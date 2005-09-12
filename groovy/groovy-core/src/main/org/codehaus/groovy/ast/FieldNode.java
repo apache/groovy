@@ -48,7 +48,6 @@ package org.codehaus.groovy.ast;
 import java.lang.reflect.Field;
 
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.classgen.BytecodeHelper;
 import org.objectweb.asm.Opcodes;
 
 /**
@@ -57,58 +56,37 @@ import org.objectweb.asm.Opcodes;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class FieldNode extends AnnotatedNode implements Opcodes {
+public class FieldNode extends AnnotatedNode implements Opcodes, Variable {
 
     private String name;
     private int modifiers;
-    private String type;
-    private String owner;
+    private Type type;
+    private Type owner;
     private Expression initialValueExpression;
     private boolean dynamicType;
     private boolean holder;
 
     public static FieldNode newStatic(Class theClass, String name) throws SecurityException, NoSuchFieldException {
         Field field = theClass.getField(name);
-        String fldType = field.getType().getName();
-        return new FieldNode(name, ACC_PUBLIC | ACC_STATIC, fldType, theClass.getName(), null);
+        Type fldType = Type.makeType(field.getType());
+        return new FieldNode(name, ACC_PUBLIC | ACC_STATIC, fldType, Type.makeType(theClass), null);
     }
 
-    public FieldNode(String name, int modifiers, String type, ClassNode owner, Expression initialValueExpression) {
-        this(name, modifiers, type, owner.getName(), initialValueExpression);
+    public FieldNode(String name, int modifiers, Type type, ClassNode owner, Expression initialValueExpression) {
+        this(name, modifiers, type, owner.getType(), initialValueExpression);
     }
 
-    public FieldNode(String name, int modifiers, String type, String owner, Expression initialValueExpression) {
+    public FieldNode(String name, int modifiers, Type type, Type owner, Expression initialValueExpression) {
         this.name = name;
         this.modifiers = modifiers;
         this.type = type;
+        if (this.type==Type.DYNAMIC_TYPE && initialValueExpression!=null) this.type = initialValueExpression.getType();
+        this.type = type.getWrapper();
         this.owner = owner;
         this.initialValueExpression = initialValueExpression;
-        if (type == null || type.length() == 0) {
-            this.dynamicType = true;
-            if (initialValueExpression != null) {
-                String initType = initialValueExpression.getType();
-                if (initType != null && initType.length() > 0){
-                    this.type = initType;
-//                    this.dynamicType = false;
-                }
-                else {
-                    this.type = "java.lang.Object";
-//                    this.dynamicType = true;
-                }
-            }
-            else {
-                this.type = "java.lang.Object";
-//                this.dynamicType = true;
-            }
-        }
-        else {
-            String boxedType = BytecodeHelper.getObjectTypeForPrimitive(type);
-            this.type = boxedType;
-            dynamicType = false;
-        }
     }
 
-    public Expression getInitialValueExpression() {
+    public Expression getInitialExpression() {
         return initialValueExpression;
     }
 
@@ -120,15 +98,15 @@ public class FieldNode extends AnnotatedNode implements Opcodes {
         return name;
     }
 
-    public String getType() {
+    public Type getType() {
         return type;
     }
 
-    public void setType(String type) {
+    public void setType(Type type) {
         this.type = type;
     }
     
-    public String getOwner() {
+    public Type getOwner() {
         return owner;
     }
 
@@ -157,7 +135,11 @@ public class FieldNode extends AnnotatedNode implements Opcodes {
 	/**
 	 * @param owner The owner to set.
 	 */
-	public void setOwner(String owner) {
+	public void setOwner(Type owner) {
 		this.owner = owner;
 	}
+
+    public boolean hasInitialExpression() {
+        return initialValueExpression!=null;
+    }
 }

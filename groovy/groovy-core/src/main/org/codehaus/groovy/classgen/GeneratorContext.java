@@ -48,6 +48,7 @@ package org.codehaus.groovy.classgen;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.Type;
 
 
 /**
@@ -95,7 +96,7 @@ public class GeneratorContext {
         if (enclosingMethod != null) {
             methodName = enclosingMethod.getName() + "_";
 
-            if (enclosingClass.isDerivedFrom("groovy.lang.Closure")) {
+            if (enclosingClass.isDerivedFrom(Type.CLOSURE_TYPE)) {
                 methodName = "";
             }
             methodName = methodName.replace('<', '_');

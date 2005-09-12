@@ -48,7 +48,7 @@ package org.codehaus.groovy.ast.expr;
 import java.lang.reflect.Constructor;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.classgen.AsmClassGenerator;
+import org.codehaus.groovy.ast.Type;
 
 /**
  * A constructor call
@@ -60,30 +60,15 @@ public class ConstructorCallExpression extends Expression {
 
     private Expression arguments;
 
-    public String getTypeToSet() {
-        return typeToSet;
-    }
-
-    private String typeToSet; // type to be set on the type field. delayed until classgen time to avoid resolving to the current class.
-
     public Constructor getConstructor() {
         return constructor;
     }
 
     private Constructor constructor = null;
 
-    protected boolean shouldContinue() {
-        if (super.isResolveFailed())
-            return false;
-        if (constructor == null)
-            return true;
-        return false;
-    }
 
-    public ConstructorCallExpression(String type, Expression arguments) {
-        //super.setType(type);
-        this.typeToSet = type;
-        setTypeResolved(false); // to set it when arguments is resolved
+    public ConstructorCallExpression(Type type, Expression arguments) {
+        super.setType(type);
         this.arguments = arguments;
     }
     
@@ -92,30 +77,7 @@ public class ConstructorCallExpression extends Expression {
     }
     
     public Expression transformExpression(ExpressionTransformer transformer) {
-        return new ConstructorCallExpression(type, transformer.transform(arguments)); 
-    }
-
-    protected void resolveType(AsmClassGenerator resolver) {
-        arguments.resolve(resolver);
-        if (constructor == null) {
-            resolver.resolve(this);
-        }
-//        if (getTypeClass() != null)
-//            setTypeResolved(true);
-//        else
-//            resolver.resolve(this);
-    }
-
-    public String getType() {
-        if (type == null) {
-            if (typeToSet != null && typeToSet.length() > 0) {
-                return typeToSet;
-            }
-            else {
-                return "java.lang.Object";
-            }
-        }
-        return type;
+        return new ConstructorCallExpression(getType(), transformer.transform(arguments)); 
     }
 
     public Expression getArguments() {
@@ -123,15 +85,15 @@ public class ConstructorCallExpression extends Expression {
     }
 
     public String getText() {
-        return "new " + type + "(" + arguments.getText() + ")";
+        return "new " + getType() + "(" + arguments.getText() + ")";
     }
 
     public String toString() {
-        return super.toString() + "[type: " + type + " arguments: " + arguments + "]";
+        return super.toString() + "[type: " + getType() + " arguments: " + arguments + "]";
     }
 
     public void setConstructor(Constructor ctor) {
         constructor = ctor;
-        super.setTypeClass(ctor.getDeclaringClass());
+        super.getType().setTypeClass(ctor.getDeclaringClass());
     }
 }

@@ -45,8 +45,6 @@
  */
 package org.codehaus.groovy.ast;
 
-import groovy.lang.Reference;
-
 import org.codehaus.groovy.ast.expr.*;
 
 /**
@@ -56,67 +54,46 @@ import org.codehaus.groovy.ast.expr.*;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class Parameter {
+public class Parameter implements Variable {
 
     public static final Parameter[] EMPTY_ARRAY = {
     };
 
-    private String type;
+    private Type type;
     private String name;
     private boolean dynamicType;
     private Expression defaultValue;
-    private String realType;
-    final private boolean hasDefaultValue;
+    private boolean hasDefaultValue;
 
-    public Parameter(String name) {
-        this.name = null;
-        this.hasDefaultValue = false;
-        this.type = "java.lang.Object";
-        this.dynamicType = true;
-    }
-
-    public Parameter(String type, String name) {
-        this.name = MethodNode.ensureJavaTypeNameSyntax(name);
+    public Parameter(Type type, String name) {
+        this.name = Type.ensureJavaTypeNameSyntax(name);
         this.type = type;
         this.hasDefaultValue = false;
-        if (type == null || type.length() == 0) {
-            this.type = "java.lang.Object";
-            this.dynamicType = true;
-        }
     }
 
-    public Parameter(String type, String name, Expression defaultValue) {
-        this.name = MethodNode.ensureJavaTypeNameSyntax(name);
-        this.type = type;
+    public Parameter(Type type, String name, Expression defaultValue) {
+        this(type,name);
         this.defaultValue = defaultValue;
         this.hasDefaultValue = true;
-        if (type == null || type.length() == 0) {
-            this.type = "java.lang.Object";
-            this.dynamicType = true;
-        }
     }
 
     public String toString() {
-        return super.toString() + "[name:" + name + ((type == null) ? "" : " type: " + type) + ", hasDefaultValue: " + this.hasDefaultValue() + "]";
+        return super.toString() + "[name:" + name + ((type == null) ? "" : " type: " + type.getName()) + ", hasDefaultValue: " + this.hasInitialExpression() + "]";
     }
 
     public String getName() {
         return name;
     }
 
-    public String getType() {
+    public Type getType() {
         return type;
     }
 
-    public void setType(String type) {
+    public void setType(Type type) {
         this.type = type;
     }
-
-    public boolean isDynamicType() {
-        return dynamicType;
-    }
     
-    public boolean hasDefaultValue() {
+    public boolean hasInitialExpression() {
         return this.hasDefaultValue;
     }
     
@@ -124,21 +101,7 @@ public class Parameter {
      * @return the default value expression for this parameter or null if
      * no default value is specified
      */
-    public Expression getDefaultValue() {
+    public Expression getInitialExpression() {
         return defaultValue;
-    }
-
-    public void makeReference() {
-        realType = type;
-        type = Reference.class.getName();
-    }
-    
-    /**
-     * @return the real logical type if a dereference is being made 
-     * (e.g. to share variables across closure scopes)
-     */
-    public String getRealType() {
-        return realType;
-    }
-
+    }    
 }

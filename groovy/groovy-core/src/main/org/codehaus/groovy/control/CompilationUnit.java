@@ -54,6 +54,7 @@
 package org.codehaus.groovy.control;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -233,7 +234,7 @@ public class CompilationUnit extends ProcessingUnit {
             public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
 
 
-                if (classNode.getName().equals(name)) {
+                if (classNode.getType().getName().equals(name)) {
 
 
                     result[0] = classNode;
@@ -613,9 +614,19 @@ public class CompilationUnit extends ProcessingUnit {
 
             if (!debug) {
                 byte[] bytes = ((ClassWriter) visitor).toByteArray();
-                /* this. */classes.add(new GroovyClass(classNode.getName(), bytes));
+                /* this. */classes.add(new GroovyClass(classNode.getType().getName(), bytes));
             }
-
+/*
+            byte[] bytes = ((ClassWriter) visitor).toByteArray();
+            FileOutputStream fos;
+            try {
+                fos = new FileOutputStream(classNode.getType().getName());
+                fos.write(bytes);
+                fos.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }*/
+            
 
             //
             // Handle any callback that's been set

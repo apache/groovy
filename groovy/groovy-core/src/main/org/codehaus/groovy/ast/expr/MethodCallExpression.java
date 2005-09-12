@@ -48,7 +48,7 @@ package org.codehaus.groovy.ast.expr;
 import groovy.lang.MetaMethod;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.classgen.AsmClassGenerator;
+import org.codehaus.groovy.ast.Type;
 
 /**
  * A method call on an object or class
@@ -75,6 +75,11 @@ public class MethodCallExpression extends Expression {
         this.objectExpression = objectExpression;
         this.method = method;
         this.arguments = arguments;
+        //TODO: set correct type here
+        // if setting type and a methodcall is the last expresssion in a method,
+        // then the method will return null if the method itself is not void too!
+        // (in bytecode after call: aconst_null, areturn)
+        this.setType(Type.DYNAMIC_TYPE);
     }
 
     public void visit(GroovyCodeVisitor visitor) {
@@ -86,12 +91,6 @@ public class MethodCallExpression extends Expression {
             new MethodCallExpression(transformer.transform(objectExpression), method, transformer.transform(arguments));
         answer.setSafe(safe);
         return answer;
-    }
-
-    protected void resolveType(AsmClassGenerator resolver) {
-        this.objectExpression.resolve(resolver);
-        this.arguments.resolve(resolver);
-        resolver.resolve(this);
     }
 
     public Expression getArguments() {
@@ -158,7 +157,7 @@ public class MethodCallExpression extends Expression {
         Expression expression = call.getObjectExpression();
         if (expression instanceof VariableExpression) {
             VariableExpression varExp = (VariableExpression) expression;
-            String variable = varExp.getVariable();
+            String variable = varExp.getName();
             return variable.equals("super");
         }
         return false;
@@ -166,6 +165,6 @@ public class MethodCallExpression extends Expression {
 
     public void setMethod(MetaMethod mmeth) {
         this.metaMethod = mmeth;
-        super.setTypeClass(mmeth.getReturnType());
+        super.setType(Type.makeType(mmeth.getReturnType()));
     }
 }

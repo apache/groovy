@@ -46,9 +46,8 @@
 package org.codehaus.groovy.ast.expr;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.classgen.AsmClassGenerator;
-import org.codehaus.groovy.classgen.BytecodeHelper;
-
+import org.codehaus.groovy.ast.Type;
+import org.codehaus.groovy.ast.Variable;
 
 /**
  * Represents a local variable name, the simplest form of expression. e.g. "foo".
@@ -56,28 +55,20 @@ import org.codehaus.groovy.classgen.BytecodeHelper;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class VariableExpression extends Expression {
+public class VariableExpression extends Expression implements Variable {
 
-    public static final VariableExpression THIS_EXPRESSION = new VariableExpression("this", null);
-    public static final VariableExpression SUPER_EXPRESSION = new VariableExpression("super", null);
+    public static final VariableExpression THIS_EXPRESSION = new VariableExpression("this", Type.DYNAMIC_TYPE);
+    public static final VariableExpression SUPER_EXPRESSION = new VariableExpression("super", Type.DYNAMIC_TYPE);
 
     private String variable;
 
-    public VariableExpression(String variable, String type) {
+    public VariableExpression(String variable, Type type) {
         this.variable = variable;
-        if (type == null || type.length() == 0) {
-            isDynamic = true;
-        }
-        else {
-            String boxedType = BytecodeHelper.getObjectTypeForPrimitive(type);
-
-            super.setType(boxedType);  // todo delay setting until resolve()
-            isDynamic = false;
-        }
+        super.setType(type.getWrapper());
     }
-
+    
     public VariableExpression(String variable) {
-        this.variable = variable;
+        this(variable, Type.DYNAMIC_TYPE);
     }
 
     public void visit(GroovyCodeVisitor visitor) {
@@ -88,38 +79,26 @@ public class VariableExpression extends Expression {
         return this;
     }
 
-    protected void resolveType(AsmClassGenerator resolver) {
-        resolver.resolve(this);
-    }
-
-    public String getVariable() {
-        return variable;
-    }
-
     public String getText() {
         return variable;
     }
-
-    public String getType() {
-        if (type == null) {
-            return "java.lang.Object";
-        }
-        return type;
-    }
-
-    boolean isDynamic = true;
-    public boolean isDynamic() {
-        return isDynamic;
+    
+    public String getName() {
+        return variable;
     }
 
     /**
      * @return true if this variable is dynamically typed
      */
     public String toString() {
-        return super.toString() + "[variable: " + variable + ((isDynamic()) ? "" : " type: " + type) + "]";
+        return super.toString() + "[variable: " + variable + ((getType().isDynamic()) ? "" : " type: " + getType()) + "]";
     }
 
-    public void setDynamic(boolean dynamic) {
-        isDynamic = dynamic;
+    public Expression getInitialExpression() {
+        return null;
+    }
+
+    public boolean hasInitialExpression() {
+        return false;
     }
 }

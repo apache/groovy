@@ -57,11 +57,11 @@ import junit.framework.TestCase;
  */
 public class ClassNodeTest extends TestCase implements Opcodes {
 
-    ClassNode classNode = new ClassNode("Foo", ACC_PUBLIC, "java.lang.Object");
-    ClassNode innerClassNode = new InnerClassNode(classNode, "Foo$1", ACC_PUBLIC, "java.lang.Object");
+    ClassNode classNode = new ClassNode(Type.makeType("Foo"), ACC_PUBLIC, Type.OBJECT_TYPE);
+    ClassNode innerClassNode = new InnerClassNode(classNode, Type.makeType("Foo$1"), ACC_PUBLIC, Type.OBJECT_TYPE);
 
     protected void setUp() throws Exception {
-        classNode.addField("field", ACC_PUBLIC, "java.lang.String", null);
+        classNode.addField("field", ACC_PUBLIC, Type.STRING_TYPE, null);
     }
 
     public void testOuterClass() {
@@ -77,7 +77,7 @@ public class ClassNodeTest extends TestCase implements Opcodes {
     public void testPackageName() {
         assertEquals("Package", null, classNode.getPackageName());
         
-        ClassNode packageNode = new ClassNode("com.acme.Foo", ACC_PUBLIC, "java.lang.Object");
+        ClassNode packageNode = new ClassNode(Type.makeType("com.acme.Foo"), ACC_PUBLIC, Type.OBJECT_TYPE);
         assertEquals("Package", "com.acme", packageNode.getPackageName());
     }
 }

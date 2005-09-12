@@ -119,6 +119,12 @@ public class CompileUnit {
     	return codeSource;
     }
 
+    public Class loadClass(Type type) throws ClassNotFoundException {
+        if (type.getTypeClass()!=null) return type.getTypeClass();
+        Class c = loadClass(type.getName());
+        type.setTypeClass(c);
+        return c;
+    }
     
     /**
      * Loads a class on the compile classpath so that it can be introspected
@@ -230,7 +236,7 @@ public class CompileUnit {
      *  Adds a class to the unit.
      */
     public void addClass(ClassNode node) {
-        String name = node.getName();
+        String name = node.getType().getName();
         if (classes.containsKey(name)) {
             throw new RuntimeException(
                 "Error: duplicate class declaration for name: " + name + " and class: " + node);

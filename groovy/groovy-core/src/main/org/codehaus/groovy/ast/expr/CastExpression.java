@@ -46,7 +46,7 @@
 package org.codehaus.groovy.ast.expr;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.classgen.AsmClassGenerator;
+import org.codehaus.groovy.ast.Type;
 
 /**
  * Represents a type cast expression
@@ -60,18 +60,17 @@ public class CastExpression extends Expression {
     private boolean ignoreAutoboxing=false;
     private boolean coerce = false;
 
-    public static CastExpression asExpression(String typeName, Expression expression) {
-        CastExpression answer = new CastExpression(typeName, expression);
+    public static CastExpression asExpression(Type type, Expression expression) {
+        CastExpression answer = new CastExpression(type, expression);
         answer.setCoerce(true);
         return answer;
     }
 
-    public CastExpression(String type, Expression expression) {
-        super.setType(type);
-        this.expression = expression;
+    public CastExpression(Type type, Expression expression) {
+        this(type,expression,false);
     }
 
-    public CastExpression(String type, Expression expression, boolean ignoreAutoboxing) {
+    public CastExpression(Type type, Expression expression, boolean ignoreAutoboxing) {
         super.setType(type);
         this.expression = expression;
         this.ignoreAutoboxing = ignoreAutoboxing;
@@ -90,7 +89,7 @@ public class CastExpression extends Expression {
     }
 
     public String toString() {
-        return super.toString() +"[(" + type + ") " + expression + "]";
+        return super.toString() +"[(" + getType().getName() + ") " + expression + "]";
     }
 
     public void visit(GroovyCodeVisitor visitor) {
@@ -98,19 +97,19 @@ public class CastExpression extends Expression {
     }
 
     public Expression transformExpression(ExpressionTransformer transformer) {
-        return new CastExpression(type, transformer.transform(expression));
+        return new CastExpression(getType(), transformer.transform(expression));
     }
     
     public String getText() {
-        return "(" + type + ") " + expression.getText();
+        return "(" + getType() + ") " + expression.getText();
     }
-
+ 
     public Expression getExpression() {
         return expression;
     }
-
-    protected  void resolveType(AsmClassGenerator resolver) {
-        //To change body of implemented methods use File | Settings | File Templates.
+    
+    public void setType(Type t) {
+        super.setType(t);
     }
 
 }

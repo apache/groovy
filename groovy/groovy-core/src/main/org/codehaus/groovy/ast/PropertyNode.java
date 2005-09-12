@@ -55,7 +55,7 @@ import org.objectweb.asm.Opcodes;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class PropertyNode extends AnnotatedNode implements Opcodes {
+public class PropertyNode extends AnnotatedNode implements Opcodes,Variable {
 
     private FieldNode field;
     private Statement getterBlock;
@@ -63,13 +63,10 @@ public class PropertyNode extends AnnotatedNode implements Opcodes {
     private int modifiers;
 
     public PropertyNode(
-        String name,
-        int modifiers,
-        String type,
-        String owner,
-        Expression initialValueExpression,
-        Statement getterBlock,
-        Statement setterBlock) {
+        String name, int modifiers, Type type, Type owner,
+        Expression initialValueExpression, Statement getterBlock,
+        Statement setterBlock)
+    {
         this(new FieldNode(name, modifiers & ACC_STATIC, type, owner, initialValueExpression), modifiers, getterBlock, setterBlock);
     }
 
@@ -84,8 +81,8 @@ public class PropertyNode extends AnnotatedNode implements Opcodes {
         return getterBlock;
     }
 
-    public Expression getInitialValueExpression() {
-        return field.getInitialValueExpression();
+    public Expression getInitialExpression() {
+        return field.getInitialExpression();
     }
 
     public int getModifiers() {
@@ -100,12 +97,8 @@ public class PropertyNode extends AnnotatedNode implements Opcodes {
         return setterBlock;
     }
 
-    public String getType() {
+    public Type getType() {
         return field.getType();
-    }
-
-    public boolean isDynamicType() {
-        return field.isDynamicType();
     }
 
     public FieldNode getField() {
@@ -114,6 +107,10 @@ public class PropertyNode extends AnnotatedNode implements Opcodes {
 
     public boolean isPrivate() {
         return (modifiers & ACC_PRIVATE) != 0;
+    }
+
+    public boolean hasInitialExpression() {
+        return field.hasInitialExpression();
     }
 
 }

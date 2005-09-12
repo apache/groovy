@@ -138,8 +138,8 @@ public class Variable {
      * @return
      */
     public Variable deriveBoxedVersion() {
-        if (BytecodeHelper.isPrimitiveType(this.getTypeName())) {
-            Type t = new Type(BytecodeHelper.getObjectTypeForPrimitive(getTypeName()));
+        if (getType().isPrimitiveType()) {
+            Type t = getType().getWrapper();
             return new Variable(index, t, name);
         } else {
             return this;

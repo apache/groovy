@@ -36,7 +36,6 @@ package org.codehaus.groovy.ast;
 
 import groovy.lang.GroovyObject;
 import groovy.lang.MissingClassException;
-import groovy.lang.Script;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
@@ -68,9 +67,9 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
     private transient Logger log = Logger.getLogger(getClass().getName());
 
-    private String name;
+    private Type type;
     private int modifiers;
-    private String superClass;
+    private Type superClass;
     private String[] interfaces;
     private MixinNode[] mixins;
     private List constructors = new ArrayList();
@@ -105,8 +104,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      *                   base class
      * @see org.objectweb.asm.Opcodes
      */
-    public ClassNode(String name, int modifiers, String superClass) {
-        this(name, modifiers, superClass, EMPTY_STRING_ARRAY, MixinNode.EMPTY_ARRAY);
+    public ClassNode(Type type, int modifiers, Type superClass) {
+        this(type, modifiers, superClass, EMPTY_STRING_ARRAY, MixinNode.EMPTY_ARRAY);
     }
 
     /**
@@ -116,8 +115,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      *                   base class
      * @see org.objectweb.asm.Opcodes
      */
-    public ClassNode(String name, int modifiers, String superClass, String[] interfaces, MixinNode[] mixins) {
-        this.name = name;
+    public ClassNode(Type type, int modifiers, Type superClass, String[] interfaces, MixinNode[] mixins) {
+        this.type = type;
         this.modifiers = modifiers;
         this.superClass = superClass;
         this.interfaces = interfaces;
@@ -129,11 +128,11 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         }*/
     }
 
-    public String getSuperClass() {
+    public Type getSuperClass() {
         return superClass;
     }
 
-    public void setSuperClass(String superClass) {
+    public void setSuperClass(Type superClass) {
         this.superClass = superClass;
     }
 
@@ -189,7 +188,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         // add in unimplemented abstract methods from the interfaces
         for (int i = 0; i < interfaces.length; i++) {
             String interfaceName = interfaces[i];
-            ClassNode iface = findClassNode(interfaceName);
+            ClassNode iface = findClassNode(Type.makeType(interfaceName));
             Map ifaceMethodsMap = iface.getDeclaredMethodsMap();
             for (Iterator iter = ifaceMethodsMap.keySet().iterator(); iter.hasNext();) {
                 String methSig = (String) iter.next();
@@ -228,8 +227,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         return -1;
     }
 
-    public String getName() {
-        return name;
+    public Type getType() {
+        return type;
     }
 
     public int getModifiers() {
@@ -257,7 +256,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
     public void addField(FieldNode node) {
         node.setDeclaringClass(this);
-        node.setOwner(getName());
+        node.setOwner(getType());
         fields.add(node);
         fieldIndex.put(node.getName(), node);
     }
@@ -272,12 +271,12 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
     public PropertyNode addProperty(String name,
                                     int modifiers,
-                                    String type,
+                                    Type type,
                                     Expression initialValueExpression,
                                     Statement getterBlock,
                                     Statement setterBlock) {
         PropertyNode node =
-                new PropertyNode(name, modifiers, type, getName(), initialValueExpression, getterBlock, setterBlock);
+                new PropertyNode(name, modifiers, type, getType(), initialValueExpression, getterBlock, setterBlock);
         addProperty(node);
         return node;
     }
@@ -307,7 +306,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      */
     public MethodNode addMethod(String name,
                                 int modifiers,
-                                String returnType,
+                                Type returnType,
                                 Parameter[] parameters,
                                 Statement code) {
         MethodNode other = getDeclaredMethod(name, parameters);
@@ -325,7 +324,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      */
     public MethodNode addSyntheticMethod(String name,
                                          int modifiers,
-                                         String returnType,
+                                         Type returnType,
                                          Parameter[] parameters,
                                          Statement code) {
         MethodNode answer = addMethod(name, modifiers, returnType, parameters, code);
@@ -333,8 +332,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         return answer;
     }
 
-    public FieldNode addField(String name, int modifiers, String type, Expression initialValue) {
-        FieldNode node = new FieldNode(name, modifiers, type, getName(), initialValue);
+    public FieldNode addField(String name, int modifiers, Type type, Expression initialValue) {
+        FieldNode node = new FieldNode(name, modifiers, type, getType(), initialValue);
         addField(node);
         return node;
     }
@@ -358,9 +357,9 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     public void addMixin(MixinNode mixin) {
         // lets check if it already uses a mixin
         boolean skip = false;
-        String mixinName = mixin.getName();
+        Type mixinName = mixin.getType();
         for (int i = 0; i < mixins.length; i++) {
-            if (mixinName.equals(mixins[i].getName())) {
+            if (mixinName.equals(mixins[i].getType())) {
                 skip = true;
             }
         }
@@ -398,7 +397,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         List declaredMethods = getDeclaredMethods("<clinit>");
         if (declaredMethods.isEmpty()) {
             method =
-                    addMethod("<clinit>", ACC_PUBLIC | ACC_STATIC, "void", Parameter.EMPTY_ARRAY, new BlockStatement());
+                    addMethod("<clinit>", ACC_PUBLIC | ACC_STATIC, Type.VOID_TYPE, Parameter.EMPTY_ARRAY, new BlockStatement());
             method.setSynthetic(true);
         }
         else {
@@ -468,10 +467,10 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     /**
      * @return true if this node is derived from the given class node
      */
-    public boolean isDerivedFrom(String name) {
+    public boolean isDerivedFrom(Type type) {
         ClassNode node = getSuperClassNode();
         while (node != null) {
-            if (name.equals(node.getName())) {
+            if (type.equals(node.getType())) {
                 return true;
             }
             node = node.getSuperClassNode();
@@ -521,11 +520,11 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * @return the ClassNode of the super class of this type
      */
     public ClassNode getSuperClassNode() {
-        if (superClass != null && superClass.length() > 0 && superClassNode == null && !name.equals("java.lang.Object")) {
+        if (superClass != null && superClassNode == null && getType()!=Type.OBJECT_TYPE) {
             // lets try find the class in the compile unit
-            String temp = resolveClassName(superClass);
+            Type temp = resolveClassName(superClass);
             if (temp == null) {
-                throw new MissingClassException(superClass, this, "No such superclass");
+                throw new MissingClassException(superClass.getName(), this, "No such superclass");
             }
             else {
                 superClass = temp;
@@ -541,21 +540,24 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * @param type fully qulified type name
      * @return the ClassNode for this type or null if it could not be found
      */
-    public ClassNode findClassNode(String type) {
+    public ClassNode findClassNode(Type type) {
         ClassNode answer = null;
         CompileUnit theCompileUnit = getCompileUnit();
         if (theCompileUnit != null) {
-            answer = theCompileUnit.getClass(type);
-            if (answer == null) {
-                Class theClass;
-                try {
-                    theClass = theCompileUnit.loadClass(type);
-                    answer = createClassNode(theClass);
-                }
-                catch (ClassNotFoundException e) {
-                    // lets ignore class not found exceptions
-                    log.log(Level.WARNING, "Cannot find class: " + type, e);
-                }
+            answer = theCompileUnit.getClass(type.getName());
+            if (answer != null) return answer;
+            if (type.getTypeClass()!=null) {
+                return createClassNode(type.getTypeClass());
+            }
+            Class theClass;
+            try {
+                theClass = theCompileUnit.loadClass(type);
+                type.setTypeClass(theClass);
+                answer = createClassNode(theClass);
+            }
+            catch (ClassNotFoundException e) {
+                // lets ignore class not found exceptions
+                log.log(Level.WARNING, "Cannot find class: " + type.getName(), e);
             }
         }
         return answer;
@@ -569,14 +571,14 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
             interfaceNames[i] = classInterfaces[i].getName();
         }
 
-        String className = null;
+        Type superClass = null;
         if (theClass.getSuperclass() != null) {
-            className = theClass.getSuperclass().getName();
+            superClass = Type.makeType(theClass.getSuperclass());
         }
         ClassNode answer =
-                new ClassNode(theClass.getName(),
+                new ClassNode(Type.makeType(theClass),
                         theClass.getModifiers(),
-                        className,
+                        superClass,
                         interfaceNames,
                         MixinNode.EMPTY_ARRAY);
         answer.compileUnit = getCompileUnit();
@@ -605,7 +607,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      */
     protected MethodNode createMethodNode(Method method) {
         Parameter[] parameters = createParameters(method.getParameterTypes());
-        return new MethodNode(method.getName(), method.getModifiers(), method.getReturnType().getName(), parameters, EmptyStatement.INSTANCE);
+        return new MethodNode(method.getName(), method.getModifiers(), Type.makeType(method.getReturnType()), parameters, EmptyStatement.INSTANCE);
     }
 
     /**
@@ -625,39 +627,40 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     protected Parameter createParameter(Class parameterType, int idx) {
-        return new Parameter(parameterType.getName(), "param" + idx);
+        return new Parameter(Type.makeType(parameterType), "param" + idx);
     }
 
 
-    public String resolveClassName(String type) {
-        String answer = null;
+    public Type resolveClassName(Type type) {
+        Type answer = null;
         if (type != null) {
-            if (getName().equals(type) || getNameWithoutPackage().equals(type)) {
-                return getName();
+            if (getType().equals(type) || getNameWithoutPackage().equals(type.getName())) {
+                return getType();
             }
             // try to resolve Class names
             answer = tryResolveClassAndInnerClass(type);
 
             // try to resolve a public static inner class' name
-            String replacedPointType = type;
+            String replacedPointType = type.getName();
             while (answer == null && replacedPointType.indexOf('.') > -1) {
                 int lastPoint = replacedPointType.lastIndexOf('.');
                 replacedPointType = new StringBuffer()
                         .append(replacedPointType.substring(0, lastPoint)).append("$")
                         .append(replacedPointType.substring(lastPoint + 1)).toString();
-                answer = tryResolveClassAndInnerClass(replacedPointType);
+                answer = tryResolveClassAndInnerClass(Type.makeType(replacedPointType));
             }
         }
         return answer;
     }
 
-    private String tryResolveClassAndInnerClass(String type) {
-        String answer = tryResolveClassFromCompileUnit(type);
+    private Type tryResolveClassAndInnerClass(Type type) {
+        if (type.getTypeClass()!=null) return type;
+        Type answer = tryResolveClassFromCompileUnit(type);
         if (answer == null) {
             // lets try class in same package
             String packageName = getPackageName();
             if (packageName != null && packageName.length() > 0) {
-                answer = tryResolveClassFromCompileUnit(packageName + "." + type);
+                answer = tryResolveClassFromCompileUnit(Type.makeType(packageName + "." + type.getName()));
             }
         }
         if (answer == null) {
@@ -667,7 +670,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
                 for (Iterator iter = module.getImportPackages().iterator(); iter.hasNext();) {
                     String packageName = (String) iter.next();
-                    answer = tryResolveClassFromCompileUnit(packageName + type);
+                    answer = tryResolveClassFromCompileUnit(Type.makeType(packageName + type.getName()));
                     if (answer != null) {
                         return answer;
                     }
@@ -677,7 +680,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         if (answer == null) {
             for (int i = 0, size = defaultImports.length; i < size; i++) {
                 String packagePrefix = defaultImports[i];
-                answer = tryResolveClassFromCompileUnit(packagePrefix + "." + type);
+                answer = tryResolveClassFromCompileUnit(Type.makeType(packagePrefix + "." + type.getName()));
                 if (answer != null) {
                     return answer;
                 }
@@ -690,10 +693,11 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * @param type
      * @return
      */
-    protected String tryResolveClassFromCompileUnit(String type) {
+    protected Type tryResolveClassFromCompileUnit(Type type) {
+        if (type.getTypeClass()!=null) return type;
         CompileUnit theCompileUnit = getCompileUnit();
         if (theCompileUnit != null) {
-            if (theCompileUnit.getClass(type) != null) {
+            if (theCompileUnit.getClass(type.getName()) != null) {
                 return type;
             }
 
@@ -705,8 +709,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
                 throw ace;
             } catch (ClassGeneratorException cge) {
                 throw cge;
-            }catch (Throwable e) {
-                // fall through
+            } catch (ClassNotFoundException e) {
+                //Fall through
             }
         }
         return null;
@@ -737,57 +741,22 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     /**
-     * @return the name of the class for the given identifier if it is a class
-     *         otherwise return null
-     */
-    public String getClassNameForExpression(String identifier) {
-        // lets see if it really is a class name
-        String className = null;
-        if (module != null) {
-            className = module.getImport(identifier);
-            if (className == null) {
-                if (module.getUnit().getClass(identifier) != null) {
-                    className = identifier;
-                }
-                else {
-                    // lets prepend the package name to see if its in our
-                    // package
-                    String packageName = getPackageName();
-                    if (packageName != null) {
-                        String guessName = packageName + "." + identifier;
-                        if (module.getUnit().getClass(guessName) != null) {
-                            className = guessName;
-                        }
-                        else if (guessName.equals(name)) {
-                            className = name;
-                        }
-                    }
-                }
-            }
-        }
-        else {
-            System.out.println("No module for class: " + getName());
-        }
-        return className;
-    }
-
-    /**
      * @return the package name of this class
      */
     public String getPackageName() {
-        int idx = name.lastIndexOf('.');
+        int idx = getType().getName().lastIndexOf('.');
         if (idx > 0) {
-            return name.substring(0, idx);
+            return getType().getName().substring(0, idx);
         }
         return null;
     }
 
     public String getNameWithoutPackage() {
-        int idx = name.lastIndexOf('.');
+        int idx = getType().getName().lastIndexOf('.');
         if (idx > 0) {
-            return name.substring(idx + 1);
+            return getType().getName().substring(idx + 1);
         }
-        return name;
+        return getType().getName();
     }
 
     public void visitContents(GroovyClassVisitor visitor) {
@@ -813,7 +782,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         for (Iterator iter = methods.iterator(); iter.hasNext();) {
             MethodNode method = (MethodNode) iter.next();
             if (getterName.equals(method.getName())
-                    && !"void".equals(method.getReturnType())
+                    && Type.VOID_TYPE!=method.getReturnType()
                     && method.getParameters().length == 0) {
                 return method;
             }
@@ -825,7 +794,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         for (Iterator iter = methods.iterator(); iter.hasNext();) {
             MethodNode method = (MethodNode) iter.next();
             if (getterName.equals(method.getName())
-                    && "void".equals(method.getReturnType())
+                    && Type.VOID_TYPE==method.getReturnType()
                     && method.getParameters().length == 1) {
                 return method;
             }
@@ -858,7 +827,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public boolean isScript() {
-        return script | isDerivedFrom(Script.class.getName());
+        return script | isDerivedFrom(Type.SCRIPT_TYPE);
     }
 
     public void setScript(boolean script) {
@@ -866,7 +835,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public String toString() {
-        return super.toString() + "[name: " + name + "]";
+        return super.toString() + "[name: " + getType().getName() + "]";
     }
 
     /**

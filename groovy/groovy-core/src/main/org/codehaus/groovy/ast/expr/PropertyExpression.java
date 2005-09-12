@@ -50,7 +50,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.classgen.AsmClassGenerator;
+import org.codehaus.groovy.ast.Type;
 
 /**
  * Represents a property access such as the expression "foo.bar".
@@ -98,15 +98,14 @@ public class PropertyExpression extends Expression {
         return this;
     }
 
-    protected void resolveType(AsmClassGenerator resolver) {
-        objectExpression.resolve(resolver);
-        resolver.resolve(this);
-    }
-
     public Expression getObjectExpression() {
         return objectExpression;
     }
 
+    public void setObjectExpression(Expression exp) {
+        objectExpression=exp;
+    }    
+    
     public String getProperty() {
         return property;
     }
@@ -141,7 +140,7 @@ public class PropertyExpression extends Expression {
 
     public void setGetter(Method meth) {
         Class returntype = meth.getReturnType();
-        Class oldType = getTypeClass();
+        Class oldType = getType().getTypeClass();
         if (oldType != null && oldType != Object.class && oldType != returntype) {
             // something is wrong
 // in this rare case the getter is discarded. Field access takes over
@@ -153,8 +152,7 @@ public class PropertyExpression extends Expression {
         }
         else {
             getter = meth;
-            setTypeClass(returntype);
-            setTypeResolved(true);
+            setType(Type.makeType(returntype));
         }
     }
 
@@ -164,7 +162,7 @@ public class PropertyExpression extends Expression {
 
     public void setSetter(Method method) {
         Class paramType = method.getParameterTypes()[0];
-        Class wasType = getTypeClass();
+        Class wasType = getType().getTypeClass();
         if (wasType != null && wasType != Object.class && wasType != paramType) {
 //            // something is wrong
 // in this rare case the getter is discarded. Field access takes over
@@ -176,8 +174,7 @@ public class PropertyExpression extends Expression {
         }
         else {
             setter = method;
-            setTypeClass(paramType);
-            setTypeResolved(true);
+            setType(Type.makeType(paramType));
         }
     }
     public Method getSetter() {
@@ -187,8 +184,9 @@ public class PropertyExpression extends Expression {
     public void setField(Field fld) {
         field = fld;
         setStatic(Modifier.isStatic(fld.getModifiers()));
-        setTypeClass(fld.getType());
+        setType(Type.makeType(fld.getType()));
     }
+    
     public Field getField() {
         return field;
     }

@@ -46,7 +46,6 @@
 package org.codehaus.groovy.ast.expr;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.classgen.AsmClassGenerator;
 
 
 /**
@@ -70,11 +69,6 @@ public class MapEntryExpression extends Expression {
 
     public Expression transformExpression(ExpressionTransformer transformer) {
         return new MapEntryExpression(transformer.transform(keyExpression), transformer.transform(valueExpression)); 
-    }
-
-    protected void resolveType(AsmClassGenerator resolver) {
-        this.keyExpression.resolve(resolver);
-        this.valueExpression.resolve(resolver);
     }
 
     public String toString() {

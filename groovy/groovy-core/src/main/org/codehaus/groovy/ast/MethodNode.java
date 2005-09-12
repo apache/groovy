@@ -59,34 +59,28 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
 
     private String name;
     private int modifiers;
-    private String returnType;
+    private Type returnType;
     private Parameter[] parameters;
     private boolean hasDefaultValue = false;
     private Statement code;
     private boolean dynamicReturnType;
     private VariableScope variableScope;
 
-    public MethodNode(String name, int modifiers, String returnType, Parameter[] parameters, Statement code) {
+    public MethodNode(String name, int modifiers, Type returnType, Parameter[] parameters, Statement code) {
         this.name = name;
         this.modifiers = modifiers;
         this.parameters = parameters;
         this.code = code;
+        this.returnType = returnType;
+        if (returnType==null) this.returnType = Type.OBJECT_TYPE; 
 
         if (parameters != null && parameters.length > 0) {
             for (int i = 0; i < parameters.length; i++) {
-                if (parameters[i].hasDefaultValue()) {
+                if (parameters[i].hasInitialExpression()) {
                     this.hasDefaultValue = true;
                     break;
                 }
             }
-        }
-
-        if (returnType == null || returnType.length() == 0) {
-            this.returnType = "java.lang.Object";
-            this.dynamicReturnType = true;
-        }
-        else {
-            this.returnType = ensureJavaTypeNameSyntax(returnType);
         }
     }
 
@@ -102,7 +96,7 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
         StringBuffer buf = new StringBuffer();
         // buf.append(dynamicReturnType ? "$dynamic" : cleanupTypeName(returnType));
         //
-        buf.append(ensureJavaTypeNameSyntax(returnType)); // br  to replace the above. Dynamic type returns Object.
+        buf.append(returnType.getName()); // br  to replace the above. Dynamic type returns Object.
         //
         buf.append(' ');
         buf.append(name);
@@ -112,50 +106,14 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
                 buf.append(',');
             }
             Parameter param = parameters[i];
-            buf.append(ensureJavaTypeNameSyntax(param.getType()));
+            buf.append(param.getType().getName());
         }
         buf.append(')');
         return buf.toString();
     }
-
-    public static String ensureJavaTypeNameSyntax(String typename) {
-        // if the typename begins with "[", ends with ";", or is
-        // one character long, it's in .class syntax.
-        if (typename.charAt(0) == '[') {
-            return ensureJavaTypeNameSyntax(typename.substring(1)) + "[]";
-        }
-        if (typename.length() == 1) {
-            switch (typename.charAt(0)) {
-                case 'B':
-                    return "byte";
-                case 'C':
-                    return "char";
-                case 'D':
-                    return "double";
-                case 'F':
-                    return "float";
-                case 'J':
-                    return "long";
-                case 'I':
-                    return "int";
-                case 'S':
-                    return "short";
-                case 'V':
-                    return "void";
-                case 'Z':
-                    return "boolean";
-            }
-        }
-        if (typename.endsWith(";")) {
-            // Type should be "Lclassname;"
-            return typename.substring(1, typename.length() - 1);
-        }
-        return typename;
-
-    }
-
+ 
     public boolean isVoidMethod() {
-        return "void".equals(returnType);
+        return returnType==Type.VOID_TYPE;
     }
 
     public Statement getCode() {
@@ -182,7 +140,7 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
         return parameters;
     }
 
-    public String getReturnType() {
+    public Type getReturnType() {
         return returnType;
     }
 
@@ -217,7 +175,7 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
         return super.toString() + "[name: " + name + "]";
     }
 
-    public void setReturnType(String returnType) {
+    public void setReturnType(Type returnType) {
         this.returnType = returnType;
     }
 

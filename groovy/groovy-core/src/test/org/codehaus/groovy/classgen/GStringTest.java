@@ -49,6 +49,7 @@ package org.codehaus.groovy.classgen;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.Type;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
@@ -70,7 +71,7 @@ import org.codehaus.groovy.syntax.Token;
 public class GStringTest extends TestSupport {
 
     public void testConstructor() throws Exception {
-        ClassNode classNode = new ClassNode("Foo", ACC_PUBLIC, "java.lang.Object");
+        ClassNode classNode = new ClassNode(Type.makeType("Foo"), ACC_PUBLIC, Type.OBJECT_TYPE);
 
         //Statement printStatement = createPrintlnStatement(new VariableExpression("str"));
 
@@ -107,7 +108,7 @@ public class GStringTest extends TestSupport {
                         new VariableExpression("text"),
                         Token.newSymbol( "==", -1, -1),
                         new ConstantExpression("Hello World!")))));
-        classNode.addMethod(new MethodNode("stringDemo", ACC_PUBLIC, "void", Parameter.EMPTY_ARRAY, block));
+        classNode.addMethod(new MethodNode("stringDemo", ACC_PUBLIC, Type.VOID_TYPE, Parameter.EMPTY_ARRAY, block));
 
         Class fooClass = loadClass(classNode);
         assertTrue("Loaded a new class", fooClass != null);

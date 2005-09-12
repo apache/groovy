@@ -55,7 +55,6 @@ import java.util.List;
  * @version $Revision$
  */
 public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, GroovyTokenTypes {
-    private static final Type OBJECT_TYPE = new Type("java.lang.Object", true);
 
     private AST ast;
     private ClassNode classNode;
@@ -275,7 +274,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
         String name = identifier(node);
         node = node.getNextSibling();
-        String superClass = "java.lang.Object";
+        Type superClass = Type.OBJECT_TYPE;
 
         String[] interfaces = {};
         if (isType(EXTENDS_CLAUSE, node)) {
@@ -284,8 +283,8 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         }
 
         addNewClassName(name);
-        String fullClassName = dot(getPackageName(), name);
-        classNode = new ClassNode(fullClassName, modifiers, superClass, interfaces, null);
+        Type classType = Type.makeType(dot(getPackageName(), name));
+        classNode = new ClassNode(classType, modifiers, superClass, interfaces, null);
         classNode.addAnnotations(annotations);
         configureAST(classNode, classDef);
 
@@ -307,13 +306,10 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         String name = identifier(node);
         node = node.getNextSibling();
 
-        String superClass = null;
+        Type superClass = null;
         if (isType(EXTENDS_CLAUSE, node)) {
-            superClass = typeName(node);
+            superClass = makeType(node);
             node = node.getNextSibling();
-        }
-        if (superClass == null) {
-            superClass = "java.lang.Object";
         }
 
         String[] interfaces = {};
@@ -326,8 +322,8 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         MixinNode[] mixins = {};
 
         addNewClassName(name);
-        String fullClassName = dot(getPackageName(), name);
-        classNode = new ClassNode(fullClassName, modifiers, superClass, interfaces, mixins);
+        Type fullClassType = Type.makeType(dot(getPackageName(), name));
+        classNode = new ClassNode(fullClassType, modifiers, superClass, interfaces, mixins);
         classNode.addAnnotations(annotations);
         configureAST(classNode, classDef);
 
@@ -376,10 +372,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             modifiers |= Opcodes.ACC_ABSTRACT;
         }
 
-        String returnType = null;
-
+        Type returnType = null;
         if (isType(TYPE, node)) {
-            returnType = typeName(node);
+            returnType = makeType(node);
             node = node.getNextSibling();
         }
 
@@ -446,9 +441,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             node = node.getNextSibling();
         }
 
-        String type = null;
+        Type type = null;
         if (isType(TYPE, node)) {
-            type = typeName(node);
+            type = makeType(node);
             node = node.getNextSibling();
         }
 
@@ -538,9 +533,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             node = node.getNextSibling();
         }
 
-        String type = null;
+        Type type = Type.DYNAMIC_TYPE;
         if (isType(TYPE, node)) {
-            type = typeName(node);
+            type = makeType(node);
             node = node.getNextSibling();
         }
 
@@ -805,7 +800,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         AST variableNode = inNode.getFirstChild();
         AST collectionNode = variableNode.getNextSibling();
 
-        Type type = OBJECT_TYPE;
+        Type type = Type.OBJECT_TYPE;
         if (isType(VARIABLE_DEF, variableNode)) {
             AST typeNode = variableNode.getFirstChild();
             assertNodeType(TYPE, typeNode);
@@ -858,12 +853,12 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
     protected Statement variableDef(AST variableDef) {
         AST node = variableDef.getFirstChild();
-        String type = null;
+        Type type = null;
         if (isType(MODIFIERS, node)) {
             node = node.getNextSibling();
         }
         if (isType(TYPE, node)) {
-            type = typeName(node);
+            type = makeType(node);
             node = node.getNextSibling();
         }
 
@@ -1000,7 +995,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     protected CatchStatement catchStatement(AST catchNode) {
         AST node = catchNode.getFirstChild();
         Parameter parameter = parameter(node);
-        String exceptionType = parameter.getType();
+        Type exceptionType = parameter.getType();
         String variable = parameter.getName();
         node = node.getNextSibling();
         Statement code = statement(node);
@@ -1352,7 +1347,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             return variableExpression;
         }
         else {
-            ClassExpression classExpression = new ClassExpression(newText);
+            ClassExpression classExpression = new ClassExpression(Type.makeType(newText));
             configureAST(classExpression, node);
             return classExpression;
         }
@@ -1473,18 +1468,18 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         Expression leftExpression = expression(leftNode);
 
         AST rightNode = leftNode.getNextSibling();
-        String typeName = resolvedName(rightNode);
-        assertTypeNotNull(typeName, rightNode);
+        Type type = resolvedName(rightNode);
+        assertTypeNotNull(type, rightNode);
 
-        Expression rightExpression = new ClassExpression(typeName);
+        Expression rightExpression = new ClassExpression(type);
         configureAST(rightExpression, rightNode);
         BinaryExpression binaryExpression = new BinaryExpression(leftExpression, makeToken(Types.KEYWORD_INSTANCEOF, node), rightExpression);
         configureAST(binaryExpression, node);
         return binaryExpression;
     }
 
-    protected void assertTypeNotNull(String typeName, AST rightNode) {
-        if (typeName == null) {
+    protected void assertTypeNotNull(Type type, AST rightNode) {
+        if (type == null) {
             throw new ASTRuntimeException(rightNode, "No type available for: " + qualifiedName(rightNode));
         }
     }
@@ -1494,20 +1489,20 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         Expression leftExpression = expression(leftNode);
 
         AST rightNode = leftNode.getNextSibling();
-        String typeName = resolvedName(rightNode);
+        Type type = resolvedName(rightNode);
 
-        return CastExpression.asExpression(typeName, leftExpression);
+        return CastExpression.asExpression(type, leftExpression);
     }
 
     protected Expression castExpression(AST castNode) {
         AST node = castNode.getFirstChild();
-        String typeName = resolvedName(node);
-        assertTypeNotNull(typeName, node);
+        Type type = resolvedName(node);
+        assertTypeNotNull(type, node);
 
         AST expressionNode = node.getNextSibling();
         Expression expression = expression(expressionNode);
 
-        CastExpression castExpression = new CastExpression(typeName, expression);
+        CastExpression castExpression = new CastExpression(type, expression);
         configureAST(castExpression, castNode);
         return castExpression;
     }
@@ -1615,7 +1610,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 PropertyExpression propertyExpression = new PropertyExpression(leftExpression, property, node.getType() != DOT);
                 if (node.getType() == SPREAD_DOT) {
                     propertyExpression.setSpreadSafe(true);
-                }
+                } 
                 configureAST(propertyExpression, node);
                 return propertyExpression;
             }
@@ -1693,7 +1688,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
     protected Expression constructorCallExpression(AST node) {
         AST constructorCallNode = node;
-        String name = resolvedName(constructorCallNode);
+        Type type = resolvedName(constructorCallNode);
 
         if (isType(CTOR_CALL, node) || isType(LITERAL_new, node)) {
             node = node.getFirstChild();
@@ -1703,8 +1698,8 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
         if (elist == null && isType(ELIST, node)) {
             elist = node;
-            if ("(".equals(name.toString())) {
-                name = classNode.getName();
+            if ("(".equals(type.getName())) {
+                type = classNode.getType();
             }
         }
 
@@ -1714,12 +1709,12 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 throw new ASTRuntimeException(elist, "No expression for the array constructor call");
             }
             Expression size = expression(expressionNode);
-            ArrayExpression arrayExpression = new ArrayExpression(name, size);
+            ArrayExpression arrayExpression = new ArrayExpression(type, size);
             configureAST(arrayExpression, constructorCallNode);
             return arrayExpression;
         }
         Expression arguments = arguments(elist);
-        ConstructorCallExpression expression = new ConstructorCallExpression(name, arguments);
+        ConstructorCallExpression expression = new ConstructorCallExpression(type, arguments);
         configureAST(expression, constructorCallNode);
         return expression;
     }
@@ -1920,7 +1915,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     protected Type type(AST typeNode) {
         // TODO intern types?
         // TODO configureAST(...)
-        return new Type(resolvedName(typeNode.getFirstChild()));
+        return resolvedName(typeNode.getFirstChild());
     }
 
     protected String qualifiedName(AST qualifiedNameNode) {
@@ -1948,17 +1943,17 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         }
     }
 
-    protected String typeName(AST typeNode) {
-        String answer = null;
+    protected Type makeType(AST typeNode) {
+        Type answer = Type.DYNAMIC_TYPE;
         AST node = typeNode.getFirstChild();
         if (node != null) {
             if (isType(INDEX_OP, node) || isType(ARRAY_DECLARATOR, node)) {
-                return resolveTypeName(qualifiedName(node.getFirstChild())) + "[]";
+                return Type.makeType(resolveTypeName(qualifiedName(node.getFirstChild()))).makeArray();
             }
-            answer = resolveTypeName(qualifiedName(node));
+            answer = Type.makeType(resolveTypeName(qualifiedName(node)));
             node = node.getNextSibling();
             if (isType(INDEX_OP, node) || isType(ARRAY_DECLARATOR, node)) {
-                return answer + "[]";
+                return answer.makeArray();
             }
         }
         return answer;
@@ -1987,36 +1982,37 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
      * Extracts an identifier from the Antlr AST and then performs a name resolution
      * to see if the given name is a type from imports, aliases or newly created classes
      */
-    protected String resolvedName(AST node) {
+    protected Type resolvedName(AST node) {
         if (isType(TYPE, node)) {
             node = node.getFirstChild();
         }
-        String answer = null;
+        Type answer = null;
         if (isType(DOT, node) || isType(OPTIONAL_DOT, node)) {
-            answer = qualifiedName(node);
+            answer = Type.makeType(qualifiedName(node));
         }
         else if (isPrimitiveTypeLiteral(node)) {
-            answer = node.getText();
+            answer = Type.makeType(node.getText());
         }
         else if (isType(INDEX_OP, node) || isType(ARRAY_DECLARATOR, node)) {
             AST child = node.getFirstChild();
-            String text = resolvedName(child);
+            Type ret = resolvedName(child);
             // TODO sometimes we have ARRAY_DECLARATOR->typeName
             // and sometimes we have typeName->ARRAY_DECLARATOR
             // so here's a little fudge while we be more consistent in the Antlr
-            if (text.endsWith("[]")) {
-                return text;
+            if (ret.isArray()) {
+                return ret;
             }
-            return text + "[]";
+            return ret.makeArray();
         }
         else {
             String identifier = node.getText();
-            answer = resolveTypeName(identifier);
+            String ret = resolveTypeName(identifier);
+            if (ret!=null) answer = Type.makeType(ret);
 
         }
         AST nextSibling = node.getNextSibling();
         if (isType(INDEX_OP, nextSibling) || isType(ARRAY_DECLARATOR, node)) {
-            return answer + "[]";
+            return answer.makeArray();
         }
         else {
             return answer;

@@ -277,7 +277,7 @@ public class ReflectorGenerator implements Opcodes {
                 helper.unbox(type);
             }
             else {
-                helper.doCast(type.getName());
+                helper.doCast(type);
             }
         }
     }

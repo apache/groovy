@@ -50,7 +50,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.classgen.AsmClassGenerator;
+
 
 /**
  * Represents an attribute access (accessing the field of a class) such as the expression "foo.@bar".
@@ -90,17 +90,8 @@ public class AttributeExpression extends Expression {
         visitor.visitAttributeExpression(this);
     }
 
-    public boolean isDynamic() {
-        return true;
-    }
-
     public Expression transformExpression(ExpressionTransformer transformer) {
         return this;
-    }
-
-    protected void resolveType(AsmClassGenerator resolver) {
-        objectExpression.resolve(resolver);
-        resolver.resolve(this);
     }
 
     public Expression getObjectExpression() {
@@ -141,7 +132,7 @@ public class AttributeExpression extends Expression {
 
     public void setGetter(Method meth) {
         Class returntype = meth.getReturnType();
-        Class oldType = getTypeClass();
+        Class oldType = getType().getTypeClass();
         if (oldType != null && oldType != Object.class && oldType != returntype) {
             // something is wrong
 // in this rare case the getter is discarded. Field access takes over
@@ -153,8 +144,8 @@ public class AttributeExpression extends Expression {
         }
         else {
             getter = meth;
-            setTypeClass(returntype);
-            setTypeResolved(true);
+            getType().setTypeClass(returntype);
+            getType().setTypeResolved(true);
         }
     }
 
@@ -164,7 +155,7 @@ public class AttributeExpression extends Expression {
 
     public void setSetter(Method method) {
         Class paramType = method.getParameterTypes()[0];
-        Class wasType = getTypeClass();
+        Class wasType = getType().getTypeClass();
         if (wasType != null && wasType != Object.class && wasType != paramType) {
 //            // something is wrong
 // in this rare case the getter is discarded. Field access takes over
@@ -176,8 +167,8 @@ public class AttributeExpression extends Expression {
         }
         else {
             setter = method;
-            setTypeClass(paramType);
-            setTypeResolved(true);
+            getType().setTypeClass(paramType);
+            getType().setTypeResolved(true);
         }
     }
     public Method getSetter() {
@@ -187,8 +178,9 @@ public class AttributeExpression extends Expression {
     public void setField(Field fld) {
         field = fld;
         setStatic(Modifier.isStatic(fld.getModifiers()));
-        setTypeClass(fld.getType());
+        getType().setTypeClass(fld.getType());
     }
+    
     public Field getField() {
         return field;
     }

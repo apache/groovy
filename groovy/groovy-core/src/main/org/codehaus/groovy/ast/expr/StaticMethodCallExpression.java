@@ -48,7 +48,7 @@ package org.codehaus.groovy.ast.expr;
 import groovy.lang.MetaMethod;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.classgen.AsmClassGenerator;
+import org.codehaus.groovy.ast.Type;
 
 /**
  * A static method call on a class
@@ -58,12 +58,12 @@ import org.codehaus.groovy.classgen.AsmClassGenerator;
  */
 public class StaticMethodCallExpression extends Expression {
 
-    String ownerType;
+    Type ownerType;
     private String method;
     private Expression arguments;
     private MetaMethod metaMethod = null;
 
-    public StaticMethodCallExpression(String type, String method, Expression arguments) {
+    public StaticMethodCallExpression(Type type, String method, Expression arguments) {
         ownerType = type;
         this.method = method;
         this.arguments = arguments;
@@ -74,12 +74,7 @@ public class StaticMethodCallExpression extends Expression {
     }
     
     public Expression transformExpression(ExpressionTransformer transformer) {
-        return new StaticMethodCallExpression(type, method, transformer.transform(arguments)); 
-    }
-
-    protected void resolveType(AsmClassGenerator resolver) {
-        arguments.resolve(resolver);
-        resolver.resolve(this);
+        return new StaticMethodCallExpression(getType(), method, transformer.transform(arguments)); 
     }
 
     public Expression getArguments() {
@@ -91,17 +86,17 @@ public class StaticMethodCallExpression extends Expression {
     }
 
     public String getText() {
-        return type + "." + method + arguments.getText();
+        return getType().getName() + "." + method + arguments.getText();
     }
 
     public String toString() {
-        return super.toString() + "[type: " + type + " method: " + method + " arguments: " + arguments + "]";
+        return super.toString() + "[type: " + getType().getName() + " method: " + method + " arguments: " + arguments + "]";
     }
-    public String getOwnerType() {
+    public Type getOwnerType() {
         return ownerType;
     }
 
-    public void setOwnerType(String ownerType) {
+    public void setOwnerType(Type ownerType) {
         this.ownerType = ownerType;
     }
 

@@ -52,6 +52,7 @@ import org.codehaus.groovy.ast.GroovyClassVisitor;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.Type;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -68,13 +69,15 @@ import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.syntax.SyntaxException;
 
+import org.codehaus.groovy.ast.Variable;
+
 public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements GroovyClassVisitor {
 
     private static class Var {
         //TODO: support final and native
-        boolean isStatic=false, isFinal=false, isDynamicTyped=false;
-        String name, type=null;
-        Class typeClass=null;
+        boolean isStatic=false, isFinal=false;
+        String name;
+        Type type=null;
         boolean isInStaticContext=false;
         
         public boolean equals(Object o){
@@ -90,74 +93,47 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
             // a Variable without type and other modifiers
             // make it dynamic type, non final and non static
             this.name=name;
+            type=Type.DYNAMIC_TYPE;
+            isInStaticContext = false;
         }
         
-        public Var(VariableExpression ve, VarScope scope) {
-            name = ve.getVariable();
-            if(ve.isDynamic()) {
-                isDynamicTyped=true;
-            } else {
-                type = ve.getType();
-                typeClass = ve.getTypeClass();
-            }
-            isInStaticContext = scope.isInStaticContext;
+        public Var(Variable v, VarScope scope) {
+            this(v,scope.isInStaticContext);
         }
         
-        public Var(Parameter par, boolean staticContext) {
-            name = par.getName();
-            if (par.isDynamicType()) {
-                isDynamicTyped=true;
-            } else {
-                type = par.getType();
-            }
+        public Var(Variable v) {
+            this(v,false);
+        }
+        
+        public Var(Variable v, boolean staticContext) {
+            name = v.getName();
+            type = v.getType();
             isInStaticContext = staticContext;
         }
 
         public Var(FieldNode f) {
-            name = f.getName();
-            if (f.isDynamicType()) {
-                isDynamicTyped=true;
-            } else {
-                type = f.getType();
-            }
+            this(f,f.isStatic());
             isStatic=f.isStatic();
-            isInStaticContext = isStatic;
         }
 
         public Var(String pName, MethodNode f) {
             name = pName;
-            if (f.isDynamicReturnType()) {
-                isDynamicTyped=true;
-            } else {
-                type = f.getReturnType();
-            }
+            type = f.getReturnType();
             isStatic=f.isStatic();
             isInStaticContext = isStatic;
         }
         
         public Var(String pName, Method m) {
             name = pName;
-            typeClass = m.getReturnType();            
+            type = Type.makeType(m.getReturnType());            
             isStatic=Modifier.isStatic(m.getModifiers());
             isFinal=Modifier.isFinal(m.getModifiers());
             isInStaticContext = isStatic;
         }
 
-        public Var(PropertyNode f) {
-            //TODO: no static? What about read-/write-only? abstract?
-            isInStaticContext = false;
-            name = f.getName();
-            if (f.isDynamicType()) {
-                isDynamicTyped=true;
-            } else {
-                type = f.getType();
-            }
-            isInStaticContext = false;
-        }
-
         public Var(Field f) {
             name = f.getName();
-            typeClass = f.getType();            
+            type = Type.makeType(f.getType());            
             isStatic=Modifier.isStatic(f.getModifiers());
             isInStaticContext = isStatic;
             isFinal=Modifier.isFinal(f.getModifiers());
@@ -167,10 +143,8 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
         public Var(Var v) {
             isStatic=v.isStatic;
             isFinal=v.isFinal;
-            isDynamicTyped=v.isDynamicTyped;
             name=v.name;
             type=v.type;
-            typeClass=v.typeClass;
             isInStaticContext=v.isInStaticContext;
         }        
     }
@@ -214,11 +188,10 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
         }
         
         public void visitVariableExpression(VariableExpression expression) {
-            itUsed = (expression.getVariable().equals("it")) && closureStarted || itUsed;
+            itUsed = (expression.getName().equals("it")) && closureStarted || itUsed;
         }
         
     }
-    
     
     private VarScope currentScope = null;
     private CompileUnit unit;
@@ -278,7 +251,7 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
         expression.getRightExpression().visit(this);
         // no need to visit left side, just get the variable name
         VariableExpression vex = expression.getVariableExpression();
-        if (!jroseRule && "it".equals(vex.getVariable())) {
+        if (!jroseRule && "it".equals(vex.getName())) {
             // we are not in jrose mode, so don't allow variables 
             // of the name 'it'
             addError("'it' is a keyword in this mode.",vex);
@@ -339,30 +312,13 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
         currentScope.declares.put(var.name,var);
         var.isInStaticContext = currentScope.isInStaticContext;
     }
-
-    /*
-     * public void visitBinaryExpression(BinaryExpression expression) {
-     *  // evaluate right first because for an expression like "def a = a"
-     *  // we need first to know if the a on the rhs is defined, before
-     *  // defining a new a for the lhs
-     * 
-     * Expression right = expression.getRightExpression();
-     * 
-     * right.visit(this);
-     * 
-     * Expression left = expression.getLeftExpression();
-     * 
-     * left.visit(this);
-     *  }
-     */
     
     public void visitVariableExpression(VariableExpression expression) {
-        String name = expression.getVariable();
+        String name = expression.getName();
         Var v = checkVariableNameForDeclaration(name,expression);
         if (v==null) return;
         checkVariableContextAccess(v,expression);
     }
-    
     
     public void visitFieldExpression(FieldExpression expression) {
         String name = expression.getFieldName();
@@ -375,52 +331,15 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
         if (!Modifier.isAbstract(methodNode.getModifiers())) return;
         if (Modifier.isAbstract(currentClass.getModifiers())) return;
         addError("Can't have an abstract method in a non abstract class." +
-                 " The class '" + currentClass.getName() +  "' must be declared abstract or the method '" +
+                 " The class '" + currentClass.getType().getName() +  "' must be declared abstract or the method '" +
                  methodNode.getName() + "' must not be abstract.",methodNode);
-    }
-    
-    private String getTypeName(String name) {
-        if (!name.endsWith("[]")) return name;
-        
-        String prefix = "";
-        while (name.endsWith("[]")) {
-            name = name.substring(0,name.length()-2);
-            prefix = "[";
-        }
-        
-        if (name.equals("int")) {
-            return prefix + "I";
-        }
-        else if (name.equals("long")) {
-            return prefix + "J";
-        }
-        else if (name.equals("short")) {
-            return prefix + "S";
-        }
-        else if (name.equals("float")) {
-            return prefix + "F";
-        }
-        else if (name.equals("double")) {
-            return prefix + "D";
-        }
-        else if (name.equals("byte")) {
-            return prefix + "B";
-        }
-        else if (name.equals("char")) {
-            return prefix + "C";
-        }
-        else if (name.equals("boolean")) {
-            return prefix + "Z";
-        }
-        // no primitive
-        return prefix+"L"+name+";";
     }
     
     private boolean hasEqualParameterTypes(Parameter[] first, Parameter[] second) {
         if (first.length!=second.length) return false;
         for (int i=0; i<first.length; i++) {
-            String ft = getTypeName(first[i].getType());
-            String st = getTypeName(second[i].getType());
+            String ft = first[i].getType().getName();
+            String st = second[i].getType().getName();
             if (ft.equals(st)) continue;
             return false;
         }        
@@ -429,11 +348,11 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
     
     private void checkImplementsAndExtends(ClassNode node) {
         ClassNode cn = node.getSuperClassNode();
-        if (cn.isInterface()) addError("you are not allowed to extend the Interface "+cn.getName()+", use implements instead", node);
+        if (cn.isInterface()) addError("you are not allowed to extend the Interface "+cn.getType().getName()+", use implements instead", node);
         String[] interfaces = node.getInterfaces();
         for (int i = 0; i < interfaces.length; i++) {
-            cn = node.findClassNode(interfaces[i]);
-            if (!cn.isInterface()) addError ("you are not allowed to implement the Class "+cn.getName()+", use extends instead", node); 
+            cn = node.findClassNode(Type.makeType(interfaces[i]));
+            if (!cn.isInterface()) addError ("you are not allowed to implement the Class "+cn.getType().getName()+", use extends instead", node); 
         }
     }
     
@@ -443,7 +362,7 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
         if (!Modifier.isFinal(superCN.getModifiers())) return;
         StringBuffer msg = new StringBuffer();
         msg.append("you are not allowed to overwrite the final class ");
-        msg.append(superCN.getName());
+        msg.append(superCN.getType().getName());
         msg.append(".");
         addError(msg.toString(),cn);
         
@@ -475,7 +394,7 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
                         msg.append(parameters[i].getType());
                     }
                     msg.append(")");
-                    msg.append(" from class ").append(superCN.getName()); 
+                    msg.append(" from class ").append(superCN.getType().getName()); 
                     msg.append(".");
                     addError(msg.toString(),method);
                     return;
@@ -500,7 +419,7 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
     
     private Var checkVariableNameForDeclaration(VariableExpression expression) {
         if (expression == VariableExpression.THIS_EXPRESSION) return null;
-        String name = expression.getVariable();
+        String name = expression.getName();
         return checkVariableNameForDeclaration(name,expression);
     }
     
@@ -621,7 +540,7 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
     {
         if (c == null) return;
         // to prefer compiled code try to get a ClassNode via name first
-        addVarNames(c.getName(), refs, visitParent);
+        addVarNames(Type.makeType(c), refs, visitParent);
     }
     
     private void addVarNames(ClassNode cn) {
@@ -716,11 +635,12 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
         addVarNames(cn.getOuterClass(), refs, visitParent);
     }
 
-    private void addVarNames(String superclassName, HashMap refs, boolean visitParent) 
+    private void addVarNames(Type superclassType, HashMap refs, boolean visitParent) 
       throws ClassNotFoundException 
     {
 
-        if (superclassName == null) return;
+        if (superclassType == null) return;
+        String superclassName = superclassType.getName();
 
         ClassNode cn = unit.getClass(superclassName);
         if (cn != null) {
@@ -728,7 +648,8 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
             return;
         }
 
-        Class c = unit.getClassLoader().loadClass(superclassName);
+        Class c =  superclassType.getTypeClass();
+        if (c==null) c = unit.getClassLoader().loadClass(superclassName);
         Field[] fields = c.getFields();
         for (int i = 0; i < fields.length; i++) {
             Field f = fields[i];
@@ -807,7 +728,7 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
     }
 
     public void visitField(FieldNode node) {
-        Expression init = node.getInitialValueExpression();
+        Expression init = node.getInitialExpression();
         if (init != null) init.visit(this);
     }
 
@@ -818,7 +739,7 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
         statement = node.getSetterBlock();
         if (statement != null) statement.visit(this);
         
-        Expression init = node.getInitialValueExpression();
+        Expression init = node.getInitialExpression();
         if (init != null) init.visit(this);
     }
 
