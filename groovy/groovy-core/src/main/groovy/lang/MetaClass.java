@@ -1115,31 +1115,51 @@ public class MetaClass {
    /**
     * Sets the given attribute (field) on the given object
     */
-   public void setAttribute(Object object, final String attribute, Object newValue) {
+   public void setAttribute(final Object object, final String attribute, final Object newValue) {
+       PrivilegedActionException firstException = null;
+       
+       final Class clazz;
+       if (object instanceof Class) {
+           clazz=(Class) object;
+       } else {
+           clazz=theClass;
+       }
+       
        try {
-           final Class clazz = theClass;
-           try {
-               Field field = (Field) AccessController.doPrivileged(new PrivilegedExceptionAction() {
-                   public Object run() throws NoSuchFieldException {
-                       return clazz.getDeclaredField(attribute);
-                   }
-               });
-               field.setAccessible(true);
-               field.set(object, newValue);
-           } catch (PrivilegedActionException pae) {
-               if (pae.getException() instanceof NoSuchFieldException) {
-                   throw (NoSuchFieldException) pae.getException();
-               } else {
-                   throw new RuntimeException(pae.getException());
+           AccessController.doPrivileged(new PrivilegedExceptionAction() {
+               public Object run() throws NoSuchFieldException, IllegalAccessException {
+                   final Field field = clazz.getDeclaredField(attribute);
+                   
+                   field.setAccessible(true);
+                   field.set(object,newValue);
+                   return null;
                }
-           }
+           });
+           return;
+       } catch (final PrivilegedActionException pae) {
+           firstException = pae;
        }
-       catch (NoSuchFieldException e) {
+       
+       try {
+           AccessController.doPrivileged(new PrivilegedExceptionAction() {
+               public Object run() throws NoSuchFieldException, IllegalAccessException {
+                   final Field field = clazz.getField(attribute);
+                   
+                   field.setAccessible(true);
+                   field.set(object, newValue);
+                   return null;
+               }
+           });
+           return;
+       } catch (final PrivilegedActionException pae) {
+           // prefere the first exception. 
+       }       
+       
+       if (firstException.getException() instanceof NoSuchFieldException) {
            throw new MissingFieldException(attribute, theClass);
-       }
-       catch (IllegalAccessException e) {
-           throw new MissingFieldException(attribute, theClass, e);
-       }
+       } else {
+           throw new RuntimeException(firstException.getException());
+       } 
    }
 
    /**
