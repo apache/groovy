@@ -327,7 +327,13 @@ public class AntBuilder extends BuilderSupport {
 
     protected void setBeanProperty(Object object, String name, Object value) {
         if (log.isLoggable(Level.FINE)) {
-            log.fine("Setting bean property on: " + object + " name: " + name + " value: " + value);
+            String objStr;
+            try {
+                objStr = object.toString(); // e.g. Fileset may throw Exception here when 'dir' is not yet set
+            } catch (Exception e) {
+                objStr = object.getClass().getName();
+            }
+            log.fine("Setting bean property on: " + objStr + " name: " + name + " value: " + value);
         }
 
         IntrospectionHelper ih = IntrospectionHelper.getHelper(object.getClass());
