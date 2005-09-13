@@ -45,6 +45,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 import groovy.lang.Closure;
+import groovy.lang.GroovyInterceptable;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -59,7 +60,7 @@ public class BaseMarkupBuilder extends Builder {
 		return new Document(root, this.namespaceMethodMap);
 	}
 	
-	private static class Document extends Built {
+	private static class Document extends Built implements GroovyInterceptable {
 		private Object out;
 		private final Map pendingNamespaces = new HashMap();
 		private final Map namespaces = new HashMap();
