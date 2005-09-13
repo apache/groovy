@@ -75,6 +75,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.classgen.ReflectorGenerator;
@@ -313,6 +314,9 @@ public class MetaClass {
        if (object == null) {
            throw new NullPointerException("Cannot invoke method: " + methodName + " on null object");
        }
+       if (log.isLoggable(Level.FINER)){
+           logMethodCall(object, methodName, arguments);
+       }
        
        MetaMethod method = retrieveMethod(object, methodName, arguments);
        
@@ -391,6 +395,48 @@ public class MetaClass {
            throw new MissingMethodException(methodName, theClass, arguments);
        }
    }
+
+    private void logMethodCall(Object object, String methodName, Object[] arguments) {
+        String logname = "methodCalls." + object.getClass().getName() + "." + methodName;
+        Logger objLog = Logger.getLogger(logname);
+        if (! objLog.isLoggable(Level.FINER)) return;
+        StringBuffer msg = new StringBuffer(methodName);
+        msg.append("(");
+        if (arguments != null){
+            for (int i = 0; i < arguments.length;) {
+                msg.append(normalizedValue(arguments[i]));
+                if (++i < arguments.length) { msg.append(","); }
+            }
+        }
+        msg.append(")");
+        objLog.logp(Level.FINER, object.getClass().getName(), msg.toString(), "called from MetaClass.invokeMethod");
+    }
+
+    final int MAX_ARG_LEN = 12;
+    private String normalizedValue(Object argument) {
+        String value;
+        try {
+            value = argument.toString();
+            if (value.length() > MAX_ARG_LEN){
+                value = value.substring(0,MAX_ARG_LEN-2) + "..";
+            }
+            if (argument instanceof String){
+                value = "\'"+value+"\'";
+            }
+        } catch (Exception e) {
+            value = shortName(argument);
+        }
+        return value;
+    }
+
+    private String shortName(Object object) {
+        if (object == null || object.getClass()==null) return "unknownClass";
+        String name = object.getClass().getName();
+        if (name == null) return "unknownClassName"; // *very* defensive...
+        int lastDotPos = name.lastIndexOf('.');
+        if (lastDotPos < 0 || lastDotPos >= name.length()-1) return name;
+        return name.substring(lastDotPos+1);
+    }
 
    protected MetaMethod retrieveMethod(Object owner, String methodName, Object[] arguments) {
        // lets try use the cache to find the method
