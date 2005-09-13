@@ -230,14 +230,18 @@ class Console extends ConsoleSupport implements CaretListener {
     }
 
     protected void handleException(String text, Exception e) {
-        def pane = swing.optionPane(message:'Error: ' + e + '\n' + e.getMessage() + '\nafter compiling: ' + text)
+        def pane = swing.optionPane()
+         // work around GROOVY-1048
+        pane.setMessage('Error: ' + e + '\n' + e.getMessage() + '\nafter compiling: ' + text)
         def dialog = pane.createDialog(frame, 'Compile error')
         dialog.show()
     }
 
     void showAbout(EventObject evt = null) {
         def version = InvokerHelper.getVersion()
-        def pane = swing.optionPane(message:'Welcome to the Groovy Console for evaluating Groovy scripts\nVersion ' + version)
+        def pane = swing.optionPane()
+         // work around GROOVY-1048
+        pane.setMessage('Welcome to the Groovy Console for evaluating Groovy scripts\nVersion ' + version)
         def dialog = pane.createDialog(frame, 'About GroovyConsole')
         dialog.show()
     }
