@@ -724,7 +724,7 @@ public class MetaClass {
                try {
                    return getAttribute(object,property);
                } catch (MissingFieldException mfe) {
-                   lastException = mfe;
+                   // do nothing
                }
            }
 
