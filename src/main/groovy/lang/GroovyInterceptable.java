@@ -51,5 +51,5 @@ package groovy.lang;
  *
  * @author Guillaume Laforge
  */
-public interface GroovyInterceptable {
+public interface GroovyInterceptable extends GroovyObject {
 }
