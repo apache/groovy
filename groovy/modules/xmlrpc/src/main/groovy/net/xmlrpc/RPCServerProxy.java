@@ -45,6 +45,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package groovy.net.xmlrpc;
 
+import groovy.lang.GroovyInterceptable;
 import groovy.lang.GroovyObjectSupport;
 
 /**
@@ -52,7 +53,7 @@ import groovy.lang.GroovyObjectSupport;
  *
  */
 
-public class RPCServerProxy extends GroovyObjectSupport {
+public class RPCServerProxy extends GroovyObjectSupport implements GroovyInterceptable {
 
   public Object getProperty(final String property) {
   	return new GroovyObjectSupport() {
