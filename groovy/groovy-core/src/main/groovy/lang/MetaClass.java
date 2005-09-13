@@ -802,9 +802,6 @@ public class MetaClass {
        // MetaBeanProperty objects
        for(int i=0; i<propertyDescriptors.length; i++) {
            PropertyDescriptor pd = propertyDescriptors[i];
-           // skip if the field already exists in the map
-           if(propertyMap.get(pd.getName()) != null)
-               continue;
 
            // skip if the property type is unknown (this seems to be the case if the
            // property descriptor is based on a setX() method that has two parameters,
@@ -833,6 +830,7 @@ public class MetaClass {
            mp = new MetaBeanProperty(pd.getName(), pd.getPropertyType(), getter, setter);
 
            // put it in the list
+           // this will overwrite a possible field property 
            propertyMap.put(pd.getName(), mp);
        }
 
@@ -1073,43 +1071,44 @@ public class MetaClass {
    public Object getAttribute(final Object object, final String attribute) {
        PrivilegedActionException firstException = null;
        
-       try {
-           try {
-               return AccessController.doPrivileged(new PrivilegedExceptionAction() {
-                   public Object run() throws NoSuchFieldException, IllegalAccessException {
-                       final Field field = theClass.getDeclaredField(attribute);
-                       
-                       field.setAccessible(true);
-                       return field.get(object);
-                   }
-               });
-           } catch (final PrivilegedActionException pae) {
-               firstException = pae;
-           }
-
-           if (object instanceof Class) {
-               try {
-                    return AccessController.doPrivileged(new PrivilegedExceptionAction() {
-                       public Object run() throws NoSuchFieldException, IllegalAccessException {
-                           final Field field = ((Class)object).getDeclaredField(attribute);
-                           
-                           field.setAccessible(true);
-                           return field.get(object);
-                       }
-                   });
-               } catch (final PrivilegedActionException pae) {
-                   firstException = pae;
-               }
-           }
-           
-           if (firstException.getException() instanceof NoSuchFieldException) {
-               throw (NoSuchFieldException) firstException.getException();
-           } else {
-               throw new RuntimeException(firstException.getException());
-           }
+       final Class clazz;
+       if (object instanceof Class) {
+           clazz=(Class) object;
+       } else {
+           clazz=theClass;
        }
-       catch (NoSuchFieldException e) {
+       
+       try {
+           return AccessController.doPrivileged(new PrivilegedExceptionAction() {
+               public Object run() throws NoSuchFieldException, IllegalAccessException {
+                   final Field field = clazz.getDeclaredField(attribute);
+                   
+                   field.setAccessible(true);
+                   return field.get(object);
+               }
+           });
+       } catch (final PrivilegedActionException pae) {
+           firstException = pae;
+       }
+       
+       try {
+           return AccessController.doPrivileged(new PrivilegedExceptionAction() {
+               public Object run() throws NoSuchFieldException, IllegalAccessException {
+                   final Field field = clazz.getField(attribute);
+                   
+                   field.setAccessible(true);
+                   return field.get(object);
+               }
+           });
+       } catch (final PrivilegedActionException pae) {
+           // prefere the first exception. 
+       }
+       
+       
+       if (firstException.getException() instanceof NoSuchFieldException) {
            throw new MissingFieldException(attribute, theClass);
+       } else {
+           throw new RuntimeException(firstException.getException());
        }
    }
 
