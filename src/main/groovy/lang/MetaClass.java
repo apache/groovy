@@ -1032,31 +1032,7 @@ public class MetaClass {
                invokeMethod(object, method, new Object[] { newValue });
            }
            catch (MissingMethodException e1) {
-               Field field = null;
-               try {
-                   final Class clazz = object.getClass();
-                   final String prop = property;
-                   try {
-                       field = (Field) AccessController.doPrivileged(new PrivilegedExceptionAction() {
-                           public Object run() throws NoSuchFieldException {
-                               return clazz.getDeclaredField(prop);
-                           }
-                       });
-                       //field.setAccessible(true);
-                       field.set(object, newValue);
-                   }
-                   catch (PrivilegedActionException pae) {
-                       if (pae.getException() instanceof NoSuchFieldException) {
-                           throw (NoSuchFieldException) pae.getException();
-                       } else {
-                           throw new RuntimeException(pae.getException());
-                       }
-                   }
-               } catch (IllegalAccessException iae) {
-                   throw new IllegalPropertyAccessException(field,object.getClass());
-               } catch (Exception e2) {
-                   throw new MissingPropertyException(property, theClass, e2);
-               }
+               setAttribute(object,property,newValue);
            }
 
        }
@@ -1448,35 +1424,17 @@ public class MetaClass {
        //System.out.println("Invoking property: " + property + " on class: "
        // + aClass);
 
-       Exception lastException = null;
-       try {
-           Field field = aClass.getField(property);
-           if (field != null) {
-               if ((field.getModifiers() & Modifier.STATIC) != 0) {
-                   return field.get(null);
-               }
-           }
-       }
-       catch (Exception e) {
-           lastException = e;
-       }
-
        // lets try invoke a static getter method
-       try {
-           MetaMethod method = findStaticGetter(aClass, "get" + capitalize(property));
-           if (method != null) {
-               return doMethodInvoke(aClass, method, EMPTY_ARRAY);
-           }
-       }
-       catch (GroovyRuntimeException e) {
-           throw new MissingPropertyException(property, aClass, e);
+       MetaMethod method = findStaticGetter(aClass, "get" + capitalize(property));
+       if (method != null) {
+           return doMethodInvoke(aClass, method, EMPTY_ARRAY);
        }
 
-       if (lastException == null) {
-           throw new MissingPropertyException(property, aClass);
-       }
-       else {
-           throw new MissingPropertyException(property, aClass, lastException);
+       //no static getter found, try attribute  
+       try {
+           return getAttribute(aClass,property);
+       } catch (MissingFieldException mfe) {
+           throw new MissingPropertyException(property, aClass, mfe);
        }
    }
 
