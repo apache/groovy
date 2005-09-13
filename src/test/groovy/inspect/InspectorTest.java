@@ -5,13 +5,10 @@ import junit.framework.TestCase;
 import java.io.Serializable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Arrays;
-import java.util.Comparator;
+import java.util.*;
 
 public class InspectorTest extends TestCase implements Serializable {
-    public String someField = "only for testing";             
+    public String someField = "only for testing";
     public static final String SOME_CONST = "only for testing";
 
     public InspectorTest(String name) {
@@ -75,7 +72,7 @@ public class InspectorTest extends TestCase implements Serializable {
         Matcher matcher = Pattern.compile("").matcher("");
         Inspector insp = new Inspector(matcher);
         Object[] metaMethods = insp.getMetaMethods();
-        assertUnique(Inspector.sort(metaMethods));
+        assertUnique(Inspector.sort(Arrays.asList(metaMethods)));
         String[] details = {"GROOVY","public static","Matcher","Matcher","getLastMatcher","","n/a"};
         assertContains(metaMethods, details);
     }
@@ -86,7 +83,7 @@ public class InspectorTest extends TestCase implements Serializable {
         assertEquals(2, fields.length);
         String[] names = { "someField","SOME_CONST" };
         assertNameEquals(names, fields);
-        String[] details = {"JAVA","public","InspectorTest","String","someField","only for testing"};
+        String[] details = {"JAVA","public","InspectorTest","String","someField","\"only for testing\""};
         assertContains(fields, details);
     }
     public void testProperties() {
@@ -95,7 +92,7 @@ public class InspectorTest extends TestCase implements Serializable {
         assertEquals(4, fields.length);
         String[] names = { "SOME_CONST","someField","class","name"};
         assertNameEquals(names, fields);
-        String[] details = {"GROOVY","public","n/a","String","name","testProperties"};
+        String[] details = {"GROOVY","public","n/a","String","name","\"testProperties\""};
         assertContains(fields, details);
     }
 
@@ -118,13 +115,17 @@ public class InspectorTest extends TestCase implements Serializable {
         fail("should have found sample: " + sampleBuffer);
     }
 
-    private void assertUnique(Object[] sortedMembers){
+    private void assertUnique(Collection sortedMembers){
+        if (sortedMembers.size() < 2) return;
         Comparator comp = new Inspector.MemberComparator();
-        for (int i = 1; i < sortedMembers.length; i++) {
-            if (0 == comp.compare(sortedMembers[i - 1], sortedMembers[i])){
-                Inspector.print(sortedMembers);
-                fail("found duplication at pos "+ (i-1)+" and "+i);
+        Iterator iter = sortedMembers.iterator();
+        Object last = iter.next();
+        while (iter.hasNext()) {
+            Object element = iter.next();
+            if (0 == comp.compare(last, element)){
+                fail("found duplication for element "+element);
             }
+            last = element;
         }
     }
 

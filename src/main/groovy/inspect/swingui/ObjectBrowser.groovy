@@ -56,8 +56,8 @@ class ObjectBrowser {
                 tabbedPane(constraints:BorderLayout.CENTER){
                     scrollPane(name:' (Meta) Methods ' ) {
                         methodTable = table() {
-                            def data = safeCopy(Inspector.sort(inspector.methods))
-                            data.addAll(safeCopy(Inspector.sort(inspector.metaMethods)))
+                            def data = Inspector.sort(inspector.methods.toList())
+                            data.addAll(Inspector.sort(inspector.metaMethods.toList()))
 
                             tableModel(list:data) {
                                 closureColumn(header:'Name',        read:{it[Inspector.MEMBER_NAME_IDX]})
@@ -72,8 +72,8 @@ class ObjectBrowser {
                     }
                     scrollPane(name: ' Public Fields and Properties ') {
                         fieldTable = table() {
-                            def data = safeCopy(Inspector.sort(inspector.publicFields))
-                            data.addAll(safeCopy(Inspector.sort(inspector.properties)))
+                            def data = Inspector.sort(inspector.publicFields.toList())
+                            data.addAll(Inspector.sort(inspector.propertyInfo.toList()))
                             tableModel(list:data) {
                                 closureColumn(header:'Name',        read:{it[Inspector.MEMBER_NAME_IDX]})
                                 closureColumn(header:'Value',       read:{it[Inspector.MEMBER_VALUE_IDX]})
@@ -99,22 +99,10 @@ class ObjectBrowser {
     }
     
     void showAbout() {
-         def pane = swing.optionPane(message:'An interactive GUI to explore object capabilities.')
+         def pane = swing.optionPane()
+         // work around GROOVY-1048
+         pane.setMessage('An interactive GUI to explore object capabilities.')
          def dialog = pane.createDialog(frame, 'About Groovy Object Browser')
          dialog.show()
-    }
-
-    // work around bug GROOVY-886-764-888-584
-    def safeCopy(Object[] objectArrayOfStringArrays){
-        def copy = []
-        for (i in 0..<objectArrayOfStringArrays.size()){
-            def row = []
-            String[] stringArray = objectArrayOfStringArrays[i]
-            for (j in 0..<stringArray.size()){
-                row << stringArray[j]
-            }
-            copy << row
-        }
-        return copy
     }
 }
