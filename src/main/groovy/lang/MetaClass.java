@@ -721,15 +721,10 @@ public class MetaClass {
                return DefaultGroovyMethods.getAt(Arrays.asList((Object[]) object), property);
            }
            if (object instanceof Object) {
-               Field field = null;
                try {
-                   // lets try a public field
-                   field = object.getClass().getDeclaredField(property);
-                   return field.get(object);
-               } catch (IllegalAccessException iae) {
-                   lastException = new IllegalPropertyAccessException(field,object.getClass());
-               } catch (Exception e1) {
-                   // fall through
+                   return getAttribute(object,property);
+               } catch (MissingFieldException mfe) {
+                   lastException = mfe;
                }
            }
 
