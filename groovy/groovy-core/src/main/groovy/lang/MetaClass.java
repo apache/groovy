@@ -317,15 +317,15 @@ public class MetaClass {
        if (log.isLoggable(Level.FINER)){
            logMethodCall(object, methodName, arguments);
        }
-       
+
        MetaMethod method = retrieveMethod(object, methodName, arguments);
-       
+
        boolean isClosure = object instanceof Closure;
        if (isClosure) {
            Closure closure = (Closure) object;
            Object delegate = closure.getDelegate();
            Object owner = closure.getOwner();
-           
+
            if ("call".equals(methodName) || "doCall".equals(methodName)) {
                if (object.getClass()==MethodClosure.class) {
                    MethodClosure mc = (MethodClosure) object;
@@ -338,11 +338,11 @@ public class MetaClass {
                    arguments = cc.getUncurriedArguments(arguments);
                    MetaClass delegateMetaClass = registry.getMetaClass(delegate.getClass());
                    return delegateMetaClass.invokeMethod(delegate,methodName,arguments);
-               } 
+               }
            } else if ("curry".equals(methodName)) {
                return closure.curry(arguments);
            }
-           
+
            if (method==null && owner!=closure) {
                MetaClass ownerMetaClass = registry.getMetaClass(owner.getClass());
                method = ownerMetaClass.retrieveMethod(owner,methodName,arguments);
@@ -371,13 +371,13 @@ public class MetaClass {
                        return go.invokeMethod(methodName,arguments);
                    } catch (MissingMethodException mme) {
                        if (last==null) last = mme;
-                   }                    
+                   }
                }
                if (last!=null) throw last;
            }
-           
+
        }
-       
+
        if (method != null) {
            return doMethodInvoke(object, method, arguments);
        } else {
@@ -391,52 +391,10 @@ public class MetaClass {
                    return delegateMetaClass.invokeMethod(closure,"doCall",arguments);
                }
            } catch (MissingPropertyException mpe) {}
-           
+
            throw new MissingMethodException(methodName, theClass, arguments);
        }
    }
-
-    private void logMethodCall(Object object, String methodName, Object[] arguments) {
-        String logname = "methodCalls." + object.getClass().getName() + "." + methodName;
-        Logger objLog = Logger.getLogger(logname);
-        if (! objLog.isLoggable(Level.FINER)) return;
-        StringBuffer msg = new StringBuffer(methodName);
-        msg.append("(");
-        if (arguments != null){
-            for (int i = 0; i < arguments.length;) {
-                msg.append(normalizedValue(arguments[i]));
-                if (++i < arguments.length) { msg.append(","); }
-            }
-        }
-        msg.append(")");
-        objLog.logp(Level.FINER, object.getClass().getName(), msg.toString(), "called from MetaClass.invokeMethod");
-    }
-
-    final int MAX_ARG_LEN = 12;
-    private String normalizedValue(Object argument) {
-        String value;
-        try {
-            value = argument.toString();
-            if (value.length() > MAX_ARG_LEN){
-                value = value.substring(0,MAX_ARG_LEN-2) + "..";
-            }
-            if (argument instanceof String){
-                value = "\'"+value+"\'";
-            }
-        } catch (Exception e) {
-            value = shortName(argument);
-        }
-        return value;
-    }
-
-    private String shortName(Object object) {
-        if (object == null || object.getClass()==null) return "unknownClass";
-        String name = object.getClass().getName();
-        if (name == null) return "unknownClassName"; // *very* defensive...
-        int lastDotPos = name.lastIndexOf('.');
-        if (lastDotPos < 0 || lastDotPos >= name.length()-1) return name;
-        return name.substring(lastDotPos+1);
-    }
 
    protected MetaMethod retrieveMethod(Object owner, String methodName, Object[] arguments) {
        // lets try use the cache to find the method
@@ -548,11 +506,9 @@ public class MetaClass {
    }
 
    public Object invokeStaticMethod(Object object, String methodName, Object[] arguments) {
-       //        System.out.println("Calling static method: " + methodName + " on args: " + InvokerHelper.toString(arguments));
-       //        Class type = arguments == null ? null : arguments.getClass();
-       //        System.out.println("Argument  type: " + type);
-       //        System.out.println("Type of first arg: " + arguments[0] + " type: " + arguments[0].getClass());
-
+       if (log.isLoggable(Level.FINER)){
+           logMethodCall(object, methodName, arguments);
+       }
        // lets try use the cache to find the method
        MethodKey methodKey = new TemporaryMethodKey(methodName, arguments);
        MetaMethod method = (MetaMethod) staticMethodCache.get(methodKey);
@@ -876,7 +832,7 @@ public class MetaClass {
            mp = new MetaBeanProperty(pd.getName(), pd.getPropertyType(), getter, setter);
 
            // put it in the list
-           // this will overwrite a possible field property 
+           // this will overwrite a possible field property
            propertyMap.put(pd.getName(), mp);
        }
 
@@ -1116,19 +1072,19 @@ public class MetaClass {
     */
    public Object getAttribute(final Object object, final String attribute) {
        PrivilegedActionException firstException = null;
-       
+
        final Class clazz;
        if (object instanceof Class) {
            clazz=(Class) object;
        } else {
            clazz=theClass;
        }
-       
+
        try {
            return AccessController.doPrivileged(new PrivilegedExceptionAction() {
                public Object run() throws NoSuchFieldException, IllegalAccessException {
                    final Field field = clazz.getDeclaredField(attribute);
-                   
+
                    field.setAccessible(true);
                    return field.get(object);
                }
@@ -1136,21 +1092,21 @@ public class MetaClass {
        } catch (final PrivilegedActionException pae) {
            firstException = pae;
        }
-       
+
        try {
            return AccessController.doPrivileged(new PrivilegedExceptionAction() {
                public Object run() throws NoSuchFieldException, IllegalAccessException {
                    final Field field = clazz.getField(attribute);
-                   
+
                    field.setAccessible(true);
                    return field.get(object);
                }
            });
        } catch (final PrivilegedActionException pae) {
-           // prefere the first exception. 
+           // prefere the first exception.
        }
-       
-       
+
+
        if (firstException.getException() instanceof NoSuchFieldException) {
            throw new MissingFieldException(attribute, theClass);
        } else {
@@ -1163,19 +1119,19 @@ public class MetaClass {
     */
    public void setAttribute(final Object object, final String attribute, final Object newValue) {
        PrivilegedActionException firstException = null;
-       
+
        final Class clazz;
        if (object instanceof Class) {
            clazz=(Class) object;
        } else {
            clazz=theClass;
        }
-       
+
        try {
            AccessController.doPrivileged(new PrivilegedExceptionAction() {
                public Object run() throws NoSuchFieldException, IllegalAccessException {
                    final Field field = clazz.getDeclaredField(attribute);
-                   
+
                    field.setAccessible(true);
                    field.set(object,newValue);
                    return null;
@@ -1185,12 +1141,12 @@ public class MetaClass {
        } catch (final PrivilegedActionException pae) {
            firstException = pae;
        }
-       
+
        try {
            AccessController.doPrivileged(new PrivilegedExceptionAction() {
                public Object run() throws NoSuchFieldException, IllegalAccessException {
                    final Field field = clazz.getField(attribute);
-                   
+
                    field.setAccessible(true);
                    field.set(object, newValue);
                    return null;
@@ -1198,14 +1154,14 @@ public class MetaClass {
            });
            return;
        } catch (final PrivilegedActionException pae) {
-           // prefere the first exception. 
-       }       
-       
+           // prefere the first exception.
+       }
+
        if (firstException.getException() instanceof NoSuchFieldException) {
            throw new MissingFieldException(attribute, theClass);
        } else {
            throw new RuntimeException(firstException.getException());
-       } 
+       }
    }
 
    /**
@@ -1579,7 +1535,7 @@ public class MetaClass {
            return null;
        }
    }
-   
+
    private boolean isVargsMethod(Class[] paramTypes, Object[] arguments) {
        if (paramTypes.length==0) return false;
        if (!paramTypes[paramTypes.length-1].isArray()) return false;
@@ -1587,16 +1543,16 @@ public class MetaClass {
        if (paramTypes.length-1==arguments.length) return true;
        if (paramTypes.length-1>arguments.length) return false;
        if (arguments.length>paramTypes.length) return true;
-       
+
        // only case left is arguments.length==paramTypes.length
        Object last = arguments[arguments.length-1];
        if (last==null) return true;
        Class clazz = last.getClass();
        if (clazz.equals(paramTypes[paramTypes.length-1])) return false;
-       
+
        return true;
    }
-   
+
 
    protected Object doMethodInvoke(Object object, MetaMethod method, Object[] argumentArray) {
        //System.out.println("Evaluating method: " + method);
@@ -1613,7 +1569,7 @@ public class MetaClass {
                    argumentArray = ARRAY_WITH_EMPTY_ARRAY;
                else
                    argumentArray = ARRAY_WITH_NULL;
-           } else if (isVargsMethod(paramTypes,argumentArray)) { 
+           } else if (isVargsMethod(paramTypes,argumentArray)) {
                // vargs
                Object[] newArg = new Object[paramTypes.length];
                System.arraycopy(argumentArray,0,newArg,0,newArg.length-1);
@@ -1826,9 +1782,9 @@ public class MetaClass {
    }
 
    protected Object doConstructorInvoke(Constructor constructor, Object[] argumentArray) {
-       //System.out.println("Evaluating constructor: " + constructor + " with
-       // arguments: " + InvokerHelper.toString(argumentArray));
-       //System.out.println(this.theClass);
+       if (log.isLoggable(Level.FINER)){
+           logMethodCall(constructor.getDeclaringClass(), constructor.getName(), argumentArray);
+       }
 
        try {
       // the following patch was provided by Mori Kouhei to fix JIRA 435
@@ -1965,17 +1921,17 @@ public class MetaClass {
            return true;
        }
        int size = arguments.length;
-       
-       if (   (size>=paramTypes.length || size==paramTypes.length-1) 
-           && paramTypes.length>0 
-           && paramTypes[paramTypes.length-1].isArray()) 
+
+       if (   (size>=paramTypes.length || size==paramTypes.length-1)
+           && paramTypes.length>0
+           && paramTypes[paramTypes.length-1].isArray())
        {
            // first check normal number of parameters
            for (int i = 0; i < paramTypes.length-1; i++) {
                if (isCompatibleClass(paramTypes[i], arguments[i], includeCoerce)) continue;
                return false;
            }
-           // check varged 
+           // check varged
            Class clazz = paramTypes[paramTypes.length-1].getComponentType();
            for (int i=paramTypes.length; i<size; i++) {
                if (isCompatibleClass(clazz, arguments[i], includeCoerce)) continue;
@@ -1993,7 +1949,7 @@ public class MetaClass {
            return true;
        }
        return false;
-       
+
    }
 
    private boolean implementsInterface (Class clazz, Class iface) {
@@ -2703,4 +2659,52 @@ public class MetaClass {
        return ans;
    }
 
+    // logging helper methods --------------------
+
+    private String getClassName(Object object) {
+         return (object instanceof Class) ? ((Class)object).getName() : object.getClass().getName();
+     }
+
+     final int MAX_ARG_LEN = 12;
+     private String normalizedValue(Object argument) {
+         String value;
+         try {
+             value = argument.toString();
+             if (value.length() > MAX_ARG_LEN){
+                 value = value.substring(0,MAX_ARG_LEN-2) + "..";
+             }
+             if (argument instanceof String){
+                 value = "\'"+value+"\'";
+             }
+         } catch (Exception e) {
+             value = shortName(argument);
+         }
+         return value;
+     }
+
+     private String shortName(Object object) {
+         if (object == null || object.getClass()==null) return "unknownClass";
+         String name = getClassName(object);
+         if (name == null) return "unknownClassName"; // *very* defensive...
+         int lastDotPos = name.lastIndexOf('.');
+         if (lastDotPos < 0 || lastDotPos >= name.length()-1) return name;
+         return name.substring(lastDotPos+1);
+     }
+
+    private void logMethodCall(Object object, String methodName, Object[] arguments) {
+        String className = getClassName(object);
+        String logname = "methodCalls." + className + "." + methodName;
+        Logger objLog = Logger.getLogger(logname);
+        if (! objLog.isLoggable(Level.FINER)) return;
+        StringBuffer msg = new StringBuffer(methodName);
+        msg.append("(");
+        if (arguments != null){
+            for (int i = 0; i < arguments.length;) {
+                msg.append(normalizedValue(arguments[i]));
+                if (++i < arguments.length) { msg.append(","); }
+            }
+        }
+        msg.append(")");
+        objLog.logp(Level.FINER, className, msg.toString(), "called from MetaClass.invokeMethod");
+    }
 }
