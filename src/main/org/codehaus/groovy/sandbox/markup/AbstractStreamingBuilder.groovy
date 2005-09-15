@@ -85,15 +85,9 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
                                                 } else {
                                                     throw new GroovyRuntimeException("namespace prefix ${key} has not been declared")
                                                 }
-/*
-
-This is commented out because of a code generator bug
-This means that mkp.declareAlias(xsd:['fred':'schema']) won't work
-But mkp.declareAlias(jim:'harry') will work
-
                                               value.each { from, to ->
                                                   info[2][to] = info[1].curry(from)
-                                              }*/
+                                              }
                                           } else {
                                               def info = namespaceSpecificTags[':']
                                               info[2][key] = info[1].curry(value)
