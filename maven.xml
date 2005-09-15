@@ -246,7 +246,13 @@
       <pathelement path="target/test-classes"/>
       <path refid="maven.dependency.classpath"/>
     </path>
-    <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpathref="test.classpath"/> 
+    
+    <taskdef name="rootLoaderRef" classname="org.codehaus.groovy.ant.RootLoaderRef" classpathref="test.classpath"/>
+    <rootLoaderRef ref="tmp.groovy.groovyc">     
+      <classpath refid="test.classpath"/>
+    </rootLoaderRef>
+        
+    <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpathref="test.classpath" loaderRef="tmp.groovy.groovyc"/> 
     <taskdef name="wiki2html" classname="org.codehaus.groovy.wiki.Wiki2Markup" classpathref="test.classpath"/> 
     <taskdef name="wiki2testcase" classname="org.codehaus.groovy.wiki.Wiki2TestCase" classpathref="test.classpath"/> 
   </goal>
@@ -288,16 +294,10 @@
       </fileset>
     </copy>
 
-    <!--<groovyc destdir="${basedir}/target/classes" srcdir="${basedir}/target/classes" listfiles="true">
+    <groovyc destdir="${basedir}/target/classes" srcdir="${basedir}/target/classes" listfiles="true">
       <classpath refid="test.classpath"/>
-    </groovyc>-->
+    </groovyc>
 
-    <!-- lets fork a JVM to avoid classpath hell -->
-    <java classname="org.codehaus.groovy.ant.Groovyc" fork="yes" failsonerror="true">
-      <classpath refid="test.classpath"/>
-      <arg value="${basedir}/target/classes"/>
-      <arg value="${basedir}/target/classes"/>
-    </java>
   </goal>
 
   <goal name="groovy:tck-test-generation" prereqs="setclasspath"
@@ -341,22 +341,9 @@
     </touch>
     -->
 
-    <!-- lets fork a JVM to avoid classpath hell -->
-    <java classname="org.codehaus.groovy.ant.Groovyc" fork="yes" failsonerror="true">
-      <sysproperty key="groovy.jsr.check" value="${groovy.jsr.check}"/>
-      <classpath refid="test.classpath"/>
-      <arg value="${basedir}/target/test-classes"/>
-      <arg value="${basedir}/target/test-classes"/>
-
-      <!-- should we list each files or not? -->
-      <arg value="${groovy.listFiles}"/>
-    </java>
-
-    <!--
     <groovyc destdir="${basedir}/target/test-classes" srcdir="${basedir}/target/test-classes" listfiles="true">
       <classpath refid="test.classpath"/>
     </groovyc>
-    -->
 
       <!-- Re compile java, so that UberTests are now built -->
       <javac srcdir="${basedir}/src/test"
