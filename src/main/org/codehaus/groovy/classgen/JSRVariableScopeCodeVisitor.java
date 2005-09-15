@@ -462,6 +462,7 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
         if (expression.isParameterSpecified()) {
             Parameter[] parameters = expression.getParameters();
             for (int i = 0; i < parameters.length; i++) {
+                parameters[i].setInStaticContext(currentScope.isInStaticContext);
                 declare(parameters[i],expression);
             }
         } else {
