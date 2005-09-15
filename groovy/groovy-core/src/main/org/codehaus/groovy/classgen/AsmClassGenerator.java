@@ -1699,8 +1699,8 @@ public class AsmClassGenerator extends ClassGenerator {
 
         // lets check that the type exists
         Type type = call.getType();
-        /*type = classNode.resolveClassName(type);
-        call.setType(type);*/
+        type = classNode.resolveClassName(type);
+        call.setType(type);
         
         visitClassExpression(new ClassExpression(type));
         if (arguments !=null) {
