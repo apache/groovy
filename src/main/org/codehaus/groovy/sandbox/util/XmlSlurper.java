@@ -297,9 +297,9 @@ class XmlList extends GroovyObjectSupport implements Writable, Buildable {
 	    	    		return new ElementCollection() {
 	        				protected ElementCollection getResult(final String property) {
 	        					return new ComplexElementCollection(new XmlList[]{XmlList.this},
-	    							     						new int[] {indexOfFirst},
-	    														new String[] {elementName},
-	    														property);
+                  	    							     						  new int[] {indexOfFirst},
+                  	    														    new String[] {elementName},
+                  	    														    property);
 	        				}
 	
 	    	    	    		/**
@@ -515,7 +515,7 @@ abstract class ElementIterator implements Iterator {
 	protected abstract void findNextChild();
 }
 
-abstract class ElementCollection extends GroovyObjectSupport {
+abstract class ElementCollection extends GroovyObjectSupport implements Buildable {
 	private int count = -1;
 	
 	public abstract ElementIterator iterator();
@@ -545,15 +545,15 @@ abstract class ElementCollection extends GroovyObjectSupport {
     
     public synchronized Object getAt(int index) {
 	    	if (index >= 0) {
-		final Iterator iter = iterator();
-		
-			while (iter.hasNext()) {
-				if (index-- == 0) {
-					return iter.next();
-				} else {
-					iter.next();
-				}
-			}
+      		final Iterator iter = iterator();
+      		
+      			while (iter.hasNext()) {
+      				if (index-- == 0) {
+      					return iter.next();
+      				} else {
+      					iter.next();
+      				}
+      			}
 	    	}
 	    	
 	    	throw new ArrayIndexOutOfBoundsException(index);
@@ -572,7 +572,16 @@ abstract class ElementCollection extends GroovyObjectSupport {
 		}
 		return this.count;
 	}
-}
+
+  public void build(final GroovyObject builder) {
+  final Iterator iter = iterator();
+  
+    while (iter.hasNext()) {
+        ((Buildable)iter.next()).build(builder);
+    }
+  }
+ }
+
 
 class ComplexElementCollection extends ElementCollection {
 	private final XmlList[] parents;
