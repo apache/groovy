@@ -113,4 +113,7 @@ public class PropertyNode extends AnnotatedNode implements Opcodes,Variable {
         return field.hasInitialExpression();
     }
 
+    public boolean isInStaticContext() {
+        return field.isInStaticContext();
+    }
 }

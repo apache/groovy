@@ -78,8 +78,8 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
             for (int i = 0; i < parameters.length; i++) {
                 if (parameters[i].hasInitialExpression()) {
                     this.hasDefaultValue = true;
-                    break;
                 }
+                parameters[i].setInStaticContext(isStatic());
             }
         }
     }

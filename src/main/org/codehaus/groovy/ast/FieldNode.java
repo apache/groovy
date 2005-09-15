@@ -142,4 +142,8 @@ public class FieldNode extends AnnotatedNode implements Opcodes, Variable {
     public boolean hasInitialExpression() {
         return initialValueExpression!=null;
     }
+
+    public boolean isInStaticContext() {
+        return isStatic();
+    }
 }

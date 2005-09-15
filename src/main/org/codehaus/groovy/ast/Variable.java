@@ -56,5 +56,5 @@ public interface Variable {
     public String getName();
     public Expression getInitialExpression();
     public boolean hasInitialExpression();
-    
+    public boolean isInStaticContext();
 }
