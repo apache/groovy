@@ -47,97 +47,96 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
     class StreamingMarkupBuilder extends AbstractStreamingBuilder {
         @Property pendingStack = []
         @Property commentClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
-                            out.unescaped() << "<!--"
-                            out.bodyText() << body
-                            out.unescaped() << "-->"
-                         }
+                                      out.unescaped() << "<!--"
+                                      out.bodyText() << body
+                                      out.unescaped() << "-->"
+                                   }
         @Property noopClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
-                            if (body instanceof Buildable) {
-                                body.build(doc)
-                            } else {
-                                out.bodyText() << body
-                            }
-                      }
-        @Property unescapedClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
-                                out.unescaped() << body
-                           }
-        @Property tagClosure = {tag, doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
-                        if (prefix != "") {
-                            if (!(namespaces.containsKey(prefix) || pendingNamespaces.containsKey(prefix))) {
-                                throw new GroovyRuntimeException("Namespace prefix: ${prefix} is not bound to a URI")
-                            }
-
-                            tag = prefix + ":" + tag
-                        }
-
-                        out = out.unescaped() << "<${tag}"
-
-                        attrs.each {key, value ->
-                                        if (key.contains('$')) {
-                                            def parts = key.tokenize('$')
-
-                                            if (namespaces.containsKey(parts[0])) {
-                                                key = parts[0] + ":" + parts[1]
-                                            } else {
-                                                throw new GroovyRuntimeException("bad attribute namespace tag in ${key}")
-                                            }
-                                        }
-
-                                        out << " ${key}='"
-                                        out.attributeValue() << "${value}"
-                                        out << "'"
+                                      if (body instanceof Buildable) {
+                                          body.build(doc)
+                                      } else {
+                                          out.bodyText() << body
                                       }
-
-                        def hiddenNamespaces = [:]
-
-                        pendingNamespaces.each {key, value ->
-                            hiddenNamespaces[key] = namespaces[key]
-                            namespaces[key] = value
-                            out << ((key == ":") ? " xmlns='" : " xmlns:${key}='")
-                            out.attributeValue() << "${value}"
-                            out << "'"
-                        }
-
-                        if (body == null) {
-                            out << "/>"
-                        } else {
-                            out << ">"
-
-                            pendingStack.add pendingNamespaces.clone()
-                            pendingNamespaces.clear()
-
-                            if (body instanceof Buildable) {
-                                body.build(doc)
-                            } else {
-                                out.bodyText() << body
-                            }
-
-                            pendingNamespaces.clear()
-                            pendingNamespaces.putAll pendingStack.pop()
-
-                            out << "</${tag}>"
-                        }
-
-                        hiddenNamespaces.each {key, value ->
-                                                    if (value == null) {
-                                                        namespaces.remove key
-                                                    } else {
-                                                        namespaces[key] = value
-                                                    }
-                                               }
-                    }
+                                }
+        @Property unescapedClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
+                                          out.unescaped() << body
+                                     }
+        @Property tagClosure = {tag, doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
+                                  if (prefix != "") {
+                                      if (!(namespaces.containsKey(prefix) || pendingNamespaces.containsKey(prefix))) {
+                                          throw new GroovyRuntimeException("Namespace prefix: ${prefix} is not bound to a URI")
+                                      }
+          
+                                      tag = prefix + ":" + tag
+                                  }
+          
+                                  out = out.unescaped() << "<${tag}"
+          
+                                  attrs.each {key, value ->
+                                                  if (key.contains('$')) {
+                                                      def parts = key.tokenize('$')
+          
+                                                      if (namespaces.containsKey(parts[0])) {
+                                                          key = parts[0] + ":" + parts[1]
+                                                      } else {
+                                                          throw new GroovyRuntimeException("bad attribute namespace tag in ${key}")
+                                                      }
+                                                  }
+          
+                                                  out << " ${key}='"
+                                                  out.attributeValue() << "${value}"
+                                                  out << "'"
+                                                }
+          
+                                  def hiddenNamespaces = [:]
+          
+                                  pendingNamespaces.each {key, value ->
+                                      hiddenNamespaces[key] = namespaces[key]
+                                      namespaces[key] = value
+                                      out << ((key == ":") ? " xmlns='" : " xmlns:${key}='")
+                                      out.attributeValue() << "${value}"
+                                      out << "'"
+                                  }
+          
+                                  if (body == null) {
+                                      out << "/>"
+                                  } else {
+                                      out << ">"
+          
+                                      pendingStack.add pendingNamespaces.clone()
+                                      pendingNamespaces.clear()
+          
+                                      if (body instanceof Buildable) {
+                                          body.build(doc)
+                                      } else {
+                                          out.bodyText() << body
+                                      }
+          
+                                      pendingNamespaces.clear()
+                                      pendingNamespaces.putAll pendingStack.pop()
+          
+                                      out << "</${tag}>"
+                                  }
+          
+                                  hiddenNamespaces.each {key, value ->
+                                                              if (value == null) {
+                                                                  namespaces.remove key
+                                                              } else {
+                                                                  namespaces[key] = value
+                                                              }
+                                                         }
+                              }
 
         @Property builder = null
 
         StreamingMarkupBuilder() {
-            def specialTags = [:]
             specialTags.putAll(['yield':noopClosure,
-                                   'yieldUnescaped':unescapedClosure,
-                                   'comment':commentClosure])
+                                'yieldUnescaped':unescapedClosure,
+                                'comment':commentClosure])
 
-            def nsSpecificTags = [':'                                          : [tagClosure, tagClosure, [:]],    // the default namespace
-                              'http://www.w3.org/XML/1998/namespace'           : [tagClosure, tagClosure, [:]],
-                              'http://www.codehaus.org/Groovy/markup/keywords' : [badTagClosure, tagClosure, specialTags]]
+            def nsSpecificTags = [':'                                              : [tagClosure, tagClosure, [:]],    // the default namespace
+                                  'http://www.w3.org/XML/1998/namespace'           : [tagClosure, tagClosure, [:]],
+                                  'http://www.codehaus.org/Groovy/markup/keywords' : [badTagClosure, tagClosure, specialTags]]
 
             this.builder = new BaseMarkupBuilder(nsSpecificTags)
         }
