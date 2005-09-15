@@ -208,7 +208,10 @@ public class IntRange extends AbstractList implements Range {
             Integer integer = (Integer) value;
             int i = integer.intValue();
             return i >= from && i <= to;
-        }
+        } else if (value instanceof IntRange) {
+            IntRange range = (IntRange) value;
+            return from<=range.from && range.to<=to;
+        } 
         return false;
     }
 
