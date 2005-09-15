@@ -64,6 +64,7 @@ public class Parameter implements Variable {
     private boolean dynamicType;
     private Expression defaultValue;
     private boolean hasDefaultValue;
+    private boolean inStaticContext;
 
     public Parameter(Type type, String name) {
         this.name = Type.ensureJavaTypeNameSyntax(name);
@@ -103,5 +104,13 @@ public class Parameter implements Variable {
      */
     public Expression getInitialExpression() {
         return defaultValue;
-    }    
+    }
+    
+    public boolean isInStaticContext() {
+        return inStaticContext;
+    }
+    
+    public void setInStaticContext(boolean inStaticContext) {
+        this.inStaticContext = inStaticContext;
+    }
 }

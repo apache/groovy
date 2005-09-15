@@ -73,79 +73,62 @@ import org.codehaus.groovy.ast.Variable;
 
 public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements GroovyClassVisitor {
 
-    private static class Var {
+    private static class Var implements Variable{
         //TODO: support final and native
-        boolean isStatic=false, isFinal=false;
         String name;
         Type type=null;
         boolean isInStaticContext=false;
-        
-        public boolean equals(Object o){
-            Var v = (Var) o;
-            return v.name.equals(name);
-        }
-        
-        public int hashCode() {
-            return name.hashCode();
-        }
-        
-        public Var(String name) {
+ 
+        public Var(String name,VarScope scope) {
             // a Variable without type and other modifiers
             // make it dynamic type, non final and non static
             this.name=name;
             type=Type.DYNAMIC_TYPE;
-            isInStaticContext = false;
-        }
-        
-        public Var(Variable v, VarScope scope) {
-            this(v,scope.isInStaticContext);
-        }
-        
-        public Var(Variable v) {
-            this(v,false);
-        }
-        
-        public Var(Variable v, boolean staticContext) {
-            name = v.getName();
-            type = v.getType();
-            isInStaticContext = staticContext;
-        }
-
-        public Var(FieldNode f) {
-            this(f,f.isStatic());
-            isStatic=f.isStatic();
+            isInStaticContext = scope.isInStaticContext;
         }
 
         public Var(String pName, MethodNode f) {
             name = pName;
             type = f.getReturnType();
-            isStatic=f.isStatic();
-            isInStaticContext = isStatic;
+            isInStaticContext=f.isStatic();
         }
         
         public Var(String pName, Method m) {
             name = pName;
-            type = Type.makeType(m.getReturnType());            
-            isStatic=Modifier.isStatic(m.getModifiers());
-            isFinal=Modifier.isFinal(m.getModifiers());
-            isInStaticContext = isStatic;
+            type = Type.makeType(m.getReturnType());
+            isInStaticContext=Modifier.isStatic(m.getModifiers());
         }
 
         public Var(Field f) {
             name = f.getName();
-            type = Type.makeType(f.getType());            
-            isStatic=Modifier.isStatic(f.getModifiers());
-            isInStaticContext = isStatic;
-            isFinal=Modifier.isFinal(f.getModifiers());
-            isInStaticContext = isStatic;
+            type = Type.makeType(f.getType());
+            isInStaticContext=Modifier.isStatic(f.getModifiers());
         }
 
-        public Var(Var v) {
-            isStatic=v.isStatic;
-            isFinal=v.isFinal;
-            name=v.name;
-            type=v.type;
-            isInStaticContext=v.isInStaticContext;
+        public Var(Variable v) {
+            name=v.getName();
+            type=v.getType();
+            isInStaticContext=v.isInStaticContext();
+        }
+
+        public Type getType() {
+            return type;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public Expression getInitialExpression() {
+            return null;
+        }
+
+        public boolean hasInitialExpression() {
+            return false;
+        }
+
+        public boolean isInStaticContext() {
+            return isInStaticContext;
         }        
     }
     
@@ -224,7 +207,7 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
         VarScope scope = currentScope;
         // TODO: always define a variable here? What about type?
         currentScope = new VarScope(currentScope);
-        declare(new Var(forLoop.getVariable()), forLoop);
+        declare(new Var(forLoop.getVariable(),currentScope), forLoop);
         super.visitForLoop(forLoop);
         currentScope = scope;
     }
@@ -251,6 +234,7 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
         expression.getRightExpression().visit(this);
         // no need to visit left side, just get the variable name
         VariableExpression vex = expression.getVariableExpression();
+        vex.setInStaticContext(currentScope.isInStaticContext);
         if (!jroseRule && "it".equals(vex.getName())) {
             // we are not in jrose mode, so don't allow variables 
             // of the name 'it'
@@ -269,10 +253,10 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
     }
 
     private void declare(VariableExpression expr) {
-        declare(new Var(expr,currentScope),expr);
+        declare(expr,expr);
     }
     
-    private void declare(Var var, ASTNode expr) {
+    private void declare(Variable var, ASTNode expr) {
         String scopeType = "scope";
         String variableType = "variable";
         
@@ -287,35 +271,34 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
         StringBuffer msg = new StringBuffer();
         msg.append("The current ").append(scopeType);
         msg.append(" does already contain a ").append(variableType);
-        msg.append(" of the name ").append(var.name);
+        msg.append(" of the name ").append(var.getName());
         
-        if (currentScope.declares.get(var.name)!=null) {
+        if (currentScope.declares.get(var.getName())!=null) {
             addError(msg.toString(),expr);
             return;
         }
         
         //TODO: this case is not visited I think
         if (currentScope.isClass) {
-            currentScope.declares.put(var.name,var);
+            currentScope.declares.put(var.getName(),var);
         }
         
         for (VarScope scope = currentScope.parent; scope!=null; scope = scope.parent) {
             HashMap declares = scope.declares;
             if (scope.isClass) break;
-            if (declares.get(var.name)!=null) {
+            if (declares.get(var.getName())!=null) {
                 // variable already declared
                 addError(msg.toString(), expr);
                 break;
             }
         }
         // declare the variable even if there was an error to allow more checks
-        currentScope.declares.put(var.name,var);
-        var.isInStaticContext = currentScope.isInStaticContext;
+        currentScope.declares.put(var.getName(),var);
     }
     
     public void visitVariableExpression(VariableExpression expression) {
         String name = expression.getName();
-        Var v = checkVariableNameForDeclaration(name,expression);
+        Variable v = checkVariableNameForDeclaration(name,expression);
         if (v==null) return;
         checkVariableContextAccess(v,expression);
     }
@@ -323,7 +306,7 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
     public void visitFieldExpression(FieldExpression expression) {
         String name = expression.getFieldName();
         //TODO: change that to get the correct scope
-        Var v = checkVariableNameForDeclaration(name,expression);
+        Variable v = checkVariableNameForDeclaration(name,expression);
         checkVariableContextAccess(v,expression);  
     }
     
@@ -403,10 +386,10 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
         }        
     }
     
-    private void checkVariableContextAccess(Var v, Expression expr) {
-        if (v.isInStaticContext || !currentScope.isInStaticContext) return;        
+    private void checkVariableContextAccess(Variable v, Expression expr) {
+        if (v.isInStaticContext() || !currentScope.isInStaticContext) return;        
         
-        String msg =  v.name+
+        String msg =  v.getName()+
                       " is declared in a dynamic context, but you tried to"+
                       " access it from a static context.";
         addError(msg,expr);
@@ -417,27 +400,27 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
         currentScope.declares.put(v2.name,v2);
     }
     
-    private Var checkVariableNameForDeclaration(VariableExpression expression) {
+    private Variable checkVariableNameForDeclaration(VariableExpression expression) {
         if (expression == VariableExpression.THIS_EXPRESSION) return null;
         String name = expression.getName();
         return checkVariableNameForDeclaration(name,expression);
     }
     
-    private Var checkVariableNameForDeclaration(String name, Expression expression) {
-        Var var = new Var(name);
+    private Variable checkVariableNameForDeclaration(String name, Expression expression) {
+        Variable var = new Var(name,currentScope);
         
         // TODO: this line is not working
         // if (expression==VariableExpression.SUPER_EXPRESSION) return;
-        if ("super".equals(var.name) || "this".equals(var.name)) return null;
+        if ("super".equals(var.getName()) || "this".equals(var.getName())) return null;
         
         VarScope scope = currentScope;
         while (scope != null) {
-            if (scope.declares.get(var.name)!=null) {
-                var = (Var) scope.declares.get(var.name);
+            if (scope.declares.get(var.getName())!=null) {
+                var = (Variable) scope.declares.get(var.getName());
                 break;
             }
-            if (scope.visibles.get(var.name)!=null) {
-                var = (Var) scope.visibles.get(var.name);
+            if (scope.visibles.get(var.getName())!=null) {
+                var = (Variable) scope.visibles.get(var.getName());
                 break;
             }
             // scope.getReferencedVariables().add(name);
@@ -448,20 +431,20 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
 
         if (scope == null) {
             //TODO add a check to be on the lhs!
-            ClassNode vn = unit.getClass(var.name);
+            ClassNode vn = unit.getClass(var.getName());
             // vn==null means there is no class of that name
             // note: we need to do this check because it's possible in groovy to access
             //       Classes without the .class known from Java. Example: def type = String;
             if (vn==null) {
                 declare(var,expression);
                 // don't create an error when inside a script body 
-                if (!scriptMode) addError("The variable " + var.name +
+                if (!scriptMode) addError("The variable " + var.getName() +
                                           " is undefined in the current scope", expression);
             }
         } else {
             scope = currentScope;
             while (scope != end) {
-                scope.visibles.put(var.name,var);
+                scope.visibles.put(var.getName(),var);
                 scope = scope.parent;
             }
         }
@@ -479,11 +462,10 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
         if (expression.isParameterSpecified()) {
             Parameter[] parameters = expression.getParameters();
             for (int i = 0; i < parameters.length; i++) {
-                declare(new Var(parameters[i],scope.isInStaticContext),expression);
+                declare(parameters[i],expression);
             }
         } else {
-            Var var = new Var("it");
-            var.isInStaticContext = scope.isInStaticContext;
+            Var var = new Var("it",scope);
             // TODO: when to add "it" and when not?
             // John's rule is to add it only to the closures using 'it'
             // and only to the closure itself, not to subclosures
@@ -551,12 +533,11 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
         Set fields = new HashSet();        
         for (Iterator iter = l.iterator(); iter.hasNext();) {
             FieldNode f = (FieldNode) iter.next();
-            Var var = new Var(f);
-            if (fields.contains(var)) {
-                declare(var,f);
+            if (fields.contains(f)) {
+                declare(f,f);
             } else {
-                fields.add(var);
-                currentScope.declares.put(var.name,var);
+                fields.add(f);
+                currentScope.declares.put(f.getName(),f);
             }            
         }
 
@@ -577,12 +558,11 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
         Set props = new HashSet();
         for (Iterator iter = l.iterator(); iter.hasNext();) {
             PropertyNode f = (PropertyNode) iter.next();
-            Var var = new Var(f);
-            if (props.contains(var)) {
-                declare(var,f);
+            if (props.contains(f)) {
+                declare(f,f);
             } else {
-                props.add(var);
-                currentScope.declares.put(var.name,var);
+                props.add(f);
+                currentScope.declares.put(f.getName(),f);
             } 
         }
     }
@@ -597,7 +577,7 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
             FieldNode f = (FieldNode) iter.next();
             if (visitParent && Modifier.isPrivate(f.getModifiers()))
                 continue;
-            refs.put(f.getName(),new Var(f));
+            refs.put(f.getName(),f);
         }
         l = cn.getMethods();
         for (Iterator iter = l.iterator(); iter.hasNext();) {
@@ -614,7 +594,7 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
             PropertyNode f = (PropertyNode) iter.next();
             if (visitParent && Modifier.isPrivate(f.getModifiers()))
                 continue;
-            refs.put(f.getName(),new Var(f));
+            refs.put(f.getName(),f);
         }
 
         if (!visitParent) return;
@@ -626,7 +606,7 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
 
         Parameter[] params = enclosingMethod.getParameters();
         for (int i = 0; i < params.length; i++) {
-            refs.put(params[i].getName(),new Var(params[i],enclosingMethod.isStatic()));
+            refs.put(params[i].getName(),params[i]);
         }
 
         if (visitParent)
@@ -698,7 +678,7 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
         Parameter[] parameters = node.getParameters();
         for (int i = 0; i < parameters.length; i++) {
             // a constructor is never static
-            declare(new Var(parameters[i],false),node);
+            declare(parameters[i],node);
         }
         currentScope = new VarScope(currentScope);
         Statement code = node.getCode();
@@ -718,7 +698,7 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
         HashMap declares = currentScope.declares;
         Parameter[] parameters = node.getParameters();
         for (int i = 0; i < parameters.length; i++) {
-            declares.put(parameters[i].getName(),new Var(parameters[i],node.isStatic()));
+            declares.put(parameters[i].getName(),parameters[i]);
         }
 
         currentScope = new VarScope(currentScope);
@@ -750,7 +730,7 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
     public void visitCatchStatement(CatchStatement statement) {
         VarScope scope = currentScope;
         currentScope = new VarScope(currentScope);
-        declare(new Var(statement.getVariable()), statement);
+        declare(new Var(statement.getVariable(),currentScope), statement);
         super.visitCatchStatement(statement);
         currentScope = scope;
     }

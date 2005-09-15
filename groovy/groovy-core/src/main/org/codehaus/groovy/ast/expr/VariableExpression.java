@@ -61,6 +61,7 @@ public class VariableExpression extends Expression implements Variable {
     public static final VariableExpression SUPER_EXPRESSION = new VariableExpression("super", Type.DYNAMIC_TYPE);
 
     private String variable;
+    private boolean inStaticContext;
 
     public VariableExpression(String variable, Type type) {
         this.variable = variable;
@@ -100,5 +101,13 @@ public class VariableExpression extends Expression implements Variable {
 
     public boolean hasInitialExpression() {
         return false;
+    }
+    
+    public boolean isInStaticContext() {
+        return inStaticContext;
+    }
+    
+    public void setInStaticContext(boolean inStaticContext) {
+        this.inStaticContext = inStaticContext;
     }
 }
