@@ -125,23 +125,12 @@
   <target name="compile" depends="init" description="compile java and groovy sources">
     <mkdir dir="${build.classes.dir}" />
 
-    <!-- lets fork a JVM to avoid classpath hell -->
-    <java classname="org.codehaus.groovy.ant.Groovyc" fork="yes" failonerror="true">
-      <sysproperty key="groovy.jsr.check" value="${groovy.jsr.check}"/>
-      <classpath refid="project.classpath"/>
-      <arg value="${build.classes.dir}"/>
-      <arg value="${src.dir}"/>
-
-      <!-- should we list each files or not? -->
-      <arg value="${groovy.listFiles}"/>
-    </java>
-    <!--
     <groovyc destdir="${build.classes.dir}"
              srcdir="${src.dir}"
              listfiles="true">
         <classpath refid="project.classpath"/>
     </groovyc>
-    -->
+
     <javac srcdir="${src.dir}"
            destdir="${build.classes.dir}"
            classpathref="project.classpath"
