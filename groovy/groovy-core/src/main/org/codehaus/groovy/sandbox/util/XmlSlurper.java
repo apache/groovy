@@ -153,7 +153,8 @@ public class XmlSlurper extends DefaultHandler {
 	public void startElement(final String namespaceURI, final String localName, final String qName, final Attributes atts) throws SAXException {
 		addNonWhitespaceCdata();
 		
-		final Map attributes = new HashMap();
+    final Map attributes = new HashMap();
+    final Map attributeNamespaces = new HashMap();
 		
 		for (int i = atts.getLength() - 1; i != -1; i--) {
 			if (atts.getURI(i).length() == 0) {
@@ -161,16 +162,19 @@ public class XmlSlurper extends DefaultHandler {
 			} else {
 				//
 				// Note this is strictly incorrect the name is really localname + URI
-				// We need to figure out what to do with paramenters in namespaces
+				// We need to figure out what to do with parameters in namespaces
 				//
-				attributes.put(atts.getLocalName(i), atts.getValue(i));
+        attributes.put(atts.getLocalName(i), atts.getValue(i));
+        attributeNamespaces.put(atts.getLocalName(i), atts.getURI(i));
 			}
 			
 		}
 		
 		final List newBody = new LinkedList();
 
-		newBody.add(attributes);
+    newBody.add(attributes);
+
+    newBody.add(attributeNamespaces);
 		
 		newBody.add(this.body);
 
@@ -191,16 +195,18 @@ public class XmlSlurper extends DefaultHandler {
 		addNonWhitespaceCdata();
 		
 		final List children = this.body;
-		
-		final Map attributes = (Map)this.body.remove(0);
+    
+    final Map attributes = (Map)this.body.remove(0);
+    
+    final Map attributeNamespaces = (Map)this.body.remove(0);
 		
 		this.body = (List)this.body.remove(0);
 		
 		final XmlList xmlList;
 		if (namespaceURI.length() == 0){
-			xmlList = new XmlList(qName, attributes, children, namespaceURI);
+			xmlList = new XmlList(qName, attributes, attributeNamespaces, children, namespaceURI);
 		} else {
-			xmlList = new XmlList(localName, attributes, children, namespaceURI);
+			xmlList = new XmlList(localName, attributes, attributeNamespaces, children, namespaceURI);
 		}
 		this.body.add(xmlList);
 
@@ -247,16 +253,18 @@ public class XmlSlurper extends DefaultHandler {
 
 class XmlList extends GroovyObjectSupport implements Writable, Buildable {
 	final String name;
-	final Map attributes;
+  final Map attributes;
+  final Map attributeNamespaces;
 	final Object[] children;
 	final String namespaceURI;
 	XmlList parent = null;
 	
-    public XmlList(final String name, final Map attributes, final List body, final String namespaceURI) {
+    public XmlList(final String name, final Map attributes, final Map attributeNamespaces, final List body, final String namespaceURI) {
         super();
         
         this.name = name;
         this.attributes = attributes;
+        this.attributeNamespaces = attributeNamespaces;
         this.children = body.toArray();
         this.namespaceURI = namespaceURI;
     }
@@ -432,6 +440,7 @@ class XmlList extends GroovyObjectSupport implements Writable, Buildable {
 		}
 	};
 
+    // TODO: handle attributes in namespaces
   	if (this.namespaceURI.length() == 0) {
   		builder.invokeMethod(this.name, new Object[]{this.attributes, rest});
     } else {
