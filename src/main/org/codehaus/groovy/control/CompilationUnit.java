@@ -54,7 +54,6 @@
 package org.codehaus.groovy.control;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -853,6 +852,8 @@ public class CompilationUnit extends ProcessingUnit {
                 }
             } catch (CompilationFailedException e) {
                 // fall thorugh, getErrorREporter().failIfErrors() will triger
+            } catch (NullPointerException npe){
+                throw npe;
             } catch (Exception e) {
                 failures = true;
 //                String msg = e.getMessage();
