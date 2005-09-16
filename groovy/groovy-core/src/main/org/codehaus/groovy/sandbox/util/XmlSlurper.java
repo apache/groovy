@@ -20,6 +20,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
@@ -423,7 +424,6 @@ class XmlList extends GroovyObjectSupport implements Writable, Buildable {
 	 * @see org.codehaus.groovy.sandbox.markup.Buildable#build(groovy.lang.GroovyObject)
 	 */
 	public void build(final GroovyObject builder) {
-		// TODO handle Namespaces
 	final Closure rest = new Closure(null) {
 		public Object doCall(final Object o) {
 			buildChildren(builder);
@@ -432,9 +432,68 @@ class XmlList extends GroovyObjectSupport implements Writable, Buildable {
 		}
 	};
 
-		builder.invokeMethod(this.name, new Object[]{this.attributes, rest});
-		
+  	if (this.namespaceURI.length() == 0) {
+  		builder.invokeMethod(this.name, new Object[]{this.attributes, rest});
+    } else {
+      builder.getProperty("mkp");
+      final List namespaces = (List)builder.invokeMethod("getNamespaces", new Object[]{});
+      
+      final Map current = (Map)namespaces.get(0);
+      final Map pending = (Map)namespaces.get(1);
+      String tag = findNamespaceTag(pending);
+      
+      if (tag == null) {
+        tag = findNamespaceTag(current);
+        
+        if (tag == null) {
+        int suffix = 0;
+        
+          do {
+          final String posibleTag = "tag" + suffix++;
+          
+            if (!pending.containsKey(posibleTag) && !current.containsKey(posibleTag)) {
+              tag = posibleTag;
+            }
+          } while (tag == null);
+        }
+      }
+      
+      final Map newNamespace = new HashMap();
+      newNamespace.put(tag, this.namespaceURI);
+      builder.getProperty("mkp");
+      builder.invokeMethod("declareNamespace", new Object[]{newNamespace});
+      
+      builder.getProperty(tag);
+      builder.invokeMethod(this.name, new Object[]{this.attributes, rest});
+    }		
 	}
+  
+  private String findNamespaceTag(final Map tagMap) {
+      if (tagMap.containsValue(this.namespaceURI)) {
+      final Iterator entries = tagMap.entrySet().iterator();
+      
+        while (entries.hasNext()) {
+        final Map.Entry entry = (Map.Entry)entries.next();
+        
+          if (this.namespaceURI.equals(entry.getValue())) {
+            return (String)entry.getKey();
+          }
+        }
+      }
+
+      return null;
+  }
+  
+  private void buildChildren(final GroovyObject builder) {
+    for (int i = 0; i != this.children.length; i++) {
+      if (this.children[i] instanceof Buildable) {
+        ((Buildable)this.children[i]).build(builder);
+      } else {
+        builder.getProperty("mkp");
+        builder.invokeMethod("yield", new Object[]{this.children[i]});
+      }
+    }
+  }
 	
 	public String toString() {
 		return text();
@@ -454,17 +513,6 @@ class XmlList extends GroovyObjectSupport implements Writable, Buildable {
 		}	
 	
 		return buff.toString();
-	}
-	
-	private void buildChildren(final GroovyObject builder) {
-		for (int i = 0; i != this.children.length; i++) {
-			if (this.children[i] instanceof Buildable) {
-				((Buildable)this.children[i]).build(builder);
-			} else {
-				builder.getProperty("mkp");
-				builder.invokeMethod("yield", new Object[]{this.children[i]});
-			}
-		}
 	}
 
     	protected int getNextXmlElement(final String name, final int lastFound) {
@@ -630,9 +678,8 @@ abstract class ElementCollection extends GroovyObjectSupport implements Buildabl
       if(next instanceof Buildable) {
         ((Buildable)next).build(builder);  
       } else {
-        GroovyObject b = (GroovyObject)builder.getProperty("mkp");
-      
-        b = (GroovyObject)b.invokeMethod("yield", new Object[]{next});
+        builder.getProperty("mkp");
+        builder.invokeMethod("yield", new Object[]{next});
       }
     }
   }
