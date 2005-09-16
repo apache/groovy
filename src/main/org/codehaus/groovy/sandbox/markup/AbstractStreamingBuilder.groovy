@@ -94,9 +94,11 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
                                           }
                                       }
                                     }
+        @Property getNamespaceClosure = {doc, pendingNamespaces, namespaces, Object[] rest -> [namespaces, pendingNamespaces]}
 
         @Property specialTags = ['declareNamespace':namespaceSetupClosure,
-                                 'declareAlias':aliasSetupClosure]
+                                 'declareAlias':aliasSetupClosure,
+                                 'getNamespaces':getNamespaceClosure]
 
         @Property builder = null
     }
