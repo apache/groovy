@@ -2,6 +2,7 @@ package org.codehaus.groovy.sandbox.util;
 import groovy.lang.Closure;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyObjectSupport;
+import groovy.lang.GroovyRuntimeException;
 import groovy.lang.Writable;
 
 import java.io.File;
@@ -277,13 +278,13 @@ class XmlList extends GroovyObjectSupport implements Writable, Buildable {
 	    	    	    		 * 
 	    	    	    		 * @return
 	    	    	    		 */
-	    	    	    		public ElementIterator iterator() {
+	    	    	    		public NameIterator iterator() {
 	    	    	    			return new ElementIterator(new XmlList[]{XmlList.this}, new int[]{-1}) {
 	    	    	    				{
 	    	    	    					findNextChild();		// set up the element indexes
 	    	    	    				}
 	    	    	    				
-	    	        				protected void findNextChild() {
+	    	        				public void findNextChild() {
 	    	        					this.nextParentElements[0] = -1;
 	    	        				}
 	    	    	    			};
@@ -296,10 +297,14 @@ class XmlList extends GroovyObjectSupport implements Writable, Buildable {
     			} else {		// > 1 element matches the element name
 	    	    		return new ElementCollection() {
 	        				protected ElementCollection getResult(final String property) {
-	        					return new ComplexElementCollection(new XmlList[]{XmlList.this},
-                  	    							     						  new int[] {indexOfFirst},
-                  	    														    new String[] {elementName},
-                  	    														    property);
+                    if (property.startsWith("@")) {
+                      return new AttributeCollection(this, property.substring(1));
+                    } else {
+  	        					return new ComplexElementCollection(new XmlList[]{XmlList.this},
+                    	    							     						  new int[] {indexOfFirst},
+                    	    														    new String[] {elementName},
+                    	    														    property);
+                      }
 	        				}
 	
 	    	    	    		/**
@@ -308,11 +313,11 @@ class XmlList extends GroovyObjectSupport implements Writable, Buildable {
 	    	    	    		 * 
 	    	    	    		 * @return
 	    	    	    		 */
-	    	    	    		public ElementIterator iterator() {
+	    	    	    		public NameIterator iterator() {
 	    	    	    			return new ElementIterator(new XmlList[]{XmlList.this}, new int[]{indexOfFirst}) {
-	    	        				protected void findNextChild() {
-	    	        					this.nextParentElements[0] = XmlList.this.getNextXmlElement(elementName, this.nextParentElements[0]);
-	    	        				}
+                	    	        				public void findNextChild() {
+                	    	        					this.nextParentElements[0] = XmlList.this.getNextXmlElement(elementName, this.nextParentElements[0]);
+                	    	        				}
 	    	    	    			};
 	    	    	    		}
 	    	    	    };
@@ -475,7 +480,11 @@ class XmlList extends GroovyObjectSupport implements Writable, Buildable {
     	}
 }
 
-abstract class ElementIterator implements Iterator {
+interface NameIterator extends Iterator {
+  void findNextChild();
+}
+
+abstract class ElementIterator implements NameIterator {
 	protected final XmlList[] parents;
 	protected final int[] nextParentElements;
 	
@@ -511,14 +520,53 @@ abstract class ElementIterator implements Iterator {
 	public void remove() {
 		throw new UnsupportedOperationException();
 	}
-	
-	protected abstract void findNextChild();
+}
+
+class AttributeIterator implements NameIterator {
+  private final NameIterator iterator;
+  private final String attributeName;
+  private Object nextAttributeValue;
+  
+  public AttributeIterator(final ElementCollection elements, final String attributeName) {
+    this.iterator = elements.iterator();
+    this.attributeName = attributeName;
+    findNextChild();
+  }
+  
+  public boolean hasNext() {
+    return this.nextAttributeValue != null;
+  }
+
+  public Object next() {
+  final Object result = this.nextAttributeValue;
+  
+    findNextChild();
+    
+    return result;
+  }
+
+  public void remove() {
+    throw new UnsupportedOperationException();
+  }
+
+  public void findNextChild() {
+    while (this.iterator.hasNext()) {
+    final XmlList element = (XmlList)this.iterator.next();
+    
+      if (element.attributes.containsKey(this.attributeName)) {
+        this.nextAttributeValue = element.attributes.get(this.attributeName);
+        return;
+      }
+    }
+    
+    this.nextAttributeValue = null;
+  }
 }
 
 abstract class ElementCollection extends GroovyObjectSupport implements Buildable {
 	private int count = -1;
 	
-	public abstract ElementIterator iterator();
+	public abstract NameIterator iterator();
 	
 	/* (non-Javadoc)
 	 * @see groovy.lang.GroovyObject#getProperty(java.lang.String)
@@ -577,11 +625,18 @@ abstract class ElementCollection extends GroovyObjectSupport implements Buildabl
   final Iterator iter = iterator();
   
     while (iter.hasNext()) {
-        ((Buildable)iter.next()).build(builder);
+    final Object next = iter.next();
+        
+      if(next instanceof Buildable) {
+        ((Buildable)next).build(builder);  
+      } else {
+        GroovyObject b = (GroovyObject)builder.getProperty("mkp");
+      
+        b = (GroovyObject)b.invokeMethod("yield", new Object[]{next});
+      }
     }
   }
  }
-
 
 class ComplexElementCollection extends ElementCollection {
 	private final XmlList[] parents;
@@ -589,9 +644,9 @@ class ComplexElementCollection extends ElementCollection {
 	private final String[] parentElementNames;
 	
 	public ComplexElementCollection(final XmlList[] parents,
-              				  	  final int[] nextParentElements,
-								  final String[] parentElementNames,
-								  final String childElementName)
+                                  final int[] nextParentElements,
+                                  final String[] parentElementNames,
+                                  final String childElementName)
 	{
 		this.parents = new XmlList[parents.length + 1];
 		this.parents[0] = (XmlList)parents[0].children[nextParentElements[0]];
@@ -609,7 +664,7 @@ class ComplexElementCollection extends ElementCollection {
 		// Use the iterator to get the index of the first element
 		//
 		
-		final ElementIterator iter = this.iterator();
+		final ElementIterator iter = (ElementIterator)this.iterator();
 		
 		iter.findNextChild();
 		
@@ -617,10 +672,14 @@ class ComplexElementCollection extends ElementCollection {
 	}
 	
 	protected ElementCollection getResult(final String property) {
-		return new ComplexElementCollection(this.parents,
-				   							this.nextParentElements,
-											this.parentElementNames,
-											property);
+    if (property.startsWith("@")) {
+      return new AttributeCollection(this, property.substring(1));
+    } else {
+  		return new ComplexElementCollection(this.parents,
+                                          this.nextParentElements,
+                                          this.parentElementNames,
+                                          property);
+    }
 	}
 	
 	/**
@@ -629,9 +688,9 @@ class ComplexElementCollection extends ElementCollection {
 	 * 
 	 * @return
 	 */
-	public ElementIterator iterator() {
+	public NameIterator iterator() {
 		return new ElementIterator(this.parents, this.nextParentElements) {
-						protected void findNextChild() {	
+						public void findNextChild() {	
 							this.nextParentElements[0] = this.parents[0].getNextXmlElement(ComplexElementCollection.this.parentElementNames[0], this.nextParentElements[0]);
 							
 							while (this.nextParentElements[0] == -1) {
@@ -664,4 +723,22 @@ class ComplexElementCollection extends ElementCollection {
 						}
 		};
 	}
+}
+
+class AttributeCollection extends ElementCollection {
+  private final ElementCollection elements;
+  private final String attributeName;
+  
+  public AttributeCollection(final ElementCollection elements, final String attributeName) {
+    this.elements = elements;
+    this.attributeName = attributeName;
+  }
+
+  protected ElementCollection getResult(String property) {
+    throw new GroovyRuntimeException("Can't select element '" + property + "' from attribute '" + this.attributeName + "'");
+  }
+
+  public NameIterator iterator() {
+    return new AttributeIterator(this.elements, this.attributeName);
+  }
 }
