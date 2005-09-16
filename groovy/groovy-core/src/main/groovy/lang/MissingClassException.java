@@ -46,6 +46,7 @@
 package groovy.lang;
 
 import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.Type;
 
 /**
  * An exception occurred if a dynamic method dispatch fails with an unknown class.
@@ -63,6 +64,10 @@ public class MissingClassException extends GroovyRuntimeException {
     public MissingClassException(String type, ASTNode node, String message) {
         super("No such class: " + type + " " + message, node);
         this.type = type;
+    }
+    
+    public MissingClassException(Type type, String message){
+        super("No such class: " + type.getName() + " " + message);
     }
 
     /**

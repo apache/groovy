@@ -630,8 +630,11 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         return new Parameter(Type.makeType(parameterType), "param" + idx);
     }
 
-
     public Type resolveClassName(Type type) {
+        return resolveClassName(type,null);
+    }
+    
+    public Type resolveClassName(Type type, String message) {
         Type answer = null;
         if (type != null) {
             if (getType().equals(type) || getNameWithoutPackage().equals(type.getName())) {
@@ -650,6 +653,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
                 answer = tryResolveClassAndInnerClass(Type.makeType(replacedPointType));
             }
         }
+        if (answer==null && message!=null) throw new MissingClassException(type,message);
         return answer;
     }
 
