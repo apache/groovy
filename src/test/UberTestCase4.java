@@ -23,6 +23,9 @@ public class UberTestCase4 extends TestCase {
          */
         suite.addTestSuite(groovy.servlet.GroovyServletTest.class);
         
+        suite.addTestSuite(gls.ch06.s05.JName1Test.class);
+        suite.addTestSuite(gls.ch06.s05.GName1Test.class);
+        
         return suite;
     }
 
