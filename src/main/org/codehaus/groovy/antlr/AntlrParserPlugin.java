@@ -1652,7 +1652,6 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         } else if (isType(IDENT, node)) {
             objectExpression = VariableExpression.THIS_EXPRESSION;
             selector = node;
-
         } else {
             objectExpression = expression(node);
             selector = null;  // implicit "call"
@@ -1670,6 +1669,15 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         else if (isPrimitiveTypeLiteral(selector)) {
             throw new ASTRuntimeException(selector, "Primitive type literal: " + selector.getText()
                     + " cannot be used as a method name");
+        }
+        else if (isType(SELECT_SLOT, selector)) {
+            String field = identifier(selector.getFirstChild());
+            AttributeExpression attributeExpression = new AttributeExpression(objectExpression, field, node.getType() != DOT);
+            configureAST(attributeExpression, node);
+            Expression arguments = arguments(elist);
+            MethodCallExpression expression = new MethodCallExpression(attributeExpression, "call", arguments);
+            configureAST(expression, methodCallNode);
+            return expression;
         }
         else {
             name = identifier(selector);
