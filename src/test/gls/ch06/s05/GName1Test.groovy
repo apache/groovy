@@ -81,7 +81,7 @@ class GName1Test extends GroovyTestCase {
     def newX2 = {"new x2"}
     
     assert (obj.x)() == "property"
-    assert (obj.@x)() == "field"  // can't write obj.@x() - syntax error
+    assert obj.@x() == "field"
     assert obj.x() == "method"
     
       
@@ -89,12 +89,12 @@ class GName1Test extends GroovyTestCase {
     obj.@x = newX1
     
     assert (obj.x)() == newX()
-    assert (obj.@x)() == newX1()
+    assert obj.@x() == newX1()
     
     obj.setX newX2
     
     assert (obj.x)() == newX2()
-    assert (obj.@x)() == newX1()
+    assert obj.@x() == newX1()
   }
   
   void testObjectSupportNameHandlingWitnClosureValues1() {
@@ -104,7 +104,7 @@ class GName1Test extends GroovyTestCase {
     def newX2 = {"new x2"}
     
     assert (obj.x)() == "property"
-    assert (obj.@x)() == "field"  // can't write obj.@x() - syntax error
+    assert obj.@x() == "field"
     assert obj.x() == "method"
     
       
