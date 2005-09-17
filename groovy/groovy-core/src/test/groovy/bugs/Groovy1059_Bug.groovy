@@ -13,6 +13,7 @@ package groovy.bugs
  *
  *    have the same meaning.
  *
+ * @author  John Wilson
  * @author  Pilho Kim
  */
 
