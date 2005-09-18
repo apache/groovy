@@ -190,6 +190,7 @@ public class UberTestCase extends TestCase {
         suite.addTestSuite(PrefixTest.class);
 
         suite.addTestSuite(PrimitiveArraysTest.class);
+        suite.addTestSuite(PrimitiveDefaultValueTest.class);
         suite.addTestSuite(PrimitiveTypeFieldTest.class);
         suite.addTestSuite(PrimitiveTypesTest.class);
 

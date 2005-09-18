@@ -456,6 +456,33 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             initialValue = expression(node);
         }
 
+        if (initialValue == null && type != null) {
+            if (type.equals(Type.int_TYPE)) {
+                initialValue = new ConstantExpression(new Integer(0));
+            }
+            else if (type.equals(Type.long_TYPE)) {
+                initialValue = new ConstantExpression(new Long(0L));
+            }
+            else if (type.equals(Type.double_TYPE)) {
+                initialValue = new ConstantExpression(new Double(0.0));
+            }
+            else if (type.equals(Type.float_TYPE)) {
+                initialValue = new ConstantExpression(new Float(0.0F));
+            }
+            else if (type.equals(Type.boolean_TYPE)) {
+                initialValue = ConstantExpression.FALSE;
+            }
+            else if (type.equals(Type.short_TYPE)) {
+                initialValue = new ConstantExpression(new Short((short) 0));
+            }
+            else if (type.equals(Type.byte_TYPE)) {
+                initialValue = new ConstantExpression(new Byte((byte) 0));
+            }
+            else if (type.equals(Type.char_TYPE)) {
+                initialValue = new ConstantExpression(new Character((char) 0));
+            }
+        }
+
 
         FieldNode fieldNode = new FieldNode(name, modifiers, type, classNode, initialValue);
         fieldNode.addAnnotations(annotations);
