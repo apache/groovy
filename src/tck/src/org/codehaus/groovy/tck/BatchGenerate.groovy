@@ -15,7 +15,9 @@ class BatchGenerate {
 
     public BatchGenerate() {
         generator = new TestGenerator();
-        verbose = false;
+        // verbose = false;
+        spew = true;
+        srcDirPath = "./";
     }
 
     public void setSrcdirPath(String pathName) {
@@ -47,7 +49,7 @@ class BatchGenerate {
 
 
         for (src in srcs) {
-
+            println( src )
             // mung the ${test.src.dir}/gls/ch14/s4 path into ${dest.dir}/gls/ch14/s4
             // first determine the relative path e.g. gls/ch14/s4
             def relativeSrcFilePathAndName = src.getAbsolutePath().substring(srcDirPath.length() + 1)

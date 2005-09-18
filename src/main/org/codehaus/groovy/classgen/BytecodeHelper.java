@@ -1,4 +1,3 @@
-
 /*
  $Id$
 
@@ -460,6 +459,14 @@ public class BytecodeHelper implements Opcodes {
         else if (value instanceof String) {
             cv.visitLdcInsn(value);
         }
+        else if (value instanceof Character) {
+            String className = "java/lang/Character";
+            cv.visitTypeInsn(NEW, className);
+            cv.visitInsn(DUP);
+            cv.visitLdcInsn(value);
+            String methodType = "(C)V";
+            cv.visitMethodInsn(INVOKESPECIAL, className, "<init>", methodType);
+        }
         else if (value instanceof Number) {
             /** todo it would be more efficient to generate class constants */
             Number n = (Number) value;
@@ -467,7 +474,12 @@ public class BytecodeHelper implements Opcodes {
             cv.visitTypeInsn(NEW, className);
             cv.visitInsn(DUP);
             String methodType;
-            if (n instanceof Double) {
+            if (n instanceof Integer) {
+            	//pushConstant(n.intValue());
+            	cv.visitLdcInsn(n);
+            	methodType = "(I)V";
+        	}
+            else if (n instanceof Double) {
             	cv.visitLdcInsn(n);
             	methodType = "(D)V";
             }
@@ -487,18 +499,20 @@ public class BytecodeHelper implements Opcodes {
             	cv.visitLdcInsn(n.toString());
             	methodType = "(Ljava/lang/String;)V";
             }
-            else if (n instanceof Integer){
-            	//cv.visitLdcInsn(n);
-                pushConstant(n.intValue());
-            	methodType = "(I)V";
-        	}
-            else
-            {
-        		throw new ClassGeneratorException(
-        				"Cannot generate bytecode for constant: " + value
-        				+ " of type: " + value.getClass().getName()
-        				+".  Numeric constant type not supported.");
-        	}
+            else if (n instanceof Short) {
+            	cv.visitLdcInsn(n);
+            	methodType = "(S)V";
+            }
+            else if (n instanceof Byte) {
+            	cv.visitLdcInsn(n);
+            	methodType = "(B)V";
+            }
+            else {
+        	throw new ClassGeneratorException(
+                               "Cannot generate bytecode for constant: " + value
+                             + " of type: " + value.getClass().getName()
+                             + ".  Numeric constant type not supported.");
+            }
             cv.visitMethodInsn(INVOKESPECIAL, className, "<init>", methodType);
         }
         else if (value instanceof Boolean) {
