@@ -1356,7 +1356,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 visitClassExpression(new ClassExpression(ownerType));
             }
             else {
-                loadThisOrOwner();
+              cv.visitVarInsn(ALOAD, 0);
             }
         }
 
