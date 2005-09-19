@@ -256,7 +256,7 @@ class XmlList extends GroovyObjectSupport implements Writable, Buildable {
   final Map attributes;
   final Map attributeNamespaces;
 	final Object[] children;
-	final String namespaceURI;
+	final String elementNamespaceURI;
 	XmlList parent = null;
 	
     public XmlList(final String name, final Map attributes, final Map attributeNamespaces, final List body, final String namespaceURI) {
@@ -266,7 +266,7 @@ class XmlList extends GroovyObjectSupport implements Writable, Buildable {
         this.attributes = attributes;
         this.attributeNamespaces = attributeNamespaces;
         this.children = body.toArray();
-        this.namespaceURI = namespaceURI;
+        this.elementNamespaceURI = namespaceURI;
     }
 
     public Object getProperty(final String elementName) {
@@ -440,8 +440,7 @@ class XmlList extends GroovyObjectSupport implements Writable, Buildable {
 		}
 	};
 
-    // TODO: handle attributes in namespaces
-  	if (this.namespaceURI.length() == 0) {
+  	if (this.elementNamespaceURI.length() == 0 && this.attributeNamespaces.isEmpty()) {
   		builder.invokeMethod(this.name, new Object[]{this.attributes, rest});
     } else {
       builder.getProperty("mkp");
@@ -449,42 +448,64 @@ class XmlList extends GroovyObjectSupport implements Writable, Buildable {
       
       final Map current = (Map)namespaces.get(0);
       final Map pending = (Map)namespaces.get(1);
-      String tag = findNamespaceTag(pending);
       
-      if (tag == null) {
-        tag = findNamespaceTag(current);
+      if (this.attributeNamespaces.isEmpty()) {     
+        builder.getProperty(getTagFor(this.elementNamespaceURI, current, pending, builder));
+        builder.invokeMethod(this.name, new Object[]{this.attributes, rest});
+      } else {
+      final Map attributesWithNamespaces = new HashMap(this.attributes);
+      final Iterator attrs = this.attributes.keySet().iterator();
+      
+        while (attrs.hasNext()) {
+        final Object key = attrs.next();
+        final Object attributeNamespaceURI = this.attributeNamespaces.get(key);
         
-        if (tag == null) {
-        int suffix = 0;
-        
-          do {
-          final String posibleTag = "tag" + suffix++;
-          
-            if (!pending.containsKey(posibleTag) && !current.containsKey(posibleTag)) {
-              tag = posibleTag;
-            }
-          } while (tag == null);
+          if (attributeNamespaceURI != null) {
+            attributesWithNamespaces.put(getTagFor(attributeNamespaceURI, current, pending, builder) + "$" + key, attributesWithNamespaces.remove(key));
+          }
         }
+        
+        builder.getProperty(getTagFor(this.elementNamespaceURI, current, pending, builder));
+        builder.invokeMethod(this.name, new Object[]{attributesWithNamespaces, rest});
       }
-      
-      final Map newNamespace = new HashMap();
-      newNamespace.put(tag, this.namespaceURI);
-      builder.getProperty("mkp");
-      builder.invokeMethod("declareNamespace", new Object[]{newNamespace});
-      
-      builder.getProperty(tag);
-      builder.invokeMethod(this.name, new Object[]{this.attributes, rest});
     }		
 	}
   
-  private String findNamespaceTag(final Map tagMap) {
-      if (tagMap.containsValue(this.namespaceURI)) {
+  private static String getTagFor(final Object namespaceURI, final Map current, final Map pending, final GroovyObject builder) {
+  String tag = findNamespaceTag(pending, namespaceURI);
+    
+    if (tag == null) {
+      tag = findNamespaceTag(current, namespaceURI);
+      
+      if (tag == null) {
+      int suffix = 0;
+      
+        do {
+        final String posibleTag = "tag" + suffix++;
+        
+          if (!pending.containsKey(posibleTag) && !current.containsKey(posibleTag)) {
+            tag = posibleTag;
+          }
+        } while (tag == null);
+      }
+    }
+    
+    final Map newNamespace = new HashMap();
+    newNamespace.put(tag, namespaceURI);
+    builder.getProperty("mkp");
+    builder.invokeMethod("declareNamespace", new Object[]{newNamespace});
+    
+    return tag;
+  }
+  
+  private static String findNamespaceTag(final Map tagMap, final Object namespaceURI) {
+      if (tagMap.containsValue(namespaceURI)) {
       final Iterator entries = tagMap.entrySet().iterator();
       
         while (entries.hasNext()) {
         final Map.Entry entry = (Map.Entry)entries.next();
         
-          if (this.namespaceURI.equals(entry.getValue())) {
+          if (namespaceURI.equals(entry.getValue())) {
             return (String)entry.getKey();
           }
         }
