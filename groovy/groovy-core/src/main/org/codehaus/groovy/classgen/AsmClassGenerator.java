@@ -53,6 +53,7 @@ import java.util.regex.Matcher;
 import java.util.logging.Logger;
 
 import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.CompileUnit;
@@ -2603,6 +2604,10 @@ public class AsmClassGenerator extends ClassGenerator {
         return storeInTemp(s, Type.OBJECT_TYPE);
     }
 
+    public void visitAnnotations(AnnotatedNode node) {
+    }
+    
+    
     // Implementation methods
     //-------------------------------------------------------------------------
     protected boolean addInnerClass(ClassNode innerClass) {

@@ -54,6 +54,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.ConstructorNode;
@@ -643,4 +644,6 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
         return statement;
     }
+
+    public void visitAnnotations(AnnotatedNode node) {}
 }

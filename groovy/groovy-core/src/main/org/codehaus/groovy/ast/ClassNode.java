@@ -764,21 +764,31 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public void visitContents(GroovyClassVisitor visitor) {
+        if (!this.getAnnotations().isEmpty()) visitor.visitAnnotations(this);
+        
         // now lets visit the contents of the class
         for (Iterator iter = getProperties().iterator(); iter.hasNext();) {
-            visitor.visitProperty((PropertyNode) iter.next());
+            PropertyNode pn = (PropertyNode) iter.next();
+            if (!pn.getAnnotations().isEmpty()) visitor.visitAnnotations(pn);
+            visitor.visitProperty(pn);
         }
 
         for (Iterator iter = getFields().iterator(); iter.hasNext();) {
-            visitor.visitField((FieldNode) iter.next());
+            FieldNode fn = (FieldNode) iter.next();
+            if (!fn.getAnnotations().isEmpty()) visitor.visitAnnotations(fn);
+            visitor.visitField(fn);
         }
 
         for (Iterator iter = getDeclaredConstructors().iterator(); iter.hasNext();) {
-            visitor.visitConstructor((ConstructorNode) iter.next());
+            ConstructorNode cn = (ConstructorNode) iter.next();
+            if (!cn.getAnnotations().isEmpty()) visitor.visitAnnotations(cn);
+            visitor.visitConstructor(cn);
         }
 
         for (Iterator iter = getMethods().iterator(); iter.hasNext();) {
-            visitor.visitMethod((MethodNode) iter.next());
+            MethodNode mn = (MethodNode) iter.next();
+            if (!mn.getAnnotations().isEmpty()) visitor.visitAnnotations(mn);
+            visitor.visitMethod(mn);
         }
     }
 

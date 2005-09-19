@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
@@ -79,6 +80,14 @@ public class ClassCompletionVerifier implements Opcodes, GroovyClassVisitor {
      * @see org.codehaus.groovy.ast.GroovyClassVisitor#visitProperty(org.codehaus.groovy.ast.PropertyNode)
      */
     public void visitProperty(PropertyNode a_node) {
+    }
+
+    /* (non-Javadoc)
+     * @see org.codehaus.groovy.ast.GroovyClassVisitor#visitAnnotations(org.codehaus.groovy.ast.AnnotatedNode)
+     */
+    public void visitAnnotations(AnnotatedNode node) {
+        // TODO Auto-generated method stub
+        
     }
 
 }
