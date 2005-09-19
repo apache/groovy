@@ -76,10 +76,10 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
                                                   if (key.contains('$')) {
                                                       def parts = key.tokenize('$')
           
-                                                      if (namespaces.containsKey(parts[0])) {
+                                                      if (namespaces.containsKey(parts[0]) || pendingNamespaces.containsKey(parts[0])) {
                                                           key = parts[0] + ":" + parts[1]
                                                       } else {
-                                                          throw new GroovyRuntimeException("bad attribute namespace tag in ${key}")
+                                                          throw new GroovyRuntimeException("bad attribute namespace tag: ${parts[0]} in ${key}")
                                                       }
                                                   }
           
