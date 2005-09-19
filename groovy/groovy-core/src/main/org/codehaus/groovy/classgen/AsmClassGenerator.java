@@ -54,6 +54,7 @@ import java.util.logging.Logger;
 
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
+import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.CompileUnit;
@@ -89,6 +90,7 @@ import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.syntax.RuntimeParserException;
+import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Label;
@@ -2605,6 +2607,21 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     public void visitAnnotations(AnnotatedNode node) {
+        Iterator it = node.getAnnotations().keySet().iterator(); 
+        while (it.hasNext()) {
+            String clazz = (String) it.next();
+            
+            AnnotationVisitor av = cw.visitAnnotation(BytecodeHelper.getClassInternalName(clazz),true);
+            
+            AnnotationNode an = (AnnotationNode) node.getAnnotations(clazz);
+            Iterator mIt = an.getMembers().keySet().iterator();
+            while (mIt.hasNext()) {
+                String name = (String) mIt.next();
+                ConstantExpression exp = (ConstantExpression) an.getMember(name);
+                av.visit(name,exp.getValue());
+            }
+            av.visitEnd();
+        }
     }
     
     
