@@ -192,4 +192,8 @@ public class DummyClassGenerator extends ClassGenerator {
     protected void visitParameter(ASTNode node, Parameter parameter) {
     }
 
+
+    public void visitAnnotations(AnnotatedNode node) {
+    }
+
 }

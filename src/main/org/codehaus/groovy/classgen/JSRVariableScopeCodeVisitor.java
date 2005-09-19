@@ -43,6 +43,7 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.List;
 import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.CompileUnit;
@@ -724,9 +725,7 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
         if (init != null) init.visit(this);
     }
 
-    public void visitPropertyExpression(PropertyExpression expression) {
-
-    }
+    public void visitPropertyExpression(PropertyExpression expression) {}
 
     public void visitCatchStatement(CatchStatement statement) {
         VarScope scope = currentScope;
@@ -735,4 +734,7 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
         super.visitCatchStatement(statement);
         currentScope = scope;
     }
+
+
+    public void visitAnnotations(AnnotatedNode node) {}
 }
