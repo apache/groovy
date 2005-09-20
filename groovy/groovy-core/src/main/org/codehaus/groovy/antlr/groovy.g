@@ -2739,6 +2739,11 @@ returns [boolean hasLabel = false]
         )?
 
         strictContextExpression
+        {
+            require(LA(1) != COLON,
+                "illegal colon after argument expression",
+                "a complex label expression before a colon must be parenthesized");
+        }
     ;
 
 /** A label for an argument is of the form a:b, 'a':b, "a":b, (a):b, etc..
