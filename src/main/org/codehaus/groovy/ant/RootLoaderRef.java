@@ -73,7 +73,7 @@ import org.codehaus.groovy.tools.RootLoader;
  * and set an AntClassLoader as child and stored in the reference. The AntClassLoader
  * instance will not have a classpath nor will it have access to the classpath somehow,
  * all loading is done by the RootLoader parent. To avoid problems with loading classes 
- * multiple times and using them at the same time, this task wilöl filter out the ant jars
+ * multiple times and using them at the same time, this task will filter out the ant jars
  * and the commons-logging jars. This only works if the ant jars are starting with "ant-" and
  * the logging jar starts with "commons-logging-".
  * 
@@ -81,7 +81,7 @@ import org.codehaus.groovy.tools.RootLoader;
  * it look for a matching method which includes a matching class. But two classes of the same name
  * with different classloaders are different, so ant would not be able to find the method.
  *
- * @see org.codehaus.groovy.tool.RootLoader
+ * @see org.codehaus.groovy.tools.RootLoader
  * @author Jochen Theodorou
  * @version $Revision$ 
  */
