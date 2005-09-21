@@ -58,6 +58,5 @@ public interface GroovyClassVisitor {
     public void visitMethod(MethodNode node);
     public void visitField(FieldNode node);
     public void visitProperty(PropertyNode node);
-    public void visitAnnotations(AnnotatedNode node);
 
 }

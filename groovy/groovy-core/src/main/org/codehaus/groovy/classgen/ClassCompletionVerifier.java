@@ -82,12 +82,4 @@ public class ClassCompletionVerifier implements Opcodes, GroovyClassVisitor {
     public void visitProperty(PropertyNode a_node) {
     }
 
-    /* (non-Javadoc)
-     * @see org.codehaus.groovy.ast.GroovyClassVisitor#visitAnnotations(org.codehaus.groovy.ast.AnnotatedNode)
-     */
-    public void visitAnnotations(AnnotatedNode node) {
-        // TODO Auto-generated method stub
-        
-    }
-
 }
