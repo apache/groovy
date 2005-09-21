@@ -696,8 +696,24 @@ abstract class ElementCollection extends GroovyObjectSupport implements Buildabl
 				iter.next();
 			}
 		}
+    
 		return this.count;
 	}
+  
+  public String text() {
+  final StringBuffer result = new StringBuffer();
+  final Iterator iter = iterator();
+    
+    while (iter.hasNext()) {
+      result.append(iter.next().toString());
+    }
+    
+    return result.toString();
+  }
+  
+  public String toString() {
+    return text();
+  }
 
   public void build(final GroovyObject builder) {
   final Iterator iter = iterator();
@@ -817,5 +833,22 @@ class AttributeCollection extends ElementCollection {
 
   public NameIterator iterator() {
     return new AttributeIterator(this.elements, this.attributeName);
+  }
+  
+  public String text() {
+  final StringBuffer result = new StringBuffer();
+  final Iterator iter = iterator();
+  boolean first = true;
+    
+    while (iter.hasNext()) {
+      if (!first) {
+        result.append(", ");
+      }
+      
+      result.append(iter.next().toString());
+      first = false;
+    }
+    
+    return result.toString();
   }
 }
