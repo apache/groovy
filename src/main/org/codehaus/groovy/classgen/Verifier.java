@@ -645,5 +645,4 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         return statement;
     }
 
-    public void visitAnnotations(AnnotatedNode node) {}
 }

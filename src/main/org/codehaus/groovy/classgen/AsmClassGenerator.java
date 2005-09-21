@@ -291,6 +291,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 BytecodeHelper.getClassInternalNames(classNode.getInterfaces())
             );            
             cw.visitSource(sourceFile,null);
+            visitAnnotations(classNode);
 
             // set the optional enclosing method attribute of the current inner class
 //          br comment out once Groovy uses the latest CVS HEAD of ASM
@@ -390,6 +391,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
         String methodType = BytecodeHelper.getMethodDescriptor(node.getReturnType(), node.getParameters());
         cv = cw.visitMethod(node.getModifiers(), node.getName(), methodType, null, null);
+        visitAnnotations(node);
         if (node.getCode()!=null) {
             Label labelStart = new Label();
             cv.visitLabel(labelStart);
@@ -442,6 +444,7 @@ public class AsmClassGenerator extends ClassGenerator {
             BytecodeHelper.getTypeDescription(fieldNode.getType()),
             null, //fieldValue,  //br  all the sudden that one cannot init the field here. init is done in static initilizer and instace intializer.
             null);
+        visitAnnotations(fieldNode);
     }
 
 
@@ -2607,11 +2610,13 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     public void visitAnnotations(AnnotatedNode node) {
-        Iterator it = node.getAnnotations().keySet().iterator(); 
+        Map annotionMap = node.getAnnotations();
+        if (annotionMap.isEmpty()) return;
+        Iterator it = annotionMap.keySet().iterator(); 
         while (it.hasNext()) {
             String clazz = (String) it.next();
             
-            AnnotationVisitor av = cw.visitAnnotation(BytecodeHelper.getClassInternalName(clazz),true);
+            AnnotationVisitor av = cw.visitAnnotation(BytecodeHelper.formatNameForClassLoading(clazz),true);
             
             AnnotationNode an = (AnnotationNode) node.getAnnotations(clazz);
             Iterator mIt = an.getMembers().keySet().iterator();

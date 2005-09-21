@@ -735,6 +735,4 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
         currentScope = scope;
     }
 
-
-    public void visitAnnotations(AnnotatedNode node) {}
 }
