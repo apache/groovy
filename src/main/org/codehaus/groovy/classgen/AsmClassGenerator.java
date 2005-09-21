@@ -2616,7 +2616,12 @@ public class AsmClassGenerator extends ClassGenerator {
         while (it.hasNext()) {
             String clazz = (String) it.next();
             
-            AnnotationVisitor av = cw.visitAnnotation(BytecodeHelper.formatNameForClassLoading(clazz),true);
+            //skip builtin properties
+            if (clazz.equals("Property")) continue;
+            Type type = Type.makeType(clazz);
+            type = classNode.resolveClassName(type,"unable to find class for annotation");
+            
+            AnnotationVisitor av = cw.visitAnnotation(BytecodeHelper.formatNameForClassLoading(clazz),false);
             
             AnnotationNode an = (AnnotationNode) node.getAnnotations(clazz);
             Iterator mIt = an.getMembers().keySet().iterator();
