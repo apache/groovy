@@ -287,7 +287,7 @@ class XmlList extends GroovyObjectSupport implements Writable, Buildable {
 	    	    	    		 * 
 	    	    	    		 * @return
 	    	    	    		 */
-	    	    	    		public NameIterator iterator() {
+	    	    	    		public ChildIterator iterator() {
 	    	    	    			return new ElementIterator(new XmlList[]{XmlList.this}, new int[]{-1}) {
 	    	    	    				{
 	    	    	    					findNextChild();		// set up the element indexes
@@ -322,7 +322,7 @@ class XmlList extends GroovyObjectSupport implements Writable, Buildable {
 	    	    	    		 * 
 	    	    	    		 * @return
 	    	    	    		 */
-	    	    	    		public NameIterator iterator() {
+	    	    	    		public ChildIterator iterator() {
 	    	    	    			return new ElementIterator(new XmlList[]{XmlList.this}, new int[]{indexOfFirst}) {
                 	    	        				public void findNextChild() {
                 	    	        					this.nextParentElements[0] = XmlList.this.getNextXmlElement(elementName, this.nextParentElements[0]);
@@ -558,11 +558,11 @@ class XmlList extends GroovyObjectSupport implements Writable, Buildable {
     	}
 }
 
-interface NameIterator extends Iterator {
+interface ChildIterator extends Iterator {
   void findNextChild();
 }
 
-abstract class ElementIterator implements NameIterator {
+abstract class ElementIterator implements ChildIterator {
 	protected final XmlList[] parents;
 	protected final int[] nextParentElements;
 	
@@ -600,10 +600,10 @@ abstract class ElementIterator implements NameIterator {
 	}
 }
 
-class AttributeIterator implements NameIterator {
-  private final NameIterator iterator;
+class AttributeIterator implements ChildIterator {
+  private final ChildIterator iterator;
   private final String attributeName;
-  private Object nextAttributeValue;
+  private XmlList nextElement;
   
   public AttributeIterator(final ElementCollection elements, final String attributeName) {
     this.iterator = elements.iterator();
@@ -612,15 +612,31 @@ class AttributeIterator implements NameIterator {
   }
   
   public boolean hasNext() {
-    return this.nextAttributeValue != null;
+    return this.nextElement != null;
   }
 
   public Object next() {
-  final Object result = this.nextAttributeValue;
+  final XmlList resultElement = this.nextElement;
   
     findNextChild();
     
-    return result;
+    return new Object() {
+      public XmlList element() {
+        return resultElement;
+      }
+      
+      public String text() {
+        return (String)resultElement.attributes.get(AttributeIterator.this.attributeName);
+      }
+      
+      public boolean equals(final Object obj) {
+        return toString().equals(obj);
+      }
+      
+      public String toString() {
+        return text();
+      }
+    };
   }
 
   public void remove() {
@@ -629,22 +645,21 @@ class AttributeIterator implements NameIterator {
 
   public void findNextChild() {
     while (this.iterator.hasNext()) {
-    final XmlList element = (XmlList)this.iterator.next();
+      this.nextElement = (XmlList)this.iterator.next();
     
-      if (element.attributes.containsKey(this.attributeName)) {
-        this.nextAttributeValue = element.attributes.get(this.attributeName);
+      if (this.nextElement.attributes.containsKey(this.attributeName)) {
         return;
       }
     }
     
-    this.nextAttributeValue = null;
+    this.nextElement = null;
   }
 }
 
 abstract class ElementCollection extends GroovyObjectSupport implements Buildable {
 	private int count = -1;
 	
-	public abstract NameIterator iterator();
+	public abstract ChildIterator iterator();
 	
 	/* (non-Javadoc)
 	 * @see groovy.lang.GroovyObject#getProperty(java.lang.String)
@@ -669,12 +684,14 @@ abstract class ElementCollection extends GroovyObjectSupport implements Buildabl
 	
 	protected abstract ElementCollection getResult(String property);
     
-    public synchronized Object getAt(int index) {
-	    	if (index >= 0) {
+    public synchronized Object getAt(final int index) {
+    int i = index;
+    
+	    	if (i >= 0) {
       		final Iterator iter = iterator();
       		
       			while (iter.hasNext()) {
-      				if (index-- == 0) {
+      				if (i-- == 0) {
       					return iter.next();
       				} else {
       					iter.next();
@@ -781,7 +798,7 @@ class ComplexElementCollection extends ElementCollection {
 	 * 
 	 * @return
 	 */
-	public NameIterator iterator() {
+	public ChildIterator iterator() {
 		return new ElementIterator(this.parents, this.nextParentElements) {
 						public void findNextChild() {	
 							this.nextParentElements[0] = this.parents[0].getNextXmlElement(ComplexElementCollection.this.parentElementNames[0], this.nextParentElements[0]);
@@ -831,7 +848,7 @@ class AttributeCollection extends ElementCollection {
     throw new GroovyRuntimeException("Can't select element '" + property + "' from attribute '" + this.attributeName + "'");
   }
 
-  public NameIterator iterator() {
+  public ChildIterator iterator() {
     return new AttributeIterator(this.elements, this.attributeName);
   }
   
