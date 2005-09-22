@@ -34,13 +34,7 @@ import org.codehaus.groovy.ast.stmt.*;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.ParserPlugin;
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.syntax.Numbers;
-import org.codehaus.groovy.syntax.Reduction;
-import org.codehaus.groovy.syntax.SyntaxException;
-import org.codehaus.groovy.syntax.Token;
-import org.codehaus.groovy.syntax.Types;
-import org.codehaus.groovy.syntax.ASTHelper;
-import org.codehaus.groovy.syntax.ParserException;
+import org.codehaus.groovy.syntax.*;
 import org.objectweb.asm.Opcodes;
 
 import java.io.*;
@@ -102,6 +96,13 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         outputASTInVariousFormsIfNeeded(sourceUnit);
 
         return null; //new Reduction(Tpken.EOF);
+    }
+
+    public SourceSummary getSummary() {
+        SummaryCollector summaryCollector = new SummaryCollector();
+        AntlrASTProcessor treewalker = new PreOrderTraversal(summaryCollector);
+        treewalker.process(ast);
+        return summaryCollector.getSourceSummary();
     }
 
     private void outputASTInVariousFormsIfNeeded(SourceUnit sourceUnit) {
