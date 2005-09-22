@@ -17,8 +17,8 @@
 	<classpathentry kind="var" path="MAVEN_REPO/commons-cli/jars/commons-cli-1.0.jar"/>
 	<classpathentry kind="var" path="MAVEN_REPO/commons-collections/jars/commons-collections-3.0-dev2.jar"/>
 	<classpathentry kind="var" path="MAVEN_REPO/commons-logging/jars/commons-logging-1.0.3.jar"/>
-	<classpathentry kind="var" path="MAVEN_REPO/jmock/jars/jmock-cglib-SNAPSHOT.jar"/>
-	<classpathentry kind="var" path="MAVEN_REPO/jmock/jars/jmock-SNAPSHOT.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/jmock/jars/jmock-cglib-1.0.1.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/jmock/jars/jmock-1.0.1.jar"/>
 	<classpathentry kind="var" path="MAVEN_REPO/junit/jars/junit-3.8.1.jar"/>
 	<classpathentry kind="var" path="MAVEN_REPO/mockobjects/jars/mockobjects-core-0.09.jar"/>
 	<classpathentry kind="var" path="MAVEN_REPO/mx4j/jars/mx4j-2.0-beta-1.jar"/>
