@@ -89,6 +89,6 @@ public class DumpClass2 {
     }
     
     public Object callConstructor() {
-        return InvokerHelper.invokeConstructor("java.lang.String", "hello");
+        return InvokerHelper.invokeConstructorOf("java.lang.String", "hello");
     }
 }

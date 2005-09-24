@@ -215,6 +215,7 @@ public class UberTestCase extends TestCase {
         suite.addTestSuite(SpreadMapOperatorTest.class);
         suite.addTestSuite(SerializeTest.class);
         suite.addTestSuite(ShellTest.class);
+        suite.addTestSuite(SingletonBugTest.class);
         suite.addTestSuite(SmallTreeTest.class);
         suite.addTestSuite(SocketTest.class);
         suite.addTestSuite(SortTest.class);

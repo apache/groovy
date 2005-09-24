@@ -123,8 +123,20 @@ public class InvokerHelper {
         return getInstance().invokeStaticMethod(type, methodName, EMPTY_ARGS);
     }
 
-    public static Object invokeConstructor(String type, Object arguments) {
-        return getInstance().invokeConstructor(type, arguments);
+    public static Object invokeConstructorAt(Class at, Class type, Object arguments) {
+        return getInstance().invokeConstructorAt(at, type, arguments);
+    }
+
+    public static Object invokeConstructorAt(Class at, String type, Object arguments) {
+        return getInstance().invokeConstructorAt(at, type, arguments);
+    }
+
+    public static Object invokeNoArgumentsConstructorAt(Class at, Class type) {
+        return getInstance().invokeConstructorAt(at, type, EMPTY_ARGS);
+    }
+
+    public static Object invokeConstructorOf(String type, Object arguments) {
+        return getInstance().invokeConstructorOf(type, arguments);
     }
 
     public static Object invokeConstructorOf(Class type, Object arguments) {

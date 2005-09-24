@@ -87,7 +87,11 @@ public class DummyReflector extends Reflector {
         }
     }
 
-    public Object invokeConstructor(Object constructor, Object[] arguments) {
+    public Object invokeConstructorAt(Object at, Object constructor, Object[] arguments) {
+        return null; // noSuchMethod(method, object, arguments);
+    }
+
+    public Object invokeConstructorOf(Object constructor, Object[] arguments) {
         return null; // noSuchMethod(method, object, arguments);
     }
 

@@ -611,6 +611,36 @@ public class MetaClass {
                        + "("+InvokerHelper.toTypeString(arguments)+")");
    }
 
+   public Object invokeConstructorAt(Class at, Object[] arguments) {
+       Class[] argClasses = convertToTypeArray(arguments);
+       Constructor constructor = (Constructor) chooseMethod("<init>", constructors, argClasses, false);
+       if (constructor != null) {
+           return doConstructorInvokeAt(at, constructor, arguments);
+       }
+       else {
+           constructor = (Constructor) chooseMethod("<init>", constructors, argClasses, true);
+           if (constructor != null) {
+               return doConstructorInvokeAt(at, constructor, arguments);
+           }
+       }
+
+       if (arguments.length == 1) {
+           Object firstArgument = arguments[0];
+           if (firstArgument instanceof Map) {
+               constructor = (Constructor) chooseMethod("<init>", constructors, EMPTY_TYPE_ARRAY, false);
+               if (constructor != null) {
+                   Object bean = doConstructorInvokeAt(at, constructor, EMPTY_ARRAY);
+                   setProperties(bean, ((Map) firstArgument));
+                   return bean;
+               }
+           }
+       }
+       throw new GroovyRuntimeException(
+                   "Could not find matching constructor for: "
+                       + theClass.getName()
+                       + "("+InvokerHelper.toTypeString(arguments)+")");
+   }
+
    /**
     * Sets a number of bean properties from the given Map where the keys are
     * the String names of properties and the values are the values of the
@@ -1802,6 +1832,131 @@ public class MetaClass {
                    + e,
                    e);
        }
+   }
+
+   protected Object doConstructorInvokeAt(final Class at, Constructor constructor, Object[] argumentArray) {
+       if (log.isLoggable(Level.FINER)) {
+           logMethodCall(constructor.getDeclaringClass(), constructor.getName(), argumentArray);
+       }
+
+       try {
+           // To fix JIRA 435
+           // Every constructor should be opened to the accessible classes.
+           final boolean accessible = accessibleToConstructor(at, constructor);
+
+           final Constructor ctor = constructor;
+           AccessController.doPrivileged(new PrivilegedAction() {
+               public Object run() {
+                   ctor.setAccessible(accessible);
+                   return null;
+               }
+           });
+           // end of patch
+
+           return constructor.newInstance(argumentArray);
+       }
+       catch (InvocationTargetException e) {
+           /*Throwable t = e.getTargetException();
+           if (t instanceof Error) {
+               Error error = (Error) t;
+               throw error;
+           }
+           if (t instanceof RuntimeException) {
+               RuntimeException runtimeEx = (RuntimeException) t;
+               throw runtimeEx;
+           }*/
+           throw new InvokerInvocationException(e);
+       }
+       catch (IllegalArgumentException e) {
+           if (coerceGStrings(argumentArray)) {
+               try {
+                   return constructor.newInstance(argumentArray);
+               }
+               catch (Exception e2) {
+                   // allow fall through
+               }
+           }
+           throw new GroovyRuntimeException(
+               "failed to invoke constructor: "
+                   + constructor
+                   + " with arguments: "
+                   + InvokerHelper.toString(argumentArray)
+                   + " reason: "
+                   + e);
+       }
+       catch (IllegalAccessException e) {
+           throw new GroovyRuntimeException(
+               "could not access constructor: "
+                   + constructor
+                   + " with arguments: "
+                   + InvokerHelper.toString(argumentArray)
+                   + " reason: "
+                   + e);
+       }
+       catch (Exception e) {
+           throw new GroovyRuntimeException(
+               "failed to invoke constructor: "
+                   + constructor
+                   + " with arguments: "
+                   + InvokerHelper.toString(argumentArray)
+                   + " reason: "
+                   + e,
+                   e);
+       }
+   }
+
+   protected boolean accessibleToConstructor(final Class at, final Constructor constructor) {
+       boolean accessible = false;
+       if (Modifier.isPublic(constructor.getModifiers())) {
+           accessible = true;
+       }
+       else if (Modifier.isPrivate(constructor.getModifiers())) {
+           accessible = at.getName().equals(constructor.getName());
+       }
+       else if ( Modifier.isProtected(constructor.getModifiers()) ) {
+           if ( at.getPackage() == null && constructor.getDeclaringClass().getPackage() == null ) {
+               accessible = true;
+           }
+           else if ( at.getPackage() == null && constructor.getDeclaringClass().getPackage() != null ) {
+               accessible = false;
+           }
+           else if ( at.getPackage() != null && constructor.getDeclaringClass().getPackage() == null ) {
+               accessible = false;
+           }
+           else if ( at.getPackage().equals(constructor.getDeclaringClass().getPackage()) ) {
+               accessible = true;
+           }
+           else {
+               boolean flag = false;
+               Class clazz = at;
+               while ( !flag && clazz != null ) {
+                   if (clazz.equals(constructor.getDeclaringClass()) ) {
+                       flag = true;
+                       break;
+                   }
+                   if (clazz.equals(Object.class) ) {
+                       break;
+                   }
+                   clazz = clazz.getSuperclass();
+               }
+               accessible = flag;
+           }
+       }
+       else {
+           if ( at.getPackage() == null && constructor.getDeclaringClass().getPackage() == null ) {
+               accessible = true;
+           }
+           else if ( at.getPackage() == null && constructor.getDeclaringClass().getPackage() != null ) {
+               accessible = false;
+           }
+           else if ( at.getPackage() != null && constructor.getDeclaringClass().getPackage() == null ) {
+               accessible = false;
+           }
+           else if ( at.getPackage().equals(constructor.getDeclaringClass().getPackage()) ) {
+               accessible = true;
+           }
+       }
+       return accessible;
    }
 
    /**

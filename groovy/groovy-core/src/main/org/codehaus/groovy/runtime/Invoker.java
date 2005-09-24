@@ -185,13 +185,22 @@ public class Invoker {
         return metaClass.invokeStaticMethod(null, method, asArray(arguments));
     }
 
-    public Object invokeConstructor(String type, Object arguments) {
-        return invokeConstructorOf(loadClass(type), arguments);
+    public Object invokeConstructorAt(Class at, Class type, Object arguments) {
+        MetaClass metaClass = metaRegistry.getMetaClass(type);
+        return metaClass.invokeConstructorAt(at, asArray(arguments));
+    }
+
+    public Object invokeConstructorAt(Class at, String type, Object arguments) {
+        return invokeConstructorAt(at, loadClass(type), arguments);
     }
 
     public Object invokeConstructorOf(Class type, Object arguments) {
         MetaClass metaClass = metaRegistry.getMetaClass(type);
         return metaClass.invokeConstructor(asArray(arguments));
+    }
+
+    public Object invokeConstructorOf(String type, Object arguments) {
+        return invokeConstructorOf(loadClass(type), arguments);
     }
 
     /**

@@ -118,14 +118,27 @@ public class ScriptBytecodeAdapter {
         }
     }
 
-    public static Object invokeConstructor(String type, Object arguments) throws Throwable{
+    public static Object invokeConstructorAt(Class at, Class type, Object arguments) throws Throwable{
         try {
-            return InvokerHelper.invokeConstructor(type, arguments);
+            return InvokerHelper.invokeConstructorAt(at, type, arguments);
         } catch (GroovyRuntimeException gre) {
             return unwrap(gre);
         }
     }
 
+    /// public static Object invokeConstructorAt(Class at, String type, Object arguments) throws Throwable{
+    ///     try {
+    ///         return InvokerHelper.invokeConstructorAt(at, type, arguments);
+    ///     } catch (GroovyRuntimeException gre) {
+    ///         return unwrap(gre);
+    ///     }
+    /// }
+
+    public static Object invokeNoArgumentsConstructorAt(Class at, Class type) throws Throwable {
+        return invokeConstructorAt(at, type, EMPTY_ARGS);
+    }
+    
+    
     public static Object invokeConstructorOf(Class type, Object arguments) throws Throwable{
         try {
             return InvokerHelper.invokeConstructorOf(type, arguments);
@@ -134,7 +147,15 @@ public class ScriptBytecodeAdapter {
         }  
     }
     
-    public static Object invokeNoArgumentsConstructorOf(Class type) throws Throwable{
+    /// public static Object invokeConstructorOf(String type, Object arguments) throws Throwable{
+    ///     try {
+    ///         return InvokerHelper.invokeConstructorOf(type, arguments);
+    ///     } catch (GroovyRuntimeException gre) {
+    ///         return unwrap(gre);
+    ///     }  
+    /// }
+    
+    public static Object invokeNoArgumentsConstructorOf(Class type) throws Throwable {
         return invokeConstructorOf(type, EMPTY_ARGS);
     }
     
