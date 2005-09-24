@@ -144,14 +144,13 @@ import org.xml.sax.ext.LexicalHandler
         @Property builder = null
 
         StreamingSAXBuilder() {
-            def specialTags = [:]
             specialTags.putAll(['yield':noopClosure,
-                                   'yieldUnescaped':noopClosure,
-                                   'comment':commentClosure])
+                                'yieldUnescaped':noopClosure,
+                                'comment':commentClosure])
 
             def nsSpecificTags = [':'                                          : [tagClosure, tagClosure, [:]],    // the default namespace
-                              'http://www.w3.org/XML/1998/namespace'           : [tagClosure, tagClosure, [:]],
-                              'http://www.codehaus.org/Groovy/markup/keywords' : [badTagClosure, tagClosure, specialTags]]
+                                  'http://www.w3.org/XML/1998/namespace'           : [tagClosure, tagClosure, [:]],
+                                  'http://www.codehaus.org/Groovy/markup/keywords' : [badTagClosure, tagClosure, specialTags]]
 
             this.builder = new BaseMarkupBuilder(nsSpecificTags)
         }

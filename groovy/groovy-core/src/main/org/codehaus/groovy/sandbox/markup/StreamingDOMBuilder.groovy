@@ -156,10 +156,9 @@ import org.w3c.dom.Node
         @Property builder = null
 
         StreamingDOMBuilder() {
-            def specialTags = [:]
             specialTags.putAll(['yield':noopClosure,
-                                    'yieldUnescaped':noopClosure,
-                                    'comment':commentClosure])
+                                'yieldUnescaped':noopClosure,
+                                'comment':commentClosure])
 
             def nsSpecificTags = [':'                                          : [tagClosure, tagClosure, [:]],    // the default namespace
                               'http://www.w3.org/XML/1998/namespace'           : [tagClosure, tagClosure, [:]],
