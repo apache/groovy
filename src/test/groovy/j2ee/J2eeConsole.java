@@ -96,7 +96,7 @@ public class J2eeConsole {
             //shell.evaluate("src/test/groovy/j2ee/CreateData.groovy");
             
             //shell.evaluate("src/main/groovy/ui/Console.groovy");
-            GroovyObject console = (GroovyObject) InvokerHelper.invokeConstructor("groovy.ui.Console", null);
+            GroovyObject console = (GroovyObject) InvokerHelper.invokeConstructorOf("groovy.ui.Console", null);
             console.setProperty("shell", shell);
             console.invokeMethod("run", null);
             /*

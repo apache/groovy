@@ -139,6 +139,8 @@ public class AsmClassGenerator extends ClassGenerator {
     MethodCaller invokeConstructorMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeConstructor");
     MethodCaller invokeConstructorOfMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeConstructorOf");
     MethodCaller invokeNoArgumentsConstructorOf = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeNoArgumentsConstructorOf");
+    MethodCaller invokeConstructorAtMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeConstructorAt");
+    MethodCaller invokeNoArgumentsConstructorAt = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeNoArgumentsConstructorAt");
     MethodCaller invokeClosureMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeClosure");
     MethodCaller invokeSuperMethodMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeSuperMethod");
     MethodCaller invokeNoArgumentsMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeNoArgumentsMethod");
@@ -1708,13 +1710,47 @@ public class AsmClassGenerator extends ClassGenerator {
         type = classNode.resolveClassName(type, "");
         call.setType(type);
         
-        visitClassExpression(new ClassExpression(type));
-        if (arguments !=null) {
-               arguments.visit(this);
-            invokeConstructorOfMethod.call(cv);     // todo subject to opti
-        } else {
-            invokeNoArgumentsConstructorOf.call(cv); // todo subject to opti
+        if (this.classNode != null) {
+            // TODO: GROOVY-435
+            pushClassTypeArgument(this.classNode.getType(), this.classNode.getType());
+            pushClassTypeArgument(this.classNode.getType(), type);
+
+            if (arguments != null) {
+                arguments.visit(this);
+                invokeConstructorAtMethod.call(cv);
+            } else {
+                invokeNoArgumentsConstructorAt.call(cv);
+            }
         }
+        else {
+            pushClassTypeArgument(this.classNode.getType(), type);
+
+            if (arguments !=null) {
+                arguments.visit(this);
+                invokeConstructorOfMethod.call(cv);
+            } else {
+                invokeNoArgumentsConstructorOf.call(cv);
+            }
+        }
+    }
+    
+    protected void pushClassTypeArgument(final Type ownerType, final Type type) {
+        String staticFieldName = "class$" + type.getName().replace('.', '$').replace('[', '_').replace(';', '_');
+        String ownerName = ownerType.getName().replace('.','/');
+
+        syntheticStaticFields.add(staticFieldName);
+        cv.visitFieldInsn(GETSTATIC, ownerName, staticFieldName, "Ljava/lang/Class;");
+        Label l0 = new Label();
+        cv.visitJumpInsn(IFNONNULL, l0);
+        cv.visitLdcInsn(type.getName());
+        cv.visitMethodInsn(INVOKESTATIC, ownerName, "class$", "(Ljava/lang/String;)Ljava/lang/Class;");
+        cv.visitInsn(DUP);
+        cv.visitFieldInsn(PUTSTATIC, ownerName, staticFieldName, "Ljava/lang/Class;");
+        Label l1 = new Label();
+        cv.visitJumpInsn(GOTO, l1);
+        cv.visitLabel(l0);
+        cv.visitFieldInsn(GETSTATIC, ownerName, staticFieldName, "Ljava/lang/Class;");
+        cv.visitLabel(l1);
     }
     
     // TODO: move this check before any scope checks, but after we know all classes

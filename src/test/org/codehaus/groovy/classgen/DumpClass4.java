@@ -63,7 +63,7 @@ public class DumpClass4 {
     }
 
     public void throwException() {
-        throw (RuntimeException) InvokerHelper.invokeConstructor("java.lang.RuntimeException", "Hello");
+        throw (RuntimeException) InvokerHelper.invokeConstructorOf("java.lang.RuntimeException", "Hello");
     }
 
     public void switchTest(int i) {

@@ -111,6 +111,14 @@ public class ProxyMetaClass extends MetaClass {
         });
     }
 
+    public Object invokeConstructorAt(final Class at, final Object[] arguments) {
+        return doCall(theClass, "ctor", arguments, new Callable() {
+            public Object call() {
+                return adaptee.invokeConstructorAt(at, arguments);
+            }
+        });
+    }
+
     // since Java has no Closures...
     private interface Callable{
         Object call();

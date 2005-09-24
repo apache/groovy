@@ -91,7 +91,7 @@ public class InvokeConstructorTest extends GroovyTestCase {
 
     protected Object invoke(String type, Object args) throws Throwable {
         try {
-            return invoker.invokeConstructor(type, args);
+            return invoker.invokeConstructorOf(type, args);
         }
         catch (InvokerInvocationException e) {
             throw e.getCause();
