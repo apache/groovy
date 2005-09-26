@@ -56,6 +56,28 @@ import org.w3c.dom.Node
                                 dom.element.appendChild(comment)
                             }
                          }
+        @Property piClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom ->
+                                attrs.each {target, instruction ->
+                                   def pi = null
+                                   if (instruction instanceof Map) {
+                                   def buf = new StringBuffer()
+                                      
+                                      instruction.each { name, value ->
+                                        if (value.toString().contains('"')) {
+                                          buf.append(" $name='$value'")
+                                        } else {
+                                          buf.append(" $name=\"$value\"" )                                        
+                                        }
+                                      }
+                                      pi = dom.document.createProcessingInstruction(target, buf.toString())
+                                    } else {
+                                      pi =dom.document.createProcessingInstruction(target, instruction)
+                                    }
+                                    if (pi != null) {
+                                      dom.element.appendChild(pi)
+                                    }
+                                  }
+                             }
         @Property noopClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom ->
                         if (body instanceof Closure) {
                             body()
@@ -158,7 +180,8 @@ import org.w3c.dom.Node
         StreamingDOMBuilder() {
             specialTags.putAll(['yield':noopClosure,
                                 'yieldUnescaped':noopClosure,
-                                'comment':commentClosure])
+                                'comment':commentClosure,
+                                'pi':piClosure])
 
             def nsSpecificTags = [':'                                          : [tagClosure, tagClosure, [:]],    // the default namespace
                               'http://www.w3.org/XML/1998/namespace'           : [tagClosure, tagClosure, [:]],

@@ -46,11 +46,29 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 
     class StreamingMarkupBuilder extends AbstractStreamingBuilder {
         @Property pendingStack = []
-        @Property commentClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
-                                      out.unescaped() << "<!--"
-                                      out.bodyText() << body
-                                      out.unescaped() << "-->"
-                                   }
+          @Property commentClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
+                                        out.unescaped() << "<!--"
+                                        out.bodyText() << body
+                                        out.unescaped() << "-->"
+                                     }
+          @Property piClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
+                                    attrs.each {target, instruction ->
+                                      out.unescaped() << "<?"
+                                      if (instruction instanceof Map) {
+                                        out.unescaped() << target
+                                        instruction.each { name, value ->
+                                          if (value.toString().contains('"')) {
+                                            out.unescaped() << " $name='$value'"
+                                          } else {
+                                            out.unescaped() << " $name=\"$value\""                                          
+                                          }
+                                        }
+                                      } else {
+                                        out.unescaped() << "$target $instruction"
+                                      }
+                                      out.unescaped() << "?>"
+                                    }
+                                 }
         @Property noopClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
                                       if (body instanceof Buildable) {
                                           body.build(doc)
@@ -132,7 +150,8 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
         StreamingMarkupBuilder() {
             specialTags.putAll(['yield':noopClosure,
                                 'yieldUnescaped':unescapedClosure,
-                                'comment':commentClosure])
+                                'comment':commentClosure,
+                                'pi':piClosure])
 
             def nsSpecificTags = [':'                                              : [tagClosure, tagClosure, [:]],    // the default namespace
                                   'http://www.w3.org/XML/1998/namespace'           : [tagClosure, tagClosure, [:]],
