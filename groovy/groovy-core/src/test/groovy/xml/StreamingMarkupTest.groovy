@@ -10,6 +10,7 @@ class StreamingMarkupTest extends groovy.xml.TestXmlSupport {
         def b = new StreamingMarkupBuilder()
         
         def m = {
+            delegate.mkp.pi("xml-stylesheet":[href:"mystyle.css", type:"text/css"])
             root1(a:5, b:7) {
                 elem1('hello1')
                 elem2('hello2')

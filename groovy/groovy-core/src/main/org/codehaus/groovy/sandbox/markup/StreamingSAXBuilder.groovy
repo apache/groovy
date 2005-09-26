@@ -54,6 +54,24 @@ import org.xml.sax.ext.LexicalHandler
                                 contentHandler.comment(body.toCharArray(), 0, body.length())
                             }
                          }
+        @Property piClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, contentHandler ->
+                                attrs.each {target, instruction ->
+                                   if (instruction instanceof Map) {
+                                   def buf = new StringBuffer()
+                                      
+                                      instruction.each { name, value ->
+                                        if (value.toString().contains('"')) {
+                                          buf.append(" $name='$value'")
+                                        } else {
+                                          buf.append(" $name=\"$value\"" )                                        
+                                        }
+                                      }
+                                      contentHandler.processingInstruction(target, buf.toString())
+                                    } else {
+                                      contentHandler.processingInstruction(target, instruction)
+                                    }
+                                  }
+                             }
         @Property noopClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, contentHandler ->
                         if (body instanceof Closure) {
                             body()
@@ -146,7 +164,8 @@ import org.xml.sax.ext.LexicalHandler
         StreamingSAXBuilder() {
             specialTags.putAll(['yield':noopClosure,
                                 'yieldUnescaped':noopClosure,
-                                'comment':commentClosure])
+                                'comment':commentClosure,
+                                'pi':piClosure])
 
             def nsSpecificTags = [':'                                          : [tagClosure, tagClosure, [:]],    // the default namespace
                                   'http://www.w3.org/XML/1998/namespace'           : [tagClosure, tagClosure, [:]],
