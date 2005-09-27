@@ -155,4 +155,17 @@ class GroovyClosureMethodsTest extends GroovyTestCase {
         assert status == true
     }
 
+    void testSplitEachLine() {
+        String s = """A B C D
+E F G H
+1 2 3 4
+"""
+        Reader reader = new StringReader(s)
+        def all_lines = []
+        reader.splitEachLine(" ") { list ->
+            all_lines << list
+        }
+        assert all_lines == [["A", "B", "C", "D"], ["E", "F", "G", "H"], ["1", "2", "3", "4"]]
+    }
+
 }
