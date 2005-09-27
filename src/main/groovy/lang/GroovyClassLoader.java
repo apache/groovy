@@ -562,7 +562,11 @@ public class GroovyClassLoader extends SecureClassLoader {
      *
      */
     public Class defineClass(String name, byte[] b) {
-        return super.defineClass(name, b, 0, b.length);
+        Class c = super.defineClass(name, b, 0, b.length);
+        synchronized (cache) {
+            cache.put(name, c);
+        }
+        return c;
     }
 
     /*
