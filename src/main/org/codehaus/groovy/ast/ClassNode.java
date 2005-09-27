@@ -635,6 +635,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
     
     public Type resolveClassName(Type type, String message) {
+        if (type.getTypeClass()!=null) return type;
         Type answer = null;
         if (type != null) {
             if (getType().equals(type) || getNameWithoutPackage().equals(type.getName())) {
