@@ -253,7 +253,7 @@ class ListTest extends GroovyTestCase {
             value = l.pop()
             fail("Should have thrown an exception")
         }
-        catch (UnsupportedOperationException e) {
+        catch (NoSuchElementException e) {
             println "Worked: caught expected exception: ${e}"
         }
     }
