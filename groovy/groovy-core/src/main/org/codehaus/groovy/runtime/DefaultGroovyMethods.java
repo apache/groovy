@@ -2385,11 +2385,11 @@ public class DefaultGroovyMethods {
      *
      * @param self a List
      * @return the item removed from the List
-     * @throws UnsupportedOperationException if the list is empty and you try to pop() it.
+     * @throws NoSuchElementException if the list is empty and you try to pop() it.
      */
     public static Object pop(List self) {
         if (self.isEmpty()) {
-            throw new UnsupportedOperationException("Cannot pop() an empty List");
+            throw new NoSuchElementException("Cannot pop() an empty List");
         }
         return self.remove(self.size() - 1);
     }
@@ -4797,8 +4797,6 @@ public class DefaultGroovyMethods {
         else
             br = new BufferedReader(self);
 
-        List args = new ArrayList();
-
         try {
             while (true) {
                 String line = br.readLine();
@@ -4806,9 +4804,7 @@ public class DefaultGroovyMethods {
                     break;
                 } else {
                     List vals = Arrays.asList(line.split(sep));
-                    args.clear();
-                    args.add(vals);
-                    closure.call(args);
+                    closure.call(vals);
                 }
             }
             br.close();

@@ -69,6 +69,7 @@ import java.util.Map;
  */
 public class Node implements java.io.Serializable {
 
+    private static final long serialVersionUID = 4121134753270542643L;
     private Node parent;
     private Object name;
     private Map attributes;
