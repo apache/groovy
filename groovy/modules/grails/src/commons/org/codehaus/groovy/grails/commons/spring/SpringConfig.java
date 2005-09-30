@@ -242,6 +242,7 @@ public class SpringConfig {
 		for (int i = 0; i < grailsDomainClasses.length; i++) {
 			GrailsDomainClass grailsDomainClass = grailsDomainClasses[i];
 			Collection constructorArguments = new ArrayList();
+			constructorArguments.add(SpringConfigUtils.createBeanReference("grailsApplication"));
 			constructorArguments.add(SpringConfigUtils.createLiteralValue(grailsDomainClass.getClazz().getName()));
 			constructorArguments.add(SpringConfigUtils.createBeanReference("sessionFactory"));
 			constructorArguments.add(classLoader);

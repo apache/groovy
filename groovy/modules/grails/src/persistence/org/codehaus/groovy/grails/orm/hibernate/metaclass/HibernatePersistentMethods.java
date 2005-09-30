@@ -18,6 +18,7 @@ package org.codehaus.groovy.grails.orm.hibernate.metaclass;
 import java.beans.IntrospectionException;
 import java.util.regex.Pattern;
 
+import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.metaclass.AbstractPersistentMethods;
 import org.hibernate.SessionFactory;
 
@@ -29,7 +30,7 @@ import org.hibernate.SessionFactory;
  */
 public class HibernatePersistentMethods extends AbstractPersistentMethods {
 
-	public HibernatePersistentMethods(Class theClass, SessionFactory sessionFactory, ClassLoader classLoader)
+	public HibernatePersistentMethods(GrailsApplication application, Class theClass, SessionFactory sessionFactory, ClassLoader classLoader)
 			throws IntrospectionException {
 		super(theClass);
 		// dynamic methods
@@ -40,7 +41,7 @@ public class HibernatePersistentMethods extends AbstractPersistentMethods {
 		// static methods
 		addStaticMethodInvocation(new FindPersistentMethod(sessionFactory,classLoader));
 		addStaticMethodInvocation(new FindAllPersistentMethod(sessionFactory, classLoader, Pattern.compile("^findAll$")));
-		addStaticMethodInvocation(new FindByPersistentMethod(sessionFactory, classLoader));
+		addStaticMethodInvocation(new FindByPersistentMethod(application,sessionFactory, classLoader));
 		addStaticMethodInvocation(new FindPersistentMethod(sessionFactory, classLoader));
 		addStaticMethodInvocation(new ListOrderByPersistentMethod(sessionFactory, classLoader));
 		addStaticMethodInvocation(new ListPersistentMethod(sessionFactory, classLoader));
