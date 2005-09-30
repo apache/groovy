@@ -6,6 +6,7 @@ import java.util.Map;
 
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyObject;
+import groovy.lang.MissingMethodException;
 
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.commons.GrailsDomainClass;
@@ -35,7 +36,7 @@ public class PersistentMethodTests extends AbstractDependencyInjectionSpringCont
 
 	public void testMethodSignatures() {
 		
-		FindByPersistentMethod findBy = new FindByPersistentMethod( null,new GroovyClassLoader());
+		FindByPersistentMethod findBy = new FindByPersistentMethod( grailsApplication,null,new GroovyClassLoader());
 		assertTrue(findBy.isMethodMatch("findByFirstName"));
 		assertTrue(findBy.isMethodMatch("findByFirstNameAndLastName"));
 		assertFalse(findBy.isMethodMatch("rubbish"));
@@ -135,7 +136,24 @@ public class PersistentMethodTests extends AbstractDependencyInjectionSpringCont
 		assertTrue(returnValue instanceof List);
 		
 		returnList = (List)returnValue;
-		assertEquals(1, returnList.size());		
+		assertEquals(1, returnList.size());
+		
+		// now lets test out some junk and make sure we get errors!
+		try {
+			returnList = (List)obj.getMetaClass().invokeStaticMethod(obj, "findByLastNameLike", new Object[] { new Boolean(false) });
+			fail("Should have thrown an exception for invalid arguments");
+		}
+		catch(MissingMethodException mme) {
+			//great!
+		}
+		// and the wrong number of arguments!
+		try {
+			returnList = (List)obj.getMetaClass().invokeStaticMethod(obj, "findByAgeBetween", new Object[] { new Integer(10) });
+			fail("Should have thrown an exception for invalid argument count");
+		}
+		catch(MissingMethodException mme) {
+			//great!
+		}		
 	}
 	
 	public void testGetPersistentMethod() {
