@@ -19,6 +19,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
@@ -43,10 +44,10 @@ public class FindByPersistentMethod extends AbstractClausedStaticPersistentMetho
 	private static final String OPERATOR_AND = "And";
 	
 	private static final String METHOD_PATTERN = "(findBy)(\\w+)";
-	private static final String[] OPERATORS = new String[]{ OPERATOR_AND };
+	private static final String[] OPERATORS = new String[]{ OPERATOR_AND, OPERATOR_OR };
 
-	public FindByPersistentMethod(SessionFactory sessionFactory, ClassLoader classLoader) {
- 		super(sessionFactory, classLoader, Pattern.compile( METHOD_PATTERN ),OPERATORS);
+	public FindByPersistentMethod(GrailsApplication application,SessionFactory sessionFactory, ClassLoader classLoader) {
+ 		super(application,sessionFactory, classLoader, Pattern.compile( METHOD_PATTERN ),OPERATORS);
 	}
 
 	protected Object doInvokeInternalWithExpressions(final Class clazz, String methodName, Object[] arguments, final List expressions) {
