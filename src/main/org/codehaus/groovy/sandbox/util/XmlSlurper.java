@@ -20,7 +20,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
@@ -160,10 +159,6 @@ public class XmlSlurper extends DefaultHandler {
 			if (atts.getURI(i).length() == 0) {
 				attributes.put(atts.getQName(i), atts.getValue(i));
 			} else {
-				//
-				// Note this is strictly incorrect the name is really localname + URI
-				// We need to figure out what to do with parameters in namespaces
-				//
         attributes.put(atts.getLocalName(i), atts.getValue(i));
         attributeNamespaces.put(atts.getLocalName(i), atts.getURI(i));
 			}
@@ -848,6 +843,54 @@ class AttributeCollection extends ElementCollection {
     throw new GroovyRuntimeException("Can't select element '" + property + "' from attribute '" + this.attributeName + "'");
   }
 
+  public ElementCollection element() {
+    return new ElementCollection() {
+      public ChildIterator iterator() {
+        return new ChildIterator() {
+          // TODO: filter this by attributename
+                    final ChildIterator iter = AttributeCollection.this.elements.iterator();
+                    Object element = nextWithAttribute();
+                    
+                    public boolean hasNext() {
+                      return this.element != null;
+                    }
+                    
+                    public Object next() {
+                    final Object result = this.element;
+                    
+                      this.element = nextWithAttribute();
+                      
+                      return result;
+                    }
+                    
+                    public void remove() {
+                      this.iter.remove();
+                    }
+                    
+                    public void findNextChild() {
+                      this.iter.findNextChild();
+                    }
+                    
+                    private Object nextWithAttribute() {
+                      while (this.iter.hasNext()) {
+                       final XmlList element = (XmlList)this.iter.next();
+                       
+                        if (element.attributes.containsKey(AttributeCollection.this.attributeName)) {
+                          return element;
+                        }
+                      }
+                      
+                      return null;
+                    }
+        };
+      }
+      
+      protected ElementCollection getResult(final String property) {
+        return null; //TODO: implement this
+      }
+    };
+  }
+  
   public ChildIterator iterator() {
     return new AttributeIterator(this.elements, this.attributeName);
   }
