@@ -80,9 +80,25 @@ import org.w3c.dom.Node
                              }
         @Property noopClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom ->
                         if (body instanceof Closure) {
-                            body()
+                          def body1 = body.clone()
+                          
+                          body1.delegate = this
+                          body1()
+                        } else if (body instanceof Buildable) {
+                              body.build(doc)
                         } else {
-                            dom.element.appendChild(dom.document.createTextNode(body))
+                          body.each {
+                            if (it instanceof Closure) {
+                              def body1 = it.clone()
+                              
+                              body1.delegate = this
+                              body1()
+                            } else if (it instanceof Buildable) {
+                              it.build(doc)
+                            } else {
+                              dom.element.appendChild(dom.document.createTextNode(it))
+                            }
+                          }
                         }
                       }
         @Property tagClosure = {tag, doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom ->

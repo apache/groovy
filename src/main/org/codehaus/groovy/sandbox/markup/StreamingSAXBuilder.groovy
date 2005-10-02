@@ -74,9 +74,26 @@ import org.xml.sax.ext.LexicalHandler
                              }
         @Property noopClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, contentHandler ->
                         if (body instanceof Closure) {
-                            body()
+                          def body1 = body.clone()
+                          
+                          body1.delegate = this
+                          body1()
+                        } else if (body instanceof Buildable) {
+                          body.build(doc)
                         } else {
-                            contentHandler.characters(body.toCharArray(), 0, body.length())
+                          body.each {
+                            if (it instanceof Closure) {
+                              def body1 = it.clone()
+                              
+                              body1.delegate = this
+                              body1()
+                            } else if (it instanceof Buildable) {
+                              it.build(doc)
+                            } else {
+                                def chars = it.toCharArray()
+                                contentHandler.characters(chars, 0, chars.length())
+                              }
+                            }
                         }
                       }
         @Property tagClosure = {tag, doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, contentHandler ->
