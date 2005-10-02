@@ -140,10 +140,26 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
                                       pendingStack.add pendingNamespaces.clone()
                                       pendingNamespaces.clear()
           
-                                      if (body instanceof Buildable) {
+                                      if (body instanceof Closure) {
+                                        def body1 = body.clone()
+                                        
+                                        body1.delegate = this
+                                        body1()
+                                      } else if (body instanceof Buildable) {
                                           body.build(doc)
                                       } else {
-                                          out.bodyText() << body
+                                          body.each {
+                                            if (it instanceof Closure) {
+                                              def body1 = it.clone()
+                                              
+                                              body1.delegate = this
+                                              body1()
+                                            } else if (it instanceof Buildable) {
+                                              it.build(doc)
+                                            } else {
+                                              out.bodyText() << it
+                                            }
+                                          }
                                       }
           
                                       pendingNamespaces.clear()

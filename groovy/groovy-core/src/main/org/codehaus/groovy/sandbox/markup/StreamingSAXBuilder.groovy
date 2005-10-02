@@ -154,9 +154,26 @@ import org.xml.sax.ext.LexicalHandler
                             pendingNamespaces.clear()
 
                             if (body instanceof Closure) {
-                                body()
+                              def body1 = body.clone()
+                              
+                              body1.delegate = this
+                              body1()
+                            } else if (body instanceof Buildable) {
+                              body.build(doc)
                             } else {
-                                contentHandler.characters(body.toCharArray(), 0, body.length())
+                              body.each {
+                                if (it instanceof Closure) {
+                                  def body1 = it.clone()
+                                  
+                                  body1.delegate = this
+                                  body1()
+                                } else if (it instanceof Buildable) {
+                                  it.build(doc)
+                                } else {
+                                    def chars = it.toCharArray()
+                                    contentHandler.characters(chars, 0, chars.length())
+                                  }
+                                }
                             }
 
                             pendingNamespaces.clear()
