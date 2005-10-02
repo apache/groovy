@@ -70,10 +70,26 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
                                     }
                                  }
         @Property noopClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
-                                      if (body instanceof Buildable) {
+                                      if (body instanceof Closure) {
+                                        def body1 = body.clone()
+                                        
+                                        body1.delegate = this
+                                        body1()
+                                      } else if (body instanceof Buildable) {
                                           body.build(doc)
                                       } else {
-                                          out.bodyText() << body
+                                          body.each {
+                                            if (it instanceof Closure) {
+                                              def body1 = it.clone()
+                                              
+                                              body1.delegate = this
+                                              body1()
+                                            } else if (it instanceof Buildable) {
+                                              it.build(doc)
+                                            } else {
+                                              out.bodyText() << it
+                                            }
+                                          }
                                       }
                                 }
         @Property unescapedClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
