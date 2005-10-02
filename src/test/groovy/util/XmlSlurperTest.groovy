@@ -42,6 +42,6 @@ class XmlSlurperTest extends GroovyTestCase {
         //test parent()
         assert gromit.likes.parent()==gromit
         assert gromit.parent()==node
-        assert node.parent()==null
+        assert node.parent()==node
     }
 }
