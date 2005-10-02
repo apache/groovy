@@ -22,6 +22,8 @@ import groovy.lang.GroovyObjectSupport;
 import groovy.lang.Writable;
 
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 
 import org.codehaus.groovy.sandbox.markup.Buildable;
 
@@ -76,6 +78,17 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
    */
   public boolean equals(Object obj) {
     return text().equals(obj.toString());
+  }
+  
+  public List list() {
+  final Iterator iter =  iterator();
+  final List result = new LinkedList();
+  
+    while (iter.hasNext()) {
+      result.add(iter.next());
+    }
+    
+    return result;
   }
 
   public abstract int size();
