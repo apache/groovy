@@ -36,16 +36,25 @@ class NodeChildren extends GPathResult {
   /**
    * @param parent
    * @param name
+   * @param namespacePrefix
+   */
+  public NodeChildren(final GPathResult parent, final String name, final String namespacePrefix) {
+    super(parent, name, namespacePrefix);
+  }
+  
+  /**
+   * @param parent
+   * @param name
    */
   public NodeChildren(final GPathResult parent, final String name) {
-    super(parent, name);
+    this(parent, name, "*");
   }
   
   /**
    * @param parent
    */
   public NodeChildren(final GPathResult parent) {
-    super(parent, "*");
+    this(parent, "*");
   }
 
   /* (non-Javadoc)
@@ -100,7 +109,12 @@ class NodeChildren extends GPathResult {
                       final Iterator result = node.childNodes();
                       
                         if (result.hasNext()) {
-                          return result;
+                          if ("*".equals(NodeChildren.this.namespacePrefix) ||
+                             ("".equals(NodeChildren.this.namespacePrefix) && "".equals(node.namespaceURI())) ||
+                             node.namespaceURI().equals(NodeChildren.this.namespaceMap.get(NodeChildren.this.namespacePrefix)))
+                          {
+                            return result;
+                          }
                         }
                       }
                     }
@@ -126,7 +140,12 @@ class NodeChildren extends GPathResult {
                         final Node node = (Node)iter.next();
                         
                           if (NodeChildren.this.name.equals(node.name())) {
-                            return node;
+                            if ("*".equals(NodeChildren.this.namespacePrefix) ||
+                                ("".equals(NodeChildren.this.namespacePrefix) && "".equals(node.namespaceURI())) ||
+                                node.namespaceURI().equals(NodeChildren.this.namespaceMap.get(NodeChildren.this.namespacePrefix)))
+                             {
+                               return node;
+                             }
                           }
                         }
                         
