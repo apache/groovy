@@ -4,7 +4,7 @@
   <groupId>groovy</groupId>
   <artifactId>gram</artifactId>
   <name>gram</name>
-  <currentVersion>1.1-SNAPSHOT</currentVersion>
+  <currentVersion>1.1</currentVersion>
   <organization>
     <name>The Codehaus</name>
     <url>http://codehaus.org</url>
@@ -43,7 +43,7 @@
     <dependency>
       <groupId>groovy</groupId>
       <artifactId>groovy-all</artifactId>
-      <version>1.0-jsr-01</version>
+      <version>1.0-jsr-03</version>
       <type>jar</type>
       <properties/>
     </dependency>

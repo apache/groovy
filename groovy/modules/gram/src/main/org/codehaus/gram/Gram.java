@@ -8,6 +8,7 @@ import org.codehaus.jam.JamServiceParams;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * A helper service for invoking Groovy scripts based on a JAM service
@@ -35,8 +36,8 @@ public class Gram {
             Gram gram = new Gram(service);
             for (int i = 1; i < args.length; i++) {
                 String script = args[i];
-                System.out.println("Evaluting Groovy script: " + script);
-                gram.execute(new File(script));
+                System.out.println("Evaluating Groovy script: " + script);
+                gram.execute(script);
             }
         }
         catch (Exception e) {
@@ -49,10 +50,28 @@ public class Gram {
         this.jam = jam;
     }
 
+    public void execute(String script) throws CompilationFailedException, IOException {
+        File file = new File(script);
+        if (file.isFile()) {
+            execute(file);
+        }
+        else {
+            // lets try load the script on the classpath
+            InputStream in = getClass().getClassLoader().getResourceAsStream(script);
+            if (in == null) {
+                in = Thread.currentThread().getContextClassLoader().getResourceAsStream(script);
+                if (in == null) {
+                    throw new IOException("No script called: " + script + " could be found on the classpath or the file system");
+                }
+            }
+            GroovyShell shell = createShell();
+            shell.evaluate(in, script);
+        }
+    }
+
     public void execute(File script) throws IOException, CompilationFailedException {
         GroovyShell shell = createShell();
         shell.evaluate(script);
-
     }
 
     protected GroovyShell createShell() {
