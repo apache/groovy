@@ -68,4 +68,60 @@ class BooleanOperationTest extends GroovyTestCase {
 	    value = x < 2
 	    assert value == false
 	}
+	
+	
+	void testBooleanOps() {
+	    boolean x = true
+	    boolean y = false
+	    assert (x & x) == true
+	    assert (x & y) == false
+	    assert (y & x) == false
+	    assert (y & y) == false
+
+	    assert (x | x) == true
+	    assert (x | y) == true
+	    assert (y | x) == true
+	    assert (y | y) == false
+
+	    assert (x ^ x) == false
+	    assert (x ^ y) == true
+	    assert (y ^ x) == true
+	    assert (y ^ y) == false
+
+	    assert (!x) == false
+	    assert (!y) == true
+	}
+
+
+	void testBooleanAssignOps() {
+	    boolean z = true
+	    z &= true
+	    assert z == true
+	    z &= false
+	    assert z == false
+
+	    z = true
+	    z |= true
+	    assert z == true
+	    z |= false
+	    assert z == true
+	    z = false
+	    z |= false
+	    assert z == false
+	    z |= true
+	    assert z == true
+
+        z = true
+        z ^= true
+        assert z == false
+        z ^= true
+        assert z == true
+        z ^= false
+        assert z == true
+        z ^= true
+        assert z == false
+        z ^= false
+        assert z == false
+	}
+
 }

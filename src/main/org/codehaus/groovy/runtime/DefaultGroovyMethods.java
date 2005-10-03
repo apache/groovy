@@ -4657,6 +4657,25 @@ public class DefaultGroovyMethods {
         return plus(self, -days);
     }
 
+    // Boolean based methods
+    //-------------------------------------------------------------------------
+
+    public static Boolean and(Boolean left, Boolean right) {
+        return Boolean.valueOf(left.booleanValue() & right.booleanValue());
+    }
+
+    public static Boolean or(Boolean left, Boolean right) {
+        return Boolean.valueOf(left.booleanValue() | right.booleanValue());
+    }
+
+    public static Boolean xor(Boolean left, Boolean right) {
+        return Boolean.valueOf(left.booleanValue() ^ right.booleanValue());
+    }
+
+//    public static Boolean negate(Boolean left) {
+//        return Boolean.valueOf(!left.booleanValue());
+//    }
+
     // File and stream based methods
     //-------------------------------------------------------------------------
 
