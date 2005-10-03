@@ -252,7 +252,7 @@ public class UberTestCase extends TestCase {
         suite.addTestSuite(UseStaticInClosureBug.class);
         suite.addTestSuite(VarargsMethodTest.class);
         suite.addTestSuite(VariableScopingBug.class);
-        suite.addTestSuite(VariblePrecedence.class);
+        suite.addTestSuite(VariablePrecedence.class);
         suite.addTestSuite(VerbatimGStringTest.class);
         suite.addTestSuite(VerboseTreeTest.class);
         suite.addTestSuite(WhileLoopTest.class);

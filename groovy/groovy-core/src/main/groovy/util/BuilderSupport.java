@@ -86,7 +86,103 @@ public abstract class BuilderSupport extends GroovyObjectSupport {
         return doInvokeMethod(methodName, name, args);
     }
 
+    public Object invokeMethodAt(Class at, String methodName, Object args) {
+        Object name = getName(methodName);
+        return doInvokeMethod(methodName, name, args);
+    }
+
     protected Object doInvokeMethod(String methodName, Object name, Object args) {
+        Object node = null;
+        Closure closure = null;
+        List list = InvokerHelper.asList(args);
+
+        //System.out.println("Called invokeMethod with name: " + name + " arguments: " + list);
+
+        switch (list.size()) {
+        		case 0:
+	    	            node = proxyBuilder.createNode(name);
+        		    break;
+        	    	case 1:
+        	    	{
+        	    	    	Object object = list.get(0);
+        	    	    	if (object instanceof Map) {
+        	    	    	    node = proxyBuilder.createNode(name, (Map) object);
+        	    	    	} else if (object instanceof Closure) {
+        	    	    	    closure = (Closure) object;
+        	    	    	    node = proxyBuilder.createNode(name);
+        	    	    	} else {
+        	    	    	    node = proxyBuilder.createNode(name, object);
+        	    	    	}
+        	    	}
+        	    	break;
+        	    	case 2:
+        	    	{
+        	    	    Object object1 = list.get(0);
+    	    	        Object object2 = list.get(1);
+        	    	    if (object1 instanceof Map) {
+        	    	        if (object2 instanceof Closure) {
+        	    	            closure = (Closure) object2;
+        	    	            node = proxyBuilder.createNode(name, (Map) object1);
+        	    	        } else {
+        	    	            node = proxyBuilder.createNode(name, (Map) object1, object2);
+        	    	        }
+        	    	    } else {
+        	    	        if (object2 instanceof Closure) {
+        	    	            closure = (Closure) object2;
+        	    	            node = proxyBuilder.createNode(name, object1);
+				} else if (object2 instanceof Map) {
+				    node = proxyBuilder.createNode(name, (Map) object2, object1);
+        	    	        } else {
+				    throw new MissingMethodException(name.toString(), getClass(), list.toArray());
+				}
+        	    	    }
+        	    	}
+        	    	break;
+        	    	case 3:
+        	    	{
+        	    	    Object arg0 = list.get(0);
+        	    	    Object arg1 = list.get(1);
+        	    	    Object arg2 = list.get(2);
+        	    	    if (arg0 instanceof Map && arg2 instanceof Closure) {
+        	    	        closure = (Closure) arg2;
+        	    	        node = proxyBuilder.createNode(name, (Map) arg0, arg1);
+			    } else if (arg1 instanceof Map && arg2 instanceof Closure) {
+        	    	        closure = (Closure) arg2;
+        	    	        node = proxyBuilder.createNode(name, (Map) arg1, arg0);
+			    } else {
+				throw new MissingMethodException(name.toString(), getClass(), list.toArray());
+			   }
+        	    	}
+        	    	break;
+        	    	default:
+        	    	{
+			    throw new MissingMethodException(name.toString(), getClass(), list.toArray());
+			}
+
+        }
+
+        if (current != null) {
+            proxyBuilder.setParent(current, node);
+        }
+
+        if (closure != null) {
+            // push new node on stack
+            Object oldCurrent = current;
+            current = node;
+
+            // lets register the builder as the delegate
+            setClosureDelegate(closure, node);
+            closure.call();
+
+            current = oldCurrent;
+        }
+
+        proxyBuilder.nodeCompleted(current, node);
+        return node;
+    }
+
+
+    protected Object doInvokeMethodAt(Class at, String methodName, Object name, Object args) {
         Object node = null;
         Closure closure = null;
         List list = InvokerHelper.asList(args);

@@ -120,6 +120,91 @@ public class MetaMethod implements Cloneable {
         }
     }
 
+    public Object invokeAt(Class at, final Object object, final Object[] arguments) throws Exception {
+        if (reflector != null) {
+            return reflector.invoke(this, object, arguments);
+        }
+        else {
+            if (at != null && object != null) {
+                boolean accessible = accessibleToThisMethod(at);
+                if ( !accessible) {
+                    throw new IllegalAccessException("Tried from the class [" + at + "] to a " + makeAccessString(modifiers) + " method [" + this.method + "]");
+                }
+                return invoke(object, arguments);
+            }
+            else {
+                return invoke(object, arguments);
+            }
+        }
+    }
+
+   protected String makeAccessString(int mod) {
+       if (Modifier.isPublic(mod))
+           return "public";
+       else if (Modifier.isPrivate(mod))
+           return "private";
+       else if (Modifier.isProtected(mod))
+           return "protected";
+       else
+           return "packaged";
+   }
+
+   protected boolean accessibleToThisMethod(final Class at) {
+       boolean accessible = false;
+
+       if (Modifier.isPublic(modifiers)) {
+           accessible = true;
+       }
+       else if (Modifier.isPrivate(modifiers)) {
+           accessible = at.getName().equals(declaringClass.getName());
+       }
+       else if ( Modifier.isProtected(modifiers) ) {
+           if ( at.getPackage() == null && declaringClass.getPackage() == null ) {
+               accessible = true;
+           }
+           else if ( at.getPackage() == null && declaringClass.getPackage() != null ) {
+               accessible = false;
+           }
+           else if ( at.getPackage() != null && declaringClass.getPackage() == null ) {
+               accessible = false;
+           }
+           else if ( at.getPackage().equals(declaringClass.getPackage()) ) {
+               accessible = true;
+           }
+
+           if ( !accessible ) {
+               boolean flag = false;
+               Class clazz = at;
+               while ( !flag && clazz != null ) {
+                   if (clazz.equals(declaringClass) ) {
+                       flag = true;
+                       break;
+                   }
+                   if (clazz.equals(Object.class) ) {
+                       break;
+                   }
+                   clazz = clazz.getSuperclass();
+               }
+               accessible = flag;
+           }
+       }
+       else {
+           if ( at.getPackage() == null && declaringClass.getPackage() == null ) {
+               accessible = true;
+           }
+           else if ( at.getPackage() == null && declaringClass.getPackage() != null ) {
+               accessible = false;
+           }
+           else if ( at.getPackage() != null && declaringClass.getPackage() == null ) {
+               accessible = false;
+           }
+           else if ( at.getPackage().equals(declaringClass.getPackage()) ) {
+               accessible = true;
+           }
+       }
+       return accessible;
+   }
+
     public Class getDeclaringClass() {
         return declaringClass;
     }

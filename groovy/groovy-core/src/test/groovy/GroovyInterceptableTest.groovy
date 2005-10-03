@@ -34,5 +34,14 @@ class GI implements GroovyInterceptable {
         else
             return 1
     }
+
+    Object invokeMethodAt(Class at, String name, Object args) {
+        if ("toString" == name)
+            return "invokeMethodToString"
+        else if ("someInt" == name)
+            return ReflectionMethodInvoker.invokeAt(at, this, name, args)
+        else
+            return 1
+    }
 }
 

@@ -66,4 +66,30 @@ public class ReflectionMetaMethod extends MetaMethod {
 
         return method.invoke(object, arguments);
     }
+
+    public Object invokeAt(Class at, Object object, Object[] arguments) throws Exception {
+        boolean accessible = true;
+        if (at != null && object != null) {
+            accessible = accessibleToThisMethod(at);
+        }
+        if ( !accessible) {
+             throw new IllegalAccessException("Illegal access from the class [" + at + "] to a " + makeAccessString(this.method.getModifiers()) + " method [" + this.method + "]");
+        }
+
+    	if ( !alreadySetAccessible ) {
+	    	AccessController.doPrivileged(new PrivilegedAction() {
+	    		public Object run() {
+	    			method.setAccessible(true);
+	                return null;
+	    		}
+	    	});
+	    	alreadySetAccessible = true;
+    	}
+
+        //        System.out.println("About to invoke method: " + method);
+        //        System.out.println("Object: " + object);
+        //        System.out.println("Using arguments: " + InvokerHelper.toString(arguments));
+
+        return method.invoke(object, arguments);
+    }
 }

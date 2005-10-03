@@ -168,6 +168,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
             // don't do anything as the base class implements the invokeMethod
             if (!addDelegateObject) {
+
                 node.addSyntheticMethod(
                     "invokeMethod",
                     ACC_PUBLIC,
@@ -187,6 +188,29 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                                             VariableExpression.THIS_EXPRESSION,
                                             new VariableExpression("method"),
                                             new VariableExpression("arguments")})))
+                }));
+
+                node.addSyntheticMethod(
+                    "invokeMethodAt",
+                    ACC_PUBLIC,
+                    Type.OBJECT_TYPE,
+                    new Parameter[] {
+                        new Parameter(Type.makeType(Class.class), "at"),
+                        new Parameter(Type.makeType(String.class), "method2"),
+                        new Parameter(Type.OBJECT_TYPE, "arguments2")},
+                    new BlockStatement(
+                        new Statement[] {
+                            initMetaClassField,
+                            new ReturnStatement(
+                                new MethodCallExpression(
+                                    metaClassVar,
+                                    "invokeMethodAt",
+                                    new ArgumentListExpression(
+                                        new Expression[] {
+                                            VariableExpression.THIS_EXPRESSION,
+                                            new VariableExpression("at"),
+                                            new VariableExpression("method2"),
+                                            new VariableExpression("arguments2")})))
                 }));
 
                 if (!node.isScript()) {

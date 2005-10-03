@@ -53,6 +53,14 @@ public class Tt1gi extends Tt1 implements GroovyObject, GroovyInterceptable {
     }
   }
 
+  public Object invokeMethodAt(final Class at, final String name, final Object args) {
+    if ("x".equals(name)) {
+      return "dynamic method";
+    } else {
+      return this.metaClass.invokeMethodAt(at, this, name, args);
+    }
+  }
+
   public void setMetaClass(final MetaClass metaClass) {
     this.metaClass = metaClass;
   }

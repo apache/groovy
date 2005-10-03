@@ -111,6 +111,6 @@ class Attributes extends NodeChildren {
    */
   public void build(GroovyObject builder) {
     builder.getProperty("mkp");
-    final List namespaces = (List)builder.invokeMethod("yield", new Object[]{text()});
+    final List namespaces = (List)builder.invokeMethodAt(this.getClass(), "yield", new Object[]{text()});
   }
 }
