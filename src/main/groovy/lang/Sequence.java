@@ -183,7 +183,7 @@ public class Sequence extends ArrayList implements GroovyObject {
     //-------------------------------------------------------------------------
     public Object invokeMethod(String name, Object args) {
         try {
-        return getMetaClass().invokeMethod(this, name, args);
+            return getMetaClass().invokeMethod(this, name, args);
         }
         catch (MissingMethodException e) {
             // lets apply the method to each item in the collection
@@ -191,6 +191,22 @@ public class Sequence extends ArrayList implements GroovyObject {
             for (Iterator iter = iterator(); iter.hasNext(); ) {
                 Object element = iter.next();
                 Object value = InvokerHelper.invokeMethod(element, name, args);
+                answer.add(value);
+            }
+            return answer;
+        }
+    }
+
+    public Object invokeMethodAt(Class at, String name, Object args) {
+        try {
+            return getMetaClass().invokeMethodAt(at, this, name, args);
+        }
+        catch (MissingMethodException e) {
+            // lets apply the method to each item in the collection
+            List answer = new ArrayList(size());
+            for (Iterator iter = iterator(); iter.hasNext(); ) {
+                Object element = iter.next();
+                Object value = InvokerHelper.invokeMethodAt(at, element, name, args);
                 answer.add(value);
             }
             return answer;

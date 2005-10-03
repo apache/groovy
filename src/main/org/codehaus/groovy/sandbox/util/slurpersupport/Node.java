@@ -185,17 +185,17 @@ public class Node extends GPathResult {
                         };
     
     if (this.namespaceURI.length() == 0 && this.attributeNamespaces.isEmpty()) {
-      builder.invokeMethod(this.name, new Object[]{this.attributes, rest});
+      builder.invokeMethodAt(this.getClass(), this.name, new Object[]{this.attributes, rest});
     } else {
       builder.getProperty("mkp");
-      final List namespaces = (List)builder.invokeMethod("getNamespaces", new Object[]{});
+      final List namespaces = (List)builder.invokeMethodAt(this.getClass(), "getNamespaces", new Object[]{});
       
       final Map current = (Map)namespaces.get(0);
       final Map pending = (Map)namespaces.get(1);
       
       if (this.attributeNamespaces.isEmpty()) {     
         builder.getProperty(getTagFor(this.namespaceURI, current, pending, builder));
-        builder.invokeMethod(this.name, new Object[]{this.attributes, rest});
+        builder.invokeMethodAt(this.getClass(), this.name, new Object[]{this.attributes, rest});
       } else {
       final Map attributesWithNamespaces = new HashMap(this.attributes);
       final Iterator attrs = this.attributes.keySet().iterator();
@@ -210,7 +210,7 @@ public class Node extends GPathResult {
         }
         
         builder.getProperty(getTagFor(this.namespaceURI, current, pending, builder));
-        builder.invokeMethod(this.name, new Object[]{attributesWithNamespaces, rest});
+        builder.invokeMethodAt(this.getClass(), this.name, new Object[]{attributesWithNamespaces, rest});
       }
     }   
   }
@@ -237,7 +237,8 @@ public class Node extends GPathResult {
     final Map newNamespace = new HashMap();
     newNamespace.put(tag, namespaceURI);
     builder.getProperty("mkp");
-    builder.invokeMethod("declareNamespace", new Object[]{newNamespace});
+    /// builder.invokeMethod("declareNamespace", new Object[]{newNamespace});
+    builder.invokeMethodAt(Node.class, "declareNamespace", new Object[]{newNamespace});
     
     return tag;
   }
@@ -268,7 +269,7 @@ public class Node extends GPathResult {
         ((Buildable)child).build(builder);
       } else {
         builder.getProperty("mkp");
-        builder.invokeMethod("yield", new Object[]{child});
+        builder.invokeMethodAt(this.getClass(), "yield", new Object[]{child});
       }
     }
   }

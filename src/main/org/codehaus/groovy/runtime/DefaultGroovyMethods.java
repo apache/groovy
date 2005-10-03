@@ -468,7 +468,7 @@ public class DefaultGroovyMethods {
      * Provide a dynamic method invocation method which can be overloaded in
      * classes to implement dynamic proxies easily.
      */
-    public static Object invokeMethod(Object object, String method, Object arguments) {
+    public static Object invokeMethodAt(Class at, Object object, String method, Object arguments) {
         return InvokerHelper.invokeMethod(object, method, arguments);
     }
 
@@ -3465,6 +3465,19 @@ public class DefaultGroovyMethods {
      */
     public static boolean contains(String self, String text) {
         int idx = self.indexOf(text);
+        return idx >= 0;
+    }
+
+    /**
+     * Provide an implementation of contains() like Collection to make GStrings more polymorphic
+     * This method is not required on JDK 1.5 onwards
+     *
+     * @param self a GString
+     * @param text a String to look for
+     * @return true if this gstring contains the given text
+     */
+    public static boolean contains(GString self, String text) {
+        int idx = self.toString().indexOf(text);
         return idx >= 0;
     }
 

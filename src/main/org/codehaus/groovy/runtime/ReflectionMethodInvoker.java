@@ -46,6 +46,7 @@
 package org.codehaus.groovy.runtime;
 
 import java.lang.reflect.Method;
+import groovy.lang.MetaMethod;
 
 /**
  * Utility class to call methods through reflection, and falls through using the <code>Invoker</code> to call the method if it fails.
@@ -76,6 +77,20 @@ public class ReflectionMethodInvoker {
             return method.invoke(object, parameters);
         } catch (Throwable t) {
             return InvokerHelper.invokeMethod(object, methodName,  parameters);
+        }
+    }
+
+    public static Object invokeAt(Class at, Object object, String methodName, Object[] parameters) {
+        try {
+            Class[] classTypes = new Class[parameters.length];
+            for (int i = 0; i < classTypes.length; i++) {
+                classTypes[i] = parameters[i].getClass();
+            }
+            Method method = object.getClass().getMethod(methodName, classTypes);
+            MetaMethod metaMethod = new MetaMethod(method);
+            return metaMethod.invokeAt(at, object, parameters);
+        } catch (Throwable t) {
+            return InvokerHelper.invokeMethodAt(at, object, methodName,  parameters);
         }
     }
 

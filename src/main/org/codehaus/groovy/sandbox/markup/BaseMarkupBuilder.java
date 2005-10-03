@@ -127,6 +127,57 @@ public class BaseMarkupBuilder extends Builder {
 			}
 		}
 		
+		public Object invokeMethodAt(final Class at, final String name, final Object args) {
+			final Object[] arguments = (Object[]) args;
+			Map attrs = Collections.EMPTY_MAP;
+			Object body = null;
+			
+			
+			//
+			// Sort the parameters out
+			//
+			for (int i = 0; i != arguments.length; i++) {
+				final Object arg = arguments[i];
+				
+				if (arg instanceof Map) {
+					attrs = (Map)arg;
+				} else if (arg instanceof Closure) {
+					final Closure c = ((Closure) arg);
+					
+					c.setDelegate(this);
+					body = c.asWritable();
+				} else {
+					body = arg;
+				}
+			}
+			
+			//
+			// call the closure corresponding to the tag
+			//
+			final Object uri;
+			
+			if (this.pendingNamespaces.containsKey(this.prefix)) {
+				uri = this.pendingNamespaces.get(this.prefix);
+			} else if (this.namespaces.containsKey(this.prefix)) {
+				uri = this.namespaces.get(this.prefix);
+			} else {
+				uri = ":";
+			}
+			
+			final Object[] info  = (Object[])this.namespaceSpecificTags.get(uri);
+			final Map tagMap = (Map)info[2];
+			final Closure defaultTagClosure = (Closure)info[0];
+			
+			final String prefix = this.prefix;
+			this.prefix = "";
+			
+			if (tagMap.containsKey(name)) {
+				return ((Closure)tagMap.get(name)).call(new Object[]{this, this.pendingNamespaces, this.namespaces, this.namespaceSpecificTags, prefix, attrs, body, this.out});
+			} else {
+				return defaultTagClosure.call(new Object[]{name, this, this.pendingNamespaces, this.namespaces, this.namespaceSpecificTags, prefix, attrs, body, this.out});		
+			}
+		}
+		
 		/* (non-Javadoc)
 		 * @see groovy.lang.GroovyObject#getProperty(java.lang.String)
 		 */

@@ -69,6 +69,10 @@ public abstract class GroovyObjectSupport implements GroovyObject {
          metaClass.setProperty(this, property, newValue);
     }
 
+    public Object invokeMethodAt(Class at, String name, Object args) {
+        return metaClass.invokeMethodAt(at, this, name, args);
+    }
+    
     public Object invokeMethod(String name, Object args) {
         return metaClass.invokeMethod(this, name, args);
     }

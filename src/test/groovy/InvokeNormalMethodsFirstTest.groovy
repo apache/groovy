@@ -39,7 +39,7 @@ class InvokeNormalMethodsFirstTest extends GroovyTestCase {
         def invokeResult = w.nonExistingMethod(str)
 
         assert staticResult == str
-        assert invokeResult == "invokerMethod call"
+        assert invokeResult == "invokerMethodAt call"
     }
 }
 
@@ -56,5 +56,9 @@ class Wacky {
 
     Object invokeMethod(String name, Object args) {
         return "invokerMethod call"
+    }
+
+    Object invokeMethodAt(Class at, String name, Object args) {
+        return "invokerMethodAt call"
     }
 }

@@ -84,4 +84,9 @@ public class GroovyLog extends GroovyObjectSupport {
         System.out.println(prefix + name + "] " + args);
         return null;
     }
+
+    public Object invokeMethodAt(Class at, String name, Object args) {
+        System.out.println("from " + at + " " + prefix + name + "] " + args);
+        return null;
+    }
 }
