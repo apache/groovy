@@ -2,7 +2,7 @@
  * @author John Wilson
  * @version $Revision$
  */
-class VariablePrecedence extends GroovyTestCase {
+class VariblePrecedence extends GroovyTestCase {
     
     void testVariablePrecedence() {
  

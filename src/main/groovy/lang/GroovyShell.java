@@ -352,7 +352,7 @@ public class GroovyShell extends GroovyObjectSupport {
             return null;
         }
         // if that main method exist, invoke it
-        return InvokerHelper.invokeMethodAt(scriptClass, scriptClass, "main", new Object[]{args});
+        return InvokerHelper.invokeMethod(scriptClass, "main", new Object[]{args});
     }
 
     /**

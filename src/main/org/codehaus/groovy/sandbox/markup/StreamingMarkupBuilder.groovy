@@ -137,13 +137,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
                                   } else {
                                       out << ">"
           
-                                      ///
-                                      // TODO:
-                                      //    The java.util.AbstractMap.clone() is a protected method,
-                                      //     and so pendingNamespaces.clone() is an illegal access.
-                                      /// pendingStack.add pendingNamespaces.clone()
-                                      pendingStack.add( new HashMap(pendingNamespaces) )
-                                      ///
+                                      pendingStack.add pendingNamespaces.clone()
                                       pendingNamespaces.clear()
           
                                       if (body instanceof Closure) {

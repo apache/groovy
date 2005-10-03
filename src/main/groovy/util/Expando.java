@@ -136,25 +136,6 @@ public class Expando extends GroovyObjectSupport {
         
     }
     
-    public Object invokeMethodAt(Class at, String name, Object args) {
-        try {
-            return super.invokeMethodAt(at, name, args);
-        }
-        catch (GroovyRuntimeException e) {
-            // br should get a "native" property match first. getProperty includes such fall-back logic
-            Object value = this.getProperty(name);
-            if (value instanceof Closure) {
-                Closure closure = (Closure) value;
-                closure.setDelegate(this);
-                return closure.call((Object[]) args);
-            }
-            else {
-                throw e;
-            }
-        }
-        
-    }
-    
     /**
      * This allows toString to be overridden by a closure <i>field</i> method attached
      * to the expando object.

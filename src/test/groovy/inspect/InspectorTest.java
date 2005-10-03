@@ -55,12 +55,11 @@ public class InspectorTest extends TestCase implements Serializable {
         }
         fail("there should have been at least one static method in this TestCase, e.g. 'fail'.");
     }
-
     public void testMetaMethods() {
         Inspector insp = new Inspector(new Object());
         Object[] metaMethods = insp.getMetaMethods();
-        assertEquals(30, metaMethods.length);
-        String[] names = { "sleep", "sleep", "println", "println", "println", "find", "print", "print", "each",
+        assertEquals(31, metaMethods.length);
+        String[] names = { "sleep", "sleep", "println", "println", "println", "find", "print", "print", "each", "invokeMethod",
                            "inspect", "is", "isCase", "identity", "getAt", "putAt", "dump", "getMetaPropertyValues",  "getProperties",
                            "use", "use", "printf", "printf", "eachWithIndex", "every", "any", "grep", "collect", "collect", "findAll", "findIndexOf"
                          };

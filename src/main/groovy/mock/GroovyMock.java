@@ -26,23 +26,9 @@ public class GroovyMock extends GroovyObjectSupport implements Verifiable {
         public Object invokeMethod(String name, Object args) {
             return callMethod(name, args);
         }
-
-        public Object invokeMethodAt(Class at, String name, Object args) {
-            return callMethod(name, args);
-        }
     };
 
     public Object invokeMethod(String name, Object args) {
-        if (name.equals("verify")) {
-            verify();
-        }
-        else {
-            expectMethod(name, args);
-        }
-        return null;
-    }
-
-    public Object invokeMethodAt(Class at, String name, Object args) {
         if (name.equals("verify")) {
             verify();
         }

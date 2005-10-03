@@ -53,7 +53,7 @@ public class MethodClosure extends Closure {
     }
 
     protected Object doCall(Object arguments) {
-        return InvokerHelper.invokeMethodAt(getDelegate().getClass(), getDelegate(), method, arguments);
+        return InvokerHelper.invokeMethod(getDelegate(), method, arguments);
     }
     
     public void setDelegate(Object delegate) {

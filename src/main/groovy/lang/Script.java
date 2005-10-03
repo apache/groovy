@@ -123,30 +123,6 @@ public abstract class Script extends GroovyObjectSupport {
         }
     }
 
-    public Object invokeMethodAt(Class at, String name, Object args) {
-        try {
-            return super.invokeMethodAt(at, name, args);
-        }
-                // if the method was not found in the current scope (the script's methods)
-                // let's try to see if there's a method closure with the same name in the binding
-        catch (MissingMethodException mme) {
-            try {
-                if (name.equals(mme.getMethod())) {
-                    Object boundClosure = binding.getVariable(name);
-                    if (boundClosure != null && boundClosure instanceof Closure) {
-                        return ((Closure) boundClosure).call((Object[])args);
-                    } else {
-                        throw mme;
-                    }
-                } else {
-                    throw mme;
-                }
-            } catch (MissingPropertyException mpe) {
-                throw mme;
-            }
-        }
-    }
-
     /**
      * The main instance method of a script which has variables in scope
      * as defined by the current {@link Binding} instance.

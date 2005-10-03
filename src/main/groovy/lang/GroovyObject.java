@@ -62,12 +62,6 @@ public interface GroovyObject {
      */
     public Object invokeMethod(String name, Object args);
     
-    /** 
-     * Invokes the given method in the given class.
-     * 
-     */
-    public Object invokeMethodAt(Class at, String name, Object args);
-    
     /**
      * @return the given property
      */

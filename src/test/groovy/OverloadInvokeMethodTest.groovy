@@ -26,20 +26,6 @@ class OverloadInvokeMethodTest extends GroovyTestCase {
         }
     }
     
-    def invokeMethodAt(Class at, String name, Object args) {
-        try {
-            return metaClass.invokeMethodAt(at, this, name, args)
-        }
-        catch (MissingMethodException e) {
-            if (name == 'foo') {
-                return metaClass.invokeMethodAt(at, this, 'bar', args)
-            }
-            else {
-                throw e
-            }
-        }
-    }
-    
     def bar(param) {
         return param * 2
     }
