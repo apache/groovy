@@ -88,21 +88,8 @@ public class ScriptBytecodeAdapter {
         }
     }
     
-    public static Object invokeMethodAt(Class at, Object object, String methodName, Object arguments)  throws Throwable{
-        try {
-            return InvokerHelper.invokeMethodAt(at, object, methodName, arguments);
-        } catch (GroovyRuntimeException gre) {
-            return unwrap(gre);
-        }
-    }
-    
     public static Object invokeMethodSafe(Object object, String methodName, Object arguments) throws Throwable{
         if (object != null) return invokeMethod(object, methodName, arguments);
-        return null;
-    }    
-
-    public static Object invokeMethodSafeAt(Class at, Object object, String methodName, Object arguments) throws Throwable{
-        if (object != null) return invokeMethodAt(at, object, methodName, arguments);
         return null;
     }    
 
@@ -123,42 +110,77 @@ public class ScriptBytecodeAdapter {
         return null;
     }    
 
-    public static Object invokeMethodSpreadSafeAt(Class at, Object object, String methodName, Object arguments) throws Throwable{
-        if (object != null) {
-            if (object instanceof List) {
-                List list = (List) object;
-                List answer = new ArrayList();
-                Iterator it = list.iterator();
-                for (; it.hasNext();) {
-                    answer.add(invokeMethodSafeAt(at, it.next(), methodName, arguments));
-                }
-                return answer;
-            }
-            else
-                return invokeMethodSafeAt(at, object, methodName, arguments);
+    public static Object invokeStaticMethod(String type, String methodName, Object arguments) throws Throwable{
+        try {
+            return InvokerHelper.invokeStaticMethod(type, methodName, arguments);
+        } catch (GroovyRuntimeException gre) {
+            return unwrap(gre);
         }
-        return null;
-    }    
+    }
 
+    public static Object invokeConstructorAt(Class at, Class type, Object arguments) throws Throwable{
+        try {
+            return InvokerHelper.invokeConstructorAt(at, type, arguments);
+        } catch (GroovyRuntimeException gre) {
+            return unwrap(gre);
+        }
+    }
+
+    /// public static Object invokeConstructorAt(Class at, String type, Object arguments) throws Throwable{
+    ///     try {
+    ///         return InvokerHelper.invokeConstructorAt(at, type, arguments);
+    ///     } catch (GroovyRuntimeException gre) {
+    ///         return unwrap(gre);
+    ///     }
+    /// }
+
+    public static Object invokeNoArgumentsConstructorAt(Class at, Class type) throws Throwable {
+        return invokeConstructorAt(at, type, EMPTY_ARGS);
+    }
+    
+    
+    public static Object invokeConstructorOf(Class type, Object arguments) throws Throwable{
+        try {
+            return InvokerHelper.invokeConstructorOf(type, arguments);
+        } catch (GroovyRuntimeException gre) {
+            return unwrap(gre);
+        }  
+    }
+    
+    /// public static Object invokeConstructorOf(String type, Object arguments) throws Throwable{
+    ///     try {
+    ///         return InvokerHelper.invokeConstructorOf(type, arguments);
+    ///     } catch (GroovyRuntimeException gre) {
+    ///         return unwrap(gre);
+    ///     }  
+    /// }
+    
+    public static Object invokeNoArgumentsConstructorOf(Class type) throws Throwable {
+        return invokeConstructorOf(type, EMPTY_ARGS);
+    }
+    
+    public static Object invokeClosure(Object closure, Object arguments) throws Throwable {
+        return invokeMethod(closure, "doCall", arguments);
+    }    
+    
+    public static Object invokeSuperMethod(Object object, String methodName, Object arguments) throws Throwable{
+        try {
+            return InvokerHelper.invokeSuperMethod(object, methodName, arguments);
+        } catch (GroovyRuntimeException gre) {
+            return unwrap(gre);
+        } 
+    }
+    
     public static Object invokeNoArgumentsMethod(Object object, String methodName) throws Throwable {
         return invokeMethod(object, methodName, EMPTY_ARGS);
     }
     
-    public static Object invokeNoArgumentsMethodAt(Class at, Object object, String methodName) throws Throwable {
-        return invokeMethodAt(at, object, methodName, EMPTY_ARGS);
-    }
-    
-    public static Object invokeNoArgumentsSafeMethod(Object object, String methodName) throws Throwable {
+    public static Object invokeNoArgumentsMethodSafe(Object object, String methodName) throws Throwable {
         if (object != null) return invokeNoArgumentsMethod(object, methodName);
         return null;
     }
     
-    public static Object invokeNoArgumentsSafeMethodAt(Class at, Object object, String methodName) throws Throwable {
-        if (object != null) return invokeNoArgumentsMethodAt(at, object, methodName);
-        return null;
-    }
-    
-    public static Object invokeNoArgumentsSpreadSafeMethod(Object object, String methodName) throws Throwable {
+    public static Object invokeNoArgumentsMethodSpreadSafe(Object object, String methodName) throws Throwable {
         if (object != null) {
             if (object instanceof List) {
                 List list = (List) object;
@@ -175,82 +197,8 @@ public class ScriptBytecodeAdapter {
         return null;
     }
     
-    public static Object invokeNoArgumentsSpreadSafeMethodAt(Class at, Object object, String methodName) throws Throwable {
-        if (object != null) {
-            if (object instanceof List) {
-                List list = (List) object;
-                List answer = new ArrayList();
-                Iterator it = list.iterator();
-                for (; it.hasNext();) {
-                    answer.add(invokeNoArgumentsMethodAt(at, it.next(), methodName));
-                }
-                return answer;
-            }
-            else
-                return invokeNoArgumentsMethodAt(at, object, methodName);
-        }
-        return null;
-    }
-    
-    public static Object invokeStaticMethod(String type, String methodName, Object arguments) throws Throwable{
-        try {
-            return InvokerHelper.invokeStaticMethod(type, methodName, arguments);
-        } catch (GroovyRuntimeException gre) {
-            return unwrap(gre);
-        }
-    }
-
     public static Object invokeStaticNoArgumentsMethod(String type, String methodName) throws Throwable {
         return invokeStaticMethod(type, methodName, EMPTY_ARGS);
-    }
-    
-    public static Object invokeStaticMethodAt(Class at, String type, String methodName, Object arguments) throws Throwable{
-        try {
-            return InvokerHelper.invokeStaticMethodAt(at, type, methodName, arguments);
-        } catch (GroovyRuntimeException gre) {
-            return unwrap(gre);
-        }
-    }
-
-    public static Object invokeStaticNoArgumentsMethodAt(Class at, String type, String methodName) throws Throwable {
-        return invokeStaticMethodAt(at, type, methodName, EMPTY_ARGS);
-    }
-    
-    public static Object invokeConstructorAt(Class at, Class type, Object arguments) throws Throwable{
-        try {
-            return InvokerHelper.invokeConstructorAt(at, type, arguments);
-        } catch (GroovyRuntimeException gre) {
-            return unwrap(gre);
-        }
-    }
-
-    public static Object invokeNoArgumentsConstructorAt(Class at, Class type) throws Throwable {
-        return invokeConstructorAt(at, type, EMPTY_ARGS);
-    }
-    
-    
-    public static Object invokeConstructorOf(Class type, Object arguments) throws Throwable{
-        try {
-            return InvokerHelper.invokeConstructorOf(type, arguments);
-        } catch (GroovyRuntimeException gre) {
-            return unwrap(gre);
-        }  
-    }
-    
-    public static Object invokeNoArgumentsConstructorOf(Class type) throws Throwable {
-        return invokeConstructorOf(type, EMPTY_ARGS);
-    }
-    
-    public static Object invokeClosure(Object closure, Object arguments) throws Throwable {
-        return invokeMethod(closure, "doCall", arguments);
-    }    
-    
-    public static Object invokeSuperMethod(Object object, String methodName, Object arguments) throws Throwable{
-        try {
-            return InvokerHelper.invokeSuperMethod(object, methodName, arguments);
-        } catch (GroovyRuntimeException gre) {
-            return unwrap(gre);
-        } 
     }
     
     public static int asInt(Object value) throws Throwable {
@@ -690,10 +638,6 @@ public class ScriptBytecodeAdapter {
     
     public static MetaClass getMetaClass(Object object) {
         return InvokerHelper.getMetaClass(object);
-    }
-
-    public static MetaClass getMetaClass(Class clazz) {
-        return InvokerHelper.getMetaClass(clazz);
     }
 
     /*

@@ -149,7 +149,7 @@ public class GStringTemplateEngine extends TemplateEngine {
             try {
                 final GroovyObject object = (GroovyObject) groovyClass.newInstance();
 
-                this.template = (Closure)object.invokeMethodAt(this.getClass(), "getTemplate", null);
+                this.template = (Closure)object.invokeMethod("getTemplate", null);
             } catch (InstantiationException e) {
                 throw new ClassNotFoundException(e.getMessage());
             } catch (IllegalAccessException e) {

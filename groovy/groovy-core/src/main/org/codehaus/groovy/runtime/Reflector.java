@@ -50,10 +50,6 @@ public class Reflector {
         return noSuchMethod(method, object, arguments);
     }
 
-    public Object invokeAt(Class at, MetaMethod method, Object object, Object[] arguments) {
-        return noSuchMethod(method, object, arguments);
-    }
-
     protected Object noSuchMethod(MetaMethod method, Object object, Object[] arguments) {
         throw new MissingMethodException(method.getName(), method.getDeclaringClass(), arguments);
     }

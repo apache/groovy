@@ -105,10 +105,6 @@ public class Invoker {
         return metaRegistry.getMetaClass(object.getClass());
     }
 
-    public MetaClass getMetaClass(Class clazz) {
-        return metaRegistry.getMetaClass(clazz);
-    }
-
     /**
      * Invokes the given method on the object.
      *
@@ -154,7 +150,7 @@ public class Invoker {
                 try {
                     // if it's a pure interceptable object (even intercepting toString(), clone(), ...)
                     if (groovy instanceof GroovyInterceptable) {
-                        return groovy.invokeMethodAt(object.getClass(), methodName, asArray(arguments));
+                        return groovy.invokeMethod(methodName, asArray(arguments));
                     }
                     //else if there's a statically typed method or a GDK method
                     else {
@@ -163,70 +159,7 @@ public class Invoker {
                 } catch (MissingMethodException e) {
                     if (e.getMethod().equals(methodName) && object.getClass() == e.getType()) {
                         // in case there's nothing else, invoke the object's own invokeMethod()
-                        return groovy.invokeMethodAt(object.getClass(), methodName, asArray(arguments));
-                    } else {
-                        throw e;
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Invokes the given method on the object.
-     *
-     * @param object
-     * @param methodName
-     * @param arguments
-     * @return
-     */
-    public Object invokeMethodAt(Class at, Object object, String methodName, Object arguments) {
-        /*
-        System
-            .out
-            .println(
-                "Invoker - Invoking method on object: "
-                    + object
-                    + " method: "
-                    + methodName
-                    + " arguments: "
-                    + InvokerHelper.toString(arguments));
-                    */
-
-        if (object == null) {
-            throw new NullPointerException("Cannot invoke method " + methodName + "() on null object");
-        }
-        
-        // if the object is a Class, call a static method from that class
-        if (object instanceof Class) {
-            Class theClass = (Class) object;
-            MetaClass metaClass = metaRegistry.getMetaClass(theClass);
-            return metaClass.invokeStaticMethodAt(at, object, methodName, asArray(arguments));
-        }
-        else // it's an instance
-        {
-            // if it's not an object implementing GroovyObject (thus not builder, nor a closure)
-            if (!(object instanceof GroovyObject)) {
-                Class theClass = object.getClass();
-                MetaClass metaClass = metaRegistry.getMetaClass(theClass);
-                return metaClass.invokeMethodAt(at, object, methodName, asArray(arguments));
-            }
-            // it's an object implementing GroovyObject
-            else {
-                GroovyObject groovy = (GroovyObject) object;
-                try {
-                    // if it's a pure interceptable object (even intercepting toString(), clone(), ...)
-                    if (groovy instanceof GroovyInterceptable) {
-                        return groovy.invokeMethodAt(object.getClass(), methodName, asArray(arguments));
-                    }
-                    //else if there's a statically typed method or a GDK method
-                    else {
-                        return groovy.getMetaClass().invokeMethodAt(at, object, methodName, asArray(arguments));
-                    }
-                } catch (MissingMethodException e) {
-                    if (e.getMethod().equals(methodName) && object.getClass() == e.getType()) {
-                        // in case there's nothing else, invoke the object's own invokeMethod()
-                        return groovy.invokeMethodAt(at, methodName, asArray(arguments));
+                        return groovy.invokeMethod(methodName, asArray(arguments));
                     } else {
                         throw e;
                     }
@@ -250,12 +183,6 @@ public class Invoker {
         MetaClass metaClass = metaRegistry.getMetaClass(loadClass(type));
         List argumentList = asList(arguments);
         return metaClass.invokeStaticMethod(null, method, asArray(arguments));
-    }
-
-    public Object invokeStaticMethodAt(Class at, String type, String method, Object arguments) {
-        MetaClass metaClass = metaRegistry.getMetaClass(loadClass(type));
-        List argumentList = asList(arguments);
-        return metaClass.invokeStaticMethodAt(at, null, method, asArray(arguments));
     }
 
     public Object invokeConstructorAt(Class at, Class type, Object arguments) {

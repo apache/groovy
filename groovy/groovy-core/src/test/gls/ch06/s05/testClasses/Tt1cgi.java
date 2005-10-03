@@ -40,10 +40,6 @@ public class Tt1cgi extends Tt1c implements GroovyObject {
     return this.metaClass.getProperty(this, property);
   }
 
-  public Object invokeMethodAt(final Class at, final String name, final Object args) {
-    return this.metaClass.invokeMethodAt(at, this, name, args);
-  }
-
   public Object invokeMethod(final String name, final Object args) {
     return this.metaClass.invokeMethod(this, name, args);
   }

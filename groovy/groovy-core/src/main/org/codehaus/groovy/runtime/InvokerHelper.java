@@ -87,10 +87,6 @@ public class InvokerHelper {
         return getInstance().getMetaClass(object);
     }
 
-    public static MetaClass getMetaClass(Class clazz) {
-        return getInstance().getMetaClass(clazz);
-    }
-
     public static void removeClass(Class clazz) {
         getInstance().removeMetaClass(clazz);
         Introspector.flushFromCaches(clazz);
@@ -106,10 +102,6 @@ public class InvokerHelper {
 
     public static Object invokeMethod(Object object, String methodName, Object arguments) {
         return getInstance().invokeMethod(object, methodName, arguments);
-    }
-
-    public static Object invokeMethodAt(Class at, Object object, String methodName, Object arguments) {
-        return getInstance().invokeMethodAt(at, object, methodName, arguments);
     }
 
     public static Object invokeSuperMethod(Object object, String methodName, Object arguments) {
@@ -129,14 +121,6 @@ public class InvokerHelper {
 
     public static Object invokeStaticNoArgumentsMethod(String type, String methodName) {
         return getInstance().invokeStaticMethod(type, methodName, EMPTY_ARGS);
-    }
-
-    public static Object invokeStaticMethodAt(Class at, String type, String methodName, Object arguments) {
-        return getInstance().invokeStaticMethodAt(at, type, methodName, arguments);
-    }
-
-    public static Object invokeStaticNoArgumentsMethodAt(Class at, String type, String methodName) {
-        return getInstance().invokeStaticMethodAt(at, type, methodName, EMPTY_ARGS);
     }
 
     public static Object invokeConstructorAt(Class at, Class type, Object arguments) {
@@ -532,7 +516,7 @@ public class InvokerHelper {
         return invokeMethod(script, "run", EMPTY_ARGS);
     }
 
-    public static Script createScript(final Class scriptClass, Binding context) {
+    public static Script createScript(Class scriptClass, Binding context) {
         // for empty scripts
         if (scriptClass == null) {
             return new Script() {

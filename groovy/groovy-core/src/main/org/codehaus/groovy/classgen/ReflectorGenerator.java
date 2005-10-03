@@ -144,61 +144,6 @@ public class ReflectorGenerator implements Opcodes {
         cv.visitMaxs(4, 4);
     }
 
-    protected void generateInvokeMethodAt() {
-        int methodCount = methods.size();
-
-        cv =
-            cw.visitMethod(
-                ACC_PUBLIC,
-                "invokeAt",
-                "(Ljava/lang/Class;Lgroovy/lang/MetaMethod;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;",
-                null,
-                null);
-        helper = new BytecodeHelper(cv);
-
-        cv.visitVarInsn(ALOAD, 2);
-        cv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/MetaMethod", "getMethodIndex", "()I");
-        Label defaultLabel = new Label();
-        Label[] labels = new Label[methodCount];
-        int[] indices = new int[methodCount];
-        for (int i = 0; i < methodCount; i++) {
-            labels[i] = new Label();
-
-            MetaMethod method = (MetaMethod) methods.get(i);
-            method.setMethodIndex(i + 1);
-            indices[i] = method.getMethodIndex();
-
-            //System.out.println("Index: " + method.getMethodIndex() + " for: " + method);
-        }
-
-        cv.visitLookupSwitchInsn(defaultLabel, indices, labels);
-        //cv.visitTableSwitchInsn(minMethodIndex, maxMethodIndex, defaultLabel, labels);
-
-        for (int i = 0; i < methodCount; i++) {
-            cv.visitLabel(labels[i]);
-
-            MetaMethod method = (MetaMethod) methods.get(i);
-            invokeMethod(method);
-            if (method.getReturnType() == void.class) {
-                cv.visitInsn(ACONST_NULL);
-            }
-            cv.visitInsn(ARETURN);
-        }
-
-        cv.visitLabel(defaultLabel);
-        cv.visitVarInsn(ALOAD, 0);
-        cv.visitVarInsn(ALOAD, 1);
-        cv.visitVarInsn(ALOAD, 2);
-        cv.visitVarInsn(ALOAD, 3);
-        cv.visitMethodInsn(
-            INVOKEVIRTUAL,
-            classInternalName,
-            "noSuchMethod",
-            "(Lgroovy/lang/MetaMethod;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
-        cv.visitInsn(ARETURN);
-        cv.visitMaxs(4, 4);
-    }
-
     protected void invokeMethod(MetaMethod method) {
         /** simple
         cv.visitVarInsn(ALOAD, 2);

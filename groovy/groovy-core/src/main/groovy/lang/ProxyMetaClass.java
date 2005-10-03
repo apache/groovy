@@ -83,15 +83,6 @@ public class ProxyMetaClass extends MetaClass {
             }
         });
     }
-
-    public Object invokeMethodAt(final Class at, final Object object, final String methodName, final Object[] arguments) {
-        return doCall(object, methodName, arguments, new Callable(){
-            public Object call() {
-                return adaptee.invokeMethodAt(at, object, methodName, arguments);
-            }
-        });
-    }
-
     /**
      * Call invokeStaticMethod on adaptee with logic like in MetaClass unless we have an Interceptor.
      * With Interceptor the call is nested in its beforeInvoke and afterInvoke methods.
@@ -102,14 +93,6 @@ public class ProxyMetaClass extends MetaClass {
         return doCall(object, methodName, arguments, new Callable(){
             public Object call() {
                 return adaptee.invokeStaticMethod(object, methodName, arguments);
-            }
-        });
-    }
-
-    public Object invokeStaticMethodAt(final Class at, final Object object, final String methodName, final Object[] arguments) {
-        return doCall(object, methodName, arguments, new Callable(){
-            public Object call() {
-                return adaptee.invokeStaticMethodAt(at, object, methodName, arguments);
             }
         });
     }

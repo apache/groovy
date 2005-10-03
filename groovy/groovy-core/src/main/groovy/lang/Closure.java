@@ -311,18 +311,6 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
             }
         }
 
-        public Object invokeMethodAt(Class at, String method, Object arguments) {
-            if ("clone".equals(method)) {
-                return clone();
-            } else if ("curry".equals(method)) {
-                return curry((Object[]) arguments);
-            } else if ("asWritable".equals(method)) {
-                return asWritable();
-            } else {
-                return Closure.this.invokeMethod(method, arguments);
-            }
-        }
-
         /* (non-Javadoc)
          * @see groovy.lang.GroovyObject#getProperty(java.lang.String)
          */

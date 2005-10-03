@@ -22,14 +22,6 @@ class OverloadA {
                         println "Missing method: ${name}"
                 }
         } 
-
-        def invokeMethodAt(Class at, String name, Object args) {
-                try {
-                        metaClass.invokeMethodAt(at, this, name, args)
-                } catch(MissingMethodException e) {
-                        println "Missing method: ${name}"
-                }
-        } 
 }
 
 class OverloadB extends OverloadA {

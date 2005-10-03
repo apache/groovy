@@ -1,5 +1,5 @@
 /*
-$Id$ 
+$Id$
 
 Copyright 2003 (C) James Strachan and Bob Mcwhirter. All Rights Reserved.
 
@@ -133,13 +133,9 @@ public class AsmClassGenerator extends ClassGenerator {
 
     // cached values
     MethodCaller invokeMethodMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeMethod");
-    MethodCaller invokeMethodMethodAt = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeMethodAt");
     MethodCaller invokeMethodSafeMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeMethodSafe");
-    MethodCaller invokeMethodSafeMethodAt = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeMethodSafeAt");
     MethodCaller invokeMethodSpreadSafeMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeMethodSpreadSafe");
-    MethodCaller invokeMethodSpreadSafeMethodAt = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeMethodSpreadSafeAt");
     MethodCaller invokeStaticMethodMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeStaticMethod");
-    MethodCaller invokeStaticMethodMethodAt = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeStaticMethodAt");
     MethodCaller invokeConstructorMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeConstructor");
     MethodCaller invokeConstructorOfMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeConstructorOf");
     MethodCaller invokeNoArgumentsConstructorOf = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeNoArgumentsConstructorOf");
@@ -148,13 +144,9 @@ public class AsmClassGenerator extends ClassGenerator {
     MethodCaller invokeClosureMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeClosure");
     MethodCaller invokeSuperMethodMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeSuperMethod");
     MethodCaller invokeNoArgumentsMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeNoArgumentsMethod");
-    MethodCaller invokeNoArgumentsMethodAt = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeNoArgumentsMethodAt");
     MethodCaller invokeNoArgumentsSafeMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeNoArgumentsSafeMethod");
-    MethodCaller invokeNoArgumentsSafeMethodAt = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeNoArgumentsSafeMethodAt");
     MethodCaller invokeNoArgumentsSpreadSafeMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeNoArgumentsSpreadSafeMethod");
-    MethodCaller invokeNoArgumentsSpreadSafeMethodAt = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeNoArgumentsSpreadSafeMethodAt");
     MethodCaller invokeStaticNoArgumentsMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeStaticNoArgumentsMethod");
-    MethodCaller invokeStaticNoArgumentsMethodAt = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeStaticNoArgumentsMethodAt");
 
     MethodCaller asIntMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "asInt");
     MethodCaller asTypeMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "asType");
@@ -449,11 +441,11 @@ public class AsmClassGenerator extends ClassGenerator {
     public void visitField(FieldNode fieldNode) {
         onLineNumber(fieldNode, "visitField: " + fieldNode.getName());
         Type t = fieldNode.getType();
-        t = classNode.resolveClassName(t,""); 
+        t = classNode.resolveClassName(t,"");
         cw.visitField(
             fieldNode.getModifiers(),
             fieldNode.getName(),
-            BytecodeHelper.getTypeDescription(t), 
+            BytecodeHelper.getTypeDescription(t),
             null, //fieldValue,  //br  all the sudden that one cannot init the field here. init is done in static initilizer and instace intializer.
             null);
         visitAnnotations(fieldNode);
@@ -1565,67 +1557,12 @@ public class AsmClassGenerator extends ClassGenerator {
                     }
                 }
                 else {
-                    if (emptyArguments(arguments)) {
-                        if (!call.isSafe() && !call.isSpreadSafe()) {
-                            if (this.classNode != null) {
-                                if (this.classNode instanceof InnerClassNode && outermostClass != null)
-                                    pushClassTypeArgument(outermostClass.getType(), outermostClass.getType());
-                                else
-                                    pushClassTypeArgument(this.classNode.getType(), this.classNode.getType());
-                            }
-
-                            call.getObjectExpression().visit(this);
-                            cv.visitLdcInsn(method);
-                            if (this.classNode != null) {
-                                invokeNoArgumentsMethodAt.call(cv);
-                            }
-                            else {
-                                invokeNoArgumentsMethod.call(cv);
-                            }
-                        }
-                        else if (call.isSpreadSafe()) {
-                            if (this.classNode != null) {
-                                if (this.classNode instanceof InnerClassNode && outermostClass != null)
-                                    pushClassTypeArgument(outermostClass.getType(), outermostClass.getType());
-                                else
-                                    pushClassTypeArgument(this.classNode.getType(), this.classNode.getType());
-                            }
-
-                            call.getObjectExpression().visit(this);
-                            cv.visitLdcInsn(method);
-                            if (this.classNode != null) {
-                                invokeNoArgumentsSpreadSafeMethodAt.call(cv);
-                            }
-                            else {
-                                invokeNoArgumentsSpreadSafeMethod.call(cv);
-                            }
-                        }
-                        else if (call.isSafe()) {
-                            if (this.classNode != null) {
-                                if (this.classNode instanceof InnerClassNode && outermostClass != null)
-                                    pushClassTypeArgument(outermostClass.getType(), outermostClass.getType());
-                                else
-                                    pushClassTypeArgument(this.classNode.getType(), this.classNode.getType());
-                            }
-
-                            call.getObjectExpression().visit(this);
-                            cv.visitLdcInsn(method);
-                            if (this.classNode != null) {
-                                invokeNoArgumentsSafeMethodAt.call(cv);
-                            }
-                            else {
-                                invokeNoArgumentsSafeMethod.call(cv);
-                            }
-                        }
+                    if (emptyArguments(arguments) && !call.isSafe() && !call.isSpreadSafe()) {
+                        call.getObjectExpression().visit(this);
+                        cv.visitLdcInsn(method);
+                        invokeNoArgumentsMethod.call(cv); // todo try if we can do early binding
                     }
                     else {
-                        if (this.classNode != null) {
-                            if (this.classNode instanceof InnerClassNode && outermostClass != null)
-                                pushClassTypeArgument(outermostClass.getType(), outermostClass.getType());
-                            else
-                                pushClassTypeArgument(this.classNode.getType(), this.classNode.getType());
-                        }
-
                         if (argumentsUseStack(arguments)) {
 
                             arguments.visit(this);
@@ -1646,29 +1583,14 @@ public class AsmClassGenerator extends ClassGenerator {
                             arguments.visit(this);
                         }
 
-                        if (!call.isSafe() && !call.isSpreadSafe()) {
-                            if (this.classNode != null) {
-                                invokeMethodMethodAt.call(cv);
-                            }
-                            else {
-                                invokeMethodMethod.call(cv);
-                            }
-                        }
-                        else if (call.isSpreadSafe()) {
-                            if (this.classNode != null) {
-                                invokeMethodSpreadSafeMethodAt.call(cv);
-                            }
-                            else {
-                                invokeMethodSpreadSafeMethod.call(cv);
-                            }
+                        if (call.isSpreadSafe()) {
+                            invokeMethodSpreadSafeMethod.call(cv);
                         }
                         else if (call.isSafe()) {
-                            if (this.classNode != null) {
-                                invokeMethodSafeMethodAt.call(cv);
-                            }
-                            else {
-                                invokeMethodSafeMethod.call(cv);
-                            }
+                            invokeMethodSafeMethod.call(cv);
+                        }
+                        else {
+                            invokeMethodMethod.call(cv);
                         }
                     }
                 }
@@ -1750,21 +1672,10 @@ public class AsmClassGenerator extends ClassGenerator {
 
         Expression arguments = call.getArguments();
         if (emptyArguments(arguments)) {
-            if (this.classNode != null) {
-                if (this.classNode instanceof InnerClassNode && outermostClass != null)
-                    pushClassTypeArgument(outermostClass.getType(), outermostClass.getType());
-                else
-                    pushClassTypeArgument(this.classNode.getType(), this.classNode.getType());
+            cv.visitLdcInsn(call.getType());
+            cv.visitLdcInsn(call.getMethod());
 
-                cv.visitLdcInsn(call.getOwnerType().getName());
-                cv.visitLdcInsn(call.getMethod());
-                invokeStaticNoArgumentsMethodAt.call(cv);
-            }
-            else {
-                cv.visitLdcInsn(call.getOwnerType().getName());
-                cv.visitLdcInsn(call.getMethod());
-                invokeStaticNoArgumentsMethod.call(cv);
-            }
+            invokeStaticNoArgumentsMethod.call(cv);
         }
         else {
             if (arguments instanceof TupleExpression) {
@@ -1775,23 +1686,11 @@ public class AsmClassGenerator extends ClassGenerator {
                 }
             }
 
-            if (this.classNode != null) {
-                if (this.classNode instanceof InnerClassNode && outermostClass != null)
-                    pushClassTypeArgument(outermostClass.getType(), outermostClass.getType());
-                else
-                    pushClassTypeArgument(this.classNode.getType(), this.classNode.getType());
+            cv.visitLdcInsn(call.getOwnerType().getName());
+            cv.visitLdcInsn(call.getMethod());
+            arguments.visit(this);
 
-                cv.visitLdcInsn(call.getOwnerType().getName());
-                cv.visitLdcInsn(call.getMethod());
-                arguments.visit(this);
-                invokeStaticMethodMethodAt.call(cv);
-            }
-            else {
-                cv.visitLdcInsn(call.getOwnerType().getName());
-                cv.visitLdcInsn(call.getMethod());
-                arguments.visit(this);
-                invokeStaticMethodMethod.call(cv);
-            }
+            invokeStaticMethodMethod.call(cv);
         }
     }
 

@@ -43,10 +43,14 @@ public class Node extends GPathResult {
   private List children = new LinkedList();
   
   public Node(final Node parent, final String name, final Map attributes, final Map attributeNamespaces, final String namespaceURI) {
-    super(parent, name);
+    super(parent, name, "*");
     this.attributes = attributes;
     this.attributeNamespaces = attributeNamespaces;
     this.namespaceURI = namespaceURI;
+  }
+  
+  public String namespace() {
+    return this.namespaceURI;
   }
   
   public GPathResult parents() {
@@ -55,6 +59,10 @@ public class Node extends GPathResult {
   
   public int size() {
     return 1;
+  }
+  
+  public String namespaceURI() {
+    return this.namespaceURI;
   }
   
   public Map attributes() {
@@ -185,17 +193,17 @@ public class Node extends GPathResult {
                         };
     
     if (this.namespaceURI.length() == 0 && this.attributeNamespaces.isEmpty()) {
-      builder.invokeMethodAt(this.getClass(), this.name, new Object[]{this.attributes, rest});
+      builder.invokeMethod(this.name, new Object[]{this.attributes, rest});
     } else {
       builder.getProperty("mkp");
-      final List namespaces = (List)builder.invokeMethodAt(this.getClass(), "getNamespaces", new Object[]{});
+      final List namespaces = (List)builder.invokeMethod("getNamespaces", new Object[]{});
       
       final Map current = (Map)namespaces.get(0);
       final Map pending = (Map)namespaces.get(1);
       
       if (this.attributeNamespaces.isEmpty()) {     
-        builder.getProperty(getTagFor(this.namespaceURI, current, pending, builder));
-        builder.invokeMethodAt(this.getClass(), this.name, new Object[]{this.attributes, rest});
+        builder.getProperty(getTagFor(this.namespaceURI, current, pending, this.namespaceMap, builder));
+        builder.invokeMethod(this.name, new Object[]{this.attributes, rest});
       } else {
       final Map attributesWithNamespaces = new HashMap(this.attributes);
       final Iterator attrs = this.attributes.keySet().iterator();
@@ -205,40 +213,44 @@ public class Node extends GPathResult {
         final Object attributeNamespaceURI = this.attributeNamespaces.get(key);
           
           if (attributeNamespaceURI != null) {
-            attributesWithNamespaces.put(getTagFor(attributeNamespaceURI, current, pending, builder) + "$" + key, attributesWithNamespaces.remove(key));
+            attributesWithNamespaces.put(getTagFor(attributeNamespaceURI, current, pending, this.namespaceMap, builder) +
+                                         "$" + key, attributesWithNamespaces.remove(key));
           }
         }
         
-        builder.getProperty(getTagFor(this.namespaceURI, current, pending, builder));
-        builder.invokeMethodAt(this.getClass(), this.name, new Object[]{attributesWithNamespaces, rest});
+        builder.getProperty(getTagFor(this.namespaceURI, current, pending, this.namespaceMap, builder));
+        builder.invokeMethod(this.name, new Object[]{attributesWithNamespaces, rest});
       }
     }   
   }
   
-  private static String getTagFor(final Object namespaceURI, final Map current, final Map pending, final GroovyObject builder) {
+  private static String getTagFor(final Object namespaceURI, final Map current, final Map pending, final Map local, final GroovyObject builder) {
   String tag = findNamespaceTag(pending, namespaceURI);
     
     if (tag == null) {
       tag = findNamespaceTag(current, namespaceURI);
       
       if (tag == null) {
+        tag = findNamespaceTag(local, namespaceURI);
+        
+        if (tag == null) {
         int suffix = 0;
         
-        do {
-          final String posibleTag = "tag" + suffix++;
-          
-          if (!pending.containsKey(posibleTag) && !current.containsKey(posibleTag)) {
-            tag = posibleTag;
-          }
-        } while (tag == null);
+          do {
+            final String posibleTag = "tag" + suffix++;
+            
+            if (!pending.containsKey(posibleTag) && !current.containsKey(posibleTag)) {
+              tag = posibleTag;
+            }
+          } while (tag == null);
+        }
       }
     }
     
     final Map newNamespace = new HashMap();
     newNamespace.put(tag, namespaceURI);
     builder.getProperty("mkp");
-    /// builder.invokeMethod("declareNamespace", new Object[]{newNamespace});
-    builder.invokeMethodAt(Node.class, "declareNamespace", new Object[]{newNamespace});
+    builder.invokeMethod("declareNamespace", new Object[]{newNamespace});
     
     return tag;
   }
@@ -269,7 +281,7 @@ public class Node extends GPathResult {
         ((Buildable)child).build(builder);
       } else {
         builder.getProperty("mkp");
-        builder.invokeMethodAt(this.getClass(), "yield", new Object[]{child});
+        builder.invokeMethod("yield", new Object[]{child});
       }
     }
   }

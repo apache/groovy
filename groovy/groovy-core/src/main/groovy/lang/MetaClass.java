@@ -306,10 +306,6 @@ public class MetaClass {
        return invokeMethod(object, methodName, asArray(arguments));
    }
 
-   public Object invokeMethodAt(Class at, Object object, String methodName, Object arguments) {
-       return invokeMethodAt(at, object, methodName, asArray(arguments));
-   }
-
    /**
     * Invokes the given method on the object.
     *
@@ -364,7 +360,7 @@ public class MetaClass {
                if (delegate!=closure && (delegate instanceof GroovyObject)) {
                    try {
                        GroovyObject go = (GroovyObject) delegate;
-                       return go.invokeMethodAt(delegate.getClass(), methodName,arguments);
+                       return go.invokeMethod(methodName,arguments);
                    } catch (MissingMethodException mme) {
                        last = mme;
                    }
@@ -372,7 +368,7 @@ public class MetaClass {
                if (owner!=closure && (owner instanceof GroovyObject)) {
                    try {
                        GroovyObject go = (GroovyObject) owner;
-                       return go.invokeMethodAt(owner.getClass(), methodName,arguments);
+                       return go.invokeMethod(methodName,arguments);
                    } catch (MissingMethodException mme) {
                        if (last==null) last = mme;
                    }
@@ -395,104 +391,6 @@ public class MetaClass {
                    return delegateMetaClass.invokeMethod(closure,"doCall",arguments);
                }
            } catch (MissingPropertyException mpe) {}
-
-           throw new MissingMethodException(methodName, theClass, arguments);
-       }
-   }
-
-   /**
-    * Invokes the given method on the object.
-    *
-    */
-   public Object invokeMethodAt(Class at, Object object, String methodName, Object[] arguments) {
-       if (object == null) {
-           throw new NullPointerException("Cannot invoke method: " + methodName + " on null object");
-       }
-       if (log.isLoggable(Level.FINER)){
-           logMethodCall(object, methodName, arguments);
-       }
-
-       MetaMethod method = retrieveMethod(object, methodName, arguments);
-
-       boolean isClosure = object instanceof Closure;
-       if (isClosure) {
-           Closure closure = (Closure) object;
-           Object delegate = closure.getDelegate();
-           Object owner = closure.getOwner();
-
-           if ("call".equals(methodName) || "doCall".equals(methodName)) {
-               if (object.getClass()==MethodClosure.class) {
-                   MethodClosure mc = (MethodClosure) object;
-                   methodName = mc.getMethod();
-                   MetaClass delegateMetaClass = registry.getMetaClass(delegate.getClass());
-                   return delegateMetaClass.invokeMethodAt(at, delegate,methodName,arguments);
-               } else if (object.getClass()==CurriedClosure.class) {
-                   CurriedClosure cc = (CurriedClosure) object;
-                   // change the arguments for an uncurried call
-                   arguments = cc.getUncurriedArguments(arguments);
-                   MetaClass delegateMetaClass = registry.getMetaClass(delegate.getClass());
-                   return delegateMetaClass.invokeMethodAt(at, delegate,methodName,arguments);
-               }
-           } else if ("curry".equals(methodName)) {
-               return closure.curry(arguments);
-           }
-
-           if (method==null && owner!=closure) {
-               MetaClass ownerMetaClass = registry.getMetaClass(owner.getClass());
-               method = ownerMetaClass.retrieveMethod(owner,methodName,arguments);
-               if (method!=null) return ownerMetaClass.invokeMethodAt(at, owner,methodName,arguments);
-           }
-           if (method==null && delegate!=closure && delegate!=null) {
-               MetaClass delegateMetaClass = registry.getMetaClass(delegate.getClass());
-               method = delegateMetaClass.retrieveMethod(delegate,methodName,arguments);
-               if (method!=null) return delegateMetaClass.invokeMethodAt(at, delegate,methodName,arguments);
-           }
-           if (method==null) {
-               // still no methods found, test if delegate or owner are GroovyObjects
-               // and invoke the method on them if so.
-               MissingMethodException last = null;
-               if (delegate!=closure && (delegate instanceof GroovyObject)) {
-                   try {
-                       GroovyObject go = (GroovyObject) delegate;
-                       return go.invokeMethodAt(at, methodName,arguments);
-                   } catch (MissingMethodException mme) {
-                       last = mme;
-                   }
-               }
-               if (owner!=closure && (owner instanceof GroovyObject)) {
-                   try {
-                       GroovyObject go = (GroovyObject) owner;
-                       return go.invokeMethodAt(owner.getClass(), methodName,arguments);
-                   } catch (MissingMethodException mme) {
-                       if (last==null) last = mme;
-                   }
-               }
-               if (last!=null) throw last;
-           }
-
-       }
-
-       if (method != null) {
-           return doMethodInvokeAt(at, object, method, arguments);
-       } else {
-           // if no method was found, try to find a closure defined as a field of the class and run it
-           try {
-               Object value = this.getProperty(object, methodName);
-               if (value instanceof Closure && object!=this) {
-                   Closure closure = (Closure) value;
-                   closure.setDelegate(this);
-                   MetaClass delegateMetaClass = registry.getMetaClass(closure.getClass());
-                   return delegateMetaClass.invokeMethodAt(at, closure,"doCall",arguments);
-               }
-           } catch (MissingPropertyException mpe) {}
-
-           if (object instanceof GString) {
-               String object2 = ((GString) object).toString();
-               method = retrieveMethod(object2, methodName, arguments);
-               if (method != null) {
-                   return doMethodInvokeAt(at, object2, method, arguments);
-               }
-           }
 
            throw new MissingMethodException(methodName, theClass, arguments);
        }
@@ -643,27 +541,6 @@ public class MetaClass {
            }
        }
        */
-       throw new MissingMethodException(methodName, theClass, arguments);
-   }
-
-   public Object invokeStaticMethodAt(Class at, Object object, String methodName, Object[] arguments) {
-       if (log.isLoggable(Level.FINER)){
-           logMethodCall(object, methodName, arguments);
-       }
-       // lets try use the cache to find the method
-       MethodKey methodKey = new TemporaryMethodKey(methodName, arguments);
-       MetaMethod method = (MetaMethod) staticMethodCache.get(methodKey);
-       if (method == null) {
-           method = pickStaticMethod(object, methodName, arguments);
-           if (method != null) {
-               staticMethodCache.put(methodKey.createCopy(), method);
-           }
-       }
-
-       if (method != null) {
-           return doMethodInvokeAt(at, object, method, arguments);
-       }
-
        throw new MissingMethodException(methodName, theClass, arguments);
    }
 
@@ -1691,11 +1568,9 @@ public class MetaClass {
            return method.invoke(object, argumentArray);
        }
        catch (ClassCastException e) {
-           Object[] newArg = new Object[argumentArray.length];
-           System.arraycopy(argumentArray,0,newArg,0,newArg.length);
-           if (coerceGStrings(newArg)) {
+           if (coerceGStrings(argumentArray)) {
                try {
-                   return doMethodInvoke(object, method, newArg);
+                   return doMethodInvoke(object, method, argumentArray);
                }
                catch (Exception e2) {
                    // allow fall through
@@ -1781,135 +1656,6 @@ public class MetaClass {
                e);
        }
    }
-
-
-   protected Object doMethodInvokeAt(Class at, Object object, MetaMethod method, Object[] argumentArray) {
-       //System.out.println("Evaluating method: " + method);
-       //System.out.println("  on object: " + object + " with arguments: "
-       //                                   + InvokerHelper.toString(argumentArray));
-       //System.out.println("  at the " + at);
-       //System.out.println(this.theClass);
-
-       Class[] paramTypes = method.getParameterTypes();
-       try {
-           if (argumentArray == null) {
-               argumentArray = EMPTY_ARRAY;
-           } else if (paramTypes.length == 1 && argumentArray.length == 0) {
-               argumentArray = EMPTY_ARRAY;
-               if (isVargsMethod(paramTypes,argumentArray))
-                   argumentArray = ARRAY_WITH_EMPTY_ARRAY;
-               else
-                   argumentArray = ARRAY_WITH_NULL;
-           } else if (isVargsMethod(paramTypes,argumentArray)) {
-               // vargs
-               Object[] newArg = new Object[paramTypes.length];
-               System.arraycopy(argumentArray,0,newArg,0,newArg.length-1);
-               Object[] vargs = new Object[argumentArray.length-newArg.length+1];
-               System.arraycopy(argumentArray,newArg.length-1,vargs,0,vargs.length);
-               if (vargs.length == 1 && vargs[0] == null)
-                   newArg[newArg.length-1] = null;
-               else {
-                   newArg[newArg.length-1] = vargs;
-               }
-               argumentArray = newArg;
-           }
-
-           return method.invokeAt(at, object, argumentArray);
-       }
-       catch (ClassCastException e) {
-           Object[] newArg = new Object[argumentArray.length];
-           System.arraycopy(argumentArray,0,newArg,0,newArg.length);
-           if (coerceGStrings(newArg)) {
-               try {
-                   return doMethodInvokeAt(at, object, method, newArg);
-               }
-               catch (Exception e2) {
-                   // allow fall through
-               }
-           }
-           throw new GroovyRuntimeException(
-               "failed to invoke method: "
-                   + method
-                   + " on: "
-                   + object
-                   + " with arguments: "
-                   + InvokerHelper.toString(argumentArray)
-                   + " reason: "
-                   + e,
-               e);
-       }
-       catch (InvocationTargetException e) {
-           /*Throwable t = e.getTargetException();
-           if (t instanceof Error) {
-               Error error = (Error) t;
-               throw error;
-           }
-           if (t instanceof RuntimeException) {
-               RuntimeException runtimeEx = (RuntimeException) t;
-               throw runtimeEx;
-           }*/
-           throw new InvokerInvocationException(e);
-       }
-       catch (IllegalAccessException e) {
-           throw new GroovyRuntimeException(
-               "could not access method: "
-                   + method
-                   + " on: "
-                   + object
-                   + " with arguments: "
-                   + InvokerHelper.toString(argumentArray)
-                   + " reason: "
-                   + e,
-               e);
-       }
-       catch (IllegalArgumentException e) {
-           if (coerceGStrings(argumentArray)) {
-               try {
-                   return doMethodInvokeAt(at, object, method, argumentArray);
-               }
-               catch (Exception e2) {
-                   // allow fall through
-               }
-           }
-
-           Object[] args = coerceNumbers(method, argumentArray);
-           if (args != null && !Arrays.equals(argumentArray,args)) {
-               try {
-                   return doMethodInvokeAt(at, object, method, args);
-               }
-               catch (Exception e3) {
-                   // allow fall through
-               }
-           }
-
-           throw new GroovyRuntimeException(
-                   "failed to invoke method: "
-                   + method
-                   + " on: "
-                   + object
-                   + " with arguments: "
-                   + InvokerHelper.toString(argumentArray)
-                   + "reason: "
-                   + e
-           );
-       }
-       catch (RuntimeException e) {
-           throw e;
-       }
-       catch (Exception e) {
-           throw new GroovyRuntimeException(
-               "failed to invoke method: "
-                   + method
-                   + " on: "
-                   + object
-                   + " with arguments: "
-                   + InvokerHelper.toString(argumentArray)
-                   + " reason: "
-                   + e,
-               e);
-       }
-   }
-
 
    private static Object[] coerceNumbers(MetaMethod method, Object[] arguments) {
        Object[] ans = null;
@@ -2160,34 +1906,31 @@ public class MetaClass {
    }
 
    protected boolean accessibleToConstructor(final Class at, final Constructor constructor) {
-       int modi = constructor.getModifiers();
-       Class klass = constructor.getDeclaringClass();
        boolean accessible = false;
-       if (Modifier.isPublic(modi)) {
+       if (Modifier.isPublic(constructor.getModifiers())) {
            accessible = true;
        }
-       else if (Modifier.isPrivate(modi)) {
+       else if (Modifier.isPrivate(constructor.getModifiers())) {
            accessible = at.getName().equals(constructor.getName());
        }
-       else if ( Modifier.isProtected(modi) ) {
-           if ( at.getPackage() == null && klass.getPackage() == null ) {
+       else if ( Modifier.isProtected(constructor.getModifiers()) ) {
+           if ( at.getPackage() == null && constructor.getDeclaringClass().getPackage() == null ) {
                accessible = true;
            }
-           else if ( at.getPackage() == null && klass.getPackage() != null ) {
+           else if ( at.getPackage() == null && constructor.getDeclaringClass().getPackage() != null ) {
                accessible = false;
            }
-           else if ( at.getPackage() != null && klass.getPackage() == null ) {
+           else if ( at.getPackage() != null && constructor.getDeclaringClass().getPackage() == null ) {
                accessible = false;
            }
-           else if ( at.getPackage().equals(klass.getPackage()) ) {
+           else if ( at.getPackage().equals(constructor.getDeclaringClass().getPackage()) ) {
                accessible = true;
            }
-
-           if (!accessible) {
+           else {
                boolean flag = false;
                Class clazz = at;
                while ( !flag && clazz != null ) {
-                   if (clazz.equals(klass) ) {
+                   if (clazz.equals(constructor.getDeclaringClass()) ) {
                        flag = true;
                        break;
                    }
@@ -2200,16 +1943,16 @@ public class MetaClass {
            }
        }
        else {
-           if ( at.getPackage() == null && klass.getPackage() == null ) {
+           if ( at.getPackage() == null && constructor.getDeclaringClass().getPackage() == null ) {
                accessible = true;
            }
-           else if ( at.getPackage() == null && klass.getPackage() != null ) {
+           else if ( at.getPackage() == null && constructor.getDeclaringClass().getPackage() != null ) {
                accessible = false;
            }
-           else if ( at.getPackage() != null && klass.getPackage() == null ) {
+           else if ( at.getPackage() != null && constructor.getDeclaringClass().getPackage() == null ) {
                accessible = false;
            }
-           else if ( at.getPackage().equals(klass.getPackage()) ) {
+           else if ( at.getPackage().equals(constructor.getDeclaringClass().getPackage()) ) {
                accessible = true;
            }
        }
@@ -2247,6 +1990,7 @@ public class MetaClass {
        }
        else {
            List matchingMethods = new ArrayList();
+
            for (Iterator iter = methods.iterator(); iter.hasNext();) {
                Object method = iter.next();
                Class[] paramTypes;
@@ -2256,7 +2000,6 @@ public class MetaClass {
                    matchingMethods.add(method);
                }
            }
-
            if (matchingMethods.isEmpty()) {
                return null;
            }
@@ -2433,7 +2176,6 @@ public class MetaClass {
            }
 
        }
-
        if (matches.size()==1) {
            return matches.getFirst();
        }

@@ -33,10 +33,15 @@ import java.util.List;
 
 class Attributes extends NodeChildren {
   final String attributeName;
-  public Attributes(final GPathResult parent, final String name) {
-    super(parent, name);
+  
+  public Attributes(final GPathResult parent, final String name, final String namespacePrefix) {
+    super(parent, name, namespacePrefix);
     
     this.attributeName = this.name.substring(1);
+  }
+  
+  public Attributes(final GPathResult parent, final String name) {
+    this(parent, name, "*");
   }
   
   /* (non-Javadoc)
@@ -111,6 +116,6 @@ class Attributes extends NodeChildren {
    */
   public void build(GroovyObject builder) {
     builder.getProperty("mkp");
-    final List namespaces = (List)builder.invokeMethodAt(this.getClass(), "yield", new Object[]{text()});
+    final List namespaces = (List)builder.invokeMethod("yield", new Object[]{text()});
   }
 }
