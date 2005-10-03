@@ -21,9 +21,11 @@ import groovy.lang.Closure;
 import groovy.lang.GroovyObjectSupport;
 import groovy.lang.Writable;
 
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import org.codehaus.groovy.sandbox.markup.Buildable;
 
@@ -35,14 +37,22 @@ import org.codehaus.groovy.sandbox.markup.Buildable;
 public abstract class GPathResult extends GroovyObjectSupport implements Writable, Buildable {
   protected final GPathResult parent;
   protected final String name;
+  protected final String namespacePrefix;
+  protected final HashMap namespaceMap = new HashMap();
  
   /**
    * @param parent
    * @param name
    */
-  public GPathResult(final GPathResult parent, final String name) {
-    this.parent = (parent == null) ? this : parent;
+  public GPathResult(final GPathResult parent, final String name, final String namespacePrefix) {
+    if (parent == null) {
+      this.parent = this;
+    } else {
+      this.parent = parent;
+      this.namespaceMap.putAll(parent.namespaceMap);
+    }
     this.name = name;
+    this.namespacePrefix = namespacePrefix;
   }
   
   public Object getProperty(final String property) {
@@ -51,9 +61,21 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
     } else if ("*".equals(property)){
       return children();
     } else if (property.startsWith("@")) {
-      return new Attributes(this, property);
+      if (property.contains(":")) {
+      final int i = property.indexOf(":");
+
+        return new Attributes(this, "@" + property.substring(i + 1), property.substring(1, i));
+      } else {
+        return new Attributes(this, property);
+      }
     } else {
-      return new NodeChildren(this, property);
+      if (property.contains(":")) {
+      final int i = property.indexOf(":");
+
+        return new NodeChildren(this, property.substring(i + 1), property.substring(0, i));
+      } else {
+        return new NodeChildren(this, property);
+      }
     }
   }
 
@@ -71,6 +93,12 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
 
   public String toString() {
     return text();
+  }
+  
+  public GPathResult declareNamespace(final Map newNamespaceMapping) {
+    this.namespaceMap.putAll(newNamespaceMapping);
+    
+    return this; 
   }
   
   /* (non-Javadoc)
