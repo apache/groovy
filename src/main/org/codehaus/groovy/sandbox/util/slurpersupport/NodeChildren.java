@@ -136,7 +136,7 @@ class NodeChildren extends GPathResult {
       }
       
       public Object next() {
-        return new NodeChild((Node)this.iter.next(), NodeChildren.this);
+        return new NodeChild((Node)this.iter.next(), NodeChildren.this.parent);
       }
       
       public void remove() {
