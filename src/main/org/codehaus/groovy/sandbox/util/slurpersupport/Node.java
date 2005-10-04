@@ -36,29 +36,26 @@ import org.codehaus.groovy.sandbox.markup.Buildable;
  *
  */
 
-public class Node extends GPathResult {
+public class Node implements Writable {
+  private final String name;
   private final Map attributes;
   private final Map attributeNamespaces;
   private final String namespaceURI;
   private List children = new LinkedList();
   
   public Node(final Node parent, final String name, final Map attributes, final Map attributeNamespaces, final String namespaceURI) {
-    super(parent, name, "*");
+    this.name = name;
     this.attributes = attributes;
     this.attributeNamespaces = attributeNamespaces;
     this.namespaceURI = namespaceURI;
   }
   
+  public String name() {
+    return this.name;
+  }
+  
   public String namespace() {
     return this.namespaceURI;
-  }
-  
-  public GPathResult parents() {
-    return this.parent;
-  }
-  
-  public int size() {
-    return 1;
   }
   
   public String namespaceURI() {
@@ -68,7 +65,18 @@ public class Node extends GPathResult {
   public Map attributes() {
     return this.attributes;
   }
-  
+
+  public List children() {
+    return this.children();
+  }
+
+  public void addChild(final Object child) {
+    this.children.add(child);
+  }
+
+  /* (non-Javadoc)
+   * @see org.codehaus.groovy.sandbox.util.slurpersupport.Node#text()
+   */
   public String text() {
   final StringBuffer buff = new StringBuffer();
   final Iterator iter = this.children.iterator();
@@ -80,35 +88,9 @@ public class Node extends GPathResult {
     return buff.toString();
   }
 
-  public Iterator iterator() {
-    return new Iterator() {
-      private boolean hasNext = true;
-      
-      public boolean hasNext() {
-        return this.hasNext;
-      }
-      
-      public Object next() {
-        try {
-          return (this.hasNext) ? Node.this : null;
-        } finally {
-          this.hasNext = false;
-        }
-      }
-      
-      public void remove() {
-        throw new UnsupportedOperationException();
-      }
-    };
-  }
-
-  public Object getAt(final int index) {
-    if (index == 0) {
-      return this;
-    } else {
-      throw new ArrayIndexOutOfBoundsException(index);
-    }
-  }
+  /* (non-Javadoc)
+   * @see org.codehaus.groovy.sandbox.util.slurpersupport.Node#childNodes()
+   */
   
   public Iterator childNodes() {
     return new Iterator() {
@@ -144,30 +126,11 @@ public class Node extends GPathResult {
       }
     };
   }
-  
-  /* (non-Javadoc)
-   * @see org.codehaus.groovy.sandbox.util.slurpersupport.GPathResult#find(groovy.lang.Closure)
-   */
-  public GPathResult find(final Closure closure) {
-    if (((Boolean)closure.call(new Object[]{this})).booleanValue()) {
-      return this;
-    } else {
-      return null;
-    }
-  }
 
   /* (non-Javadoc)
-   * @see org.codehaus.groovy.sandbox.util.slurpersupport.GPathResult#findAll(groovy.lang.Closure)
+   * @see org.codehaus.groovy.sandbox.util.slurpersupport.Node#writeTo(java.io.Writer)
    */
-  public GPathResult findAll(final Closure closure) {
-    return find(closure);
-  }
-
-  public void addChild(final Object child) {
-    this.children.add(child);
-  }
-
-  public Writer writeTo(Writer out) throws IOException {
+  public Writer writeTo(final Writer out) throws IOException {
   final Iterator iter = this.children.iterator();
   
     while (iter.hasNext()) {
@@ -183,10 +146,10 @@ public class Node extends GPathResult {
     return out;
   }
   
-  public void build(final GroovyObject builder) {
+  public void build(final GroovyObject builder, final Map namespaceMap) {
   final Closure rest = new Closure(null) {
                           public Object doCall(final Object o) {
-                            buildChildren(builder);
+                            buildChildren(builder, namespaceMap);
                             
                             return null;
                           }
@@ -195,6 +158,7 @@ public class Node extends GPathResult {
     if (this.namespaceURI.length() == 0 && this.attributeNamespaces.isEmpty()) {
       builder.invokeMethod(this.name, new Object[]{this.attributes, rest});
     } else {
+      final List newTags = new LinkedList();
       builder.getProperty("mkp");
       final List namespaces = (List)builder.invokeMethod("getNamespaces", new Object[]{});
       
@@ -202,7 +166,7 @@ public class Node extends GPathResult {
       final Map pending = (Map)namespaces.get(1);
       
       if (this.attributeNamespaces.isEmpty()) {     
-        builder.getProperty(getTagFor(this.namespaceURI, current, pending, this.namespaceMap, builder));
+        builder.getProperty(getTagFor(this.namespaceURI, current, pending, namespaceMap, newTags, builder));
         builder.invokeMethod(this.name, new Object[]{this.attributes, rest});
       } else {
       final Map attributesWithNamespaces = new HashMap(this.attributes);
@@ -213,44 +177,56 @@ public class Node extends GPathResult {
         final Object attributeNamespaceURI = this.attributeNamespaces.get(key);
           
           if (attributeNamespaceURI != null) {
-            attributesWithNamespaces.put(getTagFor(attributeNamespaceURI, current, pending, this.namespaceMap, builder) +
+            attributesWithNamespaces.put(getTagFor(attributeNamespaceURI, current, pending, namespaceMap, newTags, builder) +
                                          "$" + key, attributesWithNamespaces.remove(key));
           }
         }
         
-        builder.getProperty(getTagFor(this.namespaceURI, current, pending, this.namespaceMap, builder));
+        builder.getProperty(getTagFor(this.namespaceURI, current, pending, namespaceMap, newTags, builder));
         builder.invokeMethod(this.name, new Object[]{attributesWithNamespaces, rest});
       }
+      
+      // remove the new tags we had to define for this element
+      if (!newTags.isEmpty()) {
+      final Iterator iter = newTags.iterator();
+      
+        do {
+          pending.remove(iter.next());
+        } while (iter.hasNext());
+      }
+      
     }   
   }
   
-  private static String getTagFor(final Object namespaceURI, final Map current, final Map pending, final Map local, final GroovyObject builder) {
-  String tag = findNamespaceTag(pending, namespaceURI);
+  private static String getTagFor(final Object namespaceURI, final Map current, final Map pending, final Map local, final List newTags, final GroovyObject builder) {
+  String tag = findNamespaceTag(pending, namespaceURI); // look in the namespaces whose decatarion has already been emitted
     
     if (tag == null) {
-      tag = findNamespaceTag(current, namespaceURI);
+      tag = findNamespaceTag(current, namespaceURI);  // look in the namespaces who will be declared at the next element
       
       if (tag == null) {
-        tag = findNamespaceTag(local, namespaceURI);
+        // we have to declare the namespace - choose a tag
+        tag = findNamespaceTag(local, namespaceURI);  // If the namespace has been decared in the GPath expression use that tag
         
-        if (tag == null) {
+        if (tag == null) { // otherwise make up a new tag and check it has not been used before
         int suffix = 0;
         
           do {
             final String posibleTag = "tag" + suffix++;
             
-            if (!pending.containsKey(posibleTag) && !current.containsKey(posibleTag)) {
+            if (!pending.containsKey(posibleTag) && !current.containsKey(posibleTag) && !local.containsKey(posibleTag)) {
               tag = posibleTag;
             }
           } while (tag == null);
         }
+        
+        final Map newNamespace = new HashMap();
+        newNamespace.put(tag, namespaceURI);
+        builder.getProperty("mkp");
+        builder.invokeMethod("declareNamespace", new Object[]{newNamespace});
+        newTags.add(tag);
       }
     }
-    
-    final Map newNamespace = new HashMap();
-    newNamespace.put(tag, namespaceURI);
-    builder.getProperty("mkp");
-    builder.invokeMethod("declareNamespace", new Object[]{newNamespace});
     
     return tag;
   }
@@ -271,13 +247,15 @@ public class Node extends GPathResult {
     return null;
   }
   
-  private void buildChildren(final GroovyObject builder) {
+  private void buildChildren(final GroovyObject builder, final Map namespaceMap) {
   final Iterator iter = this.children.iterator();
   
     while (iter.hasNext()) {
     final Object child = iter.next();
     
-      if (child instanceof Buildable) {
+      if (child instanceof Node) {
+        ((Node)child).build(builder, namespaceMap);
+      } else if (child instanceof Buildable) {
         ((Buildable)child).build(builder);
       } else {
         builder.getProperty("mkp");

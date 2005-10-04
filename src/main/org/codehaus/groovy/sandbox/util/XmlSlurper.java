@@ -36,6 +36,7 @@ import javax.xml.parsers.SAXParserFactory;
 
 import org.codehaus.groovy.sandbox.util.slurpersupport.GPathResult;
 import org.codehaus.groovy.sandbox.util.slurpersupport.Node;
+import org.codehaus.groovy.sandbox.util.slurpersupport.NodeChild;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -98,7 +99,7 @@ public class XmlSlurper extends DefaultHandler {
    */
   public GPathResult getDocument() {
     try {
-      return this.currentNode;
+      return new NodeChild(this.currentNode, null);
     } finally {
       this.currentNode = null;
     }

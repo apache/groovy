@@ -46,7 +46,9 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
    */
   public GPathResult(final GPathResult parent, final String name, final String namespacePrefix) {
     if (parent == null) {
+      // we are the top of the tree
       this.parent = this;
+      this.namespaceMap.put("xml", "http://www.w3.org/XML/1998/namespace");  // The XML namespace is always defined
     } else {
       this.parent = parent;
       this.namespaceMap.putAll(parent.namespaceMap);
@@ -107,9 +109,25 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
   public boolean equals(Object obj) {
     return text().equals(obj.toString());
   }
+
+  public Object getAt(final int index) {
+  final Iterator iter = iterator();
+  int count = 0;
+  
+  
+    while (iter.hasNext()) {
+      if (count++ == index) {
+        return iter.next();
+      } else {
+        iter.next();
+      }
+    }
+    
+    throw new ArrayIndexOutOfBoundsException(index);
+  }
   
   public List list() {
-  final Iterator iter =  iterator();
+  final Iterator iter = nodeIterator();
   final List result = new LinkedList();
   
     while (iter.hasNext()) {
@@ -129,9 +147,9 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
   
   public abstract Iterator iterator();
   
-  public abstract Object getAt(int index);
-  
   public abstract GPathResult find(Closure closure);
   
   public abstract GPathResult findAll(Closure closure);
+  
+  public abstract Iterator nodeIterator();
 }
