@@ -125,9 +125,30 @@ class NodeChildren extends GPathResult {
   }
 
   /* (non-Javadoc)
-   * @see org.codehaus.groovy.sandbox.util.GPathResult#iterator()
+   * @see org.codehaus.groovy.sandbox.util.slurpersupport.GPathResult#iterator()
    */
   public Iterator iterator() {
+    return new Iterator() {
+      final Iterator iter = nodeIterator();
+      
+      public boolean hasNext() {
+        return this.iter.hasNext();
+      }
+      
+      public Object next() {
+        return new NodeChild((Node)this.iter.next(), NodeChildren.this);
+      }
+      
+      public void remove() {
+        throw new UnsupportedOperationException();
+      }
+    };
+  }
+
+  /* (non-Javadoc)
+   * @see org.codehaus.groovy.sandbox.util.GPathResult#iterator()
+   */
+  public Iterator nodeIterator() {
     if ("*".equals(this.name)) {
       return this.parent.childNodes();
     } else {
@@ -156,25 +177,6 @@ class NodeChildren extends GPathResult {
   }
 
   /* (non-Javadoc)
-   * @see org.codehaus.groovy.sandbox.util.GPathResult#getAt(int)
-   */
-  public Object getAt(final int index) {
-  final Iterator iter = iterator();
-  int count = 0;
-  
-  
-    while (iter.hasNext()) {
-      if (count++ == index) {
-        return iter.next();
-      } else {
-        iter.next();
-      }
-    }
-    
-    throw new ArrayIndexOutOfBoundsException(index);
-  }
-
-  /* (non-Javadoc)
    * @see org.codehaus.groovy.sandbox.util.GPathResult#parents()
    */
   public GPathResult parents() {
@@ -187,7 +189,7 @@ class NodeChildren extends GPathResult {
    */
   public synchronized int size() {
     if (this.size == -1) {
-    final Iterator iter = iterator();
+    final Iterator iter = nodeIterator();
     
       this.size = 0;
       while (iter.hasNext()) {
@@ -204,7 +206,7 @@ class NodeChildren extends GPathResult {
    */
   public String text() {
   final StringBuffer buf = new StringBuffer();
-  final Iterator iter = iterator();
+  final Iterator iter = nodeIterator();
   
     while (iter.hasNext()) {
       buf.append(((Node)iter.next()).text());
@@ -228,7 +230,7 @@ class NodeChildren extends GPathResult {
       }
     }
     
-    return null;
+    return new NoChildren(this, this.name);
   }
 
   /* (non-Javadoc)
@@ -242,10 +244,10 @@ class NodeChildren extends GPathResult {
    * @see org.codehaus.groovy.sandbox.markup.Buildable#build(groovy.lang.GroovyObject)
    */
   public void build(final GroovyObject builder) {
-  final Iterator iter = iterator();
+  final Iterator iter = nodeIterator();
   
     while (iter.hasNext()) {
-      ((Node)iter.next()).build(builder);
+      ((Node)iter.next()).build(builder, this.namespaceMap);
     }
   }
 
@@ -253,7 +255,7 @@ class NodeChildren extends GPathResult {
    * @see groovy.lang.Writable#writeTo(java.io.Writer)
    */
   public Writer writeTo(final Writer out) throws IOException {
-  final Iterator iter = iterator();
+  final Iterator iter = nodeIterator();
   
     while (iter.hasNext()) {
       ((Node)iter.next()).writeTo(out);

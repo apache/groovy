@@ -37,7 +37,7 @@ public class FilteredNodeChildren extends NodeChildren {
   /* (non-Javadoc)
    * @see org.codehaus.groovy.sandbox.util.slurpersupport.NodeChildren#iterator()
    */
-  public Iterator iterator() {
+  public Iterator nodeIterator() {
     return new NodeIterator(this.parent.iterator()) {
               /* (non-Javadoc)
                * @see org.codehaus.groovy.sandbox.util.slurpersupport.NodeIterator#getNextNode(java.util.Iterator)

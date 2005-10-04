@@ -24,7 +24,6 @@ import groovy.lang.GroovyRuntimeException;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Iterator;
-import java.util.List;
 
 /**
  * @author John Wilson
@@ -55,7 +54,7 @@ class Attributes extends NodeChildren {
    * @see org.codehaus.groovy.sandbox.util.slurpersupport.NodeChildren#iterator()
    */
   public Iterator iterator() {
-    return new NodeIterator(this.parent.iterator()) {
+    return new NodeIterator(this.parent.nodeIterator()) {
                   /* (non-Javadoc)
                    * @see org.codehaus.groovy.sandbox.util.slurpersupport.NodeIterator#getNextNode(java.util.Iterator)
                    */
@@ -77,7 +76,6 @@ class Attributes extends NodeChildren {
    * @see org.codehaus.groovy.sandbox.util.slurpersupport.NodeChildren#parents()
    */
   public GPathResult parents() {
-    // TODO Auto-generated method stub
     return super.parents();
   }
   
@@ -98,14 +96,14 @@ class Attributes extends NodeChildren {
   /* (non-Javadoc)
    * @see org.codehaus.groovy.sandbox.util.slurpersupport.NodeChildren#find(groovy.lang.Closure)
    */
-  public GPathResult find(Closure closure) {
+  public GPathResult find(final Closure closure) {
     return new FilteredAttributes(this, closure);
   }
 
   /* (non-Javadoc)
    * @see org.codehaus.groovy.sandbox.util.slurpersupport.NodeChildren#writeTo(java.io.Writer)
    */
-  public Writer writeTo(Writer out) throws IOException {
+  public Writer writeTo(final Writer out) throws IOException {
     out.write(text());
     
     return out;
@@ -114,8 +112,8 @@ class Attributes extends NodeChildren {
   /* (non-Javadoc)
    * @see org.codehaus.groovy.sandbox.util.slurpersupport.NodeChildren#build(groovy.lang.GroovyObject)
    */
-  public void build(GroovyObject builder) {
+  public void build(final GroovyObject builder) {
     builder.getProperty("mkp");
-    final List namespaces = (List)builder.invokeMethod("yield", new Object[]{text()});
+    builder.invokeMethod("yield", new Object[]{text()});
   }
 }
