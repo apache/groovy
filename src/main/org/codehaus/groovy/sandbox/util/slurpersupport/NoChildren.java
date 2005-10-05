@@ -24,6 +24,7 @@ import groovy.lang.GroovyRuntimeException;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Iterator;
+import java.util.Map;
 
 /**
  * @author John Wilson
@@ -36,8 +37,8 @@ public class NoChildren extends GPathResult {
    * @param name
    * @param namespacePrefix
    */
-  public NoChildren(final GPathResult parent, final String name) {
-    super(parent, name, "*");
+  public NoChildren(final GPathResult parent, final String name, final Map namespaceTagHints) {
+    super(parent, name, "*", namespaceTagHints);
   }
 
   /* (non-Javadoc)
