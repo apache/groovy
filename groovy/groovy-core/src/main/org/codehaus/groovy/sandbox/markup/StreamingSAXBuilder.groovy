@@ -55,148 +55,148 @@ import org.xml.sax.ext.LexicalHandler
     class StreamingSAXBuilder extends AbstractStreamingBuilder {
         @Property pendingStack = []
         @Property commentClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, contentHandler ->
-                            if (contentHandler instanceof LexicalHandler) {
-                                contentHandler.comment(body.toCharArray(), 0, body.length())
-                            }
-                         }
+                                      if (contentHandler instanceof LexicalHandler) {
+                                          contentHandler.comment(body.toCharArray(), 0, body.length())
+                                      }
+                                   }
         @Property piClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, contentHandler ->
-                                attrs.each {target, instruction ->
-                                   if (instruction instanceof Map) {
-                                   def buf = new StringBuffer()
-                                      
-                                      instruction.each { name, value ->
-                                        if (value.toString().contains('"')) {
-                                          buf.append(" $name='$value'")
-                                        } else {
-                                          buf.append(" $name=\"$value\"" )                                        
+                                  attrs.each {target, instruction ->
+                                     if (instruction instanceof Map) {
+                                     def buf = new StringBuffer()
+                                        
+                                        instruction.each { name, value ->
+                                          if (value.toString().contains('"')) {
+                                            buf.append(" $name='$value'")
+                                          } else {
+                                            buf.append(" $name=\"$value\"" )                                        
+                                          }
+                                        }
+                                        contentHandler.processingInstruction(target, buf.toString())
+                                      } else {
+                                        contentHandler.processingInstruction(target, instruction)
+                                      }
+                                    }
+                               }
+        @Property noopClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, contentHandler ->
+                                  if (body instanceof Closure) {
+                                    def body1 = body.clone()
+                                    
+                                    body1.delegate = this
+                                    body1()
+                                  } else if (body instanceof Buildable) {
+                                    body.build(doc)
+                                  } else {
+                                    body.each {
+                                      if (it instanceof Closure) {
+                                        def body1 = it.clone()
+                                        
+                                        body1.delegate = this
+                                        body1()
+                                      } else if (it instanceof Buildable) {
+                                        it.build(doc)
+                                      } else {
+                                          def chars = it.toCharArray()
+                                          contentHandler.characters(chars, 0, chars.length())
                                         }
                                       }
-                                      contentHandler.processingInstruction(target, buf.toString())
-                                    } else {
-                                      contentHandler.processingInstruction(target, instruction)
-                                    }
                                   }
-                             }
-        @Property noopClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, contentHandler ->
-                        if (body instanceof Closure) {
-                          def body1 = body.clone()
-                          
-                          body1.delegate = this
-                          body1()
-                        } else if (body instanceof Buildable) {
-                          body.build(doc)
-                        } else {
-                          body.each {
-                            if (it instanceof Closure) {
-                              def body1 = it.clone()
-                              
-                              body1.delegate = this
-                              body1()
-                            } else if (it instanceof Buildable) {
-                              it.build(doc)
-                            } else {
-                                def chars = it.toCharArray()
-                                contentHandler.characters(chars, 0, chars.length())
-                              }
-                            }
-                        }
-                      }
+                                }
         @Property tagClosure = {tag, doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, contentHandler ->
-                        def attributes = new AttributesImpl()
-
-                        attrs.each {key, value ->
-                                if (key.contains('$')) {
-                                    def parts = key.tokenize('$')
-
-                                    if (namespaces.containsKey(parts[0])) {
-                                        def namespaceUri = namespaces[parts[0]]
-
-//                                      attributes.addAttribute(namespaceUri, parts[1], "${parts[0]}:${parts[1]}", "CDATA", value)
+                                  def attributes = new AttributesImpl()
+          
+                                  attrs.each {key, value ->
+                                          if (key.contains('$')) {
+                                              def parts = key.tokenize('$')
+          
+                                              if (namespaces.containsKey(parts[0])) {
+                                                  def namespaceUri = namespaces[parts[0]]
+          
+//                                                attributes.addAttribute(namespaceUri, parts[1], "${parts[0]}:${parts[1]}", "CDATA", value)
 // workround for bug GROOVY-309
-                                        attributes.addAttribute(namespaceUri, parts[1], "${parts[0]}:${parts[1]}".toString(), "CDATA", value)
-                                    } else {
-                                        throw new GroovyRuntimeException("bad attribute namespace tag in ${key}")
+                                                  attributes.addAttribute(namespaceUri, parts[1], "${parts[0]}:${parts[1]}".toString(), "CDATA", value)
+                                              } else {
+                                                  throw new GroovyRuntimeException("bad attribute namespace tag in ${key}")
+                                              }
+                                          } else {
+                                              attributes.addAttribute("", key, key, "CDATA", value)
+                                          }
                                     }
-                                } else {
-                                    attributes.addAttribute("", key, key, "CDATA", value)
-                                }
-                          }
-
-                        def hiddenNamespaces = [:]
-
-                        pendingNamespaces.each {key, value ->
-                            hiddenNamespaces[key] = namespaces[key]
-                            namespaces[key] = value
-//                            attributes.addAttribute("http://www.w3.org/2000/xmlns/", key, "xmlns:${key}", "CDATA", value)
+          
+                                  def hiddenNamespaces = [:]
+          
+                                  pendingNamespaces.each {key, value ->
+                                      hiddenNamespaces[key] = namespaces[key]
+                                      namespaces[key] = value
+//                                    attributes.addAttribute("http://www.w3.org/2000/xmlns/", key, "xmlns:${key}", "CDATA", value)
 // workround for bug GROOVY-309
-                            attributes.addAttribute("http://www.w3.org/2000/xmlns/", key, "xmlns:${key}".toString(), "CDATA", value)
-                                contentHandler.startPrefixMapping(key, value)
-                        }
-
-                        // setup the tag info
-
-                        def uri = ""
-                        def qualifiedName = tag
-
-                        if (prefix != "") {
-                            if (namespaces.containsKey(prefix)) {
-                                uri = namespaces[prefix]
-                            } else if (pendingNamespaces.containsKey(prefix)) {
-                                uri = pendingNamespaces[prefix]
-                            } else {
-                                throw new GroovyRuntimeException("Namespace prefix: ${prefix} is not bound to a URI")
-                            }
-
-                            if (prefix != ":") {
-                                qualifiedName = prefix + ":" + tag
-                            }
-                        }
-
-                        contentHandler.startElement(uri, tag, qualifiedName, attributes)
-
-                        if (body != null) {
-                            pendingStack.add pendingNamespaces.clone()
-                            pendingNamespaces.clear()
-
-                            if (body instanceof Closure) {
-                              def body1 = body.clone()
-                              
-                              body1.delegate = this
-                              body1()
-                            } else if (body instanceof Buildable) {
-                              body.build(doc)
-                            } else {
-                              body.each {
-                                if (it instanceof Closure) {
-                                  def body1 = it.clone()
-                                  
-                                  body1.delegate = this
-                                  body1()
-                                } else if (it instanceof Buildable) {
-                                  it.build(doc)
-                                } else {
-                                    def chars = it.toCharArray()
-                                    contentHandler.characters(chars, 0, chars.length())
+                                      attributes.addAttribute("http://www.w3.org/2000/xmlns/", key, "xmlns:${key}".toString(), "CDATA", value)
+                                          contentHandler.startPrefixMapping(key, value)
                                   }
-                                }
-                            }
-
-                            pendingNamespaces.clear()
-                            pendingNamespaces.putAll pendingStack.pop()
-                        }
-
-                        contentHandler.endElement(uri, tag, qualifiedName)
-
-                        hiddenNamespaces.each {key, value ->
-                                                    contentHandler.endPrefixMapping(key)
-
-                                                    if (value == null) {
-                                                        namespaces.remove key
-                                                    } else {
-                                                        namespaces[key] = value
-                                                    }
-                                               }
-                    }
+          
+                                  // setup the tag info
+          
+                                  def uri = ""
+                                  def qualifiedName = tag
+          
+                                  if (prefix != "") {
+                                      if (namespaces.containsKey(prefix)) {
+                                          uri = namespaces[prefix]
+                                      } else if (pendingNamespaces.containsKey(prefix)) {
+                                          uri = pendingNamespaces[prefix]
+                                      } else {
+                                          throw new GroovyRuntimeException("Namespace prefix: ${prefix} is not bound to a URI")
+                                      }
+          
+                                      if (prefix != ":") {
+                                          qualifiedName = prefix + ":" + tag
+                                      }
+                                  }
+          
+                                  contentHandler.startElement(uri, tag, qualifiedName, attributes)
+          
+                                  if (body != null) {
+                                      pendingStack.add pendingNamespaces.clone()
+                                      pendingNamespaces.clear()
+          
+                                      if (body instanceof Closure) {
+                                        def body1 = body.clone()
+                                        
+                                        body1.delegate = this
+                                        body1()
+                                      } else if (body instanceof Buildable) {
+                                        body.build(doc)
+                                      } else {
+                                        body.each {
+                                          if (it instanceof Closure) {
+                                            def body1 = it.clone()
+                                            
+                                            body1.delegate = this
+                                            body1()
+                                          } else if (it instanceof Buildable) {
+                                            it.build(doc)
+                                          } else {
+                                              def chars = it.toCharArray()
+                                              contentHandler.characters(chars, 0, chars.length())
+                                            }
+                                          }
+                                      }
+          
+                                      pendingNamespaces.clear()
+                                      pendingNamespaces.putAll pendingStack.pop()
+                                  }
+          
+                                  contentHandler.endElement(uri, tag, qualifiedName)
+          
+                                  hiddenNamespaces.each {key, value ->
+                                                              contentHandler.endPrefixMapping(key)
+          
+                                                              if (value == null) {
+                                                                  namespaces.remove key
+                                                              } else {
+                                                                  namespaces[key] = value
+                                                              }
+                                                         }
+                              }
 
         @Property builder = null
 

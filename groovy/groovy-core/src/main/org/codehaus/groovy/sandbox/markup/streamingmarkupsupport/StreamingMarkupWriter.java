@@ -45,11 +45,15 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
 
 public class StreamingMarkupWriter extends Writer {
-	protected final Writer delegate;
-	private final int encodingLimit = 127; // initally encode everything that's not US ASCII
+	protected final Writer writer;
+  protected final String encoding;
+  protected final CharsetEncoder encoder;
 	private final Writer bodyWriter =  new Writer() {
 											/* (non-Javadoc)
 											 * @see java.io.Writer#close()
@@ -69,18 +73,18 @@ public class StreamingMarkupWriter extends Writer {
 											 * @see java.io.Writer#write(int)
 											 */
 											public void write(int c) throws IOException {
-												if (c > StreamingMarkupWriter.this.encodingLimit) {
-													StreamingMarkupWriter.this.delegate.write("&#x");
-													StreamingMarkupWriter.this.delegate.write(Integer.toHexString(c));
-													StreamingMarkupWriter.this.delegate.write(';');
+												if (!StreamingMarkupWriter.this.encoder.canEncode((char)c)) {
+													StreamingMarkupWriter.this.writer.write("&#x");
+													StreamingMarkupWriter.this.writer.write(Integer.toHexString(c));
+													StreamingMarkupWriter.this.writer.write(';');
 												} else if (c == '<') {
-													StreamingMarkupWriter.this.delegate.write("&lt;");
+													StreamingMarkupWriter.this.writer.write("&lt;");
 												} else if (c == '>') {
-													StreamingMarkupWriter.this.delegate.write("&gt;");
+													StreamingMarkupWriter.this.writer.write("&gt;");
 												} else if (c == '&') {
-													StreamingMarkupWriter.this.delegate.write("&amp;");
+													StreamingMarkupWriter.this.writer.write("&amp;");
 												} else {
-													StreamingMarkupWriter.this.delegate.write(c);
+													StreamingMarkupWriter.this.writer.write(c);
 												}
 											}
 											
@@ -126,7 +130,7 @@ public class StreamingMarkupWriter extends Writer {
 												 */
 												public void write(int c) throws IOException {
 													if (c == '\'') {
-														StreamingMarkupWriter.this.delegate.write("&apos;");
+														StreamingMarkupWriter.this.writer.write("&apos;");
 													} else {
 														StreamingMarkupWriter.this.bodyWriter.write(c);
 													}
@@ -155,28 +159,36 @@ public class StreamingMarkupWriter extends Writer {
 											};
 
 		public StreamingMarkupWriter(final Writer delegate) {
-			this.delegate = delegate;
+			this.writer = delegate;
+      
+      if (delegate instanceof OutputStreamWriter) {
+        this.encoding = ((OutputStreamWriter)delegate).getEncoding();
+      } else {
+        this.encoding = "US-ASCII";
+      }
+      
+      this.encoder = Charset.forName(this.encoding).newEncoder();
 		}
 	
 		/* (non-Javadoc)
 		 * @see java.io.Writer#close()
 		 */
 		public void close() throws IOException {
-			this.delegate.close();
+			this.writer.close();
 		}
 
 		/* (non-Javadoc)
 		 * @see java.io.Writer#flush()
 		 */
 		public void flush() throws IOException {
-			this.delegate.flush();
+			this.writer.flush();
 		}
 		
 		/* (non-Javadoc)
 		 * @see java.io.Writer#write(char[], int, int)
 		 */
 		public void write(final char[] cbuf, int off, int len) throws IOException {
-			this.delegate.write(cbuf, off, len);
+			this.writer.write(cbuf, off, len);
 		}
 		
 		public Writer attributeValue() {
