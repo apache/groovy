@@ -27,6 +27,7 @@ import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.Map;
 import java.util.Stack;
 
@@ -53,6 +54,7 @@ public class XmlSlurper extends DefaultHandler {
   private Node currentNode = null;
   private final Stack stack = new Stack();
   private final StringBuffer charBuffer = new StringBuffer();
+  private final Map namespaceTagHints = new Hashtable();
 
   public XmlSlurper() throws ParserConfigurationException, SAXException {
     this(false, true);
@@ -99,7 +101,7 @@ public class XmlSlurper extends DefaultHandler {
    */
   public GPathResult getDocument() {
     try {
-      return new NodeChild(this.currentNode, null);
+      return new NodeChild(this.currentNode, null, this.namespaceTagHints);
     } finally {
       this.currentNode = null;
     }
@@ -200,6 +202,13 @@ public class XmlSlurper extends DefaultHandler {
     this.charBuffer.setLength(0);
   }
   
+  /* (non-Javadoc)
+   * @see org.xml.sax.helpers.DefaultHandler#startPrefixMapping(java.lang.String, java.lang.String)
+   */
+  public void startPrefixMapping(final String tag, final String uri) throws SAXException {
+    this.namespaceTagHints.put(tag, uri);
+  }
+
   /* (non-Javadoc)
    * @see org.xml.sax.ContentHandler#startElement(java.lang.String, java.lang.String, java.lang.String, org.xml.sax.Attributes)
    */

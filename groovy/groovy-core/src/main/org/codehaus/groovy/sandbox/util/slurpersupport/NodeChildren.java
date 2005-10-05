@@ -24,6 +24,7 @@ import groovy.lang.GroovyRuntimeException;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Iterator;
+import java.util.Map;
 
 /**
  * @author John Wilson
@@ -38,23 +39,23 @@ class NodeChildren extends GPathResult {
    * @param name
    * @param namespacePrefix
    */
-  public NodeChildren(final GPathResult parent, final String name, final String namespacePrefix) {
-    super(parent, name, namespacePrefix);
+  public NodeChildren(final GPathResult parent, final String name, final String namespacePrefix, final Map namespaceTagHints) {
+    super(parent, name, namespacePrefix, namespaceTagHints);
   }
   
   /**
    * @param parent
    * @param name
    */
-  public NodeChildren(final GPathResult parent, final String name) {
-    this(parent, name, "*");
+  public NodeChildren(final GPathResult parent, final String name, final Map namespaceTagHints) {
+    this(parent, name, "*", namespaceTagHints);
   }
   
   /**
    * @param parent
    */
-  public NodeChildren(final GPathResult parent) {
-    this(parent, "*");
+  public NodeChildren(final GPathResult parent, final Map namespaceTagHints) {
+    this(parent, "*", namespaceTagHints);
   }
 
   /* (non-Javadoc)
@@ -136,7 +137,7 @@ class NodeChildren extends GPathResult {
       }
       
       public Object next() {
-        return new NodeChild((Node)this.iter.next(), NodeChildren.this.parent);
+        return new NodeChild((Node)this.iter.next(), NodeChildren.this.parent, NodeChildren.this.namespaceTagHints);
       }
       
       public void remove() {
@@ -230,14 +231,14 @@ class NodeChildren extends GPathResult {
       }
     }
     
-    return new NoChildren(this, this.name);
+    return new NoChildren(this, this.name, this.namespaceTagHints);
   }
 
   /* (non-Javadoc)
    * @see org.codehaus.groovy.sandbox.util.slurpersupport.GPathResult#findAll(groovy.lang.Closure)
    */
   public GPathResult findAll(final Closure closure) {
-    return new FilteredNodeChildren(this, closure);
+    return new FilteredNodeChildren(this, closure, this.namespaceTagHints);
   }
 
   /* (non-Javadoc)
@@ -247,7 +248,7 @@ class NodeChildren extends GPathResult {
   final Iterator iter = nodeIterator();
   
     while (iter.hasNext()) {
-      ((Node)iter.next()).build(builder, this.namespaceMap);
+      ((Node)iter.next()).build(builder, this.namespaceMap, this.namespaceTagHints);
     }
   }
 

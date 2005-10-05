@@ -18,6 +18,7 @@
 package org.codehaus.groovy.sandbox.util.slurpersupport;
 
 import java.util.Iterator;
+import java.util.Map;
 
 import groovy.lang.Closure;
 
@@ -29,8 +30,8 @@ import groovy.lang.Closure;
 public class FilteredNodeChildren extends NodeChildren {
   private final Closure closure;
   
-  public FilteredNodeChildren(final GPathResult parent, final Closure closure) {
-    super(parent, parent.name);
+  public FilteredNodeChildren(final GPathResult parent, final Closure closure, final Map namespaceTagHints) {
+    super(parent, parent.name, namespaceTagHints);
     this.closure = closure;
   }
 

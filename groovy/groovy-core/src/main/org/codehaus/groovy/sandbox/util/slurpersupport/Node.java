@@ -146,10 +146,10 @@ public class Node implements Writable {
     return out;
   }
   
-  public void build(final GroovyObject builder, final Map namespaceMap) {
+  public void build(final GroovyObject builder, final Map namespaceMap, final Map namespaceTagHints) {
   final Closure rest = new Closure(null) {
                           public Object doCall(final Object o) {
-                            buildChildren(builder, namespaceMap);
+                            buildChildren(builder, namespaceMap, namespaceTagHints);
                             
                             return null;
                           }
@@ -166,7 +166,7 @@ public class Node implements Writable {
       final Map pending = (Map)namespaces.get(1);
       
       if (this.attributeNamespaces.isEmpty()) {     
-        builder.getProperty(getTagFor(this.namespaceURI, current, pending, namespaceMap, newTags, builder));
+        builder.getProperty(getTagFor(this.namespaceURI, current, pending, namespaceMap, namespaceTagHints, newTags, builder));
         builder.invokeMethod(this.name, new Object[]{this.attributes, rest});
       } else {
       final Map attributesWithNamespaces = new HashMap(this.attributes);
@@ -177,12 +177,12 @@ public class Node implements Writable {
         final Object attributeNamespaceURI = this.attributeNamespaces.get(key);
           
           if (attributeNamespaceURI != null) {
-            attributesWithNamespaces.put(getTagFor(attributeNamespaceURI, current, pending, namespaceMap, newTags, builder) +
+            attributesWithNamespaces.put(getTagFor(attributeNamespaceURI, current, pending, namespaceMap, namespaceTagHints, newTags, builder) +
                                          "$" + key, attributesWithNamespaces.remove(key));
           }
         }
         
-        builder.getProperty(getTagFor(this.namespaceURI, current, pending, namespaceMap, newTags, builder));
+        builder.getProperty(getTagFor(this.namespaceURI, current, pending, namespaceMap,namespaceTagHints,  newTags, builder));
         builder.invokeMethod(this.name, new Object[]{attributesWithNamespaces, rest});
       }
       
@@ -198,7 +198,9 @@ public class Node implements Writable {
     }   
   }
   
-  private static String getTagFor(final Object namespaceURI, final Map current, final Map pending, final Map local, final List newTags, final GroovyObject builder) {
+  private static String getTagFor(final Object namespaceURI, final Map current,
+                                  final Map pending, final Map local, final Map tagHints,
+                                  final List newTags, final GroovyObject builder) {
   String tag = findNamespaceTag(pending, namespaceURI); // look in the namespaces whose decatarion has already been emitted
     
     if (tag == null) {
@@ -207,6 +209,10 @@ public class Node implements Writable {
       if (tag == null) {
         // we have to declare the namespace - choose a tag
         tag = findNamespaceTag(local, namespaceURI);  // If the namespace has been decared in the GPath expression use that tag
+        
+        if (tag == null) {
+          tag = findNamespaceTag(tagHints, namespaceURI);  // If the namespace has been used in the parse documant use that tag         
+        }
         
         if (tag == null) { // otherwise make up a new tag and check it has not been used before
         int suffix = 0;
@@ -247,14 +253,14 @@ public class Node implements Writable {
     return null;
   }
   
-  private void buildChildren(final GroovyObject builder, final Map namespaceMap) {
+  private void buildChildren(final GroovyObject builder, final Map namespaceMap, final Map namespaceTagHints) {
   final Iterator iter = this.children.iterator();
   
     while (iter.hasNext()) {
     final Object child = iter.next();
     
       if (child instanceof Node) {
-        ((Node)child).build(builder, namespaceMap);
+        ((Node)child).build(builder, namespaceMap, namespaceTagHints);
       } else if (child instanceof Buildable) {
         ((Buildable)child).build(builder);
       } else {

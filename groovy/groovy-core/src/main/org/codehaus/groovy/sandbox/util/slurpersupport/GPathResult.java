@@ -38,13 +38,14 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
   protected final GPathResult parent;
   protected final String name;
   protected final String namespacePrefix;
-  protected final HashMap namespaceMap = new HashMap();
+  protected final Map namespaceMap = new HashMap();
+  protected final Map namespaceTagHints;
  
   /**
    * @param parent
    * @param name
    */
-  public GPathResult(final GPathResult parent, final String name, final String namespacePrefix) {
+  public GPathResult(final GPathResult parent, final String name, final String namespacePrefix, final Map namespaceTagHints) {
     if (parent == null) {
       // we are the top of the tree
       this.parent = this;
@@ -55,6 +56,7 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
     }
     this.name = name;
     this.namespacePrefix = namespacePrefix;
+    this.namespaceTagHints = namespaceTagHints;
   }
   
   public Object getProperty(final String property) {
@@ -66,17 +68,17 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
       if (property.indexOf(":") != -1) {
       final int i = property.indexOf(":");
 
-        return new Attributes(this, "@" + property.substring(i + 1), property.substring(1, i));
+        return new Attributes(this, "@" + property.substring(i + 1), property.substring(1, i), this.namespaceTagHints);
       } else {
-        return new Attributes(this, property);
+        return new Attributes(this, property, this.namespaceTagHints);
       }
     } else {
       if (property.indexOf(":") != -1) {
       final int i = property.indexOf(":");
 
-        return new NodeChildren(this, property.substring(i + 1), property.substring(0, i));
+        return new NodeChildren(this, property.substring(i + 1), property.substring(0, i), this.namespaceTagHints);
       } else {
-        return new NodeChildren(this, property);
+        return new NodeChildren(this, property, this.namespaceTagHints);
       }
     }
   }
@@ -90,7 +92,7 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
   }
 
   public GPathResult children() {
-    return new NodeChildren(this);
+    return new NodeChildren(this, this.namespaceTagHints);
   }
 
   public String toString() {

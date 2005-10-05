@@ -24,6 +24,7 @@ import groovy.lang.GroovyRuntimeException;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Iterator;
+import java.util.Map;
 
 /**
  * @author John Wilson
@@ -33,13 +34,13 @@ import java.util.Iterator;
 public class NodeChild extends GPathResult {
   private final Node node;
 
-  public NodeChild(final Node node, final GPathResult parent, final String namespacePrefix) {
-    super(parent, node.name(), namespacePrefix);
+  public NodeChild(final Node node, final GPathResult parent, final String namespacePrefix, final Map namespaceTagHints) {
+    super(parent, node.name(), namespacePrefix, namespaceTagHints);
     this.node = node;
   }
 
-  public NodeChild(final Node node, final GPathResult parent) {
-    this(node, parent, "*");
+  public NodeChild(final Node node, final GPathResult parent, final Map namespaceTagHints) {
+    this(node, parent, "*", namespaceTagHints);
   }
 
   /* (non-Javadoc)
@@ -149,7 +150,7 @@ public class NodeChild extends GPathResult {
    * @see org.codehaus.groovy.sandbox.util.slurpersupport.Node#build(groovy.lang.GroovyObject)
    */
   public void build(final GroovyObject builder) {
-    this.node.build(builder, this.namespaceMap);
+    this.node.build(builder, this.namespaceMap, this.namespaceTagHints);
   }
 
   /* (non-Javadoc)

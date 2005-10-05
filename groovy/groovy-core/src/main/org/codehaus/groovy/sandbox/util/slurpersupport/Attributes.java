@@ -24,6 +24,7 @@ import groovy.lang.GroovyRuntimeException;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Iterator;
+import java.util.Map;
 
 /**
  * @author John Wilson
@@ -33,14 +34,14 @@ import java.util.Iterator;
 class Attributes extends NodeChildren {
   final String attributeName;
   
-  public Attributes(final GPathResult parent, final String name, final String namespacePrefix) {
-    super(parent, name, namespacePrefix);
+  public Attributes(final GPathResult parent, final String name, final String namespacePrefix, final Map namespaceTagHints) {
+    super(parent, name, namespacePrefix, namespaceTagHints);
     
     this.attributeName = this.name.substring(1);
   }
   
-  public Attributes(final GPathResult parent, final String name) {
-    this(parent, name, "*");
+  public Attributes(final GPathResult parent, final String name, final Map namespaceTagHints) {
+    this(parent, name, "*", namespaceTagHints);
   }
   
   /* (non-Javadoc)
@@ -97,7 +98,7 @@ class Attributes extends NodeChildren {
    * @see org.codehaus.groovy.sandbox.util.slurpersupport.NodeChildren#find(groovy.lang.Closure)
    */
   public GPathResult find(final Closure closure) {
-    return new FilteredAttributes(this, closure);
+    return new FilteredAttributes(this, closure, this.namespaceTagHints);
   }
 
   /* (non-Javadoc)
