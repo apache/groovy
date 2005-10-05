@@ -1,4 +1,4 @@
-package org.codehaus.groovy.sandbox.markup
+package org.codehaus.groovy.sandbox.markup.streamingmarkupsupport
 /*
 
 Copyright 2004 (C) John Wilson. All Rights Reserved.
