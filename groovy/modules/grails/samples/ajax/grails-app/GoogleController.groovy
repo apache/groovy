@@ -8,11 +8,6 @@ class GoogleController {
 		request,response ->
 		def q = request["q"][0];
 		def google = new GoogleSearch();
-		
-		google.proxyHost = "purgatory"
-		google.proxyPort = 80
-		google.proxyUserName = "KNOWLEDGEPOOL\\graemer"
-		google.proxyPassword = "B1rj1n1a"		
 		google.key = "/ndZrntQFHIOTUjtA2bCOE5ulMxHovBj";
 		google.queryString = q;
 		google.maxResults = 10;
