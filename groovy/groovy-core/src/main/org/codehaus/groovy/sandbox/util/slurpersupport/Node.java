@@ -210,11 +210,11 @@ public class Node implements Writable {
         // we have to declare the namespace - choose a tag
         tag = findNamespaceTag(local, namespaceURI);  // If the namespace has been decared in the GPath expression use that tag
         
-        if (tag == null) {
+        if (tag == null || tag.length() == 0) {
           tag = findNamespaceTag(tagHints, namespaceURI);  // If the namespace has been used in the parse documant use that tag         
         }
         
-        if (tag == null) { // otherwise make up a new tag and check it has not been used before
+        if (tag == null || tag.length() == 0) { // otherwise make up a new tag and check it has not been used before
         int suffix = 0;
         
           do {
