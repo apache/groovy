@@ -5687,9 +5687,10 @@ public class DefaultGroovyMethods {
     /**
      * Transforms the lines from a reader with a Closure and write them to a writer
      *
-     * @param reader
-     * @param writer
-     * @param closure
+     * @param reader  Lines of text to be transformed.
+     * @param writer  Where transformed lines are written.
+     * @param closure Single parameter closure that is called to transform each line of 
+     *                text from the reader, before writing it to the writer.
      */
     public static void transformLine(Reader reader, Writer writer, Closure closure) throws IOException {
         BufferedReader br = new BufferedReader(reader);
@@ -5702,6 +5703,7 @@ public class DefaultGroovyMethods {
                 bw.newLine();
             }
         }
+        bw.flush();
     }
 
     /**
