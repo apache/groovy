@@ -61,10 +61,15 @@ public class DefaultGrailsControllerClass extends AbstractInjectableGrailsClass
 			if (propertyDescriptor.getPropertyType().equals(Closure.class)) {
 				closureNames.add(propertyDescriptor.getName());
 				String viewName = (String)getPropertyValue(propertyDescriptor.getName() + VIEW, String.class);
+				// if no explicity view name is specified just use property name
+				if(viewName == null) {
+					viewName = propertyDescriptor.getName();
+				}
 				Map typedViews = (Map)getPropertyValue(propertyDescriptor.getName() + TYPED_VIEWS, Map.class);
 				String tmpUri = uri + SLASH + propertyDescriptor.getName();
+				
 				if (StringUtils.isNotBlank(viewName)) {
-					this.viewNames.put(tmpUri, viewName);
+					this.viewNames.put(tmpUri, uri + SLASH + viewName);
 				}
 				Closure closure = (Closure)getPropertyValue(propertyDescriptor.getName(), Closure.class);
 				if (closure != null) {
