@@ -1,4 +1,4 @@
-package org.codehaus.groovy.sandbox.markup
+package groovy.xml
 /*
 
 Copyright 2004 (C) John Wilson. All Rights Reserved.
@@ -47,9 +47,9 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 import javax.xml.parsers.DocumentBuilderFactory
 import org.w3c.dom.Node
 
-import org.codehaus.groovy.sandbox.markup.streamingmarkupsupport.AbstractStreamingBuilder
-import org.codehaus.groovy.sandbox.markup.streamingmarkupsupport.StreamingMarkupWriter
-import org.codehaus.groovy.sandbox.markup.streamingmarkupsupport.BaseMarkupBuilder
+import groovy.xml.streamingmarkupsupport.AbstractStreamingBuilder
+import groovy.xml.streamingmarkupsupport.StreamingMarkupWriter
+import groovy.xml.streamingmarkupsupport.BaseMarkupBuilder
 
 	
     class StreamingDOMBuilder extends AbstractStreamingBuilder {

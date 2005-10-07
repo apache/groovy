@@ -22,7 +22,7 @@ public class UberTestCaseLongRunningTests extends TestCase {
         suite.addTestSuite(org.codehaus.groovy.classgen.RunClosureTest.class);
         suite.addTestSuite(org.codehaus.groovy.runtime.PropertyTest.class);
 
-        suite.addTestSuite(org.codehaus.groovy.sandbox.markup.StreamingMarkupTest.class);
+        suite.addTestSuite(groovy.xml.StreamingMarkupTest.class);
         return suite;
     }
 

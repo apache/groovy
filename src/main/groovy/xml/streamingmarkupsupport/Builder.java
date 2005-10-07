@@ -1,3 +1,4 @@
+package groovy.xml.streamingmarkupsupport;
 /*
 
 Copyright 2004 (C) John Wilson. All Rights Reserved.
@@ -42,11 +43,60 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
+
+import groovy.lang.Closure;
+import groovy.lang.GroovyObjectSupport;
+
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+public abstract class Builder extends GroovyObjectSupport {
+	protected final Map namespaceMethodMap = new HashMap();
 	
-package org.codehaus.groovy.sandbox.markup;
-
-import groovy.lang.GroovyObject;
-
-public interface Buildable {
-	void build(GroovyObject builder);
+	public Builder(final Map namespaceMethodMap) {
+	final Iterator keyIterator = namespaceMethodMap.keySet().iterator();
+		
+		while (keyIterator.hasNext()) {
+		final Object key = keyIterator.next();
+		final List value = (List)namespaceMethodMap.get(key);
+		final Closure dg = ((Closure)value.get(1)).asWritable();
+		
+			this.namespaceMethodMap.put(key, new Object[]{value.get(0), dg, fettleMethodMap(dg, (Map)value.get(2))});
+		}
+	}
+	
+	private static Map fettleMethodMap(final Closure defaultGenerator, final Map methodMap) {
+	final Map newMethodMap = new HashMap();
+	final Iterator keyIterator = methodMap.keySet().iterator();
+		
+		while (keyIterator.hasNext()) {
+		final Object key = keyIterator.next();
+		final Object value = methodMap.get(key);
+		
+			if ((value instanceof Closure)) {
+				newMethodMap.put(key, value);
+			} else {
+				newMethodMap.put(key, defaultGenerator.curry((Object[])value));
+			}
+		}
+		
+		return newMethodMap;
+	}
+	
+	abstract public Object bind(Closure root);
+	
+	protected static abstract class Built extends GroovyObjectSupport {
+	protected final Closure root;
+	protected final Map namespaceSpecificTags = new HashMap();
+		
+		public Built(final Closure root, final Map namespaceTagMap) {
+			this.namespaceSpecificTags.putAll(namespaceTagMap);
+		
+			this.root = (Closure)root.clone();
+			
+			this.root.setDelegate(this);
+		}
+	}
 }

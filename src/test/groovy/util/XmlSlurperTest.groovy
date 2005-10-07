@@ -1,4 +1,4 @@
-package org.codehaus.groovy.sandbox.util
+package groovy.util
 
 class XmlSlurperTest extends GroovyTestCase {
     

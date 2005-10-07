@@ -1,7 +1,7 @@
 package org.codehaus.groovy.tools;
 
 import java.io.*;
-import org.codehaus.groovy.sandbox.util.XmlSlurper;
+import groovy.util.XmlSlurper;
 
 class FailsGenerator {
 

@@ -44,7 +44,7 @@ public class UberTestCase3 extends TestCase {
         suite.addTestSuite(org.codehaus.groovy.runtime.MethodKeyTest.class);
         suite.addTestSuite(org.codehaus.groovy.runtime.NewStaticMetaMethodTest.class);
         suite.addTestSuite(org.codehaus.groovy.runtime.TupleListTest.class);
-        suite.addTestSuite(org.codehaus.groovy.sandbox.util.XmlSlurperTest.class);
+        suite.addTestSuite(groovy.util.XmlSlurperTest.class);
         suite.addTestSuite(org.codehaus.groovy.syntax.TokenTest.class);
         suite.addTestSuite(org.codehaus.groovy.tools.CompilerTest.class);
         suite.addTestSuite(org.codehaus.groovy.tools.FileSystemCompilerTest.class);

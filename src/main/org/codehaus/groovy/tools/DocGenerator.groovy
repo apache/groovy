@@ -1,6 +1,6 @@
 package org.codehaus.groovy.tools
 
-import org.codehaus.groovy.sandbox.markup.StreamingMarkupBuilder
+import groovy.xml.StreamingMarkupBuilder
 
 import java.io.File
 
