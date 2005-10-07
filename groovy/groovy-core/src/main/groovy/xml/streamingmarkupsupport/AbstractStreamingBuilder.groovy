@@ -85,7 +85,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
                                                 } else {
                                                     throw new GroovyRuntimeException("namespace prefix ${key} has not been declared")
                                                 }
-                                              value.each { from, to ->
+                                              value.each { to, from ->
                                                   info[2][to] = info[1].curry(from)
                                               }
                                           } else {
