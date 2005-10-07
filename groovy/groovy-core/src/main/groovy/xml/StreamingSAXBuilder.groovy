@@ -1,8 +1,8 @@
-package org.codehaus.groovy.sandbox.markup
+package groovy.xml
 
-import org.codehaus.groovy.sandbox.markup.streamingmarkupsupport.AbstractStreamingBuilder
-import org.codehaus.groovy.sandbox.markup.streamingmarkupsupport.StreamingMarkupWriter
-import org.codehaus.groovy.sandbox.markup.streamingmarkupsupport.BaseMarkupBuilder
+import groovy.xml.streamingmarkupsupport.AbstractStreamingBuilder
+import groovy.xml.streamingmarkupsupport.StreamingMarkupWriter
+import groovy.xml.streamingmarkupsupport.BaseMarkupBuilder
 
 /*
 

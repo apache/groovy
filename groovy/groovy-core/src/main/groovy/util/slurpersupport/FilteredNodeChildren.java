@@ -1,5 +1,4 @@
 /*
- /*
  * Copyright 2005 John G. Wilson
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,7 +15,7 @@
  *
  */
 
-package org.codehaus.groovy.sandbox.util.slurpersupport;
+package groovy.util.slurpersupport;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -28,10 +27,10 @@ import groovy.lang.Closure;
  *
  */
 
-public class FilteredAttributes extends Attributes {
+public class FilteredNodeChildren extends NodeChildren {
   private final Closure closure;
   
-  public FilteredAttributes(final GPathResult parent, final Closure closure, final Map namespaceTagHints) {
+  public FilteredNodeChildren(final GPathResult parent, final Closure closure, final Map namespaceTagHints) {
     super(parent, parent.name, namespaceTagHints);
     this.closure = closure;
   }
@@ -47,14 +46,14 @@ public class FilteredAttributes extends Attributes {
               protected Object getNextNode(final Iterator iter) {
                 while (iter.hasNext()) {
                 final Object node = iter.next();
-                final Boolean result = (Boolean)FilteredAttributes.this.closure.call(new Object[]{node});
+                final Boolean result = (Boolean)FilteredNodeChildren.this.closure.call(new Object[]{node});
                 
                   if (result != null && result.booleanValue()) {
                     return node;
                   }
-                  }
-                  
-                  return null;
+                }
+                
+                return null;
               }   
             };
   }

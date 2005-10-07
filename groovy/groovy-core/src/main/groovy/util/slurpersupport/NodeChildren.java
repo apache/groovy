@@ -15,7 +15,7 @@
  *
  */
 
-package org.codehaus.groovy.sandbox.util.slurpersupport;
+package groovy.util.slurpersupport;
 
 import groovy.lang.Closure;
 import groovy.lang.GroovyObject;

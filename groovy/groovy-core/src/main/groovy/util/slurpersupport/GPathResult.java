@@ -15,8 +15,9 @@
  *
  */
 
-package org.codehaus.groovy.sandbox.util.slurpersupport;
+package groovy.util.slurpersupport;
 
+import groovy.lang.Buildable;
 import groovy.lang.Closure;
 import groovy.lang.GroovyObjectSupport;
 import groovy.lang.Writable;
@@ -27,7 +28,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import org.codehaus.groovy.sandbox.markup.Buildable;
 
 /**
  * @author John Wilson

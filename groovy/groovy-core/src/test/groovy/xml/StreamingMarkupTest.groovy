@@ -1,4 +1,4 @@
-package org.codehaus.groovy.sandbox.markup
+package groovy.xml
 
 /**
  * This test uses the concise syntax to test the building of 
