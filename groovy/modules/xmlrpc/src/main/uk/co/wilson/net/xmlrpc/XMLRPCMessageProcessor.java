@@ -338,7 +338,7 @@ public class XMLRPCMessageProcessor extends MinML {
 	private final StringBuffer buffer = new StringBuffer();
 	private final DateFormat dateTime = new SimpleDateFormat("yyyyMMdd'T'HH:mm:ss");
 	private final DateFormat dateTime1 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-	private final Boolean bools[] = {new Boolean(false), new Boolean(true)};
+	private final Boolean bools[] = {Boolean.FALSE, Boolean.TRUE};
   
   public void parseMessage(final String message) throws IOException, XMLRPCFailException { 
     try {

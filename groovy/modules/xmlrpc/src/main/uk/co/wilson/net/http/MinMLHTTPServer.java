@@ -282,15 +282,16 @@ public abstract class MinMLHTTPServer extends MinMLSocketServer {
                                              + "Server: uk.co.wilson.net.http.HTTPServer\r\n").getBytes();
 
   protected static final byte[] endOfLine = "\r\n".getBytes();
-  protected static final byte[] get = "GET".getBytes();
-  protected static final byte[] head = "HEAD".getBytes();
-  protected static final byte[] post = "POST".getBytes();
-  protected static final byte[] put = "PUT".getBytes();
-  protected static final byte[] errorMessage1 = (" 400 Bad Request\r\n"
+  
+  static final byte[] get = "GET".getBytes();
+  static final byte[] head = "HEAD".getBytes();
+  static final byte[] post = "POST".getBytes();
+  static final byte[] put = "PUT".getBytes();
+  static final byte[] errorMessage1 = (" 400 Bad Request\r\n"
                                                  + "Server: uk.co.wilson.net.http.HTTPServer\r\n\r\n"
                                                  + "Method ").getBytes();
 
-  protected static final byte[] errorMessage2 = " not implemented\r\n".getBytes();
-  protected static final byte[] keepConnection = "Connection: Keep-Alive\r\n".getBytes();
-  protected static final byte[] closeConnection = "Connection: Close\r\n".getBytes();
+  static final byte[] errorMessage2 = " not implemented\r\n".getBytes();
+  static final byte[] keepConnection = "Connection: Keep-Alive\r\n".getBytes();
+  static final byte[] closeConnection = "Connection: Close\r\n".getBytes();
 }
