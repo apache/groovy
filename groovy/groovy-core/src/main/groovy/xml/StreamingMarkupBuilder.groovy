@@ -197,12 +197,15 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 
             this.builder = new BaseMarkupBuilder(nsSpecificTags)
         }
+        
+        @Property encoding = null
 
         @Property bind(closure) {
             def boundClosure = this.builder.bind(closure);
+            def enc = encoding; // take a snapshot of the encoding when the cosure is bound to the builder
 
             {out ->
-                out = new StreamingMarkupWriter(out)
+                out = new StreamingMarkupWriter(out, enc)
                 boundClosure.trigger = out
                 out.flush()
             }.asWritable()

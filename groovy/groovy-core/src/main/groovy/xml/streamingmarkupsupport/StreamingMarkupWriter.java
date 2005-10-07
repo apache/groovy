@@ -72,7 +72,7 @@ public class StreamingMarkupWriter extends Writer {
 											/* (non-Javadoc)
 											 * @see java.io.Writer#write(int)
 											 */
-											public void write(int c) throws IOException {
+											public void write(final int c) throws IOException {
 												if (!StreamingMarkupWriter.this.encoder.canEncode((char)c)) {
 													StreamingMarkupWriter.this.writer.write("&#x");
 													StreamingMarkupWriter.this.writer.write(Integer.toHexString(c));
@@ -128,7 +128,7 @@ public class StreamingMarkupWriter extends Writer {
 												/* (non-Javadoc)
 												 * @see java.io.Writer#write(int)
 												 */
-												public void write(int c) throws IOException {
+												public void write(final int c) throws IOException {
 													if (c == '\'') {
 														StreamingMarkupWriter.this.writer.write("&apos;");
 													} else {
@@ -158,18 +158,24 @@ public class StreamingMarkupWriter extends Writer {
 												}
 											};
 
-		public StreamingMarkupWriter(final Writer delegate) {
-			this.writer = delegate;
+		public StreamingMarkupWriter(final Writer writer, final String encoding) {
+			this.writer = writer;
       
-      if (delegate instanceof OutputStreamWriter) {
-        this.encoding = ((OutputStreamWriter)delegate).getEncoding();
+      if (encoding != null) {
+        this.encoding = encoding;
+      } else if (writer instanceof OutputStreamWriter) {
+        this.encoding = ((OutputStreamWriter)writer).getEncoding();
       } else {
         this.encoding = "US-ASCII";
       }
       
       this.encoder = Charset.forName(this.encoding).newEncoder();
 		}
-	
+
+    public StreamingMarkupWriter(final Writer writer) {
+      this(writer, null);
+    }
+    
 		/* (non-Javadoc)
 		 * @see java.io.Writer#close()
 		 */
