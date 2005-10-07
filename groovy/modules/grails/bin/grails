@@ -29,4 +29,4 @@ case "`uname`" in
     ;;
 esac
 
-${ANT_BIN} -f ${GRAILS_BUILD_FILE} -Dbasedir=${BASEDIR} $@
+${ANT_BIN} -lib  %GRAILS_HOME%/lib -f ${GRAILS_BUILD_FILE} -Dbasedir=${BASEDIR} $@
