@@ -1,30 +1,151 @@
-<project default="init">
+<project name="grails" default="help">
 
 	<property name="servlet.version" value="2.3"/>
+	<property name="path" value="" />
+	
+	<target name="help">
+		<echo>Usage: grails [target]
+
+Targets:		
+"init" - initialise the current app
+"create-app" - Create a new grails app
+"create-controller" - Create a new controller
+"create-domain-class" - Create a new domain class
+"create-test-suite" - Create a new test suite
+"test-app" - Run current app's unit tests
+"run-app" - Run the application (coming soon)
+		</echo>
+	</target>
+	
+
+	<target name="create-app">
+		<property environment="env"/>
+		<fail unless="env.GRAILS_HOME" message="GRAILS_HOME is not set."/>
+		<property name="grails.home" location="${env.GRAILS_HOME}"/>
+		
+		<input addproperty="project.name" message="Enter application name:" />
+		
+		<antcall target="init">
+			<param name="path" value="${project.name}/"/>
+		</antcall>
+		
+		<script language="groovy">
+			def projName = grails.getProperty("project.name")			
+			grails.setProperty("project.class.name", projName.substring(0,1).toUpperCase() + projName.substring(1,projName.length()))
+		</script>		
+		
+		<copy 	file="${grails.home}/src/grails/templates/DataSource.groovy" 
+				tofile="${project.name}/grails-app/conf/${project.class.name}DataSource.groovy"/>
+		
+		<replace 	file="${project.name}/grails-app/conf/${project.class.name}DataSource.groovy" 
+					token="@data.source.name@" 
+					value="${project.class.name}" />
+	</target>
+	
+	<target name="create-controller">
+		<property environment="env"/>
+		<fail unless="env.GRAILS_HOME" message="GRAILS_HOME is not set."/>
+		<property name="grails.home" location="${env.GRAILS_HOME}"/>
+		
+		<input addproperty="controller.name" message="Enter controller name:" />
+		
+		<script language="groovy">
+			def ctrlName = grails.getProperty("controller.name")		
+			ctrlName = ctrlName.substring(0,1).toUpperCase() + ctrlName.substring(1,ctrlName.length())
+			if(ctrlName.endsWith("Controller")) {
+				def i = ctrlName.lastIndexOf("Controller");
+				ctrlName = ctrlName.substring(0, i);
+			}			
+			grails.setProperty("controller.class.name", ctrlName)
+		</script>
+				
+		<copy 	file="${grails.home}/src/grails/templates/Controller.groovy" 
+				tofile="grails-app/controllers/${controller.class.name}Controller.groovy"/>
+		
+		<replace 	file="grails-app/controllers/${controller.class.name}Controller.groovy" 
+					token="@controller.name@" 
+					value="${controller.class.name}" />	
+		<echo>Created controller: grails-app/controllers/${controller.class.name}Controller.groovy</echo>
+	</target>
+	
+	<target name="create-domain-class">
+		<property environment="env"/>
+		<fail unless="env.GRAILS_HOME" message="GRAILS_HOME is not set."/>
+		<property name="grails.home" location="${env.GRAILS_HOME}"/>
+		
+		<input addproperty="domain.class.name" message="Enter domain class name:" />
+		
+		<script language="groovy">
+			def className = grails.getProperty("domain.class.name")		
+			className = className.substring(0,1).toUpperCase() + className.substring(1,className.length())
+			grails.setProperty("domain.class.name", className)
+		</script>
+				
+		<copy 	file="${grails.home}/src/grails/templates/DomainClass.groovy" 
+				tofile="grails-app/domain/${domain.class.name}.groovy"/>
+		
+		<replace 	file="grails-app/domain/${domain.class.name}.groovy" 
+					token="@domain.class.name@" 
+					value="${domain.class.name}" />	
+		<echo>Domain class created: grails-app/domain/${domain.class.name}.groovy</echo>
+	</target>	
+	
+	<target name="create-test-suite">
+		<property environment="env"/>
+		<fail unless="env.GRAILS_HOME" message="GRAILS_HOME is not set."/>
+		<property name="grails.home" location="${env.GRAILS_HOME}"/>
+		
+		<input addproperty="test.suite.name" message="Enter test suite name:" />
+		
+		<script language="groovy">
+			def suiteName = grails.getProperty("test.suite.name")		
+			suiteName = suiteName.substring(0,1).toUpperCase() + suiteName.substring(1,suiteName.length())
+			if(suiteName.endsWith("Tests")) {
+				def i = suiteName.lastIndexOf("Tests");
+				suiteName = suiteName.substring(0, i);
+			}			
+			grails.setProperty("test.suite.name", suiteName)
+		</script>
+				
+		<copy 	file="${grails.home}/src/grails/templates/Tests.groovy" 
+				tofile="grails-app/tests/${test.suite.name}Tests.groovy"/>
+		
+		<replace 	file="grails-app/tests/${test.suite.name}Tests.groovy" 
+					token="@test.suite.name@" 
+					value="${test.suite.name}" />	
+		<echo>Created test suite: grails-app/tests/${test.suite.name}Tests.groovy</echo>
+	</target>	
 	
 	<target name="init">
 		<property environment="env"/>
 		<fail unless="env.GRAILS_HOME" message="GRAILS_HOME is not set."/>
 		<property name="grails.home" location="${env.GRAILS_HOME}"/>
-		<mkdir dir="src"/>
-		<mkdir dir="jsp"/>
-		<mkdir dir="grails-app"/>
-		<mkdir dir="grails-test"/>
-		<mkdir dir="lib"/>
-		<mkdir dir="spring"/>
-		<mkdir dir="html"/>
-		<mkdir dir="war"/>
-		<mkdir dir="war/WEB-INF"/>
-		<mkdir dir="war/WEB-INF/classes"/>
+		<mkdir dir="${path}src"/>
+		<mkdir dir="${path}src/java"/>
+		<mkdir dir="${path}src/groovy"/>		
+		<mkdir dir="${path}grails-app"/>
+		<mkdir dir="${path}grails-app/controllers"/>
+		<mkdir dir="${path}grails-app/domain"/>
+		<mkdir dir="${path}grails-app/view"/>
+		<mkdir dir="${path}grails-app/conf"/>
+		<mkdir dir="${path}grails-app/tests"/>
+		<mkdir dir="${path}grails-test"/>
+		<mkdir dir="${path}jsp"/>
+		<mkdir dir="${path}lib"/>
+		<mkdir dir="${path}spring"/>
+		<mkdir dir="${path}html"/>
+		<mkdir dir="${path}war"/>
+		<mkdir dir="${path}war/WEB-INF"/>
+		<mkdir dir="${path}war/WEB-INF/classes"/>
 		<mkdir dir="${grails.home}/dist"/>
 		
-		<copy todir="war/WEB-INF">
+		<copy todir="${path}war/WEB-INF">
 			<fileset dir="${grails.home}/src/war/WEB-INF">
 				<include name="applicationContext.xml"/>
 			</fileset>
 		</copy>
 		<copy file="${grails.home}/src/war/WEB-INF/web${servlet.version}.xml" tofile="war/WEB-INF/web.xml"/>
-		<copy todir="spring">
+		<copy todir="${path}spring">
 			<fileset dir="${grails.home}/src/war/WEB-INF/spring">
 				<include name="*.xml"/>
 			</fileset>
@@ -93,6 +214,10 @@
 			<pathelement location="${basedir}/tmp/tests/classpath"/>
 			<pathelement location="${grails.home}/src/war/WEB-INF"/>
 			<pathelement location="${basedir}/grails-app"/>
+			<pathelement location="${basedir}/grails-app/controllers"/>
+			<pathelement location="${basedir}/grails-app/domain"/>
+			<pathelement location="${basedir}/grails-app/conf"/>
+			<pathelement location="${basedir}/grails-app/tests"/>
 			<pathelement location="${basedir}/grails-test"/>
 			<fileset dir="${grails.home}/lib"/>
 			<fileset dir="${grails.home}/dist"/>
@@ -141,6 +266,13 @@
 		<copy todir="tmp/war/WEB-INF/lib">
 			<fileset dir="${grails.home}/lib">
 				<include name="antlr-2.7.5.jar"/>
+				<include name="cglib-2.1.jar"/>
+				<include name="ehcache-1.1.jar"/>
+				<include name="ejb-3.0-edr2.jar"/>
+				<include name="hibernate3.jar"/>					
+				<include name="jdbc2_0-stdext.jar"/>					
+				<include name="jta.jar"/>					
+				<include name="hibernate3.jar"/>										
 				<include name="asm-2.0.jar"/>
 				<include name="asm-util-2.0.jar"/>
 				<include name="commons-logging.jar"/>
@@ -159,18 +291,26 @@
 				<include name="commons-pool-1.2.jar"/>
 				<include name="commons-dbcp-1.2.1.jar"/>
 			</fileset>
-			<fileset dir="${grails.home}/lib/hibernate">
-				<include name="*.jar"/>
-			</fileset>
 			<fileset dir="${grails.home}/dist"/>
 			<fileset dir="lib"/>
 		</copy>
 		<copy todir="tmp/war/WEB-INF/classes">
 			<fileset dir="war/WEB-INF/classes"/>
-			<fileset dir="grails-app" includes="**"/>
+			<fileset dir="grails-app" includes="**">
+				<exclude name="controllers"/>
+				<exclude name="domain"/>
+				<exclude name="conf"/>
+				<exclude name="tests"/>
+				<exclude name="view"/>
+			</fileset>
+			<fileset dir="grails-app/controllers" includes="**"/>
+			<fileset dir="grails-app/domain" includes="**"/>
+			<fileset dir="grails-app/conf" includes="**"/>
+			<fileset dir="grails-app/tests" includes="**"/>
 		</copy>
 		<copy todir="tmp/war/WEB-INF/jsp">
 			<fileset dir="jsp" includes="**"/>
+			<fileset dir="grails-app/view" includes="**"/>
 		</copy>
 		<copy todir="tmp/war/WEB-INF/spring">
 			<fileset dir="spring" includes="**"/>
@@ -183,4 +323,19 @@
 		<jar destfile="grails-app.war" basedir="tmp/war" />
 	</target>
 
+	<target name="run-app" depends="war">
+	    <property location="tmp/war" name="tmp.war.location" />
+		<script language="groovy">
+			import org.mortbay.jetty.*;
+			import org.mortbay.http.*;
+			def server = new Server();
+			def listener = new SocketListener();
+			listener.setPort(8080); 
+			server.addListener(listener);
+			server.addWebApplication("/grails-app",grails.getProperty("tmp.war.location"));
+			server.start();		
+			def ant = new AntBuilder();
+			ant.sleep(hours:12)
+		</script>
+	</target>	
 </project>
