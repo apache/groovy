@@ -416,6 +416,10 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
 
             return writer.toString();
         }
+        
+        public Closure curry(final Object arguments[]) {
+            return (new CurriedClosure(this,arguments)).asWritable();
+        }
     }
 
     /**
