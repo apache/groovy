@@ -91,8 +91,10 @@ set STARTER_CLASSPATH=%GROOVY_HOME%\lib\groovy-starter.jar;%CLASSPATH%
 if "x" == "x%CP%" goto empty_cp
 :non_empty_cp
 set CP=%STARTER_CLASSPATH%;%CP%;.
+goto after_cp
 :empty_cp
 set CP=%STARTER_CLASSPATH%;.
+:after_cp
 
 set STARTER_MAIN_CLASS=org.codehaus.groovy.tools.GroovyStarter
 set STARTER_CONF=%GROOVY_HOME%\conf\groovy-starter.conf
