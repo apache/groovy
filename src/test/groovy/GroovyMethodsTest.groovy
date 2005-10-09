@@ -22,6 +22,16 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert [1:'a', 2:'b', 3:'c'].collect{it.getKey() + "*" + it.getValue()} == ['1*a','2*b','3*c']
         
     }
+    
+    void testSum() {
+    	assert [].sum() == 0
+    	assert [1].sum() == 1
+    	assert [1, 2, 3].sum() == 6
+    	
+    	assert [].sum() {it.length()} == 0
+    	assert ["abc"].sum() {it.length()} == 3
+    	assert ["a", "bc", "def"].sum() {it.length()} == 6
+    }
 
     void testJoin() {
         assert [2, 4, 6].join("-") == "2-4-6"

@@ -1025,6 +1025,49 @@ public class DefaultGroovyMethods {
         }
         return value;
     }
+    
+    /**
+     * Sums a collection of numeric values. <code>coll.sum()</code> is equivalent to:
+     * <code>coll.inject(0) {value, item -> value + item}</code>.
+     * 
+     * @param self Collection of values to add together.
+     * @return The sum of all of the list itmems.
+     */
+    public static Object sum(Collection self) {
+    	Object result = Integer.valueOf(0);
+		Object[] param = new Object[1];
+		for (Iterator iter = self.iterator(); iter.hasNext();) {
+			Object operand = iter.next();
+			param[0] = operand;
+			MetaClass metaClass = InvokerHelper.getMetaClass(result);
+			result = metaClass.invokeMethod(result, "plus", param);
+		}
+		return result;
+    }
+
+    /**
+     * Sums the result of apply a closure to each item of a collection. 
+     * <code>coll.sum(closure)</code> is equivalent to:
+     * <code>coll.collect(closure).sum()</code>.
+     * 
+     * @param self a Collection
+     * @param closure a single parameter closure that returns a numeric value.
+     * @return The sum of the values returned by applying the closure to each
+     *         item of the list.
+     */
+    public static Object sum(Collection self, Closure closure) {
+    	Object result = Integer.valueOf(0);
+		Object[] closureParam = new Object[1];
+		Object[] plusParam = new Object[1];
+		for (Iterator iter = self.iterator(); iter.hasNext();) {
+			Object item = iter.next();
+			closureParam[0] = item;
+			plusParam[0] = closure.call(closureParam);
+			MetaClass metaClass = InvokerHelper.getMetaClass(result);
+			result = metaClass.invokeMethod(result, "plus", plusParam);
+		}
+		return result;
+    }
 
     /**
      * Concatenates all of the items of the collection together with the given String as a separator
