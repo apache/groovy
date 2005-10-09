@@ -1034,7 +1034,7 @@ public class DefaultGroovyMethods {
      * @return The sum of all of the list itmems.
      */
     public static Object sum(Collection self) {
-    	Object result = Integer.valueOf(0);
+    	Object result = new Integer(0);
 		Object[] param = new Object[1];
 		for (Iterator iter = self.iterator(); iter.hasNext();) {
 			Object operand = iter.next();
@@ -1056,7 +1056,7 @@ public class DefaultGroovyMethods {
      *         item of the list.
      */
     public static Object sum(Collection self, Closure closure) {
-    	Object result = Integer.valueOf(0);
+    	Object result = new Integer(0);
 		Object[] closureParam = new Object[1];
 		Object[] plusParam = new Object[1];
 		for (Iterator iter = self.iterator(); iter.hasNext();) {
