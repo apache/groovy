@@ -56,10 +56,6 @@ public class MethodClosure extends Closure {
         return InvokerHelper.invokeMethod(getDelegate(), method, arguments);
     }
     
-    public void setDelegate(Object delegate) {
-        throw new UnsupportedOperationException("setting delegates for method closures is unsupported");
-    }
-    
     public Object getProperty(String property) {
         if ("method".equals(property)) {
             return getMethod();
