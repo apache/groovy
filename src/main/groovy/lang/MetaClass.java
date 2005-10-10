@@ -384,9 +384,8 @@ public class MetaClass {
            // if no method was found, try to find a closure defined as a field of the class and run it
            try {
                Object value = this.getProperty(object, methodName);
-               if (value instanceof Closure && object!=this) {
+               if (value instanceof Closure) {  // This test ensures that value != this If you ever change this ensure that value != this
                    Closure closure = (Closure) value;
-                   closure.setDelegate(this);
                    MetaClass delegateMetaClass = registry.getMetaClass(closure.getClass());
                    return delegateMetaClass.invokeMethod(closure,"doCall",arguments);
                }
