@@ -141,7 +141,7 @@ public class BaseMarkupBuilder extends Builder {
 		public void setProperty(String property, Object newValue) {
 			if ("trigger".equals(property)) {
 				this.out = newValue;
-				this.root.call();
+				this.root.call(this);
 			} else {
 				super.setProperty(property, newValue);
 			}
