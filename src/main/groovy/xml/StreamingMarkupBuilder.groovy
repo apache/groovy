@@ -80,7 +80,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
                                         def body1 = body.clone()
                                         
                                         body1.delegate = this
-                                        body1()
+                                        body1(this)
                                       } else if (body instanceof Buildable) {
                                           body.build(doc)
                                       } else {
@@ -150,7 +150,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
                                         def body1 = body.clone()
                                         
                                         body1.delegate = this
-                                        body1()
+                                        body1(this)
                                       } else if (body instanceof Buildable) {
                                           body.build(doc)
                                       } else {
@@ -159,7 +159,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
                                               def body1 = it.clone()
                                               
                                               body1.delegate = this
-                                              body1()
+                                              body1(this)
                                             } else if (it instanceof Buildable) {
                                               it.build(doc)
                                             } else {
