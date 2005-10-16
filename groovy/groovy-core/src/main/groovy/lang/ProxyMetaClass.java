@@ -12,7 +12,7 @@ import java.beans.IntrospectionException;
  * See groovy/lang/InterceptorTest.groovy for details.
  * @author Dierk Koenig
  */
-public class ProxyMetaClass extends MetaClass {
+public class ProxyMetaClass extends MetaClassImpl {
 
     protected MetaClass adaptee = null;
     protected Interceptor interceptor = null;

@@ -92,8 +92,8 @@ public class MetaClassRegistry {
         if (loadDefault == LOAD_DEFAULT) {
             this.useAccessible = true;
             // lets register the default methods
-            lookup(DefaultGroovyMethods.class).registerInstanceMethods();
-            lookup(DefaultGroovyStaticMethods.class).registerStaticMethods();
+            ((MetaClassImpl)lookup(DefaultGroovyMethods.class)).registerInstanceMethods();
+            ((MetaClassImpl)lookup(DefaultGroovyStaticMethods.class)).registerStaticMethods();
             checkInitialised();
         }
         else {
@@ -110,8 +110,8 @@ public class MetaClassRegistry {
         this.useAccessible = useAccessible;
 
         // lets register the default methods
-        lookup(DefaultGroovyMethods.class).registerInstanceMethods();
-        lookup(DefaultGroovyStaticMethods.class).registerStaticMethods();
+        ((MetaClassImpl)lookup(DefaultGroovyMethods.class)).registerInstanceMethods();
+        ((MetaClassImpl)lookup(DefaultGroovyStaticMethods.class)).registerStaticMethods();
         checkInitialised();
     }
 
@@ -120,7 +120,7 @@ public class MetaClassRegistry {
             MetaClass answer = (MetaClass) metaClasses.get(theClass);
             if (answer == null) {
                 try {
-                    answer = new MetaClass(this, theClass);
+                    answer = new MetaClassImpl(this, theClass);
                     answer.checkInitialised();
                 }
                 catch (IntrospectionException e) {
@@ -238,7 +238,7 @@ public class MetaClassRegistry {
         MetaClass answer = (MetaClass) metaClasses.get(theClass);
         if (answer == null) {
             try {
-                answer = new MetaClass(this, theClass);
+                answer = new MetaClassImpl(this, theClass);
             }
             catch (IntrospectionException e) {
                 throw new GroovyRuntimeException("Could not introspect class: " + theClass.getName() + ". Reason: " + e,
