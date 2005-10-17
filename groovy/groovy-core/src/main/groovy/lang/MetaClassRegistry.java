@@ -47,9 +47,11 @@ package groovy.lang;
 
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
+import org.codehaus.groovy.runtime.MethodHelper;
 
 import java.beans.IntrospectionException;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -105,9 +107,29 @@ public class MetaClassRegistry {
         
         if (loadDefault == LOAD_DEFAULT) {
             // lets register the default methods
-            ((MetaClassImpl)lookup(DefaultGroovyMethods.class)).registerInstanceMethods();
-            ((MetaClassImpl)lookup(DefaultGroovyStaticMethods.class)).registerStaticMethods();
+            lookup(DefaultGroovyMethods.class);
+            registerMethods(DefaultGroovyMethods.class, true);
+            lookup(DefaultGroovyStaticMethods.class);
+            registerMethods(DefaultGroovyStaticMethods.class, false);
             checkInitialised();
+        }
+    }
+    
+    private void registerMethods(final Class theClass, final boolean instanceMethods) {
+        Method[] methods = theClass.getMethods();
+        for (int i = 0; i < methods.length; i++) {
+            Method method = methods[i];
+            if (MethodHelper.isStatic(method)) {
+                Class[] paramTypes = method.getParameterTypes();
+                if (paramTypes.length > 0) {
+                    Class owner = paramTypes[0];
+                    if (instanceMethods) {
+                        lookup(owner).addNewInstanceMethod(method);
+                    } else {
+                        lookup(owner).addNewStaticMethod(method);
+                    }
+                }
+            }
         }
     }
 

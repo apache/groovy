@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.runtime.MetaClassHelper;
 
 /**
  * @author John Wilson
