@@ -39,6 +39,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.MetaClassHelper;
 
 /**
  * Represents a property on a bean which may have a getter and/or a setter
@@ -70,7 +71,7 @@ public class MetaBeanProperty extends MetaProperty {
             //@todo we probably need a WriteOnlyException class
             throw new GroovyRuntimeException("Cannot read write-only property: " + name);
         }
-        return getter.invoke(object, MetaClass.EMPTY_ARRAY);
+        return getter.invoke(object, MetaClassHelper.EMPTY_ARRAY);
     }
 
     /**

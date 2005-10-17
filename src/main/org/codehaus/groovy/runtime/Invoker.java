@@ -806,7 +806,7 @@ public class Invoker {
         if (object == null) {
             throw new NullPointerException("Cannot access method pointer for '" + methodName + "' on null object");
         }
-        return metaRegistry.getMetaClass(object.getClass()).getMethodPointer(object, methodName);
+        return MetaClassHelper.getMethodPointer(object, methodName);
     }
 
 

@@ -34,7 +34,6 @@
  */
 package org.codehaus.groovy.runtime;
 
-import groovy.lang.MetaClass;
 
 /**
  * A temporary implementation of MethodKey used to perform a fast lookup
@@ -50,7 +49,7 @@ public class TemporaryMethodKey extends MethodKey {
     public TemporaryMethodKey(String name, Object[] parameterValues) {
         super(name);
         if (parameterValues == null) {
-            parameterValues = MetaClass.EMPTY_ARRAY;
+            parameterValues = MetaClassHelper.EMPTY_ARRAY;
         }
         this.parameterValues = parameterValues;
     }
