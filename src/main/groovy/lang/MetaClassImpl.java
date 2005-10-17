@@ -120,8 +120,8 @@ public class MetaClassImpl extends MetaClass {
    private List interfaceMethods;
    private Reflector reflector;
    private boolean initialised;
-  // we only need one of these that can be reused over and over.
-  private MetaProperty arrayLengthProperty = new MetaArrayLengthProperty();
+   // we only need one of these that can be reused over and over.
+   private MetaProperty arrayLengthProperty = new MetaArrayLengthProperty();
 
    public MetaClassImpl(MetaClassRegistry registry, final Class theClass) throws IntrospectionException {
        super(theClass);
@@ -210,7 +210,7 @@ public class MetaClassImpl extends MetaClass {
     * @return all the normal instance methods avaiable on this class for the
     *         given name
     */
-   public List getMethods(String name) {
+   private List getMethods(String name) {
        List answer = (List) methodIndex.get(name);
        List used = GroovyCategorySupport.getCategoryMethods(theClass, name);
        if (used != null) {
@@ -229,7 +229,7 @@ public class MetaClassImpl extends MetaClass {
     * @return all the normal static methods avaiable on this class for the
     *         given name
     */
-   public List getStaticMethods(String name) {
+   private List getStaticMethods(String name) {
        List answer = (List) staticMethodIndex.get(name);
        if (answer == null) {
            return Collections.EMPTY_LIST;
@@ -277,7 +277,7 @@ public class MetaClassImpl extends MetaClass {
     * Invokes the given method on the object.
     *
     */
-   public Object invokeMethod(Object object, String methodName, Object[] arguments) {
+   protected Object invokeMethod(Object object, String methodName, Object[] arguments) {
        if (object == null) {
            throw new NullPointerException("Cannot invoke method: " + methodName + " on null object");
        }
@@ -510,7 +510,7 @@ public class MetaClassImpl extends MetaClass {
        throw new MissingMethodException(methodName, theClass, arguments);
    }
 
-   protected MetaMethod pickStaticMethod(Object object, String methodName, Object[] arguments) {
+   private MetaMethod pickStaticMethod(Object object, String methodName, Object[] arguments) {
        MetaMethod method = null;
        List methods = getStaticMethods(methodName);
 
@@ -528,7 +528,7 @@ public class MetaClassImpl extends MetaClass {
        return method;
    }
 
-   protected MetaMethod pickStaticMethod(String methodName, Class[] arguments) {
+   private MetaMethod pickStaticMethod(String methodName, Class[] arguments) {
        MetaMethod method = null;
        List methods = getStaticMethods(methodName);
 
@@ -750,7 +750,7 @@ public class MetaClassImpl extends MetaClass {
     * This will build up the property map (Map of MetaProperty objects, keyed on
     * property name).
     */
-   protected void setupProperties(PropertyDescriptor[] propertyDescriptors) {
+   private void setupProperties(PropertyDescriptor[] propertyDescriptors) {
        MetaProperty mp;
        Method method;
        MetaMethod getter = null;
@@ -1192,7 +1192,7 @@ public class MetaClassImpl extends MetaClass {
     *
     * @param theClass
     */
-   protected void addMethods(final Class theClass, boolean forceOverwrite) {
+   private void addMethods(final Class theClass, boolean forceOverwrite) {
        // add methods directly declared in the class
        Method[] methodArray = (Method[]) AccessController.doPrivileged(new  PrivilegedAction() {
                public Object run() {
@@ -1209,7 +1209,7 @@ public class MetaClassImpl extends MetaClass {
        }
    }
 
-   protected void addMethod(MetaMethod method, boolean forceOverwrite) {
+   private void addMethod(MetaMethod method, boolean forceOverwrite) {
        String name = method.getName();
 
        //System.out.println(theClass.getName() + " == " + name + Arrays.asList(method.getParameterTypes()));
@@ -1253,7 +1253,7 @@ public class MetaClassImpl extends MetaClass {
    /**
     * remove a method of the same matching prototype was found in the list
     */
-   protected void removeMatchingMethod(List list, MetaMethod method) {
+   private void removeMatchingMethod(List list, MetaMethod method) {
        for (Iterator iter = list.iterator(); iter.hasNext();) {
            MetaMethod aMethod = (MetaMethod) iter.next();
            Class[] params1 = aMethod.getParameterTypes();
@@ -1282,7 +1282,7 @@ public class MetaClassImpl extends MetaClass {
     *
     * @param theClass
     */
-   protected void addNewStaticMethodsFrom(Class theClass) {
+   private void addNewStaticMethodsFrom(Class theClass) {
        MetaClass interfaceMetaClass = registry.getMetaClass(theClass);
        Iterator iter = interfaceMetaClass.newGroovyMethodsList.iterator();
        while (iter.hasNext()) {
@@ -1297,7 +1297,7 @@ public class MetaClassImpl extends MetaClass {
    /**
     * @return the value of the static property of the given class
     */
-   protected Object getStaticProperty(Class aClass, String property) {
+   private Object getStaticProperty(Class aClass, String property) {
        //System.out.println("Invoking property: " + property + " on class: "
        // + aClass);
 
@@ -1318,7 +1318,7 @@ public class MetaClassImpl extends MetaClass {
    /**
     * @return the matching method which should be found
     */
-   protected MetaMethod findMethod(Method aMethod) {
+   private MetaMethod findMethod(Method aMethod) {
        List methods = getMethods(aMethod.getName());
        for (Iterator iter = methods.iterator(); iter.hasNext();) {
            MetaMethod method = (MetaMethod) iter.next();
@@ -1333,7 +1333,7 @@ public class MetaClassImpl extends MetaClass {
    /**
     * @return the getter method for the given object
     */
-   protected MetaMethod findGetter(Object object, String name) {
+   private MetaMethod findGetter(Object object, String name) {
        List methods = getMethods(name);
        for (Iterator iter = methods.iterator(); iter.hasNext();) {
            MetaMethod method = (MetaMethod) iter.next();
@@ -1347,7 +1347,7 @@ public class MetaClassImpl extends MetaClass {
    /**
     * @return the Method of the given name with no parameters or null
     */
-   protected MetaMethod findStaticGetter(Class type, String name) {
+   private MetaMethod findStaticGetter(Class type, String name) {
        List methods = getStaticMethods(name);
        for (Iterator iter = methods.iterator(); iter.hasNext();) {
            MetaMethod method = (MetaMethod) iter.next();
@@ -1371,7 +1371,7 @@ public class MetaClassImpl extends MetaClass {
        }
    }
 
-   protected static Object doConstructorInvokeAt(final Class at, Constructor constructor, Object[] argumentArray) {
+   private static Object doConstructorInvokeAt(final Class at, Constructor constructor, Object[] argumentArray) {
        if (log.isLoggable(Level.FINER)) {
            MetaClassHelper.logMethodCall(constructor.getDeclaringClass(), constructor.getName(), argumentArray);
        }
@@ -1452,7 +1452,7 @@ public class MetaClassImpl extends MetaClass {
     *            the original argument to the method
     * @return
     */
-   protected Object chooseMethod(String methodName, List methods, Class[] arguments, boolean coerce) {
+   private Object chooseMethod(String methodName, List methods, Class[] arguments, boolean coerce) {
        int methodCount = methods.size();
        if (methodCount <= 0) {
            return null;
@@ -1502,7 +1502,7 @@ public class MetaClassImpl extends MetaClass {
                + InvokerHelper.toString(arguments));
    }
 
-   protected Object chooseMostSpecificParams(String name, List matchingMethods, Class[] arguments) {
+   private Object chooseMostSpecificParams(String name, List matchingMethods, Class[] arguments) {
 
        Class[] wrappedArguments = MetaClassHelper.wrap(arguments);
 
@@ -1545,7 +1545,7 @@ public class MetaClassImpl extends MetaClass {
        throw new GroovyRuntimeException(msg);
    }
 
-   protected boolean isGenericGetMethod(MetaMethod method) {
+   private boolean isGenericGetMethod(MetaMethod method) {
        if (method.getName().equals("get")) {
            Class[] parameterTypes = method.getParameterTypes();
            return parameterTypes.length == 1 && parameterTypes[0] == String.class;
@@ -1558,7 +1558,7 @@ public class MetaClassImpl extends MetaClass {
     * method to this MetaClass so that any caching or bytecode generation can be
     * regenerated.
     */
-   protected synchronized void onMethodChange() {
+   private synchronized void onMethodChange() {
        reflector = null;
    }
 
@@ -1572,7 +1572,7 @@ public class MetaClassImpl extends MetaClass {
        }
    }
 
-   protected MetaMethod createMetaMethod(final Method method) {
+   private MetaMethod createMetaMethod(final Method method) {
        if (registry.useAccessible()) {
            AccessController.doPrivileged(new PrivilegedAction() {
                public Object run() {
@@ -1600,7 +1600,7 @@ public class MetaClassImpl extends MetaClass {
        return answer;
    }
 
-   protected boolean isValidReflectorMethod(MetaMethod method) {
+   private boolean isValidReflectorMethod(MetaMethod method) {
        // We cannot use a reflector if the method is private, protected, or package accessible only.
        if (!method.isPublic()) {
            return false;
@@ -1650,7 +1650,7 @@ public class MetaClassImpl extends MetaClass {
        return true;
    }
 
-   protected void generateReflector() {
+   private void generateReflector() {
        reflector = loadReflector(allMethods);
        if (reflector == null) {
            throw new RuntimeException("Should have a reflector for "+theClass.getName());
@@ -1674,7 +1674,7 @@ public class MetaClassImpl extends MetaClass {
        return name;
    }
 
-   protected Reflector loadReflector(List methods) {
+   private Reflector loadReflector(List methods) {
        ReflectorGenerator generator = new ReflectorGenerator(methods);
        String name = getReflectorName();
        /* 
@@ -1719,7 +1719,7 @@ public class MetaClassImpl extends MetaClass {
        }
    }
 
-   protected Class loadReflectorClass(final String name, final byte[] bytecode) throws ClassNotFoundException {
+   private Class loadReflectorClass(final String name, final byte[] bytecode) throws ClassNotFoundException {
        ClassLoader loader = (ClassLoader) AccessController.doPrivileged(new  PrivilegedAction() {
            public Object run() {
                return theClass.getClassLoader();
@@ -1736,7 +1736,7 @@ public class MetaClassImpl extends MetaClass {
        return registry.loadClass(loader, name, bytecode);
    }
 
-   protected Class loadReflectorClass(String name) throws ClassNotFoundException {
+   private Class loadReflectorClass(String name) throws ClassNotFoundException {
        ClassLoader loader = (ClassLoader) AccessController.doPrivileged(new  PrivilegedAction() {
            public Object run() {
                return theClass.getClassLoader();
@@ -1757,7 +1757,7 @@ public class MetaClassImpl extends MetaClass {
        return new ArrayList(newGroovyMethodsList);
    }
 
-   protected synchronized List getInterfaceMethods() {
+   private synchronized List getInterfaceMethods() {
        if (interfaceMethods == null) {
            interfaceMethods = new ArrayList();
            Class type = theClass;
