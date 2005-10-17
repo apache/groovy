@@ -41,8 +41,12 @@ public class ProxyMetaClass extends MetaClassImpl {
      */
     public void use(Closure closure){
         registry.setMetaClass(theClass, this);
-        closure.call();
-        registry.setMetaClass(theClass, adaptee);
+        
+        try {
+            closure.call();
+        } finally {
+            registry.setMetaClass(theClass, adaptee);
+        }
     }
 
      /**
@@ -52,8 +56,12 @@ public class ProxyMetaClass extends MetaClassImpl {
      */
     public void use(GroovyObject object, Closure closure){
         object.setMetaClass(this);
-        closure.call();
-        object.setMetaClass(adaptee);
+        
+        try {
+            closure.call();
+        } finally {
+            object.setMetaClass(adaptee);
+        }
     }
 
     /**
