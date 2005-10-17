@@ -85,6 +85,7 @@ import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
 import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
+import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.RegexSupport;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.syntax.Token;
@@ -3974,13 +3975,13 @@ public class AsmClassGenerator extends ClassGenerator {
                         }
                         paramClasses[j] = paramClass;
                     }
-                    if (MetaClass.isValidMethod(paramClasses, argsArray, false)) {
+                    if (MetaClassHelper.isValidMethod(paramClasses, argsArray, false)) {
                         candidateParamClasses = paramClasses;
                         candidate = meth;
                         break;
                     }
                     else {
-                        if (MetaClass.isValidMethod(paramClasses, argsArray, true)){
+                        if (MetaClassHelper.isValidMethod(paramClasses, argsArray, true)){
                             candidateParamClasses = paramClasses;
                             candidate = meth;
                             break;

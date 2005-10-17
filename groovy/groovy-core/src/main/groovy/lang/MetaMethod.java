@@ -41,6 +41,7 @@ import java.security.PrivilegedAction;
 import java.util.logging.Logger;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.Reflector;
 
 /**
@@ -94,7 +95,7 @@ public class MetaMethod implements Cloneable {
      */
     public void checkParameters(Class[] arguments) {
         // lets check that the argument types are valid
-        if (!MetaClass.isValidMethod(getParameterTypes(), arguments, false)) {
+        if (!MetaClassHelper.isValidMethod(getParameterTypes(), arguments, false)) {
             throw new IllegalArgumentException(
                     "Parameters to method: "
                     + getName()
