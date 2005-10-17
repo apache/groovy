@@ -84,7 +84,6 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.MethodClosure;
-import org.codehaus.groovy.runtime.MethodHelper;
 import org.codehaus.groovy.runtime.MethodKey;
 import org.codehaus.groovy.runtime.NewInstanceMetaMethod;
 import org.codehaus.groovy.runtime.NewStaticMetaMethod;
@@ -1552,32 +1551,6 @@ public class MetaClassImpl extends MetaClass {
            return parameterTypes.length == 1 && parameterTypes[0] == String.class;
        }
        return false;
-   }
-
-   private void registerMethods(boolean instanceMethods) {
-       Method[] methods = theClass.getMethods();
-       for (int i = 0; i < methods.length; i++) {
-           Method method = methods[i];
-           if (MethodHelper.isStatic(method)) {
-               Class[] paramTypes = method.getParameterTypes();
-               if (paramTypes.length > 0) {
-                   Class owner = paramTypes[0];
-                   if (instanceMethods) {
-                       registry.lookup(owner).addNewInstanceMethod(method);
-                   } else {
-                       registry.lookup(owner).addNewStaticMethod(method);
-                   }
-               }
-           }
-       }
-   }
-
-   protected void registerStaticMethods() {
-       registerMethods(false);
-   }
-
-   protected void registerInstanceMethods() {
-       registerMethods(true);
    }
 
    /**
