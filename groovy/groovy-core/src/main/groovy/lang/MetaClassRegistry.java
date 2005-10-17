@@ -85,21 +85,11 @@ public class MetaClassRegistry {
 
 
     public MetaClassRegistry() {
-        this(true);
+        this(LOAD_DEFAULT, true);
     }
 
     public MetaClassRegistry(int loadDefault) {
-        if (loadDefault == LOAD_DEFAULT) {
-            this.useAccessible = true;
-            // lets register the default methods
-            ((MetaClassImpl)lookup(DefaultGroovyMethods.class)).registerInstanceMethods();
-            ((MetaClassImpl)lookup(DefaultGroovyStaticMethods.class)).registerStaticMethods();
-            checkInitialised();
-        }
-        else {
-            this.useAccessible = true;
-            // do nothing to avoid loading DefaultGroovyMethod
-        }
+        this(loadDefault, true);
     }
 
     /**
@@ -107,12 +97,18 @@ public class MetaClassRegistry {
      *                      method will be called to enable access to all methods when using reflection
      */
     public MetaClassRegistry(boolean useAccessible) {
+        this(LOAD_DEFAULT, useAccessible);
+    }
+    
+    public MetaClassRegistry(final int loadDefault, final boolean useAccessible) {
         this.useAccessible = useAccessible;
-
-        // lets register the default methods
-        ((MetaClassImpl)lookup(DefaultGroovyMethods.class)).registerInstanceMethods();
-        ((MetaClassImpl)lookup(DefaultGroovyStaticMethods.class)).registerStaticMethods();
-        checkInitialised();
+        
+        if (loadDefault == LOAD_DEFAULT) {
+            // lets register the default methods
+            ((MetaClassImpl)lookup(DefaultGroovyMethods.class)).registerInstanceMethods();
+            ((MetaClassImpl)lookup(DefaultGroovyStaticMethods.class)).registerStaticMethods();
+            checkInitialised();
+        }
     }
 
     public MetaClass getMetaClass(Class theClass) {
