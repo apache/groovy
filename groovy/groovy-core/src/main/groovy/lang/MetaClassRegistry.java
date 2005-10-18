@@ -137,14 +137,8 @@ public class MetaClassRegistry {
         synchronized (theClass) {
             MetaClass answer = (MetaClass) metaClasses.get(theClass);
             if (answer == null) {
-                try {
-                    answer = new MetaClassImpl(this, theClass);
-                    answer.checkInitialised();
-                }
-                catch (IntrospectionException e) {
-                    throw new GroovyRuntimeException("Could not introspect class: " + theClass.getName() + ". Reason: " + e,
-                            e);
-                }
+                answer = getMetaClassFor(theClass);
+                answer.checkInitialised();
                 metaClasses.put(theClass, answer);
             }
             return answer;
@@ -255,18 +249,20 @@ public class MetaClassRegistry {
     MetaClass lookup(Class theClass) {
         MetaClass answer = (MetaClass) metaClasses.get(theClass);
         if (answer == null) {
-            try {
-                answer = new MetaClassImpl(this, theClass);
-            }
-            catch (IntrospectionException e) {
-                throw new GroovyRuntimeException("Could not introspect class: " + theClass.getName() + ". Reason: " + e,
-                        e);
-            }
+            answer = getMetaClassFor(theClass);
             metaClasses.put(theClass, answer);
         }
         return answer;
     }
 
+    private MetaClass getMetaClassFor(final Class theClass) {
+        try {
+            return new MetaClassImpl(this, theClass);
+        }
+        catch (IntrospectionException e) {
+            throw new GroovyRuntimeException("Could not introspect class: " + theClass.getName() + ". Reason: " + e, e);
+        }
+    }
 
     public MetaMethod getDefinedMethod(Class theClass, String methodName, Class[] args, boolean isStatic) {
         MetaClass metaclass = this.getMetaClass(theClass);
