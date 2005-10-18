@@ -33,6 +33,21 @@ import org.codehaus.groovy.ast.ClassNode;
 
 public abstract class MetaClass {
     protected static final Logger log = Logger.getLogger(MetaClass.class.getName());
+    protected static boolean useReflection = false;
+    
+    public static boolean isUseReflection() {
+        return MetaClass.useReflection;
+    }
+
+    /**
+     * Allows reflection to be enabled in situations where bytecode generation
+     * of method invocations causes issues.
+     *
+     * @param useReflection
+     */
+    public static void setUseReflection(boolean useReflection) {
+        MetaClass.useReflection = useReflection;
+    }
 
     protected final Class theClass;
     
@@ -67,22 +82,6 @@ public abstract class MetaClass {
     public abstract Object invokeStaticMethod(Object object, String methodName, Object[] arguments);
     public abstract Object invokeConstructor(Object[] arguments);
     public abstract Object invokeConstructorAt(Class at, Object[] arguments);
-    
-    public static boolean isUseReflection() {
-        return MetaClass.useReflection;
-    }
-
-    protected static boolean useReflection = false;
-
-    /**
-     * Allows reflection to be enabled in situations where bytecode generation
-     * of method invocations causes issues.
-     *
-     * @param useReflection
-     */
-    public static void setUseReflection(boolean useReflection) {
-        MetaClass.useReflection = useReflection;
-    }
 
     // Possibly Temp fields
     protected List newGroovyMethodsList = new LinkedList();
