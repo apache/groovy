@@ -1370,7 +1370,7 @@ public class MetaClassImpl extends MetaClass {
            return null;
        }
    }
-
+   
    private static Object doConstructorInvokeAt(final Class at, Constructor constructor, Object[] argumentArray) {
        if (log.isLoggable(Level.FINER)) {
            MetaClassHelper.logMethodCall(constructor.getDeclaringClass(), constructor.getName(), argumentArray);
