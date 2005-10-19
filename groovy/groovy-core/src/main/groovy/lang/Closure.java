@@ -78,9 +78,9 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
     public static int DONE = 1;
     public static int SKIP = 2;
 
-    public Closure(Object delegate) {
-        this.delegate = delegate;
-        this.owner = delegate;
+    public Closure(Object owner) {
+        this.owner = owner;
+        this.delegate = owner;
 
         Class closureClass = this.getClass();
         maximumNumberOfParameters = 0;
