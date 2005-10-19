@@ -47,6 +47,7 @@ public class HibernatePersistentMethods extends AbstractPersistentMethods {
 		addStaticMethodInvocation(new ListPersistentMethod(sessionFactory, classLoader));
 		addStaticMethodInvocation(new FindWherePersistentMethod(sessionFactory, classLoader));
 		addStaticMethodInvocation(new GetPersistentMethod(sessionFactory, classLoader));
+		addStaticMethodInvocation(new CreateCriteriaPersistentMethod(sessionFactory, classLoader));
 	}
 	
 }
