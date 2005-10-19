@@ -44,7 +44,6 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 package groovy.text;
 
-import groovy.lang.Binding;
 import groovy.lang.Closure;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyCodeSource;
@@ -95,7 +94,7 @@ public class GStringTemplateEngine extends TemplateEngine {
          * @throws IOException
          */
         public GStringTemplate(final Reader reader) throws CompilationFailedException, ClassNotFoundException, IOException {
-            final StringBuffer templateExpressions = new StringBuffer("package groovy.tmp.templates\n def getTemplate() { return { out -> out << \"\"\"");
+            final StringBuffer templateExpressions = new StringBuffer("package groovy.tmp.templates\n def getTemplate() { return { out -> delegate = new Binding(delegate); out << \"\"\"");
             boolean writingString = true;
        
             while(true) {
@@ -249,7 +248,7 @@ public class GStringTemplateEngine extends TemplateEngine {
        public Writable make(final Map map) {
        final Closure template = (Closure)this.template.clone();
            
-           template.setDelegate(new Binding(map));
+           template.setDelegate(map);
            
            return (Writable)template;
        }
