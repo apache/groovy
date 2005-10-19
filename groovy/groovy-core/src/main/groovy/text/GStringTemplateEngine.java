@@ -44,13 +44,15 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 package groovy.text;
 
-import groovy.lang.*;
+import groovy.lang.Binding;
+import groovy.lang.Closure;
+import groovy.lang.GroovyClassLoader;
+import groovy.lang.GroovyCodeSource;
+import groovy.lang.GroovyObject;
+import groovy.lang.Writable;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.Reader;
-import java.io.StringWriter;
-import java.io.Writer;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Map;
@@ -245,36 +247,11 @@ public class GStringTemplateEngine extends TemplateEngine {
        }
 
        public Writable make(final Map map) {
-       final Closure delegatedClosure = (Closure)this.template.clone();
+       final Closure template = (Closure)this.template.clone();
            
-           delegatedClosure.setDelegate(new Binding(map));
+           template.setDelegate(new Binding(map));
            
-           return new Writable() {
-               /* (non-Javadoc)
-               * @see groovy.lang.Writable#writeTo(java.io.Writer)
-               */
-               public Writer writeTo(final Writer writer) throws IOException {
-                   delegatedClosure.call(new PrintWriter(writer));
-
-                   return writer;
-               }
-
-               /* (non-Javadoc)
-               * @see java.lang.Object#toString()
-               */
-               public String toString() {
-                   final StringWriter stringWriter = new StringWriter();
-
-                   try {
-                       writeTo(stringWriter);
-
-                       return stringWriter.toString();
-                   } catch (final IOException e) {
-                       return e.toString();
-                   }
-               }
-
-           };
+           return (Writable)template;
        }
     }
 }
