@@ -303,8 +303,8 @@ public class MetaClassImpl extends MetaClass {
                    CurriedClosure cc = (CurriedClosure) object;
                    // change the arguments for an uncurried call
                    arguments = cc.getUncurriedArguments(arguments);
-                   MetaClass delegateMetaClass = registry.getMetaClass(delegate.getClass());
-                   return delegateMetaClass.invokeMethod(delegate,methodName,arguments);
+                   MetaClass ownerMetaClass = registry.getMetaClass(owner.getClass());
+                   return ownerMetaClass.invokeMethod(owner,methodName,arguments);
                }
            } else if ("curry".equals(methodName)) {
                return closure.curry(arguments);
