@@ -297,8 +297,8 @@ public class MetaClassImpl extends MetaClass {
                if (object.getClass()==MethodClosure.class) {
                    MethodClosure mc = (MethodClosure) object;
                    methodName = mc.getMethod();
-                   MetaClass delegateMetaClass = registry.getMetaClass(delegate.getClass());
-                   return delegateMetaClass.invokeMethod(delegate,methodName,arguments);
+                   MetaClass ownerMetaClass = registry.getMetaClass(owner.getClass());
+                   return ownerMetaClass.invokeMethod(owner,methodName,arguments);
                } else if (object.getClass()==CurriedClosure.class) {
                    CurriedClosure cc = (CurriedClosure) object;
                    // change the arguments for an uncurried call
