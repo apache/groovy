@@ -127,6 +127,7 @@ Targets:
 		<mkdir dir="${path}grails-app/controllers"/>
 		<mkdir dir="${path}grails-app/domain"/>
 		<mkdir dir="${path}grails-app/view"/>
+		<mkdir dir="${path}grails-app/layouts"/>		
 		<mkdir dir="${path}grails-app/conf"/>
 		<mkdir dir="${path}grails-app/tests"/>
 		<mkdir dir="${path}grails-test"/>
@@ -145,6 +146,7 @@ Targets:
 			</fileset>
 		</copy>
 		<copy file="${grails.home}/src/war/WEB-INF/web${servlet.version}.xml" tofile="war/WEB-INF/web.xml"/>
+		<copy file="${grails.home}/src/war/WEB-INF/sitemesh.xml" tofile="war/WEB-INF/sitemesh.xml"/>		
 		<copy todir="${path}spring">
 			<fileset dir="${grails.home}/src/war/WEB-INF/spring">
 				<include name="*.xml"/>
@@ -247,6 +249,8 @@ Targets:
 		<touch file="tmp/war/WEB-INF/lib/.dummy"/>
 		<mkdir dir="tmp/war/WEB-INF/jsp"/>
 		<touch file="tmp/war/WEB-INF/jsp/.dummy"/>
+		<mkdir dir="tmp/war/WEB-INF/jsp/layouts"/>
+		<touch file="tmp/war/WEB-INF/jsp/layouts/.dummy"/>		
 		<mkdir dir="tmp/war/WEB-INF/spring"/>
 		<touch file="tmp/war/WEB-INF/spring/.dummy"/>
 		<mkdir dir="tmp/war/WEB-INF/grails-app"/>
@@ -276,6 +280,7 @@ Targets:
 				<include name="asm-2.0.jar"/>
 				<include name="asm-util-2.0.jar"/>
 				<include name="commons-logging.jar"/>
+				<include name="sitemesh-2.2.1.jar"/>				
 				<include name="spring-webflow.jar"/>
 				<include name="spring-binding.jar"/>
 				<include name="spring.jar"/>
@@ -312,6 +317,9 @@ Targets:
 			<fileset dir="jsp" includes="**"/>
 			<fileset dir="grails-app/view" includes="**"/>
 		</copy>
+			<copy todir="tmp/war/WEB-INF/jsp/layouts">
+				<fileset dir="grails-app/layouts" includes="**"/>
+			</copy>		
 		<copy todir="tmp/war/WEB-INF/spring">
 			<fileset dir="spring" includes="**"/>
 		</copy>
