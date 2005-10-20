@@ -18,9 +18,11 @@ package org.codehaus.groovy.grails.web.servlet;
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.commons.spring.SpringConfig;
 import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
 import org.springframework.util.StringUtils;
 import org.springframework.web.context.ConfigurableWebApplicationContext;
 import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.context.support.XmlWebApplicationContext;
 import org.springframework.web.servlet.DispatcherServlet;
 import org.springmodules.beans.factory.drivers.xml.XmlWebApplicationContextDriver;
 
@@ -36,6 +38,7 @@ import org.springmodules.beans.factory.drivers.xml.XmlWebApplicationContextDrive
 public class GrailsDispatcherServlet extends DispatcherServlet {
 
     private static final String GRAILS_APPLICATION_ID = "grailsApplication";
+    private static final String GRAILS_APPLICATION_CONTEXT = "grailsApplicationContext";
 
     public GrailsDispatcherServlet() {
         super();
@@ -43,22 +46,31 @@ public class GrailsDispatcherServlet extends DispatcherServlet {
 
     protected WebApplicationContext createWebApplicationContext(WebApplicationContext parent) throws BeansException {
         // use config file locations if available
-        String[] locations = null;
-        if (null != getContextConfigLocation()) {
-            locations = StringUtils.tokenizeToStringArray(
-                    getContextConfigLocation(),
-                    ConfigurableWebApplicationContext.CONFIG_LOCATION_DELIMITERS);
-        }
-        // construct the SpringConfig for the container managed application
-        GrailsApplication application = (GrailsApplication) parent.getBean(GRAILS_APPLICATION_ID, GrailsApplication.class);
-        SpringConfig springConfig = new SpringConfig(application);
-        // return a context that obeys grails' settings
-        return new XmlWebApplicationContextDriver().getWebApplicationContext(
-                springConfig.getBeanReferences(),
-                parent,
-                getServletContext(),
-                getNamespace(),
-                locations);
+    	ApplicationContext grailsContext = (ApplicationContext)getServletContext().getAttribute(GRAILS_APPLICATION_CONTEXT );
+    	
+    	if(grailsContext != null) {
+    		XmlWebApplicationContext webContext = new XmlWebApplicationContext();
+    		webContext.setParent(grailsContext);    		
+    		return webContext; 
+    	}
+    	else {
+	        String[] locations = null;
+	        if (null != getContextConfigLocation()) {
+	            locations = StringUtils.tokenizeToStringArray(
+	                    getContextConfigLocation(),
+	                    ConfigurableWebApplicationContext.CONFIG_LOCATION_DELIMITERS);
+	        }
+	        // construct the SpringConfig for the container managed application
+	        GrailsApplication application = (GrailsApplication) parent.getBean(GRAILS_APPLICATION_ID, GrailsApplication.class);
+	        SpringConfig springConfig = new SpringConfig(application);
+	        // return a context that obeys grails' settings
+	        return new XmlWebApplicationContextDriver().getWebApplicationContext(
+	                springConfig.getBeanReferences(),
+	                parent,
+	                getServletContext(),
+	                getNamespace(),
+	                locations);
+    	}
     }
 
 }
