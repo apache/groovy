@@ -270,12 +270,16 @@ Targets:
 		<copy todir="tmp/war/WEB-INF/lib">
 			<fileset dir="${grails.home}/lib">
 				<include name="antlr-2.7.5.jar"/>
+				<include name="asm.jar"/>
+				<include name="asm-attrs.jar"/>
 				<include name="cglib-2.1.jar"/>
+				<include name="dom4j-1.6.jar"/>
 				<include name="ehcache-1.1.jar"/>
 				<include name="ejb-3.0-edr2.jar"/>
 				<include name="hibernate3.jar"/>					
 				<include name="jdbc2_0-stdext.jar"/>					
-				<include name="jta.jar"/>					
+				<include name="jta.jar"/>
+				<include name="junit.jar"/>				
 				<include name="hibernate3.jar"/>										
 				<include name="asm-2.0.jar"/>
 				<include name="asm-util-2.0.jar"/>
@@ -335,15 +339,24 @@ Targets:
 	    <property location="tmp/war" name="tmp.war.location" />
 		<script language="groovy">
 			import org.mortbay.jetty.*;
-			import org.mortbay.http.*;
-			def server = new Server();
-			def listener = new SocketListener();
-			listener.setPort(8080); 
-			server.addListener(listener);
-			server.addWebApplication("/grails-app",grails.getProperty("tmp.war.location"));
-			server.start();		
-			def ant = new AntBuilder();
-			ant.sleep(hours:12)
+			import org.mortbay.http.*;		
+			try {
+				def server = new Server();
+				def listener = new SocketListener();
+				listener.setPort(8080); 
+				server.addListener(listener);
+				server.addWebApplication("/grails-app",grails.getProperty("tmp.war.location"));
+				server.start();		
+				// we put this here because ant drops out of its process when the script tag finishes 
+				// and hence stops the web server		
+				Thread.sleep(999999999999)
+			}
+			catch(Error er) {
+				er.printStackTrace();			
+			}
+			catch(Exception e) {
+				e.printStackTrace();
+			}
 		</script>
 	</target>	
 </project>
