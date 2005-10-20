@@ -100,19 +100,16 @@ public abstract class ConsoleSupport {
     }
 
     public GroovyShell getShell() {
+        if (shell == null) {
+            shell = new GroovyShell();
+        }
         return shell;
     }
 
     protected Object evaluate(String text) {
-        System.out.println("Evaluating: " + text);
-        
-        if (shell == null) {
-            shell = new GroovyShell();
-        }
-
         String name = "Script" + counter++;
         try {
-            return shell.evaluate(text, name);
+            return getShell().evaluate(text, name);
         }
         catch (Exception e) {
             handleException(text, e);
