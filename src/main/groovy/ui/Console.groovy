@@ -35,12 +35,12 @@ class Console extends ConsoleSupport implements CaretListener {
     def scriptList
     def scriptFile
     def lastResult    
-    private JLabel statusLabel
-    private List history = []
-    private int historyIndex = 1 // valid values are 0..history.length()
-    private boolean dirty
-    private int textSelectionStart  // keep track of selections in inputArea
-    private int textSelectionEnd
+    def JLabel statusLabel
+    def List history = []
+    def int historyIndex = 1 // valid values are 0..history.length()
+    def boolean dirty
+    def int textSelectionStart  // keep track of selections in inputArea
+    def int textSelectionEnd
 
     static void main(args) {
         def console = new Console()
