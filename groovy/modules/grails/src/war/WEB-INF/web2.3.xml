@@ -16,10 +16,20 @@
 	    <filter-class>com.opensymphony.module.sitemesh.filter.PageFilter</filter-class>
 	</filter>
 	
+  	<filter>
+	    <filter-name>hibernateFilter</filter-name>
+    	<filter-class>org.codehaus.groovy.grails.orm.hibernate.support.GrailsOpenSessionInViewFilter</filter-class>
+   	</filter>	
+	
 	<filter-mapping>
     	<filter-name>sitemesh</filter-name>
 	    <url-pattern>/*</url-pattern>
 	</filter-mapping>
+	
+	<filter-mapping>
+	    <filter-name>hibernateFilter</filter-name>
+	     <url-pattern>/*</url-pattern>
+	</filter-mapping>		
 		
 	<servlet>
 		<servlet-name>log4j</servlet-name>
