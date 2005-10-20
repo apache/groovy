@@ -15,8 +15,6 @@
  */ 
 package org.codehaus.groovy.grails.orm.hibernate.support;
 
-import javax.servlet.http.HttpServletRequest;
-
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.commons.spring.SpringConfig;
 import org.hibernate.FlushMode;
