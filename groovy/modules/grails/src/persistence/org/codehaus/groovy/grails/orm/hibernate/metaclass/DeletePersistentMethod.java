@@ -25,8 +25,11 @@ import org.hibernate.SessionFactory;
  */
 public class DeletePersistentMethod extends AbstractDynamicPersistentMethod {
 
+	private static final String METHOD_SIGNATURE = "delete";
+	
 	public DeletePersistentMethod(SessionFactory sessionFactory, ClassLoader classLoader) {
 		super(sessionFactory, classLoader);
+		setMethodName(METHOD_SIGNATURE);
 	}
 
 	protected Object doInvokeInternal(Object target, Object[] arguments) {

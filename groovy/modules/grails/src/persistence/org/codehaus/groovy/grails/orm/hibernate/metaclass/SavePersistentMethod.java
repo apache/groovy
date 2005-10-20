@@ -24,10 +24,12 @@ import org.hibernate.SessionFactory;
  * @since Aug 7, 2005
  */
 public class SavePersistentMethod extends AbstractDynamicPersistentMethod {
-
+	
+	private static final String METHOD_SIGNATURE = "save";
+	
 	public SavePersistentMethod(SessionFactory sessionFactory, ClassLoader classLoader) {
 		super(sessionFactory, classLoader);
-		setMethodName("save");
+		setMethodName(METHOD_SIGNATURE);
 	}
 
 	protected Object doInvokeInternal(Object target, Object[] arguments) {
