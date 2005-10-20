@@ -3,6 +3,7 @@ package groovy.ui
 import groovy.swing.SwingBuilder
 import groovy.inspect.swingui.ObjectBrowser
 
+import java.awt.BorderLayout
 import java.awt.Toolkit
 import java.awt.Insets
 import java.awt.Color
@@ -24,15 +25,21 @@ import org.codehaus.groovy.runtime.InvokerHelper
  */
 class Console extends ConsoleSupport implements CaretListener {
 
+	// TODO: make this configurable
+	private static final int MAX_HISTORY = 10;
+
     def frame
     def swing
-    def textArea
+    def inputArea
     def outputArea
     def scriptList
     def scriptFile
-    def lastResult
+    def lastResult    
+    private JLabel statusLabel
+    private List history = []
+    private int historyIndex = 1 // valid values are 0..history.length()
     private boolean dirty
-    private int textSelectionStart  // keep track of selections in textArea
+    private int textSelectionStart  // keep track of selections in inputArea
     private int textSelectionEnd
 
     static void main(args) {
@@ -55,7 +62,7 @@ class Console extends ConsoleSupport implements CaretListener {
             size:[500,400],
             defaultCloseOperation:javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE) {
             def newAction = action(
-                name:'New', closure: this.&fileNew, mnemonic: 'N', accelerator: menuModifier + 'N'
+                name:'New', closure: this.&fileNew, mnemonic: 'N'
             )
             def openAction = action(
                 name:'Open', closure: this.&fileOpen, mnemonic: 'O', accelerator: menuModifier + 'O'
@@ -64,8 +71,14 @@ class Console extends ConsoleSupport implements CaretListener {
                 name:'Save', closure: this.&fileSave, mnemonic: 'S', accelerator: menuModifier + 'S'
             )
             def exitAction = action(
-                name:'Exit', closure: this.&exit, mnemonic: 'x'
-            )
+                name:'Exit', closure: this.&exit, mnemonic: 'x', accelerator: 'alt F4'
+            )	            
+            def historyPrevAction = action(
+                name:'Previous', closure: this.&historyPrev, mnemonic: 'P', accelerator: 'ctrl P'
+            )            
+            def historyNextAction = action(
+            	name: 'Next', closure: this.&historyNext, mnemonic: 'N', accelerator: 'ctrl N'
+            )            
             def runAction = action(
                 name:'Run', closure: this.&runScript, mnemonic: 'R', keyStroke: 'ctrl ENTER',
                 accelerator: 'ctrl R'
@@ -92,6 +105,11 @@ class Console extends ConsoleSupport implements CaretListener {
                     separator()
                     menuItem() { action(exitAction) }
                 }
+                menu(text:'Edit', mnemonic: 'E') {
+                	menuItem() { action(historyNextAction) }
+                	menuItem() { action(historyPrevAction) }
+                	// Add copy/cut/paste here
+                }
                 menu(text:'Actions', mnemonic: 'A') {
                     menuItem() { action(runAction) }
                     menuItem() { action(inspectAction) }
@@ -102,9 +120,14 @@ class Console extends ConsoleSupport implements CaretListener {
                     menuItem() { action(aboutAction) }
                 }
             }
-            splitPane(id:'splitPane', resizeWeight:0.50F) {
+            
+            borderLayout()
+            
+            splitPane(id:'splitPane', resizeWeight:0.50F, 
+            	orientation:JSplitPane.VERTICAL_SPLIT, constraints: BorderLayout.CENTER) 
+            {
                 scrollPane {
-                    textArea = textArea(
+                    inputArea = textArea(
                         margin: new Insets(3,3,3,3), font: new Font('Monospaced',Font.PLAIN,12)
                     ) { action(runAction) }
                 }
@@ -113,137 +136,52 @@ class Console extends ConsoleSupport implements CaretListener {
                     addStylesToDocument(outputArea)
                 }
             }
+            
+            statusLabel = label(id:'status', text: 'Welcome to the Groovy.', constraints: BorderLayout.SOUTH,
+            	border: BorderFactory.createLoweredBevelBorder())
         }   // end of SwingBuilder use
-        swing.splitPane.setOrientation(JSplitPane.VERTICAL_SPLIT)
 
         // add listeners
         frame.windowClosing = this.&exit
-        textArea.addCaretListener(this)
-        textArea.document.undoableEditHappened = { setDirty(true) }
+        inputArea.addCaretListener(this)
+        inputArea.document.undoableEditHappened = { setDirty(true) }
 
         frame.show()
-        SwingUtilities.invokeLater({textArea.requestFocus()});
+        SwingUtilities.invokeLater({inputArea.requestFocus()});
+    }
+    
+    void addToHistory(record) {
+    	history.add(record)
+    	// history.size here just retrieves method closure
+    	if (history.size() > MAX_HISTORY) {
+    		history.remove(0)
+    	}
+    	// history.size doesn't work here either
+    	historyIndex = history.size()
+    }
+
+	// Append a string to the output area
+    void appendOutput(text, style){
+    	def doc = outputArea.getStyledDocument();
+        doc.insertString(doc.getLength(), text, style)
+    }
+
+	// Append a string to the output area on a new line
+    void appendOutputNl(text, style){
+    	def doc = outputArea.getStyledDocument();
+    	if (doc.getLength() != 0) {
+    		doc.insertString(doc.getLength(), "\n", style);
+    	}
+        doc.insertString(doc.getLength(), text, style)
+    }
+    
+    private static void beep() {
+    	Toolkit.defaultToolkit.beep()
     }
 
     void caretUpdate(CaretEvent e){
         textSelectionStart = Math.min(e.dot,e.mark)
         textSelectionEnd = Math.max(e.dot,e.mark)
-    }
-
-    void setDirty(boolean newDirty) {
-        dirty = newDirty
-        updateTitle()
-    }
-
-    void updateTitle() {
-        if (scriptFile != null) {
-            frame.title = scriptFile.name + (dirty?" * ":"") + " - GroovyConsole"
-        } else {
-            frame.title = "GroovyConsole"
-        }
-    }
-
-    def selectFilename(name = "Open") {
-        def fc = new JFileChooser()
-        fc.fileSelectionMode = JFileChooser.FILES_ONLY
-        if (fc.showDialog(frame, name) == JFileChooser.APPROVE_OPTION) {
-            return fc.selectedFile
-        } else {
-            return null
-        }
-    }
-
-    void fileNew(EventObject evt = null) {
-      (new Console()).run()
-    }
-
-    void fileOpen(EventObject evt = null) {
-        scriptFile = selectFilename();
-        if (scriptFile != null) {
-            textArea.text = scriptFile.readLines().join('\n');
-            setDirty(false)
-            textArea.caretPosition = 0
-        }
-    }
-
-    boolean fileSave(EventObject evt = null) {
-        if (scriptFile == null) {
-            scriptFile = selectFilename("Save");
-        }
-        if (scriptFile != null) {
-            scriptFile.write(textArea.text)
-            setDirty(false);
-            return true
-        } else {
-            return false
-        }
-    }
-
-    void append(doc, text, style){
-        doc.insertString(doc.getLength(), text, style)
-    }
-
-    void inspect(EventObject evt = null){
-        if (null == lastResult) return
-        ObjectBrowser.inspect(lastResult)
-    }
-
-    void largerFont(EventObject evt = null){
-        if (textArea.font.size > 40) return
-        def newFont = new Font('Monospaced', Font.PLAIN, textArea.font.size + 2)
-        textArea.font = newFont
-        outputArea.font = newFont
-    }
-
-    void smallerFont(EventObject evt = null){
-        if (textArea.font.size < 5) return
-        def newFont = new Font('Monospaced', Font.PLAIN, textArea.font.size - 2)
-        textArea.font = newFont
-        outputArea.font = newFont
-    }
-    
-    void runScript(EventObject evt = null) {
-        def text = textArea.getText()
-        if (textSelectionStart != textSelectionEnd) {   // we have a real selection
-            text = textArea.getText()[textSelectionStart...textSelectionEnd]
-        }
-        scriptList.add(text)
-
-        def doc = outputArea.getStyledDocument();
-
-        for (line in text.tokenize("\n")) {
-            if (doc.length > 0) { append(doc,  "\n", promptStyle)}
-            append(doc, 'groovy> ', promptStyle)
-            append(doc, line, commandStyle)
-        }
-
-        lastResult = evaluate(text)
-        def output = "\n" + InvokerHelper.inspect(lastResult)
-
-        append(doc, output, outputStyle)
-
-        println("Variables: " + shell.context.variables)
-
-        if (scriptFile == null) {
-            textArea.text = null
-        }
-    }
-
-    protected void handleException(String text, Exception e) {
-        def pane = swing.optionPane()
-         // work around GROOVY-1048
-        pane.setMessage('Error: ' + e + '\n' + e.getMessage() + '\nafter compiling: ' + text)
-        def dialog = pane.createDialog(frame, 'Compile error')
-        dialog.show()
-    }
-
-    void showAbout(EventObject evt = null) {
-        def version = InvokerHelper.getVersion()
-        def pane = swing.optionPane()
-         // work around GROOVY-1048
-        pane.setMessage('Welcome to the Groovy Console for evaluating Groovy scripts\nVersion ' + version)
-        def dialog = pane.createDialog(frame, 'About GroovyConsole')
-        dialog.show()
     }
 
     void exit(EventObject evt = null) {
@@ -265,4 +203,158 @@ class Console extends ConsoleSupport implements CaretListener {
         }
     }
 
+    protected void handleException(String text, Exception e) {
+        def pane = swing.optionPane()
+         // work around GROOVY-1048
+        pane.setMessage('Error: ' + e + '\n' + e.getMessage() + '\nafter compiling: ' + text)
+        def dialog = pane.createDialog(frame, 'Compile error')
+        dialog.show()
+    }
+
+    void fileNew(EventObject evt = null) {
+      (new Console()).run()
+    }
+
+    void fileOpen(EventObject evt = null) {
+        scriptFile = selectFilename();
+        if (scriptFile != null) {
+            inputArea.text = scriptFile.readLines().join('\n');
+            setDirty(false)
+            inputArea.caretPosition = 0
+        }
+    }
+
+    boolean fileSave(EventObject evt = null) {
+        if (scriptFile == null) {
+            scriptFile = selectFilename("Save");
+        }
+        if (scriptFile != null) {
+            scriptFile.write(inputArea.text)
+            setDirty(false);
+            return true
+        } else {
+            return false
+        }
+    }
+
+    void inspect(EventObject evt = null){
+        if (null == lastResult) return
+        ObjectBrowser.inspect(lastResult)
+    }
+    
+    void historyNext(EventObject evt = null) {
+    	if (historyIndex < history.size()) {
+    		historyIndex++;
+    		setInputTextFromHistory()
+    	} else {
+    		setStatusText("Can't go past end of history (time travel not allowed)")
+    		beep()
+    	}
+    }
+
+    void historyPrev(EventObject evt = null) {
+    	if (historyIndex > 0) {
+    		historyIndex--;
+    		setInputTextFromHistory()
+    	} else {
+    		setStatusText("Can't go past start of history")
+    		beep()
+    	}
+    }
+
+    void largerFont(EventObject evt = null) {
+        if (inputArea.font.size > 40) return
+        def newFont = new Font('Monospaced', Font.PLAIN, inputArea.font.size + 2)
+        inputArea.font = newFont
+        outputArea.font = newFont
+    }
+    
+    void runScript(EventObject evt = null) {
+    	def record = new RunText( allText: inputArea.getText(),
+    		selectionStart: textSelectionStart, selectionEnd: textSelectionEnd,
+    		scriptFile: scriptFile)
+    		
+    	addToHistory(record)
+    	
+    	// Always separate from previous output with a line break
+        for (line in record.textToRun.tokenize("\n")) {
+            appendOutputNl('groovy> ', promptStyle)
+            appendOutput(line, commandStyle)
+        }
+
+        lastResult = evaluate(record.textToRun)
+        appendOutputNl("${InvokerHelper.inspect(lastResult)}\n", outputStyle);
+    }
+
+    def selectFilename(name = "Open") {
+        def fc = new JFileChooser()
+        fc.fileSelectionMode = JFileChooser.FILES_ONLY
+        if (fc.showDialog(frame, name) == JFileChooser.APPROVE_OPTION) {
+            return fc.selectedFile
+        } else {
+            return null
+        }
+    }
+
+    void setDirty(boolean newDirty) {
+        dirty = newDirty
+        updateTitle()
+    }
+    
+    private void setInputTextFromHistory() {
+		if (historyIndex < history.size()) {
+			def runText = history[historyIndex]
+			inputArea.text = runText.allText
+			inputArea.selectionStart = runText.selectionStart
+			inputArea.selectionEnd = runText.selectionEnd
+			setDirty(true) // Should calculate dirty flag properly (hash last saved/read text in each file)
+			setStatusText("command history ${history.size() - historyIndex}")
+		} else {
+			inputArea.text = ""
+			setStatusText('at end of history')
+		}    	
+    }
+    
+    void setStatusText(String text) {
+    	statusLabel.text = text
+    }
+
+    void showAbout(EventObject evt = null) {
+        def version = InvokerHelper.getVersion()
+        def pane = swing.optionPane()
+         // work around GROOVY-1048
+        pane.setMessage('Welcome to the Groovy Console for evaluating Groovy scripts\nVersion ' + version)
+        def dialog = pane.createDialog(frame, 'About GroovyConsole')
+        dialog.show()
+    }
+
+    void smallerFont(EventObject evt = null){
+        if (inputArea.font.size < 5) return
+        def newFont = new Font('Monospaced', Font.PLAIN, inputArea.font.size - 2)
+        inputArea.font = newFont
+        outputArea.font = newFont
+    }
+
+    void updateTitle() {
+        if (scriptFile != null) {
+            frame.title = scriptFile.name + (dirty?" * ":"") + " - GroovyConsole"
+        } else {
+            frame.title = "GroovyConsole"
+        }
+    }
+}
+
+/** A snapshot of the code area, when the user selected "run" */
+class RunText {
+	@Property allText
+	@Property selectionStart
+	@Property selectionEnd
+	@Property scriptName
+	
+	def getTextToRun() {
+        if (selectionStart != selectionEnd) {   
+            return allText[selectionStart ..< selectionEnd]
+        }
+        return allText
+	}
 }
