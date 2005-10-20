@@ -17,8 +17,9 @@ package org.codehaus.groovy.grails.web.servlet.mvc;
 
 import groovy.lang.Closure;
 import groovy.lang.GroovyObject;
-import groovy.lang.ParameterArray;
+import groovy.util.Proxy;
 
+import java.util.Iterator;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
@@ -128,6 +129,8 @@ public class SimpleGrailsController implements Controller, ApplicationContextAwa
 				return new ModelAndView(viewName);
 			}
 		} else if (returnValue instanceof Map) {
+			// remove any Proxy wrappers and set the adaptee as the value
+			removeProxiesFromModelObjects((Map)returnValue);
 			if (viewNameBlank) {
 				throw new NoViewNameDefinedException("Map instance returned by and no view name specified for closure on property [" + closurePropertyName + "] in controller [" + controllerClass.getFullName() + "]!");
 			} else {
@@ -135,6 +138,10 @@ public class SimpleGrailsController implements Controller, ApplicationContextAwa
 			}
 		} else if (returnValue instanceof ModelAndView) {
 			ModelAndView modelAndView = (ModelAndView)returnValue;
+			
+			// remove any Proxy wrappers and set the adaptee as the value
+			removeProxiesFromModelObjects(modelAndView.getModel());
+			
 			if (modelAndView.getView() == null && modelAndView.getViewName() == null) {
 				if (viewNameBlank) {
 					throw new NoViewNameDefinedException("ModelAndView instance returned by and no view name defined by nor for closure on property [" + closurePropertyName + "] in controller [" + controllerClass.getFullName() + "]!");
@@ -146,6 +153,23 @@ public class SimpleGrailsController implements Controller, ApplicationContextAwa
 		}
 		
 		throw new UnsupportedReturnValueException("Return value [" + returnValue + "] is not supported for closure property [" + closurePropertyName + "] in controller [" + controllerClass.getFullName() + "]!");
+	}
+
+	/**
+	 * If in Proxy's are used in the Groovy context, unproxy (is that a word?) them by setting
+	 * the adaptee as the value in the map so that they can be used in non-groovy view technologies
+	 *   
+	 * @param model The model as a map
+	 */
+	private void removeProxiesFromModelObjects(Map model) {
+		
+		for (Iterator keyIter = model.keySet().iterator(); keyIter.hasNext();) {
+			Object current = keyIter.next();
+			Object modelObject = model.get(current);
+			if(modelObject instanceof Proxy) {
+				model.put( current, ((Proxy)modelObject).getAdaptee() );
+			}			
+		}
 	}
 
 }
