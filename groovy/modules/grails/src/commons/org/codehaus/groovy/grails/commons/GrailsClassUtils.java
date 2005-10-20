@@ -147,7 +147,16 @@ public class GrailsClassUtils {
 				wrapper = new BeanWrapperImpl(clazz.newInstance());
 				beanWrapperInstances.put( clazz.getName(), wrapper );
 			}
-			return  wrapper.getPropertyValue( propertyName );					
+			Object pValue = wrapper.getPropertyValue( propertyName );
+			if(pValue == null)
+				return null;
+			
+			if(pValue.getClass().equals(propertyType)) {
+				return pValue;		
+			}
+			else {
+				return null;	
+			}
 			
 		} catch (Exception e) {
 			// if there are any errors in instantiating just return null
@@ -214,4 +223,36 @@ public class GrailsClassUtils {
 		}				
 		return (PropertyDescriptor[])properties.toArray( new PropertyDescriptor[ properties.size() ] );
 	}
+	
+	/**
+	 * Retrieves a property of the given class of the specified name and type
+	 * @param clazz The class to retrieve the property from
+	 * @param propertyName The name of the property
+	 * @param propertyType The type of the property
+	 * 
+	 * @return A PropertyDescriptor instance or null if none exists
+	 */
+	public static PropertyDescriptor getProperty(Class clazz, String propertyName, Class propertyType) {
+		if(clazz == null || propertyName == null || propertyType == null)
+			return null;
+		
+		try {
+			BeanWrapper wrapper = (BeanWrapper)beanWrapperInstances.get( clazz.getName() );
+			if(wrapper == null) {
+				wrapper = new BeanWrapperImpl(clazz.newInstance());
+				beanWrapperInstances.put( clazz.getName(), wrapper );
+			}
+			PropertyDescriptor pd = wrapper.getPropertyDescriptor(propertyName);
+			if(pd.getPropertyType().equals( propertyType )) {
+				return pd;
+			}
+			else {
+				return null;
+			}
+		} catch (Exception e) {
+			// if there are any errors in instantiating just return null for the moment
+			return null;
+		}			
+	}
+	
 }
