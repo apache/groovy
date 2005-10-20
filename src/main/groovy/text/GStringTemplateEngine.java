@@ -94,8 +94,8 @@ public class GStringTemplateEngine extends TemplateEngine {
          * @throws IOException
          */
         public GStringTemplate(final Reader reader) throws CompilationFailedException, ClassNotFoundException, IOException {
-            final StringBuffer templateExpressions = new StringBuffer("package groovy.tmp.templates\n def getTemplate() { return { out -> delegate = new Binding(delegate); out << \"\"\"");
-            boolean writingString = true;
+        final StringBuffer templateExpressions = new StringBuffer("package groovy.tmp.templates\n def getTemplate() { return { out -> delegate = new Binding(delegate); out << \"\"\"");
+        boolean writingString = true;
        
             while(true) {
                 int c = reader.read();
@@ -113,7 +113,7 @@ public class GStringTemplateEngine extends TemplateEngine {
                                 writingString = true;
                                 continue;
                         } else {
-                                parseSection(reader, writingString, templateExpressions);
+                                parseSection(c, reader, writingString, templateExpressions);
                                 writingString = false;
                                 continue;
                         }
@@ -159,8 +159,8 @@ public class GStringTemplateEngine extends TemplateEngine {
         }
 
         private static void appendCharacter(final char c,
-                                          final StringBuffer templateExpressions,
-                                          final boolean writingString)
+                                            final StringBuffer templateExpressions,
+                                            final boolean writingString)
         {
             if (!writingString) {
                 templateExpressions.append("out << \"\"\"");
@@ -174,19 +174,22 @@ public class GStringTemplateEngine extends TemplateEngine {
          * if we are writing a GString close and append ';'
          * then write the section as a statement
          *
+         * @param pendingC
          * @param reader
          * @param writingString
          * @param templateExpressions
          * @throws IOException
          */
-        private static void parseSection(final Reader reader,
-                                        final boolean writingString,
+        private static void parseSection(final int pendingC,
+                                         final Reader reader,
+                                         final boolean writingString,
                                          final StringBuffer templateExpressions)
             throws IOException
         {
             if (writingString) {
                 templateExpressions.append("\"\"\"; ");
             }
+            templateExpressions.append((char)pendingC);
 
                 while (true) {
                     int c = reader.read();
@@ -197,6 +200,8 @@ public class GStringTemplateEngine extends TemplateEngine {
                         c = reader.read();
 
                         if (c == '>') break;
+                        
+                        templateExpressions.append('%');
                     }
 
                     templateExpressions.append((char)c);
@@ -233,6 +238,8 @@ public class GStringTemplateEngine extends TemplateEngine {
                         c = reader.read();
 
                         if (c == '>') break;
+                        
+                        templateExpressions.append('%');
                     }
 
                     templateExpressions.append((char)c);
