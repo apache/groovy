@@ -93,12 +93,18 @@ public abstract class AbstractClausedStaticPersistentMethod extends
 		void setArguments(Object[] args)
 			throws IllegalArgumentException {
 			if(args.length != argumentsRequired)
-				throw new IllegalArgumentException("Expression '"+this.type+"' requires " + argumentsRequired + " arguments");
-
+				throw new IllegalArgumentException("Method expression '"+this.type+"' requires " + argumentsRequired + " arguments");
+			
 			GrailsDomainClass dc = application.getGrailsDomainClass(targetClass.getName());
 			GrailsDomainClassProperty prop = dc.getPropertyByName(propertyName);
 			
+			if(prop == null)
+				throw new IllegalArgumentException("Property "+propertyName+" doesn't exist for method expression '"+this.type+"'");
+			
 			for (int i = 0; i < args.length; i++) {
+				if(args[i] == null)
+					throw new IllegalArgumentException("Argument " + args[0] + " cannot be null");
+				
 				if(!prop.getType().isAssignableFrom( args[i].getClass() ))
 					throw new IllegalArgumentException("Argument " + args[0] + " does not match property '"+propertyName+"' of type " + prop.getType());				
 			}
