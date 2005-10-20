@@ -15,6 +15,7 @@
  */ 
 package grails.orm;
 
+import grails.util.ExtendProxy;
 import groovy.lang.MissingMethodException;
 import groovy.util.BuilderSupport;
 import groovy.util.Proxy;
@@ -31,6 +32,8 @@ import org.hibernate.SessionFactory;
 import org.hibernate.criterion.Criterion;
 import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Restrictions;
+import org.springframework.orm.hibernate3.SessionHolder;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
  * <p>Wraps the Hibernate Criteria API in a builder. The builder can be retrieved through the "createCriteria()" dynamic static 
@@ -104,11 +107,12 @@ public class HibernateCriteriaBuilder extends BuilderSupport {
 	private Class targetClass;
 	private Criteria criteria;
 	private boolean uniqueResult = false;
-	private Proxy resultProxy = new Proxy();
+	private Proxy resultProxy = new ExtendProxy();
 	private Proxy criteriaProxy;
 	private Object parent;
 	private List logicalExpressions = new ArrayList();
 	private List logicalExpressionArgs = new ArrayList();
+	private boolean participate;
 	
 	
 	public HibernateCriteriaBuilder(Class targetClass, SessionFactory sessionFactory) {
@@ -556,9 +560,15 @@ public class HibernateCriteriaBuilder extends BuilderSupport {
 			if(name.equals(GET_CALL))
 				this.uniqueResult = true;
 			
-			this.session = sessionFactory.openSession();
+			if(TransactionSynchronizationManager.hasResource(sessionFactory)) {
+				this.participate = true;
+				this.session = ((SessionHolder)TransactionSynchronizationManager.getResource(sessionFactory)).getSession();
+			}
+			else {
+				this.session = sessionFactory.openSession();
+			}
 			this.criteria = this.session.createCriteria(targetClass);
-			this.criteriaProxy = new Proxy();
+			this.criteriaProxy = new ExtendProxy();
 			this.criteriaProxy.setAdaptee(this.criteria);
 			this.parent = resultProxy;
 						
@@ -572,7 +582,7 @@ public class HibernateCriteriaBuilder extends BuilderSupport {
 			this.logicalExpressions.add(name);
 			return name;
 		}
-		closeSession();
+		closeSessionFollowingException();
 		throw new MissingMethodException((String) name, getClass(), new Object[] {}) ;		
 	}	
 	
@@ -590,7 +600,9 @@ public class HibernateCriteriaBuilder extends BuilderSupport {
 				);
 			}
 			this.criteria = null;
-			this.session.close();
+			if(!this.participate) {
+				this.session.close();
+			}
 		}		
 		else if(node.equals( AND ) ||
 				node.equals( OR )) {
@@ -641,12 +653,12 @@ public class HibernateCriteriaBuilder extends BuilderSupport {
 	 * Throws a runtime exception where necessary to ensure the session gets closed
 	 */
 	private void throwRuntimeException(RuntimeException t) {
-		closeSession();
+		closeSessionFollowingException();
 		throw t;
 	}
 	
-	private void closeSession() {
-		if(this.session != null && this.session.isOpen()) {
+	private void closeSessionFollowingException() {
+		if(this.session != null && this.session.isOpen() && !this.participate) {
 			this.session.close();
 		}
 		if(this.criteria != null) {
