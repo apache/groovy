@@ -45,10 +45,6 @@
  */
 package groovy.lang;
 
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
-import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
-import org.codehaus.groovy.runtime.MethodHelper;
-
 import java.beans.IntrospectionException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -61,6 +57,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
+import org.codehaus.groovy.runtime.MethodHelper;
+
 /**
  * A registery of MetaClass instances which caches introspection &
  * reflection information and allows methods to be dynamically added to
@@ -68,6 +68,10 @@ import java.util.WeakHashMap;
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
+ */
+/**
+ * @author John Wilson
+ *
  */
 public class MetaClassRegistry {
     private Map metaClasses = Collections.synchronizedMap(new WeakHashMap());
@@ -255,12 +259,27 @@ public class MetaClassRegistry {
         return answer;
     }
 
+    /**
+     * Find a MetaClass for the class
+     * If there is a custom MetaClass then return an instance of that. Otherwise return an instance of the standard MetaClass
+     * 
+     * @param theClass
+     * @return An instace of the MetaClass which will handle this class
+     */
     private MetaClass getMetaClassFor(final Class theClass) {
         try {
-            return new MetaClassImpl(this, theClass);
-        }
-        catch (IntrospectionException e) {
-            throw new GroovyRuntimeException("Could not introspect class: " + theClass.getName() + ". Reason: " + e, e);
+        final Class customMetaClass = Class.forName("groovy.runtime.metaclass." + theClass.getName() + "MetaClass");
+        final Constructor customMetaClassConstructor = customMetaClass.getConstructor(new Class[]{MetaClassRegistry.class, Class.class});
+            
+            return (MetaClass)customMetaClassConstructor.newInstance(new Object[]{this, theClass});
+        } catch (final ClassNotFoundException e) {
+            try {
+                return new MetaClassImpl(this, theClass);
+            } catch (final IntrospectionException e1) {
+                throw new GroovyRuntimeException("Could not introspect class: " + theClass.getName() + ". Reason: " + e1, e1);
+            }
+        } catch (final Exception e) {
+            throw new GroovyRuntimeException("Could not instantiate custom Metaclass for class: " + theClass.getName() + ". Reason: " + e, e);
         }
     }
 

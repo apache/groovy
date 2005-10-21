@@ -269,15 +269,11 @@ public class MetaClassImpl extends MetaClass {
        }
    }
 
-   public Object invokeMethod(Object object, String methodName, Object arguments) {
-       return invokeMethod(object, methodName, MetaClassHelper.asArray(arguments));
-   }
-
    /**
     * Invokes the given method on the object.
     *
     */
-   protected Object invokeMethod(Object object, String methodName, Object[] arguments) {
+   public Object invokeMethod(Object object, String methodName, Object[] arguments) {
        if (object == null) {
            throw new NullPointerException("Cannot invoke method: " + methodName + " on null object");
        }
@@ -362,7 +358,7 @@ public class MetaClassImpl extends MetaClass {
        }
    }
 
-   protected MetaMethod retrieveMethod(Object owner, String methodName, Object[] arguments) {
+   public MetaMethod retrieveMethod(Object owner, String methodName, Object[] arguments) {
        // lets try use the cache to find the method
        MethodKey methodKey = new TemporaryMethodKey(methodName, arguments);
        MetaMethod method = (MetaMethod) methodCache.get(methodKey);
@@ -1202,6 +1198,7 @@ public class MetaClassImpl extends MetaClass {
        for (int i = 0; i < methodArray.length; i++) {
            Method reflectionMethod = methodArray[i];
            if ( reflectionMethod.getName().indexOf('+') >= 0 ) {
+               // Skip Synthetic methods inserted by JDK 1.5 compilers and later
                continue;
            }
            MetaMethod method = createMetaMethod(reflectionMethod);

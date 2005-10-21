@@ -21,7 +21,6 @@ import groovy.lang.Closure;
 import groovy.lang.GString;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaMethod;
-import groovy.lang.Tuple;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
@@ -104,26 +103,6 @@ public class MetaClassHelper {
             }
         }
         return accessible;
-    }
-    
-    /**
-     * Converts the given object into an array; if its an array then just cast
-     * otherwise wrap it in an array
-     */
-    public static Object[] asArray(Object arguments) {
-        if (arguments == null) {
-            return EMPTY_ARRAY;
-        }
-        if (arguments instanceof Tuple) {
-            Tuple tuple = (Tuple) arguments;
-            return tuple.toArray();
-        }
-        if (arguments instanceof Object[]) {
-            return (Object[]) arguments;
-        }
-        else {
-            return new Object[] { arguments };
-        }
     }
     
     /**
