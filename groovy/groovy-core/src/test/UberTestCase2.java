@@ -51,6 +51,7 @@ public class UberTestCase2 extends TestCase {
         suite.addTestSuite(groovy.bugs.SubscriptOnPrimitiveTypeArrayBug.class);
         suite.addTestSuite(groovy.bugs.SubscriptOnStringArrayBug.class);
         suite.addTestSuite(groovy.inspect.InspectorTest.class);
+        suite.addTestSuite(groovy.lang.BenchmarkInterceptorTest.class);
         suite.addTestSuite(groovy.lang.GroovyShellTest.class);
         suite.addTestSuite(groovy.lang.GStringTest.class);
         suite.addTestSuite(groovy.lang.InterceptorTest.class);
