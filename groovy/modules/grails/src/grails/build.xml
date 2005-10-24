@@ -126,7 +126,7 @@ Targets:
 		<mkdir dir="${path}grails-app"/>
 		<mkdir dir="${path}grails-app/controllers"/>
 		<mkdir dir="${path}grails-app/domain"/>
-		<mkdir dir="${path}grails-app/view"/>
+		<mkdir dir="${path}grails-app/views"/>
 		<mkdir dir="${path}grails-app/layouts"/>		
 		<mkdir dir="${path}grails-app/conf"/>
 		<mkdir dir="${path}grails-app/tests"/>
@@ -310,7 +310,7 @@ Targets:
 				<exclude name="domain"/>
 				<exclude name="conf"/>
 				<exclude name="tests"/>
-				<exclude name="view"/>
+				<exclude name="views"/>
 			</fileset>
 			<fileset dir="grails-app/controllers" includes="**"/>
 			<fileset dir="grails-app/domain" includes="**"/>
@@ -319,7 +319,7 @@ Targets:
 		</copy>
 		<copy todir="tmp/war/WEB-INF/jsp">
 			<fileset dir="jsp" includes="**"/>
-			<fileset dir="grails-app/view" includes="**"/>
+			<fileset dir="grails-app/views" includes="**"/>
 		</copy>
 			<copy todir="tmp/war/WEB-INF/jsp/layouts">
 				<fileset dir="grails-app/layouts" includes="**"/>
@@ -349,7 +349,9 @@ Targets:
 				server.start();		
 				// we put this here because ant drops out of its process when the script tag finishes 
 				// and hence stops the web server		
-				Thread.sleep(999999999999)
+				while(true) {
+					Thread.sleep(Long.MAX_VALUE)
+				}
 			}
 			catch(Error er) {
 				er.printStackTrace();			
