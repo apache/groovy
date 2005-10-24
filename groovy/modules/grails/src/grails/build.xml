@@ -289,6 +289,7 @@ Targets:
 				<include name="asm-2.0.jar"/>
 				<include name="asm-util-2.0.jar"/>
 				<include name="commons-logging.jar"/>
+				<include name="ognl-2.6.3.jar"/>				
 				<include name="sitemesh-2.2.1.jar"/>				
 				<include name="spring-webflow.jar"/>
 				<include name="spring-binding.jar"/>
