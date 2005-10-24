@@ -7,12 +7,17 @@ import java.util.Map;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyObject;
 import groovy.lang.MissingMethodException;
+import groovy.lang.ProxyMetaClass;
 
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.commons.GrailsDomainClass;
 import org.codehaus.groovy.grails.commons.spring.SpringConfig;
+import org.codehaus.groovy.grails.metaclass.PropertyAccessProxyMetaClass;
 import org.codehaus.groovy.grails.orm.hibernate.metaclass.FindByPersistentMethod;
+import org.codehaus.groovy.grails.web.metaclass.ControllerDynamicMethodsInterceptor;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.AbstractDependencyInjectionSpringContextTests;
 import org.springmodules.beans.factory.drivers.xml.XmlApplicationContextDriver;
 
@@ -42,6 +47,53 @@ public class PersistentMethodTests extends AbstractDependencyInjectionSpringCont
 		assertFalse(findBy.isMethodMatch("rubbish"));
 	}
 	
+	public void testSetPropertiesDynamicProperty()  throws Exception {
+		GroovyClassLoader gcl = new GroovyClassLoader();
+		MockHttpServletRequest request = new MockHttpServletRequest();
+		MockHttpServletResponse response = new MockHttpServletResponse();
+		
+		
+		
+		Class groovyClass = gcl.parseClass( "class TestController {\n" +
+						"@Property domainClass\n" +
+						"def testMethod() {\n" +
+						"domainClass.properties = this.params;\n" +
+						"}\n" +
+						"}" );
+		
+		ProxyMetaClass pmc = PropertyAccessProxyMetaClass.getInstance(groovyClass);
+		// proof of concept to try out proxy meta class
+		pmc.setInterceptor( new ControllerDynamicMethodsInterceptor(groovyClass,request,response) );
+		
+		GroovyObject go = (GroovyObject)groovyClass.newInstance();
+		
+		go.setMetaClass( pmc );		
+		
+		
+		GrailsDomainClass domainClass = this.grailsApplication.getGrailsDomainClass("org.codehaus.groovy.grails.orm.hibernate.PersistentMethodTestClass");
+		
+		GroovyObject dco = domainClass.newInstance();
+		request.addParameter("id", "1");
+		request.addParameter("firstName", "fred");
+		request.addParameter("lastName", "flintstone");
+		request.addParameter("age", "45");
+		
+		try {
+			// invoke real method
+			go.setProperty("domainClass",dco);
+			go.invokeMethod("testMethod", new Object[]{});
+			dco = (GroovyObject)go.getProperty("domainClass");
+			
+			assertEquals(new Integer(45), dco.getProperty("age"));
+			assertEquals(new Long(1), dco.getProperty("id"));
+			assertEquals("fred", dco.getProperty("firstName"));
+			assertEquals("flintstone", dco.getProperty("lastName"));
+		}
+		catch(MissingMethodException mme) {
+			fail("Missing method exception should not have been thrown!");
+		}
+		
+	}
 	
 	public void testSavePersistentMethod() {
 		// init spring config

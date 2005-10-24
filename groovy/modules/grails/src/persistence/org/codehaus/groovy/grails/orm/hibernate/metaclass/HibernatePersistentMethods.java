@@ -20,6 +20,7 @@ import java.util.regex.Pattern;
 
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.metaclass.AbstractDynamicMethods;
+import org.codehaus.groovy.grails.metaclass.SetPropertiesDynamicProperty;
 import org.hibernate.SessionFactory;
 
 /**
@@ -37,7 +38,6 @@ public class HibernatePersistentMethods extends AbstractDynamicMethods {
 		addDynamicMethodInvocation(new SavePersistentMethod(sessionFactory, classLoader));
 		addDynamicMethodInvocation(new DeletePersistentMethod(sessionFactory, classLoader));
 		addDynamicMethodInvocation(new RefreshPersistentMethod(sessionFactory, classLoader));
-		
 		// static methods
 		addStaticMethodInvocation(new FindPersistentMethod(sessionFactory,classLoader));
 		addStaticMethodInvocation(new FindAllPersistentMethod(sessionFactory, classLoader, Pattern.compile("^findAll$")));
@@ -49,6 +49,9 @@ public class HibernatePersistentMethods extends AbstractDynamicMethods {
 		addStaticMethodInvocation(new FindWherePersistentMethod(sessionFactory, classLoader));
 		addStaticMethodInvocation(new GetPersistentMethod(sessionFactory, classLoader));
 		addStaticMethodInvocation(new CreateCriteriaPersistentMethod(sessionFactory, classLoader));
+		
+		// add dynamic properties
+		addDynamicProperty( new SetPropertiesDynamicProperty() );
 	}
 	
 }
