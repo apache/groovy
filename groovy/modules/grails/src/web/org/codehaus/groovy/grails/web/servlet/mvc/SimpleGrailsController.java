@@ -17,6 +17,7 @@ package org.codehaus.groovy.grails.web.servlet.mvc;
 
 import groovy.lang.Closure;
 import groovy.lang.GroovyObject;
+import groovy.lang.ProxyMetaClass;
 import groovy.util.Proxy;
 
 import java.util.Iterator;
@@ -28,6 +29,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.lang.WordUtils;
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.commons.GrailsControllerClass;
+import org.codehaus.groovy.grails.metaclass.PropertyAccessProxyMetaClass;
+import org.codehaus.groovy.grails.web.metaclass.ControllerDynamicMethodsInterceptor;
 import org.codehaus.groovy.grails.web.servlet.GrailsHttpServletRequest;
 import org.codehaus.groovy.grails.web.servlet.GrailsHttpServletResponse;
 import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.IncompatibleParameterCountException;
@@ -96,6 +99,12 @@ public class SimpleGrailsController implements Controller, ApplicationContextAwa
 		
 		// Step 3: load controller from application context.
 		GroovyObject controller = (GroovyObject)this.applicationContext.getBean(controllerClass.getFullName());
+		
+		// Step 3a: Configure a proxy interceptor for controller dynamic methods for this request
+		ProxyMetaClass pmc = PropertyAccessProxyMetaClass.getInstance(controller.getClass());
+		pmc.setInterceptor( new ControllerDynamicMethodsInterceptor(controller.getClass(),request,response) );
+		controller.setMetaClass(pmc);
+		
 		
 		// Step 4: get closure property name for URI.
 		String closurePropertyName = controllerClass.getClosurePropertyName(uri);
