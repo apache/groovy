@@ -32,8 +32,8 @@ public abstract class AbstractDynamicPersistentMethod extends
 	private SessionFactory sessionFactory = null;
 	private ClassLoader classLoader = null;
 	
-	public AbstractDynamicPersistentMethod(SessionFactory sessionFactory, ClassLoader classLoader) {
-		super();
+	public AbstractDynamicPersistentMethod(String methodName, SessionFactory sessionFactory, ClassLoader classLoader) {
+		super(methodName);
 		this.sessionFactory = sessionFactory;
 		this.classLoader = classLoader;
 	}

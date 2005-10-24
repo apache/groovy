@@ -19,7 +19,7 @@ import java.beans.IntrospectionException;
 import java.util.regex.Pattern;
 
 import org.codehaus.groovy.grails.commons.GrailsApplication;
-import org.codehaus.groovy.grails.metaclass.AbstractPersistentMethods;
+import org.codehaus.groovy.grails.metaclass.AbstractDynamicMethods;
 import org.hibernate.SessionFactory;
 
 /**
@@ -28,7 +28,7 @@ import org.hibernate.SessionFactory;
  * @author Steven Devijver
  * @since Aug 7, 2005
  */
-public class HibernatePersistentMethods extends AbstractPersistentMethods {
+public class HibernatePersistentMethods extends AbstractDynamicMethods {
 
 	public HibernatePersistentMethods(GrailsApplication application, Class theClass, SessionFactory sessionFactory, ClassLoader classLoader)
 			throws IntrospectionException {
