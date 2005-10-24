@@ -48,7 +48,7 @@ public class GetParamsDynamicProperty extends AbstractDynamicControllerProperty 
 	 * @author Graeme Rocher
 	 * @since Oct 24, 2005
 	 */
-	private class HttpRequestParameterMap implements Map {
+	class HttpRequestParameterMap implements Map {
 		Map parameterMap = request.getParameterMap();
 		
 		public int size() {
