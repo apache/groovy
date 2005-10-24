@@ -26,8 +26,9 @@ public abstract class AbstractDynamicMethodInvocation implements
 
 	private String methodName = null;
 	
-	public AbstractDynamicMethodInvocation() {
+	public AbstractDynamicMethodInvocation(String methodName) {		
 		super();
+		this.methodName = methodName;
 	}
 
 	public void setMethodName(String methodName) {
@@ -37,6 +38,10 @@ public abstract class AbstractDynamicMethodInvocation implements
 	public String getMethodName() {
 		return this.methodName;
 	}
-
+	
+	public boolean isMethodMatch(String methodName) {
+		return getMethodName().equals(methodName);
+	}
+	
 	public abstract Object invoke(Object target, Object[] arguments);
 }

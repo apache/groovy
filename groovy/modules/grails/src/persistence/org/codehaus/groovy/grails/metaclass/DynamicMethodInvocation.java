@@ -25,6 +25,13 @@ package org.codehaus.groovy.grails.metaclass;
 public interface DynamicMethodInvocation {
 
 	/**
+	 * <p>Checks if a method name matches the criteria of the implementation class.
+	 * 
+	 * @param methodName the static method name
+	 * @return result of criteria match test
+	 */
+	public boolean isMethodMatch(String methodName);
+	/**
 	 * <p>Returns the method name for this method implementation.
 	 * 
 	 * @return method name
