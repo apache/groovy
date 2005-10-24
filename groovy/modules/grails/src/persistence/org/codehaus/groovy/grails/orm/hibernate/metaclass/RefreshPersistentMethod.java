@@ -30,8 +30,7 @@ public class RefreshPersistentMethod extends AbstractDynamicPersistentMethod {
 	private static final String METHOD_SIGNATURE = "refresh";
 
 	public RefreshPersistentMethod(SessionFactory sessionFactory, ClassLoader classLoader) {
-		super(sessionFactory, classLoader);
-		setMethodName(METHOD_SIGNATURE);
+		super(METHOD_SIGNATURE,sessionFactory, classLoader);
 	}
 
 	protected Object doInvokeInternal(Object target, Object[] arguments) {
