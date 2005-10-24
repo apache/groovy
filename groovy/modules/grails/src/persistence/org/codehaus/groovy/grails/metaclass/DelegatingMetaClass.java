@@ -29,18 +29,18 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  */
 public class DelegatingMetaClass extends MetaClass {
 
-	AbstractDynamicMethods persistentMethods = null;
+	AbstractDynamicMethods dynamicMethods = null;
 	
-	public DelegatingMetaClass(Class clazz, AbstractDynamicMethods persistentMethods)
+	public DelegatingMetaClass(Class clazz, AbstractDynamicMethods dynamicMethods)
 			throws IntrospectionException {
 		super(InvokerHelper.getInstance().getMetaRegistry(), clazz);
-		this.persistentMethods = persistentMethods;
+		this.dynamicMethods = dynamicMethods;
 		registry.setMetaClass(clazz, this);
 	}
 
 	public Object invokeMethod(Object target, String methodName, Object[] arguments) {
 		InvocationCallback callback = new InvocationCallback();
-		Object returnValue = this.persistentMethods.invokeMethod(target, methodName, arguments, callback);
+		Object returnValue = this.dynamicMethods.invokeMethod(target, methodName, arguments, callback);
 		if (callback.isInvoked()) {
 			return returnValue;
 		} else {
@@ -50,11 +50,31 @@ public class DelegatingMetaClass extends MetaClass {
 	
 	public Object invokeStaticMethod(Object target, String methodName, Object[] arguments) {
 		InvocationCallback callback = new InvocationCallback();
-		Object returnValue = this.persistentMethods.invokeStaticMethod(target, methodName, arguments, callback);
+		Object returnValue = this.dynamicMethods.invokeStaticMethod(target, methodName, arguments, callback);
 		if (callback.isInvoked()) {
 			return returnValue;
 		} else {
 			return super.invokeStaticMethod(target, methodName, arguments);
 		}
 	}
+
+	public void setProperty(Object object, String property, Object newValue) {
+		InvocationCallback callback = new InvocationCallback();
+		this.dynamicMethods.setProperty(object,property,newValue,callback);
+		if (!callback.isInvoked()) {
+			super.setProperty(object, property, newValue);
+		}		
+	}
+
+	public Object getProperty(Object object, String property) {
+		InvocationCallback callback = new InvocationCallback();
+		Object returnValue = this.dynamicMethods.getProperty(object,property,callback);
+		if (callback.isInvoked()) {
+			return returnValue;
+		} else {
+			return super.getProperty(object,property);
+		}	
+	}
+	
+	
 }
