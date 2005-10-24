@@ -332,11 +332,14 @@ Targets:
 				<include name="log4j.properties"/>
 			</fileset>
 		</copy>
-		<jar destfile="grails-app.war" basedir="tmp/war" />
+		<basename property="project.dir" file="."/>
+		<jar destfile="${project.dir}.war" basedir="tmp/war" />
 	</target>
 
 	<target name="run-app" depends="war">
 	    <property location="tmp/war" name="tmp.war.location" />
+		<basename property="project.dir" file="."/>
+		
 		<script language="groovy">
 			import org.mortbay.jetty.*;
 			import org.mortbay.http.*;		
@@ -345,7 +348,7 @@ Targets:
 				def listener = new SocketListener();
 				listener.setPort(8080); 
 				server.addListener(listener);
-				server.addWebApplication("/grails-app",grails.getProperty("tmp.war.location"));
+				server.addWebApplication("/" + grails.getProperty("project.dir"),grails.getProperty("tmp.war.location"));
 				server.start();		
 				// we put this here because ant drops out of its process when the script tag finishes 
 				// and hence stops the web server		
