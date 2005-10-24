@@ -107,4 +107,11 @@ public interface GrailsApplication {
 	 * @return the service class
 	 */
 	public GrailsServiceClass getGrailsServiceClass(String name);
+	
+	/**
+	 * <p>Returns all the bootstrap classes for the Grails application
+	 * 
+	 * @return An array of BootStrap classes
+	 */
+	public GrailsBootstrapClass[] getGrailsBootstrapClasses();
 }

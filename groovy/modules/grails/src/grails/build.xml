@@ -36,10 +36,15 @@ Targets:
 		
 		<copy 	file="${grails.home}/src/grails/templates/DataSource.groovy" 
 				tofile="${project.name}/grails-app/conf/${project.class.name}DataSource.groovy"/>
+			<copy 	file="${grails.home}/src/grails/templates/BootStrap.groovy" 
+					tofile="${project.name}/grails-app/conf/${project.class.name}BootStrap.groovy"/>		
 		
 		<replace 	file="${project.name}/grails-app/conf/${project.class.name}DataSource.groovy" 
 					token="@data.source.name@" 
 					value="${project.class.name}" />
+			<replace 	file="${project.name}/grails-app/conf/${project.class.name}BootStrap.groovy" 
+						token="@bootstrap.class.name@" 
+						value="${project.class.name}" />		
 	</target>
 	
 	<target name="create-controller">
@@ -145,8 +150,8 @@ Targets:
 				<include name="applicationContext.xml"/>
 			</fileset>
 		</copy>
-		<copy file="${grails.home}/src/war/WEB-INF/web${servlet.version}.xml" tofile="war/WEB-INF/web.xml"/>
-		<copy file="${grails.home}/src/war/WEB-INF/sitemesh.xml" tofile="war/WEB-INF/sitemesh.xml"/>		
+		<copy file="${grails.home}/src/war/WEB-INF/web${servlet.version}.xml" tofile="${path}war/WEB-INF/web.xml"/>
+		<copy file="${grails.home}/src/war/WEB-INF/sitemesh.xml" tofile="${path}war/WEB-INF/sitemesh.xml"/>		
 		<copy todir="${path}spring">
 			<fileset dir="${grails.home}/src/war/WEB-INF/spring">
 				<include name="*.xml"/>

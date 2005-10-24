@@ -45,13 +45,16 @@ public class DefaultGrailsApplication implements GrailsApplication {
 	private GrailsDomainClass[] domainClasses = null;
 	private GrailsDataSource dataSource = null;
 	private GrailsServiceClass[] services = null;
+	private GrailsBootstrapClass[] bootstrapClasses = null;
 	
 	private Map controllerMap = null;
 	private Map domainMap = null;
 	private Map pageFlowMap = null;
 	private Map serviceMap = null;
+	private Map bootstrapMap = null;
 	
 	private Class[] allClasses = null;
+	
 	
 	private static Logger log = Logger.getLogger(DefaultGrailsApplication.class);
 	
@@ -125,6 +128,7 @@ public class DefaultGrailsApplication implements GrailsApplication {
 		this.controllerMap = new HashMap();
 		this.pageFlowMap = new HashMap();
 		this.serviceMap = new HashMap();
+		this.bootstrapMap = new HashMap();
 		for (int i = 0; i < classes.length; i++) {
 			if (Modifier.isAbstract(classes[i].getModifiers())) {
 				continue;
@@ -152,12 +156,17 @@ public class DefaultGrailsApplication implements GrailsApplication {
 				GrailsServiceClass grailsServiceClass = new DefaultGrailsServiceClass(classes[i]);
 				serviceMap.put(grailsServiceClass.getFullName(), grailsServiceClass);
 			}
+			else if(GrailsClassUtils.isBootstrapClass(classes[i])) {
+				GrailsBootstrapClass grailsBootstrapClass = new DefaultGrailsBootstrapClass(classes[i]);
+				this.bootstrapMap.put(grailsBootstrapClass.getFullName(),grailsBootstrapClass);
+			}
 		}
 		
 		this.controllerClasses = ((GrailsControllerClass[])controllerMap.values().toArray(new GrailsControllerClass[controllerMap.size()]));
 		this.pageFlows = ((GrailsPageFlowClass[])pageFlowMap.values().toArray(new GrailsPageFlowClass[pageFlowMap.size()]));
 		this.domainClasses = ((GrailsDomainClass[])this.domainMap.values().toArray(new GrailsDomainClass[domainMap.size()]));
 		this.services = ((GrailsServiceClass[])this.serviceMap.values().toArray(new GrailsServiceClass[serviceMap.size()]));
+		this.bootstrapClasses = ((GrailsBootstrapClass[])this.bootstrapMap.values().toArray(new GrailsBootstrapClass[bootstrapMap.size()]));
 		
 		configureDomainClassRelationships();
 	}
@@ -235,6 +244,10 @@ public class DefaultGrailsApplication implements GrailsApplication {
 	
 	public Class[] getAllClasses() {
 		return this.allClasses;
+	}
+
+	public GrailsBootstrapClass[] getGrailsBootstrapClasses() {		// 
+		return this.bootstrapClasses;
 	}
 	
 }

@@ -43,6 +43,15 @@ public class GrailsClassUtils {
 	 * @param clazz
 	 * @return
 	 */
+	public static boolean isBootstrapClass( Class clazz ) {
+		return clazz.getName().endsWith(DefaultGrailsBootstrapClass.BOOT_STRAP)  && !Closure.class.isAssignableFrom(clazz);
+	}
+	
+	/**
+	 * Returns true of the specified Groovy class is a controller
+	 * @param clazz
+	 * @return
+	 */
 	public static boolean isControllerClass( Class clazz ) {
 		return clazz.getName().endsWith(DefaultGrailsControllerClass.CONTROLLER)  && !Closure.class.isAssignableFrom(clazz);
 	}
