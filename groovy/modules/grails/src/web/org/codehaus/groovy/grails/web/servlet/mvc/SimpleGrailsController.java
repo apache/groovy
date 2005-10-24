@@ -89,7 +89,9 @@ public class SimpleGrailsController implements Controller, ApplicationContextAwa
 		if (uri.indexOf("?") > -1) {
 			uri = uri.substring(0, uri.indexOf("?"));
 		}
-		
+		if(uri.endsWith("/")) {
+			uri = uri.substring(0,uri.length() - 2);
+		}
 		// Step 2: lookup the controller in the application.
 		GrailsControllerClass controllerClass = this.application.getControllerByURI(uri);
 		if (controllerClass == null) {
