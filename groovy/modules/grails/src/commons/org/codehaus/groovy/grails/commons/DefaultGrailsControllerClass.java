@@ -89,7 +89,7 @@ public class DefaultGrailsControllerClass extends AbstractInjectableGrailsClass
 					}
 					if (defaultClosureName != null && defaultClosureName.equals(propertyDescriptor.getName())) {
 						this.uri2closureMap.put(uri, propertyDescriptor.getName());
-						this.viewNames.put(uri, viewName);
+						this.viewNames.put(uri, uri + SLASH + viewName);
 					}
 				}
 			}
