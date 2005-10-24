@@ -41,7 +41,7 @@ public class DefaultGrailsControllerClass extends AbstractInjectableGrailsClass
     private static final String SLASH = "/";
     private static final String VIEW = "View";
     private static final String TYPED_VIEWS = "TypedViews";
-    private static final String DEFAULT_CLOSURE_PROPERTY = "defaultClosure";
+    private static final String DEFAULT_CLOSURE_PROPERTY = "defaultAction";
 
 	private Map viewNames = null;
 	private Map uri2closureMap = null;

@@ -1,21 +1,15 @@
 class BlogController {
 	
-	@Property String defaultClosure = "list"
+	@Property String defaultAction = "list"
+	
 	@Property init = false
 	
-	@Property Closure list = {
-		request,response ->
-		
+	@Property Closure list = {		
 		createTestData()
 		
-		def blogOwner = Owner.findByLogin( request.getParameter("name") )
-		
-		println "Returned owner ${blogOwner}"
-		
-		if(blogOwner.size() == 0)
-			return [:]
-		else
-			return [ "blog": blogOwner[0].blog ];
+		def blogOwner = Owner.findByLogin( this.params["name"] )
+
+		return [ "blog": blogOwner.blog ];
 		
 	}
 	
