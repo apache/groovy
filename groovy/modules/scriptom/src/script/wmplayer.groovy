@@ -16,7 +16,7 @@ println "Playing Wav files from: ${folderName}"
 player = new ActiveXProxy("clsid:{6BF52A52-394A-11D3-B153-00C04F79FAA6}")
 
 // for each file in the folder
-new File(folderName).eachFile{ |file|
+new File(folderName).eachFile{ file ->
     if (file.name.endsWith("wav")) {
         println file
         player.URL = file.absolutePath

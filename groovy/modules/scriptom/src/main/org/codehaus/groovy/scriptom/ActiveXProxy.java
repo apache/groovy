@@ -46,6 +46,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  * <p>Dynamic Groovy proxy around ActiveX COM components.</p>
  *
  * @author Guillaume Laforge
+ * @author Dierk Koenig, adapted to Jacob 1.9
  */
 public class ActiveXProxy extends GroovyObjectSupport
 {
@@ -140,7 +141,7 @@ public class ActiveXProxy extends GroovyObjectSupport
 
     protected void finalize() throws Throwable
     {
-        activex.release();
+        activex.safeRelease();
         ComThread.Release();
         super.finalize();
     }

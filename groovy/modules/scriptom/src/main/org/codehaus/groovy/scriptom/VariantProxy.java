@@ -49,6 +49,7 @@ import java.math.BigInteger;
  * it can be the value of a property, or the return value of a COM method call.</p>
  *
  * @author Guillaume Laforge
+ * @author Dierk Koenig, adapted to Jacob 1.9
  */
 public class VariantProxy extends GroovyObjectSupport
 {
@@ -178,7 +179,7 @@ public class VariantProxy extends GroovyObjectSupport
 
     protected void finalize() throws Throwable
     {
-        variant.release();
+        variant.safeRelease();
         super.finalize();
     }
 }
