@@ -23,10 +23,9 @@ import java.util.Map;
 import ognl.Ognl;
 import ognl.OgnlException;
 
+import org.apache.commons.collections.BeanMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.springframework.beans.BeanWrapper;
-import org.springframework.beans.BeanWrapperImpl;
 
 /**
  * A dynamic property that uses a Map of OGNL expressions to sets properties on the target object
@@ -45,11 +44,21 @@ public class SetPropertiesDynamicProperty extends AbstractDynamicProperty {
 		super(PROPERTY_NAME);
 	}
 
-	public Object get(Object object) {
-		BeanWrapper bean = new BeanWrapperImpl(object);
-		return bean.getPropertyDescriptors();
+	/**
+	 * @return A org.apache.commons.collections.BeanMap instance
+	 */
+	public Object get(Object object) {				
+		return new BeanMap(object);
 	}
 
+	/**
+	 * Sets the property on the specified object with the specified value. The
+	 * value is expected to be a Map containing OGNL expressions for the keys
+	 * and objects for the values.
+	 * 
+	 * @param object The target object
+	 * @param newValue The value to set
+	 */
 	public void set(Object object, Object newValue) {
 		if(newValue == null)
 			return;
@@ -72,7 +81,7 @@ public class SetPropertiesDynamicProperty extends AbstractDynamicProperty {
 					Ognl.setValue(propertyName,object,propertyValue);
 				} catch (OgnlException e) {
 					if(LOG.isDebugEnabled())
-						LOG.debug("OGNL error attempt to set '"+propertyName+"' to value '"+propertyValue+"' for object '"+object+"'");
+						LOG.debug("OGNL error attempt to set '"+propertyName+"' to value '"+propertyValue+"' for object '"+object+"':" + e.getMessage(),e);
 				}				
 			}
 			
