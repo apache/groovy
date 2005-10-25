@@ -789,12 +789,17 @@ public class SwingBuilder extends BuilderSupport {
         Object parent = getCurrent();
         if (parent instanceof Container) {
             Object axisObject = properties.remove("axis");
-            int axis = 0;
+            int axis = BoxLayout.X_AXIS;
             if (axisObject != null) {
                 Integer i = (Integer) axisObject;
                 axis = i.intValue();
             }
-            BoxLayout answer = new BoxLayout((Container) parent, axis);
+            
+            Container target = (Container) parent;
+            if (target instanceof RootPaneContainer) {
+            	target = ((RootPaneContainer) target).getContentPane();
+            }
+            BoxLayout answer = new BoxLayout(target, axis);
             
             // now lets try set the layout property
             InvokerHelper.setProperty(parent, "layout", answer);
