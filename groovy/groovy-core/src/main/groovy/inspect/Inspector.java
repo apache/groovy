@@ -83,6 +83,13 @@ public class Inspector {
     public boolean isGroovy() {
         return getClassUnderInspection().isAssignableFrom(GroovyObject.class);
     }
+    
+    /**
+     * Gets the object being inspected.
+     */
+    public Object getObject() {
+    	return objectUnderInspection;
+    }
 
     /**
      * Get info about usual Java instance and class Methods as well as Constructors.
