@@ -38,7 +38,7 @@ public class ExtendProxy extends Proxy {
 
 	public void setProperty(String property, Object newValue) {
 		try {			
-			super.getProperty(property);
+			super.setProperty(property,newValue);
 		}
 		catch(MissingPropertyException mpe) {
 			InvokerHelper.getMetaClass(getAdaptee()).setProperty(getAdaptee(),property,newValue);
