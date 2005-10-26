@@ -35,6 +35,5 @@
 	<classpathentry kind="lib" path="lib/jdbc2_0-stdext.jar"/>
 	<classpathentry kind="lib" path="lib/jta.jar"/>
 	<classpathentry sourcepath="D:/Downloads/Development/SiteMesh/src/java" kind="lib" path="lib/sitemesh-2.2.1.jar"/>
-	<classpathentry kind="lib" path="lib/ognl-2.6.3.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>
