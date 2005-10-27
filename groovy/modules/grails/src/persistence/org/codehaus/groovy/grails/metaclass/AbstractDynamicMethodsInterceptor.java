@@ -29,6 +29,7 @@ public abstract class AbstractDynamicMethodsInterceptor extends AbstractDynamicM
 	private boolean doInvoke = true;
 	private boolean doGet = true;
 	private boolean doSet = true;
+	private Object returnValue;
 	
 	public AbstractDynamicMethodsInterceptor(Class theClass) throws IntrospectionException {
 		super(theClass);
@@ -37,7 +38,7 @@ public abstract class AbstractDynamicMethodsInterceptor extends AbstractDynamicM
 	public Object beforeInvoke(Object target, String methodName,
 			Object[] arguments) {
 		InvocationCallback callback = new InvocationCallback();
-		Object returnValue = super.invokeMethod(target, methodName, arguments, callback);
+		this.returnValue = super.invokeMethod(target, methodName, arguments, callback);
 		// if the method was invoked as dynamic 
 		// don't invoke true target
 		if (callback.isInvoked()) {
@@ -51,7 +52,7 @@ public abstract class AbstractDynamicMethodsInterceptor extends AbstractDynamicM
 
 	public Object afterInvoke(Object object, String methodName,
 			Object[] arguments, Object result) {
-		return null;
+		return this.returnValue;
 	}
 
 	public boolean doInvoke() {
