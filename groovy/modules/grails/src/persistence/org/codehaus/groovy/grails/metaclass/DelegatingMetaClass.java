@@ -29,9 +29,9 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  */
 public class DelegatingMetaClass extends MetaClass {
 
-	AbstractDynamicMethods dynamicMethods = null;
+	DynamicMethods dynamicMethods = null;
 	
-	public DelegatingMetaClass(Class clazz, AbstractDynamicMethods dynamicMethods)
+	public DelegatingMetaClass(Class clazz, DynamicMethods dynamicMethods)
 			throws IntrospectionException {
 		super(InvokerHelper.getInstance().getMetaRegistry(), clazz);
 		this.dynamicMethods = dynamicMethods;
