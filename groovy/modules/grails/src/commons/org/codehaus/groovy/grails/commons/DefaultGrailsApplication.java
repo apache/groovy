@@ -58,6 +58,12 @@ public class DefaultGrailsApplication implements GrailsApplication {
 	
 	private static Logger log = Logger.getLogger(DefaultGrailsApplication.class);
 	
+	public DefaultGrailsApplication(final Class[] classes) {
+		if(classes == null)
+			throw new IllegalArgumentException("Constructor argument 'classes' cannot be null");
+		
+		configureLoadedClasses(classes);
+	}
 	public DefaultGrailsApplication(final Resource[] resources) throws IOException, ClassNotFoundException {
 		super();
 		
@@ -103,8 +109,14 @@ public class DefaultGrailsApplication implements GrailsApplication {
 			}
 		}
 		// get all the classes that were loaded
-		Class[] classes = cl.getLoadedClasses();
+		Class[] classes = cl.getLoadedClasses();		
 		this.allClasses = classes;
+		
+		configureLoadedClasses(classes);
+	}
+
+	private void configureLoadedClasses(Class[] classes) {
+		
 		// first load the domain classes
 		this.domainMap = new HashMap();
 		log.debug("Going to inspect domain classes.");
@@ -168,9 +180,8 @@ public class DefaultGrailsApplication implements GrailsApplication {
 		this.services = ((GrailsServiceClass[])this.serviceMap.values().toArray(new GrailsServiceClass[serviceMap.size()]));
 		this.bootstrapClasses = ((GrailsBootstrapClass[])this.bootstrapMap.values().toArray(new GrailsBootstrapClass[bootstrapMap.size()]));
 		
-		configureDomainClassRelationships();
+		configureDomainClassRelationships();	
 	}
-
 	/**
 	 * Sets up the relationships between the domain classes, this has to be done after
 	 * the intial creation to avoid looping
