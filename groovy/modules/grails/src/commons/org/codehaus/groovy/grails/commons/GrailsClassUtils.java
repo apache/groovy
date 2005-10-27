@@ -173,6 +173,28 @@ public class GrailsClassUtils {
 		}		
 	}
 	
+	
+	/**
+	 * Retrieves a PropertyDescriptor for the specified instance and property value
+	 * 
+	 * @param instance The instance
+	 * @param propertyValue The value of the property
+	 * @return The PropertyDescriptor
+	 */
+	public static PropertyDescriptor getPropertyDescriptorForValue(Object instance, Object propertyValue) {
+		if(instance == null || propertyValue == null)
+			return null;
+		
+		BeanWrapper wrapper = new BeanWrapperImpl(instance);
+		PropertyDescriptor[] descriptors = wrapper.getPropertyDescriptors();
+		
+		for (int i = 0; i < descriptors.length; i++) {
+			Object value = wrapper.getPropertyValue( descriptors[i].getName() );
+			if(propertyValue.equals(value))
+				return descriptors[i];
+		}
+		return null;
+	}
 	/**
 	 * Returns the type of the given property contained within the specified class
 	 * 
