@@ -158,6 +158,68 @@ public class ControllerMetaClassTests extends TestCase {
 		}		
 	}
 	
+	public void testChainDynamicMethod() throws Exception {
+
+		GroovyClassLoader gcl = new GroovyClassLoader();
+		MockHttpServletRequest request = new MockHttpServletRequest();
+		MockHttpServletResponse response = new MockHttpServletResponse();
+		
+		request.addParameter("testParam", "testValue");
+		
+		Class groovyClass = gcl.parseClass( "class TestController {\n" +
+						"@Property next = {\n" +
+							"return ['success':this.params['testParam2']]" +
+						"}\n" +
+						"@Property list = {\n" +
+							"return chain(action:this.next,model:['mymodel':'myvalue'],params:['testParam2':'testValue2'])\n" +
+						"}\n" +
+						"}" );
+		Class secondController = gcl.parseClass( "class SecondController {\n" +
+				"@Property list = {\n" +
+					"return chain(action:'test/list',model:['mymodel':'myvalue'],params:['testParam2':'testValue2'])\n" +
+				"}\n" +
+				"}" );		
+		
+		GrailsApplication application = new DefaultGrailsApplication(new Class[] { groovyClass,secondController });		
+		GroovyObject go = configureDynamicGO(groovyClass, application,request,response);
+		GroovyObject go2 = configureDynamicGO(secondController, application,request,response);
+		
+		// first test redirection within the same controller		
+		try {
+			Closure closure = (Closure)go.getProperty("list");
+			Object returnValue = closure.call();
+			assertNotNull(returnValue);
+			assertTrue(returnValue instanceof ModelAndView);
+			Map model = ((ModelAndView)returnValue).getModel();
+			
+			assertEquals("myvalue", model.get("mymodel"));
+			assertEquals("testValue2", model.get("success"));
+		}
+		catch(MissingMethodException mme) {
+			fail("Missing method exception should not have been thrown!");
+		}	
+		catch(MissingPropertyException mpex) {
+			fail("Missing property exception should not have been thrown!");
+		}
+		// now redirection to another controller
+		try {
+			Closure closure = (Closure)go2.getProperty("list");
+			Object returnValue = closure.call();
+			assertNotNull(returnValue);
+			assertTrue(returnValue instanceof ModelAndView);
+			Map model = ((ModelAndView)returnValue).getModel();
+			
+			assertEquals("myvalue", model.get("mymodel"));
+			assertEquals("testValue2", model.get("success"));
+		}
+		catch(MissingMethodException mme) {
+			fail("Missing method exception should not have been thrown!");
+		}	
+		catch(MissingPropertyException mpex) {
+			fail("Missing property exception should not have been thrown!");
+		}		
+	}
+	
 	private GroovyObject configureDynamicGO(Class groovyClass,GrailsApplication application, HttpServletRequest request, HttpServletResponse response)
 		throws Exception {
 		ProxyMetaClass pmc = PropertyAccessProxyMetaClass.getInstance(groovyClass);
