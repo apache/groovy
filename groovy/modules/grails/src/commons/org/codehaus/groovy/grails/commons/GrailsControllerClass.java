@@ -39,13 +39,20 @@ public interface GrailsControllerClass extends InjectableGrailsClass {
 	public boolean mapsToURI(String uri);
 	
 	/**
-	 * <p>Looks for a string property named &lt;closureName&gt;View and returns
-	 * that value as view name or null if not found.
+     * Retrieves the view name for the specified URI
 	 * 
-	 * @param closureName the name of URI
+	 * @param uri the name of URI
 	 * @return the view name of null if not found
 	 */
-	public String getViewName(String closureName);
+	public String getViewByURI(String uri);
+	
+	/**
+	 * Retrieves the view name for the specified closure name
+	 * 
+	 * @param closureName The name of the closure
+	 * @return
+	 */
+	public String getViewByName(String closureName);
 
 	/**
 	 * <p>Returns a closure property name for a specific URI or null if the URI does not map to a closure.
@@ -54,5 +61,7 @@ public interface GrailsControllerClass extends InjectableGrailsClass {
 	 * @return the closure property name mapped to the URI or null is no closure was found
 	 */
 	public String getClosurePropertyName(String uri);
+
+	
 
 }
