@@ -15,6 +15,8 @@ import org.codehaus.groovy.grails.commons.spring.SpringConfig;
 import org.codehaus.groovy.grails.metaclass.PropertyAccessProxyMetaClass;
 import org.codehaus.groovy.grails.orm.hibernate.metaclass.FindByPersistentMethod;
 import org.codehaus.groovy.grails.web.metaclass.ControllerDynamicMethodsInterceptor;
+import org.codehaus.groovy.grails.web.servlet.mvc.GrailsControllerHelper;
+import org.codehaus.groovy.grails.web.servlet.mvc.SimpleGrailsControllerHelper;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -32,10 +34,7 @@ public class PersistentMethodTests extends AbstractDependencyInjectionSpringCont
 	
 	
 	
-	public void setGrailsApplication(GrailsApplication grailsApplication) {
-		this.grailsApplication = grailsApplication;
-	
-	}
+
 
 
 
@@ -62,8 +61,9 @@ public class PersistentMethodTests extends AbstractDependencyInjectionSpringCont
 						"}" );
 		
 		ProxyMetaClass pmc = PropertyAccessProxyMetaClass.getInstance(groovyClass);
+		GrailsControllerHelper helper = new SimpleGrailsControllerHelper(this.grailsApplication,this.applicationContext);
 		// proof of concept to try out proxy meta class
-		pmc.setInterceptor( new ControllerDynamicMethodsInterceptor(groovyClass,request,response) );
+		pmc.setInterceptor( new ControllerDynamicMethodsInterceptor(groovyClass,helper,request,response) );
 		
 		GroovyObject go = (GroovyObject)groovyClass.newInstance();
 		
