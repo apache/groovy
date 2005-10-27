@@ -18,7 +18,11 @@ package org.codehaus.groovy.grails.metaclass;
 import java.beans.IntrospectionException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
+
+
 
 /**
  * InvokerHelper.getInstance().getMetaRegistry().setMetaClass(Foo.class,myFooMetaClass)
@@ -26,11 +30,11 @@ import java.util.Iterator;
  * @author Steven Devijver
  * @since Aug 7, 2005
  */
-public abstract class AbstractDynamicMethods {
+public abstract class AbstractDynamicMethods implements DynamicMethods {
 
 	private Collection dynamicMethodInvocations = null;
 	private Collection staticMethodInvocations = null;
-	private Collection dynamicProperties = null;
+	private Map dynamicProperties = null;
 	private Class clazz = null;
 	
 	public AbstractDynamicMethods(Class theClass)
@@ -40,40 +44,54 @@ public abstract class AbstractDynamicMethods {
 		this.clazz = theClass;
 		this.dynamicMethodInvocations = new ArrayList();
 		this.staticMethodInvocations = new ArrayList();
-		this.dynamicProperties = new ArrayList();
+		this.dynamicProperties = new HashMap();
 	}
 
-	public void addDynamicMethodInvocation(DynamicMethodInvocation methodInvocation) {
+	/* (non-Javadoc)
+	 * @see org.codehaus.groovy.grails.metaclass.DynamicMethods#addDynamicMethodInvocation(org.codehaus.groovy.grails.metaclass.DynamicMethodInvocation)
+	 */
+	public void addDynamicMethodInvocation(DynamicMethodInvocation methodInvocation) {		
 		this.dynamicMethodInvocations.add(methodInvocation);
 	}
 	
+	/* (non-Javadoc)
+	 * @see org.codehaus.groovy.grails.metaclass.DynamicMethods#addStaticMethodInvocation(org.codehaus.groovy.grails.metaclass.StaticMethodInvocation)
+	 */
 	public void addStaticMethodInvocation(StaticMethodInvocation methodInvocation) {
 		this.staticMethodInvocations.add(methodInvocation);
 	}
 	
+	/* (non-Javadoc)
+	 * @see org.codehaus.groovy.grails.metaclass.DynamicMethods#addDynamicProperty(org.codehaus.groovy.grails.metaclass.DynamicProperty)
+	 */
 	public void addDynamicProperty(DynamicProperty property) {
-		this.dynamicProperties.add(property);
+		this.dynamicProperties.put(property.getPropertyName(), property);
 	}
 	
-	public Object getProperty(Object object, String propertyName, InvocationCallback callback) {
-		for (Iterator iter = this.dynamicProperties.iterator(); iter.hasNext();) {
-			DynamicProperty getter = (DynamicProperty)iter.next();
-			if (getter.isPropertyMatch(propertyName)) {
-				callback.markInvoked();
-				return getter.get(object);
-			}
+	/* (non-Javadoc)
+	 * @see org.codehaus.groovy.grails.metaclass.DynamicMethods#getProperty(java.lang.Object, java.lang.String, org.codehaus.groovy.grails.metaclass.InvocationCallback)
+	 */
+	public Object getProperty(Object object, String propertyName, InvocationCallback callback) {		
+		DynamicProperty getter = (DynamicProperty)this.dynamicProperties.get(propertyName);
+		if (getter != null && getter.isPropertyMatch(propertyName)) {
+			callback.markInvoked();
+			return getter.get(object);
 		}
 		return null;		
 	}
+	/* (non-Javadoc)
+	 * @see org.codehaus.groovy.grails.metaclass.DynamicMethods#setProperty(java.lang.Object, java.lang.String, java.lang.Object, org.codehaus.groovy.grails.metaclass.InvocationCallback)
+	 */
 	public void setProperty(Object object, String propertyName,Object newValue, InvocationCallback callback) {
-		for (Iterator iter = this.dynamicProperties.iterator(); iter.hasNext();) {
-			DynamicProperty property = (DynamicProperty)iter.next();
-			if (property.isPropertyMatch(propertyName)) {
-				callback.markInvoked();
-				property.set(object,newValue);
-			}
+		DynamicProperty setter = (DynamicProperty)this.dynamicProperties.get(propertyName);
+		if (setter != null && setter.isPropertyMatch(propertyName)) {
+			callback.markInvoked();
+			setter.set(object,newValue);
 		}		
 	}	
+	/* (non-Javadoc)
+	 * @see org.codehaus.groovy.grails.metaclass.DynamicMethods#invokeMethod(java.lang.Object, java.lang.String, java.lang.Object[], org.codehaus.groovy.grails.metaclass.InvocationCallback)
+	 */
 	public Object invokeMethod(Object object, String methodName,
 		Object[] arguments, InvocationCallback callback) {
 		for (Iterator iter = this.dynamicMethodInvocations.iterator(); iter.hasNext();) {
@@ -86,6 +104,9 @@ public abstract class AbstractDynamicMethods {
 		return null;
 	}
 	
+	/* (non-Javadoc)
+	 * @see org.codehaus.groovy.grails.metaclass.DynamicMethods#invokeStaticMethod(java.lang.Object, java.lang.String, java.lang.Object[], org.codehaus.groovy.grails.metaclass.InvocationCallback)
+	 */
 	public Object invokeStaticMethod(Object object, String methodName,
 			Object[] arguments, InvocationCallback callBack) {
 		for (Iterator iter = this.staticMethodInvocations.iterator(); iter.hasNext();) {
@@ -96,5 +117,9 @@ public abstract class AbstractDynamicMethods {
 			}
 		}
 		return null;
+	}
+
+	public DynamicProperty getDynamicProperty(String propertyName) {
+		return (DynamicProperty)this.dynamicProperties.get(propertyName);
 	}
 }
