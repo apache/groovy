@@ -34,6 +34,11 @@ public abstract class AbstractDynamicProperty implements DynamicProperty {
 		return this.propertyName.equals(propertyName);
 	}
 
+	
+	public String getPropertyName() {
+		return propertyName;
+	}
+
 	public abstract Object get(Object object);
 	public abstract void set(Object object, Object newValue);
 }

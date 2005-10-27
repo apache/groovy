@@ -41,6 +41,11 @@ public interface DynamicProperty {
 	 * @param object The target object
 	 * @param newValue The new value of the property
 	 */
-	void set(Object object, Object newValue);	
+	void set(Object object, Object newValue);
+
+	/**
+	 * @return The name of the property
+	 */
+	String getPropertyName();	
 
 }
