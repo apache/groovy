@@ -21,6 +21,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.codehaus.groovy.grails.metaclass.AbstractDynamicMethodsInterceptor;
+import org.codehaus.groovy.grails.web.servlet.mvc.GrailsControllerHelper;
 /**
  * Adds dynamic methods and properties for Grails Controllers
  * 
@@ -30,11 +31,12 @@ import org.codehaus.groovy.grails.metaclass.AbstractDynamicMethodsInterceptor;
 public class ControllerDynamicMethodsInterceptor extends
 		AbstractDynamicMethodsInterceptor {
 
-	public ControllerDynamicMethodsInterceptor(Class theClass,HttpServletRequest request, HttpServletResponse response) throws IntrospectionException {
+	public ControllerDynamicMethodsInterceptor(Class theClass,GrailsControllerHelper helper,HttpServletRequest request, HttpServletResponse response) throws IntrospectionException {
 		super(theClass);
 				
 		addDynamicProperty(new GetParamsDynamicProperty(request,response));
 		addDynamicProperty(new GetSessionDynamicProperty(request,response));
+		addDynamicMethodInvocation( new RedirectDynamicMethod(helper,request,response) );
 	}
 
 }
