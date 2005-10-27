@@ -35,17 +35,19 @@ import javax.servlet.http.HttpSession;
 public class GetSessionDynamicProperty extends AbstractDynamicControllerProperty {
 
 	private static final String PROPERTY_NAME = "session";
+	private HttpSessionMap sessionMap;
 
 	public GetSessionDynamicProperty(HttpServletRequest request, HttpServletResponse response) {
 		super(PROPERTY_NAME, request, response);
+		this.sessionMap = new HttpSessionMap();
 	}
 
 	public Object get(Object object) {
-		return new HttpSessionMap();
+		return this.sessionMap;
 	}
 
 	public void set(Object object, Object newValue) {
-		throw new UnsupportedOperationException("Property '" + PROPERTY_NAME + "' is read-only!" );
+		throw new UnsupportedOperationException("Property '" + PROPERTY_NAME + "' of class '"+object.getClass()+"' is read-only!" );
 	}
 	
 	/**
