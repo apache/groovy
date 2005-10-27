@@ -15,98 +15,37 @@
  */
 package org.codehaus.groovy.grails.web.metaclass;
 
-import java.util.Collection;
 import java.util.Map;
-import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 /**
- * A dynamic property that adds a "params" map to a controller for accessing request parameters
+ * A dynamic property that adds a "params" map to a controller for accessing request and controller parameters
  * 
  * @author Graeme Rocher
  * @since Oct 24, 2005
  */
 public class GetParamsDynamicProperty extends AbstractDynamicControllerProperty {
-	private static final String PROPERTY_NAME = "params";
+	public static final String PROPERTY_NAME = "params";
+	private GrailsParameterMap paramsMap;
 	
 	public GetParamsDynamicProperty(HttpServletRequest request, HttpServletResponse response) {
 		super(PROPERTY_NAME,request, response);
+		this.paramsMap = new GrailsParameterMap(request);
 	}
 
 	public Object get(Object object) {
-		return new HttpRequestParameterMap();
+		return paramsMap;
 	}
 
 	public void set(Object object, Object newValue) {
-		throw new UnsupportedOperationException("Property '" + PROPERTY_NAME + "' is read-only!" ); 
+		throw new UnsupportedOperationException("Property '" + PROPERTY_NAME + "' of class '"+object.getClass()+"' is read-only!" ); 
 	}	
-	
-	/**
-	 * Wraps the HttpRequest in a map for accessing request parameters
-	 * 
-	 * @author Graeme Rocher
-	 * @since Oct 24, 2005
-	 */
-	class HttpRequestParameterMap implements Map {
-		Map parameterMap = request.getParameterMap();
-		
-		public int size() {
-			return parameterMap.size();
-		}
 
-		public boolean isEmpty() {			
-			return parameterMap.isEmpty();
-		}
-
-		public boolean containsKey(Object key) {
-			return parameterMap.containsKey(key);
-		}
-
-		public boolean containsValue(Object value) {
-			return parameterMap.containsValue(value);
-		}
-
-		public Object get(Object key) {
-			if(!(key instanceof String))
-					throw new IllegalArgumentException("Request parameter key '"+key+"' must be a string value");
-			
-			String[] valueArray = (String[])parameterMap.get(key);
-			if(valueArray == null)
-				return null;
-			
-			if(valueArray.length == 1)
-				return request.getParameter((String)key); 
-
-			return parameterMap.get(key);
-		}
-
-		public Object put(Object arg0, Object arg1) {
-			throw new UnsupportedOperationException("Property '" + PROPERTY_NAME + "' is read-only!" );
-		}
-
-		public Object remove(Object arg0) {
-			throw new UnsupportedOperationException("Property '" + PROPERTY_NAME + "' is read-only!" );
-		}
-
-		public void putAll(Map arg0) {
-			throw new UnsupportedOperationException("Property '" + PROPERTY_NAME + "' is read-only!" );
-		}
-
-		public void clear() {
-			throw new UnsupportedOperationException("Property '" + PROPERTY_NAME + "' is read-only!" );
-		}
-
-		public Set keySet() {
-			return parameterMap.keySet();
-		}
-
-		public Collection values() {
-			return parameterMap.values();
-		}
-
-		public Set entrySet() {
-			return parameterMap.entrySet();
-		}		
+	public void addParam(String paramName, Object paramValue) {
+		this.paramsMap.put( paramName,paramValue );
+	}	
+	public void addParams(Map params) {
+		this.paramsMap.putAll(params);
 	}
 }
