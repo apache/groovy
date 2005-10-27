@@ -28,10 +28,12 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.lang.WordUtils;
+//import org.apache.commons.lang.WordUtils;
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.commons.GrailsControllerClass;
+import org.codehaus.groovy.grails.metaclass.GenericDynamicProperty;
 import org.codehaus.groovy.grails.metaclass.PropertyAccessProxyMetaClass;
+import org.codehaus.groovy.grails.web.metaclass.ChainDynamicMethod;
 import org.codehaus.groovy.grails.web.metaclass.ControllerDynamicMethodsInterceptor;
 import org.codehaus.groovy.grails.web.metaclass.GetParamsDynamicProperty;
 import org.codehaus.groovy.grails.web.servlet.GrailsHttpServletRequest;
@@ -49,6 +51,7 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
 
 	private GrailsApplication application;
 	private ApplicationContext applicationContext;
+	private Map chainModel = Collections.EMPTY_MAP;
 
 	public SimpleGrailsControllerHelper(GrailsApplication application, ApplicationContext context) {
 		super();
@@ -102,13 +105,25 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
 			if (viewNameBlank) {
 				throw new NoViewNameDefinedException("Map instance returned by and no view name specified for closure on property [" + closurePropertyName + "] in controller [" + controllerClass.getFullName() + "]!");
 			} else {
-				return new ModelAndView(viewName, (Map)returnValue);
+				Map returnMap = (Map)returnValue;
+				if(!this.chainModel.isEmpty()) {
+					this.chainModel.putAll( returnMap );
+					return new ModelAndView(viewName, this.chainModel);
+				}
+				else {
+					return new ModelAndView(viewName, returnMap);
+				}
 			}
 		} else if (returnValue instanceof ModelAndView) {
 			ModelAndView modelAndView = (ModelAndView)returnValue;
 			
 			// remove any Proxy wrappers and set the adaptee as the value
-			removeProxiesFromModelObjects(modelAndView.getModel());
+			Map modelMap = modelAndView.getModel();
+			removeProxiesFromModelObjects(modelMap);
+			if(!this.chainModel.isEmpty()) {
+				this.chainModel.putAll(modelMap);
+				modelAndView.addAllObjects(this.chainModel);
+			}
 			
 			if (modelAndView.getView() == null && modelAndView.getViewName() == null) {
 				if (viewNameBlank) {
@@ -160,7 +175,7 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
 		if (controllerClass == null) {
 			throw new UnknownControllerException("No controller found for URI [" + uri + "]!");
 		}
-		String controllerName = WordUtils.uncapitalize(controllerClass.getName());
+		//String controllerName = WordUtils.uncapitalize(controllerClass.getName());
 		
 		// Step 3: load controller from application context.
 		GroovyObject controller = getControllerInstance(controllerClass);
@@ -173,7 +188,22 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
 			if(params != null && !params.isEmpty()) {
 				GetParamsDynamicProperty paramsProp = (GetParamsDynamicProperty)interceptor.getDynamicProperty( GetParamsDynamicProperty.PROPERTY_NAME );
 				paramsProp.addParams( params );
-			}			
+			}
+			// check the chain model is not empty and add it
+			if(!this.chainModel.isEmpty()) {
+				// get the "chainModel" property
+				GenericDynamicProperty chainProperty = (GenericDynamicProperty)interceptor.getDynamicProperty(ChainDynamicMethod.PROPERTY_CHAIN_MODEL);
+				// if it doesn't exist create it
+				if(chainProperty == null) {			
+					interceptor.addDynamicProperty( new GenericDynamicProperty( ChainDynamicMethod.PROPERTY_CHAIN_MODEL,Map.class,this.chainModel,false ) );
+				}
+				else {
+					// otherwise add to it
+					Map chainPropertyModel = (Map)chainProperty.getValue();
+					chainPropertyModel.putAll( this.chainModel );
+					this.chainModel = chainPropertyModel;
+				}
+			}
 			pmc.setInterceptor( interceptor );
 			controller.setMetaClass(pmc);
 		}
@@ -208,6 +238,10 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
 		
 		// Step 8: determine return value type and handle accordingly
 		return handleActionResponse(controllerClass,returnValue,closurePropertyName,viewName);
+	}
+
+	public void setChainModel(Map model) {
+		this.chainModel  = model;
 	}
 	
 }

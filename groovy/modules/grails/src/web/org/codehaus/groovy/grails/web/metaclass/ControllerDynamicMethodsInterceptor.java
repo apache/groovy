@@ -37,6 +37,7 @@ public class ControllerDynamicMethodsInterceptor extends
 		addDynamicProperty(new GetParamsDynamicProperty(request,response));
 		addDynamicProperty(new GetSessionDynamicProperty(request,response));
 		addDynamicMethodInvocation( new RedirectDynamicMethod(helper,request,response) );
+		addDynamicMethodInvocation( new ChainDynamicMethod(helper, request, response ) );
 	}
 
 }

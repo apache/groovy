@@ -15,29 +15,10 @@
  */ 
 package org.codehaus.groovy.grails.web.servlet.mvc;
 
-import groovy.lang.Closure;
-import groovy.lang.GroovyObject;
-import groovy.lang.ProxyMetaClass;
-import groovy.util.Proxy;
-
-import java.util.Iterator;
-import java.util.Map;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.lang.WordUtils;
 import org.codehaus.groovy.grails.commons.GrailsApplication;
-import org.codehaus.groovy.grails.commons.GrailsControllerClass;
-import org.codehaus.groovy.grails.metaclass.PropertyAccessProxyMetaClass;
-import org.codehaus.groovy.grails.web.metaclass.ControllerDynamicMethodsInterceptor;
-import org.codehaus.groovy.grails.web.servlet.GrailsHttpServletRequest;
-import org.codehaus.groovy.grails.web.servlet.GrailsHttpServletResponse;
-import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.IncompatibleParameterCountException;
-import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.NoClosurePropertyForURIException;
-import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.NoViewNameDefinedException;
-import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.UnknownControllerException;
-import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.UnsupportedReturnValueException;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -53,7 +34,6 @@ import org.springframework.web.util.UrlPathHelper;
  */
 public class SimpleGrailsController implements Controller, ApplicationContextAware {
 
-	private static final String SLASH = "/";
 	
 	private UrlPathHelper urlPathHelper = new UrlPathHelper();
 	private GrailsApplication application = null;
