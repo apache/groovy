@@ -15,6 +15,7 @@
  */
 package org.codehaus.groovy.grails.web.servlet.mvc;
 
+import groovy.lang.Closure;
 import groovy.lang.GroovyObject;
 
 import java.util.Map;
@@ -39,8 +40,18 @@ public interface GrailsControllerHelper {
 	 */
 	public abstract GrailsControllerClass getControllerClassByName(String className);
 
+	/**
+	 * Retrieves a GrailsControllerClass by URI
+	 * 
+	 * @param uri The URI to lookup
+	 * @return A GrailsControllerClass 
+	 */
 	public abstract GrailsControllerClass getControllerClassByURI(String uri);
-
+	/**
+	 * Creates a new controller instance for the specified GrailsControllerClass
+	 * @param controllerClass The GrailsControllerClass
+	 * @return A new controller instance
+	 */
 	public abstract GroovyObject getControllerInstance(
 			GrailsControllerClass controllerClass);
 	/**
@@ -53,6 +64,29 @@ public interface GrailsControllerHelper {
 	public abstract ModelAndView handleURI(String uri,
 			HttpServletRequest request, HttpServletResponse response);
 
+	/**
+	 * Handles a Controller action
+	 * 
+	 * @param action An action Closure instance
+	 * @param request The request object
+	 * @param response The response
+	 * 
+	 * @return
+	 */
+	public abstract Object handleAction(GroovyObject controller,Closure action,HttpServletRequest request, HttpServletResponse response);
+	
+	/**
+	 * Handles a Controller action
+	 * 
+	 * @param action An action Closure instance
+	 * @param request The request object
+	 * @param response The response
+	 * @param params A Map of controller parameters
+	 * 
+	 * @return
+	 */
+	public abstract Object handleAction(GroovyObject controller,Closure action,HttpServletRequest request, HttpServletResponse response, Map params);
+	
 	/**
 	 * Processes an action response for the specified arguments
 	 * 

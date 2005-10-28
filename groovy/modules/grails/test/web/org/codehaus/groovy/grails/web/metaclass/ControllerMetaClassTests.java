@@ -168,10 +168,13 @@ public class ControllerMetaClassTests extends TestCase {
 		
 		Class groovyClass = gcl.parseClass( "class TestController {\n" +
 						"@Property next = {\n" +
-							"return ['success':this.params['testParam2']]" +
+							"chain(action:this.next2,model:['mymodel2':'myvalue2'],params:['testParam2':this.params['testParam2']])\n" +
 						"}\n" +
+						"@Property next2 = {\n" +
+							"return ['success':this.params['testParam2']]" +
+						"}\n" +						
 						"@Property list = {\n" +
-							"return chain(action:this.next,model:['mymodel':'myvalue'],params:['testParam2':'testValue2'])\n" +
+							"chain(action:this.next,model:['mymodel':'myvalue'],params:['testParam2':'testValue2'])\n" +
 						"}\n" +
 						"}" );
 		Class secondController = gcl.parseClass( "class SecondController {\n" +
@@ -193,6 +196,7 @@ public class ControllerMetaClassTests extends TestCase {
 			Map model = ((ModelAndView)returnValue).getModel();
 			
 			assertEquals("myvalue", model.get("mymodel"));
+			assertEquals("myvalue2", model.get("mymodel2"));
 			assertEquals("testValue2", model.get("success"));
 		}
 		catch(MissingMethodException mme) {

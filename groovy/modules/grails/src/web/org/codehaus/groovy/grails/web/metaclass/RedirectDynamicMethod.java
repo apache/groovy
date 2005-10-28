@@ -15,22 +15,18 @@
  */
 package org.codehaus.groovy.grails.web.metaclass;
 
-import java.util.Map;
-
 import groovy.lang.Closure;
 import groovy.lang.GroovyObject;
 import groovy.lang.MissingMethodException;
-import groovy.lang.ProxyMetaClass;
+
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.codehaus.groovy.grails.commons.GrailsClassUtils;
 import org.codehaus.groovy.grails.commons.GrailsControllerClass;
-import org.codehaus.groovy.grails.web.servlet.GrailsHttpServletRequest;
-import org.codehaus.groovy.grails.web.servlet.GrailsHttpServletResponse;
 import org.codehaus.groovy.grails.web.servlet.mvc.GrailsControllerHelper;
-import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.IncompatibleParameterCountException;
 
 /**
  * Implements the "redirect" Controller method for action redirection
@@ -91,23 +87,7 @@ public class RedirectDynamicMethod extends AbstractDynamicControllerMethod {
 			GrailsControllerClass controllerClass = helper.getControllerClassByName( target.getClass().getName() );
 			String viewName  = controllerClass.getViewByName(closureName);
 			
-			// add additional params to params dynamic property
-			if(params != null) {
-				ProxyMetaClass metaClass =  (ProxyMetaClass)targetGo.getMetaClass();
-				ControllerDynamicMethodsInterceptor interceptor = (ControllerDynamicMethodsInterceptor)metaClass.getInterceptor();
-				GetParamsDynamicProperty paramsProp = (GetParamsDynamicProperty)interceptor.getDynamicProperty(GetParamsDynamicProperty.PROPERTY_NAME);
-				paramsProp.addParams(params);
-			}
-			
-			Object returnValue;
-			if (c.getParameterTypes().length == 1) {
-				// closure may have zero or one parameter, we cannot be sure.
-				returnValue = c.call(new GrailsHttpServletRequest(request));
-			} else if (c.getParameterTypes().length == 2) {
-				returnValue = c.call(new Object[] { new  GrailsHttpServletRequest(request), new GrailsHttpServletResponse(response) });
-			} else {
-				throw new IncompatibleParameterCountException("Closure on property [" + c + "] in [" + target.getClass() + "] has an incompatible parameter count [" + c.getParameterTypes().length + "]! Supported values are 0 to 2.");			
-			}
+			Object returnValue = helper.handleAction(targetGo,c,request,response,params);
 			return helper.handleActionResponse(controllerClass,returnValue,closureName,viewName);
 		}
 

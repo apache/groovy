@@ -162,6 +162,7 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
 		if(uri == null)
 			throw new IllegalArgumentException("Controller URI [" + uri + "] cannot be null!");
 		
+		// step 1: process the uri
 		if (uri.indexOf("?") > -1) {
 			uri = uri.substring(0, uri.indexOf("?"));
 		}		
@@ -180,15 +181,55 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
 		// Step 3: load controller from application context.
 		GroovyObject controller = getControllerInstance(controllerClass);
 		
+		// Step 4: get closure property name for URI.
+		String closurePropertyName = controllerClass.getClosurePropertyName(uri);
+		if (closurePropertyName == null) {
+			throw new NoClosurePropertyForURIException("Could not find closure property for URI [" + uri + "] for controller [" + controllerClass.getFullName() + "]!");
+		}
+		
+		// Step 5: get the view name for this URI.
+		String viewName = controllerClass.getViewByURI(uri);
+		
+		
+		// Step 6: get closure from closure property
+		Closure closure = (Closure)controller.getProperty(closurePropertyName);
+		
+		// Step 7: process the action
+		Object returnValue = handleAction( controller,closure,request,response,params );
+
+		
+		// Step 8: determine return value type and handle accordingly
+		return handleActionResponse(controllerClass,returnValue,closurePropertyName,viewName);
+	}
+
+	public void setChainModel(Map model) {
+		this.chainModel  = model;
+	}
+
+	public Object handleAction(GroovyObject controller,Closure action, HttpServletRequest request, HttpServletResponse response) {
+		return handleAction(controller,action,request,response,Collections.EMPTY_MAP);
+	}
+
+	public Object handleAction(GroovyObject controller,Closure action, HttpServletRequest request, HttpServletResponse response, Map params) {
 		// Step 3a: Configure a proxy interceptor for controller dynamic methods for this request
 		try {
-			ProxyMetaClass pmc = PropertyAccessProxyMetaClass.getInstance(controller.getClass());
-			ControllerDynamicMethodsInterceptor interceptor = new ControllerDynamicMethodsInterceptor(controller.getClass(),this,request,response);
+			ControllerDynamicMethodsInterceptor interceptor;
+			if(!controller.getMetaClass().getClass().equals( PropertyAccessProxyMetaClass.class )) {
+				ProxyMetaClass pmc = PropertyAccessProxyMetaClass.getInstance(controller.getClass());
+				interceptor = new ControllerDynamicMethodsInterceptor(controller.getClass(),this,request,response);
+
+				pmc.setInterceptor( interceptor );
+				controller.setMetaClass(pmc);				
+			}
+			else {
+				ProxyMetaClass pmc = (ProxyMetaClass)controller.getMetaClass(); 
+				interceptor = (ControllerDynamicMethodsInterceptor)pmc.getInterceptor(); 
+			}
 			// if there are additional params add them to the params dynamic property
 			if(params != null && !params.isEmpty()) {
 				GetParamsDynamicProperty paramsProp = (GetParamsDynamicProperty)interceptor.getDynamicProperty( GetParamsDynamicProperty.PROPERTY_NAME );
 				paramsProp.addParams( params );
-			}
+			}			
 			// check the chain model is not empty and add it
 			if(!this.chainModel.isEmpty()) {
 				// get the "chainModel" property
@@ -204,44 +245,23 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
 					this.chainModel = chainPropertyModel;
 				}
 			}
-			pmc.setInterceptor( interceptor );
-			controller.setMetaClass(pmc);
+
 		}
 		catch(IntrospectionException ie) {
 			throw new ControllerExecutionException("Error creating dynamic controller methods for controller ["+controller.getClass()+"]: " + ie.getMessage(), ie);
 		}
 		
-		
-		// Step 4: get closure property name for URI.
-		String closurePropertyName = controllerClass.getClosurePropertyName(uri);
-		if (closurePropertyName == null) {
-			throw new NoClosurePropertyForURIException("Could not find closure property for URI [" + uri + "] for controller [" + controllerClass.getFullName() + "]!");
-		}
-		
-		// Step 5: get the view name for this URI.
-		String viewName = controllerClass.getViewByURI(uri);
-		
-		
-		// Step 6: get closure from closure property
-		Closure closure = (Closure)controller.getProperty(closurePropertyName);
-		
 		// Step 7: determine argument count and execute.
 		Object returnValue = null;
-		if (closure.getParameterTypes().length == 1) {
+		if (action.getParameterTypes().length == 1) {
 			// closure may have zero or one parameter, we cannot be sure.
-			returnValue = closure.call(new GrailsHttpServletRequest(request));
-		} else if (closure.getParameterTypes().length == 2) {
-			returnValue = closure.call(new Object[] { new  GrailsHttpServletRequest(request), new GrailsHttpServletResponse(response) });
+			returnValue = action.call(new GrailsHttpServletRequest(request));
+		} else if (action.getParameterTypes().length == 2) {
+			returnValue = action.call(new Object[] { new  GrailsHttpServletRequest(request), new GrailsHttpServletResponse(response) });
 		} else {
-			throw new IncompatibleParameterCountException("Closure on property [" + closurePropertyName + "] in [" + controllerClass.getFullName() + "] has an incompatible parameter count [" + closure.getParameterTypes().length + "]! Supported values are 0 and 2.");			
+			throw new IncompatibleParameterCountException("Closure on property [" + action + "] in [" + controller.getClass() + "] has an incompatible parameter count [" + action.getParameterTypes().length + "]! Supported values are 0 and 2.");			
 		}
-		
-		// Step 8: determine return value type and handle accordingly
-		return handleActionResponse(controllerClass,returnValue,closurePropertyName,viewName);
-	}
-
-	public void setChainModel(Map model) {
-		this.chainModel  = model;
+		return returnValue;
 	}
 	
 }
