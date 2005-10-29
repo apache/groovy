@@ -180,7 +180,7 @@ class Console extends ConsoleSupport implements CaretListener {
         }   // end of frame
         
         runWaitDialog = swing.dialog(title: 'Groovy executing', owner: frame, modal: true) {
-        	boxLayout(axis: BoxLayout.Y_AXIS)
+        	//boxLayout(axis: BoxLayout.Y_AXIS)  // todo mittie: dialog.setLayout -> dialog.contentPane.setLayout()
         	label(text: "Groovy is now executing. Please wait.", 
         		border: BorderFactory.createEmptyBorder(10, 10, 10, 10), alignmentX: 0.5f)
         	button(action: action(name: 'Interrupt', closure: this.&confirmRunInterrupt),
