@@ -35,6 +35,7 @@ import org.codehaus.groovy.runtime.MetaClassHelper;
 public abstract class MetaClass {
     protected static final Logger log = Logger.getLogger(MetaClass.class.getName());
     protected static boolean useReflection = false;
+    public static final Object NO_METHOD_FOUND = new Object();
     
     public static boolean isUseReflection() {
         return MetaClass.useReflection;
@@ -74,6 +75,7 @@ public abstract class MetaClass {
     
     public abstract Object invokeConstructor(Object[] arguments);
     public abstract Object invokeMethod(Object object, String methodName, Object[] arguments);
+    public abstract Object invokeStaticMethod(Object object, String methodName, Object[] arguments);
     public abstract Object getProperty(Object object, String property);
     public abstract void setProperty(Object object, String property, Object newValue);
     public abstract Object getAttribute(Object object, String attribute);
@@ -94,7 +96,6 @@ public abstract class MetaClass {
     public abstract void setProperties(Object bean, Map map);
     public abstract ClassNode getClassNode();
     public abstract List getMetaMethods();
-    public abstract Object invokeStaticMethod(Object object, String methodName, Object[] arguments);
     public abstract Object invokeConstructorAt(Class at, Object[] arguments);
 
     // Possibly Temp fields
