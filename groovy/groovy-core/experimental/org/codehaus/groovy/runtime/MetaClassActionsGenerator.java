@@ -15,6 +15,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.WeakHashMap;
 
 import org.codehaus.groovy.runtimemetaclassactionssupport.DefaultGroovyInstanceMethodGenerator;
 import org.codehaus.groovy.runtimemetaclassactionssupport.DefaultGroovyStaticMethodGenerator;
@@ -46,7 +47,7 @@ import org.codehaus.groovy.runtimemetaclassactionssupport.StaticMethodGenerator;
  */
 
 public class MetaClassActionsGenerator {
-  private static final Map actionsInfoMap = new HashMap();
+  private static final Map actionsInfoMap = new WeakHashMap();
   
   static {
     actionsInfoMap.put(Object.class, new ActionsInfo(Object.class));
@@ -63,7 +64,7 @@ public class MetaClassActionsGenerator {
     final Class superClass = claz.getSuperclass();
     
       if (superClass != null) {
-        getActionsInfo(superClass); // ensure that the suprclass information has been created
+        getActionsInfo(superClass); // ensure that the superclass information has been created
       }
       
       classInfo = new ActionsInfo(claz);
@@ -142,14 +143,14 @@ class ActionsInfo {
   final Package pack = claz.getPackage();
   final String packageName = "groovy.runtime.metaclassactions." + ((pack == null) ? "" : pack.getName() + ".");
   
+    setUpGenerators(claz);  // Need to do this even if the class is already generated
+  
     try {
     final Class actionsClass = Class.forName(packageName + claz.getSimpleName() + "MetaClassActions");
     
       this.actions = (MetaClassActions)actionsClass.newInstance();
     } catch (final Exception e1) {
     final File generatedFile = new File("generated/" + packageName.replace('.', '/'));
-    
-      setUpGenerators(claz);
       
       generatedFile.mkdirs();
       
