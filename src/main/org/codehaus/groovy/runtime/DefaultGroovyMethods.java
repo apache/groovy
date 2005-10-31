@@ -56,6 +56,8 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.codehaus.groovy.tools.RootLoader;
+
 /**
  * This class defines all the new groovy methods which appear on normal JDK
  * classes inside the Groovy environment. Static methods are used with the
@@ -6138,6 +6140,20 @@ public class DefaultGroovyMethods {
             }
         }
         return i;
+    }
+    
+    /**
+     * Iterates through the class loader parents until it finds a loader with a class
+     * named equal to org.codehaus.groovy.tools.RootLoader. If there is no such class
+     * null will be returned.
+     * @see org.codehaus.groovy.tools.RootLoader
+     */
+    public static ClassLoader getRootLoader(ClassLoader cl) {
+        while (true) {
+            if (cl==null) return null;
+            if (cl.getClass().getName().equals(RootLoader.class.getName())) return cl;
+            cl = cl.getParent();
+        }
     }
 
     /**
