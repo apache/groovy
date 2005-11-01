@@ -305,37 +305,75 @@ class ActionsInfo {
     code.append("throws Exception {\n");
     
     if (this.generators.size() != 0) {
-    int currentArgsLength = -1;
-    boolean firstMethod = true;
+    final List generatorSubset = new LinkedList();
+    MethodGenerator firstGenerator = (MethodGenerator)this.generators.get(0);
+    int currentArgsLength = firstGenerator.getNumberOfParameters();
+    char firstChar = firstGenerator.getName().charAt(0);
     final Iterator iter = this.generators.iterator();
-      
+    
       while (iter.hasNext()) {
       final MethodGenerator generator = (MethodGenerator)iter.next();
-      final int argsLength = generator.getNumberOfParameters();
       
-        if (argsLength == currentArgsLength) {     
-          code.setLength(code.length() - 1);   // trim the '\n' off
-          code.append(" else ");      
+        if (currentArgsLength == generator.getNumberOfParameters()) {
+          generatorSubset.add(generator);
         } else {
-          currentArgsLength = argsLength;
-          
-          if (firstMethod) {
-            firstMethod = false;
-          } else {
-            code.append("} else ");
-         }
-          
-          code.append("if (args.length == ").append(argsLength).append(") {\n");
+          generateCalls(claz, code, currentArgsLength, generatorSubset);
+          currentArgsLength = generator.getNumberOfParameters();
         }
-        
-        code.append("if (\"").append(generator.getName()).append("\".equals(name)) {\n");
-        code.append(generator.generateCall(claz)).append("}\n");
       }
       
-      code.append("}\n");
+      generateCalls(claz, code, currentArgsLength, generatorSubset);
+      
+      code.setLength(code.length() - 6);  // chop the trailing " else "     
     }
     
-    code.append("return groovy.lang.MetaClass.NO_METHOD_FOUND;\n}\n");
+    code.append("\nreturn groovy.lang.MetaClass.NO_METHOD_FOUND;");
+    code.append("\n}\n");
+  }
+  
+  private void generateCalls(final Class claz, final StringBuffer code, final int currentArgsLength, final List generatorSubset) {
+    if (generatorSubset.size() != 0) {
+      code.append("if (args.length == ").append(currentArgsLength).append(") {\n");
+      code.append("switch(name.charAt(0)) {");
+      
+      boolean firstCase = true;
+      final Iterator iter1 = generatorSubset.iterator();
+      char fc = 0;
+      
+      while (iter1.hasNext()) {
+      final MethodGenerator generator1 = (MethodGenerator)iter1.next();
+      final String name = generator1.getName();
+      
+        if (fc != name.charAt(0)) {
+          if (firstCase) {
+            firstCase = false;
+          } else {
+            code.append(" else {\n");
+            code.append("return groovy.lang.MetaClass.NO_METHOD_FOUND;\n");
+            code.append("}");
+          }
+          fc = name.charAt(0);
+          code.append("\ncase '").append(fc).append("' :\n");
+          code.append("if (\"").append(generator1.getName()).append("\".equals(name)) {\n");
+          code.append(generator1.generateCall(claz));
+          code.append("}");
+        } else {
+          code.append(" else if (\"").append(generator1.getName()).append("\".equals(name)) {\n");
+          code.append(generator1.generateCall(claz));
+          code.append("}");
+        }
+      }
+      
+      code.append(" else {\n");
+      code.append("return groovy.lang.MetaClass.NO_METHOD_FOUND;\n");
+      code.append("}\n");
+      code.append("default:\n");
+      code.append("return groovy.lang.MetaClass.NO_METHOD_FOUND;\n");
+      code.append("}\n");
+      code.append("} else ");
+      
+      generatorSubset.clear();
+    }
   }
   
   private void generateEndOfFile(final Class claz, final StringBuffer code) {
