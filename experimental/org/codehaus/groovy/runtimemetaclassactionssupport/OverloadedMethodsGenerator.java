@@ -55,6 +55,8 @@ public class OverloadedMethodsGenerator extends MethodGenerator {
       code.append("case ").append(i++).append(": \n");
       code.append(generator.generateCall(claz));
     }
+    code.append("default:\n");
+    code.append("return groovy.lang.MetaClass.NO_METHOD_FOUND;\n");
     code.append("}\n");
 
     return code.toString();
