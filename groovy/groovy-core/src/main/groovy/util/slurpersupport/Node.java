@@ -54,10 +54,6 @@ public class Node implements Writable {
     return this.name;
   }
   
-  public String namespace() {
-    return this.namespaceURI;
-  }
-  
   public String namespaceURI() {
     return this.namespaceURI;
   }
@@ -201,7 +197,7 @@ public class Node implements Writable {
   private static String getTagFor(final Object namespaceURI, final Map current,
                                   final Map pending, final Map local, final Map tagHints,
                                   final List newTags, final GroovyObject builder) {
-  String tag = findNamespaceTag(pending, namespaceURI); // look in the namespaces whose decatarion has already been emitted
+  String tag = findNamespaceTag(pending, namespaceURI); // look in the namespaces whose declaration has already been emitted
     
     if (tag == null) {
       tag = findNamespaceTag(current, namespaceURI);  // look in the namespaces who will be declared at the next element
