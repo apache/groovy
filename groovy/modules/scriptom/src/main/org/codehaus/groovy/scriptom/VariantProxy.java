@@ -84,8 +84,6 @@ public class VariantProxy extends GroovyObjectSupport
      *
      * @param v the variant to retrieve the real value from
      * @return the real value of the variant
-     * 
-     * @todo find better mappings or conversions from COM to Java.
      */
     private Object toObject(Variant v)
     {
@@ -152,7 +150,7 @@ public class VariantProxy extends GroovyObjectSupport
         else if (newValue instanceof BigDecimal)
             newValue = new Double(((BigDecimal) newValue).doubleValue());
         else if (newValue instanceof GString)
-            newValue = ((GString)newValue).toString();
+            newValue = newValue.toString();
         return newValue;
     }
 

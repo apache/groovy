@@ -38,12 +38,16 @@ import com.jacob.activeX.ActiveXComponent;
 import com.jacob.com.DispatchEvents;
 import groovy.lang.Closure;
 import groovy.lang.GroovyObjectSupport;
+import groovy.lang.GroovyShell;
+import groovy.lang.Binding;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Iterator;
+
+import org.codehaus.groovy.control.CompilationFailedException;
 
 /**
  * Provides a hooking mechanism to use an "events" property belonging to the ActiveXProxy,
@@ -71,19 +75,15 @@ public class EventSupport extends GroovyObjectSupport implements InvocationHandl
 {
     private Map eventHandlers = new HashMap();
     private ActiveXComponent activex;
-    private ScriptomClassLoader scriptomCL;
-    private Object reflectionProxy;
 
     /**
-     * In the constructor, we pass the reference to the <code>ActiveXComponent</code>,
-     * and a <code>ScriptomClassLoader</code> in charge of building a custom <code>EventHandler</code> interface is created.
+     * In the constructor, we pass the reference to the <code>ActiveXComponent</code>.
      *
      * @param activex the component
      */
     EventSupport(ActiveXComponent activex)
     {
         this.activex = activex;
-        this.scriptomCL = new ScriptomClassLoader(activex.getClass().getClassLoader(), eventHandlers);
     }
 
     /**
@@ -99,24 +99,46 @@ public class EventSupport extends GroovyObjectSupport implements InvocationHandl
     {
         if ("listen".equals(name))
         {
-            Class genInterface = null;
-            try
-            {
-                // build and load the EventHandler interface
-                genInterface = scriptomCL.loadClass("EventHandler");
-                // create a java.lang.reflect.Proxy of the generated interface
-                this.reflectionProxy = Proxy.newProxyInstance(scriptomCL, new Class[]{genInterface}, this);
-                // hook up the dispatch mechanism of Jacob
-                new DispatchEvents(this.activex, this.reflectionProxy);
-            }
-            catch (ClassNotFoundException e)
-            {
+            try {
+                StringBuffer methods = new StringBuffer();
+                for (Iterator iterator = eventHandlers.keySet().iterator(); iterator.hasNext();) {
+                    String eventName = (String) iterator.next();
+                    methods.append("    void ")
+                    .append(eventName)
+                    .append("(Variant[] variants) {\n")
+                    .append("        evtHandlers['")
+                    .append(eventName)
+                    .append("'].call(variants)\n    }\n");
+                }
+
+                StringBuffer classSource = new StringBuffer();
+                classSource.append("import com.jacob.com.*\n")
+                .append("class EventHandler {\n")
+                .append("    def evtHandlers\n")
+                .append("    EventHandler(scriptBinding) {\n")
+                .append("        evtHandlers = scriptBinding\n")
+                .append("    }\n")
+                .append(methods.toString())
+                .append("}\n")
+                .append("new EventHandler(binding)\n");
+
+                Map eventHandlersContainer = new HashMap();
+                eventHandlersContainer.put("eventHandlers", eventHandlers);
+                Binding binding = new Binding(eventHandlers);
+                Object generatedInstance = new GroovyShell(binding).evaluate(classSource.toString());
+
+                new DispatchEvents(this.activex, generatedInstance);
+            } catch (CompilationFailedException e) {
                 e.printStackTrace();
             }
             return null;
+
         }
-        // call the closure from the eventHandlers Map
-        return ((Closure) eventHandlers.get(name)).call(args);
+        else
+        {
+            // call the closure from the eventHandlers Map
+            return ((Closure) eventHandlers.get(name)).call(args);
+        }
     }
 
     /**

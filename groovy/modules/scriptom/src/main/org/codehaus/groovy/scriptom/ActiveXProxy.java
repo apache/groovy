@@ -69,6 +69,7 @@ public class ActiveXProxy extends GroovyObjectSupport
      */
     public ActiveXProxy(String clsId)
     {
+        ComThread.InitMTA();
         activex = new ActiveXComponent(clsId);
         eventSupport = new EventSupport(activex);
     }
