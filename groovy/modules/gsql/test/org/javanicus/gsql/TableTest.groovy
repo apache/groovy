@@ -1,9 +1,9 @@
 package org.javanicus.gsql
 
 class TableTest extends GroovyTestCase {
-    property table
-    property idColumn
-    property nameColumn
+    @Property table
+    @Property idColumn
+    @Property nameColumn
               
     void setUp() {
         typeMap = new TypeMap()          

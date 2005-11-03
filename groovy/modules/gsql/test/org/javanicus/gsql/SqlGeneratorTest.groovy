@@ -9,8 +9,8 @@ package org.javanicus.gsql
 import java.io.*
 
 class SqlGeneratorTest extends GroovyTestCase {
-    property database
-    property sqlGenerator
+    @Property database
+    @Property sqlGenerator
               
     void setUp() {
         typeMap = new TypeMap()          

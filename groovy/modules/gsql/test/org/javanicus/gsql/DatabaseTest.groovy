@@ -1,13 +1,13 @@
 package org.javanicus.gsql
 
 class DatabaseTest extends GroovyTestCase {
-    property table
-    property idColumn
-    property fred
-    property barney
-    property wilma
-    property db1
-    property db2
+    @Property table
+    @Property idColumn
+    @Property fred
+    @Property barney
+    @Property wilma
+    @Property db1
+    @Property db2
               
     void setUp() {
         typeMap = new TypeMap()          

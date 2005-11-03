@@ -1,11 +1,11 @@
 package org.javanicus.gsql
 
 public class Reference implements Cloneable {
-    property local
-    property foreign
+    @Property local
+    @Property foreign
     
     public Object clone() { // @todo throws CloneNotSupportedException {
-        result = new Reference()
+        def result = new Reference()
         
         result.local   = local
         result.foreign = foreign

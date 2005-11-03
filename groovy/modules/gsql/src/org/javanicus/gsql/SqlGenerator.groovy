@@ -12,28 +12,28 @@
 package org.javanicus.gsql
 
 public class SqlGenerator {
-    property lineSeparator
+    @Property lineSeparator
               
     /** The current Writer used to output the SQL to */
-    property writer
+    @Property writer
     
     /** The indentation used to indent commands */
-    property indent
+    @Property indent
     
     /** Whether or not primary key constraints are embedded inside the create table statement, the default is true */
-    property primaryKeyEmbedded
+    @Property primaryKeyEmbedded
     
     /** Whether or not foreign key constraints are embedded inside the create table statement */
-    property foreignKeysEmbedded
+    @Property foreignKeysEmbedded
               
     /** Whether or not indexes are embedded inside the create table statement */
-    property indexesEmbedded
+    @Property indexesEmbedded
     
     /** Should foreign key constraints be explicitly named */
-    property foreignKeyConstraintsNamed
+    @Property foreignKeyConstraintsNamed
     
     /** Is an ALTER TABLE needed to drop indexes? */
-    property alterTableForDrop
+    @Property alterTableForDrop
     
     /** A counter used to count the constraints */
     private counter
@@ -165,7 +165,7 @@ public class SqlGenerator {
      * @return true if the columns differ
      */
     public boolean columnsDiffer(desired,current) {
-        result = false
+        def result = false
 
         //The createColumn method leaves off the default clause if column.getDefaultValue()
         //is null.  mySQL interprets this as a default of "" or 0, and thus the columns
@@ -178,10 +178,10 @@ public class SqlGenerator {
         //method use a "DEFAULT NULL" statement if that is what is needed.
         //A good way to get this would be to require a defaultValue="<NULL>" in the
         //schema xml if you really want null and not just unspecified.
-        desiredDefault = desired.defaultValue
-        currentDefault = current.defaultValue
-        defaultsEqual = (desiredDefault == null || desiredDefault.equals(currentDefault))
-        sizeMatters = (desired.size != null)
+        def desiredDefault = desired.defaultValue
+        def currentDefault = current.defaultValue
+        def defaultsEqual = (desiredDefault == null || desiredDefault.equals(currentDefault))
+        def sizeMatters = (desired.size != null)
         if ( desired.typeCode != current.typeCode ||
                 desired.required != current.required ||
                 (sizeMatters && desired.size != current.size) ||
@@ -238,7 +238,7 @@ public class SqlGenerator {
     * Writes the column types for a table 
    */
     void writeColumnTypes(Table table) { // @todo throws IOException {
-        first = true
+        def first = true
         for (column in table.columns) {
             if (first) { first = false } else { wprintln(", ")}
             wprintIndent()
@@ -296,7 +296,7 @@ public class SqlGenerator {
      void writePrimaryKeyStatement(primaryKeyColumns) {//@todo throws IOException {
      //@todo protected
         wprint("PRIMARY KEY (")
-        first = true
+        def first = true
         for (column in primaryKeyColumns) {
             if (first) { first = false } else { wprint(", ")}
             wprint(column.name)
@@ -381,7 +381,7 @@ public class SqlGenerator {
                 wprint( " UNIQUE" )
             }
             wprint(" INDEX ${index.name} ON ${table.name} (")
-            first = true          
+            def first = true          
                       
             for (column in index.indexColumns) {
                 if (first) { first = false } else { wprint(", ")}
@@ -404,7 +404,7 @@ public class SqlGenerator {
      */
    void writeLocalReferences(ForeignKey key) { //@todo throws IOException {
    //@todo protected     
-        first = true
+        def first = true
         for (reference in key.references) {
             if (first) { first = false } else { wprint(", ")}                    
             wprint(reference.local)
@@ -415,7 +415,7 @@ public class SqlGenerator {
     */
     void writeForeignReferences(ForeignKey key) { //@todo throws IOException {
     //@todo protected
-        first = true
+        def first = true
         for (reference in key.references) {
             if (first) { first = false } else { wprint(", ")}                    
             wprint(reference.foreign)
@@ -548,11 +548,11 @@ public class SqlGenerator {
     void alterDatabase(desiredDb, cn,doDrops, modifyColumns) {//@todo throws IOException, SQLException {
         //        currentDb      = new JdbcModelReader(cn).database
         //@todo line below is just test
-        currentDb = new Database("wibble")
+        def currentDb = new Database("wibble")
                   
-        deferredTables = []
+        def deferredTables = []
         for (desiredTable in desiredDb.tables) {
-            currentTable = currentDb.findTable(desiredTable.name);
+            def currentTable = currentDb.findTable(desiredTable.name);
 //took out because if there were no changes to be made the execution had
 //errors because it tries to execute the comments as a statement
 //            tableComment(desiredTable)
@@ -565,7 +565,7 @@ public class SqlGenerator {
                 //add any columns, indices, or constraints
                 for (desiredColumn in desiredTable.columns) {
                     // ??? can we do currentTable.${desiredColumn.name} instead ????
-                    currentColumn = currentTable.findColumn(desiredColumn.name)
+                    def currentColumn = currentTable.findColumn(desiredColumn.name)
                     if ( null == currentColumn ) {
                         //@todo log.info( "creating column ${desiredTable.name}.${desiredColumn.getName()}")
                         alterColumn( desiredTable, desiredColumn, true )
@@ -588,7 +588,7 @@ public class SqlGenerator {
                 //hmm, m-w.com says indices and indexes are both okay
                 //@todo should we check the index fields for differences?
                 for (desiredIndex in desiredTable.indexes) {
-                    currentIndex = currentTable.findIndex(desiredIndex.name)
+                    def currentIndex = currentTable.findIndex(desiredIndex.name)
                     if ( null == currentIndex ) {
                         //@todo log.info( "creating index ${desiredTable.name}.${desiredIndex.name}" )
                         writeIndex( desiredTable, desiredIndex )
@@ -600,13 +600,13 @@ public class SqlGenerator {
 
                 //do any drops of columns
                 for (currentColumn in currentTable.columns) {
-                    desiredColumn = desiredTable.findColumn(currentColumn.name)
+                    def desiredColumn = desiredTable.findColumn(currentColumn.name)
                     if ( null == desiredColumn ) {
                         if ( doDrops ) {
                             //@todo log.info( "dropping column ${currentTable.name}.${currentColumn.name}" )
                             dropColumn( currentTable, currentColumn )
                         } else {
-                            text = "Column ${currentColumn.name} can be dropped from table ${currentTable.name}"
+                            def text = "Column ${currentColumn.name} can be dropped from table ${currentTable.name}"
                             //@todo log.info( text )
                             wprintComment( text )
                         }
@@ -615,12 +615,12 @@ public class SqlGenerator {
 
                 //drop indexes
                 for (currentIndex in currentTable.indexes) {
-                    desiredIndex = desiredTable.findIndex(currentIndex.name)
+                    def desiredIndex = desiredTable.findIndex(currentIndex.name)
                     if ( null == desiredIndex ) {
                         //make sure this isn't the primary key index (mySQL reports this at least)
-                        isPk = true
+                        def isPk = true
                         for (ic in currentIndex.indexColumns) {
-                            c = currentTable.findColumn( ic.name )
+                            def c = currentTable.findColumn( ic.name )
                             if ( !c.primaryKey ) {
                                 isPk = false
                                 break
@@ -646,14 +646,14 @@ public class SqlGenerator {
 
         //check for table drops
         for (currentTable in currentDb.tables) {
-            desiredTable = desiredDb.findTable(currentTable.name)
+            def desiredTable = desiredDb.findTable(currentTable.name)
 
             if ( desiredTable == null ) {
                 if ( doDrops ) {
                     //@todo log.info( "dropping table ${currentTable.name}" )
                     dropTable( currentTable )
                 } else {
-                    text = "Table ${currentTable.name} can be dropped"
+                    def text = "Table ${currentTable.name} can be dropped"
                     //@todo log.info( text )
                     wprintComment( text )
                 }

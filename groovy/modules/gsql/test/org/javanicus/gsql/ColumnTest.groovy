@@ -1,10 +1,10 @@
 package org.javanicus.gsql
 
 class ColumnTest extends GroovyTestCase {
-    property column
-    property idColumn
-    property nameColumn
-    property yearOfBirthColumn          
+    @Property column
+    @Property idColumn
+    @Property nameColumn
+    @Property yearOfBirthColumn          
               
     void setUp() {
         TypeMap typeMap = new TypeMap()          

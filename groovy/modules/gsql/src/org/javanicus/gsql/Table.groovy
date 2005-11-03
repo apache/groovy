@@ -1,15 +1,15 @@
 package org.javanicus.gsql
 
 public class Table extends GroovyObjectSupport implements Cloneable {
-    property catalog
-    property name
-    property groovyName
-    property schema
-    property remarks
-    property type
-    property List columns
-    property List foreignKeys
-    property List indexes
+    @Property catalog
+    @Property name
+    @Property groovyName
+    @Property schema
+    @Property remarks
+    @Property type
+    @Property List columns
+    @Property List foreignKeys
+    @Property List indexes
     
     public Table(aName) {
         catalog = null
@@ -24,7 +24,7 @@ public class Table extends GroovyObjectSupport implements Cloneable {
     }
 
     public Object clone() { // throws CloneNotSupportedException {
-        result = new Table(name)
+        def result = new Table(name)
 
         result.catalog     = catalog
         result.name        = name
@@ -50,7 +50,7 @@ public class Table extends GroovyObjectSupport implements Cloneable {
     
     
     public boolean hasPrimaryKey() {
-        aPrimaryKeyColumn = getColumns().find() {it.isPrimaryKey()}
+        def aPrimaryKeyColumn = getColumns().find() {it.isPrimaryKey()}
         return aPrimaryKeyColumn != null
     }   
     public Object getProperty(String propertyName) {

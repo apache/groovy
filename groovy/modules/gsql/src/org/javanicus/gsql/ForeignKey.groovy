@@ -1,15 +1,15 @@
 package org.javanicus.gsql
 
 public class ForeignKey implements Cloneable {
-    property foreignTable
-    property List references
+    @Property foreignTable
+    @Property List references
     
     public ForeignKey() {
         references = []
     }
     
     public Object clone() { // @todo throws CloneNotSupportedException {
-        result = new ForeignKey()
+        def result = new ForeignKey()
         
         result.foreignTable = foreignTable
         result.references   = references.clone()

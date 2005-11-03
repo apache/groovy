@@ -1,22 +1,23 @@
 /**
  * ported from commons-sql
  * @author Jeremy Rayner
+ * @author Dierk Koenig, adapted to jsr-04
  */
 package org.javanicus.gsql
 
 public class Column implements Cloneable {
-    property name
-    property groovyName
-    property boolean primaryKey
-    property required
-    property autoIncrement
-    property typeCode
-    property type
-    property size
-    property defaultValue
-    property scale
-    property precisionRadix
-    property ordinalPosition
+    @Property name
+    @Property groovyName
+    @Property boolean primaryKey
+    @Property required
+    @Property autoIncrement
+    @Property typeCode
+    @Property type
+    @Property size
+    @Property defaultValue
+    @Property scale
+    @Property precisionRadix
+    @Property ordinalPosition
     private typeMap
 
     public Column(typeMap) {
@@ -33,7 +34,7 @@ public class Column implements Cloneable {
     }
 
     public Object clone() { //todo: throws CloneNotSupportedException {
-        result = new Column(typeMap)
+        def result = new Column(typeMap)
         
         result.name            = name
         result.groovyName      = groovyName

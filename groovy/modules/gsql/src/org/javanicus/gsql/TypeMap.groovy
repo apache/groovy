@@ -3,11 +3,11 @@ package org.javanicus.gsql
 import java.sql.Types
 
 public class TypeMap {
-    property nameToCode
-    property codeToName
-    property decimalTypes
-    property textTypes
-    property otherTypes
+    @Property nameToCode
+    @Property codeToName
+    @Property decimalTypes
+    @Property textTypes
+    @Property otherTypes
               
     public TypeMap() {
         nameToCode = [:]
