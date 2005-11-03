@@ -43,9 +43,8 @@
         <dependency>
             <groupId>groovy</groupId>
             <artifactId>groovy-all</artifactId>
-            <version>1.0-beta-8</version>
+            <version>1.0-jsr-03</version>
             <type>jar</type>
-            <properties/>
         </dependency>
     </dependencies>
 
