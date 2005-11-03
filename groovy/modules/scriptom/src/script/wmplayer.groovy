@@ -1,7 +1,7 @@
 
 import org.codehaus.groovy.scriptom.ActiveXProxy
 
-def folderName = "D:\\projets\\HalloweenSounds\\sounds\\animals"
+def folderName = "."
 println "Playing files from: ${folderName}"
 
 def songFiles = []
@@ -30,8 +30,6 @@ songFiles.each{ song ->
     player.URL = song.absolutePath
     control = player.controls.play()
 }
-
-
 
 // close the player
 player.close()
