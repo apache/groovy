@@ -17,6 +17,7 @@
 
 package groovy.util.slurpersupport;
 
+import groovy.lang.Buildable;
 import groovy.lang.Closure;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
@@ -248,7 +249,13 @@ class NodeChildren extends GPathResult {
   final Iterator iter = nodeIterator();
   
     while (iter.hasNext()) {
-      ((Node)iter.next()).build(builder, this.namespaceMap, this.namespaceTagHints);
+    final Object next = iter.next();
+    
+      if (next instanceof Buildable) {
+        ((Buildable)next).build(builder);
+      } else {
+        ((Node)next).build(builder, this.namespaceMap, this.namespaceTagHints);
+      }
     }
   }
 
