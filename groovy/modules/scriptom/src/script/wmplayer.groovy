@@ -1,30 +1,37 @@
 
 import org.codehaus.groovy.scriptom.ActiveXProxy
-import java.io.File
 
-// create a proxy for the Shell object
-sh = new ActiveXProxy("Shell.Application")
+def folderName = "D:\\projets\\HalloweenSounds\\sounds\\animals"
+println "Playing files from: ${folderName}"
 
-// use a Windows standard folder chooser
-folder = sh.BrowseForFolder(0, "Choose a folder with wav files", 0)
-
-// get the folder chosen
-folderName = folder.Items().Item().Path.value
-println "Playing Wav files from: ${folderName}"
+def songFiles = []
+new File(folderName).eachFileMatch(~/.*(wav|mp3)/){ songFiles << it }
 
 // create a Windows Media Player (from its Class ID)
-player = new ActiveXProxy("clsid:{6BF52A52-394A-11D3-B153-00C04F79FAA6}")
+def player = new ActiveXProxy("clsid:{6BF52A52-394A-11D3-B153-00C04F79FAA6}")
 
-// for each file in the folder
-new File(folderName).eachFile{ file ->
-    if (file.name.endsWith("wav")) {
-        println file
-        player.URL = file.absolutePath
-        // play the wav for one second
-        control = player.controls.play()
-        Thread.sleep(1000)
-    }
+// a flag indicating the player is ready to play
+def ready = true
+
+// react upon a state change
+player.events.PlayStateChange = { 
+    // if the media ended change the status flag
+    // so that the main thread notices the change
+    if (it[0].toInt() == 1) ready = true
 }
+// start listening to the events we're subsribed to
+player.events.listen()
+
+// loop over the available files and play them
+songFiles.each{ song ->
+    while (!ready) sleep(1000)
+    ready = false
+    println "Listening to: $song"
+    player.URL = song.absolutePath
+    control = player.controls.play()
+}
+
+
 
 // close the player
 player.close()
