@@ -183,7 +183,7 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
                     ((Buildable)value).build(builder);
                 } else {
                     builder.getProperty("mkp");
-                    builder.invokeMethod("yield", new Object[]{value.toString()});
+                    builder.invokeMethod("yield", new Object[]{value});
                 }
             }
         }
