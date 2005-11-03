@@ -54,7 +54,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public abstract class GString extends GroovyObjectSupport implements Comparable, CharSequence, Writable {
+public abstract class GString extends GroovyObjectSupport implements Comparable, CharSequence, Writable, Buildable {
 
     private Object[] values;
 
@@ -164,6 +164,29 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
             }
         }
         return out;
+    }
+
+    /* (non-Javadoc)
+     * @see groovy.lang.Buildable#build(groovy.lang.GroovyObject)
+     */
+    public void build(final GroovyObject builder) {
+    final String[] s = getStrings();
+    final int numberOfValues = values.length;
+        
+        for (int i = 0, size = s.length; i < size; i++) {
+            builder.getProperty("mkp");
+            builder.invokeMethod("yield", new Object[]{s[i]});
+            if (i < numberOfValues) {
+            final Object value = values[i];
+            
+                if (value instanceof Buildable) {
+                    ((Buildable)value).build(builder);
+                } else {
+                    builder.getProperty("mkp");
+                    builder.invokeMethod("yield", new Object[]{value.toString()});
+                }
+            }
+        }
     }
 
     public boolean equals(Object that) {
