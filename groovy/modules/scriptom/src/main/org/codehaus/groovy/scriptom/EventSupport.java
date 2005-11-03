@@ -41,8 +41,6 @@ import groovy.lang.GroovyObjectSupport;
 import groovy.lang.GroovyShell;
 import groovy.lang.Binding;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Iterator;
@@ -71,7 +69,7 @@ import org.codehaus.groovy.control.CompilationFailedException;
  *
  * @author Guillaume Laforge
  */
-public class EventSupport extends GroovyObjectSupport implements InvocationHandler
+public class EventSupport extends GroovyObjectSupport
 {
     private Map eventHandlers = new HashMap();
     private ActiveXComponent activex;
@@ -139,21 +137,6 @@ public class EventSupport extends GroovyObjectSupport implements InvocationHandl
             // call the closure from the eventHandlers Map
             return ((Closure) eventHandlers.get(name)).call(args);
         }
-    }
-
-    /**
-     * Invocation method of the <code>InvocationHandler</code> passed to the Proxy.
-     *
-     * @param proxy the proxy
-     * @param method the name of the method to invoke
-     * @param args the arguments to pass to the method
-     * @return the return of the method
-     * @throws Throwable thrown if the invocation fails
-     */
-    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable
-    {
-        // delegates to the GroovyObjectSupport metamethod
-        return invokeMethod(method.getName(), args);
     }
 
     /**
