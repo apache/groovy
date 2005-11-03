@@ -39,6 +39,7 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
 
@@ -218,5 +219,14 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
 
     public CharSequence subSequence(int start, int end) {
         return toString().subSequence(start, end);
+    }
+
+    /**
+     * Turns a String into a regular expression pattern
+     *
+     * @return the regular expression pattern
+     */
+    public Pattern negate() {
+        return InvokerHelper.regexPattern(toString());
     }
 }
