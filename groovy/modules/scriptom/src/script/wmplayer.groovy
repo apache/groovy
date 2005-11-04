@@ -4,9 +4,6 @@ import org.codehaus.groovy.scriptom.ActiveXProxy
 def folderName = "."
 println "Playing files from: ${folderName}"
 
-def songFiles = []
-new File(folderName).eachFileMatch(~/.*(wav|mp3)/){ songFiles << it }
-
 // create a Windows Media Player (from its Class ID)
 def player = new ActiveXProxy("clsid:{6BF52A52-394A-11D3-B153-00C04F79FAA6}")
 
@@ -23,7 +20,7 @@ player.events.PlayStateChange = {
 player.events.listen()
 
 // loop over the available files and play them
-songFiles.each{ song ->
+new File(folderName).eachFileMatch(~/.*(wav|mp3)/) { song ->
     while (!ready) sleep(1000)
     ready = false
     println "Listening to: $song"
