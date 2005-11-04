@@ -769,10 +769,13 @@ public class Invoker {
              */
         }
         else {
-            if (object instanceof Class)
+            if (object instanceof Class) {
                 return metaRegistry.getMetaClass((Class) object).getAttribute(object, attribute);
-            else
+            } else if (object instanceof GroovyObject) {
+                return ((GroovyObject)object).getMetaClass().getAttribute(object, attribute);
+            } else {
                 return metaRegistry.getMetaClass(object.getClass()).getAttribute(object, attribute);
+            }
 	}
     }
 
@@ -792,10 +795,13 @@ public class Invoker {
             */
         }
         else {
-            if (object instanceof Class)
-                metaRegistry.getMetaClass((Class) object).setAttribute((Class) object, attribute, newValue);
-            else
+            if (object instanceof Class) {
+                metaRegistry.getMetaClass((Class) object).setAttribute(object, attribute, newValue);
+            } else if (object instanceof GroovyObject) {
+                ((GroovyObject)object).getMetaClass().setAttribute(object, attribute, newValue);
+            } else {
                 metaRegistry.getMetaClass(object.getClass()).setAttribute(object, attribute, newValue);
+            }
 	}
     }
 
