@@ -19,7 +19,9 @@ package groovy.util.slurpersupport;
 
 import groovy.lang.Buildable;
 import groovy.lang.Closure;
+import groovy.lang.DelegatingMetaClass;
 import groovy.lang.GroovyObjectSupport;
+import groovy.lang.MetaClass;
 import groovy.lang.Writable;
 
 import java.util.HashMap;
@@ -57,9 +59,27 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
     this.name = name;
     this.namespacePrefix = namespacePrefix;
     this.namespaceTagHints = namespaceTagHints;
+    
+    setMetaClass(getMetaClass()); // wrap the standard MetaClass with the delegate
   }
-  
-  public Object getProperty(final String property) {
+
+    /* (non-Javadoc)
+     * @see groovy.lang.GroovyObjectSupport#setMetaClass(groovy.lang.MetaClass)
+     */
+    public void setMetaClass(final MetaClass metaClass) {
+    final MetaClass newMetaClass = new DelegatingMetaClass(metaClass) {
+                                        /* (non-Javadoc)
+                                         * @see groovy.lang.DelegatingMetaClass#getAttribute(java.lang.Object, java.lang.String)
+                                         */
+                                        public Object getAttribute(Object object, String attribute) {
+                                            return GPathResult.this.getProperty(attribute);
+                                        }
+                                    };
+
+        super.setMetaClass(newMetaClass);
+    }
+
+public Object getProperty(final String property) {
     if ("..".equals(property)) {
       return parent();
     } else if ("*".equals(property)){
