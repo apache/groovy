@@ -945,6 +945,7 @@ public class AsmClassGenerator extends ClassGenerator {
         int index = defineVariable(createVariableName("synchronized"), Type.Integer_TYPE).getIndex();
 
         cv.visitVarInsn(ASTORE, index);
+        cv.visitVarInsn(ALOAD, index);
         cv.visitInsn(MONITORENTER);
         final Label l0 = new Label();
         cv.visitLabel(l0);
