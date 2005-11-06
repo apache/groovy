@@ -233,6 +233,7 @@ public class UberTestCase extends TestCase {
         suite.addTestSuite(SuperMethodBug.class);
         suite.addTestSuite(SwitchTest.class);
         suite.addTestSuite(SwitchWithDifferentTypesTest.class);
+        suite.addTestSuite(SynchronizedBytecodeBug.class);
         suite.addTestSuite(TedsClosureBug.class);
         suite.addTestSuite(TernaryOperatorTest.class);
         suite.addTestSuite(TextPropertyTest.class);
