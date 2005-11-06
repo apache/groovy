@@ -386,4 +386,35 @@ class ListTest extends GroovyTestCase {
         list[0..-1] = []
         assert list == []                   , 'delete by pos-negativ Range'
     }
+
+    // todo: make this run GROOVY-1128
+    void disabled_testAsSynchronized() {
+        def synclist = [].asSynchronized() << 1
+        assert synclist == [1]
+    }
+
+    // todo: make this run GROOVY-1128
+    void disabled_testAsImmutable() {
+        def immlist = [1,2,3].asImmutable()
+        assert immlist == [1,2,3]
+        def testlist = ['a','b','c','d','e']
+        assert testlist[immlist] == ['b','c','d']
+        assert immlist[0] == 1
+        assert immlist[0..-1] == immlist
+        shouldFail(UnsupportedOperationException.class){
+            immlist << 1
+        }
+        shouldFail(UnsupportedOperationException.class){
+            immlist += 1
+        }
+        shouldFail(UnsupportedOperationException.class){
+            immlist -= 1
+        }
+        shouldFail(UnsupportedOperationException.class){
+            immlist[0..<0] = [0]
+        }
+        shouldFail(UnsupportedOperationException.class){
+            immlist[0] = 1
+        }
+    }
 }
