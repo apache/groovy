@@ -648,7 +648,8 @@ public class CompilationUnit extends ProcessingUnit {
             String sourceName = (source == null ? classNode.getModule().getDescription() : source.getName());
             // only show the file name and its extension like javac does in its stacktraces rather than the full path
             // also takes care of both \ and / depending on the host compiling environment
-            sourceName = sourceName.substring(Math.max(sourceName.lastIndexOf('\\'), sourceName.lastIndexOf('/')) + 1);
+            if (sourceName != null)
+                sourceName = sourceName.substring(Math.max(sourceName.lastIndexOf('\\'), sourceName.lastIndexOf('/')) + 1);
             ClassGenerator generator = new AsmClassGenerator(context, visitor, classLoader, sourceName);
 
 
