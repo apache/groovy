@@ -72,7 +72,7 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
                                          * @see groovy.lang.DelegatingMetaClass#getAttribute(java.lang.Object, java.lang.String)
                                          */
                                         public Object getAttribute(Object object, String attribute) {
-                                            return GPathResult.this.getProperty(attribute);
+                                            return GPathResult.this.getProperty("@" + attribute);
                                         }
                                     };
 
