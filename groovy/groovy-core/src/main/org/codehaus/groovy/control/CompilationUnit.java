@@ -158,8 +158,8 @@ public class CompilationUnit extends ProcessingUnit {
      * security stuff and a class loader for loading classes.
      */
     public CompilationUnit(CompilerConfiguration configuration, CodeSource security, ClassLoader loader) {
-        super(configuration, loader, null);        
-        
+        super(configuration, loader, null);
+
         this.names = new ArrayList();
         this.sources = new HashMap();
         this.summariesBySourceName = new HashMap();
@@ -611,7 +611,7 @@ public class CompilationUnit extends ProcessingUnit {
             this.progressCallback.call(this, CompilationUnit.this.phase);
         }
     }
- 
+
     /**
      * Runs classgen() on a single ClassNode.
      */
@@ -628,16 +628,16 @@ public class CompilationUnit extends ProcessingUnit {
                         new SyntaxException(rpe.getMessage(),null,node.getLineNumber(),node.getColumnNumber()),
                         source
                 );
-            }          
-            
+            }
+
             //
-            // do scoping 
+            // do scoping
             //
             if (source!=null && (!classNode.isSynthetic()) && (!"false".equals(System.getProperty("groovy.jsr.check")))) {
                 JSRVariableScopeCodeVisitor scopeVisitor = new JSRVariableScopeCodeVisitor(null ,source);
                 scopeVisitor.visitClass(classNode);
                 source.getErrorCollector().failIfErrors();
-            }  
+            }
 
             //
             // Prep the generator machinery
@@ -646,6 +646,9 @@ public class CompilationUnit extends ProcessingUnit {
 
 
             String sourceName = (source == null ? classNode.getModule().getDescription() : source.getName());
+            // only show the file name and its extension like javac does in its stacktraces rather than the full path
+            // also takes care of both \ and / depending on the host compiling environment
+            sourceName = sourceName.substring(Math.max(sourceName.lastIndexOf('\\'), sourceName.lastIndexOf('/')) + 1);
             ClassGenerator generator = new AsmClassGenerator(context, visitor, classLoader, sourceName);
 
 
@@ -670,7 +673,7 @@ public class CompilationUnit extends ProcessingUnit {
             } catch (IOException e) {
                 e.printStackTrace();
             }*/
-            
+
 
             //
             // Handle any callback that's been set
@@ -856,7 +859,7 @@ public class CompilationUnit extends ProcessingUnit {
 
         getErrorCollector().failIfErrors();
     }
-    
+
 
     //---------------------------------------------------------------------------
     // LOOP SIMPLIFICATION FOR PRIMARY ClassNode OPERATIONS
@@ -907,7 +910,7 @@ public class CompilationUnit extends ProcessingUnit {
 //                    ASTNode node = rpe.getNode();
 //                    msg += ". The probable error location: [" + node.getLineNumber() + ":" + node.getColumnNumber() + "]";
 //                }
-                
+
                 // check the exception for a nested compilation exception
                 ErrorCollector nestedCollector = null;
                 for (Throwable next = e.getCause(); next!=e && next!=null; next=next.getCause()) {
@@ -916,7 +919,7 @@ public class CompilationUnit extends ProcessingUnit {
                     nestedCollector = mcee.collector;
                     break;
                 }
-                
+
                 if (nestedCollector!=null) {
                     getErrorCollector().addCollectorContents(nestedCollector);
                 } else {
