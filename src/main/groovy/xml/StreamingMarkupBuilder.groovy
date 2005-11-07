@@ -79,8 +79,8 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
                                       if (body instanceof Closure) {
                                         def body1 = body.clone()
                                         
-                                        body1.delegate = this
-                                        body1(this)
+                                        body1.delegate = doc
+                                        body1(doc)
                                       } else if (body instanceof Buildable) {
                                           body.build(doc)
                                       } else {
@@ -88,8 +88,8 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
                                             if (it instanceof Closure) {
                                               def body1 = it.clone()
                                               
-                                              body1.delegate = this
-                                              body1()
+                                              body1.delegate = doc
+                                              body1(doc)
                                             } else if (it instanceof Buildable) {
                                               it.build(doc)
                                             } else {
@@ -149,8 +149,8 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
                                       if (body instanceof Closure) {
                                         def body1 = body.clone()
                                         
-                                        body1.delegate = this
-                                        body1(this)
+                                        body1.delegate = doc
+                                        body1(doc)
                                       } else if (body instanceof Buildable) {
                                           body.build(doc)
                                       } else {
@@ -158,8 +158,8 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
                                             if (it instanceof Closure) {
                                               def body1 = it.clone()
                                               
-                                              body1.delegate = this
-                                              body1(this)
+                                              body1.delegate = doc
+                                              body1(doc)
                                             } else if (it instanceof Buildable) {
                                               it.build(doc)
                                             } else {
