@@ -27,9 +27,9 @@ import org.codehaus.groovy.runtime.InvokerHelper
  *
  * @author Danno Ferrin
  * @author Dierk Koenig, changed Layout, included Selection sensitivity, included ObjectBrowser
- * @author Alan Green included history, System.out capture and some smaller features.
+ * @author Alan Green more features: history, System.out capture, bind result to _
  */
-class Console extends ConsoleSupport implements CaretListener {
+class Console implements CaretListener {
 
 	// Whether or not std output should be captured to the console
 	@Property captureStdOut = true
@@ -37,16 +37,23 @@ class Console extends ConsoleSupport implements CaretListener {
 	// Maximum size of history
 	@Property int maxHistory = 10
 	
-	// Maximum number of characters to show on console from std out
+	// Maximum number of characters to show on console at any time
 	@Property int maxOutputChars = 10000
 
 	// UI
-    def frame
-    def swing
-    def inputArea
-    def outputArea
+    def SwingBuilder swing
+    def JFrame frame
+    def JTextArea inputArea
+    def JTextPane outputArea
     def JLabel statusLabel
-
+    def JDialog runWaitDialog
+    
+    // Styles for output area
+    def Style promptStyle;
+    def Style commandStyle;
+    def Style outputStyle;
+    def Style resultStyle;
+    
 	// Internal history
     def List history = []
     def int historyIndex = 1 // valid values are 0..history.length()
@@ -58,16 +65,23 @@ class Console extends ConsoleSupport implements CaretListener {
     def scriptFile
 
 	// Running scripts
+	def GroovyShell shell 
     def int scriptNameCounter = 0
     def systemOutInterceptor
-    
-    // Modal dialog thrown up when script is running
-    def runWaitDialog
     def runThread = null
+    
 
     static void main(args) {
         def console = new Console()
         console.run()
+    }
+    
+    Console() {
+    	shell = new GroovyShell()
+    }
+    
+    Console(Binding binding) {
+    	shell = new GroovyShell(binding)
     }
 
     void run() {
@@ -83,8 +97,12 @@ class Console extends ConsoleSupport implements CaretListener {
             location:[100,100],
             size:[500,400],
             defaultCloseOperation:javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE) {
-            def newAction = action(
-                name:'New', closure: this.&fileNew, mnemonic: 'N'
+            def newFileAction = action(
+                name:'New File', closure: this.&fileNewFile, mnemonic: 'N', 
+                accelerator: menuModifier + 'Q'
+            )
+            def newWindowAction = action(
+                name:'New Window', closure: this.&fileNewWindow, mnemonic: 'W'
             )
             def openAction = action(
                 name:'Open', closure: this.&fileOpen, mnemonic: 'O', accelerator: menuModifier + 'O'
@@ -102,7 +120,7 @@ class Console extends ConsoleSupport implements CaretListener {
             	name: 'Next', closure: this.&historyNext, mnemonic: 'N', accelerator: 'ctrl N'
             )            
             def clearOutputAction = action(
-                name:'Clear Output', closure: this.&clearOutput, mnemonic: 'C', keyStroke: 'ctrl W',
+                name:'Clear Output', closure: this.&clearOutput, mnemonic: 'l', keyStroke: 'ctrl W',
                 accelerator: 'ctrl W'
             )
             def runAction = action(
@@ -131,7 +149,8 @@ class Console extends ConsoleSupport implements CaretListener {
             def aboutAction = action(name:'About', closure: this.&showAbout, mnemonic: 'A')
             menuBar {
                 menu(text:'File', mnemonic: 'F') {
-                    menuItem() { action(newAction) }
+                    menuItem() { action(newFileAction) }
+                    menuItem() { action(newWindowAction) }
                     menuItem() { action(openAction) }
                     separator()
                     menuItem() { action(saveAction) }
@@ -200,6 +219,27 @@ class Console extends ConsoleSupport implements CaretListener {
         frame.show()
         SwingUtilities.invokeLater({inputArea.requestFocus()});
     }
+
+	void addStylesToDocument(JTextPane outputArea) {
+        StyledDocument doc = outputArea.getStyledDocument();
+
+        Style defStyle = StyleContext.getDefaultStyleContext().getStyle(StyleContext.DEFAULT_STYLE);
+
+        Style regular = doc.addStyle("regular", defStyle);
+        StyleConstants.setFontFamily(regular, "Monospaced")
+
+        promptStyle = doc.addStyle("prompt", regular)
+        StyleConstants.setForeground(promptStyle, Color.BLUE)
+
+        commandStyle = doc.addStyle("command", regular);
+        StyleConstants.setForeground(commandStyle, Color.MAGENTA)
+
+        outputStyle = regular 
+        
+        resultStyle = doc.addStyle("result", regular)
+        StyleConstants.setBackground(resultStyle, Color.BLUE)
+        StyleConstants.setBackground(resultStyle, Color.YELLOW)
+    }
     
     void addToHistory(record) {
     	history.add(record)
@@ -216,7 +256,7 @@ class Console extends ConsoleSupport implements CaretListener {
     	def doc = outputArea.styledDocument
         doc.insertString(doc.length, text, style)
         
-        // Ensure we don't have too much in console (takes to much memory)
+        // Ensure we don't have too much in console (takes too much memory)
         if (doc.length > maxOutputChars) {
         	doc.remove(0, doc.length - maxOutputChars)
         }
@@ -224,19 +264,39 @@ class Console extends ConsoleSupport implements CaretListener {
 
 	// Append a string to the output area on a new line
     void appendOutputNl(text, style){
-    	if (outputArea.styledDocument.length) {
+    	def doc = outputArea.styledDocument
+    	def len = doc.length
+    	if (len > 0 && doc.getText(len - 1, 1) != "\n") {
     		appendOutput("\n", style);
-    	}
+    	} 
     	appendOutput(text, style)
     }
     
+    // Return false if use elected to cancel
+    boolean askToSaveFile() {
+    	if (scriptFile == null || !dirty) {
+    		return true
+    	}
+        switch (JOptionPane.showConfirmDialog(frame,
+            "Save changes to " + scriptFile.name + "?",
+            "GroovyConsole", JOptionPane.YES_NO_CANCEL_OPTION))
+        {
+            case JOptionPane.YES_OPTION:
+                return fileSave()
+            case JOptionPane.NO_OPTION:
+            	return true
+            default:
+            	return false
+        }
+    }
+
     private static void beep() {
     	Toolkit.defaultToolkit.beep()
     }
     
     // Binds the "_" and "__" variables in the shell
     void bindResults() {
-		shell.setVariable("_", history.empty ? null : lastResult)
+		shell.setVariable("_", getLastResult()) // lastResult doesn't seem to work
 		shell.setVariable("__", history.collect {it.result})
     }
     
@@ -249,6 +309,7 @@ class Console extends ConsoleSupport implements CaretListener {
         textSelectionStart = Math.min(e.dot,e.mark)
         textSelectionEnd = Math.max(e.dot,e.mark)
     }
+
     
     void clearOutput(EventObject evt = null) {
     	outputArea.setText('')
@@ -262,34 +323,25 @@ class Console extends ConsoleSupport implements CaretListener {
     		runThread.interrupt()
     	}
     }
-
+    
     void exit(EventObject evt = null) {
-        if (scriptFile != null && dirty) {
-            switch (JOptionPane.showConfirmDialog(frame,
-                "Save changes to " + scriptFile.name + "?",
-                "GroovyConsole", JOptionPane.YES_NO_CANCEL_OPTION))
-            {
-                case JOptionPane.YES_OPTION:
-                    if (!fileSave())
-                        break
-                case JOptionPane.NO_OPTION:
-                    frame.hide()
-                    frame.dispose()
-            }
-        } else {
+    	if (askToSaveFile()) {
             frame.hide()
             frame.dispose()
         }
     }
     
-	static String extractTraceback(Exception e) {
-		StringWriter sw = new StringWriter()
-		new PrintWriter(sw).withWriter { pw -> e.printStackTrace(pw) }
-		return sw.buffer
-	}
-
-    void fileNew(EventObject evt = null) {
-      (new Console()).run()
+    void fileNewFile(EventObject evt = null) {
+    	if (askToSaveFile()) {
+	    	scriptFile = null
+	    	setDirty(false)
+	    	inputArea.text = ''
+    	}
+    }
+    
+    // Start a new window with a copy of current variables
+    void fileNewWindow(EventObject evt = null) {
+      (new Console(new Binding(new HashMap(shell.context.variables)))).run()
     }
 
     void fileOpen(EventObject evt = null) {
@@ -301,6 +353,7 @@ class Console extends ConsoleSupport implements CaretListener {
         }
     }
 
+	// Save file - return false if user cancelled save
     boolean fileSave(EventObject evt = null) {
         if (scriptFile == null) {
             scriptFile = selectFilename("Save");
@@ -317,28 +370,49 @@ class Console extends ConsoleSupport implements CaretListener {
     def finishException(Throwable t) {
     	statusLabel.text = 'Execution terminated with exception.'
     	history[-1].exception = t
-		appendOutputNl("Exception thrown: $t", promptStyle);
-		appendOutputNl(extractTraceback(t), outputStyle);
+    	
+		appendOutputNl("Exception thrown: ", promptStyle)
+		appendOutput(t.toString(), resultStyle)
+		
+		StringWriter sw = new StringWriter()
+		new PrintWriter(sw).withWriter { pw -> t.printStackTrace(pw) }
+		
+		appendOutputNl("\n${sw.buffer}\n", outputStyle)
 		bindResults()	
     }
     
     def finishNormal(Object result) {
     	// Take down the wait/cancel dialog
-    	statusLabel.text = 'Execution complete.'
     	history[-1].result = result
-		appendOutputNl("${InvokerHelper.inspect(lastResult)}", outputStyle);
+    	if (result) {
+	    	statusLabel.text = 'Execution complete.'
+	    	appendOutputNl("Result: ", promptStyle)
+			appendOutput("${InvokerHelper.inspect(result)}", resultStyle)
+		} else {
+	    	statusLabel.text = 'Execution complete. Result was null.'
+		}
 		bindResults()	
     }
     
+    // Gets the last, non-null result
     def getLastResult() {
+    	// runtime bugs in here history.reverse produces odd lookup
+    	// return history.reverse.find {it != null}
     	if (!history) {
-    		return null
+    		return
     	}
-    	return history[-1].value
+    	for (i in (history.size() - 1)..0) {
+    		if (history[i].result != null) {
+    			return history[i].result
+    		}
+    	}
+    	return null
     }
-    
-    void handleException(String text, Exception e) {
-    	throw new RuntimeException("?");
+
+	// Allow access to shell from outside console 
+	// (useful for configuring shell before startup)
+    GroovyShell getShell() {
+		return shell
     }
     
     void historyNext(EventObject evt = null) {
@@ -401,7 +475,7 @@ class Console extends ConsoleSupport implements CaretListener {
     
     // actually run the
     void runScript(EventObject evt = null) {
-    	def record = new RunText( allText: inputArea.getText(),
+    	def record = new HistoryRecord( allText: inputArea.getText(),
     		selectionStart: textSelectionStart, selectionEnd: textSelectionEnd,
     		scriptFile: scriptFile)
     	addToHistory(record)
@@ -413,7 +487,7 @@ class Console extends ConsoleSupport implements CaretListener {
         }
         
         //appendOutputNl("") - with wrong number of args, causes StackOverFlowError;
-        appendOutputNl("", outputStyle)
+        appendOutputNl("\n", promptStyle)
         
         // Kick off a new thread to do the evaluation
         statusLabel.text = 'Running Script...'
@@ -456,10 +530,10 @@ class Console extends ConsoleSupport implements CaretListener {
     
     private void setInputTextFromHistory() {
 		if (historyIndex < history.size()) {
-			def runText = history[historyIndex]
-			inputArea.text = runText.allText
-			inputArea.selectionStart = runText.selectionStart
-			inputArea.selectionEnd = runText.selectionEnd
+			def record = history[historyIndex]
+			inputArea.text = record.allText
+			inputArea.selectionStart = record.selectionStart
+			inputArea.selectionEnd = record.selectionEnd
 			setDirty(true) // Should calculate dirty flag properly (hash last saved/read text in each file)
 			statusLabel.text = "command history ${history.size() - historyIndex}"
 		} else {
@@ -508,8 +582,8 @@ class Console extends ConsoleSupport implements CaretListener {
     }
 }
 
-/** A snapshot of the code area, when the user selected "run" */
-class RunText {
+/** A single time when the user selected "run" */
+class HistoryRecord {
 	@Property allText
 	@Property selectionStart
 	@Property selectionEnd
@@ -528,5 +602,3 @@ class RunText {
 		return exception ? exception : result
 	}
 }
-
-
