@@ -89,7 +89,7 @@ public class DefaultGroovyMethods {
      * @return true if self and other are identical, false otherwise
      */
     public static boolean is(Object self, Object other){
-        return System.identityHashCode(self) == System.identityHashCode(other);
+        return self == other;
     }
 
     /**
