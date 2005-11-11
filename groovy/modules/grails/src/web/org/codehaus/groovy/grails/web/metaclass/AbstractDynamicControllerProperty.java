@@ -18,7 +18,7 @@ package org.codehaus.groovy.grails.web.metaclass;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.codehaus.groovy.grails.metaclass.AbstractDynamicProperty;
+import org.codehaus.groovy.grails.commons.metaclass.AbstractDynamicProperty;
 /**
  * An abstract class for dynamic controller properties to implement
  * 

@@ -18,7 +18,7 @@ package org.codehaus.groovy.grails.web.metaclass;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.codehaus.groovy.grails.metaclass.AbstractDynamicMethodInvocation;
+import org.codehaus.groovy.grails.commons.metaclass.AbstractDynamicMethodInvocation;
 /**
  * An abstract class for dynamic controller methods to implement
  * 
