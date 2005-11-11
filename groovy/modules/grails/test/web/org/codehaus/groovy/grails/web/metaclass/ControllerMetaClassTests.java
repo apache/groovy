@@ -1,24 +1,5 @@
 package org.codehaus.groovy.grails.web.metaclass;
 
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.codehaus.groovy.grails.commons.DefaultGrailsApplication;
-import org.codehaus.groovy.grails.commons.GrailsApplication;
-import org.codehaus.groovy.grails.commons.spring.SpringConfigUtils;
-import org.codehaus.groovy.grails.metaclass.PropertyAccessProxyMetaClass;
-import org.codehaus.groovy.grails.web.servlet.mvc.GrailsControllerHelper;
-import org.codehaus.groovy.grails.web.servlet.mvc.SimpleGrailsControllerHelper;
-import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.beans.factory.support.RootBeanDefinition;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.GenericApplicationContext;
-import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.mock.web.MockHttpServletResponse;
-import org.springframework.web.servlet.ModelAndView;
-
 import groovy.lang.Closure;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyObject;
@@ -26,7 +7,25 @@ import groovy.lang.MissingMethodException;
 import groovy.lang.MissingPropertyException;
 import groovy.lang.ProxyMetaClass;
 import groovy.lang.TracingInterceptor;
+
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import junit.framework.TestCase;
+
+import org.codehaus.groovy.grails.commons.DefaultGrailsApplication;
+import org.codehaus.groovy.grails.commons.GrailsApplication;
+import org.codehaus.groovy.grails.commons.metaclass.PropertyAccessProxyMetaClass;
+import org.codehaus.groovy.grails.web.servlet.mvc.GrailsControllerHelper;
+import org.codehaus.groovy.grails.web.servlet.mvc.SimpleGrailsControllerHelper;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.beans.factory.support.RootBeanDefinition;
+import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.web.servlet.ModelAndView;
 
 public class ControllerMetaClassTests extends TestCase {
 
@@ -236,9 +235,10 @@ public class ControllerMetaClassTests extends TestCase {
 				
 		
 		GrailsControllerHelper helper = new SimpleGrailsControllerHelper(application,context);
-		pmc.setInterceptor( new ControllerDynamicMethodsInterceptor(groovyClass,helper,request,response) );
-		
 		GroovyObject go = (GroovyObject)groovyClass.newInstance();
+		pmc.setInterceptor( new ControllerDynamicMethodsInterceptor(go,helper,request,response) );
+		
+		
 		go.setMetaClass( pmc );
 		return go;
 	}
