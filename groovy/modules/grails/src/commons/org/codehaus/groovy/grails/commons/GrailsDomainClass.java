@@ -14,6 +14,8 @@
  */ 
 package org.codehaus.groovy.grails.commons;
 
+import java.util.Map;
+
 
 /**
  * <p>Represents a persistable Grails domain class</p>
@@ -105,5 +107,12 @@ public interface GrailsDomainClass extends GrailsClass {
 	 * @return The type of the class or null if no relationship exists for the specified property
 	 */
 	public Class getRelatedClassType(String propertyName);
-	
+
+	/**
+	 * Returns a map of constraints applied to this domain class with the keys being the property name
+	 * and the values being ConstrainedProperty instances
+	 * 
+	 * @return A map of constraints
+	 */
+	public Map getConstrainedProperties();
 }

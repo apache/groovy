@@ -15,8 +15,11 @@
 package org.codehaus.groovy.grails.commons;
 
 
-import java.beans.PropertyDescriptor;
+import groovy.lang.Closure;
+import groovy.lang.GroovyObject;
 
+import java.beans.IntrospectionException;
+import java.beans.PropertyDescriptor;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -25,8 +28,13 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.lang.ClassUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.codehaus.groovy.grails.commons.metaclass.DefaultGroovyDynamicMethodsInterceptor;
+import org.codehaus.groovy.grails.commons.metaclass.DynamicMethods;
 import org.codehaus.groovy.grails.exceptions.GrailsDomainException;
 import org.codehaus.groovy.grails.exceptions.InvalidPropertyException;
+import org.codehaus.groovy.grails.validation.metaclass.ConstraintsDynamicProperty;
 
 /**
  * @author Graeme Rocher
@@ -34,13 +42,15 @@ import org.codehaus.groovy.grails.exceptions.InvalidPropertyException;
  */
 public class DefaultGrailsDomainClass extends AbstractGrailsClass  implements GrailsDomainClass {
 
+	private static final Log LOG  = LogFactory.getLog(DefaultGrailsDomainClass.class);
+	
 	private GrailsDomainClassProperty identifier;
 	private GrailsDomainClassProperty version;
 	private GrailsDomainClassProperty[] properties;
 	private GrailsDomainClassProperty[] persistantProperties;
 	private Map propertyMap;
 	private Map relationshipMap;
-	
+	private Map constraints;
 
 	
 	public DefaultGrailsDomainClass(Class clazz) {
@@ -53,7 +63,8 @@ public class DefaultGrailsDomainClass extends AbstractGrailsClass  implements Gr
 		if(this.relationshipMap == null) {
 			this.relationshipMap = new HashMap();
 		}
-		
+		// process the constraints
+		evaluateConstraints();		
 		// First go through the properties of the class and create domain properties
 		// populating into a map
 		for(int i = 0; i < propertyDescriptors.length; i++) {
@@ -65,7 +76,8 @@ public class DefaultGrailsDomainClass extends AbstractGrailsClass  implements Gr
 				   !descriptor.getName().equals( GrailsDomainClassProperty.TRANSIENT) &&
 				   !descriptor.getName().equals( GrailsDomainClassProperty.RELATIONSHIPS) &&
 				   !descriptor.getName().equals( GrailsDomainClassProperty.EVANESCENT) &&
-				   !descriptor.getName().equals( GrailsDomainClassProperty.OPTIONAL)  ) {
+				   !descriptor.getName().equals( GrailsDomainClassProperty.OPTIONAL) &&
+				   !descriptor.getName().equals( GrailsDomainClassProperty.CONSTRAINTS ))  {
 					
 					
 					GrailsDomainClassProperty property = new DefaultGrailsDomainClassProperty(this, descriptor);
@@ -93,6 +105,8 @@ public class DefaultGrailsDomainClass extends AbstractGrailsClass  implements Gr
 		
 		// establish relationships
 		establishRelationships();
+
+		
 		// set persistant properties
 		Collection tempList = new ArrayList();
 		for(Iterator i = this.propertyMap.values().iterator();i.hasNext();) {
@@ -104,6 +118,26 @@ public class DefaultGrailsDomainClass extends AbstractGrailsClass  implements Gr
 		this.persistantProperties = (GrailsDomainClassProperty[])tempList.toArray( new GrailsDomainClassProperty[tempList.size()]);		
 	}
 	
+	/**
+	 * Evaluates the constraints closure to build the list of constraints
+	 *
+	 */
+	private void evaluateConstraints() {
+		Closure constraintsClosure = (Closure)getPropertyValue( GrailsDomainClassProperty.CONSTRAINTS, Closure.class );
+		if(constraintsClosure != null) {
+			GroovyObject instance = (GroovyObject)getReference().getWrappedInstance();
+			try {
+				DynamicMethods interceptor = new DefaultGroovyDynamicMethodsInterceptor(instance);
+				interceptor.addDynamicProperty( new ConstraintsDynamicProperty() );
+				
+				this.constraints = (Map)instance.getProperty(GrailsDomainClassProperty.CONSTRAINTS);
+				
+			} catch (IntrospectionException e) {
+				LOG.error("Introspection error reading domain class ["+getFullName()+"] constraints: " + e.getMessage(), e);
+			}
+		}		
+	}
+
 	/**
 	 * Calculates the relationship type based other types referenced
 	 *
@@ -387,6 +421,13 @@ public class DefaultGrailsDomainClass extends AbstractGrailsClass  implements Gr
 	 */
 	public boolean isBidirectional(String propertyName) {
 		return getPropertyByName(propertyName).isBidirectional();
+	}
+
+	/* (non-Javadoc)
+	 * @see org.codehaus.groovy.grails.commons.GrailsDomainClass#getConstraints()
+	 */
+	public Map getConstrainedProperties() {
+		return this.constraints;
 	}
 	
 }
