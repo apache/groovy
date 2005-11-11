@@ -47,7 +47,7 @@ public class DefaultGrailsControllerClassTests extends TestCase {
 		GrailsControllerClass grailsClass = new DefaultGrailsControllerClass(clazz);
 		assertEquals("Overview", grailsClass.getName());
 		assertEquals("OverviewController", grailsClass.getFullName());
-		assertEquals("listPage", grailsClass.getViewName("/overview/list"));
+		assertEquals("listPage", grailsClass.getViewByURI("/overview/list"));
 		assertEquals(2, grailsClass.getURIs().length);
 	}
 
