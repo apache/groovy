@@ -24,8 +24,9 @@ public interface GrailsDomainClassProperty {
 	
 	String IDENTITY = "id";
 	String VERSION = "version";
-	String OPTIONAL = "optional";
+	String OPTIONAL = "optionals";
 	String TRANSIENT = "transients";
+	String CONSTRAINTS = "constraints";
 	String EVANESCENT = "evanescent";
 	String RELATIONSHIPS = "relationships";
 	Object META_CLASS = "metaClass";
