@@ -285,5 +285,20 @@ public class GrailsClassUtils {
 			return null;
 		}			
 	}
+
+	/**
+	 * Returns the class name without the package prefix
+	 * 
+	 * @param targetClass
+	 * @return
+	 */
+	public static String getShortName(Class targetClass) {
+		String className = targetClass.getName();
+		int i = className.lastIndexOf(".");
+		if(i > -1) {
+			className = className.substring( i + 1, className.length() );
+		}
+		return className;
+	}
 	
 }
