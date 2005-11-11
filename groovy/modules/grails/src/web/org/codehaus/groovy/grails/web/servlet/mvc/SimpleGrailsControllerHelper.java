@@ -31,8 +31,8 @@ import javax.servlet.http.HttpServletResponse;
 //import org.apache.commons.lang.WordUtils;
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.commons.GrailsControllerClass;
-import org.codehaus.groovy.grails.metaclass.GenericDynamicProperty;
-import org.codehaus.groovy.grails.metaclass.PropertyAccessProxyMetaClass;
+import org.codehaus.groovy.grails.commons.metaclass.GenericDynamicProperty;
+import org.codehaus.groovy.grails.commons.metaclass.PropertyAccessProxyMetaClass;
 import org.codehaus.groovy.grails.web.metaclass.ChainDynamicMethod;
 import org.codehaus.groovy.grails.web.metaclass.ControllerDynamicMethodsInterceptor;
 import org.codehaus.groovy.grails.web.metaclass.GetParamsDynamicProperty;
@@ -214,12 +214,8 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
 		// Step 3a: Configure a proxy interceptor for controller dynamic methods for this request
 		try {
 			ControllerDynamicMethodsInterceptor interceptor;
-			if(!controller.getMetaClass().getClass().equals( PropertyAccessProxyMetaClass.class )) {
-				ProxyMetaClass pmc = PropertyAccessProxyMetaClass.getInstance(controller.getClass());
-				interceptor = new ControllerDynamicMethodsInterceptor(controller.getClass(),this,request,response);
-
-				pmc.setInterceptor( interceptor );
-				controller.setMetaClass(pmc);				
+			if(!controller.getMetaClass().getClass().equals( PropertyAccessProxyMetaClass.class )) {				
+				interceptor = new ControllerDynamicMethodsInterceptor(controller,this,request,response);
 			}
 			else {
 				ProxyMetaClass pmc = (ProxyMetaClass)controller.getMetaClass(); 
