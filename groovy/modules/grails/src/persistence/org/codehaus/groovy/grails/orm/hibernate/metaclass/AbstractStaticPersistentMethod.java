@@ -17,7 +17,7 @@ package org.codehaus.groovy.grails.orm.hibernate.metaclass;
 
 import java.util.regex.Pattern;
 
-import org.codehaus.groovy.grails.metaclass.AbstractStaticMethodInvocation;
+import org.codehaus.groovy.grails.commons.metaclass.AbstractStaticMethodInvocation;
 import org.hibernate.SessionFactory;
 import org.springframework.orm.hibernate3.HibernateTemplate;
 import org.springframework.util.Assert;

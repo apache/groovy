@@ -15,7 +15,7 @@
  */ 
 package org.codehaus.groovy.grails.orm.hibernate.metaclass;
 
-import org.codehaus.groovy.grails.metaclass.AbstractDynamicMethodInvocation;
+import org.codehaus.groovy.grails.commons.metaclass.AbstractDynamicMethodInvocation;
 import org.hibernate.SessionFactory;
 import org.springframework.orm.hibernate3.HibernateTemplate;
 import org.springframework.util.Assert;

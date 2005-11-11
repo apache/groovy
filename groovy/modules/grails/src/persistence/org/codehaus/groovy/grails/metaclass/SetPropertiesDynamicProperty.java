@@ -26,6 +26,7 @@ import ognl.OgnlException;
 import org.apache.commons.collections.BeanMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.codehaus.groovy.grails.commons.metaclass.AbstractDynamicProperty;
 
 /**
  * A dynamic property that uses a Map of OGNL expressions to sets properties on the target object
