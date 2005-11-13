@@ -8,10 +8,10 @@ println "Playing files from: ${folderName}"
 def player = new ActiveXProxy("clsid:{6BF52A52-394A-11D3-B153-00C04F79FAA6}")
 
 // react upon a state change
-player.events.PlayStateChange = { 
+player.events.PlayStateChange = { variants ->
     // if the media ended change the status flag
     // so that the main thread notices the change
-    if (it[0].toInt() == 1) synchronized(player) { player.notify() }
+    if (variants[0].value == 1) synchronized(player) { player.notify() }
 }
 // start listening to the events we're subsribed to
 player.events.listen()

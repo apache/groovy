@@ -54,25 +54,39 @@ import org.codehaus.groovy.control.CompilationFailedException;
  * This "events" is backed by a Map that contains keys representing the event to subscribe to,
  * and closures representing the code to execute when the event is triggered.
  * <p/>
- * Jacob allows only to pass to the <code>DispatchEvents</code> class a class of the form:
- * <pre>
- * public class MyEvents {
- *    public void Quit(Variant[] variants) { }
- * }
- * </pre>
+ * Jacob allows only to pass to the <code>DispatchEvents</code> class.
+ * But Scriptom pass a dynamically generated class in Groovy through GroovyShell,
+ * which delegates calls to the closures stored in the Map.
  * <p/>
- * To circumvent this, and to allow the users to use closures for event handling,
- * I'm building with ASM an interface, with event methods forged after the name of the keys in the map.
- * I'm then creating a <code>java.lang.reflect.Proxy</code> that delegates all calls to the Proxy
- * to my own <code>InvocationHandler</code> which is implemented by <code>EventSupport</code>.
- * All invocations gets then routed to the relevant closure in the <code>eventHandlers</code> Map.
+ *
+ * <p>
+ * Event support can be done by adding closures to the event object,
+ * then calling listen() method will subscribe to all events:
+ * <code>
+ * comProxy.events.SomeEvent = { // do something }
+ * comProxy.events.OtherEvent = { // do something else }
+ * comProxy.events.listen()
+ * </code>
+ * </p>
  *
  * @author Guillaume Laforge
  */
 public class EventSupport extends GroovyObjectSupport
 {
+    /**
+     * Map containing closures for each events which has been subscribed to
+     */
     private Map eventHandlers = new HashMap();
+
+    /**
+     * Underlying Jacob ActiveXComponent
+     */
     private ActiveXComponent activex;
+
+    /**
+     * Source code of the class dealing with event support
+     */
+    private String eventClassSourceCode = "// no event support script generated";
 
     /**
      * In the constructor, we pass the reference to the <code>ActiveXComponent</code>.
@@ -106,11 +120,12 @@ public class EventSupport extends GroovyObjectSupport
                     .append("(Variant[] variants) {\n")
                     .append("        evtHandlers['")
                     .append(eventName)
-                    .append("'].call(variants)\n    }\n");
+                    .append("'].call( VariantProxy.defineArray(variants) )\n    }\n");
                 }
 
                 StringBuffer classSource = new StringBuffer();
                 classSource.append("import com.jacob.com.*\n")
+                .append("import org.codehaus.groovy.scriptom.VariantProxy\n")
                 .append("class EventHandler {\n")
                 .append("    def evtHandlers\n")
                 .append("    EventHandler(scriptBinding) {\n")
@@ -123,7 +138,8 @@ public class EventSupport extends GroovyObjectSupport
                 Map eventHandlersContainer = new HashMap();
                 eventHandlersContainer.put("eventHandlers", eventHandlers);
                 Binding binding = new Binding(eventHandlers);
-                Object generatedInstance = new GroovyShell(binding).evaluate(classSource.toString());
+                eventClassSourceCode = classSource.toString();
+                Object generatedInstance = new GroovyShell(binding).evaluate(eventClassSourceCode);
 
                 new DispatchEvents(this.activex, generatedInstance);
             } catch (CompilationFailedException e) {
@@ -161,6 +177,10 @@ public class EventSupport extends GroovyObjectSupport
      */
     public Object getProperty(String property)
     {
+        // used to print the source of the generated class dealing with event support for debugging purpose
+        if ("eventSourceScript".equals(property)) {
+            return eventClassSourceCode;
+        }
         return eventHandlers.get(property);
     }
 }

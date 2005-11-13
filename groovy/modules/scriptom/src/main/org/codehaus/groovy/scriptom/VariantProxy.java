@@ -66,6 +66,26 @@ public class VariantProxy extends GroovyObjectSupport
     }
 
     /**
+     * Used internally by the Groovy generated event support class
+     * to transform Variant arrays to VariantProxy arrays.
+     *
+     * @param obj a Variant[] array
+     * @return a VariantProxy[] array
+     */
+    static VariantProxy[] defineArray(Object obj)
+    {
+        if (obj instanceof Variant[]) {
+            Variant[] variants = (Variant[])obj;
+            VariantProxy[] array = new VariantProxy[variants.length];
+            for (int i = 0; i < array.length; i++)
+                array[i] = new VariantProxy(variants[i]);
+            return array;
+        } else {
+            return new VariantProxy[0];
+        }
+    }
+
+    /**
      * Get the property associated to the property named passed as argument.<b/>
      * The property name <code>value</code> will return the real value of the Variant, not a proxy.
      *
@@ -141,7 +161,7 @@ public class VariantProxy extends GroovyObjectSupport
         Dispatch.put(variant.toDispatch(), property, toValue(newValue));
     }
 
-    public static Object toValue(Object newValue)
+    static Object toValue(Object newValue)
     {
         // special case for Groovy's arithmetics:
         // BigInteger and BigDecimal aren't recognized by the Jacob library
