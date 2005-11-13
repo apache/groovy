@@ -47,8 +47,8 @@ package org.codehaus.groovy.ast.expr;
 
 import groovy.lang.MetaMethod;
 
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.ast.Type;
 
 /**
  * A method call on an object or class
@@ -79,7 +79,7 @@ public class MethodCallExpression extends Expression {
         // if setting type and a methodcall is the last expresssion in a method,
         // then the method will return null if the method itself is not void too!
         // (in bytecode after call: aconst_null, areturn)
-        this.setType(Type.DYNAMIC_TYPE);
+        this.setType(ClassHelper.DYNAMIC_TYPE);
     }
 
     public void visit(GroovyCodeVisitor visitor) {
@@ -165,6 +165,6 @@ public class MethodCallExpression extends Expression {
 
     public void setMethod(MetaMethod mmeth) {
         this.metaMethod = mmeth;
-        super.setType(Type.makeType(mmeth.getReturnType()));
+        super.setType(ClassHelper.make(mmeth.getReturnType()));
     }
 }

@@ -47,8 +47,9 @@ package org.codehaus.groovy.ast.expr;
 
 import java.lang.reflect.Constructor;
 
+import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.ast.Type;
 
 /**
  * A constructor call
@@ -67,7 +68,7 @@ public class ConstructorCallExpression extends Expression {
     private Constructor constructor = null;
 
 
-    public ConstructorCallExpression(Type type, Expression arguments) {
+    public ConstructorCallExpression(ClassNode type, Expression arguments) {
         super.setType(type);
         this.arguments = arguments;
     }
@@ -94,6 +95,6 @@ public class ConstructorCallExpression extends Expression {
 
     public void setConstructor(Constructor ctor) {
         constructor = ctor;
-        super.getType().setTypeClass(ctor.getDeclaringClass());
+        super.setType(ClassHelper.make(ctor.getDeclaringClass()));
     }
 }

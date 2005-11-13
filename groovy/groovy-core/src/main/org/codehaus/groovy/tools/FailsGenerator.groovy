@@ -2,6 +2,7 @@ package org.codehaus.groovy.tools;
 
 import java.io.*;
 import groovy.util.XmlSlurper;
+import groovy.xml.StreamingMarkupBuilder;
 
 class FailsGenerator {
 

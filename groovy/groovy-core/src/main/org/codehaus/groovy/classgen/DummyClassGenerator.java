@@ -80,7 +80,7 @@ public class DummyClassGenerator extends ClassGenerator {
     public void visitClass(ClassNode classNode) {
         try {
             this.classNode = classNode;
-            this.internalClassName = BytecodeHelper.getClassInternalName(classNode.getType());
+            this.internalClassName = BytecodeHelper.getClassInternalName(classNode);
 
             //System.out.println("Generating class: " + classNode.getName());
 
@@ -99,7 +99,7 @@ public class DummyClassGenerator extends ClassGenerator {
 
             for (Iterator iter = innerClasses.iterator(); iter.hasNext();) {
                 ClassNode innerClass = (ClassNode) iter.next();
-                Type innerClassType = innerClass.getType();
+                ClassNode innerClassType = innerClass;
                 String innerClassInternalName = BytecodeHelper.getClassInternalName(innerClassType);
                 String outerClassName = internalClassName; // default for inner classes
                 MethodNode enclosingMethod = innerClass.getEnclosingMethod();
@@ -125,7 +125,7 @@ public class DummyClassGenerator extends ClassGenerator {
 
         visitParameters(node, node.getParameters());
 
-        String methodType = BytecodeHelper.getMethodDescriptor("void", node.getParameters());
+        String methodType = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, node.getParameters());
         cv = cw.visitMethod(node.getModifiers(), "<init>", methodType, null, null);
         cv.visitTypeInsn(NEW, "java/lang/RuntimeException");
         cv.visitInsn(DUP);
@@ -165,14 +165,6 @@ public class DummyClassGenerator extends ClassGenerator {
      * Creates a getter, setter and field
      */
     public void visitProperty(PropertyNode statement) {
-    }
-
-    protected static boolean isPrimitiveFieldType(String type) {
-        return type.equals("java.lang.String")
-            || type.equals("java.lang.Integer")
-            || type.equals("java.lang.Double")
-            || type.equals("java.lang.Long")
-            || type.equals("java.lang.Float");
     }
     
     protected CompileUnit getCompileUnit() {

@@ -49,8 +49,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.ast.Type;
 
 /**
  * Represents a list expression [1, 2, 3] which creates a mutable List
@@ -69,7 +69,7 @@ public class ListExpression extends Expression {
         this.expressions = expressions;
         //TODO: get the type's of the expressions to specify the
         // list type to List<X> if possible.
-        setType(Type.LIST_TYPE);
+        setType(ClassHelper.LIST_TYPE);
     }
     
     public void addExpression(Expression expression) {
@@ -111,28 +111,5 @@ public class ListExpression extends Expression {
 
     public String toString() {
         return super.toString() + expressions;
-    }
-
-    /**
-     * return the common element type of all the element
-     * @return
-     */
-    public Class getComponentTypeClass() {
-        boolean first = true;
-        Class cls = null;
-
-        for (Iterator iter = expressions.iterator(); iter.hasNext(); ) {
-            Expression exp = (Expression) iter.next();
-            if (cls == null) {
-                cls = exp.getType().getTypeClass();
-            }
-            else {
-                if (cls != exp.getType().getTypeClass()) {
-                    // a heterogenous list
-                    return null;
-                }
-            }
-        }
-        return cls;
     }
 }

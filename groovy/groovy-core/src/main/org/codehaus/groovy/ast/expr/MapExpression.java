@@ -48,8 +48,8 @@ package org.codehaus.groovy.ast.expr;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.ast.Type;
 
 /**
  * Represents a map expression [1 : 2, "a" : "b", x : y] which creates a mutable Map
@@ -68,7 +68,7 @@ public class MapExpression extends Expression {
         this.mapEntryExpressions = mapEntryExpressions;
         //TODO: get the type's of the expressions to specify the
         // map type to Map<X> if possible.
-        setType(Type.MAP_TYPE);
+        setType(ClassHelper.MAP_TYPE);
     }
     
     public void addMapEntryExpression(MapEntryExpression expression) {

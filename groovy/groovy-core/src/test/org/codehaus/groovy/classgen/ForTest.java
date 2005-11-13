@@ -62,13 +62,13 @@ import org.codehaus.groovy.runtime.InvokerInvocationException;
 public class ForTest extends TestSupport {
 
     public void testNonLoop() throws Exception {
-        ClassNode classNode = new ClassNode(Type.makeType("Foo"), ACC_PUBLIC, Type.OBJECT_TYPE);
+        ClassNode classNode = new ClassNode("Foo", ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
         classNode.addConstructor(new ConstructorNode(ACC_PUBLIC, null));
 
-        Parameter[] parameters = {new Parameter(Type.OBJECT_TYPE, "coll")};
+        Parameter[] parameters = {new Parameter(ClassHelper.OBJECT_TYPE, "coll")};
 
         Statement statement = createPrintlnStatement(new VariableExpression("coll"));
-        classNode.addMethod(new MethodNode("oneParamDemo", ACC_PUBLIC, Type.VOID_TYPE, parameters, statement));
+        classNode.addMethod(new MethodNode("oneParamDemo", ACC_PUBLIC, ClassHelper.VOID_TYPE, parameters, statement));
 
         Class fooClass = loadClass(classNode);
         assertTrue("Loaded a new class", fooClass != null);
@@ -91,15 +91,15 @@ public class ForTest extends TestSupport {
 
 
     public void testLoop() throws Exception {
-        ClassNode classNode = new ClassNode(Type.makeType("Foo"), ACC_PUBLIC, Type.OBJECT_TYPE);
+        ClassNode classNode = new ClassNode("Foo", ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
         classNode.addConstructor(new ConstructorNode(ACC_PUBLIC, null));
 
-        Parameter[] parameters = {new Parameter(Type.OBJECT_TYPE.makeArray(), "coll")};
+        Parameter[] parameters = {new Parameter(ClassHelper.OBJECT_TYPE.makeArray(), "coll")};
 
         Statement loopStatement = createPrintlnStatement(new VariableExpression("i"));
 
-        ForStatement statement = new ForStatement("i", Type.DYNAMIC_TYPE, new VariableExpression("coll"), loopStatement);
-        classNode.addMethod(new MethodNode("iterateDemo", ACC_PUBLIC, Type.VOID_TYPE, parameters, statement));
+        ForStatement statement = new ForStatement("i", ClassHelper.DYNAMIC_TYPE, new VariableExpression("coll"), loopStatement);
+        classNode.addMethod(new MethodNode("iterateDemo", ACC_PUBLIC, ClassHelper.VOID_TYPE, parameters, statement));
 
         Class fooClass = loadClass(classNode);
         assertTrue("Loaded a new class", fooClass != null);
@@ -121,17 +121,17 @@ public class ForTest extends TestSupport {
     }
 
     public void testManyParam() throws Exception {
-        ClassNode classNode = new ClassNode(Type.makeType("Foo"), ACC_PUBLIC, Type.OBJECT_TYPE);
+        ClassNode classNode = new ClassNode("Foo", ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
         classNode.addConstructor(new ConstructorNode(ACC_PUBLIC, null));
 
-        Parameter[] parameters = { new Parameter(Type.OBJECT_TYPE, "coll1"), new Parameter(Type.OBJECT_TYPE, "coll2"), new Parameter(Type.OBJECT_TYPE, "coll3") };
+        Parameter[] parameters = { new Parameter(ClassHelper.OBJECT_TYPE, "coll1"), new Parameter(ClassHelper.OBJECT_TYPE, "coll2"), new Parameter(ClassHelper.OBJECT_TYPE, "coll3") };
 
         BlockStatement statement = new BlockStatement();
         statement.addStatement(createPrintlnStatement(new VariableExpression("coll1")));
         statement.addStatement(createPrintlnStatement(new VariableExpression("coll2")));
         statement.addStatement(createPrintlnStatement(new VariableExpression("coll3")));
 
-        classNode.addMethod(new MethodNode("manyParamDemo", ACC_PUBLIC, Type.VOID_TYPE, parameters, statement));
+        classNode.addMethod(new MethodNode("manyParamDemo", ACC_PUBLIC, ClassHelper.VOID_TYPE, parameters, statement));
 
         Class fooClass = loadClass(classNode);
         assertTrue("Loaded a new class", fooClass != null);

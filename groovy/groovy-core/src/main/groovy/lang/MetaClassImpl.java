@@ -1151,17 +1151,16 @@ public class MetaClassImpl extends MetaClass {
                     * checking won't work but that mostly affects the bytecode
                     * generation rather than viewing the AST
                     */
-
                    CompilationUnit.ClassgenCallback search = new CompilationUnit.ClassgenCallback() {
                        public void call( ClassVisitor writer, ClassNode node ) {
-                           if( node.getType().getName().equals(theClass.getName()) ) {
+                           if( node.getName().equals(theClass.getName()) ) {
                                MetaClassImpl.this.classNode = node;
                            }
                        }
                    };
 
 
-                   CompilationUnit unit = new CompilationUnit( getClass().getClassLoader() );
+                   CompilationUnit unit = new CompilationUnit(new GroovyClassLoader(getClass().getClassLoader()) );
                    unit.setClassgenCallback( search );
                    unit.addSource( url );
                    unit.compile( Phases.CLASS_GENERATION );
@@ -1665,8 +1664,16 @@ public class MetaClassImpl extends MetaClass {
        String packagePrefix = "gjdk.";
        String name = packagePrefix + className + "_GroovyReflector";
        if (theClass.isArray()) {
-           String componentName = theClass.getComponentType().getName();
+       	   Class clazz = theClass;
+       	   name = packagePrefix;
+       	   int level = 0;
+       	   while (clazz.isArray()) {
+       	   	  clazz = clazz.getComponentType();
+       	   	  level++;
+       	   }
+           String componentName = clazz.getName();
            name = packagePrefix + componentName + "_GroovyReflectorArray";
+           if (level>1) name += level;
        }
        return name;
    }

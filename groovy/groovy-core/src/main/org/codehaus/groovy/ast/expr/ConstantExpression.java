@@ -45,8 +45,8 @@
  */
 package org.codehaus.groovy.ast.expr;
 
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.ast.Type;
 
 /**
  * Represents a constant expression such as null, true, false
@@ -67,7 +67,7 @@ public class ConstantExpression extends Expression {
     public ConstantExpression(Object value) {
         this.value = value;
         if (this.value != null)
-            setType(Type.makeType(value.getClass()));
+            setType(ClassHelper.make(value.getClass()));
     }
 
     public String toString() {

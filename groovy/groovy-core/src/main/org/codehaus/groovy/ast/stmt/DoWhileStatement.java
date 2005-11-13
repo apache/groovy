@@ -76,4 +76,7 @@ public class DoWhileStatement extends Statement {
     public Statement getLoopBlock() {
         return loopBlock;
     }
+    public void setBooleanExpression(BooleanExpression booleanExpression) {
+        this.booleanExpression = booleanExpression;
+    }
 }

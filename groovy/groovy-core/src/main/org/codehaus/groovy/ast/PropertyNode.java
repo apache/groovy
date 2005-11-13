@@ -63,7 +63,7 @@ public class PropertyNode extends AnnotatedNode implements Opcodes,Variable {
     private int modifiers;
 
     public PropertyNode(
-        String name, int modifiers, Type type, Type owner,
+        String name, int modifiers, ClassNode type, ClassNode owner,
         Expression initialValueExpression, Statement getterBlock,
         Statement setterBlock)
     {
@@ -97,10 +97,14 @@ public class PropertyNode extends AnnotatedNode implements Opcodes,Variable {
         return setterBlock;
     }
 
-    public Type getType() {
+    public ClassNode getType() {
         return field.getType();
     }
 
+    public void setType(ClassNode t) {
+        field.setType(t);
+    }
+    
     public FieldNode getField() {
         return field;
     }
@@ -115,5 +119,9 @@ public class PropertyNode extends AnnotatedNode implements Opcodes,Variable {
 
     public boolean isInStaticContext() {
         return field.isInStaticContext();
+    }
+
+    public boolean isDynamicTyped() {
+        return field.isDynamicTyped();
     }
 }

@@ -47,7 +47,6 @@ package org.codehaus.groovy.ast.expr;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
@@ -91,7 +90,7 @@ public class AttributeExpression extends Expression {
     }
 
     public Expression transformExpression(ExpressionTransformer transformer) {
-        return this;
+        return new AttributeExpression(transformer.transform(objectExpression),property,safe);
     }
 
     public Expression getObjectExpression() {
@@ -130,55 +129,12 @@ public class AttributeExpression extends Expression {
         this.isStatic = aStatic;
     }
 
-    public void setGetter(Method meth) {
-        Class returntype = meth.getReturnType();
-        Class oldType = getType().getTypeClass();
-        if (oldType != null && oldType != Object.class && oldType != returntype) {
-            // something is wrong
-// in this rare case the getter is discarded. Field access takes over
-//            String msg = "PropertyExpression.setSetter(): type mismatch: was " + getTypeClass() +
-//                    ". now " + returntype;
-//            System.err.println(msg);
-//            setResolveFailed(true);
-//            setFailure(msg);
-        }
-        else {
-            getter = meth;
-            getType().setTypeClass(returntype);
-            getType().setTypeResolved(true);
-        }
-    }
-
     public Method getGetter() {
         return getter;
     }
 
-    public void setSetter(Method method) {
-        Class paramType = method.getParameterTypes()[0];
-        Class wasType = getType().getTypeClass();
-        if (wasType != null && wasType != Object.class && wasType != paramType) {
-//            // something is wrong
-// in this rare case the getter is discarded. Field access takes over
-//            String msg = "PropertyExpression.setSetter(): type mismatch: was " + getTypeClass() +
-//                    ". now " + paramType;
-//            System.err.println(msg);
-//            setResolveFailed(true);
-//            setFailure(msg);
-        }
-        else {
-            setter = method;
-            getType().setTypeClass(paramType);
-            getType().setTypeResolved(true);
-        }
-    }
     public Method getSetter() {
         return setter;
-    }
-
-    public void setField(Field fld) {
-        field = fld;
-        setStatic(Modifier.isStatic(fld.getModifiers()));
-        getType().setTypeClass(fld.getType());
     }
     
     public Field getField() {

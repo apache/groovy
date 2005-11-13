@@ -49,8 +49,8 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
+import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.ast.Type;
 
 /**
  * Represents an array object construction either using a fixed size
@@ -63,16 +63,15 @@ public class ArrayExpression extends Expression {
     private List expressions;
     private Expression sizeExpression;
 
-    private Type elementType;
-    /**
-     * Creates an array using an initializer expression
-     */
-    public ArrayExpression(Type elementType, List expressions) {
+    private ClassNode elementType;
+    
+    private ArrayExpression(ClassNode elementType, List expressions, Expression sizeExpression) {
         //expect to get the elementType
         super.setType(elementType.makeArray());
         this.elementType = elementType;
         this.expressions = expressions;
-
+        this.sizeExpression = sizeExpression;
+        
         for (Iterator iter = expressions.iterator(); iter.hasNext();) {
             Object item = iter.next();
             if (!(item instanceof Expression)) {
@@ -80,16 +79,20 @@ public class ArrayExpression extends Expression {
             }
         }
     }
+    
+    
+    /**
+     * Creates an array using an initializer expression
+     */
+    public ArrayExpression(ClassNode elementType, List expressions) {
+        this(elementType,expressions,null);
+    }
 
     /**
      * Creates an empty array of a certain size
      */
-    public ArrayExpression(Type elementType, Expression sizeExpression) {
-        // expect to get the elementType
-        super.setType(elementType.makeArray());
-        this.elementType = elementType;        
-        this.sizeExpression = sizeExpression;
-        this.expressions = Collections.EMPTY_LIST;
+    public ArrayExpression(ClassNode elementType, Expression sizeExpression) {
+        this(elementType,Collections.EMPTY_LIST,sizeExpression);
     }
 
     public void addExpression(Expression expression) {
@@ -109,7 +112,7 @@ public class ArrayExpression extends Expression {
     }
 
     public Expression transformExpression(ExpressionTransformer transformer) {
-        return new ArrayExpression(elementType, transformExpressions(expressions, transformer));
+        return new ArrayExpression(elementType, transformExpressions(expressions, transformer), transformer.transform(sizeExpression));
     }
 
     public Expression getExpression(int i) {
@@ -117,7 +120,7 @@ public class ArrayExpression extends Expression {
         return (Expression) object;
     }
 
-    public Type getElementType() {
+    public ClassNode getElementType() {
         return elementType;
     }
     

@@ -48,13 +48,36 @@ package org.codehaus.groovy.ast;
 import org.codehaus.groovy.ast.expr.Expression;
 
 /**
+ * interface to mark a AstNode as Variable. Typically these are 
+ * VariableExpression, FieldNode, PropertyNode and Parameter
+ * 
  * @author Jochen Theodorou
  */
 public interface Variable {
     
-    public Type getType();
+    /**
+     * the type of the variable
+     */
+    public ClassNode getType();
+    /**
+     * the name of the variable
+     */
     public String getName();
+    /**
+     * expression used to initialize the variable or null of there
+     * is no initialization.
+     */
     public Expression getInitialExpression();
+    /**
+     * returns true if there is an initialization expression
+     */
     public boolean hasInitialExpression();
+    /**
+     * returns true if this variable is used in a static context.
+     * A static context is any static initializer block, when this variable
+     * is declared as static or when this variable is used in a static method 
+     */
     public boolean isInStaticContext();
+    
+    public boolean isDynamicTyped();
 }

@@ -45,8 +45,8 @@
  */
 package org.codehaus.groovy.ast.expr;
 
+import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.ast.Type;
 
 /**
  * Represents access to a Java/Groovy class in an expression, such
@@ -57,7 +57,7 @@ import org.codehaus.groovy.ast.Type;
  */
 public class ClassExpression extends Expression {
 
-    public ClassExpression(Type type) {
+    public ClassExpression(ClassNode type) {
         super.setType(type);
     }
 

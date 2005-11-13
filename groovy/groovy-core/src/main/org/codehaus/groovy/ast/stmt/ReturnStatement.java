@@ -77,4 +77,7 @@ public class ReturnStatement extends Statement {
         return "return " + expression.getText();
     }
 
+    public void setExpression(Expression expression) {
+        this.expression = expression;
+    }
 }

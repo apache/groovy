@@ -49,8 +49,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.ast.Type;
 
 /**
  * Represents a property access such as the expression "foo.bar".
@@ -138,45 +138,10 @@ public class PropertyExpression extends Expression {
         this.isStatic = aStatic;
     }
 
-    public void setGetter(Method meth) {
-        Class returntype = meth.getReturnType();
-        Class oldType = getType().getTypeClass();
-        if (oldType != null && oldType != Object.class && oldType != returntype) {
-            // something is wrong
-// in this rare case the getter is discarded. Field access takes over
-//            String msg = "PropertyExpression.setSetter(): type mismatch: was " + getTypeClass() +
-//                    ". now " + returntype;
-//            System.err.println(msg);
-//            setResolveFailed(true);
-//            setFailure(msg);
-        }
-        else {
-            getter = meth;
-            setType(Type.makeType(returntype));
-        }
-    }
-
     public Method getGetter() {
         return getter;
     }
 
-    public void setSetter(Method method) {
-        Class paramType = method.getParameterTypes()[0];
-        Class wasType = getType().getTypeClass();
-        if (wasType != null && wasType != Object.class && wasType != paramType) {
-//            // something is wrong
-// in this rare case the getter is discarded. Field access takes over
-//            String msg = "PropertyExpression.setSetter(): type mismatch: was " + getTypeClass() +
-//                    ". now " + paramType;
-//            System.err.println(msg);
-//            setResolveFailed(true);
-//            setFailure(msg);
-        }
-        else {
-            setter = method;
-            setType(Type.makeType(paramType));
-        }
-    }
     public Method getSetter() {
         return setter;
     }
@@ -184,7 +149,7 @@ public class PropertyExpression extends Expression {
     public void setField(Field fld) {
         field = fld;
         setStatic(Modifier.isStatic(fld.getModifiers()));
-        setType(Type.makeType(fld.getType()));
+        setType(ClassHelper.make(fld.getType()));
     }
     
     public Field getField() {

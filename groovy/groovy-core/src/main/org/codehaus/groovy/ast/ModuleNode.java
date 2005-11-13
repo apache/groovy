@@ -51,6 +51,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -77,7 +78,7 @@ import org.objectweb.asm.Opcodes;
 public class ModuleNode extends ASTNode implements Opcodes {
 
     private BlockStatement statementBlock = new BlockStatement();
-    List classes = new ArrayList();
+    List classes = new LinkedList();
     private List methods = new ArrayList();
     private List imports = new ArrayList();
     private List importPackages = new ArrayList();
@@ -89,11 +90,11 @@ public class ModuleNode extends ASTNode implements Opcodes {
     private transient SourceUnit context;
 
 
-    public ModuleNode( SourceUnit context ) {
+    public ModuleNode (SourceUnit context ) {
         this.context = context;
     }
 
-    public ModuleNode(CompileUnit unit) {
+    public ModuleNode (CompileUnit unit) {
         this.unit = unit;
     }
 
@@ -175,6 +176,10 @@ public class ModuleNode extends ASTNode implements Opcodes {
     public void setPackageName(String packageName) {
         this.packageName = packageName;
     }
+    
+    public boolean hasPackageName(){
+        return this.packageName != null;
+    }
 
     public SourceUnit getContext() {
         return context;
@@ -212,9 +217,6 @@ public class ModuleNode extends ASTNode implements Opcodes {
         if (name == null) {
             name = "";
         }
-        else {
-            name = name + ".";
-        }
         // now lets use the file name to determine the class name
         if (getDescription() == null) {
             throw new RuntimeException("Cannot generate main(String[]) class for statements when we have no file description");
@@ -223,14 +225,14 @@ public class ModuleNode extends ASTNode implements Opcodes {
 
         String baseClassName = null;
         if (unit != null) baseClassName = unit.getConfig().getScriptBaseClass();
-        Type baseClass = null;
+        ClassNode baseClass = null;
         if (baseClassName!=null) {
-            baseClass = Type.makeType(baseClassName);
+            baseClass = ClassHelper.make(baseClassName);
         }
         if (baseClass == null) {
-            baseClass = Type.SCRIPT_TYPE;
+            baseClass = ClassHelper.SCRIPT_TYPE;
         }
-        ClassNode classNode = new ClassNode(Type.makeType(name), ACC_PUBLIC, baseClass);
+        ClassNode classNode = new ClassNode(name, ACC_PUBLIC, baseClass);
         classNode.setScript(true);
 
         // return new Foo(new ShellContext(args)).run()
@@ -238,19 +240,19 @@ public class ModuleNode extends ASTNode implements Opcodes {
             new MethodNode(
                 "main",
                 ACC_PUBLIC | ACC_STATIC,
-                Type.VOID_TYPE,
-                new Parameter[] { new Parameter(Type.STRING_TYPE.makeArray(), "args")},
+                ClassHelper.VOID_TYPE,
+                new Parameter[] { new Parameter(ClassHelper.STRING_TYPE.makeArray(), "args")},
                 new ExpressionStatement(
                     new MethodCallExpression(
-                        new ClassExpression(Type.makeType(InvokerHelper.class)),
+                        new ClassExpression(ClassHelper.make(InvokerHelper.class)),
                         "runScript",
                         new ArgumentListExpression(
                             new Expression[] {
-                                new ClassExpression(classNode.getType()),
+                                new ClassExpression(classNode),
                                 new VariableExpression("args")})))));
 
         classNode.addMethod(
-            new MethodNode("run", ACC_PUBLIC, Type.OBJECT_TYPE, Parameter.EMPTY_ARRAY, statementBlock));
+            new MethodNode("run", ACC_PUBLIC, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, statementBlock));
 
         classNode.addConstructor(ACC_PUBLIC, Parameter.EMPTY_ARRAY, new BlockStatement());
         Statement stmt = new ExpressionStatement(
@@ -263,7 +265,7 @@ public class ModuleNode extends ASTNode implements Opcodes {
 
         classNode.addConstructor(
             ACC_PUBLIC,
-            new Parameter[] { new Parameter(Type.makeType(Binding.class), "context")},
+            new Parameter[] { new Parameter(ClassHelper.make(Binding.class), "context")},
 			stmt);
 
         for (Iterator iter = methods.iterator(); iter.hasNext();) {
@@ -304,6 +306,25 @@ public class ModuleNode extends ASTNode implements Opcodes {
 
     public boolean isEmpty() {
         return classes.isEmpty() && statementBlock.getStatements().isEmpty();
+    }
+    
+    public void sortClasses(){
+    	if (isEmpty()) return;
+    	List classes = getClasses();
+    	LinkedList sorted = new LinkedList();
+    	int level=1;
+    	while (!classes.isEmpty()) {
+	    	for (Iterator cni = classes.iterator(); cni.hasNext();) {
+				ClassNode cn = (ClassNode) cni.next();
+				ClassNode sn = cn;
+				for (int i=0; sn!=null && i<level; i++) sn = sn.getSuperClass();
+				if (sn!=null && sn.isPrimaryClassNode()) continue;
+				cni.remove();
+				sorted.addLast(cn);
+			}
+	    	level++;
+    	}
+    	this.classes = sorted;
     }
 
 }

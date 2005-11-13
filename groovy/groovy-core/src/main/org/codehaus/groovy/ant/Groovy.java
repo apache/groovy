@@ -74,7 +74,6 @@ import org.apache.tools.ant.types.Path;
 import org.apache.tools.ant.types.Reference;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
-import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.tools.ErrorReporter;
 

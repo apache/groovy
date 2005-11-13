@@ -49,8 +49,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.ast.Type;
 
 /**
  * Represents a String expression which contains embedded values inside
@@ -67,14 +67,14 @@ public class GStringExpression extends Expression {
     
     public GStringExpression(String verbatimText) {
         this.verbatimText = verbatimText;
-        super.setType(Type.GSTRING_TYPE);
+        super.setType(ClassHelper.GSTRING_TYPE);
     }
 
     public GStringExpression(String verbatimText, List strings, List values) {
         this.verbatimText = verbatimText;
         this.strings = strings;
         this.values = values;
-        super.setType(Type.GSTRING_TYPE);
+        super.setType(ClassHelper.GSTRING_TYPE);
     }
 
     public void visit(GroovyCodeVisitor visitor) {

@@ -47,16 +47,14 @@ package org.codehaus.groovy.classgen;
 
 import groovy.lang.*;
 
-import java.lang.reflect.Modifier;
 import java.util.*;
-import java.util.regex.Matcher;
 import java.util.logging.Logger;
 
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
@@ -65,7 +63,6 @@ import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
-import org.codehaus.groovy.ast.Type;
 import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.AssertStatement;
@@ -85,8 +82,6 @@ import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
 import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
-import org.codehaus.groovy.runtime.MetaClassHelper;
-import org.codehaus.groovy.runtime.RegexSupport;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
@@ -279,7 +274,7 @@ public class AsmClassGenerator extends ClassGenerator {
             syntheticStaticFields.clear();
             this.classNode = classNode;
             this.outermostClass = null;
-            this.internalClassName = BytecodeHelper.getClassInternalName(classNode.getType());
+            this.internalClassName = BytecodeHelper.getClassInternalName(classNode);
 
             //System.out.println("Generating class: " + classNode.getName());
 
@@ -310,7 +305,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
             for (Iterator iter = innerClasses.iterator(); iter.hasNext();) {
                 ClassNode innerClass = (ClassNode) iter.next();
-                String innerClassName = innerClass.getType().getName();
+                String innerClassName = innerClass.getName();
                 String innerClassInternalName = BytecodeHelper.getClassInternalName(innerClassName);
                 {
                     int index = innerClassName.lastIndexOf('$');
@@ -338,33 +333,15 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
-    // create a surrogate class that represents the classNode
-    // the surrogate has the "face" of the real class. It's used for
-    // type resolving "this"
-    private void createDummyClass(ClassNode classNode) {
-        dummyGen.visitClass(classNode);
-        byte[] code = dummyClassWriter.toByteArray();
-
-        ClassLoader parentLoader = getClass().getClassLoader();
-        GroovyClassLoader groovyLoader = new GroovyClassLoader(parentLoader);
-        Type type = classNode.getType();
-        Class theClass = groovyLoader.defineClass(type.getName(), code);
-
-        if (theClass != null) {
-            classCache.put(type.getName(), theClass);
-            type.setTypeClass(theClass);
-        }
-    }
-
     public void visitConstructor(ConstructorNode node) {
         // creates a MethodWriter for the (implicit) constructor
-        //String methodType = Type.getMethodDescriptor(VOID_TYPE, )
+        //String methodType = ClassNode.getMethodDescriptor(VOID_TYPE, )
 
         this.constructorNode = node;
         this.methodNode = null;
         this.variableScope = null;
 
-        String methodType = BytecodeHelper.getMethodDescriptor("void", node.getParameters());
+        String methodType = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, node.getParameters());
         cv = cw.visitMethod(node.getModifiers(), "<init>", methodType, null, null);
         helper = new BytecodeHelper(cv);
 
@@ -441,8 +418,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
     public void visitField(FieldNode fieldNode) {
         onLineNumber(fieldNode, "visitField: " + fieldNode.getName());
-        Type t = fieldNode.getType();
-        t = classNode.resolveClassName(t,"");
+        ClassNode t = fieldNode.getType();
         cw.visitField(
             fieldNode.getModifiers(),
             fieldNode.getName(),
@@ -474,7 +450,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
         //
         // Declare the loop counter.
-        Type variableType = loop.getVariableType();
+        ClassNode variableType = loop.getVariableType();
         Variable variable = defineVariable(loop.getVariable(), variableType, true);
 
         if( isInScriptBody() ) {
@@ -489,7 +465,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
         asIteratorMethod.call(cv);
 
-        final Variable iterTemp = storeInTemp("iterator", Type.makeType(java.util.Iterator.class));
+        final Variable iterTemp = storeInTemp("iterator", ClassHelper.make(java.util.Iterator.class));
         final int iteratorIdx = iterTemp.getIndex();
 
         // to push scope here allows the iterator available after the loop, such as the i in: for (i in 1..5)
@@ -501,15 +477,10 @@ public class AsmClassGenerator extends ClassGenerator {
         Label label2 = new Label();
         cv.visitLabel(label2);
 
-        final Class elemClass = elemType;
         BytecodeExpression expression = new BytecodeExpression() {
             public void visit(GroovyCodeVisitor visitor) {
                 cv.visitVarInsn(ALOAD, iteratorIdx);
                 iteratorNextMethod.call(cv);
-            }
-
-            protected void resolveType(AsmClassGenerator resolver) {
-                setType(Type.makeType(elemClass));
             }
         };
 
@@ -727,8 +698,8 @@ public class AsmClassGenerator extends ClassGenerator {
             tryStatement.visit(this);
 
 
-            int index1 = defineVariable(this.createVariableName("exception"), Type.OBJECT_TYPE).getIndex();
-            int index2 = defineVariable(this.createVariableName("exception"), Type.OBJECT_TYPE).getIndex();
+            int index1 = defineVariable(this.createVariableName("exception"), ClassHelper.OBJECT_TYPE).getIndex();
+            int index2 = defineVariable(this.createVariableName("exception"), ClassHelper.OBJECT_TYPE).getIndex();
 
             final Label l1 = new Label();
             cv.visitJumpInsn(JSR, l1);
@@ -761,8 +732,8 @@ public class AsmClassGenerator extends ClassGenerator {
 
         }
         else {
-            int finallySubAddress = defineVariable(this.createVariableName("exception"), Type.OBJECT_TYPE).getIndex();
-            int anyExceptionIndex = defineVariable(this.createVariableName("exception"), Type.OBJECT_TYPE).getIndex();
+            int finallySubAddress = defineVariable(this.createVariableName("exception"), ClassHelper.OBJECT_TYPE).getIndex();
+            int anyExceptionIndex = defineVariable(this.createVariableName("exception"), ClassHelper.OBJECT_TYPE).getIndex();
 
             // start try block, label needed for exception table
             final Label tryStart = new Label();
@@ -777,7 +748,7 @@ public class AsmClassGenerator extends ClassGenerator {
             
             for (Iterator it=statement.getCatchStatements().iterator(); it.hasNext();) {
                 catchStatement = (CatchStatement) it.next();
-                Type exceptionType = catchStatement.getExceptionType();
+                ClassNode exceptionType = catchStatement.getExceptionType();
                 int exceptionIndex = defineVariable(catchStatement.getVariable(), exceptionType, false).getIndex();
                 
                 // start catch block, label needed for exception table
@@ -842,7 +813,7 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
-    private Variable storeInTemp(String name, Type type) {
+    private Variable storeInTemp(String name, ClassNode type) {
         Variable var  = defineVariable(createVariableName(name), type, false);
         int varIdx = var.getIndex();
         cv.visitVarInsn(ASTORE, varIdx);
@@ -860,7 +831,7 @@ public class AsmClassGenerator extends ClassGenerator {
         //scope.setContinueLabel(scope.getParent().getContinueLabel());
 
 
-        int switchVariableIndex = defineVariable(createVariableName("switch"), Type.OBJECT_TYPE).getIndex();
+        int switchVariableIndex = defineVariable(createVariableName("switch"), ClassHelper.OBJECT_TYPE).getIndex();
         cv.visitVarInsn(ASTORE, switchVariableIndex);
 
         List caseStatements = statement.getCaseStatements();
@@ -942,7 +913,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
         statement.getExpression().visit(this);
 
-        int index = defineVariable(createVariableName("synchronized"), Type.Integer_TYPE).getIndex();
+        int index = defineVariable(createVariableName("synchronized"), ClassHelper.Integer_TYPE).getIndex();
 
         cv.visitVarInsn(ASTORE, index);
         cv.visitVarInsn(ALOAD, index);
@@ -981,8 +952,8 @@ public class AsmClassGenerator extends ClassGenerator {
 
     public void visitReturnStatement(ReturnStatement statement) {
         onLineNumber(statement, "visitReturnStatement");
-        Type returnType = methodNode.getReturnType();
-        if (returnType==Type.VOID_TYPE) {
+        ClassNode returnType = methodNode.getReturnType();
+        if (returnType==ClassHelper.VOID_TYPE) {
         	if (!(statement == ReturnStatement.RETURN_NULL_OR_VOID)) {
                 throwException("Cannot use return statement with an expression on a method that returns void");
         	}
@@ -993,7 +964,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
         Expression expression = statement.getExpression();
         evaluateExpression(expression);
-        if (returnType==Type.OBJECT_TYPE && expression.getType() != null && expression.getType()==Type.VOID_TYPE) {
+        if (returnType==ClassHelper.OBJECT_TYPE && expression.getType() != null && expression.getType()==ClassHelper.VOID_TYPE) {
             cv.visitInsn(ACONST_NULL); // cheat the caller
             cv.visitInsn(ARETURN);
         } else {
@@ -1001,25 +972,25 @@ public class AsmClassGenerator extends ClassGenerator {
             //TODO: make work with arrays
             // we may need to cast
             helper.unbox(returnType);
-            String returnTypeName = returnType.getName();
-            if (returnTypeName.equals("double")) {
+            if (returnType==ClassHelper.double_TYPE) {
                 cv.visitInsn(DRETURN);
             }
-            else if (returnTypeName.equals("float")) {
+            else if (returnType==ClassHelper.float_TYPE) {
                 cv.visitInsn(FRETURN);
             }
-            else if (returnTypeName.equals("long")) {
+            else if (returnType==ClassHelper.long_TYPE) {
                 cv.visitInsn(LRETURN);
             }
-            else if (returnTypeName.equals("boolean")) {
+            else if (returnType==ClassHelper.boolean_TYPE) {
                 cv.visitInsn(IRETURN);
             }
             else if (
-                    returnTypeName.equals("char")
-                    || returnTypeName.equals("byte")
-                    || returnTypeName.equals("int")
-                    || returnTypeName.equals("short")) { //byte,short,boolean,int are
-                // all IRETURN
+                       returnType==ClassHelper.char_TYPE
+                    || returnType==ClassHelper.byte_TYPE
+                    || returnType==ClassHelper.int_TYPE
+                    || returnType==ClassHelper.short_TYPE) 
+            { 
+                //byte,short,boolean,int are all IRETURN
                 cv.visitInsn(IRETURN);
             }
             else {
@@ -1033,11 +1004,11 @@ public class AsmClassGenerator extends ClassGenerator {
     /**
      * Casts to the given type unless it can be determined that the cast is unnecessary
      */
-    protected void doConvertAndCast(Type type, Expression expression, boolean ignoreAutoboxing, boolean forceCast) {
-        Type expType = getExpressionType(expression);
+    protected void doConvertAndCast(ClassNode type, Expression expression, boolean ignoreAutoboxing, boolean forceCast) {
+        ClassNode expType = getExpressionType(expression);
         // temp resolution: convert all primitive casting to corresponsing Object type
-        if (!ignoreAutoboxing && type.isPrimitiveType()) {
-            type = type.getWrapper();
+        if (!ignoreAutoboxing && ClassHelper.isPrimitiveType(type)) {
+            type = ClassHelper.getWrapper(type);
         }
         if (forceCast || (type!=null && !type.equals(expType))) {
             doConvertAndCast(type);
@@ -1320,15 +1291,10 @@ public class AsmClassGenerator extends ClassGenerator {
     public void visitClosureExpression(ClosureExpression expression) {
         ClassNode innerClass = createClosureClass(expression);
         addInnerClass(innerClass);
-        String innerClassinternalName = BytecodeHelper.getClassInternalName(innerClass.getType());
+        String innerClassinternalName = BytecodeHelper.getClassInternalName(innerClass);
 
         ClassNode owner = innerClass.getOuterClass();
-        Type ownerType = owner.getType();
-/*
-        if (classNode.isStaticClass() || isStaticMethod()) {
-            ownerTypeName = "java.lang.Class";
-        }
-*/
+
         passingClosureParams = true;
         List constructors = innerClass.getDeclaredConstructors();
         ConstructorNode node = (ConstructorNode) constructors.get(0);
@@ -1340,32 +1306,32 @@ public class AsmClassGenerator extends ClassGenerator {
         // created inside the closure.  Note that the first two
         // parameters are always _outerInstance and _delegate,
         // so we don't worry about them.
-
+		//
         for (int i = 2; i < localVariableParams.length; i++) {
             Parameter param = localVariableParams[i];
             String name = param.getName();
 
             if (variableStack.get(name) == null && classNode.getField(name) == null) {
-                defineVariable(name, Type.OBJECT_TYPE); // todo  should use param type is available
+                defineVariable(name, ClassHelper.OBJECT_TYPE); // todo  should use param type is available
             }
         }
 
         cv.visitTypeInsn(NEW, innerClassinternalName);
         cv.visitInsn(DUP);
         if (isStaticMethod() || classNode.isStaticClass()) {
-            visitClassExpression(new ClassExpression(ownerType));
+            visitClassExpression(new ClassExpression(owner));
         }
         else {
             loadThisOrOwner();
         }
 
-        if (innerClass.getSuperClass()==Type.CLOSURE_TYPE) {
+        if (innerClass.getSuperClass()==ClassHelper.CLOSURE_TYPE) {
             if (isStaticMethod()) {
                 /**
                  * todo could maybe stash this expression in a JVM variable
                  * from previous statement above
                  */
-                visitClassExpression(new ClassExpression(ownerType));
+                visitClassExpression(new ClassExpression(owner));
             }
             else {
               cv.visitVarInsn(ALOAD, 0);
@@ -1395,7 +1361,7 @@ public class AsmClassGenerator extends ClassGenerator {
             INVOKESPECIAL,
             innerClassinternalName,
             "<init>",
-            BytecodeHelper.getMethodDescriptor("void", localVariableParams));
+            BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, localVariableParams));
     }
 
     /**
@@ -1456,7 +1422,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     public void visitCastExpression(CastExpression expression) {
-        Type type = expression.getType();
+        ClassNode type = expression.getType();
         visitAndAutoboxBoolean(expression.getExpression());
         doConvertAndCast(type, expression.getExpression(), expression.isIgnoringAutoboxing(),false);
     }
@@ -1544,7 +1510,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
                         loadArguments(superConstructorNode.getParameters(), arguments);
 
-                        String descriptor = BytecodeHelper.getMethodDescriptor("void", superConstructorNode.getParameters());
+                        String descriptor = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, superConstructorNode.getParameters());
                         cv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(classNode.getSuperClass()), "<init>", descriptor);
                     }
                     else {
@@ -1555,7 +1521,7 @@ public class AsmClassGenerator extends ClassGenerator {
                         loadArguments(superMethodNode.getParameters(), arguments);
 
                         String descriptor = BytecodeHelper.getMethodDescriptor(superMethodNode.getReturnType(), superMethodNode.getParameters());
-                        cv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(superMethodNode.getDeclaringClass().getType()), method, descriptor);
+                        cv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(superMethodNode.getDeclaringClass()), method, descriptor);
                     }
                 }
                 else {
@@ -1611,8 +1577,8 @@ public class AsmClassGenerator extends ClassGenerator {
             Parameter param = parameters[i];
             visitAndAutoboxBoolean(argExp);
 
-            Type type = param.getType();
-            Type expType = getExpressionType(argExp);
+            ClassNode type = param.getType();
+            ClassNode expType = getExpressionType(argExp);
             if (!type.equals(expType)) {
                 doConvertAndCast(type);
             }
@@ -1626,7 +1592,7 @@ public class AsmClassGenerator extends ClassGenerator {
         String methodName = call.getMethod();
         TupleExpression argExpr = (TupleExpression) call.getArguments();
         int argCount = argExpr.getExpressions().size();
-        ClassNode superClassNode = classNode.getSuperClassNode();
+        ClassNode superClassNode = classNode.getSuperClass();
         if (superClassNode != null) {
             List methods = superClassNode.getMethods(methodName);
             for (Iterator iter = methods.iterator(); iter.hasNext(); ) {
@@ -1636,7 +1602,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 }
             }
         }
-        throwException("No such method: " + methodName + " for class: " + classNode.getType().getName());
+        throwException("No such method: " + methodName + " for class: " + classNode.getName());
         return null; // should not come here
     }
 
@@ -1646,7 +1612,7 @@ public class AsmClassGenerator extends ClassGenerator {
     protected ConstructorNode findSuperConstructor(MethodCallExpression call) {
         TupleExpression argExpr = (TupleExpression) call.getArguments();
         int argCount = argExpr.getExpressions().size();
-        ClassNode superClassNode = classNode.getSuperClassNode();
+        ClassNode superClassNode = classNode.getSuperClass();
         if (superClassNode != null) {
             List constructors = superClassNode.getDeclaredConstructors();
             for (Iterator iter = constructors.iterator(); iter.hasNext(); ) {
@@ -1656,7 +1622,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 }
             }
         }
-        throwException("No such constructor for class: " + classNode.getType().getName());
+        throwException("No such constructor for class: " + classNode.getName());
         return null; // should not come here
     }
 
@@ -1674,7 +1640,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
         Expression arguments = call.getArguments();
         if (emptyArguments(arguments)) {
-            cv.visitLdcInsn(call.getType());
+            cv.visitLdcInsn(call.getOwnerType().getName());
             cv.visitLdcInsn(call.getMethod());
 
             invokeStaticNoArgumentsMethod.call(cv);
@@ -1710,14 +1676,12 @@ public class AsmClassGenerator extends ClassGenerator {
         }
 
         // lets check that the type exists
-        Type type = call.getType();
-        type = classNode.resolveClassName(type, "");
-        call.setType(type);
+        ClassNode type = call.getType();
         
         if (this.classNode != null) {
             // TODO: GROOVY-435
-            pushClassTypeArgument(this.classNode.getType(), this.classNode.getType());
-            pushClassTypeArgument(this.classNode.getType(), type);
+            pushClassTypeArgument(this.classNode, this.classNode);
+            pushClassTypeArgument(this.classNode, type);
 
             if (arguments != null) {
                 arguments.visit(this);
@@ -1727,7 +1691,7 @@ public class AsmClassGenerator extends ClassGenerator {
             }
         }
         else {
-            pushClassTypeArgument(this.classNode.getType(), type);
+            pushClassTypeArgument(this.classNode, type);
 
             if (arguments !=null) {
                 arguments.visit(this);
@@ -1738,15 +1702,21 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
     
-    protected void pushClassTypeArgument(final Type ownerType, final Type type) {
-        String staticFieldName = "class$" + type.getName().replace('.', '$').replace('[', '_').replace(';', '_');
+    private static String getStaticFieldName(ClassNode type) {
+        String name = "class$" + BytecodeHelper.getClassInternalName(type).replace('/', '$').replace('[', '_').replace(';', '_');
+        return name;
+    }
+    
+    protected void pushClassTypeArgument(ClassNode ownerType, ClassNode type) {
+        String name = type.getName();
+    	String staticFieldName = getStaticFieldName(type);
         String ownerName = ownerType.getName().replace('.','/');
 
         syntheticStaticFields.add(staticFieldName);
         cv.visitFieldInsn(GETSTATIC, ownerName, staticFieldName, "Ljava/lang/Class;");
         Label l0 = new Label();
         cv.visitJumpInsn(IFNONNULL, l0);
-        cv.visitLdcInsn(type.getName());
+        cv.visitLdcInsn(name);
         cv.visitMethodInsn(INVOKESTATIC, ownerName, "class$", "(Ljava/lang/String;)Ljava/lang/Class;");
         cv.visitInsn(DUP);
         cv.visitFieldInsn(PUTSTATIC, ownerName, staticFieldName, "Ljava/lang/Class;");
@@ -1756,101 +1726,8 @@ public class AsmClassGenerator extends ClassGenerator {
         cv.visitFieldInsn(GETSTATIC, ownerName, staticFieldName, "Ljava/lang/Class;");
         cv.visitLabel(l1);
     }
-    
-    // TODO: move this check before any scope checks, but after we know all classes
-    // iterate from the inner most to the outer and check for classes
-    // this check will ignore a .class property, for Exmaple Integer.class will be
-    // a PropertyExpression with the ClassExpression of Integer as objectExprsssion
-    // and class as property
-    // NOTE: possible bug when a package name is equal to a classname
-    private class PropertyClassTransformer extends CodeVisitorSupport {
-        ClassExpression ce = null;
-        String cname = "";
-        boolean handled = false;
-        Expression top = null;
-        
-        public void visitClassExpression(ClassExpression expression) {
-            ce = expression;
-        }
-        
-        public void visitPropertyExpression(PropertyExpression expression) {
-            Expression oe = expression.getObjectExpression();
-            // spreadsafe expressions will stop resolving
-            // anything other than PropertyExpressions and VariableExpressions will stop resolving
-            if (expression.isSpreadSafe() || !(oe instanceof PropertyExpression || oe instanceof VariableExpression || oe instanceof ClassExpression)) {
-                handled = true;
-                return;
-            }                
-            oe.visit(this);
-            // if handled nothing to do
-            if (handled) return;
-            String pname = expression.getProperty();
-            
-            if (pname.equals("class")){
-                if (ce!=null){
-                    // we have found a class, the property is class
-                    // so we possible want the resolved class here, like in Integer.class
-                    // But if we have already used the classProperty, we don't want the 
-                    // resolved class, example: Integer.class.class
-                    // so simply return and set new top if this is the top level expression
-                    if (expression==top) top=ce;
-                }
-                handled=true;
-                return;
-            }
-            
-            // if ce==null we have still resolve work to do
-            else if (ce==null) {
-                cname = cname+"."+pname;
-                Type type = Type.makeType(cname);
-                type = classNode.resolveClassName(type);
-                if (type==null) return;
-                ce = new ClassExpression(type);
-                // if we are at top level, set new top
-                if (expression==top) top=ce;
-                return;
-            } 
-            // possible static access. But this is ignored for now and handled
-            // as normal property
-            expression.setObjectExpression(ce);
-            handled=true;
-            return;
-        }
-        
-        public void visitVariableExpression(VariableExpression expression) {
-            cname = expression.getName();
-            // no resolving for "this"
-            if (cname.equals("this")) {
-                handled = true;
-                return;
-            }
-            Type type = Type.makeType(cname);
-            type = classNode.resolveClassName(type);
-            if (type==null) return;
-            ce = new ClassExpression(type);
-        }
-        
-        public Expression transform(PropertyExpression pe) {
-            top = pe;
-            ce = null;
-            cname = "";
-            handled = false;
-            
-            pe.visit(this);
-            // top may be modified to a ClassExpression now
-            return top;
-        }
-    }    
-    private PropertyClassTransformer propertyClassTransformer = new PropertyClassTransformer();
-    
+ 
     public void visitPropertyExpression(PropertyExpression expression) {
-        // lets check if we're a fully qualified class name
-        Expression result = propertyClassTransformer.transform(expression);
-        if (result!=expression) {
-            result.visit(this);
-            return;
-        }
-
         Expression objectExpression = expression.getObjectExpression();
         if (isThisExpression(objectExpression)) {
             // lets use the field expression if its available
@@ -1980,18 +1857,18 @@ public class AsmClassGenerator extends ClassGenerator {
     public void loadStaticField(FieldExpression fldExp) {
         FieldNode field = fldExp.getField();
         boolean holder = field.isHolder() && !isInClosureConstructor();
-        Type type = field.getType();
+        ClassNode type = field.getType();
 
-        String ownerName = (field.getOwner().equals(classNode.getType()))
+        String ownerName = (field.getOwner().equals(classNode))
                 ? internalClassName
-                : org.objectweb.asm.Type.getInternalName(loadClass(field.getOwner()));
+                : BytecodeHelper.getClassInternalName(field.getOwner());
         if (holder) {
             cv.visitFieldInsn(GETSTATIC, ownerName, fldExp.getFieldName(), BytecodeHelper.getTypeDescription(type));
             cv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Reference", "get", "()Ljava/lang/Object;");
         }
         else {
             cv.visitFieldInsn(GETSTATIC, ownerName, fldExp.getFieldName(), BytecodeHelper.getTypeDescription(type));
-            if (type.isPrimitiveType()) {
+            if (ClassHelper.isPrimitiveType(type)) {
                 helper.box(type);
 			} else {
 			}
@@ -2005,10 +1882,10 @@ public class AsmClassGenerator extends ClassGenerator {
     public void loadInstanceField(FieldExpression fldExp) {
     	FieldNode field = fldExp.getField();
         boolean holder = field.isHolder() && !isInClosureConstructor();
-        Type type = field.getType();
-        String ownerName = (field.getOwner().equals(classNode.getType()))
+        ClassNode type = field.getType();
+        String ownerName = (field.getOwner().equals(classNode))
 				? internalClassName
-				: org.objectweb.asm.Type.getInternalName(loadClass(field.getOwner()));
+				: helper.getClassInternalName(field.getOwner());
 
         cv.visitVarInsn(ALOAD, 0);
 		cv.visitFieldInsn(GETFIELD, ownerName, fldExp.getFieldName(), BytecodeHelper.getTypeDescription(type));
@@ -2016,7 +1893,7 @@ public class AsmClassGenerator extends ClassGenerator {
 		if (holder) {
 			cv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Reference", "get", "()Ljava/lang/Object;");
 		} else {
-			if (type.isPrimitiveType()) {
+			if (ClassHelper.isPrimitiveType(type)) {
 				helper.box(type);
 			} else {
 			}
@@ -2027,10 +1904,10 @@ public class AsmClassGenerator extends ClassGenerator {
         FieldNode field = expression.getField();
 
         boolean holder = field.isHolder() && !isInClosureConstructor();
-        Type type = field.getType();
+        ClassNode type = field.getType();
 
-        String ownerName =  (field.getOwner().equals(classNode.getType())) ?
-        		internalClassName : org.objectweb.asm.Type.getInternalName(loadClass(field.getOwner()));
+        String ownerName =  (field.getOwner().equals(classNode)) ?
+        		internalClassName : BytecodeHelper.getClassInternalName(field.getOwner());
         if (holder) {
             Variable tv = visitASTOREInTemp(field.getName());
             int tempIndex = tv.getIndex();
@@ -2067,11 +1944,11 @@ public class AsmClassGenerator extends ClassGenerator {
 
         boolean holder = field.isHolder() && !isInClosureConstructor();
 
-        Type type = field.getType();
+        ClassNode type = field.getType();
 
-        String ownerName = (field.getOwner().equals(classNode.getType()))
+        String ownerName = (field.getOwner().equals(classNode))
                 ? internalClassName
-                : org.objectweb.asm.Type.getInternalName(loadClass(field.getOwner()));
+                : helper.getClassInternalName(field.getOwner());
         if (holder) {
             Variable tv = visitASTOREInTemp(field.getName());
             int tempIndex = tv.getIndex();
@@ -2098,7 +1975,7 @@ public class AsmClassGenerator extends ClassGenerator {
         FieldNode field = expression.getField();
         boolean isStatic = field.isStatic();
 
-        Variable fieldTemp = defineVariable(createVariableName(field.getName()), Type.OBJECT_TYPE, false);
+        Variable fieldTemp = defineVariable(createVariableName(field.getName()), ClassHelper.OBJECT_TYPE, false);
         int valueIdx = fieldTemp.getIndex();
 
         if (leftHandExpression && first) {
@@ -2112,12 +1989,12 @@ public class AsmClassGenerator extends ClassGenerator {
                 GETFIELD,
                 internalClassName,
                 "owner",
-                BytecodeHelper.getTypeDescription(outerClassNode.getType()));
+                BytecodeHelper.getTypeDescription(outerClassNode));
         }
 
         if( steps == 1 ) {
             int opcode = (leftHandExpression) ? ((isStatic) ? PUTSTATIC : PUTFIELD) : ((isStatic) ? GETSTATIC : GETFIELD);
-            String ownerName = BytecodeHelper.getClassInternalName(outerClassNode.getType());
+            String ownerName = BytecodeHelper.getClassInternalName(outerClassNode);
 
             if (leftHandExpression) {
                 cv.visitVarInsn(ALOAD, valueIdx);
@@ -2128,7 +2005,7 @@ public class AsmClassGenerator extends ClassGenerator {
             }
             cv.visitFieldInsn(opcode, ownerName, expression.getFieldName(), BytecodeHelper.getTypeDescription(field.getType()));
             if (!leftHandExpression) {
-                if (field.getType().isPrimitiveType()) {
+                if (ClassHelper.isPrimitiveType(field.getType())) {
                     helper.box(field.getType());
                 }
             }
@@ -2156,7 +2033,7 @@ public class AsmClassGenerator extends ClassGenerator {
         // "this" for static methods is the Class instance
 
         if (isStaticMethod() && variableName.equals("this")) {
-            visitClassExpression(new ClassExpression(classNode.getType()));
+            visitClassExpression(new ClassExpression(classNode));
             return;                                               // <<< FLOW CONTROL <<<<<<<<<
         }
 
@@ -2235,19 +2112,6 @@ public class AsmClassGenerator extends ClassGenerator {
         }
 
         //
-        // class names return a Class instance, too
-        if (!handled  && !variableName.equals("this")) {
-            Type classType = classNode.resolveClassName(Type.makeType(variableName));
-            if (classType != null) {
-                if (leftHandExpression) {
-                    throwException("The variable name '"+variableName+"' conflicts with the class name '"+classType.getName()+"'. Please use another variable name");
-                }
-                visitClassExpression(new ClassExpression(classType));
-                return;                                               // <<< FLOW CONTROL <<<<<<<<<
-            }
-        }
-
-        //
         // Finally, if unhandled, create a variable for it.
         // Except there a stack variable should be created,
         // we define the variable as a property accessor and
@@ -2255,14 +2119,14 @@ public class AsmClassGenerator extends ClassGenerator {
         // if the property doesn't exist.
 
         if( !handled ) {
-            Type variableType = expression.getType();
+            ClassNode variableType = expression.getType();
             variable = defineVariable( variableName, variableType );
 
-            if (leftHandExpression && variableType.isDynamic()) {
-                variable.setDynamic(true); // false  by default
+            if (leftHandExpression && variableType==ClassHelper.DYNAMIC_TYPE) {
+                variable.setDynamicTyped(true); // false  by default
             }
             else {
-                variable.setDynamic(false);
+                variable.setDynamicTyped(false);
             }
 
             if( isInScriptBody() || !leftHandExpression ) { // todo problematic: if on right hand not defined, should I report undefined var error?
@@ -2355,7 +2219,7 @@ public class AsmClassGenerator extends ClassGenerator {
      */
     protected boolean isPopRequired(Expression expression) {
         if (expression instanceof MethodCallExpression) {
-            if (expression.getType()==Type.VOID_TYPE) { // nothing on the stack
+            if (expression.getType()==ClassHelper.VOID_TYPE) { // nothing on the stack
                 return false;
             } else {
                 return !MethodCallExpression.isSuperMethodCall((MethodCallExpression) expression);
@@ -2446,17 +2310,17 @@ public class AsmClassGenerator extends ClassGenerator {
 
     /** load class object on stack */
     public void visitClassExpression(ClassExpression expression) {
-        Type type = expression.getType();
+        ClassNode type = expression.getType();
         //type = checkValidType(type, expression, "Must be a valid type name for a constructor call");
 
 
-        if (type.isPrimitiveType()) {
-            Type objectType = type.getWrapper();
+        if (ClassHelper.isPrimitiveType(type)) {
+            ClassNode objectType = ClassHelper.getWrapper(type);
             cv.visitFieldInsn(GETSTATIC, BytecodeHelper.getClassInternalName(objectType), "TYPE", "Ljava/lang/Class;");
         }
         else {
             final String staticFieldName =
-                (type.equals(classNode.getType())) ? "class$0" : "class$" + type.getName().replace('.', '$').replace('[', '_').replace(';', '_');
+                (type.equals(classNode)) ? "class$0" : getStaticFieldName(type);
 
             syntheticStaticFields.add(staticFieldName);
 
@@ -2532,7 +2396,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     public void visitArrayExpression(ArrayExpression expression) {
-        Type type = expression.getType().getComponentType();
+        ClassNode type = expression.getType().getComponentType();
         String typeName = BytecodeHelper.getClassInternalName(type);        
         Expression sizeExpression = expression.getSizeExpression();
 
@@ -2547,30 +2411,30 @@ public class AsmClassGenerator extends ClassGenerator {
         }
 
         int storeIns=AASTORE;
-        if (type.isPrimitiveType()) {
+        if (ClassHelper.isPrimitiveType(type)) {
             int primType=0;
-            if (type==Type.boolean_TYPE) {
+            if (type==ClassHelper.boolean_TYPE) {
                 primType = T_BOOLEAN;
                 storeIns = BASTORE;
-            } else if (type==Type.char_TYPE) {
+            } else if (type==ClassHelper.char_TYPE) {
                 primType = T_CHAR;
                 storeIns = CASTORE;
-            } else if (type==Type.float_TYPE) {
+            } else if (type==ClassHelper.float_TYPE) {
                 primType = T_FLOAT;
                 storeIns = FASTORE;
-            } else if (type==Type.double_TYPE) {
+            } else if (type==ClassHelper.double_TYPE) {
                 primType = T_DOUBLE;
                 storeIns = DASTORE;
-            } else if (type==Type.byte_TYPE) {
+            } else if (type==ClassHelper.byte_TYPE) {
                 primType = T_BYTE;
                 storeIns = BASTORE;
-            } else if (type==Type.short_TYPE) {
+            } else if (type==ClassHelper.short_TYPE) {
                 primType = T_SHORT;
                 storeIns = SASTORE;
-            } else if (type==Type.int_TYPE) {
+            } else if (type==ClassHelper.int_TYPE) {
                 primType = T_INT;
                 storeIns=IASTORE;
-            } else if (type==Type.long_TYPE) {
+            } else if (type==ClassHelper.long_TYPE) {
                 primType = T_LONG;
                 storeIns = LASTORE;
             } 
@@ -2595,8 +2459,8 @@ public class AsmClassGenerator extends ClassGenerator {
             cv.visitInsn(storeIns);            
         }
         
-        if (type.isPrimitiveType()) {
-            int par = defineVariable("par",Type.OBJECT_TYPE).getIndex();
+        if (ClassHelper.isPrimitiveType(type)) {
+            int par = defineVariable("par",ClassHelper.OBJECT_TYPE).getIndex();
             cv.visitVarInsn(ASTORE, par);
             cv.visitVarInsn(ALOAD, par);
         }
@@ -2635,7 +2499,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
         ClassNode innerClass = createGStringClass(expression);
         addInnerClass(innerClass);
-        String innerClassinternalName = BytecodeHelper.getClassInternalName(innerClass.getType());
+        String innerClassinternalName = BytecodeHelper.getClassInternalName(innerClass);
 
         cv.visitTypeInsn(NEW, innerClassinternalName);
         cv.visitInsn(DUP);
@@ -2646,24 +2510,22 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     private Variable visitASTOREInTemp(String s) {
-        return storeInTemp(s, Type.OBJECT_TYPE);
+        return storeInTemp(s, ClassHelper.OBJECT_TYPE);
     }
-
+    
     public void visitAnnotations(AnnotatedNode node) {
         Map annotionMap = node.getAnnotations();
         if (annotionMap.isEmpty()) return;
-        Iterator it = annotionMap.keySet().iterator(); 
+        Iterator it = annotionMap.values().iterator(); 
         while (it.hasNext()) {
-            String clazz = (String) it.next();
-            
+            AnnotationNode an = (AnnotationNode) it.next();
             //skip builtin properties
-            if (clazz.equals("Property")) continue;
-            Type type = Type.makeType(clazz);
-            type = classNode.resolveClassName(type,"unable to find class for annotation");
-            
+            if (an.isBuiltIn()) continue;
+            ClassNode type = an.getClassNode();
+
+            String clazz = type.getName();
             AnnotationVisitor av = cw.visitAnnotation(BytecodeHelper.formatNameForClassLoading(clazz),false);
-            
-            AnnotationNode an = (AnnotationNode) node.getAnnotations(clazz);
+
             Iterator mIt = an.getMembers().keySet().iterator();
             while (mIt.hasNext()) {
                 String name = (String) mIt.next();
@@ -2684,23 +2546,22 @@ public class AsmClassGenerator extends ClassGenerator {
 
     protected ClassNode createClosureClass(ClosureExpression expression) {
         ClassNode owner = getOutermostClass();
-        boolean parentIsInnerClass = owner instanceof InnerClassNode;
-        String outerClassName = owner.getType().getName();
-        String name = outerClassName + "$"
+        ClassNode outerClass = owner;
+        String name = owner.getName() + "$"
                 + context.getNextClosureInnerName(owner, classNode, methodNode); // br added a more infomative name
         boolean staticMethodOrInStaticClass = isStaticMethod() || classNode.isStaticClass();
         if (staticMethodOrInStaticClass) {
-            outerClassName = "java.lang.Class";
+            outerClass = ClassHelper.make(Class.class);
         }
         Parameter[] parameters = expression.getParameters();
         if (parameters == null || parameters.length == 0) {
             // lets create a default 'it' parameter
-            parameters = new Parameter[] { new Parameter(Type.OBJECT_TYPE, "it", ConstantExpression.NULL)};
+            parameters = new Parameter[] { new Parameter(ClassHelper.OBJECT_TYPE, "it", ConstantExpression.NULL)};
         }
 
         Parameter[] localVariableParams = getClosureSharedVariables(expression);
 
-        InnerClassNode answer = new InnerClassNode(owner, Type.makeType(name), 0, Type.CLOSURE_TYPE); // clsures are local inners and not public
+        InnerClassNode answer = new InnerClassNode(owner, name, 0, ClassHelper.CLOSURE_TYPE); // clsures are local inners and not public
         answer.setEnclosingMethod(this.methodNode);
         answer.setSynthetic(true);
         
@@ -2711,7 +2572,7 @@ public class AsmClassGenerator extends ClassGenerator {
             answer.setScriptBody(true);
         }
         MethodNode method =
-            answer.addMethod("doCall", ACC_PUBLIC, Type.OBJECT_TYPE, parameters, expression.getCode());
+            answer.addMethod("doCall", ACC_PUBLIC, ClassHelper.OBJECT_TYPE, parameters, expression.getCode());
 
         method.setLineNumber(expression.getLineNumber());
         method.setColumnNumber(expression.getColumnNumber());
@@ -2727,13 +2588,13 @@ public class AsmClassGenerator extends ClassGenerator {
         if (parameters.length > 1
             || (parameters.length == 1
                 && parameters[0].getType() != null
-                && parameters[0].getType() != Type.OBJECT_TYPE)) {
+                && parameters[0].getType() != ClassHelper.OBJECT_TYPE)) {
 
             // lets add a typesafe call method
             answer.addMethod(
                 "call",
                 ACC_PUBLIC,
-                Type.OBJECT_TYPE,
+                ClassHelper.OBJECT_TYPE,
                 parameters,
                 new ReturnStatement(
                     new MethodCallExpression(
@@ -2742,7 +2603,7 @@ public class AsmClassGenerator extends ClassGenerator {
                         new ArgumentListExpression(parameters))));
         }
 
-        FieldNode ownerField = answer.addField("owner", ACC_PRIVATE, Type.makeType(outerClassName), null);
+        FieldNode ownerField = answer.addField("owner", ACC_PRIVATE, outerClass, null);
 
         // lets make the constructor
         BlockStatement block = new BlockStatement();
@@ -2765,15 +2626,15 @@ public class AsmClassGenerator extends ClassGenerator {
             String paramName = param.getName();
             boolean holder = mutableVars.contains(paramName);
             Expression initialValue = null;
-            Type type = param.getType();
+            ClassNode type = param.getType();
             FieldNode paramField = null;
             if (holder) {
             	initialValue = new VariableExpression(paramName);
-                type = type.makeReference();
+                ClassNode realType = type;
+                type = ClassHelper.makeReference();
                 param.setType(type);
                 paramField = answer.addField(paramName, ACC_PRIVATE, type, initialValue);
                 paramField.setHolder(true);
-                Type realType = type.getRealType();
                 String methodName = Verifier.capitalize(paramName);
 
                 // lets add a getter & setter
@@ -2808,8 +2669,8 @@ public class AsmClassGenerator extends ClassGenerator {
         }
 
         Parameter[] params = new Parameter[2 + localVariableParams.length];
-        params[0] = new Parameter(Type.makeType(outerClassName), "_outerInstance");
-        params[1] = new Parameter(Type.OBJECT_TYPE, "_delegate");
+        params[0] = new Parameter(outerClass, "_outerInstance");
+        params[1] = new Parameter(ClassHelper.OBJECT_TYPE, "_delegate");
         System.arraycopy(localVariableParams, 0, params, 2, localVariableParams.length);
 
         answer.addConstructor(ACC_PUBLIC, params, block);
@@ -2831,20 +2692,20 @@ public class AsmClassGenerator extends ClassGenerator {
         if (owner instanceof InnerClassNode) {
             owner = owner.getOuterClass();
         }
-        String outerClassName = owner.getType().getName();
+        String outerClassName = owner.getName();
         String name = outerClassName + "$" + context.getNextInnerClassIdx();
-        InnerClassNode answer = new InnerClassNode(owner, Type.makeType(name), 0, Type.GSTRING_TYPE);
+        InnerClassNode answer = new InnerClassNode(owner, name, 0, ClassHelper.GSTRING_TYPE);
         answer.setEnclosingMethod(this.methodNode);
         FieldNode stringsField =
             answer.addField(
                 "strings",
                 ACC_PRIVATE /*| ACC_STATIC*/,
-                Type.STRING_TYPE.makeArray(),
-                new ArrayExpression(Type.STRING_TYPE, expression.getStrings()));
+                ClassHelper.STRING_TYPE.makeArray(),
+                new ArrayExpression(ClassHelper.STRING_TYPE, expression.getStrings()));
         answer.addMethod(
             "getStrings",
             ACC_PUBLIC,
-            Type.STRING_TYPE.makeArray(),
+            ClassHelper.STRING_TYPE.makeArray(),
             Parameter.EMPTY_ARRAY,
             new ReturnStatement(new FieldExpression(stringsField)));
         // lets make the constructor
@@ -2852,13 +2713,13 @@ public class AsmClassGenerator extends ClassGenerator {
         block.addStatement(
             new ExpressionStatement(
                 new MethodCallExpression(new VariableExpression("super"), "<init>", new VariableExpression("values"))));
-        Parameter[] contructorParams = new Parameter[] { new Parameter(Type.OBJECT_TYPE.makeArray(), "values")};
+        Parameter[] contructorParams = new Parameter[] { new Parameter(ClassHelper.OBJECT_TYPE.makeArray(), "values")};
         answer.addConstructor(ACC_PUBLIC, contructorParams, block);
         return answer;
     }
 
-    protected void doConvertAndCast(Type type) {
-        if (type==Type.OBJECT_TYPE) return;
+    protected void doConvertAndCast(ClassNode type) {
+        if (type==ClassHelper.OBJECT_TYPE) return;
         if (isValidTypeForCast(type)) {
             visitClassExpression(new ClassExpression(type));
             asTypeMethod.call(cv);
@@ -2989,213 +2850,6 @@ public class AsmClassGenerator extends ClassGenerator {
         compareMethod.call(cv);
     }
 
-    /**
-     * note: leave the primitive boolean on staock for comparison expressions. All the result types need to match the
-     * utility methods in the ScriptBytecodeAdapter.
-     * @param compareMethod
-     * @param expression
-     */
-    protected void evalBinaryExp_EarlyBinding(MethodCaller compareMethod, BinaryExpression expression) {
-        Expression leftExp = expression.getLeftExpression();
-        Expression rightExp = expression.getRightExpression();
-
-        if (expression.getType() == Type.DYNAMIC_TYPE){
-            evalBinaryExp_LateBinding(compareMethod, expression);
-            return;
-        }
-        else {
-            Class lclass = leftExp.getType().getTypeClass();
-            Class rclass = rightExp.getType().getTypeClass();
-            if (lclass == null || rclass == null) {
-                if ((lclass == null && rclass != null) || (lclass != null && rclass == null)) {
-                    // lets treat special cases: obj == null / obj != null . leave primitive boolean on the stack, which will be boxed by visitAndAutoBox()
-                    if (leftExp == ConstantExpression.NULL && !rclass.isPrimitive() ||
-                            rightExp == ConstantExpression.NULL && !lclass.isPrimitive()) {
-                        Expression exp = leftExp == ConstantExpression.NULL? rightExp : leftExp;
-                        int type = expression.getOperation().getType();
-                        switch (type) {
-                            case Types.COMPARE_EQUAL :
-                                load(exp);
-                                cv.visitInsn(ICONST_1);
-                                cv.visitInsn(SWAP);
-                                Label l1 = new Label();
-                                cv.visitJumpInsn(IFNULL, l1);
-                                cv.visitInsn(POP);
-                                cv.visitInsn(ICONST_0);
-                                cv.visitLabel(l1);
-                                return;
-                            case Types.COMPARE_NOT_EQUAL :
-                                load(exp);
-                                cv.visitInsn(ICONST_1);
-                                cv.visitInsn(SWAP);
-                                Label l2 = new Label();
-                                cv.visitJumpInsn(IFNONNULL, l2);
-                                cv.visitInsn(POP);
-                                cv.visitInsn(ICONST_0);
-                                cv.visitLabel(l2);
-                                return;
-                            default:
-                                evalBinaryExp_LateBinding(compareMethod, expression);
-                                return;
-                        }
-                    }
-                    else {
-                        evalBinaryExp_LateBinding(compareMethod, expression);
-                        return;
-                    }
-                }
-                else {
-                    evalBinaryExp_LateBinding(compareMethod, expression);
-                    return;
-                }
-            }
-            else if (lclass == String.class && rclass == String.class) {
-                int type = expression.getOperation().getType();
-                switch (type) {
-                    case Types.COMPARE_EQUAL : // ==
-                        load(leftExp); cast(String.class);
-                        load(rightExp); cast(String.class);
-                        cv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z");
-                        //helper.quickBoxIfNecessary(boolean.class);
-                        return;
-                    case Types.COMPARE_NOT_EQUAL :
-                        load(leftExp);cast(String.class);
-                        load(rightExp); cast(String.class);
-                        cv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z");
-                        cv.visitInsn(ICONST_1);
-                        cv.visitInsn(IXOR);
-                        //helper.quickBoxIfNecessary(boolean.class);
-                        return;
-                    case Types.COMPARE_TO :
-                        load(leftExp);cast(String.class);
-                        load(rightExp); cast(String.class);
-                        cv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "compareTo", "(Ljava/lang/Object;)I");
-                        helper.quickBoxIfNecessary(int.class); // object type
-                        return;
-                    case Types.COMPARE_GREATER_THAN :
-                    case Types.COMPARE_GREATER_THAN_EQUAL :
-                    case Types.COMPARE_LESS_THAN :
-                    case Types.COMPARE_LESS_THAN_EQUAL :
-                        {
-                            int op;
-                            switch (type) {
-                                case Types.COMPARE_GREATER_THAN :
-                                    op = IFLE;
-                                    break;
-                                case Types.COMPARE_GREATER_THAN_EQUAL :
-                                    op = IFLT;
-                                    break;
-                                case Types.COMPARE_LESS_THAN :
-                                    op = IFGE;
-                                    break;
-                                case Types.COMPARE_LESS_THAN_EQUAL :
-                                    op = IFGT;
-                                    break;
-                                default:
-                                    System.err.println("flow control error: should not be here. type: " + type);
-                                    return;
-                            }
-                            load(leftExp);cast(String.class);
-                            load(rightExp); cast(String.class);
-                            cv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "compareTo", "(Ljava/lang/Object;)I");
-
-                            // set true/false on stack
-                            Label l4 = new Label();
-                            cv.visitJumpInsn(op, l4);
-                            // need to use primitive boolean //cv.visitFieldInsn(GETSTATIC, "java/lang/Boolean", "TRUE", "Ljava/lang/Boolean;");
-                            cv.visitInsn(ICONST_1);  // true
-                            Label l5 = new Label();
-                            cv.visitJumpInsn(GOTO, l5);
-                            cv.visitLabel(l4);
-                            cv.visitInsn(ICONST_0); //cv.visitFieldInsn(GETSTATIC, "java/lang/Boolean", "FALSE", "Ljava/lang/Boolean;");
-                            cv.visitLabel(l5);
-                        }
-                        return;
-
-                    default:
-                        evalBinaryExp_LateBinding(compareMethod, expression);
-                        return;
-                }
-            }
-            else if (Integer.class == lclass && Integer.class == rclass) {
-                int type = expression.getOperation().getType();
-                switch (type) {
-                    case Types.COMPARE_EQUAL : // ==
-                        load(leftExp); cast(Integer.class);
-                        load(rightExp);
-                        cv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Integer", "equals", "(Ljava/lang/Object;)Z");
-                        //helper.quickBoxIfNecessary(boolean.class);
-                        return;
-                    case Types.COMPARE_NOT_EQUAL :
-                        load(leftExp); cast(Integer.class);
-                        load(rightExp);
-                        cv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Integer", "equals", "(Ljava/lang/Object;)Z");
-                        cv.visitInsn(ICONST_1);
-                        cv.visitInsn(IXOR);
-                        //helper.quickBoxIfNecessary(boolean.class);
-                        return;
-                    case Types.COMPARE_TO :
-                        load(leftExp); cast(Integer.class);
-                        load(rightExp);
-                        cv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Integer", "compareTo", "(Ljava/lang/Object;)I");
-                        helper.quickBoxIfNecessary(int.class);
-                        return;
-                    case Types.COMPARE_GREATER_THAN :
-                    case Types.COMPARE_GREATER_THAN_EQUAL :
-                    case Types.COMPARE_LESS_THAN :
-                    case Types.COMPARE_LESS_THAN_EQUAL :
-                        {
-                            int op;
-                            switch (type) {
-                                case Types.COMPARE_GREATER_THAN :
-                                    op = IFLE;
-                                    break;
-                                case Types.COMPARE_GREATER_THAN_EQUAL :
-                                    op = IFLT;
-                                    break;
-                                case Types.COMPARE_LESS_THAN :
-                                    op = IFGE;
-                                    break;
-                                case Types.COMPARE_LESS_THAN_EQUAL :
-                                    op = IFGT;
-                                    break;
-                                default:
-                                    System.err.println("flow control error: should not be here. type: " + type);
-                                    return;
-                            }
-                            load(leftExp); cast(Integer.class);
-                            load(rightExp);
-                            cv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Integer", "compareTo", "(Ljava/lang/Object;)I");
-
-                            Label l4 = new Label();
-                            cv.visitJumpInsn(op, l4);
-                            cv.visitInsn(ICONST_1); //cv.visitFieldInsn(GETSTATIC, "java/lang/Boolean", "TRUE", "Ljava/lang/Boolean;");
-                            Label l5 = new Label();
-                            cv.visitJumpInsn(GOTO, l5);
-                            cv.visitLabel(l4);
-                            cv.visitInsn(ICONST_0);//cv.visitFieldInsn(GETSTATIC, "java/lang/Boolean", "FALSE", "Ljava/lang/Boolean;");
-                            cv.visitLabel(l5);
-                        }
-                        return;
-
-                    default:
-                        evalBinaryExp_LateBinding(compareMethod, expression);
-                        return;
-                }
-            }
-            else {
-                evalBinaryExp_LateBinding(compareMethod, expression);
-                return;
-            }
-        }
-    }
-
-    private void cast(Class aClass) {
-        if (!aClass.isPrimitive() && aClass != Object.class) {
-            cv.visitTypeInsn(CHECKCAST, BytecodeHelper.getClassInternalName(aClass.getName()));
-        }
-    }
-
     protected void evaluateEqual(BinaryExpression expression) {
 
         Expression leftExpression = expression.getLeftExpression();
@@ -3223,12 +2877,12 @@ public class AsmClassGenerator extends ClassGenerator {
         leftHandExpression = false;
         Expression rightExpression = expression.getRightExpression();
 
-        Type type = getLHSType(leftExpression);
+        ClassNode type = getLHSType(leftExpression);
         // lets not cast for primitive types as we handle these in field setting etc
-        if (type.isPrimitiveType()) {
+        if (ClassHelper.isPrimitiveType(type)) {
             rightExpression.visit(this);
         } else {
-            if (type!=Type.OBJECT_TYPE){
+            if (type!=ClassHelper.OBJECT_TYPE){
                 visitCastExpression(new CastExpression(type, rightExpression));
             } else {
                 visitAndAutoboxBoolean(rightExpression);
@@ -3240,26 +2894,13 @@ public class AsmClassGenerator extends ClassGenerator {
         leftExpression.visit(this);
         leftHandExpression = false;
     }
-
-    private void copyTypeClass(Expression leftExpression, Expression rightExpression) {
-        // copy type class from the right to the left, boxing numbers & treat ClassExpression specially
-        Type rType = rightExpression.getType();
-        if (rightExpression instanceof ClassExpression) {
-            leftExpression.setType(Type.makeType(Class.class));
-        }
-        else {
-            rType = BytecodeHelper.boxOnPrimitive(rType);
-            leftExpression.setType(rType);
-        }
-    }
-
     
     /**
      * Deduces the type name required for some casting
      *
      * @return the type of the given (LHS) expression or null if it is java.lang.Object or it cannot be deduced
      */
-    protected Type getLHSType(Expression leftExpression) {
+    protected ClassNode getLHSType(Expression leftExpression) {
         do {
 // commented out. not quiteworking yet. would complain something like:
 //java.lang.ClassFormatError: Foo$1 (Illegal Field name "class$[Ljava$lang$String;")
@@ -3274,7 +2915,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
         if (leftExpression instanceof VariableExpression) {
             VariableExpression varExp = (VariableExpression) leftExpression;
-            Type type = varExp.getType();
+            ClassNode type = varExp.getType();
             if (isValidTypeForCast(type)) {
                 return type;
             }
@@ -3304,16 +2945,16 @@ public class AsmClassGenerator extends ClassGenerator {
         }
         else if (leftExpression instanceof FieldExpression) {
             FieldExpression fieldExp = (FieldExpression) leftExpression;
-            Type type = fieldExp.getType();
+            ClassNode type = fieldExp.getType();
             if (isValidTypeForCast(type)) {
                 return type;
             }
         }
-        return Type.DYNAMIC_TYPE;
+        return ClassHelper.DYNAMIC_TYPE;
     }
 
-    protected boolean isValidTypeForCast(Type type) {
-        return type!=Type.DYNAMIC_TYPE && !type.getName().equals("groovy.lang.Reference") && !type.isPrimitiveType();
+    protected boolean isValidTypeForCast(ClassNode type) {
+        return type!=ClassHelper.DYNAMIC_TYPE && !type.getName().equals("groovy.lang.Reference") && !ClassHelper.isPrimitiveType(type);
     }
 
     protected void visitAndAutoboxBoolean(Expression expression) {
@@ -3377,7 +3018,7 @@ public class AsmClassGenerator extends ClassGenerator {
     protected void evaluateInstanceof(BinaryExpression expression) {
         expression.getLeftExpression().visit(this);
         Expression rightExp = expression.getRightExpression();
-        Type classType = Type.DYNAMIC_TYPE;
+        ClassNode classType = ClassHelper.DYNAMIC_TYPE;
         if (rightExp instanceof ClassExpression) {
             ClassExpression classExp = (ClassExpression) rightExp;
             classType = classExp.getType();
@@ -3578,7 +3219,7 @@ public class AsmClassGenerator extends ClassGenerator {
             String var = (String) iter.next();
             // lets not pass in fields from the most-outer class, but pass in values from an outer closure
             if (outerDecls.contains(var) && (isNotFieldOfOutermostClass(var))) {
-                Type type = getVariableType(var);
+                ClassNode type = getVariableType(var);
                 vars.add(new Parameter(type, var));
                 varSet.add(var);
             }
@@ -3587,7 +3228,7 @@ public class AsmClassGenerator extends ClassGenerator {
             String var = (String) iter.next();
             // lets not pass in fields from the most-outer class, but pass in values from an outer closure
             if (innerDecls.contains(var) && (isNotFieldOfOutermostClass(var)) && !varSet.contains(var)) {
-                Type type = getVariableType(var);
+                ClassNode type = getVariableType(var);
                 vars.add(new Parameter(type, var));
             }
         }
@@ -3653,12 +3294,12 @@ public class AsmClassGenerator extends ClassGenerator {
         return classNode instanceof InnerClassNode;
     }
 
-    protected Type getVariableType(String name) {
+    protected ClassNode getVariableType(String name) {
         Variable variable = (Variable) variableStack.get(name);
         if (variable != null) {
-            return Type.makeType(variable.getTypeName());
+            return variable.getType();
         }
-        return Type.DYNAMIC_TYPE;
+        return ClassHelper.DYNAMIC_TYPE;
     }
 
     protected void resetVariableStack(Parameter[] parameters) {
@@ -3671,14 +3312,14 @@ public class AsmClassGenerator extends ClassGenerator {
         // lets push this onto the stack
         definingParameters = true;
         if (!isStaticMethod()) {
-            defineVariable("this", classNode.getType()).getIndex();
+            defineVariable("this", classNode).getIndex();
         } // now lets create indices for the parameteres
         for (int i = 0; i < parameters.length; i++) {
             Parameter parameter = parameters[i];
-            Type type = parameter.getType();
+            ClassNode type = parameter.getType();
             Variable v = defineVariable(parameter.getName(), type);
             int idx = v.getIndex();
-            if (type.isPrimitiveType()) {
+            if (ClassHelper.isPrimitiveType(type)) {
                 helper.load(type, idx);
                 helper.box(type);
                 cv.visitVarInsn(ASTORE, idx);
@@ -3764,11 +3405,11 @@ public class AsmClassGenerator extends ClassGenerator {
     /**
      * Defines the given variable in scope and assigns it to the stack
      */
-    protected Variable defineVariable(String name, Type type) {
+    protected Variable defineVariable(String name, ClassNode type) {
         return defineVariable(name, type, true);
     }
 
-    private Variable defineVariable(String name, Type type, boolean define) {
+    private Variable defineVariable(String name, ClassNode type, boolean define) {
         Variable answer = (Variable) variableStack.get(name);
         if (answer == null) {
             lastVariableIndex = getNextVariableID();
@@ -3818,8 +3459,8 @@ public class AsmClassGenerator extends ClassGenerator {
         return answer;
     }
 
-    private boolean isDoubleSizeVariable(Type type) {
-        return type==Type.long_TYPE || type==Type.double_TYPE;
+    private boolean isDoubleSizeVariable(ClassNode type) {
+        return type==ClassHelper.long_TYPE || type==ClassHelper.double_TYPE;
     }
 
     private int getNextVariableID() {
@@ -3852,38 +3493,25 @@ public class AsmClassGenerator extends ClassGenerator {
      * @return if the type of the expression can be determined at compile time
      *         then this method returns the type - otherwise null
      */
-    protected Type getExpressionType(Expression expression) {
+    protected ClassNode getExpressionType(Expression expression) {
         if (isComparisonExpression(expression)) {
-            return Type.boolean_TYPE;
+            return ClassHelper.boolean_TYPE;
         }
         if (expression instanceof VariableExpression) {
             VariableExpression varExpr = (VariableExpression) expression;
             Variable variable = (Variable) variableStack.get(varExpr.getName());
             if (variable != null && !variable.isHolder()) {
-                Type type = variable.getType();
-                if (! type.isDynamic()) return type;
+                ClassNode type = variable.getType();
+                if (! variable.isDynamicTyped()) return type;
             }
         }
         return expression.getType();
     }
 
-    /**
-     * @return true if the value is an Integer, a Float, a Long, a Double or a
-     *         String .
-     */
-    protected static boolean isPrimitiveFieldType(Type t) {
-        String type = t.getName();
-        return type.equals("java.lang.String")
-            || type.equals("java.lang.Integer")
-            || type.equals("java.lang.Double")
-            || type.equals("java.lang.Long")
-            || type.equals("java.lang.Float");
-    }
-
     protected boolean isInClosureConstructor() {
         return constructorNode != null
             && classNode.getOuterClass() != null
-            && classNode.getSuperClass()==Type.CLOSURE_TYPE;
+            && classNode.getSuperClass()==ClassHelper.CLOSURE_TYPE;
     }
 
     protected boolean isStaticMethod() {
@@ -3893,58 +3521,6 @@ public class AsmClassGenerator extends ClassGenerator {
         return methodNode.isStatic();
     }
 
-    Map classCache = new HashMap();
-    {
-        classCache.put("int", Integer.TYPE);
-        classCache.put("byte", Byte.TYPE);
-        classCache.put("short", Short.TYPE);
-        classCache.put("char", Character.TYPE);
-        classCache.put("boolean", Boolean.TYPE);
-        classCache.put("long", Long.TYPE);
-        classCache.put("double", Double.TYPE);
-        classCache.put("float", Float.TYPE);
-        classCache.put("void", Void.TYPE);
-    }
-    /**
-     * @return loads the given type name
-     */
-    protected Class loadClass(Type t) {
-        if (t.getTypeClass()!=null) return t.getTypeClass();
-        String name = t.getName();
-
-        if (t.equals(this.classNode.getType())) {
-            return Object.class;
-        }
-
-        if (name == null) {
-            return null;
-        }
-        else if (name.length() == 0) {
-            return Object.class;
-        }
-
-        name = BytecodeHelper.formatNameForClassLoading(name);
-
-    	try {
-    		Class cls = (Class)classCache.get(name);
-    		if (cls != null)
-    			return cls;
-
-    		CompileUnit compileUnit = getCompileUnit();
-            if (compileUnit != null) {
-            	cls = compileUnit.loadClass(name);
-                classCache.put(name, cls);
-            	return cls;
-            }
-            else {
-                throw new ClassGeneratorException("Could not load class: " + name);
-            }
-        }
-        catch (ClassNotFoundException e) {
-            throw new ClassGeneratorException("Error when compiling class: " + classNode.getType().getName() + ". Reason: could not load class: " + name + " reason: " + e, e);
-        }
-    }
-
     protected CompileUnit getCompileUnit() {
         CompileUnit answer = classNode.getCompileUnit();
         if (answer == null) {
@@ -3952,244 +3528,5 @@ public class AsmClassGenerator extends ClassGenerator {
         }
         return answer;
     }
- 
-    /** search in the current classNode and super class for matching method */
-    private MetaMethod getMethodOfThisAndSuper(String methName, Class[] argsArray, boolean isStaticCall) {
-        MethodNode candidate = null;
-        List meths = classNode.getMethods();
-        Class[] candidateParamClasses = null;
-        for (int i = 0; i < meths.size(); i++) {
-            MethodNode meth = (MethodNode) meths.get(i);
-            if (meth.getName().equals(methName)) {
-                Parameter[] params = meth.getParameters();
-                if  (params.length == argsArray.length) {
-                    Class[] paramClasses = new Class[params.length];
-                    for (int j = 0; j < params.length; j++) {
-                        Parameter param = params[j];
-                        Type type = param.getType();
-                        Class paramClass = null;
-                        try {
-                            paramClass = loadClass(type);
-                        } catch (Exception e) {
-                            log.warning(e.getMessage());
-                            return null;
-                        }
-                        paramClasses[j] = paramClass;
-                    }
-                    if (MetaClassHelper.isValidMethod(paramClasses, argsArray, false)) {
-                        candidateParamClasses = paramClasses;
-                        candidate = meth;
-                        break;
-                    }
-                    else {
-                        if (MetaClassHelper.isValidMethod(paramClasses, argsArray, true)){
-                            candidateParamClasses = paramClasses;
-                            candidate = meth;
-                            break;
-                        }
-                    }
-                }
-            }
-        }
 
-        if (candidate != null && candidateParamClasses != null) {
-            // let's synth a MetaMethod from the MethodNode
-            try {
-                return new MetaMethod(methName, null, candidateParamClasses, loadClass(candidate.getReturnType()), candidate.getModifiers());
-            } catch (Exception e) {
-                log.warning(e.getMessage());
-                return null;
-            }
-        }
-        else {
-            // try super class
-            Class superClass = null;
-            try {
-                superClass = loadClass(classNode.getSuperClass());
-            }
-            catch(Exception e) {
-                // the super may be a groovy class that's not compiled yet
-                log.warning(e.getMessage());
-            }
-            // should I filter out GroovyObject super class here?
-            if (superClass != null ) {
-                MetaMethod mmethod = MetaClassRegistry.getIntance(MetaClassRegistry.DONT_LOAD_DEFAULT).getDefinedMethod(superClass, methName, argsArray, isStaticCall);
-                if (mmethod == null)
-                    return null;
-                int modies = mmethod.getModifiers();
-                if (Modifier.isPrivate(modies)) {
-                    return null;
-                }
-                else if(modies == 0) {
-                    // match package
-                    int pThis = classNode.getType().getName().lastIndexOf(".");
-                    String packageNameThis = pThis > 0? classNode.getType().getName().substring(0, pThis) : "";
-
-                    int pSuper = classNode.getSuperClass().getName().lastIndexOf(".");
-                    String packageNameSuper = pSuper > 0? classNode.getSuperClass().getName().substring(0, pSuper) : "";
-                    if (packageNameThis.equals(packageNameSuper)) {
-                        return new MetaMethod(methName, null, mmethod.getParameterTypes(), mmethod.getReturnType(), mmethod.getModifiers());
-                    }
-                    else {
-                        return null;
-                    }
-                }
-                else {
-                    // let changes the declaring class back to null (meaning "this"), so that proper class inheritance permission control is obeyed
-                    return new MetaMethod(methName, null, mmethod.getParameterTypes(), mmethod.getReturnType(), mmethod.getModifiers());
-                }
-            }
-            return null;
-        }
-    }
-
-    // the fowllowing asXXX() methods are copied from the Invoker class, to avoid initilization of an invoker instance,
-    // which has lots of baggage with it, notably the meta class stuff.
-    private static Object asType(Object object, Class type) {
-        if (object == null) {
-            return null;
-        }
-        if (type.isInstance(object)) {
-            return object;
-        }
-        if (type.equals(Type.STRING_TYPE)) {
-            return object.toString();
-        }
-        if (type.equals(Type.Character_TYPE)) {
-            if (object instanceof Number) {
-                return asCharacter((Number) object);
-            }
-            else {
-                String text = object.toString();
-                if (text.length() == 1) {
-                    return new Character(text.charAt(0));
-                }
-                else {
-                    throw new ClassCastException("Cannot cast: " + text + " to a Character");
-                }
-            }
-        }
-        if (Number.class.isAssignableFrom(type)) {
-            if (object instanceof Character) {
-                return new Integer(((Character) object).charValue());
-            }
-            else if (object instanceof String) {
-                String c = (String) object;
-                if (c.length() == 1) {
-                    return new Integer(c.charAt(0));
-                }
-                else {
-                    throw new ClassCastException("Cannot cast: '" + c + "' to an Integer");
-                }
-            }
-        }
-        if (object instanceof Number) {
-            Number n = (Number) object;
-            if (type.isPrimitive()) {
-                if (type == byte.class) {
-                    return new Byte(n.byteValue());
-                }
-                if (type == char.class) {
-                    return new Character((char) n.intValue());
-                }
-                if (type == short.class) {
-                    return new Short(n.shortValue());
-                }
-                if (type == int.class) {
-                    return new Integer(n.intValue());
-                }
-                if (type == long.class) {
-                    return new Long(n.longValue());
-                }
-                if (type == float.class) {
-                    return new Float(n.floatValue());
-                }
-                if (type == double.class) {
-                    Double answer = new Double(n.doubleValue());
-                    //throw a runtime exception if conversion would be out-of-range for the type.
-                    if (!(n instanceof Double) && (answer.doubleValue() == Double.NEGATIVE_INFINITY
-                            || answer.doubleValue() == Double.POSITIVE_INFINITY)) {
-                        throw new  GroovyRuntimeException("Automatic coercion of "+n.getClass().getName()
-                                +" value "+n+" to double failed.  Value is out of range.");
-                    }
-                    return answer;
-                }
-            }
-            else {
-                if (Number.class.isAssignableFrom(type)) {
-                    if (type == Byte.class) {
-                        return new Byte(n.byteValue());
-                    }
-                    if (type == Character.class) {
-                        return new Character((char) n.intValue());
-                    }
-                    if (type == Short.class) {
-                        return new Short(n.shortValue());
-                    }
-                    if (type == Integer.class) {
-                        return new Integer(n.intValue());
-                    }
-                    if (type == Long.class) {
-                        return new Long(n.longValue());
-                    }
-                    if (type == Float.class) {
-                        return new Float(n.floatValue());
-                    }
-                    if (type == Double.class) {
-                        Double answer = new Double(n.doubleValue());
-                        //throw a runtime exception if conversion would be out-of-range for the type.
-                        if (!(n instanceof Double) && (answer.doubleValue() == Double.NEGATIVE_INFINITY
-                                || answer.doubleValue() == Double.POSITIVE_INFINITY)) {
-                            throw new  GroovyRuntimeException("Automatic coercion of "+n.getClass().getName()
-                                    +" value "+n+" to double failed.  Value is out of range.");
-                        }
-                        return answer;
-                    }
-
-                }
-            }
-        }
-        if (type == Boolean.class) {
-            return asBool(object) ? Boolean.TRUE : Boolean.FALSE;
-        }
-        return object;
-    }
-
-    public static boolean asBool(Object object) {
-       if (object instanceof Boolean) {
-            Boolean booleanValue = (Boolean) object;
-            return booleanValue.booleanValue();
-        }
-        else if (object instanceof Matcher) {
-            Matcher matcher = (Matcher) object;
-            RegexSupport.setLastMatcher(matcher);
-            return matcher.find();
-        }
-        else if (object instanceof Collection) {
-            Collection collection = (Collection) object;
-            return !collection.isEmpty();
-        }
-        else if (object instanceof Map) {
-            Map map = (Map) object;
-            return !map.isEmpty();
-        }
-        else if (object instanceof String) {
-            String string = (String) object;
-            return string.length() > 0;
-        }
-        else if (object instanceof Number) {
-            Number n = (Number) object;
-            return n.doubleValue() != 0;
-        }
-        else {
-            return object != null;
-        }
-    }
-    private static Character asCharacter(Number value) {
-        return new Character((char) value.intValue());
-    }
-
-    private static Character asCharacter(String text) {
-        return new Character(text.charAt(0));
-    }
 }

@@ -91,6 +91,10 @@ public class SwitchStatement extends Statement {
         return expression;
     }
 
+    public void setExpression(Expression e) {
+        expression=e;
+    }
+    
     public Statement getDefaultStatement() {
         return defaultStatement;
     }

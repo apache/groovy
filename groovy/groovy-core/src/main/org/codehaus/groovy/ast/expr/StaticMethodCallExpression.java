@@ -47,8 +47,8 @@ package org.codehaus.groovy.ast.expr;
 
 import groovy.lang.MetaMethod;
 
+import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.ast.Type;
 
 /**
  * A static method call on a class
@@ -58,12 +58,12 @@ import org.codehaus.groovy.ast.Type;
  */
 public class StaticMethodCallExpression extends Expression {
 
-    Type ownerType;
+    private ClassNode ownerType;
     private String method;
     private Expression arguments;
     private MetaMethod metaMethod = null;
 
-    public StaticMethodCallExpression(Type type, String method, Expression arguments) {
+    public StaticMethodCallExpression(ClassNode type, String method, Expression arguments) {
         ownerType = type;
         this.method = method;
         this.arguments = arguments;
@@ -90,13 +90,13 @@ public class StaticMethodCallExpression extends Expression {
     }
 
     public String toString() {
-        return super.toString() + "[type: " + getType().getName() + " method: " + method + " arguments: " + arguments + "]";
+        return super.toString() + "[" + getOwnerType().getName() + "#" + method + " arguments: " + arguments + "]";
     }
-    public Type getOwnerType() {
+    public ClassNode getOwnerType() {
         return ownerType;
     }
 
-    public void setOwnerType(Type ownerType) {
+    public void setOwnerType(ClassNode ownerType) {
         this.ownerType = ownerType;
     }
 

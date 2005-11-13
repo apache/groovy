@@ -45,8 +45,8 @@
  */
 package org.codehaus.groovy.ast.stmt;
 
+import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.ast.Type;
 
 
 /**
@@ -57,11 +57,11 @@ import org.codehaus.groovy.ast.Type;
  */
 public class CatchStatement extends Statement {
 
-    private Type exceptionType;
+    private ClassNode exceptionType;
     private String variable;
     private Statement code;
     
-    public CatchStatement(Type exceptionType, String variable, Statement code) {
+    public CatchStatement(ClassNode exceptionType, String variable, Statement code) {
         this.exceptionType = exceptionType;
         this.variable = variable;
         this.code = code;
@@ -75,7 +75,7 @@ public class CatchStatement extends Statement {
         return code;
     }
 
-    public Type getExceptionType() {
+    public ClassNode getExceptionType() {
         return exceptionType;
     }
 

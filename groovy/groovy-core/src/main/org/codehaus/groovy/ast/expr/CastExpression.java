@@ -45,8 +45,8 @@
  */
 package org.codehaus.groovy.ast.expr;
 
+import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.ast.Type;
 
 /**
  * Represents a type cast expression
@@ -60,17 +60,17 @@ public class CastExpression extends Expression {
     private boolean ignoreAutoboxing=false;
     private boolean coerce = false;
 
-    public static CastExpression asExpression(Type type, Expression expression) {
+    public static CastExpression asExpression(ClassNode type, Expression expression) {
         CastExpression answer = new CastExpression(type, expression);
         answer.setCoerce(true);
         return answer;
     }
 
-    public CastExpression(Type type, Expression expression) {
+    public CastExpression(ClassNode type, Expression expression) {
         this(type,expression,false);
     }
 
-    public CastExpression(Type type, Expression expression, boolean ignoreAutoboxing) {
+    public CastExpression(ClassNode type, Expression expression, boolean ignoreAutoboxing) {
         super.setType(type);
         this.expression = expression;
         this.ignoreAutoboxing = ignoreAutoboxing;
@@ -108,7 +108,7 @@ public class CastExpression extends Expression {
         return expression;
     }
     
-    public void setType(Type t) {
+    public void setType(ClassNode t) {
         super.setType(t);
     }
 

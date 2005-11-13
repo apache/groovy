@@ -60,28 +60,24 @@ public class FieldNode extends AnnotatedNode implements Opcodes, Variable {
 
     private String name;
     private int modifiers;
-    private Type type;
-    private Type owner;
+    private ClassNode type;
+    private ClassNode owner;
     private Expression initialValueExpression;
-    private boolean dynamicType;
+    private boolean dynamicTyped;
     private boolean holder;
 
     public static FieldNode newStatic(Class theClass, String name) throws SecurityException, NoSuchFieldException {
         Field field = theClass.getField(name);
-        Type fldType = Type.makeType(field.getType());
-        return new FieldNode(name, ACC_PUBLIC | ACC_STATIC, fldType, Type.makeType(theClass), null);
+        ClassNode fldType = ClassHelper.make(field.getType());
+        return new FieldNode(name, ACC_PUBLIC | ACC_STATIC, fldType, ClassHelper.make(theClass), null);
     }
 
-    public FieldNode(String name, int modifiers, Type type, ClassNode owner, Expression initialValueExpression) {
-        this(name, modifiers, type, owner.getType(), initialValueExpression);
-    }
-
-    public FieldNode(String name, int modifiers, Type type, Type owner, Expression initialValueExpression) {
+    public FieldNode(String name, int modifiers, ClassNode type, ClassNode owner, Expression initialValueExpression) {
         this.name = name;
         this.modifiers = modifiers;
         this.type = type;
-        if (this.type==Type.DYNAMIC_TYPE && initialValueExpression!=null) this.type = initialValueExpression.getType();
-        this.type = type.getWrapper();
+        if (this.type==ClassHelper.DYNAMIC_TYPE && initialValueExpression!=null) this.setType(initialValueExpression.getType());
+        this.setType(ClassHelper.getWrapper(type));
         this.owner = owner;
         this.initialValueExpression = initialValueExpression;
     }
@@ -98,15 +94,16 @@ public class FieldNode extends AnnotatedNode implements Opcodes, Variable {
         return name;
     }
 
-    public Type getType() {
+    public ClassNode getType() {
         return type;
     }
 
-    public void setType(Type type) {
+    public void setType(ClassNode type) {
         this.type = type;
+        dynamicTyped |= type==ClassHelper.DYNAMIC_TYPE;
     }
     
-    public Type getOwner() {
+    public ClassNode getOwner() {
         return owner;
     }
 
@@ -118,8 +115,8 @@ public class FieldNode extends AnnotatedNode implements Opcodes, Variable {
         this.holder = holder;
     }
 
-    public boolean isDynamicType() {
-        return dynamicType;
+    public boolean isDynamicTyped() {
+        return dynamicTyped;
     }
 
     public void setModifiers(int modifiers) {
@@ -135,7 +132,7 @@ public class FieldNode extends AnnotatedNode implements Opcodes, Variable {
 	/**
 	 * @param owner The owner to set.
 	 */
-	public void setOwner(Type owner) {
+	public void setOwner(ClassNode owner) {
 		this.owner = owner;
 	}
 
@@ -145,5 +142,11 @@ public class FieldNode extends AnnotatedNode implements Opcodes, Variable {
 
     public boolean isInStaticContext() {
         return isStatic();
+    }
+    public Expression getInitialValueExpression() {
+        return initialValueExpression;
+    }
+    public void setInitialValueExpression(Expression initialValueExpression) {
+        this.initialValueExpression = initialValueExpression;
     }
 }

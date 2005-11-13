@@ -60,8 +60,8 @@ public class InnerClassNode extends ClassNode {
      * @param modifiers the modifiers, @see org.objectweb.asm.Opcodes
      * @param superClass the base class name - use "java.lang.Object" if no direct base class
      */
-    public InnerClassNode(ClassNode outerClass, Type type, int modifiers, Type superClass) {
-        this(outerClass, type, modifiers, superClass, EMPTY_STRING_ARRAY, MixinNode.EMPTY_ARRAY);
+    public InnerClassNode(ClassNode outerClass, String name, int modifiers, ClassNode superClass) {
+        this(outerClass, name, modifiers, superClass, ClassHelper.EMPTY_TYPE_ARRAY, MixinNode.EMPTY_ARRAY);
     }
 
     /**
@@ -69,8 +69,8 @@ public class InnerClassNode extends ClassNode {
      * @param modifiers the modifiers, @see org.objectweb.asm.Opcodes
      * @param superClass the base class name - use "java.lang.Object" if no direct base class
      */
-    public InnerClassNode(ClassNode outerClass, Type type, int modifiers, Type superClass, String[] interfaces, MixinNode[] mixins) {
-        super(type, modifiers, superClass, interfaces, mixins);
+    public InnerClassNode(ClassNode outerClass, String name, int modifiers, ClassNode superClass, ClassNode[] interfaces, MixinNode[] mixins) {
+        super(name, modifiers, superClass, interfaces, mixins);
         this.outerClass = outerClass;
     }
 

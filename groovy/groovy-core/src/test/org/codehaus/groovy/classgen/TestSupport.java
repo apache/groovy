@@ -67,7 +67,6 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.ModuleNode;
-import org.codehaus.groovy.ast.Type;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
@@ -94,12 +93,12 @@ public class TestSupport extends GroovyTestCase implements Opcodes {
     			return new GroovyClassLoader(parentLoader);
     		}
     	});
-    CompileUnit unit = new CompileUnit(parentLoader, new CompilerConfiguration());
+    CompileUnit unit = new CompileUnit(loader, new CompilerConfiguration());
     ModuleNode module = new ModuleNode(unit);
     
     protected Class loadClass(ClassNode classNode) {
         classNode.setModule(module);
-        Class fooClass = loader.defineClass(classNode, classNode.getType().getName() + ".groovy", "groovy.testSupport");
+        Class fooClass = loader.defineClass(classNode, classNode.getName() + ".groovy", "groovy.testSupport");
         return fooClass;
     }
 
@@ -159,7 +158,7 @@ public class TestSupport extends GroovyTestCase implements Opcodes {
         return null;
     }
 
-    protected void assertField(Class aClass, String name, int modifiers, Type type) throws Exception {
+    protected void assertField(Class aClass, String name, int modifiers, ClassNode type) throws Exception {
         Field field = aClass.getDeclaredField(name);
 
         assertTrue("Found field called: " + name, field != null);

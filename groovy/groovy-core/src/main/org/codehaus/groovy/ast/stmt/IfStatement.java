@@ -83,4 +83,7 @@ public class IfStatement extends Statement {
         return elseBlock;
     }
 
+    public void setBooleanExpression(BooleanExpression booleanExpression) {
+        this.booleanExpression = booleanExpression;
+    }
 }

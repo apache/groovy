@@ -75,7 +75,7 @@ public abstract class ProcessingUnit {
     /**
      * The ClassLoader to use during processing
      */
-    protected ClassLoader classLoader;
+    protected GroovyClassLoader classLoader;
     
     /**
      * a helper to share errors and report them
@@ -87,12 +87,10 @@ public abstract class ProcessingUnit {
      * Initialize the ProcessingUnit to the empty state.
      */
 
-    public ProcessingUnit(CompilerConfiguration configuration, ClassLoader classLoader, ErrorCollector er) {
+    public ProcessingUnit(CompilerConfiguration configuration, GroovyClassLoader classLoader, ErrorCollector er) {
 
         this.phase = Phases.INITIALIZATION;
-        ClassLoader parent = Thread.currentThread().getContextClassLoader();
-        if (parent == null) parent = ProcessingUnit.class.getClassLoader();
-        this.classLoader = (classLoader == null ? new GroovyClassLoader(parent, configuration) : classLoader);
+        this.setClassLoader(classLoader);
         configure((configuration == null ? new CompilerConfiguration() : configuration));
         if (er==null) er = new ErrorCollector(getConfiguration());
         this.errorCollector = er;
@@ -119,7 +117,7 @@ public abstract class ProcessingUnit {
      * Returns the class loader in use by this ProcessingUnit.
      */
 
-    public ClassLoader getClassLoader() {
+    public GroovyClassLoader getClassLoader() {
         return classLoader;
     }
 
@@ -128,8 +126,10 @@ public abstract class ProcessingUnit {
      * Sets the class loader for use by this ProcessingUnit.
      */
 
-    public void setClassLoader(ClassLoader loader) {
-        this.classLoader = loader;
+    public void setClassLoader(GroovyClassLoader loader) {
+        ClassLoader parent = Thread.currentThread().getContextClassLoader();
+        if (parent == null) parent = ProcessingUnit.class.getClassLoader();
+        this.classLoader = (loader == null ? new GroovyClassLoader(parent, configuration) : loader);
     }
 
 

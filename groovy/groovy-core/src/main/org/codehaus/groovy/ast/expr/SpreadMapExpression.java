@@ -45,8 +45,9 @@
  */
 package org.codehaus.groovy.ast.expr;
 
+import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.ast.Type;
+
 /**
  * Represents a spread map expression *:m
  *         in the map expression [1, *:m, 2, "c":100]
@@ -78,7 +79,7 @@ public class SpreadMapExpression extends Expression {
 	return "*:" + expression.getText();
     }
 
-    public Type getType() {
+    public ClassNode getType() {
         return expression.getType();
     }
 }

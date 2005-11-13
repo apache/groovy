@@ -46,11 +46,11 @@
 
 package org.codehaus.groovy.classgen;
 
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.Type;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
@@ -65,20 +65,20 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 public class MethodTest extends TestSupport {
 
     public void testMethods() throws Exception {
-        ClassNode classNode = new ClassNode(Type.makeType("Foo"), ACC_PUBLIC, Type.OBJECT_TYPE);
+        ClassNode classNode = new ClassNode("Foo", ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
         classNode.addConstructor(new ConstructorNode(ACC_PUBLIC, null));
 
         Statement statementA = new ReturnStatement(new ConstantExpression("calledA"));
         Statement statementB = new ReturnStatement(new ConstantExpression("calledB"));
         Statement emptyStatement = new BlockStatement();
 
-        classNode.addMethod(new MethodNode("a", ACC_PUBLIC, Type.OBJECT_TYPE, Parameter.EMPTY_ARRAY, statementA));
+        classNode.addMethod(new MethodNode("a", ACC_PUBLIC, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, statementA));
         classNode.addMethod(new MethodNode("b", ACC_PUBLIC, null, Parameter.EMPTY_ARRAY, statementB));
         
         classNode.addMethod(new MethodNode("noReturnMethodA", ACC_PUBLIC, null, Parameter.EMPTY_ARRAY, emptyStatement));
-        classNode.addMethod(new MethodNode("noReturnMethodB", ACC_PUBLIC, Type.OBJECT_TYPE, Parameter.EMPTY_ARRAY, emptyStatement));
+        classNode.addMethod(new MethodNode("noReturnMethodB", ACC_PUBLIC, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, emptyStatement));
         
-        classNode.addMethod(new MethodNode("c", ACC_PUBLIC, Type.VOID_TYPE, Parameter.EMPTY_ARRAY, emptyStatement));
+        classNode.addMethod(new MethodNode("c", ACC_PUBLIC, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, emptyStatement));
 
         Class fooClass = loadClass(classNode);
         assertTrue("Loaded a new class", fooClass != null);

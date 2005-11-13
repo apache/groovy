@@ -76,4 +76,8 @@ public class WhileStatement extends Statement {
     public Statement getLoopBlock() {
         return loopBlock;
     }
+
+	public void setBooleanExpression(BooleanExpression booleanExpression) {
+		this.booleanExpression = booleanExpression;
+	}
 }

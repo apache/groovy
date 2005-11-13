@@ -33,8 +33,8 @@
  */
 package org.codehaus.groovy.ast.expr;
 
+import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.ast.Type;
 
 /**
  * @author phk
@@ -63,7 +63,7 @@ public class BitwiseNegExpression extends Expression {
 		return expression.getText();
 	}
 
-    public Type getType() {
+    public ClassNode getType() {
         return expression.getType();
     }
 

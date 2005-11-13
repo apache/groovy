@@ -43,7 +43,7 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.List;
 import org.codehaus.groovy.ast.ASTNode;
-import org.codehaus.groovy.ast.AnnotatedNode;
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.CompileUnit;
@@ -53,7 +53,6 @@ import org.codehaus.groovy.ast.GroovyClassVisitor;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
-import org.codehaus.groovy.ast.Type;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -77,32 +76,33 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
     private static class Var implements Variable{
         //TODO: support final and native
         String name;
-        Type type=null;
+        ClassNode type=null;
         boolean isInStaticContext=false;
- 
+        boolean isDynamicTyped;
+        
         public Var(String name,VarScope scope) {
             // a Variable without type and other modifiers
             // make it dynamic type, non final and non static
             this.name=name;
-            type=Type.DYNAMIC_TYPE;
+            setType(ClassHelper.DYNAMIC_TYPE);
             isInStaticContext = scope.isInStaticContext;
         }
 
         public Var(String pName, MethodNode f) {
             name = pName;
-            type = f.getReturnType();
+            setType(f.getReturnType());
             isInStaticContext=f.isStatic();
         }
         
         public Var(String pName, Method m) {
             name = pName;
-            type = Type.makeType(m.getReturnType());
+            type = ClassHelper.make(m.getReturnType());
             isInStaticContext=Modifier.isStatic(m.getModifiers());
         }
 
         public Var(Field f) {
             name = f.getName();
-            type = Type.makeType(f.getType());
+            type = ClassHelper.make(f.getType());
             isInStaticContext=Modifier.isStatic(f.getModifiers());
         }
 
@@ -110,9 +110,15 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
             name=v.getName();
             type=v.getType();
             isInStaticContext=v.isInStaticContext();
+            isDynamicTyped=v.isDynamicTyped();
         }
 
-        public Type getType() {
+        public void setType(ClassNode cn) {
+            type = cn;
+            isDynamicTyped |= cn==ClassHelper.DYNAMIC_TYPE;
+        }
+        
+        public ClassNode getType() {
             return type;
         }
 
@@ -130,6 +136,10 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
 
         public boolean isInStaticContext() {
             return isInStaticContext;
+        }
+
+        public boolean isDynamicTyped() {
+            return isDynamicTyped;
         }        
     }
     
@@ -315,7 +325,7 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
         if (!Modifier.isAbstract(methodNode.getModifiers())) return;
         if (Modifier.isAbstract(currentClass.getModifiers())) return;
         addError("Can't have an abstract method in a non abstract class." +
-                 " The class '" + currentClass.getType().getName() +  "' must be declared abstract or the method '" +
+                 " The class '" + currentClass.getName() +  "' must be declared abstract or the method '" +
                  methodNode.getName() + "' must not be abstract.",methodNode);
     }
     
@@ -331,22 +341,22 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
     }
     
     private void checkImplementsAndExtends(ClassNode node) {
-        ClassNode cn = node.getSuperClassNode();
-        if (cn.isInterface()) addError("you are not allowed to extend the Interface "+cn.getType().getName()+", use implements instead", node);
-        String[] interfaces = node.getInterfaces();
+        ClassNode cn = node.getSuperClass();
+        if (cn.isInterface()) addError("you are not allowed to extend the Interface "+cn.getName()+", use implements instead", node);
+        ClassNode[] interfaces = node.getInterfaces();
         for (int i = 0; i < interfaces.length; i++) {
-            cn = node.findClassNode(Type.makeType(interfaces[i]));
-            if (!cn.isInterface()) addError ("you are not allowed to implement the Class "+cn.getType().getName()+", use extends instead", node); 
+            cn = interfaces[i];
+            if (!cn.isInterface()) addError ("you are not allowed to implement the Class "+cn.getName()+", use extends instead", node); 
         }
     }
     
     private void checkClassForOverwritingFinal(ClassNode cn) {
-        ClassNode superCN = cn.getSuperClassNode();
+        ClassNode superCN = cn.getSuperClass();
         if (superCN==null) return;
         if (!Modifier.isFinal(superCN.getModifiers())) return;
         StringBuffer msg = new StringBuffer();
         msg.append("you are not allowed to overwrite the final class ");
-        msg.append(superCN.getType().getName());
+        msg.append(superCN.getName());
         msg.append(".");
         addError(msg.toString(),cn);
         
@@ -357,7 +367,7 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
         for (Iterator cnIter = l.iterator(); cnIter.hasNext();) {
             MethodNode method =(MethodNode) cnIter.next();
             Parameter[] parameters = method.getParameters();
-            for (ClassNode superCN = cn.getSuperClassNode(); superCN!=null; superCN=superCN.getSuperClassNode()){
+            for (ClassNode superCN = cn.getSuperClass(); superCN!=null; superCN=superCN.getSuperClass()){
                 List methods = superCN.getMethods(method.getName());
                 for (Iterator iter = methods.iterator(); iter.hasNext();) {
                     MethodNode m = (MethodNode) iter.next();
@@ -378,7 +388,7 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
                         msg.append(parameters[i].getType());
                     }
                     msg.append(")");
-                    msg.append(" from class ").append(superCN.getType().getName()); 
+                    msg.append(" from class ").append(superCN.getName()); 
                     msg.append(".");
                     addError(msg.toString(),method);
                     return;
@@ -500,31 +510,15 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
         // first pass, add all possible variable names (properies and fields)
         // TODO: handle interfaces
         // TODO: handle static imports
-        try {
-            addVarNames(node);
-            addVarNames(node.getOuterClass(), currentScope.visibles, true);
-            addVarNames(node.getSuperClass(), currentScope.visibles, true);
-        } catch (ClassNotFoundException cnfe) {
-            //TODO: handle this case properly
-            // throw new GroovyRuntimeException("couldn't find super
-            // class",cnfe);
-            cnfe.printStackTrace();
-        }
-       
+        addVarNames(node);
+        addVarNames(node.getOuterClass(), currentScope.visibles, true);
+        addVarNames(node.getSuperClass(), currentScope.visibles, true);
         // second pass, check contents
         node.visitContents(this);
         
         currentClass = classBackup;
         currentScope = scope;
         scriptMode = scriptModeBackup;
-    }
-
-    private void addVarNames(Class c, HashMap refs, boolean visitParent)
-            throws ClassNotFoundException 
-    {
-        if (c == null) return;
-        // to prefer compiled code try to get a ClassNode via name first
-        addVarNames(Type.makeType(c), refs, visitParent);
     }
     
     private void addVarNames(ClassNode cn) {
@@ -569,8 +563,7 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
         }
     }
 
-    private void addVarNames(ClassNode cn, HashMap refs, boolean visitParent)
-            throws ClassNotFoundException {
+    private void addVarNames(ClassNode cn, HashMap refs, boolean visitParent){
         // note this method is only called for parent classes
         
         if (cn == null) return;
@@ -617,7 +610,7 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
         addVarNames(cn.getOuterClass(), refs, visitParent);
     }
 
-    private void addVarNames(Type superclassType, HashMap refs, boolean visitParent) 
+    /*private void addVarNames(ClassNode superclassType, HashMap refs, boolean visitParent) 
       throws ClassNotFoundException 
     {
 
@@ -658,7 +651,7 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
         // method
 
         // addVarNames(c.getEnclosingClass(),refs,visitParent);
-    }
+    }*/
     
     private String getPropertyName(String name) {
         if (!(name.startsWith("set") || name.startsWith("get"))) return null;
