@@ -3067,7 +3067,7 @@ options {
                             mSTRING_CTOR_END(true, /*fromStart:*/false, true); break;
                         case SCS_RE_TYPE:
                             mREGEXP_CTOR_END(true, /*fromStart:*/false); break;
-                        default:  assert(false);
+                        default:  throw new AssertionError(false);
                         }
                         lastSigTokenType = _returnToken.getType();
                         return _returnToken;
