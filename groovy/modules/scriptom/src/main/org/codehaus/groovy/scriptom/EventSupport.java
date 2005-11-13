@@ -44,6 +44,7 @@ import groovy.lang.Binding;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Iterator;
+import java.util.Date;
 
 import org.codehaus.groovy.control.CompilationFailedException;
 
@@ -123,17 +124,25 @@ public class EventSupport extends GroovyObjectSupport
                     .append("'].call( VariantProxy.defineArray(variants) )\n    }\n");
                 }
 
+                // time token to avoid duplicate classes with the same name
+                long time = new Date().getTime();
                 StringBuffer classSource = new StringBuffer();
                 classSource.append("import com.jacob.com.*\n")
                 .append("import org.codehaus.groovy.scriptom.VariantProxy\n")
-                .append("class EventHandler {\n")
+                .append("class EventHandler")
+                .append(time)
+                .append(" {\n")
                 .append("    def evtHandlers\n")
-                .append("    EventHandler(scriptBinding) {\n")
+                .append("    EventHandler")
+                .append(time)
+                .append("(scriptBinding) {\n")
                 .append("        evtHandlers = scriptBinding\n")
                 .append("    }\n")
                 .append(methods.toString())
                 .append("}\n")
-                .append("new EventHandler(binding)\n");
+                .append("new EventHandler")
+                .append(time)
+                .append("(binding)\n");
 
                 Map eventHandlersContainer = new HashMap();
                 eventHandlersContainer.put("eventHandlers", eventHandlers);
