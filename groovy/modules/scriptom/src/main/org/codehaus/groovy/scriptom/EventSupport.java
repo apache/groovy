@@ -170,7 +170,14 @@ public class EventSupport extends GroovyObjectSupport
     }
 
     /**
-     * Retrieves the closure associated with a given event.
+     * <p>Retrieves the action event closure associated with a given event.</p>
+     *
+     * <p>
+     * For debugging purpose, the generated scripted can be retrieved with:
+     * <code>
+     * println comProxy.events.eventSourceScript
+     * </code>
+     * </p>
      *
      * @param property the name of the event
      * @return the closure associated with the handling of the given event
