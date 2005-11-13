@@ -12,7 +12,7 @@
  *
  * Requirements:
  *   - install Groovy as detailed at <http://groovy.codehaus.org/>.
- *   - put commons-httpclient-2.0.1.jar into GROOVY_HOME/lib
+ *   - put commons-httpclient-3.0-rc3.jar into GROOVY_HOME/lib
  *       see <http://jakarta.apache.org/commons/httpclient/>.
  *       note: this is currently designed for HttpClient2.x and not HttpClient3.x
  *
@@ -26,7 +26,6 @@
  */
 
 import groovy.swing.SwingBuilder
-import org.codehaus.groovy.sandbox.util.XmlSlurper
 import java.awt.BorderLayout
 import java.net.URL
 import javax.swing.BorderFactory
