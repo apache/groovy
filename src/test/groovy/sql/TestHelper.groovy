@@ -19,6 +19,12 @@ class TestHelper extends GroovyTestCase {
     protected def createSql() {
         def sql = newSql(getURI())
         
+        try {
+           sql.execute("drop table PERSON")
+           sql.execute("drop table FOOD")
+           sql.execute("drop table FEATURE")
+        } catch(Exception e){}
+        
         sql.execute("create table PERSON ( firstname varchar, lastname varchar, id integer, location_id integer, location_name varchar )")     
         sql.execute("create table FOOD ( type varchar, name varchar)")
         sql.execute("create table FEATURE ( id integer, name varchar)")
@@ -46,7 +52,7 @@ class TestHelper extends GroovyTestCase {
     protected def getURI() {
 		def answer = "jdbc:axiondb:foo"
 		def name = getMethodName()
-		if (name == null) { name = "" }
+		if (name == null) {name = ""}
 		name += counter++
 		return answer + name
     }

@@ -45,8 +45,9 @@
  */
 package org.codehaus.groovy.ast.expr;
 
+import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.ast.Type;
 import org.codehaus.groovy.ast.Variable;
 
 /**
@@ -57,19 +58,20 @@ import org.codehaus.groovy.ast.Variable;
  */
 public class VariableExpression extends Expression implements Variable {
 
-    public static final VariableExpression THIS_EXPRESSION = new VariableExpression("this", Type.DYNAMIC_TYPE);
-    public static final VariableExpression SUPER_EXPRESSION = new VariableExpression("super", Type.DYNAMIC_TYPE);
+    public static final VariableExpression THIS_EXPRESSION = new VariableExpression("this", ClassHelper.DYNAMIC_TYPE);
+    public static final VariableExpression SUPER_EXPRESSION = new VariableExpression("super", ClassHelper.DYNAMIC_TYPE);
 
     private String variable;
     private boolean inStaticContext;
+    private boolean isDynamicTyped=false;
 
-    public VariableExpression(String variable, Type type) {
+    public VariableExpression(String variable, ClassNode type) {
         this.variable = variable;
-        super.setType(type.getWrapper());
+        super.setType(ClassHelper.getWrapper(type));
     }
     
     public VariableExpression(String variable) {
-        this(variable, Type.DYNAMIC_TYPE);
+        this(variable, ClassHelper.DYNAMIC_TYPE);
     }
 
     public void visit(GroovyCodeVisitor visitor) {
@@ -92,7 +94,7 @@ public class VariableExpression extends Expression implements Variable {
      * @return true if this variable is dynamically typed
      */
     public String toString() {
-        return super.toString() + "[variable: " + variable + ((getType().isDynamic()) ? "" : " type: " + getType()) + "]";
+        return super.toString() + "[variable: " + variable + (this.isDynamicTyped() ? "" : " type: " + getType()) + "]";
     }
 
     public Expression getInitialExpression() {
@@ -109,5 +111,14 @@ public class VariableExpression extends Expression implements Variable {
     
     public void setInStaticContext(boolean inStaticContext) {
         this.inStaticContext = inStaticContext;
+    }
+
+    public void setType(ClassNode cn){
+        super.setType(cn);
+        isDynamicTyped |= ClassHelper.DYNAMIC_TYPE==cn;
+    }
+    
+    public boolean isDynamicTyped() {
+        return isDynamicTyped;
     }
 }

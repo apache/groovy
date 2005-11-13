@@ -6134,7 +6134,8 @@ public class DefaultGroovyMethods {
     /**
      * Iterates through the class loader parents until it finds a loader with a class
      * named equal to org.codehaus.groovy.tools.RootLoader. If there is no such class
-     * null will be returned.
+     * null will be returned. The name has to be used because a direct compare with 
+     * == may fail as the class may be loaded through different classloaders.
      * @see org.codehaus.groovy.tools.RootLoader
      */
     public static ClassLoader getRootLoader(ClassLoader cl) {

@@ -45,8 +45,8 @@
  */
 package org.codehaus.groovy.ast.expr;
 
+import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.ast.Type;
 import org.codehaus.groovy.syntax.Token;
 
 /**
@@ -93,7 +93,7 @@ public class PrefixExpression extends Expression {
         return "(" + operation.getText() + expression.getText() + ")";
     }
 
-    public Type getType() {
+    public ClassNode getType() {
         return expression.getType();
     }
 

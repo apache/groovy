@@ -70,4 +70,7 @@ public class ThrowStatement extends Statement {
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitThrowStatement(this);
     }
+    public void setExpression(Expression expression) {
+        this.expression = expression;
+    }
 }

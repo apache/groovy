@@ -60,6 +60,7 @@ import java.util.Map;
  */
 public class AnnotatedNode extends ASTNode {
     private Map annotations = new HashMap();
+    private Map annotationClasses = new HashMap();
     private boolean synthetic;
     ClassNode declaringClass;
 
@@ -73,8 +74,13 @@ public class AnnotatedNode extends ASTNode {
     public AnnotationNode getAnnotations(String name) {
         return (AnnotationNode) annotations.get(name);
     }
+    
+    public ClassNode getAnnotationClass(String name) {
+        return (ClassNode) annotationClasses.get(name);
+    }
 
     public void addAnnotation(String name, AnnotationNode value) {
+        annotationClasses.put(name,value.getClassNode());
         AnnotationNode oldValue = (AnnotationNode) annotations.get(name);
 
         // TODO can we support many annotations of the same name?
@@ -98,7 +104,7 @@ public class AnnotatedNode extends ASTNode {
     public void addAnnotations(List annotations) {
         for (Iterator iter = annotations.iterator(); iter.hasNext();) {
             AnnotationNode node = (AnnotationNode) iter.next();
-            addAnnotation(node.getName(), node);
+            addAnnotation(node.getClassNode().getName(), node);
         }
 
     }

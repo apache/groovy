@@ -18,10 +18,7 @@
 package org.codehaus.groovy.syntax;
 
 import org.codehaus.groovy.ast.ModuleNode;
-import org.codehaus.groovy.control.CompilationFailedException;
-import org.codehaus.groovy.control.MultipleCompilationErrorsException;
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.syntax.Types;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -40,7 +37,6 @@ import java.util.Map;
 public class ASTHelper {
 
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
-    private static final String[] DEFAULT_IMPORTS = {"java.lang.", "java.io.", "java.net.", "java.util.", "groovy.lang.", "groovy.util."};
 
     /** The SourceUnit controlling us */
     private SourceUnit controller;
@@ -79,7 +75,9 @@ public class ASTHelper {
 
     public void setPackageName(String packageName) {
         this.packageName = packageName;
-
+        if (packageName!=null && packageName.length()>0){
+            packageName+='.';
+        }
         output.setPackageName(packageName);
     }
 
@@ -107,7 +105,7 @@ public class ASTHelper {
      * Returns a fully qualified name for any given potential type
      * name.  Returns null if no qualified name could be determined.
      */
-    protected String resolveName(String name, boolean safe) {
+/*    protected String resolveName(String name, boolean safe) {
         //
         // Use our cache of resolutions, if possible
 
@@ -252,13 +250,13 @@ public class ASTHelper {
             return resolution;
         }
     }
-
+*/
+    
     /**
      * Returns two names joined by a dot.  If the base name is
      * empty, returns the name unchanged.
      */
-
-    protected String dot(String base, String name) {
+    public static String dot(String base, String name) {
         if (base != null && base.length() > 0) {
             return base + "." + name;
         }
@@ -273,50 +271,31 @@ public class ASTHelper {
     }
 
     /**
-     * Returns true if the specified name is a known type name.
-     */
-
-    protected boolean isDatatype(String name) {
-        return resolveName(name, false) != null;
-    }
-
-    /**
      * A synonym for <code>dot( base, "" )</code>.
      */
-
     protected String dot(String base) {
         return dot(base, "");
     }
 
-    protected String resolveNewClassOrName(String name, boolean safe) {
+    /*protected String resolveNewClassOrName(String name, boolean safe) {
         if (this.newClasses.contains(name)) {
             return dot(packageName, name);
         }
         else {
             return resolveName(name, safe);
         }
-    }
+    }*/
 
     protected void addNewClassName(String name) {
         this.newClasses.add(name);
     }
 
     protected void importClass(String importPackage, String name, String as) {
-        //
-        // There appears to be a bug in the previous code for
-        // single imports, in that the old code passed unqualified
-        // class names to module.addImport().  This hasn't been a
-        // problem apparently because those names are resolved here.
-        // Passing module.addImport() a fully qualified name does
-        // currently causes problems with classgen, possibly because
-        // of name collisions.  So, for now, we use the old method...
-
         if (as==null) as=name;
-        output.addImport( as, name );  // unqualified
 
         name = dot( importPackage, name );
 
-        // module.addImport( as, name );  // qualified
+        output.addImport( as, name ); 
         imports.put( as, name );
     }
 

@@ -45,8 +45,8 @@
  */
 package org.codehaus.groovy.ast.expr;
 
+import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.ast.Type;
 
 /**
  * Represents a spread expression *x in the list expression [1, *x, 2].
@@ -77,7 +77,7 @@ public class SpreadExpression extends Expression {
 		return "*" + expression.getText();
 	}
 
-    public Type getType() {
+    public ClassNode getType() {
         return expression.getType();
     }
 }

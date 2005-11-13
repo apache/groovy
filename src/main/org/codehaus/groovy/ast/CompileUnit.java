@@ -43,8 +43,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.codehaus.groovy.classgen.ClassGeneratorException;
-import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
 
 /**
@@ -59,18 +57,15 @@ public class CompileUnit {
     private List modules = new ArrayList();
     private Map classes = new HashMap();
     private CompilerConfiguration config;
-    private ClassLoader classLoader;
+    private GroovyClassLoader classLoader;
     private CodeSource codeSource;
-    private Map cachedClasses = new HashMap();
+    private Map classesToCompile = new HashMap();
     
-    public static final Object NO_CLASS = new Object();
-    
-
-    public CompileUnit(ClassLoader classLoader, CompilerConfiguration config) {
+    public CompileUnit(GroovyClassLoader classLoader, CompilerConfiguration config) {
     	this(classLoader, null, config);
     }
     
-    public CompileUnit(ClassLoader classLoader, CodeSource codeSource, CompilerConfiguration config) {
+    public CompileUnit(GroovyClassLoader classLoader, CodeSource codeSource, CompilerConfiguration config) {
         this.classLoader = classLoader;
         this.config = config;
         this.codeSource = codeSource;
@@ -83,7 +78,7 @@ public class CompileUnit {
     public void addModule(ModuleNode node) {
         modules.add(node);
         node.setUnit(this);
-        addClasses(node.classes);
+        addClasses(node.getClasses());
     }
 
     /**
@@ -92,7 +87,9 @@ public class CompileUnit {
      *         (ignoring the .class files on the classpath)
      */
     public ClassNode getClass(String name) {
-        return (ClassNode) classes.get(name);
+        ClassNode cn = (ClassNode) classes.get(name);
+        if (cn!=null) return cn;
+        return (ClassNode) classesToCompile.get(name);
     }
 
     /**
@@ -111,116 +108,13 @@ public class CompileUnit {
         return config;
     }
 
-    public ClassLoader getClassLoader() {
+    public GroovyClassLoader getClassLoader() {
         return classLoader;
     }
     
     public CodeSource getCodeSource() {
     	return codeSource;
     }
-
-    public Class loadClass(Type type) throws ClassNotFoundException {
-        if (type.getTypeClass()!=null) return type.getTypeClass();
-        Class c = loadClass(type.getName());
-        type.setTypeClass(c);
-        return c;
-    }
-    
-    /**
-     * Loads a class on the compile classpath so that it can be introspected
-     * 
-     * @param type
-     * @return @throws
-     *         ClassNotFoundException
-     */
-    public Class loadClass(String type) throws ClassNotFoundException {
-    	Object obj = cachedClasses.get(type);
-    	if ( obj == NO_CLASS ) {
-    		throw new ClassNotFoundException(type);
-    	}
-    	if ( obj != null) {
-    		return (Class)obj;
-    	}
-    	
-    	Class answer = null;
-    	ClassLoader lastLoader  = getClassLoader();
-    	try {
-    		answer = lastLoader.loadClass(type);
-    	} catch (ClassNotFoundException e) {
-            Throwable cause = e.getCause();
-    		if (cause !=null && cause instanceof CompilationFailedException){
-                throw new ClassGeneratorException("Error when compiling class: " + type + ". Reason: " + cause, cause);
-            }
-    	} catch (NoClassDefFoundError e) {
-           // fall through   
-        }
-    	
-        try {
-            ClassLoader loader = Thread.currentThread().getContextClassLoader();
-        	if ( answer == null && loader != lastLoader /*&& loader != null*/) {
-                lastLoader = loader;
-        		answer = loader.loadClass(type);
-        	}
-        }
-        catch (ClassNotFoundException e1) {
-            Throwable cause = e1.getCause();
-            if (cause !=null && cause instanceof CompilationFailedException){
-                throw new ClassGeneratorException("Error when compiling class: " + type + ". Reason: " + cause, cause);
-            }
-        } catch (NoClassDefFoundError e) {
-            // fall through   
-        }
-        
-        // lets try our class loader
-        try {
-            ClassLoader loader = getClass().getClassLoader();
-        	if ( answer == null && loader != lastLoader) {
-                lastLoader = loader;
-        		answer = loader.loadClass(type);
-        	}
-        }
-        catch (ClassNotFoundException e2) {
-            Throwable cause = e2.getCause();
-            if (cause !=null && cause instanceof CompilationFailedException){
-                throw new ClassGeneratorException("Error when compiling class: " + type + ". Reason: " + cause, cause);
-            }        
-        }
-        catch (NoClassDefFoundError e) {
-            // fall through   
-         }
-        
-        try {
-        	if (answer == null ) {
-        		answer = Class.forName(type);
-        	}
-        }
-        catch (ClassNotFoundException e2) {
-            Throwable cause = e2.getCause();
-            if (cause !=null && cause instanceof CompilationFailedException){
-                throw new ClassGeneratorException("Error when compiling class: " + type + ". Reason: " + cause, cause);
-            }
-        }
-        catch (NoClassDefFoundError e) {
-            // fall through   
-         }
-
-        if ( answer == null ) {
-        	cachedClasses.put(type,NO_CLASS);
-        	throw new ClassNotFoundException(type);
-        } else if (answer==GroovyClassLoader.PARSING.class){
-            //no chaching
-        } else {
-            if (!type.equals(answer.getName())) { // br case sensitive match
-                cachedClasses.put(type,NO_CLASS);
-                System.out.println("Mismatch: answer.getName() = " + answer.getName() + ", type = " + type);
-                throw new ClassNotFoundException(type);
-            }
-            cachedClasses.put(type,answer);
-        }
-        
-        return answer;
-    }
-
 
     /**
      * Appends all of the fully qualified class names in this
@@ -236,12 +130,32 @@ public class CompileUnit {
      *  Adds a class to the unit.
      */
     public void addClass(ClassNode node) {
-        String name = node.getType().getName();
-        if (classes.containsKey(name)) {
+    	node = node.redirect();
+        String name = node.getName();
+        Object stored = classes.get(name);
+        if (stored != null && stored != node) {
             throw new RuntimeException(
                 "Error: duplicate class declaration for name: " + name + " and class: " + node);
         }
         classes.put(name, node);
+        
+        if (classesToCompile.containsKey(name)) {
+            ClassNode cn = (ClassNode) classesToCompile.get(name);
+            cn.setRedirect(node);
+            classesToCompile.remove(name);
+        }        
+    }
+     
+    /**
+     * this emthod actually does not compile a class. It's only
+     * a marker that this type has to be compiled by the CompilationUnit
+     * at the end of a parse step no node should be be left.
+     */
+    public void addClassNodeToCompile(ClassNode node) {
+        classesToCompile.put(node.getName(),node);
     }
 
+    public boolean hasClassNodeToCompile(){
+        return classesToCompile.size()!=0;
+    }
 }

@@ -45,9 +45,9 @@
  */
 package org.codehaus.groovy.ast.expr;
 
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.Type;
 import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -69,7 +69,7 @@ public class ClosureExpression extends Expression {
     public ClosureExpression(Parameter[] parameters, Statement code) {
         this.parameters = parameters;
         this.code = code;
-        super.setType(Type.CLOSURE_TYPE);
+        super.setType(ClassHelper.CLOSURE_TYPE);
     }
     
     public void visit(GroovyCodeVisitor visitor) {

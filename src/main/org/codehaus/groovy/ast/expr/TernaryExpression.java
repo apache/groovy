@@ -45,8 +45,9 @@
  */
 package org.codehaus.groovy.ast.expr;
 
+import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.ast.Type;
+
 /**
  * Represents a ternary expression (booleanExpression) ? expression : expression
  * 
@@ -103,7 +104,7 @@ public class TernaryExpression extends Expression {
             + falseExpression.getText();
     }
 
-    public Type getType() {
+    public ClassNode getType() {
         return trueExpression.getType();
     }
 }

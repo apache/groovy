@@ -45,8 +45,8 @@
  */
 package org.codehaus.groovy.ast.expr;
 
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.ast.Type;
 
 /**
  * Represents a regular expression of the form ~<double quoted string> which creates
@@ -61,7 +61,7 @@ public class RegexExpression extends Expression {
     
     public RegexExpression(Expression string) {
         this.string = string;
-        super.setType(Type.PATTERN_TYPE);
+        super.setType(ClassHelper.PATTERN_TYPE);
     }
     
     public void visit(GroovyCodeVisitor visitor) {

@@ -59,20 +59,20 @@ public class Parameter implements Variable {
     public static final Parameter[] EMPTY_ARRAY = {
     };
 
-    private Type type;
+    private ClassNode type;
     private String name;
-    private boolean dynamicType;
+    private boolean dynamicTyped;
     private Expression defaultValue;
     private boolean hasDefaultValue;
     private boolean inStaticContext;
 
-    public Parameter(Type type, String name) {
-        this.name = Type.ensureJavaTypeNameSyntax(name);
-        this.type = type;
+    public Parameter(ClassNode type, String name) {
+        this.name = name;
+        this.setType(type);
         this.hasDefaultValue = false;
     }
-
-    public Parameter(Type type, String name, Expression defaultValue) {
+    
+    public Parameter(ClassNode type, String name, Expression defaultValue) {
         this(type,name);
         this.defaultValue = defaultValue;
         this.hasDefaultValue = true;
@@ -86,12 +86,13 @@ public class Parameter implements Variable {
         return name;
     }
 
-    public Type getType() {
+    public ClassNode getType() {
         return type;
     }
 
-    public void setType(Type type) {
+    public void setType(ClassNode type) {
         this.type = type;
+        dynamicTyped |= type==ClassHelper.DYNAMIC_TYPE;
     }
     
     public boolean hasInitialExpression() {
@@ -112,5 +113,9 @@ public class Parameter implements Variable {
     
     public void setInStaticContext(boolean inStaticContext) {
         this.inStaticContext = inStaticContext;
+    }
+
+    public boolean isDynamicTyped() {
+        return dynamicTyped;
     }
 }

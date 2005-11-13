@@ -72,4 +72,9 @@ public class DeclarationExpression extends BinaryExpression {
     public void setLeftExpression(Expression leftExpression) {
         super.setLeftExpression((VariableExpression) leftExpression);
     }
+    
+    
+    public Expression transformExpression(ExpressionTransformer transformer) {
+        return new DeclarationExpression((VariableExpression) transformer.transform(getLeftExpression()), getOperation(), transformer.transform(getRightExpression()));
+    }
 }

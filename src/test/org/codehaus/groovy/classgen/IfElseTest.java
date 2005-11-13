@@ -46,13 +46,13 @@
 
 package org.codehaus.groovy.classgen;
 
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
-import org.codehaus.groovy.ast.Type;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
@@ -71,17 +71,17 @@ import org.codehaus.groovy.syntax.Token;
 public class IfElseTest extends TestSupport {
 
     public void testLoop() throws Exception {
-        ClassNode classNode = new ClassNode(Type.makeType("Foo"), ACC_PUBLIC, Type.OBJECT_TYPE);
+        ClassNode classNode = new ClassNode("Foo", ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
         classNode.addConstructor(new ConstructorNode(ACC_PUBLIC, null));
-        classNode.addProperty(new PropertyNode("bar", ACC_PUBLIC, Type.STRING_TYPE, Type.makeType("Foo"), null, null, null));
+        classNode.addProperty(new PropertyNode("bar", ACC_PUBLIC, ClassHelper.STRING_TYPE, classNode, null, null, null));
 
-        classNode.addProperty(new PropertyNode("result", ACC_PUBLIC, Type.STRING_TYPE, Type.makeType("Foo"), null, null, null));
+        classNode.addProperty(new PropertyNode("result", ACC_PUBLIC, ClassHelper.STRING_TYPE, classNode, null, null, null));
 
         BooleanExpression expression =
             new BooleanExpression(
                 new BinaryExpression(
                     new FieldExpression(
-                        new FieldNode("bar", ACC_PRIVATE, Type.STRING_TYPE, Type.makeType("Foo"), ConstantExpression.NULL)),
+                        new FieldNode("bar", ACC_PRIVATE, ClassHelper.STRING_TYPE, classNode, ConstantExpression.NULL)),
                     Token.newSymbol("==", 0, 0),
                     new ConstantExpression("abc")));
 
@@ -89,14 +89,14 @@ public class IfElseTest extends TestSupport {
             new ExpressionStatement(
                 new BinaryExpression(
                     new FieldExpression(
-                        new FieldNode("result", ACC_PRIVATE, Type.STRING_TYPE, Type.makeType("Foo"), ConstantExpression.NULL)),
+                        new FieldNode("result", ACC_PRIVATE, ClassHelper.STRING_TYPE, classNode, ConstantExpression.NULL)),
                     Token.newSymbol("=", 0, 0),
                     new ConstantExpression("worked")));
 
         Statement falseStatement = createPrintlnStatement(new ConstantExpression("false"));
 
         IfStatement statement = new IfStatement(expression, trueStatement, falseStatement);
-        classNode.addMethod(new MethodNode("ifDemo", ACC_PUBLIC, Type.VOID_TYPE, Parameter.EMPTY_ARRAY, statement));
+        classNode.addMethod(new MethodNode("ifDemo", ACC_PUBLIC, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, statement));
 
         Class fooClass = loadClass(classNode);
         assertTrue("Loaded a new class", fooClass != null);

@@ -83,7 +83,6 @@ import org.objectweb.asm.ClassWriter;
 public class GroovyClassLoader extends SecureClassLoader {
 
     private Map cache = new HashMap();
-    private Collection loadedClasses = null;
 
     private GroovyResourceLoader resourceLoader = new GroovyResourceLoader() {
         public File loadGroovyFile(String filename) {
@@ -102,28 +101,39 @@ public class GroovyClassLoader extends SecureClassLoader {
     }
 
     private CompilerConfiguration config;
-
     private String[] searchPaths;
-
     private Set additionalPaths = new HashSet();
 
+    /**
+     * creates a GroovyClassLoader using the current Thread's context
+     * Class loader as parent.
+     */
     public GroovyClassLoader() {
         this(Thread.currentThread().getContextClassLoader());
     }
 
+    /**
+     * creates a GroovyClassLoader using the given ClassLoader as parent
+     */
     public GroovyClassLoader(ClassLoader loader) {
         this(loader, null);
     }
 
+    /**
+     * creates a GroovyClassLoader using the given GroovyClassLoader as parent.
+     * This loader will get the parent's CompilerConfiguration
+     */
     public GroovyClassLoader(GroovyClassLoader parent) {
         this(parent, parent.config);
     }
 
+    /**
+     * creates a GroovyClassLoader using the given ClassLoader as parent.
+     */
     public GroovyClassLoader(ClassLoader loader, CompilerConfiguration config) {
         super(loader);
         if (config==null) config = CompilerConfiguration.DEFAULT;
         this.config = config;
-        this.loadedClasses = new ArrayList();
     }
 
     public void setResourceLoader(GroovyResourceLoader resourceLoader) {
@@ -131,6 +141,10 @@ public class GroovyClassLoader extends SecureClassLoader {
             throw new IllegalArgumentException("Resource loader must not be null!");
         }
         this.resourceLoader = resourceLoader;
+    }
+    
+    public GroovyResourceLoader getResourceLoader() {
+        return resourceLoader;
     }
 
     /**
@@ -157,10 +171,7 @@ public class GroovyClassLoader extends SecureClassLoader {
             //swallow
         }
 
-        //
-        // BUG: Why is this passing getParent() as the ClassLoader???
-
-        CompilationUnit unit = new CompilationUnit(config, codeSource, getParent());
+        CompilationUnit unit = new CompilationUnit(config, codeSource, this);
         try {
             ClassCollector collector = createCollector(unit);
 
@@ -271,18 +282,16 @@ public class GroovyClassLoader extends SecureClassLoader {
             unit.compile(goalPhase);
 
             answer = collector.generatedClass;
-            // }
-            // catch( CompilationFailedException e ) {
-            //     throw new RuntimeException( e );
-            // }
-            synchronized (this.loadedClasses) {
-                this.loadedClasses.addAll(collector.getLoadedClasses());
+            if (shouldCache) {
+	            for (Iterator iter = collector.getLoadedClasses().iterator(); iter.hasNext();) {
+					Class clazz = (Class) iter.next();
+					cache.put(clazz.getName(),clazz);
+				}
             }
         } finally {
             synchronized (cache) {
-                if (answer == null || !shouldCache) {
-                    cache.remove(name);
-                } else {
+            	cache.remove(name);
+                if (shouldCache) {
                     cache.put(name, answer);
                 }
             }
@@ -538,7 +547,7 @@ public class GroovyClassLoader extends SecureClassLoader {
         protected Class onClassNode(ClassWriter classWriter, ClassNode classNode) {
             byte[] code = classWriter.toByteArray();
 
-            Class theClass = cl.defineClass(classNode.getType().getName(), code, 0, code.length, unit.getAST().getCodeSource());
+            Class theClass = cl.defineClass(classNode.getName(), code, 0, code.length, unit.getAST().getCodeSource());
             this.loadedClasses.add(theClass);
 
             if (generatedClass == null) {
@@ -568,22 +577,39 @@ public class GroovyClassLoader extends SecureClassLoader {
         }
         return c;
     }
-
-    /*
-     * (non-Javadoc)
-     *
-     * @see java.lang.ClassLoader#loadClass(java.lang.String, boolean)
-     *      Implemented here to check package access prior to returning an
-     *      already loaded class. todo : br shall we search for the source
-     *      groovy here to see if the soource file has been updated first?
+    
+    /**
+     * loads a class from a file or a parent classloader. 
+     * This method does call @see #loadClass(String, boolean, boolean, boolean)
+     * with the last parameter set to false.
      */
-    protected synchronized Class loadClass(final String name, boolean resolve) throws ClassNotFoundException {
+    public Class loadClass(final String name, boolean lookupScriptFiles, boolean preferClassOverScript) 
+        throws ClassNotFoundException 
+    {
+        return loadClass(name,lookupScriptFiles,preferClassOverScript,false);
+    }
+    
+    /**
+     * loads a class from a file or a parent classloader.
+     * 
+     * @param name                      of the class to be loaded
+     * @param lookupScriptFiles         if false no lookup at files is done at all
+     * @param preferClassOverScript     if true the file lookup is only done if there is no class
+     * @param resolve                   @see ClassLoader#loadClass(java.lang.String, boolean)
+     * @return                          the class found or the class created from a file lookup
+     * @throws ClassNotFoundException
+     */
+    public Class loadClass(final String name, boolean lookupScriptFiles, boolean preferClassOverScript, boolean resolve) 
+        throws ClassNotFoundException 
+    {
+        // look into cache
         synchronized (cache) {
             Class cls = (Class) cache.get(name);
             if (cls == NOT_RESOLVED.class) throw new ClassNotFoundException(name);
             if (cls!=null) return cls;
         }
-
+        
+        // check security manager
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             String className = name.replace('/', '.');
@@ -593,11 +619,16 @@ public class GroovyClassLoader extends SecureClassLoader {
             }
         }
 
+        // try parent loader
         Class cls = null;
         ClassNotFoundException last = null;
         try {
             cls = super.loadClass(name, resolve);
-
+        } catch (ClassNotFoundException cnfe) {
+            last = cnfe;
+        }
+        
+        if (cls!=null) {
             boolean recompile = false;
             if (getTimeStamp(cls) < Long.MAX_VALUE) {
                 Class[] inters = cls.getInterfaces();
@@ -608,41 +639,58 @@ public class GroovyClassLoader extends SecureClassLoader {
                     }
                 }
             }
-            if (!recompile) return cls;
-        } catch (ClassNotFoundException cnfe) {
-            last = cnfe;
+            
+            preferClassOverScript |= cls.getClassLoader()==this;
+            preferClassOverScript |= !recompile;
+            if(preferClassOverScript) return cls;
+        }
+        
+        if (lookupScriptFiles) {
+            // try groovy file
+            try {
+                File source = (File) AccessController.doPrivileged(new PrivilegedAction() {
+                    public Object run() {
+                        return resourceLoader.loadGroovyFile(name);
+                    }
+                });
+                if (source != null) {
+                    // found a source, compile it then
+                    if ((cls!=null && isSourceNewer(source, cls)) || (cls==null)) {
+                        synchronized (cache) {
+                            cache.put(name,PARSING.class);
+                        }
+                        cls = parseClass(source);
+                    }
+                }
+            } catch (Exception e) {
+                cls = null;
+                last = new ClassNotFoundException("Failed to parse groovy file: " + name, e);
+            }
         }
 
-        // try groovy file
-        try {
-            File source = (File) AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
-                    return resourceLoader.loadGroovyFile(name);
-                }
-            });
-            if (source != null) {
-                if ((cls!=null && isSourceNewer(source, cls)) || (cls==null)) {
-                    synchronized (cache) {
-                        cache.put(name,PARSING.class);
-                    }
-                    cls = parseClass(source);
-                }
-            }
-        } catch (Exception e) {
-            cls = null;
-            last = new ClassNotFoundException("Failed to parse groovy file: " + name, e);
-        }
         if (cls==null) {
+            // no class found, there has to be an exception before then
             if (last==null) throw new AssertionError(true);
             synchronized (cache) {
                 cache.put(name, NOT_RESOLVED.class);
             }
             throw last;
         }
+        
+        //class found, store it in cache
         synchronized (cache) {
             cache.put(name, cls);
         }
         return cls;
+    }
+    
+    /**
+     * Implemented here to check package access prior to returning an
+     * already loaded class. 
+     * @see java.lang.ClassLoader#loadClass(java.lang.String, boolean)
+     */
+    protected synchronized Class loadClass(final String name, boolean resolve) throws ClassNotFoundException {
+        return loadClass(name,true,false,resolve);
     }
 
     private long getTimeStamp(Class cls) {
@@ -652,23 +700,10 @@ public class GroovyClassLoader extends SecureClassLoader {
             field = cls.getField(Verifier.__TIMESTAMP);
             o = (Long) field.get(null);
         } catch (Exception e) {
-            //throw new RuntimeException(e);
             return Long.MAX_VALUE;
         }
         return o.longValue();
     }
-
-    //    static class ClassWithTimeTag {
-    //        final static ClassWithTimeTag NOT_RESOLVED = new ClassWithTimeTag(null,
-    // 0);
-    //        Class cls;
-    //        long lastModified;
-    //
-    //        public ClassWithTimeTag(Class cls, long lastModified) {
-    //            this.cls = cls;
-    //            this.lastModified = lastModified;
-    //        }
-    //    }
 
     private File getSourceFile(String name) {
         File source = null;
@@ -725,8 +760,8 @@ public class GroovyClassLoader extends SecureClassLoader {
      */
     public Class[] getLoadedClasses() {
         Class[] loadedClasses = null;
-        synchronized (this.loadedClasses) {
-            loadedClasses = (Class[])this.loadedClasses.toArray(new Class[this.loadedClasses.size()]);
+        synchronized (cache) {
+            loadedClasses = (Class[])this.cache.values().toArray(new Class[0]);
         }
         return loadedClasses;
     }

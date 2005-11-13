@@ -60,15 +60,15 @@ import java.util.Map;
  * @version $Revision$
  */
 public class AnnotationNode extends ASTNode {
-    private String name;
+    private ClassNode classNode;
     private Map members = new HashMap();
 
-    public AnnotationNode(String name) {
-        this.name = name;
+    public AnnotationNode(ClassNode classNode) {
+        this.classNode = classNode;
     }
 
-    public String getName() {
-        return name;
+    public ClassNode getClassNode() {
+        return classNode;
     }
 
     public Map getMembers() {
@@ -100,6 +100,10 @@ public class AnnotationNode extends ASTNode {
 
     public void setMember(String name, Expression value) {
         members.put(name, value);
+    }
+    
+    public boolean isBuiltIn(){
+        return classNode.getName().equals("Property");
     }
     
 }

@@ -48,8 +48,8 @@ package org.codehaus.groovy.ast.expr;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
+import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.ast.Type;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 
@@ -152,7 +152,7 @@ public class BinaryExpression extends Expression {
      *  is written into the specified variable name.   
      */
      
-     public static BinaryExpression newInitializationExpression( String variable, Type type, Expression rhs ) {
+     public static BinaryExpression newInitializationExpression( String variable, ClassNode type, Expression rhs ) {
      	VariableExpression lhs = new VariableExpression( variable );
      
      	if( type != null ) {

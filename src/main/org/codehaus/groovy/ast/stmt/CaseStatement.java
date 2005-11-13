@@ -72,6 +72,10 @@ public class CaseStatement extends Statement {
     public Expression getExpression() {
         return expression;
     }
+    
+    public void setExpression(Expression e) {
+        expression=e;
+    }
 
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitCaseStatement(this);

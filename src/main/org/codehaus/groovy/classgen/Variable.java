@@ -45,7 +45,8 @@
  */
 package org.codehaus.groovy.classgen;
 
-import org.codehaus.groovy.ast.Type;
+import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
 import org.objectweb.asm.Label;
 
 
@@ -58,7 +59,7 @@ import org.objectweb.asm.Label;
 public class Variable {
 
     private int index;
-    private Type type;
+    private ClassNode type;
     private String name;
     private boolean holder;
     private boolean property;
@@ -67,8 +68,9 @@ public class Variable {
     // these fields should probably go to jvm Operand class
     private Label startLabel = null;
     private Label endLabel = null;
+    private boolean dynamicTyped;
 
-    public Variable(int index, Type type, String name) {
+    public Variable(int index, ClassNode type, String name) {
         this.index = index;
         this.type = type;
         this.name = name;
@@ -78,7 +80,7 @@ public class Variable {
         return name;
     }
 
-    public Type getType() {
+    public ClassNode getType() {
         return type;
     }
     
@@ -138,19 +140,24 @@ public class Variable {
      * @return
      */
     public Variable deriveBoxedVersion() {
-        if (getType().isPrimitiveType()) {
-            Type t = getType().getWrapper();
+        if (ClassHelper.isPrimitiveType(getType())) {
+            ClassNode t = ClassHelper.getWrapper(getType());
             return new Variable(index, t, name);
         } else {
             return this;
         }
     }
 
-    public void setType(Type type) {
+    public void setType(ClassNode type) {
         this.type = type;
+        dynamicTyped |= type==ClassHelper.DYNAMIC_TYPE;
     }
 
-    public void setDynamic(boolean b) {
-        type.setDynamic(b);
+    public void setDynamicTyped(boolean b) {
+        dynamicTyped = b;
+    }
+    
+    public boolean isDynamicTyped() {
+        return dynamicTyped;
     }
 }

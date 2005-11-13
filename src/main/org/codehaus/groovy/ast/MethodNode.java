@@ -59,20 +59,20 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
 
     private String name;
     private int modifiers;
-    private Type returnType;
+    private ClassNode returnType;
     private Parameter[] parameters;
     private boolean hasDefaultValue = false;
     private Statement code;
     private boolean dynamicReturnType;
     private VariableScope variableScope;
 
-    public MethodNode(String name, int modifiers, Type returnType, Parameter[] parameters, Statement code) {
+    public MethodNode(String name, int modifiers, ClassNode returnType, Parameter[] parameters, Statement code) {
         this.name = name;
         this.modifiers = modifiers;
         this.parameters = parameters;
         this.code = code;
         this.returnType = returnType;
-        if (returnType==null) this.returnType = Type.OBJECT_TYPE; 
+        if (returnType==null) this.returnType = ClassHelper.OBJECT_TYPE; 
 
         if (parameters != null && parameters.length > 0) {
             for (int i = 0; i < parameters.length; i++) {
@@ -113,7 +113,7 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
     }
  
     public boolean isVoidMethod() {
-        return returnType==Type.VOID_TYPE;
+        return returnType==ClassHelper.VOID_TYPE;
     }
 
     public Statement getCode() {
@@ -140,7 +140,7 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
         return parameters;
     }
 
-    public Type getReturnType() {
+    public ClassNode getReturnType() {
         return returnType;
     }
 
@@ -175,7 +175,7 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
         return super.toString() + "[name: " + name + "]";
     }
 
-    public void setReturnType(Type returnType) {
+    public void setReturnType(ClassNode returnType) {
         this.returnType = returnType;
     }
 

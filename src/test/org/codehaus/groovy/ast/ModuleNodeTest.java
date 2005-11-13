@@ -67,6 +67,6 @@ public class ModuleNodeTest extends TestParserSupport {
         
         ClassNode classNode = (ClassNode) classes.get(0);
         
-        assertEquals("Class name", "Cheese", classNode.getType().getName());
+        assertEquals("Class name", "Cheese", classNode.getName());
     }
 }

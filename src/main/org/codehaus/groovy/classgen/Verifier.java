@@ -54,7 +54,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import org.codehaus.groovy.ast.AnnotatedNode;
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.ConstructorNode;
@@ -64,7 +64,6 @@ import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
-import org.codehaus.groovy.ast.Type;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
@@ -127,17 +126,17 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         addDefaultParameterMethods(node);
 
         if (!node.isDerivedFromGroovyObject()) {
-            node.addInterface(GroovyObject.class.getName());
+            node.addInterface(ClassHelper.make(GroovyObject.class));
 
             // lets add a new field for the metaclass
             StaticMethodCallExpression initMetaClassCall =
                 new StaticMethodCallExpression(
-                    Type.makeType(ScriptBytecodeAdapter.class),
+                    ClassHelper.make(ScriptBytecodeAdapter.class),
                     "getMetaClass",
                     VariableExpression.THIS_EXPRESSION);
 
             PropertyNode metaClassProperty =
-                node.addProperty("metaClass", ACC_PUBLIC, Type.makeType(MetaClass.class), initMetaClassCall, null, null);
+                node.addProperty("metaClass", ACC_PUBLIC, ClassHelper.make(MetaClass.class), initMetaClassCall, null, null);
             metaClassProperty.setSynthetic(true);
             FieldNode metaClassField = metaClassProperty.getField();
             metaClassField.setModifiers(metaClassField.getModifiers() | ACC_TRANSIENT);
@@ -153,7 +152,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             node.addSyntheticMethod(
                 "getMetaClass",
                 ACC_PUBLIC,
-                Type.makeType(MetaClass.class),
+                ClassHelper.make(MetaClass.class),
                 Parameter.EMPTY_ARRAY,
                 new BlockStatement(new Statement[] { initMetaClassField, new ReturnStatement(metaClassVar)})
             );
@@ -161,20 +160,20 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             // @todo we should check if the base class implements the invokeMethod method
 
             // lets add the invokeMethod implementation
-            Type superClass = node.getSuperClass();
+            ClassNode superClass = node.getSuperClass();
             boolean addDelegateObject =
                 (node instanceof InnerClassNode && superClass.equals(Closure.class.getName()))
-                    || superClass.equals(Type.GSTRING_TYPE);
+                    || superClass.equals(ClassHelper.GSTRING_TYPE);
 
             // don't do anything as the base class implements the invokeMethod
             if (!addDelegateObject) {
                 node.addSyntheticMethod(
                     "invokeMethod",
                     ACC_PUBLIC,
-                    Type.OBJECT_TYPE,
+                    ClassHelper.OBJECT_TYPE,
                     new Parameter[] {
-                        new Parameter(Type.makeType(String.class), "method"),
-                        new Parameter(Type.OBJECT_TYPE, "arguments")},
+                        new Parameter(ClassHelper.STRING_TYPE, "method"),
+                        new Parameter(ClassHelper.OBJECT_TYPE, "arguments")},
                     new BlockStatement(
                         new Statement[] {
                             initMetaClassField,
@@ -193,8 +192,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     node.addSyntheticMethod(
                         "getProperty",
                         ACC_PUBLIC,
-                        Type.OBJECT_TYPE,
-                        new Parameter[] { new Parameter(Type.makeType(String.class), "property")},
+                        ClassHelper.OBJECT_TYPE,
+                        new Parameter[] { new Parameter(ClassHelper.STRING_TYPE, "property")},
                         new BlockStatement(
                             new Statement[] {
                                 initMetaClassField,
@@ -211,10 +210,10 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     node.addSyntheticMethod(
                         "setProperty",
                         ACC_PUBLIC,
-                        Type.VOID_TYPE,
+                        ClassHelper.VOID_TYPE,
                         new Parameter[] {
-                            new Parameter(Type.makeType(String.class), "property"),
-                            new Parameter(Type.OBJECT_TYPE, "value")},
+                            new Parameter(ClassHelper.STRING_TYPE, "property"),
+                            new Parameter(ClassHelper.OBJECT_TYPE, "value")},
                         new BlockStatement(
                             new Statement[] {
                                 initMetaClassField,
@@ -242,9 +241,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             FieldNode timeTagField = new FieldNode(
                     Verifier.__TIMESTAMP,
                     Modifier.PUBLIC | Modifier.STATIC,
-                    Type.makeType(Long.class),
+                    ClassHelper.Long_TYPE,
                     //"",
-                    node.getType(),
+                    node,
                     new ConstantExpression(new Long(System.currentTimeMillis())));
             // alternatively , FieldNode timeTagField = SourceUnit.createFieldNode("public static final long __timeStamp = " + System.currentTimeMillis() + "L");
             timeTagField.setSynthetic(true);
@@ -327,8 +326,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             Parameter[] params = node.getParameters();
             if (params.length == 1) {
                 Parameter param = params[0];
-                if (param.getType() == null || param.getType()==Type.OBJECT_TYPE) {
-                    param.setType(Type.STRING_TYPE.makeArray());
+                if (param.getType() == null || param.getType()==ClassHelper.OBJECT_TYPE) {
+                    param.setType(ClassHelper.STRING_TYPE.makeArray());
                 }
             }
         }
@@ -366,7 +365,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             classNode.addMethod(getter);
             visitMethod(getter);
 
-            if (Type.boolean_TYPE==node.getType() || Type.Boolean_TYPE==node.getType()) {
+            if (ClassHelper.boolean_TYPE==node.getType() || ClassHelper.Boolean_TYPE==node.getType()) {
                 String secondGetterName = "is" + capitalize(name);
                 MethodNode secondGetter =
                     new MethodNode(secondGetterName, node.getModifiers(), node.getType(), Parameter.EMPTY_ARRAY, getterBlock);
@@ -378,7 +377,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         if (setterBlock != null) {
             Parameter[] setterParameterTypes = { new Parameter(node.getType(), "value")};
             MethodNode setter =
-                new MethodNode(setterName, node.getModifiers(), Type.VOID_TYPE, setterParameterTypes, setterBlock);
+                new MethodNode(setterName, node.getModifiers(), ClassHelper.VOID_TYPE, setterParameterTypes, setterBlock);
             setter.setSynthetic(true);
             classNode.addMethod(setter);
             visitMethod(setter);

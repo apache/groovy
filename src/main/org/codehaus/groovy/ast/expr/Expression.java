@@ -50,7 +50,8 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.codehaus.groovy.ast.ASTNode;
-import org.codehaus.groovy.ast.Type;
+import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
 
 /**
  * Represents a base class for expressions which evaluate as an object
@@ -60,7 +61,7 @@ import org.codehaus.groovy.ast.Type;
  */
 public abstract class Expression extends ASTNode {
 
-    private Type type=Type.DYNAMIC_TYPE;
+    private ClassNode type=ClassHelper.DYNAMIC_TYPE;
     
     /**
      * Return a copy of the expression calling the transformer on any nested expressions 
@@ -81,11 +82,11 @@ public abstract class Expression extends ASTNode {
         return list;
     }
     
-    public Type getType() {
+    public ClassNode getType() {
         return type;
     }
     
-    public void setType(Type t) {
+    public void setType(ClassNode t) {
         type=t;
     }
 }

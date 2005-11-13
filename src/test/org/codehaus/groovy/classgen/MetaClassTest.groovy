@@ -19,6 +19,6 @@ class MetaClassTest extends GroovyTestCase {
         println(classNode)
         
         def name = object.getClass().getName()
-        assert classNode.type.name == name
+        assert classNode.name == name
     }
 }
