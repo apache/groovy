@@ -225,7 +225,7 @@ public class LoaderConfiguration {
             try {
                 classPath.add(f.toURI().toURL());
             } catch (MalformedURLException e) {
-                assert false:"converting an existing file to an url should have never thrown an exception!";
+                throw new AssertionError("converting an existing file to an url should have never thrown an exception!");
             }
         }        
     }
