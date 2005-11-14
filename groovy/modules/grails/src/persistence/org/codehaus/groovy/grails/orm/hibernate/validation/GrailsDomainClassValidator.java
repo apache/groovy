@@ -17,8 +17,10 @@ package org.codehaus.groovy.grails.orm.hibernate.validation;
 import java.util.Collection;
 import java.util.Iterator;
 
-import org.codehaus.groovy.grails.validation.ConstrainedProperty;
+import org.codehaus.groovy.grails.commons.GrailsDomainClass;
 import org.hibernate.SessionFactory;
+import org.springframework.beans.BeanWrapper;
+import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.orm.hibernate3.HibernateTemplate;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
@@ -33,35 +35,45 @@ public class GrailsDomainClassValidator implements Validator {
 	private Collection constrainedProperties;
 	private Class targetClass;
 	private HibernateTemplate template;
-
-	public GrailsDomainClassValidator(Class targetClass, Collection constrainedProperties, SessionFactory sessionFactory) {
-		super();
-		if(targetClass == null)
-			throw new IllegalArgumentException("Constructor argument 'targetClass' cannot be null");
-		if(constrainedProperties == null)
-			throw new IllegalArgumentException("Constructor argument 'constrainedProperties' cannot be null");
-		if(template == null)
-			throw new IllegalArgumentException("Constructor argument 'template' cannot be null");		
-		
-		
-		this.targetClass = targetClass;
-		this.constrainedProperties = constrainedProperties;
-		this.template = new HibernateTemplate(sessionFactory);
-	}
+	private GrailsDomainClass domainClass;
+	private SessionFactory sessionFactory;
 
 	public boolean supports(Class clazz) {
 		return this.targetClass.equals( clazz );
 	}
+	
+	
+	/**
+	 * @param domainClass The domainClass to set.
+	 */
+	public void setDomainClass(GrailsDomainClass domainClass) {
+		this.domainClass = domainClass;
+		this.domainClass.setValidator(this);
+		this.targetClass = this.domainClass.getClazz();
+		this.constrainedProperties = domainClass.getConstrainedProperties().values();
+	}
 
-	public void validate(Object obj, Errors errors) {		
+	/**
+	 * @param sessionFactory The sessionFactory to set.
+	 */
+	public void setSessionFactory(SessionFactory sessionFactory) {
+		this.sessionFactory = sessionFactory;
+		this.template = new HibernateTemplate(this.sessionFactory);
+	}
+
+	public void validate(Object obj, Errors errors) {
+		BeanWrapper bean = new BeanWrapperImpl(obj);
+		
 		for (Iterator i = constrainedProperties.iterator(); i.hasNext();) {
-			ConstrainedProperty c = (ConstrainedProperty)i.next();
-			if(c instanceof ConstrainedPersistentProperty) {
-				((ConstrainedPersistentProperty)c).setHibernateTemplate(this.template);
-			}
-			c.validate(obj,errors);
+			ConstrainedPersistentProperty c = (ConstrainedPersistentProperty)i.next();			
+			c.setHibernateTemplate(this.template);			
+			c.validate(bean.getPropertyValue( c.getPropertyName() ),errors);
 		}
 
+	}
+
+	public void setHibernateTemplate(HibernateTemplate template) {
+		this.template = template;
 	}
 
 }
