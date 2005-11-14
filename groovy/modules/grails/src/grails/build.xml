@@ -304,6 +304,8 @@ Targets:
 				<include name="commons-collections-3.0.jar"/>
 				<include name="commons-pool-1.2.jar"/>
 				<include name="commons-dbcp-1.2.1.jar"/>
+				<include name="commons-validator.jar"/>
+				<include name="jakarta-oro-2.0.8.jar"/>					
 			</fileset>
 			<fileset dir="${grails.home}/dist"/>
 			<fileset dir="lib"/>
