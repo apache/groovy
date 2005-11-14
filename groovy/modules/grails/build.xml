@@ -28,6 +28,11 @@
 			<src path="${grails.src.persistence}"/>
 			<classpath refid="classpath"/>
 		</javac>
+		<copy todir="${grails.build}">
+			<fileset dir="${grails.src.commons}" includes="**/*.properties" />
+			<fileset dir="${grails.src.web}" includes="**/*.properties" />
+			<fileset dir="${grails.src.persistence}" includes="**/*.properties" />				
+		</copy>
 	</target>
 	
 	<target name="build-test" depends="build">

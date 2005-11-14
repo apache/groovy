@@ -10,7 +10,7 @@
 	<classpathentry sourcepath="D:/Downloads/Development/Spring/spring-framework-1.2/src" kind="lib" path="lib/spring.jar"/>
 	<classpathentry kind="lib" path="lib/commons-logging.jar"/>
 	<classpathentry kind="lib" path="lib/servlet-api.jar"/>
-	<classpathentry kind="lib" path="lib/springmodules-sandbox.jar"/>
+	<classpathentry sourcepath="D:/sandbox_os/spring-projects/spring-beans/src/java" kind="lib" path="lib/springmodules-sandbox.jar"/>
 	<classpathentry kind="lib" path="lib/spring-mock.jar"/>
 	<classpathentry kind="lib" path="lib/commons-lang-2.0.jar"/>
 	<classpathentry kind="lib" path="lib/commons-dbcp-1.2.1.jar"/>
