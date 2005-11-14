@@ -1,24 +1,22 @@
 class BlogBootStrap {
 
      @Property Closure init = { servletContext ->
-		def user = new User()
-		user.firstName = "Joe"
-		user.lastName = "Blogs"
-		user.login = "jblogs"
-		user.password = "me"
-		user.email = "joe.blogs@blogs.com"
-		
-
-		
-		def blog = new Blog()
-		blog.owner = user
-		blog.name = "Joe's Blog"
+     	
+     	println "Loading Blog data"
+     	
+		def user = new User(
+			firstName:"Joe",
+			lastName:"Blogs",
+			login:"jblogs",
+			password:"me",
+			email:"joe.blogs@blogs.com"
+		)
+				
+		def blog = new Blog(name:"Joe's Blog", owner:user)
 		user.blog = blog
 		
-		def entry = new Entry()
-		entry.title = "Test Entry"
-		entry.date = new Date()
-		entry.body = "This is a test entry in this demo blog"
+		def entry = new Entry(title:"Test Entry",date:new Date())
+		entry.body = "This is a test entry in this demo blog"		
 		blog.entries.add(entry)
 		
 		
@@ -30,7 +28,8 @@ class BlogBootStrap {
 		comment.body = "This is my comment!"		
 		entry.comments.add(comment)
 		
-		user.save()     
+		user.save() 
+  
      }
      @Property Closure destroy = {
      }
