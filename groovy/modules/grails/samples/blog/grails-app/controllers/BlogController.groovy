@@ -15,13 +15,13 @@ class BlogController {
 		if(results.size() > 0) {
 			def firstOwner = results[0]
 			println "Checking errors"
-			if(firstOwner.validate()) {
+			if(!firstOwner.validate()) {
 				println "Errors"
 				println firstOwner.errors
 			}
 							
 			Blog blog = firstOwner.blog
-			if(blog.validate()) {
+			if(!blog.validate()) {
 				println "Errors"
 				println blog.errors
 			}			

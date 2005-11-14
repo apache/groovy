@@ -57,24 +57,26 @@ public class ValidatePersistentMethod extends AbstractDynamicPersistentMethod {
 		Errors errors = new BindException(target, target.getClass().getName());
 		Validator validator = application.getGrailsDomainClass( target.getClass().getName() ).getValidator();
 		
-		Boolean hasErrors = new Boolean(false);
+		Boolean valid = new Boolean(true);
 		if(validator != null) {
 			validator.validate(target,errors);
 			
-			hasErrors = new Boolean(errors.hasErrors());			
-			GenericDynamicProperty hasErrorsProperty = new GenericDynamicProperty(HAS_ERRORS_PROPERTY,Boolean.class,hasErrors,true);
-			GenericDynamicProperty errorsProperty = new GenericDynamicProperty(ERRORS_PROPERTY,List.class,errors.getAllErrors(),true);
-			
-			DynamicMethods interceptor;
-			try {
-				interceptor = new DefaultGroovyDynamicMethodsInterceptor((GroovyObject)target);
-				interceptor.addDynamicProperty(hasErrorsProperty);
-				interceptor.addDynamicProperty( errorsProperty );			
-			} catch (IntrospectionException e) {
-				throw new GrailsDomainException("Introspection exception validating object ["+target+"] or class ["+target.getClass()+"]: " + e.getMessage(),e);
+			if(errors.hasErrors()) {
+				valid = new Boolean(!errors.hasErrors());			
+				GenericDynamicProperty hasErrorsProperty = new GenericDynamicProperty(HAS_ERRORS_PROPERTY,Boolean.class,valid,true);
+				GenericDynamicProperty errorsProperty = new GenericDynamicProperty(ERRORS_PROPERTY,List.class,errors.getAllErrors(),true);
+				
+				DynamicMethods interceptor;
+				try {
+					interceptor = new DefaultGroovyDynamicMethodsInterceptor((GroovyObject)target);
+					interceptor.addDynamicProperty(hasErrorsProperty);
+					interceptor.addDynamicProperty( errorsProperty );			
+				} catch (IntrospectionException e) {
+					throw new GrailsDomainException("Introspection exception validating object ["+target+"] or class ["+target.getClass()+"]: " + e.getMessage(),e);
+				}
 			}
 		}
-		return hasErrors;
+		return valid;
 	}
 
 }
