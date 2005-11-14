@@ -42,17 +42,23 @@ public class GrailsOpenSessionInViewFilter extends OpenSessionInViewFilter {
 		WebApplicationContext parent =
 			WebApplicationContextUtils.getRequiredWebApplicationContext(getServletContext());
 		
-        // construct the SpringConfig for the container managed application
-        GrailsApplication application = (GrailsApplication) parent.getBean(GRAILS_APPLICATION_ID, GrailsApplication.class);
-        SpringConfig springConfig = new SpringConfig(application);
-        // return a context that obeys grails' settings
-        
-        ApplicationContext context = new XmlApplicationContextDriver().getApplicationContext(
-        			springConfig.getBeanReferences(),
-        			parent
-        		); 
-                
-       getServletContext().setAttribute( GRAILS_APPLICATION_CONTEXT, context );
+		ApplicationContext context;
+		if(getServletContext().getAttribute(GRAILS_APPLICATION_CONTEXT) == null) {
+	        // construct the SpringConfig for the container managed application
+	        GrailsApplication application = (GrailsApplication) parent.getBean(GRAILS_APPLICATION_ID, GrailsApplication.class);
+	        SpringConfig springConfig = new SpringConfig(application);
+	        // return a context that obeys grails' settings
+	        
+	        context = new XmlApplicationContextDriver().getApplicationContext(
+	        			springConfig.getBeanReferences(),
+	        			parent
+	        		); 
+	                
+	       getServletContext().setAttribute( GRAILS_APPLICATION_CONTEXT, context );
+		}
+		else {
+			context = (ApplicationContext)getServletContext().getAttribute( GRAILS_APPLICATION_CONTEXT );
+		}
        
        return (SessionFactory) context.getBean(getSessionFactoryBeanName(), SessionFactory.class);
 	}
