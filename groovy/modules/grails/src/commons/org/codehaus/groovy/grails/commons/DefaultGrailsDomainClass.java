@@ -35,6 +35,7 @@ import org.codehaus.groovy.grails.commons.metaclass.DynamicMethods;
 import org.codehaus.groovy.grails.exceptions.GrailsDomainException;
 import org.codehaus.groovy.grails.exceptions.InvalidPropertyException;
 import org.codehaus.groovy.grails.validation.metaclass.ConstraintsDynamicProperty;
+import org.springframework.validation.Validator;
 
 /**
  * @author Graeme Rocher
@@ -51,6 +52,7 @@ public class DefaultGrailsDomainClass extends AbstractGrailsClass  implements Gr
 	private Map propertyMap;
 	private Map relationshipMap;
 	private Map constraints;
+	private Validator validator;
 
 	
 	public DefaultGrailsDomainClass(Class clazz) {
@@ -130,7 +132,7 @@ public class DefaultGrailsDomainClass extends AbstractGrailsClass  implements Gr
 				DynamicMethods interceptor = new DefaultGroovyDynamicMethodsInterceptor(instance);
 				interceptor.addDynamicProperty( new ConstraintsDynamicProperty() );
 				
-				this.constraints = (Map)instance.getProperty(GrailsDomainClassProperty.CONSTRAINTS);
+				this.constraints = (Map)instance.getProperty(GrailsDomainClassProperty.CONSTRAINTS);				
 				
 			} catch (IntrospectionException e) {
 				LOG.error("Introspection error reading domain class ["+getFullName()+"] constraints: " + e.getMessage(), e);
@@ -429,5 +431,17 @@ public class DefaultGrailsDomainClass extends AbstractGrailsClass  implements Gr
 	public Map getConstrainedProperties() {
 		return this.constraints;
 	}
-	
+	/* (non-Javadoc)
+	 * @see org.codehaus.groovy.grails.commons.GrailsDomainClass#getValidator()
+	 */
+	public Validator getValidator() {
+		return this.validator;
+	}
+
+	/* (non-Javadoc)
+	 * @see org.codehaus.groovy.grails.commons.GrailsDomainClass#setValidator(Validator validator)
+	 */
+	public void setValidator(Validator validator) {
+		this.validator = validator;
+	}	
 }

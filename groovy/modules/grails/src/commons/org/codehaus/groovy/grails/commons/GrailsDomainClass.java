@@ -16,6 +16,8 @@ package org.codehaus.groovy.grails.commons;
 
 import java.util.Map;
 
+import org.springframework.validation.Validator;
+
 
 /**
  * <p>Represents a persistable Grails domain class</p>
@@ -115,4 +117,16 @@ public interface GrailsDomainClass extends GrailsClass {
 	 * @return A map of constraints
 	 */
 	public Map getConstrainedProperties();
+	/**
+	 * Retreives the validator for this domain class 
+	 * 
+	 * @return A validator instance or null if none exists
+	 */
+	public Validator getValidator();
+	/**
+	 * Sets the validator for this domain class 
+	 * 
+	 * @param validator The domain class validator to set
+	 */
+	public void setValidator(Validator validator);
 }
