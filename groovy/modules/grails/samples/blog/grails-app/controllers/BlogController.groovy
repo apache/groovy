@@ -5,7 +5,7 @@ class BlogController {
 	@Property Closure list = {}
 	
 	@Property Closure show = {		
-		
+		println "Executing show"
 		if(this.params.containsKey("name")) {
 			println "Querying for name: ${this.params['name']}"
 			
@@ -13,7 +13,7 @@ class BlogController {
 				
 			println "Found results: ${results}"
 			
-			println "User: " + User.get(1)
+			println "User: " + User.findAll()
 			
 			if(results.size() > 0) {
 				def firstOwner = results[0]
@@ -23,11 +23,7 @@ class BlogController {
 					println firstOwner.errors
 				}
 								
-				Blog blog = firstOwner.blog
-				if(!blog.validate()) {
-					println "Errors"
-					println blog.errors
-				}			
+				Blog blog = firstOwner.blog	
 					
 				return [ "blog": blog ];
 			}
