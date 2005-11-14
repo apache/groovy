@@ -72,6 +72,7 @@ public class ConstrainedProperty   {
 	public static final String NOT_EQUAL_CONSTRAINT = "notEqual";
 	public static final String NULLABLE_CONSTRAINT = "nullable";
 	
+	protected static final String INVALID_SUFFIX = ".invalid";
 	protected static Map constraints = new HashMap();
 	
 	static {
@@ -158,10 +159,10 @@ public class ConstrainedProperty   {
 			processValidate(propertyValue, errors);
 		}		
 		public void rejectValue(Errors errors, String code,String defaultMessage) {
-			errors.rejectValue(constraintPropertyName, constraintPropertyName + '.' + code +  ".invalid", defaultMessage);
+			errors.rejectValue(constraintPropertyName, constraintPropertyName + '.' + code, defaultMessage);
 		}
 		public void rejectValue(Errors errors, String code,Object[] args,String defaultMessage) {
-			errors.rejectValue(constraintPropertyName, constraintPropertyName + '.' + code +  ".invalid", args,defaultMessage);
+			errors.rejectValue(constraintPropertyName, constraintPropertyName + '.' + code, args,defaultMessage);
 		}		
 		protected abstract void processValidate(Object propertyValue, Errors errors);
 
@@ -269,9 +270,11 @@ public class ConstrainedProperty   {
 		protected void processValidate(Object propertyValue, Errors errors) {
 
 			if(!blank) {
-				if(StringUtils.isBlank((String)propertyValue)) {
-					Object[] args = new Object[] { constraintPropertyName, constraintOwningClass };
-					super.rejectValue( errors, BLANK_CONSTRAINT,args, MessageFormat.format( DEFAULT_BLANK_MESSAGE, args ) );
+				if(propertyValue instanceof String) {
+					if(StringUtils.isBlank((String)propertyValue)) {
+						Object[] args = new Object[] { constraintPropertyName, constraintOwningClass };
+						super.rejectValue( errors, BLANK_CONSTRAINT,args, MessageFormat.format( DEFAULT_BLANK_MESSAGE, args ) );
+					}
 				}
 			}
 		}
@@ -312,7 +315,7 @@ public class ConstrainedProperty   {
 				EmailValidator emailValidator = EmailValidator.getInstance();
 				if(!emailValidator.isValid(propertyValue.toString())  ) {
 					Object[] args = new Object[] { constraintPropertyName, constraintOwningClass, propertyValue };
-					super.rejectValue(errors,EMAIL_CONSTRAINT,args,MessageFormat.format( DEFAULT_INVALID_EMAIL_MESSAGE, args ));
+					super.rejectValue(errors,EMAIL_CONSTRAINT + INVALID_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_EMAIL_MESSAGE, args ));
 				}
 			}
 		}
@@ -354,7 +357,7 @@ public class ConstrainedProperty   {
 								
 				if(!urlValidator.isValid(propertyValue.toString())) {
 					Object[] args = new Object[] { constraintPropertyName, constraintOwningClass, propertyValue };
-					super.rejectValue(errors,URL_CONSTRAINT,args,MessageFormat.format( DEFAULT_INVALID_URL_MESSAGE, args ));				
+					super.rejectValue(errors,URL_CONSTRAINT + INVALID_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_URL_MESSAGE, args ));				
 				}
 			}
 		}
@@ -400,7 +403,7 @@ public class ConstrainedProperty   {
 		protected void processValidate(Object propertyValue, Errors errors) {
 			if(!this.range.contains(propertyValue)) {
 				Object[] args = new Object[] { constraintPropertyName, constraintOwningClass, propertyValue, range.getFrom(), range.getTo()  };
-				super.rejectValue(errors,RANGE_CONSTRAINT,args,MessageFormat.format( DEFAULT_INVALID_RANGE_MESSAGE, args ));
+				super.rejectValue(errors,RANGE_CONSTRAINT + INVALID_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_RANGE_MESSAGE, args ));
 			}
 		}				
 	}
@@ -448,7 +451,7 @@ public class ConstrainedProperty   {
 		protected void processValidate(Object propertyValue, Errors errors) {
 			if(maxValue.compareTo((Comparable)propertyValue) > 0) {
 				Object[] args = new Object[] { constraintPropertyName, constraintOwningClass, propertyValue, maxValue  };
-				super.rejectValue(errors,MAX_CONSTRAINT,args,MessageFormat.format( DEFAULT_INVALID_MAX_MESSAGE, args ));
+				super.rejectValue(errors,MAX_CONSTRAINT + INVALID_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_MAX_MESSAGE, args ));
 			}
 		}		
 	}
@@ -497,7 +500,7 @@ public class ConstrainedProperty   {
 		protected void processValidate(Object propertyValue, Errors errors)		{
 			if(minValue.compareTo((Comparable)propertyValue) < 0) {
 				Object[] args = new Object[] { constraintPropertyName, constraintOwningClass, propertyValue, minValue  };
-				super.rejectValue(errors,MIN_CONSTRAINT,args,MessageFormat.format( DEFAULT_INVALID_MIN_MESSAGE, args ));
+				super.rejectValue(errors,MIN_CONSTRAINT + INVALID_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_MIN_MESSAGE, args ));
 			}
 		}		
 	}	
@@ -580,7 +583,7 @@ public class ConstrainedProperty   {
 		protected void processValidate(Object propertyValue, Errors errors) {
 			if(propertyValue.toString().matches( regex )) {
 				Object[] args = new Object[] { constraintPropertyName, constraintOwningClass, propertyValue, regex  };
-				super.rejectValue(errors,MATCHES_CONSTRAINT,args,MessageFormat.format( DEFAULT_DOESNT_MATCH_MESSAGE, args ));
+				super.rejectValue(errors,MATCHES_CONSTRAINT + INVALID_SUFFIX,args,MessageFormat.format( DEFAULT_DOESNT_MATCH_MESSAGE, args ));
 			}
 			
 		}
@@ -637,22 +640,22 @@ public class ConstrainedProperty   {
 			if(propertyValue.getClass().isArray()) {
 				Integer length = new Integer(Array.getLength( propertyValue ));
 				if(!sizeRange.contains(length)) {										
-					super.rejectValue(errors,SIZE_CONSTRAINT,args,MessageFormat.format( DEFAULT_INVALID_SIZE_MESSAGE, args ));					
+					super.rejectValue(errors,SIZE_CONSTRAINT + INVALID_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_SIZE_MESSAGE, args ));					
 				}
 			}
 			if(propertyValue instanceof Collection) {
 				if(!sizeRange.contains( new Integer(((Collection)propertyValue).size()) ) ) {
-					super.rejectValue(errors,SIZE_CONSTRAINT,args,MessageFormat.format( DEFAULT_INVALID_SIZE_MESSAGE, args ));
+					super.rejectValue(errors,SIZE_CONSTRAINT + INVALID_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_SIZE_MESSAGE, args ));
 				}
 			}
 			else if(propertyValue instanceof Number) {
 				if(!sizeRange.contains(propertyValue)) {
-					super.rejectValue(errors,SIZE_CONSTRAINT,args,MessageFormat.format( DEFAULT_INVALID_SIZE_MESSAGE, args ));
+					super.rejectValue(errors,SIZE_CONSTRAINT + INVALID_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_SIZE_MESSAGE, args ));
 				}
 			}
 			else if(propertyValue instanceof String) {
 				if(!sizeRange.contains( new Integer(((String)propertyValue ).length()))) {
-					super.rejectValue(errors,SIZE_CONSTRAINT,args,MessageFormat.format( DEFAULT_INVALID_SIZE_MESSAGE, args ));
+					super.rejectValue(errors,SIZE_CONSTRAINT + INVALID_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_SIZE_MESSAGE, args ));
 				}
 			}			
 		}		
@@ -701,23 +704,23 @@ public class ConstrainedProperty   {
 			if(propertyValue.getClass().isArray()) {
 				int length = Array.getLength( propertyValue );
 				if(length > maxSize) {
-					super.rejectValue(errors,MAX_LENGTH_CONSTRAINT,args,MessageFormat.format( DEFAULT_INVALID_MAX_LENGTH_MESSAGE, args ));					
+					super.rejectValue(errors,MAX_LENGTH_CONSTRAINT + INVALID_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_MAX_LENGTH_MESSAGE, args ));					
 				}
 			}
 			if(propertyValue instanceof Collection) {
 				if( ((Collection)propertyValue).size() > maxSize ) {
-					super.rejectValue(errors,MAX_SIZE_CONSTRAINT,args,MessageFormat.format( DEFAULT_INVALID_MAX_SIZE_MESSAGE, args ));
+					super.rejectValue(errors,MAX_SIZE_CONSTRAINT + INVALID_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_MAX_SIZE_MESSAGE, args ));
 				}
 			}
 			else if(propertyValue instanceof Number) {				
 				int numberSize = ((Number)propertyValue).intValue();
 				if( numberSize > maxSize ) {
-					super.rejectValue(errors,MAX_SIZE_CONSTRAINT,args,MessageFormat.format( DEFAULT_INVALID_MAX_SIZE_MESSAGE, args ));
+					super.rejectValue(errors,MAX_SIZE_CONSTRAINT + INVALID_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_MAX_SIZE_MESSAGE, args ));
 				}
 			}
 			else if(propertyValue instanceof String) {
 				if(((String)propertyValue ).length() > maxSize) {
-					super.rejectValue(errors,MAX_LENGTH_CONSTRAINT,args,MessageFormat.format( DEFAULT_INVALID_MAX_LENGTH_MESSAGE, args ));
+					super.rejectValue(errors,MAX_LENGTH_CONSTRAINT + INVALID_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_MAX_LENGTH_MESSAGE, args ));
 				}
 			}			
 		}		
@@ -769,23 +772,23 @@ public class ConstrainedProperty   {
 			if(propertyValue.getClass().isArray()) {
 				int length = Array.getLength( propertyValue );
 				if(length < minSize) {
-					super.rejectValue(errors,MIN_LENGTH_CONSTRAINT,args,MessageFormat.format( DEFAULT_INVALID_MIN_LENGTH_MESSAGE, args ));					
+					super.rejectValue(errors,MIN_LENGTH_CONSTRAINT + INVALID_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_MIN_LENGTH_MESSAGE, args ));					
 				}
 			}
 			if(propertyValue instanceof Collection) {
 				if( ((Collection)propertyValue).size() < minSize ) {
-					super.rejectValue(errors,MIN_SIZE_CONSTRAINT,args,MessageFormat.format( DEFAULT_INVALID_MIN_SIZE_MESSAGE, args ));
+					super.rejectValue(errors,MIN_SIZE_CONSTRAINT + INVALID_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_MIN_SIZE_MESSAGE, args ));
 				}
 			}
 			else if(propertyValue instanceof Number) {				
 				int numberSize = ((Number)propertyValue).intValue();
 				if( numberSize < minSize ) {
-					super.rejectValue(errors,MIN_SIZE_CONSTRAINT,args,MessageFormat.format( DEFAULT_INVALID_MIN_SIZE_MESSAGE, args ));
+					super.rejectValue(errors,MIN_SIZE_CONSTRAINT + INVALID_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_MIN_SIZE_MESSAGE, args ));
 				}
 			}
 			else if(propertyValue instanceof String) {
 				if(((String)propertyValue ).length() < minSize) {
-					super.rejectValue(errors,MIN_LENGTH_CONSTRAINT,args,MessageFormat.format( DEFAULT_INVALID_MIN_LENGTH_MESSAGE, args ));
+					super.rejectValue(errors,MIN_LENGTH_CONSTRAINT + INVALID_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_MIN_LENGTH_MESSAGE, args ));
 				}
 			}			
 		}		
