@@ -1,4 +1,4 @@
-class BlogEntry { 
+class Entry { 
 	@Property Long id; 
 	@Property Long version; 
 	@Property relationships = [ "comments" : Comment.class ]

@@ -1,4 +1,4 @@
-class Owner { 
+class User { 
 	@Property Long id; 
 	@Property Long version; 
 	

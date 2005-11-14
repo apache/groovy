@@ -2,7 +2,7 @@ class Comment {
 	@Property Long id; 
 	@Property Long version; 
 	
-	@Property BlogEntry entry
+	@Property Entry entry
 	
 	@Property String authorName
 	@Property String authorEmail
