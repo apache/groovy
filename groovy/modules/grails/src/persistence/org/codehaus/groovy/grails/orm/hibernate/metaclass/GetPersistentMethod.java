@@ -52,8 +52,8 @@ public class GetPersistentMethod extends AbstractStaticPersistentMethod {
 		// if its not a map throw exception
 		final Object arg = arguments[0];
 		// if its a long retrieve by id
-		if(arg instanceof Long) {
-			return super.getHibernateTemplate().get( clazz, (Long)arg );
+		if(arg instanceof Number) {			
+			return super.getHibernateTemplate().get( clazz, new Long(arg.toString()) );
 		}
 		// if its an instance of this class, retrieve by example
 		else if(clazz.isInstance( arg.getClass() )) {
