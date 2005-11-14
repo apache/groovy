@@ -17,6 +17,8 @@ package org.codehaus.groovy.grails.commons.metaclass;
 
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang.builder.ToStringBuilder;
+
 /**
  * 
  * 
@@ -45,4 +47,14 @@ public abstract class AbstractStaticMethodInvocation implements StaticMethodInvo
 
 	public abstract Object invoke(Class clazz, String methodName, Object[] arguments);
 
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	public String toString() {
+		return new ToStringBuilder(this)
+						.append("Pattern",this.pattern)
+						.toString();
+	}
+
+	
 }
