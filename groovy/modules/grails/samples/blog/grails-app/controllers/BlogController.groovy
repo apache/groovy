@@ -5,12 +5,32 @@ class BlogController {
 	@Property init = false
 	
 	@Property Closure list = {		
-		createTestData()
+		if(!init) {
+			createTestData()
+			init = true
+		}
 		
-		def blogOwner = Owner.findByLogin( this.params["name"] )
-
-		return [ "blog": blogOwner.blog ];
+		def results = Owner.findByLogin( this.params["name"] )
 		
+		if(results.size() > 0) {
+			def firstOwner = results[0]
+			println "Checking errors"
+			if(firstOwner.validate()) {
+				println "Errors"
+				println firstOwner.errors
+			}
+							
+			Blog blog = firstOwner.blog
+			if(blog.validate()) {
+				println "Errors"
+				println blog.errors
+			}			
+				
+			return [ "blog": blog ];
+		}
+		else {
+			return [:]
+		}		
 	}
 	
 	def createTestData() {
@@ -20,6 +40,8 @@ class BlogController {
 		owner.login = "jblogs"
 		owner.password = "me"
 		owner.email = "joe.blogs@blogs.com"
+		
+
 		
 		def blog = new Blog()
 		blog.owner = owner

@@ -6,4 +6,8 @@ class Blog {
 	@Property Owner owner
 	@Property String name
 	@Property Set entries = new HashSet()
+	
+	@Property constraints = {
+		name(blank:false)
+	}
 }	
