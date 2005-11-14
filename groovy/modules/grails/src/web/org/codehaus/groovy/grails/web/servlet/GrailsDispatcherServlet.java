@@ -75,6 +75,7 @@ public class GrailsDispatcherServlet extends DispatcherServlet {
 	                getServletContext(),
 	                getNamespace(),
 	                locations);
+	        getServletContext().setAttribute(GRAILS_APPLICATION_CONTEXT,webContext );
     	}
     	
     	// init the Grails application
