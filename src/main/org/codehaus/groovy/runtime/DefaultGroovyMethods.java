@@ -2638,37 +2638,38 @@ public class DefaultGroovyMethods {
      * @param  right     a List
      * @return boolean   <code>true</code> if two Lists equals, <code>false</code> otherwise.
      */
-    public static boolean equals(List left, List right) {
-        if (left == null && right == null)
-             return true;
-        else if (left == null && right != null)
-             return false;
-        else if (left != null && right == null)
-             return false;
-        else if (left.size() != right.size())
-             return false;
-        NumberComparator numberComparator = new NumberComparator(); 
-        Iterator it1 = left.iterator(), it2 = right.iterator();
-        for (; it1.hasNext() && it2.hasNext(); ) {
-            Object o1 = it1.next();
-            Object o2 = it2.next();
-            if (Number.class.isInstance(o1) && Number.class.isInstance(o2)) {
-                if (numberComparator.compare(o1, o2) != 0)
-                    return false;
-            }
-            else {
-                if (o1 == null) {
-                    if (o1 != null)
-                        return false;
-                }
-                else if (!o1.equals(o2))
-                    return false;
-            }
-        }
-
-        if (it1.hasNext() || it2.hasNext())
+    public static boolean equals(final List left, final List right) {
+        if (left == null) {
+            return right == null;
+        } else if (right == null) {
             return false;
-        return true;
+        } else if (left.size() != right.size()) {
+            return false;
+        } else {
+        final NumberComparator numberComparator = new NumberComparator(); 
+        final Iterator it1 = left.iterator(), it2 = right.iterator();
+        
+            while (it1.hasNext()) {
+            final Object o1 = it1.next();
+            final Object o2 = it2.next();
+            
+                if (o1 == null) {
+                    if (o2 != null) return false;
+                } else {
+                    if (o1 instanceof Number) {
+                        if (!(o2 instanceof Number && numberComparator.compare(o1, o2) == 0)) {
+                            return false;
+                        }
+                    } else {
+                        // Use this way of calling equals in case the elament is a List
+                        // or any other type which has an equals in DGM
+                        if (!((Boolean)InvokerHelper.invokeMethod(o1, "equals", new Object[]{o2})).booleanValue()) return false;
+                    }
+                }
+            }
+            
+            return true;
+        }
     }
 
     /**
