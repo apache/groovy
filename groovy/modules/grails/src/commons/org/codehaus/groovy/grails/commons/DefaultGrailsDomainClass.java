@@ -22,6 +22,7 @@ import java.beans.IntrospectionException;
 import java.beans.PropertyDescriptor;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -51,7 +52,7 @@ public class DefaultGrailsDomainClass extends AbstractGrailsClass  implements Gr
 	private GrailsDomainClassProperty[] persistantProperties;
 	private Map propertyMap;
 	private Map relationshipMap;
-	private Map constraints;
+	private Map constraints = new HashMap();
 	private Validator validator;
 
 	
@@ -429,7 +430,7 @@ public class DefaultGrailsDomainClass extends AbstractGrailsClass  implements Gr
 	 * @see org.codehaus.groovy.grails.commons.GrailsDomainClass#getConstraints()
 	 */
 	public Map getConstrainedProperties() {
-		return this.constraints;
+		return Collections.unmodifiableMap(this.constraints);
 	}
 	/* (non-Javadoc)
 	 * @see org.codehaus.groovy.grails.commons.GrailsDomainClass#getValidator()
