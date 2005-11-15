@@ -28,7 +28,6 @@ public class DefaultGroovyDynamicMethodsInterceptor extends
 		AbstractDynamicGroovyMethodsInterceptor {
 
 	public DefaultGroovyDynamicMethodsInterceptor(GroovyObject go) throws IntrospectionException {
-		super(go);
+		super(go, false);
 	}
-
 }

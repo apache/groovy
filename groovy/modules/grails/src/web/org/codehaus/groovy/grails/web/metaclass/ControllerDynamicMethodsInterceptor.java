@@ -34,7 +34,7 @@ public class ControllerDynamicMethodsInterceptor extends
 		AbstractDynamicGroovyMethodsInterceptor {
 
 	public ControllerDynamicMethodsInterceptor(GroovyObject controller,GrailsControllerHelper helper,HttpServletRequest request, HttpServletResponse response) throws IntrospectionException {
-		super(controller);
+		super(controller, false);
 			
 		addDynamicProperty(new GetParamsDynamicProperty(request,response));
 		addDynamicProperty(new GetSessionDynamicProperty(request,response));

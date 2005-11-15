@@ -16,7 +16,6 @@
 package org.codehaus.groovy.grails.commons.metaclass;
 
 import groovy.lang.MetaClass;
-
 import java.beans.IntrospectionException;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -33,10 +32,17 @@ public class DelegatingMetaClass extends MetaClass {
 	
 	public DelegatingMetaClass(Class clazz, DynamicMethods dynamicMethods)
 			throws IntrospectionException {
+		this(clazz,dynamicMethods,true);
+	}
+	
+	public DelegatingMetaClass(Class clazz, DynamicMethods dynamicMethods, boolean inRegistry)
+			throws IntrospectionException {
 		super(InvokerHelper.getInstance().getMetaRegistry(), clazz);
 		this.dynamicMethods = dynamicMethods;
-		registry.setMetaClass(clazz, this);
-	}
+		if(inRegistry) {
+			registry.setMetaClass(clazz, this);
+		}
+	}	
 
 	public Object invokeMethod(Object target, String methodName, Object[] arguments) {
 		InvocationCallback callback = new InvocationCallback();

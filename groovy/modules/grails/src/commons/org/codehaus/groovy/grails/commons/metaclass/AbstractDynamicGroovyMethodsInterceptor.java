@@ -16,7 +16,6 @@
 package org.codehaus.groovy.grails.commons.metaclass;
 
 import groovy.lang.GroovyObject;
-import groovy.lang.MetaClass;
 import groovy.lang.ProxyMetaClass;
 
 import java.beans.IntrospectionException;
@@ -30,23 +29,12 @@ import java.beans.IntrospectionException;
 public abstract class AbstractDynamicGroovyMethodsInterceptor extends
 		AbstractDynamicMethodsInterceptor {
 
-	private MetaClass originalMetaClass;
+	private ProxyMetaClass pmc;
 	
-	public AbstractDynamicGroovyMethodsInterceptor(GroovyObject go) throws IntrospectionException {
-		super(go.getClass());
-		ProxyMetaClass pmc = PropertyAccessProxyMetaClass.getInstance(go.getClass());
+	public AbstractDynamicGroovyMethodsInterceptor(GroovyObject go, boolean inRegistry) throws IntrospectionException {
+		super(go.getClass(), inRegistry);
+		this.pmc = PropertyAccessProxyMetaClass.getInstance(go.getClass());
 		pmc.setInterceptor( this );
-		this.originalMetaClass = go.getMetaClass();
 		go.setMetaClass(pmc);				
-	}
-
-	/**
-	 * Returns the original meta class of the object prior to setting the interceptor
-	 * @return Returns the originalMetaClass.
-	 */
-	public MetaClass getOriginalMetaClass() {
-		return originalMetaClass;
-	}
-
-	
+	}	
 }

@@ -33,8 +33,8 @@ public abstract class AbstractDynamicMethodsInterceptor extends AbstractDynamicM
 	private boolean doSet = true;
 	private Object returnValue;
 	
-	public AbstractDynamicMethodsInterceptor(Class theClass) throws IntrospectionException {
-		super(theClass);
+	public AbstractDynamicMethodsInterceptor(Class theClass, boolean inRegistry) throws IntrospectionException {
+		super(theClass, inRegistry);
 	}
 
 	public Object beforeInvoke(Object target, String methodName,

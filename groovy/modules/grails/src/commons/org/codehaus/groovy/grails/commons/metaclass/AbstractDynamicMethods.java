@@ -45,13 +45,18 @@ public abstract class AbstractDynamicMethods implements DynamicMethods {
 	
 	public AbstractDynamicMethods(Class theClass)
 			throws IntrospectionException {
-		super();
-		new DelegatingMetaClass(theClass, this);
-		this.clazz = theClass;
-		this.dynamicMethodInvocations = new ArrayList();
-		this.staticMethodInvocations = new ArrayList();
-		this.dynamicProperties = new HashMap();
+		this(theClass, true);		
 	}
+	
+	public AbstractDynamicMethods(Class theClass, boolean inRegistry)
+	throws IntrospectionException {
+			super();
+			new DelegatingMetaClass(theClass, this, inRegistry);
+			this.clazz = theClass;
+			this.dynamicMethodInvocations = new ArrayList();
+			this.staticMethodInvocations = new ArrayList();
+			this.dynamicProperties = new HashMap();
+	}	
 
 	/* (non-Javadoc)
 	 * @see org.codehaus.groovy.grails.metaclass.DynamicMethods#addDynamicMethodInvocation(org.codehaus.groovy.grails.metaclass.DynamicMethodInvocation)
