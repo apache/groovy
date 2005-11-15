@@ -92,6 +92,7 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
 	 */
 	public ModelAndView handleActionResponse( GrailsControllerClass controllerClass,Object returnValue,String closurePropertyName, String viewName) {
 		boolean viewNameBlank = (viewName == null || viewName.length() == 0);
+		// reset the metaclass
 		
 		if (returnValue == null) {
 			if (viewNameBlank) {
@@ -179,7 +180,7 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
 		//String controllerName = WordUtils.uncapitalize(controllerClass.getName());
 		
 		// Step 3: load controller from application context.
-		GroovyObject controller = getControllerInstance(controllerClass);
+		GroovyObject controller = controllerClass.newInstance();
 		
 		// Step 4: get closure property name for URI.
 		String closurePropertyName = controllerClass.getClosurePropertyName(uri);
@@ -215,7 +216,7 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
 		try {
 			ControllerDynamicMethodsInterceptor interceptor;
 			if(!controller.getMetaClass().getClass().equals( PropertyAccessProxyMetaClass.class )) {				
-				interceptor = new ControllerDynamicMethodsInterceptor(controller,this,request,response);
+				interceptor = new ControllerDynamicMethodsInterceptor(controller,this,request,response);				
 			}
 			else {
 				ProxyMetaClass pmc = (ProxyMetaClass)controller.getMetaClass(); 
