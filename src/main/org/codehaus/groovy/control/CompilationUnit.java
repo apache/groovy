@@ -618,9 +618,6 @@ public class CompilationUnit extends ProcessingUnit {
         }
     };
 
-    /**
-     * Builds ASTs for all parsed sources.
-     */
     public void semanticAnalysis() throws CompilationFailedException {
         if (this.phase != Phases.SEMANTIC_ANALYSIS) {
             throw new GroovyBugError("CompilationUnit not ready for semanticAnalysis()");

@@ -291,6 +291,14 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
         n.setRedirect(cn);
     }
     
+    private void ambigousClass(ClassNode type, ClassNode iType, String name, boolean resolved){
+        if (resolved && !type.getName().equals(iType.getName())) {
+            addError("reference to "+name+" is ambigous, both class "+type.getName()+" and "+iType.getName()+" match",type);
+        } else {
+            type.setRedirect(iType);
+        }
+    }
+
     private boolean resolveFromModule(ClassNode type, boolean testModuleImports) {
         ModuleNode module = currentClass.getModule();
         if (module==null) return false;
@@ -313,16 +321,33 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
         
         {
             // check module node imports aliases
-            String aliased = module.getImport(name);
-            if (aliased!=null && !aliased.equals(name)) {
-                type.setName(aliased);
-                boolean useInnerStaticClasses = aliased.indexOf('.')==-1;
-                if (resolve(type,true,true,useInnerStaticClasses)) return true;
-                type.setName(name);                
-            }
+        	// the while loop enables a check for inner classes which are not fully imported,
+        	// but visible as the surrounding class is imported and the inner class is public/protected static
+        	String pname = name;
+        	int index = name.length();
+            /*
+             * we have a name foo.bar and an import foo.foo. This means foo.bar is possibly
+             * foo.foo.bar rather than foo.bar. This means to cut at the dot in foo.bar and
+             * foo for import
+             */
+            
+        	while (true) {
+        		pname = name.substring(0,index);
+        		String aliased = module.getImport(pname);
+        		if (aliased!=null && !aliased.equals(name)) {
+        			if (pname.length()<name.length()){
+        				aliased +=  name.substring(pname.length());
+        			}
+	        		type.setName(aliased);
+	                if (resolve(type,true,true,true)) return true;
+	                type.setName(name);
+        		}
+        		index = pname.lastIndexOf('.');
+                if (index==-1) break;
+        	}
         }
         
-        testModuleImports &= !type.hasPackageName();
+        //testModuleImports &= !type.hasPackageName();
         if (testModuleImports) {
             String packageName = "";
             if (module.hasPackageName()) packageName = module.getPackageName();
@@ -332,19 +357,15 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
             
             // check module node imports packages
             List packages = module.getImportPackages();
-            ClassNode iType = ClassHelper.make(name);
+            ClassNode iType = ClassHelper.makeWithoutCaching(name);
             for (Iterator iter = packages.iterator(); iter.hasNext();) {
                 String packagePrefix = (String) iter.next();
                 String fqn = packagePrefix+name;
                 iType.setName(fqn);
-                if (resolve(iType,false,false,false)) {
-                    if (resolved) {
-                        addError("reference to "+name+" is ambigous, both class "+type.getName()+" and "+fqn+" match",type);
-                    } else {
-                        type.setRedirect(iType);
-                    }
+                if (resolve(iType,false,false,true)) {
+                	ambigousClass(type,iType,name,resolved);
                     return true;
-                }
+                } 
                 iType.setName(name);
             }
             if (!resolved) type.setName(name);
@@ -353,7 +374,7 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
         return false;
     }
     
-    public boolean resolveToClass(ClassNode type) {
+    private boolean resolveToClass(ClassNode type) {
         String name = type.getName();
         if (cachedClasses.get(name)==NO_CLASS) return false;
         if (currentClass.getModule().hasPackageName() && name.indexOf('.')==-1) return false;
@@ -464,7 +485,7 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
         return pe;
     }
     
-    public Expression transformPropertyExpression(PropertyExpression pe) {
+    protected Expression transformPropertyExpression(PropertyExpression pe) {
         boolean itlp = isTopLevelProperty;
         
         Expression objectExpression = pe.getObjectExpression();

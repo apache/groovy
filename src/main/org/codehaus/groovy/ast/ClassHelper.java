@@ -38,7 +38,8 @@ public class ClassHelper {
         Byte.class.getName(),       Short.class.getName(),
         Integer.class.getName(),    Long.class.getName(),
         Double.class.getName(),     Float.class.getName(),
-        BigDecimal.class.getName(), BigInteger.class.getName()
+        BigDecimal.class.getName(), BigInteger.class.getName(),
+        Void.class.getName()
     };
     
     private static Class[] classes = new Class[] {
@@ -47,7 +48,7 @@ public class ClassHelper {
         Closure.class, GString.class, List.class, Map.class, Range.class,
         Pattern.class, Script.class, String.class,  Boolean.class, 
         Character.class, Byte.class, Short.class, Integer.class, Long.class,
-        Double.class, Float.class, BigDecimal.class, BigInteger.class
+        Double.class, Float.class, BigDecimal.class, BigInteger.class, Void.class
     };
     
     public static final ClassNode 
@@ -67,7 +68,8 @@ public class ClassHelper {
         Character_TYPE = new ClassNode(Character.class), Float_TYPE = new ClassNode(Float.class),
         Double_TYPE = new ClassNode(Double.class),       Boolean_TYPE = new ClassNode(Boolean.class),
         BigInteger_TYPE =  new ClassNode(java.math.BigInteger.class),
-        BigDecimal_TYPE = new ClassNode(java.math.BigDecimal.class);
+        BigDecimal_TYPE = new ClassNode(java.math.BigDecimal.class),
+        void_WRAPPER_TYPE = new ClassNode(Void.class);
     
     private static ClassNode[] types = new ClassNode[] {
         OBJECT_TYPE,
@@ -77,7 +79,7 @@ public class ClassHelper {
         LIST_TYPE, MAP_TYPE, RANGE_TYPE, PATTERN_TYPE,
         SCRIPT_TYPE, STRING_TYPE, Boolean_TYPE, Character_TYPE,
         Byte_TYPE, Short_TYPE, Integer_TYPE, Long_TYPE,
-        Double_TYPE, Float_TYPE, BigDecimal_TYPE, BigInteger_TYPE
+        Double_TYPE, Float_TYPE, BigDecimal_TYPE, BigInteger_TYPE, void_WRAPPER_TYPE
     };
 
     
@@ -104,6 +106,13 @@ public class ClassHelper {
         return t;
     }
     
+    public static ClassNode makeWithoutCaching(String name) { 
+        ClassNode cn = new ClassNode(name,Opcodes.ACC_PUBLIC,OBJECT_TYPE);
+        cn.resolved = false;
+        cn.isPrimaryNode = false;
+        return cn;
+    }
+    
     public static ClassNode make(String name) {
         if (name == null || name.length() == 0) return DYNAMIC_TYPE;
         
@@ -111,10 +120,7 @@ public class ClassHelper {
             String cname = classes[i].getName();
             if (name.equals(cname)) return types[i];
         }        
-        ClassNode cn = new ClassNode(name,Opcodes.ACC_PUBLIC,OBJECT_TYPE);
-        cn.resolved = false;
-        cn.isPrimaryNode = false;
-        return cn;
+        return makeWithoutCaching(name);
     }
     
     public static ClassNode getWrapper(ClassNode cn) {
@@ -136,7 +142,10 @@ public class ClassHelper {
             return Float_TYPE;
         } else if (cn==double_TYPE) {
             return Double_TYPE;
-        } else {
+        } else if (cn==VOID_TYPE) {
+        	return void_WRAPPER_TYPE;
+        }
+        else {
             return cn;
         }
     }

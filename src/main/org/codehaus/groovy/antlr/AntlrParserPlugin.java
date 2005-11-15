@@ -1095,6 +1095,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             case LITERAL_int:
             case LITERAL_long:
             case LITERAL_short:
+            case LITERAL_void:
                 return variableExpression(node);
 
             case LIST_CONSTRUCTOR:

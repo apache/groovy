@@ -369,6 +369,10 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
                                     Expression initialValueExpression,
                                     Statement getterBlock,
                                     Statement setterBlock) {
+    	for (Iterator iter = getProperties().iterator(); iter.hasNext();) {
+			PropertyNode pn = (PropertyNode) iter.next();
+			if (pn.getName().equals(name)) return pn;
+		}
         PropertyNode node =
                 new PropertyNode(name, modifiers, type, redirect(), initialValueExpression, getterBlock, setterBlock);
         addProperty(node);
@@ -847,5 +851,5 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     
     public boolean hasPackageName(){
         return redirect().name.indexOf('.')>0;
-    }    
+    }
 }
