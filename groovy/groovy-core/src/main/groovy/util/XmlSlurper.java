@@ -40,8 +40,13 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
 import org.xml.sax.Attributes;
+import org.xml.sax.DTDHandler;
+import org.xml.sax.EntityResolver;
+import org.xml.sax.ErrorHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXNotRecognizedException;
+import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -189,6 +194,79 @@ public class XmlSlurper extends DefaultHandler {
    */
   public GPathResult parseText(final String text) throws IOException, SAXException {
     return parse(new StringReader(text));
+  }
+  
+  // Delegated XMLReader methods
+  //------------------------------------------------------------------------
+
+  /* (non-Javadoc)
+   * @see org.xml.sax.XMLReader#getDTDHandler()
+   */
+  public DTDHandler getDTDHandler() {
+      return this.reader.getDTDHandler();
+  }
+
+  /* (non-Javadoc)
+   * @see org.xml.sax.XMLReader#getEntityResolver()
+   */
+  public EntityResolver getEntityResolver() {
+      return this.reader.getEntityResolver();
+  }
+
+  /* (non-Javadoc)
+   * @see org.xml.sax.XMLReader#getErrorHandler()
+   */
+  public ErrorHandler getErrorHandler() {
+      return this.reader.getErrorHandler();
+  }
+
+  /* (non-Javadoc)
+   * @see org.xml.sax.XMLReader#getFeature(java.lang.String)
+   */
+  public boolean getFeature(final String uri) throws SAXNotRecognizedException, SAXNotSupportedException {
+      return this.reader.getFeature(uri);
+  }
+
+  /* (non-Javadoc)
+   * @see org.xml.sax.XMLReader#getProperty(java.lang.String)
+   */
+  public Object getProperty(final String uri) throws SAXNotRecognizedException, SAXNotSupportedException {
+      return this.reader.getProperty(uri);
+  }
+
+  /* (non-Javadoc)
+   * @see org.xml.sax.XMLReader#setDTDHandler(org.xml.sax.DTDHandler)
+   */
+  public void setDTDHandler(final DTDHandler dtdHandler) {
+      this.reader.setDTDHandler(dtdHandler);
+  }
+
+  /* (non-Javadoc)
+   * @see org.xml.sax.XMLReader#setEntityResolver(org.xml.sax.EntityResolver)
+   */
+  public void setEntityResolver(final EntityResolver entityResolver) {
+      this.reader.setEntityResolver(entityResolver);
+  }
+
+  /* (non-Javadoc)
+   * @see org.xml.sax.XMLReader#setErrorHandler(org.xml.sax.ErrorHandler)
+   */
+  public void setErrorHandler(final ErrorHandler errorHandler) {
+      this.reader.setErrorHandler(errorHandler);
+  }
+
+  /* (non-Javadoc)
+   * @see org.xml.sax.XMLReader#setFeature(java.lang.String, boolean)
+   */
+  public void setFeature(final String uri, final boolean value) throws SAXNotRecognizedException, SAXNotSupportedException {
+      this.reader.setFeature(uri, value);
+  }
+
+  /* (non-Javadoc)
+   * @see org.xml.sax.XMLReader#setProperty(java.lang.String, java.lang.Object)
+   */
+  public void setProperty(final String uri, final Object value) throws SAXNotRecognizedException, SAXNotSupportedException {
+       this.reader.setProperty(uri, value);
   }
   
   
