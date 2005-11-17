@@ -62,11 +62,13 @@ import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.Phases;
+import org.codehaus.groovy.control.SourceUnit;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 
@@ -173,7 +175,7 @@ public class GroovyClassLoader extends SecureClassLoader {
 
         CompilationUnit unit = new CompilationUnit(config, codeSource, this);
         try {
-            ClassCollector collector = createCollector(unit);
+            ClassCollector collector = createCollector(unit,classNode.getModule().getContext());
 
             unit.addClassNode(classNode);
             unit.setClassgenCallback(collector);
@@ -269,13 +271,14 @@ public class GroovyClassLoader extends SecureClassLoader {
         try {
             CompilationUnit unit = new CompilationUnit(config, codeSource.getCodeSource(), this);
             // try {
-            ClassCollector collector = createCollector(unit);
-
+            SourceUnit su = null;
             if (codeSource.getFile()==null) {
-                unit.addSource(name, codeSource.getInputStream());
+                su = unit.addSource(name, codeSource.getInputStream());
             } else {
-                unit.addSource(codeSource.getFile());
+                su = unit.addSource(codeSource.getFile());
             }
+
+            ClassCollector collector = createCollector(unit,su);
             unit.setClassgenCallback(collector);
             int goalPhase = Phases.CLASS_GENERATION;
             if (config != null && config.getTargetDirectory()!=null) goalPhase = Phases.OUTPUT;
@@ -525,23 +528,22 @@ public class GroovyClassLoader extends SecureClassLoader {
         return defineClass(name, bytecode, 0, bytecode.length, domain);
     }
 
-    protected ClassCollector createCollector(CompilationUnit unit) {
-        return new ClassCollector(this, unit);
+    protected ClassCollector createCollector(CompilationUnit unit,SourceUnit su) {
+        return new ClassCollector(this, unit, su);
     }
 
     public static class ClassCollector extends CompilationUnit.ClassgenCallback {
         private Class generatedClass;
-
         private GroovyClassLoader cl;
-
+        private SourceUnit su;
         private CompilationUnit unit;
-
         private Collection loadedClasses = null;
 
-        protected ClassCollector(GroovyClassLoader cl, CompilationUnit unit) {
+        protected ClassCollector(GroovyClassLoader cl, CompilationUnit unit, SourceUnit su) {
             this.cl = cl;
             this.unit = unit;
             this.loadedClasses = new ArrayList();
+            this.su = su;
         }
 
         protected Class onClassNode(ClassWriter classWriter, ClassNode classNode) {
@@ -551,7 +553,12 @@ public class GroovyClassLoader extends SecureClassLoader {
             this.loadedClasses.add(theClass);
 
             if (generatedClass == null) {
-                generatedClass = theClass;
+                ModuleNode mn = classNode.getModule();
+                SourceUnit msu = null;
+                if (mn!=null) msu = mn.getContext();
+                ClassNode main = null;
+                if (mn!=null) main = (ClassNode) mn.getClasses().get(0);
+                if (msu==su && main==classNode) generatedClass = theClass;
             }
 
             return theClass;

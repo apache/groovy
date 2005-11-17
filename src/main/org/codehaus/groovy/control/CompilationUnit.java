@@ -270,7 +270,7 @@ public class CompilationUnit extends ProcessingUnit {
 
 
         try {
-            applyToPrimaryClassNodes(handler);
+            applyToPrimaryClassNodes(handler,false);
         } catch (CompilationFailedException e) {
             if (debug) e.printStackTrace();
         }
@@ -639,7 +639,7 @@ public class CompilationUnit extends ProcessingUnit {
         }
 
         
-        applyToPrimaryClassNodes(classgen);
+        applyToPrimaryClassNodes(classgen,true);
 
         completePhase();
         applyToSourceUnits(mark);
@@ -910,29 +910,66 @@ public class CompilationUnit extends ProcessingUnit {
     }
 
 
+    private List getPrimaryClassNodes(boolean sort) {
+        ArrayList unsorted = new ArrayList();
+        Iterator modules = this.ast.getModules().iterator();
+        while (modules.hasNext()) {
+            ModuleNode module = (ModuleNode) modules.next();
+
+            Iterator classNodes = module.getClasses().iterator();
+            while (classNodes.hasNext()) {
+                ClassNode classNode = (ClassNode) classNodes.next();
+                unsorted.add(classNode);
+            }
+        }
+        
+        if(sort==false) return unsorted;
+        
+        int[] index = new int[unsorted.size()];
+        {            
+            int i = 0;
+            for (Iterator iter = unsorted.iterator(); iter.hasNext(); i++) {
+                ClassNode element = (ClassNode) iter.next();
+                int count = 0;
+                while (element!=null){
+                    count++;
+                    element = element.getSuperClass();
+                }
+                index[i] = count;
+            }
+        }
+        
+        ArrayList sorted = new ArrayList(unsorted.size());
+        int start = 0;
+        for (int i=0; i<index.length; i++) {           
+            int min = start;
+            for (int j=start+1; j<index.length; j++) {
+                if (index[j]!=-1 && index[j]<index[min]) min = j;
+            }
+            if (min==start) start++;
+            sorted.add(unsorted.get(min));
+            index[min] = -1;
+        }
+     
+        return sorted;
+    }
 
     /**
      * A loop driver for applying operations to all primary ClassNodes in
      * our AST.  Automatically skips units that have already been processed
      * through the current phase.
      */
-    public void applyToPrimaryClassNodes(LoopBodyForPrimaryClassNodeOperations body) throws CompilationFailedException {
+    public void applyToPrimaryClassNodes(LoopBodyForPrimaryClassNodeOperations body,boolean sort) throws CompilationFailedException {
         boolean failures = false;
 
-
-        Iterator modules = this.ast.getModules().iterator();
-        while (modules.hasNext()) {
-            ModuleNode module = (ModuleNode) modules.next();
-
+        Iterator classNodes = getPrimaryClassNodes(sort).iterator();
+        while (classNodes.hasNext()) {
             try {
-                Iterator classNodes = module.getClasses().iterator();
-                while (classNodes.hasNext()) {
-                    ClassNode classNode = (ClassNode) classNodes.next();
-                    SourceUnit context = module.getContext();
-                    if (context == null || context.phase <= phase) {
-                        body.call(module.getContext(), new GeneratorContext(this.ast), classNode);
-                    }
-                }
+               ClassNode classNode = (ClassNode) classNodes.next();
+               SourceUnit context = classNode.getModule().getContext();
+               if (context == null || context.phase <= phase) {
+                   body.call(context, new GeneratorContext(this.ast), classNode);
+               }
             } catch (CompilationFailedException e) {
                 // fall thorugh, getErrorREporter().failIfErrors() will triger
             } catch (NullPointerException npe){
