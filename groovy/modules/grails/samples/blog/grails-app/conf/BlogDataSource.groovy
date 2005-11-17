@@ -1,6 +1,6 @@
 class BlogDataSource {
-   @Property String url = "jdbc:hsqldb:mem:testDB"
-   @Property String driverClassName = "org.hsqldb.jdbcDriver"
-   @Property String username = "sa"
-   @Property String password = ""
+   @Property String url = "jdbc:mysql://localhost/blogs"
+   @Property String driverClassName = "com.mysql.jdbc.Driver"
+   @Property String username = "root"
+   @Property String password = "admin"
 }

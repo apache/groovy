@@ -21,7 +21,6 @@ class BlogBootStrap {
 		
 		
 		def comment = new Comment()
-		comment.entry = entry
 		comment.authorName = "Fred Flintstone"
 		comment.authorEmail = "fred@blogs.com"
 		comment.authorBlogURL = "http://www.blogs.com/fred"

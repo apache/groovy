@@ -10,7 +10,7 @@ class Entry {
 	
 	@Property constraints = {
 		title(blank:false,length:1..50)
-		date(nullable:true)
+		date(nullable:false)
 		body(blank:false)
 	}
 }	
