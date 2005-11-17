@@ -28,6 +28,14 @@ public class PersistentMethodTests extends AbstractDependencyInjectionSpringCont
 	protected GrailsApplication grailsApplication = null;
 
 
+	/**
+	 * @param grailsApplication The grailsApplication to set.
+	 */
+	public void setGrailsApplication(GrailsApplication grailsApplication) {
+		this.grailsApplication = grailsApplication;
+	}
+
+
 	protected String[] getConfigLocations() {
 		return new String[] { "org/codehaus/groovy/grails/orm/hibernate/grails-persistent-method-tests.xml" };
 	}
@@ -294,10 +302,11 @@ public class PersistentMethodTests extends AbstractDependencyInjectionSpringCont
 	}
 	protected void onSetUp() throws Exception {
 		SpringConfig springConfig = new SpringConfig(grailsApplication);
-		ConfigurableApplicationContext appCtx = (ConfigurableApplicationContext) 
+		ConfigurableApplicationContext appCtx = (ConfigurableApplicationContext)		
 		new XmlApplicationContextDriver().getApplicationContext(
 				springConfig.getBeanReferences(), super.applicationContext);
 		
+		System.out.println("Loaded app context: " + appCtx.getDisplayName()); 
 		super.onSetUp();
 	}
 	
