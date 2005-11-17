@@ -78,7 +78,7 @@ public class ControllerMetaClassTests extends TestCase {
 						"}" );
 		
 
-		GrailsApplication application = new DefaultGrailsApplication(new Class[] { groovyClass });		
+		GrailsApplication application = new DefaultGrailsApplication(new Class[] { groovyClass },gcl);		
 		GroovyObject go = configureDynamicGO(groovyClass,application, request,response);		
 		try {
 			Object params = go.getProperty( "params" );			
@@ -119,7 +119,7 @@ public class ControllerMetaClassTests extends TestCase {
 				"}\n" +
 				"}" );		
 		
-		GrailsApplication application = new DefaultGrailsApplication(new Class[] { groovyClass,secondController });		
+		GrailsApplication application = new DefaultGrailsApplication(new Class[] { groovyClass,secondController },gcl);		
 		GroovyObject go = configureDynamicGO(groovyClass, application,request,response);
 		GroovyObject go2 = configureDynamicGO(secondController, application,request,response);
 		
@@ -182,7 +182,7 @@ public class ControllerMetaClassTests extends TestCase {
 				"}\n" +
 				"}" );		
 		
-		GrailsApplication application = new DefaultGrailsApplication(new Class[] { groovyClass,secondController });		
+		GrailsApplication application = new DefaultGrailsApplication(new Class[] { groovyClass,secondController },gcl);		
 		GroovyObject go = configureDynamicGO(groovyClass, application,request,response);
 		GroovyObject go2 = configureDynamicGO(secondController, application,request,response);
 		
