@@ -126,13 +126,14 @@ public abstract class AbstractGrailsClass implements GrailsClass {
 	 * @return property value or null if no property or static field was found
 	 */
 	protected Object getPropertyValue(String name, Class type) {
-		if (getReference().isReadableProperty(name) && getReference().getPropertyType(name).equals(type)) {
-			return getReference().getPropertyValue(name);
+		BeanWrapper ref = getReference();
+		if (ref.isReadableProperty(name) && ref.getPropertyType(name).isAssignableFrom(type)) {
+			return ref.getPropertyValue(name);
 		} else {
 			try {
-				Field field = getReference().getWrappedClass().getField(name);
+				Field field = ref.getWrappedClass().getField(name);
 				if (Modifier.isStatic(field.getModifiers()) && Modifier.isPublic(field.getModifiers()) && field.getType().equals(type)) {
-					return field.get(getReference().getWrappedInstance());
+					return field.get(ref.getWrappedInstance());
 				}
 			} catch (NoSuchFieldException e) {
 				// ignore

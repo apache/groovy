@@ -160,7 +160,7 @@ public class GrailsClassUtils {
 			if(pValue == null)
 				return null;
 			
-			if(pValue.getClass().equals(propertyType)) {
+			if(propertyType.isAssignableFrom(pValue.getClass())) {
 				return pValue;		
 			}
 			else {
