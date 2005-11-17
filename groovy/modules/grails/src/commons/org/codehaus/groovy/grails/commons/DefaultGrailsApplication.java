@@ -58,11 +58,12 @@ public class DefaultGrailsApplication implements GrailsApplication {
 	
 	private static Logger log = Logger.getLogger(DefaultGrailsApplication.class);
 	
-	public DefaultGrailsApplication(final Class[] classes) {
+	public DefaultGrailsApplication(final Class[] classes, GroovyClassLoader classLoader) {
 		if(classes == null)
 			throw new IllegalArgumentException("Constructor argument 'classes' cannot be null");
 		
 		configureLoadedClasses(classes);
+		this.cl = classLoader;
 	}
 	public DefaultGrailsApplication(final Resource[] resources) throws IOException, ClassNotFoundException {
 		super();
@@ -194,13 +195,34 @@ public class DefaultGrailsApplication implements GrailsApplication {
 			
 			for (int j = 0; j < props.length; j++) {
 				if(props[j].isAssociation()) {
+					DefaultGrailsDomainClassProperty prop = (DefaultGrailsDomainClassProperty)props[j];
 					GrailsDomainClass referencedGrailsDomainClass = (GrailsDomainClass)this.domainMap.get( props[j].getReferencedPropertyType().getName() );
-					((DefaultGrailsDomainClassProperty)props[j]).setReferencedDomainClass(referencedGrailsDomainClass);
+					prop.setReferencedDomainClass(referencedGrailsDomainClass);
+					
 				}
 			}
+						
 		}
 		
-		
+		for (int i = 0; i < this.domainClasses.length; i++) {
+			GrailsDomainClassProperty[] props = this.domainClasses[i].getPersistantProperties();
+			
+			for (int j = 0; j < props.length; j++) {
+				if(props[j].isAssociation()) {
+					DefaultGrailsDomainClassProperty prop = (DefaultGrailsDomainClassProperty)props[j];
+					GrailsDomainClassProperty[] referencedProperties =  prop.getReferencedDomainClass().getPersistantProperties();					
+					for (int k = 0; k < referencedProperties.length; k++) {
+						if(referencedProperties[k].getReferencedPropertyType().equals( this.domainClasses[i].getClazz())) {
+							prop.setOtherSide(referencedProperties[k]);
+							break;
+						}
+					}		
+				}
+			}
+						
+		}		
+	
+			
 	}
 
 	public GrailsControllerClass[] getControllers() {
