@@ -37,6 +37,7 @@ import org.codehaus.groovy.grails.web.pageflow.GrailsFlowBuilder;
 import org.codehaus.groovy.grails.web.pageflow.execution.servlet.GrailsServletFlowExecutionManager;
 import org.codehaus.groovy.grails.web.servlet.mvc.SimpleGrailsController;
 import org.hibernate.dialect.HSQLDialect;
+import org.hibernate.dialect.MySQLDialect;
 import org.springframework.beans.factory.config.CustomEditorConfigurer;
 import org.springframework.beans.factory.config.MethodInvokingFactoryBean;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
@@ -195,6 +196,7 @@ public class SpringConfig {
 		
 		Map vendorNameDialectMappings = new HashMap();
 		vendorNameDialectMappings.put("HSQL Database Engine", HSQLDialect.class.getName());
+		vendorNameDialectMappings.put("MySQL", MySQLDialect.class.getName());
 			
 		Bean dialectDetector = SpringConfigUtils.createSingletonBean(HibernateDialectDetectorFactoryBean.class);
 		dialectDetector.setProperty("dataSource", SpringConfigUtils.createBeanReference("dataSource"));
