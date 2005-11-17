@@ -4,4 +4,6 @@ class OneToOneTest {
 	
    @Property Long id;
    @Property Long version;
+   
+   @Property RelationshipsTest other
 }

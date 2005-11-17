@@ -4,6 +4,6 @@ class OneToManyTest2 {
 
    @Property int id;
    @Property int version;
-   //@Property RelationshipsTest other; // many-to-one relationship
+   @Property RelationshipsTest other; // many-to-one relationship
 
 }

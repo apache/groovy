@@ -14,7 +14,9 @@
  */ 
 package org.codehaus.groovy.grails.domain;
 
+import org.codehaus.groovy.grails.commons.DefaultGrailsApplication;
 import org.codehaus.groovy.grails.commons.DefaultGrailsDomainClass;
+import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.commons.GrailsDomainClass;
 import org.codehaus.groovy.grails.commons.GrailsDomainClassProperty;
 import org.codehaus.groovy.grails.exceptions.InvalidPropertyException;
@@ -61,7 +63,7 @@ public class DefaultGrailsDomainClassTest extends TestCase {
 	public void testDefaultGrailsDomainClass()
 		throws Exception {
 	
-		Class clazz = cl.parseClass("class UserTest { @Property int id; @Property int version; @Property List transients = [ \"age\" ]; @Property List optional  = [ \"lastName\" ]; @Property String firstName; @Property String lastName; @Property java.util.Date age; }");
+		Class clazz = cl.parseClass("class UserTest { @Property int id; @Property int version; @Property List transients = [ \"age\" ]; @Property List optionals  = [ \"lastName\" ]; @Property String firstName; @Property String lastName; @Property java.util.Date age; }");
 				
 		
 		GrailsDomainClass domainClass = new DefaultGrailsDomainClass(clazz);
@@ -104,15 +106,21 @@ public class DefaultGrailsDomainClassTest extends TestCase {
 		throws Exception {		
 						
 										
-		GrailsDomainClass c1dc = new DefaultGrailsDomainClass(relClass);
-		GrailsDomainClass c2dc = new DefaultGrailsDomainClass(oneToManyClass);
+		GrailsApplication grailsApplication = new DefaultGrailsApplication(new Class[]{ relClass,oneToManyClass,oneToOneClass,manyToManyClass },cl);
+		
+		GrailsDomainClass c1dc = grailsApplication.getGrailsDomainClass(relClass.getName());
+		GrailsDomainClass c2dc = grailsApplication.getGrailsDomainClass(oneToManyClass.getName());
 		
 		// test relationship property
+		assertEquals( c1dc.getPropertyByName("ones").getOtherSide(), c2dc.getPropertyByName("other") );
 		assertTrue( c1dc.getPropertyByName( "ones" ).isOneToMany() );
+		assertTrue( c1dc.getPropertyByName( "ones" ).isPersistant() );
 		assertFalse( c1dc.getPropertyByName( "ones" ).isManyToMany() );
 		assertFalse( c1dc.getPropertyByName( "ones" ).isManyToOne() );
 		assertFalse( c1dc.getPropertyByName( "ones" ).isOneToOne() );		
 		
+		assertEquals( c2dc.getPropertyByName("other").getOtherSide(), c1dc.getPropertyByName("ones") );
+		assertTrue( c2dc.getPropertyByName( "other" ).isPersistant() );
 		assertTrue( c2dc.getPropertyByName( "other" ).isManyToOne() );	
 		assertFalse( c2dc.getPropertyByName( "other" ).isManyToMany() );
 		assertFalse( c2dc.getPropertyByName( "other" ).isOneToOne() );
@@ -128,11 +136,13 @@ public class DefaultGrailsDomainClassTest extends TestCase {
 		GrailsDomainClass c2dc = new DefaultGrailsDomainClass(manyToManyClass);
 		
 		// test relationships
+		assertTrue( c1dc.getPropertyByName( "manys" ).isPersistant() );
 		assertTrue( c1dc.getPropertyByName( "manys" ).isManyToMany() );		
 		assertFalse( c1dc.getPropertyByName( "manys" ).isOneToMany() );
 		assertFalse( c1dc.getPropertyByName( "manys" ).isManyToOne() );
 		assertFalse( c1dc.getPropertyByName( "manys" ).isOneToOne() );			
 		
+		assertTrue( c2dc.getPropertyByName( "manys" ).isPersistant() );
 		assertTrue( c2dc.getPropertyByName( "manys" ).isManyToMany() );
 		assertFalse( c2dc.getPropertyByName( "manys" ).isManyToOne() );
 		assertFalse( c2dc.getPropertyByName( "manys" ).isOneToOne() );
@@ -145,11 +155,13 @@ public class DefaultGrailsDomainClassTest extends TestCase {
 		GrailsDomainClass c2dc = new DefaultGrailsDomainClass(oneToOneClass);		
 		
 		// test relationships
+		assertTrue( c1dc.getPropertyByName( "one" ).isPersistant() );		
 		assertTrue( c1dc.getPropertyByName( "one" ).isOneToOne() );	
 		assertFalse( c1dc.getPropertyByName( "one" ).isManyToMany() );
 		assertFalse( c1dc.getPropertyByName( "one" ).isManyToOne() );
 		assertFalse( c1dc.getPropertyByName( "one" ).isOneToMany() );
 		
+		assertTrue( c2dc.getPropertyByName( "other" ).isPersistant() );		
 		assertTrue( c2dc.getPropertyByName( "other" ).isOneToOne() );
 		assertFalse( c2dc.getPropertyByName( "other" ).isManyToMany() );
 		assertFalse( c2dc.getPropertyByName( "other" ).isManyToOne() );
