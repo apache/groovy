@@ -785,7 +785,7 @@ public class CompilationUnit extends ProcessingUnit {
                 directory.mkdirs();
             }
 
-
+            
             //
             // Create the file and write out the data
             //
@@ -942,15 +942,19 @@ public class CompilationUnit extends ProcessingUnit {
         ArrayList sorted = new ArrayList(unsorted.size());
         int start = 0;
         for (int i=0; i<index.length; i++) {           
-            int min = start;
-            for (int j=start+1; j<index.length; j++) {
-                if (index[j]!=-1 && index[j]<index[min]) min = j;
+            int min = -1;
+            for (int j=0; j<index.length; j++) {
+                if (index[j]==-1) continue;
+                if (min==-1) {
+                    min = j;
+                } else if (index[j]<index[min]) {
+                    min = j;
+                }
             }
-            if (min==start) start++;
             sorted.add(unsorted.get(min));
             index[min] = -1;
         }
-     
+        
         return sorted;
     }
 
