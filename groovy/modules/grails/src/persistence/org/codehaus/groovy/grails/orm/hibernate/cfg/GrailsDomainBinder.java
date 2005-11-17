@@ -31,6 +31,7 @@ import org.hibernate.cfg.GrailsSecondPass;
 import org.hibernate.cfg.Mappings;
 //import org.hibernate.cfg.SecondPass;
 import org.hibernate.id.PersistentIdentifierGenerator;
+import org.hibernate.mapping.Backref;
 import org.hibernate.mapping.Collection;
 import org.hibernate.mapping.Column;
 import org.hibernate.mapping.DependantValue;
@@ -170,7 +171,11 @@ public final class GrailsDomainBinder {
 			keyValue = (KeyValue)collection.getOwner().getProperty( propertyRef ).getValue();
 		}
 		
-		DependantValue key = new DependantValue(collection.getCollectionTable(), keyValue);
+		keyValue.setTypeUsingReflection(property.getReferencedDomainClass().getName(), collection.getReferencedPropertyName());
+		
+		DependantValue key = new DependantValue(collection.getCollectionTable(), keyValue);		
+		key.setTypeUsingReflection(property.getReferencedDomainClass().getName(), collection.getReferencedPropertyName());
+		
 		
 		bindSimpleValue( property,key,mappings );
 		
@@ -185,7 +190,18 @@ public final class GrailsDomainBinder {
 			collection.setElement(element);
 			bindManyToOne(property,element, mappings);
 		}
-		
+		else if ( property.isOneToMany() ) {
+				// for non-inverse one-to-many, with a not-null fk, add a backref!
+				String entityName = ( (OneToMany) collection.getElement() ).getReferencedEntityName();
+				PersistentClass referenced = mappings.getClass( entityName );
+				Backref prop = new Backref();
+				prop.setName( '_' + property.getName() + "Backref" );
+				prop.setUpdateable( false );
+				prop.setSelectable( false );
+				prop.setCollectionRole( collection.getRole() );
+				prop.setValue( collection.getKey() );
+				referenced.addProperty( prop );
+		}		
 	}		
 	
 	/**
@@ -239,7 +255,7 @@ public final class GrailsDomainBinder {
 	 */
 	public static void bindClass(GrailsDomainClass domainClass, Mappings mappings)
 		throws MappingException {		
-		if(domainClass.newInstance().getClass().getSuperclass() == java.lang.Object.class) {
+		if(domainClass.getClazz().getSuperclass() == java.lang.Object.class) {
 			bindRoot(domainClass, mappings);
 		}
 		else {
@@ -316,7 +332,7 @@ public final class GrailsDomainBinder {
 		);
 		root.setTable(table);
 		
-		LOG.info( "Mapping Grails domain class: " + domainClass.getFullName() + " -> " + root.getTable().getName() );
+		LOG.info( "[GrailsDomainBinder] Mapping Grails domain class: " + domainClass.getFullName() + " -> " + root.getTable().getName() );
 		
 		bindSimpleId( domainClass.getIdentifier(), root, mappings );
 		bindVersion( domainClass.getVersion(), root, mappings );
@@ -342,6 +358,14 @@ public final class GrailsDomainBinder {
 		for(int i = 0; i < persistantProperties.length;i++) {
 			
 			GrailsDomainClassProperty currentGrailsProp = persistantProperties[i];
+			if(currentGrailsProp.isManyToOne() && currentGrailsProp.isBidirectional() ) {
+				GrailsDomainClassProperty otherSide = currentGrailsProp.getOtherSide();
+				if(otherSide.isOneToMany())
+					continue;
+			}
+			
+			if(LOG.isTraceEnabled()) 
+				LOG.trace("[GrailsDomainBinder] Binding persistent property [" + currentGrailsProp.getName() + "]");
 			
 			Value value = null;
 			
@@ -362,7 +386,7 @@ public final class GrailsDomainBinder {
 				value = new ManyToOne( table );
 				bindManyToOne( currentGrailsProp, (ManyToOne) value, mappings );
 			}
-			else if ( currentGrailsProp.isOneToOne() ) {				
+			else if ( currentGrailsProp.isOneToOne()) {				
 				//value = new OneToOne( table, persistentClass );
 				//bindOneToOne( currentGrailsProp, (OneToOne)value, mappings );
 				value = new ManyToOne( table );
@@ -373,8 +397,10 @@ public final class GrailsDomainBinder {
 				bindSimpleValue( persistantProperties[i], (SimpleValue) value, mappings );
 			}
 
-			Property property = createProperty( value, persistentClass, persistantProperties[i], mappings );			
-			persistentClass.addProperty( property );						
+			if(value != null) {
+				Property property = createProperty( value, persistentClass, persistantProperties[i], mappings );			
+				persistentClass.addProperty( property );						
+			}
 		}		
 	}
 
@@ -464,9 +490,10 @@ public final class GrailsDomainBinder {
 		
 		// bind column
 		bindSimpleValue(property,manyToOne,mappings);
+
 		// set referenced entity
 		manyToOne.setReferencedEntityName( property.getReferencedPropertyType().getName() );
-		
+		manyToOne.setIgnoreNotFound(true);
 	}
 
 	/**
@@ -545,7 +572,11 @@ public final class GrailsDomainBinder {
 		prop.setPropertyAccessorName( mappings.getDefaultAccess() );
 		prop.setOptional( grailsProperty.isOptional() );
 		// set to cascade all for the moment
-		prop.setCascade("all");
+		if(grailsProperty.isAssociation()) {
+			prop.setCascade("all");
+			if(LOG.isTraceEnabled()) 
+				LOG.trace( "[GrailsDomainBinder] Set cascading strategy on property ["+grailsProperty.getName()+"] to [all]" );
+		}
 		// lazy to true
 		prop.setLazy(true);
 		
@@ -562,13 +593,11 @@ public final class GrailsDomainBinder {
 	private static void bindSimpleValue(GrailsDomainClassProperty grailsProp, SimpleValue simpleValue,Mappings mappings) {
 		// set type
 		simpleValue.setTypeName(grailsProp.getType().getName());
-		
+		Table table = simpleValue.getTable();
 		Column column = new Column();
 		column.setValue(simpleValue);
 		bindColumn(grailsProp, column);
-		
-		Table table = simpleValue.getTable();
-		
+								
 		if(table != null) table.addColumn(column);
 		
 		simpleValue.addColumn(column);		
@@ -579,16 +608,22 @@ public final class GrailsDomainBinder {
 	 * @param grailsProp The Grails domain class property
 	 * @param column The column to bind
 	 */
-	private static void bindColumn(GrailsDomainClassProperty grailsProp, Column column) {
-		
+	private static void bindColumn(GrailsDomainClassProperty grailsProp, Column column) {						
 		if(grailsProp.isAssociation()) {
-			column.setName( grailsProp.getFieldName() + FOREIGN_KEY_SUFFIX );
+			if(grailsProp.isOneToMany() && grailsProp.isBidirectional()) {							
+				column.setName( grailsProp.getDomainClass().getTableName() + FOREIGN_KEY_SUFFIX );
+			}
+			else {
+				column.setName( grailsProp.getFieldName() + FOREIGN_KEY_SUFFIX );
+			}			
 			column.setNullable(true);
 			
 		} else {
 			column.setNullable(grailsProp.isOptional());
 			column.setName(grailsProp.getFieldName());
 		}
+		if(LOG.isTraceEnabled()) 
+			LOG.trace("[GrailsDomainBinder] bound property [" + grailsProp + "] to column name ["+column.getName()+"]");		
 	}
 
 
