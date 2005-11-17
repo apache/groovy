@@ -56,6 +56,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.control.SourceUnit;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.util.CheckClassAdapter;
@@ -80,8 +81,8 @@ public class DumpingClassLoader extends GroovyClassLoader implements Opcodes {
     
     protected class DebugCollector extends ClassCollector {
 
-        DebugCollector(GroovyClassLoader cl, CompilationUnit unit) {
-            super(cl, unit);
+        DebugCollector(GroovyClassLoader cl, CompilationUnit unit, SourceUnit su) {
+            super(cl, unit, su);
         }
         
         public void call(ClassVisitor classWriter, ClassNode classNode) {
@@ -99,7 +100,7 @@ public class DumpingClassLoader extends GroovyClassLoader implements Opcodes {
     }
     
     protected ClassCollector createCollector(CompilationUnit unit) {
-        return new DebugCollector(this, unit);
+        return new DebugCollector(this, unit, null);
     }
 
     protected ASMifierClassVisitor dumpVisitor = new ASMifierClassVisitor(new PrintWriter(new OutputStreamWriter(System.out)));
