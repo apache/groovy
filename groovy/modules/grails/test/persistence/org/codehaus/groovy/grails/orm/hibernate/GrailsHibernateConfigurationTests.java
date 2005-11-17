@@ -15,15 +15,19 @@
 package org.codehaus.groovy.grails.orm.hibernate;
 
 
+import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyObject;
-import java.sql.Connection;
+
 import java.sql.SQLException;
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Properties;
+import java.util.Set;
 
-import javax.sql.DataSource;
-
+import org.codehaus.groovy.grails.commons.DefaultGrailsApplication;
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.commons.GrailsDomainClass;
+import org.codehaus.groovy.grails.orm.hibernate.cfg.DefaultGrailsDomainConfiguration;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -35,51 +39,49 @@ import org.springframework.test.AbstractDependencyInjectionSpringContextTests;
  * @author Graeme Rocher
  * @since 08-Jul-2005
  */
-public class GrailsHibernateConfigurationTests extends
-		AbstractDependencyInjectionSpringContextTests {
-
-	protected DataSource dataSource = null;
+public class GrailsHibernateConfigurationTests extends AbstractDependencyInjectionSpringContextTests  {
+	GroovyClassLoader cl = new GroovyClassLoader();
+	
+	
 	protected GrailsApplication grailsApplication = null;
 	protected SessionFactory sessionFactory = null;
 	
 
-	/* (non-Javadoc)
-	 * @see org.springframework.test.AbstractDependencyInjectionSpringContextTests#getConfigLocations()
-	 */
 	protected String[] getConfigLocations() {
 		return new String[] { "org/codehaus/groovy/grails/orm/hibernate/grails-hibernate-configuration-tests.xml" };
 	}
 	
-	/**
-	 * @param dataSource The dataSource to set.
-	 */
-	public void setDataSource(DataSource dataSource) {
-		this.dataSource = dataSource;
-	}
 	
+	protected void onSetUp() throws Exception {
+		Thread.currentThread().setContextClassLoader(cl);
+		
+		cl.loadClass( "org.codehaus.groovy.grails.domain.RelationshipsTest" );
+		
+		Class[] loadedClasses = cl.getLoadedClasses();
+		grailsApplication = new DefaultGrailsApplication(loadedClasses,cl);
+		
 
-	/**
-	 * @param grailsApplication The grailsApplication to set.
-	 */
-	public void setGrailsApplication(GrailsApplication grailsApplication) {
-		this.grailsApplication = grailsApplication;
-	}
+		DefaultGrailsDomainConfiguration config = new DefaultGrailsDomainConfiguration();
+		config.setGrailsApplication(this.grailsApplication);
+		Properties props = new Properties();
+		props.put("hibernate.connection.username","sa");
+		props.put("hibernate.connection.password","");
+		props.put("hibernate.connection.url","jdbc:hsqldb:mem:grailsDB");
+		props.put("hibernate.connection.driver_class","org.hsqldb.jdbcDriver");
+		props.put("hibernate.dialect","org.hibernate.dialect.HSQLDialect");
+		props.put("hibernate.hbm2ddl.auto","create-drop");
+		config.setProperties(props);
+		//originalClassLoader = Thread.currentThread().getContextClassLoader();
+		Thread.currentThread().setContextClassLoader(this.cl);		
+		this.sessionFactory = config.buildSessionFactory();
+		
+		
+	}	
 
-	/**
-	 * @param sessionFactory The sessionFactory to set.
-	 */
-	public void setSessionFactory(SessionFactory sessionFactory) {
-		this.sessionFactory = sessionFactory;
-	}
-
-	public void testDataSource() throws Exception {
-		Connection connection = dataSource.getConnection();			
-		connection.close();
-	}
 
 	public void testGrailsDomain() throws Exception {
 		GrailsDomainClass[] domainClasses = grailsApplication.getGrailsDomainClasses();
-		assertEquals(7,domainClasses.length);
+		assertEquals(4,domainClasses.length);
 	}
 	
 	public void testHibernateSave() throws Exception {		
@@ -155,5 +157,5 @@ public class GrailsHibernateConfigurationTests extends
 		// TODO Test loading the relationship back from hibernate
 		
 	}
-	
+
 }
