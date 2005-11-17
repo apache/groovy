@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.lang.ClassUtils;
+import org.apache.commons.lang.builder.ToStringBuilder;
 
 /**
  * @author Graeme Rocher
@@ -45,6 +46,7 @@ public class DefaultGrailsDomainClassProperty implements GrailsDomainClassProper
 
 	private Class referencedPropertyType;
 	private GrailsDomainClass referencedDomainClass;
+	private GrailsDomainClassProperty otherSide;
 	
 
 	
@@ -295,6 +297,47 @@ public class DefaultGrailsDomainClassProperty implements GrailsDomainClassProper
 			return true;
 		else
 			return false;
+	}
+
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	public String toString() {
+		String assType = null;
+		if(isManyToMany()) {
+			assType = "many-to-many";
+		}
+		else if(isOneToMany()) {
+			assType = "one-to-many";
+		}
+		else if(isOneToOne()) {
+			assType = "one-to-one";
+		}
+		else if(isManyToOne()) {
+			assType = "many-to-one";
+		}
+		return new ToStringBuilder(this)
+						.append("name", this.name)
+						.append("type", this.type)
+						.append("persistent", isPersistant())
+						.append("optional", isOptional())
+						.append("association", isAssociation())
+						.append("bidirectional", isBidirectional())
+						.append("association-type", assType)
+						.toString();
+	}
+
+	/* (non-Javadoc)
+	 * @see org.codehaus.groovy.grails.commons.GrailsDomainClassProperty#getOtherSide()
+	 */
+	public GrailsDomainClassProperty getOtherSide() {
+		return this.otherSide;
+	}
+
+
+	protected void setOtherSide(GrailsDomainClassProperty property) {
+		this.otherSide = property;
 	}
 
 

@@ -46,12 +46,19 @@ public interface GrailsDomainClassProperty {
 	
 	/**
 	 * <p>Returns the referenced property type. This differs from getType() in that in
-	 * the case of a Collection it will return the type of the elements contained within the Collection,
+	 * the case of an Association it will return the type of the elements contained within the Collection,
 	 * otherwise it will delegate to getType();</p>
 	 * 
 	 * @return The referenced type
 	 */
 	public Class getReferencedPropertyType();
+	
+	/**
+	 * <p>Returns the other side of a bidirectional association
+	 * 
+	 * @return
+	 */
+	public GrailsDomainClassProperty getOtherSide();
 	
 	/**
 	 * Returns the class type as a property name representation
