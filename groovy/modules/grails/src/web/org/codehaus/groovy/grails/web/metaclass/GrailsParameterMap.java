@@ -33,12 +33,10 @@ public class GrailsParameterMap implements Map {
 
 	private Map parameterMap;
 	private Map controllerParamsMap = new HashMap();
-	private HttpServletRequest request;
-	
-	
+		
 	public GrailsParameterMap(HttpServletRequest request) {
 		super();
-		this.request = request;
+
 		this.parameterMap = request.getParameterMap();
 	}
 
@@ -70,8 +68,9 @@ public class GrailsParameterMap implements Map {
 			if(valueArray == null)
 				return null;
 			
-			if(valueArray.length == 1)
-				return request.getParameter((String)key); 
+			if(valueArray.length == 1) {
+				return valueArray[0];
+			}
 	
 			return parameterMap.get(key);
 		}
