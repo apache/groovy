@@ -271,6 +271,7 @@ Targets:
 		<copy todir="tmp/war/WEB-INF/tld">
 			<fileset dir="${grails.home}/src/war/WEB-INF/tld/${servlet.version}"/>
 			<fileset dir="${grails.home}/src/war/WEB-INF/tld" includes="spring.tld"/>
+			<fileset dir="${grails.home}/src/war/WEB-INF/tld" includes="gvtags.tld"/>
 		</copy>
 		<copy todir="tmp/war/WEB-INF/lib">
 			<fileset dir="${grails.home}/lib">
@@ -301,9 +302,11 @@ Targets:
 				<include name="log4j-1.2.8.jar"/>				
 				<include name="ognl-2.7.jar"/>
 				<include name="hsqldb.jar"/>
+				<include name="gvtags.jar"/>
 				<include name="commons-collections-3.0.jar"/>
 				<include name="commons-pool-1.2.jar"/>
 				<include name="commons-dbcp-1.2.1.jar"/>
+				<include name="commons-cli-1.0.jar"/>
 				<include name="commons-validator.jar"/>
 				<include name="jakarta-oro-2.0.8.jar"/>					
 			</fileset>
