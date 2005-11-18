@@ -36,6 +36,7 @@ package org.codehaus.groovy.control;
 import groovy.lang.GroovyClassLoader;
 
 import java.io.File;
+import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -80,6 +81,7 @@ import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
 import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.ast.GroovyClassVisitor;
+import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Types;
@@ -203,8 +205,9 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
                 resovleFromDefaultImports(type,testDefaultImports) ||
                 resolveFromStaticInnerClasses(type,testStaticInnerClasses) ||
                 resolveFromClassCache(type) ||
-                resolveToScript(type) ||
-                resolveToClass(type);
+                resolveToClass(type) ||
+                resolveToScript(type);
+                
     }
     
     private boolean resolveFromClassCache(ClassNode type) {
@@ -218,6 +221,25 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
         }
     }
     
+    // NOTE: copied from GroovyClassLoader
+    private long getTimeStamp(Class cls) {
+        Field field;
+        Long o;
+        try {
+            field = cls.getField(Verifier.__TIMESTAMP);
+            o = (Long) field.get(null);
+        } catch (Exception e) {
+            return Long.MAX_VALUE;
+        }
+        return o.longValue();
+    }
+    
+    // NOTE: copied from GroovyClassLoader
+    private boolean isSourceNewer(File source, Class cls) {
+        return source.lastModified() > getTimeStamp(cls);
+    }
+    
+    
     private boolean resolveToScript(ClassNode type) {
         String name = type.getName();
         if (cachedClasses.get(name)==NO_CLASS) return false;
@@ -230,6 +252,13 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
         GroovyClassLoader gcl = compilationUnit.getClassLoader();
         File f = gcl.getResourceLoader().loadGroovyFile(name);
         if (f!=null) {
+            if (type.isResolved()) {
+                Class cls = type.getTypeClass();
+                // if the file is not newer we don't want to recompile 
+                if (!isSourceNewer(f,cls)) return true;
+                cachedClasses.remove(type.getName());
+                type.setRedirect(null);
+            }
             compilationUnit.addSource(f);
             currentClass.getCompileUnit().addClassNodeToCompile(type);
             return true;
@@ -395,7 +424,11 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
         if (cls==null) return false;
         cachedClasses.put(name,cls);
         setClass(type,cls);
-        return true;
+        //NOTE: we return false here even if we found a class, 
+        //but we want to give a possible script a chance to recompile.
+        //this can only be done if the loader was not the instance 
+        //defining the class.
+        return cls.getClassLoader()==loader;
     }
     
     
