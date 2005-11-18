@@ -243,11 +243,11 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
     private boolean resolveToScript(ClassNode type) {
         String name = type.getName();
         if (cachedClasses.get(name)==NO_CLASS) return false;
-        if (name.startsWith("java.")) return false;
+        if (name.startsWith("java.")) return type.isResolved();
         //TODO: don't ignore inner static classes completly
-        if (name.indexOf('$')!=-1) return false;
+        if (name.indexOf('$')!=-1) return type.isResolved();
         ModuleNode module = currentClass.getModule();
-        if (module.hasPackageName() && name.indexOf('.')==-1) return false;
+        if (module.hasPackageName() && name.indexOf('.')==-1) return type.isResolved();
         // try to find a script from classpath
         GroovyClassLoader gcl = compilationUnit.getClassLoader();
         File f = gcl.getResourceLoader().loadGroovyFile(name);
