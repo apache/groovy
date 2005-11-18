@@ -263,7 +263,8 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
             currentClass.getCompileUnit().addClassNodeToCompile(type);
             return true;
         }
-        return false;
+        // type may be resolved through the classloader before
+        return type.isResolved();
     }
     
     
