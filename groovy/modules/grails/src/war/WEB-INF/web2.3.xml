@@ -72,4 +72,8 @@
 		<taglib-location>/WEB-INF/tld/spring.tld</taglib-location>
 	</taglib>
 	
+	<taglib>
+		<taglib-uri>http://www.taobits.net/gvtags</taglib-uri>
+		<taglib-location>/WEB-INF/tld/gvtags.tld</taglib-location>
+	</taglib>	
 </web-app>
