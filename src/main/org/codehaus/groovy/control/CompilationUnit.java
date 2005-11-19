@@ -702,10 +702,9 @@ public class CompilationUnit extends ProcessingUnit {
             completionVerifier.visitClass(classNode);
 
 
-            if (!debug) {
-                byte[] bytes = ((ClassWriter) visitor).toByteArray();
-                /* this. */generatedClasses.add(new GroovyClass(classNode.getName(), bytes));
-            }
+            byte[] bytes = ((ClassWriter) visitor).toByteArray();
+            generatedClasses.add(new GroovyClass(classNode.getName(), bytes));
+
 /*
             byte[] bytes = ((ClassWriter) visitor).toByteArray();
             FileOutputStream fos;

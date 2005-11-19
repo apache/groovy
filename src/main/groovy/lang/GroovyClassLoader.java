@@ -767,8 +767,14 @@ public class GroovyClassLoader extends SecureClassLoader {
      */
     public Class[] getLoadedClasses() {
         Class[] loadedClasses = null;
+        HashSet set = new HashSet(cache.size());
         synchronized (cache) {
-            loadedClasses = (Class[])this.cache.values().toArray(new Class[0]);
+            for (Iterator iter = cache.values().iterator(); iter.hasNext();) {
+                Class element = (Class) iter.next();
+                if (element==NOT_RESOLVED.class) continue;
+                set.add(element);
+            }
+            loadedClasses = (Class[])set.toArray(new Class[0]);
         }
         return loadedClasses;
     }
