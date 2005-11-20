@@ -21,4 +21,14 @@ class MetaClassTest extends GroovyTestCase {
         def name = object.getClass().getName()
         assert classNode.name == name
     }
+    
+	void testMetClassDefinition() {
+		assertScript """
+			class Foo {
+		    	@Property MetaClass metaClass
+			} 
+			def foo = new Foo()
+			assert foo.@metaClass != null
+			"""
+	}
 }
