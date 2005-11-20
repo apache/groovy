@@ -43,4 +43,15 @@ class ClassExpressionTest extends GroovyTestCase {
 
         System.err.println( "x.class: " + x.class );
     }
+    
+    void testPrimitiveClasses() {
+        assert void == Void.TYPE
+        assert int == Integer.TYPE
+        assert byte == Byte.TYPE
+        assert char == Character.TYPE
+        assert double == Double.TYPE
+        assert float == Float.TYPE
+        assert long == Long.TYPE
+        assert short == Short.TYPE
+    }
 }
