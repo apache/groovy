@@ -220,6 +220,7 @@ public class UberTestCase extends TestCase {
         suite.addTestSuite(SocketTest.class);
         suite.addTestSuite(SortTest.class);
         suite.addTestSuite(SpreadDotTest.class);
+        suite.addTestSuite(StackTraceTest.class);
         suite.addTestSuite(StaticClosurePropertyBug.class);
         suite.addTestSuite(StaticMarkupBug.class);
         suite.addTestSuite(StaticPrintlnTest.class);
