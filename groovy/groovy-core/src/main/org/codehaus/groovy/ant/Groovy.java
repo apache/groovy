@@ -419,31 +419,39 @@ public class Groovy extends Task {
         log("Groovy: " + txt, Project.MSG_VERBOSE);
 
         //log(getClasspath().toString(),Project.MSG_VERBOSE);
-        GroovyShell groovy = new GroovyShell(GroovyShell.class.getClassLoader(), new Binding(), configuration);
-
+        GroovyShell groovy = null;
+        Object mavenPom = null;
+        Project project = getProject();
+        // treat the case Ant is run through Maven, and
+        if ("org.apache.commons.grant.GrantProject".equals(project.getClass().getName())) {
+            try {
+               Object propsHandler = project.getClass().getMethod("getPropsHandler", new Class[0]).invoke(project, new Object[0]);
+               Field contextField = propsHandler.getClass().getDeclaredField("context");
+               contextField.setAccessible(true);
+               Object context = contextField.get(propsHandler);
+               mavenPom = InvokerHelper.invokeMethod(context, "getProject", new Object[0]);
+            }
+            catch (Exception e) {
+                throw new BuildException("Impossible to retrieve Maven's Ant project: " + e.getMessage(), getLocation());
+            }
+            // let ASM lookup "root" classloader
+            Thread.currentThread().setContextClassLoader(GroovyShell.class.getClassLoader());
+            // load groovy into "root.maven" classloader instead of "root" so that
+            // groovy script can access Maven classes
+            groovy = new GroovyShell(mavenPom.getClass().getClassLoader(), new Binding(), configuration);
+        } else {
+            groovy = new GroovyShell(GroovyShell.class.getClassLoader(), new Binding(), configuration);
+        }
         try {
             Script script = groovy.parse(txt);
-            Project project = getProject();
             script.setProperty("ant", new AntBuilder(project));
             script.setProperty("project", project);
             script.setProperty("properties", new AntProjectPropertiesDelegate(project));
             script.setProperty("target", getOwningTarget());
             script.setProperty("task", this);
-
-            // treat the case Ant is run through Maven, and
-            if ("org.apache.commons.grant.GrantProject".equals(project.getClass().getName())) {
-                try {
-                    Object propsHandler = project.getClass().getMethod("getPropsHandler", new Class[0]).invoke(project, new Object[0]);
-                    Field contextField = propsHandler.getClass().getDeclaredField("context");
-                    contextField.setAccessible(true);
-                    Object context = contextField.get(propsHandler);
-                    Object mavenPom = InvokerHelper.invokeMethod(context, "getProject", new Object[0]);
-                    script.setProperty("pom", mavenPom);
-                } catch (Exception e) {
-                    throw new BuildException("Impossible to retrieve Maven's Ant project: " + e.getMessage(), getLocation());
-                }
+            if(mavenPom != null) {
+                script.setProperty("pom", mavenPom);
             }
-
             script.run();
         } catch (CompilationFailedException e) {
             StringWriter writer = new StringWriter();
