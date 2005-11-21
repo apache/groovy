@@ -15,7 +15,8 @@
  */ 
 package groovy.lang;
 
-import java.io.File;
+import java.net.URL;
+import java.net.MalformedURLException;
 
 /**
  * Allows frameworks that integrate with Groovy to determine how Groovy files are resolved.
@@ -28,7 +29,7 @@ public interface GroovyResourceLoader {
      * Loads a Groovy source file given its name.
      *
      * @param filename name of the file
-     * @return a File
+     * @return a URL
      */
-    public File loadGroovyFile(String filename);
+    public URL loadGroovySource(String filename) throws MalformedURLException;
 }
