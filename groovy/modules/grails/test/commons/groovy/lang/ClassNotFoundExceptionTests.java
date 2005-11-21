@@ -1,6 +1,5 @@
 package groovy.lang;
 import java.io.File;
-import java.net.URL;
 
 import junit.framework.TestCase;
 
@@ -24,29 +23,29 @@ import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
 public class ClassNotFoundExceptionTests extends TestCase {
 
-	public ClassNotFoundExceptionTests() {
-		super();
-	}
+    public ClassNotFoundExceptionTests() {
+        super();
+    }
 
-	public ClassNotFoundExceptionTests(String arg0) {
-		super(arg0);
-	}
+    public ClassNotFoundExceptionTests(String arg0) {
+        super(arg0);
+    }
 
-	public void testClassNotFoundException() throws Exception {
-		GroovyClassLoader gcl = new GroovyClassLoader();
-		gcl.setResourceLoader(new GroovyResourceLoader() {
-			public File loadGroovyFile(String filename) {
-				if ("Order".equals(filename)) {
-					return new File("test/commons/groovy/lang/Order.groovy");
-				} else {
-					return null;
-				}
-			}
-		});
-		gcl.parseClass(new File("test/commons/groovy/lang/OrderService.groovy"));
-	}
-	
-	public void testClassNotFoundExceptionGrailsApplication() throws Exception {
-		DefaultGrailsApplication app = new DefaultGrailsApplication(new PathMatchingResourcePatternResolver().getResources("file:test/commons/groovy/lang/*.groovy"));
-	}
+    public void testClassNotFoundException() throws Exception {
+        GroovyClassLoader gcl = new GroovyClassLoader();
+        gcl.setResourceLoader(new GroovyResourceLoader() {
+            public File loadGroovySource(String filename) {
+                if ("Order".equals(filename)) {
+                    return new File("test/commons/groovy/lang/Order.groovy");
+                } else {
+                    return null;
+                }
+            }
+        });
+        gcl.parseClass(new File("test/commons/groovy/lang/OrderService.groovy"));
+    }
+
+    public void testClassNotFoundExceptionGrailsApplication() throws Exception {
+        DefaultGrailsApplication app = new DefaultGrailsApplication(new PathMatchingResourcePatternResolver().getResources("file:test/commons/groovy/lang/*.groovy"));
+    }
 }

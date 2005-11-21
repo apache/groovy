@@ -36,6 +36,7 @@ package org.codehaus.groovy.control;
 import groovy.lang.GroovyClassLoader;
 
 import java.io.IOException;
+import java.io.File;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -239,7 +240,20 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
     // NOTE: copied from GroovyClassLoader
     private boolean isSourceNewer(URL source, Class cls) {
         try {
-            return source.openConnection().getLastModified() > getTimeStamp(cls);
+            long lastMod;
+
+            // Special handling for file:// protocol, as getLastModified() often reports
+            // incorrect results (-1)
+            if (source.getProtocol().equals("file")) {
+                // Coerce the file URL to a File
+                String path = source.getPath().replace('/', File.separatorChar).replace('|', ':');
+                File file = new File(path);
+                lastMod = file.lastModified();
+            }
+            else {
+                lastMod = source.openConnection().getLastModified();
+            }
+            return lastMod > getTimeStamp(cls);            
         } catch (IOException e) {
             // if the stream can't be opened, let's keep the old reference
             return false;

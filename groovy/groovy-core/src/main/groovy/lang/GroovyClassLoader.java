@@ -757,7 +757,20 @@ public class GroovyClassLoader extends SecureClassLoader {
     }
 
     private boolean isSourceNewer(URL source, Class cls) throws IOException {
-        return source.openConnection().getLastModified() > getTimeStamp(cls);
+        long lastMod;
+
+        // Special handling for file:// protocol, as getLastModified() often reports
+        // incorrect results (-1)
+        if (source.getProtocol().equals("file")) {
+            // Coerce the file URL to a File
+            String path = source.getPath().replace('/', File.separatorChar).replace('|', ':');
+            File file = new File(path);
+            lastMod = file.lastModified();
+        }
+        else {
+            lastMod = source.openConnection().getLastModified();
+        }
+        return lastMod > getTimeStamp(cls);
     }
 
     public void addClasspath(String path) {
