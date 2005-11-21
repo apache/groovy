@@ -29,12 +29,8 @@ public abstract class NewMetaClass {
     public static final Object NO_PROPERTY = new Object();
     public static final Object NO_ATTRIBUTE = new Object();
     
-    protected static final Object[] NO_PARAMETERS =        new Object[0];
-    protected static final Class[] NO_PARAMETER_TYPES =    new Class[0];
-    protected static final Class[] ONE_PARAMETER_TYPE =    new Class[1];
-    protected static final Class[] TWO_PARAMETER_TYPES =   new Class[2];
-    protected static final Class[] THREE_PARAMETER_TYPES = new Class[3];
-    protected static final Class[] FOUR_PARAMETER_TYPES =  new Class[4];
+    protected static final Object[] NO_PARAMETERS = new Object[0];
+    protected static final Class[] NO_PARAMETER_TYPES = new Class[0];
     
     //
     // The methods forming the Meta Object Protocol
@@ -69,6 +65,13 @@ public abstract class NewMetaClass {
      * @param methodName
      * The name of the method to be called
      * @param arguments
+     * The arguments to the call.
+     * If NOT_CALLED is returned and there is a private or protected method which
+     * should be called then this array will contain the parameters to that method. The MetaClass will have done any conversions
+     * (e.g. GString to String) needed to allow the call to suceed.
+     * If any other value is returned then the values in this array are undefined. In this case the MetaClass may or may not
+     * change these values. DO NOT use these values unless NOT_CALLED is returned.
+     * @param argumentTypes
      * This array must be the same length as the arguments arguments array.
      * It contains the type of each parameter if known or null if unknown.
      * The if there are multiple methods with the same name and number of parameters then this information
@@ -77,11 +80,6 @@ public abstract class NewMetaClass {
      * should be called then this array will contain the classes which represent the types of the parameters to that method.
      * If any other value is returned then the values in this array are undefined. In this case the MetaClass may or may not
      * change these values. DO NOT use these values unless NOT_CALLED is returned.
-     * @param argumentTypes
-     * This array must be the same length as the arguments arguments array.
-     * It contains the type of each parameter if known or null if unknown.
-     * The if there are overloaded methods then this information contributes to the selection of the correct method to call.
-     * The MetaClass may or may not change these values. DO NOT use these values after the call.
      * @return
      * The result of calling the method (null is returned if the method returns void).
      */
@@ -102,8 +100,12 @@ public abstract class NewMetaClass {
      * If a protected or private constructor is the best match for the parameters then NOT_CONSTRUCTED is returned
      * otherwise a groovy.lang.MissingConstructorException is thrown
      * @param arguments
-     * The arguments to the constructor call. The values in this array are undefined after the call is made.
-     * The MetaClass may or may not change these vaues. DO NOT use these vaules after the call.
+     * The arguments to the constructor.
+     * If NOT_CONSTUCTED is returned and there is a private or protected constuctor which
+     * should be called then this array will contain the parameters to that constructor. The MetaClass will have done any conversions
+     * (e.g. GString to String) needed to allow the constuctor call to suceed.
+     * If any other value is returned then the values in this array are undefined. In this case the MetaClass may or may not
+     * change these values. DO NOT use these values unless NOT_CONSTUCTED is returned.
      * @param argumentTypes
      * This array must be the same length as the arguments arguments array.
      * It contains the type of each parameter if known or null if unknown.
@@ -136,8 +138,12 @@ public abstract class NewMetaClass {
      * @param methodName
      * The name of the method to be called
      * @param arguments
-     * The arguments to the call. The values in this array are undefined after the call is made.
-     * The MetaClass may or may not change these values. DO NOT use these vaules after the call.
+     * The arguments to the call.
+     * If NOT_CALLED is returned and there is a private or protected method which
+     * should be called then this array will contain the parameters to that method. The MetaClass will have done any conversions
+     * (e.g. GString to String) needed to allow the call to succeed.
+     * If any other value is returned then the values in this array are undefined. In this case the MetaClass may or may not
+     * change these values. DO NOT use these values unless NOT_CALLED is returned.
      * @param argumentTypes
      * This array must be the same length as the arguments arguments array.
      * It contains the type of each parameter if known or null if unknown.
@@ -154,7 +160,6 @@ public abstract class NewMetaClass {
      * If there are multiple methods with the same name and number of parameters then the values on the array passed
      * as argumentTypes should be used to choose the correct one to call.
      */
-    
     public abstract Object invokeThisMethod(final Object object, final Class thisType, final String methodName, final Object[] arguments, final Class[] argumentTypes);
     
     public abstract Object getThisProperty(final Object object, final Class thisType, final String property);
@@ -177,8 +182,12 @@ public abstract class NewMetaClass {
      * @param methodName
      * The name of the method to be called
      * @param arguments
-     * The arguments to the call. The values in this array are undefined after the call is made.
-     * The MetaClass may or may not change these values. DO NOT use these vaules after the call.
+     * The arguments to the call.
+     * If NOT_CALLED is returned and there is a private or protected method which
+     * should be called then this array will contain the parameters to that method. The MetaClass will have done any conversions
+     * (e.g. GString to String) needed to allow the call to succeed.
+     * If any other value is returned then the values in this array are undefined. In this case the MetaClass may or may not
+     * change these values. DO NOT use these values unless NOT_CALLED is returned.
      * @param argumentTypes
      * This array must be the same length as the arguments arguments array.
      * It contains the type of each parameter if known or null if unknown.
@@ -194,8 +203,7 @@ public abstract class NewMetaClass {
      * In this case the caller is free to try to invoke the method itself (e.g. by executing generated bytecode).
      * If there are multiple methods with the same name and number of parameters then the values on the array passed
      * as argumentTypes should be used to choose the correct one to call.
-     */
-    
+     */  
     public abstract Object invokeSuperMethod(final Object object, final Class superclassType, final String methodName, final Object[] arguments, final Class[] argumentTypes);
     
     public abstract Object getSuperProperty(final Object object, final Class superclassType, final String property);
@@ -293,11 +301,11 @@ public abstract class NewMetaClass {
     }
        
     public Object invokeMethod(final Object object, final String methodName, final Object p1) {
-        return invokeMethod(object, (Class)null, methodName, new Object[] {p1}, ONE_PARAMETER_TYPE);
+        return invokeMethod(object, (Class)null, methodName, new Object[] {p1}, new Class[1]);
     }
        
     public Object invokeMethod(final Object object, final Class objectType, final String methodName, final Object p1) {
-        return invokeMethod(object, objectType, methodName, new Object[] {p1}, ONE_PARAMETER_TYPE);
+        return invokeMethod(object, objectType, methodName, new Object[] {p1}, new Class[1]);
     }
        
     public Object invokeMethod(final Object object, final String methodName, final Object p1, final Object p2, final Class c1, final Class c2) {
@@ -309,11 +317,11 @@ public abstract class NewMetaClass {
     }
        
     public Object invokeMethod(final Object object, final String methodName, final Object p1, final Object p2) {
-        return invokeMethod(object, (Class)null, methodName, new Object[] {p1, p2}, TWO_PARAMETER_TYPES);
+        return invokeMethod(object, (Class)null, methodName, new Object[] {p1, p2}, new Class[2]);
     }
        
     public Object invokeMethod(final Object object, final Class objectType, final String methodName, final Object p1, final Object p2) {
-        return invokeMethod(object, objectType, methodName, new Object[] {p1, p2}, TWO_PARAMETER_TYPES);
+        return invokeMethod(object, objectType, methodName, new Object[] {p1, p2}, new Class[2]);
     }
        
     public Object invokeMethod(final Object object, final String methodName, final Object p1, final Object p2, final Object p3, final Class c1, final Class c2, final Class c3) {
@@ -325,11 +333,11 @@ public abstract class NewMetaClass {
     }
        
     public Object invokeMethod(final Object object, final String methodName, final Object p1, final Object p2, final Object p3) {
-        return invokeMethod(object, (Class)null, methodName, new Object[] {p1, p2, p3}, THREE_PARAMETER_TYPES);
+        return invokeMethod(object, (Class)null, methodName, new Object[] {p1, p2, p3}, new Class[3]);
     }
        
     public Object invokeMethod(final Object object, final Class objectType, final String methodName, final Object p1, final Object p2, final Object p3) {
-        return invokeMethod(object, objectType, methodName, new Object[] {p1, p2, p3}, THREE_PARAMETER_TYPES);
+        return invokeMethod(object, objectType, methodName, new Object[] {p1, p2, p3}, new Class[3]);
     }
        
     public Object invokeMethod(final Object object, final String methodName, final Object p1, final Object p2, final Object p3, final Object p4, final Class c1, final Class c2, final Class c3, final Class c4) {
@@ -341,11 +349,11 @@ public abstract class NewMetaClass {
     }
        
     public Object invokeMethod(final Object object, final String methodName, final Object p1, final Object p2, final Object p3, final Object p4) {
-        return invokeMethod(object, (Class)null, methodName, new Object[] {p1, p2, p3, p4}, FOUR_PARAMETER_TYPES);
+        return invokeMethod(object, (Class)null, methodName, new Object[] {p1, p2, p3, p4}, new Class[4]);
     }
        
     public Object invokeMethod(final Object object, final Class objectType, final String methodName, final Object p1, final Object p2, final Object p3, final Object p4) {
-        return invokeMethod(object, objectType, methodName, new Object[] {p1, p2, p3, p4}, FOUR_PARAMETER_TYPES);
+        return invokeMethod(object, objectType, methodName, new Object[] {p1, p2, p3, p4}, new Class[4]);
     }
        
     public Object invokeThisMethod(final Object object, final Class thisType, final String methodName) {
@@ -357,7 +365,7 @@ public abstract class NewMetaClass {
     }
        
     public Object invokeThisMethod(final Object object, final Class thisType, final String methodName, final Object p1) {
-        return invokeThisMethod(object, thisType, methodName, new Object[] {p1}, ONE_PARAMETER_TYPE);
+        return invokeThisMethod(object, thisType, methodName, new Object[] {p1}, new Class[1]);
     }
 
     public Object invokeThisMethod(final Object object, final Class thisType, final String methodName, final Object p1, final Object p2, final Class c1, final Class c2) {
@@ -365,7 +373,7 @@ public abstract class NewMetaClass {
     }
 
     public Object invokeThisMethod(final Object object, final Class thisType, final String methodName, final Object p1, final Object p2) {
-        return invokeThisMethod(object, thisType, methodName, new Object[] {p1, p2}, TWO_PARAMETER_TYPES);
+        return invokeThisMethod(object, thisType, methodName, new Object[] {p1, p2}, new Class[2]);
     }
 
     public Object invokeThisMethod(final Object object, final Class thisType, final String methodName, final Object p1, final Object p2, final Object p3, final Class c1, final Class c2, final Class c3) {
@@ -373,7 +381,7 @@ public abstract class NewMetaClass {
     }
 
     public Object invokeThisMethod(final Object object, final Class thisType, final String methodName, final Object p1, final Object p2, final Object p3) {
-        return invokeThisMethod(object, thisType, methodName, new Object[] {p1, p2, p3}, THREE_PARAMETER_TYPES);
+        return invokeThisMethod(object, thisType, methodName, new Object[] {p1, p2, p3}, new Class[3]);
     }
 
     public Object invokeThisMethod(final Object object, final Class thisType, final String methodName, final Object p1, final Object p2, final Object p3, final Object p4, final Class c1, final Class c2, final Class c3, final Class c4) {
@@ -381,6 +389,6 @@ public abstract class NewMetaClass {
     }
 
     public Object invokeThisMethod(final Object object, final Class thisType, final String methodName, final Object p1, final Object p2, final Object p3, final Object p4) {
-        return invokeThisMethod(object, thisType, methodName, new Object[] {p1, p2, p3, p4}, FOUR_PARAMETER_TYPES);
+        return invokeThisMethod(object, thisType, methodName, new Object[] {p1, p2, p3, p4}, new Class[4]);
     }
 }
