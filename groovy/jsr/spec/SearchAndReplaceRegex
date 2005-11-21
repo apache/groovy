@@ -27,11 +27,23 @@ The following regexes are replaced with the regex immediately following
 
 1.1 \(\$([^\)]+)\)
 
-({link:&#167;$1|AltChapter03LexicalStructure.html#$1})
+({link:&#167;$1|AltChapter03LexicalStructure2.html#$1})
 
 1.1 (?m)^\s*(bq\.)\s+(.*?)$
 
 <blockquote class="blockquote">$2</blockquote>
+
+1.1 \(\+\)
+
+<img src="plus.png" alt="Addition" />
+
+1.1 \(-\)
+
+<img src="minus.png" alt="Deletion" />
+
+1.1 \(i\)
+
+<img src="info.png" alt="Information" />
 
 1.1 \*(.*?)\*
 

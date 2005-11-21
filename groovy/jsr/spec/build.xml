@@ -35,7 +35,7 @@
       <copy todir="${rendered.dir}">
          <fileset dir="."><include name="biscuit.css"/></fileset>
          <fileset dir="."><include name="fullscreen.css"/></fileset>
-         <fileset dir="."><include name="groovy-logo.png"/></fileset>
+         <fileset dir="."><include name="*.png"/></fileset>
       </copy>
       <biscuit destdir="${rendered.dir}"
                srcdir="${wiki.src.dir}"

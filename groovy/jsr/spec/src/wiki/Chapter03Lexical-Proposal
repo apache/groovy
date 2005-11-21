@@ -1,0 +1,131 @@
+*Chapter 3*
+
+h1. Lexical Structure
+
+This chapter specifies the lexical structure of the Groovy programming language.
+
+The organization of this chapter parallels the chapter on [Lexical Structure|http://example.com] in the [Java Language Specification (third edition)|http://example.com], and builds on top of that specification.
+
+{anchor:3.1}
+h2. 3.1 Unicode
+
+Versions of the Groovy programming language up to and including 1.0 final use Unicode version 3.0 because J2SE 1.4 does. 
+Upgrades to newer versions of the Unicode Standard occurred in J2SE 5.0 (to Unicode 4.0). 
+
+The range of legal code points since J2SE 5.0 is now U+0000 to U+10FFFF, using the hexadecimal U+n _notation_.
+
+The Groovy programming language represents text in sequences of 16-bit code units, using the UTF-16 encoding.
+
+(-) Unlike Java, Groovy has no character literals, see ($3.10.4)
+
+{anchor:3.2}
+h2. 3.2 Lexical Translations
+
+Unchanged. Tokenization of character streams occurs exactly as in Java.
+
+{anchor:3.3}
+h2. 3.3 Unicode Escapes
+
+Unchanged. Unicode Escapes follow the same rules and are evaluated
+at the same time as Java.
+
+*J2SE 5.0+*
+Representing supplementary characters requires two consecutive Unicode escapes.
+
+{anchor:3.4}
+h2. 3.4 Line Terminators
+
+Unchanged. Unicode input characters are split into lines in the same way as Java.
+
+{anchor:3.5}
+h2. 3.5 Input Elements and Tokens
+
+(+) Shell comments are possible on the first line of a groovy source file ($3.7)
+
+(+) The definition of _Token_ includes _StringConstructor_ ($3.10.todo), as shown below.
+
+{code}
+Input:
+    ShellComment(opt) InputElements(opt) Sub(opt)
+
+Token:
+    Identifier
+    Keyword
+    Literal
+    StringConstructor
+    Separator
+    Operator
+{code}
+
+(i) It is also noted that line terminators (as defined by ($3.4)) may be classified as either separators ($3.11) or white space ($3.6), according to the rules of ($3.11).
+
+{anchor:3.6}
+h2. 3.6 White Space
+
+(i) Some line terminators are transformed into separators instead of whitespace, according to the rules defined in ($3.11), below.
+
+{anchor:3.7}
+h2. 3.7 Comments
+
+(+) Groovy has a third kind of _comment_ which is only acceptable on the first line of a groovy source file ($3.5)
+{table}
+ syntax           | description
+ {{# text}}       | A _shell_ _comment_: all the text from the ASCII
+                  | character {{#}} to the end of the line is ignored (as in
+                  | Unix shell scripts).
+{table}
+
+This comment style is formally specified by the following amendment to the Java productions ([JLS 3.7|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#48125]) :
+{code}
+  
+ShellComment:
+  '#' CharactersInLine(opt)
+{code}
+
+These productions imply all of the following additional properties:
+- {{#}}, {{/\*}} and {{\*/}} have no special meaning in comments that begin with {{//}}.
+- {{#}} and {{//}} have no special meaning in comments that begin with {{/\*}} or {{/\*\*}}.
+- {{//}}, {{/\*}} and {{\*/}} have no special meaning in comments that begin with {{#}}.
+
+The lexical grammar implies that comments do not occur within string literals ($3.10.5) or regex literals ($3.10.todo).
+
+(+) Note that the newline terminating an "end of line" comment can be significant. ($3.11)
+
+{anchor:3.8}
+h2. 3.8 Identifiers
+
+(i) Groovy identifiers consist of _Java_ _letters_ and _Java_ _numbers_ with the exception of the ASCII dollar character '$' which is not a legal identifier character.  
+
+{table}
+todo 
+jrose - "The dollar sign is sometimes used internally by Groovy to mangle non-Java identifiers which must be converted to Java names. For this reason, it would be confusing to allow unescaped dollar signs as Groovy identifier constituents."
+jrayner - Is this true blackdrag?
+Also... should we implement Character.isGroovyIdentifier(), including a formalism of this rule above?
+{table}
+
+(+) Groovy provides a way to use any Unicode string as a member name. (See [Chapter 6|Chapter06Names.html].)
+
+{anchor:3.9}
+h2. 3.9 Keywords
+
+(+) The following character sequences, formed from ASCII letters, are reserved for use as additional _keywords_  and cannot be used as unqualified identifiers ($3.8):
+
+{table}
+Keywords:    | one of       |                
+{{any     }} | {{def     }} | {{threadsafe}} 
+{{as      }} | {{in      }} | {{with}}       
+{table}
+
+The keywords {{any}}, {{const}}, {{goto}}, {{threadsafe}} and {{with}} are reserved, even though they are not currently used. This may allow a Groovy compiler to produce better error messages if these keywords incorrectly appear in programs.
+
+(-) The keywords {{do}}, {{strictfp}}, {{native}} are not used in groovy.
+
+(i) The following appear to not yet be implemented in groovy, but I think they are intended to be {{throws}}, {{enum}}, {{final}}
+
+(i) Reference Implementation Note: {{metaClass}} and {{\_\_timeStamp}} are used internally, and should be avoided as basic members of Groovy Objects.
+
+{table}
+todo 
+Should we allow keywords as qualified member names (when idents quoted)?
+e.g. myFoo.with()  or  myBar."any" etc...
+{table}
