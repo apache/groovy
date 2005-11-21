@@ -567,8 +567,8 @@
     <!-- only used for GroovyMock tools -->
     <dependency>
       <groupId>mockobjects</groupId>
-      <artifactId>mockobjects</artifactId>    
-      <version>core-0.09</version>
+      <artifactId>mockobjects-core</artifactId>
+      <version>0.09</version>
     </dependency>
 
     <!-- only used for EJB browser -->
