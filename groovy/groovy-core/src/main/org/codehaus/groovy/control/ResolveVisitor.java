@@ -35,13 +35,15 @@ package org.codehaus.groovy.control;
 
 import groovy.lang.GroovyClassLoader;
 
-import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.net.URL;
+import java.net.MalformedURLException;
 
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
@@ -87,12 +89,12 @@ import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Types;
 
 /**
- * Visitor to resolve Types and convert VariableExpression to 
- * ClassExpressions if needed. 
- * 
+ * Visitor to resolve Types and convert VariableExpression to
+ * ClassExpressions if needed.
+ *
  * Note: the method to start the resolving is @see ResolveVisitor#startResolving(ClassNode, SourceUnit).
- * 
- * 
+ *
+ *
  * @author Jochen Theodorou
  */
 public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTransformer, GroovyClassVisitor {
@@ -102,13 +104,13 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
     private Map cachedClasses = new HashMap();
     private static final Object NO_CLASS = new Object();
     private SourceUnit source;
-    
+
     private boolean isTopLevelProperty = true;
-        
+
     public ResolveVisitor(CompilationUnit cu) {
         compilationUnit = cu;
     }
-    
+
     public void startResolving(ClassNode node,SourceUnit source) {
         this.source = source;
         visitClass(node);
@@ -123,7 +125,7 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
         Statement code = node.getCode();
         if (code!=null) code.visit(this);
     }
-    
+
     public void visitSwitch(SwitchStatement statement) {
         Expression exp = statement.getExpression();
         statement.setExpression(transform(exp));
@@ -131,7 +133,7 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
         for (Iterator iter = list.iterator(); iter.hasNext(); ) {
             CaseStatement caseStatement = (CaseStatement) iter.next();
             caseStatement.visit(this);
-        }        
+        }
         statement.getDefaultStatement().visit(this);
     }
 
@@ -161,28 +163,28 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
         code = node.getSetterBlock();
         if (code!=null) code.visit(this);
     }
-    
+
     public void visitIfElse(IfStatement ifElse) {
         ifElse.setBooleanExpression((BooleanExpression) (transform(ifElse.getBooleanExpression())));
         super.visitIfElse(ifElse);
     }
-    
+
     private void resolveOrFail(ClassNode type, String msg, ASTNode node) {
         if (resolve(type)) return;
         addError("unable to resolve class "+type.getName()+" "+msg,node);
     }
-    
+
     private void resolveOrFail(ClassNode type, ASTNode node) {
         resolveOrFail(type,"",node);
     }
-    
+
     private boolean resolve(ClassNode type) {
         String name = type.getName();
         return resolve(type,true,true,true);
     }
-    
+
     private boolean resolve(ClassNode type, boolean testModuleImports, boolean testDefaultImports, boolean testStaticInnerClasses) {
-        if (type.isResolved()) return true;        
+        if (type.isResolved()) return true;
         if (type.isArray()) {
             ClassNode element = type.getComponentType();
             boolean resolved = resolve(element,testModuleImports,testDefaultImports,testStaticInnerClasses);
@@ -192,7 +194,7 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
             }
             return resolved;
         }
-        
+
         // test if vanilla name is current class name
         if (currentClass==type) return true;
         if (currentClass.getNameWithoutPackage().equals(type.getName())) {
@@ -207,9 +209,9 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
                 resolveFromClassCache(type) ||
                 resolveToClass(type) ||
                 resolveToScript(type);
-                
+
     }
-    
+
     private boolean resolveFromClassCache(ClassNode type) {
         String name = type.getName();
         Object val = cachedClasses.get(name);
@@ -220,7 +222,7 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
             return true;
         }
     }
-    
+
     // NOTE: copied from GroovyClassLoader
     private long getTimeStamp(Class cls) {
         Field field;
@@ -233,13 +235,18 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
         }
         return o.longValue();
     }
-    
+
     // NOTE: copied from GroovyClassLoader
-    private boolean isSourceNewer(File source, Class cls) {
-        return source.lastModified() > getTimeStamp(cls);
+    private boolean isSourceNewer(URL source, Class cls) {
+        try {
+            return source.openConnection().getLastModified() > getTimeStamp(cls);
+        } catch (IOException e) {
+            // if the stream can't be opened, let's keep the old reference
+            return false;
+        }
     }
-    
-    
+
+
     private boolean resolveToScript(ClassNode type) {
         String name = type.getName();
         if (cachedClasses.get(name)==NO_CLASS) return false;
@@ -250,24 +257,29 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
         if (module.hasPackageName() && name.indexOf('.')==-1) return type.isResolved();
         // try to find a script from classpath
         GroovyClassLoader gcl = compilationUnit.getClassLoader();
-        File f = gcl.getResourceLoader().loadGroovyFile(name);
-        if (f!=null) {
+        URL url = null;
+        try {
+            url = gcl.getResourceLoader().loadGroovySource(name);
+        } catch (MalformedURLException e) {
+            // fall through and let the URL be null
+        }
+        if (url !=null) {
             if (type.isResolved()) {
                 Class cls = type.getTypeClass();
-                // if the file is not newer we don't want to recompile 
-                if (!isSourceNewer(f,cls)) return true;
+                // if the file is not newer we don't want to recompile
+                if (!isSourceNewer(url,cls)) return true;
                 cachedClasses.remove(type.getName());
                 type.setRedirect(null);
             }
-            compilationUnit.addSource(f);
+            compilationUnit.addSource(url);
             currentClass.getCompileUnit().addClassNodeToCompile(type);
             return true;
         }
         // type may be resolved through the classloader before
         return type.isResolved();
     }
-    
-    
+
+
     private boolean resolveFromStaticInnerClasses(ClassNode type, boolean testStaticInnerClasses) {
         // try to resolve a public static inner class' name
         testStaticInnerClasses &= type.hasPackageName();
@@ -286,7 +298,7 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
         }
         return false;
     }
-    
+
     private boolean resovleFromDefaultImports(ClassNode type, boolean testDefaultImports) {
         // test default imports
         testDefaultImports &= !type.hasPackageName();
@@ -298,11 +310,11 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
                 type.setName(fqn);
                 if (resolve(type,false,false,false)) return true;
                 type.setName(name);
-            }            
+            }
         }
         return false;
     }
-    
+
     private boolean resolveFromCompileUnit(ClassNode type) {
         // look into the compile unit if there is a class with that name
         CompileUnit compileUnit = currentClass.getCompileUnit();
@@ -314,13 +326,13 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
         }
         return false;
     }
-    
-    
+
+
     private void setClass(ClassNode n, Class cls) {
         ClassNode cn = ClassHelper.make(cls);
         n.setRedirect(cn);
     }
-    
+
     private void ambigousClass(ClassNode type, ClassNode iType, String name, boolean resolved){
         if (resolved && !type.getName().equals(iType.getName())) {
             addError("reference to "+name+" is ambigous, both class "+type.getName()+" and "+iType.getName()+" match",type);
@@ -334,10 +346,10 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
         if (module==null) return false;
 
         String name = type.getName();
-        
+
         if (!type.hasPackageName() && module.hasPackageName()){
             type.setName(module.getPackageName()+name);
-        }        
+        }
         // look into the module node if there is a class with that name
         List moduleClasses = module.getClasses();
         for (Iterator iter = moduleClasses.iterator(); iter.hasNext();) {
@@ -348,7 +360,7 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
             }
         }
         type.setName(name);
-        
+
         {
             // check module node imports aliases
         	// the while loop enables a check for inner classes which are not fully imported,
@@ -360,7 +372,7 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
              * foo.foo.bar rather than foo.bar. This means to cut at the dot in foo.bar and
              * foo for import
              */
-            
+
         	while (true) {
         		pname = name.substring(0,index);
         		String aliased = module.getImport(pname);
@@ -376,7 +388,7 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
                 if (index==-1) break;
         	}
         }
-        
+
         //testModuleImports &= !type.hasPackageName();
         if (testModuleImports) {
             String packageName = "";
@@ -384,7 +396,7 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
             // check package this class is defined in
             type.setName(packageName+name);
             boolean resolved = resolve(type,false,false,false);
-            
+
             // check module node imports packages
             List packages = module.getImportPackages();
             ClassNode iType = ClassHelper.makeWithoutCaching(name);
@@ -395,7 +407,7 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
                 if (resolve(iType,false,false,true)) {
                 	ambigousClass(type,iType,name,resolved);
                     return true;
-                } 
+                }
                 iType.setName(name);
             }
             if (!resolved) type.setName(name);
@@ -403,7 +415,7 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
         }
         return false;
     }
-    
+
     private boolean resolveToClass(ClassNode type) {
         String name = type.getName();
         if (cachedClasses.get(name)==NO_CLASS) return false;
@@ -412,7 +424,7 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
         Class cls = null;
         try {
             // NOTE: it's important to do no lookup against script files
-            // here since the GroovyClassLoader would create a new 
+            // here since the GroovyClassLoader would create a new
             // CompilationUnit
             cls = loader.loadClass(name,false,true);
         } catch (ClassNotFoundException cnfe) {
@@ -425,14 +437,14 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
         if (cls==null) return false;
         cachedClasses.put(name,cls);
         setClass(type,cls);
-        //NOTE: we return false here even if we found a class, 
+        //NOTE: we return false here even if we found a class,
         //but we want to give a possible script a chance to recompile.
-        //this can only be done if the loader was not the instance 
+        //this can only be done if the loader was not the instance
         //defining the class.
         return cls.getClassLoader()==loader;
     }
-    
-    
+
+
 
     public Expression transform(Expression exp) {
         if (exp==null) return null;
@@ -441,22 +453,22 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
         } else if (exp instanceof PropertyExpression) {
             return transformPropertyExpression((PropertyExpression) exp);
         } else if (exp instanceof DeclarationExpression) {
-            return transformDeclarationExpression((DeclarationExpression)exp); 
+            return transformDeclarationExpression((DeclarationExpression)exp);
         } else if (exp instanceof BinaryExpression) {
-            return transformBinaryExpression((BinaryExpression)exp); 
+            return transformBinaryExpression((BinaryExpression)exp);
         } else if (exp instanceof MethodCallExpression) {
             return transformMethodCallExpression((MethodCallExpression)exp);
         } else if (exp instanceof ClosureExpression) {
         	return transformClosureExpression((ClosureExpression) exp);
         } else if (exp instanceof ConstructorCallExpression) {
-        	return transformConstructorCallExpression((ConstructorCallExpression) exp);        	
+        	return transformConstructorCallExpression((ConstructorCallExpression) exp);
         } else {
             resolveOrFail(exp.getType(),exp);
             return exp.transformExpression(this);
-        } 
+        }
     }
-    
-    
+
+
     private String lookupClassName(PropertyExpression pe) {
         String name = "";
         for (Expression it = pe; it!=null; it = ((PropertyExpression)it).getObjectExpression()) {
@@ -468,8 +480,8 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
                 }
                 name= ve.getName()+"."+name;
                 break;
-            } 
-            // anything other than PropertyExpressions and VariableExpressions will stop resolving           
+            }
+            // anything other than PropertyExpressions and VariableExpressions will stop resolving
             else if (!(it instanceof PropertyExpression)) {
                 return null;
             } else {
@@ -477,15 +489,15 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
                 String propertyPart = current.getProperty();
                 // the class property stops resolving
                 if (propertyPart.equals("class")) {
-                    return null;               
+                    return null;
                 }
                 name = propertyPart+"."+name;
-            }            
+            }
         }
         if (name.length()>0) return name.substring(0,name.length()-1);
         return null;
     }
-    
+
     // iterate from the inner most to the outer and check for classes
     // this check will ignore a .class property, for Exmaple Integer.class will be
     // a PropertyExpression with the ClassExpression of Integer as objectExprsssion
@@ -503,22 +515,22 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
             stack.addFirst(it);
         }
         if (found==null) return pe;
-        
+
         if (stack.isEmpty()) return pe;
-        Object stackElement = stack.removeFirst();        
+        Object stackElement = stack.removeFirst();
         if (!(stackElement instanceof PropertyExpression)) return pe;
         PropertyExpression classPropertyExpression = (PropertyExpression) stackElement;
         if (! classPropertyExpression.getProperty().equals("class")) return pe;
-        
+
         if (stack.isEmpty()) return found;
         stackElement = stack.removeFirst();
         if (!(stackElement instanceof PropertyExpression)) return pe;
         PropertyExpression classPropertyExpressionContainer = (PropertyExpression) stackElement;
-        
+
         classPropertyExpressionContainer.setObjectExpression(found);
         return pe;
     }
-    
+
     protected Expression transformPropertyExpression(PropertyExpression pe) {
         boolean itlp = isTopLevelProperty;
         

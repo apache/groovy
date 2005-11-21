@@ -87,8 +87,9 @@ public class GroovyClassLoader extends SecureClassLoader {
     private Map cache = new HashMap();
 
     private GroovyResourceLoader resourceLoader = new GroovyResourceLoader() {
-        public File loadGroovyFile(String filename) {
-            return getSourceFile(filename);
+        public URL loadGroovySource(String filename) throws MalformedURLException {
+            File file = getSourceFile(filename);
+            return file == null ? null : file.toURL();
         }
     };
 
@@ -144,7 +145,7 @@ public class GroovyClassLoader extends SecureClassLoader {
         }
         this.resourceLoader = resourceLoader;
     }
-    
+
     public GroovyResourceLoader getResourceLoader() {
         return resourceLoader;
     }
@@ -584,21 +585,21 @@ public class GroovyClassLoader extends SecureClassLoader {
         }
         return c;
     }
-    
+
     /**
-     * loads a class from a file or a parent classloader. 
+     * loads a class from a file or a parent classloader.
      * This method does call @see #loadClass(String, boolean, boolean, boolean)
      * with the last parameter set to false.
      */
-    public Class loadClass(final String name, boolean lookupScriptFiles, boolean preferClassOverScript) 
-        throws ClassNotFoundException 
+    public Class loadClass(final String name, boolean lookupScriptFiles, boolean preferClassOverScript)
+        throws ClassNotFoundException
     {
         return loadClass(name,lookupScriptFiles,preferClassOverScript,false);
     }
-    
+
     /**
      * loads a class from a file or a parent classloader.
-     * 
+     *
      * @param name                      of the class to be loaded
      * @param lookupScriptFiles         if false no lookup at files is done at all
      * @param preferClassOverScript     if true the file lookup is only done if there is no class
@@ -606,8 +607,8 @@ public class GroovyClassLoader extends SecureClassLoader {
      * @return                          the class found or the class created from a file lookup
      * @throws ClassNotFoundException
      */
-    public Class loadClass(final String name, boolean lookupScriptFiles, boolean preferClassOverScript, boolean resolve) 
-        throws ClassNotFoundException 
+    public Class loadClass(final String name, boolean lookupScriptFiles, boolean preferClassOverScript, boolean resolve)
+        throws ClassNotFoundException
     {
         // look into cache
         synchronized (cache) {
@@ -615,7 +616,7 @@ public class GroovyClassLoader extends SecureClassLoader {
             if (cls == NOT_RESOLVED.class) throw new ClassNotFoundException(name);
             if (cls!=null) return cls;
         }
-        
+
         // check security manager
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
@@ -634,7 +635,7 @@ public class GroovyClassLoader extends SecureClassLoader {
         } catch (ClassNotFoundException cnfe) {
             last = cnfe;
         }
-        
+
         if (cls!=null) {
             boolean recompile = false;
             if (getTimeStamp(cls) < Long.MAX_VALUE) {
@@ -646,18 +647,22 @@ public class GroovyClassLoader extends SecureClassLoader {
                     }
                 }
             }
-            
+
             preferClassOverScript |= cls.getClassLoader()==this;
             preferClassOverScript |= !recompile;
             if(preferClassOverScript) return cls;
         }
-        
+
         if (lookupScriptFiles) {
             // try groovy file
             try {
-                File source = (File) AccessController.doPrivileged(new PrivilegedAction() {
+                URL source = (URL) AccessController.doPrivileged(new PrivilegedAction() {
                     public Object run() {
-                        return resourceLoader.loadGroovyFile(name);
+                        try {
+                            return resourceLoader.loadGroovySource(name);
+                        } catch (MalformedURLException e) {
+                            return null; // ugly to return null
+                        }
                     }
                 });
                 if (source != null) {
@@ -666,7 +671,7 @@ public class GroovyClassLoader extends SecureClassLoader {
                         synchronized (cache) {
                             cache.put(name,PARSING.class);
                         }
-                        cls = parseClass(source);
+                        cls = parseClass(source.openStream());
                     }
                 }
             } catch (Exception e) {
@@ -683,17 +688,17 @@ public class GroovyClassLoader extends SecureClassLoader {
             }
             throw last;
         }
-        
+
         //class found, store it in cache
         synchronized (cache) {
             cache.put(name, cls);
         }
         return cls;
     }
-    
+
     /**
      * Implemented here to check package access prior to returning an
-     * already loaded class. 
+     * already loaded class.
      * @see java.lang.ClassLoader#loadClass(java.lang.String, boolean)
      */
     protected synchronized Class loadClass(final String name, boolean resolve) throws ClassNotFoundException {
@@ -751,8 +756,8 @@ public class GroovyClassLoader extends SecureClassLoader {
         return source;
     }
 
-    private boolean isSourceNewer(File source, Class cls) {
-        return source.lastModified() > getTimeStamp(cls);
+    private boolean isSourceNewer(URL source, Class cls) throws IOException {
+        return source.openConnection().getLastModified() > getTimeStamp(cls);
     }
 
     public void addClasspath(String path) {
