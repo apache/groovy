@@ -76,6 +76,9 @@ public class CompileUnit {
     }
 
     public void addModule(ModuleNode node) {
+        // node==null means a compilation error prevented
+        // groovy from building an ast
+        if (node==null) return;
         modules.add(node);
         node.setUnit(this);
         addClasses(node.getClasses());
