@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
+import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
@@ -246,6 +247,20 @@ public class XmlSlurper extends DefaultHandler {
    */
   public void setEntityResolver(final EntityResolver entityResolver) {
       this.reader.setEntityResolver(entityResolver);
+  }
+
+  /**
+   * Resolves entities against using the suppied URL as the base for relative URLs
+   * 
+   * @param base
+   * The URL used to resolve relative URLs
+   */
+  public void setEntityResolver(final URL base) {
+      this.reader.setEntityResolver(new EntityResolver() {
+          public InputSource resolveEntity(final String publicId, final String systemId) throws IOException {
+              return new InputSource(new URL(base, systemId).openStream());
+          }
+      });
   }
 
   /* (non-Javadoc)
