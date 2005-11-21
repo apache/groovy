@@ -2896,6 +2896,29 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * Pipe an inputstream into an outputstream for efficient stream copying.
+     *
+     * @param self stream on which to write
+     * @param in stream to read from
+     * @return the outputstream itself
+     * @throws IOException
+     */
+    public static OutputStream leftShift(OutputStream self, InputStream in) throws IOException {
+        byte[] buf = new byte[1024];
+        while (true) {
+            int count = in.read(buf,0,buf.length);
+            if (count == -1) break;
+            if (count == 0) {
+                Thread.yield();
+                continue;
+            }
+            self.write(buf, 0, count);
+        }
+        self.flush();
+        return self;
+    }
+
+    /**
      * Overloads the left shift operator to provide an append mechanism to add bytes to a stream
      *
      * @param self  an OutputStream
@@ -4741,7 +4764,7 @@ public class DefaultGroovyMethods {
     /**
      * Iterates through the given object stream object by object
      *
-     * @param self    an ObjectInputStream
+     * @param ois    an ObjectInputStream
      * @param closure a closure
      * @throws IOException
      * @throws ClassNotFoundException
