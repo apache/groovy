@@ -556,7 +556,7 @@
     
     <!-- fix crlf-->
     <fixcrlf srcdir="${groovy.install.staging.dest}/bin"
-       eol="unix" excludes="*.bat" 
+       eol="lf" excludes="*.bat" 
     />
     <fixcrlf srcdir="${groovy.install.staging.dest}/bin"
        eol="crlf" includes="*.bat"
