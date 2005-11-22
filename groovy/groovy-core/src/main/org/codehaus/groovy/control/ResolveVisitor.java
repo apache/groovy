@@ -104,6 +104,7 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
     private CompilationUnit compilationUnit;
     private Map cachedClasses = new HashMap();
     private static final Object NO_CLASS = new Object();
+    private static final Object SCRIPT = new Object();
     private SourceUnit source;
 
     private boolean isTopLevelProperty = true;
@@ -264,6 +265,7 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
     private boolean resolveToScript(ClassNode type) {
         String name = type.getName();
         if (cachedClasses.get(name)==NO_CLASS) return false;
+        if (cachedClasses.get(name)==SCRIPT) cachedClasses.put(name,NO_CLASS);
         if (name.startsWith("java.")) return type.isResolved();
         //TODO: don't ignore inner static classes completly
         if (name.indexOf('$')!=-1) return type.isResolved();
@@ -442,10 +444,10 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
             // CompilationUnit
             cls = loader.loadClass(name,false,true);
         } catch (ClassNotFoundException cnfe) {
-            cachedClasses.put(name,NO_CLASS);
+            cachedClasses.put(name,SCRIPT);
             return false;
         } catch (NoClassDefFoundError ncdfe) {
-            cachedClasses.put(name,NO_CLASS);
+            cachedClasses.put(name,SCRIPT);
             return false;
         }
         if (cls==null) return false;
