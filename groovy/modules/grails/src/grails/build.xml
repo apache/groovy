@@ -132,7 +132,8 @@ Targets:
 		<mkdir dir="${path}grails-app/controllers"/>
 		<mkdir dir="${path}grails-app/domain"/>
 		<mkdir dir="${path}grails-app/views"/>
-		<mkdir dir="${path}grails-app/layouts"/>		
+		<mkdir dir="${path}grails-app/views/layouts"/>		
+		<mkdir dir="${path}grails-app/i18n"/>				
 		<mkdir dir="${path}grails-app/conf"/>
 		<mkdir dir="${path}grails-app/tests"/>
 		<mkdir dir="${path}grails-test"/>
@@ -157,6 +158,7 @@ Targets:
 				<include name="*.xml"/>
 			</fileset>
 		</copy>
+		<touch file="${path}grails-app/i18n/messages.properties"></touch>
 	</target>
 	
 	<target name="clean">
@@ -321,9 +323,12 @@ Targets:
 				<exclude name="conf"/>
 				<exclude name="tests"/>
 				<exclude name="views"/>
+				<exclude name="views/layouts"/>				
+				<exclude name="i18n"/>				
 			</fileset>
 			<fileset dir="grails-app/controllers" includes="**"/>
 			<fileset dir="grails-app/domain" includes="**"/>
+			<fileset dir="grails-app/i18n" includes="**"/>			
 			<fileset dir="grails-app/conf" includes="**"/>
 			<fileset dir="grails-app/tests" includes="**"/>
 		</copy>
@@ -332,7 +337,7 @@ Targets:
 			<fileset dir="grails-app/views" includes="**"/>
 		</copy>
 			<copy todir="tmp/war/WEB-INF/jsp/layouts">
-				<fileset dir="grails-app/layouts" includes="**"/>
+				<fileset dir="grails-app/views/layouts" includes="**"/>
 			</copy>		
 		<copy todir="tmp/war/WEB-INF/spring">
 			<fileset dir="spring" includes="**"/>
