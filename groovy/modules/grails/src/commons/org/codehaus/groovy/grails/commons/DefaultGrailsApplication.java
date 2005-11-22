@@ -21,7 +21,9 @@ import groovy.lang.GroovyResourceLoader;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Modifier;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -73,7 +75,7 @@ public class DefaultGrailsApplication implements GrailsApplication {
 		final Collection loadedResources = new ArrayList();
 		
 		GroovyResourceLoader resourceLoader = new GroovyResourceLoader() {
-			public File loadGroovyFile(String resource) {
+			public URL loadGroovySource(String resource) {
 				String filename = resource.replace('.', '/') + ".groovy";
 				Resource foundResource = null;
 				for (int i = 0; resources != null && i < resources.length; i++) {
@@ -88,7 +90,7 @@ public class DefaultGrailsApplication implements GrailsApplication {
 				try {
 					if (foundResource != null) {
 						loadedResources.add(foundResource);
-						return foundResource.getFile();
+						return foundResource.getURL();
 					} else {
 						return null;
 					}
@@ -96,23 +98,32 @@ public class DefaultGrailsApplication implements GrailsApplication {
 					throw new RuntimeException(e);
 				}
 			}
+
+			public File loadGroovyFile(String resource) {
+				return new File(loadGroovySource(resource).getFile());
+			}
 		};
 		this.cl = new GroovyClassLoader();
 		this.cl.setResourceLoader(resourceLoader);
-		for (int i = 0; resources != null && i < resources.length; i++) {
-			try {
+		
+		
+			for (int i = 0; resources != null && i < resources.length; i++) {
 				log.debug("Loading groovy file :[" + resources[i].getFile().getAbsolutePath() + "]");
 				if (!loadedResources.contains(resources[i])) {
-					cl.parseClass(resources[i].getFile());
-				}
-			} catch (CompilationFailedException e) {
-				throw new org.codehaus.groovy.grails.exceptions.CompilationFailedException("Compilation error in file [" + resources[i].getFilename() + "]: " + e.getMessage(), e);
-			}
-		}
-		// get all the classes that were loaded
-		Class[] classes = cl.getLoadedClasses();		
-		this.allClasses = classes;
+					try {
+						cl.parseClass(resources[i].getFile());
+					} catch (CompilationFailedException e) {
+						throw new org.codehaus.groovy.grails.exceptions.CompilationFailedException("Compilation error parsing file ["+resources[i].getFilename()+"]: " + e.getMessage(), e);
+					}						
+				}				
+			}			
 		
+		// get all the classes that were loaded
+		if(log.isDebugEnabled())
+			log.debug( "loaded classes: ["+Arrays.toString(this.cl.getLoadedClasses())+"]" );
+		
+		Class[] classes = this.cl.getLoadedClasses();		
+		this.allClasses = classes;		
 		configureLoadedClasses(classes);
 	}
 
