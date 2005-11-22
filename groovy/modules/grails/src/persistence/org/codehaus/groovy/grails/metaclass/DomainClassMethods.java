@@ -35,6 +35,7 @@ import org.codehaus.groovy.grails.orm.hibernate.metaclass.ListPersistentMethod;
 import org.codehaus.groovy.grails.orm.hibernate.metaclass.RefreshPersistentMethod;
 import org.codehaus.groovy.grails.orm.hibernate.metaclass.SavePersistentMethod;
 import org.codehaus.groovy.grails.orm.hibernate.metaclass.ValidatePersistentMethod;
+import org.codehaus.groovy.grails.validation.metaclass.ConstraintsDynamicProperty;
 import org.hibernate.SessionFactory;
 
 /**
@@ -52,7 +53,7 @@ public class DomainClassMethods extends AbstractDynamicMethods {
 			throws IntrospectionException {
 		super(theClass);
 		// dynamic methods
-		addDynamicMethodInvocation(new SavePersistentMethod(sessionFactory, classLoader));
+		addDynamicMethodInvocation(new SavePersistentMethod(sessionFactory, classLoader,application));
 		addDynamicMethodInvocation(new DeletePersistentMethod(sessionFactory, classLoader));
 		addDynamicMethodInvocation(new RefreshPersistentMethod(sessionFactory, classLoader));		
 		addDynamicMethodInvocation(new ValidatePersistentMethod(sessionFactory, classLoader, application ));
@@ -70,6 +71,7 @@ public class DomainClassMethods extends AbstractDynamicMethods {
 		
 		// add dynamic properties
 		addDynamicProperty( new SetPropertiesDynamicProperty() );
+		addDynamicProperty( new ConstraintsDynamicProperty() );
 		addDynamicProperty( new GenericDynamicProperty(HAS_ERRORS_PROPERTY, Boolean.class,new Boolean(false), false) );
 		addDynamicProperty( new GenericDynamicProperty(ERRORS_PROPERTY, List.class,new ArrayList(),false) );
 		
