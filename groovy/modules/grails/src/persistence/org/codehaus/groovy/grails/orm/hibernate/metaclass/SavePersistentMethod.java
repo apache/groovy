@@ -15,7 +15,14 @@
  */ 
 package org.codehaus.groovy.grails.orm.hibernate.metaclass;
 
+import org.codehaus.groovy.grails.commons.GrailsApplication;
+import org.codehaus.groovy.grails.commons.metaclass.DelegatingMetaClass;
+import org.codehaus.groovy.grails.metaclass.DomainClassMethods;
+import org.codehaus.groovy.runtime.InvokerHelper;
 import org.hibernate.SessionFactory;
+import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
+import org.springframework.validation.Validator;
 
 /**
  * 
@@ -26,14 +33,47 @@ import org.hibernate.SessionFactory;
 public class SavePersistentMethod extends AbstractDynamicPersistentMethod {
 	
 	private static final String METHOD_SIGNATURE = "save";
+	private GrailsApplication application;
 	
-	public SavePersistentMethod(SessionFactory sessionFactory, ClassLoader classLoader) {
+	public SavePersistentMethod(SessionFactory sessionFactory, ClassLoader classLoader, GrailsApplication application) {
 		super(METHOD_SIGNATURE,sessionFactory, classLoader);
+		
+		if(application == null)
+			throw new IllegalArgumentException("Constructor argument 'application' cannot be null");
+		this.application = application;		
 	}
 
 	protected Object doInvokeInternal(Object target, Object[] arguments) {
-		getHibernateTemplate().saveOrUpdate(target);
-		return null;
+		
+		Errors errors = new BindException(target, target.getClass().getName());
+		Validator validator = application.getGrailsDomainClass( target.getClass().getName() ).getValidator();
+		boolean doValidation = true;
+		if(arguments.length > 0) {
+			if(arguments[0] instanceof Boolean) {
+				doValidation = ((Boolean)arguments[0]).booleanValue();
+			}
+		}
+		Boolean success = new Boolean(true);
+		if(doValidation) {
+			if(validator != null) {
+				validator.validate(target,errors);
+				
+				if(errors.hasErrors()) {
+					success = new Boolean(!errors.hasErrors());	
+					DelegatingMetaClass metaClass = (DelegatingMetaClass)InvokerHelper.getInstance().getMetaRegistry().getMetaClass(target.getClass());
+					metaClass.setProperty(target,DomainClassMethods.HAS_ERRORS_PROPERTY,success);
+					metaClass.setProperty(target,DomainClassMethods.ERRORS_PROPERTY,errors.getAllErrors());											
+				}
+				else {
+					getHibernateTemplate().saveOrUpdate(target);
+				}
+			}
+		}
+		else {
+			getHibernateTemplate().saveOrUpdate(target);			
+		}
+		
+		return success;
 	}
 
 }

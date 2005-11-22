@@ -12,6 +12,6 @@ public class PersistentMethodTestClass {
 	@Property Integer age;
 	
 	@Property constraints = {
-		firstName(length:5..15)
+		firstName(length:4..15)
 	}
 }

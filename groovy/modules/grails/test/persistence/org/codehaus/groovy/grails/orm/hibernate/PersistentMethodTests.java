@@ -23,7 +23,6 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.AbstractDependencyInjectionSpringContextTests;
-import org.springframework.validation.Errors;
 import org.springmodules.beans.factory.drivers.xml.XmlApplicationContextDriver;
 
 public class PersistentMethodTests extends AbstractDependencyInjectionSpringContextTests {
@@ -130,7 +129,7 @@ public class PersistentMethodTests extends AbstractDependencyInjectionSpringCont
 		
 		GroovyObject obj = domainClass.newInstance();
 		obj.setProperty( "id", new Long(1) );
-		obj.setProperty( "firstName", "fred" );
+		obj.setProperty( "firstName", "fr" );
 		obj.setProperty( "lastName", "flintstone" );
 		
 		obj.invokeMethod("validate", null);
