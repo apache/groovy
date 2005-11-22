@@ -34,6 +34,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.commons.validator.EmailValidator;
 import org.apache.commons.validator.UrlValidator;
 import org.codehaus.groovy.grails.validation.exceptions.ConstraintException;
+import org.springframework.beans.BeanWrapper;
+import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.validation.Errors;
 
 /**
@@ -120,6 +122,12 @@ public class ConstrainedProperty   {
 	
 	protected Map appliedConstraints = new HashMap();
 	protected Class owningClass;
+	private BeanWrapper bean;
+	
+	// simple constraints
+	private boolean display; // whether the property should be displayed
+	private boolean editable; // whether the property is editable
+	private int order; // what order to property appears in
 	
 	/**
 	 * 
@@ -799,6 +807,7 @@ public class ConstrainedProperty   {
 		this.owningClass = clazz;
 		this.propertyName = propertyName;
 		this.propertyType = propertyType;
+		this.bean = new BeanWrapperImpl(this);
 	}
 
 	
@@ -1405,6 +1414,55 @@ public class ConstrainedProperty   {
 		}
 	}
 
+	
+	/**
+	 * @return Returns the display.
+	 */
+	public boolean isDisplay() {
+		return display;
+	}
+
+
+	/**
+	 * @param display The display to set.
+	 */
+	public void setDisplay(boolean display) {
+		this.display = display;
+	}
+
+
+	/**
+	 * @return Returns the editable.
+	 */
+	public boolean isEditable() {
+		return editable;
+	}
+
+
+	/**
+	 * @param editable The editable to set.
+	 */
+	public void setEditable(boolean editable) {
+		this.editable = editable;
+	}
+
+
+	/**
+	 * @return Returns the order.
+	 */
+	public int getOrder() {
+		return order;
+	}
+
+
+	/**
+	 * @param order The order to set.
+	 */
+	public void setOrder(int order) {
+		this.order = order;
+	}
+
+
 	/**
 	 * Validate this constrainted property against specified property value
 	 * 
@@ -1425,10 +1483,14 @@ public class ConstrainedProperty   {
 	 * @param constraintName The name of the constraint
 	 * @return True if the constraint is supported
 	 */
-	public boolean supportsContraint(String constraintName) {		
-		if(!constraints.containsKey(constraintName))
-			return false;
+	public boolean supportsContraint(String constraintName) {
 		
+		if(!constraints.containsKey(constraintName)) {
+			if(!this.bean.isWritableProperty(constraintName))
+				return false;
+			else
+				return true;
+		}					
 		Class constraintClass = (Class)constraints.get(constraintName);
 		try {
 			Constraint c = (Constraint)constraintClass.newInstance();
@@ -1467,6 +1529,9 @@ public class ConstrainedProperty   {
 					throw new ConstraintException("Exception thrown applying constraint ["+constraintName+"] to class ["+owningClass+"] for value ["+constrainingValue+"]: " + e.getMessage());
 				}
 			}
+		}
+		else if(this.bean.isWritableProperty(constraintName)) {
+			this.bean.setPropertyValue( constraintName, constrainingValue );
 		}
 		else {
 			throw new ConstraintException("Constraint ["+constraintName+"] is not supported for property ["+propertyName+"] of class ["+owningClass+"] with type ["+propertyType+"]");

@@ -38,7 +38,7 @@ public class ConstrainedPropertyBuilder extends BuilderSupport {
 	private Object target;
 	private BeanWrapper bean;
 	private Map constrainedProperties = new HashMap();
-	
+	private int order = 1;
 	
 	public ConstrainedPropertyBuilder(Object target) {
 		super();
@@ -59,15 +59,15 @@ public class ConstrainedPropertyBuilder extends BuilderSupport {
 			else {
 				PropertyDescriptor pd = this.bean.getPropertyDescriptor(property);
 				cp = new ConstrainedPersistentProperty(this.target.getClass(), property, pd.getPropertyType());
-				
-				for (Iterator i = attributes.keySet().iterator(); i.hasNext();) {
-					String constraintName = (String) i.next();
-					if(cp.supportsContraint(constraintName)) {
-						cp.applyConstraint(constraintName, attributes.get(constraintName));
-					}					
-				}
+				cp.setOrder(order++);
 				constrainedProperties.put( property, cp );
 			}
+			for (Iterator i = attributes.keySet().iterator(); i.hasNext();) {
+				String constraintName = (String) i.next();
+				if(cp.supportsContraint(constraintName)) {
+					cp.applyConstraint(constraintName, attributes.get(constraintName));
+				}					
+			}				
 			return cp;
 		}
 		catch(InvalidPropertyException ipe) {
