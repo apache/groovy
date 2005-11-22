@@ -23,6 +23,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.AbstractDependencyInjectionSpringContextTests;
+import org.springframework.validation.Errors;
 import org.springmodules.beans.factory.drivers.xml.XmlApplicationContextDriver;
 
 public class PersistentMethodTests extends AbstractDependencyInjectionSpringContextTests {
@@ -120,6 +121,25 @@ public class PersistentMethodTests extends AbstractDependencyInjectionSpringCont
 		obj.invokeMethod("save", null);
 		
 	}
+	
+	public void testValidatePersistentMethod() {
+		// init spring config
+		
+		
+		GrailsDomainClass domainClass = this.grailsApplication.getGrailsDomainClass("org.codehaus.groovy.grails.orm.hibernate.PersistentMethodTestClass");
+		
+		GroovyObject obj = domainClass.newInstance();
+		obj.setProperty( "id", new Long(1) );
+		obj.setProperty( "firstName", "fred" );
+		obj.setProperty( "lastName", "flintstone" );
+		
+		obj.invokeMethod("validate", null);
+		
+		List errors = (List)obj.getProperty("errors");
+		assertNotNull(errors);
+		assertEquals(1, errors.size());
+		
+	}	
 
 	public void testFindByPersistentMethods() {
 		GrailsDomainClass domainClass = this.grailsApplication.getGrailsDomainClass("org.codehaus.groovy.grails.orm.hibernate.PersistentMethodTestClass");
@@ -353,6 +373,8 @@ public class PersistentMethodTests extends AbstractDependencyInjectionSpringCont
 		assertEquals("fred", obj2.getProperty("firstName"));
 		
 	}
+	
+	
 	protected void onSetUp() throws Exception {
 		SpringConfig springConfig = new SpringConfig(grailsApplication);
 		ConfigurableApplicationContext appCtx = (ConfigurableApplicationContext)		

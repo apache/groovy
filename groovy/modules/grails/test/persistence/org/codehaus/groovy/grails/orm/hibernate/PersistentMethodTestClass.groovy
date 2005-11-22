@@ -10,4 +10,8 @@ public class PersistentMethodTestClass {
 	@Property String firstName; 
 	@Property String lastName; 
 	@Property Integer age;
+	
+	@Property constraints = {
+		firstName(length:5..15)
+	}
 }
