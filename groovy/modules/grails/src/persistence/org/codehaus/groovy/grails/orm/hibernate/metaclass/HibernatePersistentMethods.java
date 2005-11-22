@@ -16,8 +16,6 @@
 package org.codehaus.groovy.grails.orm.hibernate.metaclass;
 
 import java.beans.IntrospectionException;
-import java.util.regex.Pattern;
-
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.commons.metaclass.AbstractDynamicMethods;
 import org.codehaus.groovy.grails.metaclass.SetPropertiesDynamicProperty;
@@ -37,12 +35,11 @@ public class HibernatePersistentMethods extends AbstractDynamicMethods {
 		// dynamic methods
 		addDynamicMethodInvocation(new SavePersistentMethod(sessionFactory, classLoader));
 		addDynamicMethodInvocation(new DeletePersistentMethod(sessionFactory, classLoader));
-		addDynamicMethodInvocation(new RefreshPersistentMethod(sessionFactory, classLoader));
-		
+		addDynamicMethodInvocation(new RefreshPersistentMethod(sessionFactory, classLoader));		
 		addDynamicMethodInvocation(new ValidatePersistentMethod(sessionFactory, classLoader, application ));
+		
 		// static methods
-		addStaticMethodInvocation(new FindPersistentMethod(sessionFactory,classLoader));
-		addStaticMethodInvocation(new FindAllPersistentMethod(sessionFactory, classLoader, Pattern.compile("^findAll$")));
+		addStaticMethodInvocation(new FindAllPersistentMethod(sessionFactory, classLoader));
 		addStaticMethodInvocation(new FindByPersistentMethod(application,sessionFactory, classLoader));
 		addStaticMethodInvocation(new GetByPersistentMethod(application,sessionFactory, classLoader));
 		addStaticMethodInvocation(new FindPersistentMethod(sessionFactory, classLoader));

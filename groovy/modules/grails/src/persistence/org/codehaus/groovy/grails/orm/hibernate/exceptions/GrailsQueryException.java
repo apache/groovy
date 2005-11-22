@@ -13,28 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */ 
-package org.codehaus.groovy.grails.orm.hibernate.metaclass;
+package org.codehaus.groovy.grails.orm.hibernate.exceptions;
 
-import java.util.regex.Pattern;
-
-import org.hibernate.SessionFactory;
+import org.codehaus.groovy.grails.exceptions.GrailsException;
 
 /**
+ * <p>Base exception class for errors related to Domain class queries in Grails 
  * 
- * 
- * @author Steven Devijver
- * @since Aug 8, 2005
+ * @author Graeme Rocher
+ * @since Nov 22, 2005
  */
-public class FindAllPersistentMethod extends AbstractStaticPersistentMethod {
+public class GrailsQueryException extends GrailsException {
 
-	public FindAllPersistentMethod(SessionFactory sessionFactory,
-			ClassLoader classLoader) {
-		super(sessionFactory, classLoader, Pattern.compile("^findAll$"));
+	public GrailsQueryException() {
+		super();
 	}
 
-	protected Object doInvokeInternal(Class clazz, String methodName,
-			Object[] arguments) {
-		return getHibernateTemplate().loadAll(clazz);
+	public GrailsQueryException(String arg0, Throwable arg1) {
+		super(arg0, arg1);
+	}
+
+	public GrailsQueryException(String arg0) {
+		super(arg0);
+	}
+
+	public GrailsQueryException(Throwable arg0) {
+		super(arg0);
 	}
 
 }

@@ -16,9 +16,12 @@ package org.codehaus.groovy.grails.orm.hibernate.metaclass;
 
 import groovy.lang.MissingMethodException;
 
+import java.io.Serializable;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.regex.Pattern;
 
+import org.codehaus.groovy.grails.orm.hibernate.exceptions.GrailsQueryException;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
@@ -31,6 +34,10 @@ import org.springframework.orm.hibernate3.HibernateCallback;
  * takes an id and returns the instance 
  * 
  * eg. Account.get(2)
+ * 
+ * Or an HQL query and tries to retrieve a unique result (note an exception is thrown if the result is not unique)
+ * 
+ * eg. Account.get("from Account as a where a.id=2)
  * 
  * @author Graeme Rocher
  *
@@ -51,12 +58,9 @@ public class GetPersistentMethod extends AbstractStaticPersistentMethod {
 			throw new MissingMethodException(METHOD_SIGNATURE, clazz,arguments);
 		// if its not a map throw exception
 		final Object arg = arguments[0];
-		// if its a long retrieve by id
-		if(arg instanceof Number) {			
-			return super.getHibernateTemplate().get( clazz, new Long(arg.toString()) );
-		}
+
 		// if its an instance of this class, retrieve by example
-		else if(clazz.isInstance( arg.getClass() )) {
+		if(clazz.isAssignableFrom( arg.getClass() )) {
 			
 			return super.getHibernateTemplate().execute( new HibernateCallback() {
 
@@ -77,14 +81,46 @@ public class GetPersistentMethod extends AbstractStaticPersistentMethod {
 		// if its a string then its a query
 		else if(arg instanceof String){
 			final String queryString = (String)arg;
-			return super.getHibernateTemplate().execute( new HibernateCallback() {
+			if(!queryString.matches( "from "+clazz.getName()+".*" )) {
+				throw new GrailsQueryException("Invalid query ["+queryString+"] for domain class ["+clazz+"]");
+			}			
+			Object[] tmp = null;
+			if(arguments.length > 1) {
+				if(arguments[1] instanceof List) {
+					tmp = ((List)arguments[1]).toArray();
+				}
+				else if(arguments[1].getClass().isArray()) {
+					tmp = (Object[])arguments[1];
+				}
+			}
+			final Object[] queryArgs = tmp;
+			if(queryArgs != null) {
+				return super.getHibernateTemplate().execute( new HibernateCallback() {
 
-				public Object doInHibernate(Session session) throws HibernateException, SQLException {
-					Query query = session.createQuery(queryString);
-					return query.uniqueResult();					
-				}			
-			});
+					public Object doInHibernate(Session session) throws HibernateException, SQLException {
+						Query query = session.createQuery(queryString);
+						for (int i = 0; i < queryArgs.length; i++) {
+							query.setParameter(i, queryArgs[i]);
+						}
+						return query.uniqueResult();					
+					}			
+				});
+			}
+			else {
+				return super.getHibernateTemplate().execute( new HibernateCallback() {
+
+					public Object doInHibernate(Session session) throws HibernateException, SQLException {
+						Query query = session.createQuery(queryString);
+						return query.uniqueResult();					
+					}			
+				});
+			}			
+
 			
+		}
+		else if(arg instanceof Serializable) {
+			// if its a long retrieve by id
+			return super.getHibernateTemplate().get( clazz, (Serializable)arg );
 		}
 		
 		throw new MissingMethodException(METHOD_SIGNATURE, clazz,arguments);

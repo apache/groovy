@@ -1,5 +1,6 @@
 package org.codehaus.groovy.grails.orm.hibernate;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +14,7 @@ import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.commons.GrailsDomainClass;
 import org.codehaus.groovy.grails.commons.metaclass.PropertyAccessProxyMetaClass;
 import org.codehaus.groovy.grails.commons.spring.SpringConfig;
+import org.codehaus.groovy.grails.orm.hibernate.exceptions.GrailsQueryException;
 import org.codehaus.groovy.grails.orm.hibernate.metaclass.FindByPersistentMethod;
 import org.codehaus.groovy.grails.web.metaclass.ControllerDynamicMethodsInterceptor;
 import org.codehaus.groovy.grails.web.servlet.mvc.GrailsControllerHelper;
@@ -247,6 +249,57 @@ public class PersistentMethodTests extends AbstractDependencyInjectionSpringCont
 		assertEquals("wilma", groovyReturn.getProperty("firstName"));
 	}
 	
+	public void testFindPersistentMethod() {
+		GrailsDomainClass domainClass = this.grailsApplication.getGrailsDomainClass("org.codehaus.groovy.grails.orm.hibernate.PersistentMethodTestClass");
+		
+		GroovyObject obj = domainClass.newInstance();
+		obj.setProperty( "id", new Long(1) );
+		obj.setProperty( "firstName", "fred" );
+		obj.setProperty( "lastName", "flintstone" );
+		
+		obj.invokeMethod("save", null);
+		
+		GroovyObject obj2 = domainClass.newInstance();
+		obj2.setProperty( "id", new Long(2) );
+		obj2.setProperty( "firstName", "wilma" );
+		obj2.setProperty( "lastName", "flintstone" );
+		
+		obj2.invokeMethod("save", null);	
+		
+		// test find with a query
+		Object returnValue = obj.getMetaClass().invokeStaticMethod(obj, "find", new Object[] { "from org.codehaus.groovy.grails.orm.hibernate.PersistentMethodTestClass" });
+		assertNotNull(returnValue);
+		assertEquals(ArrayList.class,returnValue.getClass());
+		List listResult = (List)returnValue;
+		assertEquals(2, listResult.size());
+		
+		// test find with query and args
+		List args = new ArrayList();
+		args.add( "wilma" );
+		returnValue = obj.getMetaClass().invokeStaticMethod(obj, "find", new Object[] { "from org.codehaus.groovy.grails.orm.hibernate.PersistentMethodTestClass as p where p.firstName = ?", args });
+		assertNotNull(returnValue);
+		assertEquals(ArrayList.class,returnValue.getClass());
+		listResult = (List)returnValue;
+		assertEquals(1, listResult.size());	
+		
+		// test find by example
+		GroovyObject example = domainClass.newInstance();
+		example.setProperty( "firstName", "fred" );
+		returnValue = obj.getMetaClass().invokeStaticMethod(obj, "find", new Object[] { example });
+		assertNotNull(returnValue);
+		assertEquals(ArrayList.class,returnValue.getClass());
+		listResult = (List)returnValue;
+		assertEquals(1, listResult.size());	
+		
+		// test invalid query
+		try {
+			returnValue = obj.getMetaClass().invokeStaticMethod(obj, "find", new Object[] { "from RubbishClass"});
+			fail("Should have thrown grails query exception");
+		}
+		catch(GrailsQueryException gqe) {
+			//expected
+		}
+	}
 
 	public void testListPersistentMethods() {
 		GrailsDomainClass domainClass = this.grailsApplication.getGrailsDomainClass("org.codehaus.groovy.grails.orm.hibernate.PersistentMethodTestClass");
