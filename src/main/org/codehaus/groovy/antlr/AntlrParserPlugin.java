@@ -2080,6 +2080,10 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         if (ast==null) throw new ASTRuntimeException(ast, "PARSER BUG: Tried to configure "+node.getClass().getName()+" with null Node");
         node.setColumnNumber(ast.getColumn());
         node.setLineNumber(ast.getLine());
+        if (ast instanceof GroovySourceAST) {
+            node.setLastColumnNumber(((GroovySourceAST)ast).getColumnLast());
+            node.setLastLineNumber(((GroovySourceAST)ast).getLineLast());
+        }
 
         // TODO we could one day store the Antlr AST on the Groovy AST
         // node.setCSTNode(ast);
