@@ -294,7 +294,7 @@ Targets:
 				<include name="spring-webflow.jar"/>
 				<include name="spring-binding.jar"/>
 				<include name="spring.jar"/>
-				<include name="groovy-all-1.0-jsr-04-SNAPSHOT.jar"/>
+				<include name="groovy-all-1.0-jsr-05-SNAPSHOT.jar"/>
 				<include name="springmodules-sandbox.jar"/>
 				<include name="standard-${servlet.version}.jar"/>
 				<include name="jstl-${servlet.version}.jar"/>

@@ -22,7 +22,6 @@
 	<classpathentry kind="lib" path="lib/spring-binding.jar"/>
 	<classpathentry kind="lib" path="lib/log4j-1.2.8.jar"/>
 	<classpathentry kind="lib" path="lib/ognl-2.7.jar"/>
-	<classpathentry sourcepath="/groovy/src/main" kind="lib" path="lib/groovy-all-1.0-jsr-04-SNAPSHOT.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="lib/antlr-2.7.5H3.jar"/>
 	<classpathentry kind="lib" path="lib/asm.jar"/>
@@ -31,11 +30,12 @@
 	<classpathentry kind="lib" path="lib/ehcache-1.1.jar"/>
 	<classpathentry kind="lib" path="lib/ejb-3.0-edr2.jar"/>
 	<classpathentry sourcepath="D:/Downloads/Development/Hibernate/hibernate-3.0.5/hibernate-3.0/src" kind="lib" path="lib/hibernate3.jar"/>
-	<classpathentry kind="lib" path="lib/hibernate-annotations.jar"/>
+	<classpathentry sourcepath="D:/Downloads/Development/Hibernate/hibernate-annotations-3.0beta2/hibernate-annotations-3.0beta2/src/java" kind="lib" path="lib/hibernate-annotations.jar"/>
 	<classpathentry kind="lib" path="lib/jdbc2_0-stdext.jar"/>
 	<classpathentry kind="lib" path="lib/jta.jar"/>
 	<classpathentry sourcepath="D:/Downloads/Development/SiteMesh/src/java" kind="lib" path="lib/sitemesh-2.2.1.jar"/>
 	<classpathentry kind="lib" path="lib/jakarta-oro-2.0.8.jar"/>
 	<classpathentry kind="lib" path="lib/commons-validator.jar"/>
+	<classpathentry kind="lib" path="lib/groovy-all-1.0-jsr-05-SNAPSHOT.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>
