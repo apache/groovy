@@ -28,8 +28,8 @@ import org.codehaus.groovy.grails.commons.GrailsDataSource;
 import org.codehaus.groovy.grails.commons.GrailsDomainClass;
 import org.codehaus.groovy.grails.commons.GrailsPageFlowClass;
 import org.codehaus.groovy.grails.commons.GrailsServiceClass;
+import org.codehaus.groovy.grails.metaclass.DomainClassMethods;
 import org.codehaus.groovy.grails.orm.hibernate.ConfigurableLocalsSessionFactoryBean;
-import org.codehaus.groovy.grails.orm.hibernate.metaclass.HibernatePersistentMethods;
 import org.codehaus.groovy.grails.orm.hibernate.support.HibernateDialectDetectorFactoryBean;
 import org.codehaus.groovy.grails.orm.hibernate.validation.GrailsDomainClassValidator;
 import org.codehaus.groovy.grails.support.ClassEditor;
@@ -40,6 +40,7 @@ import org.hibernate.dialect.HSQLDialect;
 import org.hibernate.dialect.MySQLDialect;
 import org.springframework.beans.factory.config.CustomEditorConfigurer;
 import org.springframework.beans.factory.config.MethodInvokingFactoryBean;
+import org.springframework.context.support.ReloadableResourceBundleMessageSource;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.orm.hibernate3.HibernateTransactionManager;
 import org.springframework.transaction.interceptor.TransactionProxyFactoryBean;
@@ -154,8 +155,7 @@ public class SpringConfig {
 			for (int x = 0; x < simpleController.getURIs().length; x++) {
 				urlMappings.put(simpleController.getURIs()[x], "simpleGrailsController");
 			}
-		}
-
+		}		
 		if (simpleUrlHandlerMapping != null) {
 			simpleUrlHandlerMapping.setProperty("mappings", SpringConfigUtils.createProperties(urlMappings));
 		}
@@ -257,7 +257,7 @@ public class SpringConfig {
 			constructorArguments.add(SpringConfigUtils.createLiteralValue(grailsDomainClass.getClazz().getName()));
 			constructorArguments.add(SpringConfigUtils.createBeanReference("sessionFactory"));
 			constructorArguments.add(classLoader);
-			Bean hibernatePersistentMethods = SpringConfigUtils.createSingletonBean(HibernatePersistentMethods.class, constructorArguments);
+			Bean hibernatePersistentMethods = SpringConfigUtils.createSingletonBean(DomainClassMethods.class, constructorArguments);
 			beanReferences.add(SpringConfigUtils.createBeanReference(grailsDomainClass.getFullName() + "PersistentMethods", hibernatePersistentMethods));
 
 			// configure validator			
@@ -266,6 +266,9 @@ public class SpringConfig {
 			validatorBean.setProperty( "sessionFactory" ,SpringConfigUtils.createBeanReference("sessionFactory") );
 			beanReferences.add( SpringConfigUtils.createBeanReference( grailsDomainClass.getFullName() + "Validator", validatorBean ) );			
 		}
+		// setup message source
+		Bean messageSource = SpringConfigUtils.createSingletonBean( ReloadableResourceBundleMessageSource.class );
+		messageSource.setProperty( "basename", SpringConfigUtils.createLiteralValue("messages"));
 		
 		GrailsServiceClass[] serviceClasses = application.getGrailsServiceClasses();
 		for (int i = 0; i <serviceClasses.length; i++) {
