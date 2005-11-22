@@ -56,6 +56,8 @@ public class ASTNode {
 
     private int lineNumber = -1;
     private int columnNumber = -1;
+    private int lastLineNumber = -1;
+    private int lastColumnNumber = -1;
 
     public void visit(GroovyCodeVisitor visitor) {
         throw new RuntimeException("No visit() method implemented for class: " + getClass().getName());
@@ -79,5 +81,21 @@ public class ASTNode {
 
     public void setColumnNumber(int columnNumber) {
         this.columnNumber = columnNumber;
+    }
+
+    public int getLastLineNumber() {
+        return lastLineNumber;
+    }
+
+    public void setLastLineNumber(int lastLineNumber) {
+        this.lastLineNumber = lastLineNumber;
+    }
+
+    public int getLastColumnNumber() {
+        return lastColumnNumber;
+    }
+
+    public void setLastColumnNumber(int lastColumnNumber) {
+        this.lastColumnNumber = lastColumnNumber;
     }
 }
