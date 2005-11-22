@@ -15,6 +15,10 @@
  */
 package org.codehaus.groovy.grails.commons.metaclass;
 
+import java.util.Collections;
+import java.util.Map;
+import java.util.WeakHashMap;
+
 import groovy.lang.MissingPropertyException;
 
 /**
@@ -27,32 +31,54 @@ public class GenericDynamicProperty extends AbstractDynamicProperty {
 
 	private Class type;
 	private boolean readyOnly;
-	private Object value;
-
+	private Map propertyToInstanceMap = Collections.synchronizedMap(new WeakHashMap());
+	private Object initialValue;
 	/**
 	 * 
 	 * @param propertyName The name of the property
 	 * @param type The type of the property
-	 * @param value The initial value of the property
+	 * @param initialValue The initial value of the property
 	 * @param readOnly True for read-only property
 	 */
-	public GenericDynamicProperty(String propertyName, Class type,Object value, boolean readOnly) {
+	public GenericDynamicProperty(String propertyName, Class type,Object initialValue,boolean readOnly) {
 		super(propertyName);
 		if(type == null)
 			throw new IllegalArgumentException("Constructor argument 'type' cannot be null");
 		this.readyOnly = readOnly;
 		this.type = type;;
-		this.value = value;
+		this.initialValue = initialValue;
 	}
+	/**
+	 * 
+	 * @param propertyName The name of the property
+	 * @param type The type of the property
+	 * @param readOnly True for read-only property
+	 */
+	public GenericDynamicProperty(String propertyName, Class type,boolean readOnly) {
+		super(propertyName);
+		if(type == null)
+			throw new IllegalArgumentException("Constructor argument 'type' cannot be null");
+		this.readyOnly = readOnly;
+		this.type = type;;
+	}
+	
 
-	public Object get(Object object) {		
-		return this.value;
+	public Object get(Object object) {			
+		String propertyKey = System.identityHashCode(object) + getPropertyName();
+		if(propertyToInstanceMap.containsKey(propertyKey)) {
+			return propertyToInstanceMap.get(propertyKey);
+		}
+		else if(this.initialValue != null) {
+			propertyToInstanceMap.put(propertyKey, this.initialValue);
+			return this.initialValue;
+		}
+		return null;
 	}
 
 	public void set(Object object, Object newValue) {		
 		if(!readyOnly) {
-			if(newValue.getClass().isAssignableFrom(this.type))
-				this.value = newValue;
+			if(this.type.isAssignableFrom(newValue.getClass()))
+				propertyToInstanceMap.put(String.valueOf(System.identityHashCode(object)) + getPropertyName(), newValue );
 			else
 				throw new MissingPropertyException("Property '"+this.getPropertyName()+"' for object '"+object.getClass()+"' cannot be set with value '"+newValue+"'. Incorrect type.",object.getClass());	
 		}
@@ -60,16 +86,4 @@ public class GenericDynamicProperty extends AbstractDynamicProperty {
 			throw new MissingPropertyException("Property '"+this.getPropertyName()+"' for object '"+object.getClass()+"' is read-only!",object.getClass());
 		}
 	}
-
-	public void setValue(Object value) {
-		if(!value.getClass().isAssignableFrom(this.type))
-			throw new IllegalArgumentException("Cannot set value ["+this.value+"] to value ["+value+"] for type ["+this.type+"]" );
-		
-		this.value = value;
-	}
-
-	public Object getValue() {
-		return value;
-	}
-
 }
