@@ -15,7 +15,8 @@
  */ 
 package org.codehaus.groovy.grails.commons.metaclass;
 
-import groovy.lang.MetaClass;
+import groovy.lang.MetaClassImpl;
+
 import java.beans.IntrospectionException;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -26,7 +27,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  * @author Steven Devijver
  * @since Aug 8, 2005
  */
-public class DelegatingMetaClass extends MetaClass {
+public class DelegatingMetaClass extends MetaClassImpl {
 
 	DynamicMethods dynamicMethods = null;
 	
