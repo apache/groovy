@@ -270,7 +270,9 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
             MethodNode method = (MethodNode) methIt.next();
             // add only abstract methods from abtract classes that
             // are not overwritten
-            if ( abstractNodes.contains(method.getDeclaringClass()) ) {
+            if ( abstractNodes.contains(method.getDeclaringClass()) && 
+                 (method.getModifiers() & Opcodes.ACC_ABSTRACT) != 0
+               ) {
                 result.add(method);
             }
         }
