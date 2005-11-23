@@ -258,11 +258,11 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         // first non abstract super class. If such a class still 
         // contains abstract methods, then loading that class will fail.
         // No need to be extra carefull here for that.
-        abstractNodes.add(this);
-        ClassNode parent = this.getSuperClass();
+        abstractNodes.add(this.redirect());
+        ClassNode parent = this.getSuperClass().redirect();
         while (parent!=null && ((parent.getModifiers() & Opcodes.ACC_ABSTRACT) != 0)) {
             abstractNodes.add(parent);
-            parent = parent.getSuperClass();
+            parent = parent.getSuperClass().redirect();
         }
 
         List result = new ArrayList();
@@ -270,7 +270,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
             MethodNode method = (MethodNode) methIt.next();
             // add only abstract methods from abtract classes that
             // are not overwritten
-            if ( abstractNodes.contains(method.getDeclaringClass()) && 
+            if ( abstractNodes.contains(method.getDeclaringClass().redirect()) && 
                  (method.getModifiers() & Opcodes.ACC_ABSTRACT) != 0
                ) {
                 result.add(method);
