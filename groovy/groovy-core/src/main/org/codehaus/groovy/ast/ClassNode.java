@@ -50,6 +50,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -251,11 +252,24 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public List getAbstractMethods() {
+        
+        HashSet abstractNodes = new HashSet();
+        // let us collect the abstract super classes and stop at the
+        // first non abstract super class. If such a class still 
+        // contains abstract methods, then loading that class will fail.
+        // No need to be extra carefull here for that.
+        ClassNode parent = this;
+        while (parent!=null && ((parent.getModifiers() & Opcodes.ACC_ABSTRACT) != 0)) {
+            abstractNodes.add(parent);
+            parent = parent.getSuperClass();
+        }
 
         List result = new ArrayList();
         for (Iterator methIt = getAllDeclaredMethods().iterator(); methIt.hasNext();) {
             MethodNode method = (MethodNode) methIt.next();
-            if (method.isAbstract()) {
+            // add only abstract methods from abtract classes that
+            // are not overwritten
+            if ( abstractNodes.contains(method.getDeclaringClass()) ) {
                 result.add(method);
             }
         }
