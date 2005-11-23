@@ -258,7 +258,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         // first non abstract super class. If such a class still 
         // contains abstract methods, then loading that class will fail.
         // No need to be extra carefull here for that.
-        ClassNode parent = this;
+        abstractNodes.add(this);
+        ClassNode parent = this.getSuperClass();
         while (parent!=null && ((parent.getModifiers() & Opcodes.ACC_ABSTRACT) != 0)) {
             abstractNodes.add(parent);
             parent = parent.getSuperClass();
