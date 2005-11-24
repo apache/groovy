@@ -85,7 +85,7 @@ import org.xml.sax.ext.LexicalHandler
                                     body1(doc)
                                   } else if (body instanceof Buildable) {
                                     body.build(doc)
-                                  } else if (bode != null) {
+                                  } else if (body != null) {
                                     body.each {
                                       if (it instanceof Closure) {
                                         def body1 = it.clone()
