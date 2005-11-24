@@ -91,7 +91,7 @@ import groovy.xml.streamingmarkupsupport.BaseMarkupBuilder
                           body1(doc)
                         } else if (body instanceof Buildable) {
                               body.build(doc)
-                        } else {
+                        } else if (body != null) {
                           body.each {
                             if (it instanceof Closure) {
                               def body1 = it.clone()
