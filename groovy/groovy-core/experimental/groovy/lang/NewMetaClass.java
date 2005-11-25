@@ -87,11 +87,11 @@ public abstract class NewMetaClass {
     
     public abstract Object getProperty(final Object object, final Class objectType, final String property);
     
-    public abstract boolean setProperty(final Object object, final Class objectType, final String property, final Object newValue, final Class newValueType);
+    public abstract void setProperty(final Object object, final Class objectType, final String property, final Object newValue, final Class newValueType);
     
     public abstract Object getAttribute(final Object object, final Class objectType, final String attribute);
     
-    public abstract boolean setAttribute(final Object object, final Class objectType, final String attribute, final Object newValue, final Class newValueType);
+    public abstract void setAttribute(final Object object, final Class objectType, final String attribute, final Object newValue, final Class newValueType);
     
     /**
      * Construct an instance of the class represented by this instance of the MetaClass.
