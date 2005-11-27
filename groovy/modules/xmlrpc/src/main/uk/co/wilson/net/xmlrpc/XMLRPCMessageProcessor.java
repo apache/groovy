@@ -248,17 +248,94 @@ public class XMLRPCMessageProcessor extends MinML {
 				
 				buffer.append("</data></array></value>");
 				
-			} else if (param instanceof Object[]) {
-      final Object[] array = (Object[])param;
-      
-        buffer.append("<value><array><data>");
-      
-        for (int i = 0; i < array.length; i++) {
-          emit(buffer, array[i]);
-        }
+      } else if (param instanceof Object[]) {
+        final Object[] array = (Object[])param;
         
-        buffer.append("</data></array></value>");
+          buffer.append("<value><array><data>");
         
+          for (int i = 0; i < array.length; i++) {
+            emit(buffer, array[i]);
+          }
+          
+          buffer.append("</data></array></value>");
+          
+      } else if (param instanceof int[]) {
+        final int[] array = (int[])param;
+        
+          buffer.append("<value><array><data>");
+        
+          for (int i = 0; i < array.length; i++) {
+            emit(buffer, new Integer(array[i]));
+          }
+          
+          buffer.append("</data></array></value>");
+          
+      } else if (param instanceof long[]) {
+        final long[] array = (long[])param;
+        
+          buffer.append("<value><array><data>");
+        
+          for (int i = 0; i < array.length; i++) {
+            emit(buffer, new Long(array[i]));
+          }
+          
+          buffer.append("</data></array></value>");
+          
+      } else if (param instanceof short[]) {
+        final short[] array = (short[])param;
+        
+          buffer.append("<value><array><data>");
+        
+          for (int i = 0; i < array.length; i++) {
+            emit(buffer, new Short(array[i]));
+          }
+          
+          buffer.append("</data></array></value>");
+          
+      } else if (param instanceof char[]) {
+        final char[] array = (char[])param;
+        
+          buffer.append("<value><array><data>");
+        
+          for (int i = 0; i < array.length; i++) {
+            emit(buffer, new Character(array[i]));
+          }
+          
+          buffer.append("</data></array></value>");
+          
+      } else if (param instanceof float[]) {
+        final float[] array = (float[])param;
+        
+          buffer.append("<value><array><data>");
+        
+          for (int i = 0; i < array.length; i++) {
+            emit(buffer, new Float(array[i]));
+          }
+          
+          buffer.append("</data></array></value>");
+          
+      } else if (param instanceof double[]) {
+        final double[] array = (double[])param;
+        
+          buffer.append("<value><array><data>");
+        
+          for (int i = 0; i < array.length; i++) {
+            emit(buffer, new Double(array[i]));
+          }
+          
+          buffer.append("</data></array></value>");
+          
+      } else if (param instanceof boolean[]) {
+        final boolean[] array = (boolean[])param;
+        
+          buffer.append("<value><array><data>");
+        
+          for (int i = 0; i < array.length; i++) {
+            emit(buffer, new Boolean(array[i]));
+          }
+          
+          buffer.append("</data></array></value>");
+          
       } else if (param instanceof Map) {
 				final Iterator iterator =((Map)param).entrySet().iterator();
 				
@@ -338,14 +415,7 @@ public class XMLRPCMessageProcessor extends MinML {
 		
 		return buffer;
 	}
-	
-	/*
-	 * A really cheap and cheerful XML-RPC reponse parser 
-	 * It only really cares if the reponse contains a <param> or <fault>
-	 * element. When the server is implemented this will be redone to be lots pickier.
-	 */
-	
-	
+
 	private Object params = null;
 	private Object name = null;
 	private String methodName = null;

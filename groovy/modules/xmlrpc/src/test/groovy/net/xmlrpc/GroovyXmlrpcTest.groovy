@@ -137,6 +137,11 @@ public class GroovyXmlrpcTest extends GroovyTestCase {
         assertEquals("serverProxy.echo", result[1], "world")
       }
 
+      serverProxy.echo(['a', 'b'] as char[]) {result ->
+        assertEquals("serverProxy.echo", result[0], 97)
+        assertEquals("serverProxy.echo", result[1], 98)
+      }
+
       serverProxy.echo(['a', 'b'] as Character[]) {result ->
         assertEquals("serverProxy.echo", result[0], 97)
         assertEquals("serverProxy.echo", result[1], 98)
@@ -147,7 +152,17 @@ public class GroovyXmlrpcTest extends GroovyTestCase {
         assertEquals("serverProxy.echo", result[1], 2)
       }
       
+      serverProxy.echo([1, 2] as int[]) {result ->
+        assertEquals("serverProxy.echo", result[0], 1)
+        assertEquals("serverProxy.echo", result[1], 2)
+      }
+      
       serverProxy.echo([1, 2] as Long[]) {result ->
+        assertEquals("serverProxy.echo", result[0], 1)
+        assertEquals("serverProxy.echo", result[1], 2)
+      }
+      
+      serverProxy.echo([1, 2] as long[]) {result ->
         assertEquals("serverProxy.echo", result[0], 1)
         assertEquals("serverProxy.echo", result[1], 2)
       }
@@ -157,9 +172,22 @@ public class GroovyXmlrpcTest extends GroovyTestCase {
         assertEquals("serverProxy.echo", result[1], 2)
       }
       
+      serverProxy.echo([1, 2] as short[]) {result ->
+        assertEquals("serverProxy.echo", result[0], 1)
+        assertEquals("serverProxy.echo", result[1], 2)
+      }
+      
       serverProxy.echo([1, 2] as Byte[]) {result ->
         assertEquals("serverProxy.echo", result[0], 1)
         assertEquals("serverProxy.echo", result[1], 2)
+      }
+      
+      serverProxy.echo([1, 2] as byte[]) {result ->
+        //
+        // Note that this is a special case and gets transmitted as Base64 encoded
+        //
+        assertEquals("serverProxy.echo", result[0], 1 as byte)
+        assertEquals("serverProxy.echo", result[1], 2 as byte)
       }
       
       serverProxy.echo([1G, 2G] as BigInteger[]) {result ->
@@ -168,6 +196,16 @@ public class GroovyXmlrpcTest extends GroovyTestCase {
       }
       
       serverProxy.echo([1.0, 2.0] as Float[]) {result ->
+        assertEquals("serverProxy.echo", result[0], 1.0)
+        assertEquals("serverProxy.echo", result[1], 2.0)
+      }
+      
+      serverProxy.echo([1.0, 2.0] as float[]) {result ->
+        assertEquals("serverProxy.echo", result[0], 1.0)
+        assertEquals("serverProxy.echo", result[1], 2.0)
+      }
+      
+      serverProxy.echo([1.0, 2.0] as double[]) {result ->
         assertEquals("serverProxy.echo", result[0], 1.0)
         assertEquals("serverProxy.echo", result[1], 2.0)
       }
@@ -187,6 +225,10 @@ public class GroovyXmlrpcTest extends GroovyTestCase {
         assertEquals("serverProxy.echo", result[1], false)
       }
       
+      serverProxy.echo([true, false] as boolean[]) {result ->
+        assertEquals("serverProxy.echo", result[0], true)
+        assertEquals("serverProxy.echo", result[1], false)
+      }
     }
     finally {
       //
