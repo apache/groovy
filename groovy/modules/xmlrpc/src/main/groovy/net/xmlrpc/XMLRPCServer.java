@@ -193,7 +193,7 @@ public byte[] getBase64() { return this.base64;} // bodge to allow testing
                 out.write(response);
               }
               catch (Throwable e) {
-  //            e.printStackTrace();
+//              e.printStackTrace();
               final String message;
               final int codeValue;
               

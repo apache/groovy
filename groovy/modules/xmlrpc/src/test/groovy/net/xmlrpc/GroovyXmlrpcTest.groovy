@@ -99,31 +99,47 @@ public class GroovyXmlrpcTest extends GroovyTestCase {
       //
       def serverProxy = new XMLRPCServerProxy("http://127.0.0.1:${serverSocket.getLocalPort()}")
       
-      def result = serverProxy.validator1.arrayOfStructsTest([['curly': 9], ['curly' : 3]])
+      serverProxy.validator1.arrayOfStructsTest([['curly': 9], ['curly' : 3]]) {result ->
+        assertEquals("validator1.arrayOfStructsTest", result, 12)
+      }
+      
+      serverProxy.validator1.countTheEntities('<.\'"  l&oi ><><><>"""') {result ->
+        assertEquals("serverProxy.validator1.countTheEntities", result['ctLeftAngleBrackets'], 4)
+        assertEquals("serverProxy.validator1.countTheEntities", result['ctRightAngleBrackets'], 4)
+        assertEquals("serverProxy.validator1.countTheEntities", result['ctApostrophes'], 1)
+        assertEquals("serverProxy.validator1.countTheEntities", result['ctAmpersands'], 1)
+        assertEquals("serverProxy.validator1.countTheEntities", result['ctQuotes'], 4)
+      }
+      
+      
+      serverProxy.validator1.manyTypesTest('a', 1.25, 'c', true, 2, 3) {result ->
+        assertEquals("serverProxy.validator1.manyTypesTest", result[0], 'a')
+        assertEquals("serverProxy.validator1.manyTypesTest", result[1], 1.25)
+        assertEquals("serverProxy.validator1.manyTypesTest", result[2], 'c')
+        assertEquals("serverProxy.validator1.manyTypesTest", result[3], true)
+        assertEquals("serverProxy.validator1.manyTypesTest", result[4], 2)
+        assertEquals("serverProxy.validator1.manyTypesTest", result[5], 3)
+      }
+      
+      serverProxy.validator1.moderateSizeArrayCheck(['a', 'b', 'c']) {result ->
+        assertEquals("serverProxy.validator1.moderateSizeArrayCheck", result, 'ac')
+      }
+      
+      serverProxy.echo(["hello", "world"]) {result ->
+        assertEquals("serverProxy.echo", result[0], "hello")
+        assertEquals("serverProxy.echo", result[1], "world")
+      }
+      
+      serverProxy.echo(["hello", "world"] as String[]) {result ->
+        assertEquals("serverProxy.echo", result[0], "hello")
+        assertEquals("serverProxy.echo", result[1], "world")
+      }
 
-      assertEquals("validator1.arrayOfStructsTest", result, 12)
-      
-      serverProxy.validator1.countTheEntities('<.\'"  l&oi ><><><>"""') { result1 ->
-        assertEquals("serverProxy.validator1.countTheEntities", result1['ctLeftAngleBrackets'], 4)
-        assertEquals("serverProxy.validator1.countTheEntities", result1['ctRightAngleBrackets'], 4)
-        assertEquals("serverProxy.validator1.countTheEntities", result1['ctApostrophes'], 1)
-        assertEquals("serverProxy.validator1.countTheEntities", result1['ctAmpersands'], 1)
-        assertEquals("serverProxy.validator1.countTheEntities", result1['ctQuotes'], 4)
+      serverProxy.echo(['a', 'b'] as Character[]) {result ->
+        assertEquals("serverProxy.echo", result[0], 97)
+        assertEquals("serverProxy.echo", result[1], 98)
       }
       
-      
-      serverProxy.validator1.manyTypesTest('a', 1.25, 'c', true, 2, 3) { result2 ->
-        assertEquals("serverProxy.validator1.manyTypesTest", result2[0], 'a')
-        assertEquals("serverProxy.validator1.manyTypesTest", result2[1], 1.25)
-        assertEquals("serverProxy.validator1.manyTypesTest", result2[2], 'c')
-        assertEquals("serverProxy.validator1.manyTypesTest", result2[3], true)
-        assertEquals("serverProxy.validator1.manyTypesTest", result2[4], 2)
-        assertEquals("serverProxy.validator1.manyTypesTest", result2[5], 3)
-      }
-      
-      result = serverProxy.validator1.moderateSizeArrayCheck(['a', 'b', 'c'])
-      
-      assertEquals("serverProxy.validator1.moderateSizeArrayCheck", result, 'ac')
     }
     finally {
       //

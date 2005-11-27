@@ -114,7 +114,12 @@ public class XMLRPCMessageProcessor extends MinML {
 						buffer.append("<value><i4>").append(integer).append("</i4></value>");
 					}
 				});
-		elements.put(Character.class, elements.get(Integer.class));
+		elements.put(Character.class, 
+        new Emitter() {
+          public void emit(final StringBuffer buffer, final Object character) {
+            buffer.append("<value><i4>").append((int)((Character)character).charValue()).append("</i4></value>");
+          }
+        });
 		elements.put(Byte.class, elements.get(Integer.class));
 		elements.put(Short.class, elements.get(Integer.class));
 		
@@ -240,7 +245,18 @@ public class XMLRPCMessageProcessor extends MinML {
 				
 				buffer.append("</data></array></value>");
 				
-			} else if (param instanceof Map) {
+			} else if (param instanceof Object[]) {
+      final Object[] array = (Object[])param;
+      
+        buffer.append("<value><array><data>");
+      
+        for (int i = 0; i < array.length; i++) {
+          emit(buffer, array[i]);
+        }
+        
+        buffer.append("</data></array></value>");
+        
+      } else if (param instanceof Map) {
 				final Iterator iterator =((Map)param).entrySet().iterator();
 				
 				buffer.append("<value><struct>");
