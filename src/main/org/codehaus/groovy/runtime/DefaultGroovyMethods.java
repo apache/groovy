@@ -4910,7 +4910,7 @@ public class DefaultGroovyMethods {
         if (self instanceof BufferedReader) {
             br = (BufferedReader) self;
         } else {
-            br = new BufferedReader(self);
+            br = new BufferedReader(self); // todo dk: bug! will return null on second call
         }
         return br.readLine();
     }
