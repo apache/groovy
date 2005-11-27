@@ -22,6 +22,7 @@ import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -121,7 +122,9 @@ public class XMLRPCMessageProcessor extends MinML {
           }
         });
 		elements.put(Byte.class, elements.get(Integer.class));
-		elements.put(Short.class, elements.get(Integer.class));
+    elements.put(Short.class, elements.get(Integer.class));
+    elements.put(Long.class, elements.get(Integer.class));
+    elements.put(BigInteger.class, elements.get(Integer.class));
 		
 		elements.put(Double.class,
 				new Emitter() {

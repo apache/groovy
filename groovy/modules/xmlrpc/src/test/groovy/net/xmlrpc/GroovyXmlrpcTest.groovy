@@ -33,6 +33,8 @@
 package groovy.net.xmlrpc
 
 import java.net.ServerSocket
+import java.math.BigInteger
+import java.math.BigDecimal
 
 import groovy.util.GroovyTestCase
 
@@ -138,6 +140,51 @@ public class GroovyXmlrpcTest extends GroovyTestCase {
       serverProxy.echo(['a', 'b'] as Character[]) {result ->
         assertEquals("serverProxy.echo", result[0], 97)
         assertEquals("serverProxy.echo", result[1], 98)
+      }
+      
+      serverProxy.echo([1, 2] as Integer[]) {result ->
+        assertEquals("serverProxy.echo", result[0], 1)
+        assertEquals("serverProxy.echo", result[1], 2)
+      }
+      
+      serverProxy.echo([1, 2] as Long[]) {result ->
+        assertEquals("serverProxy.echo", result[0], 1)
+        assertEquals("serverProxy.echo", result[1], 2)
+      }
+      
+      serverProxy.echo([1, 2] as Short[]) {result ->
+        assertEquals("serverProxy.echo", result[0], 1)
+        assertEquals("serverProxy.echo", result[1], 2)
+      }
+      
+      serverProxy.echo([1, 2] as Byte[]) {result ->
+        assertEquals("serverProxy.echo", result[0], 1)
+        assertEquals("serverProxy.echo", result[1], 2)
+      }
+      
+      serverProxy.echo([1G, 2G] as BigInteger[]) {result ->
+        assertEquals("serverProxy.echo", result[0], 1)
+        assertEquals("serverProxy.echo", result[1], 2)
+      }
+      
+      serverProxy.echo([1.0, 2.0] as Float[]) {result ->
+        assertEquals("serverProxy.echo", result[0], 1.0)
+        assertEquals("serverProxy.echo", result[1], 2.0)
+      }
+      
+      serverProxy.echo([1.0, 2.0] as Double[]) {result ->
+        assertEquals("serverProxy.echo", result[0], 1.0)
+        assertEquals("serverProxy.echo", result[1], 2.0)
+      }
+      
+      serverProxy.echo([1.0, 2.0] as BigDecimal[]) {result ->
+        assertEquals("serverProxy.echo", result[0], 1.0)
+        assertEquals("serverProxy.echo", result[1], 2.0)
+      }
+      
+      serverProxy.echo([true, false] as Boolean[]) {result ->
+        assertEquals("serverProxy.echo", result[0], true)
+        assertEquals("serverProxy.echo", result[1], false)
       }
       
     }
