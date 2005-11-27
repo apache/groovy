@@ -55,14 +55,14 @@ public class GroovyXmlrpcTest extends GroovyTestCase {
     //
     
     server.validator1.arrayOfStructsTest = {structs ->      
-                                    def count = 0
-                                  
-                                    for (struct in structs) {
-                                      count += struct['curly']
-                                    }
-                                    
-                                    return count
-                                 };
+                                              def count = 0
+                                            
+                                              for (struct in structs) {
+                                                count += struct['curly']
+                                              }
+                                              
+                                              return count
+                                           }
     server.validator1.countTheEntities = {text -> foo(text) }
     
     server.validator1.easyStructTest = {struct -> return struct['larry'] + struct['moe'] + struct['curly'] }
@@ -70,19 +70,19 @@ public class GroovyXmlrpcTest extends GroovyTestCase {
     server.validator1.echoStructTest = {struct -> return struct }  
     
     server.validator1.manyTypesTest = {p1, p2, p3, p4, p5, p6 ->  
-                                  return [p1, p2, p3, p4, p5, p6]
-                               }  
+                                          return [p1, p2, p3, p4, p5, p6]
+                                       }  
     
     server.validator1.moderateSizeArrayCheck = {array -> return array[0] + array[array.size() - 1] } 
     
     server.validator1.nestedStructTest = {struct ->  
-                                    def day = struct['2000']['04']['01']
-                                    return day['larry'] + day['moe'] + day['curly']
-                                 }
+                                            def day = struct['2000']['04']['01']
+                                            return day['larry'] + day['moe'] + day['curly']
+                                         }
     
     server.validator1.simpleStructReturnTest = {number ->  
-                                      return ['times10' : number * 10, 'times100' : number * 100, 'times1000' : number * 1000]
-                                   }
+                                                  return ['times10' : number * 10, 'times100' : number * 100, 'times1000' : number * 1000]
+                                               }
                                    
     server.echo = {return it}
     
@@ -100,21 +100,15 @@ public class GroovyXmlrpcTest extends GroovyTestCase {
       def serverProxy = new XMLRPCServerProxy("http://127.0.0.1:${serverSocket.getLocalPort()}")
       
       def result = serverProxy.validator1.arrayOfStructsTest([['curly': 9], ['curly' : 3]])
-      
-//
-//  the code is commented out because of some bug in Groovy method calling
-//  I'm trying to find the problem and will reinstate the code when it's fixed
-//  Note it's not n XML-RPC problem but a more general problem      
-//
-      
-//      assertEquals("validator1.arrayOfStructsTest", result, 12)
+
+      assertEquals("validator1.arrayOfStructsTest", result, 12)
       
       serverProxy.validator1.countTheEntities('<.\'"  l&oi ><><><>"""') { result1 ->
-//        assertEquals("serverProxy.validator1.countTheEntities", result1['ctLeftAngleBrackets'], 4)
-//        assertEquals("serverProxy.validator1.countTheEntities", result1['ctRightAngleBrackets'], 4)
-//        assertEquals("serverProxy.validator1.countTheEntities", result1['ctApostrophes'], 1)
-//        assertEquals("serverProxy.validator1.countTheEntities", result1['ctAmpersands'], 1)
-//        assertEquals("serverProxy.validator1.countTheEntities", result1['ctQuotes'], 4)
+        assertEquals("serverProxy.validator1.countTheEntities", result1['ctLeftAngleBrackets'], 4)
+        assertEquals("serverProxy.validator1.countTheEntities", result1['ctRightAngleBrackets'], 4)
+        assertEquals("serverProxy.validator1.countTheEntities", result1['ctApostrophes'], 1)
+        assertEquals("serverProxy.validator1.countTheEntities", result1['ctAmpersands'], 1)
+        assertEquals("serverProxy.validator1.countTheEntities", result1['ctQuotes'], 4)
       }
       
       
@@ -123,8 +117,8 @@ public class GroovyXmlrpcTest extends GroovyTestCase {
         assertEquals("serverProxy.validator1.manyTypesTest", result2[1], 1.25)
         assertEquals("serverProxy.validator1.manyTypesTest", result2[2], 'c')
         assertEquals("serverProxy.validator1.manyTypesTest", result2[3], true)
-//        assertEquals("serverProxy.validator1.manyTypesTest", result2[4], 2)
-//        assertEquals("serverProxy.validator1.manyTypesTest", result2[5], 3)
+        assertEquals("serverProxy.validator1.manyTypesTest", result2[4], 2)
+        assertEquals("serverProxy.validator1.manyTypesTest", result2[5], 3)
       }
       
       result = serverProxy.validator1.moderateSizeArrayCheck(['a', 'b', 'c'])
@@ -137,44 +131,44 @@ public class GroovyXmlrpcTest extends GroovyTestCase {
       //
       server.stopServer()
     }
+  }
+  
+  def foo(text) {
+    def ctLeftAngleBrackets = 0
+    def ctRightAngleBrackets = 0
+    def ctAmpersands = 0
+    def ctApostrophes = 0
+    def ctQuotes = 0
+     
+    for (c in text) {
+      switch (c) {
+        case '<' :
+          ctLeftAngleBrackets++
+          break;
+          
+        case '>' :
+          ctRightAngleBrackets++
+          break;
+          
+        case '&' :
+          ctAmpersands++
+          break;
+          
+        case '\'' :
+          ctApostrophes++
+          break;
+          
+        case '"' :
+          ctQuotes++
+          break;
+      }
     }
     
-    def foo(text) {
-                                  def ctLeftAngleBrackets = 0
-                                  def ctRightAngleBrackets = 0
-                                  def ctAmpersands = 0
-                                  def ctApostrophes = 0
-                                  def ctQuotes = 0
-                                   
-                                  for (c in text) {
-                                    switch (c) {
-                                      case '<' :
-                                        ctLeftAngleBrackets++
-                                        break;
-                                        
-                                      case '>' :
-                                        ctRightAngleBrackets++
-                                        break;
-                                        
-                                      case '&' :
-                                        ctAmpersands++
-                                        break;
-                                        
-                                      case '\'' :
-                                        ctApostrophes++
-                                        break;
-                                        
-                                      case '"' :
-                                        ctQuotes++
-                                        break;
-                                    }
-                                  }
-                                  
-                                  return ['ctLeftAngleBrackets' : ctLeftAngleBrackets,
-                                      'ctRightAngleBrackets' : ctRightAngleBrackets,
-                                      'ctAmpersands' : ctAmpersands,
-                                      'ctApostrophes' : ctApostrophes,
-                                      'ctQuotes' : ctQuotes]
+    return ['ctLeftAngleBrackets' : ctLeftAngleBrackets,
+            'ctRightAngleBrackets' : ctRightAngleBrackets,
+            'ctAmpersands' : ctAmpersands,
+            'ctApostrophes' : ctApostrophes,
+            'ctQuotes' : ctQuotes]
 
-    }                         
+  }                         
 }

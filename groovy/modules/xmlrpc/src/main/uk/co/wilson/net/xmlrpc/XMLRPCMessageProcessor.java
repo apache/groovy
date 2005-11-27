@@ -141,7 +141,7 @@ public class XMLRPCMessageProcessor extends MinML {
 					}
 				});
 		
-		elements.put(byte [].class,
+		elements.put(byte[].class,
 				new Emitter() {
 					public void emit(final StringBuffer buffer, final Object bytes) {
 						int charCount = 0;
