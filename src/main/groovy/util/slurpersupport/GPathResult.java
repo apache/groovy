@@ -29,6 +29,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Stack;
 
 
 /**
@@ -83,7 +84,9 @@ public Object getProperty(final String property) {
     if ("..".equals(property)) {
       return parent();
     } else if ("*".equals(property)){
-      return children();
+        return children();
+    } else if ("**".equals(property)){
+        return depthFirst();
     } else if (property.startsWith("@")) {
       if (property.indexOf(":") != -1) {
       final int i = property.indexOf(":");
@@ -146,6 +149,47 @@ public Object getProperty(final String property) {
     }
     
     throw new ArrayIndexOutOfBoundsException(index);
+  }
+  
+  public Iterator depthFirst() {
+      return new Iterator() {
+        private final Stack stack = new Stack();
+        private Iterator iter = iterator();
+        private GPathResult next = getNextByDepth();
+      
+          public boolean hasNext() {
+            return this.next != null;
+          }
+          
+          public Object next() {
+            try {
+              return this.next;
+            } finally {
+              this.next = getNextByDepth();
+            }
+          }
+          
+          public void remove() {
+            throw new UnsupportedOperationException();
+          }
+          
+          private GPathResult getNextByDepth() {
+            while (this.iter.hasNext()) {
+            final GPathResult node = (GPathResult)this.iter.next();
+            
+              this.stack.push(node);
+              this.stack.push(this.iter);
+              this.iter = node.children().iterator();
+            }
+            
+            if (this.stack.empty()) {
+              return null;
+            } else {
+              this.iter = (Iterator)this.stack.pop();
+              return (GPathResult)this.stack.pop();
+            }
+          }
+      };
   }
   
   public List list() {
