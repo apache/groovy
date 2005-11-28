@@ -28,6 +28,7 @@ public class UberTestCase2 extends TestCase {
         suite.addTestSuite(groovy.bugs.Groovy593_Bug.class);
         //suite.addTestSuite(groovy.bugs.Groovy662.class); // In UbertTestCase as in default package.
         suite.addTestSuite(groovy.bugs.Groovy666_Bug.class);
+        suite.addTestSuite(groovy.bugs.Groovy674_Bug.class);
         suite.addTestSuite(groovy.bugs.Groovy675_Bug.class);
         suite.addTestSuite(groovy.bugs.Groovy770_Bug.class);
         suite.addTestSuite(groovy.bugs.Groovy779_Bug.class);
