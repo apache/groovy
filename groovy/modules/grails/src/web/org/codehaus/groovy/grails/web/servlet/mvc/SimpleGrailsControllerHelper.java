@@ -237,7 +237,7 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
 				}
 				else {
 					// otherwise add to it
-					Map chainPropertyModel = (Map)chainProperty.getValue();
+					Map chainPropertyModel = (Map)chainProperty.get(controller);
 					chainPropertyModel.putAll( this.chainModel );
 					this.chainModel = chainPropertyModel;
 				}
