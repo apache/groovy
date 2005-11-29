@@ -34,6 +34,8 @@ import uk.co.wilson.net.http.MinMLHTTPServer;
  */
 
 public class HTTPServer extends GroovyObjectSupport {
+  protected static final byte[] userAgent = "User-Agent: Groovy Simple Web Server\r\n".getBytes();
+  
   private final int minWorkers;
   private final int maxWorkers;
   private final int maxKeepAlives;
@@ -62,13 +64,13 @@ public class HTTPServer extends GroovyObjectSupport {
    */
   public void setProperty(final String property, final Object newValue) {
     if ("get".equalsIgnoreCase(property) && newValue instanceof Closure) {
-      this.getClosure = (Closure)newValue;
+      this.getClosure = (Closure)((Closure)newValue).clone();
     } else if ("head".equalsIgnoreCase(property) && newValue instanceof Closure) {
-      this.headClosure = (Closure)newValue;
+      this.headClosure = (Closure)((Closure)newValue).clone();
     } else if ("post".equalsIgnoreCase(property) && newValue instanceof Closure) {
-      this.postClosure = (Closure)newValue;
+      this.postClosure = (Closure)((Closure)newValue).clone();
     } else if ("put".equalsIgnoreCase(property) && newValue instanceof Closure) {
-      this.putClosure = (Closure)newValue;
+      this.putClosure = (Closure)((Closure)newValue).clone();
     } else {
       super.setProperty(property, newValue);
     }
@@ -98,7 +100,12 @@ public class HTTPServer extends GroovyObjectSupport {
                                       final String uri,
                                       final String version)
                                         throws Exception
-            {
+            {             
+              out.write(version.getBytes());
+              out.write(okMessage);
+              out.write(userAgent);
+              out.write(host);
+              
               if (HTTPServer.this.getClosure != null) {
                 HTTPServer.this.getClosure.call(new Object[]{in, out, uri, version});
               }
@@ -110,6 +117,11 @@ public class HTTPServer extends GroovyObjectSupport {
                                        final String version)
                                          throws Exception
             {
+              out.write(version.getBytes());
+              out.write(okMessage);
+              out.write(userAgent);
+              out.write(host);
+              
               if (HTTPServer.this.headClosure != null) {
                 HTTPServer.this.headClosure.call(new Object[]{in, out, uri, version});
               }
@@ -121,6 +133,11 @@ public class HTTPServer extends GroovyObjectSupport {
                                        final String version)
                                          throws Exception
             {
+              out.write(version.getBytes());
+              out.write(okMessage);
+              out.write(userAgent);
+              out.write(host);
+              
               if (HTTPServer.this.postClosure != null) {
                 HTTPServer.this.postClosure.call(new Object[]{in, out, uri, version});
               }
@@ -132,6 +149,11 @@ public class HTTPServer extends GroovyObjectSupport {
                                       final String version)
                                         throws Exception
             {
+              out.write(version.getBytes());
+              out.write(okMessage);
+              out.write(userAgent);
+              out.write(host);
+              
               if (HTTPServer.this.putClosure != null) {
                 HTTPServer.this.putClosure.call(new Object[]{in, out, uri, version});
               }

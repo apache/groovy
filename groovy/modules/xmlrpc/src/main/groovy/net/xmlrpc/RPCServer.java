@@ -53,7 +53,6 @@ import groovy.lang.GroovyObjectSupport;
 import groovy.lang.GroovyRuntimeException;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -61,7 +60,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import uk.co.wilson.net.MinMLSocketServer;
 import uk.co.wilson.net.xmlrpc.XMLRPCFailException;
 
 /**
@@ -70,7 +68,6 @@ import uk.co.wilson.net.xmlrpc.XMLRPCFailException;
  */
 
 public class RPCServer extends GroovyObjectSupport {
-  protected MinMLSocketServer server = null;
   protected final Map registeredMethods = Collections.synchronizedMap(new HashMap());
   protected Closure defaultMethod = null;
   protected Closure preCallMethod = null;
@@ -211,17 +208,6 @@ public class RPCServer extends GroovyObjectSupport {
   	} catch (Exception e) {
   		throw new GroovyRuntimeException("Can't generate proxy for XML-RPC method " + methodName, e);
   	}
-  }
-
-  /**
-   * Starts the server shutdown process
-   * This will return before the server has shut down completely
-   * Full shutdown may take some time
-   * 
-   * @throws IOException
-   */
-  public void stopServer() throws IOException {
-  	this.server.shutDown();
   }
 
   /**

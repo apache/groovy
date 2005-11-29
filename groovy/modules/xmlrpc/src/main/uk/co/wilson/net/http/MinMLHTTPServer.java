@@ -22,13 +22,24 @@ import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.StringTokenizer;
 
 import uk.co.wilson.net.MinMLSocketServer;
 
 public abstract class MinMLHTTPServer extends MinMLSocketServer {
+
+  protected static byte[] host;
+  static {
+    try {
+      host  = ("Host: " + InetAddress.getLocalHost().getHostName() +"\r\n").getBytes();
+    } catch (UnknownHostException e) {
+      host = "Host: unknown\r\n ".getBytes();
+    }
+  }
   public MinMLHTTPServer(final ServerSocket serverSocket,
                          final int minWorkers,
                          final int maxWorkers,

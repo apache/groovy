@@ -52,13 +52,12 @@ import groovy.lang.GroovyRuntimeException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.InetAddress;
 import java.net.ServerSocket;
-import java.net.UnknownHostException;
 import java.util.List;
 
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 
+import uk.co.wilson.net.MinMLSocketServer;
 import uk.co.wilson.net.http.MinMLHTTPServer;
 import uk.co.wilson.net.xmlrpc.XMLRPCFailException;
 
@@ -73,27 +72,18 @@ private byte[] base64 = new byte[600];
 		this.base64[i] = (byte)i;
 	}
 }
-public byte[] getBase64() { return this.base64;} // bodge to allow testing
-
-	static byte[] host;
-	static {
-		try {
-			host  = ("Host: " + InetAddress.getLocalHost().getHostName() +"\r\n").getBytes();
-		} catch (UnknownHostException e) {
-			host = "Host: unknown\r\n ".getBytes();
-		}
-	}
+public byte[] getBase64() { return this.base64;} // bodge to allow testing  
+  protected static final String xmlDeclaration = "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n";
+  protected static final byte[] userAgent = "User-Agent: Groovy XML-RPC\r\n".getBytes();
+  protected static final byte[] contentTypeXML = "Content-Type: text/xml\r\n".getBytes();
+  protected static final byte[] contentLength = "Content-Length: ".getBytes();
   
-  static final String xmlDeclaration = "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n";
-	static final byte[] userAgent = "User-Agent: Groovy XML-RPC\r\n".getBytes();
-	static final byte[] contentTypeXML = "Content-Type: text/xml\r\n".getBytes();
-	static final byte[] contentLength = "Content-Length: ".getBytes();
-  
-	final int minWorkers;
-	final int maxWorkers;
-	final int maxKeepAlives;
-	final int workerIdleLife;
-	final int socketReadTimeout;
+  protected MinMLSocketServer server = null; 
+  protected final int minWorkers;
+  protected final int maxWorkers;
+  protected final int maxKeepAlives;
+  protected final int workerIdleLife;
+  protected final int socketReadTimeout;
 
 	/**
 	 * @param minWorkers
@@ -245,4 +235,15 @@ public byte[] getBase64() { return this.base64;} // bodge to allow testing
       startingThread.setName("XML-RPC Server main thread");
       startingThread.start();
     }
+
+  /**
+   * Starts the server shutdown process
+   * This will return before the server has shut down completely
+   * Full shutdown may take some time
+   * 
+   * @throws IOException
+   */
+  public void stopServer() throws IOException {
+    this.server.shutDown();
+  }
 }
