@@ -23,17 +23,93 @@ package groovy.lang;
  *
  */
 
-public abstract class NewMetaClass {
-    public static final Object NOT_CALLED = new Object();
+public abstract class NewMetaClass implements MOP {
     public static final Object NOT_CONSTRUCTED = new Object();
-    public static final Object NO_PROPERTY = new Object();
-    public static final Object NO_ATTRIBUTE = new Object();
     
     protected static final Object[] NO_PARAMETERS = new Object[0];
     protected static final Class[] NO_PARAMETER_TYPES = new Class[0];
     
     //
     // The methods forming the Meta Object Protocol
+    
+    //
+    /* (non-Javadoc)
+     * @see groovy.lang.MOP#invokeMethod(java.lang.Object, java.lang.Class, java.lang.String, java.lang.Object[], java.lang.Class[])
+     */
+    public abstract Object invokeMethod(final Object object, final Class objectType, final String methodName, final Object[] arguments, final Class[] argumentTypes);
+    
+    /* (non-Javadoc)
+     * @see groovy.lang.MOP#getProperty(java.lang.Object, java.lang.Class, java.lang.String)
+     */
+    public abstract Object getProperty(final Object object, final Class objectType, final String property);
+    
+    /* (non-Javadoc)
+     * @see groovy.lang.MOP#setProperty(java.lang.Object, java.lang.Class, java.lang.String, java.lang.Object, java.lang.Class)
+     */
+    public abstract void setProperty(final Object object, final Class objectType, final String property, final Object newValue, final Class newValueType);
+    
+    /* (non-Javadoc)
+     * @see groovy.lang.MOP#getAttribute(java.lang.Object, java.lang.Class, java.lang.String)
+     */
+    public abstract Object getAttribute(final Object object, final Class objectType, final String attribute);
+    
+    /* (non-Javadoc)
+     * @see groovy.lang.MOP#setAttribute(java.lang.Object, java.lang.Class, java.lang.String, java.lang.Object, java.lang.Class)
+     */
+    public abstract void setAttribute(final Object object, final Class objectType, final String attribute, final Object newValue, final Class newValueType);
+    
+    /* (non-Javadoc)
+     * @see groovy.lang.MOP#invokeThisMethod(java.lang.Object, java.lang.Class, java.lang.String, java.lang.Object[], java.lang.Class[])
+     */
+    public abstract Object invokeThisMethod(final Object object, final Class thisType, final String methodName, final Object[] arguments, final Class[] argumentTypes);
+    
+    /* (non-Javadoc)
+     * @see groovy.lang.MOP#getThisProperty(java.lang.Object, java.lang.Class, java.lang.String)
+     */
+    public abstract Object getThisProperty(final Object object, final Class thisType, final String property);
+    
+    /* (non-Javadoc)
+     * @see groovy.lang.MOP#setThisProperty(java.lang.Object, java.lang.Class, java.lang.String, java.lang.Object, java.lang.Class)
+     */
+    public abstract boolean setThisProperty(final Object object, final Class thisType, final String property, final Object newValue, final Class newValueType);
+    
+    /* (non-Javadoc)
+     * @see groovy.lang.MOP#getThisAttribute(java.lang.Object, java.lang.Class, java.lang.String)
+     */
+    public abstract Object getThisAttribute(final Object object, final Class thisType, final String attribute);
+    
+    /* (non-Javadoc)
+     * @see groovy.lang.MOP#setThisAttribute(java.lang.Object, java.lang.Class, java.lang.String, java.lang.Object, java.lang.Class)
+     */
+    public abstract boolean setThisAttribute(final Object object, final Class thisType, final String attribute, final Object newValue, final Class newValueType);
+
+    /* (non-Javadoc)
+     * @see groovy.lang.MOP#invokeSuperMethod(java.lang.Object, java.lang.Class, java.lang.String, java.lang.Object[], java.lang.Class[])
+     */
+    public abstract Object invokeSuperMethod(final Object object, final Class superclassType, final String methodName, final Object[] arguments, final Class[] argumentTypes);
+    
+    /* (non-Javadoc)
+     * @see groovy.lang.MOP#getSuperProperty(java.lang.Object, java.lang.Class, java.lang.String)
+     */
+    public abstract Object getSuperProperty(final Object object, final Class superclassType, final String property);
+    
+    /* (non-Javadoc)
+     * @see groovy.lang.MOP#setSuperProperty(java.lang.Object, java.lang.Class, java.lang.String, java.lang.Object, java.lang.Class)
+     */
+    public abstract boolean setSuperProperty(final Object object, final Class superclassType, final String property, final Object newValue, final Class newValueType);
+    
+    /* (non-Javadoc)
+     * @see groovy.lang.MOP#getSuperAttribute(java.lang.Object, java.lang.Class, java.lang.String)
+     */
+    public abstract Object getSuperAttribute(final Object object, final Class superclassType, final String attribute);
+    
+    /* (non-Javadoc)
+     * @see groovy.lang.MOP#setSuperAttribute(java.lang.Object, java.lang.Class, java.lang.String, java.lang.Object, java.lang.Class)
+     */
+    public abstract boolean setSuperAttribute(final Object object, final Class superclassType, final String attribute, final Object newValue, final Class newValueType);
+
+    //
+    // Methods which may migrate to the MOP at some time in the future
     //
     
     /**
@@ -53,45 +129,6 @@ public abstract class NewMetaClass {
      * A new instance of the class represented by this instance of MetaClass.
      */
     public abstract Object invokeConstructor(final Object[] arguments, final Class[] argumentTypes);
-
-    /**
-     * Invoke a public method on an object.
-     * Public methods are those declared public in the class and those added via mechanisms like DefaultGroovyMethods.
-     * If no suitable method is found a groovy.lang.MissingMethodException is thrown.
-     * @param object
-     * The object on which the call is to be made
-     * @param objectType
-     * If objectType is not null then method to be called is selected as though the object was cast to this type before making the call.
-     * @param methodName
-     * The name of the method to be called
-     * @param arguments
-     * The arguments to the call.
-     * If NOT_CALLED is returned and there is a private or protected method which
-     * should be called then this array will contain the parameters to that method. The MetaClass will have done any conversions
-     * (e.g. GString to String) needed to allow the call to suceed.
-     * If any other value is returned then the values in this array are undefined. In this case the MetaClass may or may not
-     * change these values. DO NOT use these values unless NOT_CALLED is returned.
-     * @param argumentTypes
-     * This array must be the same length as the arguments arguments array.
-     * It contains the type of each parameter if known or null if unknown.
-     * The if there are multiple methods with the same name and number of parameters then this information
-     * contributes to the selection of the correct method to call.
-     * If NOT_CALLED is returned and there is a private or protected method which
-     * should be called then this array will contain the classes which represent the types of the parameters to that method.
-     * If any other value is returned then the values in this array are undefined. In this case the MetaClass may or may not
-     * change these values. DO NOT use these values unless NOT_CALLED is returned.
-     * @return
-     * The result of calling the method (null is returned if the method returns void).
-     */
-    public abstract Object invokeMethod(final Object object, final Class objectType, final String methodName, final Object[] arguments, final Class[] argumentTypes);
-    
-    public abstract Object getProperty(final Object object, final Class objectType, final String property);
-    
-    public abstract void setProperty(final Object object, final Class objectType, final String property, final Object newValue, final Class newValueType);
-    
-    public abstract Object getAttribute(final Object object, final Class objectType, final String attribute);
-    
-    public abstract void setAttribute(final Object object, final Class objectType, final String attribute, final Object newValue, final Class newValueType);
     
     /**
      * Construct an instance of the class represented by this instance of the MetaClass.
@@ -124,96 +161,6 @@ public abstract class NewMetaClass {
      */
     public abstract Object invokeThisConstructor(final Object[] arguments, final Class[] argumentTypes);
     
-    /**
-     * Invoke a public method on an object.
-     * These public methods are those declared public in the class and those added via mechanisms like DefaultGroovyMethods.
-     * If no public method can be found but there exists protected or private methods which would match the name, number and type
-     * of the parameters then the value NOT_CALLED is returned.
-     * Oherwise a groovy.lang.MissingMethodException is thrown.
-     * @param object
-     * The object on which the call is to be made
-     * @param thisType
-     * The type of the class in which this call was made. This must never be null.
-     * Note this type valie may not be the same as object.getClass() as it my be a superclass of that class.
-     * @param methodName
-     * The name of the method to be called
-     * @param arguments
-     * The arguments to the call.
-     * If NOT_CALLED is returned and there is a private or protected method which
-     * should be called then this array will contain the parameters to that method. The MetaClass will have done any conversions
-     * (e.g. GString to String) needed to allow the call to succeed.
-     * If any other value is returned then the values in this array are undefined. In this case the MetaClass may or may not
-     * change these values. DO NOT use these values unless NOT_CALLED is returned.
-     * @param argumentTypes
-     * This array must be the same length as the arguments arguments array.
-     * It contains the type of each parameter if known or null if unknown.
-     * The if there are multiple methods with the same name and number of parameters then this information
-     * contributes to the selection of the correct method to call.
-     * If NOT_CALLED is returned and there is a private or protected method which
-     * should be called then this array will contain the classes which represent the types of the parameters to that method.
-     * If any other value is returned then the values in this array are undefined. In this case the MetaClass may or may not
-     * change these values. DO NOT use these values unless NOT_CALLED is returned.
-     * @return
-     * Either the result of calling the method (null is returned if the method returns void) or the value NOT_CALLED.
-     * NOT_CALLED is returned if a suitable method exists but the MetaClass did not call it because it is not public.
-     * In this case the caller is free to try to invoke the method itself (e.g. by executing generated bytecode).
-     * If there are multiple methods with the same name and number of parameters then the values on the array passed
-     * as argumentTypes should be used to choose the correct one to call.
-     */
-    public abstract Object invokeThisMethod(final Object object, final Class thisType, final String methodName, final Object[] arguments, final Class[] argumentTypes);
-    
-    public abstract Object getThisProperty(final Object object, final Class thisType, final String property);
-    
-    public abstract boolean setThisProperty(final Object object, final Class thisType, final String property, final Object newValue, final Class newValueType);
-    
-    public abstract Object getThisAttribute(final Object object, final Class thisType, final String attribute);
-    
-    public abstract boolean setThisAttribute(final Object object, final Class thisType, final String attribute, final Object newValue, final Class newValueType);
-    
-    /**
-     * Invoke an added method on an object. Methods are added via mechanisms like DefaultGroovyMethods.
-     * If no added method can be found but there exists public, protected or private methods on the specified superclass
-     * which would match the name, number and type of the parameters then the value NOT_CALLED is returned.
-     * Oherwise a groovy.lang.MissingMethodException is thrown.
-     * @param object
-     * The object on which the call is to be made
-     * @param superclassType
-     * The type of the superclass. This must never be null.
-     * @param methodName
-     * The name of the method to be called
-     * @param arguments
-     * The arguments to the call.
-     * If NOT_CALLED is returned and there is a private or protected method which
-     * should be called then this array will contain the parameters to that method. The MetaClass will have done any conversions
-     * (e.g. GString to String) needed to allow the call to succeed.
-     * If any other value is returned then the values in this array are undefined. In this case the MetaClass may or may not
-     * change these values. DO NOT use these values unless NOT_CALLED is returned.
-     * @param argumentTypes
-     * This array must be the same length as the arguments arguments array.
-     * It contains the type of each parameter if known or null if unknown.
-     * The if there are multiple methods with the same name and number of parameters then this information
-     * contributes to the selection of the correct method to call.
-     * If NOT_CALLED is returned and there is a method which
-     * should be called then this array will contain the classes which represent the types of the parameters to that method.
-     * If any other value is returned then the values in this array are undefined. In this case the MetaClass may or may not
-     * change these values. DO NOT use these values unless NOT_CALLED is returned.
-     * @return
-     * Either the result of calling the method (null is returned if the method returns void) or the value NOT_CALLED.
-     * NOT_CALLED is returned if a suitable method exists but the MetaClass did not call it because it is not added.
-     * In this case the caller is free to try to invoke the method itself (e.g. by executing generated bytecode).
-     * If there are multiple methods with the same name and number of parameters then the values on the array passed
-     * as argumentTypes should be used to choose the correct one to call.
-     */  
-    public abstract Object invokeSuperMethod(final Object object, final Class superclassType, final String methodName, final Object[] arguments, final Class[] argumentTypes);
-    
-    public abstract Object getSuperProperty(final Object object, final Class superclassType, final String property);
-    
-    public abstract boolean setSuperProperty(final Object object, final Class superclassType, final String property, final Object newValue, final Class newValueType);
-    
-    public abstract Object getSuperAttribute(final Object object, final Class superclassType, final String attribute);
-    
-    public abstract boolean setSuperAttribute(final Object object, final Class superclassType, final String attribute, final Object newValue, final Class newValueType);
-    
     //
     // Additional methods for use when some or all of the type information is not available
     // We don't bother doing this with super calls properety and attribute acess as they are far less common
@@ -239,32 +186,32 @@ public abstract class NewMetaClass {
         return getProperty(object, (Class)null, property);
     }
     
-    public boolean setProperty(final Object object, final Class objectType, final String property, final Object newValue) {
-        return setProperty(object, objectType, property, newValue, (Class)null);
+    public void setProperty(final Object object, final Class objectType, final String property, final Object newValue) {
+        setProperty(object, objectType, property, newValue, (Class)null);
     }
     
-    public boolean setProperty(final Object object, final String property, final Object newValue, final Class newValueType) {
-        return setProperty(object, (Class)null, property, newValue, newValueType);
+    public void setProperty(final Object object, final String property, final Object newValue, final Class newValueType) {
+        setProperty(object, (Class)null, property, newValue, newValueType);
     }
     
-    public boolean setProperty(final Object object, final String property, final Object newValue) {
-        return setProperty(object, (Class)null, property, newValue, (Class)null);
+    public void setProperty(final Object object, final String property, final Object newValue) {
+        setProperty(object, (Class)null, property, newValue, (Class)null);
     }
     
     public Object getAttribute(final Object object, final String attribute) {
         return getAttribute(object, (Class)null, attribute);
     }
     
-    public boolean setAttribute(final Object object, final Class objectType, final String attribute, final Object newValue) {
-        return setAttribute(object, objectType, attribute, newValue, (Class)null);
+    public void setAttribute(final Object object, final Class objectType, final String attribute, final Object newValue) {
+        setAttribute(object, objectType, attribute, newValue, (Class)null);
     }
     
-    public boolean setAttribute(final Object object, final String attribute, final Object newValue, final Class newValueType) {
-        return setAttribute(object, (Class)null, attribute, newValue, newValueType);
+    public void setAttribute(final Object object, final String attribute, final Object newValue, final Class newValueType) {
+        setAttribute(object, (Class)null, attribute, newValue, newValueType);
     }
     
-    public boolean setAttribute(final Object object, final String attribute, final Object newValue) {
-        return setAttribute(object, (Class)null, attribute, newValue, (Class)null);
+    public void setAttribute(final Object object, final String attribute, final Object newValue) {
+        setAttribute(object, (Class)null, attribute, newValue, (Class)null);
     }
     
     public Object invokeThisMethod(final Object object, final Class thisType, final String methodName, final Object[] arguments) {
