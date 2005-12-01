@@ -34,9 +34,7 @@
  */
 package groovy.lang;
 
-import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -80,6 +78,7 @@ import org.objectweb.asm.ClassWriter;
  * @author Steve Goetze
  * @author Bing Ran
  * @author <a href="mailto:scottstirling@rcn.com">Scott Stirling</a>
+ * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
  * @version $Revision$
  */
 public class GroovyClassLoader extends SecureClassLoader {
@@ -308,129 +307,6 @@ public class GroovyClassLoader extends SecureClassLoader {
         return answer;
     }
 
-    /**
-     * Using this classloader you can load groovy classes from the system
-     * classpath as though they were already compiled. Note that .groovy classes
-     * found with this mechanism need to conform to the standard java naming
-     * convention - i.e. the public class inside the file must match the
-     * filename and the file must be located in a directory structure that
-     * matches the package structure.
-     */
-    /*protected Class findClass(final String name) throws ClassNotFoundException {
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            String className = name.replace('/', '.');
-            int i = className.lastIndexOf('.');
-            if (i != -1) {
-                sm.checkPackageDefinition(className.substring(0, i));
-            }
-        }
-        try {
-            return (Class) AccessController.doPrivileged(new PrivilegedExceptionAction() {
-                public Object run() throws ClassNotFoundException {
-                    return findGroovyClass(name);
-                }
-            });
-        } catch (PrivilegedActionException pae) {
-            throw (ClassNotFoundException) pae.getException();
-        }
-    }*/
-
-/*    protected Class findGroovyClass(String name) throws ClassNotFoundException {
-        //Use a forward slash here for the path separator. It will work as a
-        // separator
-        //for the File class on all platforms, AND it is required as a jar file
-        // entry separator.
-        String filename = name.replace('.', '/') + ".groovy";
-        String[] paths = getClassPath();
-        // put the absolute classname in a File object so we can easily
-        // pluck off the class name and the package path
-        File classnameAsFile = new File(filename);
-        // pluck off the classname without the package
-        String classname = classnameAsFile.getName();
-        String pkg = classnameAsFile.getParent();
-        String pkgdir;
-        for (int i = 0; i < paths.length; i++) {
-            String pathName = paths[i];
-            File path = new File(pathName);
-            if (path.exists()) {
-                if (path.isDirectory()) {
-                    // patch to fix case preserving but case insensitive file
-                    // systems (like macosx)
-                    // JIRA issue 414
-                    //
-                    // first see if the file even exists, no matter what the
-                    // case is
-                    File nocasefile = new File(path, filename);
-                    if (!nocasefile.exists())
-                        continue;
-
-                    // now we know the file is there is some form or another, so
-                    // let's look up all the files to see if the one we're
-                    // really
-                    // looking for is there
-                    if (pkg == null)
-                        pkgdir = pathName;
-                    else
-                        pkgdir = pathName + "/" + pkg;
-                    File pkgdirF = new File(pkgdir);
-                    // make sure the resulting path is there and is a dir
-                    if (pkgdirF.exists() && pkgdirF.isDirectory()) {
-                        File files[] = pkgdirF.listFiles();
-                        for (int j = 0; j < files.length; j++) {
-                            // do the case sensitive comparison
-                            if (files[j].getName().equals(classname)) {
-                                try {
-                                    return parseClass(files[j]);
-                                } catch (CompilationFailedException e) {
-                                    throw new ClassNotFoundException("Syntax error in groovy file: " + files[j].getAbsolutePath(), e);
-                                } catch (IOException e) {
-                                    throw new ClassNotFoundException("Error reading groovy file: " + files[j].getAbsolutePath(), e);
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    try {
-                        JarFile jarFile = new JarFile(path);
-                        JarEntry entry = jarFile.getJarEntry(filename);
-                        if (entry != null) {
-                            byte[] bytes = extractBytes(jarFile, entry);
-                            Certificate[] certs = entry.getCertificates();
-                            try {
-                                return parseClass(new GroovyCodeSource(new ByteArrayInputStream(bytes), filename, path, certs));
-                            } catch (CompilationFailedException e1) {
-                                throw new ClassNotFoundException("Syntax error in groovy file: " + filename, e1);
-                            }
-                        }
-
-                    } catch (IOException e) {
-                        // Bad jar in classpath, ignore
-                    }
-                }
-            }
-        }
-        throw new ClassNotFoundException(name);
-    }*/
-
-    //Read the bytes from a non-null JarEntry. This is done here because the
-    // entry must be read completely
-    //in order to get verified certificates, which can only be obtained after a
-    // full read.
-    private byte[] extractBytes(JarFile jarFile, JarEntry entry) {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        int b;
-        try {
-            BufferedInputStream bis = new BufferedInputStream(jarFile.getInputStream(entry));
-            while ((b = bis.read()) != -1) {
-                baos.write(b);
-            }
-        } catch (IOException ioe) {
-            throw new GroovyRuntimeException("Could not read the jar bytes for " + entry.getName());
-        }
-        return baos.toByteArray();
-    }
-
       /**
        * Workaround for Groovy-835
        *
@@ -528,9 +404,38 @@ public class GroovyClassLoader extends SecureClassLoader {
     protected Class defineClass(String name, byte[] bytecode, ProtectionDomain domain) {
         return defineClass(name, bytecode, 0, bytecode.length, domain);
     }
+    
+    private class InnerLoader extends GroovyClassLoader{
+    	InnerLoader() {
+    		super(GroovyClassLoader.this);
+    	}    	
+        public Class loadClass(final String name, boolean lookupScriptFiles, boolean preferClassOverScript, boolean resolve) throws ClassNotFoundException {
+        	return GroovyClassLoader.this.loadClass(name,lookupScriptFiles,preferClassOverScript,resolve);
+        }
+        public Class parseClass(GroovyCodeSource codeSource, boolean shouldCache) throws CompilationFailedException {
+        	return GroovyClassLoader.this.parseClass(codeSource,shouldCache);
+        }
+        public Class defineClass(String name, byte[] b) {
+            Class c = super.defineClass(name, b, 0, b.length);
+            synchronized (cache) {
+                cache.put(name, c);
+            }
+            return c;
+        }
+        protected ClassCollector createCollector(CompilationUnit unit,SourceUnit su) {
+        	return GroovyClassLoader.this.createCollector(unit,su);
+        }
+        public void addClasspath(String path) {
+            GroovyClassLoader.this.addClasspath(path);
+        }
+        public Class[] getLoadedClasses() {
+        	return GroovyClassLoader.this.getLoadedClasses();
+        }
+    }
+    
 
     protected ClassCollector createCollector(CompilationUnit unit,SourceUnit su) {
-        return new ClassCollector(this, unit, su);
+        return new ClassCollector(new InnerLoader(), unit, su);
     }
 
     public static class ClassCollector extends CompilationUnit.ClassgenCallback {
@@ -671,7 +576,7 @@ public class GroovyClassLoader extends SecureClassLoader {
                         synchronized (cache) {
                             cache.put(name,PARSING.class);
                         }
-                        cls = parseClass(source.openStream());
+                        cls = parseClass(source.openStream(),source.getFile());
                     }
                 }
             } catch (Exception e) {

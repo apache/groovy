@@ -1472,7 +1472,6 @@ public class MetaClassImpl extends MetaClass {
 
            for (Iterator iter = methods.iterator(); iter.hasNext();) {
                Object method = iter.next();
-               Class[] paramTypes;
 
                // making this false helps find matches
                if (MetaClassHelper.isValidMethod(method, arguments, coerce)) {
@@ -1696,6 +1695,7 @@ public class MetaClassImpl extends MetaClass {
                ClassWriter cw = new ClassWriter(true);
                generator.generate(cw, name);
                byte[] bytecode = cw.toByteArray();
+               
                Class type = loadReflectorClass(name, bytecode);
                if  (Reflector.class.getClassLoader()!=type.getSuperclass().getClassLoader()) {
                    throw new Error(

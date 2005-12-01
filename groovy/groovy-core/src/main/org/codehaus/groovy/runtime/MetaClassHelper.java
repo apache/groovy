@@ -105,6 +105,62 @@ public class MetaClassHelper {
         return accessible;
     }
     
+    public static Object[] asWrapperArray(Object parameters, Class componentType) {
+        Object[] ret=null;
+        if (componentType == boolean.class) {
+            boolean[] array = (boolean[]) parameters;
+            ret = new Object[array.length];
+            for (int i=0; i<array.length; i++) {
+                ret[i] = new Boolean(array[i]);
+            }
+        } else if (componentType == char.class) {
+            char[] array = (char[]) parameters;
+            ret = new Object[array.length];
+            for (int i=0; i<array.length; i++) {
+                ret[i] = new Character(array[i]);
+            }
+        } else if (componentType == byte.class) {
+            byte[] array = (byte[]) parameters;
+            ret = new Object[array.length];
+            for (int i=0; i<array.length; i++) {
+                ret[i] = new Byte(array[i]);
+            }
+        } else if (componentType == int.class) {
+            int[] array = (int[]) parameters;
+            ret = new Object[array.length];
+            for (int i=0; i<array.length; i++) {
+                ret[i] = new Integer(array[i]);
+            }
+        } else if (componentType == short.class) {
+            short[] array = (short[]) parameters;
+            ret = new Object[array.length];
+            for (int i=0; i<array.length; i++) {
+                ret[i] = new Short(array[i]);
+            }
+        } else if (componentType == long.class) {
+            long[] array = (long[]) parameters;
+            ret = new Object[array.length];
+            for (int i=0; i<array.length; i++) {
+                ret[i] = new Long(array[i]);
+            }
+        } else if (componentType == double.class) {
+            double[] array = (double[]) parameters;
+            ret = new Object[array.length];
+            for (int i=0; i<array.length; i++) {
+                ret[i] = new Double(array[i]);
+            }
+        } else if (componentType == float.class) {
+            float[] array = (float[]) parameters;
+            ret = new Object[array.length];
+            for (int i=0; i<array.length; i++) {
+                ret[i] = new Float(array[i]);
+            }
+        }
+        
+        return ret;
+    }
+    
+    
     /**
      * @param list
      * @param parameterType
@@ -184,15 +240,21 @@ public class MetaClassHelper {
             if (parameters[i]==arguments[i]) continue;
             
             if (parameters[i].isInterface()) {
-                dist+=2;
+                dist+=3;
                 continue;
             }
             
             if (arguments[i]!=null) {
+                if (autoboxType(parameters[i]) == autoboxType(arguments[i])){
+                    // type is not equal, but boxed types are. Increase distance 
+                    // by 1 to reflect the change in type
+                    dist +=1;
+                    continue;
+                }
                 if (arguments[i].isPrimitive() || parameters[i].isPrimitive()) {
-                    // type is not equal, increase distance by one to reflect
+                    // type is not equal, increase distance by 2 to reflect
                     // the change in type
-                    dist++;
+                    dist+=2;
                     continue;
                 }
                 
@@ -206,7 +268,7 @@ public class MetaClassHelper {
                         break;
                     }
                     clazz = clazz.getSuperclass();
-                    dist+=2;
+                    dist+=3;
                 }
             } else {
                 // choose the distance to Object if a parameter is null
@@ -226,32 +288,6 @@ public class MetaClassHelper {
     
     public static String capitalize(String property) {
         return property.substring(0, 1).toUpperCase() + property.substring(1, property.length());
-    }
-    
-    /**
-     * Checks that one of the parameter types is a superset of the other and
-     * that the two lists of types don't conflict. e.g. foo(String, Object) and
-     * foo(Object, String) would conflict if called with foo("a", "b").
-     *
-     * Note that this method is only called with 2 possible signatures. i.e.
-     * possible invalid combinations will already have been filtered out. So if
-     * there were methods foo(String, Object) and foo(Object, String) then one
-     * of these would be already filtered out if foo was called as foo(12, "a")
-     */
-    protected static void checkForInvalidOverloading(String name, Class[] baseTypes, Class[] derivedTypes) {
-        for (int i = 0, size = baseTypes.length; i < size; i++) {
-            Class baseType = baseTypes[i];
-            Class derivedType = derivedTypes[i];
-            if (!isAssignableFrom(derivedType, baseType)) {
-                throw new GroovyRuntimeException(
-                        "Ambiguous method overloading for method: "
-                        + name
-                        + ". Cannot resolve which method to invoke due to overlapping prototypes between: "
-                        + InvokerHelper.toString(baseTypes)
-                        + " and: "
-                        + InvokerHelper.toString(derivedTypes));
-            }
-        }
     }
     
     /**
@@ -287,7 +323,7 @@ public class MetaClassHelper {
             if (paramLength == 1) {
                 Class theType = paramTypes[0];
                 if (theType.isPrimitive()) continue;
-                if (closestClass == null || isAssignableFrom(closestClass, theType)) {
+                if (closestClass == null || isAssignableFrom(theType, closestClass)) {
                     closestClass = theType;
                     answer = method;
                 }
@@ -554,11 +590,6 @@ public class MetaClassHelper {
     }
     
     public static Object doMethodInvoke(Object object, MetaMethod method, Object[] argumentArray) {
-        //System.out.println("Evaluating method: " + method);
-        //System.out.println("on object: " + object + " with arguments: " +
-        // InvokerHelper.toString(argumentArray));
-        //System.out.println(this.theClass);
-        
         Class[] paramTypes = method.getParameterTypes();
         try {
             if (argumentArray == null) {
@@ -570,10 +601,31 @@ public class MetaClassHelper {
                     argumentArray = ARRAY_WITH_NULL;
             } else if (isVargsMethod(paramTypes,argumentArray)) {
                 // vargs
+                
+                // copy nonvargs arguments
                 Object[] newArg = new Object[paramTypes.length];
                 System.arraycopy(argumentArray,0,newArg,0,newArg.length-1);
+                // make vargs argument
                 Object[] vargs = new Object[argumentArray.length-newArg.length+1];
-                System.arraycopy(argumentArray,newArg.length-1,vargs,0,vargs.length);
+                
+                Class lastArgumentClass = null;
+                Object lastArgument = argumentArray[argumentArray.length-1];
+                if (lastArgument!=null) {
+                    lastArgumentClass = lastArgument.getClass();
+                }
+                if (argumentArray.length==paramTypes.length && lastArgumentClass!=null && lastArgumentClass.isArray()) {
+                    // we are calling a vargs method with an array
+                    lastArgumentClass = lastArgumentClass.getComponentType();
+                    if (lastArgumentClass.isPrimitive()) {
+                        // primmitive arrays don't fit in a Object array, so we have to convert it first
+                        lastArgument = asWrapperArray(lastArgument,lastArgumentClass);
+                    }
+                    System.arraycopy(lastArgument,newArg.length-1,vargs,0,vargs.length);
+                    argumentArray = newArg;
+                } else {
+                    System.arraycopy(argumentArray,newArg.length-1,vargs,0,vargs.length);
+                }
+                
                 if (vargs.length == 1 && vargs[0] == null)
                     newArg[newArg.length-1] = null;
                 else {
@@ -701,159 +753,79 @@ public class MetaClassHelper {
         }
         throw new IllegalArgumentException("Must be a Method or Constructor");
     }
-    
-    private static boolean implementsInterface(Class clazz, Class iface) {
-        if (!iface.isInterface()) return false;
-        return iface.isAssignableFrom(clazz);
-    }
-    
-    protected static boolean isAssignableFrom(Class mostSpecificType, Class type) {
-        if (mostSpecificType==null) return true;
-        // let's handle primitives
-        if (mostSpecificType.isPrimitive() && type.isPrimitive()) {
-            if (mostSpecificType == type) {
-                return true;
-            }
-            else {  // note: there is not coercion for boolean and char. Range matters, precision doesn't
-                if (type == int.class) {
-                    return
-                    mostSpecificType == int.class
-                    || mostSpecificType == short.class
-                    || mostSpecificType == byte.class;
-                }
-                else if (type == double.class) {
-                    return
-                    mostSpecificType == double.class
-                    || mostSpecificType == int.class
-                    || mostSpecificType == long.class
-                    || mostSpecificType == short.class
-                    || mostSpecificType == byte.class
-                    || mostSpecificType == float.class;
-                }
-                else if (type == long.class) {
-                    return
-                    mostSpecificType == long.class
-                    || mostSpecificType == int.class
-                    || mostSpecificType == short.class
-                    || mostSpecificType == byte.class;
-                }
-                else if (type == float.class) {
-                    return
-                    mostSpecificType == float.class
-                    || mostSpecificType == int.class
-                    || mostSpecificType == long.class
-                    || mostSpecificType == short.class
-                    || mostSpecificType == byte.class;
-                }
-                else if (type == short.class) {
-                    return
-                    mostSpecificType == short.class
-                    || mostSpecificType == byte.class;
-                }
-                else {
-                    return false;
-                }
-            }
+   
+    protected static boolean isAssignableFrom(Class classToTransformTo, Class classToTransformFrom) {
+        if (classToTransformFrom==null) return true;
+        classToTransformTo = autoboxType(classToTransformTo);
+        classToTransformFrom = autoboxType(classToTransformFrom);
+        
+        if (classToTransformTo == classToTransformFrom) {
+        	return true;
         }
-        if (type==String.class) {
-            return  mostSpecificType == String.class ||
-            GString.class.isAssignableFrom(mostSpecificType);
+        // note: there is not coercion for boolean and char. Range matters, precision doesn't
+        else if (classToTransformTo == Integer.class) {
+        	if (	classToTransformFrom == Integer.class
+        			|| classToTransformFrom == Short.class
+        			|| classToTransformFrom == Byte.class)
+        	return true;
+        }
+        else if (classToTransformTo == Double.class) {
+        	if (	classToTransformFrom == Double.class
+        			|| classToTransformFrom == Integer.class
+        			|| classToTransformFrom == Long.class
+        			|| classToTransformFrom == Short.class
+        			|| classToTransformFrom == Byte.class
+        			|| classToTransformFrom == Float.class
+                    || classToTransformFrom == BigDecimal.class
+                    || classToTransformFrom == BigInteger.class)
+        	return true;
+        }
+        else if (classToTransformTo == BigDecimal.class) {
+            if (    classToTransformFrom == Double.class
+                    || classToTransformFrom == Integer.class
+                    || classToTransformFrom == Long.class
+                    || classToTransformFrom == Short.class
+                    || classToTransformFrom == Byte.class
+                    || classToTransformFrom == Float.class
+                    || classToTransformFrom == BigDecimal.class
+                    || classToTransformFrom == BigInteger.class)
+            return true;
+        }
+        else if (classToTransformTo == BigInteger.class) {
+            if (    classToTransformFrom == Integer.class
+                    || classToTransformFrom == Long.class
+                    || classToTransformFrom == Short.class
+                    || classToTransformFrom == Byte.class
+                    || classToTransformFrom == BigInteger.class)
+            return true;
+        }
+        else if (classToTransformTo == Long.class) {
+        	if (	classToTransformFrom == Long.class
+        			|| classToTransformFrom == Integer.class
+        			|| classToTransformFrom == Short.class
+        			|| classToTransformFrom == Byte.class)
+        	return true;
+        }
+        else if (classToTransformTo == Float.class) {
+        	if (	classToTransformFrom == Float.class
+        			|| classToTransformFrom == Integer.class
+        			|| classToTransformFrom == Long.class
+        			|| classToTransformFrom == Short.class
+        			|| classToTransformFrom == Byte.class)
+        	return true;
+        }
+        else if (classToTransformTo == Short.class) {
+        	if (	classToTransformFrom == Short.class
+        			|| classToTransformFrom == Byte.class)
+        	return true;
+        }
+        else if (classToTransformTo==String.class) {
+            if (	classToTransformFrom == String.class ||
+            		GString.class.isAssignableFrom(classToTransformFrom))
+            return true;
         }
         
-        boolean answer = type.isAssignableFrom(mostSpecificType);
-        if (!answer) {
-            answer = autoboxType(type).isAssignableFrom(autoboxType(mostSpecificType));
-        }
-        return answer;
-    }
-    
-    protected static boolean isCompatibleClass(Class type, Class value, boolean includeCoerce) {
-        boolean answer = value == null || type.isAssignableFrom(value); // this might have taken care of primitive types, rendering part of the following code unnecessary
-        if (!answer) {
-            if (type.isPrimitive()) {
-                if (type == int.class) {
-                    return value == Integer.class;// || value == BigDecimal.class; //br added BigDecimal
-                }
-                else if (type == double.class) {
-                    return value == Double.class || value == Float.class || value == Integer.class || value == BigDecimal.class;
-                }
-                else if (type == boolean.class) {
-                    return value == Boolean.class;
-                }
-                else if (type == long.class) {
-                    return value == Long.class || value == Integer.class; // || value == BigDecimal.class;//br added BigDecimal
-                }
-                else if (type == float.class) {
-                    return value == Float.class || value == Integer.class; // || value == BigDecimal.class;//br added BigDecimal
-                }
-                else if (type == char.class) {
-                    return value == Character.class;
-                }
-                else if (type == byte.class) {
-                    return value == Byte.class;
-                }
-                else if (type == short.class) {
-                    return value == Short.class;
-                }
-            } else if (type.isArray() && value.isArray()) {
-                return isCompatibleClass(type.getComponentType(), value.getComponentType(), false);
-            }
-            else if (includeCoerce) {
-                //if (type == String.class && value == GString.class) {
-                if (type == String.class && GString.class.isAssignableFrom(value)) {
-                    return true;
-                }
-                else if (value == Number.class) {
-                    // lets allow numbers to be coerced downwards?
-                    return Number.class.isAssignableFrom(type);
-                }
-            }
-        }
-        return answer;
-    }
-    
-    protected static boolean isCompatibleInstance(Class type, Object value, boolean includeCoerce) {
-        boolean answer = value == null || type.isInstance(value);
-        if (!answer) {
-            if (type.isPrimitive()) {
-                if (type == int.class) {
-                    return value instanceof Integer;
-                }
-                else if (type == double.class) {
-                    return value instanceof Double || value instanceof Float || value instanceof Integer || value instanceof BigDecimal;
-                }
-                else if (type == boolean.class) {
-                    return value instanceof Boolean;
-                }
-                else if (type == long.class) {
-                    return value instanceof Long || value instanceof Integer;
-                }
-                else if (type == float.class) {
-                    return value instanceof Float || value instanceof Integer;
-                }
-                else if (type == char.class) {
-                    return value instanceof Character;
-                }
-                else if (type == byte.class) {
-                    return value instanceof Byte;
-                }
-                else if (type == short.class) {
-                    return value instanceof Short;
-                }
-            }
-            else if(type.isArray() && value.getClass().isArray()) {
-                return isCompatibleClass(type.getComponentType(), value.getClass().getComponentType(), false);
-            }
-            else if (includeCoerce) {
-                if (type == String.class && value instanceof GString) {
-                    return true;
-                }
-                else if (value instanceof Number) {
-                    // lets allow numbers to be coerced downwards?
-                    return Number.class.isAssignableFrom(type);
-                }
-            }
-        }
+        boolean answer = classToTransformTo.isAssignableFrom(classToTransformFrom);
         return answer;
     }
     
@@ -882,20 +854,20 @@ public class MetaClassHelper {
         {
             // first check normal number of parameters
             for (int i = 0; i < paramTypes.length-1; i++) {
-                if (isCompatibleClass(paramTypes[i], arguments[i], includeCoerce)) continue;
+                if (isAssignableFrom(paramTypes[i], arguments[i])) continue;
                 return false;
             }
             // check varged
             Class clazz = paramTypes[paramTypes.length-1].getComponentType();
             for (int i=paramTypes.length; i<size; i++) {
-                if (isCompatibleClass(clazz, arguments[i], includeCoerce)) continue;
+                if (isAssignableFrom(clazz, arguments[i])) continue;
                 return false;
             }
             return true;
         } else if (paramTypes.length == size) {
             // lets check the parameter types match
             for (int i = 0; i < size; i++) {
-                if (isCompatibleClass(paramTypes[i], arguments[i], includeCoerce)) continue;
+                if (isAssignableFrom(paramTypes[i], arguments[i])) continue;
                 return false;
             }
             return true;
@@ -964,7 +936,7 @@ public class MetaClassHelper {
     public static boolean parametersAreCompatible(Class[] arguments, Class[] parameters) {
         if (arguments.length!=parameters.length) return false;
         for (int i=0; i<arguments.length; i++) {
-            if (!isAssignableFrom(arguments[i],parameters[i])) return false;
+            if (!isAssignableFrom(parameters[i],arguments[i])) return false;
         }
         return true;
     }

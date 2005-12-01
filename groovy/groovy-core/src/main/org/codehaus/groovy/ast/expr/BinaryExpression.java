@@ -45,9 +45,6 @@
  */
 package org.codehaus.groovy.ast.expr;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
-
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.syntax.Token;
@@ -71,28 +68,7 @@ public class BinaryExpression extends Expression {
         this.leftExpression = leftExpression;
         this.operation = operation;
         this.rightExpression = rightExpression;
-
     }
-
-    private static boolean isFloatingPoint(Class cls) {
-		return cls == Double.class || cls == Float.class;
-	}
-
-	private static boolean isInteger(Class cls) {
-		return cls == Integer.class || cls == Byte.class || cls == Short.class || cls == Character.class;
-	}
-
-	private static boolean isLong(Class cls) {
-		return cls == Long.class;
-	}
-
-	private static boolean isBigDecimal(Class cls) {
-		return cls == BigDecimal.class;
-	}
-
-	private static boolean isBigInteger(Class cls) {
-		return cls == BigInteger.class;
-	}
 
     public String toString() {
         return super.toString() +"[" + leftExpression + operation + rightExpression + "]";
