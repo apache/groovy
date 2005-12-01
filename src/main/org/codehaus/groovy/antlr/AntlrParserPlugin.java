@@ -1968,13 +1968,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         AST node = typeNode.getFirstChild();
         if (node != null) {
             if (isType(INDEX_OP, node) || isType(ARRAY_DECLARATOR, node)) {
-                return ClassHelper.make(qualifiedName(node.getFirstChild())).makeArray();
+                return makeType(node).makeArray();
              }
-            answer = ClassHelper.make(qualifiedName(node));
-            node = node.getNextSibling();
-            if (isType(INDEX_OP, node) || isType(ARRAY_DECLARATOR, node)) {
-                return answer.makeArray();
-            }
+            return ClassHelper.make(qualifiedName(node));
         }
         return answer;
     }
@@ -2007,14 +2003,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         }
         else if (isType(INDEX_OP, node) || isType(ARRAY_DECLARATOR, node)) {
             AST child = node.getFirstChild();
-            ClassNode ret = buildName(child);
-            // TODO sometimes we have ARRAY_DECLARATOR->typeName
-            // and sometimes we have typeName->ARRAY_DECLARATOR
-            // so here's a little fudge while we be more consistent in the Antlr
-            if (!ret.isArray()) {
-            	ret = ret.makeArray();
-            } 
-            return ret;
+            return buildName(child).makeArray();
         }
         else {
             String identifier = node.getText();
