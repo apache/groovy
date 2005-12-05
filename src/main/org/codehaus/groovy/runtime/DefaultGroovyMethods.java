@@ -216,7 +216,7 @@ public class DefaultGroovyMethods {
      */
     public static List getMetaPropertyValues(Object self) {
         MetaClass metaClass = InvokerHelper.getMetaClass(self);
-        List mps = metaClass.getProperties();        
+        List mps = metaClass.getProperties();
         List props = new ArrayList(mps.size());
         for (Iterator itr = mps.iterator(); itr.hasNext();) {
             MetaProperty mp = (MetaProperty) itr.next();
@@ -319,7 +319,7 @@ public class DefaultGroovyMethods {
       throw new RuntimeException ("printf requires JDK1.5 or later.") ;
     }
   }
-  
+
   /**
    * Returns a formatted string using the specified format string and
    * arguments.
@@ -330,7 +330,7 @@ public class DefaultGroovyMethods {
    *     printf ( "Hello, %s!\n" , [ "Groovy" ])
    *     printf ( "%d + %d = %d\n" , [ 1 , 2 , 1+2 ] as Integer[] )
    *     printf ( "%d + %d = %d\n" , [ 3 , 3 , 3+3 ])
-   * 
+   *
    *     ( 1..5 ).each { printf ( "-- %d\n" , [ it ] as Integer[] ) }
    *     ( 1..5 ).each { printf ( "-- %d\n" , [ it ] as int[] ) }
    *     ( 0x41..0x45 ).each { printf ( "-- %c\n" , [ it ] as char[] ) }
@@ -341,7 +341,7 @@ public class DefaultGroovyMethods {
    *     ( 7..11 ).each { printf ( "-- %5.2g\n" , [ it ] as double[] ) }
    * </pre>
    * <p>
-   * 
+   *
    * @param  format
    *         A format string
    *
@@ -611,7 +611,7 @@ public class DefaultGroovyMethods {
      *     def list = [a, b, c, d]
      *     List list2 = list.unique(new PersonComparator())
      *     assert( list2 == list && list == [a, b, c] )
-     *     
+     *
      * </pre></code>
      *
      * @param self        a Collection
@@ -992,7 +992,7 @@ public class DefaultGroovyMethods {
      * the closure along with the current iterated item then passing into the
      * next iteration the value of the previous closure.
      *
-     * @param self    a Collection 
+     * @param self    a Collection
      * @param value   a value
      * @param closure a closure
      * @return the last value of the last iteration
@@ -1027,11 +1027,11 @@ public class DefaultGroovyMethods {
         }
         return value;
     }
-    
+
     /**
      * Sums a collection of numeric values. <code>coll.sum()</code> is equivalent to:
      * <code>coll.inject(0) {value, item -> value + item}</code>.
-     * 
+     *
      * @param self Collection of values to add together.
      * @return The sum of all of the list itmems.
      */
@@ -1048,10 +1048,10 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Sums the result of apply a closure to each item of a collection. 
+     * Sums the result of apply a closure to each item of a collection.
      * <code>coll.sum(closure)</code> is equivalent to:
      * <code>coll.collect(closure).sum()</code>.
-     * 
+     *
      * @param self a Collection
      * @param closure a single parameter closure that returns a numeric value.
      * @return The sum of the values returned by applying the closure to each
@@ -1314,25 +1314,25 @@ public class DefaultGroovyMethods {
 
         return text.subSequence(from, to + 1);
     }
-    
+
     /**
      * Support the range subscript operator for CharSequence or StringBuffer with IntRange
      *
      * @param text  a CharSequence
      * @param range an IntRange
      * @return the subsequence CharSequence
-     */    
+     */
     public static CharSequence getAt(CharSequence text, IntRange range) {
         return getAt(text, (Range) range);
     }
-    
+
     /**
      * Support the range subscript operator for String with IntRange
      *
      * @param text  a String
      * @param range an IntRange
      * @return the resulting String
-     */    
+     */
     public static String getAt(String text, IntRange range) {
         return getAt(text,(Range)range);
     }
@@ -1411,8 +1411,8 @@ public class DefaultGroovyMethods {
      *          it[0] is the global string of the matched group
      *          it[1] is the first string in the matched group
      *          it[2] is the second string in the matched group
-     * 
-     * 
+     *
+     *
      *     assert "FOO-FOO-" == "foobar-FooBar-".replaceAll("(([fF][oO]{2})[bB]ar)", { x, y, z -> z.toUpperCase() })
      *
      *     Here,
@@ -1546,18 +1546,18 @@ public class DefaultGroovyMethods {
      * Support the subscript operator, e.g. matcher[index], for a regex Matcher.
      *
      * For an example using no group match, <code><pre>
-     *    def p = /ab[d|f]/ 
-     *    def m = "abcabdabeabf" =~ p 
-     *    for (i in 0..<m.count) { 
+     *    def p = /ab[d|f]/
+     *    def m = "abcabdabeabf" =~ p
+     *    for (i in 0..<m.count) {
      *        println( "m.groupCount() = " + m.groupCount())
      *        println( "  " + i + ": " + m[i] )   // m[i] is a String
      *    }
      * </pre></code>
      *
      * For an example using group matches, <code><pre>
-     *    def p = /(?:ab([c|d|e|f]))/ 
-     *    def m = "abcabdabeabf" =~ p 
-     *    for (i in 0..<m.count) { 
+     *    def p = /(?:ab([c|d|e|f]))/
+     *    def m = "abcabdabeabf" =~ p
+     *    for (i in 0..<m.count) {
      *        println( "m.groupCount() = " + m.groupCount())
      *        println( "  " + i + ": " + m[i] )   // m[i] is a List
      *    }
@@ -1565,7 +1565,7 @@ public class DefaultGroovyMethods {
      *
      * For another example using group matches, <code><pre>
      *    def m = "abcabdabeabfabxyzabx" =~ /(?:ab([d|x-z]+))/
-     *    m.count.times { 
+     *    m.count.times {
      *        println( "m.groupCount() = " + m.groupCount())
      *        println( "  " + it + ": " + m[it] )   // m[it] is a List
      *    }
@@ -1851,12 +1851,12 @@ public class DefaultGroovyMethods {
         List list = Arrays.asList(array);
         return getAt(list, range);
     }
-    
+
     public static List getAt(Object[] array, IntRange range) {
         List list = Arrays.asList(array);
         return getAt(list, range);
-    }    
-    
+    }
+
     public static List getAt(Object[] array, ObjectRange range) {
         List list = Arrays.asList(array);
         return getAt(list, range);
@@ -2266,7 +2266,7 @@ public class DefaultGroovyMethods {
      * </pre></blockquote>
      * <p>
      * </pre><br>
-     * 
+     *
      * @param self a list to be converted into a spreadlist
      * @return a newly created SpreadList if this list is not null and its size is positive.
      */
@@ -2322,10 +2322,10 @@ public class DefaultGroovyMethods {
     /**
      * Returns the converted <code>SpreadList</code> of the given <code>self</code>.
      * <p>
-     * For examples, if there is defined a function like as 
+     * For examples, if there is defined a function like as
      * <blockquote><pre>
      *     def fn(a, b, c, d) { return a + b + c + d }
-     * </pre></blockquote>, then all of the following three have the same meaning. 
+     * </pre></blockquote>, then all of the following three have the same meaning.
      * <blockquote><pre>
      *     println fn(([1, 2, 3] as Object[]).toSpreadList(), 4)
      *     println fn(*[1, 2, 3], 4)
@@ -2343,7 +2343,7 @@ public class DefaultGroovyMethods {
         else
            return new SpreadList(self);
     }
-    
+
     public static SpreadMap spread(Map self) {
         return toSpreadMap(self);
     }
@@ -2378,7 +2378,7 @@ public class DefaultGroovyMethods {
             throw new GroovyRuntimeException("Fail to convert Object[] to SpreadMap, because it's size is not even.");
         else
             return new SpreadMap(self);
-    }   
+    }
 
     /**
      * Sorts the given collection into a sorted list.
@@ -2646,13 +2646,13 @@ public class DefaultGroovyMethods {
         } else if (left.size() != right.size()) {
             return false;
         } else {
-        final NumberComparator numberComparator = new NumberComparator(); 
+        final NumberComparator numberComparator = new NumberComparator();
         final Iterator it1 = left.iterator(), it2 = right.iterator();
-        
+
             while (it1.hasNext()) {
             final Object o1 = it1.next();
             final Object o2 = it2.next();
-            
+
                 if (o1 == null) {
                     if (o2 != null) return false;
                 } else {
@@ -2667,7 +2667,7 @@ public class DefaultGroovyMethods {
                     }
                 }
             }
-            
+
             return true;
         }
     }
@@ -3058,7 +3058,7 @@ public class DefaultGroovyMethods {
     public static Object getAt(boolean[] array, IntRange range) {
         return primitiveArrayGet(array, range);
     }
-    
+
     public static Object getAt(byte[] array, ObjectRange range) {
         return primitiveArrayGet(array, range);
     }
@@ -3090,7 +3090,7 @@ public class DefaultGroovyMethods {
     public static Object getAt(boolean[] array, ObjectRange range) {
         return primitiveArrayGet(array, range);
     }
-    
+
     public static Object getAt(byte[] array, Collection indices) {
         return primitiveArrayGet(array, indices);
     }
@@ -3606,7 +3606,7 @@ public class DefaultGroovyMethods {
     public static Process execute(String self) throws IOException {
         return Runtime.getRuntime().exec(self);
     }
-    
+
     /**
      * Executes the command specified by the <code>String</code> array that is the parameter.
      * The first item in the array is the command the others are the parameters. For more
@@ -3708,7 +3708,7 @@ public class DefaultGroovyMethods {
         }
         return answer.toString();
     }
-    
+
     /**
      * Returns the string representation of the given map with bracket boundaries.
      *
@@ -5071,6 +5071,17 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * Write the text to the File.
+     *
+     * @param file a File
+     * @param text the text to write to the File
+     * @throws IOException
+     */
+    public static void leftShift(File file, String text) throws IOException {
+		write(file, text);
+    }
+
+    /**
      * Write the text to the File with a specified encoding.
      *
      * @param file    a File
@@ -5220,7 +5231,7 @@ public class DefaultGroovyMethods {
 
     /**
      * Allow simple syntax for using timers.
-     * 
+     *
      * @param timer a timer object
      * @param delay the delay in milliseconds before running the closure code
      * @param closure
@@ -5747,7 +5758,7 @@ public class DefaultGroovyMethods {
      *
      * @param reader  Lines of text to be transformed.
      * @param writer  Where transformed lines are written.
-     * @param closure Single parameter closure that is called to transform each line of 
+     * @param closure Single parameter closure that is called to transform each line of
      *                text from the reader, before writing it to the writer.
      */
     public static void transformLine(Reader reader, Writer writer, Closure closure) throws IOException {
@@ -6109,7 +6120,7 @@ public class DefaultGroovyMethods {
                 // it's own parameter, so try a closure with one parameter
                 // and give it all groups as a array
                 closure.call((Object)groups.toArray());
-            } else { 
+            } else {
                 closure.call((Object[])groups.toArray());
             }
         }
@@ -6154,11 +6165,11 @@ public class DefaultGroovyMethods {
         }
         return i;
     }
-    
+
     /**
      * Iterates through the class loader parents until it finds a loader with a class
      * named equal to org.codehaus.groovy.tools.RootLoader. If there is no such class
-     * null will be returned. The name has to be used because a direct compare with 
+     * null will be returned. The name has to be used because a direct compare with
      * == may fail as the class may be loaded through different classloaders.
      * @see org.codehaus.groovy.tools.RootLoader
      */
