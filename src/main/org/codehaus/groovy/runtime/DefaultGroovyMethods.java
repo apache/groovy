@@ -5077,8 +5077,9 @@ public class DefaultGroovyMethods {
      * @param text the text to write to the File
      * @throws IOException
      */
-    public static void leftShift(File file, String text) throws IOException {
-		write(file, text);
+    public static File leftShift(File file, String text) throws IOException {
+		append(file, text);
+		return file;
     }
 
     /**
