@@ -11,7 +11,7 @@ public class UberTestCase extends TestCase {
         TestSuite suite = new TestSuite();
         suite.addTestSuite(AbstractClassAndInterfaceTest.class);
         suite.addTestSuite(AmbiguousInvocationTest.class);
-        suite.addTestSuite(ArrayAutoboxingTest.class);        
+        suite.addTestSuite(ArrayAutoboxingTest.class);
         suite.addTestSuite(ArrayParamMethodTest.class);
         suite.addTestSuite(ArrayTest.class);
         suite.addTestSuite(AssertNumberTest.class);
@@ -137,6 +137,7 @@ public class UberTestCase extends TestCase {
         suite.addTestSuite(InvokeNormalMethodsFirstTest.class);
         suite.addTestSuite(IntegerOperationTest.class);
         suite.addTestSuite(IterateOverCustomTypeBug.class);
+        suite.addTestSuite(LeftShiftTest.class);
         suite.addTestSuite(ListIteratingTest.class);
         suite.addTestSuite(ListTest.class);
         suite.addTestSuite(LiteralTypesTest.class);
