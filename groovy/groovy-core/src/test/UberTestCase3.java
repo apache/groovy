@@ -36,6 +36,7 @@ public class UberTestCase3 extends TestCase {
         suite.addTestSuite(org.codehaus.groovy.control.CompilationUnitTest.class);
         suite.addTestSuite(org.codehaus.groovy.control.messages.SyntaxErrorMessageTest.class);
         suite.addTestSuite(org.codehaus.groovy.runtime.DefaultGroovyMethodsTest.class);
+        suite.addTestSuite(org.codehaus.groovy.runtime.FileLeftShiftTest.class);
         suite.addTestSuite(org.codehaus.groovy.runtime.InheritedInterfaceMethodTest.class);
         suite.addTestSuite(org.codehaus.groovy.runtime.InvokeGroovyMethodTest.class);
         suite.addTestSuite(org.codehaus.groovy.runtime.InvokeMethodTest.class);
