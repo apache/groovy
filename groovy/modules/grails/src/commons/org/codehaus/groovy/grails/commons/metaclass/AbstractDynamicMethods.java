@@ -43,11 +43,23 @@ public abstract class AbstractDynamicMethods implements DynamicMethods {
 	
 	private static final Log LOG = LogFactory.getLog(AbstractDynamicMethods.class);
 	
+	/**
+	 * Creates and registers a DelegatingMetaClass instance in the registry that delegates to this class
+	 * 
+	 * @param theClass
+	 * @throws IntrospectionException
+	 */
 	public AbstractDynamicMethods(Class theClass)
 			throws IntrospectionException {
 		this(theClass, true);		
 	}
 	
+	/**
+	 * Creates and optionally registers a DelegatingMetaClass in the MetaClasRegistry that delegates to this class
+	 * @param theClass
+	 * @param inRegistry
+	 * @throws IntrospectionException
+	 */
 	public AbstractDynamicMethods(Class theClass, boolean inRegistry)
 	throws IntrospectionException {
 			super();
@@ -57,6 +69,16 @@ public abstract class AbstractDynamicMethods implements DynamicMethods {
 			this.staticMethodInvocations = new ArrayList();
 			this.dynamicProperties = new HashMap();
 	}	
+	
+	/**
+	 * A non-registering constructor that simple creates an instance
+	 *
+	 */
+	public AbstractDynamicMethods() {
+		this.dynamicMethodInvocations = new ArrayList();
+		this.staticMethodInvocations = new ArrayList();
+		this.dynamicProperties = new HashMap();		
+	}
 
 	/* (non-Javadoc)
 	 * @see org.codehaus.groovy.grails.metaclass.DynamicMethods#addDynamicMethodInvocation(org.codehaus.groovy.grails.metaclass.DynamicMethodInvocation)
