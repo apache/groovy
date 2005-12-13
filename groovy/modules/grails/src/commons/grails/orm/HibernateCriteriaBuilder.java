@@ -55,7 +55,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
  * <p>The builder can also be instantiated standalone with a SessionFactory and persistent Class instance:
  * 
  * <pre>
- * 	 new HibernateCritiriaBuilder(clazz, sessionFactory).list {
+ * 	 new HibernateCriteriaBuilder(clazz, sessionFactory).list {
  * 		eq("firstName", "Fred")
  * 	 }
  * </pre>
@@ -65,35 +65,35 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
  */
 public class HibernateCriteriaBuilder extends BuilderSupport {
 
-	private static final String AND = "and"; // builder
-	private static final String IS_NULL = "isNull"; // builder
-	private static final String IS_NOT_NULL = "notNull"; // builder
-	private static final String NOT = "not";// builder
-	private static final String OR = "or"; // builder
-	private static final String ID_EQUALS = "idEq"; // builder
-	private static final String IS_EMPTY = "isEmpty"; //builder
-	private static final String IS_NOT_EMPTY = "isNotEmpty"; //builder
+	public static final String AND = "and"; // builder
+	public static final String IS_NULL = "isNull"; // builder
+	public static final String IS_NOT_NULL = "notNull"; // builder
+	public static final String NOT = "not";// builder
+	public static final String OR = "or"; // builder
+	public static final String ID_EQUALS = "idEq"; // builder
+	public static final String IS_EMPTY = "isEmpty"; //builder
+	public static final String IS_NOT_EMPTY = "isNotEmpty"; //builder
 	
 	
-	private static final String BETWEEN = "between";//method
-	private static final String EQUALS = "eq";//method	
-	private static final String EQUALS_PROPERTY = "eqProperty";//method
-	private static final String GREATER_THAN = "gt";//method
-	private static final String GREATER_THAN_PROPERTY = "gtProperty";//method
-	private static final String GREATER_THAN_OR_EQUAL = "ge";//method
-	private static final String GREATER_THAN_OR_EQUAL_PROPERTY = "geProperty";//method
-	private static final String ILIKE = "ilike";//method
-	private static final String IN = "in";//method
-	private static final String LESS_THAN = "lt"; //method
-	private static final String LESS_THAN_PROPERTY = "ltProperty";//method
-	private static final String LESS_THAN_OR_EQUAL = "le";//method
-	private static final String LESS_THAN_OR_EQUAL_PROPERTY = "leProperty";//method	
-	private static final String LIKE = "like";//method
-	private static final String NOT_EQUAL = "ne";//method
-	private static final String NOT_EQUAL_PROPERTY = "neProperty";//method
-	private static final String SIZE_EQUALS = "sizeEq"; //method
-	private static final String ORDER_DESCENDING = "desc";
-	private static final String ORDER_ASCENDING = "asc";
+	public static final String BETWEEN = "between";//method
+	public static final String EQUALS = "eq";//method	
+	public static final String EQUALS_PROPERTY = "eqProperty";//method
+	public static final String GREATER_THAN = "gt";//method
+	public static final String GREATER_THAN_PROPERTY = "gtProperty";//method
+	public static final String GREATER_THAN_OR_EQUAL = "ge";//method
+	public static final String GREATER_THAN_OR_EQUAL_PROPERTY = "geProperty";//method
+	public static final String ILIKE = "ilike";//method
+	public static final String IN = "in";//method
+	public static final String LESS_THAN = "lt"; //method
+	public static final String LESS_THAN_PROPERTY = "ltProperty";//method
+	public static final String LESS_THAN_OR_EQUAL = "le";//method
+	public static final String LESS_THAN_OR_EQUAL_PROPERTY = "leProperty";//method	
+	public static final String LIKE = "like";//method
+	public static final String NOT_EQUAL = "ne";//method
+	public static final String NOT_EQUAL_PROPERTY = "neProperty";//method
+	public static final String SIZE_EQUALS = "sizeEq"; //method
+	public static final String ORDER_DESCENDING = "desc";
+	public static final String ORDER_ASCENDING = "asc";
 
 
 	private static final String ROOT_CALL = "doCall";
