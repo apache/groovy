@@ -164,6 +164,8 @@ public class HibernateCriteriaBuilderTests extends
 		new XmlApplicationContextDriver().getApplicationContext(
 				springConfig.getBeanReferences(), super.applicationContext);
 		
+		assertNotNull(appCtx);
+			
 		super.onSetUp();
 	}	
 }
