@@ -26,6 +26,7 @@ import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.WordUtils;
+import org.codehaus.groovy.grails.scaffolding.DefaultGrailsScaffolder;
 
 /**
  * 
@@ -42,27 +43,51 @@ public class DefaultGrailsControllerClass extends AbstractInjectableGrailsClass
     private static final String VIEW = "View";
     private static final String TYPED_VIEWS = "TypedViews";
     private static final String DEFAULT_CLOSURE_PROPERTY = "defaultAction";
+	private static final String SCAFFOLDING_PROPERTY = "scaffold";
 
 	private Map uri2viewMap = null;
 	private Map uri2closureMap = null;
 	private Map viewNames = null;
 	private String[] uris = null;
 
+	private boolean scaffolding;
 	
 	
 	public DefaultGrailsControllerClass(Class clazz) {
 		super(clazz, CONTROLLER);
 		String uri = SLASH + (StringUtils.isNotBlank(getPackageName()) ? getPackageName().replace('.', '/')  + SLASH : "" ) + WordUtils.uncapitalize(getName());
 		String defaultClosureName = (String)getPropertyValue(DEFAULT_CLOSURE_PROPERTY, String.class);
+		Boolean tmp = (Boolean)getPropertyValue(SCAFFOLDING_PROPERTY, Boolean.class);
+		if(tmp != null) {
+			this.scaffolding = tmp.booleanValue();
+		}
 		Collection closureNames = new ArrayList();
 		
 		this.uri2viewMap = new HashMap();
 		this.uri2closureMap = new HashMap();
 		this.viewNames = new HashMap();
 		
+		if(this.scaffolding) {
+			for(int i = 0; i < DefaultGrailsScaffolder.ACTION_NAMES.length;i++) {
+				closureNames.add(DefaultGrailsScaffolder.ACTION_NAMES[i]);
+				String viewName = (String)getPropertyValue(DefaultGrailsScaffolder.ACTION_NAMES[i] + VIEW, String.class);
+				// if no explicity view name is specified just use action name
+				if(viewName == null) {
+					viewName =DefaultGrailsScaffolder.ACTION_NAMES[i];
+				}		
+				String tmpUri = uri + SLASH + DefaultGrailsScaffolder.ACTION_NAMES[i];
+				String viewUri = uri + SLASH + viewName;				
+				if (StringUtils.isNotBlank(viewName)) {
+					this.uri2viewMap.put(tmpUri, viewUri);
+					this.viewNames.put( DefaultGrailsScaffolder.ACTION_NAMES[i], viewUri );
+				}	
+				this.uri2closureMap.put(tmpUri, DefaultGrailsScaffolder.ACTION_NAMES[i]);
+			}
+		}
+		
 		PropertyDescriptor[] propertyDescriptors = getReference().getPropertyDescriptors();
 		for (int i = 0; i < propertyDescriptors.length; i++) {
-			PropertyDescriptor propertyDescriptor = propertyDescriptors[i];
+			PropertyDescriptor propertyDescriptor = propertyDescriptors[i];			
 			if (propertyDescriptor.getPropertyType().isAssignableFrom(Closure.class)) {
 				closureNames.add(propertyDescriptor.getName());
 				String closureName = propertyDescriptor.getName();
@@ -147,4 +172,16 @@ public class DefaultGrailsControllerClass extends AbstractInjectableGrailsClass
 	public String getViewByName(String closureName) {
 		return (String)this.viewNames.get(closureName);
 	}
+
+	public boolean isScaffolding() {
+		return this.scaffolding;
+	}
+	/**
+	 * @param scaffolding The scaffolding to set.
+	 */
+	public void setScaffolding(boolean scaffolding) {
+		this.scaffolding = scaffolding;
+	}
+	
+	
 }
