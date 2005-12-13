@@ -16,8 +16,6 @@
 package org.codehaus.groovy.grails.web.pageflow;
 
 import groovy.lang.Closure;
-import groovy.lang.ParameterArray;
-
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
 
