@@ -22,6 +22,8 @@ import java.util.Map;
 
 import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.commons.lang.WordUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.commons.GrailsControllerClass;
 import org.codehaus.groovy.grails.commons.GrailsDataSource;
@@ -32,6 +34,12 @@ import org.codehaus.groovy.grails.metaclass.DomainClassMethods;
 import org.codehaus.groovy.grails.orm.hibernate.ConfigurableLocalsSessionFactoryBean;
 import org.codehaus.groovy.grails.orm.hibernate.support.HibernateDialectDetectorFactoryBean;
 import org.codehaus.groovy.grails.orm.hibernate.validation.GrailsDomainClassValidator;
+import org.codehaus.groovy.grails.scaffolding.DefaultGrailsResponseHandlerFactory;
+import org.codehaus.groovy.grails.scaffolding.DefaultGrailsScaffoldViewResolver;
+import org.codehaus.groovy.grails.scaffolding.DefaultGrailsScaffolder;
+import org.codehaus.groovy.grails.scaffolding.DefaultScaffoldDomain;
+import org.codehaus.groovy.grails.scaffolding.DefaultScaffoldRequestHandler;
+import org.codehaus.groovy.grails.scaffolding.ViewDelegatingScaffoldResponseHandler;
 import org.codehaus.groovy.grails.support.ClassEditor;
 import org.codehaus.groovy.grails.web.pageflow.GrailsFlowBuilder;
 import org.codehaus.groovy.grails.web.pageflow.execution.servlet.GrailsServletFlowExecutionManager;
@@ -62,6 +70,8 @@ import org.springmodules.db.hsqldb.ServerBean;
 public class SpringConfig {
 
 	private GrailsApplication application = null;
+	private static final Log LOG = LogFactory.getLog(SpringConfig.class);
+	private Map controllerClassBeans = new HashMap();
 	
 	public SpringConfig(GrailsApplication application) {
 		super();
@@ -73,49 +83,112 @@ public class SpringConfig {
 		Map urlMappings = new HashMap();
 		
 		Assert.notNull(application);
-		
-		GrailsPageFlowClass[] pageFlows = application.getPageFlows();
-		for (int i = 0; i < pageFlows.length; i++) {
-			GrailsPageFlowClass pageFlow = pageFlows[i];
-			if (!pageFlow.getAvailable()) {
-				continue;
-			}
-			Bean pageFlowClass = SpringConfigUtils.createSingletonBean(MethodInvokingFactoryBean.class);
-			pageFlowClass.setProperty("targetObject", SpringConfigUtils.createBeanReference("grailsApplication"));
-			pageFlowClass.setProperty("targetMethod", SpringConfigUtils.createLiteralValue("getPageFlow"));
-			pageFlowClass.setProperty("arguments", SpringConfigUtils.createLiteralValue(pageFlow.getFullName()));
-			beanReferences.add(SpringConfigUtils.createBeanReference(pageFlow.getFullName() + "Class", pageFlowClass));
-			
-			Bean pageFlowInstance = SpringConfigUtils.createSingletonBean();
-			pageFlowInstance.setFactoryBean(SpringConfigUtils.createBeanReference(pageFlow.getFullName() + "Class"));
-			pageFlowInstance.setFactoryMethod("newInstance");
-			if (pageFlow.byType()) {
-				pageFlowInstance.setAutowire("byType");
-			} else if (pageFlow.byName()) {
-				pageFlowInstance.setAutowire("byName");
-			}
-			beanReferences.add(SpringConfigUtils.createBeanReference(pageFlow.getFullName(), pageFlowInstance));
-			
-			Bean flowBuilder = SpringConfigUtils.createSingletonBean(GrailsFlowBuilder.class);
-			flowBuilder.setProperty("pageFlowClass", SpringConfigUtils.createBeanReference(pageFlow.getFullName() + "Class"));
-			
-			Bean flowFactoryBean = SpringConfigUtils.createSingletonBean(FlowFactoryBean.class);
-			flowFactoryBean.setProperty("flowBuilder", flowBuilder);
-			beanReferences.add(SpringConfigUtils.createBeanReference(pageFlow.getFlowId(), flowFactoryBean));
 
-			if (pageFlow.getAccessible()) {
-				Bean flowExecutionManager = SpringConfigUtils.createSingletonBean(GrailsServletFlowExecutionManager.class);
-				flowExecutionManager.setProperty("flow", SpringConfigUtils.createBeanReference(pageFlow.getFlowId()));
-				
-				Bean flowController = SpringConfigUtils.createSingletonBean(FlowController.class);
-				flowController.setProperty("flowExecutionManager", flowExecutionManager);
-				beanReferences.add(SpringConfigUtils.createBeanReference(pageFlow.getFullName() + "Controller", flowController));
-				
-				urlMappings.put(pageFlow.getUri(), pageFlow.getFullName() + "Controller");
-			}
-			
-		}
+		// configure general references
+		Bean classLoader = SpringConfigUtils.createSingletonBean(MethodInvokingFactoryBean.class);
+		classLoader.setProperty("targetObject", SpringConfigUtils.createBeanReference("grailsApplication"));
+		classLoader.setProperty("targetMethod", SpringConfigUtils.createLiteralValue("getClassLoader"));
 		
+		Bean classEditor = SpringConfigUtils.createSingletonBean(ClassEditor.class);
+		classEditor.setProperty("classLoader", classLoader);
+		
+		Bean propertyEditors = SpringConfigUtils.createSingletonBean(CustomEditorConfigurer.class);
+		Map customEditors = new HashMap();
+		customEditors.put(SpringConfigUtils.createLiteralValue("java.lang.Class"), classEditor);
+		propertyEditors.setProperty("customEditors", SpringConfigUtils.createMap(customEditors));
+		beanReferences.add(SpringConfigUtils.createBeanReference("customEditors", propertyEditors));
+		
+		// setup message source
+		Bean messageSource = SpringConfigUtils.createSingletonBean( ReloadableResourceBundleMessageSource.class );
+		messageSource.setProperty( "basename", SpringConfigUtils.createLiteralValue("messages"));		
+		
+		// configure data source & hibernate
+		LOG.info("[SpringConfig] Configuring Grails data source");
+		populateDataSourceReferences(beanReferences);
+		
+		// configure domain classes
+		LOG.info("[SpringConfig] Configuring Grails domain");
+		populateDomainClassReferences(beanReferences, classLoader);
+				
+		// configure services
+		LOG.info("[SpringConfig] Configuring Grails services");
+		populateServiceClassReferences(beanReferences);
+		
+		// configure grails page flows
+		LOG.info("[SpringConfig] Configuring Grails page flows");
+		populatePageFlowReferences(beanReferences, urlMappings);
+	
+		// configure grails controllers
+		LOG.info("[SpringConfig] Configuring Grails controllers");
+		populateControllerReferences(beanReferences, urlMappings);
+		
+		// configure scaffolding
+		LOG.info("[SpringConfig] Configuring Grails scaffolding");
+		populateScaffoldingReferences(beanReferences);
+		
+				
+		return beanReferences;
+	}
+
+	// configures scaffolding
+	private void populateScaffoldingReferences(Collection beanReferences) {
+		// go through all the controllers
+		GrailsControllerClass[] simpleControllers = application.getControllers();
+		for (int i = 0; i < simpleControllers.length; i++) {
+			
+			// if the controller is scaffolding
+			if(simpleControllers[i].isScaffolding()) {
+				// retrieve appropriate domain class
+				GrailsDomainClass domainClass = application.getGrailsDomainClass(simpleControllers[i].getName());
+				if(domainClass == null) {
+					LOG.info("[Spring] Unable to scaffold controller ["+simpleControllers[i].getFullName()+"], no equivalent domain class named ["+simpleControllers[i].getName()+"]");
+				}
+				else {
+					Bean scaffolder = SpringConfigUtils.createSingletonBean(DefaultGrailsScaffolder.class);				
+										
+					// create scaffold domain
+					Collection constructorArguments = new ArrayList();
+					constructorArguments.add(SpringConfigUtils.createBeanReference(domainClass.getFullName() + "PersistentClass"));
+					constructorArguments.add(SpringConfigUtils.createLiteralValue(domainClass.getIdentifier().getName()));
+					constructorArguments.add(SpringConfigUtils.createBeanReference("sessionFactory"));
+					
+					Bean domain = SpringConfigUtils.createSingletonBean(DefaultScaffoldDomain.class, constructorArguments);
+					domain.setProperty("validator", SpringConfigUtils.createBeanReference( domainClass.getFullName() + "Validator"));
+					
+					beanReferences.add( SpringConfigUtils.createBeanReference( domainClass.getFullName() + "ScaffoldDomain",domain ) );
+					
+					// create and configure request handler
+					Bean requestHandler = SpringConfigUtils.createSingletonBean(DefaultScaffoldRequestHandler.class);
+					requestHandler.setProperty("scaffoldDomain", SpringConfigUtils.createBeanReference(domainClass.getFullName() + "ScaffoldDomain"));
+					
+					// create response factory
+					constructorArguments = new ArrayList();
+					constructorArguments.add(SpringConfigUtils.createBeanReference("grailsApplication"));
+					
+					// configure default response handler
+					Bean defaultResponseHandler = SpringConfigUtils.createSingletonBean(ViewDelegatingScaffoldResponseHandler.class);
+					
+					// configure a simple view delegating resolver
+					Bean defaultViewResolver = SpringConfigUtils.createSingletonBean(DefaultGrailsScaffoldViewResolver.class,constructorArguments);
+					defaultResponseHandler.setProperty("scaffoldViewResolver", defaultViewResolver);
+					
+					// create constructor arguments response handler factory
+					constructorArguments = new ArrayList();
+					constructorArguments.add(SpringConfigUtils.createBeanReference("grailsApplication"));
+					constructorArguments.add(defaultResponseHandler);
+					
+					Bean responseHandlerFactory = SpringConfigUtils.createSingletonBean( DefaultGrailsResponseHandlerFactory.class,constructorArguments );
+					
+					scaffolder.setProperty( "scaffoldResponseHandlerFactory", responseHandlerFactory );					
+					scaffolder.setProperty("scaffoldRequestHandler", requestHandler);					
+					
+					beanReferences.add( SpringConfigUtils.createBeanReference( simpleControllers[i].getFullName() + "Scaffolder",scaffolder  ) );					
+				}								
+			}
+		}
+	}
+
+	private void populateControllerReferences(Collection beanReferences, Map urlMappings) {
 		Bean simpleGrailsController = SpringConfigUtils.createSingletonBean(SimpleGrailsController.class);
 		simpleGrailsController.setAutowire("byType");
 		beanReferences.add(SpringConfigUtils.createBeanReference("simpleGrailsController", simpleGrailsController));
@@ -142,24 +215,28 @@ public class SpringConfig {
 			controllerClass.setProperty("targetMethod", SpringConfigUtils.createLiteralValue("getController"));
 			controllerClass.setProperty("arguments", SpringConfigUtils.createLiteralValue(simpleController.getFullName()));
 			beanReferences.add(SpringConfigUtils.createBeanReference(simpleController.getFullName() + "Class", controllerClass));
+			controllerClassBeans.put(simpleController.getFullName() + "Class", controllerClass);
 			
 			Bean controller = SpringConfigUtils.createSingletonBean();
 			controller.setFactoryBean(SpringConfigUtils.createBeanReference(simpleController.getFullName() + "Class"));
 			controller.setFactoryMethod("newInstance");
-			if (simpleController.byType()) {
+			controller.setAutowire("byName");
+			/*if (simpleController.byType()) {
 				controller.setAutowire("byType");
 			} else if (simpleController.byName()) {
 				controller.setAutowire("byName");
-			}
+			}*/
 			beanReferences.add(SpringConfigUtils.createBeanReference(simpleController.getFullName(), controller));
 			for (int x = 0; x < simpleController.getURIs().length; x++) {
 				urlMappings.put(simpleController.getURIs()[x], "simpleGrailsController");
-			}
+			}		
 		}		
 		if (simpleUrlHandlerMapping != null) {
 			simpleUrlHandlerMapping.setProperty("mappings", SpringConfigUtils.createProperties(urlMappings));
 		}
+	}
 
+	private void populateDataSourceReferences(Collection beanReferences) {
 		boolean dependsOnHsqldbServer = false;
 		if (application.getGrailsDataSource() != null) {
 			GrailsDataSource grailsDataSource = application.getGrailsDataSource();
@@ -227,20 +304,9 @@ public class SpringConfig {
 		Bean transactionManager = SpringConfigUtils.createSingletonBean(HibernateTransactionManager.class);
 		transactionManager.setProperty("sessionFactory", SpringConfigUtils.createBeanReference("sessionFactory"));
 		beanReferences.add(SpringConfigUtils.createBeanReference("transactionManager", transactionManager));
+	}
 
-		Bean classLoader = SpringConfigUtils.createSingletonBean(MethodInvokingFactoryBean.class);
-		classLoader.setProperty("targetObject", SpringConfigUtils.createBeanReference("grailsApplication"));
-		classLoader.setProperty("targetMethod", SpringConfigUtils.createLiteralValue("getClassLoader"));
-		
-		Bean classEditor = SpringConfigUtils.createSingletonBean(ClassEditor.class);
-		classEditor.setProperty("classLoader", classLoader);
-		
-		Bean propertyEditors = SpringConfigUtils.createSingletonBean(CustomEditorConfigurer.class);
-		Map customEditors = new HashMap();
-		customEditors.put(SpringConfigUtils.createLiteralValue("java.lang.Class"), classEditor);
-		propertyEditors.setProperty("customEditors", SpringConfigUtils.createMap(customEditors));
-		beanReferences.add(SpringConfigUtils.createBeanReference("customEditors", propertyEditors));
-		
+	private void populateDomainClassReferences(Collection beanReferences, Bean classLoader) {
 		GrailsDomainClass[] grailsDomainClasses = application.getGrailsDomainClasses();
 		for (int i = 0; i < grailsDomainClasses.length; i++) {
 			GrailsDomainClass grailsDomainClass = grailsDomainClasses[i];
@@ -250,6 +316,13 @@ public class SpringConfig {
 			domainClassBean.setProperty("targetMethod", SpringConfigUtils.createLiteralValue("getGrailsDomainClass"));
 			domainClassBean.setProperty("arguments", SpringConfigUtils.createLiteralValue(grailsDomainClass.getFullName()));
 			beanReferences.add(SpringConfigUtils.createBeanReference(grailsDomainClass.getFullName() + "DomainClass", domainClassBean));
+			
+			// create persistent class bean references
+			Bean persistentClassBean = SpringConfigUtils.createSingletonBean(MethodInvokingFactoryBean.class);
+			persistentClassBean.setProperty("targetObject", SpringConfigUtils.createBeanReference(grailsDomainClass.getFullName() + "DomainClass"));
+			persistentClassBean.setProperty("targetMethod", SpringConfigUtils.createLiteralValue("getClazz"));
+			
+			beanReferences.add(SpringConfigUtils.createBeanReference(grailsDomainClass.getFullName() + "PersistentClass", persistentClassBean));
 			
 			Collection constructorArguments = new ArrayList();
 			// configure persistent methods
@@ -266,10 +339,9 @@ public class SpringConfig {
 			validatorBean.setProperty( "sessionFactory" ,SpringConfigUtils.createBeanReference("sessionFactory") );
 			beanReferences.add( SpringConfigUtils.createBeanReference( grailsDomainClass.getFullName() + "Validator", validatorBean ) );			
 		}
-		// setup message source
-		Bean messageSource = SpringConfigUtils.createSingletonBean( ReloadableResourceBundleMessageSource.class );
-		messageSource.setProperty( "basename", SpringConfigUtils.createLiteralValue("messages"));
-		
+	}
+
+	private void populateServiceClassReferences(Collection beanReferences) {
 		GrailsServiceClass[] serviceClasses = application.getGrailsServiceClasses();
 		for (int i = 0; i <serviceClasses.length; i++) {
 			GrailsServiceClass grailsServiceClass = serviceClasses[i];
@@ -302,8 +374,53 @@ public class SpringConfig {
 				beanReferences.add(SpringConfigUtils.createBeanReference(WordUtils.uncapitalize(grailsServiceClass.getName()) + "Service", serviceInstance));
 			}
 		}
+	}
+
+	/**
+	 * Configures Grails page flows
+	 */
+	private void populatePageFlowReferences(Collection beanReferences, Map urlMappings) {
+		GrailsPageFlowClass[] pageFlows = application.getPageFlows();
 		
-		
-		return beanReferences;
+		for (int i = 0; i < pageFlows.length; i++) {
+			GrailsPageFlowClass pageFlow = pageFlows[i];
+			if (!pageFlow.getAvailable()) {
+				continue;
+			}
+			Bean pageFlowClass = SpringConfigUtils.createSingletonBean(MethodInvokingFactoryBean.class);
+			pageFlowClass.setProperty("targetObject", SpringConfigUtils.createBeanReference("grailsApplication"));
+			pageFlowClass.setProperty("targetMethod", SpringConfigUtils.createLiteralValue("getPageFlow"));
+			pageFlowClass.setProperty("arguments", SpringConfigUtils.createLiteralValue(pageFlow.getFullName()));
+			beanReferences.add(SpringConfigUtils.createBeanReference(pageFlow.getFullName() + "Class", pageFlowClass));
+			
+			Bean pageFlowInstance = SpringConfigUtils.createSingletonBean();
+			pageFlowInstance.setFactoryBean(SpringConfigUtils.createBeanReference(pageFlow.getFullName() + "Class"));
+			pageFlowInstance.setFactoryMethod("newInstance");
+			if (pageFlow.byType()) {
+				pageFlowInstance.setAutowire("byType");
+			} else if (pageFlow.byName()) {
+				pageFlowInstance.setAutowire("byName");
+			}
+			beanReferences.add(SpringConfigUtils.createBeanReference(pageFlow.getFullName(), pageFlowInstance));
+			
+			Bean flowBuilder = SpringConfigUtils.createSingletonBean(GrailsFlowBuilder.class);
+			flowBuilder.setProperty("pageFlowClass", SpringConfigUtils.createBeanReference(pageFlow.getFullName() + "Class"));
+			
+			Bean flowFactoryBean = SpringConfigUtils.createSingletonBean(FlowFactoryBean.class);
+			flowFactoryBean.setProperty("flowBuilder", flowBuilder);
+			beanReferences.add(SpringConfigUtils.createBeanReference(pageFlow.getFlowId(), flowFactoryBean));
+
+			if (pageFlow.getAccessible()) {
+				Bean flowExecutionManager = SpringConfigUtils.createSingletonBean(GrailsServletFlowExecutionManager.class);
+				flowExecutionManager.setProperty("flow", SpringConfigUtils.createBeanReference(pageFlow.getFlowId()));
+				
+				Bean flowController = SpringConfigUtils.createSingletonBean(FlowController.class);
+				flowController.setProperty("flowExecutionManager", flowExecutionManager);
+				beanReferences.add(SpringConfigUtils.createBeanReference(pageFlow.getFullName() + "Controller", flowController));
+				
+				urlMappings.put(pageFlow.getUri(), pageFlow.getFullName() + "Controller");
+			}
+			
+		}
 	}
 }
