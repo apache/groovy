@@ -1,27 +1,20 @@
 package org.codehaus.groovy.grails.orm.hibernate;
 
+import groovy.lang.GroovyClassLoader;
+import groovy.lang.GroovyObject;
+import groovy.lang.MissingMethodException;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import groovy.lang.GroovyClassLoader;
-import groovy.lang.GroovyObject;
-import groovy.lang.MissingMethodException;
-import groovy.lang.ProxyMetaClass;
-
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.commons.GrailsDomainClass;
-import org.codehaus.groovy.grails.commons.metaclass.PropertyAccessProxyMetaClass;
 import org.codehaus.groovy.grails.commons.spring.SpringConfig;
 import org.codehaus.groovy.grails.orm.hibernate.exceptions.GrailsQueryException;
 import org.codehaus.groovy.grails.orm.hibernate.metaclass.FindByPersistentMethod;
-import org.codehaus.groovy.grails.web.metaclass.ControllerDynamicMethodsInterceptor;
-import org.codehaus.groovy.grails.web.servlet.mvc.GrailsControllerHelper;
-import org.codehaus.groovy.grails.web.servlet.mvc.SimpleGrailsControllerHelper;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.AbstractDependencyInjectionSpringContextTests;
 import org.springmodules.beans.factory.drivers.xml.XmlApplicationContextDriver;
 
@@ -56,55 +49,6 @@ public class PersistentMethodTests extends AbstractDependencyInjectionSpringCont
 		assertFalse(findBy.isMethodMatch("rubbish"));
 	}
 	
-	public void testSetPropertiesDynamicProperty()  throws Exception {
-		GroovyClassLoader gcl = new GroovyClassLoader();
-		MockHttpServletRequest request = new MockHttpServletRequest();
-		MockHttpServletResponse response = new MockHttpServletResponse();
-		
-		
-		
-		Class groovyClass = gcl.parseClass( "class TestController {\n" +
-						"@Property domainClass\n" +
-						"def testMethod() {\n" +
-						"domainClass.properties = this.params;\n" +
-						"}\n" +
-						"}" );
-		
-		ProxyMetaClass pmc = PropertyAccessProxyMetaClass.getInstance(groovyClass);
-		GrailsControllerHelper helper = new SimpleGrailsControllerHelper(this.grailsApplication,this.applicationContext);
-		// proof of concept to try out proxy meta class
-		GroovyObject go = (GroovyObject)groovyClass.newInstance();
-		pmc.setInterceptor( new ControllerDynamicMethodsInterceptor(go,helper,request,response) );
-		
-		
-		
-		go.setMetaClass( pmc );		
-		
-		
-		GrailsDomainClass domainClass = this.grailsApplication.getGrailsDomainClass("org.codehaus.groovy.grails.orm.hibernate.PersistentMethodTestClass");
-		
-		GroovyObject dco = domainClass.newInstance();
-		request.addParameter("id", "1");
-		request.addParameter("firstName", "fred");
-		request.addParameter("lastName", "flintstone");
-		request.addParameter("age", "45");
-		
-		try {
-			// invoke real method
-			go.setProperty("domainClass",dco);
-			go.invokeMethod("testMethod", new Object[]{});
-			dco = (GroovyObject)go.getProperty("domainClass");
-			
-			assertEquals(new Integer(45), dco.getProperty("age"));
-			assertEquals(new Long(1), dco.getProperty("id"));
-			assertEquals("fred", dco.getProperty("firstName"));
-			assertEquals("flintstone", dco.getProperty("lastName"));
-		}
-		catch(MissingMethodException mme) {
-			fail("Missing method exception should not have been thrown!");
-		}
-		
-	}
 	
 	public void testSavePersistentMethod() {
 		// init spring config
@@ -165,14 +109,14 @@ public class PersistentMethodTests extends AbstractDependencyInjectionSpringCont
 		obj3.setProperty( "age", new Integer(12));
 		obj3.invokeMethod("save", null);			
 		
-		Object returnValue = obj.getMetaClass().invokeStaticMethod(obj, "findByFirstName", new Object[] { "fred" });
+		Object returnValue = obj.getMetaClass().invokeStaticMethod(obj, "findAllByFirstName", new Object[] { "fred" });
 		assertNotNull(returnValue);
 		assertTrue(returnValue instanceof List);
 		
 		List returnList = (List)returnValue;
 		assertEquals(1, returnList.size());
 		
-		returnValue = obj.getMetaClass().invokeStaticMethod(obj, "findByFirstNameAndLastName", new Object[] { "fred", "flintstone" });
+		returnValue = obj.getMetaClass().invokeStaticMethod(obj, "findAllByFirstNameAndLastName", new Object[] { "fred", "flintstone" });
 		assertNotNull(returnValue);
 		assertTrue(returnValue instanceof List);
 		
@@ -186,28 +130,28 @@ public class PersistentMethodTests extends AbstractDependencyInjectionSpringCont
 		returnList = (List)returnValue;
 		assertEquals(2, returnList.size());*/			
 		
-		returnList = (List)obj.getMetaClass().invokeStaticMethod(obj, "findByFirstNameNotEqual", new Object[] { "fred" });
+		returnList = (List)obj.getMetaClass().invokeStaticMethod(obj, "findAllByFirstNameNotEqual", new Object[] { "fred" });
 		assertEquals(2, returnList.size());
 		obj = (GroovyObject)returnList.get(0);
 		obj2 = (GroovyObject)returnList.get(1);
 		assertFalse("fred".equals( obj.getProperty("firstName")));
 		assertFalse("fred".equals( obj2.getProperty("firstName")));
 		
-		returnList = (List)obj.getMetaClass().invokeStaticMethod(obj, "findByAgeLessThan", new Object[] { new Integer(20) });
+		returnList = (List)obj.getMetaClass().invokeStaticMethod(obj, "findAllByAgeLessThan", new Object[] { new Integer(20) });
 		assertEquals(1, returnList.size());
 		obj = (GroovyObject)returnList.get(0);
 		assertEquals("dino", obj.getProperty("firstName"));
 		
-		returnList = (List)obj.getMetaClass().invokeStaticMethod(obj, "findByAgeGreaterThan", new Object[] { new Integer(20) });
+		returnList = (List)obj.getMetaClass().invokeStaticMethod(obj, "findAllByAgeGreaterThan", new Object[] { new Integer(20) });
 		assertEquals(2, returnList.size());
 		
-		returnList = (List)obj.getMetaClass().invokeStaticMethod(obj, "findByAgeGreaterThanAndLastName", new Object[] { new Integer(20), "flintstone" });
+		returnList = (List)obj.getMetaClass().invokeStaticMethod(obj, "findAllByAgeGreaterThanAndLastName", new Object[] { new Integer(20), "flintstone" });
 		assertEquals(2, returnList.size());
 		
-		returnList = (List)obj.getMetaClass().invokeStaticMethod(obj, "findByLastNameLike", new Object[] { "flint%" });
+		returnList = (List)obj.getMetaClass().invokeStaticMethod(obj, "findAllByLastNameLike", new Object[] { "flint%" });
 		assertEquals(2, returnList.size());
 		
-		returnList = (List)obj.getMetaClass().invokeStaticMethod(obj, "findByAgeBetween", new Object[] { new Integer(10), new Integer(43) });
+		returnList = (List)obj.getMetaClass().invokeStaticMethod(obj, "findAllByAgeBetween", new Object[] { new Integer(10), new Integer(43) });
 		assertEquals(2, returnList.size());		
 		
 		Map queryMap = new HashMap();
@@ -215,14 +159,9 @@ public class PersistentMethodTests extends AbstractDependencyInjectionSpringCont
 		queryMap.put("lastName", "flintstone");
 		returnValue = obj.getMetaClass().invokeStaticMethod(obj, "findWhere", new Object[] { queryMap });
 		assertNotNull(returnValue);
-		assertTrue(returnValue instanceof List);
-		
-		returnList = (List)returnValue;
-		assertEquals(1, returnList.size());
-		
 		// now lets test out some junk and make sure we get errors!
 		try {
-			returnList = (List)obj.getMetaClass().invokeStaticMethod(obj, "findByLastNameLike", new Object[] { new Boolean(false) });
+			returnList = (List)obj.getMetaClass().invokeStaticMethod(obj, "findAllByLastNameLike", new Object[] { new Boolean(false) });
 			fail("Should have thrown an exception for invalid arguments");
 		}
 		catch(MissingMethodException mme) {
@@ -230,7 +169,7 @@ public class PersistentMethodTests extends AbstractDependencyInjectionSpringCont
 		}
 		// and the wrong number of arguments!
 		try {
-			returnList = (List)obj.getMetaClass().invokeStaticMethod(obj, "findByAgeBetween", new Object[] { new Integer(10) });
+			returnList = (List)obj.getMetaClass().invokeStaticMethod(obj, "findAllByAgeBetween", new Object[] { new Integer(10) });
 			fail("Should have thrown an exception for invalid argument count");
 		}
 		catch(MissingMethodException mme) {
@@ -258,17 +197,10 @@ public class PersistentMethodTests extends AbstractDependencyInjectionSpringCont
 		// get wilma by id
 		Object returnValue = obj.getMetaClass().invokeStaticMethod(obj, "get", new Object[] { new Long(2) });
 		assertNotNull(returnValue);
-		assertEquals(returnValue.getClass(),domainClass.getClazz());
-		GroovyObject groovyReturn = (GroovyObject)returnValue;
-		
-		// get wilma with a HQL query
-		String query = "from org.codehaus.groovy.grails.orm.hibernate.PersistentMethodTestClass as p where p.firstName='wilma'";
-		returnValue = obj.getMetaClass().invokeStaticMethod(obj, "get", new Object[] { query });
-		
-		assertEquals("wilma", groovyReturn.getProperty("firstName"));
+		assertEquals(returnValue.getClass(),domainClass.getClazz());	
 	}
 	
-	public void testFindPersistentMethod() {
+	public void testFindAllPersistentMethod() {
 		GrailsDomainClass domainClass = this.grailsApplication.getGrailsDomainClass("org.codehaus.groovy.grails.orm.hibernate.PersistentMethodTestClass");
 		
 		GroovyObject obj = domainClass.newInstance();
@@ -286,7 +218,7 @@ public class PersistentMethodTests extends AbstractDependencyInjectionSpringCont
 		obj2.invokeMethod("save", null);	
 		
 		// test find with a query
-		Object returnValue = obj.getMetaClass().invokeStaticMethod(obj, "find", new Object[] { "from org.codehaus.groovy.grails.orm.hibernate.PersistentMethodTestClass" });
+		Object returnValue = obj.getMetaClass().invokeStaticMethod(obj, "findAll", new Object[] { "from org.codehaus.groovy.grails.orm.hibernate.PersistentMethodTestClass" });
 		assertNotNull(returnValue);
 		assertEquals(ArrayList.class,returnValue.getClass());
 		List listResult = (List)returnValue;
@@ -295,7 +227,7 @@ public class PersistentMethodTests extends AbstractDependencyInjectionSpringCont
 		// test find with query and args
 		List args = new ArrayList();
 		args.add( "wilma" );
-		returnValue = obj.getMetaClass().invokeStaticMethod(obj, "find", new Object[] { "from org.codehaus.groovy.grails.orm.hibernate.PersistentMethodTestClass as p where p.firstName = ?", args });
+		returnValue = obj.getMetaClass().invokeStaticMethod(obj, "findAll", new Object[] { "from org.codehaus.groovy.grails.orm.hibernate.PersistentMethodTestClass as p where p.firstName = ?", args });
 		assertNotNull(returnValue);
 		assertEquals(ArrayList.class,returnValue.getClass());
 		listResult = (List)returnValue;
@@ -304,7 +236,7 @@ public class PersistentMethodTests extends AbstractDependencyInjectionSpringCont
 		// test find by example
 		GroovyObject example = domainClass.newInstance();
 		example.setProperty( "firstName", "fred" );
-		returnValue = obj.getMetaClass().invokeStaticMethod(obj, "find", new Object[] { example });
+		returnValue = obj.getMetaClass().invokeStaticMethod(obj, "findAll", new Object[] { example });
 		assertNotNull(returnValue);
 		assertEquals(ArrayList.class,returnValue.getClass());
 		listResult = (List)returnValue;
@@ -312,7 +244,7 @@ public class PersistentMethodTests extends AbstractDependencyInjectionSpringCont
 		
 		// test invalid query
 		try {
-			returnValue = obj.getMetaClass().invokeStaticMethod(obj, "find", new Object[] { "from RubbishClass"});
+			returnValue = obj.getMetaClass().invokeStaticMethod(obj, "findAll", new Object[] { "from RubbishClass"});
 			fail("Should have thrown grails query exception");
 		}
 		catch(GrailsQueryException gqe) {
@@ -352,7 +284,9 @@ public class PersistentMethodTests extends AbstractDependencyInjectionSpringCont
 		List returnList = (List)returnValue;
 		assertEquals(3, returnList.size());
 		// test list with max value
-		returnValue = obj.getMetaClass().invokeStaticMethod(obj,"list", new Object[]{ new Integer(1) });
+		Map argsMap = new HashMap();
+		argsMap.put("max",new Integer(1));
+		returnValue = obj.getMetaClass().invokeStaticMethod(obj,"list", new Object[]{ argsMap });
 		assertNotNull(returnValue);
 		assertTrue(returnValue instanceof List);
 		
