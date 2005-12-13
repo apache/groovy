@@ -62,6 +62,9 @@ public interface GrailsControllerClass extends InjectableGrailsClass {
 	 */
 	public String getClosurePropertyName(String uri);
 
-	
+	/**
+	 * @return True of the controller class is scaffolding
+	 */
+	public boolean isScaffolding();
 
 }
