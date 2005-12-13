@@ -18,7 +18,6 @@ package org.codehaus.groovy.grails.commons;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyResourceLoader;
 
-import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Modifier;
 import java.net.URL;
@@ -97,10 +96,6 @@ public class DefaultGrailsApplication implements GrailsApplication {
 				} catch (IOException e) {
 					throw new RuntimeException(e);
 				}
-			}
-
-			public File loadGroovyFile(String resource) {
-				return new File(loadGroovySource(resource).getFile());
 			}
 		};
 		this.cl = new GroovyClassLoader();
