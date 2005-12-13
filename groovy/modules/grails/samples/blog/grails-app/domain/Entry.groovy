@@ -4,7 +4,7 @@ class Entry {
 	@Property relationships = [ "comments" : Comment.class ]
 	
 	@Property String title
-	@Property Date date
+	@Property Date date = new Date()
 	@Property String body
 	@Property Set comments = new HashSet()
 	
