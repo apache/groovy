@@ -15,12 +15,17 @@
  */ 
 package org.codehaus.groovy.grails.web.servlet;
 
+import groovy.lang.GroovyObject;
+
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
+
+import org.codehaus.groovy.grails.web.metaclass.GetParamsDynamicProperty;
 
 /**
  * <p>Wrapper for HttpServletRequest instance that also implements
@@ -33,28 +38,47 @@ import javax.servlet.http.HttpServletRequestWrapper;
  */
 public class GrailsHttpServletRequest extends HttpServletRequestWrapper implements Map {
 
+	Map controllerParams = Collections.EMPTY_MAP;
+	
     public GrailsHttpServletRequest(HttpServletRequest delegate) {
         super(delegate);
     }
 
-    public int size() {
-        return getRequest().getParameterMap().size();
+    public GrailsHttpServletRequest(HttpServletRequest request, GroovyObject controller) {
+    	super(request);
+    	controllerParams = (Map)controller.getProperty(GetParamsDynamicProperty.PROPERTY_NAME);
+	}
+
+	/* (non-Javadoc)
+	 * @see javax.servlet.ServletRequestWrapper#getParameter(java.lang.String)
+	 */
+	public String getParameter(String paramName) {
+    	if(controllerParams.containsKey(paramName)) 
+    		return controllerParams.get(paramName).toString();
+		return super.getParameter(paramName);
+	}
+
+	public int size() {
+        return getRequest().getParameterMap().size() + controllerParams.size();
     }
 
     public boolean isEmpty() {
-        return getRequest().getParameterMap().isEmpty();
+        return getRequest().getParameterMap().isEmpty() && controllerParams.isEmpty();
     }
 
     public boolean containsKey(Object key) {
-        return getRequest().getParameterMap().containsKey(key);
+        return getRequest().getParameterMap().containsKey(key) || controllerParams.containsKey(key);
     }
 
     public boolean containsValue(Object value) {
-        return getRequest().getParameterMap().containsValue(value);
+        return getRequest().getParameterMap().containsValue(value) || controllerParams.containsValue(value);
     }
 
     public Object get(Object key) {
-        return getRequest().getParameterMap().get(key);
+    	if(controllerParams.containsKey(key)) 
+    		return controllerParams.get(key);
+    	else
+    		return getRequest().getParameterMap().get(key);
     }
 
     public Object put(Object key, Object value) {
