@@ -236,7 +236,7 @@ public class ControllerMetaClassTests extends TestCase {
 		
 		GrailsControllerHelper helper = new SimpleGrailsControllerHelper(application,context);
 		GroovyObject go = (GroovyObject)groovyClass.newInstance();
-		pmc.setInterceptor( new ControllerDynamicMethodsInterceptor(go,helper,request,response) );
+		pmc.setInterceptor( new ControllerDynamicMethods(go,helper,request,response) );
 		
 		
 		go.setMetaClass( pmc );
