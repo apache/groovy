@@ -24,6 +24,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.codehaus.groovy.grails.commons.GrailsControllerClass;
+import org.codehaus.groovy.grails.scaffolding.GrailsScaffolder;
 import org.springframework.web.servlet.ModelAndView;
 /**
  * An interface for a helper class that processes Grails controller requests and responses 
@@ -51,9 +52,16 @@ public interface GrailsControllerHelper {
 	 * Creates a new controller instance for the specified GrailsControllerClass
 	 * @param controllerClass The GrailsControllerClass
 	 * @return A new controller instance
-	 */
+	 */	
 	public abstract GroovyObject getControllerInstance(
 			GrailsControllerClass controllerClass);
+	
+	/**
+	 * Retreives the scaffolder for the specified controller
+	 * @param controllerName The controller name
+	 * @return
+	 */
+	public abstract GrailsScaffolder getScaffolderForController(String controllerName);
 	/**
 	 * Handles a Grails URI
 	 * @param uri The URI to processs
@@ -98,7 +106,7 @@ public interface GrailsControllerHelper {
 	 * @return A ModelAndView object
 	 */
 	public abstract ModelAndView handleActionResponse(
-			GrailsControllerClass controllerClass, Object returnValue,
+			GroovyObject controller, Object returnValue,
 			String closurePropertyName, String viewName);
 
 	/**
