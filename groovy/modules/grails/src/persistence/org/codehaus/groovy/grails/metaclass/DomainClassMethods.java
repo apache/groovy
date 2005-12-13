@@ -24,11 +24,11 @@ import org.codehaus.groovy.grails.commons.metaclass.AbstractDynamicMethods;
 import org.codehaus.groovy.grails.commons.metaclass.GenericDynamicProperty;
 import org.codehaus.groovy.grails.orm.hibernate.metaclass.CreateCriteriaPersistentMethod;
 import org.codehaus.groovy.grails.orm.hibernate.metaclass.DeletePersistentMethod;
+import org.codehaus.groovy.grails.orm.hibernate.metaclass.FindAllByPersistentMethod;
 import org.codehaus.groovy.grails.orm.hibernate.metaclass.FindAllPersistentMethod;
 import org.codehaus.groovy.grails.orm.hibernate.metaclass.FindByPersistentMethod;
 import org.codehaus.groovy.grails.orm.hibernate.metaclass.FindPersistentMethod;
 import org.codehaus.groovy.grails.orm.hibernate.metaclass.FindWherePersistentMethod;
-import org.codehaus.groovy.grails.orm.hibernate.metaclass.GetByPersistentMethod;
 import org.codehaus.groovy.grails.orm.hibernate.metaclass.GetPersistentMethod;
 import org.codehaus.groovy.grails.orm.hibernate.metaclass.ListOrderByPersistentMethod;
 import org.codehaus.groovy.grails.orm.hibernate.metaclass.ListPersistentMethod;
@@ -60,13 +60,13 @@ public class DomainClassMethods extends AbstractDynamicMethods {
 		
 		// static methods
 		addStaticMethodInvocation(new FindAllPersistentMethod(sessionFactory, classLoader));
+		addStaticMethodInvocation(new FindAllByPersistentMethod(application,sessionFactory, classLoader));
 		addStaticMethodInvocation(new FindByPersistentMethod(application,sessionFactory, classLoader));
-		addStaticMethodInvocation(new GetByPersistentMethod(application,sessionFactory, classLoader));
 		addStaticMethodInvocation(new FindPersistentMethod(sessionFactory, classLoader));
 		addStaticMethodInvocation(new ListOrderByPersistentMethod(sessionFactory, classLoader));
 		addStaticMethodInvocation(new ListPersistentMethod(sessionFactory, classLoader));
 		addStaticMethodInvocation(new FindWherePersistentMethod(sessionFactory, classLoader));
-		addStaticMethodInvocation(new GetPersistentMethod(sessionFactory, classLoader));
+		addStaticMethodInvocation(new GetPersistentMethod(application,sessionFactory, classLoader));
 		addStaticMethodInvocation(new CreateCriteriaPersistentMethod(sessionFactory, classLoader));
 		
 		// add dynamic properties

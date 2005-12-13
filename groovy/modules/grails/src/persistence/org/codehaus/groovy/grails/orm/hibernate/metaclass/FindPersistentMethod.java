@@ -30,20 +30,20 @@ import org.hibernate.criterion.Example;
 import org.springframework.orm.hibernate3.HibernateCallback;
 /**
  * <p>The "find" persistent static method allows searching for instances using either an example instance or an HQL 
- * query. A GrailsQueryException is thrown if the query is not a valid query for the domain class.
+ * query. This method returns the first result of the query. A GrailsQueryException is thrown if the query is not a valid query for the domain class.
  * 
  * <p>Examples in Groovy:
  * <code>
  * 		// retrieve the first 10 accounts ordered by account number
- * 		def results = Account.find("from Account as a order by a.number asc", 10)
+ * 		def a = Account.find("from Account as a order by a.number asc", 10)
  * 
  * 		// with query parameters
- * 		def results  = Account.find("from Account as a where a.number = ? and a.branch = ?", [38479, "London"]) 
+ * 		def a  = Account.find("from Account as a where a.number = ? and a.branch = ?", [38479, "London"]) 
  * 
  * 		// query by example
  * 		def a = new Account()
  * 		a.number = 495749357
- * 		def results = Account.find(a)
+ * 		def a = Account.find(a)
  * 
  * </code>
  * 
@@ -96,7 +96,10 @@ public class FindPersistentMethod extends AbstractStaticPersistentMethod {
 					if(max > -1) {
 						q.setMaxResults(max);
 					}
-					return q.list();
+					List results = q.list();
+					if(results.size() > 0)
+						return results.get(0);
+					return null;
 				}
 
 				private int retrieveMaxValue(Object[] arguments) {
@@ -126,9 +129,12 @@ public class FindPersistentMethod extends AbstractStaticPersistentMethod {
 							.ignoreCase();
 					
 					Criteria crit = session.createCriteria(clazz);
-					return crit
-						.add(example)
-						.list();
+					crit.add(example);
+					
+					List results = crit.list();
+					if(results.size() > 0)
+						return results.get(0);
+					return null;					
 				}
 				
 			});			

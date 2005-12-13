@@ -17,18 +17,15 @@ package org.codehaus.groovy.grails.orm.hibernate.metaclass;
 import groovy.lang.MissingMethodException;
 
 import java.io.Serializable;
-import java.sql.SQLException;
-import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.codehaus.groovy.grails.orm.hibernate.exceptions.GrailsQueryException;
-import org.hibernate.Criteria;
-import org.hibernate.HibernateException;
-import org.hibernate.Query;
-import org.hibernate.Session;
+import ognl.DefaultTypeConverter;
+import ognl.Ognl;
+
+import org.codehaus.groovy.grails.commons.GrailsApplication;
+import org.codehaus.groovy.grails.commons.GrailsDomainClass;
 import org.hibernate.SessionFactory;
-import org.hibernate.criterion.Example;
-import org.springframework.orm.hibernate3.HibernateCallback;
 /**
  * The "get" static persistent method for Grails domain classes. This method
  * takes an id and returns the instance 
@@ -46,9 +43,13 @@ public class GetPersistentMethod extends AbstractStaticPersistentMethod {
 
 	private static final String METHOD_PATTERN = "^get$";
 	private static final String METHOD_SIGNATURE = "get";
+	private GrailsApplication application;
+	private Map context = Ognl.createDefaultContext(this);
+	private DefaultTypeConverter typeConverter = new DefaultTypeConverter();
 
-	public GetPersistentMethod(SessionFactory sessionFactory, ClassLoader classLoader) {
+	public GetPersistentMethod(GrailsApplication application, SessionFactory sessionFactory, ClassLoader classLoader) {
 		super(sessionFactory, classLoader, Pattern.compile(METHOD_PATTERN));
+		this.application = application;
 	}
 
 	protected Object doInvokeInternal(final Class clazz, String methodName,
@@ -57,73 +58,15 @@ public class GetPersistentMethod extends AbstractStaticPersistentMethod {
 		if(arguments.length == 0)
 			throw new MissingMethodException(METHOD_SIGNATURE, clazz,arguments);
 		// if its not a map throw exception
-		final Object arg = arguments[0];
+		Object arg = arguments[0];
 
-		// if its an instance of this class, retrieve by example
-		if(clazz.isAssignableFrom( arg.getClass() )) {
-			
-			return super.getHibernateTemplate().execute( new HibernateCallback() {
-
-				public Object doInHibernate(Session session) throws HibernateException, SQLException {
-					
-					Example example = Example.create(arg)
-							.ignoreCase();
-					
-					Criteria crit = session.createCriteria(clazz);
-					return crit
-						.add(example)
-						.uniqueResult();
-				}
-				
-			});
-			
+		GrailsDomainClass domainClass = this.application.getGrailsDomainClass(clazz.getName());
+		Class identityType = domainClass.getIdentifier().getType();
+		if(!identityType.isAssignableFrom(arg.getClass())) {
+			arg = typeConverter.convertValue(context,arg, identityType);
 		}
-		// if its a string then its a query
-		else if(arg instanceof String){
-			final String queryString = (String)arg;
-			if(!queryString.matches( "from "+clazz.getName()+".*" )) {
-				throw new GrailsQueryException("Invalid query ["+queryString+"] for domain class ["+clazz+"]");
-			}			
-			Object[] tmp = null;
-			if(arguments.length > 1) {
-				if(arguments[1] instanceof List) {
-					tmp = ((List)arguments[1]).toArray();
-				}
-				else if(arguments[1].getClass().isArray()) {
-					tmp = (Object[])arguments[1];
-				}
-			}
-			final Object[] queryArgs = tmp;
-			if(queryArgs != null) {
-				return super.getHibernateTemplate().execute( new HibernateCallback() {
 
-					public Object doInHibernate(Session session) throws HibernateException, SQLException {
-						Query query = session.createQuery(queryString);
-						for (int i = 0; i < queryArgs.length; i++) {
-							query.setParameter(i, queryArgs[i]);
-						}
-						return query.uniqueResult();					
-					}			
-				});
-			}
-			else {
-				return super.getHibernateTemplate().execute( new HibernateCallback() {
-
-					public Object doInHibernate(Session session) throws HibernateException, SQLException {
-						Query query = session.createQuery(queryString);
-						return query.uniqueResult();					
-					}			
-				});
-			}			
-
-			
-		}
-		else if(arg instanceof Serializable) {
-			// if its a long retrieve by id
-			return super.getHibernateTemplate().get( clazz, (Serializable)arg );
-		}
-		
-		throw new MissingMethodException(METHOD_SIGNATURE, clazz,arguments);
+		return super.getHibernateTemplate().get( clazz, (Serializable)arg );		
 	}
 
 }

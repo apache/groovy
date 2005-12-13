@@ -17,6 +17,7 @@ package org.codehaus.groovy.grails.orm.hibernate.metaclass;
 import groovy.lang.MissingMethodException;
 
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -72,9 +73,12 @@ public class FindWherePersistentMethod extends AbstractStaticPersistentMethod {
 				
 				Criteria crit = session.createCriteria(clazz);
 				
-				return crit
-					.add( Expression.allEq( queryMap ) )
-					.list();
+				crit.add( Expression.allEq( queryMap ) );
+				
+				List results = crit.list();
+				if(results.size() > 0)
+					return results.get(0);
+				return null;					
 				
 			}
 			

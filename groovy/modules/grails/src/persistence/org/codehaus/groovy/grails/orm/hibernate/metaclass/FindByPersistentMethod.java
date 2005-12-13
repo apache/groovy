@@ -28,7 +28,7 @@ import org.springframework.orm.hibernate3.HibernateCallback;
 
 /**
  * The "findBy*" static persistent method. This method allows querying for
- * instances of grails domain classes based on their properties.
+ * instances of grails domain classes based on their properties. This method returns the first result of the query
  * 
  * eg.
  * Account.findByHolder("Joe Blogs"); // Where class "Account" has a property called "holder"
@@ -60,7 +60,13 @@ public class FindByPersistentMethod extends AbstractClausedStaticPersistentMetho
 					crit.add( current.getCriterion() );
 					
 				}
-				return crit.list();
+				List results = crit.list();
+				if(results.size() > 0) {
+					return results.get(0);
+				}
+				else {
+					return null;
+				}
 			}
 		});
 	}
