@@ -31,7 +31,7 @@ import java.util.Set;
 import org.apache.commons.lang.ClassUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.groovy.grails.commons.metaclass.DefaultGroovyDynamicMethodsInterceptor;
+import org.codehaus.groovy.grails.commons.metaclass.GroovyDynamicMethodsInterceptor;
 import org.codehaus.groovy.grails.commons.metaclass.DynamicMethods;
 import org.codehaus.groovy.grails.exceptions.GrailsDomainException;
 import org.codehaus.groovy.grails.exceptions.InvalidPropertyException;
@@ -130,7 +130,7 @@ public class DefaultGrailsDomainClass extends AbstractGrailsClass  implements Gr
 		if(constraintsClosure != null) {
 			GroovyObject instance = (GroovyObject)getReference().getWrappedInstance();
 			try {
-				DynamicMethods interceptor = new DefaultGroovyDynamicMethodsInterceptor(instance);
+				DynamicMethods interceptor = new GroovyDynamicMethodsInterceptor(instance);
 				interceptor.addDynamicProperty( new ConstraintsDynamicProperty() );
 				
 				this.constraints = (Map)instance.getProperty(GrailsDomainClassProperty.CONSTRAINTS);				
