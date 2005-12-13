@@ -51,7 +51,7 @@ public class FindByPersistentMethod extends AbstractClausedStaticPersistentMetho
 	}
 
 	protected Object doInvokeInternalWithExpressions(final Class clazz, String methodName, Object[] arguments, final List expressions) {
-		return super.getHibernateTemplate().executeFind( new HibernateCallback() {
+		return super.getHibernateTemplate().execute( new HibernateCallback() {
 
 			public Object doInHibernate(Session session) throws HibernateException, SQLException {
 				Criteria crit = session.createCriteria(clazz);

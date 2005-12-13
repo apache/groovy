@@ -67,7 +67,7 @@ public class FindWherePersistentMethod extends AbstractStaticPersistentMethod {
 		// is a valid property of the GrailsDomainClass thus hiding the Hibernate
 		// exception that will be thrown if it is not
 		
-		return super.getHibernateTemplate().executeFind( new HibernateCallback() {
+		return super.getHibernateTemplate().execute( new HibernateCallback() {
 
 			public Object doInHibernate(Session session) throws HibernateException, SQLException {
 				
