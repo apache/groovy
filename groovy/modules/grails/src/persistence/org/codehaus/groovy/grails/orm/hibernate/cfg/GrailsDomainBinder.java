@@ -29,7 +29,6 @@ import org.hibernate.FetchMode;
 import org.hibernate.MappingException;
 import org.hibernate.cfg.GrailsSecondPass;
 import org.hibernate.cfg.Mappings;
-//import org.hibernate.cfg.SecondPass;
 import org.hibernate.id.PersistentIdentifierGenerator;
 import org.hibernate.mapping.Backref;
 import org.hibernate.mapping.Collection;
@@ -38,7 +37,6 @@ import org.hibernate.mapping.DependantValue;
 import org.hibernate.mapping.KeyValue;
 import org.hibernate.mapping.ManyToOne;
 import org.hibernate.mapping.OneToMany;
-import org.hibernate.mapping.OneToOne;
 import org.hibernate.mapping.PersistentClass;
 import org.hibernate.mapping.Property;
 import org.hibernate.mapping.RootClass;
@@ -46,7 +44,6 @@ import org.hibernate.mapping.SimpleValue;
 import org.hibernate.mapping.Table;
 import org.hibernate.mapping.ToOne;
 import org.hibernate.mapping.Value;
-import org.hibernate.type.ForeignKeyDirection;
 import org.hibernate.util.StringHelper;
 
 
@@ -445,7 +442,7 @@ public final class GrailsDomainBinder {
 	 * @param oneToOne
 	 * @param mappings
 	 */
-	private static void bindOneToOne(GrailsDomainClassProperty property, OneToOne oneToOne, Mappings mappings) {
+/*	private static void bindOneToOne(GrailsDomainClassProperty property, OneToOne oneToOne, Mappings mappings) {
 		
 		// bind value
 		bindSimpleValue(property, oneToOne, mappings );
@@ -463,7 +460,7 @@ public final class GrailsDomainBinder {
 		oneToOne.setReferencedEntityName( property.getType().getName() );
 		
 		
-	}
+	}*/
 
 	/**
 	 * @param currentGrailsProp
