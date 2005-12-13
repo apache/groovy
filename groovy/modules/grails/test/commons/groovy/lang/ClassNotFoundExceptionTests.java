@@ -35,18 +35,14 @@ public class ClassNotFoundExceptionTests extends TestCase {
 	}
 
 	public void testClassNotFoundException() throws Exception {
-		GroovyClassLoader gcl = new GroovyClassLoader();
+		final GroovyClassLoader gcl = new GroovyClassLoader();
 		gcl.setResourceLoader(new GroovyResourceLoader() {
-			public File loadGroovyFile(String filename) {
+			public URL loadGroovySource(String filename) throws MalformedURLException {
 				if ("Order".equals(filename)) {
-					return new File("test/commons/groovy/lang/Order.groovy");
+					return gcl.getResource("test/commons/groovy/lang/Order.groovy");
 				} else {
 					return null;
 				}
-			}
-
-			public URL loadGroovySource(String filename) throws MalformedURLException {
-				return null;
 			}
 		});
 		gcl.parseClass(new File("test/commons/groovy/lang/OrderService.groovy"));
@@ -54,5 +50,6 @@ public class ClassNotFoundExceptionTests extends TestCase {
 	
 	public void testClassNotFoundExceptionGrailsApplication() throws Exception {
 		DefaultGrailsApplication app = new DefaultGrailsApplication(new PathMatchingResourcePatternResolver().getResources("file:test/commons/groovy/lang/*.groovy"));
+		assertNotNull(app);
 	}
 }
