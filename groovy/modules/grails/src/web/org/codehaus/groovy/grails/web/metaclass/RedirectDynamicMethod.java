@@ -19,6 +19,8 @@ import groovy.lang.Closure;
 import groovy.lang.GroovyObject;
 import groovy.lang.MissingMethodException;
 
+import java.beans.PropertyDescriptor;
+import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
@@ -26,6 +28,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.codehaus.groovy.grails.commons.GrailsClassUtils;
 import org.codehaus.groovy.grails.commons.GrailsControllerClass;
+import org.codehaus.groovy.grails.scaffolding.GrailsScaffolder;
 import org.codehaus.groovy.grails.web.servlet.mvc.GrailsControllerHelper;
 
 /**
@@ -36,9 +39,10 @@ import org.codehaus.groovy.grails.web.servlet.mvc.GrailsControllerHelper;
  */
 public class RedirectDynamicMethod extends AbstractDynamicControllerMethod {
 
-	private static final String METHOD_SIGNATURE = "redirect";
-	private static final String ARGUMENT_ACTION = "action";
-	private static final String ARGUMENT_PARAMS = "params";
+	public static final String METHOD_SIGNATURE = "redirect";
+	public static final String ARGUMENT_ACTION = "action";
+	public static final String ARGUMENT_PARAMS = "params";
+	public static final String ARGUMENT_ERRORS = "errors";
 	
 	private GrailsControllerHelper helper;
 
@@ -56,12 +60,14 @@ public class RedirectDynamicMethod extends AbstractDynamicControllerMethod {
 				
 		Object actionRef;
 		Map params = null;
-		GroovyObject targetGo = (GroovyObject)target;
+		List errors = null;
+		GroovyObject controller = (GroovyObject)target;
 		
 		if(arguments[0] instanceof Map) {
 			Map argMap = (Map)arguments[0];
 			actionRef = argMap.get(ARGUMENT_ACTION);
 			params = (Map)argMap.get(ARGUMENT_PARAMS);
+			errors = (List)argMap.get(ARGUMENT_ERRORS);
 		}
 		else {
 			actionRef = arguments[0];
@@ -69,9 +75,24 @@ public class RedirectDynamicMethod extends AbstractDynamicControllerMethod {
 				if(arguments[1] instanceof Map) {
 					params = (Map)arguments[1];
 				}
+				else if(arguments[1] instanceof List) {
+					errors = (List)arguments[1];
+				}
+			}
+			if(arguments.length > 2) {
+				if(arguments[2] instanceof Map) {
+					params = (Map)arguments[2];
+				}
+				else if(arguments[2] instanceof List) {
+					errors = (List)arguments[2];
+				}
 			}			
-		}		
-
+		}	
+		// if there are errors add it to the list of errors
+		if(errors != null && errors.size() > 0) {
+			List controllerErrors = (List)controller.getProperty( ControllerDynamicMethods.ERRORS_PROPERTY );
+			controllerErrors.addAll(errors);
+		}
 		if(actionRef instanceof String) {
 			String uri = (String)actionRef;
 			if(params != null ) {
@@ -83,12 +104,22 @@ public class RedirectDynamicMethod extends AbstractDynamicControllerMethod {
 		}
 		else if(actionRef instanceof Closure) {
 			Closure c = (Closure)actionRef;
-			String closureName = GrailsClassUtils.getPropertyDescriptorForValue(target,c).getName();
+			PropertyDescriptor prop = GrailsClassUtils.getPropertyDescriptorForValue(target,c);
+			String closureName = null;
+			if(prop != null) {
+				closureName = prop.getName();
+			}
+			else {
+				GrailsScaffolder scaffolder = helper.getScaffolderForController(target.getClass().getName());
+				if(scaffolder != null) {
+						closureName = scaffolder.getActionName(c);
+				}
+			}
 			GrailsControllerClass controllerClass = helper.getControllerClassByName( target.getClass().getName() );
 			String viewName  = controllerClass.getViewByName(closureName);
 			
-			Object returnValue = helper.handleAction(targetGo,c,request,response,params);
-			return helper.handleActionResponse(controllerClass,returnValue,closureName,viewName);
+			Object returnValue = helper.handleAction(controller,c,request,response,params);
+			return helper.handleActionResponse(controller,returnValue,closureName,viewName);
 		}
 
 		throw new MissingMethodException(METHOD_SIGNATURE,target.getClass(),arguments);			

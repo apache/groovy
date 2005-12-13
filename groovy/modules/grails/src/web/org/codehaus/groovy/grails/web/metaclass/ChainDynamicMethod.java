@@ -19,6 +19,7 @@ import groovy.lang.Closure;
 import groovy.lang.GroovyObject;
 import groovy.lang.MissingMethodException;
 
+import java.beans.PropertyDescriptor;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
@@ -26,6 +27,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.codehaus.groovy.grails.commons.GrailsClassUtils;
 import org.codehaus.groovy.grails.commons.GrailsControllerClass;
+import org.codehaus.groovy.grails.scaffolding.GrailsScaffolder;
 import org.codehaus.groovy.grails.web.servlet.mvc.GrailsControllerHelper;
 
 /**
@@ -36,10 +38,10 @@ import org.codehaus.groovy.grails.web.servlet.mvc.GrailsControllerHelper;
  */
 public class ChainDynamicMethod extends AbstractDynamicControllerMethod {
 
-	private static final String METHOD_SIGNATURE = "chain";
-	private static final String ARGUMENT_ACTION = "action";
-	private static final String ARGUMENT_PARAMS = "params";
-	private static final Object ARGUMENT_MODEL = "model";
+	public static final String METHOD_SIGNATURE = "chain";
+	public static final String ARGUMENT_ACTION = "action";
+	public static final String ARGUMENT_PARAMS = "params";
+	public static final Object ARGUMENT_MODEL = "model";
 	
 	static public final String PROPERTY_CHAIN_MODEL = "chainModel";
 	
@@ -60,7 +62,7 @@ public class ChainDynamicMethod extends AbstractDynamicControllerMethod {
 		Object actionRef;
 		Map params = null;
 		Map model = null;
-		GroovyObject targetGo = (GroovyObject)target;
+		GroovyObject controller = (GroovyObject)target;
 		
 		if(arguments[0] instanceof Map) {
 			Map argMap = (Map)arguments[0];
@@ -98,14 +100,25 @@ public class ChainDynamicMethod extends AbstractDynamicControllerMethod {
 		}
 		else if(actionRef instanceof Closure) {
 			Closure c = (Closure)actionRef;
-			String closureName = GrailsClassUtils.getPropertyDescriptorForValue(target,c).getName();
+			PropertyDescriptor prop = GrailsClassUtils.getPropertyDescriptorForValue(target,c);
+			String closureName = null;
+			if(prop != null) {
+				closureName = prop.getName();
+			}
+			else {
+				GrailsScaffolder scaffolder = helper.getScaffolderForController(target.getClass().getName());
+				if(scaffolder != null) {
+						closureName = scaffolder.getActionName(c);
+				}
+			}
+			
 			GrailsControllerClass controllerClass = helper.getControllerClassByName( target.getClass().getName() );
 			String viewName  = controllerClass.getViewByName(closureName);
 
 			helper.setChainModel(model);			
-			Object returnValue = helper.handleAction(targetGo,c,request,response,params);
+			Object returnValue = helper.handleAction(controller,c,request,response,params);
 
-			return helper.handleActionResponse(controllerClass,returnValue,closureName,viewName);
+			return helper.handleActionResponse(controller,returnValue,closureName,viewName);
 		}
 
 		throw new MissingMethodException(METHOD_SIGNATURE,target.getClass(),arguments);			
