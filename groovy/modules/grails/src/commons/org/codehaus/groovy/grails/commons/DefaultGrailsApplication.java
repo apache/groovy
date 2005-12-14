@@ -22,11 +22,11 @@ import java.io.IOException;
 import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.log4j.Logger;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.grails.exceptions.MoreThanOneActiveDataSourceException;
@@ -115,7 +115,7 @@ public class DefaultGrailsApplication implements GrailsApplication {
 		
 		// get all the classes that were loaded
 		if(log.isDebugEnabled())
-			log.debug( "loaded classes: ["+Arrays.toString(this.cl.getLoadedClasses())+"]" );
+			log.debug( "loaded classes: ["+ArrayUtils.toString(this.cl.getLoadedClasses())+"]" );
 		
 		Class[] classes = this.cl.getLoadedClasses();		
 		this.allClasses = classes;		
