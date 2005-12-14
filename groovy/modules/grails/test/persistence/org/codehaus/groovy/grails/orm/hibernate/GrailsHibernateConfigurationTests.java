@@ -33,7 +33,10 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.orm.hibernate3.HibernateTemplate;
+import org.springframework.orm.hibernate3.SessionFactoryUtils;
+import org.springframework.orm.hibernate3.SessionHolder;
 import org.springframework.test.AbstractDependencyInjectionSpringContextTests;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
  * @author Graeme Rocher
@@ -72,13 +75,35 @@ public class GrailsHibernateConfigurationTests extends AbstractDependencyInjecti
 		props.put("hibernate.connection.driver_class","org.hsqldb.jdbcDriver");
 		props.put("hibernate.dialect","org.hibernate.dialect.HSQLDialect");
 		props.put("hibernate.hbm2ddl.auto","create-drop");
+		
+		//props.put("hibernate.hbm2ddl.auto","update");		
 		config.setProperties(props);
 		//originalClassLoader = Thread.currentThread().getContextClassLoader();
 		Thread.currentThread().setContextClassLoader(this.cl);		
 		this.sessionFactory = config.buildSessionFactory();
 		
 		
+			
+		if(!TransactionSynchronizationManager.hasResource(this.sessionFactory)) {
+			Session hibSession = this.sessionFactory.openSession();
+		    TransactionSynchronizationManager.bindResource(this.sessionFactory, new SessionHolder(hibSession));
+		}		
+		
 	}	
+
+
+	/* (non-Javadoc)
+	 * @see org.springframework.test.AbstractDependencyInjectionSpringContextTests#onTearDown()
+	 */
+	protected void onTearDown() throws Exception {
+		if(TransactionSynchronizationManager.hasResource(this.sessionFactory)) {
+		    SessionHolder holder = (SessionHolder) TransactionSynchronizationManager.getResource(this.sessionFactory);
+		    Session s = holder.getSession(); 
+		    s.flush();
+		    TransactionSynchronizationManager.unbindResource(this.sessionFactory);
+		    SessionFactoryUtils.releaseSession(s, this.sessionFactory);				
+		}
+	}
 
 
 	public void testGrailsDomain() throws Exception {
@@ -147,7 +172,8 @@ public class GrailsHibernateConfigurationTests extends AbstractDependencyInjecti
 	}
 	
 	public void testHibernateOneToMany() {
-		GroovyObject one2many = grailsApplication.getGrailsDomainClass( "org.codehaus.groovy.grails.domain.RelationshipsTest" ).newInstance();
+		GrailsDomainClass one2ManyDomain = grailsApplication.getGrailsDomainClass( "org.codehaus.groovy.grails.domain.RelationshipsTest" );
+		GroovyObject one2many = one2ManyDomain.newInstance();
 
 		
 		GroovyObject many2one = grailsApplication.getGrailsDomainClass( "org.codehaus.groovy.grails.domain.OneToManyTest2" ).newInstance();
@@ -165,7 +191,13 @@ public class GrailsHibernateConfigurationTests extends AbstractDependencyInjecti
 		// persist
 		template.save(one2many);
 		
-		// TODO Test loading the relationship back from hibernate
+		// now get it back and check it works as expected
+		one2many = (GroovyObject) template.get(one2ManyDomain.getClazz(),new Long(1));
+		assertNotNull(one2many);
+		
+		set = (Set)one2many.getProperty("ones");
+		assertNotNull(set);
+		assertEquals(1, set.size());
 		
 	}
 	
@@ -181,7 +213,7 @@ public class GrailsHibernateConfigurationTests extends AbstractDependencyInjecti
 		assertNotNull(many2one);
 		Set set = new HashSet();
 		one2many.setProperty("ones", set);
-		template.save(one2many);
+		//template.save(one2many);
 									
 		// create many-to-one relationship
 				
@@ -190,7 +222,8 @@ public class GrailsHibernateConfigurationTests extends AbstractDependencyInjecti
 		template.save(many2one);
 		
 		// now get it back and check it works as expected
-		one2many = (GroovyObject) template.get(one2ManyDomain.getClazz(),new Long(1));
+		template.refresh(one2many);
+		//one2many = (GroovyObject) template.get(one2ManyDomain.getClazz(),new Long(1));
 		assertNotNull(one2many);
 		
 		set = (Set)one2many.getProperty("ones");

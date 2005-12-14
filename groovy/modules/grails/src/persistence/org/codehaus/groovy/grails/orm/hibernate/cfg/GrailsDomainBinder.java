@@ -30,6 +30,7 @@ import org.hibernate.MappingException;
 import org.hibernate.cfg.GrailsSecondPass;
 import org.hibernate.cfg.Mappings;
 import org.hibernate.id.PersistentIdentifierGenerator;
+import org.hibernate.mapping.Backref;
 import org.hibernate.mapping.Collection;
 import org.hibernate.mapping.Column;
 import org.hibernate.mapping.DependantValue;
@@ -147,6 +148,7 @@ public final class GrailsDomainBinder {
 			
 			oneToMany.setAssociatedClass( persistentClass );
 			collection.setCollectionTable( persistentClass.getTable() );
+			collection.setLazy(true);
 			
 			LOG.info( "Mapping collection: "
 					+ collection.getRole()
@@ -186,34 +188,19 @@ public final class GrailsDomainBinder {
 			collection.setElement(element);
 			bindManyToOne(property,element, mappings);
 		}
-		else if ( property.isOneToMany() ) {
+		else if ( property.isOneToMany() && !collection.isInverse() ) {
 				// for non-inverse one-to-many, with a not-null fk, add a backref!
-			/*OneToMany oneToMany = (OneToMany) collection.getElement();
+			OneToMany oneToMany = (OneToMany) collection.getElement();
 				String entityName = ( oneToMany ).getReferencedEntityName();
 				PersistentClass referenced = mappings.getClass( entityName );
 				Backref prop = new Backref();
 				prop.setName( '_' + property.getName() + "Backref" );
 				prop.setUpdateable( false );
-				prop.setSelectable( false );
+				prop.setInsertable(false);
 				prop.setCollectionRole( collection.getRole() );
 				prop.setValue( collection.getKey() );
 				prop.setOptional( property.isOptional() );
 				referenced.addProperty( prop );
-				// if the relationship is bidirectional
-				if(property.isBidirectional()) {
-					// get the other side
-					GrailsDomainClassProperty otherSide = property.getOtherSide();
-					// if the other side is many-to-one use the same column to bind this property 
-					// in the persistent class
-					if(otherSide.isManyToOne()) {
-						ManyToOne manyToOne = new ManyToOne(referenced.getTable());
-						manyToOne.setFetchMode(FetchMode.DEFAULT);
-						manyToOne.setLazy(true);
-						
-						manyToOne.setReferencedEntityName(property.getDomainClass().getFullName());
-						manyToOne.setIgnoreNotFound(true);
-					}
-				}*/
 		}		
 	}		
 	
