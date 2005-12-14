@@ -260,6 +260,8 @@ public class UberTestCase extends TestCase {
         suite.addTestSuite(VerboseTreeTest.class);
         suite.addTestSuite(WhileLoopTest.class);
         suite.addTestSuite(ZoharsBug.class);
+        
+        suit.addTestSuite(MultiDimArraysTest.class);
         return suite;
     }
 
