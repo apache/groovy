@@ -261,7 +261,7 @@ public class UberTestCase extends TestCase {
         suite.addTestSuite(WhileLoopTest.class);
         suite.addTestSuite(ZoharsBug.class);
         
-        suit.addTestSuite(MultiDimArraysTest.class);
+        suite.addTestSuite(MultiDimArraysTest.class);
         return suite;
     }
 
