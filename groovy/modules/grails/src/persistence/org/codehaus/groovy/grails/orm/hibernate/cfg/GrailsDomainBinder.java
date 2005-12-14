@@ -30,7 +30,6 @@ import org.hibernate.MappingException;
 import org.hibernate.cfg.GrailsSecondPass;
 import org.hibernate.cfg.Mappings;
 import org.hibernate.id.PersistentIdentifierGenerator;
-import org.hibernate.mapping.Backref;
 import org.hibernate.mapping.Collection;
 import org.hibernate.mapping.Column;
 import org.hibernate.mapping.DependantValue;
@@ -168,7 +167,7 @@ public final class GrailsDomainBinder {
 			keyValue = (KeyValue)collection.getOwner().getProperty( propertyRef ).getValue();
 		}
 		
-		keyValue.setTypeUsingReflection(property.getReferencedDomainClass().getName(), collection.getReferencedPropertyName());
+		keyValue.setTypeUsingReflection(property.getReferencedDomainClass().getFullName(), collection.getReferencedPropertyName());
 		
 		DependantValue key = new DependantValue(collection.getCollectionTable(), keyValue);		
 		key.setTypeUsingReflection(property.getReferencedDomainClass().getName(), collection.getReferencedPropertyName());
@@ -189,7 +188,8 @@ public final class GrailsDomainBinder {
 		}
 		else if ( property.isOneToMany() ) {
 				// for non-inverse one-to-many, with a not-null fk, add a backref!
-				String entityName = ( (OneToMany) collection.getElement() ).getReferencedEntityName();
+			/*OneToMany oneToMany = (OneToMany) collection.getElement();
+				String entityName = ( oneToMany ).getReferencedEntityName();
 				PersistentClass referenced = mappings.getClass( entityName );
 				Backref prop = new Backref();
 				prop.setName( '_' + property.getName() + "Backref" );
@@ -197,7 +197,23 @@ public final class GrailsDomainBinder {
 				prop.setSelectable( false );
 				prop.setCollectionRole( collection.getRole() );
 				prop.setValue( collection.getKey() );
+				prop.setOptional( property.isOptional() );
 				referenced.addProperty( prop );
+				// if the relationship is bidirectional
+				if(property.isBidirectional()) {
+					// get the other side
+					GrailsDomainClassProperty otherSide = property.getOtherSide();
+					// if the other side is many-to-one use the same column to bind this property 
+					// in the persistent class
+					if(otherSide.isManyToOne()) {
+						ManyToOne manyToOne = new ManyToOne(referenced.getTable());
+						manyToOne.setFetchMode(FetchMode.DEFAULT);
+						manyToOne.setLazy(true);
+						
+						manyToOne.setReferencedEntityName(property.getDomainClass().getFullName());
+						manyToOne.setIgnoreNotFound(true);
+					}
+				}*/
 		}		
 	}		
 	
@@ -212,7 +228,7 @@ public final class GrailsDomainBinder {
 	private static void bindCollection(GrailsDomainClassProperty property, Collection collection, PersistentClass owner, Mappings mappings) {
 		
 		// set role
-		collection.setRole( StringHelper.qualify( property.getDomainClass().getName() , property.getName() ) );
+		collection.setRole( StringHelper.qualify( property.getDomainClass().getFullName() , property.getName() ) );
 		
 		// TODO: add code to configure optimistic locking
 		
@@ -355,11 +371,11 @@ public final class GrailsDomainBinder {
 		for(int i = 0; i < persistantProperties.length;i++) {
 			
 			GrailsDomainClassProperty currentGrailsProp = persistantProperties[i];
-			if(currentGrailsProp.isManyToOne() && currentGrailsProp.isBidirectional() ) {
+/*			if(currentGrailsProp.isManyToOne() && currentGrailsProp.isBidirectional() ) {
 				GrailsDomainClassProperty otherSide = currentGrailsProp.getOtherSide();
 				if(otherSide.isOneToMany())
-					continue;
-			}
+					table = null;
+			}*/
 			
 			if(LOG.isTraceEnabled()) 
 				LOG.trace("[GrailsDomainBinder] Binding persistent property [" + currentGrailsProp.getName() + "]");
@@ -429,7 +445,9 @@ public final class GrailsDomainBinder {
 			//String propertyRef = collection.getReferencedPropertyName();
 		}
 		
-		value.createForeignKey();
+		if(value.getTable() != null)
+			value.createForeignKey();
+		
 		Property prop = new Property();
 		prop.setValue( value );
 		
@@ -599,6 +617,7 @@ public final class GrailsDomainBinder {
 		
 		simpleValue.addColumn(column);		
 	}
+	
 
 	/**
 	 * Binds a Column instance to the Hibernate meta model
@@ -607,9 +626,12 @@ public final class GrailsDomainBinder {
 	 */
 	private static void bindColumn(GrailsDomainClassProperty grailsProp, Column column) {						
 		if(grailsProp.isAssociation()) {
-			if(grailsProp.isOneToMany() && grailsProp.isBidirectional()) {							
+			if(grailsProp.isOneToMany()) {							
 				column.setName( grailsProp.getDomainClass().getTableName() + FOREIGN_KEY_SUFFIX );
 			}
+			else if(grailsProp.isManyToOne()) {							
+				column.setName( grailsProp.getReferencedDomainClass().getTableName() + FOREIGN_KEY_SUFFIX );
+			}			
 			else {
 				column.setName( grailsProp.getFieldName() + FOREIGN_KEY_SUFFIX );
 			}			

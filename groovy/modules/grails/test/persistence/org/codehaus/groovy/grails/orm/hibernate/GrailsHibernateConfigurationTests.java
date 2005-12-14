@@ -56,6 +56,8 @@ public class GrailsHibernateConfigurationTests extends AbstractDependencyInjecti
 		Thread.currentThread().setContextClassLoader(cl);
 		
 		cl.loadClass( "org.codehaus.groovy.grails.domain.RelationshipsTest" );
+		cl.loadClass( "org.codehaus.groovy.grails.domain.Test1" );
+		cl.loadClass( "org.codehaus.groovy.grails.domain.Test2" );
 		
 		Class[] loadedClasses = cl.getLoadedClasses();
 		grailsApplication = new DefaultGrailsApplication(loadedClasses,cl);
@@ -81,7 +83,7 @@ public class GrailsHibernateConfigurationTests extends AbstractDependencyInjecti
 
 	public void testGrailsDomain() throws Exception {
 		GrailsDomainClass[] domainClasses = grailsApplication.getGrailsDomainClasses();
-		assertEquals(4,domainClasses.length);
+		assertEquals(6,domainClasses.length);
 	}
 	
 	public void testHibernateSave() throws Exception {		
@@ -99,9 +101,18 @@ public class GrailsHibernateConfigurationTests extends AbstractDependencyInjecti
 	
 	public void testHibernateLoad() throws Exception {
 		
+		
 		HibernateTemplate template = new HibernateTemplate(this.sessionFactory);
 		
-		GroovyObject obj = (GroovyObject)template.execute(new HibernateCallback() {
+		GroovyObject obj = grailsApplication.getGrailsDomainClass("org.codehaus.groovy.grails.domain.Test1").newInstance();
+		assertNotNull(obj);
+		
+		obj.setProperty("firstName", "Joe");
+		obj.setProperty("id",new Long(1));
+		//obj.setProperty("lastName", "Bloggs");
+		template.save( obj );
+		
+		obj = (GroovyObject)template.execute(new HibernateCallback() {
 
 			public Object doInHibernate(Session session) throws HibernateException, SQLException {
 				// create query based on cid and list results
@@ -156,6 +167,35 @@ public class GrailsHibernateConfigurationTests extends AbstractDependencyInjecti
 		
 		// TODO Test loading the relationship back from hibernate
 		
+	}
+	
+	public void testHibernateManyToOne() {
+		GrailsDomainClass one2ManyDomain = grailsApplication.getGrailsDomainClass( "org.codehaus.groovy.grails.domain.RelationshipsTest" );
+		GroovyObject one2many = one2ManyDomain.newInstance();
+
+		
+		GroovyObject many2one = grailsApplication.getGrailsDomainClass( "org.codehaus.groovy.grails.domain.OneToManyTest2" ).newInstance();
+		
+		HibernateTemplate template = new HibernateTemplate(this.sessionFactory);
+		
+		assertNotNull(many2one);
+		Set set = new HashSet();
+		one2many.setProperty("ones", set);
+		template.save(one2many);
+									
+		// create many-to-one relationship
+				
+		many2one.setProperty("other", one2many);
+		
+		template.save(many2one);
+		
+		// now get it back and check it works as expected
+		one2many = (GroovyObject) template.get(one2ManyDomain.getClazz(),new Long(1));
+		assertNotNull(one2many);
+		
+		set = (Set)one2many.getProperty("ones");
+		assertNotNull(set);
+		assertEquals(1, set.size());
 	}
 
 }
