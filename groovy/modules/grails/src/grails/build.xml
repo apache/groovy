@@ -3,6 +3,10 @@
 	<property name="servlet.version" value="2.3"/>
 	<property name="path" value="" />
 	
+    <taskdef name="groovyc"
+	    classname="org.codehaus.groovy.ant.Groovyc">
+	</taskdef>
+    	
 	<target name="help">
 		<echo>Usage: grails [target]
 
@@ -10,6 +14,7 @@ Targets:
 "init" - initialise the current app
 "create-app" - Create a new grails app
 "create-controller" - Create a new controller
+"create-service" - Create a new service
 "create-domain-class" - Create a new domain class
 "create-test-suite" - Create a new test suite
 "test-app" - Run current app's unit tests
@@ -34,17 +39,11 @@ Targets:
 			grails.setProperty("project.class.name", projName.substring(0,1).toUpperCase() + projName.substring(1,projName.length()))
 		</script>		
 		
-		<copy 	file="${grails.home}/src/grails/templates/DataSource.groovy" 
-				tofile="${project.name}/grails-app/conf/${project.class.name}DataSource.groovy"/>
-			<copy 	file="${grails.home}/src/grails/templates/BootStrap.groovy" 
-					tofile="${project.name}/grails-app/conf/${project.class.name}BootStrap.groovy"/>		
+			<copy 	file="${grails.home}/src/grails/templates/artifacts/DataSource.groovy" 
+				tofile="${project.name}/grails-app/conf/ApplicationDataSource.groovy"/>
+			<copy 	file="${grails.home}/src/grails/templates/artifacts/BootStrap.groovy" 
+					tofile="${project.name}/grails-app/conf/ApplicationBootStrap.groovy"/>		
 		
-		<replace 	file="${project.name}/grails-app/conf/${project.class.name}DataSource.groovy" 
-					token="@data.source.name@" 
-					value="${project.class.name}" />
-			<replace 	file="${project.name}/grails-app/conf/${project.class.name}BootStrap.groovy" 
-						token="@bootstrap.class.name@" 
-						value="${project.class.name}" />		
 	</target>
 	
 	<target name="create-controller">
@@ -64,7 +63,7 @@ Targets:
 			grails.setProperty("controller.class.name", ctrlName)
 		</script>
 				
-		<copy 	file="${grails.home}/src/grails/templates/Controller.groovy" 
+		<copy 	file="${grails.home}/src/grails/templates/artifacts/Controller.groovy" 
 				tofile="grails-app/controllers/${controller.class.name}Controller.groovy"/>
 		
 		<replace 	file="grails-app/controllers/${controller.class.name}Controller.groovy" 
@@ -73,6 +72,33 @@ Targets:
 		<echo>Created controller: grails-app/controllers/${controller.class.name}Controller.groovy</echo>
 	</target>
 	
+	<target name="create-service">
+		<property environment="env"/>
+		<fail unless="env.GRAILS_HOME" message="GRAILS_HOME is not set."/>
+		<property name="grails.home" location="${env.GRAILS_HOME}"/>
+		
+		<input addproperty="service.name" message="Enter service name:" />
+		
+		<script language="groovy">
+			def serviceName = grails.getProperty("service.name")		
+			serviceName = serviceName.substring(0,1).toUpperCase() + serviceName.substring(1,serviceName.length())
+			if(serviceName.endsWith("Service")) {
+				def i = serviceName.lastIndexOf("Service");
+				serviceName = serviceName.substring(0, i);
+			}			
+			serviceName = serviceName.replaceAll(" ", "" )
+			grails.setProperty("service.class.name", serviceName)
+		</script>
+				
+		<copy 	file="${grails.home}/src/grails/templates/artifacts/Service.groovy" 
+				tofile="grails-app/services/${service.class.name}Service.groovy"/>
+		
+		<replace 	file="grails-app/services/${service.class.name}Service.groovy" 
+					token="@service.name@" 
+					value="${service.class.name}" />	
+		<echo>Created service: grails-app/services/${service.class.name}Service.groovy</echo>
+	</target>
+			
 	<target name="create-domain-class">
 		<property environment="env"/>
 		<fail unless="env.GRAILS_HOME" message="GRAILS_HOME is not set."/>
@@ -86,7 +112,7 @@ Targets:
 			grails.setProperty("domain.class.name", className)
 		</script>
 				
-		<copy 	file="${grails.home}/src/grails/templates/DomainClass.groovy" 
+		<copy 	file="${grails.home}/src/grails/templates/artifacts/DomainClass.groovy" 
 				tofile="grails-app/domain/${domain.class.name}.groovy"/>
 		
 		<replace 	file="grails-app/domain/${domain.class.name}.groovy" 
@@ -130,29 +156,31 @@ Targets:
 		<mkdir dir="${path}src/groovy"/>		
 		<mkdir dir="${path}grails-app"/>
 		<mkdir dir="${path}grails-app/controllers"/>
+		<mkdir dir="${path}grails-app/services"/>		
 		<mkdir dir="${path}grails-app/domain"/>
 		<mkdir dir="${path}grails-app/views"/>
 		<mkdir dir="${path}grails-app/views/layouts"/>		
 		<mkdir dir="${path}grails-app/i18n"/>				
 		<mkdir dir="${path}grails-app/conf"/>
-		<mkdir dir="${path}grails-app/tests"/>
 		<mkdir dir="${path}grails-test"/>
-		<mkdir dir="${path}jsp"/>
+		<mkdir dir="${path}web-app"/>		
+		<mkdir dir="${path}web-app"/>
+		<mkdir dir="${path}web-app"/>
+		<mkdir dir="${path}web-app/WEB-INF/classes"/>		
+		<mkdir dir="${path}web-app/WEB-INF/jsp"/>				
+		<!--<mkdir dir="${path}jsp"/>-->
+		<!--<mkdir dir="${path}html"/>-->
 		<mkdir dir="${path}lib"/>
 		<mkdir dir="${path}spring"/>
-		<mkdir dir="${path}html"/>
-		<mkdir dir="${path}war"/>
-		<mkdir dir="${path}war/WEB-INF"/>
-		<mkdir dir="${path}war/WEB-INF/classes"/>
 		<mkdir dir="${grails.home}/dist"/>
 		
-		<copy todir="${path}war/WEB-INF">
+		<copy todir="${path}web-app/WEB-INF">
 			<fileset dir="${grails.home}/src/war/WEB-INF">
 				<include name="applicationContext.xml"/>
 			</fileset>
 		</copy>
-		<copy file="${grails.home}/src/war/WEB-INF/web${servlet.version}.xml" tofile="${path}war/WEB-INF/web.xml"/>
-		<copy file="${grails.home}/src/war/WEB-INF/sitemesh.xml" tofile="${path}war/WEB-INF/sitemesh.xml"/>		
+		<copy file="${grails.home}/src/war/WEB-INF/web${servlet.version}.xml" tofile="${path}web-app/WEB-INF/web.xml"/>
+		<copy file="${grails.home}/src/war/WEB-INF/sitemesh.xml" tofile="${path}web-app/WEB-INF/sitemesh.xml"/>		
 		<copy todir="${path}spring">
 			<fileset dir="${grails.home}/src/war/WEB-INF/spring">
 				<include name="*.xml"/>
@@ -175,10 +203,12 @@ Targets:
 			<fileset dir="${grails.home}/lib"/>
 			<fileset dir="${grails.home}/dist"/>
 		</path>
-		<delete>
-			<fileset dir="war/WEB-INF/classes"/>
+		<delete failonerror="false">
+			<fileset dir="web-app/WEB-INF/classes"/>
 		</delete>
-		<javac srcdir="src" destdir="war/WEB-INF/classes" classpathref="classpath" debug="on" deprecation="on" optimize="off"/>
+		<javac srcdir="src/java" destdir="web-app/WEB-INF/classes" classpathref="classpath" debug="on" deprecation="on" optimize="off"/>
+		
+		<groovyc srcdir="src/groovy" destdir="web-app/WEB-INF/classes" classpathref="classpath" debug="on" deprecation="on" optimize="off"/>		
 	</target>
 	
 	<target name="test" depends="build">
@@ -191,7 +221,7 @@ Targets:
 			<fileset dir="lib"/>
 			<fileset dir="${grails.home}/lib"/>
 			<fileset dir="${grails.home}/dist"/>
-			<path location="war/WEB-INF/classes"/>
+			<path location="web-app/WEB-INF/classes"/>
 		</path>
 		<junit>
 			<classpath refid="test_classpath"/>
@@ -199,7 +229,7 @@ Targets:
 			<formatter type="plain" usefile="no"/>
 			<formatter type="xml"/>
 			<batchtest todir="tmp/reports" fork="yes">
-				<fileset dir="war/WEB-INF/classes" includes="**/*Tests.class" excludes="**/Abstract*"/>
+				<fileset dir="web-app/WEB-INF/classes" includes="**/*Tests.class" excludes="**/Abstract*"/>
 			</batchtest>			
 		</junit>
 	</target>
@@ -211,7 +241,7 @@ Targets:
 		<delete dir="tmp/tests/classpath"/>
 		<mkdir dir="tmp/tests/classpath/spring"/>
 		<copy todir="tmp/tests/classpath">
-			<fileset dir="${grails.home}/src/war/WEB-INF">
+			<fileset dir="${grails.home}/src/web-app/WEB-INF">
 				<include name="log4j.properties"/>
 			</fileset>
 			<fileset dir="grails-app"/>
@@ -221,7 +251,7 @@ Targets:
 		</copy>
 		<path id="test.classpath">
 			<pathelement location="${basedir}/tmp/tests/classpath"/>
-			<pathelement location="${grails.home}/src/war/WEB-INF"/>
+			<pathelement location="${grails.home}/src/web-app/WEB-INF"/>
 			<pathelement location="${basedir}/grails-app"/>
 			<pathelement location="${basedir}/grails-app/controllers"/>
 			<pathelement location="${basedir}/grails-app/domain"/>
@@ -246,7 +276,7 @@ Targets:
 		<delete dir="tmp"/>
 		<mkdir dir="tmp/war"/>
 		<copy todir="tmp/war">
-			<fileset dir="war">
+			<fileset dir="web-app">
 				<include name="WEB-INF/*.xml"/>
 			</fileset>
 		</copy>
@@ -264,9 +294,6 @@ Targets:
 		<touch file="tmp/war/WEB-INF/grails-app/.dummy"/>
 		<mkdir dir="tmp/war/WEB-INF/tld"/>
 		<mkdir dir="tmp/war/js"/>
-		<copy todir="tmp/war">
-			<fileset dir="html"/>
-		</copy>
 		<copy todir="tmp/war/js">
 			<fileset dir="${grails.home}/src/war/js"/>
 		</copy>
@@ -316,12 +343,11 @@ Targets:
 			<fileset dir="lib"/>
 		</copy>
 		<copy todir="tmp/war/WEB-INF/classes">
-			<fileset dir="war/WEB-INF/classes"/>
+			<fileset dir="web-app/WEB-INF/classes"/>
 			<fileset dir="grails-app" includes="**">
 				<exclude name="controllers"/>
 				<exclude name="domain"/>
 				<exclude name="conf"/>
-				<exclude name="tests"/>
 				<exclude name="views"/>
 				<exclude name="views/layouts"/>				
 				<exclude name="i18n"/>				
@@ -330,10 +356,8 @@ Targets:
 			<fileset dir="grails-app/domain" includes="**"/>
 			<fileset dir="grails-app/i18n" includes="**"/>			
 			<fileset dir="grails-app/conf" includes="**"/>
-			<fileset dir="grails-app/tests" includes="**"/>
 		</copy>
 		<copy todir="tmp/war/WEB-INF/jsp">
-			<fileset dir="jsp" includes="**"/>
 			<fileset dir="grails-app/views" includes="**"/>
 		</copy>
 			<copy todir="tmp/war/WEB-INF/jsp/layouts">
