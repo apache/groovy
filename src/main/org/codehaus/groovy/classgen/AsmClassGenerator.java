@@ -2408,7 +2408,7 @@ public class AsmClassGenerator extends ClassGenerator {
 				if (element==ConstantExpression.EMTPY_EXPRESSION) break;
 				dimensions++;
 	            // lets convert to an int
-	            visitAndAutoboxBoolean((Expression) sizeExpression.get(0));
+	            visitAndAutoboxBoolean(element);
 	            asIntMethod.call(cv);
 			}
         } else {
