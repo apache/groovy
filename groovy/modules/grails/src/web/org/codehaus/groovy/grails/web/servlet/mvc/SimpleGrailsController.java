@@ -18,6 +18,8 @@ package org.codehaus.groovy.grails.web.servlet.mvc;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -38,6 +40,8 @@ public class SimpleGrailsController implements Controller, ApplicationContextAwa
 	private UrlPathHelper urlPathHelper = new UrlPathHelper();
 	private GrailsApplication application = null;
 	private ApplicationContext applicationContext = null;
+	
+	private static final Log LOG = LogFactory.getLog(SimpleGrailsController.class);
 	
 	public SimpleGrailsController() {
 		super();
@@ -64,8 +68,10 @@ public class SimpleGrailsController implements Controller, ApplicationContextAwa
 	public ModelAndView handleRequest(HttpServletRequest request,
 			HttpServletResponse response) throws Exception {		
 		// Step 1: determine the correct URI of the request.
-		String uri = this.urlPathHelper.getLookupPathForRequest(request);
-		
+		String uri = this.urlPathHelper.getPathWithinApplication(request);
+		if(LOG.isDebugEnabled()) {
+			LOG.debug("[SimpleGrailsController] Processing request for uri ["+uri+"]");
+		}
 		GrailsControllerHelper helper = new SimpleGrailsControllerHelper(this.application,this.applicationContext);
 		return helper.handleURI(uri,request,response);
 	}

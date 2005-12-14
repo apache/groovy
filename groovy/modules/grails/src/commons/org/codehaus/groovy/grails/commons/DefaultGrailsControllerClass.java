@@ -51,6 +51,8 @@ public class DefaultGrailsControllerClass extends AbstractInjectableGrailsClass
 	private String[] uris = null;
 
 	private boolean scaffolding;
+
+	private String[] internalUris;
 	
 	
 	public DefaultGrailsControllerClass(Class clazz) {
@@ -62,7 +64,7 @@ public class DefaultGrailsControllerClass extends AbstractInjectableGrailsClass
 			this.scaffolding = tmp.booleanValue();
 		}
 		Collection closureNames = new ArrayList();
-		
+		Collection urisList = new ArrayList();
 		this.uri2viewMap = new HashMap();
 		this.uri2closureMap = new HashMap();
 		this.viewNames = new HashMap();
@@ -75,7 +77,8 @@ public class DefaultGrailsControllerClass extends AbstractInjectableGrailsClass
 				if(viewName == null) {
 					viewName =DefaultGrailsScaffolder.ACTION_NAMES[i];
 				}		
-				String tmpUri = uri + SLASH + DefaultGrailsScaffolder.ACTION_NAMES[i];
+				urisList.add(SLASH + DefaultGrailsScaffolder.ACTION_NAMES[i]);
+				String tmpUri = uri + SLASH + DefaultGrailsScaffolder.ACTION_NAMES[i];				
 				String viewUri = uri + SLASH + viewName;				
 				if (StringUtils.isNotBlank(viewName)) {
 					this.uri2viewMap.put(tmpUri, viewUri);
@@ -97,6 +100,7 @@ public class DefaultGrailsControllerClass extends AbstractInjectableGrailsClass
 					viewName = propertyDescriptor.getName();
 				}
 				Map typedViews = (Map)getPropertyValue(propertyDescriptor.getName() + TYPED_VIEWS, Map.class);
+				urisList.add(SLASH + propertyDescriptor.getName());
 				String tmpUri = uri + SLASH + propertyDescriptor.getName();
 				String viewUri = uri + SLASH + viewName;
 				if (StringUtils.isNotBlank(viewName)) {
@@ -121,14 +125,16 @@ public class DefaultGrailsControllerClass extends AbstractInjectableGrailsClass
 							}
 						}
 					}
-					if (defaultClosureName != null && defaultClosureName.equals(propertyDescriptor.getName())) {
-						this.uri2closureMap.put(uri, propertyDescriptor.getName());
-						this.uri2viewMap.put(uri, viewName);
-						this.viewNames.put( closureName, viewName );
-					}
 				}
 			}
 		}
+		
+		if (defaultClosureName != null) {
+			this.uri2closureMap.put(uri + SLASH, defaultClosureName);
+			this.uri2viewMap.put(uri + SLASH + defaultClosureName, defaultClosureName);
+			this.viewNames.put( defaultClosureName, uri + SLASH + defaultClosureName );
+		}
+		
 		if (closureNames.size() == 1) {
 			String closureName = ((String)closureNames.iterator().next());
 			this.uri2closureMap.put(uri, this.uri2closureMap.values().iterator().next());
@@ -145,7 +151,8 @@ public class DefaultGrailsControllerClass extends AbstractInjectableGrailsClass
 				}
 			}
 		}
-		this.uris = (String[])this.uri2closureMap.keySet().toArray(new String[this.uri2closureMap.size()]); 
+		this.uris = (String[])urisList.toArray(new String[urisList.size()]); 
+		this.internalUris  = (String[])this.uri2closureMap.keySet().toArray(new String[this.uri2closureMap.keySet().size()]);
 	}
 
 	public String[] getURIs() {
@@ -153,8 +160,8 @@ public class DefaultGrailsControllerClass extends AbstractInjectableGrailsClass
 	}
 
 	public boolean mapsToURI(String uri) {
-		for (int i = 0; i < uris.length; i++) {
-			if (uris[i].equals(uri)) {
+		for (int i = 0; i < internalUris.length; i++) {
+			if (internalUris[i].equals(uri)) {
 				return true;
 			}
 		}

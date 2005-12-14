@@ -15,17 +15,17 @@
  */ 
 package org.codehaus.groovy.grails.web.servlet.mvc;
 
+import groovy.lang.GroovyClassLoader;
+
 import java.util.Iterator;
 import java.util.Properties;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import junit.framework.TestCase;
 
+import org.codehaus.groovy.grails.commons.DefaultGrailsApplication;
 import org.codehaus.groovy.grails.commons.GrailsApplication;
-import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.NoViewNameDefinedException;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
-import org.springframework.test.AbstractDependencyInjectionSpringContextTests;
 import org.springframework.web.servlet.ModelAndView;
 
 /**
@@ -34,20 +34,48 @@ import org.springframework.web.servlet.ModelAndView;
  * @author Steven Devijver
  * @since Jul 2, 2005
  */
-public class SimpleGrailsControllerTests extends AbstractDependencyInjectionSpringContextTests {
+public class SimpleGrailsControllerTests extends TestCase {
 
 	public SimpleGrailsControllerTests() {
 		super();
-		setPopulateProtectedVariables(true);
 	}
 
 	protected GrailsApplication grailsApplication = null;
 	protected SimpleGrailsController controller = null;
 	
-	protected String[] getConfigLocations() {
-		return new String[] { "org/codehaus/groovy/grails/web/servlet/mvc/simple-grails-controller-tests.xml" };
-	}
 	
+	/* (non-Javadoc)
+	 * @see junit.framework.TestCase#setUp()
+	 */
+	protected void setUp() throws Exception {
+		GroovyClassLoader cl = new GroovyClassLoader();
+		
+		Class c1 = cl.parseClass("class TestController {\n"+
+							"@Property Closure test = {\n"+
+								"return [ \"test\" : \"123\" ]\n"+
+						     "}\n" +
+						"}");	
+		
+		Class c2 = cl.parseClass("class SimpleController {\n"+
+				"@Property Closure test = {\n"+
+			     "}\n" +
+			"}");
+		
+		Class c3 = cl.parseClass("class NoViewController {\n"+
+				"@Property Closure test = {\n"+
+			      "request, response ->\n" +
+			      "new grails.util.OpenRicoBuilder(response).ajax { element(id:\"test\") { } };\n" +
+			      "return null;\n" +				
+			     "}\n" +
+			"}");		
+		
+		this.grailsApplication = new DefaultGrailsApplication(new Class[]{c1,c2,c3},cl);
+		this.controller = new SimpleGrailsController();
+		this.controller.setGrailsApplication(grailsApplication);
+		super.setUp();
+	}
+
+
 	private ModelAndView execute(String uri, Properties parameters) throws Exception {
 		MockHttpServletRequest request = new MockHttpServletRequest("GET", uri);
 		if (parameters != null) {
@@ -61,85 +89,10 @@ public class SimpleGrailsControllerTests extends AbstractDependencyInjectionSpri
 		return controller.handleRequest(request, response);
 	}
 	
-	public void testTestControllerFail() throws Exception {
-		try {
-			execute("/test", null);
-			fail();
-		} catch (NoViewNameDefinedException e) {
-			// expected
-		}
-	}
 	
 	public void testSimpleControllerSuccess() throws Exception {
 		ModelAndView modelAndView = execute("/simple", null);
-		assertNull(modelAndView);
-	}
-	
-	public void testReturnModelAndViewControllerWithView() throws Exception {
-		ModelAndView modelAndView = execute("/org/codehaus/groovy/grails/web/servlet/mvc/returnModelAndView/withView", null);
 		assertNotNull(modelAndView);
 	}
-	
-	public void testReturnModelAndViewControlerWithoutView() throws Exception {
-		try {
-			execute("/org/codehaus/groovy/grails/web/servlet/mvc/returnModelAndView/withoutView", null);
-			fail();
-		} catch (NoViewNameDefinedException e) {
-			// expected
-		}
-	}
-	
-	public void testReturnModelAndViewControllerViewConfigured() throws Exception {
-		ModelAndView modelAndView = execute("/org/codehaus/groovy/grails/web/servlet/mvc/returnModelAndView/viewConfigured", null);
-		assertNotNull(modelAndView);
-		assertEquals("someOtherView", modelAndView.getViewName());
-	}
-	
-	public void testReturnModelAndViewControllerDefaultClosure() throws Exception {
-		ModelAndView modelAndView = execute("/org/codehaus/groovy/grails/web/servlet/mvc/returnModelAndView?test1=test2&test3=test4", null);
-		assertNotNull(modelAndView);
-		assertEquals("someView", modelAndView.getViewName());
-	}
-	
-	public void testParameterControllerTwoParameters() throws Exception {
-		ModelAndView modelAndView = execute("/parameter", null);
-		assertNotNull(modelAndView);
-		assertEquals("someView", modelAndView.getViewName());
-		assertNotNull(modelAndView.getModel().get("request"));
-		assertTrue(modelAndView.getModel().get("request") instanceof HttpServletRequest);
-		assertNotNull(modelAndView.getModel().get("response"));
-		assertTrue(modelAndView.getModel().get("response") instanceof HttpServletResponse);
-	}
-
-	public void testParameterControllerTwoParametersRss() throws Exception {
-		ModelAndView modelAndView = execute("/parameter/rss", null);
-		assertNotNull(modelAndView);
-		assertEquals("someRssView", modelAndView.getViewName());
-		assertNotNull(modelAndView.getModel().get("request"));
-		assertTrue(modelAndView.getModel().get("request") instanceof HttpServletRequest);
-		assertNotNull(modelAndView.getModel().get("response"));
-		assertTrue(modelAndView.getModel().get("response") instanceof HttpServletResponse);
-	}
-
-	
-	public void testParameterControllerOneParameter() throws Exception {
-		ModelAndView modelAndView = execute("/parameter/oneParameter", null);
-		assertNotNull(modelAndView);
-		assertEquals("someOtherView", modelAndView.getViewName());
-		assertNotNull(modelAndView.getModel().get("request"));
-		assertTrue(modelAndView.getModel().get("request") instanceof HttpServletRequest);
-	}
-	
-	public void testParameterControllerOneParameterRss() throws Exception {
-		ModelAndView modelAndView = execute("/parameter/oneParameter/rss", null);
-		assertNotNull(modelAndView);
-		assertEquals("someOtherRssView", modelAndView.getViewName());
-		assertNotNull(modelAndView.getModel().get("request"));
-		assertTrue(modelAndView.getModel().get("request") instanceof HttpServletRequest);
-	}
-
-	public void testNoViewController() throws Exception {
-		ModelAndView modelAndView = execute("/noView", null);
-		assertNull(modelAndView);
-	}
+		
 }

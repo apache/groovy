@@ -228,7 +228,8 @@ public class SpringConfig {
 			}*/
 			beanReferences.add(SpringConfigUtils.createBeanReference(simpleController.getFullName(), controller));
 			for (int x = 0; x < simpleController.getURIs().length; x++) {
-				urlMappings.put(simpleController.getURIs()[x], "simpleGrailsController");
+				if(!urlMappings.containsKey(simpleController.getURIs()[x]))
+					urlMappings.put(simpleController.getURIs()[x], "simpleGrailsController");
 			}		
 		}		
 		if (simpleUrlHandlerMapping != null) {

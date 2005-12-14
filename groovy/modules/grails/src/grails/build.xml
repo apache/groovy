@@ -179,7 +179,7 @@ Targets:
 				<include name="applicationContext.xml"/>
 			</fileset>
 		</copy>
-		<copy file="${grails.home}/src/war/WEB-INF/web${servlet.version}.xml" tofile="${path}web-app/WEB-INF/web.xml"/>
+		<copy file="${grails.home}/src/war/WEB-INF/web${servlet.version}.xml.template" tofile="${path}web-app/WEB-INF/web.xml.template"/>
 		<copy file="${grails.home}/src/war/WEB-INF/sitemesh.xml" tofile="${path}web-app/WEB-INF/sitemesh.xml"/>		
 		<copy todir="${path}spring">
 			<fileset dir="${grails.home}/src/war/WEB-INF/spring">
@@ -278,8 +278,36 @@ Targets:
 		<copy todir="tmp/war">
 			<fileset dir="web-app">
 				<include name="WEB-INF/*.xml"/>
+				<exclude name="WEB-INF/*.xml.template"/>				
 			</fileset>
 		</copy>
+		
+		<property name="controllers.home" location="grails-app/controllers"></property>
+		<property name="web.xml.template"  location="web-app/WEB-INF/web.xml.template"></property>		
+		<property name="target.web.xml"  location="tmp/war/WEB-INF/web.xml"></property>				
+		
+		<script language="groovy">
+			import groovy.text.SimpleTemplateEngine
+			
+			def controllersHome = grails.getProperty("controllers.home")		
+			def controllers = []
+			new File("${controllersHome}").eachFileRecurse {
+				def match = it.name =~ "(\\w+)(Controller.groovy\$)"
+				if(match) {
+					def controllerName = match[0][1]
+					controllerName = controllerName.substring(0,1).toLowerCase() + controllerName.substring(1)
+					controllers &lt;&lt; controllerName
+				}
+			}
+
+			def binding = ["controllers" : controllers ]
+			def engine = new SimpleTemplateEngine()
+			def template = engine.createTemplate( new File( grails.getProperty("web.xml.template") ).text ).make(binding)
+			
+			new File( grails.getProperty("target.web.xml") ).write( template.toString() )
+		</script>
+			
+		
 		<mkdir dir="tmp/war/WEB-INF/classes"/>
 		<touch file="tmp/war/WEB-INF/classes/.dummy"/>
 		<mkdir dir="tmp/war/WEB-INF/lib"/>
