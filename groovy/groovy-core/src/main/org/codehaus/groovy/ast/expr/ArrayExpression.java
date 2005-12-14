@@ -61,22 +61,41 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  */
 public class ArrayExpression extends Expression {
     private List expressions;
-    private Expression sizeExpression;
+    private List sizeExpression;
 
     private ClassNode elementType;
     
-    private ArrayExpression(ClassNode elementType, List expressions, Expression sizeExpression) {
+    private static ClassNode makeArray(ClassNode base, List sizeExpression) {
+    	ClassNode ret = base.makeArray();
+    	if (sizeExpression==null) return ret;
+    	int size = sizeExpression.size();
+    	for (int i=1; i<size; i++) {
+    		ret = ret.makeArray();
+    	}
+    	return ret;
+    }
+    
+    public ArrayExpression(ClassNode elementType, List expressions, List sizeExpression) {
         //expect to get the elementType
-        super.setType(elementType.makeArray());
+        super.setType(makeArray(elementType,sizeExpression));
+        if (expressions==null) expressions=Collections.EMPTY_LIST;
         this.elementType = elementType;
         this.expressions = expressions;
         this.sizeExpression = sizeExpression;
         
         for (Iterator iter = expressions.iterator(); iter.hasNext();) {
             Object item = iter.next();
-            if (!(item instanceof Expression)) {
+            if (item!=null && !(item instanceof Expression)) {
                 throw new ClassCastException("Item: " + item + " is not an Expression");
             }
+        }
+        if (sizeExpression!=null) {
+	        for (Iterator iter = sizeExpression.iterator(); iter.hasNext();) {
+	            Object item = iter.next();
+	            if (!(item instanceof Expression)) {
+	                throw new ClassCastException("Item: " + item + " is not an Expression");
+	            }
+	        }
         }
     }
     
@@ -86,13 +105,6 @@ public class ArrayExpression extends Expression {
      */
     public ArrayExpression(ClassNode elementType, List expressions) {
         this(elementType,expressions,null);
-    }
-
-    /**
-     * Creates an empty array of a certain size
-     */
-    public ArrayExpression(ClassNode elementType, Expression sizeExpression) {
-        this(elementType,Collections.EMPTY_LIST,sizeExpression);
     }
 
     public void addExpression(Expression expression) {
@@ -112,7 +124,10 @@ public class ArrayExpression extends Expression {
     }
 
     public Expression transformExpression(ExpressionTransformer transformer) {
-        return new ArrayExpression(elementType, transformExpressions(expressions, transformer), transformer.transform(sizeExpression));
+    	List exprList = transformExpressions(expressions, transformer);
+    	List sizes = null;
+    	if (sizeExpression!=null) sizes = transformExpressions(sizeExpression,transformer);
+        return new ArrayExpression(elementType, exprList, sizes);
     }
 
     public Expression getExpression(int i) {
@@ -141,7 +156,7 @@ public class ArrayExpression extends Expression {
         return buffer.toString();
     }
 
-    public Expression getSizeExpression() {
+    public List getSizeExpression() {
         return sizeExpression;
     }
 

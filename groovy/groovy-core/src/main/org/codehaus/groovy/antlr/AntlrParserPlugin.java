@@ -1705,7 +1705,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         configureAST(expression, methodCallNode);
         return expression;
     }
-
+    
     protected Expression constructorCallExpression(AST node) {
         AST constructorCallNode = node;
         ClassNode type = buildName(constructorCallNode);
@@ -1728,8 +1728,8 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             if (expressionNode == null) {
                 throw new ASTRuntimeException(elist, "No expression for the array constructor call");
             }
-            Expression size = expression(expressionNode);
-            ArrayExpression arrayExpression = new ArrayExpression(type, size);
+            List size = arraySizeExpression(expressionNode);
+            ArrayExpression arrayExpression = new ArrayExpression(type, null, size);
             configureAST(arrayExpression, constructorCallNode);
             return arrayExpression;
         }
@@ -1737,6 +1737,25 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         ConstructorCallExpression expression = new ConstructorCallExpression(type, arguments);
         configureAST(expression, constructorCallNode);
         return expression;
+    }
+    
+    protected List arraySizeExpression(AST node) {
+        List list;
+        Expression size = null;
+    	if (isType(ARRAY_DECLARATOR,node)) {
+    		AST right = node.getNextSibling();
+        	if (right!=null) {
+        		size = expression(right);
+        	} else {
+        		size = ConstantExpression.EMTPY_EXPRESSION;
+        	}
+        	list = arraySizeExpression(node.getFirstChild());
+        } else {
+        	size = expression(node);
+        	list = new ArrayList();
+        }
+    	list.add(size);
+    	return list;
     }
 
     protected Expression arguments(AST elist) {
