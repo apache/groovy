@@ -17,9 +17,14 @@ package org.codehaus.groovy.grails.metaclass;
 
 import groovy.lang.MissingPropertyException;
 
+import java.text.DateFormat;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.Map;
 
+import javax.servlet.http.HttpServletRequest;
+
+import ognl.NoSuchPropertyException;
 import ognl.Ognl;
 import ognl.OgnlException;
 
@@ -27,6 +32,9 @@ import org.apache.commons.collections.BeanMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.groovy.grails.commons.metaclass.AbstractDynamicProperty;
+import org.codehaus.groovy.grails.web.metaclass.GrailsParameterMap;
+import org.springframework.beans.propertyeditors.CustomDateEditor;
+import org.springframework.web.bind.ServletRequestDataBinder;
 
 /**
  * A dynamic property that uses a Map of OGNL expressions to sets properties on the target object
@@ -64,7 +72,14 @@ public class SetPropertiesDynamicProperty extends AbstractDynamicProperty {
 		if(newValue == null)
 			return;
 		
-		if(newValue instanceof Map) {
+		if(newValue instanceof GrailsParameterMap) {
+			GrailsParameterMap parameterMap = (GrailsParameterMap)newValue;
+			HttpServletRequest request = parameterMap.getRequest();
+			ServletRequestDataBinder dataBinder = new ServletRequestDataBinder(object, object.getClass().getName());			
+			dataBinder.registerCustomEditor( Date.class, new CustomDateEditor(DateFormat.getDateInstance( DateFormat.SHORT, request.getLocale() ),true) );
+			dataBinder.bind(request);			
+		}
+		else if(newValue instanceof Map) {
 			
 			Map propertyMap = (Map)newValue;
 			
@@ -80,10 +95,13 @@ public class SetPropertiesDynamicProperty extends AbstractDynamicProperty {
 				
 				try {
 					Ognl.setValue(propertyName,object,propertyValue);
-				} catch (OgnlException e) {
+				} catch (NoSuchPropertyException nspe) {
+					if(LOG.isDebugEnabled())
+						LOG.debug("Unable to set property '"+propertyName+"' to value '"+propertyValue+"' for object '"+object+"' property doesn't exist." + nspe.getMessage());					
+				}catch (OgnlException e) {
 					if(LOG.isDebugEnabled())
 						LOG.debug("OGNL error attempt to set '"+propertyName+"' to value '"+propertyValue+"' for object '"+object+"':" + e.getMessage(),e);
-				}				
+				} 
 			}
 			
 		}

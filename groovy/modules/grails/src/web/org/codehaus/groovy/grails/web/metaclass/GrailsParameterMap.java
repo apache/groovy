@@ -33,11 +33,20 @@ public class GrailsParameterMap implements Map {
 
 	private Map parameterMap;
 	private Map controllerParamsMap = new HashMap();
+	private HttpServletRequest request;
 		
 	public GrailsParameterMap(HttpServletRequest request) {
 		super();
 
+		this.request = request;
 		this.parameterMap = request.getParameterMap();
+	}
+
+	/**
+	 * @return Returns the request.
+	 */
+	public HttpServletRequest getRequest() {
+		return request;
 	}
 
 	public int size() {
