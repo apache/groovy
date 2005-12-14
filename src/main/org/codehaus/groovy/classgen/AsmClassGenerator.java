@@ -2394,24 +2394,33 @@ public class AsmClassGenerator extends ClassGenerator {
         }
         //createTupleMethod.call(cv);
     }
-
+    
     public void visitArrayExpression(ArrayExpression expression) {
-        ClassNode type = expression.getType().getComponentType();
+        ClassNode type = expression.getElementType();
         String typeName = BytecodeHelper.getClassInternalName(type);        
-        Expression sizeExpression = expression.getSizeExpression();
+        List sizeExpression = expression.getSizeExpression();
 
         int size=0;
-        if (sizeExpression != null) {
-            // lets convert to an int
-            visitAndAutoboxBoolean(sizeExpression);
-            asIntMethod.call(cv);
+        int dimensions=0;
+        if (sizeExpression!=null) {
+        	for (Iterator iter = sizeExpression.iterator(); iter.hasNext();) {
+				Expression element = (Expression) iter.next();
+				if (element==ConstantExpression.EMTPY_EXPRESSION) break;
+				dimensions++;
+	            // lets convert to an int
+	            visitAndAutoboxBoolean((Expression) sizeExpression.get(0));
+	            asIntMethod.call(cv);
+			}
         } else {
             size = expression.getExpressions().size();
             helper.pushConstant(size);
         }
 
         int storeIns=AASTORE;
-        if (ClassHelper.isPrimitiveType(type)) {
+        if (sizeExpression!=null) {
+        	typeName =  BytecodeHelper.getClassInternalName(expression.getType()); 
+        	cv.visitMultiANewArrayInsn(typeName, dimensions);
+        } else if (ClassHelper.isPrimitiveType(type)) {
             int primType=0;
             if (type==ClassHelper.boolean_TYPE) {
                 primType = T_BOOLEAN;
@@ -2441,7 +2450,7 @@ public class AsmClassGenerator extends ClassGenerator {
             cv.visitIntInsn(NEWARRAY, primType);
         } else {
             cv.visitTypeInsn(ANEWARRAY, typeName);
-        }
+        } 
 
         for (int i = 0; i < size; i++) {
             cv.visitInsn(DUP);
@@ -2459,7 +2468,7 @@ public class AsmClassGenerator extends ClassGenerator {
             cv.visitInsn(storeIns);            
         }
         
-        if (ClassHelper.isPrimitiveType(type)) {
+        if (sizeExpression==null && ClassHelper.isPrimitiveType(type)) {
             int par = defineVariable("par",ClassHelper.OBJECT_TYPE).getIndex();
             cv.visitVarInsn(ASTORE, par);
             cv.visitVarInsn(ALOAD, par);
