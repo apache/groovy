@@ -61,15 +61,17 @@ public class ConstructorNode extends AnnotatedNode {
     private Parameter[] parameters;   
     private Statement code;
     private VariableScope variableScope;
+    private ClassNode[] exceptions;
     
     public ConstructorNode(int modifiers, Statement code) {
-        this(modifiers, Parameter.EMPTY_ARRAY, code);
+        this(modifiers, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, code);
     }
     
-    public ConstructorNode(int modifiers, Parameter[] parameters, Statement code) {
+    public ConstructorNode(int modifiers, Parameter[] parameters, ClassNode[] exceptions, Statement code) {
         this.modifiers = modifiers;
         this.parameters = parameters;
         this.code = code;
+        this.exceptions = exceptions;
     }
     
     public Statement getCode() {
@@ -110,5 +112,9 @@ public class ConstructorNode extends AnnotatedNode {
         addFieldsToVisitor(variableScope);
         return variableScope;
     }
+
+	public ClassNode[] getExceptions() {
+		return exceptions;
+	}
 
 }

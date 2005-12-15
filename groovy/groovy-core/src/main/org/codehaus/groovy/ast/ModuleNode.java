@@ -242,6 +242,7 @@ public class ModuleNode extends ASTNode implements Opcodes {
                 ACC_PUBLIC | ACC_STATIC,
                 ClassHelper.VOID_TYPE,
                 new Parameter[] { new Parameter(ClassHelper.STRING_TYPE.makeArray(), "args")},
+                ClassNode.EMPTY_ARRAY,
                 new ExpressionStatement(
                     new MethodCallExpression(
                         new ClassExpression(ClassHelper.make(InvokerHelper.class)),
@@ -252,9 +253,9 @@ public class ModuleNode extends ASTNode implements Opcodes {
                                 new VariableExpression("args")})))));
 
         classNode.addMethod(
-            new MethodNode("run", ACC_PUBLIC, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, statementBlock));
+            new MethodNode("run", ACC_PUBLIC, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, statementBlock));
 
-        classNode.addConstructor(ACC_PUBLIC, Parameter.EMPTY_ARRAY, new BlockStatement());
+        classNode.addConstructor(ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, new BlockStatement());
         Statement stmt = new ExpressionStatement(
                         new MethodCallExpression(
                             new VariableExpression("super"),
@@ -266,7 +267,8 @@ public class ModuleNode extends ASTNode implements Opcodes {
         classNode.addConstructor(
             ACC_PUBLIC,
             new Parameter[] { new Parameter(ClassHelper.make(Binding.class), "context")},
-			stmt);
+			ClassNode.EMPTY_ARRAY,
+            stmt);
 
         for (Iterator iter = methods.iterator(); iter.hasNext();) {
             MethodNode node = (MethodNode) iter.next();

@@ -94,6 +94,15 @@ public class ClassHelper {
     
     public static final String OBJECT = "java.lang.Object";    
     
+    public static ClassNode[] make(Class[] classes) {
+    	ClassNode[] cns = new ClassNode[classes.length];
+    	for (int i=0; i<cns.length; i++) {
+    		cns[i] = make(classes[i]);
+    	}
+    	
+    	return cns;
+    }
+    
     public static ClassNode make(Class c) {
         for (int i=0; i<classes.length; i++) {
             if (c==classes[i]) return types[i];

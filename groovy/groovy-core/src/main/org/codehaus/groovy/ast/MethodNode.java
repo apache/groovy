@@ -65,8 +65,9 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
     private Statement code;
     private boolean dynamicReturnType;
     private VariableScope variableScope;
-
-    public MethodNode(String name, int modifiers, ClassNode returnType, Parameter[] parameters, Statement code) {
+    private ClassNode[] exceptions;
+    
+    public MethodNode(String name, int modifiers, ClassNode returnType, Parameter[] parameters, ClassNode[] exceptions, Statement code) {
         this.name = name;
         this.modifiers = modifiers;
         this.parameters = parameters;
@@ -82,6 +83,8 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
                 parameters[i].setInStaticContext(isStatic());
             }
         }
+        
+        this.exceptions = exceptions;
     }
 
     /**
@@ -191,4 +194,8 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
         addFieldsToVisitor(variableScope);
         return variableScope;
     }
+
+	public ClassNode[] getExceptions() {
+		return exceptions;
+	}
 }

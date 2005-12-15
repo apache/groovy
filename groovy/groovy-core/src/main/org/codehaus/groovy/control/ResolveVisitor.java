@@ -124,6 +124,11 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
             ClassNode t = paras[i].getType();
             resolveOrFail(t,node);
         }
+        ClassNode[] exceptions = node.getExceptions();
+        for (int i=0; i<exceptions.length; i++) {
+            ClassNode t = exceptions[i];
+            resolveOrFail(t,node);
+        }
         Statement code = node.getCode();
         if (code!=null) code.visit(this);
     }
@@ -145,6 +150,11 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
             ClassNode t = paras[i].getType();
             resolveOrFail(t,node);
         }
+        ClassNode[] exceptions = node.getExceptions();
+        for (int i=0; i<exceptions.length; i++) {
+            ClassNode t = exceptions[i];
+            resolveOrFail(t,node);
+        }       
         resolveOrFail(node.getReturnType(),node);
         Statement code = node.getCode();
         if (code!=null) code.visit(this);

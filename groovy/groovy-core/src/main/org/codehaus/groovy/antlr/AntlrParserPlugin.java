@@ -357,6 +357,16 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             }
         }
     }
+    
+    protected void throwsList(AST node,List list) {
+    	String clazz = identifier(node);
+    	ClassNode exception = ClassHelper.make(clazz);
+    	list.add(exception);
+    	AST next = node.getNextSibling();
+    	if (next!=null) throwsList(next, list);
+    	next = node.getFirstChild();
+    	if (next!=null) throwsList(next, list);
+    }
 
     protected void methodDef(AST methodDef) {
         List annotations = new ArrayList();
@@ -388,6 +398,15 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         assertNodeType(PARAMETERS, node);
         Parameter[] parameters = parameters(node);
         node = node.getNextSibling();
+        
+        ClassNode[] exceptions=new ClassNode[0];
+        if (isType(LITERAL_throws, node)) {
+        	AST throwsNode = node.getFirstChild();
+        	List exceptionList = new ArrayList();
+        	throwsList(throwsNode, exceptionList);
+        	exceptions = (ClassNode[]) exceptionList.toArray(exceptions);
+        	node = node.getNextSibling();
+        }
 
         Statement code = null;
         if ((modifiers & Opcodes.ACC_ABSTRACT) == 0) {
@@ -398,7 +417,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             code = statementList(node);
         }
 
-        MethodNode methodNode = new MethodNode(name, modifiers, returnType, parameters, code);
+        MethodNode methodNode = new MethodNode(name, modifiers, returnType, parameters, exceptions, code);
         methodNode.addAnnotations(annotations);
         configureAST(methodNode, methodDef);
         if (classNode != null) {
@@ -422,10 +441,19 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         Parameter[] parameters = parameters(node);
         node = node.getNextSibling();
 
+        ClassNode[] exceptions=new ClassNode[0];
+        if (isType(LITERAL_throws, node)) {
+        	AST throwsNode = node.getFirstChild();
+        	List exceptionList = new ArrayList();
+        	throwsList(throwsNode, exceptionList);
+        	exceptions = (ClassNode[]) exceptionList.toArray(exceptions);
+        	node = node.getNextSibling();
+        }
+        
         assertNodeType(SLIST, node);
         Statement code = statementList(node);
 
-        ConstructorNode constructorNode = classNode.addConstructor(modifiers, parameters, code);
+        ConstructorNode constructorNode = classNode.addConstructor(modifiers, parameters, exceptions, code);
         constructorNode.addAnnotations(annotations);
         configureAST(constructorNode, constructorDef);
     }
