@@ -52,12 +52,20 @@
 	</servlet>
 	
 	<!-- Map all requests to the Grails dispatcher servlet -->
-	<servlet-mapping>
-		<servlet-name>grails</servlet-name>
-		<% for ( c in controllers ) { %>
+	<% for ( c in controllers ) { %>	
+		<servlet-mapping>
+			<servlet-name>grails</servlet-name>
 			<url-pattern>/${c}/*</url-pattern>
-		<% } %>
-	</servlet-mapping>
+		</servlet-mapping>
+	<% } %>		
+	
+	<% for ( f in flows ) { %>
+		<servlet-mapping>
+			<servlet-name>grails</servlet-name>
+			<url-pattern>/${f}/*</url-pattern>
+		</servlet-mapping>
+	<% } %>		
+
 	
 	<taglib>
 		<taglib-uri>http://java.sun.com/jstl/core</taglib-uri>

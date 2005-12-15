@@ -277,7 +277,7 @@ Targets:
 		<mkdir dir="tmp/war"/>
 		<copy todir="tmp/war">
 			<fileset dir="web-app">
-				<include name="WEB-INF/*.xml"/>
+				<include name="**/**"/>
 				<exclude name="WEB-INF/*.xml.template"/>				
 			</fileset>
 		</copy>
@@ -291,6 +291,7 @@ Targets:
 			
 			def controllersHome = grails.getProperty("controllers.home")		
 			def controllers = []
+			def flows = []
 			new File("${controllersHome}").eachFileRecurse {
 				def match = it.name =~ "(\\w+)(Controller.groovy\$)"
 				if(match) {
@@ -298,9 +299,15 @@ Targets:
 					controllerName = controllerName.substring(0,1).toLowerCase() + controllerName.substring(1)
 					controllers &lt;&lt; controllerName
 				}
+				match = it.name =~ "(\\w+)(PageFlow.groovy\$)"
+				if(match) {
+					def flowName = match[0][1]
+					flowName = flowName.substring(0,1).toLowerCase() + flowName.substring(1)
+					flows &lt;&lt; flowName
+				}			
 			}
 
-			def binding = ["controllers" : controllers ]
+			def binding = ["controllers" : controllers, "flows" : flows ]
 			def engine = new SimpleTemplateEngine()
 			def template = engine.createTemplate( new File( grails.getProperty("web.xml.template") ).text ).make(binding)
 			
