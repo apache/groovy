@@ -98,7 +98,7 @@ class BooksPageFlow {
         return SUCCESS_TOKEN
     }
 
-    @Property Flow flow = new PageFlowBuilder().flow {
+    @Property grails.pageflow.Flow flow = new PageFlowBuilder().flow {
         loadBooks(action:loadBooks) {
             success('listBooks')
         }
@@ -240,7 +240,7 @@ class AuthorsPageFlow {
 	}
 
 	@Property boolean accessible = false
-	@Property Flow flow = new PageFlowBuilder().flow {
+	@Property grails.pageflow.Flow flow = new PageFlowBuilder().flow {
 		listAuthors(view:'listAuthors',model:[authors:getAuthors]) {
 			select('selectAuthorBind')
 			add('addAuthorBind')
