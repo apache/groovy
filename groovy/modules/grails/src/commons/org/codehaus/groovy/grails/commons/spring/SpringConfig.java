@@ -43,6 +43,7 @@ import org.codehaus.groovy.grails.scaffolding.ViewDelegatingScaffoldResponseHand
 import org.codehaus.groovy.grails.support.ClassEditor;
 import org.codehaus.groovy.grails.web.pageflow.GrailsFlowBuilder;
 import org.codehaus.groovy.grails.web.pageflow.execution.servlet.GrailsServletFlowExecutionManager;
+import org.codehaus.groovy.grails.web.servlet.mvc.GrailsUrlHandlerMapping;
 import org.codehaus.groovy.grails.web.servlet.mvc.SimpleGrailsController;
 import org.hibernate.dialect.HSQLDialect;
 import org.hibernate.dialect.MySQLDialect;
@@ -53,7 +54,6 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.orm.hibernate3.HibernateTransactionManager;
 import org.springframework.transaction.interceptor.TransactionProxyFactoryBean;
 import org.springframework.util.Assert;
-import org.springframework.web.servlet.handler.SimpleUrlHandlerMapping;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
 import org.springframework.webflow.config.FlowFactoryBean;
 import org.springframework.webflow.mvc.FlowController;
@@ -200,7 +200,7 @@ public class SpringConfig {
 		
 		Bean simpleUrlHandlerMapping = null;
 		if (application.getControllers().length > 0 || application.getPageFlows().length > 0) {
-			simpleUrlHandlerMapping = SpringConfigUtils.createSingletonBean(SimpleUrlHandlerMapping.class);
+			simpleUrlHandlerMapping = SpringConfigUtils.createSingletonBean(GrailsUrlHandlerMapping.class);
 			beanReferences.add(SpringConfigUtils.createBeanReference("handlerMapping", simpleUrlHandlerMapping));
 		}
 		

@@ -45,6 +45,8 @@ public class DefaultGrailsControllerClass extends AbstractInjectableGrailsClass
     private static final String DEFAULT_CLOSURE_PROPERTY = "defaultAction";
 	private static final String SCAFFOLDING_PROPERTY = "scaffold";
 
+	
+
 	private Map uri2viewMap = null;
 	private Map uri2closureMap = null;
 	private Map viewNames = null;
@@ -52,7 +54,6 @@ public class DefaultGrailsControllerClass extends AbstractInjectableGrailsClass
 
 	private boolean scaffolding;
 
-	private String[] internalUris;
 	
 	
 	public DefaultGrailsControllerClass(Class clazz) {
@@ -64,7 +65,6 @@ public class DefaultGrailsControllerClass extends AbstractInjectableGrailsClass
 			this.scaffolding = tmp.booleanValue();
 		}
 		Collection closureNames = new ArrayList();
-		Collection urisList = new ArrayList();
 		this.uri2viewMap = new HashMap();
 		this.uri2closureMap = new HashMap();
 		this.viewNames = new HashMap();
@@ -77,7 +77,6 @@ public class DefaultGrailsControllerClass extends AbstractInjectableGrailsClass
 				if(viewName == null) {
 					viewName =DefaultGrailsScaffolder.ACTION_NAMES[i];
 				}		
-				urisList.add(SLASH + DefaultGrailsScaffolder.ACTION_NAMES[i]);
 				String tmpUri = uri + SLASH + DefaultGrailsScaffolder.ACTION_NAMES[i];				
 				String viewUri = uri + SLASH + viewName;				
 				if (StringUtils.isNotBlank(viewName)) {
@@ -91,7 +90,7 @@ public class DefaultGrailsControllerClass extends AbstractInjectableGrailsClass
 		PropertyDescriptor[] propertyDescriptors = getReference().getPropertyDescriptors();
 		for (int i = 0; i < propertyDescriptors.length; i++) {
 			PropertyDescriptor propertyDescriptor = propertyDescriptors[i];			
-			if (propertyDescriptor.getPropertyType().isAssignableFrom(Closure.class)) {
+			if (Closure.class.isAssignableFrom(propertyDescriptor.getPropertyType())) {
 				closureNames.add(propertyDescriptor.getName());
 				String closureName = propertyDescriptor.getName();
 				String viewName = (String)getPropertyValue(propertyDescriptor.getName() + VIEW, String.class);
@@ -100,7 +99,6 @@ public class DefaultGrailsControllerClass extends AbstractInjectableGrailsClass
 					viewName = propertyDescriptor.getName();
 				}
 				Map typedViews = (Map)getPropertyValue(propertyDescriptor.getName() + TYPED_VIEWS, Map.class);
-				urisList.add(SLASH + propertyDescriptor.getName());
 				String tmpUri = uri + SLASH + propertyDescriptor.getName();
 				String viewUri = uri + SLASH + viewName;
 				if (StringUtils.isNotBlank(viewName)) {
@@ -130,8 +128,10 @@ public class DefaultGrailsControllerClass extends AbstractInjectableGrailsClass
 		}
 		
 		if (defaultClosureName != null) {
+			this.uri2closureMap.put(uri, defaultClosureName);
 			this.uri2closureMap.put(uri + SLASH, defaultClosureName);
-			this.uri2viewMap.put(uri + SLASH + defaultClosureName, defaultClosureName);
+			this.uri2viewMap.put(uri + SLASH, uri + SLASH + defaultClosureName);
+			this.uri2viewMap.put(uri,uri + SLASH +  defaultClosureName);
 			this.viewNames.put( defaultClosureName, uri + SLASH + defaultClosureName );
 		}
 		
@@ -151,8 +151,7 @@ public class DefaultGrailsControllerClass extends AbstractInjectableGrailsClass
 				}
 			}
 		}
-		this.uris = (String[])urisList.toArray(new String[urisList.size()]); 
-		this.internalUris  = (String[])this.uri2closureMap.keySet().toArray(new String[this.uri2closureMap.keySet().size()]);
+		this.uris  = (String[])this.uri2closureMap.keySet().toArray(new String[this.uri2closureMap.keySet().size()]);
 	}
 
 	public String[] getURIs() {
@@ -160,8 +159,8 @@ public class DefaultGrailsControllerClass extends AbstractInjectableGrailsClass
 	}
 
 	public boolean mapsToURI(String uri) {
-		for (int i = 0; i < internalUris.length; i++) {
-			if (internalUris[i].equals(uri)) {
+		for (int i = 0; i < uris.length; i++) {
+			if (uris[i].equals(uri)) {
 				return true;
 			}
 		}

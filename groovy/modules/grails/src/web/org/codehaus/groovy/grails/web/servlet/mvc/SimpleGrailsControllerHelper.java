@@ -128,7 +128,7 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
 		if(!uri.startsWith("/"))
 			uri = '/' + uri;
 		if(uri.endsWith("/"))
-			uri = uri.substring(0,uri.length() - 2);
+			uri = uri.substring(0,uri.length() - 1);
 		
 		// Step 2: lookup the controller in the application.
 		GrailsControllerClass controllerClass = getControllerClassByURI(uri);
