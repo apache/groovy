@@ -108,7 +108,7 @@ public class GStringTest extends TestSupport {
                         new VariableExpression("text"),
                         Token.newSymbol( "==", -1, -1),
                         new ConstantExpression("Hello World!")))));
-        classNode.addMethod(new MethodNode("stringDemo", ACC_PUBLIC, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, block));
+        classNode.addMethod(new MethodNode("stringDemo", ACC_PUBLIC, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, block));
 
         Class fooClass = loadClass(classNode);
         assertTrue("Loaded a new class", fooClass != null);

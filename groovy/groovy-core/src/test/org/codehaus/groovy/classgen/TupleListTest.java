@@ -111,7 +111,7 @@ public class TupleListTest extends TestSupport {
         BlockStatement block = new BlockStatement();
         block.addStatement(new ExpressionStatement(new BinaryExpression(new VariableExpression("list"), Token.newSymbol("=", 0, 0), listExpression)));
         block.addStatement(new ForStatement("i", ClassHelper.DYNAMIC_TYPE, new VariableExpression("list"), loopStatement));
-        classNode.addMethod(new MethodNode(methodName, ACC_PUBLIC, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, block));
+        classNode.addMethod(new MethodNode(methodName, ACC_PUBLIC, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, block));
 
         Class fooClass = loadClass(classNode);
         assertTrue("Loaded a new class", fooClass != null);

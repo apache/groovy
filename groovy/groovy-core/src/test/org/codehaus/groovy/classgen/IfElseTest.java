@@ -96,7 +96,7 @@ public class IfElseTest extends TestSupport {
         Statement falseStatement = createPrintlnStatement(new ConstantExpression("false"));
 
         IfStatement statement = new IfStatement(expression, trueStatement, falseStatement);
-        classNode.addMethod(new MethodNode("ifDemo", ACC_PUBLIC, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, statement));
+        classNode.addMethod(new MethodNode("ifDemo", ACC_PUBLIC, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, statement));
 
         Class fooClass = loadClass(classNode);
         assertTrue("Loaded a new class", fooClass != null);
