@@ -24,9 +24,17 @@ import junit.framework.TestCase;
 
 import org.codehaus.groovy.grails.commons.DefaultGrailsApplication;
 import org.codehaus.groovy.grails.commons.GrailsApplication;
+import org.codehaus.groovy.grails.commons.spring.SpringConfig;
+import org.springframework.beans.MutablePropertyValues;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.beans.factory.config.ConstructorArgumentValues;
+import org.springframework.beans.factory.support.RootBeanDefinition;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.web.servlet.ModelAndView;
+import org.springmodules.beans.factory.drivers.xml.XmlApplicationContextDriver;
 
 /**
  * 
@@ -42,6 +50,8 @@ public class SimpleGrailsControllerTests extends TestCase {
 
 	protected GrailsApplication grailsApplication = null;
 	protected SimpleGrailsController controller = null;
+	private GenericApplicationContext localContext;
+	private ConfigurableApplicationContext appCtx;
 	
 	
 	/* (non-Javadoc)
@@ -69,15 +79,45 @@ public class SimpleGrailsControllerTests extends TestCase {
 			     "}\n" +
 			"}");		
 		
-		this.grailsApplication = new DefaultGrailsApplication(new Class[]{c1,c2,c3},cl);
-		this.controller = new SimpleGrailsController();
-		this.controller.setGrailsApplication(grailsApplication);
+//		this.grailsApplication = new DefaultGrailsApplication(new Class[]{c1,c2,c3},cl);
+//		this.controller = new SimpleGrailsController();
+//		this.controller.setGrailsApplication(grailsApplication);
+		
+		Thread.currentThread().setContextClassLoader(cl);
+		
+		//grailsApplication = new DefaultGrailsApplication(,cl);
+		this.localContext = new GenericApplicationContext();
+		
+		ConstructorArgumentValues args = new ConstructorArgumentValues();
+		args.addGenericArgumentValue(new Class[]{c1,c2,c3});
+		args.addGenericArgumentValue(cl);
+		MutablePropertyValues propValues = new MutablePropertyValues();
+		
+		BeanDefinition grailsApplicationBean = new RootBeanDefinition(DefaultGrailsApplication.class,args,propValues);		
+		localContext.registerBeanDefinition( "grailsApplication", grailsApplicationBean );
+		this.localContext.refresh();
+		
+		this.grailsApplication = (GrailsApplication)localContext.getBean("grailsApplication");
+		
+		/*BeanDefinition applicationEventMulticaster = new RootBeanDefinition(SimpleApplicationEventMulticaster.class);
+		context.registerBeanDefinition( "applicationEventMulticaster ", applicationEventMulticaster);*/
+		SpringConfig springConfig = new SpringConfig(grailsApplication);
+		this.appCtx = (ConfigurableApplicationContext) 
+		new XmlApplicationContextDriver().getApplicationContext(
+				springConfig.getBeanReferences(), this.localContext);
+		
+		this.controller = (SimpleGrailsController)appCtx.getBean("simpleGrailsController");
+		
+		
+		assertNotNull(appCtx);		
 		super.setUp();
 	}
 
 
 	private ModelAndView execute(String uri, Properties parameters) throws Exception {
 		MockHttpServletRequest request = new MockHttpServletRequest("GET", uri);
+		request.setContextPath("/simple");
+		
 		if (parameters != null) {
 			for (Iterator iter = parameters.keySet().iterator(); iter.hasNext();) {
 				String paramName = (String)iter.next();
@@ -91,7 +131,7 @@ public class SimpleGrailsControllerTests extends TestCase {
 	
 	
 	public void testSimpleControllerSuccess() throws Exception {
-		ModelAndView modelAndView = execute("/simple", null);
+		ModelAndView modelAndView = execute("/test", null);
 		assertNotNull(modelAndView);
 	}
 		
