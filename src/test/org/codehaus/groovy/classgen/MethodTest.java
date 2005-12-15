@@ -72,13 +72,13 @@ public class MethodTest extends TestSupport {
         Statement statementB = new ReturnStatement(new ConstantExpression("calledB"));
         Statement emptyStatement = new BlockStatement();
 
-        classNode.addMethod(new MethodNode("a", ACC_PUBLIC, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, statementA));
-        classNode.addMethod(new MethodNode("b", ACC_PUBLIC, null, Parameter.EMPTY_ARRAY, statementB));
+        classNode.addMethod(new MethodNode("a", ACC_PUBLIC, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, statementA));
+        classNode.addMethod(new MethodNode("b", ACC_PUBLIC, null, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, statementB));
         
-        classNode.addMethod(new MethodNode("noReturnMethodA", ACC_PUBLIC, null, Parameter.EMPTY_ARRAY, emptyStatement));
-        classNode.addMethod(new MethodNode("noReturnMethodB", ACC_PUBLIC, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, emptyStatement));
+        classNode.addMethod(new MethodNode("noReturnMethodA", ACC_PUBLIC, null, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, emptyStatement));
+        classNode.addMethod(new MethodNode("noReturnMethodB", ACC_PUBLIC, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, emptyStatement));
         
-        classNode.addMethod(new MethodNode("c", ACC_PUBLIC, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, emptyStatement));
+        classNode.addMethod(new MethodNode("c", ACC_PUBLIC, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, emptyStatement));
 
         Class fooClass = loadClass(classNode);
         assertTrue("Loaded a new class", fooClass != null);

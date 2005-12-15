@@ -68,7 +68,7 @@ public class ForTest extends TestSupport {
         Parameter[] parameters = {new Parameter(ClassHelper.OBJECT_TYPE, "coll")};
 
         Statement statement = createPrintlnStatement(new VariableExpression("coll"));
-        classNode.addMethod(new MethodNode("oneParamDemo", ACC_PUBLIC, ClassHelper.VOID_TYPE, parameters, statement));
+        classNode.addMethod(new MethodNode("oneParamDemo", ACC_PUBLIC, ClassHelper.VOID_TYPE, parameters, ClassNode.EMPTY_ARRAY, statement));
 
         Class fooClass = loadClass(classNode);
         assertTrue("Loaded a new class", fooClass != null);
@@ -99,7 +99,7 @@ public class ForTest extends TestSupport {
         Statement loopStatement = createPrintlnStatement(new VariableExpression("i"));
 
         ForStatement statement = new ForStatement("i", ClassHelper.DYNAMIC_TYPE, new VariableExpression("coll"), loopStatement);
-        classNode.addMethod(new MethodNode("iterateDemo", ACC_PUBLIC, ClassHelper.VOID_TYPE, parameters, statement));
+        classNode.addMethod(new MethodNode("iterateDemo", ACC_PUBLIC, ClassHelper.VOID_TYPE, parameters, ClassNode.EMPTY_ARRAY, statement));
 
         Class fooClass = loadClass(classNode);
         assertTrue("Loaded a new class", fooClass != null);
@@ -131,7 +131,7 @@ public class ForTest extends TestSupport {
         statement.addStatement(createPrintlnStatement(new VariableExpression("coll2")));
         statement.addStatement(createPrintlnStatement(new VariableExpression("coll3")));
 
-        classNode.addMethod(new MethodNode("manyParamDemo", ACC_PUBLIC, ClassHelper.VOID_TYPE, parameters, statement));
+        classNode.addMethod(new MethodNode("manyParamDemo", ACC_PUBLIC, ClassHelper.VOID_TYPE, parameters, ClassNode.EMPTY_ARRAY, statement));
 
         Class fooClass = loadClass(classNode);
         assertTrue("Loaded a new class", fooClass != null);
