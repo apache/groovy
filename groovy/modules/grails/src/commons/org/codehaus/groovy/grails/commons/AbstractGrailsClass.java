@@ -128,7 +128,11 @@ public abstract class AbstractGrailsClass implements GrailsClass {
 	protected Object getPropertyValue(String name, Class type) {
 		BeanWrapper ref = getReference();
 		if (ref.isReadableProperty(name) && ref.getPropertyType(name).isAssignableFrom(type)) {
-			return ref.getPropertyValue(name);
+			Object value = ref.getPropertyValue(name);
+			if(value != null && type.isAssignableFrom(value.getClass())) {
+				return value;
+			}
+			return null;
 		} else {
 			try {
 				Field field = ref.getWrappedClass().getField(name);

@@ -89,8 +89,9 @@ public class DefaultGrailsControllerClass extends AbstractInjectableGrailsClass
 		
 		PropertyDescriptor[] propertyDescriptors = getReference().getPropertyDescriptors();
 		for (int i = 0; i < propertyDescriptors.length; i++) {
-			PropertyDescriptor propertyDescriptor = propertyDescriptors[i];			
-			if (Closure.class.isAssignableFrom(propertyDescriptor.getPropertyType())) {
+			PropertyDescriptor propertyDescriptor = propertyDescriptors[i];	
+			Closure closure = (Closure)getPropertyValue(propertyDescriptor.getName(), Closure.class);
+			if (closure != null) {
 				closureNames.add(propertyDescriptor.getName());
 				String closureName = propertyDescriptor.getName();
 				String viewName = (String)getPropertyValue(propertyDescriptor.getName() + VIEW, String.class);
@@ -105,7 +106,7 @@ public class DefaultGrailsControllerClass extends AbstractInjectableGrailsClass
 					this.uri2viewMap.put(tmpUri, viewUri);
 					this.viewNames.put( closureName, viewUri );
 				}
-				Closure closure = (Closure)getPropertyValue(propertyDescriptor.getName(), Closure.class);
+				closure = (Closure)getPropertyValue(propertyDescriptor.getName(), Closure.class);
 				if (closure != null) {
 					this.uri2closureMap.put(tmpUri, propertyDescriptor.getName());
 					// TODO: This code is likely broken and needs re-thinking as there may be a better way to
