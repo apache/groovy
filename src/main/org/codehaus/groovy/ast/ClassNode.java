@@ -66,6 +66,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     //private static final String[] defaultImports = {"java.lang", "java.util", "groovy.lang", "groovy.util"};
     //private transient Logger log = Logger.getLogger(getClass().getName());
 
+	public static ClassNode[] EMPTY_ARRAY = new ClassNode[0];
+	
     private String name;
     private int modifiers;
     private ClassNode[] interfaces;
@@ -155,13 +157,13 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         Method[] methods = clazz.getDeclaredMethods();
         for (int i=0;i<methods.length;i++){
             Method m = methods[i];
-            MethodNode mn = new MethodNode(m.getName(), m.getModifiers(), ClassHelper.make(m.getReturnType()), createParameters(m.getParameterTypes()), null);
+            MethodNode mn = new MethodNode(m.getName(), m.getModifiers(), ClassHelper.make(m.getReturnType()), createParameters(m.getParameterTypes()), ClassHelper.make(m.getExceptionTypes()), null);
             addMethod(mn);
         }
         Constructor[] constructors = clazz.getConstructors();
         for (int i=0;i<constructors.length;i++){
             Constructor ctor = constructors[i];
-            addConstructor(ctor.getModifiers(),createParameters(ctor.getParameterTypes()),null);
+            addConstructor(ctor.getModifiers(),createParameters(ctor.getParameterTypes()),ClassHelper.make(ctor.getExceptionTypes()),null);
         }
         Class sc = clazz.getSuperclass();
         if (sc!=null) superClass = ClassHelper.make(sc);
@@ -401,8 +403,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         redirect().constructors.add(node);
     }
 
-    public ConstructorNode addConstructor(int modifiers, Parameter[] parameters, Statement code) {
-        ConstructorNode node = new ConstructorNode(modifiers, parameters, code);
+    public ConstructorNode addConstructor(int modifiers, Parameter[] parameters, ClassNode[] exceptions, Statement code) {
+        ConstructorNode node = new ConstructorNode(modifiers, parameters, exceptions, code);
         addConstructor(node);
         return node;
     }
@@ -423,13 +425,14 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
                                 int modifiers,
                                 ClassNode returnType,
                                 Parameter[] parameters,
+                                ClassNode[] exceptions,
                                 Statement code) {
         MethodNode other = getDeclaredMethod(name, parameters);
         // lets not add duplicate methods
         if (other != null) {
             return other;
         }
-        MethodNode node = new MethodNode(name, modifiers, returnType, parameters, code);
+        MethodNode node = new MethodNode(name, modifiers, returnType, parameters, exceptions, code);
         addMethod(node);
         return node;
     }
@@ -441,8 +444,9 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
                                          int modifiers,
                                          ClassNode returnType,
                                          Parameter[] parameters,
+                                         ClassNode[] exceptions,
                                          Statement code) {
-        MethodNode answer = addMethod(name, modifiers, returnType, parameters, code);
+        MethodNode answer = addMethod(name, modifiers, returnType, parameters, exceptions, code);
         answer.setSynthetic(true);
         return answer;
     }
@@ -519,7 +523,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         List declaredMethods = getDeclaredMethods("<clinit>");
         if (declaredMethods.isEmpty()) {
             method =
-                    addMethod("<clinit>", ACC_PUBLIC | ACC_STATIC, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, new BlockStatement());
+                    addMethod("<clinit>", ACC_PUBLIC | ACC_STATIC, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, new BlockStatement());
             method.setSynthetic(true);
         }
         else {
@@ -657,7 +661,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      */
     protected MethodNode createMethodNode(Method method) {
         Parameter[] parameters = createParameters(method.getParameterTypes());
-        return new MethodNode(method.getName(), method.getModifiers(), ClassHelper.make(method.getReturnType()), parameters, EmptyStatement.INSTANCE);
+        return new MethodNode(method.getName(), method.getModifiers(), ClassHelper.make(method.getReturnType()), parameters, ClassHelper.make(method.getExceptionTypes()), EmptyStatement.INSTANCE);
     }
 
     /**

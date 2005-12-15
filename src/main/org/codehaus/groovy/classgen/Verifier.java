@@ -154,6 +154,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 ACC_PUBLIC,
                 ClassHelper.make(MetaClass.class),
                 Parameter.EMPTY_ARRAY,
+                ClassNode.EMPTY_ARRAY,
                 new BlockStatement(new Statement[] { initMetaClassField, new ReturnStatement(metaClassVar)})
             );
 
@@ -173,7 +174,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     ClassHelper.OBJECT_TYPE,
                     new Parameter[] {
                         new Parameter(ClassHelper.STRING_TYPE, "method"),
-                        new Parameter(ClassHelper.OBJECT_TYPE, "arguments")},
+                        new Parameter(ClassHelper.OBJECT_TYPE, "arguments")
+                    },
+                    ClassNode.EMPTY_ARRAY,    
                     new BlockStatement(
                         new Statement[] {
                             initMetaClassField,
@@ -194,6 +197,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                         ACC_PUBLIC,
                         ClassHelper.OBJECT_TYPE,
                         new Parameter[] { new Parameter(ClassHelper.STRING_TYPE, "property")},
+                        ClassNode.EMPTY_ARRAY,
                         new BlockStatement(
                             new Statement[] {
                                 initMetaClassField,
@@ -213,7 +217,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                         ClassHelper.VOID_TYPE,
                         new Parameter[] {
                             new Parameter(ClassHelper.STRING_TYPE, "property"),
-                            new Parameter(ClassHelper.OBJECT_TYPE, "value")},
+                            new Parameter(ClassHelper.OBJECT_TYPE, "value")
+                        },
+                        ClassNode.EMPTY_ARRAY,
                         new BlockStatement(
                             new Statement[] {
                                 initMetaClassField,
@@ -360,7 +366,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
         if (getterBlock != null) {
             MethodNode getter =
-                new MethodNode(getterName, node.getModifiers(), node.getType(), Parameter.EMPTY_ARRAY, getterBlock);
+                new MethodNode(getterName, node.getModifiers(), node.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, getterBlock);
             getter.setSynthetic(true);
             classNode.addMethod(getter);
             visitMethod(getter);
@@ -368,7 +374,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             if (ClassHelper.boolean_TYPE==node.getType() || ClassHelper.Boolean_TYPE==node.getType()) {
                 String secondGetterName = "is" + capitalize(name);
                 MethodNode secondGetter =
-                    new MethodNode(secondGetterName, node.getModifiers(), node.getType(), Parameter.EMPTY_ARRAY, getterBlock);
+                    new MethodNode(secondGetterName, node.getModifiers(), node.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, getterBlock);
                 secondGetter.setSynthetic(true);
                 classNode.addMethod(secondGetter);
                 visitMethod(secondGetter);
@@ -377,7 +383,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         if (setterBlock != null) {
             Parameter[] setterParameterTypes = { new Parameter(node.getType(), "value")};
             MethodNode setter =
-                new MethodNode(setterName, node.getModifiers(), ClassHelper.VOID_TYPE, setterParameterTypes, setterBlock);
+                new MethodNode(setterName, node.getModifiers(), ClassHelper.VOID_TYPE, setterParameterTypes, ClassNode.EMPTY_ARRAY, setterBlock);
             setter.setSynthetic(true);
             classNode.addMethod(setter);
             visitMethod(setter);
@@ -437,7 +443,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     else {
                         code = new ReturnStatement(expression);
                     }
-                    node.addMethod(method.getName(), method.getModifiers(), method.getReturnType(), newParams, code);
+                    node.addMethod(method.getName(), method.getModifiers(), method.getReturnType(), newParams, method.getExceptions(), code);
                 }
             }
         }
@@ -477,7 +483,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             code = new ReturnStatement(expression);
         }
 
-        node.addMethod(method.getName(), method.getModifiers(), method.getReturnType(), newParams, code);
+        node.addMethod(method.getName(), method.getModifiers(), method.getReturnType(), newParams, method.getExceptions(), code);
     }
 
     /**
@@ -523,7 +529,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             code = new ReturnStatement(expression);
         }
 
-        node.addMethod(method.getName(), method.getModifiers(), method.getReturnType(), newParams, code);
+        node.addMethod(method.getName(), method.getModifiers(), method.getReturnType(), newParams, method.getExceptions(), code);
     }
 
     protected void addClosureCode(InnerClassNode node) {

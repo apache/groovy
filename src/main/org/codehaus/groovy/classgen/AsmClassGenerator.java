@@ -342,7 +342,12 @@ public class AsmClassGenerator extends ClassGenerator {
         this.variableScope = null;
 
         String methodType = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, node.getParameters());
-        cv = cw.visitMethod(node.getModifiers(), "<init>", methodType, null, null);
+        ClassNode[] nodeExceptions = node.getExceptions();
+        String[] exceptions = new String[nodeExceptions.length];
+        for (int i=0; i< nodeExceptions.length; i++) {
+        	exceptions[i] = BytecodeHelper.getClassInternalName(nodeExceptions[i]);
+        }
+        cv = cw.visitMethod(node.getModifiers(), "<init>", methodType, null, exceptions);
         helper = new BytecodeHelper(cv);
 
         findMutableVariables();
@@ -370,7 +375,12 @@ public class AsmClassGenerator extends ClassGenerator {
         this.variableScope = null;
 
         String methodType = BytecodeHelper.getMethodDescriptor(node.getReturnType(), node.getParameters());
-        cv = cw.visitMethod(node.getModifiers(), node.getName(), methodType, null, null);
+        ClassNode[] nodeExceptions = node.getExceptions();
+        String[] exceptions = new String[nodeExceptions.length];
+        for (int i=0; i< nodeExceptions.length; i++) {
+        	exceptions[i] = BytecodeHelper.getClassInternalName(nodeExceptions[i]);
+        }
+        cv = cw.visitMethod(node.getModifiers(), node.getName(), methodType, null, exceptions);
         visitAnnotations(node);
         if (node.getCode()!=null) {
             Label labelStart = new Label();
@@ -2581,7 +2591,7 @@ public class AsmClassGenerator extends ClassGenerator {
             answer.setScriptBody(true);
         }
         MethodNode method =
-            answer.addMethod("doCall", ACC_PUBLIC, ClassHelper.OBJECT_TYPE, parameters, expression.getCode());
+            answer.addMethod("doCall", ACC_PUBLIC, ClassHelper.OBJECT_TYPE, parameters, ClassNode.EMPTY_ARRAY, expression.getCode());
 
         method.setLineNumber(expression.getLineNumber());
         method.setColumnNumber(expression.getColumnNumber());
@@ -2605,6 +2615,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 ACC_PUBLIC,
                 ClassHelper.OBJECT_TYPE,
                 parameters,
+                ClassNode.EMPTY_ARRAY,
                 new ReturnStatement(
                     new MethodCallExpression(
                         VariableExpression.THIS_EXPRESSION,
@@ -2653,6 +2664,7 @@ public class AsmClassGenerator extends ClassGenerator {
                     ACC_PUBLIC,
                     realType,
                     Parameter.EMPTY_ARRAY,
+                    ClassNode.EMPTY_ARRAY,
                     new ReturnStatement(fieldExp));
 
                 /*
@@ -2682,7 +2694,7 @@ public class AsmClassGenerator extends ClassGenerator {
         params[1] = new Parameter(ClassHelper.OBJECT_TYPE, "_delegate");
         System.arraycopy(localVariableParams, 0, params, 2, localVariableParams.length);
 
-        answer.addConstructor(ACC_PUBLIC, params, block);
+        answer.addConstructor(ACC_PUBLIC, params, ClassNode.EMPTY_ARRAY, block);
         return answer;
     }
 
@@ -2716,6 +2728,7 @@ public class AsmClassGenerator extends ClassGenerator {
             ACC_PUBLIC,
             ClassHelper.STRING_TYPE.makeArray(),
             Parameter.EMPTY_ARRAY,
+            ClassNode.EMPTY_ARRAY,
             new ReturnStatement(new FieldExpression(stringsField)));
         // lets make the constructor
         BlockStatement block = new BlockStatement();
@@ -2723,7 +2736,7 @@ public class AsmClassGenerator extends ClassGenerator {
             new ExpressionStatement(
                 new MethodCallExpression(new VariableExpression("super"), "<init>", new VariableExpression("values"))));
         Parameter[] contructorParams = new Parameter[] { new Parameter(ClassHelper.OBJECT_TYPE.makeArray(), "values")};
-        answer.addConstructor(ACC_PUBLIC, contructorParams, block);
+        answer.addConstructor(ACC_PUBLIC, contructorParams, ClassNode.EMPTY_ARRAY, block);
         return answer;
     }
 
