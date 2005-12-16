@@ -108,7 +108,7 @@ public class GrailsHibernateConfigurationTests extends AbstractDependencyInjecti
 
 	public void testGrailsDomain() throws Exception {
 		GrailsDomainClass[] domainClasses = grailsApplication.getGrailsDomainClasses();
-		assertEquals(6,domainClasses.length);
+		assertEquals(7,domainClasses.length);
 	}
 	
 	public void testHibernateSave() throws Exception {		
@@ -171,31 +171,64 @@ public class GrailsHibernateConfigurationTests extends AbstractDependencyInjecti
 		// TODO Test loading the relationship back from hibernate
 	}
 	
+	public void testHibernateUniOneToMany() {
+		GrailsDomainClass one2ManyDomain = grailsApplication.getGrailsDomainClass( "org.codehaus.groovy.grails.domain.RelationshipsTest" );
+		GroovyObject one2many = one2ManyDomain.newInstance();
+
+		
+		GroovyObject child = grailsApplication.getGrailsDomainClass( "org.codehaus.groovy.grails.domain.UniOneToManyTest" ).newInstance();
+		
+		HibernateTemplate template = new HibernateTemplate(this.sessionFactory);
+		
+		
+		assertNotNull(child);
+									
+		// create one-to-many relationship
+		Set set = new HashSet();		
+		one2many.setProperty("uniones", set);		
+		((Set)one2many.getProperty("uniones")).add( child );
+		
+		// persist
+		template.save(one2many);
+		template.evict(one2many);
+		
+		one2many = null;
+		// now get it back and check it works as expected
+		one2many = (GroovyObject) template.get(one2ManyDomain.getClazz(),new Long(1));
+		assertNotNull(one2many);
+		
+		set = (Set)one2many.getProperty("uniones");
+		assertNotNull(set);
+		assertEquals(1, set.size());
+		
+	}
+	
 	public void testHibernateOneToMany() {
 		GrailsDomainClass one2ManyDomain = grailsApplication.getGrailsDomainClass( "org.codehaus.groovy.grails.domain.RelationshipsTest" );
 		GroovyObject one2many = one2ManyDomain.newInstance();
 
 		
-		GroovyObject many2one = grailsApplication.getGrailsDomainClass( "org.codehaus.groovy.grails.domain.OneToManyTest2" ).newInstance();
+		GroovyObject child = grailsApplication.getGrailsDomainClass( "org.codehaus.groovy.grails.domain.OneToManyTest2" ).newInstance();
 		
 		HibernateTemplate template = new HibernateTemplate(this.sessionFactory);
 		
 		
-		assertNotNull(many2one);
-									
-		// create one-to-many relationship
-		Set set = new HashSet();		
-		one2many.setProperty("ones", set);		
-		((Set)one2many.getProperty("ones")).add( many2one );
-		
-		// persist
+		assertNotNull(child);
 		template.save(one2many);
 		
+		// create one-to-many relationship
+		child.setProperty("other",one2many);
+		
+		// persist
+		template.save(child);
+		
+		template.evict(one2many);		
+		one2many = null;
 		// now get it back and check it works as expected
 		one2many = (GroovyObject) template.get(one2ManyDomain.getClazz(),new Long(1));
 		assertNotNull(one2many);
 		
-		set = (Set)one2many.getProperty("ones");
+		Set set = (Set)one2many.getProperty("ones");
 		assertNotNull(set);
 		assertEquals(1, set.size());
 		

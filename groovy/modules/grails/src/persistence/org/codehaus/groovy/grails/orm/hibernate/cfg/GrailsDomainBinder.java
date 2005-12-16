@@ -188,15 +188,15 @@ public final class GrailsDomainBinder {
 			collection.setElement(element);
 			bindManyToOne(property,element, mappings);
 		}
-		else if ( property.isOneToMany() && !collection.isInverse() ) {
+		else if ( property.isOneToMany() && !property.isBidirectional() ) {
 				// for non-inverse one-to-many, with a not-null fk, add a backref!
 			OneToMany oneToMany = (OneToMany) collection.getElement();
 				String entityName = ( oneToMany ).getReferencedEntityName();
 				PersistentClass referenced = mappings.getClass( entityName );
 				Backref prop = new Backref();
 				prop.setName( '_' + property.getName() + "Backref" );
-				prop.setUpdateable( false );
-				prop.setInsertable(false);
+				prop.setUpdateable( true );
+				prop.setInsertable( true );
 				prop.setCollectionRole( collection.getRole() );
 				prop.setValue( collection.getKey() );
 				prop.setOptional( property.isOptional() );
