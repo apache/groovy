@@ -1,13 +1,13 @@
 class EntryController {
 	@Property boolean scaffold = true
+	@Property defaultAction = "list"
 	
 	@Property createComment = {
 		def e = Entry.get( this.params["entryId"] )
 		
-		def c = new Comment()
+		def c = new Comment(entry:e)
 		c.properties = this.params		
-		e.comments.add(c)		
-		e.save()
+		c.save()
 		
 		redirect(action:this.show,params:[ "id": this.params["entryId"] ] )
 	}
