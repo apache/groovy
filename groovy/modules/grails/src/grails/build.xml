@@ -135,16 +135,17 @@ Targets:
 				def i = suiteName.lastIndexOf("Tests");
 				suiteName = suiteName.substring(0, i);
 			}			
+			suiteName = suiteName.replaceAll(" ", "" )			
 			grails.setProperty("test.suite.name", suiteName)
 		</script>
 				
-		<copy 	file="${grails.home}/src/grails/templates/Tests.groovy" 
-				tofile="grails-app/tests/${test.suite.name}Tests.groovy"/>
+		<copy 	file="${grails.home}/src/grails/templates/artifacts/Tests.groovy" 
+				tofile="grails-test/${test.suite.name}Tests.groovy"/>
 		
-		<replace 	file="grails-app/tests/${test.suite.name}Tests.groovy" 
+		<replace 	file="grails-test/${test.suite.name}Tests.groovy" 
 					token="@test.suite.name@" 
 					value="${test.suite.name}" />	
-		<echo>Created test suite: grails-app/tests/${test.suite.name}Tests.groovy</echo>
+		<echo>Created test suite: grails-test/${test.suite.name}Tests.groovy</echo>
 	</target>	
 	
 	<target name="init">
@@ -241,20 +242,25 @@ Targets:
 		<delete dir="tmp/tests/classpath"/>
 		<mkdir dir="tmp/tests/classpath/spring"/>
 		<copy todir="tmp/tests/classpath">
-			<fileset dir="${grails.home}/src/web-app/WEB-INF">
+			<fileset dir="${grails.home}/src/war/WEB-INF">
 				<include name="log4j.properties"/>
 			</fileset>
 			<fileset dir="grails-app"/>
+			<fileset dir="grails-test"/>			
 		</copy>
 		<copy todir="tmp/tests/classpath/spring">
 			<fileset dir="spring" includes="**"/>
 		</copy>
+		<copy tofile="tmp/tests/classpath/spring/test-applicationContext.xml" file="${basedir}/web-app/WEB-INF/applicationContext.xml" />
 		<path id="test.classpath">
 			<pathelement location="${basedir}/tmp/tests/classpath"/>
-			<pathelement location="${grails.home}/src/web-app/WEB-INF"/>
+			<pathelement location="${basedir}/tmp/tests/classpath/spring"/>			
+			<!--<pathelement location="${grails.home}/src/web-app/WEB-INF"/>-->
 			<pathelement location="${basedir}/grails-app"/>
 			<pathelement location="${basedir}/grails-app/controllers"/>
 			<pathelement location="${basedir}/grails-app/domain"/>
+			<pathelement location="${basedir}/grails-app/services"/>			
+			<pathelement location="${basedir}/grails-app/i18n"/>						
 			<pathelement location="${basedir}/grails-app/conf"/>
 			<pathelement location="${basedir}/grails-app/tests"/>
 			<pathelement location="${basedir}/grails-test"/>

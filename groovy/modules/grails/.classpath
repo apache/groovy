@@ -7,7 +7,7 @@
 	<classpathentry output="target/test-classes" kind="src" path="test/commons"/>
 	<classpathentry output="target/test-classes" kind="src" path="test/web"/>
 	<classpathentry output="target/test-classes" kind="src" path="test/persistence"/>
-	<classpathentry output="target/test-classes" kind="src" path="test/scaffolding"/>	
+	<classpathentry output="target/test-classes" kind="src" path="test/scaffolding"/>
 	<classpathentry kind="lib" path="lib/junit.jar"/>
 	<classpathentry sourcepath="D:/Downloads/Development/Spring/spring-framework-1.2/src" kind="lib" path="lib/spring.jar"/>
 	<classpathentry kind="lib" path="lib/commons-logging.jar"/>
@@ -39,6 +39,5 @@
 	<classpathentry kind="lib" path="lib/jakarta-oro-2.0.8.jar"/>
 	<classpathentry kind="lib" path="lib/commons-validator.jar"/>
 	<classpathentry sourcepath="/groovy/src/main" kind="lib" path="lib/groovy-all-1.0-jsr-05-SNAPSHOT.jar"/>
-
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>
