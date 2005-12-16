@@ -41,7 +41,7 @@ This application is written against the Servlet 2.3 specifications so should run
 
 Deploy grails-app.war in you servlet container (for most containers this mean copying the file in the webapps folder).
 
-Browse to http://<server_address>:<server_port>/grails-app/app/books to test the application. You can also rename the WAR file to use another context path.
+Browse to http://<server_address>:<server_port>/books/books to test the application. You can also rename the WAR file to use another context path.
 
 Please post a message on the Grails mailing list if you experience any problems running this sample application.
 
