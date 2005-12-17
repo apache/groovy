@@ -384,7 +384,7 @@ class Console implements CaretListener {
     def finishNormal(Object result) {
     	// Take down the wait/cancel dialog
     	history[-1].result = result
-    	if (result) {
+    	if (result != null) {
 	    	statusLabel.text = 'Execution complete.'
 	    	appendOutputNl("Result: ", promptStyle)
 			appendOutput("${InvokerHelper.inspect(result)}", resultStyle)
