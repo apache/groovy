@@ -499,7 +499,7 @@ class Console implements CaretListener {
 		        String name = "Script${scriptNameCounter++}"
 				def result = shell.evaluate(record.textToRun, name); 
 				SwingUtilities.invokeLater { finishNormal(result) }
-	    	} catch (Exception e) {
+	    	} catch (Throwable e) {
 	    		// This assignment required because closure can't see 'e'
 	    		def t = e
 	    		SwingUtilities.invokeLater { finishException(t) }
