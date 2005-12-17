@@ -67,8 +67,10 @@ import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.syntax.*;
 import org.codehaus.groovy.tools.Utilities;
 
+import antlr.CharScanner;
 import antlr.MismatchedTokenException;
 import antlr.NoViableAltException;
+import antlr.NoViableAltForCharException;
 
 import com.thoughtworks.xstream.XStream;
 
@@ -182,34 +184,27 @@ public class SourceUnit extends ProcessingUnit {
      * that returns true if parse() failed with an unexpected EOF.
      */
     public boolean failedWithUnexpectedEOF() {
-        boolean result = false;
+    	// Implementation note - there are several ways for the Groovy compiler
+    	// to report an unexpected EOF. Perhaps this implementation misses some.
+    	// If you find another way, please add it.
         if (getErrorCollector().hasErrors()) {
-            // Classic support
             Message last = (Message) getErrorCollector().getLastError();
+            Throwable cause = null;
             if (last instanceof SyntaxErrorMessage) {
-                SyntaxException cause = ((SyntaxErrorMessage) last).getCause();
-                if (cause instanceof UnexpectedTokenException) {
-                    Token unexpected = ((UnexpectedTokenException) cause).getUnexpectedToken();
-                    if (unexpected.isA(Types.EOF)) {
-                        result = true;
-                    }
-                }
+                cause = ((SyntaxErrorMessage) last).getCause().getCause();
             }
-            // JSR support
-            if (last instanceof ExceptionMessage) {
-                ExceptionMessage exceptionMessage = (ExceptionMessage) last;
-                Exception cause = exceptionMessage.getCause();
-                if (cause instanceof NoViableAltException) {
-                    NoViableAltException antlrException = (NoViableAltException) cause;
-                    result = isEofToken(antlrException.token);
-                }
-                if (cause instanceof MismatchedTokenException) {
-                    MismatchedTokenException antlrException = (MismatchedTokenException) cause;
-                    result = isEofToken(antlrException.token);
+            if (cause != null) {
+            	if (cause instanceof NoViableAltException) {
+                    return isEofToken(((NoViableAltException) cause).token);
+            	} else if (cause instanceof NoViableAltForCharException) {
+            		char badChar = ((NoViableAltForCharException) cause).foundChar;
+            		return badChar == CharScanner.EOF_CHAR;
+                } else if (cause instanceof MismatchedTokenException) {
+                    return isEofToken(((MismatchedTokenException) cause).token);
                 }
             }
         }
-        return result;    
+        return false;    
     }
 
     protected boolean isEofToken(antlr.Token token) {
