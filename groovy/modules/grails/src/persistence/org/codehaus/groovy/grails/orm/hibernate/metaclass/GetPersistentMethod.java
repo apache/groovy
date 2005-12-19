@@ -61,9 +61,11 @@ public class GetPersistentMethod extends AbstractStaticPersistentMethod {
 		Object arg = arguments[0];
 
 		GrailsDomainClass domainClass = this.application.getGrailsDomainClass(clazz.getName());
-		Class identityType = domainClass.getIdentifier().getType();
-		if(!identityType.isAssignableFrom(arg.getClass())) {
-			arg = typeConverter.convertValue(context,arg, identityType);
+		if(domainClass != null) {
+			Class identityType = domainClass.getIdentifier().getType();
+			if(!identityType.isAssignableFrom(arg.getClass())) {
+				arg = typeConverter.convertValue(context,arg, identityType);
+			}
 		}
 
 		return super.getHibernateTemplate().get( clazz, (Serializable)arg );		
