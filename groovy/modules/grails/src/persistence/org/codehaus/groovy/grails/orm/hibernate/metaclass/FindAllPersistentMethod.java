@@ -46,7 +46,7 @@ public class FindAllPersistentMethod extends AbstractStaticPersistentMethod {
 	protected Object doInvokeInternal(final Class clazz, String methodName,
 			final Object[] arguments) {
 		if(arguments.length == 0)
-			throw new MissingMethodException(methodName,clazz,arguments);
+			return getHibernateTemplate().loadAll(clazz);
 		
 		final Object arg = arguments[0];
 		
