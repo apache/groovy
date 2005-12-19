@@ -15,6 +15,7 @@
  */ 
 package org.codehaus.groovy.grails.commons.spring;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -297,6 +298,11 @@ public class SpringConfig {
 		
 		Bean localSessionFactoryBean = SpringConfigUtils.createSingletonBean(ConfigurableLocalsSessionFactoryBean.class);
 		localSessionFactoryBean.setProperty("dataSource", SpringConfigUtils.createBeanReference("dataSource"));
+		ClassLoader cl = this.application.getClassLoader();
+		URL hibernateConfig = cl.getResource("hibernate.cfg.xml");
+		if(hibernateConfig != null) {
+			localSessionFactoryBean.setProperty("configLocation", SpringConfigUtils.createLiteralValue("hibernate.cfg.xml"));			
+		}
 		localSessionFactoryBean.setProperty("hibernateProperties", hibernateProperties);
 		localSessionFactoryBean.setProperty("grailsApplication", SpringConfigUtils.createBeanReference("grailsApplication"));
 		localSessionFactoryBean.setProperty("classLoader", grailsClassLoader);
