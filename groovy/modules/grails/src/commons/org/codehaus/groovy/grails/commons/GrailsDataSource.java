@@ -66,4 +66,10 @@ public interface GrailsDataSource extends InjectableGrailsClass {
 	 * @return other properties
 	 */
 	public Properties getOtherProperties();
+	
+	/**
+	 * Whether to generate the database with HBM 2 DDL, values can be "create", "create-drop" or "update"
+	 * @return
+	 */
+	public String getDdlAuto();
 }

@@ -240,8 +240,9 @@ public class SpringConfig {
 
 	private void populateDataSourceReferences(Collection beanReferences) {
 		boolean dependsOnHsqldbServer = false;
-		if (application.getGrailsDataSource() != null) {
-			GrailsDataSource grailsDataSource = application.getGrailsDataSource();
+		GrailsDataSource grailsDataSource = application.getGrailsDataSource();
+		if (grailsDataSource != null) {
+			
 			Bean dataSource = null;
 			if (grailsDataSource.isPooled()) {
 				dataSource = SpringConfigUtils.createSingletonBean(BasicDataSource.class);
@@ -288,7 +289,14 @@ public class SpringConfig {
 		
 		Map hibernatePropertiesMap = new HashMap();
 		hibernatePropertiesMap.put(SpringConfigUtils.createLiteralValue("hibernate.dialect"), dialectDetector);
-		hibernatePropertiesMap.put(SpringConfigUtils.createLiteralValue("hibernate.hbm2ddl.auto"), SpringConfigUtils.createLiteralValue("create-drop"));
+		if(grailsDataSource == null ) {
+			hibernatePropertiesMap.put(SpringConfigUtils.createLiteralValue("hibernate.hbm2ddl.auto"), SpringConfigUtils.createLiteralValue("create-drop"));
+		}
+		else {
+			if(grailsDataSource.getDdlAuto() != null) {
+				hibernatePropertiesMap.put(SpringConfigUtils.createLiteralValue("hibernate.hbm2ddl.auto"), SpringConfigUtils.createLiteralValue(grailsDataSource.getDdlAuto()));
+			}
+		}
 		Bean hibernateProperties = SpringConfigUtils.createSingletonBean(MapToPropertiesFactoryBean.class);
 		hibernateProperties.setProperty("map", SpringConfigUtils.createMap(hibernatePropertiesMap));
 				
