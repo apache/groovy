@@ -173,6 +173,7 @@ Targets:
 		<!--<mkdir dir="${path}html"/>-->
 		<mkdir dir="${path}lib"/>
 		<mkdir dir="${path}spring"/>
+		<mkdir dir="${path}hibernate"/>		
 		<mkdir dir="${grails.home}/dist"/>
 		
 		<copy todir="${path}web-app/WEB-INF">
@@ -209,7 +210,7 @@ Targets:
 		</delete>
 		<javac srcdir="src/java" destdir="web-app/WEB-INF/classes" classpathref="classpath" debug="on" deprecation="on" optimize="off"/>
 		
-		<groovyc srcdir="src/groovy" destdir="web-app/WEB-INF/classes" classpathref="classpath" debug="on" deprecation="on" optimize="off"/>		
+		<groovyc srcdir="src/groovy" destdir="web-app/WEB-INF/classes" classpathref="classpath" />		
 	</target>
 	
 	<target name="test" depends="build">
@@ -235,7 +236,7 @@ Targets:
 		</junit>
 	</target>
 
-	<target name="test-app">
+	<target name="test-app" depends="build">
 		<property environment="env"/>
 		<fail unless="env.GRAILS_HOME" message="GRAILS_HOME is not set."/>
 		<property name="grails.home" location="${env.GRAILS_HOME}"/>
@@ -245,24 +246,22 @@ Targets:
 			<fileset dir="${grails.home}/src/war/WEB-INF">
 				<include name="log4j.properties"/>
 			</fileset>
-			<fileset dir="grails-app"/>
+			<fileset dir="grails-app/controllers"/>
+			<fileset dir="grails-app/domain"/>			
+			<fileset dir="grails-app/services"/>			
+			<fileset dir="grails-app/i18n"/>			
+			<fileset dir="grails-app/conf"/>				
 			<fileset dir="grails-test"/>			
+			<fileset dir="hibernate" />		
+			<fileset dir="web-app/WEB-INF/classes" />										
 		</copy>
 		<copy todir="tmp/tests/classpath/spring">
 			<fileset dir="spring" includes="**"/>
 		</copy>
-		<copy tofile="tmp/tests/classpath/spring/test-applicationContext.xml" file="${basedir}/web-app/WEB-INF/applicationContext.xml" />
+		<copy tofile="tmp/tests/classpath/test-applicationContext.xml" file="${basedir}/web-app/WEB-INF/applicationContext.xml" />
 		<path id="test.classpath">
-			<pathelement location="${basedir}/tmp/tests/classpath"/>
-			<pathelement location="${basedir}/tmp/tests/classpath/spring"/>			
+			<pathelement location="tmp/tests/classpath"/>			
 			<!--<pathelement location="${grails.home}/src/web-app/WEB-INF"/>-->
-			<pathelement location="${basedir}/grails-app"/>
-			<pathelement location="${basedir}/grails-app/controllers"/>
-			<pathelement location="${basedir}/grails-app/domain"/>
-			<pathelement location="${basedir}/grails-app/services"/>			
-			<pathelement location="${basedir}/grails-app/i18n"/>						
-			<pathelement location="${basedir}/grails-app/conf"/>
-			<pathelement location="${basedir}/grails-app/tests"/>
 			<pathelement location="${basedir}/grails-test"/>
 			<fileset dir="${grails.home}/lib"/>
 			<fileset dir="${grails.home}/dist"/>
@@ -274,7 +273,7 @@ Targets:
 		</java>
 	</target>
 	
-	<target name="war">
+	<target name="war" depends="build">
 		<property environment="env"/>
 		<fail unless="env.GRAILS_HOME" message="GRAILS_HOME is not set."/>
 		<property name="grails.home" location="${env.GRAILS_HOME}"/>
@@ -388,6 +387,7 @@ Targets:
 			<fileset dir="grails-app" includes="**">
 				<exclude name="controllers"/>
 				<exclude name="domain"/>
+				<exclude name="services"/>				
 				<exclude name="conf"/>
 				<exclude name="views"/>
 				<exclude name="views/layouts"/>				
@@ -407,6 +407,9 @@ Targets:
 		<copy todir="tmp/war/WEB-INF/spring">
 			<fileset dir="spring" includes="**"/>
 		</copy>
+		<copy todir="tmp/war/WEB-INF/classes">
+			<fileset dir="hibernate" includes="**"/>
+		</copy>		
 		<copy todir="tmp/war/WEB-INF">
 			<fileset dir="${grails.home}/src/war/WEB-INF">
 				<include name="log4j.properties"/>

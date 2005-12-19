@@ -31,6 +31,9 @@
 		<property name="grailsApplication">
 			<ref bean="grailsApplication" />
 		</property>
+		<property name="configLocation">
+			<value>hibernate.cfg.xml</value>
+		</property> 				
 		<property name="configurationClass">
 			<value>org.codehaus.groovy.grails.orm.hibernate.cfg.DefaultGrailsDomainConfiguration</value>
 		</property> 

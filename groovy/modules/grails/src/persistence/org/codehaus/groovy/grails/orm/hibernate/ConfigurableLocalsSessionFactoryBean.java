@@ -15,12 +15,21 @@
  */ 
 package org.codehaus.groovy.grails.orm.hibernate;
 
+import java.beans.IntrospectionException;
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Iterator;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.codehaus.groovy.grails.commons.GrailsApplication;
+import org.codehaus.groovy.grails.metaclass.DomainClassMethods;
 import org.codehaus.groovy.grails.orm.hibernate.cfg.DefaultGrailsDomainConfiguration;
+import org.hibernate.EntityMode;
 import org.hibernate.HibernateException;
+import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
+import org.hibernate.metadata.ClassMetadata;
 import org.springframework.orm.hibernate3.LocalSessionFactoryBean;
 
 /**
@@ -30,8 +39,32 @@ import org.springframework.orm.hibernate3.LocalSessionFactoryBean;
 public class ConfigurableLocalsSessionFactoryBean extends
 		LocalSessionFactoryBean {
 
+	private static final Log LOG  = LogFactory.getLog(ConfigurableLocalsSessionFactoryBean.class);
 	private ClassLoader classLoader = null;
 	private GrailsApplication grailsApplication;	
+
+
+	/* (non-Javadoc)
+	 * @see org.springframework.orm.hibernate3.LocalSessionFactoryBean#newSessionFactory(org.hibernate.cfg.Configuration)
+	 */
+	protected SessionFactory newSessionFactory(Configuration config) throws HibernateException {
+		SessionFactory sessionFactory = super.newSessionFactory(config);
+		
+		Collection classMetaData = sessionFactory.getAllClassMetadata().values();
+		for (Iterator i = classMetaData.iterator(); i.hasNext();) {
+			ClassMetadata cmd = (ClassMetadata) i.next();
+			Class persistentClass = cmd.getMappedClass(EntityMode.POJO);
+			if(this.grailsApplication.getGrailsDomainClass(persistentClass.getName()) == null) {
+				LOG.info("[LocalsSessionFactoryBean] Registering dynamic methods on externally configured hibernate persistent class ["+persistentClass+"]");
+				try {
+					new DomainClassMethods(this.grailsApplication,persistentClass,sessionFactory,this.grailsApplication.getClassLoader());
+				} catch (IntrospectionException e) {
+					LOG.warn("[LocalsSessionFactoryBean] Introspection exception registering dynamic methods for ["+persistentClass+"]:" + e.getMessage(), e);
+				}
+			}
+		}
+		return sessionFactory;
+	}
 
 	/**
 	 * 

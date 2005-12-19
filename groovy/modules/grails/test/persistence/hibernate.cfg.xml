@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-configuration PUBLIC "-//Hibernate/Hibernate Configuration DTD 2.0//EN" "http://hibernate.sourceforge.net/hibernate-configuration-2.0.dtd">
+<hibernate-configuration>
+
+	<!-- a SessionFactory instance listed as /jndi/name -->
+	<session-factory>
+		<!-- mapping files -->
+		<mapping resource="org/codehaus/groovy/grails/orm/hibernate/HibernateMappedClass.hbm.xml"/>
+	</session-factory>
+
+</hibernate-configuration>
