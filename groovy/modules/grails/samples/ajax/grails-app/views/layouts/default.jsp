@@ -11,6 +11,17 @@
 			body,td,a,p,.h{font-family:arial,sans-serif;}
 			.h{font-size: 20px;}
 			.q{color:#0000cc;}
+.autoComplete {
+	font-weight:bold;
+	font-size: 0.95em;	
+	background-color: white;
+	border: 1px solid black;
+	padding: 1px;	
+}
+.autoCompleteResultOver {
+	background-color:#00287A;
+	color:white;
+}
 			//-->
 		</style>
 		<script type="text/javascript" src="js/prototype.js"></script>

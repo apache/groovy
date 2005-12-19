@@ -6,24 +6,28 @@
 	<script>
 	<!--
 		function bodyOnload() {
-			var autoComplete = new Grails.AutoComplete("googleAutoComplete", 
-														 "googleTextField",
-														 "/grails-app/app/google/search" );
+			ajaxEngine.registerAjaxElement("googleUrlResults");
+			ajaxEngine.registerRequest("search", "/ajax/google/search");
+			$("btnG").onclick = function() {
+				ajaxEngine.sendRequest("search", "q=" + $("googleTextField").value);
+			}
 		}
 	// -->
 	</script>
 </head>
 <body onload="bodyOnload();">
 
-<form action=/search name=f>
 	<table border=0 cellspacing=0 cellpadding=4>
 		<table cellspacing=0 cellpadding=0>
 			<tr><td width=25%>&nbsp;</td>
 			<td align=center>
-				<input id="googleTextField" maxLength=256 size=55 name=q value="">
-				<input type=submit value="Go" name=btnG>
+				<input id="googleTextField" maxLength=256 size=55 name=q value="" autocomplete="off">
+				<input type=button id="btnG" value="Go" name=btnG>
 			</td>
 			</tr>
 		</table>
-	</form>
+		
+		<div id="googleUrlResults">
+		
+		</div>
 </body></html>
