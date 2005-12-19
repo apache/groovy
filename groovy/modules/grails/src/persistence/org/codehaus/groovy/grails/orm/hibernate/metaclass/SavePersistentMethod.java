@@ -16,6 +16,7 @@
 package org.codehaus.groovy.grails.orm.hibernate.metaclass;
 
 import org.codehaus.groovy.grails.commons.GrailsApplication;
+import org.codehaus.groovy.grails.commons.GrailsDomainClass;
 import org.codehaus.groovy.grails.commons.metaclass.DelegatingMetaClass;
 import org.codehaus.groovy.grails.metaclass.DomainClassMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -46,32 +47,32 @@ public class SavePersistentMethod extends AbstractDynamicPersistentMethod {
 	protected Object doInvokeInternal(Object target, Object[] arguments) {
 		
 		Errors errors = new BindException(target, target.getClass().getName());
-		Validator validator = application.getGrailsDomainClass( target.getClass().getName() ).getValidator();
+		GrailsDomainClass domainClass = application.getGrailsDomainClass( target.getClass().getName() );
+		Validator validator = null;
 		boolean doValidation = true;
-		if(arguments.length > 0) {
-			if(arguments[0] instanceof Boolean) {
-				doValidation = ((Boolean)arguments[0]).booleanValue();
+		Boolean success = new Boolean(true);
+		if(domainClass != null) {
+			validator = domainClass.getValidator();
+			doValidation = true;
+			if(arguments.length > 0) {
+				if(arguments[0] instanceof Boolean) {
+					doValidation = ((Boolean)arguments[0]).booleanValue();
+				}
 			}
 		}
-		Boolean success = new Boolean(true);
 		if(doValidation) {
 			if(validator != null) {
 				validator.validate(target,errors);
 				
 				if(errors.hasErrors()) {
-					success = new Boolean(!errors.hasErrors());	
 					DelegatingMetaClass metaClass = (DelegatingMetaClass)InvokerHelper.getInstance().getMetaRegistry().getMetaClass(target.getClass());
 					metaClass.setProperty(target,DomainClassMethods.HAS_ERRORS_PROPERTY,success);
-					metaClass.setProperty(target,DomainClassMethods.ERRORS_PROPERTY,errors.getAllErrors());											
-				}
-				else {
-					getHibernateTemplate().saveOrUpdate(target);
+					metaClass.setProperty(target,DomainClassMethods.ERRORS_PROPERTY,errors.getAllErrors());
+					return new Boolean(!errors.hasErrors());	
 				}
 			}
-		}
-		else {
-			getHibernateTemplate().saveOrUpdate(target);			
-		}
+		}		
+		getHibernateTemplate().saveOrUpdate(target);			
 		
 		return success;
 	}
