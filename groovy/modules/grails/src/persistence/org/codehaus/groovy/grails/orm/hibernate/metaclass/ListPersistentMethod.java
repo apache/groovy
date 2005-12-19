@@ -33,7 +33,7 @@ import org.springframework.orm.hibernate3.HibernateCallback;
  * 
  * eg.
  * Account.list(); // list all
- * Account.list(max); // list all up to max
+ * Account.list(max:10,offset:50,sort:"holder",order:"desc"); // list up to 10, offset by 50, sorted by holder and in descending order 
  * 
  * @author Graeme Rocher
  *
