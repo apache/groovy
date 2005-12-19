@@ -34,12 +34,6 @@ public class PersistentMethodTests extends AbstractDependencyInjectionSpringCont
 	protected String[] getConfigLocations() {
 		return new String[] { "org/codehaus/groovy/grails/orm/hibernate/grails-persistent-method-tests.xml" };
 	}
-	
-	
-	
-
-
-
 
 	public void testMethodSignatures() {
 		
@@ -109,7 +103,7 @@ public class PersistentMethodTests extends AbstractDependencyInjectionSpringCont
 		obj3.setProperty( "age", new Integer(12));
 		obj3.invokeMethod("save", null);			
 		
-		Object returnValue = obj.getMetaClass().invokeStaticMethod(obj, "findAllByFirstName", new Object[] { "fred" });
+		Object returnValue = obj.getMetaClass().invokeStaticMethod(obj, "findAllByFirstName", new Object[] { "fred", new Integer(10) });
 		assertNotNull(returnValue);
 		assertTrue(returnValue instanceof List);
 		

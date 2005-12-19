@@ -369,7 +369,7 @@ public abstract class AbstractClausedStaticPersistentMethod extends
 		if(!containsOperator) {
 			GrailsMethodExpression solo = GrailsMethodExpression.create(this.application, clazz,querySequence );
 			
-			if(solo.argumentsRequired != arguments.length)
+			if(solo.argumentsRequired > arguments.length)
 				throw new MissingMethodException(methodName,clazz,arguments);
 			
 			totalRequiredArguments += solo.argumentsRequired;			
@@ -390,11 +390,21 @@ public abstract class AbstractClausedStaticPersistentMethod extends
 
 		// if the total of all the arguments necessary does not equal the number of arguments
 		// throw exception
-		if(totalRequiredArguments != arguments.length)
+		if(totalRequiredArguments > arguments.length)
 			throw new MissingMethodException(methodName,clazz,arguments);
 		
-		LOG.debug("Calculated expressions: " + expressions);
-		return doInvokeInternalWithExpressions(clazz, methodName, arguments, expressions);
+		// calculate the remaining arguments
+		Object[] remainingArguments = new Object[arguments.length - totalRequiredArguments];
+		if(remainingArguments.length > 0) {		
+			for (int i = 0, j = totalRequiredArguments; i < remainingArguments.length; i++,j++) {
+				remainingArguments[i] = arguments[j];
+			}
+		}
+		
+		if(LOG.isTraceEnabled())
+			LOG.trace("Calculated expressions: " + expressions);
+		
+		return doInvokeInternalWithExpressions(clazz, methodName, remainingArguments, expressions);
 	}
 	
 	protected abstract Object doInvokeInternalWithExpressions(Class clazz, String methodName, Object[] arguments, List expressions);
