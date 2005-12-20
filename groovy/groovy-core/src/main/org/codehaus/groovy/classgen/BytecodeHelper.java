@@ -224,7 +224,7 @@ public class BytecodeHelper implements Opcodes {
     }
     
     public static String getClassInternalName(Class t) {
-        return org.objectweb.asm.Type.getInternalName(t);
+        return org.objectweb.asm.Type.getDescriptor(t);
     }
     
     /**
