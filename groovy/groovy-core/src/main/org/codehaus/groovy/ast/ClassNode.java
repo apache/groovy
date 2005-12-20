@@ -101,7 +101,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     
     public void setRedirect(ClassNode cn) {
         if (isPrimaryNode) throw new GroovyBugError("tried to set a redirect for a primary ClassNode ("+getName()+"->"+cn.getName()+").");
-        redirect = cn.redirect();
+        redirect = cn.redirect();        
     }
         
     public ClassNode makeArray() {
@@ -118,7 +118,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
     
     public boolean isPrimaryClassNode(){
-    	return redirect().isPrimaryNode;
+    	return redirect().isPrimaryNode || (componentType!= null && componentType.isPrimaryClassNode());
     }
     
     private ClassNode(ClassNode componentType) {
