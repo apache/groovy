@@ -218,7 +218,7 @@ public class SpringConfig {
 			beanReferences.add(SpringConfigUtils.createBeanReference(simpleController.getFullName() + "Class", controllerClass));
 			controllerClassBeans.put(simpleController.getFullName() + "Class", controllerClass);
 			
-			Bean controller = SpringConfigUtils.createSingletonBean();
+			Bean controller = SpringConfigUtils.createPrototypeBean();
 			controller.setFactoryBean(SpringConfigUtils.createBeanReference(simpleController.getFullName() + "Class"));
 			controller.setFactoryMethod("newInstance");
 			controller.setAutowire("byName");

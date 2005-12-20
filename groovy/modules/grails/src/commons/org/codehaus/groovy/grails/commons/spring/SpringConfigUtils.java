@@ -51,12 +51,28 @@ public class SpringConfigUtils {
 		return createSingletonBean(clazz, null, constructorArguments);
 	}
 	
+	public static Bean createPrototypeBean() {
+		return createPrototypeBean(null, null, null);
+	}
+	
+	public static Bean createPrototypeBean(Class clazz) {
+		return createPrototypeBean(clazz, null, null);
+	}
+	
+	public static Bean createPrototypeBean(Class clazz, Collection constructorArguments) {
+		return createPrototypeBean(clazz, null, constructorArguments);
+	}	
+	
+	public static Bean createPrototypeBean(Class clazz,  BeanReference parent, Collection constructorArguments) {
+		return createBean(clazz, parent, false, constructorArguments,false);
+	}
+
 	public static Bean createSingletonBean(Class clazz, BeanReference parent) {
 		return createSingletonBean(clazz, parent, null);
 	}
 	
 	public static Bean createSingletonBean(Class clazz, BeanReference parent, Collection constructorArguments) {
-		return createSingletonBean(clazz, parent, false, constructorArguments);
+		return createBean(clazz, parent, false, constructorArguments,true);
 	}
 	
 	public static Bean createAbstractSingletonBean(Class clazz) {
@@ -64,10 +80,10 @@ public class SpringConfigUtils {
 	}
 	
 	public static Bean createAbstractSingletonBean(Class clazz, Collection constructorArguments) {
-		return createSingletonBean(clazz, null, true, constructorArguments);
+		return createBean(clazz, null, true, constructorArguments,true);
 	}
 	
-	public static Bean createSingletonBean(final Class clazz, final BeanReference parent, final boolean _abstract, final Collection constructorArguments) {
+	public static Bean createBean(final Class clazz, final BeanReference parent, final boolean _abstract, final Collection constructorArguments, final boolean isSingleton) {
 		return new Bean() {
 			private String autowire = null;
 			private Collection dependsOn = null;
@@ -123,7 +139,7 @@ public class SpringConfigUtils {
 			}
 			
 			public boolean isSingleton() {
-				return true;
+				return isSingleton;
 			}
 			
 			public void setAutowire(String autowire) {

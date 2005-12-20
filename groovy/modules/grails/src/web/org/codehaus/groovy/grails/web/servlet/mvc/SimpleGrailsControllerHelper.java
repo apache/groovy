@@ -139,7 +139,7 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
 		//String controllerName = WordUtils.uncapitalize(controllerClass.getName());
 		
 		// Step 3: load controller from application context.
-		GroovyObject controller = controllerClass.newInstance();
+		GroovyObject controller = getControllerInstance(controllerClass);
 		// Step 3a: Configure a proxy interceptor for controller dynamic methods for this request		
 		if(this.interceptor == null) {
 			try {
