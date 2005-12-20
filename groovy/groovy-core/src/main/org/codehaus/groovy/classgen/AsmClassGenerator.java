@@ -415,8 +415,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 for (Iterator iterator = vars.iterator(); iterator.hasNext();) {
                     String varName = (String) iterator.next();
                     Variable v = (Variable)variableStack.get(varName);
-                    String type = v.getTypeName();
-                    type = BytecodeHelper.getTypeDescription(type);
+                    String type = BytecodeHelper.getTypeDescription(v.getType());
                     Label start = v.getStartLabel() != null ? v.getStartLabel() : labelStart;
                     Label end = v.getEndLabel() != null ? v.getEndLabel() : labelEnd;
                     cv.visitLocalVariable(varName, type, null, start, end, v.getIndex());
@@ -3369,7 +3368,7 @@ public class AsmClassGenerator extends ClassGenerator {
                     visitVariableEndLabel(v);
                     cv.visitLocalVariable(
                                           v.getName(),
-                                          BytecodeHelper.getTypeDescription(v.getTypeName()),
+                                          BytecodeHelper.getTypeDescription(v.getType()),
                                           null,
                                           v.getStartLabel(),
                                           v.getEndLabel(),
@@ -3388,7 +3387,7 @@ public class AsmClassGenerator extends ClassGenerator {
         	cv.visitLabel(endl);
         	cv.visitLocalVariable(
                                 v.getName(),
-                                BytecodeHelper.getTypeDescription(v.getTypeName()),
+                                BytecodeHelper.getTypeDescription(v.getType()),
                                 null,
                                 v.getStartLabel(),
                                 endl,
