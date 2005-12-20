@@ -46,6 +46,8 @@
 
 package org.codehaus.groovy.classgen;
 
+import org.codehaus.groovy.ast.ClassHelper;
+
 import groovy.util.GroovyTestCase;
 
 /**
@@ -56,7 +58,7 @@ import groovy.util.GroovyTestCase;
 public class BytecodeHelperTest extends GroovyTestCase {
 
     public void testTypeName() {
-        assertEquals("[C", BytecodeHelper.getTypeDescription("char[]"));
+        assertEquals("[C", BytecodeHelper.getTypeDescription(ClassHelper.char_TYPE.makeArray()));
     }
 
     public void testMethodDescriptor() {
