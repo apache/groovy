@@ -17,6 +17,7 @@ package org.codehaus.groovy.grails.orm.hibernate.cfg;
 
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -134,20 +135,21 @@ public final class GrailsDomainBinder {
 
 	private static void bindCollectionSecondPass(GrailsDomainClassProperty property, Mappings mappings, Map persistentClasses, Collection collection, Map inheritedMetas) {
 
+		PersistentClass associatedClass = null;
 		// Configure one-to-many
 		if(collection.isOneToMany()) {
 			OneToMany oneToMany = (OneToMany)collection.getElement();
 			String associatedClassName = oneToMany.getReferencedEntityName();
 			
-			PersistentClass persistentClass = (PersistentClass)persistentClasses.get(associatedClassName);
+			associatedClass = (PersistentClass)persistentClasses.get(associatedClassName);
 			// if there is no persistent class for the association throw
 			// exception
-			if(persistentClass == null) {
+			if(associatedClass == null) {
 				throw new MappingException( "Association references unmapped class: " + oneToMany.getReferencedEntityName() );
 			}
 			
-			oneToMany.setAssociatedClass( persistentClass );
-			collection.setCollectionTable( persistentClass.getTable() );
+			oneToMany.setAssociatedClass( associatedClass );
+			collection.setCollectionTable( associatedClass.getTable() );
 			collection.setLazy(true);
 			
 			LOG.info( "Mapping collection: "
@@ -169,14 +171,24 @@ public final class GrailsDomainBinder {
 			keyValue = (KeyValue)collection.getOwner().getProperty( propertyRef ).getValue();
 		}
 		
-		keyValue.setTypeUsingReflection(property.getReferencedDomainClass().getFullName(), collection.getReferencedPropertyName());
-		
 		DependantValue key = new DependantValue(collection.getCollectionTable(), keyValue);		
-		key.setTypeUsingReflection(property.getReferencedDomainClass().getName(), collection.getReferencedPropertyName());
+		key.setTypeName(null);
 		
-		
-		bindSimpleValue( property,key,mappings );
-		
+//		
+		if(property.isBidirectional()) {
+			GrailsDomainClassProperty otherSide = property.getOtherSide();
+			if(otherSide.isManyToOne()) {
+				collection.setInverse(true);
+				Iterator mappedByColumns = associatedClass.getProperty( otherSide.getName() ).getValue().getColumnIterator();
+				while(mappedByColumns.hasNext()) {
+					Column column = (Column)mappedByColumns.next();
+					linkValueUsingAColumnCopy(otherSide,column,key);
+				}
+			}			
+		}
+		else {
+			bindSimpleValue( property,key,mappings );
+		}				
 		collection.setKey( key );
 		// make required and non-updateable
 		key.setNullable(false);
@@ -204,6 +216,18 @@ public final class GrailsDomainBinder {
 		}		
 	}		
 	
+	private static void linkValueUsingAColumnCopy(GrailsDomainClassProperty prop, Column column, DependantValue key) {
+		Column mappingColumn = new Column();
+		mappingColumn.setName(column.getName());
+		mappingColumn.setLength(column.getLength());
+		mappingColumn.setNullable(!prop.isOptional());
+		mappingColumn.setSqlType(column.getSqlType());		
+		
+		mappingColumn.setValue(key);
+		key.addColumn( mappingColumn );
+		key.getTable().addColumn( mappingColumn );		
+	}
+
 	/**
 	 * First pass to bind collection to Hibernate metamodel, sets up second pass
 	 * 
@@ -358,6 +382,9 @@ public final class GrailsDomainBinder {
 		for(int i = 0; i < persistantProperties.length;i++) {
 			
 			GrailsDomainClassProperty currentGrailsProp = persistantProperties[i];
+			// TODO: Implement support for many from many relationships
+			if(currentGrailsProp.isManyToMany())
+				continue;
 /*			if(currentGrailsProp.isManyToOne() && currentGrailsProp.isBidirectional() ) {
 				GrailsDomainClassProperty otherSide = currentGrailsProp.getOtherSide();
 				if(otherSide.isOneToMany())
@@ -473,8 +500,7 @@ public final class GrailsDomainBinder {
 	 * @param mappings
 	 */
 	private static void bindOneToMany(GrailsDomainClassProperty currentGrailsProp, OneToMany one, Mappings mappings) {
-
-		one.setReferencedEntityName( currentGrailsProp.getReferencedPropertyType().getName() );
+		one.setReferencedEntityName( currentGrailsProp.getReferencedPropertyType().getName() );		
 	}
 
 	/**
@@ -597,6 +623,9 @@ public final class GrailsDomainBinder {
 		simpleValue.setTypeName(grailsProp.getType().getName());
 		Table table = simpleValue.getTable();
 		Column column = new Column();
+		if(grailsProp.isManyToOne())
+			column.setNullable(false);
+		
 		column.setValue(simpleValue);
 		bindColumn(grailsProp, column);
 								
