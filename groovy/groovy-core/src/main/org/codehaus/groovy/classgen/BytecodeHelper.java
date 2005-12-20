@@ -134,7 +134,7 @@ public class BytecodeHelper implements Opcodes {
      */
     public void box(Class type) {
         if (type.isPrimitive() && type != void.class) {
-            String returnString = "(" + getTypeDescription(type.getName()) + ")Ljava/lang/Object;";
+            String returnString = "(" + getTypeDescription(type) + ")Ljava/lang/Object;";
             cv.visitMethodInsn(INVOKESTATIC, getClassInternalName(ScriptBytecodeAdapter.class.getName()), "box", returnString);
         }
     }
@@ -149,7 +149,7 @@ public class BytecodeHelper implements Opcodes {
      */
     public void unbox(Class type) {
         if (type.isPrimitive() && type != Void.TYPE) {
-            String returnString = "(Ljava/lang/Object;)" + getTypeDescription(type.getName());
+            String returnString = "(Ljava/lang/Object;)" + getTypeDescription(type);
             cv.visitMethodInsn(
                 INVOKESTATIC,
                 getClassInternalName(ScriptBytecodeAdapter.class.getName()),
@@ -162,59 +162,6 @@ public class BytecodeHelper implements Opcodes {
         if (type.isPrimaryClassNode()) return;
         unbox(type.getTypeClass());
     }
- 
-    /**
-     * array types are special:
-     * eg.: String[]: classname: [Ljava/lang/String;
-     *      int[]: [I
-     * @return the ASM type description
-     */
-    public static String getTypeDescription(String name) {
-        // lets avoid class loading
-        // return getType(name).getDescriptor();
-        if (name == null) {
-            return "Ljava/lang/Object;";
-        }
-        if (name.equals("void")) {
-            return "V";
-        }
-
-        if (name.startsWith("[")) { // todo need to take care of multi-dimentional array
-            return name.replace('.', '/');
-        }
-
-        String prefix = "";
-        if (name.endsWith("[]")) {
-            prefix = "[";
-            name = name.substring(0, name.length() - 2);
-        }
-
-        if (name.equals("int")) {
-            return prefix + "I";
-        }
-        else if (name.equals("long")) {
-            return prefix + "J";
-        }
-        else if (name.equals("short")) {
-            return prefix + "S";
-        }
-        else if (name.equals("float")) {
-            return prefix + "F";
-        }
-        else if (name.equals("double")) {
-            return prefix + "D";
-        }
-        else if (name.equals("byte")) {
-            return prefix + "B";
-        }
-        else if (name.equals("char")) {
-            return prefix + "C";
-        }
-        else if (name.equals("boolean")) {
-            return prefix + "Z";
-        }
-        return prefix + "L" + name.replace('.', '/') + ";";
-    }
 
     public static String getClassInternalName(ClassNode t){
     	if (t.isPrimaryClassNode()){
@@ -224,18 +171,14 @@ public class BytecodeHelper implements Opcodes {
     }
     
     public static String getClassInternalName(Class t) {
-        return org.objectweb.asm.Type.getDescriptor(t);
+        return org.objectweb.asm.Type.getInternalName(t);
     }
     
     /**
      * @return the ASM internal name of the type
      */
     public static String getClassInternalName(String name) {
-        String answer = name.replace('.', '/');
-        while (answer.endsWith("[]")) {
-            answer = "[" + answer.substring(0, answer.length() - 2);
-        }
-        return answer;
+        return name.replace('.', '/');
     }
     
     /**
@@ -244,10 +187,10 @@ public class BytecodeHelper implements Opcodes {
     public static String getMethodDescriptor(ClassNode returnType, Parameter[] parameters) {
         StringBuffer buffer = new StringBuffer("(");
         for (int i = 0; i < parameters.length; i++) {
-            buffer.append(getTypeDescription(parameters[i].getType().getName()));
+            buffer.append(getTypeDescription(parameters[i].getType()));
         }
         buffer.append(")");
-        buffer.append(getTypeDescription(returnType.getName()));
+        buffer.append(getTypeDescription(returnType));
         return buffer.toString();
     }
 
@@ -258,21 +201,64 @@ public class BytecodeHelper implements Opcodes {
         // lets avoid class loading
         StringBuffer buffer = new StringBuffer("(");
         for (int i = 0; i < paramTypes.length; i++) {
-            buffer.append(getTypeDescription(paramTypes[i].getName()));
+            buffer.append(getTypeDescription(paramTypes[i]));
         }
         buffer.append(")");
-        buffer.append(getTypeDescription(returnType.getName()));
+        buffer.append(getTypeDescription(returnType));
         return buffer.toString();
     }
-    
-    
 
-    public static String getTypeDescription(ClassNode type) {
-        if (type.isArray()) {
-            return type.getName().replace('.', '/');
-        }
-        else {
-            return getTypeDescription(type.getName());
+    public static String getTypeDescription(Class c) {
+        return org.objectweb.asm.Type.getDescriptor(c);
+    }
+    
+    /**
+     * array types are special:
+     * eg.: String[]: classname: [Ljava/lang/String;
+     *      int[]: [I
+     * @return the ASM type description
+     */
+    public static String getTypeDescription(ClassNode c) {
+        StringBuffer buf = new StringBuffer();
+        ClassNode d = c;
+        while (true) {
+            if (d.isPrimaryClassNode()) {
+                char car;
+                if (d == ClassHelper.int_TYPE) {
+                    car = 'I';
+                } else if (d == ClassHelper.VOID_TYPE) {
+                    car = 'V';
+                } else if (d == ClassHelper.boolean_TYPE) {
+                    car = 'Z';
+                } else if (d == ClassHelper.byte_TYPE) {
+                    car = 'B';
+                } else if (d == ClassHelper.char_TYPE) {
+                    car = 'C';
+                } else if (d == ClassHelper.short_TYPE) {
+                    car = 'S';
+                } else if (d == ClassHelper.double_TYPE) {
+                    car = 'D';
+                } else if (d == ClassHelper.float_TYPE) {
+                    car = 'F';
+                } else /* long */{
+                    car = 'J';
+                }
+                buf.append(car);
+                return buf.toString();
+            } else if (d.isArray()) {
+                buf.append('[');
+                d = d.getComponentType();
+            } else {
+                buf.append('L');
+                String name = d.getName();
+                int len = name.length();
+                for (int i = 0; i < len; ++i) {
+                    char car = name.charAt(i);
+                    buf.append(car == '.' ? '/' : car);
+                }
+                buf.append(';');
+                return buf.toString();
+            }
         }
     }
 
@@ -338,7 +324,7 @@ public class BytecodeHelper implements Opcodes {
             else {
                 cv.visitTypeInsn(
                     CHECKCAST,
-                    type.isArray() ? getTypeDescription(type.getName()) : getClassInternalName(type.getName()));
+                    type.isArray() ? getTypeDescription(type) : getClassInternalName(type.getName()));
             }
         }
     }
@@ -557,7 +543,7 @@ public class BytecodeHelper implements Opcodes {
     }
 
     public void putField(FieldNode fld, String ownerName) {
-    	cv.visitFieldInsn(PUTFIELD, ownerName, fld.getName(), getTypeDescription(fld.getType().getName()));
+    	cv.visitFieldInsn(PUTFIELD, ownerName, fld.getName(), getTypeDescription(fld.getType()));
     }
 
     public void loadThis() {
