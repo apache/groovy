@@ -222,7 +222,7 @@ public class BytecodeHelper implements Opcodes {
         StringBuffer buf = new StringBuffer();
         ClassNode d = c;
         while (true) {
-            if (d.isPrimaryClassNode()) {
+            if (ClassHelper.isPrimitiveType(d)) {
                 char car;
                 if (d == ClassHelper.int_TYPE) {
                     car = 'I';
