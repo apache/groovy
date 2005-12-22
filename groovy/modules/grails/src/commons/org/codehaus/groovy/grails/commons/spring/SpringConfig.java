@@ -42,6 +42,7 @@ import org.codehaus.groovy.grails.scaffolding.DefaultScaffoldDomain;
 import org.codehaus.groovy.grails.scaffolding.DefaultScaffoldRequestHandler;
 import org.codehaus.groovy.grails.scaffolding.ViewDelegatingScaffoldResponseHandler;
 import org.codehaus.groovy.grails.support.ClassEditor;
+import org.codehaus.groovy.grails.web.errors.GrailsExceptionResolver;
 import org.codehaus.groovy.grails.web.pageflow.GrailsFlowBuilder;
 import org.codehaus.groovy.grails.web.pageflow.execution.servlet.GrailsServletFlowExecutionManager;
 import org.codehaus.groovy.grails.web.servlet.mvc.GrailsUrlHandlerMapping;
@@ -102,6 +103,11 @@ public class SpringConfig {
 		// setup message source
 		Bean messageSource = SpringConfigUtils.createSingletonBean( ReloadableResourceBundleMessageSource.class );
 		messageSource.setProperty( "basename", SpringConfigUtils.createLiteralValue("messages"));		
+		
+		// configure exception handler
+		Bean exceptionHandler = SpringConfigUtils.createSingletonBean(GrailsExceptionResolver.class);
+		exceptionHandler.setProperty("exceptionMappings", SpringConfigUtils.createLiteralValue("java.lang.Exception=error"));
+		beanReferences.add(SpringConfigUtils.createBeanReference("exceptionHandler", exceptionHandler));
 		
 		// configure data source & hibernate
 		LOG.info("[SpringConfig] Configuring Grails data source");
@@ -293,8 +299,8 @@ public class SpringConfig {
 			hibernatePropertiesMap.put(SpringConfigUtils.createLiteralValue("hibernate.hbm2ddl.auto"), SpringConfigUtils.createLiteralValue("create-drop"));
 		}
 		else {
-			if(grailsDataSource.getDdlAuto() != null) {
-				hibernatePropertiesMap.put(SpringConfigUtils.createLiteralValue("hibernate.hbm2ddl.auto"), SpringConfigUtils.createLiteralValue(grailsDataSource.getDdlAuto()));
+			if(grailsDataSource.getDbCreate() != null) {
+				hibernatePropertiesMap.put(SpringConfigUtils.createLiteralValue("hibernate.hbm2ddl.auto"), SpringConfigUtils.createLiteralValue(grailsDataSource.getDbCreate()));
 			}
 		}
 		Bean hibernateProperties = SpringConfigUtils.createSingletonBean(MapToPropertiesFactoryBean.class);

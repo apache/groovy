@@ -34,14 +34,14 @@ public class DefaultGrailsDataSource extends AbstractInjectableGrailsClass
 	private static final String USERNAME = "username";
 	private static final String PASSWORD = "password";
 	private static final String POOLING = "pooling";
-	private static final String DDL_AUTO = "ddlAuto";
+	private static final String DB_CREATE = "dbCreate";
 	
 	private boolean pooled = true;
 	private String driverClassName = null;
 	private String url = null;
 	private String username = null;
 	private String password = null;
-	private String ddlAuto = null;
+	private String dbCreate = null;
 	
 	public DefaultGrailsDataSource(Class clazz) {
 		super(clazz, DATA_SOURCE);
@@ -49,10 +49,10 @@ public class DefaultGrailsDataSource extends AbstractInjectableGrailsClass
 		if (getPropertyValue(POOLING, boolean.class) != null) {
 			this.pooled = getPropertyValue(POOLING, boolean.class).equals(Boolean.TRUE) ? true : false;
 		}
-		if (getPropertyValue(DDL_AUTO, String.class) != null) {
-			String ddlValue = (String)getPropertyValue(DDL_AUTO, String.class);
-			if(ddlValue.equals( "create-drop" ) || ddlValue.equals("create") || ddlValue.equals("update"))
-				this.ddlAuto = ddlValue;
+		if (getPropertyValue(DB_CREATE, String.class) != null) {
+			String _dbCreate = (String)getPropertyValue(DB_CREATE, String.class);
+			if(_dbCreate.equals( "create-drop" ) || _dbCreate.equals("create") || _dbCreate.equals("update"))
+				this.dbCreate = _dbCreate;
 		}		
 				
 		if (getPropertyValue(DRIVER_CLASS_NAME, String.class) != null) {
@@ -104,8 +104,8 @@ public class DefaultGrailsDataSource extends AbstractInjectableGrailsClass
 		return null;
 	}
 
-	public String getDdlAuto() {
-		return ddlAuto;
+	public String getDbCreate() {
+		return dbCreate;
 	}
 
 }
