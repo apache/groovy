@@ -181,6 +181,9 @@ Targets:
 				<include name="applicationContext.xml"/>
 			</fileset>
 		</copy>
+		<copy todir="${path}grails-app">
+			<fileset dir="${grails.home}/src/grails/templates/grails-app" />
+		</copy>		
 		<copy file="${grails.home}/src/war/WEB-INF/web${servlet.version}.xml.template" tofile="${path}web-app/WEB-INF/web.xml.template"/>
 		<copy file="${grails.home}/src/war/WEB-INF/sitemesh.xml" tofile="${path}web-app/WEB-INF/sitemesh.xml"/>		
 		<copy todir="${path}spring">
