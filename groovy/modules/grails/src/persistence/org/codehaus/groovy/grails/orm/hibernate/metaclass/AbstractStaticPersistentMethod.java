@@ -15,10 +15,13 @@
  */ 
 package org.codehaus.groovy.grails.orm.hibernate.metaclass;
 
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import org.codehaus.groovy.grails.commons.metaclass.AbstractStaticMethodInvocation;
+import org.hibernate.Criteria;
 import org.hibernate.SessionFactory;
+import org.hibernate.criterion.Order;
 import org.springframework.orm.hibernate3.HibernateTemplate;
 import org.springframework.util.Assert;
 
@@ -34,6 +37,13 @@ public abstract class AbstractStaticPersistentMethod extends
 	private SessionFactory sessionFactory = null;
 	private ClassLoader classLoader = null;
 	
+	protected static final String ARGUMENT_MAX = "max";
+	protected static final String ARGUMENT_OFFSET = "offset";
+	protected static final String ARGUMENT_ORDER = "order";
+	protected static final String ARGUMENT_SORT = "sort";
+	protected static final String ORDER_DESC = "desc";
+	protected static final String ORDER_ASC = "asc";
+		
 	public AbstractStaticPersistentMethod(SessionFactory sessionFactory, ClassLoader classLoader, Pattern pattern) {
 		super();
 		setPattern(pattern);
@@ -55,4 +65,27 @@ public abstract class AbstractStaticPersistentMethod extends
 	}
 
 	protected abstract Object doInvokeInternal(Class clazz, String methodName, Object[] arguments);
+	
+	protected void populateArgumentsForCriteria(Criteria c, Map argMap) {
+		Integer maxParam = (Integer)argMap.get(ARGUMENT_MAX);
+		Integer offsetParam = (Integer)argMap.get(ARGUMENT_OFFSET);
+		String orderParam = (String)argMap.get(ARGUMENT_ORDER);
+		
+		final String sort = (String)argMap.get(ARGUMENT_SORT);
+		final String order = ORDER_DESC.equalsIgnoreCase(orderParam) ? ORDER_DESC : ORDER_ASC;
+		final int max = maxParam == null ? -1 : maxParam.intValue();
+		final int offset = offsetParam == null ? -1 : offsetParam.intValue();
+		if(max > -1)
+			c.setMaxResults(max);
+		if(offset > -1)
+			c.setFirstResult(offset);
+		if(sort != null) {
+			if(ORDER_DESC.equals(order)) {
+				c.addOrder( Order.desc(sort) );
+			}
+			else {
+				c.addOrder( Order.asc(sort) );
+			}
+		}		
+	}	
 }
