@@ -56,6 +56,8 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.orm.hibernate3.HibernateTransactionManager;
 import org.springframework.transaction.interceptor.TransactionProxyFactoryBean;
 import org.springframework.util.Assert;
+import org.springframework.web.servlet.i18n.CookieLocaleResolver;
+import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
 import org.springframework.webflow.config.FlowFactoryBean;
 import org.springframework.webflow.mvc.FlowController;
@@ -99,15 +101,15 @@ public class SpringConfig {
 		customEditors.put(SpringConfigUtils.createLiteralValue("java.lang.Class"), classEditor);
 		propertyEditors.setProperty("customEditors", SpringConfigUtils.createMap(customEditors));
 		beanReferences.add(SpringConfigUtils.createBeanReference("customEditors", propertyEditors));
-		
-		// setup message source
-		Bean messageSource = SpringConfigUtils.createSingletonBean( ReloadableResourceBundleMessageSource.class );
-		messageSource.setProperty( "basename", SpringConfigUtils.createLiteralValue("messages"));		
-		
+			
 		// configure exception handler
 		Bean exceptionHandler = SpringConfigUtils.createSingletonBean(GrailsExceptionResolver.class);
 		exceptionHandler.setProperty("exceptionMappings", SpringConfigUtils.createLiteralValue("java.lang.Exception=error"));
 		beanReferences.add(SpringConfigUtils.createBeanReference("exceptionHandler", exceptionHandler));
+		
+		// configure data source & hibernate
+		LOG.info("[SpringConfig] Configuring i18n support");
+		populateI18nSupport(beanReferences);		
 		
 		// configure data source & hibernate
 		LOG.info("[SpringConfig] Configuring Grails data source");
@@ -136,7 +138,21 @@ public class SpringConfig {
 				
 		return beanReferences;
 	}
-
+	private void populateI18nSupport(Collection beanReferences) {
+		// setup message source
+		Bean messageSource = SpringConfigUtils.createSingletonBean( ReloadableResourceBundleMessageSource.class );
+		messageSource.setProperty( "basename", SpringConfigUtils.createLiteralValue("messages"));				
+		beanReferences.add(SpringConfigUtils.createBeanReference("messageSource", messageSource));
+		
+		// setup locale change interceptor
+		Bean localeChangeInterceptor = SpringConfigUtils.createSingletonBean(LocaleChangeInterceptor.class);
+		localeChangeInterceptor.setProperty("paramName", SpringConfigUtils.createLiteralValue("lang"));
+		beanReferences.add(SpringConfigUtils.createBeanReference("localeChangeInterceptor", localeChangeInterceptor));
+		
+		// setup locale resolver
+		Bean localeResolver = SpringConfigUtils.createSingletonBean(CookieLocaleResolver.class);
+		beanReferences.add(SpringConfigUtils.createBeanReference("localeResolver", localeResolver));
+	}
 	// configures scaffolding
 	private void populateScaffoldingReferences(Collection beanReferences) {
 		// go through all the controllers

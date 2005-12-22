@@ -333,8 +333,6 @@ Targets:
 		<touch file="tmp/war/WEB-INF/jsp/layouts/.dummy"/>		
 		<mkdir dir="tmp/war/WEB-INF/spring"/>
 		<touch file="tmp/war/WEB-INF/spring/.dummy"/>
-		<mkdir dir="tmp/war/WEB-INF/grails-app"/>
-		<touch file="tmp/war/WEB-INF/grails-app/.dummy"/>
 		<mkdir dir="tmp/war/WEB-INF/tld"/>
 		<mkdir dir="tmp/war/js"/>
 		<copy todir="tmp/war/js">
@@ -387,26 +385,20 @@ Targets:
 		</copy>
 		<copy todir="tmp/war/WEB-INF/classes">
 			<fileset dir="web-app/WEB-INF/classes"/>
-			<fileset dir="grails-app" includes="**">
-				<exclude name="controllers"/>
-				<exclude name="domain"/>
-				<exclude name="services"/>				
-				<exclude name="conf"/>
-				<exclude name="views"/>
-				<exclude name="views/layouts"/>				
-				<exclude name="i18n"/>				
-			</fileset>
 			<fileset dir="grails-app/controllers" includes="**"/>
+			<fileset dir="grails-app/services" includes="**"/>			
 			<fileset dir="grails-app/domain" includes="**"/>
-			<fileset dir="grails-app/i18n" includes="**"/>			
 			<fileset dir="grails-app/conf" includes="**"/>
 		</copy>
 		<copy todir="tmp/war/WEB-INF/jsp">
 			<fileset dir="grails-app/views" includes="**"/>
 		</copy>
-			<copy todir="tmp/war/WEB-INF/jsp/layouts">
-				<fileset dir="grails-app/views/layouts" includes="**"/>
-			</copy>		
+		<copy todir="tmp/war/WEB-INF">
+			<fileset dir="grails-app/i18n" includes="**"/>
+		</copy>		
+		<copy todir="tmp/war/WEB-INF/jsp/layouts">
+			<fileset dir="grails-app/views/layouts" includes="**"/>
+		</copy>		
 		<copy todir="tmp/war/WEB-INF/spring">
 			<fileset dir="spring" includes="**"/>
 		</copy>
