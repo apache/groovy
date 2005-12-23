@@ -141,7 +141,7 @@ public class SpringConfig {
 	private void populateI18nSupport(Collection beanReferences) {
 		// setup message source
 		Bean messageSource = SpringConfigUtils.createSingletonBean( ReloadableResourceBundleMessageSource.class );
-		messageSource.setProperty( "basename", SpringConfigUtils.createLiteralValue("messages"));				
+		messageSource.setProperty( "basename", SpringConfigUtils.createLiteralValue("classpath:messages"));				
 		beanReferences.add(SpringConfigUtils.createBeanReference("messageSource", messageSource));
 		
 		// setup locale change interceptor
@@ -217,6 +217,8 @@ public class SpringConfig {
 		beanReferences.add(SpringConfigUtils.createBeanReference("simpleGrailsController", simpleGrailsController));
 		
 		Bean internalResourceViewResolver = SpringConfigUtils.createSingletonBean(InternalResourceViewResolver.class);
+		
+		internalResourceViewResolver.setProperty("viewClass",SpringConfigUtils.createLiteralValue("org.springframework.web.servlet.view.JstlView"));
 		internalResourceViewResolver.setProperty("prefix", SpringConfigUtils.createLiteralValue("/WEB-INF/jsp/"));
 		internalResourceViewResolver.setProperty("suffix", SpringConfigUtils.createLiteralValue(".jsp"));
 		beanReferences.add(SpringConfigUtils.createBeanReference("jspViewResolver", internalResourceViewResolver));

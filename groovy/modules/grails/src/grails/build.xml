@@ -395,7 +395,7 @@ Targets:
 		</copy>
 		<copy todir="tmp/war/WEB-INF">
 			<fileset dir="grails-app/i18n" includes="**"/>
-		</copy>		
+		</copy>				
 		<copy todir="tmp/war/WEB-INF/jsp/layouts">
 			<fileset dir="grails-app/views/layouts" includes="**"/>
 		</copy>		
