@@ -27,7 +27,10 @@ import org.springframework.validation.Validator;
  */
 public interface GrailsDomainClass extends GrailsClass {
 
-
+	/**
+	 * The name of the default ORM implementation used to map the class
+	 */
+	String GORM = "GORM";
 	
 	/**
 	 * Returns all of the properties of the domain class
@@ -129,4 +132,9 @@ public interface GrailsDomainClass extends GrailsClass {
 	 * @param validator The domain class validator to set
 	 */
 	public void setValidator(Validator validator);
+	
+	/**
+	 * @return The name of the ORM implementation used to map the domain class (default is "GORM")
+	 */
+	public String getMappedBy();
 }

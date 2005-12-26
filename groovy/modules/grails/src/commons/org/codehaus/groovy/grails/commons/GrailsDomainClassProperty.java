@@ -31,7 +31,7 @@ public interface GrailsDomainClassProperty {
 	String RELATIONSHIPS = "relationships";
 	Object META_CLASS = "metaClass";
 	String CLASS = "class";
-	//String MAPPED_BY = "mappedBy";	
+	String MAPPED_BY = "mappedBy";	
 	
 	/**
 	 * Returns the name of the property

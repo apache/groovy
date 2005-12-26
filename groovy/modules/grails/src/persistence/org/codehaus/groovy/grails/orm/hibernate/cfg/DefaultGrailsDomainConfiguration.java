@@ -52,8 +52,10 @@ public class DefaultGrailsDomainConfiguration extends Configuration implements G
 	 * @see org.codehaus.groovy.grails.orm.hibernate.cfg.GrailsDomainConfiguration#addDomainClass(org.codehaus.groovy.grails.commons.GrailsDomainClass)
 	 */
 	public GrailsDomainConfiguration addDomainClass( GrailsDomainClass domainClass ) {
-		this.domainClasses.add(domainClass);
-		
+		if(domainClass.getMappedBy().equalsIgnoreCase( GrailsDomainClass.GORM )) {
+			this.domainClasses.add(domainClass);
+		}
+				
 		return this;		
 	}
 	/* (non-Javadoc)
@@ -64,7 +66,7 @@ public class DefaultGrailsDomainConfiguration extends Configuration implements G
 		
 		GrailsDomainClass[] existingDomainClasses = this.grailsApplication.getGrailsDomainClasses();
 		for(int i = 0; i < existingDomainClasses.length;i++) {
-			addDomainClass(existingDomainClasses[i]);
+				addDomainClass(existingDomainClasses[i]);
 		}		
 	}
 	

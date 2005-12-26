@@ -45,6 +45,7 @@ import org.springframework.validation.Validator;
 public class DefaultGrailsDomainClass extends AbstractGrailsClass  implements GrailsDomainClass {
 
 	private static final Log LOG  = LogFactory.getLog(DefaultGrailsDomainClass.class);
+
 	
 	private GrailsDomainClassProperty identifier;
 	private GrailsDomainClassProperty version;
@@ -54,6 +55,7 @@ public class DefaultGrailsDomainClass extends AbstractGrailsClass  implements Gr
 	private Map relationshipMap;
 	private Map constraints = new HashMap();
 	private Validator validator;
+	private String mappedBy = GrailsDomainClass.GORM;
 
 	
 	public DefaultGrailsDomainClass(Class clazz) {
@@ -67,7 +69,12 @@ public class DefaultGrailsDomainClass extends AbstractGrailsClass  implements Gr
 			this.relationshipMap = new HashMap();
 		}
 		// process the constraints
-		evaluateConstraints();		
+		evaluateConstraints();
+		
+		// get mapped by setting
+		if(getPropertyValue(GrailsDomainClassProperty.MAPPED_BY, String.class) != null)
+			this.mappedBy = (String)getPropertyValue(GrailsDomainClassProperty.MAPPED_BY, String.class);
+		
 		// First go through the properties of the class and create domain properties
 		// populating into a map
 		for(int i = 0; i < propertyDescriptors.length; i++) {
@@ -80,7 +87,8 @@ public class DefaultGrailsDomainClass extends AbstractGrailsClass  implements Gr
 				   !descriptor.getName().equals( GrailsDomainClassProperty.RELATIONSHIPS) &&
 				   !descriptor.getName().equals( GrailsDomainClassProperty.EVANESCENT) &&
 				   !descriptor.getName().equals( GrailsDomainClassProperty.OPTIONAL) &&
-				   !descriptor.getName().equals( GrailsDomainClassProperty.CONSTRAINTS ))  {
+				   !descriptor.getName().equals( GrailsDomainClassProperty.CONSTRAINTS )&&
+				   !descriptor.getName().equals( GrailsDomainClassProperty.MAPPED_BY ))  {
 					
 					
 					GrailsDomainClassProperty property = new DefaultGrailsDomainClassProperty(this, descriptor);
@@ -444,5 +452,12 @@ public class DefaultGrailsDomainClass extends AbstractGrailsClass  implements Gr
 	 */
 	public void setValidator(Validator validator) {
 		this.validator = validator;
+	}
+
+	/* (non-Javadoc)
+	 * @see org.codehaus.groovy.grails.commons.GrailsDomainClass#getMappedBy()
+	 */	
+	public String getMappedBy() {
+		return this.mappedBy;
 	}	
 }
