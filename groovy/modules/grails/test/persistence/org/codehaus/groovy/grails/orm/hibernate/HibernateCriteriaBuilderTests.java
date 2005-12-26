@@ -37,14 +37,15 @@ public class HibernateCriteriaBuilderTests extends
 	}
 
 
-	private Proxy parse(String groovy) throws Exception {
+	private Proxy parse(String groovy,String testClassName) throws Exception {
 	
 		
-		GroovyClassLoader cl = new GroovyClassLoader();
+		GroovyClassLoader cl = this.grailsApplication.getClassLoader();
 		Class clazz = 
-		 cl.parseClass( "import grails.orm.*;\n" +
+		 cl.parseClass( "package test;\n" +
+		 				"import grails.orm.*;\n" +
 		 				"import org.hibernate.*;\n" +
-		 				"class TestClass {\n" +
+		 				"class "+testClassName+" {\n" +
 		 					"@Property SessionFactory sf;\n" +
 		 					"@Property Class tc;\n" + 
 		 					"@Property Closure test = {\n" +
@@ -97,7 +98,7 @@ public class HibernateCriteriaBuilderTests extends
 						"eq('firstName','fred');" +
 						"eq('lastName', 'flintstone')" +
 					"}" +
-				"}");
+				"}", "Test1");
 		System.out.println("Criteria output = ");
 		System.out.println(ArrayUtils.toString(p.invokeMethod("toArray",null)));		
 		p = parse(	"{\n" +
@@ -108,14 +109,14 @@ public class HibernateCriteriaBuilderTests extends
 								"eq(\"lastName\", \"flintstone\")\n" +
 						     "}\n" +
 						"}\n" +
-					"}");
+					"}", "Test2");
 		System.out.println("Criteria output = ");
 		System.out.println(ArrayUtils.toString(p.invokeMethod("toArray",null)));
 		p = parse(	"{\n" +
 						"eq(\"firstName\",\"Fred\")\n" +
 						"order(\"firstName\")\n" +
 						"maxResults(10)\n" +
-					"}");
+					"}", "Test3");
 		System.out.println("Criteria output = ");
 		System.out.println(ArrayUtils.toString(p.invokeMethod("toArray",null)));		
 		
@@ -129,7 +130,7 @@ public class HibernateCriteriaBuilderTests extends
 							"eq(\"age\", 42)\n" +
 					     "}\n" +
 					"}\n" +
-				"}");			
+				"}", "Test4");			
 			
 			fail("Should have thrown illegal argument exception");					
 		}
@@ -148,7 +149,7 @@ public class HibernateCriteriaBuilderTests extends
 							"rubbish()\n" +
 					     "}\n" +
 					"}\n" +
-				"}");			
+				"}", "Test5");			
 			
 			fail("Should have thrown illegal argument exception");					
 		}
