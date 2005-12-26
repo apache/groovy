@@ -241,7 +241,7 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
 			if (viewNameBlank) {
 				return null;
 			} else {
-				return new ModelAndView(viewName);
+				return new ModelAndView(viewName, new BeanMap(controller));
 			}
 		} else if (returnValue instanceof Map) {
 			// remove any Proxy wrappers and set the adaptee as the value
