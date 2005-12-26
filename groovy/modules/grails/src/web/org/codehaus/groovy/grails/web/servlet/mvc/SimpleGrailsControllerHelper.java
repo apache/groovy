@@ -28,6 +28,7 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.collections.BeanMap;
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.commons.GrailsControllerClass;
 import org.codehaus.groovy.grails.commons.metaclass.GenericDynamicProperty;
@@ -42,7 +43,6 @@ import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.IncompatibleParamet
 import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.NoClosurePropertyForURIException;
 import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.NoViewNameDefinedException;
 import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.UnknownControllerException;
-import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.UnsupportedReturnValueException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -281,8 +281,15 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
 			}
 			return modelAndView;
 		}
-		
-		throw new UnsupportedReturnValueException("Return value [" + returnValue + "] is not supported for closure property [" + closurePropertyName + "] in controller [" + controller.getClass() + "]!");
+		else {
+			Map modelMap = new BeanMap(controller);
+			ModelAndView modelAndView = new ModelAndView(viewName, modelMap);
+			if(!this.chainModel.isEmpty()) {
+				this.chainModel.putAll(modelMap);
+				modelAndView.addAllObjects(this.chainModel);
+			}
+			return modelAndView;
+		}
 	}
 	
 }
