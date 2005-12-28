@@ -18,6 +18,9 @@ package org.codehaus.groovy.grails.orm.hibernate.metaclass;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import ognl.DefaultTypeConverter;
+import ognl.Ognl;
+
 import org.codehaus.groovy.grails.commons.metaclass.AbstractStaticMethodInvocation;
 import org.hibernate.Criteria;
 import org.hibernate.SessionFactory;
@@ -36,6 +39,8 @@ public abstract class AbstractStaticPersistentMethod extends
 
 	private SessionFactory sessionFactory = null;
 	private ClassLoader classLoader = null;
+	private DefaultTypeConverter converter = new DefaultTypeConverter();
+	private Map context = Ognl.createDefaultContext(this);
 	
 	protected static final String ARGUMENT_MAX = "max";
 	protected static final String ARGUMENT_OFFSET = "offset";
@@ -67,8 +72,15 @@ public abstract class AbstractStaticPersistentMethod extends
 	protected abstract Object doInvokeInternal(Class clazz, String methodName, Object[] arguments);
 	
 	protected void populateArgumentsForCriteria(Criteria c, Map argMap) {
-		Integer maxParam = (Integer)argMap.get(ARGUMENT_MAX);
-		Integer offsetParam = (Integer)argMap.get(ARGUMENT_OFFSET);
+		
+		Integer maxParam = null;
+		Integer offsetParam = null;
+		if(argMap.containsKey(ARGUMENT_MAX)) {			
+			maxParam = (Integer)converter.convertValue(context,argMap.get(ARGUMENT_MAX),Integer.class);
+		}
+		if(argMap.containsKey(ARGUMENT_OFFSET)) {
+			offsetParam = (Integer)converter.convertValue(context,argMap.get(ARGUMENT_OFFSET),Integer.class);
+		}
 		String orderParam = (String)argMap.get(ARGUMENT_ORDER);
 		
 		final String sort = (String)argMap.get(ARGUMENT_SORT);
