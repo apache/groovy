@@ -81,6 +81,7 @@ public class UberTestCase2 extends TestCase {
         suite.addTestSuite(groovy.sql.SqlRowsTest.class);
         suite.addTestSuite(groovy.tree.NodePrinterTest.class);
         suite.addTestSuite(groovy.txn.TransactionTest.class);
+        suite.addTestSuite(groovy.util.AllTestSuiteTest.class);
         suite.addTestSuite(groovy.util.EmptyScriptTest.class);
         suite.addTestSuite(groovy.util.EvalTest.class);
         suite.addTestSuite(groovy.util.MBeanTest.class);
