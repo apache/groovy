@@ -25,7 +25,7 @@ class AllTestSuiteTest extends GroovyLogTestCase {
                 suite = AllTestSuite.suite()
             }
         }
-        assertTrue result, result.contains('groovy\\util\\AllTestSuiteTest.groovy')
+        assertTrue result, result.contains('AllTestSuiteTest.groovy')
         assertEquals 1+1, result.count("\n")   // only one entry in the log
         assert suite
         assertEquals 2, suite.countTestCases() // the 2 test methods in this file
