@@ -14,14 +14,23 @@
  */ 
 package org.codehaus.groovy.grails.orm.hibernate.cfg;
 
+import java.beans.IntrospectionException;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.commons.GrailsDomainClass;
+import org.codehaus.groovy.grails.metaclass.DomainClassMethods;
+import org.hibernate.EntityMode;
+import org.hibernate.HibernateException;
 import org.hibernate.MappingException;
+import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
+import org.hibernate.metadata.ClassMetadata;
 
 /**
  * Creates runtime configuration mappings for the Grails domain classes
@@ -32,6 +41,7 @@ import org.hibernate.cfg.Configuration;
  */
 public class DefaultGrailsDomainConfiguration extends Configuration implements GrailsDomainConfiguration {
 
+	private static final Log LOG  = LogFactory.getLog(DefaultGrailsDomainConfiguration.class);
 	/**
 	 * 
 	 */
@@ -71,6 +81,27 @@ public class DefaultGrailsDomainConfiguration extends Configuration implements G
 		}
 	}
 	
+	
+	/* (non-Javadoc)
+	 * @see org.hibernate.cfg.Configuration#buildSessionFactory()
+	 */
+	public SessionFactory buildSessionFactory() throws HibernateException {
+
+		SessionFactory sessionFactory =  super.buildSessionFactory();
+		Collection classMetaData = sessionFactory.getAllClassMetadata().values();
+		for (Iterator i = classMetaData.iterator(); i.hasNext();) {
+			ClassMetadata cmd = (ClassMetadata) i.next();
+			Class persistentClass = cmd.getMappedClass(EntityMode.POJO);
+			LOG.info("[GrailsDomainConfiguration] Registering dynamic methods on externally configured hibernate persistent class ["+persistentClass+"]");
+			try {
+				new DomainClassMethods(this.grailsApplication,persistentClass,sessionFactory,this.grailsApplication.getClassLoader());
+			} catch (IntrospectionException e) {
+				LOG.warn("[GrailsDomainConfiguration] Introspection exception registering dynamic methods for ["+persistentClass+"]:" + e.getMessage(), e);
+			}
+		}	
+		return sessionFactory;
+	}
+
 	/**
 	 *  Overrides the default behaviour to including binding of Grails
 	 *  domain classes

@@ -31,7 +31,6 @@ import org.codehaus.groovy.grails.commons.GrailsDataSource;
 import org.codehaus.groovy.grails.commons.GrailsDomainClass;
 import org.codehaus.groovy.grails.commons.GrailsPageFlowClass;
 import org.codehaus.groovy.grails.commons.GrailsServiceClass;
-import org.codehaus.groovy.grails.metaclass.DomainClassMethods;
 import org.codehaus.groovy.grails.orm.hibernate.ConfigurableLocalsSessionFactoryBean;
 import org.codehaus.groovy.grails.orm.hibernate.support.HibernateDialectDetectorFactoryBean;
 import org.codehaus.groovy.grails.orm.hibernate.validation.GrailsDomainClassValidator;
@@ -363,14 +362,14 @@ public class SpringConfig {
 			
 			beanReferences.add(SpringConfigUtils.createBeanReference(grailsDomainClass.getFullName() + "PersistentClass", persistentClassBean));
 			
-			Collection constructorArguments = new ArrayList();
+			/*Collection constructorArguments = new ArrayList();
 			// configure persistent methods
 			constructorArguments.add(SpringConfigUtils.createBeanReference("grailsApplication"));
 			constructorArguments.add(SpringConfigUtils.createLiteralValue(grailsDomainClass.getClazz().getName()));
 			constructorArguments.add(SpringConfigUtils.createBeanReference("sessionFactory"));
 			constructorArguments.add(classLoader);
 			Bean hibernatePersistentMethods = SpringConfigUtils.createSingletonBean(DomainClassMethods.class, constructorArguments);
-			beanReferences.add(SpringConfigUtils.createBeanReference(grailsDomainClass.getFullName() + "PersistentMethods", hibernatePersistentMethods));
+			beanReferences.add(SpringConfigUtils.createBeanReference(grailsDomainClass.getFullName() + "PersistentMethods", hibernatePersistentMethods));*/
 
 			// configure validator			
 			Bean validatorBean = SpringConfigUtils.createSingletonBean( GrailsDomainClassValidator.class);
