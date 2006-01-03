@@ -97,11 +97,13 @@ public class LinkTag extends BodyTagSupport implements DynamicAttributes {
 						try {
 							evalId = pageContext.getExpressionEvaluator().evaluate(id, Object.class, pageContext.getVariableResolver(),null);
 						} catch (ELException e) {
-							evalId = id;
+							throw new JspException(e.getMessage(),e);
 						}
-					}	
+					}
 					else {
-						evalId = id;
+						evalId = pageContext.findAttribute(id);
+						if(evalId == null)
+							evalId = id;
 					}
 					buf.append('?')
 					   .append("id=")
