@@ -342,6 +342,7 @@ Targets:
 			<fileset dir="${grails.home}/src/war/WEB-INF/tld/${servlet.version}"/>
 			<fileset dir="${grails.home}/src/war/WEB-INF/tld" includes="spring.tld"/>
 			<fileset dir="${grails.home}/src/war/WEB-INF/tld" includes="gvtags.tld"/>
+			<fileset dir="${grails.home}/src/war/WEB-INF/tld" includes="grails.tld"/>			
 		</copy>
 		<copy todir="tmp/war/WEB-INF/lib">
 			<fileset dir="${grails.home}/lib">

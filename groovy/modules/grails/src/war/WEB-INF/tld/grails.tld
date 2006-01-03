@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<taglib xmlns="http://java.sun.com/xml/ns/j2ee"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee
+            http://java.sun.com/xml/ns/j2ee/web-jsptaglibrary_2_0.xsd"
+        version="2.0">
+    <description>The Grails (Groovy on Rails) custom tag library</description>
+    
+	<tlibversion>1.0</tlibversion>
+	<shortname>grails</shortname>
+	<uri>http://grails.codehaus.org/tags</uri>
+
+	<tag>
+		<name>link</name>
+		<tag-class>org.codehaus.groovy.grails.web.tags.LinkTag</tag-class>
+		<attribute>
+			<name>action</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<name>controller</name>
+			<required>true</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<name>id</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>				
+		<dynamic-attributes>true</dynamic-attributes>
+		<body-content>scriptless</body-content>
+	</tag>
+</taglib>
+
