@@ -63,11 +63,12 @@ public class DefaultGrailsDomainConfiguration extends Configuration implements G
 	 */
 	public void setGrailsApplication(GrailsApplication application) {
 		this.grailsApplication = application;
-		
-		GrailsDomainClass[] existingDomainClasses = this.grailsApplication.getGrailsDomainClasses();
-		for(int i = 0; i < existingDomainClasses.length;i++) {
+		if(this.grailsApplication != null) {
+			GrailsDomainClass[] existingDomainClasses = this.grailsApplication.getGrailsDomainClasses();
+			for(int i = 0; i < existingDomainClasses.length;i++) {
 				addDomainClass(existingDomainClasses[i]);
-		}		
+			}		
+		}
 	}
 	
 	/**
@@ -79,7 +80,8 @@ public class DefaultGrailsDomainConfiguration extends Configuration implements G
 			return;
 		}		
 		// set the class loader to load Groovy classes
-		Thread.currentThread().setContextClassLoader( this.grailsApplication.getClassLoader() );
+		if(this.grailsApplication != null)
+			Thread.currentThread().setContextClassLoader( this.grailsApplication.getClassLoader() );
 		// do Grails class configuration
 		for(Iterator i = this.domainClasses.iterator();i.hasNext();) {
 			GrailsDomainClass domainClass = (GrailsDomainClass)i.next();
