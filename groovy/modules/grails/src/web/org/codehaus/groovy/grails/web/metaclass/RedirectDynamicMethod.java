@@ -20,7 +20,6 @@ import groovy.lang.GroovyObject;
 import groovy.lang.MissingMethodException;
 
 import java.beans.PropertyDescriptor;
-import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
@@ -30,6 +29,7 @@ import org.codehaus.groovy.grails.commons.GrailsClassUtils;
 import org.codehaus.groovy.grails.commons.GrailsControllerClass;
 import org.codehaus.groovy.grails.scaffolding.GrailsScaffolder;
 import org.codehaus.groovy.grails.web.servlet.mvc.GrailsControllerHelper;
+import org.springframework.validation.Errors;
 
 /**
  * Implements the "redirect" Controller method for action redirection
@@ -60,14 +60,14 @@ public class RedirectDynamicMethod extends AbstractDynamicControllerMethod {
 				
 		Object actionRef;
 		Map params = null;
-		List errors = null;
+		Errors errors = null;
 		GroovyObject controller = (GroovyObject)target;
 		
 		if(arguments[0] instanceof Map) {
 			Map argMap = (Map)arguments[0];
 			actionRef = argMap.get(ARGUMENT_ACTION);
 			params = (Map)argMap.get(ARGUMENT_PARAMS);
-			errors = (List)argMap.get(ARGUMENT_ERRORS);
+			errors = (Errors)argMap.get(ARGUMENT_ERRORS);
 		}
 		else {
 			actionRef = arguments[0];
@@ -75,24 +75,23 @@ public class RedirectDynamicMethod extends AbstractDynamicControllerMethod {
 				if(arguments[1] instanceof Map) {
 					params = (Map)arguments[1];
 				}
-				else if(arguments[1] instanceof List) {
-					errors = (List)arguments[1];
+				else if(arguments[1] instanceof Errors) {
+					errors = (Errors)arguments[1];
 				}
 			}
 			if(arguments.length > 2) {
 				if(arguments[2] instanceof Map) {
 					params = (Map)arguments[2];
 				}
-				else if(arguments[2] instanceof List) {
-					errors = (List)arguments[2];
+				else if(arguments[2] instanceof Errors) {
+					errors = (Errors)arguments[2];
 				}
 			}			
 		}	
 		// if there are errors add it to the list of errors
-		if(errors != null && errors.size() > 0) {
-			List controllerErrors = (List)controller.getProperty( ControllerDynamicMethods.ERRORS_PROPERTY );
-			controllerErrors.addAll(errors);
-		}
+		Errors controllerErrors = (Errors)controller.getProperty( ControllerDynamicMethods.ERRORS_PROPERTY );
+		controllerErrors.addAllErrors(errors);
+		
 		if(actionRef instanceof String) {
 			String uri = (String)actionRef;
 			if(params != null ) {

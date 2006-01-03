@@ -20,8 +20,7 @@ import groovy.lang.GroovyObject;
 import groovy.lang.MissingPropertyException;
 
 import java.beans.IntrospectionException;
-import java.util.ArrayList;
-import java.util.List;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -32,6 +31,7 @@ import org.codehaus.groovy.grails.commons.metaclass.GroovyDynamicMethodsIntercep
 import org.codehaus.groovy.grails.scaffolding.GrailsScaffolder;
 import org.codehaus.groovy.grails.web.servlet.GrailsHttpServletRequest;
 import org.codehaus.groovy.grails.web.servlet.mvc.GrailsControllerHelper;
+import org.springframework.validation.Errors;
 /**
  * Adds dynamic methods and properties for Grails Controllers
  * 
@@ -60,7 +60,7 @@ public class ControllerDynamicMethods extends
 		addDynamicProperty(new GetSessionDynamicProperty(request,response));
 		addDynamicProperty(new GenericDynamicProperty(REQUEST_PROPERTY, HttpServletRequest.class,new GrailsHttpServletRequest( request,controller),true) );
 		addDynamicProperty(new GenericDynamicProperty(RESPONSE_PROPERTY, HttpServletResponse.class,response,true) );
-		addDynamicProperty(new GenericDynamicProperty(ERRORS_PROPERTY, List.class, new ArrayList(), false));
+		addDynamicProperty(new GenericDynamicProperty(ERRORS_PROPERTY, Errors.class, null, false));
 
 		
 		// add dynamic methods
@@ -70,8 +70,8 @@ public class ControllerDynamicMethods extends
 		addDynamicMethodInvocation( new AbstractDynamicMethodInvocation(HAS_ERRORS_METHOD) {
 			public Object invoke(Object target, Object[] arguments) {
 				GroovyObject controller = (GroovyObject)target;
-				List errorsList = (List)controller.getProperty(ERRORS_PROPERTY);
-				return new Boolean(errorsList.size() > 0);
+				Errors errors = (Errors)controller.getProperty(ERRORS_PROPERTY);
+				return new Boolean(errors.hasErrors());
 			}			
 		});
 		
