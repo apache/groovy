@@ -15,6 +15,13 @@
 	  			overflow:auto;
 	  			height: 300px;
 	  		}
+	  		.snippet {
+	  			padding: 5px;
+	  			background-color:white;
+	  			border:1px solid black;
+	  			margin:3px;
+	  			font-family:courier;
+	  		}
 	  </style>
   </head>
   
@@ -26,6 +33,12 @@
   		<strong>Caused by:</strong> <c:out value="${exception.cause.message}" /> <br />
   		<strong>Class:</strong> <c:out value="${exception.className}" /> <br />  		  		
   		<strong>At Line:</strong> [<c:out value="${exception.lineNumber}" />] <br />  		
+  		<strong>Code Snippet:</strong><br />   		
+  		<div class="snippet">
+  			<c:forEach var="cs" items="${exception.codeSnippet}"> 
+  				<c:out value="${cs}" /><br />  			
+  			</c:forEach>  	
+  		</div>	  		
   	</div>
     <h2>Stack Trace</h2>
     <div class="stack">
