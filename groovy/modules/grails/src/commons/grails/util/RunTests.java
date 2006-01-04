@@ -21,7 +21,8 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import junit.textui.TestRunner;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.codehaus.groovy.grails.commons.DefaultGrailsApplication;
 import org.codehaus.groovy.grails.commons.spring.SpringConfig;
 import org.codehaus.groovy.grails.support.GrailsTestSuite;
@@ -38,7 +39,7 @@ import org.springmodules.beans.factory.drivers.xml.XmlApplicationContextDriver;
  */
 public class RunTests {
 
-	private static Logger log = Logger.getLogger(RunTests.class);
+	private static Log log = LogFactory.getLog(RunTests.class);
 	
 	public static void main(String[] args) {
 		ApplicationContext parent = new ClassPathXmlApplicationContext("test-applicationContext.xml");

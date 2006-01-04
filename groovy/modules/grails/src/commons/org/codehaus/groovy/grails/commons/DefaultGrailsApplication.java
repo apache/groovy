@@ -27,7 +27,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.lang.ArrayUtils;
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.grails.exceptions.MoreThanOneActiveDataSourceException;
 import org.springframework.core.io.Resource;
@@ -57,7 +58,7 @@ public class DefaultGrailsApplication implements GrailsApplication {
 	private Class[] allClasses = null;
 	
 	
-	private static Logger log = Logger.getLogger(DefaultGrailsApplication.class);
+	private static Log log = LogFactory.getLog(DefaultGrailsApplication.class);
 	
 	public DefaultGrailsApplication(final Class[] classes, GroovyClassLoader classLoader) {
 		if(classes == null)
