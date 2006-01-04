@@ -44,7 +44,7 @@ public class AbstractInjectableGrailsClassTests extends TestCase {
 	
 	public void testAbstractInjectableGrailsClassNullProperty() throws Exception {
 		GroovyClassLoader cl = new GroovyClassLoader();
-		Class clazz = cl.parseClass("class TestService { @Property boolean byName; @Property boolean available }");
+		Class clazz = cl.parseClass("class TestService { @Property boolean byName; @Property boolean available = true }");
 		InjectableGrailsClass grailsClass = new AbstractInjectableGrailsClass(clazz, "Service") {};
 		assertTrue(grailsClass.byType());
 		assertFalse(grailsClass.byName());
