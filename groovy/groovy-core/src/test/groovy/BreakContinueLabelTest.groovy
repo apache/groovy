@@ -5,9 +5,8 @@ class BreakContinueLabelTest extends GroovyTestCase {
 
     void testDeclareSimpleLabel() {
         label_1: assert true
-        // todo: make this pass
-        // label_2:
-        // assert true
+        label_2:
+        assert true
     }
     void testBreakLabelInSimpleForLoop() {
         label_1: for (i in [1]) {
