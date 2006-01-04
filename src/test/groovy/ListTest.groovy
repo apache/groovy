@@ -165,7 +165,7 @@ class ListTest extends GroovyTestCase {
         assert l1 - l2 == ["wrer", 3, 3, "wrewer", 4, 5] 
     }
 
-    void disabled_testMinusEmptyCollection(){
+    void testMinusEmptyCollection(){
         // todo: GROOVY-790
         def list = [1,1]
         assert list - [] == list

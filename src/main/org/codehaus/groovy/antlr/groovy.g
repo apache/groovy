@@ -1778,7 +1778,7 @@ branchStatement
 /** A labeled statement, consisting of a vanilla identifier followed by a colon. */
 // Note:  Always use this lookahead, to keep antlr from panicking: (IDENT COLON)=>
 statementLabelPrefix
-    :   IDENT c:COLON^ {#c.setType(LABELED_STAT);}
+    :   IDENT c:COLON^ {#c.setType(LABELED_STAT);} nls!
     ;
 
 /** An expression statement can be any general expression.
