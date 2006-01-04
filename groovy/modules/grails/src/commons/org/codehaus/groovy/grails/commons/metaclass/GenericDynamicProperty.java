@@ -77,7 +77,10 @@ public class GenericDynamicProperty extends AbstractDynamicProperty {
 
 	public void set(Object object, Object newValue) {		
 		if(!readyOnly) {
-			if(this.type.isAssignableFrom(newValue.getClass()))
+            if(newValue == null) {
+                propertyToInstanceMap.put(String.valueOf(System.identityHashCode(object)) + getPropertyName(), null );
+            }
+            else if(this.type.isInstance(newValue))
 				propertyToInstanceMap.put(String.valueOf(System.identityHashCode(object)) + getPropertyName(), newValue );
 			else
 				throw new MissingPropertyException("Property '"+this.getPropertyName()+"' for object '"+object.getClass()+"' cannot be set with value '"+newValue+"'. Incorrect type.",object.getClass());	
