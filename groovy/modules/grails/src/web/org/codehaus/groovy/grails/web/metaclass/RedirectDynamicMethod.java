@@ -90,9 +90,15 @@ public class RedirectDynamicMethod extends AbstractDynamicControllerMethod {
 		}	
 		// if there are errors add it to the list of errors
 		Errors controllerErrors = (Errors)controller.getProperty( ControllerDynamicMethods.ERRORS_PROPERTY );
-		controllerErrors.addAllErrors(errors);
+        if(controllerErrors != null) {
+            controllerErrors.addAllErrors(errors);
+        }
+        else {
+            controller.setProperty( ControllerDynamicMethods.ERRORS_PROPERTY, errors);
+        }
+
 		
-		if(actionRef instanceof String) {
+        if(actionRef instanceof String) {
 			String uri = (String)actionRef;
 			if(params != null ) {
 				return helper.handleURI(uri,this.request,this.response, params);
