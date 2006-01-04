@@ -69,8 +69,10 @@ public class PropertyAccessProxyMetaClass extends ProxyMetaClass {
 	        	super.setProperty(object, property,newValue);
 	        }
         }
-		super.setProperty(object, property, newValue);
-	}
+        else {
+            super.setProperty(object, property, newValue);
+        }
+    }
 
 	
 }
