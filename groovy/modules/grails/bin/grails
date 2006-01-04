@@ -27,7 +27,6 @@ GRAILS_ANT_CLASSPATH=$GRAILS_ANT_CLASSPATH:$GRAILS_HOME/lib/javax.servlet.jar
 GRAILS_ANT_CLASSPATH=$GRAILS_ANT_CLASSPATH:$GRAILS_HOME/lib/log4j-1.2.8.jar
 GRAILS_ANT_CLASSPATH=$GRAILS_ANT_CLASSPATH:$GRAILS_HOME/lib/jasper-compiler.jar
 GRAILS_ANT_CLASSPATH=$GRAILS_ANT_CLASSPATH:$GRAILS_HOME/lib/jasper-runtime.jar
-
 GRAILS_BUILD_FILE=${GRAILS_HOME}/src/grails/build.xml
 ANT_BIN=${ANT_HOME}/bin/ant
 BASEDIR=`pwd`
@@ -35,8 +34,9 @@ BASEDIR=`pwd`
 case "`uname`" in
   CYGWIN*)
     GRAILS_BUILD_FILE=`cygpath --windows "$GRAILS_BUILD_FILE"`;
+    GRAILS_ANT_CLASSPATH=`cygpath --windows -p "$GRAILS_ANT_CLASSPATH"`
     BASEDIR=`cygpath --windows "$BASEDIR"`
     ;;
 esac
 
-${ANT_BIN} -lib ${GRAILS_ANT_CLASSPATH} -f ${GRAILS_BUILD_FILE} -Dbasedir=${BASEDIR} $@
+${ANT_BIN} -lib "${GRAILS_ANT_CLASSPATH}" -f ${GRAILS_BUILD_FILE} -Dbasedir=${BASEDIR} $@
