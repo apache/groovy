@@ -39,7 +39,7 @@ Targets:
 			grails.setProperty("project.class.name", projName.substring(0,1).toUpperCase() + projName.substring(1,projName.length()))
 		</script>		
 		
-			<copy 	file="${grails.home}/src/grails/templates/artifacts/DataSource.groovy" 
+			<copy 	file="${grails.home}/src/grails/templates/artifacts/DataSource.groovy"
 				tofile="${project.name}/grails-app/conf/ApplicationDataSource.groovy"/>
 			<copy 	file="${grails.home}/src/grails/templates/artifacts/BootStrap.groovy" 
 					tofile="${project.name}/grails-app/conf/ApplicationBootStrap.groovy"/>		
@@ -164,7 +164,7 @@ Targets:
 		<mkdir dir="${path}grails-app/i18n"/>				
 		<mkdir dir="${path}grails-app/conf"/>
 		<mkdir dir="${path}grails-test"/>
-		<mkdir dir="${path}web-app"/>		
+		<mkdir dir="${path}web-app"/>
 		<mkdir dir="${path}web-app"/>
 		<mkdir dir="${path}web-app"/>
 		<mkdir dir="${path}web-app/WEB-INF/classes"/>		
@@ -184,7 +184,7 @@ Targets:
 		<copy todir="${path}grails-app">
 			<fileset dir="${grails.home}/src/grails/templates/grails-app" />
 		</copy>		
-		<copy file="${grails.home}/src/war/WEB-INF/web${servlet.version}.xml.template" tofile="${path}web-app/WEB-INF/web.xml.template"/>
+		<copy file="${grails.home}/src/war/WEB-INF/web${servlet.version}.template.xml" tofile="${path}web-app/WEB-INF/web.template.xml"/>
 		<copy file="${grails.home}/src/war/WEB-INF/sitemesh.xml" tofile="${path}web-app/WEB-INF/sitemesh.xml"/>		
 		<copy todir="${path}spring">
 			<fileset dir="${grails.home}/src/war/WEB-INF/spring">
@@ -286,12 +286,12 @@ Targets:
 		<copy todir="tmp/war">
 			<fileset dir="web-app">
 				<include name="**/**"/>
-				<exclude name="WEB-INF/*.xml.template"/>				
+				<exclude name="WEB-INF/*.template.xml"/>
 			</fileset>
 		</copy>
 		
 		<property name="controllers.home" location="grails-app/controllers"></property>
-		<property name="web.xml.template"  location="web-app/WEB-INF/web.xml.template"></property>		
+		<property name="web.xml.template"  location="web-app/WEB-INF/web.template.xml"></property>
 		<property name="target.web.xml"  location="tmp/war/WEB-INF/web.xml"></property>				
 		
 		<script language="groovy">

@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<web-app version="2.4"
+         xmlns="http://java.sun.com/xml/ns/j2ee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd">
+
+	<context-param>
+		<param-name>log4jConfigLocation</param-name>
+		<param-value>/WEB-INF/log4j.properties</param-value>
+	</context-param>
+
+	<filter>
+	   	<filter-name>sitemesh</filter-name>
+	    <filter-class>com.opensymphony.module.sitemesh.filter.PageFilter</filter-class>
+	</filter>
+	
+  	<filter>
+	    <filter-name>hibernateFilter</filter-name>
+    	<filter-class>org.codehaus.groovy.grails.orm.hibernate.support.GrailsOpenSessionInViewFilter</filter-class>
+   	</filter>	
+	
+	<filter-mapping>
+    	<filter-name>sitemesh</filter-name>
+	    <url-pattern>/*</url-pattern>
+	</filter-mapping>
+	
+	<filter-mapping>
+	    <filter-name>hibernateFilter</filter-name>
+	     <url-pattern>/*</url-pattern>
+	</filter-mapping>	
+	
+	<servlet>
+		<servlet-name>log4j</servlet-name>
+		<servlet-class>org.springframework.web.util.Log4jConfigServlet</servlet-class>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+
+
+    <!-- Context loader servlet for those older servlet engines. -->
+    <servlet>
+        <servlet-name>context</servlet-name>
+        <servlet-class>org.springframework.web.context.ContextLoaderServlet</servlet-class>
+        <load-on-startup>2</load-on-startup>
+    </servlet>
+
+    <!-- Grails dispatcher servlet -->
+    <servlet>
+        <servlet-name>grails</servlet-name>
+        <servlet-class>org.codehaus.groovy.grails.web.servlet.GrailsDispatcherServlet</servlet-class>
+        <load-on-startup>3</load-on-startup>
+    </servlet>
+
+    <!-- Map all requests to the Grails dispatcher servlet -->
+	<% for ( c in controllers ) { %>	
+		<servlet-mapping>
+			<servlet-name>grails</servlet-name>
+			<url-pattern>/${c}/*</url-pattern>
+		</servlet-mapping>
+	<% } %>		
+	
+	<% for ( f in flows ) { %>
+		<servlet-mapping>
+			<servlet-name>grails</servlet-name>
+			<url-pattern>/${f}/*</url-pattern>
+		</servlet-mapping>
+	<% } %>		
+
+    <jsp-config>
+        <taglib>
+            <taglib-uri>http://java.sun.com/jsp/jstl/core</taglib-uri>
+            <taglib-location>/WEB-INF/tld/c.tld</taglib-location>
+        </taglib>
+        <taglib>
+            <taglib-uri>http://java.sun.com/jsp/jstl/fmt</taglib-uri>
+            <taglib-location>/WEB-INF/tld/fmt.tld</taglib-location>
+        </taglib>
+		<taglib>
+			<taglib-uri>http://www.springframework.org/tags</taglib-uri>
+			<taglib-location>/WEB-INF/tld/spring.tld</taglib-location>
+		</taglib>
+		<taglib>
+			<taglib-uri>http://www.taobits.net/gvtags</taglib-uri>
+			<taglib-location>/WEB-INF/tld/gvtags.tld</taglib-location>
+		</taglib>	
+		<taglib>
+			<taglib-uri>http://grails.codehaus.org/tags</taglib-uri>
+			<taglib-location>/WEB-INF/tld/grails.tld</taglib-location>
+		</taglib>						
+    </jsp-config>
+
+</web-app>
