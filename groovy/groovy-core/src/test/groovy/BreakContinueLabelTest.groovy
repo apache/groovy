@@ -1,6 +1,6 @@
 /**
  * todo: add BreakContinueLabelWithClosureTest (when break is used to return from a Closure)
- 
+
  * @author Dierk Koenig
  */
 class BreakContinueLabelTest extends GroovyTestCase {
@@ -89,7 +89,7 @@ class BreakContinueLabelTest extends GroovyTestCase {
         assertEquals '1424',log
     }
 
-    void todo_testContinueLabelInNestedForLoop_FAILS() { if (notYetImplemented()) return
+    void testContinueLabelInNestedForLoop_FAILS() { if (notYetImplemented()) return
         def log = ''
         label: for (i in [1,2]) {
             log += i
