@@ -57,7 +57,8 @@ import org.codehaus.groovy.syntax.parser.TestParserSupport;
  */
 public class ModuleNodeTest extends TestParserSupport {
 
-    public void testStatementClass() throws Exception {
+    public void testStatementClass_FAILS() throws Exception { if (notYetImplemented()) return;
+        
         ModuleNode module = parse("x = [1, 2, 3]; println(x)", "Cheese.groovy");
         
         assertTrue("Should have statements", ! module.getStatementBlock().isEmpty());

@@ -9,8 +9,8 @@ class DOMTest extends GroovyTestCase {
 
   def benchmark = false;
 
-  /*
-  void testDOMParser() {
+
+  void testDOMParser_FAILS() { if (notYetImplemented()) return
     def xml = new StringReader("<html><head><title class='mytitle'>Test</title></head><body><p class='mystyle'>This is a test.</p></body></html>");
     def doc = DOMBuilder.parse(xml);
     def html = doc.documentElement;
@@ -18,7 +18,7 @@ class DOMTest extends GroovyTestCase {
     if (!benchmark) { assertCorrect html }
   }
 
-  void testDOMBuilder() {
+  void testDOMBuilder_FAILS() { if (notYetImplemented()) return
     def html = DOMBuilder.newInstance().
         
     html {
@@ -32,9 +32,8 @@ class DOMTest extends GroovyTestCase {
 
     if (!benchmark) { assertCorrect html }
   }
- */
- 
-  void testStreamingDOMBuilder() {
+
+  void testStreamingDOMBuilder_FAILS() { if (notYetImplemented()) return
 
     def doc = new StreamingDOMBuilder().bind {
       html {

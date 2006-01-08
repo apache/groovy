@@ -51,8 +51,15 @@ import junit.framework.TestSuite;
  */
 public class RunWikiTest extends TestSupport {
 
+    public RunWikiTest(String name) {
+        setName(name);
+    }
+
+    public void testMakeAtLeastOneTestCaseAvailable(){}
+
     public static Test suite() {
         TestSuite suite = new TestSuite();
+        suite.addTest(new RunWikiTest("testMakeAtLeastOneTestCaseAvailable"));
         File dir = new File("xdocs");
         File[] files = dir.listFiles();
         for (int i = 0; i < files.length; i++) {

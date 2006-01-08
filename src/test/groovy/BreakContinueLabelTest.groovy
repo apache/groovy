@@ -1,4 +1,6 @@
-/** 
+/**
+ * todo: add BreakContinueLabelWithClosureTest (when break is used to return from a Closure)
+ 
  * @author Dierk Koenig
  */
 class BreakContinueLabelTest extends GroovyTestCase {
@@ -14,8 +16,8 @@ class BreakContinueLabelTest extends GroovyTestCase {
             assert false
         }
     }
-    // todo: make this pass
-    void todo_testBreakLabelInNestedForLoop() {
+
+    void testBreakLabelInNestedForLoop_FAILS() { if (notYetImplemented()) return
         label: for (i in [1]) {
             for (j in [1]){
                 break label
@@ -43,8 +45,8 @@ class BreakContinueLabelTest extends GroovyTestCase {
             assert false
         }
     }
-    // todo: make this pass
-    void todo_testBreakLabelInNestedWhileLoop() {
+
+    void testBreakLabelInNestedWhileLoop_FAILS() { if (notYetImplemented()) return
         def count = 0
         label: while (count < 1) {
             count++
@@ -55,8 +57,8 @@ class BreakContinueLabelTest extends GroovyTestCase {
             assert false, 'did not break outer loop'
         }
     }
-    // todo: make this pass
-    void todo_testBreakLabelInNestedMixedForAndWhileLoop() {
+
+    void testBreakLabelInNestedMixedForAndWhileLoop_FAILS() { if (notYetImplemented()) return
         def count = 0
         label_1: while (count < 1) {
             count++
@@ -86,8 +88,8 @@ class BreakContinueLabelTest extends GroovyTestCase {
         }
         assertEquals '1424',log
     }
-    // todo: make this pass
-    void todo_testContinueLabelInNestedForLoop() {
+
+    void todo_testContinueLabelInNestedForLoop_FAILS() { if (notYetImplemented()) return
         def log = ''
         label: for (i in [1,2]) {
             log += i

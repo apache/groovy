@@ -166,6 +166,7 @@ class SubscriptTest extends GroovyTestCase {
     }
 
     void testStringWithSubscriptList() {
+
         def text = "nice cheese gromit!"
         
         def sub = text[1, 2, 3, 5..10]

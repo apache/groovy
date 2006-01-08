@@ -50,6 +50,8 @@ import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovyShell;
 
 import java.util.logging.Logger;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 
 import junit.framework.TestCase;
 
@@ -62,11 +64,12 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  *
  * @author <a href="mailto:bob@werken.com">bob mcwhirter</a>
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * @author Dierk Koenig (the notYetImplemented feature)
  * @version $Revision$
  */
 public class GroovyTestCase extends TestCase {
 
-    protected Logger log = Logger.getLogger(getClass().getName());
+    protected static Logger log = Logger.getLogger(GroovyTestCase.class.getName());
     private static int counter;
     private boolean useAgileDoxNaming = false;
 
@@ -152,10 +155,10 @@ public class GroovyTestCase extends TestCase {
 
         StringBuffer message = new StringBuffer();
 
-        message.append(expected + " not in {");
+        message.append(expected).append(" not in {");
 
         for (int i = 0; i < array.length; ++i) {
-            message.append("'" + array[i] + "'");
+            message.append("'").append(array[i]).append("'");
 
             if (i < (array.length - 1)) {
                 message.append(", ");
@@ -182,10 +185,10 @@ public class GroovyTestCase extends TestCase {
 
         StringBuffer message = new StringBuffer();
 
-        message.append(expected + " not in {");
+        message.append(expected).append(" not in {");
 
         for (int i = 0; i < array.length; ++i) {
-            message.append("'" + array[i] + "'");
+            message.append("'").append(array[i]).append("'");
 
             if (i < (array.length - 1)) {
                 message.append(", ");
@@ -281,7 +284,6 @@ public class GroovyTestCase extends TestCase {
         } 
     }
 
-
     /**
      *  Returns a copy of a string in which all EOLs are \n.
      */
@@ -289,4 +291,98 @@ public class GroovyTestCase extends TestCase {
     {
         return value.replaceAll( "(\\r\\n?)|\n", "\n" );
     }
+
+    /**
+     * Runs the calling JUnit test again and fails only if it unexpectedly runs.<br/>
+     * This is helpful for tests that don't currently work but should work one day,
+     * when the tested functionality has been implemented.<br/>
+     * The right way to use it is:
+     * <pre>
+     * public void testXXX() {
+     *   if (GroovyTestCase.notYetImplemented(this)) return;
+     *   ... the real (now failing) unit test
+     * }
+     * </pre>
+     * Idea copied from HtmlUnit (many thanks to Marc Guillemot).
+     * Future versions maybe available in the JUnit distro.
+     * The purpose of providing a 'static' version is such that you can use the
+     * feature even if not subclassing GroovyTestCase.
+     * @return <false> when not itself already in the call stack
+     */
+    public static boolean notYetImplemented(TestCase caller) {
+        if (notYetImplementedFlag.get() != null) {
+            return false;
+        }
+        notYetImplementedFlag.set(Boolean.TRUE);
+
+        final Method testMethod = findRunningJUnitTestMethod(caller.getClass());
+        try {
+            log.info("Running " + testMethod.getName() + " as not yet implemented");
+            testMethod.invoke(caller, new Class[] {});
+            fail(testMethod.getName() + " is marked as not yet implemented but passes unexpectedly");
+        }
+        catch (final Exception e) {
+            log.info(testMethod.getName() + " fails what is normal as it is not yet implemented");
+            // method execution failed, it is really "not yet implemented"
+        }
+        finally {
+            notYetImplementedFlag.set(null);
+        }
+        return true;
+    }
+
+    /**
+     * Convenience method for subclasses of GroovyTestCase, identical to
+     * <pre> GroovyTestCase.notYetImplemented(this); </pre>.
+     * @see #notYetImplemented(junit.framework.TestCase)
+     * @return  <false> when not itself already in the call stack
+     */
+    public boolean notYetImplemented() {
+        return notYetImplemented(this);
+    }
+
+    /**
+     * From JUnit. Finds from the call stack the active running JUnit test case
+     * @return the test case method
+     * @throws RuntimeException if no method could be found.
+     */
+    private static Method findRunningJUnitTestMethod(Class caller) {
+        final Class[] args = new Class[] {};
+
+        // search the inial junit test
+        final Throwable t = new Exception();
+        for (int i=t.getStackTrace().length-1; i>=0; --i) {
+            final StackTraceElement element = t.getStackTrace()[i];
+            if (element.getClassName().equals(caller.getName())) {
+                try {
+                    final Method m = caller.getMethod(element.getMethodName(), args);
+                    if (isPublicTestMethod(m)) {
+                        return m;
+                    }
+                }
+                catch (final Exception e) {
+                    // can't access, ignore it
+                }
+            }
+        }
+        throw new RuntimeException("No JUnit test case method found in call stack");
+    }
+
+
+    /**
+     * From Junit. Test if the method is a junit test.
+     * @param method the method
+     * @return <code>true</code> if this is a junit test.
+     */
+    private static boolean isPublicTestMethod(final Method method) {
+        final String name = method.getName();
+        final Class[] parameters = method.getParameterTypes();
+        final Class returnType = method.getReturnType();
+
+        return parameters.length == 0 && name.startsWith("test")
+            && returnType.equals(Void.TYPE)
+            && Modifier.isPublic(method.getModifiers());
+    }
+
+    private static final ThreadLocal notYetImplementedFlag = new ThreadLocal();
 }

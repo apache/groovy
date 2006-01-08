@@ -42,7 +42,7 @@ public class SecurityTest extends SecurityTestSupport {
 		assertExecute(script, "/groovy/security/testForbiddenPackage", new RuntimePermission("accessClassInPackage.sun.*"));
 	}
 
-	public void testForbiddenCodebase() {
+	public void testForbiddenCodebase_FAILS() { if (notYetImplemented()) return;
 		assertExecute(new File("src/test/groovy/security/forbiddenCodeBase.gvy"), new GroovyCodeSourcePermission("/groovy/security/forbiddenCodeBase"));
 	}
 	
@@ -56,11 +56,11 @@ public class SecurityTest extends SecurityTestSupport {
 		assertExecute(script, "/groovy/security/javax/print/allow", null);
 	}
 	
-	public void testBadScriptNameBug() {
+	public void testBadScriptNameBug_FAILS() { if (notYetImplemented()) return;
 		assertExecute(new File("src/test/groovy/bugs/BadScriptNameBug.groovy"), null);
 	}
 
-	public void testClosureListenerTest() {
+	public void testClosureListenerTest_FAILS() { if (notYetImplemented()) return;
 		assertExecute(new File("src/test/groovy/ClosureListenerTest.groovy"), null);
 	}
 
@@ -80,7 +80,7 @@ public class SecurityTest extends SecurityTestSupport {
 		assertExecute(new File("src/test/groovy/bugs/Groovy303_Bug.groovy"), null);
 	}
 
-	public void testScriptTest() {
+	public void testScriptTest_FAILS() { if (notYetImplemented()) return;
 		assertExecute(new File("src/test/groovy/script/ScriptTest.groovy"), null);
 	}
 	

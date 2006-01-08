@@ -1,4 +1,4 @@
-class ChainedAssignment extends GroovyTestCase {
+class ChainedAssignmentTest extends GroovyTestCase {
 
     def dummy(v) {
         print v

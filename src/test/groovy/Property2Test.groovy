@@ -9,7 +9,7 @@
  * @author dierk koenig
  * @version $Revision$
  */
-class PropertyTest2 extends GroovyTestCase {
+class Property2Test extends GroovyTestCase {
 
     void testEachPropertyName() {
         def foo = new Foo()
