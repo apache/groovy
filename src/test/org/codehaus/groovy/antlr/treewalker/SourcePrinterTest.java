@@ -207,7 +207,7 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
     public void testMapConstructor() throws Exception {
         assertEquals("Map foo = [:]", pretty("Map foo = [:]"));
-        //assertEquals("[a:1,b:2]", pretty("[a:1,b:2]"));
+        assertEquals("[a:1,b:2]", pretty("[a:1,b:2]"));
     }
 
     public void testMemberPointer() throws Exception {
