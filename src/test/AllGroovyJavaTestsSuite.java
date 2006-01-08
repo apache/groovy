@@ -1,6 +1,6 @@
 import groovy.inspect.InspectorTest;
 import groovy.lang.*;
-import groovy.security.SecurityTest;
+import groovy.security.SecurityTestDisabled;
 import groovy.security.SignedJarTest;
 import groovy.servlet.GroovyServletTest;
 import groovy.text.TemplateTest;
@@ -32,7 +32,7 @@ public class AllGroovyJavaTestsSuite {
         suite.addTestSuite(ScriptTest.class);
         suite.addTestSuite(SequenceTest.class);
         suite.addTestSuite(TupleTest.class);
-        suite.addTestSuite(SecurityTest.class);
+        suite.addTestSuite(SecurityTestDisabled.class);
         suite.addTestSuite(SignedJarTest.class);
         suite.addTestSuite(GroovyServletTest.class);
         suite.addTestSuite(TemplateTest.class);
