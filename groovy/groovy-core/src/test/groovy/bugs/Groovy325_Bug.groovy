@@ -1,10 +1,10 @@
 class Groovy325_Bug extends GroovyTestCase {
-  static void staticMethod() {
-    println("hello world")
+  static boolean staticMethod() {
+    return true
   }
 
-  static void main(args) {
+  void testCallStaticMethodFromClosure() {
     def c = { staticMethod() }
-    c()
+    assert c()
   }
 }

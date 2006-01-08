@@ -1,107 +1,15 @@
 /**
- * to prevent a JVM startup-shutdown time per test, it should be more efficient to
- * collect the tests together into a suite.
+ * Collects all Bug-related tests.
  *
  * @author <a href="mailto:jeremy.rayner@bigfoot.com">Jeremy Rayner</a>
  * @version $Revision$
  */
 import junit.framework.*;
+import groovy.util.AllTestSuite;
+
 public class UberTestCase2 extends TestCase {
     public static Test suite() {
-        TestSuite suite = new TestSuite();
-        suite.addTestSuite(org.codehaus.groovy.runtime.InvokeConstructorTest.class);
-        
-        suite.addTestSuite(groovy.bugs.ArrayMethodCallBug.class);
-        suite.addTestSuite(groovy.bugs.AsBoolBug.class);
-        suite.addTestSuite(groovy.bugs.AttributeSetExpressionBug.class);
-        suite.addTestSuite(groovy.bugs.ClassGeneratorFixesTest.class);
-        suite.addTestSuite(groovy.bugs.ClassInScriptBug.class);
-        suite.addTestSuite(groovy.bugs.ClosuresInScriptBug.class);
-        suite.addTestSuite(groovy.bugs.ClosureWithStaticVariablesBug.class);
-        suite.addTestSuite(groovy.bugs.ConstructorParameterBug.class);
-        suite.addTestSuite(groovy.bugs.ConstructorThisCallBug.class);
-        suite.addTestSuite(groovy.bugs.DoubleSizeParametersBug.class);
-        suite.addTestSuite(groovy.bugs.Groovy278_Bug.class);
-        suite.addTestSuite(groovy.bugs.Groovy303_Bug.class);
-        suite.addTestSuite(groovy.bugs.Groovy308_Bug.class);
-        suite.addTestSuite(groovy.bugs.Groovy558_616_Bug.class);
-        suite.addTestSuite(groovy.bugs.Groovy593_Bug.class);
-        //suite.addTestSuite(groovy.bugs.Groovy662.class); // In UbertTestCase as in default package.
-        suite.addTestSuite(groovy.bugs.Groovy666_Bug.class);
-        suite.addTestSuite(groovy.bugs.Groovy674_Bug.class);
-        suite.addTestSuite(groovy.bugs.Groovy675_Bug.class);
-        suite.addTestSuite(groovy.bugs.Groovy770_Bug.class);
-        suite.addTestSuite(groovy.bugs.Groovy779_Bug.class);
-        suite.addTestSuite(groovy.bugs.Groovy831_Bug.class);
-        suite.addTestSuite(groovy.bugs.Groovy872.class);
-        suite.addTestSuite(groovy.bugs.Groovy996_Bug.class);
-        suite.addTestSuite(groovy.bugs.Groovy1018_Bug.class);
-        suite.addTestSuite(groovy.bugs.Groovy1059_Bug.class);
-        suite.addTestSuite(groovy.bugs.InterfaceImplBug.class);
-        suite.addTestSuite(groovy.bugs.MarkupInScriptBug.class);
-        suite.addTestSuite(groovy.bugs.MethodClosureWithArrayBug.class);
-        suite.addTestSuite(groovy.bugs.MethodPointerBug.class);
-        suite.addTestSuite(groovy.bugs.PrimitivePropertyBug.class);
-        suite.addTestSuite(groovy.bugs.PropertyNameBug.class);
-        suite.addTestSuite(groovy.bugs.ScriptBug.class);
-        suite.addTestSuite(groovy.bugs.SeansBug.class);
-        suite.addTestSuite(groovy.bugs.StaticMethodCallBug.class);
-        suite.addTestSuite(groovy.bugs.StaticMethodImportBug.class);
-        suite.addTestSuite(groovy.bugs.StaticMethodImportBug2.class);
-        suite.addTestSuite(groovy.bugs.SubscriptOnPrimitiveTypeArrayBug.class);
-        suite.addTestSuite(groovy.bugs.SubscriptOnStringArrayBug.class);
-        suite.addTestSuite(groovy.inspect.InspectorTest.class);
-        suite.addTestSuite(groovy.lang.BenchmarkInterceptorTest.class);
-        suite.addTestSuite(groovy.lang.GroovyShellTest.class);
-        suite.addTestSuite(groovy.lang.GStringTest.class);
-        suite.addTestSuite(groovy.lang.InterceptorTest.class);
-        suite.addTestSuite(groovy.lang.IntRangeTest.class);
-        suite.addTestSuite(groovy.lang.GroovyLogTestCaseTest.class);
-        suite.addTestSuite(groovy.lang.RangeTest.class);
-        suite.addTestSuite(groovy.lang.RangeTest.class);
-        suite.addTestSuite(groovy.lang.ScriptIntegerDivideTest.class);
-        suite.addTestSuite(groovy.lang.ScriptPrintTest.class);
-        suite.addTestSuite(groovy.lang.ScriptTest.class);
-        suite.addTestSuite(groovy.lang.SequenceTest.class);
-        suite.addTestSuite(groovy.lang.TupleTest.class);
-        suite.addTestSuite(groovy.mock.example.SandwichMakerTest.class);
-        suite.addTestSuite(groovy.mock.MockTest.class);
-        suite.addTestSuite(groovy.model.TableModelTest.class);
-//todo - error in some test environments        suite.addTestSuite(groovy.security.RunAllGroovyScriptsSuite.class);
-//todo - error in some test environments        suite.addTestSuite(groovy.security.RunOneGroovyScript.class);
-//todo - error in some test environments        suite.addTestSuite(groovy.security.SecurityTest.class);
-//todo - error in some test environments        suite.addTestSuite(groovy.security.SecurityTestSupport.class);
-//todo - error in some test environments        suite.addTestSuite(groovy.security.SignedJarTest.class);
-        suite.addTestSuite(groovy.sql.PersonTest.class);
-        suite.addTestSuite(groovy.sql.SqlCompleteTest.class);
-        suite.addTestSuite(groovy.sql.SqlCompleteWithoutDataSourceTest.class);
-        suite.addTestSuite(groovy.sql.SqlTest.class);
-        suite.addTestSuite(groovy.sql.SqlWithBuilderTest.class);
-        suite.addTestSuite(groovy.sql.SqlWithTypedResultsTest.class);
-        suite.addTestSuite(groovy.sql.SqlRowsTest.class);
-        suite.addTestSuite(groovy.tree.NodePrinterTest.class);
-        suite.addTestSuite(groovy.txn.TransactionTest.class);
-        suite.addTestSuite(groovy.util.AllTestSuiteTest.class);
-        suite.addTestSuite(groovy.util.EmptyScriptTest.class);
-        suite.addTestSuite(groovy.util.EvalTest.class);
-        suite.addTestSuite(groovy.util.MBeanTest.class);
-        suite.addTestSuite(groovy.util.NodeTest.class);
-        suite.addTestSuite(groovy.util.ProxyTest.class);
-        suite.addTestSuite(groovy.util.XmlParserTest.class);
-        suite.addTestSuite(groovy.util.BuilderSupportTest.class);
-
-        // no idea - tugs crazy streaming stuff
-
-        suite.addTestSuite(groovy.xml.DOMTest.class);
-        suite.addTestSuite(groovy.xml.MarkupTest.class);
-        suite.addTestSuite(groovy.xml.MarkupWithWriterTest.class);
-        suite.addTestSuite(groovy.xml.NamespaceDOMTest.class);
-        suite.addTestSuite(groovy.xml.NamespaceNodeGPathTest.class);
-        suite.addTestSuite(groovy.xml.SAXTest.class);
-        suite.addTestSuite(groovy.xml.SmallNamespaceDOMTest.class);
-        suite.addTestSuite(groovy.xml.VerboseDOMTest.class);
-        suite.addTestSuite(groovy.xml.XmlTest.class);
-        return suite;
+        return AllTestSuite.suite("./src/test/groovy","**/*Bug.groovy");
     }
 
 // no tests inside (should we have an AbstractGroovyTestCase???)

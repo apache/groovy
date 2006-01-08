@@ -1,6 +1,6 @@
 import java.util.Arrays
 
-class ToArrayBug extends GroovyTestCase {
+class ToArrayBugTest extends GroovyTestCase {
     
     void testToArrayBug() {
         

@@ -46,13 +46,7 @@
 
 package groovy.util;
 
-import org.codehaus.groovy.classgen.TestSupport;
-
-/**
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
- */
-public class EmptyScriptTest extends TestSupport {
+public class EmptyScriptTest extends GroovyTestCase {
 
     public void testEmptyScript() throws Exception {
         assertScript("");

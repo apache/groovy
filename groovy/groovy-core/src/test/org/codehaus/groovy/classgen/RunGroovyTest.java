@@ -59,11 +59,11 @@ import org.codehaus.groovy.classgen.TestSupport;
 public class RunGroovyTest extends TestSupport {
 
     public void testArrayBug() throws Exception {
-        GroovyObject object = compile("src/test/groovy/ToArrayBug.groovy");
+        GroovyObject object = compile("src/test/groovy/ToArrayBugTest.groovy");
         object.invokeMethod("testToArrayBug", null);
     }
 
-    /*
+
     public void testPostfix() throws Exception {
         GroovyObject object = compile("src/test/groovy/PostfixTest.groovy");
         object.invokeMethod("testIntegerPostfix", null);
@@ -76,12 +76,12 @@ public class RunGroovyTest extends TestSupport {
 
     public void testClosure() throws Exception {
         GroovyObject object = compile("src/test/groovy/ClosureMethodTest.groovy");
-        object.invokeMethod("testListMap", null);
+        object.invokeMethod("testListCollect", null);
     }
 
     public void testClosureWithDefaultParam() throws Exception {
         GroovyObject object = compile("src/test/groovy/ClosureWithDefaultParamTest.groovy");
-        object.invokeMethod("testListMap", null);
+        object.invokeMethod("methodWithDefaultParam", null);
     }
 
     public void testOptionalReturn() throws Exception {
@@ -93,5 +93,5 @@ public class RunGroovyTest extends TestSupport {
     public void testConsole() throws Exception {
         GroovyObject object = compile("src/main/groovy/ui/Console.groovy");
     }
-    */
+    /*    */
 }

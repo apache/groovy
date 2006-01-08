@@ -11,19 +11,7 @@
 import junit.framework.*;
 public class UberTestCaseLongRunningTests extends TestCase {
     public static Test suite() {
-        TestSuite suite = new TestSuite();
-        suite.addTestSuite(ClosureListenerTest.class);
-        suite.addTestSuite(ScriptTest.class);
-        suite.addTestSuite(groovy.util.AntTest.class);
-        suite.addTestSuite(org.codehaus.groovy.bsf.BSFTest.class);
-        suite.addTestSuite(org.codehaus.groovy.bsf.CacheBSFTest.class);
-        suite.addTestSuite(org.codehaus.groovy.classgen.ReflectorGeneratorTest.class);
-        suite.addTestSuite(org.codehaus.groovy.classgen.RunBugsTest.class);
-        suite.addTestSuite(org.codehaus.groovy.classgen.RunClosureTest.class);
-        suite.addTestSuite(org.codehaus.groovy.runtime.PropertyTest.class);
-
-        suite.addTestSuite(groovy.xml.StreamingMarkupTest.class);
-        return suite;
+        return AllCodehausJavaTestsSuite.suite();
     }
 
 }

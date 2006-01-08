@@ -61,11 +61,15 @@ public class AllTestSuite extends TestSuite {
     }
 
     public static Test suite() {
+        String basedir = System.getProperty(SYSPROP_TEST_DIR, "./test/");
+        String pattern = System.getProperty(SYSPROP_TEST_PATTERN, "**/*Test.groovy");
+        return suite(basedir, pattern);
+    }    
+
+    public static Test suite(String basedir, String pattern) {
         AllTestSuite suite = new AllTestSuite();
         String fileName = "";
         try {
-            String basedir = System.getProperty(SYSPROP_TEST_DIR, "./test/");
-            String pattern = System.getProperty(SYSPROP_TEST_PATTERN, "**/*Test.groovy");
             Collection filenames = FINDER.getFileNames(basedir, pattern);
             for (Iterator iter = filenames.iterator(); iter.hasNext();) {
                 fileName = (String) iter.next();

@@ -8,6 +8,10 @@ import java.io.File
  */
 class ClosureWithDefaultParamTest extends GroovyTestCase {
 
+    void methodWithDefaultParam(example='default'){
+        assert 'default' == example
+    }
+
     void testListCollect() {
         def list = [1, 2, 3, 4]
         def answer = list.collect { it * 2 }

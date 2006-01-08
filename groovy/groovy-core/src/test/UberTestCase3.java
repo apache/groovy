@@ -1,62 +1,19 @@
 /**
- * to prevent a JVM startup-shutdown time per test, it should be more efficient to
- * collect the tests together into a suite.
+ * Collecting all Groovy unit tests that are written in Groovy, not in root, and not Bug-related.
  *
  * @author <a href="mailto:jeremy.rayner@bigfoot.com">Jeremy Rayner</a>
+ * @author Dierk Koenig
  * @version $Revision$
  */
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import groovy.util.AllTestSuite;
+
 public class UberTestCase3 extends TestCase {
     public static Test suite() {
-        TestSuite suite = new TestSuite();
-        suite.addTestSuite(groovy.lang.GroovyClassLoaderTest.class);
-        suite.addTestSuite(org.codehaus.groovy.antlr.GroovySourceASTTest.class);
-        suite.addTestSuite(org.codehaus.groovy.antlr.SourceBufferTest.class);
-        suite.addTestSuite(org.codehaus.groovy.antlr.treewalker.SourcePrinterTest.class);
-        suite.addTestSuite(org.codehaus.groovy.classgen.BytecodeHelperTest.class);
-        suite.addTestSuite(org.codehaus.groovy.classgen.CallClosureFieldAsMethodTest.class);
-
-        suite.addTestSuite(org.codehaus.groovy.classgen.CapitalizeTest.class);
-        suite.addTestSuite(org.codehaus.groovy.classgen.ConstructorIssueTest.class);
-        suite.addTestSuite(org.codehaus.groovy.classgen.ConstructorTest.class);
-        suite.addTestSuite(org.codehaus.groovy.classgen.ForTest.class);
-        suite.addTestSuite(org.codehaus.groovy.classgen.GetPropertyTest.class);
-        suite.addTestSuite(org.codehaus.groovy.classgen.GroovyClassLoaderTest.class);
-        suite.addTestSuite(org.codehaus.groovy.classgen.GStringTest.class);
-        suite.addTestSuite(org.codehaus.groovy.classgen.IfElseTest.class);
-        suite.addTestSuite(org.codehaus.groovy.classgen.MainTest.class);
-        suite.addTestSuite(org.codehaus.groovy.classgen.MetaClassTest.class);
-        suite.addTestSuite(org.codehaus.groovy.classgen.MethodTest.class);
-        suite.addTestSuite(org.codehaus.groovy.classgen.PropertyTest.class);
-        suite.addTestSuite(org.codehaus.groovy.classgen.RunGroovyTest.class);
-        suite.addTestSuite(org.codehaus.groovy.classgen.TupleListTest.class);
-        suite.addTestSuite(org.codehaus.groovy.classgen.VerifierCodeVisitorTest.class);
-        suite.addTestSuite(org.codehaus.groovy.control.CompilationUnitTest.class);
-        suite.addTestSuite(org.codehaus.groovy.control.messages.SyntaxErrorMessageTest.class);
-        suite.addTestSuite(org.codehaus.groovy.runtime.DefaultGroovyMethodsTest.class);
-        suite.addTestSuite(org.codehaus.groovy.runtime.FileLeftShiftTest.class);
-        suite.addTestSuite(org.codehaus.groovy.runtime.InheritedInterfaceMethodTest.class);
-        suite.addTestSuite(org.codehaus.groovy.runtime.InvokeGroovyMethodTest.class);
-        suite.addTestSuite(org.codehaus.groovy.runtime.InvokeMethodTest.class);
-        suite.addTestSuite(org.codehaus.groovy.runtime.InvokerTest.class);
-        suite.addTestSuite(org.codehaus.groovy.runtime.MethodFailureTest.class);
-        suite.addTestSuite(org.codehaus.groovy.runtime.MethodKeyTest.class);
-        suite.addTestSuite(org.codehaus.groovy.runtime.NewStaticMetaMethodTest.class);
-        suite.addTestSuite(org.codehaus.groovy.runtime.TupleListTest.class);
-        suite.addTestSuite(groovy.util.XmlSlurperTest.class);
-        suite.addTestSuite(org.codehaus.groovy.syntax.TokenTest.class);
-        suite.addTestSuite(org.codehaus.groovy.tools.CompilerTest.class);
-        suite.addTestSuite(org.codehaus.groovy.tools.FileSystemCompilerTest.class);
-        suite.addTestSuite(org.codehaus.groovy.tools.xml.DomToGroovyTest.class);
-        suite.addTestSuite(org.codehaus.groovy.wiki.TestCaseRenderEngineTest.class);
-        return suite;
+        return AllTestSuite.suite("./src/test/groovy","*/**/*Test.groovy");
     }
-
-// todo - Are we still using wiki tests as none turn up on my build???
-// GL: no, we don't use them anymore, so let's ditch it
-//        suite.addTestSuite(org.codehaus.groovy.wiki.RunWikiTest.class);
 
 // no tests inside (should we have an AbstractGroovyTestCase???)
 //
