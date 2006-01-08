@@ -138,7 +138,7 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert map.size() == 2
     }
 
-    void DISABLE_testExecuteCommandLineProcessUsingAString() {
+    void testExecuteCommandLineProcessUsingAString_FAILS() { if (notYetImplemented()) return
         /** @todo why does this not work
         javaHome = System.getProperty('java.home', '')
         cmd = "${javaHome}/bin/java -version"
@@ -173,7 +173,7 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert count > 1
     }
     
-    void DISABLED_testExecuteCommandLineProcessAndUseWaitForOrKill() {
+    void testExecuteCommandLineProcessAndUseWaitForOrKill_FAILS() { if (notYetImplemented()) return
         /** @todo why does this not work
         javaHome = System.getProperty('java.home', '')
         cmd = "${javaHome}/bin/java -version"
@@ -200,7 +200,7 @@ class GroovyMethodsTest extends GroovyTestCase {
         println "Exit value of command line is ${value}"
     }
     
-    void DISABLE_testExecuteCommandLineUnderWorkingDirectory() {
+    void testExecuteCommandLineUnderWorkingDirectory_FAILS() { if (notYetImplemented()) return
         def cmd = "ls -l"
         if (System.getProperty('os.name', '').contains('Win')) {
             cmd = "dir"
