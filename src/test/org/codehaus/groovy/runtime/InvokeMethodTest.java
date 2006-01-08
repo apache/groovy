@@ -122,10 +122,8 @@ public class InvokeMethodTest extends GroovyTestCase {
 
     public void testMethodChooserString() throws Throwable {
         assertMethodChooser("String", "foo");
-
-        /** @todo some type cooercion would be cool here... */
-        //assertMethodChooser("String", new StringBuffer());
-        //assertMethodChooser("String", new Character('a');
+        assertMethodChooser("String", new StringBuffer());
+        assertMethodChooser("String", new Character('a'));
     }
 
     public void testMethodChooserNumber() throws Throwable {

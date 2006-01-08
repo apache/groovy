@@ -64,16 +64,6 @@ class PrimitiveDefaultValueTest extends GroovyTestCase {
         a.flag1 == false
         a.c1 == (char) 0
     }
-
-  /*
-    public static void main(String[] args) {
-        def app = new PrimitiveDefaultValueTest()
-        app.testThisPrimitiveDefaultValues()
-        app.testPrimitiveDefaultValues()
-        app.testDefaultPrimitiveValuesForAttributes()
-        app.testDefaultPrimitiveValuesForProperties()
-    }
-  */
 }
 
 class ClassForPrimitiveDefaultValue {
