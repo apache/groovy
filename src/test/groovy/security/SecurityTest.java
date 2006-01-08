@@ -35,7 +35,7 @@ public class SecurityTest extends SecurityTestSupport {
     }
 
     /** this test doesn't run under certain environments... */
-    public void testForbiddenProperty_FAILS() { if (notYetImplemented()) return;
+    public void fails_on_buildserver_testForbiddenProperty() { 
 		String script = "System.getProperty(\"user.home\")";
 		assertExecute(script, null, new PropertyPermission("user.home", "read"));
 	}
