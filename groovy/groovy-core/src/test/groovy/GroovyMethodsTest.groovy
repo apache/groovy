@@ -16,18 +16,18 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert answer[0] == 4
         assert answer[1] == 8
         assert answer[2] == 12
-        
+
         assert [1:'a', 2:'b', 3:'c'].collect{k,v -> k + v} == ['1a','2b','3c']
-        
+
         assert [1:'a', 2:'b', 3:'c'].collect{it.getKey() + "*" + it.getValue()} == ['1*a','2*b','3*c']
-        
+
     }
-    
+
     void testSum() {
     	assert [].sum() == 0
     	assert [1].sum() == 1
     	assert [1, 2, 3].sum() == 6
-    	
+
     	assert [].sum() {it.length()} == 0
     	assert ["abc"].sum() {it.length()} == 3
     	assert ["a", "bc", "def"].sum() {it.length()} == 6
@@ -36,10 +36,10 @@ class GroovyMethodsTest extends GroovyTestCase {
     void testJoin() {
         assert [2, 4, 6].join("-") == "2-4-6"
         assert ["edam", "cheddar", "brie"].join(", ") == 'edam, cheddar, brie'
-        
+
         println( ["abc", 5, 2.34].join(", ") )
     }
-    
+
     void testTimes() {
         def count = 0
         5.times { i -> count = count + i }
@@ -138,7 +138,8 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert map.size() == 2
     }
 
-    void testExecuteCommandLineProcessUsingAString_FAILS() { if (notYetImplemented()) return
+    /** runs only on JDK 1.5 */
+    void todo_testExecuteCommandLineProcessUsingAString() {
         /** @todo why does this not work
         javaHome = System.getProperty('java.home', '')
         cmd = "${javaHome}/bin/java -version"
