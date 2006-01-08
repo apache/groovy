@@ -41,7 +41,7 @@ public class SourcePrinterTest extends GroovyTestCase {
 
 
     public void testAnnotations() throws Exception{
-        //todo assertEquals("@Property foo", pretty("@Property foo"));
+        assertEquals("@Property foo", pretty("@Property foo"));
     }
 
     public void testAssign() throws Exception {
@@ -54,7 +54,7 @@ public class SourcePrinterTest extends GroovyTestCase {
 
     public void testClosedBlock() throws Exception {
         assertEquals("[1, 2, 3].each {println(it)}", pretty("[1,2,3].each{println it}"));
-        //assertEquals("def x = foo.bar(mooky) {x ->wibble(x)}", pretty("def x = foo.bar(mooky) {x-> wibble(x)}"));
+        assertEquals("def x = foo.bar(mooky) {x ->wibble(x)}", pretty("def x = foo.bar(mooky) {x-> wibble(x)}"));
     }
     public void testCtorIdent() throws Exception {
         assertEquals("class Foo {private Foo() {}}", pretty("class Foo {private Foo() {}}"));
@@ -73,7 +73,7 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
 
     public void testExpr() throws Exception {
-        //todo assertEquals("foo(bar) mooky(bar)", pretty("foo(bar) mooky(bar)"));
+        assertEquals("foo(bar) mooky(bar)", pretty("foo(bar) mooky(bar)"));
     }
 
     public void testExtendsClause() throws Exception {
@@ -103,7 +103,7 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
 
     public void testLabeledArg() throws Exception {
-        //todo assertEquals("myMethod(argOne:123,argTwo:123)", pretty("myMethod(argOne:123,argTwo:123)"));
+        assertEquals("myMethod(argOne:123,argTwo:123)", pretty("myMethod(argOne:123,argTwo:123)"));
     }
     public void testLand() throws Exception {
         assertEquals("true && false", pretty("true && false"));
@@ -157,15 +157,15 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
 
     public void testLiteralPrivate() throws Exception {
-        //todo assertEquals("private bar", pretty("private bar"));
+        assertEquals("private bar", pretty("private bar"));
     }
 
     public void testLiteralProtected() throws Exception {
-        //todo assertEquals("protected mooky", pretty("protected mooky"));
+        assertEquals("protected mooky", pretty("protected mooky"));
     }
 
     public void testLiteralPublic() throws Exception {
-        //todo assertEquals("public foo", pretty("public foo"));
+        assertEquals("public foo", pretty("public foo"));
     }
 
     public void testLiteralReturn() throws Exception {
@@ -221,7 +221,7 @@ public class SourcePrinterTest extends GroovyTestCase {
 
     public void testMethodDef() throws Exception {
         assertEquals("def foo(int bar, boolean boo) {}", pretty("def foo(int bar,boolean boo) {}"));
-        //todo assertEquals("void foo(){} void bar(){}", pretty("void foo(){} void bar(){}"));
+        assertEquals("void foo(){} void bar(){}", pretty("void foo(){} void bar(){}"));
     }
 
     public void testMinus() throws Exception {
@@ -229,7 +229,7 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
 
     public void testModifiers() throws Exception {
-        //todo assertEquals("", pretty(""));
+        assertEquals("", pretty(""));
     }
     public void testNotEqual() throws Exception {
         assertEquals("a != b", pretty("a!=b"));
@@ -251,11 +251,11 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
 
     public void testParameterDef() throws Exception {
-        //todo assertEquals("", pretty(""));
+        assertEquals("", pretty(""));
     }
 
     public void testParameters() throws Exception {
-        //todo assertEquals("", pretty(""));
+        assertEquals("", pretty(""));
     }
     public void testPlus() throws Exception {
         assertEquals("a + b", pretty("a+b"));
@@ -279,12 +279,12 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
 
     public void testStringConstructor() throws Exception {
-        //todo assertEquals("\"foo$bar\"", pretty("\"foo$bar\""));
+        assertEquals("\"foo$bar\"", pretty("\"foo$bar\""));
     }
 
     public void testStringLiteral() throws Exception {
         assertEquals("\"mooky\"", pretty("\"mooky\""));
-        //todo assertEquals("'mooky'", pretty("'mooky'"));
+        assertEquals("'mooky'", pretty("'mooky'"));
     }
 
     public void testType() throws Exception {

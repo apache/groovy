@@ -53,7 +53,16 @@ class BitwiseOperationsTest extends GroovyTestCase {
     }
 
     void testBitwiseAnd() {
-       /*
+
+        def a = 13
+        assert (a & 3) == 1    // 0x0000000D & 0x00000003
+        assert (a & 7) == 5    // 0x0000000D & 0x00000007
+        def b = -13
+        assert (b & 3) == 3    // 0xFFFFFFF3 & 0x00000003
+        assert (b & 7) == 3    // 0xFFFFFFF3 & 0x00000007
+    }
+
+    void testBitwiseAndOperatorPrecedence_FAILS() { if (notYetImplemented()) return
         // Oprator Precedence Problem
         // ^, &, | should be prior to ==, <, >, <=, >=
         def a = 13
@@ -62,14 +71,6 @@ class BitwiseOperationsTest extends GroovyTestCase {
         def b = -13
         assert b & 3 == 3    // 0xFFFFFFF3 & 0x00000003
         assert b & 7 == 3    // 0xFFFFFFF3 & 0x00000007
-       */
-
-        def a = 13
-        assert (a & 3) == 1    // 0x0000000D & 0x00000003
-        assert (a & 7) == 5    // 0x0000000D & 0x00000007
-        def b = -13
-        assert (b & 3) == 3    // 0xFFFFFFF3 & 0x00000003
-        assert (b & 7) == 3    // 0xFFFFFFF3 & 0x00000007
     }
 
     void testBitwiseAndEqual() {
@@ -86,7 +87,15 @@ class BitwiseOperationsTest extends GroovyTestCase {
     }
 
     void testBitwiseOr() {
-       /*
+        def a = 13
+        assert (a | 8) == 13      // 0x0000000D | 0x00000008
+        assert (a | 16) == 29     // 0x0000000D | 0x00000010
+        def b = -13
+        assert (b | 8) == -5      // 0xFFFFFFF3 | 0x00000008
+        assert (b | 16) == -13    // 0xFFFFFFF3 | 0x00000010
+    }
+
+    void testBitwiseOrOperatorPrecedence_FAILS() { if (notYetImplemented()) return
         // Oprator Precedence Problem
         // ^, &, | should be prior to ==, <, >, <=, >=
         def a = 13
@@ -95,14 +104,6 @@ class BitwiseOperationsTest extends GroovyTestCase {
         def b = -13
         assert b | 8 == -5      // 0xFFFFFFF3 | 0x00000008
         assert b | 16 == -13    // 0xFFFFFFF3 | 0x00000010
-       */
-
-        def a = 13
-        assert (a | 8) == 13      // 0x0000000D | 0x00000008
-        assert (a | 16) == 29     // 0x0000000D | 0x00000010
-        def b = -13
-        assert (b | 8) == -5      // 0xFFFFFFF3 | 0x00000008
-        assert (b | 16) == -13    // 0xFFFFFFF3 | 0x00000010
     }
 
     void testBitwiseOrEqual() {
@@ -119,7 +120,14 @@ class BitwiseOperationsTest extends GroovyTestCase {
     }
 
     void testBitwiseXor() {
-       /*
+        def a = 13
+        assert (a ^ 10) == 7     // 0x0000000D ^ 0x0000000A = 0x000000007
+        assert (a ^ 15) == 2     // 0x0000000D ^ 0x0000000F = 0x000000002
+        def b = -13
+        assert (b ^ 10) == -7    // 0xFFFFFFF3 ^ 0x0000000A = 0xFFFFFFF9
+        assert (b ^ 15) == -4    // 0xFFFFFFF3 ^ 0x0000000F = 0xFFFFFFFC
+    }
+    void testBitwiseXorOperatorPrecedence_FAILS() { if (notYetImplemented()) return
         // Oprator Precedence Problem
         // ^, &, | should be prior to ==, <, >, <=, >=
         def a = 13
@@ -128,14 +136,6 @@ class BitwiseOperationsTest extends GroovyTestCase {
         def b = -13
         assert b ^ 10 == -7    // 0xFFFFFFF3 ^ 0x0000000A = 0xFFFFFFF9
         assert b ^ 15 == -4    // 0xFFFFFFF3 ^ 0x0000000F = 0xFFFFFFFC
-       */
-
-        def a = 13
-        assert (a ^ 10) == 7     // 0x0000000D ^ 0x0000000A = 0x000000007
-        assert (a ^ 15) == 2     // 0x0000000D ^ 0x0000000F = 0x000000002
-        def b = -13
-        assert (b ^ 10) == -7    // 0xFFFFFFF3 ^ 0x0000000A = 0xFFFFFFF9
-        assert (b ^ 15) == -4    // 0xFFFFFFF3 ^ 0x0000000F = 0xFFFFFFFC
     }
 
     void testBitwiseXorEqual() {

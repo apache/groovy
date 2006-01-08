@@ -38,10 +38,9 @@ class VariblePrecedence extends GroovyTestCase {
 
 
 /*
- * CURRENTLY BROKEN.  Variable scoping needs an overhaul to
- * fix it.
- *
-    void testVariablePrecedenceInScript() {
+ * CURRENTLY BROKEN.  Variable scoping needs an overhaul to * fix it.
+ */
+    void testVariablePrecedenceInScript_FAILS() { if (notYetImplemented()) return
         assertScript( """
             c = { x -> assert x == 1; assert y == 93; }
             x = 100;
@@ -50,6 +49,5 @@ class VariblePrecedence extends GroovyTestCase {
             c.call(1);
         """);
     }
- */
 
 }

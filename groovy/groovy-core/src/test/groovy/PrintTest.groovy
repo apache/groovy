@@ -1,7 +1,6 @@
 class PrintTest extends GroovyTestCase {
 
-    /*
-    void testToString() {
+    void testToString_FAILS() { if (notYetImplemented()) return
         assertToString("hello", 'hello')
         
         assertToString([], "[]")
@@ -13,7 +12,6 @@ class PrintTest extends GroovyTestCase {
         assertToString([['bob':'drools', 'james':'geronimo']], '[[james:geronimo, bob:drools]]')
         assertToString([5, ["bob", "james"], ["bob":"drools", "james":"geronimo"], "cheese"], '[5, [bob, james], [james:geronimo, bob:drools], cheese]')
     }
-    */
 
     void testInspect() {
         assertInspect("hello", '"hello"')

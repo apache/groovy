@@ -29,13 +29,6 @@ class SingletonBugTest extends GroovyTestCase {
         assert x != y
     }
 
-  /*
-    static void main(args) {
-        def app = new SingletonBugTest()
-        app.testPrivate()
-        app.testProtected()
-    }
-  */
 }
 
 
