@@ -19,6 +19,8 @@ import junit.textui.TestRunner;
  * behavior (e.g. ensuring that GroovyCodeSources may only be created for which proper permissions exist).
  * Other tests run .groovy scripts under a secure environment and ensure that the proper permissions
  * are required for success.
+ *
+ * Todo: find out why the marked tests are environment specific.
  * 
  * @author Steve Goetze
  */
@@ -42,7 +44,8 @@ public class SecurityTest extends SecurityTestSupport {
 		assertExecute(script, "/groovy/security/testForbiddenPackage", new RuntimePermission("accessClassInPackage.sun.*"));
 	}
 
-	public void testForbiddenCodebase_FAILS() { if (notYetImplemented()) return;
+    /** this test doesn't run under certain environments... */
+    public void testForbiddenCodebase() {
 		assertExecute(new File("src/test/groovy/security/forbiddenCodeBase.gvy"), new GroovyCodeSourcePermission("/groovy/security/forbiddenCodeBase"));
 	}
 	
@@ -55,12 +58,14 @@ public class SecurityTest extends SecurityTestSupport {
 		//This should not throw an ACE because groovy.policy grants the codeBase access to javax.print
 		assertExecute(script, "/groovy/security/javax/print/allow", null);
 	}
-	
-	public void testBadScriptNameBug_FAILS() { if (notYetImplemented()) return;
+
+    /** this test doesn't run under certain environments... */
+    public void testBadScriptNameBug() {
 		assertExecute(new File("src/test/groovy/bugs/BadScriptNameBug.groovy"), null);
 	}
 
-	public void testClosureListenerTest_FAILS() { if (notYetImplemented()) return;
+    /** this test doesn't run under certain environments... */
+    public void testClosureListenerTest() {
 		assertExecute(new File("src/test/groovy/ClosureListenerTest.groovy"), null);
 	}
 
@@ -80,7 +85,8 @@ public class SecurityTest extends SecurityTestSupport {
 		assertExecute(new File("src/test/groovy/bugs/Groovy303_Bug.groovy"), null);
 	}
 
-	public void testScriptTest_FAILS() { if (notYetImplemented()) return;
+    /** this test doesn't run under certain environments... */
+    public void testScriptTest() {
 		assertExecute(new File("src/test/groovy/script/ScriptTest.groovy"), null);
 	}
 	

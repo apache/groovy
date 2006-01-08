@@ -33,7 +33,8 @@ public class SignedJarTest extends SecurityTestSupport {
     	return new TestSuite(SignedJarTest.class);
     }
 
-    public void testReadSignedJar_FAILS() throws Exception { if (notYetImplemented()) return;
+    /** this test doesn't run under certain environments... */
+    public void testReadSignedJar() throws Exception {
     	if (!isSecurityAvailable()) {
     		return;
     	}
