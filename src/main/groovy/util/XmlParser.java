@@ -65,12 +65,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
-import org.xml.sax.Attributes;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.InputSource;
-import org.xml.sax.Locator;
-import org.xml.sax.SAXException;
-import org.xml.sax.XMLReader;
+import org.xml.sax.*;
 
 /**
  * A helper class for parsing XML into a tree of Node instances for 
@@ -99,20 +94,20 @@ public class XmlParser implements ContentHandler {
 
     public XmlParser(boolean validating, boolean namespaceAware) throws ParserConfigurationException, SAXException {
         SAXParserFactory factory = null;
-    	try {
-			factory = (SAXParserFactory) AccessController.doPrivileged(new PrivilegedExceptionAction() {
-				public Object run() throws ParserConfigurationException {
-					return SAXParserFactory.newInstance();
-				}
-			});
-    	} catch (PrivilegedActionException pae) {
-    		Exception e = pae.getException();
-    		if (e instanceof ParserConfigurationException) {
-    			throw (ParserConfigurationException) e;
-    		} else {
-    			throw new RuntimeException(e);
-    		}
-    	}
+        try {
+            factory = (SAXParserFactory) AccessController.doPrivileged(new PrivilegedExceptionAction() {
+                public Object run() throws ParserConfigurationException {
+                    return SAXParserFactory.newInstance();
+                }
+            });
+        } catch (PrivilegedActionException pae) {
+            Exception e = pae.getException();
+            if (e instanceof ParserConfigurationException) {
+                throw (ParserConfigurationException) e;
+            } else {
+                throw new RuntimeException(e);
+            }
+        }
         factory.setNamespaceAware(namespaceAware);
         factory.setValidating(validating);
 
@@ -128,7 +123,7 @@ public class XmlParser implements ContentHandler {
         reader = parser.getXMLReader();
     }
 
-    
+
     /**
      * Parses the content of the given file as XML turning it into a tree
      * of Nodes
@@ -190,7 +185,78 @@ public class XmlParser implements ContentHandler {
     public Node parseText(String text) throws IOException, SAXException {
         return parse(new StringReader(text));
     }
-    
+    // Delegated XMLReader methods
+    //------------------------------------------------------------------------
+
+    /* (non-Javadoc)
+     * @see org.xml.sax.XMLReader#getDTDHandler()
+     */
+    public DTDHandler getDTDHandler() {
+        return this.reader.getDTDHandler();
+    }
+
+    /* (non-Javadoc)
+     * @see org.xml.sax.XMLReader#getEntityResolver()
+     */
+    public EntityResolver getEntityResolver() {
+        return this.reader.getEntityResolver();
+    }
+
+    /* (non-Javadoc)
+     * @see org.xml.sax.XMLReader#getErrorHandler()
+     */
+    public ErrorHandler getErrorHandler() {
+        return this.reader.getErrorHandler();
+    }
+
+    /* (non-Javadoc)
+     * @see org.xml.sax.XMLReader#getFeature(java.lang.String)
+     */
+    public boolean getFeature(final String uri) throws SAXNotRecognizedException, SAXNotSupportedException {
+        return this.reader.getFeature(uri);
+    }
+
+    /* (non-Javadoc)
+     * @see org.xml.sax.XMLReader#getProperty(java.lang.String)
+     */
+    public Object getProperty(final String uri) throws SAXNotRecognizedException, SAXNotSupportedException {
+        return this.reader.getProperty(uri);
+    }
+
+    /* (non-Javadoc)
+     * @see org.xml.sax.XMLReader#setDTDHandler(org.xml.sax.DTDHandler)
+     */
+    public void setDTDHandler(final DTDHandler dtdHandler) {
+        this.reader.setDTDHandler(dtdHandler);
+    }
+
+    /* (non-Javadoc)
+     * @see org.xml.sax.XMLReader#setEntityResolver(org.xml.sax.EntityResolver)
+     */
+    public void setEntityResolver(final EntityResolver entityResolver) {
+        this.reader.setEntityResolver(entityResolver);
+    }
+
+    /* (non-Javadoc)
+     * @see org.xml.sax.XMLReader#setErrorHandler(org.xml.sax.ErrorHandler)
+     */
+    public void setErrorHandler(final ErrorHandler errorHandler) {
+        this.reader.setErrorHandler(errorHandler);
+    }
+
+    /* (non-Javadoc)
+     * @see org.xml.sax.XMLReader#setFeature(java.lang.String, boolean)
+     */
+    public void setFeature(final String uri, final boolean value) throws SAXNotRecognizedException, SAXNotSupportedException {
+        this.reader.setFeature(uri, value);
+    }
+
+    /* (non-Javadoc)
+     * @see org.xml.sax.XMLReader#setProperty(java.lang.String, java.lang.Object)
+     */
+    public void setProperty(final String uri, final Object value) throws SAXNotRecognizedException, SAXNotSupportedException {
+         this.reader.setProperty(uri, value);
+    }
 
     // ContentHandler interface
     //-------------------------------------------------------------------------                    
@@ -205,7 +271,7 @@ public class XmlParser implements ContentHandler {
     public void startElement(String namespaceURI, String localName, String qName, Attributes list)
         throws SAXException {
         addTextToNode();
-        
+
         Object name = getElementName(namespaceURI, localName, qName);
 
         int size = list.getLength();
@@ -221,7 +287,7 @@ public class XmlParser implements ContentHandler {
 
     public void endElement(String namespaceURI, String localName, String qName) throws SAXException {
         addTextToNode();
-        
+
         if (!stack.isEmpty()) {
             stack.remove(stack.size() - 1);
             if (!stack.isEmpty()) {
