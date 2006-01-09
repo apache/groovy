@@ -167,9 +167,9 @@ Targets:
 		<mkdir dir="${path}web-app"/>
 		<mkdir dir="${path}web-app"/>
 		<mkdir dir="${path}web-app"/>
-		<mkdir dir="${path}web-app/WEB-INF/classes"/>		
-		<mkdir dir="${path}web-app/WEB-INF/jsp"/>				
-		<!--<mkdir dir="${path}jsp"/>-->
+		<mkdir dir="${path}web-app/WEB-INF/classes"/>
+		<!--<mkdir dir="${path}
+		"/>-->
 		<!--<mkdir dir="${path}html"/>-->
 		<mkdir dir="${path}lib"/>
 		<mkdir dir="${path}spring"/>
@@ -196,7 +196,7 @@ Targets:
 	
 	<target name="clean">
 		<delete file="grails-app.war"/>
-		<delete dir="tmp"/>
+		<delete dir="tmp" />
 	</target>
 	
 	<target name="build">
@@ -327,10 +327,6 @@ Targets:
 		<touch file="tmp/war/WEB-INF/classes/.dummy"/>
 		<mkdir dir="tmp/war/WEB-INF/lib"/>
 		<touch file="tmp/war/WEB-INF/lib/.dummy"/>
-		<mkdir dir="tmp/war/WEB-INF/jsp"/>
-		<touch file="tmp/war/WEB-INF/jsp/.dummy"/>
-		<mkdir dir="tmp/war/WEB-INF/jsp/layouts"/>
-		<touch file="tmp/war/WEB-INF/jsp/layouts/.dummy"/>		
 		<mkdir dir="tmp/war/WEB-INF/spring"/>
 		<touch file="tmp/war/WEB-INF/spring/.dummy"/>
 		<mkdir dir="tmp/war/WEB-INF/tld"/>
@@ -384,15 +380,8 @@ Targets:
 			<fileset dir="${grails.home}/dist"/>
 			<fileset dir="lib"/>
 		</copy>
-		<copy todir="tmp/war/WEB-INF/classes">
-			<fileset dir="web-app/WEB-INF/classes"/>
-			<fileset dir="grails-app/controllers" includes="**"/>
-			<fileset dir="grails-app/services" includes="**"/>			
-			<fileset dir="grails-app/domain" includes="**"/>
-			<fileset dir="grails-app/conf" includes="**"/>
-		</copy>
-		<copy todir="tmp/war/WEB-INF/jsp">
-			<fileset dir="grails-app/views" includes="**"/>
+		<copy todir="tmp/war/WEB-INF/grails-app">			
+			<fileset dir="grails-app" includes="**"/>
 		</copy>
 		<copy todir="tmp/war/WEB-INF/classes">
 			<fileset dir="grails-app/i18n" includes="**"/>

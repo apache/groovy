@@ -5,15 +5,16 @@
             http://java.sun.com/xml/ns/j2ee/web-jsptaglibrary_2_0.xsd"
         version="2.0">
     <description>The Grails (Groovy on Rails) custom tag library</description>
-    
-	<tlibversion>1.0</tlibversion>
-	<shortname>grails</shortname>
-	<uri>http://grails.codehaus.org/tags</uri>
 
-	<tag>
+	<tlib-version>1.0</tlib-version>
+	<short-name>grails</short-name>
+    <uri>http://grails.codehaus.org/tags</uri>
+
+    <tag>
 		<name>link</name>
-		<tag-class>org.codehaus.groovy.grails.web.tags.LinkTag</tag-class>
-		<attribute>
+		<tag-class>org.codehaus.groovy.grails.web.taglib.LinkTag</tag-class>
+        <body-content>scriptless</body-content>
+        <attribute>
 			<name>action</name>
 			<required>false</required>
 			<rtexprvalue>true</rtexprvalue>
@@ -29,7 +30,21 @@
 			<rtexprvalue>true</rtexprvalue>
 		</attribute>				
 		<dynamic-attributes>true</dynamic-attributes>
-		<body-content>scriptless</body-content>
 	</tag>
+    <tag>
+        <name>scaffold</name>
+        <tag-class>org.codehaus.groovy.grails.web.taglib.ScaffoldTag</tag-class>
+        <body-content>empty</body-content>
+        <attribute>
+            <name>bean</name>
+            <required>true</required>
+            <rtexprvalue>false</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>property</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+    </tag>
 </taglib>
 
