@@ -16,25 +16,23 @@
 package org.codehaus.groovy.grails.metaclass;
 
 import groovy.lang.MissingPropertyException;
-
-import java.text.DateFormat;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-
 import ognl.NoSuchPropertyException;
 import ognl.Ognl;
 import ognl.OgnlException;
-
 import org.apache.commons.collections.BeanMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.groovy.grails.commons.metaclass.AbstractDynamicProperty;
+import org.codehaus.groovy.grails.web.binding.GrailsDataBinder;
 import org.codehaus.groovy.grails.web.metaclass.GrailsParameterMap;
 import org.springframework.beans.propertyeditors.CustomDateEditor;
 import org.springframework.web.bind.ServletRequestDataBinder;
+
+import javax.servlet.http.HttpServletRequest;
+import java.text.DateFormat;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * A dynamic property that uses a Map of OGNL expressions to sets properties on the target object
@@ -75,7 +73,7 @@ public class SetPropertiesDynamicProperty extends AbstractDynamicProperty {
 		if(newValue instanceof GrailsParameterMap) {
 			GrailsParameterMap parameterMap = (GrailsParameterMap)newValue;
 			HttpServletRequest request = parameterMap.getRequest();
-			ServletRequestDataBinder dataBinder = new ServletRequestDataBinder(object, object.getClass().getName());			
+			ServletRequestDataBinder dataBinder = new GrailsDataBinder(object, object.getClass().getName());			
 			dataBinder.registerCustomEditor( Date.class, new CustomDateEditor(DateFormat.getDateInstance( DateFormat.SHORT, request.getLocale() ),true) );
 			dataBinder.bind(request);			
 		}

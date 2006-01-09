@@ -15,22 +15,23 @@
  */ 
 package org.codehaus.groovy.grails.scaffolding;
 
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.codehaus.groovy.grails.web.binding.GrailsDataBinder;
+import org.springframework.beans.BeanWrapper;
+import org.springframework.beans.BeanWrapperImpl;
+import org.springframework.beans.propertyeditors.CustomDateEditor;
+import org.springframework.web.bind.ServletRequestDataBinder;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.text.DateFormat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.springframework.beans.BeanWrapper;
-import org.springframework.beans.BeanWrapperImpl;
-import org.springframework.beans.propertyeditors.CustomDateEditor;
-import org.springframework.web.bind.ServletRequestDataBinder;
 /**
  * Default implementation of the ScaffoldRequestHandler interface
  * 
@@ -39,143 +40,143 @@ import org.springframework.web.bind.ServletRequestDataBinder;
  */
 public class DefaultScaffoldRequestHandler implements ScaffoldRequestHandler {
 
-	private static final Log LOG = LogFactory.getLog(DefaultScaffoldRequestHandler.class);
+    private static final Log LOG = LogFactory.getLog(DefaultScaffoldRequestHandler.class);
 
-	private static final String PARAM_MAX = "max";
-	private static final String PARAM_OFFSET = "offset";
-	private static final String PARAM_ID = "id";
-	private static final String PARAM_SORT = "sort";
-	private static final String PARAM_ORDER = "order";
-	
-	private ScaffoldDomain domain;
-	
-	public void setScaffoldDomain(ScaffoldDomain domain) {
-		this.domain = domain;
-	}
-	public Map handleList(HttpServletRequest request,
-			HttpServletResponse response) {
-		int max = 10;
-		int offset = 0;
-		String maxParam = request.getParameter(PARAM_MAX);
-		String offsetParam = request.getParameter(PARAM_OFFSET);
+    private static final String PARAM_MAX = "max";
+    private static final String PARAM_OFFSET = "offset";
+    private static final String PARAM_ID = "id";
+    private static final String PARAM_SORT = "sort";
+    private static final String PARAM_ORDER = "order";
 
-		if(!StringUtils.isBlank(maxParam)) {
-			try {
-				max = Integer.parseInt(maxParam);
-			}
-			catch(NumberFormatException nfe) {
-				LOG.warn("[ScaffoldRequestHandler] Error parsing max parameter ["+maxParam+"] for request", nfe);
-			}
-		}
-		if(!StringUtils.isBlank(offsetParam)) {
-			try {
-				offset = Integer.parseInt(offsetParam);
-			}
-			catch(NumberFormatException nfe) {
-				LOG.warn("[ScaffoldRequestHandler] Error parsing offset parameter ["+offsetParam+"] for request", nfe);
-			}
-		}	
-		if(LOG.isTraceEnabled()) {
-			LOG.trace("[ScaffoldRequestHandler] Executing [list] for max ["+max+"] and offset ["+offset+"]");
-		}		
-		Map model = new HashMap();
-		model.put( domain.getPluralName(), domain.list(max, offset, request.getParameter(PARAM_SORT), request.getParameter(PARAM_ORDER)) );
-		
-		if(LOG.isTraceEnabled()) {
-			LOG.trace("[ScaffoldRequestHandler] Returned model ["+model+"] from domain method [list]");
-		}	
-				
-		return model;
-	}
+    private ScaffoldDomain domain;
 
-	public Map handleShow(HttpServletRequest request,
-			HttpServletResponse response, ScaffoldCallback callback) {
-		
-		String id = request.getParameter(PARAM_ID);
-		if(StringUtils.isBlank(id)) {
-			LOG.debug("[ScaffoldRequestHandler] No ID parameter ["+id+"] for request [show]");
-			callback.setInvoked(false);			
-			return Collections.EMPTY_MAP;
-		}		
-		
-		
-		Map model = new HashMap();
-		Object domainObject = domain.get(id);		
-		model.put(domain.getSingularName(), domainObject);		
-		callback.setInvoked(true);
-		
-		return model;
-	}
+    public void setScaffoldDomain(ScaffoldDomain domain) {
+        this.domain = domain;
+    }
+    public Map handleList(HttpServletRequest request,
+                          HttpServletResponse response) {
+        int max = 10;
+        int offset = 0;
+        String maxParam = request.getParameter(PARAM_MAX);
+        String offsetParam = request.getParameter(PARAM_OFFSET);
 
-	public Map handleDelete(HttpServletRequest request,
-			HttpServletResponse response, ScaffoldCallback callback) {
-		
-		String id = request.getParameter(PARAM_ID);
-		if(StringUtils.isBlank(id)) {
-			LOG.debug("[ScaffoldRequestHandler] No ID parameter ["+id+"] for request [delete]");
-			callback.setInvoked(false);			
-			return Collections.EMPTY_MAP;
-		}		
-		
-		
-		Map model = new HashMap();
-		Object domainObject = domain.get(id);		
-		model.put(domain.getSingularName(), domainObject);
-		
-		if(domainObject != null) {
-			domain.delete(id);
-			callback.setInvoked(true);
-		}
-				
-		return model;
-	}
+        if(!StringUtils.isBlank(maxParam)) {
+            try {
+                max = Integer.parseInt(maxParam);
+            }
+            catch(NumberFormatException nfe) {
+                LOG.warn("[ScaffoldRequestHandler] Error parsing max parameter ["+maxParam+"] for request", nfe);
+            }
+        }
+        if(!StringUtils.isBlank(offsetParam)) {
+            try {
+                offset = Integer.parseInt(offsetParam);
+            }
+            catch(NumberFormatException nfe) {
+                LOG.warn("[ScaffoldRequestHandler] Error parsing offset parameter ["+offsetParam+"] for request", nfe);
+            }
+        }
+        if(LOG.isTraceEnabled()) {
+            LOG.trace("[ScaffoldRequestHandler] Executing [list] for max ["+max+"] and offset ["+offset+"]");
+        }
+        Map model = new HashMap();
+        model.put( domain.getPluralName(), domain.list(max, offset, request.getParameter(PARAM_SORT), request.getParameter(PARAM_ORDER)) );
 
-	public Map handleSave(HttpServletRequest request,
-			HttpServletResponse reponse, ScaffoldCallback callback) {
-		
-		Object domainObject = domain.newInstance();
-		ServletRequestDataBinder dataBinder = new ServletRequestDataBinder(domainObject, domain.getName());		
-		dataBinder.registerCustomEditor( Date.class, new CustomDateEditor(DateFormat.getDateInstance( DateFormat.SHORT, request.getLocale() ),true) );
-		dataBinder.bind(request);
-		
-		Map model = new HashMap();
-		
-		if( this.domain.save(domainObject,callback) ) {
-			BeanWrapper domainBean = new BeanWrapperImpl(domainObject);
-			Object identity = domainBean.getPropertyValue(domain.getIdentityPropertyName());
-			model.put( PARAM_ID, identity );
-			model.put( domain.getSingularName(), domainObject);
-			callback.setInvoked(true);
-		}
-		return model;
-	}
+        if(LOG.isTraceEnabled()) {
+            LOG.trace("[ScaffoldRequestHandler] Returned model ["+model+"] from domain method [list]");
+        }
+
+        return model;
+    }
+
+    public Map handleShow(HttpServletRequest request,
+                          HttpServletResponse response, ScaffoldCallback callback) {
+
+        String id = request.getParameter(PARAM_ID);
+        if(StringUtils.isBlank(id)) {
+            LOG.debug("[ScaffoldRequestHandler] No ID parameter ["+id+"] for request [show]");
+            callback.setInvoked(false);
+            return Collections.EMPTY_MAP;
+        }
 
 
-	public Map handleUpdate(HttpServletRequest request, HttpServletResponse reponse, ScaffoldCallback callback) {
-		String id = request.getParameter(PARAM_ID);
-		if(StringUtils.isBlank(id)) {
-			LOG.debug("[ScaffoldRequestHandler] No ID parameter ["+id+"] for request [update]");
-			callback.setInvoked(false);			
-			return Collections.EMPTY_MAP;
-		}
-		
-		Object domainObject = this.domain.get(id);
-		ServletRequestDataBinder dataBinder = new ServletRequestDataBinder(domainObject, domain.getName());
-		dataBinder.registerCustomEditor( Date.class, new CustomDateEditor(DateFormat.getDateInstance( DateFormat.SHORT, request.getLocale() ),true) );		
-		dataBinder.bind(request);
-			
-		Map model = new HashMap();
-		if( this.domain.update(domainObject,callback) ) {		
-			model.put( PARAM_ID, id );
-			model.put(	this.domain.getSingularName(), domainObject);
-		}				
-		return model;
-	}
+        Map model = new HashMap();
+        Object domainObject = domain.get(id);
+        model.put(domain.getSingularName(), domainObject);
+        callback.setInvoked(true);
 
-	public Map handleFind(HttpServletRequest request,
-			HttpServletResponse reponse) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+        return model;
+    }
+
+    public Map handleDelete(HttpServletRequest request,
+                            HttpServletResponse response, ScaffoldCallback callback) {
+
+        String id = request.getParameter(PARAM_ID);
+        if(StringUtils.isBlank(id)) {
+            LOG.debug("[ScaffoldRequestHandler] No ID parameter ["+id+"] for request [delete]");
+            callback.setInvoked(false);
+            return Collections.EMPTY_MAP;
+        }
+
+
+        Map model = new HashMap();
+        Object domainObject = domain.get(id);
+        model.put(domain.getSingularName(), domainObject);
+
+        if(domainObject != null) {
+            domain.delete(id);
+            callback.setInvoked(true);
+        }
+
+        return model;
+    }
+
+    public Map handleSave(HttpServletRequest request,
+                          HttpServletResponse reponse, ScaffoldCallback callback) {
+
+        Object domainObject = domain.newInstance();
+        ServletRequestDataBinder dataBinder = new GrailsDataBinder(domainObject, domain.getName());
+        dataBinder.registerCustomEditor( Date.class, new CustomDateEditor(DateFormat.getDateInstance( DateFormat.SHORT, request.getLocale() ),true) );
+        dataBinder.bind(request);
+
+        Map model = new HashMap();
+
+        if( this.domain.save(domainObject,callback) ) {
+            BeanWrapper domainBean = new BeanWrapperImpl(domainObject);
+            Object identity = domainBean.getPropertyValue(domain.getIdentityPropertyName());
+            model.put( PARAM_ID, identity );
+            model.put( domain.getSingularName(), domainObject);
+            callback.setInvoked(true);
+        }
+        return model;
+    }
+
+
+    public Map handleUpdate(HttpServletRequest request, HttpServletResponse reponse, ScaffoldCallback callback) {
+        String id = request.getParameter(PARAM_ID);
+        if(StringUtils.isBlank(id)) {
+            LOG.debug("[ScaffoldRequestHandler] No ID parameter ["+id+"] for request [update]");
+            callback.setInvoked(false);
+            return Collections.EMPTY_MAP;
+        }
+
+        Object domainObject = this.domain.get(id);
+        ServletRequestDataBinder dataBinder = new GrailsDataBinder(domainObject, domain.getName());
+        dataBinder.registerCustomEditor( Date.class, new CustomDateEditor(DateFormat.getDateInstance( DateFormat.SHORT, request.getLocale() ),true) );
+        dataBinder.bind(request);
+
+        Map model = new HashMap();
+        if( this.domain.update(domainObject,callback) ) {
+            model.put( PARAM_ID, id );
+            model.put(	this.domain.getSingularName(), domainObject);
+        }
+        return model;
+    }
+
+    public Map handleFind(HttpServletRequest request,
+                          HttpServletResponse reponse) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
 }
