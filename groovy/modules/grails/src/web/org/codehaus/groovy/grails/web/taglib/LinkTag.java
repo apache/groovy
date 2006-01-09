@@ -15,11 +15,8 @@
  */ 
 package org.codehaus.groovy.grails.web.taglib;
 
-import java.io.IOException;
-import java.io.Writer;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import org.apache.commons.lang.StringUtils;
+import org.springframework.web.util.UrlPathHelper;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
@@ -28,9 +25,11 @@ import javax.servlet.jsp.el.ELException;
 import javax.servlet.jsp.tagext.BodyContent;
 import javax.servlet.jsp.tagext.BodyTagSupport;
 import javax.servlet.jsp.tagext.DynamicAttributes;
-
-import org.apache.commons.lang.StringUtils;
-import org.springframework.web.util.UrlPathHelper;
+import java.io.IOException;
+import java.io.Writer;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 /**
  * A link tag for easily creating links to controllers and actions within grails. Examples:
  * 
@@ -77,7 +76,10 @@ public class LinkTag extends BodyTagSupport implements DynamicAttributes {
 	 * @see javax.servlet.jsp.tagext.BodyTagSupport#doStartTag()
 	 */
 	public int doStartTag() throws JspException {
-		Writer out = super.pageContext.getOut();
+        if(StringUtils.isBlank(controller)) {
+            throw new JspException("Tag link missing required attribute 'controller'");
+        }
+        Writer out = super.pageContext.getOut();
 		
 		String contextPath = urlPathHelper.getContextPath( (HttpServletRequest)pageContext.getRequest() );
 		try {
