@@ -17,26 +17,22 @@ package org.codehaus.groovy.grails.validation;
 
 import groovy.lang.MissingPropertyException;
 import groovy.lang.Range;
-
-import java.lang.reflect.Array;
-import java.text.MessageFormat;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.ResourceBundle;
-
+import groovy.lang.IntRange;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.commons.validator.CreditCardValidator;
 import org.apache.commons.validator.EmailValidator;
 import org.apache.commons.validator.UrlValidator;
 import org.codehaus.groovy.grails.validation.exceptions.ConstraintException;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.validation.Errors;
+
+import java.lang.reflect.Array;
+import java.text.MessageFormat;
+import java.util.*;
 
 /**
  * Provides the ability to set contraints against a properties of a class. Constraints can either be
@@ -51,13 +47,20 @@ import org.springframework.validation.Errors;
  *      	cp.applyConstraint( ConstrainedProperty.EMAIL_CONSTRAINT, new Boolean(true) );      
  *      }
  * </code>
- * 
+ *
+ * Alternatively constraints can be applied directly using the java bean getters/setters if a static (as oposed to dynamic)
+ * approach to constraint creation is possible:
+ *
+ * <code>
+ *       cp.setEmail(true)
+ * </code>
  * @author Graeme Rocher
  * @since 07-Nov-2005
  */
 public class ConstrainedProperty   {
 
-	public static final String EMAIL_CONSTRAINT = "email";
+    public static final String CREDIT_CARD_CONSTRAINT = "creditCard";
+    public static final String EMAIL_CONSTRAINT = "email";
 	public static final String BLANK_CONSTRAINT = "blank";
 	public static final String RANGE_CONSTRAINT = "range";
 	public static final String IN_LIST_CONSTRAINT = "inList";
@@ -86,7 +89,8 @@ public class ConstrainedProperty   {
 	protected static Map constraints = new HashMap();
 	
 	static {
-		constraints.put( EMAIL_CONSTRAINT, EmailConstraint.class );
+        constraints.put( CREDIT_CARD_CONSTRAINT, CreditCardConstraint.class );
+        constraints.put( EMAIL_CONSTRAINT, EmailConstraint.class );
 		constraints.put( BLANK_CONSTRAINT, BlankConstraint.class );
 		constraints.put( RANGE_CONSTRAINT, RangeConstraint.class );
 		constraints.put( IN_LIST_CONSTRAINT, InListConstraint.class );
@@ -109,8 +113,9 @@ public class ConstrainedProperty   {
 	
 	private static final String DEFAULT_BLANK_MESSAGE = bundle.getString( "default.blank.message" );
 	private static final String DEFAULT_DOESNT_MATCH_MESSAGE = bundle.getString( "default.doesnt.match.message" );
-	private static final String DEFAULT_INVALID_URL_MESSAGE = bundle.getString( "default.invalid.url.message" );	
-	//private static final String DEFAULT_INVALID_MESSAGE = bundle.getString( "default.invalid.message" );
+	private static final String DEFAULT_INVALID_URL_MESSAGE = bundle.getString( "default.invalid.url.message" );
+    private static final String DEFAULT_INVALID_CREDIT_CARD_MESSAGE = bundle.getString( "default.invalid.creditCard.message" );
+    //private static final String DEFAULT_INVALID_MESSAGE = bundle.getString( "default.invalid.message" );
 	private static final String DEFAULT_INVALID_EMAIL_MESSAGE  = bundle.getString( "default.invalid.email.message" );
 	private static final String DEFAULT_INVALID_RANGE_MESSAGE = bundle.getString( "default.invalid.range.message" );	
 	private static final String DEFAULT_NOT_IN_LIST_MESSAGE = bundle.getString( "default.not.inlist.message" );
@@ -134,11 +139,17 @@ public class ConstrainedProperty   {
 	private BeanWrapper bean;
 	
 	// simple constraints
-	private boolean display; // whether the property should be displayed
-	private boolean editable; // whether the property is editable
-	private int order; // what order to property appears in
-	
-	/**
+	private boolean display = true; // whether the property should be displayed
+	private boolean editable = true; // whether the property is editable
+    private boolean file; // whether the property is a file
+    private int order; // what order to property appears in
+    private String format; // the format of the property (for example a date pattern)
+    private String widget; // the widget to use to render the property
+    private boolean password; // whether the property is a password
+    private Map attributes = Collections.EMPTY_MAP; // a map of attributes of property
+
+
+    /**
 	 * 
 	 * Abstract class for constraints to implement
 	 */
@@ -296,7 +307,41 @@ public class ConstrainedProperty   {
 			}
 		}
 	}
-	/**
+
+    /**
+     * A constraint class that validates a credit card number
+     */
+    static class CreditCardConstraint extends AbstractConstraint {
+        private boolean creditCard;
+
+
+        protected void processValidate(Object propertyValue, Errors errors) {
+            if(creditCard) {
+                CreditCardValidator validator = new CreditCardValidator();
+
+                if(!validator.isValid(propertyValue.toString())  ) {
+                    Object[] args = new Object[] { constraintPropertyName, constraintOwningClass, propertyValue };
+                    super.rejectValue(errors,CREDIT_CARD_CONSTRAINT + INVALID_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_CREDIT_CARD_MESSAGE, args ));
+                }
+            }
+        }
+
+        public void setParameter(Object constraintParameter) {
+			if(!(constraintParameter instanceof Boolean))
+				throw new IllegalArgumentException("Parameter for constraint ["+EMAIL_CONSTRAINT+"] of property ["+constraintPropertyName+"] of class ["+constraintOwningClass+"] must be a boolean value");
+
+			this.creditCard = ((Boolean)constraintParameter).booleanValue();
+			super.setParameter(constraintParameter);
+        }
+
+        public boolean supports(Class type) {
+			if(type == null)
+				return false;
+
+			return String.class.isAssignableFrom(type);
+        }
+    }
+    /**
 	 * 
 	 * A Constraint that validates an email address
 	 */	
@@ -622,12 +667,12 @@ public class ConstrainedProperty   {
 	 */		
 	static class SizeConstraint extends AbstractConstraint {
 
-		private Range sizeRange;
+		private IntRange sizeRange;
 
 		/**
 		 * @return Returns the sizeRange.
 		 */
-		public Range getSizeRange() {
+		public IntRange getSizeRange() {
 			return sizeRange;
 		}
 		
@@ -652,10 +697,10 @@ public class ConstrainedProperty   {
 		 * @see org.codehaus.groovy.grails.validation.ConstrainedProperty.AbstractConstraint#setParameter(java.lang.Object)
 		 */
 		public void setParameter(Object constraintParameter) {
-			if(!(constraintParameter instanceof Range)) 
-				throw new IllegalArgumentException("Parameter for constraint ["+SIZE_CONSTRAINT+"] of property ["+constraintPropertyName+"] of class ["+constraintOwningClass+"] must be a of type [groovy.lang.Range]");
+			if(!(constraintParameter instanceof IntRange))
+				throw new IllegalArgumentException("Parameter for constraint ["+SIZE_CONSTRAINT+"] of property ["+constraintPropertyName+"] of class ["+constraintOwningClass+"] must be a of type [groovy.lang.IntRange]");
 			
-			this.sizeRange = (Range)constraintParameter;
+			this.sizeRange = (IntRange)constraintParameter;
 			super.setParameter(constraintParameter);
 		}
 
@@ -1064,7 +1109,7 @@ public class ConstrainedProperty   {
 	/**
 	 * @return Returns the length.
 	 */
-	public Range getLength() {
+	public IntRange getLength() {
 		if(!String.class.isInstance( propertyType ) || !propertyType.isArray()) {
 			throw new MissingPropertyException("Length constraint only applies to a String or Array property",LENGTH_CONSTRAINT,owningClass);
 		}		
@@ -1072,13 +1117,13 @@ public class ConstrainedProperty   {
 		if(c == null)
 			return null;
 			
-		return c.getSizeRange();
+		return (IntRange)c.getSizeRange();
 	}
 
 	/**
 	 * @param length The length to set.
 	 */
-	public void setLength(Range length) {
+	public void setLength(IntRange length) {
 		if(!String.class.isInstance( propertyType ) || !propertyType.isArray()) {
 			throw new MissingPropertyException("Length constraint can only be applied to a String or Array property",LENGTH_CONSTRAINT,owningClass);
 		}			
@@ -1208,8 +1253,47 @@ public class ConstrainedProperty   {
 	}
 
 
+    /**
+     * @return Returns the creditCard.
+     */
+    public boolean isCreditCard() {
+        if(!String.class.isInstance( propertyType )) {
+            throw new MissingPropertyException("CreditCard constraint only applies to a String property",CREDIT_CARD_CONSTRAINT,owningClass);
+        }
 
-	/**
+        return this.appliedConstraints.containsKey( CREDIT_CARD_CONSTRAINT );
+    }
+
+    /**
+     * @param creditCard The creditCard to set.
+     */
+    public void setCreditCard(boolean creditCard) {
+        if(!String.class.isInstance( propertyType )) {
+            throw new MissingPropertyException("CreditCard constraint only applies to a String property",CREDIT_CARD_CONSTRAINT,owningClass);
+        }
+
+        Constraint c = (Constraint)this.appliedConstraints.get( CREDIT_CARD_CONSTRAINT );
+        if(creditCard) {
+            if(c != null) {
+                c.setParameter( new Boolean(creditCard) );
+            }
+            else {
+                c = new CreditCardConstraint();
+                c.setOwningClass(this.owningClass);
+                c.setPropertyName(this.propertyName);
+                c.setParameter(new Boolean(creditCard));
+                this.appliedConstraints.put( CREDIT_CARD_CONSTRAINT,c );
+            }
+        }
+        else {
+            if(c != null) {
+                this.appliedConstraints.remove( CREDIT_CARD_CONSTRAINT );
+            }
+        }
+
+    }
+
+    /**
 	 * @return Returns the matches.
 	 */
 	public String getMatches() {
@@ -1224,7 +1308,7 @@ public class ConstrainedProperty   {
 	}
 
 	/**
-	 * @param matches The matches to set.
+	 * @param regex The matches to set.
 	 */
 	public void setMatches(String regex) {
 		if(!String.class.isInstance( propertyType )) {
@@ -1255,8 +1339,15 @@ public class ConstrainedProperty   {
 	 */
 	public int getMaxLength() {
 		MaxSizeConstraint c = (MaxSizeConstraint)this.appliedConstraints.get( MAX_LENGTH_CONSTRAINT );
-		if(c == null)
-			return Integer.MAX_VALUE;
+
+        if(c == null) {
+            if(this.appliedConstraints.containsKey( LENGTH_CONSTRAINT )) {
+                SizeConstraint sc = (SizeConstraint)this.appliedConstraints.get(LENGTH_CONSTRAINT);
+                return sc.getSizeRange().getToInt();
+            }
+            return Integer.MAX_VALUE;
+        }
+
 		
 		return c.getMaxSize();
 	}
@@ -1286,9 +1377,14 @@ public class ConstrainedProperty   {
 	 */
 	public int getMinLength() {
 		MinSizeConstraint c = (MinSizeConstraint)this.appliedConstraints.get( MIN_LENGTH_CONSTRAINT );
-		if(c == null)
-			return 0;
-		
+		if(c == null) {
+            if(this.appliedConstraints.containsKey( LENGTH_CONSTRAINT )) {
+                SizeConstraint sc = (SizeConstraint)this.appliedConstraints.get(LENGTH_CONSTRAINT);
+                return sc.getSizeRange().getFromInt();
+            }
+            return 0;
+        }
+
 		return c.getMinSize();
 	}
 
@@ -1336,7 +1432,7 @@ public class ConstrainedProperty   {
 	}
 
 	/**
-	 * @param maxLength The mazSize to set.
+	 * @param mazSize The mazSize to set.
 	 */
 	public void setMaxSize(int mazSize) {
 		Constraint c = (MaxSizeConstraint)this.appliedConstraints.get( MAX_SIZE_CONSTRAINT );
@@ -1368,7 +1464,7 @@ public class ConstrainedProperty   {
 
 
 	/**
-	 * @param minLength The minLength to set.
+	 * @param minSize The minLength to set.
 	 */
 	public void setMinSize(int minSize) {
 		Constraint c = (MinSizeConstraint)this.appliedConstraints.get( MIN_SIZE_CONSTRAINT );
@@ -1526,8 +1622,38 @@ public class ConstrainedProperty   {
 		this.order = order;
 	}
 
+    public String getFormat() {
+        return format;
+    }
 
-	/**
+    public void setFormat(String format) {
+        this.format = format;
+    }
+
+    public boolean isPassword() {
+        return password;
+    }
+
+    public void setPassword(boolean password) {
+        this.password = password;
+    }
+
+    public Map getAttributes() {
+        return attributes;
+    }
+    public void setAttributes(Map attributes) {
+        this.attributes = attributes;
+    }
+
+    public String getWidget() {
+        return widget;
+    }
+
+    public void setWidget(String widget) {
+        this.widget = widget;
+    }
+
+    /**
 	 * Validate this constrainted property against specified property value
 	 * 
 	 * @param propertyValue
