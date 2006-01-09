@@ -29,7 +29,8 @@ class BooksTest extends WebTest {
                         description:"hidden index id must be $index",
                         xpath:"//input[@type='hidden'][@name='id'][@value='$index']")
                     verifyInputField(name:'title', value:title)
-                    verifyInputField(name:'author', value:'Dan Brown')
+                    verifyText(text:'Dan Brown')
+                    // go into author details here
                     clickButton(label:'Save')
                     verifyTitle(text:'Book detail')
                     clickButton(label:'Close')
@@ -43,18 +44,17 @@ class BooksTest extends WebTest {
 
             verifyTitle(text:'Book detail')
             setInputField(name:'title', value:'Groovy in Action')
-            setInputField(name:'author', value:'Dierk Koenig et al.')
+            clickButton(label:'...')
+            clickButton(label:'Add author ...')
+            setInputField(name:'name', value:'Dierk Koenig et al.') // todo: also try with ö
+            clickButton(label:'Save')
+            clickButton(htmlId:'detail2')
+            
             clickButton(label:'Save')
 
             verifyTitle(text:'Book list')
-            selectForm(index: '5')
-            clickButton(label:'Details')
-
-            verifyXPath(
-                description:"hidden index id must be 5",
-                xpath:"//input[@type='hidden'][@name='id'][@value='5']")
-            verifyInputField(name:'title', value:'Groovy in Action')
-            verifyInputField(name:'author', value:'Dierk Koenig et al.')
+            verifyText(text:'Groovy in Action.*Dierk Koenig et al.', regex:true)
+            clickButton(label:'End')
     }   }
 
 }
