@@ -24,14 +24,21 @@ import groovy.lang.GroovyClassLoader;
  * @since Jul 2, 2005
  */
 public interface GrailsApplication {
+    /**
+     * The id of the grails application within a bean context
+     */
+    String APPLICATION_ID = "grailsApplication";
+    /**
+     * The application context name
+     */
+    String APPLICATION_CONTEXT = "grailsApplicationContext";
 
-	
-	/**
-	 * <p>Returns all controllers in an application
-	 * 
-	 * @return controllers in an application
-	 */
-	public GrailsControllerClass[] getControllers();
+    /**
+     * <p>Returns all controllers in an application
+     *
+     * @return controllers in an application
+     */
+    public GrailsControllerClass[] getControllers();
 	
 	/**
 	 * <p>Returns the controller with the given full name or null if no controller was found with that name.
@@ -82,7 +89,7 @@ public interface GrailsApplication {
 	/**
 	 * <p>Returns the active data source for this Grails application or null if not available.
 	 * 
-	 * @retrun the active data source or null if not available.
+	 * @return the active data source or null if not available.
 	 */
 	public GrailsDataSource getGrailsDataSource();
 	
