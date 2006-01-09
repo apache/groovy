@@ -66,7 +66,9 @@ public class ControllerDynamicMethods extends
 		// add dynamic methods
 		addDynamicMethodInvocation( new RedirectDynamicMethod(helper,request,response) );
 		addDynamicMethodInvocation( new ChainDynamicMethod(helper, request, response ) );
-		// the hasErrors() dynamic method that checks of there are any errors in the controller
+        addDynamicMethodInvocation( new RenderDynamicMethod(request,response));
+        
+        // the hasErrors() dynamic method that checks of there are any errors in the controller
 		addDynamicMethodInvocation( new AbstractDynamicMethodInvocation(HAS_ERRORS_METHOD) {
 			public Object invoke(Object target, Object[] arguments) {
 				GroovyObject controller = (GroovyObject)target;

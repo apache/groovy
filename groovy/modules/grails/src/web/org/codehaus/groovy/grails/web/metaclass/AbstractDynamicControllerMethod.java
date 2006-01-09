@@ -19,6 +19,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.codehaus.groovy.grails.commons.metaclass.AbstractDynamicMethodInvocation;
+import org.codehaus.groovy.grails.web.servlet.GrailsHttpServletResponse;
+
 /**
  * An abstract class for dynamic controller methods to implement
  * 
@@ -26,14 +28,18 @@ import org.codehaus.groovy.grails.commons.metaclass.AbstractDynamicMethodInvocat
  * @since Oct 24, 2005
  */
 public abstract class AbstractDynamicControllerMethod extends
-		AbstractDynamicMethodInvocation {
+        AbstractDynamicMethodInvocation {
 
-	protected HttpServletRequest request;
-	protected HttpServletResponse response;
+    protected HttpServletRequest request;
+    protected GrailsHttpServletResponse response;
 
-	public AbstractDynamicControllerMethod(String methodName,HttpServletRequest request, HttpServletResponse response) {
-		super(methodName);
-		this.request = request;
-		this.response = response;
-	}
+    public AbstractDynamicControllerMethod(String methodName,HttpServletRequest request, HttpServletResponse response) {
+        super(methodName);
+        this.request = request;
+        if(response instanceof GrailsHttpServletResponse)
+            this.response = (GrailsHttpServletResponse)response;
+        else {
+            this.response = new GrailsHttpServletResponse(response);
+        }
+    }
 }
