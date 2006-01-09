@@ -67,6 +67,7 @@ public class ControllerDynamicMethods extends
 		addDynamicMethodInvocation( new RedirectDynamicMethod(helper,request,response) );
 		addDynamicMethodInvocation( new ChainDynamicMethod(helper, request, response ) );
         addDynamicMethodInvocation( new RenderDynamicMethod(request,response));
+        addDynamicMethodInvocation( new RicoDynamicMethod(request,response));
         
         // the hasErrors() dynamic method that checks of there are any errors in the controller
 		addDynamicMethodInvocation( new AbstractDynamicMethodInvocation(HAS_ERRORS_METHOD) {
