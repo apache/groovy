@@ -35,17 +35,14 @@ import org.springmodules.beans.factory.drivers.xml.XmlApplicationContextDriver;
  */
 public class GrailsOpenSessionInViewFilter extends OpenSessionInViewFilter {
 
-    private static final String GRAILS_APPLICATION_ID = "grailsApplication";
-    private static final String GRAILS_APPLICATION_CONTEXT = "grailsApplicationContext";
-
 	protected SessionFactory lookupSessionFactory() {
 		WebApplicationContext parent =
 			WebApplicationContextUtils.getRequiredWebApplicationContext(getServletContext());
 		
 		ApplicationContext context;
-		if(getServletContext().getAttribute(GRAILS_APPLICATION_CONTEXT) == null) {
+		if(getServletContext().getAttribute(GrailsApplication.APPLICATION_CONTEXT) == null) {
 	        // construct the SpringConfig for the container managed application
-	        GrailsApplication application = (GrailsApplication) parent.getBean(GRAILS_APPLICATION_ID, GrailsApplication.class);
+	        GrailsApplication application = (GrailsApplication) parent.getBean(GrailsApplication.APPLICATION_ID, GrailsApplication.class);
 	        SpringConfig springConfig = new SpringConfig(application);
 	        // return a context that obeys grails' settings
 	        
@@ -54,10 +51,10 @@ public class GrailsOpenSessionInViewFilter extends OpenSessionInViewFilter {
 	        			parent
 	        		); 
 	                
-	       getServletContext().setAttribute( GRAILS_APPLICATION_CONTEXT, context );
+	       getServletContext().setAttribute(GrailsApplication.APPLICATION_CONTEXT, context );
 		}
 		else {
-			context = (ApplicationContext)getServletContext().getAttribute( GRAILS_APPLICATION_CONTEXT );
+			context = (ApplicationContext)getServletContext().getAttribute(GrailsApplication.APPLICATION_CONTEXT);
 		}
        
        return (SessionFactory) context.getBean(getSessionFactoryBeanName(), SessionFactory.class);

@@ -37,17 +37,13 @@ import org.springmodules.beans.factory.drivers.xml.XmlWebApplicationContextDrive
  * @since Jul 2, 2005
  */
 public class GrailsDispatcherServlet extends DispatcherServlet {
-
-    private static final String GRAILS_APPLICATION_ID = "grailsApplication";
-    private static final String GRAILS_APPLICATION_CONTEXT = "grailsApplicationContext";
-
     public GrailsDispatcherServlet() {
         super();
     }
 
     protected WebApplicationContext createWebApplicationContext(WebApplicationContext parent) throws BeansException {
         // use config file locations if available
-    	ApplicationContext grailsContext = (ApplicationContext)getServletContext().getAttribute(GRAILS_APPLICATION_CONTEXT );
+    	ApplicationContext grailsContext = (ApplicationContext)getServletContext().getAttribute(GrailsApplication.APPLICATION_CONTEXT );
     	GrailsApplication application;
     	WebApplicationContext webContext;
     	
@@ -55,7 +51,7 @@ public class GrailsDispatcherServlet extends DispatcherServlet {
     		XmlWebApplicationContext xmlContext = new XmlWebApplicationContext();
     		xmlContext.setParent(grailsContext);
     		webContext = xmlContext;
-    		application = (GrailsApplication) webContext.getBean(GRAILS_APPLICATION_ID, GrailsApplication.class);
+    		application = (GrailsApplication) webContext.getBean(GrailsApplication.APPLICATION_ID, GrailsApplication.class);
     		 
     	}
     	else {
@@ -66,7 +62,7 @@ public class GrailsDispatcherServlet extends DispatcherServlet {
 	                    ConfigurableWebApplicationContext.CONFIG_LOCATION_DELIMITERS);
 	        }
 	        // construct the SpringConfig for the container managed application
-	        application = (GrailsApplication) parent.getBean(GRAILS_APPLICATION_ID, GrailsApplication.class);
+	        application = (GrailsApplication) parent.getBean(GrailsApplication.APPLICATION_ID, GrailsApplication.class);
 	        SpringConfig springConfig = new SpringConfig(application);
 	        // return a context that obeys grails' settings
 	        webContext = new XmlWebApplicationContextDriver().getWebApplicationContext(
@@ -75,7 +71,7 @@ public class GrailsDispatcherServlet extends DispatcherServlet {
 	                getServletContext(),
 	                getNamespace(),
 	                locations);
-	        getServletContext().setAttribute(GRAILS_APPLICATION_CONTEXT,webContext );
+	        getServletContext().setAttribute(GrailsApplication.APPLICATION_CONTEXT,webContext );
     	}
     	
     	// init the Grails application
@@ -89,7 +85,7 @@ public class GrailsDispatcherServlet extends DispatcherServlet {
 
 	public void destroy() {
 		WebApplicationContext webContext = getWebApplicationContext();
-		GrailsApplication application = (GrailsApplication) webContext.getBean(GRAILS_APPLICATION_ID, GrailsApplication.class);
+		GrailsApplication application = (GrailsApplication) webContext.getBean(GrailsApplication.APPLICATION_ID, GrailsApplication.class);
 		
     	GrailsBootstrapClass[] bootstraps =  application.getGrailsBootstrapClasses();
     	for (int i = 0; i < bootstraps.length; i++) {
