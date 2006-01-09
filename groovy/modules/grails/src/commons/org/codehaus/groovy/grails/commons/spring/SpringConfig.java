@@ -15,31 +15,15 @@
  */ 
 package org.codehaus.groovy.grails.commons.spring;
 
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-
 import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.commons.lang.WordUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.groovy.grails.commons.GrailsApplication;
-import org.codehaus.groovy.grails.commons.GrailsControllerClass;
-import org.codehaus.groovy.grails.commons.GrailsDataSource;
-import org.codehaus.groovy.grails.commons.GrailsDomainClass;
-import org.codehaus.groovy.grails.commons.GrailsPageFlowClass;
-import org.codehaus.groovy.grails.commons.GrailsServiceClass;
+import org.codehaus.groovy.grails.commons.*;
 import org.codehaus.groovy.grails.orm.hibernate.ConfigurableLocalsSessionFactoryBean;
 import org.codehaus.groovy.grails.orm.hibernate.support.HibernateDialectDetectorFactoryBean;
 import org.codehaus.groovy.grails.orm.hibernate.validation.GrailsDomainClassValidator;
-import org.codehaus.groovy.grails.scaffolding.DefaultGrailsResponseHandlerFactory;
-import org.codehaus.groovy.grails.scaffolding.DefaultGrailsScaffoldViewResolver;
-import org.codehaus.groovy.grails.scaffolding.DefaultGrailsScaffolder;
-import org.codehaus.groovy.grails.scaffolding.DefaultScaffoldDomain;
-import org.codehaus.groovy.grails.scaffolding.DefaultScaffoldRequestHandler;
-import org.codehaus.groovy.grails.scaffolding.ViewDelegatingScaffoldResponseHandler;
+import org.codehaus.groovy.grails.scaffolding.*;
 import org.codehaus.groovy.grails.support.ClassEditor;
 import org.codehaus.groovy.grails.web.errors.GrailsExceptionResolver;
 import org.codehaus.groovy.grails.web.pageflow.GrailsFlowBuilder;
@@ -63,6 +47,12 @@ import org.springframework.webflow.mvc.FlowController;
 import org.springmodules.beans.factory.config.MapToPropertiesFactoryBean;
 import org.springmodules.beans.factory.drivers.Bean;
 import org.springmodules.db.hsqldb.ServerBean;
+
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * <p>Creates beans and bean references for a Grails application.
@@ -218,7 +208,7 @@ public class SpringConfig {
 		Bean internalResourceViewResolver = SpringConfigUtils.createSingletonBean(InternalResourceViewResolver.class);
 		
 		internalResourceViewResolver.setProperty("viewClass",SpringConfigUtils.createLiteralValue("org.springframework.web.servlet.view.JstlView"));
-		internalResourceViewResolver.setProperty("prefix", SpringConfigUtils.createLiteralValue("/WEB-INF/jsp/"));
+		internalResourceViewResolver.setProperty("prefix", SpringConfigUtils.createLiteralValue("/WEB-INF/grails-app/views"));
 		internalResourceViewResolver.setProperty("suffix", SpringConfigUtils.createLiteralValue(".jsp"));
 		beanReferences.add(SpringConfigUtils.createBeanReference("jspViewResolver", internalResourceViewResolver));
 		
