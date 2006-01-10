@@ -19,15 +19,6 @@ import groovy.lang.Closure;
 import groovy.lang.GroovyObject;
 import groovy.lang.ProxyMetaClass;
 import groovy.util.Proxy;
-
-import java.beans.IntrospectionException;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.apache.commons.collections.BeanMap;
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.commons.GrailsControllerClass;
@@ -38,13 +29,16 @@ import org.codehaus.groovy.grails.web.metaclass.ControllerDynamicMethods;
 import org.codehaus.groovy.grails.web.metaclass.GetParamsDynamicProperty;
 import org.codehaus.groovy.grails.web.servlet.GrailsHttpServletRequest;
 import org.codehaus.groovy.grails.web.servlet.GrailsHttpServletResponse;
-import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.ControllerExecutionException;
-import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.IncompatibleParameterCountException;
-import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.NoClosurePropertyForURIException;
-import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.NoViewNameDefinedException;
-import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.UnknownControllerException;
+import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.*;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.servlet.ModelAndView;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.beans.IntrospectionException;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.Map;
 
 public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
 
@@ -236,8 +230,11 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
 	public ModelAndView handleActionResponse( GroovyObject controller,Object returnValue,String closurePropertyName, String viewName) {
 		boolean viewNameBlank = (viewName == null || viewName.length() == 0);
 		// reset the metaclass
-		
-		if (returnValue == null) {
+		ModelAndView explicityModelAndView = (ModelAndView)controller.getProperty(ControllerDynamicMethods.MODEL_AND_VIEW_PROPERTY);
+        if(explicityModelAndView != null) {
+            return explicityModelAndView;
+        }
+        else if (returnValue == null) {
 			if (viewNameBlank) {
 				return null;
 			} else {

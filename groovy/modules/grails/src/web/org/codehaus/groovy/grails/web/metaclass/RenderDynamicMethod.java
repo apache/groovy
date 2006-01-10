@@ -17,8 +17,13 @@ package org.codehaus.groovy.grails.web.metaclass;
 
 import groovy.lang.Closure;
 import groovy.lang.MissingMethodException;
+import groovy.lang.GroovyObject;
 import groovy.xml.MarkupBuilder;
 import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.ControllerExecutionException;
+import org.codehaus.groovy.grails.web.servlet.mvc.GrailsControllerHelper;
+import org.codehaus.groovy.grails.commons.GrailsControllerClass;
+import org.apache.commons.collections.BeanMap;
+import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -37,9 +42,13 @@ public class RenderDynamicMethod extends AbstractDynamicControllerMethod {
     private static final String ARGUMENT_TEXT = "text";
     private static final String ARGUMENT_CONTENT_TYPE = "contentType";
     private static final String ARGUMENT_ENCODING = "encoding";
+    private static final String ARGUMENT_VIEW = "view";
+    private static final String ARGUMENT_MODEL = "model";
+    private GrailsControllerHelper helper;
 
-    public RenderDynamicMethod(HttpServletRequest request, HttpServletResponse response) {
+    public RenderDynamicMethod(GrailsControllerHelper helper, HttpServletRequest request, HttpServletResponse response) {
         super(METHOD_SIGNATURE, request, response);
+        this.helper = helper;
     }
 
     public Object invoke(Object target, Object[] arguments) {
@@ -55,25 +64,41 @@ public class RenderDynamicMethod extends AbstractDynamicControllerMethod {
         }
         else if(arguments[0] instanceof Map) {
             Map argMap = (Map)arguments[0];
+           PrintWriter out = null;
+           try {
+               if(argMap.containsKey(ARGUMENT_CONTENT_TYPE) && argMap.containsKey(ARGUMENT_ENCODING)) {
+                   out = response.getWriter((String)argMap.get(ARGUMENT_CONTENT_TYPE),
+                                            (String)argMap.get(ARGUMENT_ENCODING));
+               }
+               else if(argMap.containsKey(ARGUMENT_CONTENT_TYPE)) {
+                   out = response.getWriter((String)argMap.get(ARGUMENT_CONTENT_TYPE));
+               }
+               else {
+                   out = response.getWriter();
+               }
+           }
+           catch(IOException ioe) {
+                throw new ControllerExecutionException("I/O creating write in method [render] on class ["+target.getClass()+"]: " + ioe.getMessage(),ioe);
+           }
             if(argMap.containsKey(ARGUMENT_TEXT)) {
                String text = (String)argMap.get(ARGUMENT_TEXT);
-               PrintWriter out = null;
-               try {
-                   if(argMap.containsKey(ARGUMENT_CONTENT_TYPE) && argMap.containsKey(ARGUMENT_ENCODING)) {
-                       out = response.getWriter((String)argMap.get(ARGUMENT_CONTENT_TYPE),
-                                                (String)argMap.get(ARGUMENT_ENCODING));
-                   }
-                   else if(argMap.containsKey(ARGUMENT_CONTENT_TYPE)) {
-                       out = response.getWriter((String)argMap.get(ARGUMENT_CONTENT_TYPE));
-                   }
-                   else {
-                       out = response.getWriter();
-                   }
-               }
-               catch(IOException ioe) {
-                    throw new ControllerExecutionException("I/O error rendering text ["+text+"] to response: " + ioe.getMessage(),ioe);
-               }
                out.write(text);
+            }
+            else if(argMap.containsKey(ARGUMENT_VIEW)) {
+               String viewName = (String)argMap.get(ARGUMENT_VIEW);
+               GrailsControllerClass controllerClass = helper.getControllerClassByName(target.getClass().getName());
+               String viewUri = controllerClass.getViewByName(viewName);
+
+               Map model;
+               Object modelObject = argMap.get(ARGUMENT_MODEL);
+                if(modelObject instanceof Map) {
+                    model = (Map)modelObject;
+                }
+                else {
+                    model = new BeanMap(target);
+                }
+                GroovyObject controller = (GroovyObject)target;
+                controller.setProperty( ControllerDynamicMethods.MODEL_AND_VIEW_PROPERTY, new ModelAndView(viewUri,model) );
             }
             else {
                 throw new MissingMethodException(METHOD_SIGNATURE,target.getClass(),arguments);
