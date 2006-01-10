@@ -4,22 +4,25 @@
 // todo: maybe make a selfrunning psvm
 
 abstract class WebTest {
-    @Property ant
+    
     @Property grailsHome
+    @Property props
+    @Property ant = new AntBuilder()
 
+    def webtestHome
     public Map configMap
+  
 
     abstract void suite()
 
     void runTests (){
-        def props = ant.antProject.properties
-        def webtestHome = locateWebTestHome(props)
-        configMap = getConfigMap(props)
-        prepare(webtestHome, props)
-
+        initWebTestHome()                
+        initConfigMap()
+        prepare()
+        
         suite()
 
-        style(webtestHome, props)
+        style()
     }
 
     void webtest(String name, Closure yield){
@@ -33,8 +36,8 @@ abstract class WebTest {
     }
 
     // try to get from build.properties, environment variable, grailsHome/downloads/webtest
-    String locateWebTestHome(props) {
-        def webtestHome = props.webtestHome
+    def initWebTestHome() {
+        webtestHome = props.webtestHome
         if (! webtestHome) {
             webtestHome = props.'env.WEBTEST_HOME'
         }
@@ -42,28 +45,32 @@ abstract class WebTest {
             webtestHome = grailsHome + '/downloads/webtest'
         }
         println "webtestHome is <$webtestHome>"
-        return webtestHome
     }
 
    // prepare a configmap based on build.properties
-    Map getConfigMap (props) {
-        def result = [:]
+    def initConfigMap () {
+        def configMap = [:]
+        def prefix = 'webtest_'
         props.keySet().each{ name ->
-            if (name.startsWith('webtest_')) result.put(name[8..-1], props[name])
+            if (name.startsWith(prefix)) configMap.put(name - prefix, props[name])
         }
-        return result
     }
 
     // prepare the ant taskdef, classpath and filesystem for reporting
-    void prepare(webtestHome, props) {
-        ant.taskdef(file:"${webtestHome}/webtestTaskdefs.properties"){
-            // webtest jars need to be in ${user.home}/.groovy/lib
-        }
+    void prepare() {        
+        def rootLoader = this.class.classLoader.rootLoader
+        def loadDir = new File("$webtestHome/lib/")
+        rootLoader.addURL(loadDir.toURL())
+        loadDir.eachFileMatch(~/.*\.jar$/){
+            rootLoader.addURL(it.toURL())
+        }        
+        ant.taskdef(file:"${webtestHome}/webtestTaskdefs.properties")
+        
         ant.delete(dir: props.webtest_resultpath)
         ant.mkdir (dir: props.webtest_resultpath)
     }
 
-    void style(webtestHome, props) {
+    def style() {
         ant.style(
             basedir:    props.webtest_resultpath,
             destdir:    props.webtest_resultpath,

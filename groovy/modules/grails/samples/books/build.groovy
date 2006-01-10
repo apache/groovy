@@ -35,7 +35,7 @@ String initGrailsHome () {
 }
 
 def startTests(){
-    new BooksTest(ant: ant, grailsHome: grailsHome).runTests()
+    new BooksTest(grailsHome:grailsHome, props:ant.antProject.properties).runTests()
 }
 
 // call the general 'war' target and 'init' only if needed
