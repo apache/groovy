@@ -125,6 +125,11 @@ public class NodeChild extends GPathResult {
       throw new ArrayIndexOutOfBoundsException(index);
     }
   }
+  
+  public Map attributes() {
+      return this.node.attributes();
+  }
+  
   public Iterator childNodes() {
     return this.node.childNodes();
   }
