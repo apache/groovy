@@ -15,13 +15,12 @@
  */ 
 package org.codehaus.groovy.grails.web.servlet;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.Locale;
-
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.Locale;
 
 /**
  * <p>Wrapper class for HttpServletResponse that allows setting the content type while getting the writer.
@@ -134,8 +133,13 @@ public class GrailsHttpServletResponse implements HttpServletResponse {
 		this.delegate.setContentType(contentType + ";charset=" + characterEncoding);
 		return this.delegate.getWriter();
 	}
-	
-	public void setCharacterEncoding(String characterEncoding) {
+
+	public PrintWriter getWriter(String contentType) throws IOException {
+		this.delegate.setContentType(contentType);
+		return this.delegate.getWriter();
+	}
+
+    public void setCharacterEncoding(String characterEncoding) {
 		this.delegate.setCharacterEncoding(characterEncoding);
 	}
 
