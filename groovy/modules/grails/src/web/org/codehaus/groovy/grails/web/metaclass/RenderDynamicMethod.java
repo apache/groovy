@@ -15,17 +15,16 @@
  */
 package org.codehaus.groovy.grails.web.metaclass;
 
+import groovy.lang.Closure;
 import groovy.lang.MissingMethodException;
+import groovy.xml.MarkupBuilder;
+import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.ControllerExecutionException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.Writer;
 import java.io.PrintWriter;
 import java.util.Map;
-
-import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.GrailsMVCException;
-import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.ControllerExecutionException;
 
 /**
  * Allows rendering of text, views, and templates to the response
@@ -72,13 +71,22 @@ public class RenderDynamicMethod extends AbstractDynamicControllerMethod {
                    }
                }
                catch(IOException ioe) {
-                    throw new ControllerExecutionException(ioe.getMessage(),ioe);
+                    throw new ControllerExecutionException("I/O error rendering text ["+text+"] to response: " + ioe.getMessage(),ioe);
                }
                out.write(text);
             }
             else {
                 throw new MissingMethodException(METHOD_SIGNATURE,target.getClass(),arguments);
             }
+        }
+        else if(arguments[0] instanceof Closure) {
+            try {
+                MarkupBuilder mkp = new MarkupBuilder(response.getWriter());
+                mkp.invokeMethod("doCall", new Object[]{ arguments[0] });
+           }
+           catch(IOException ioe) {
+                throw new ControllerExecutionException("I/O error rendering text markup from closure to response: " + ioe.getMessage(),ioe);
+           }
         }
         else {
             throw new MissingMethodException(METHOD_SIGNATURE,target.getClass(),arguments);
