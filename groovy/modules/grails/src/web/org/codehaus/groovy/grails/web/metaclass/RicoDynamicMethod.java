@@ -16,17 +16,14 @@
 
 package org.codehaus.groovy.grails.web.metaclass;
 
-import groovy.lang.MissingMethodException;
+import grails.util.OpenRicoBuilder;
 import groovy.lang.Closure;
+import groovy.lang.MissingMethodException;
+import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.ControllerExecutionException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import grails.util.OpenRicoBuilder;
-
 import java.io.IOException;
-
-import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.ControllerExecutionException;
 
 /**
  * A controller dynamic method that takes a closure to create a OpenRico response using the OpenRicoBuilder syntax
@@ -52,7 +49,7 @@ public class RicoDynamicMethod extends AbstractDynamicControllerMethod {
             } catch (IOException e) {
                 throw new ControllerExecutionException("I/O error building ajax response in call ["+METHOD_SIGNATURE+"] on target ["+target.getClass()+"]");
             }
-            orb.invokeMethod("ajax", arguments[0]);
+            orb.invokeMethod("ajax", new Object[]{arguments[0]});
             return null;
         }
         else {
