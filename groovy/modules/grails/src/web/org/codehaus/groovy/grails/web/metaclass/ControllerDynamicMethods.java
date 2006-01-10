@@ -18,12 +18,6 @@ package org.codehaus.groovy.grails.web.metaclass;
 import groovy.lang.Closure;
 import groovy.lang.GroovyObject;
 import groovy.lang.MissingPropertyException;
-
-import java.beans.IntrospectionException;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.codehaus.groovy.grails.commons.GrailsControllerClass;
 import org.codehaus.groovy.grails.commons.metaclass.AbstractDynamicMethodInvocation;
 import org.codehaus.groovy.grails.commons.metaclass.GenericDynamicProperty;
@@ -32,6 +26,10 @@ import org.codehaus.groovy.grails.scaffolding.GrailsScaffolder;
 import org.codehaus.groovy.grails.web.servlet.GrailsHttpServletRequest;
 import org.codehaus.groovy.grails.web.servlet.mvc.GrailsControllerHelper;
 import org.springframework.validation.Errors;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.beans.IntrospectionException;
 /**
  * Adds dynamic methods and properties for Grails Controllers
  * 
@@ -68,6 +66,7 @@ public class ControllerDynamicMethods extends
 		addDynamicMethodInvocation( new ChainDynamicMethod(helper, request, response ) );
         addDynamicMethodInvocation( new RenderDynamicMethod(request,response));
         addDynamicMethodInvocation( new RicoDynamicMethod(request,response));
+        addDynamicMethodInvocation( new BindDynamicMethod(request,response));
         
         // the hasErrors() dynamic method that checks of there are any errors in the controller
 		addDynamicMethodInvocation( new AbstractDynamicMethodInvocation(HAS_ERRORS_METHOD) {
