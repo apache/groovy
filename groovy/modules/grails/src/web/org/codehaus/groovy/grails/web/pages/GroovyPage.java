@@ -109,12 +109,13 @@ public abstract class GroovyPage extends Script {
         return buf.toString();
     } // fromHtml()
 
-    public Object resolveVariable(String name) {
-        try {
+    public Object resolveVariable(String name)
+        throws GroovyRuntimeException {
+        if(name.startsWith("${") && name.endsWith("}")) {
             Binding b = getBinding();
             return b.getVariable(name);
         }
-        catch(GroovyRuntimeException gre) {
+        else {
             return name;
         }
     }
