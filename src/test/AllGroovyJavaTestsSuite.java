@@ -1,6 +1,6 @@
 import groovy.inspect.InspectorTest;
 import groovy.lang.*;
-import groovy.security.SecurityTestDisabled;
+import groovy.security.SecurityTest;
 import groovy.security.SignedJarTest;
 import groovy.servlet.GroovyServletTest;
 import groovy.text.TemplateTest;
@@ -32,8 +32,8 @@ public class AllGroovyJavaTestsSuite {
         suite.addTestSuite(ScriptTest.class);
         suite.addTestSuite(SequenceTest.class);
         suite.addTestSuite(TupleTest.class);
-        // suite.addTestSuite(SecurityTestDisabled.class); // todo: re-enable as soon as it is working on the build server
-        // suite.addTestSuite(SignedJarTest.class); // todo: re-enable as soon as it is working on the build server
+        suite.addTestSuite(SecurityTest.class);
+        suite.addTestSuite(SignedJarTest.class);
         suite.addTestSuite(GroovyServletTest.class);
         suite.addTestSuite(TemplateTest.class);
         suite.addTestSuite(XmlTemplateEngineTest.class);

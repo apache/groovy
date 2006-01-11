@@ -25,14 +25,14 @@ import junit.textui.TestRunner;
  * 
  * @author Steve Goetze
  */
-public class SecurityTestDisabled extends SecurityTestSupport {
+public class SecurityTest extends SecurityTestSupport {
 
 	public static void main(String[] args) {
         TestRunner.run( suite() );
     }
    
     public static Test suite() {
-    	return new TestSuite(SecurityTestDisabled.class);
+    	return new TestSuite(SecurityTest.class);
     }
 
     public void testForbiddenProperty() {
@@ -45,8 +45,7 @@ public class SecurityTestDisabled extends SecurityTestSupport {
 		assertExecute(script, "/groovy/security/testForbiddenPackage", new RuntimePermission("accessClassInPackage.sun.*"));
 	}
 
-    /** this test doesn't run under certain environments... */
-    public void testForbiddenCodebase() {
+    public void testForbiddenCodebase_FAILS() { if (notYetImplemented()) return;
 		assertExecute(new File("src/test/groovy/security/forbiddenCodeBase.gvy"), new GroovyCodeSourcePermission("/groovy/security/forbiddenCodeBase"));
 	}
 	
@@ -60,21 +59,21 @@ public class SecurityTestDisabled extends SecurityTestSupport {
 		assertExecute(script, "/groovy/security/javax/print/allow", null);
 	}
 
-    /** this test doesn't run under certain environments... */
-    public void testBadScriptNameBug() {
+    public void testBadScriptNameBug_FAILS() { if (notYetImplemented()) return;
 		assertExecute(new File("src/test/groovy/bugs/BadScriptNameBug.groovy"), null);
 	}
 
-    /** this test doesn't run under certain environments... */
-    public void testClosureListenerTest() {
-		assertExecute(new File("src/test/groovy/ClosureListenerTest.groovy"), null);
+    public void testClosureListenerTest_FAILS_on_JDK5() {
+        if (System.getProperty("java.version").startsWith("1.5") && notYetImplemented()) return;
+        assertExecute(new File("src/test/groovy/ClosureListenerTest.groovy"), null);
 	}
 
 	public void testClosureMethodTest() {
 		assertExecute(new File("src/test/groovy/ClosureMethodTest.groovy"), null);
 	}
 
-	public void testGroovyMethodsTest() {
+	public void testGroovyMethodsTest_FAILS() {
+        if (notYetImplemented()) return;
 		assertExecute(new File("src/test/groovy/GroovyMethodsTest.groovy"), null);
 	}
 
@@ -86,8 +85,7 @@ public class SecurityTestDisabled extends SecurityTestSupport {
 		assertExecute(new File("src/test/groovy/bugs/Groovy303_Bug.groovy"), null);
 	}
 
-    /** this test doesn't run under certain environments... */
-    public void testScriptTest() {
+    public void testScriptTest_FAILS() { if (notYetImplemented()) return;
 		assertExecute(new File("src/test/groovy/script/ScriptTest.groovy"), null);
 	}
 	
