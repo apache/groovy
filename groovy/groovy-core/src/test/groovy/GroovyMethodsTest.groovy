@@ -138,22 +138,19 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert map.size() == 2
     }
 
-    /** runs only on JDK 1.5 */
-    void todo_testExecuteCommandLineProcessUsingAString() {
-        /** @todo why does this not work
-        javaHome = System.getProperty('java.home', '')
-        cmd = "${javaHome}/bin/java -version"
-        */
-
+    String getCmd() {
         def cmd = "ls -l"
-        if (System.getProperty('os.name', '').contains('Win')) {
+        if (System.properties.'os.name'.contains('Win')) {
             cmd = "dir"
         }
+        return cmd
+    }
+
+    void testExecuteCommandLineProcessUsingAString() {
 
         println "executing command: ${cmd}"
 
         def process = cmd.execute()
-        //process = "ls -l".execute()
 
         // lets have an easier way to do this!
         def count = 0
@@ -174,16 +171,8 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert count > 1
     }
     
-    void testExecuteCommandLineProcessAndUseWaitForOrKill_FAILS() { if (notYetImplemented()) return
-        /** @todo why does this not work
-        javaHome = System.getProperty('java.home', '')
-        cmd = "${javaHome}/bin/java -version"
-        */
-
-        def cmd = "ls -l"
-        if (System.getProperty('os.name', '').contains('Win')) {
-            cmd = "dir"
-        }
+    void testExecuteCommandLineProcessAndUseWaitForOrKill_FAILS_UNLESS_MAC() {
+        if (!System.properties.'java.vendor'.contains('Apple') && notYetImplemented()) return
 
         println "executing command: ${cmd}"
 
@@ -193,7 +182,6 @@ class GroovyMethodsTest extends GroovyTestCase {
         def value = process.exitValue()
         println "Exit value of command line is ${value}"
 
-
         process = cmd.execute()
 
         process.waitForOrKill(1)
@@ -202,15 +190,11 @@ class GroovyMethodsTest extends GroovyTestCase {
     }
     
     void testExecuteCommandLineUnderWorkingDirectory_FAILS() { if (notYetImplemented()) return
-        def cmd = "ls -l"
-        if (System.getProperty('os.name', '').contains('Win')) {
-            cmd = "dir"
-        }
 
         def envp = java.util.Array.newInstance(String, 0)
         def workDir = new File(".")
 
-        println "executing command: ${cmd} under the directory ${workDir}"
+        println "executing command: ${cmd} under the directory ${workDir.canonicalPath}"
 
         def process = cmd.execute(envp, workDir)
 

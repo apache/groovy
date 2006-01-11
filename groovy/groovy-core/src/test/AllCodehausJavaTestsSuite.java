@@ -26,7 +26,7 @@ public class AllCodehausJavaTestsSuite {
         TestSuite suite = new TestSuite();
         suite.addTestSuite(GroovySourceASTTest.class);
         suite.addTestSuite(SourceBufferTest.class);
-        // suite.addTestSuite(SourcePrinterTest.class);  // todo: re-enable as soon as it works on the build server
+        suite.addTestSuite(SourcePrinterTest.class);  
         suite.addTestSuite(ClassNodeTest.class);
         suite.addTestSuite(ModuleNodeTest.class);
         suite.addTestSuite(BSFTest.class);
