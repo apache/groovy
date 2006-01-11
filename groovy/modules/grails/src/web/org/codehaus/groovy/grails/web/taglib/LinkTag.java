@@ -64,4 +64,7 @@ public class LinkTag extends AbstractTag {
         out.write("</a>");
     }
 
+    public boolean isDynamicAttribute(String attr) {
+        return false; // no dynamic attributes
+    }
 }

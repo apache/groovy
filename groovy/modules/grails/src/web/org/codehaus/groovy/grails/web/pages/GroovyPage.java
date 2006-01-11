@@ -18,6 +18,7 @@ package org.codehaus.groovy.grails.web.pages;
 import groovy.lang.Binding;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.Script;
+import org.codehaus.groovy.grails.web.taglib.GrailsTag;
 
 /**
  * NOTE: Based on work done by on the GSP standalone project (https://gsp.dev.java.net/)
@@ -109,14 +110,16 @@ public abstract class GroovyPage extends Script {
         return buf.toString();
     } // fromHtml()
 
-    public Object resolveVariable(String name)
+    public Object resolveVariable(GrailsTag tag,String attr,String expr)
         throws GroovyRuntimeException {
-        if(name.startsWith("${") && name.endsWith("}")) {
-            Binding b = getBinding();
-            return b.getVariable(name);
+        if(tag.isDynamicAttribute(attr)) {
+            return expr;
+        }
+        else if(expr.startsWith("${") && expr.endsWith("}")) {
+            return '\"' + expr + '\"';
         }
         else {
-            return name;
+            return '\'' + expr + '\'';
         }
     }
 } // GroovyPage

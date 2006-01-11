@@ -49,4 +49,14 @@ public interface GrailsTag {
      * @throws IOException
      */
     void doEndTag() throws IOException;
+
+    /**
+     * In GSP files grails tag attributes can be dynamic in that a groovy expression could be placed
+     * within the tag value. This method needs to return true for all tag attributes that need to be dynamic.
+     * Otherwise only a String or GString value is possible within the attribute.
+     *
+     * @param attr
+     * @return True if the specified attribute is dynamic
+     */
+    boolean isDynamicAttribute(String attr);
 }

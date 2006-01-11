@@ -197,26 +197,33 @@ public class Parse implements Tokens {
     private void startTag() {
         if (!finalPass) return;
         tagIndex++;
-        String text = scan.getToken();
+        String text = scan.getToken().trim();
         buf.append("tag")
             .append(tagIndex)
             .append("= grailsTagRegistry.loadTag('");
         if(text.indexOf(' ') > -1) {
             String[] tagTokens = text.split( " ");
-            String tagName = tagTokens[0];
+            String tagName = tagTokens[0].trim();
             buf.append(tagName)
                .append("',request,response,out)\n");
 
             for (int i = 1; i < tagTokens.length; i++) {
-                String[] attr = tagTokens[i].split("=");
-                String val = attr[1].substring(1,attr[1].length() - 1);
-                buf.append("tag")
-                   .append(tagIndex)
-                   .append(".setAttribute('")
-                   .append(attr[0])
-                   .append("', resolveVariable('")
-                   .append(val)
-                   .append("'))\n");
+                if(tagTokens[i].indexOf('=') > -1) {
+                    String[] attr = tagTokens[i].split("=");
+                    String name = attr[0].trim();
+                    String val = attr[1].trim().substring(1,attr[1].length() - 1);
+                    buf.append("tag")
+                       .append(tagIndex)
+                       .append(".setAttribute('")
+                       .append(name)
+                       .append("', resolveVariable(tag")
+                       .append(tagIndex)
+                       .append(",'")
+                       .append(name)
+                       .append("','")
+                       .append(val)
+                       .append("'))\n");
+                }
             }
         } else {
             buf.append(text)
