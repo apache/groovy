@@ -21,6 +21,8 @@ package org.codehaus.groovy.grails.web.pages;
  * Lexer for GroovyPages.
  *
  * @author Troy Heninger
+ * @author Graeme Rocher
+ *
  * Date: Jan 10, 2004
  *
  */
@@ -59,8 +61,20 @@ class Scan implements Tokens {
 			char c = text.charAt(end1++);
 			char c1 = left > 1 ? text.charAt(end1) : 0;
 			char c2 = left > 2 ? text.charAt(end1 + 1) : 0;
+            char c3 = left > 3 ? text.charAt(end1 + 2) : 0;
+            char c4 = left > 4 ? text.charAt(end1 + 3) : 0;
+            StringBuffer chars = new StringBuffer()
+                                       .append(c)
+                                       .append(c1)
+                                       .append(c2)
+                                       .append(c3);
+            String startTag = chars.toString();
 
-			if (str1) {
+            String endTag =    chars
+                                 .append(c4)
+                                 .toString();
+
+            if (str1) {
 				if (c == '\\') end1++;
 				else if (c == '\'') str1 = false;
 				continue;
@@ -88,7 +102,13 @@ class Scan implements Tokens {
 							}
 							return found(JSCRIPT, 2);
 						}
-					} else if (c == '$' && c1 == '{') {
+                        else if(startTag.equals("<gr:")) {
+                            return found(GSTART_TAG,4);
+                        }
+                        else if(endTag.equals("</gr:")) {
+                            return found(GEND_TAG,5);
+                        }
+                    } else if (c == '$' && c1 == '{') {
 						return found(GEXPR, 2);
 					} else if (c == '%' && c1 == '{') {
 						if (c2 == '-' && left > 3 && text.charAt(end1 + 2) == '-') {
@@ -104,12 +124,22 @@ class Scan implements Tokens {
 				case JEXPR:
 				case JSCRIPT:
 				case JDIRECT:
-				case JDECLAR:
+                case JDECLAR:
 					if (c == '%' && c1 == '>') {
 						return found(HTML, 2);
 					}
 					break;
-				case GEXPR:
+                case GSTART_TAG:
+                    if(c == '>') {
+                        return found(HTML,1);
+                    }
+                    break;
+                case GEND_TAG:
+                    if(c == '>') {
+                        return found(HTML,1);
+                    }
+                    break;
+                case GEXPR:
 				case GDIRECT:
 					if (c == '}' && !str1 && !str2 && level == 0) {
 						return found(HTML, 1);

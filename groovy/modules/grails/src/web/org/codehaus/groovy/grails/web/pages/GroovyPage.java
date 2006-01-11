@@ -15,6 +15,8 @@
  */
 package org.codehaus.groovy.grails.web.pages;
 
+import groovy.lang.Binding;
+import groovy.lang.GroovyRuntimeException;
 import groovy.lang.Script;
 
 /**
@@ -31,80 +33,90 @@ public abstract class GroovyPage extends Script {
 
 /*	do noething in here for the moment
 */
-	/**
-	 * Convert from HTML to Unicode text.  This function converts many of the encoded HTML
-	 * characters to normal Unicode text.  Example: &amp;lt&semi; to &lt;.
-	 */
-	public static String fromHtml(String text)
-	{
-		int ixz;
-		if (text == null || (ixz = text.length()) == 0) return text;
-		StringBuffer buf = new StringBuffer(ixz);
-		String rep = null;
-		for (int ix = 0; ix < ixz; ix++)
-		{
-			char c = text.charAt(ix);
-			if (c == '&');
-			{
-				String sub = text.substring(ix + 1).toLowerCase();
-				if (sub.startsWith("lt;"))
-				{
-					c = '<';
-					ix += 3;
-				}
-				else
-				if (sub.startsWith("gt;"))
-				{
-					c = '>';
-					ix += 3;
-				}
-				else
-				if (sub.startsWith("amp;"))
-				{
-					c = '&';
-					ix += 4;
-				}
-				else
-				if (sub.startsWith("nbsp;"))
-				{
-					c = ' ';
-					ix += 5;
-				}
-				else
-				if (sub.startsWith("semi;"))
-				{
-					c = ';';
-					ix += 5;
-				}
-				else
-				if (sub.startsWith("#"))
-				{
-					char c2 = 0;
-					for (int iy = ix + 1; iy < ixz; iy++)
-					{
-						char c1 = text.charAt(iy);
-						if (c1 >= '0' && c1 <= '9')
-						{
-							c2 = (char)(c2 * 10 + c1);
-							continue;
-						}
-						if (c1 == ';')
-						{
-							c = c2;
-							ix = iy;
-						}
-						break;
-					}
-				}
-			}
-			if (rep != null)
-			{
-				buf.append(rep);
-				rep = null;
-			}
-			else buf.append(c);
-		}
-		return buf.toString();
-	} // fromHtml()
+    /**
+     * Convert from HTML to Unicode text.  This function converts many of the encoded HTML
+     * characters to normal Unicode text.  Example: &amp;lt&semi; to &lt;.
+     */
+    public static String fromHtml(String text)
+    {
+        int ixz;
+        if (text == null || (ixz = text.length()) == 0) return text;
+        StringBuffer buf = new StringBuffer(ixz);
+        String rep = null;
+        for (int ix = 0; ix < ixz; ix++)
+        {
+            char c = text.charAt(ix);
+            if (c == '&');
+            {
+                String sub = text.substring(ix + 1).toLowerCase();
+                if (sub.startsWith("lt;"))
+                {
+                    c = '<';
+                    ix += 3;
+                }
+                else
+                if (sub.startsWith("gt;"))
+                {
+                    c = '>';
+                    ix += 3;
+                }
+                else
+                if (sub.startsWith("amp;"))
+                {
+                    c = '&';
+                    ix += 4;
+                }
+                else
+                if (sub.startsWith("nbsp;"))
+                {
+                    c = ' ';
+                    ix += 5;
+                }
+                else
+                if (sub.startsWith("semi;"))
+                {
+                    c = ';';
+                    ix += 5;
+                }
+                else
+                if (sub.startsWith("#"))
+                {
+                    char c2 = 0;
+                    for (int iy = ix + 1; iy < ixz; iy++)
+                    {
+                        char c1 = text.charAt(iy);
+                        if (c1 >= '0' && c1 <= '9')
+                        {
+                            c2 = (char)(c2 * 10 + c1);
+                            continue;
+                        }
+                        if (c1 == ';')
+                        {
+                            c = c2;
+                            ix = iy;
+                        }
+                        break;
+                    }
+                }
+            }
+            if (rep != null)
+            {
+                buf.append(rep);
+                rep = null;
+            }
+            else buf.append(c);
+        }
+        return buf.toString();
+    } // fromHtml()
+
+    public Object resolveVariable(String name) {
+        try {
+            Binding b = getBinding();
+            return b.getVariable(name);
+        }
+        catch(GroovyRuntimeException gre) {
+            return name;
+        }
+    }
 } // GroovyPage
 

@@ -77,7 +77,6 @@ public class GroovyWriter extends PrintWriter {
 	public void close() {
 		if (!response.isCommitted()) {
 			response.setContentLength(out0.size());
-		    System.out.println("Content Length = " + out0.size());
 		}
 		flush();
 		super.close();

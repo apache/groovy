@@ -21,6 +21,7 @@ import org.codehaus.groovy.grails.commons.GrailsControllerClass;
 import org.codehaus.groovy.grails.web.metaclass.ControllerDynamicMethods;
 import org.codehaus.groovy.grails.web.metaclass.GetParamsDynamicProperty;
 import org.codehaus.groovy.grails.web.metaclass.GetSessionDynamicProperty;
+import org.codehaus.groovy.grails.web.taglib.GrailsTagRegistry;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 import javax.servlet.ServletConfig;
@@ -43,11 +44,11 @@ import java.util.*;
  *       <servlet-name>GroovyPages</servlet-name>
  *       <servlet-class>org.codehaus.groovy.grails.web.pages.GroovyPages</servlet-class>
  *		<init-param>
- *			<param-name>allowSpilling</param-name>
+ *			<param-name>showSource</param-name>
  *			<param-value>1</param-value>
  *			<description>
  *             Allows developers to view the intermediade source code, when they pass
- *				a spillGroovy argument in the URL.
+ *				a showSource argument in the URL (eg /edit/list?showSource=true.
  *          </description>
  *		</init-param>
  *    </servlet>
@@ -60,7 +61,7 @@ import java.util.*;
 public class GroovyPages extends HttpServlet /*implements GroovyObject*/ {
 	Object x;
 	private ServletContext context;
-	private boolean allowSpilling = false;
+	private boolean showSource = false;
 
 	private static Map pageCache = Collections.synchronizedMap(new HashMap());
 	private static ClassLoader parent;
@@ -91,7 +92,7 @@ public class GroovyPages extends HttpServlet /*implements GroovyObject*/ {
 		parent = Thread.currentThread().getContextClassLoader();
 		if (parent == null) parent = getClass().getClassLoader();
 
-		allowSpilling = config.getInitParameter("allowSpilling") != null;
+		showSource = config.getInitParameter("showSource") != null;
 	} // init()
 
 	/**
@@ -132,7 +133,7 @@ public class GroovyPages extends HttpServlet /*implements GroovyObject*/ {
 			return;
 		}
 
-		boolean spillGroovy = allowSpilling && request.getParameter("spillGroovy") != null;
+		boolean spillGroovy = showSource && request.getParameter("spillGroovy") != null;
 		PageMeta pageMeta = getPage(pageId, pageUrl, request.getServletPath(), spillGroovy);
 		Writer out = GroovyWriter.getInstance(response, 8192);
 		try {
@@ -150,7 +151,6 @@ public class GroovyPages extends HttpServlet /*implements GroovyObject*/ {
 			}
 		} finally {
 			if (out != null) out.close();
-	System.out.println("Done");
 		}
 	} // doPage()
 
@@ -173,8 +173,9 @@ public class GroovyPages extends HttpServlet /*implements GroovyObject*/ {
 		binding.setVariable("session", controller.getProperty(GetSessionDynamicProperty.PROPERTY_NAME));
         binding.setVariable("params", controller.getProperty(GetParamsDynamicProperty.PROPERTY_NAME));
         binding.setVariable("out", out);
+        binding.setVariable("grailsTagRegistry", GrailsTagRegistry.getInstance());
 
-		// Go through request attributes and add them to the binding as the model
+        // Go through request attributes and add them to the binding as the model
         for (Enumeration attributeEnum =  request.getAttributeNames(); attributeEnum.hasMoreElements();) {
 			String key = (String) attributeEnum.nextElement();
             try {

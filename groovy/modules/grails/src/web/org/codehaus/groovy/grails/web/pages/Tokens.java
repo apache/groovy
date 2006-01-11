@@ -6,6 +6,8 @@ package org.codehaus.groovy.grails.web.pages;
  * Interface defining an enumeration of tokens for the different scriptlet types
  *
  * @author Troy Heninger
+ * @author Graeme Rocher
+ *
  * Date: Jan 10, 2004
  *
  */
@@ -20,4 +22,6 @@ interface Tokens {
 	static final int GSCRIPT = 12; // %{ ... }%
 	static final int GDIRECT = 13; // @{ ... }
 	static final int GDECLAR = 14; // !{ ... }!
+    static final int GSTART_TAG = 15; // <gr:..>
+    static final int GEND_TAG = 16; // </gr:..>
 }
