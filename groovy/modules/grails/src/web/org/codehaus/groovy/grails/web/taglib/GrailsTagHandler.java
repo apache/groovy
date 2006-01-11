@@ -26,7 +26,13 @@ public interface GrailsTagHandler {
     void setAttributes(Map attributes);
 
     /**
-     * Process the tag
+     * Process the start tag
      */
-    void doTag() throws IOException;
+    void doStartTag() throws IOException;
+
+    /**
+     * process the end tag
+     * @throws IOException
+     */
+    void doEndTag() throws IOException;
 }

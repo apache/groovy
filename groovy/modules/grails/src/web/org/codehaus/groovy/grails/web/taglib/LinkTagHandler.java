@@ -34,7 +34,7 @@ public class LinkTagHandler extends AbstractTagHandler {
     }
 
 
-    public void doTag()  throws IOException {
+    public void doStartTag()  throws IOException {
         StringBuffer buf = new StringBuffer();
         buf.append("<a href=\"")
             .append(contextPath)
@@ -64,5 +64,9 @@ public class LinkTagHandler extends AbstractTagHandler {
             }
             buf.append('>');
             out.write(buf.toString());
+    }
+
+    public void doEndTag() throws IOException {
+        //To change body of implemented methods use File | Settings | File Templates.
     }
 }

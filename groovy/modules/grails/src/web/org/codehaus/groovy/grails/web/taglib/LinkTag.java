@@ -50,13 +50,14 @@ public class LinkTag extends BodyTagSupport implements DynamicAttributes {
 	private String action;
 	private String controller;
 	private String id;
-	
-	/**
-	 * @param action The action to set.
-	 */
-	public void setAction(String action) {
-		this.action = action;
-	}
+    private GrailsTagHandler tagHandler;
+
+    /**
+     * @param action The action to set.
+     */
+    public void setAction(String action) {
+        this.action = action;
+    }
 
 	/**
 	 * @param controller The controller to set.
@@ -102,8 +103,8 @@ public class LinkTag extends BodyTagSupport implements DynamicAttributes {
         }
 
         try {
-            GrailsTagHandler tagHandler = new LinkTagHandler((HttpServletRequest)pageContext.getRequest(),pageContext.getOut(),attributes);
-            tagHandler.doTag();
+            this.tagHandler = new LinkTagHandler((HttpServletRequest)pageContext.getRequest(),pageContext.getOut(),attributes);
+            tagHandler.doStartTag();
 		} catch (IOException e) {
 			throw new JspTagException(e.getMessage(),e);
 		}
@@ -129,9 +130,8 @@ public class LinkTag extends BodyTagSupport implements DynamicAttributes {
 	 * @see javax.servlet.jsp.tagext.BodyTagSupport#doEndTag()
 	 */
 	public int doEndTag() throws JspException {
-		Writer out = super.pageContext.getOut();
 		try {
-			out.write("</a>");
+			tagHandler.doEndTag();
 		} catch (IOException e) {
 			throw new JspException(e.getMessage(),e);
 		}
