@@ -23,13 +23,17 @@ package org.codehaus.groovy.grails.commons;
  * @since Jul 2, 2005
  */
 public interface GrailsControllerClass extends InjectableGrailsClass {
+    /**
+     * The name of the controller contained within the request scope
+     */
+    String REQUEST_CONTROLLER = "grailsController";
 
-	/**
-	 * <p>Gets the list of all possible URI's available in this controller.
-	 * 
-	 * @return list of all possible URI's
-	 */
-	public String[] getURIs();
+    /**
+     * <p>Gets the list of all possible URI's available in this controller.
+     *
+     * @return list of all possible URI's
+     */
+    public String[] getURIs();
 	
 	/**
 	 * <p>Tests if a controller maps to a given URI.
@@ -50,7 +54,7 @@ public interface GrailsControllerClass extends InjectableGrailsClass {
 	 * Retrieves the view name for the specified closure name
 	 * 
 	 * @param closureName The name of the closure
-	 * @return
+	 * @return The view for the specified closure action
 	 */
 	public String getViewByName(String closureName);
 

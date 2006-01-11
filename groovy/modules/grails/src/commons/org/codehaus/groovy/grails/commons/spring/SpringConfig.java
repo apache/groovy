@@ -30,6 +30,7 @@ import org.codehaus.groovy.grails.web.pageflow.GrailsFlowBuilder;
 import org.codehaus.groovy.grails.web.pageflow.execution.servlet.GrailsServletFlowExecutionManager;
 import org.codehaus.groovy.grails.web.servlet.mvc.GrailsUrlHandlerMapping;
 import org.codehaus.groovy.grails.web.servlet.mvc.SimpleGrailsController;
+import org.codehaus.groovy.grails.web.servlet.view.GrailsViewResolver;
 import org.hibernate.dialect.HSQLDialect;
 import org.hibernate.dialect.MySQLDialect;
 import org.springframework.beans.factory.config.CustomEditorConfigurer;
@@ -41,7 +42,6 @@ import org.springframework.transaction.interceptor.TransactionProxyFactoryBean;
 import org.springframework.util.Assert;
 import org.springframework.web.servlet.i18n.CookieLocaleResolver;
 import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
-import org.springframework.web.servlet.view.InternalResourceViewResolver;
 import org.springframework.webflow.config.FlowFactoryBean;
 import org.springframework.webflow.mvc.FlowController;
 import org.springmodules.beans.factory.config.MapToPropertiesFactoryBean;
@@ -205,12 +205,12 @@ public class SpringConfig {
 		simpleGrailsController.setAutowire("byType");
 		beanReferences.add(SpringConfigUtils.createBeanReference("simpleGrailsController", simpleGrailsController));
 		
-		Bean internalResourceViewResolver = SpringConfigUtils.createSingletonBean(InternalResourceViewResolver.class);
+		Bean grailsViewResolver = SpringConfigUtils.createSingletonBean(GrailsViewResolver.class);
 		
-		internalResourceViewResolver.setProperty("viewClass",SpringConfigUtils.createLiteralValue("org.springframework.web.servlet.view.JstlView"));
-		internalResourceViewResolver.setProperty("prefix", SpringConfigUtils.createLiteralValue("/WEB-INF/grails-app/views"));
-		internalResourceViewResolver.setProperty("suffix", SpringConfigUtils.createLiteralValue(".jsp"));
-		beanReferences.add(SpringConfigUtils.createBeanReference("jspViewResolver", internalResourceViewResolver));
+		grailsViewResolver.setProperty("viewClass",SpringConfigUtils.createLiteralValue("org.springframework.web.servlet.view.JstlView"));
+		grailsViewResolver.setProperty("prefix", SpringConfigUtils.createLiteralValue("/WEB-INF/grails-app/views"));
+		grailsViewResolver.setProperty("suffix", SpringConfigUtils.createLiteralValue(".jsp"));
+		beanReferences.add(SpringConfigUtils.createBeanReference("jspViewResolver", grailsViewResolver));
 		
 		Bean simpleUrlHandlerMapping = null;
 		if (application.getControllers().length > 0 || application.getPageFlows().length > 0) {

@@ -15,17 +15,10 @@
  */
 package org.codehaus.groovy.grails.web.metaclass;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import java.util.*;
 /**
  * A dynamic property that adds a "session" map to a controller for accessing the Http Session
  * 
@@ -34,7 +27,7 @@ import javax.servlet.http.HttpSession;
  */
 public class GetSessionDynamicProperty extends AbstractDynamicControllerProperty {
 
-	private static final String PROPERTY_NAME = "session";
+	public static final String PROPERTY_NAME = "session";
 	private HttpSessionMap sessionMap;
 
 	public GetSessionDynamicProperty(HttpServletRequest request, HttpServletResponse response) {

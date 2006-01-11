@@ -134,7 +134,9 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
 		
 		// Step 3: load controller from application context.
 		GroovyObject controller = getControllerInstance(controllerClass);
-		// Step 3a: Configure a proxy interceptor for controller dynamic methods for this request		
+        request.setAttribute( GrailsControllerClass.REQUEST_CONTROLLER, controller );
+        
+        // Step 3a: Configure a proxy interceptor for controller dynamic methods for this request
 		if(this.interceptor == null) {
 			try {
 				interceptor = new ControllerDynamicMethods(controller,this,request,response);

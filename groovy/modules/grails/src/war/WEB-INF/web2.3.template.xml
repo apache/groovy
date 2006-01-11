@@ -50,8 +50,26 @@
 		<servlet-class>org.codehaus.groovy.grails.web.servlet.GrailsDispatcherServlet</servlet-class>
 		<load-on-startup>3</load-on-startup>
 	</servlet>
-	
-	<!-- Map all requests to the Grails dispatcher servlet -->
+
+    <!-- The Groovy Server Pages servlet -->
+      <servlet>
+        <servlet-name>gsp</servlet-name>
+        <servlet-class>org.codehaus.groovy.grails.web.pages.GroovyPages</servlet-class>
+        <init-param>
+            <param-name>allowSpilling</param-name>
+            <param-value>1</param-value>
+            <description>
+              Allows developers to view the intermediade source code, when they pass
+                a spillGroovy argument in the URL.
+           </description>
+        </init-param>
+     </servlet>
+
+    <servlet-mapping>
+        <servlet-name>gsp</servlet-name>
+        <url-pattern>*.gsp</url-pattern>
+    </servlet-mapping>
+    <!-- Map all requests to the Grails dispatcher servlet -->
 	<% for ( c in controllers ) { %>	
 		<servlet-mapping>
 			<servlet-name>grails</servlet-name>
