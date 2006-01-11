@@ -16,19 +16,19 @@
 package org.codehaus.groovy.grails.web.taglib;
 
 import org.apache.commons.lang.StringUtils;
+import org.springframework.web.util.ExpressionEvaluationUtils;
 import org.springframework.web.util.UrlPathHelper;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
+import javax.servlet.jsp.JspTagException;
 import javax.servlet.jsp.JspWriter;
-import javax.servlet.jsp.el.ELException;
 import javax.servlet.jsp.tagext.BodyContent;
 import javax.servlet.jsp.tagext.BodyTagSupport;
 import javax.servlet.jsp.tagext.DynamicAttributes;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 /**
  * A link tag for easily creating links to controllers and actions within grails. Examples:
@@ -77,57 +77,35 @@ public class LinkTag extends BodyTagSupport implements DynamicAttributes {
 	 */
 	public int doStartTag() throws JspException {
         if(StringUtils.isBlank(controller)) {
-            throw new JspException("Tag link missing required attribute 'controller'");
+            throw new JspTagException("Tag link missing required attribute 'controller'");
         }
         Writer out = super.pageContext.getOut();
 		
-		String contextPath = urlPathHelper.getContextPath( (HttpServletRequest)pageContext.getRequest() );
-		try {
-			StringBuffer buf = new StringBuffer();
-			
-			buf.append("<a href=\"")
-				.append(contextPath)
-				.append('/')
-				.append(controller);
-				if(!StringUtils.isBlank(action)) {
-					buf.append('/')
-						.append(action);
-				}
-				if(!StringUtils.isBlank(id)) {
-					Object evalId;
-					if(id.startsWith("${") && id.endsWith("}")) {
-						try {
-							evalId = pageContext.getExpressionEvaluator().evaluate(id, Object.class, pageContext.getVariableResolver(),null);
-						} catch (ELException e) {
-							throw new JspException(e.getMessage(),e);
-						}
-					}
-					else {
-						evalId = pageContext.findAttribute(id);
-						if(evalId == null)
-							evalId = id;
-					}
-					buf.append('?')
-					   .append("id=")
-					   .append(evalId);
-				}			
-				
-				buf.append("\" ");
-			
-				if(dyanmicAttributes.size() > 0) {
-					for (Iterator i = dyanmicAttributes.keySet().iterator(); i.hasNext();) {
-						String attributeName = (String) i.next();
-						Object attributeValue = dyanmicAttributes.get(attributeName);
-						buf.append(attributeName)
-						   .append("=\"")
-						   .append(attributeValue)
-						   .append("\" ");
-					}
-				}			
-				buf.append('>');
-				out.write(buf.toString());
+
+        Map attributes = new HashMap();
+        attributes.putAll(this.dyanmicAttributes);
+        attributes.put(LinkTagHandler.ATTRIBUTE_CONTROLLER, controller);
+        if(!StringUtils.isBlank(action)) {
+            attributes.put(LinkTagHandler.ATTRIBUTE_ACTION, action);
+        }
+        if(!StringUtils.isBlank(id)) {
+            Object evalId;
+            if(ExpressionEvaluationUtils.isExpressionLanguage(id)) {
+                evalId = ExpressionEvaluationUtils.evaluate("id",id, Object.class, pageContext);
+            }
+            else {
+                evalId = pageContext.findAttribute(id);
+                if(evalId == null)
+                    evalId = id;
+            }
+            attributes.put(LinkTagHandler.ATTRIBUTE_ID, evalId);
+        }
+
+        try {
+            GrailsTagHandler tagHandler = new LinkTagHandler((HttpServletRequest)pageContext.getRequest(),pageContext.getOut(),attributes);
+            tagHandler.doTag();
 		} catch (IOException e) {
-			throw new JspException(e.getMessage(),e);
+			throw new JspTagException(e.getMessage(),e);
 		}
 		return EVAL_BODY_BUFFERED;
 	}
