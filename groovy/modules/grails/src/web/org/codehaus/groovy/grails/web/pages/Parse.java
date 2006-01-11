@@ -191,6 +191,7 @@ public class Parse implements Tokens {
        buf.append("tag")
             .append(tagIndex)
             .append(".doEndTag()\n");
+       tagIndex--;
     }
 
     private void startTag() {
