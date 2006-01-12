@@ -207,7 +207,7 @@ public class GStringTemplateEngine extends TemplateEngine {
                     templateExpressions.append((char)c);
                 }
 
-                templateExpressions.append("; ");
+                templateExpressions.append(";\n ");
         }
 
         /**
