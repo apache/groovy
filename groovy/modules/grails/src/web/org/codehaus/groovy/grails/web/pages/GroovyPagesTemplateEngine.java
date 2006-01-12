@@ -83,7 +83,7 @@ public class GroovyPagesTemplateEngine {
         boolean spillGroovy = showSource && request.getParameter("showSource") != null;
 
         PageMeta pageMeta = getPage(pageId, context,pageUrl, request.getServletPath(), spillGroovy);
-        return new GroovyPagesTemplate(context,request,response,pageMeta);  //To change body of implemented methods use File | Settings | File Templates.
+        return new GroovyPagesTemplate(context,request,response,pageMeta,spillGroovy);  //To change body of implemented methods use File | Settings | File Templates.
     }
 
 
@@ -206,6 +206,7 @@ public class GroovyPagesTemplateEngine {
     } // isPageNew()
 
     /**
+     * 
      * @author Graeme Rocher
      * @since 12-Jan-2006
      */
@@ -220,12 +221,13 @@ public class GroovyPagesTemplateEngine {
         public GroovyPagesTemplate(ServletContext context,
                                    HttpServletRequest request,
                                    HttpServletResponse response,
-                                   PageMeta pageMeta) {
+                                   PageMeta pageMeta,
+                                   boolean showSource) {
             this.request = request;
             this.response = response;
             this.context = context;
 
-            this.showSource = showSource && request.getParameter("showSource") != null;
+            this.showSource = showSource;
             this.pageMeta = pageMeta;
         }
 
@@ -240,104 +242,109 @@ public class GroovyPagesTemplateEngine {
         }
     }
 
-        protected static class GroovyPageTemplateWritable implements Writable {
-            private HttpServletResponse response;
-            private HttpServletRequest request;
-            private PageMeta pageMeta;
-            private boolean showSource;
-            private ServletContext context;
-            private Map additionalBinding = new HashMap();
+    /**
+     *
+     * @author Graeme Rocher
+     * @since 12-Jan-2006
+     */
+    protected static class GroovyPageTemplateWritable implements Writable {
+        private HttpServletResponse response;
+        private HttpServletRequest request;
+        private PageMeta pageMeta;
+        private boolean showSource;
+        private ServletContext context;
+        private Map additionalBinding = new HashMap();
 
-            public GroovyPageTemplateWritable(ServletContext context,
-                                              HttpServletRequest request,
-                                              HttpServletResponse response,
-                                              PageMeta pageMeta,
-                                              boolean showSource) {
-                this.request = request;
-                this.response = response;
-                this.pageMeta = pageMeta;
-                this.showSource = showSource;
-                this.context = context;
-            }
-
-            public void setBinding(Map binding) {
-                if(binding != null)
-                    this.additionalBinding = binding;
-            }
-
-            public Writer writeTo(Writer out) throws IOException {
-                if (showSource) {
-                        // Set it to TEXT
-                    response.setContentType("text/plain"); // must come before response.getOutputStream()
-                    send(pageMeta.groovySource, out);
-                    pageMeta.groovySource = null;
-                } else {
-                    // Set it to HTML by default
-                    response.setContentType("text/html"); // must come before response.getWriter()
-                    Binding binding = getBinding(request, response, out);
-                    Script page = InvokerHelper.createScript(pageMeta.servletScriptClass, binding);
-                    page.run();
-                }
-                return out;
-            }
-
-            /**
-             * Copy all of input to output.
-             * @param in
-             * @param out
-             * @throws IOException
-             */
-            public static void send(InputStream in, Writer out) throws IOException {
-                try {
-                    Reader reader = new InputStreamReader(in);
-                    char[] buf = new char[8192];
-                    for (;;) {
-                        int read = reader.read(buf);
-                        if (read <= 0) break;
-                        out.write(buf, 0, read);
-                    }
-                } finally {
-                    out.close();
-                    in.close();
-                }
-            } // send()
-            /**
-             * Prepare Bindings before instantiating page.
-             * @param request
-             * @param response
-             * @param out
-             * @return the Bindings
-             * @throws IOException
-             */
-            protected Binding getBinding(HttpServletRequest request, HttpServletResponse response, Writer out)
-                    throws IOException {
-                // Set up the script context
-                Binding binding = new Binding();
-                GroovyObject controller = (GroovyObject)request.getAttribute(GrailsControllerClass.REQUEST_CONTROLLER);
-                binding.setVariable("request", controller.getProperty(ControllerDynamicMethods.REQUEST_PROPERTY));
-                binding.setVariable("response", controller.getProperty(ControllerDynamicMethods.RESPONSE_PROPERTY));
-                binding.setVariable("application", context);
-                binding.setVariable("session", controller.getProperty(GetSessionDynamicProperty.PROPERTY_NAME));
-                binding.setVariable("params", controller.getProperty(GetParamsDynamicProperty.PROPERTY_NAME));
-                binding.setVariable("out", out);
-                binding.setVariable("grailsTagRegistry", GrailsTagRegistry.getInstance());
-
-                // Go through request attributes and add them to the binding as the model
-                for (Enumeration attributeEnum =  request.getAttributeNames(); attributeEnum.hasMoreElements();) {
-                    String key = (String) attributeEnum.nextElement();
-                    try {
-                        binding.getVariable(key);
-                    }
-                    catch(MissingPropertyException mpe) {
-                        binding.setVariable( key, request.getAttribute(key) );
-                    }
-                }
-                for (Iterator i = additionalBinding.keySet().iterator(); i.hasNext();) {
-                    String key =  (String)i.next();
-                    binding.setVariable(key, additionalBinding.get(key));
-                }
-                return binding;
-            } // getBinding()
+        public GroovyPageTemplateWritable(ServletContext context,
+                                          HttpServletRequest request,
+                                          HttpServletResponse response,
+                                          PageMeta pageMeta,
+                                          boolean showSource) {
+            this.request = request;
+            this.response = response;
+            this.pageMeta = pageMeta;
+            this.showSource = showSource;
+            this.context = context;
         }
+
+        public void setBinding(Map binding) {
+            if(binding != null)
+                this.additionalBinding = binding;
+        }
+
+        public Writer writeTo(Writer out) throws IOException {
+            if (showSource) {
+                    // Set it to TEXT
+                response.setContentType("text/plain"); // must come before response.getOutputStream()
+                send(pageMeta.groovySource, out);
+                pageMeta.groovySource = null;
+            } else {
+                // Set it to HTML by default
+                response.setContentType("text/html"); // must come before response.getWriter()
+                Binding binding = getBinding(request, response, out);
+                Script page = InvokerHelper.createScript(pageMeta.servletScriptClass, binding);
+                page.run();
+            }
+            return out;
+        }
+
+        /**
+         * Copy all of input to output.
+         * @param in
+         * @param out
+         * @throws IOException
+         */
+        public static void send(InputStream in, Writer out) throws IOException {
+            try {
+                Reader reader = new InputStreamReader(in);
+                char[] buf = new char[8192];
+                for (;;) {
+                    int read = reader.read(buf);
+                    if (read <= 0) break;
+                    out.write(buf, 0, read);
+                }
+            } finally {
+                out.close();
+                in.close();
+            }
+        } // send()
+        /**
+         * Prepare Bindings before instantiating page.
+         * @param request
+         * @param response
+         * @param out
+         * @return the Bindings
+         * @throws IOException
+         */
+        protected Binding getBinding(HttpServletRequest request, HttpServletResponse response, Writer out)
+                throws IOException {
+            // Set up the script context
+            Binding binding = new Binding();
+            GroovyObject controller = (GroovyObject)request.getAttribute(GrailsControllerClass.REQUEST_CONTROLLER);
+            binding.setVariable("request", controller.getProperty(ControllerDynamicMethods.REQUEST_PROPERTY));
+            binding.setVariable("response", controller.getProperty(ControllerDynamicMethods.RESPONSE_PROPERTY));
+            binding.setVariable("application", context);
+            binding.setVariable("session", controller.getProperty(GetSessionDynamicProperty.PROPERTY_NAME));
+            binding.setVariable("params", controller.getProperty(GetParamsDynamicProperty.PROPERTY_NAME));
+            binding.setVariable("out", out);
+            binding.setVariable("grailsTagRegistry", GrailsTagRegistry.getInstance());
+
+            // Go through request attributes and add them to the binding as the model
+            for (Enumeration attributeEnum =  request.getAttributeNames(); attributeEnum.hasMoreElements();) {
+                String key = (String) attributeEnum.nextElement();
+                try {
+                    binding.getVariable(key);
+                }
+                catch(MissingPropertyException mpe) {
+                    binding.setVariable( key, request.getAttribute(key) );
+                }
+            }
+            for (Iterator i = additionalBinding.keySet().iterator(); i.hasNext();) {
+                String key =  (String)i.next();
+                binding.setVariable(key, additionalBinding.get(key));
+            }
+            return binding;
+        } // getBinding()
+    }
 
 }
