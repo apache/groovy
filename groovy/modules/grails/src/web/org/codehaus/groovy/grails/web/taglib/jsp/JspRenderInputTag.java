@@ -21,8 +21,6 @@ import org.springframework.beans.InvalidPropertyException;
 import org.springframework.web.servlet.tags.RequestContextAwareTag;
 import org.springframework.web.util.ExpressionEvaluationUtils;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspTagException;
 import java.io.Writer;
@@ -58,8 +56,8 @@ public class JspRenderInputTag extends RequestContextAwareTag {
             GrailsTagRegistry tagRegistry = GrailsTagRegistry.getInstance();
             RenderInputTag tag = (RenderInputTag)tagRegistry.loadTag( RenderInputTag.TAG_NAME,
                                 pageContext.getServletContext(),
-                                (HttpServletRequest)pageContext.getRequest(),
-                                (HttpServletResponse)pageContext.getResponse());
+                                pageContext.getRequest(),
+                                pageContext.getResponse());
 
              tag.setBean(beanInstance);
              tag.setProperty(property);
