@@ -73,8 +73,8 @@ public class GroovyPagesTemplateEngine {
         parent = Thread.currentThread().getContextClassLoader();
         if (parent == null) parent = getClass().getClassLoader();
 
-        String pageId = getPageId(request);
-        URL pageUrl = getPageUrl(context,pageId);
+        String uri = getPageId(request);
+        URL pageUrl = getPageUrl(context,uri);
         if (pageUrl == null) {
             context.log("GroovyPagesServlet:  \"" + pageUrl + "\" not found");
             return null;
@@ -82,10 +82,9 @@ public class GroovyPagesTemplateEngine {
 
         boolean spillGroovy = showSource && request.getParameter("showSource") != null;
 
-        PageMeta pageMeta = getPage(pageId, context,pageUrl, request.getServletPath(), spillGroovy);
+        PageMeta pageMeta = getPage(uri, context,pageUrl, spillGroovy);
         return new GroovyPagesTemplate(context,request,response,pageMeta,spillGroovy);  //To change body of implemented methods use File | Settings | File Templates.
     }
-
 
     /**
      * Return the page identifier.
@@ -112,31 +111,30 @@ public class GroovyPagesTemplateEngine {
 
     /**
      * Lookup page class or load new one if needed.
-     * @param pageId
+     * @param uri
      * @param pageUrl
-     * @param servletPath
      * @param spillGroovy
      * @return
      * @throws IOException
      * @throws javax.servlet.ServletException
      */
-    protected PageMeta getPage(String pageId, ServletContext context,URL pageUrl, String servletPath, boolean spillGroovy)
+    protected PageMeta getPage(String uri, ServletContext context,URL pageUrl, boolean spillGroovy)
             throws IOException, ServletException  {
-            // Lock on the pageId to ensure that only one compile occurs for any script
-        synchronized (pageId) {
+            // Lock on the uri to ensure that only one compile occurs for any script
+        synchronized (uri) {
                 // Get the URLConnection
             URLConnection groovyScriptConn = pageUrl.openConnection();
                 // URL last modified
             long lastModified = groovyScriptConn.getLastModified();
                 // Check the cache for the script
-            PageMeta pageMeta = (PageMeta)pageCache.get(pageId);
+            PageMeta pageMeta = (PageMeta)pageCache.get(uri);
                 // If the pageMeta isn't null check all the dependencies
             boolean dependencyOutOfDate = false;
             if (pageMeta != null && !spillGroovy) {
                 isPageNew(pageMeta);
             }
             if (pageMeta == null || pageMeta.lastModified < lastModified || dependencyOutOfDate || spillGroovy) {
-                pageMeta = newPage(pageId, context,servletPath, groovyScriptConn, lastModified, spillGroovy);
+                pageMeta = newPage(uri, context,groovyScriptConn, lastModified, spillGroovy);
             }
             return pageMeta;
         }
@@ -144,8 +142,7 @@ public class GroovyPagesTemplateEngine {
 
    /**
      * Load and compile new page.
-     * @param pageId
-     * @param servletPath
+     * @param uri
      * @param groovyScriptConn
      * @param lastModified
      * @param spillGroovy
@@ -153,9 +150,9 @@ public class GroovyPagesTemplateEngine {
      * @throws IOException
      * @throws ServletException
      */
-    private PageMeta newPage(String pageId, ServletContext context,String servletPath, URLConnection groovyScriptConn, long lastModified,
+    private PageMeta newPage(String uri, ServletContext context,URLConnection groovyScriptConn, long lastModified,
                              boolean spillGroovy) throws IOException, ServletException {
-        Parse parse = new Parse(pageId, groovyScriptConn.getInputStream());
+        Parse parse = new Parse(uri, groovyScriptConn.getInputStream());
         InputStream in = parse.parse();
 
             // Make a new pageMeta
@@ -167,17 +164,17 @@ public class GroovyPagesTemplateEngine {
             return pageMeta;
         }
             // Compile the script into an object
-        GroovyClassLoader groovyLoader = new Loader(parent, context, servletPath, pageMeta.dependencies);
+        GroovyClassLoader groovyLoader = new Loader(parent, context, uri, pageMeta.dependencies);
         Class scriptClass;
         try {
             scriptClass =
-                groovyLoader.parseClass(in, pageId.substring(1));
+                groovyLoader.parseClass(in, uri.substring(1));
         } catch (CompilationFailedException e) {
-            throw new ServletException("Could not parse script: " + pageId, e);
+            throw new ServletException("Could not parse script: " + uri, e);
         }
         pageMeta.servletScriptClass = scriptClass;
         pageMeta.lastModified = lastModified;
-        pageCache.put(pageId, pageMeta);
+        pageCache.put(uri, pageMeta);
         return pageMeta;
     } // newPage()
 
@@ -206,7 +203,7 @@ public class GroovyPagesTemplateEngine {
     } // isPageNew()
 
     /**
-     * 
+     *
      * @author Graeme Rocher
      * @since 12-Jan-2006
      */
