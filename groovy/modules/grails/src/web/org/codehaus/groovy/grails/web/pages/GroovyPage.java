@@ -17,6 +17,7 @@ package org.codehaus.groovy.grails.web.pages;
 
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.Script;
+import groovy.lang.MissingPropertyException;
 import org.codehaus.groovy.grails.web.taglib.GrailsTag;
 import org.codehaus.groovy.control.CompilationFailedException;
 
@@ -114,11 +115,14 @@ public abstract class GroovyPage extends Script {
 
     public Object resolveVariable(GrailsTag tag,String attr,String expr)
             throws GroovyRuntimeException, IOException, CompilationFailedException {
-        if(tag.isDynamicAttribute(attr)) {
-            return getBinding().getVariable(expr);
-        }
-        else if(expr.startsWith("${") && expr.endsWith("}")) {
-            return expr;
+        if(expr.startsWith("${") && expr.endsWith("}")) {
+            expr = expr.substring(2, expr.length()-1);
+            try {
+                return getBinding().getVariable(expr);
+            }
+            catch(MissingPropertyException mpe) {
+                return evaluate(expr);
+            }            
         }
         else {
             return expr;
