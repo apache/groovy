@@ -54,13 +54,19 @@ import java.util.Map;
  *
  */
 public class GroovyPagesServlet extends HttpServlet /*implements GroovyObject*/ {
-	Object x;
+    /**
+     * The name of the GSP template engine registered in the servlet context
+     */
+    public static final String GSP_TEMPLATE_ENGINE = "gspTemplateEngine";
+
+    Object x;
 	private ServletContext context;
 	private boolean showSource = false;
 
 	private static Map pageCache = Collections.synchronizedMap(new HashMap());
 	private static ClassLoader parent;
     private GroovyPagesTemplateEngine engine;
+
 
     /**
      * @return the servlet context
@@ -82,9 +88,11 @@ public class GroovyPagesServlet extends HttpServlet /*implements GroovyObject*/ 
 
 		showSource = config.getInitParameter("showSource") != null;
 
+        this.engine = (GroovyPagesTemplateEngine)context.getAttribute(GSP_TEMPLATE_ENGINE);
         if(this.engine == null)   {
             this.engine = new GroovyPagesTemplateEngine();
             this.engine.setShowSource(this.showSource);
+            context.setAttribute(GSP_TEMPLATE_ENGINE,this.engine);
         }
 
     } // init()
