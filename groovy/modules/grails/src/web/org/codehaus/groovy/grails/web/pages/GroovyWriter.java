@@ -49,6 +49,19 @@ public class GroovyWriter extends PrintWriter {
 	} // GroovyWriter
 
 	/**
+	 * Private constructor.  Use getInstance() instead.
+	 * @param writer The target writer to write to
+	 * @param out
+	 * @param max
+	 */
+	private GroovyWriter(Writer writer, CharArrayWriter out, int max) {
+		super(out);
+		this.out0 = out;
+        this.out1 = writer;
+        this.max = max;
+	}
+
+    /**
 	 * Make sure streams get closed eventually.
 	 * @throws Throwable
 	 */
@@ -116,6 +129,16 @@ public class GroovyWriter extends PrintWriter {
 	} // getInstance()
 
 	/**
+	 * Static factory method to create the writer.
+	 * @param target The target writer to write too
+	 * @param max
+	 * @return  A GroovyWriter instance
+	 */
+	static GroovyWriter getInstance(Writer target, int max) {
+		return new GroovyWriter(target, new CharArrayWriter(max), max);
+	} // getInstance()
+
+    /**
 	 * Print an object.  The string produced by the <code>{@link
 	 * java.lang.String#valueOf(Object)}</code> method is translated into bytes
 	 * according to the platform's default character encoding, and these bytes

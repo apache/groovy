@@ -18,7 +18,7 @@ package org.codehaus.groovy.grails.web.pages;
 /**
  * NOTE: Based on work done by on the GSP standalone project (https://gsp.dev.java.net/)
  *
- * Lexer for GroovyPages.
+ * Lexer for GroovyPagesServlet.
  *
  * @author Troy Heninger
  * @author Graeme Rocher
@@ -132,6 +132,9 @@ class Scan implements Tokens {
                 case GSTART_TAG:
                     if(c == '>') {
                         return found(HTML,1);
+                    }
+                    else if(c == '/' && c1 == '>') {
+                       return found(GEND_TAG,1);
                     }
                     break;
                 case GEND_TAG:

@@ -65,15 +65,17 @@
     <!-- The Groovy Server Pages servlet -->
       <servlet>
         <servlet-name>gsp</servlet-name>
-        <servlet-class>org.codehaus.groovy.grails.web.pages.GroovyPages</servlet-class>
+        <servlet-class>org.codehaus.groovy.grails.web.pages.GroovyPagesServlet</servlet-class>
+        <% if(dev) { %>
         <init-param>
-            <param-name>allowSpilling</param-name>
+            <param-name>showSource</param-name>
             <param-value>1</param-value>
             <description>
               Allows developers to view the intermediade source code, when they pass
                 a spillGroovy argument in the URL.
            </description>
         </init-param>
+        <% } %>
      </servlet>
 
     <servlet-mapping>

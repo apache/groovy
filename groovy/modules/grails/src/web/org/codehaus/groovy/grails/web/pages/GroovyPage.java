@@ -15,7 +15,6 @@
  */
 package org.codehaus.groovy.grails.web.pages;
 
-import groovy.lang.Binding;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.Script;
 import org.codehaus.groovy.grails.web.taglib.GrailsTag;
@@ -116,10 +115,10 @@ public abstract class GroovyPage extends Script {
             return expr;
         }
         else if(expr.startsWith("${") && expr.endsWith("}")) {
-            return '\"' + expr + '\"';
+            return expr;
         }
         else {
-            return '\'' + expr + '\'';
+            return expr;
         }
     }
 } // GroovyPage

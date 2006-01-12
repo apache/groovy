@@ -12,7 +12,7 @@
 
     <tag>
 		<name>link</name>
-		<tag-class>org.codehaus.groovy.grails.web.taglib.LinkTag</tag-class>
+		<tag-class>org.codehaus.groovy.grails.web.taglib.jsp.JspLinkTag</tag-class>
         <body-content>scriptless</body-content>
         <attribute>
 			<name>action</name>
