@@ -15,11 +15,16 @@
 package org.codehaus.groovy.grails.web.taglib;
 
 import org.codehaus.groovy.grails.web.taglib.exceptions.GrailsTagException;
+import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.web.util.UrlPathHelper;
+import org.springframework.web.servlet.support.RequestContextUtils;
+import org.springframework.web.context.WebApplicationContext;
 
 import javax.servlet.ServletRequest;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.Writer;
@@ -38,7 +43,11 @@ public abstract class AbstractTag implements GrailsTag {
     protected UrlPathHelper urlPathHelper = new UrlPathHelper();
     protected GrailsTagRegistry registry;
     private boolean init;
-    private BeanWrapper bean;
+    protected BeanWrapper bean;
+    protected ServletContext servletContext;
+    protected ServletResponse response;
+    protected WebApplicationContext applicationContext;
+    protected GrailsApplication grailsApplication;
 
 
     public void init(GrailsTagContext context) {
@@ -50,6 +59,10 @@ public abstract class AbstractTag implements GrailsTag {
             throw new GrailsTagException("I/O error obtaining response writer: " + e.getMessage(),e);
         }
         this.request = context.getRequest();
+        this.servletContext = context.getServletContext();
+        this.response = context.getResponse();
+        this.applicationContext = RequestContextUtils.getWebApplicationContext(request, servletContext);
+        this.grailsApplication = (GrailsApplication)this.applicationContext.getBean(GrailsApplication.APPLICATION_ID);
         this.bean = new BeanWrapperImpl(this);
         if(context.getAttributes() == null)
             this.attributes = new HashMap();

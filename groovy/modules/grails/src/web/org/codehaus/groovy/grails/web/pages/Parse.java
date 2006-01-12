@@ -205,7 +205,7 @@ public class Parse implements Tokens {
             String[] tagTokens = text.split( " ");
             String tagName = tagTokens[0].trim();
             buf.append(tagName)
-               .append("',request,response,out)\n");
+               .append("',application,request,response,out)\n");
 
             for (int i = 1; i < tagTokens.length; i++) {
                 if(tagTokens[i].indexOf('=') > -1) {
@@ -227,7 +227,7 @@ public class Parse implements Tokens {
             }
         } else {
             buf.append(text)
-                .append("',request,response,out)\n");
+                .append("',application,request,response,out)\n");
         }
 
 

@@ -18,6 +18,14 @@ import java.io.IOException;
 import java.util.Iterator;
 
 /**
+ * A link tag for easily creating links to controllers and actions within grails. Examples:
+ *
+ * <code>
+ * 		<gr:link controller="entry" action="list" />
+ * 		<gr:link controller="entry"  />
+ * 		<gr:link controller="entry" action="edit" id="1" />
+ *
+ *  </code>
  * @author Graeme Rocher
  * @since 11-Jan-2006
  */

@@ -16,6 +16,7 @@ package org.codehaus.groovy.grails.web.taglib;
 
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
+import javax.servlet.ServletContext;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.HashMap;
@@ -31,6 +32,19 @@ public class DefaultGrailsTagContext implements GrailsTagContext {
     private ServletRequest request;
     private Map attributes = new HashMap();
     private ServletResponse response;
+    private ServletContext servletContext;
+
+    public ServletContext getServletContext() {
+        return servletContext;
+    }
+
+    public ServletResponse getResponse() {
+        return this.response;
+    }
+
+    public void setServletContext(ServletContext servletContext) {
+        this.servletContext = servletContext;
+    }
 
     public Writer getOut() throws IOException {
         if(out == null)

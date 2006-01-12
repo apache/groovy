@@ -18,10 +18,12 @@ import org.codehaus.groovy.grails.web.taglib.exceptions.GrailsTagException;
 
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
+import javax.servlet.ServletContext;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Collections;
 
 /**
  * A registry for holding all Grails tag implementations
@@ -32,12 +34,14 @@ import java.util.Map;
 public class GrailsTagRegistry {
     private static GrailsTagRegistry instance;
 
-    private Map tagRegistry = new HashMap();
+    private static Map tagRegistry = Collections.synchronizedMap(new HashMap());
 
     static {
-        GrailsTagRegistry tagRegistry = GrailsTagRegistry.getInstance();
+        GrailsTagRegistry tagRegistry = getInstance();
         tagRegistry.registerTag(LinkTag.TAG_NAME, LinkTag.class);
+        tagRegistry.registerTag(RenderInputTag.TAG_NAME, RenderInputTag.class);
     }
+
     private GrailsTagRegistry() {
     }
 
@@ -56,15 +60,15 @@ public class GrailsTagRegistry {
         return tagRegistry.containsKey(tagName);
     }
 
-    public GrailsTag loadTag(String tagName, ServletRequest request, ServletResponse response) {
+    public GrailsTag loadTag(String tagName, ServletContext context,ServletRequest request, ServletResponse response) {
         try {
-            return loadTag(tagName,request,response,response.getWriter());
+            return loadTag(tagName,context,request,response,response.getWriter());
         } catch (IOException e) {
             throw new GrailsTagException("I/O error retrieving response writer for ["+tagName+"]:" + e.getMessage(), e);
         }
     }
 
-    public GrailsTag loadTag(String tagName, ServletRequest request, ServletResponse response, Writer out)
+    public GrailsTag loadTag(String tagName, ServletContext servletContext,ServletRequest request, ServletResponse response, Writer out)
             throws GrailsTagException {
         if(tagRegistry.containsKey(tagName)) {
             Class tagClass = (Class)tagRegistry.get(tagName);
@@ -80,6 +84,7 @@ public class GrailsTagRegistry {
             DefaultGrailsTagContext context = new DefaultGrailsTagContext();
             context.setRequest(request);
             context.setResponse(response);
+            context.setServletContext(servletContext);
             if(out != null)
                 context.setOut(out);
             tag.init(context);

@@ -18,6 +18,9 @@ package org.codehaus.groovy.grails.web.pages;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.Script;
 import org.codehaus.groovy.grails.web.taglib.GrailsTag;
+import org.codehaus.groovy.control.CompilationFailedException;
+
+import java.io.IOException;
 
 /**
  * NOTE: Based on work done by on the GSP standalone project (https://gsp.dev.java.net/)
@@ -110,9 +113,9 @@ public abstract class GroovyPage extends Script {
     } // fromHtml()
 
     public Object resolveVariable(GrailsTag tag,String attr,String expr)
-        throws GroovyRuntimeException {
+            throws GroovyRuntimeException, IOException, CompilationFailedException {
         if(tag.isDynamicAttribute(attr)) {
-            return expr;
+            return getBinding().getVariable(expr);
         }
         else if(expr.startsWith("${") && expr.endsWith("}")) {
             return expr;

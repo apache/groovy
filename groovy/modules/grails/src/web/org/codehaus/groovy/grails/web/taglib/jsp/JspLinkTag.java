@@ -35,14 +35,8 @@ import java.io.Writer;
 import java.util.HashMap;
 import java.util.Map;
 /**
- * A link tag for easily creating links to controllers and actions within grails. Examples:
- * 
- * <code>
- * 		<gr:link controller="entry" action="list" />
- * 		<gr:link controller="entry"  />
- * 		<gr:link controller="entry" action="edit" id="1" />
- *  
- *  </code>
+ * A JSP facade that delegates to the Grails LinkTag (@see org.codehaus.groovy.grails.web.taglib.LinkTag)
+ *
  * @author Graeme Rocher
  * @since Jan 3, 2006
  */
@@ -109,6 +103,7 @@ public class JspLinkTag extends BodyTagSupport implements DynamicAttributes {
         try {
             GrailsTagRegistry tagRegistry = GrailsTagRegistry.getInstance();
             this.tag = tagRegistry.loadTag( LinkTag.TAG_NAME,
+                                pageContext.getServletContext(),
                                 (HttpServletRequest)pageContext.getRequest(),
                                 (HttpServletResponse)pageContext.getResponse());
 

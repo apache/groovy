@@ -32,8 +32,8 @@
 		<dynamic-attributes>true</dynamic-attributes>
 	</tag>
     <tag>
-        <name>scaffold</name>
-        <tag-class>org.codehaus.groovy.grails.web.taglib.ScaffoldTag</tag-class>
+        <name>renderInput</name>
+        <tag-class>org.codehaus.groovy.grails.web.taglib.jsp.JspRenderInputTag</tag-class>
         <body-content>empty</body-content>
         <attribute>
             <name>bean</name>

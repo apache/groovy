@@ -58,6 +58,8 @@ public class GroovyPagesTemplateEngine {
         this.showSource = showSource;
     }
 
+
+
     private static class PageMeta {
         private Class servletScriptClass;
         private long lastModified;
@@ -69,21 +71,45 @@ public class GroovyPagesTemplateEngine {
     public GroovyPagesTemplateEngine() {
     }
 
+    /**
+     * Create a template for the current request
+     *
+     * @param context
+     * @param request
+     * @param response
+     * @return  The created template or null if the page was not found
+     * @throws IOException
+     * @throws ServletException
+     */
     public Template createTemplate(ServletContext context, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         parent = Thread.currentThread().getContextClassLoader();
         if (parent == null) parent = getClass().getClassLoader();
 
         String uri = getPageId(request);
+        return createTemplate(uri,context,request,response);
+    }
+
+    /**
+     * Creates a template for the specified uri
+     *
+     * @param uri
+     * @param context
+     * @param request
+     * @param response
+     * @return The created template or null if the page was not found for the specified uri
+     * @throws IOException
+     * @throws ServletException
+     */
+   public Template createTemplate(String uri, ServletContext context, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         URL pageUrl = getPageUrl(context,uri);
         if (pageUrl == null) {
             context.log("GroovyPagesServlet:  \"" + pageUrl + "\" not found");
             return null;
         }
-
         boolean spillGroovy = showSource && request.getParameter("showSource") != null;
 
         PageMeta pageMeta = getPage(uri, context,pageUrl, spillGroovy);
-        return new GroovyPagesTemplate(context,request,response,pageMeta,spillGroovy);  //To change body of implemented methods use File | Settings | File Templates.
+        return new GroovyPagesTemplate(context,request,response,pageMeta,spillGroovy);
     }
 
     /**
