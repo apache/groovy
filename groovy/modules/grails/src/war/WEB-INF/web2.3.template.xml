@@ -19,9 +19,21 @@
   	<filter>
 	    <filter-name>hibernateFilter</filter-name>
     	<filter-class>org.codehaus.groovy.grails.orm.hibernate.support.GrailsOpenSessionInViewFilter</filter-class>
-   	</filter>	
-	
-	<filter-mapping>
+   	</filter>
+
+    <% if(dev) { %>
+    <filter>
+        <filter-name>reloadFilter</filter-name>
+        <filter-class>org.codehaus.groovy.grails.web.servlet.filter.GrailsReloadServletFilter</filter-class>
+    </filter>
+
+    <filter-mapping>
+        <filter-name>reloadFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+    <% } %>
+
+    <filter-mapping>
     	<filter-name>sitemesh</filter-name>
 	    <url-pattern>/*</url-pattern>
 	</filter-mapping>
@@ -29,9 +41,10 @@
 	<filter-mapping>
 	    <filter-name>hibernateFilter</filter-name>
 	     <url-pattern>/*</url-pattern>
-	</filter-mapping>		
-		
-	<servlet>
+	</filter-mapping>
+
+
+    <servlet>
 		<servlet-name>log4j</servlet-name>
 		<servlet-class>org.springframework.web.util.Log4jConfigServlet</servlet-class>
 		<load-on-startup>1</load-on-startup>

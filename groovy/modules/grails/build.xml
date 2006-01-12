@@ -30,10 +30,10 @@
 			<classpath refid="classpath"/>
 		</javac>
 		<copy todir="${grails.build}">
-			<fileset dir="${grails.src.commons}" includes="**/*.properties" />
-			<fileset dir="${grails.src.web}" includes="**/*.properties" />
-			<fileset dir="${grails.src.persistence}" includes="**/*.properties" />				
-			<fileset dir="${grails.src.scaffolding}" includes="**/*.properties" />							
+			<fileset dir="${grails.src.commons}" excludes="**/*.java" />
+			<fileset dir="${grails.src.web}" excludes="**/*.java" />
+			<fileset dir="${grails.src.persistence}" excludes="**/*.java"/>
+			<fileset dir="${grails.src.scaffolding}" excludes="**/*.java"/>							
 		</copy>
 	</target>
 	
