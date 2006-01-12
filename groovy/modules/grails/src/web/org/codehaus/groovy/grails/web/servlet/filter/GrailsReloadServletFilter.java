@@ -60,9 +60,9 @@ public class GrailsReloadServletFilter extends OncePerRequestFilter {
           } catch(Exception e) {
              LOG.error("Error loading resource copier. Save/reload disabled: " + e.getMessage(), e);
           }
-            if(copyScript != null) {
-                copyScript.invokeMethod("run", new Object[0]);
-            }
+        }
+        if(copyScript != null) {
+            copyScript.invokeMethod("run", new Object[0]);
         }
         filterChain.doFilter(httpServletRequest,httpServletResponse);
     }
