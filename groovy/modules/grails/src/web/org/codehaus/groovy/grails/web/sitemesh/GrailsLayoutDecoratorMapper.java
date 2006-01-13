@@ -40,7 +40,7 @@ import com.opensymphony.module.sitemesh.mapper.DefaultDecorator;
  */
 public class GrailsLayoutDecoratorMapper extends AbstractDecoratorMapper implements DecoratorMapper {
 
-	private static final String DEFAULT_DECORATOR_PATH = "/WEB-INF/jsp/layouts";
+	private static final String DEFAULT_DECORATOR_PATH = "/WEB-INF/grails-app/views/layouts";
 	private static final String DEFAULT_VIEW_TYPE = ".jsp";
 	
 	private static final Log LOG = LogFactory.getLog( GrailsLayoutDecoratorMapper.class );

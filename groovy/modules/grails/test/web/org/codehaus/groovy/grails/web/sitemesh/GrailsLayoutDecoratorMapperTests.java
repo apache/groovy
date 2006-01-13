@@ -25,7 +25,7 @@ public class GrailsLayoutDecoratorMapperTests extends TestCase {
 		Page page = parser.parse( new StringReader(html) ); 
 		Decorator d = m.getDecorator(request, page);
 		
-		assertEquals("/WEB-INF/jsp/layouts/test.jsp", d.getPage());
+		assertEquals("/WEB-INF/grails-app/views/layouts/test.jsp", d.getPage());
 		assertEquals("test", d.getName());
 		
 	}
