@@ -47,7 +47,7 @@ public class GrailsWrappedRuntimeException extends GrailsException {
      * @param t
      */
     public GrailsWrappedRuntimeException(Throwable t) {
-        super(this.t.getMessage(), t);
+        super(t.getMessage(), t);
         this.t = t;
 
         StringWriter sw  = new StringWriter();
