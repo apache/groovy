@@ -15,10 +15,10 @@
  */
 package org.codehaus.groovy.grails.web.pages;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import org.apache.commons.logging.LogFactory;
+import org.apache.commons.logging.Log;
+
+import java.io.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -28,17 +28,21 @@ import java.util.regex.Pattern;
  * Parsing implementation for GSP files
  *
  * @author Troy Heninger
+ * @author Graeme Rocher
+ * 
  * Date: Jan 10, 2004
  *
  */
 public class Parse implements Tokens {
-    public static final boolean DEBUG = false;
+    public static final Log LOG = LogFactory.getLog(Parse.class);
 
     private static final Pattern paraBreak = Pattern.compile("/p>\\s*<p[^>]*>", Pattern.CASE_INSENSITIVE);
     private static final Pattern rowBreak = Pattern.compile("((/td>\\s*</tr>\\s*<)?tr[^>]*>\\s*<)?td[^>]*>", Pattern.CASE_INSENSITIVE);
 
     private Scan scan;
-    private StringBuffer buf;
+    //private StringBuffer buf;
+    private StringWriter sw;
+    private GSPWriter out;
     private String className;
     private boolean finalPass = false;
     private int tagIndex;
@@ -49,38 +53,41 @@ public class Parse implements Tokens {
     } // Parse()
 
     public InputStream parse() {
-        buf = new StringBuffer();
+
+        sw = new StringWriter();
+        out = new GSPWriter(sw);
         page();
         finalPass = true;
         scan.reset();
         page();
 //		if (DEBUG) System.out.println(buf);
-        InputStream out = new ByteArrayInputStream(buf.toString().getBytes());
-        buf = null;
+        InputStream in = new ByteArrayInputStream(sw.toString().getBytes());
+        out = null;
         scan = null;
-        return out;
+        return in;
     } // parse()
 
     private void declare(boolean gsp) {
         if (finalPass) return;
-        if (DEBUG) System.out.println("parse: declare");
-        buf.append("\n");
+        if (LOG.isDebugEnabled()) LOG.debug("parse: declare");
+        out.println();
         write(scan.getToken().trim(), gsp);
-        buf.append("\n\n");
+        out.println();
+        out.println();
     } // declare()
 
     private void direct() {
         if (finalPass) return;
-        if (DEBUG) System.out.println("parse: direct");
+        if (LOG.isDebugEnabled()) LOG.debug("parse: direct");
         String text = scan.getToken();
         text = text.trim();
-//		System.out.println("direct(" + text + ')');
+//		LOG.debug("direct(" + text + ')');
         if (text.startsWith("page ")) directPage(text);
     } // direct()
 
     private void directPage(String text) {
         text = text.substring(5).trim();
-//		System.out.println("directPage(" + text + ')');
+//		LOG.debug("directPage(" + text + ')');
         Pattern pat = Pattern.compile("(\\w+)\\s*=\\s*\"([^\"]*)\"");
         Matcher mat = pat.matcher(text);
         for (int ix = 0;;) {
@@ -94,16 +101,16 @@ public class Parse implements Tokens {
 
     private void expr() {
         if (!finalPass) return;
-        if (DEBUG) System.out.println("parse: expr");
-        buf.append("out.print(");
+        if (LOG.isDebugEnabled()) LOG.debug("parse: expr");
+
         String text = scan.getToken().trim();
-        buf.append(GroovyPage.fromHtml(text));
-        buf.append(")\n");
+        out.printlnToOut(GroovyPage.fromHtml(text));
+
     } // expr()
 
     private void html() {
         if (!finalPass) return;
-        if (DEBUG) System.out.println("parse: html");
+        if (LOG.isDebugEnabled()) LOG.debug("parse: html");
         StringBuffer text = new StringBuffer(scan.getToken());
         while (text.length() > 80) {
             int end = 80;
@@ -151,16 +158,16 @@ public class Parse implements Tokens {
     } // match()
 
     private void page() {
-        if (DEBUG) System.out.println("parse: page");
+        if (LOG.isDebugEnabled()) LOG.debug("parse: page");
         if (finalPass) {
-            buf.append("\nclass ");
-            buf.append(className);
-			buf.append(" extends GroovyPage {\n");
-//            buf.append(" extends Script {\n");  //implements GroovyPage {\n");
-            buf.append("public Object run() {\n");
+            out.println();
+            out.print("class ");
+            out.print(className);
+            out.println(" extends GroovyPage {");
+            out.println("public Object run() {");
         } else {
-            buf.append("import org.codehaus.groovy.grails.web.pages.GroovyPage\n");
-            buf.append("import org.codehaus.groovy.grails.web.taglib.*\n");
+            out.println("import org.codehaus.groovy.grails.web.pages.GroovyPage");
+            out.println("import org.codehaus.groovy.grails.web.taglib.*");
         }
         loop: for (;;) {
             int state = scan.nextToken();
@@ -180,17 +187,17 @@ public class Parse implements Tokens {
             }
         }
         if (finalPass) {
-            buf.append("}\n}\n");
-//			buf.append("} // run()\n");
+            out.println("}");
+            out.println("}");
         }
     } // page()
 
     private void endTag() {
         if (!finalPass) return;
 
-       buf.append("tag")
-            .append(tagIndex)
-            .append(".doEndTag()\n");
+       out.print("tag");
+       out.print(tagIndex);
+       out.println(".doEndTag()\n");
        tagIndex--;
     }
 
@@ -198,58 +205,60 @@ public class Parse implements Tokens {
         if (!finalPass) return;
         tagIndex++;
         String text = scan.getToken().trim();
-        buf.append("tag")
-            .append(tagIndex)
-            .append("= grailsTagRegistry.loadTag('");
+        out.print("tag");
+        out.print(tagIndex);
+        out.print("= grailsTagRegistry.loadTag('");
         if(text.indexOf(' ') > -1) {
             String[] tagTokens = text.split( " ");
             String tagName = tagTokens[0].trim();
-            buf.append(tagName)
-               .append("',application,request,response,out)\n");
+            out.print(tagName);
+            out.println("',application,request,response,out)");
 
             for (int i = 1; i < tagTokens.length; i++) {
                 if(tagTokens[i].indexOf('=') > -1) {
                     String[] attr = tagTokens[i].split("=");
                     String name = attr[0].trim();
                     String val = attr[1].trim().substring(1,attr[1].length() - 1);
-                    buf.append("tag")
-                       .append(tagIndex)
-                       .append(".setAttribute('")
-                       .append(name)
-                       .append("', resolveVariable(tag")
-                       .append(tagIndex)
-                       .append(",'")
-                       .append(name)
-                       .append("','")
-                       .append(val)
-                       .append("'))\n");
+
+                    out.print("tag");
+                    out.print(tagIndex);
+                    out.print(".setAttribute('");
+                    out.print(name);
+                    out.print("', resolveVariable(tag");
+                    out.print(tagIndex);
+                    out.print(",'");
+                    out.print(name);
+                    out.print("','");
+                    out.print(val);
+                    out.println("'))");
                 }
             }
         } else {
-            buf.append(text)
-                .append("',application,request,response,out)\n");
+            out.print(text);
+            out.println("',application,request,response,out)");
         }
 
 
 
-        buf.append("tag")
-           .append(tagIndex)
-           .append(".doStartTag()")
-           .append('\n');
+        out.print("tag");
+        out.print(tagIndex);
+        out.println(".doStartTag()");
+
     }
 
     private void pageImport(String value) {
-//		System.out.println("pageImport(" + value + ')');
+//		LOG.debug("pageImport(" + value + ')');
         String[] imports = Pattern.compile(";").split(value.subSequence(0, value.length()));
         for (int ix = 0; ix < imports.length; ix++) {
-            buf.append("import ");
-            buf.append(imports[ix]);
-            buf.append('\n');
+            out.print("import ");
+            out.print(imports[ix]);
+            out.println();
         }
     } // pageImport()
 
     private void print(CharSequence text) {
-        buf.append("out.print('");
+        StringBuffer buf = new StringBuffer();
+        buf.append('\'');
         for (int ix = 0, ixz = text.length(); ix < ixz; ix++) {
             char c = text.charAt(ix);
             String rep = null;
@@ -261,7 +270,8 @@ public class Parse implements Tokens {
             if (rep != null) buf.append(rep);
             else buf.append(c);
         }
-        buf.append("')\n");
+        buf.append('\'');
+        out.printlnToOut(buf.toString());
     } // print()
 
     private String readStream(InputStream in) throws IOException {
@@ -282,15 +292,16 @@ public class Parse implements Tokens {
 
     private void script(boolean gsp) {
         if (!finalPass) return;
-        if (DEBUG) System.out.println("parse: script");
-        buf.append("\n");
+        if (LOG.isDebugEnabled()) LOG.debug("parse: script");
+        out.println();
         write(scan.getToken().trim(), gsp);
-        buf.append("\n\n");
+        out.println();
+        out.println();
     } // script()
 
     private void write(CharSequence text, boolean gsp) {
         if (!gsp) {
-            buf.append(text);
+            out.print(text);
             return;
         }
         for (int ix = 0, ixz = text.length(); ix < ixz; ix++) {
@@ -330,8 +341,8 @@ public class Parse implements Tokens {
                     }
                 }
             }
-            if (rep != null) buf.append(rep);
-            else buf.append(c);
+            if (rep != null) out.print(rep);
+            else out.print(c);
         }
     } // write()
 

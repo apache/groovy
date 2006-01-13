@@ -113,6 +113,8 @@ public abstract class GroovyPage extends Script {
         return buf.toString();
     } // fromHtml()
 
+    
+
     public Object resolveVariable(GrailsTag tag,String attr,String expr)
             throws GroovyRuntimeException, IOException, CompilationFailedException {
         if(expr.startsWith("${") && expr.endsWith("}")) {

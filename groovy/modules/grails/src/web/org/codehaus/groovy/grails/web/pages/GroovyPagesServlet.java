@@ -137,7 +137,7 @@ public class GroovyPagesServlet extends HttpServlet /*implements GroovyObject*/ 
 
         Template t = engine.createTemplate(context,request,response);
         Writable w = t.make();
-		Writer out = GroovyWriter.getInstance(response, 8192);
+		Writer out = GSPResonseWriter.getInstance(response, 8192);
         try {
             w.writeTo(out);
         }
