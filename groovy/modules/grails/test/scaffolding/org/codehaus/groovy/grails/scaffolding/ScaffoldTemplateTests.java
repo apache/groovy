@@ -55,7 +55,7 @@ public class ScaffoldTemplateTests  extends TestCase {
     public void testBooleanTemplate() throws Exception {
         SimpleTemplateEngine templateEngine = new SimpleTemplateEngine();
 
-        Template template = templateEngine.createTemplate(new File("src/grails/templates/grails-app/views/scaffolding/java.lang.Boolean.template"));
+        Template template = templateEngine.createTemplate(new File("src/grails/templates/grails-app/views/scaffolding/java.lang.Boolean.gsp"));
         Map binding = new HashMap();
 
         binding.put("name", "testBoolean");
@@ -83,7 +83,7 @@ public class ScaffoldTemplateTests  extends TestCase {
     public void testDateTemplate() throws Exception {
         SimpleTemplateEngine templateEngine = new SimpleTemplateEngine();
 
-        Template template = templateEngine.createTemplate(new File("src/grails/templates/grails-app/views/scaffolding/java.util.Date.template"));
+        Template template = templateEngine.createTemplate(new File("src/grails/templates/grails-app/views/scaffolding/java.util.Date.gsp"));
         Map binding = new HashMap();
 
         binding.put("name", "testDate");
@@ -101,7 +101,7 @@ public class ScaffoldTemplateTests  extends TestCase {
     public void testLocaleTemplate() throws Exception {
         SimpleTemplateEngine templateEngine = new SimpleTemplateEngine();
 
-        Template template = templateEngine.createTemplate(new File("src/grails/templates/grails-app/views/scaffolding/java.util.Locale.template"));
+        Template template = templateEngine.createTemplate(new File("src/grails/templates/grails-app/views/scaffolding/java.util.Locale.gsp"));
         Map binding = new HashMap();
 
         binding.put("name", "testLocale");
@@ -115,7 +115,7 @@ public class ScaffoldTemplateTests  extends TestCase {
     public void testTimeZoneTemplate() throws Exception {
         SimpleTemplateEngine templateEngine = new SimpleTemplateEngine();
 
-        Template template = templateEngine.createTemplate(new File("src/grails/templates/grails-app/views/scaffolding/java.util.TimeZone.template"));
+        Template template = templateEngine.createTemplate(new File("src/grails/templates/grails-app/views/scaffolding/java.util.TimeZone.gsp"));
         Map binding = new HashMap();
 
         binding.put("name", "testTimeZone");
@@ -128,7 +128,7 @@ public class ScaffoldTemplateTests  extends TestCase {
     public void testCurrencyTemplate() throws Exception {
         SimpleTemplateEngine templateEngine = new SimpleTemplateEngine();
 
-        Template template = templateEngine.createTemplate(new File("src/grails/templates/grails-app/views/scaffolding/java.util.Currency.template"));
+        Template template = templateEngine.createTemplate(new File("src/grails/templates/grails-app/views/scaffolding/java.util.Currency.gsp"));
         Map binding = new HashMap();
 
         binding.put("name", "testCurrency");
@@ -141,7 +141,7 @@ public class ScaffoldTemplateTests  extends TestCase {
     public void testNumberTemplate() throws Exception {
         SimpleTemplateEngine templateEngine = new SimpleTemplateEngine();
 
-        Template template = templateEngine.createTemplate(new File("src/grails/templates/grails-app/views/scaffolding/java.lang.Number.template"));
+        Template template = templateEngine.createTemplate(new File("src/grails/templates/grails-app/views/scaffolding/java.lang.Number.gsp"));
         Map binding = new HashMap();
 
         binding.put("name", "testNumber");
