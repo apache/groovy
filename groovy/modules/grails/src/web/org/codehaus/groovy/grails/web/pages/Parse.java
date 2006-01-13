@@ -124,9 +124,23 @@ public class Parse implements Tokens {
         }
     } // html()
 
-    private void makeName(String name) {
-        int slash = name.lastIndexOf('/');
-        if (slash >= 0) name = name.substring(slash + 1);
+    private void makeName(String uri) {
+	    String name;
+        int slash = uri.lastIndexOf('/');
+        if (slash > -1) {
+            name = uri.substring(slash + 1);
+            uri = uri.substring(0,(uri.length() - 1) - name.length());
+            while(uri.endsWith("/")) {
+	            uri = uri.substring(0,uri.length() -1);
+            }
+            slash = uri.lastIndexOf('/');
+            if(slash > -1) {
+                    name = uri.substring(slash + 1) + '_' + name;                  
+            }
+        }
+        else {
+            name = uri;
+        }
         StringBuffer buf = new StringBuffer(name.length());
         for (int ix = 0, ixz = name.length(); ix < ixz; ix++) {
             char c = name.charAt(ix);
