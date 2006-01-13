@@ -24,7 +24,7 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.handler.SimpleMappingExceptionResolver;
 
 /**
- *  Exception resolver that wraps any GroovyRuntimeExceptions with a GrailsWrappedException instance
+ *  Exception resolver that wraps any runtime exceptions with a GrailsWrappedException instance
  * 
  * @author Graeme Rocher
  * @since 22 Dec, 2005
@@ -38,12 +38,8 @@ public class GrailsExceptionResolver extends SimpleMappingExceptionResolver {
 
 		ModelAndView mv = super.resolveException(request, response, handler, ex);
 			
-		if(ex instanceof GroovyRuntimeException) {
-			GroovyRuntimeException gre = (GroovyRuntimeException)ex;
-			GrailsWrappedRuntimeException gwrex = new GrailsWrappedRuntimeException(gre);
-			mv.addObject("exception",gwrex);
-		}
-				
+		GrailsWrappedRuntimeException gwrex = new GrailsWrappedRuntimeException(ex);
+		mv.addObject("exception",gwrex);
 		return mv;
 	}
 

@@ -26,158 +26,121 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.groovy.ast.ASTNode;
-import org.codehaus.groovy.ast.ModuleNode;
+import org.codehaus.groovy.grails.exceptions.GrailsException;
 
-import groovy.lang.GroovyRuntimeException;
 /**
- *  An exception that wraps a GroovyRuntimeException and attempts to extract more relevent diagnostic messages from the stack trace
+ *  An exception that wraps a Grails RuntimeException and attempts to extract more relevent diagnostic messages from the stack trace
  * 
  * @author Graeme Rocher
  * @since 22 Dec, 2005
  */
-public class GrailsWrappedRuntimeException extends GroovyRuntimeException {
+public class GrailsWrappedRuntimeException extends GrailsException {
 
-	private static final Log LOG  = LogFactory.getLog(GrailsWrappedRuntimeException.class);
-	private GroovyRuntimeException gre;
-	private String className;
-	private int lineNumber = - 1;
-	private String stackTrace;
-	private String[] codeSnippet = new String[0];
-	
-	/**
-	 * @param gre
-	 */
-	public GrailsWrappedRuntimeException(GroovyRuntimeException gre) {
-		super(gre.getMessage(), gre);
-		this.gre = gre;
-		
-		if(gre.getModule() == null) {
-			StringWriter sw  = new StringWriter();
-			PrintWriter pw = new PrintWriter(sw);
-			gre.printStackTrace(pw);
-			this.stackTrace = sw.toString();
-			Pattern extractDetails = Pattern.compile("\\((\\w+)\\.groovy:(\\d+)\\)");
-			Matcher matcher = extractDetails.matcher(stackTrace);			
-			if(matcher.find()) {
-				this.className = matcher.group(1);
-				LineNumberReader reader = null;
-				try {
-					this.lineNumber = Integer.parseInt(matcher.group(2));
-					if(getLineNumber() > -1) {
-						String fileName = this.className.replace('.', '/') + ".groovy";
-						InputStream in = getClass().getClassLoader().getResourceAsStream(fileName);
-						if(in != null) {
-							reader = new LineNumberReader(new InputStreamReader( in ));
-							String currentLine = reader.readLine();
-							StringBuffer buf = new StringBuffer();
-							while(currentLine != null) {
+    private static final Log LOG  = LogFactory.getLog(GrailsWrappedRuntimeException.class);
+    private Throwable t;
+    private String className = "Unknown";
+    private int lineNumber = - 1;
+    private String stackTrace;
+    private String[] codeSnippet = new String[0];
 
-								int currentLineNumber = reader.getLineNumber();
-								if(currentLineNumber == this.lineNumber) {
-									buf.append(currentLineNumber);
-									buf.append(": ");
-									buf.append(currentLine);
-									buf.append("\n");
-								}	
-								else if(currentLineNumber == this.lineNumber + 1) {
-									buf.append(currentLineNumber);
-									buf.append(": ");
-									buf.append(currentLine);
-									break;
-								}								
-								currentLine = reader.readLine();
-							}
-							this.codeSnippet = buf.toString().split("\n");
-						}
-					}					
-				}
-				catch(NumberFormatException nfex) {
-					// ignore
-				} 
-				catch (IOException e) {
-					LOG.warn("[GrailsWrappedRuntimeException] I/O error reading line diagnostics: " + e.getMessage(), e);
-				}
-				finally {
-					if(reader != null)
-						try {
-							reader.close();
-						} catch (IOException e) {
-							// ignore
-						}
-				}
+    /**
+     * @param t
+     */
+    public GrailsWrappedRuntimeException(Throwable t) {
+        super(this.t.getMessage(), t);
+        this.t = t;
 
-			}
-		}
-	}
+        StringWriter sw  = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        this.t.printStackTrace(pw);
+        this.stackTrace = sw.toString();
+        Pattern extractDetails = Pattern.compile("\\((\\w+)\\.groovy:(\\d+)\\)");
+        Matcher matcher = extractDetails.matcher(stackTrace);
+        if(matcher.find()) {
+            this.className = matcher.group(1);
+            LineNumberReader reader = null;
+            try {
+                this.lineNumber = Integer.parseInt(matcher.group(2));
+                if(getLineNumber() > -1) {
+                    String fileName = this.className.replace('.', '/') + ".groovy";
+                    InputStream in = getClass().getClassLoader().getResourceAsStream(fileName);
+                    if(in != null) {
+                        reader = new LineNumberReader(new InputStreamReader( in ));
+                        String currentLine = reader.readLine();
+                        StringBuffer buf = new StringBuffer();
+                        while(currentLine != null) {
 
-	/**
-	 * @return Returns the line.
-	 */
-	public String[] getCodeSnippet() {
-		return this.codeSnippet;
-	}
+                            int currentLineNumber = reader.getLineNumber();
+                            if(currentLineNumber == this.lineNumber) {
+                                buf.append(currentLineNumber)
+                                   .append(": ")
+                                   .append(currentLine)
+                                   .append("\n");
+                            }
+                            else if(currentLineNumber == this.lineNumber + 1) {
+                                buf.append(currentLineNumber)
+                                   .append(": ")
+                                   .append(currentLine);
+                                break;
+                            }
+                            currentLine = reader.readLine();
+                        }
+                        this.codeSnippet = buf.toString().split("\n");
+                    }
+                }
+            }
+            catch(NumberFormatException nfex) {
+                // ignore
+            }
+            catch (IOException e) {
+                LOG.warn("[GrailsWrappedRuntimeException] I/O error reading line diagnostics: " + e.getMessage(), e);
+            }
+            finally {
+                if(reader != null)
+                    try {
+                        reader.close();
+                    } catch (IOException e) {
+                        // ignore
+                    }
+            }
 
-	/**
-	 * @return Returns the className.
-	 */
-	public String getClassName() {
-		if(getModule() != null) {
-			return getModule().getDescription();
-		}
-		return className;
-	}
+        }
+    }
 
-	/**
-	 * @return Returns the lineNumber.
-	 */
-	public int getLineNumber() {
-		if(getNode() != null) {
-			return getNode().getLineNumber();
-		}
-		return lineNumber;
-	}
+    /**
+     * @return Returns the line.
+     */
+    public String[] getCodeSnippet() {
+        return this.codeSnippet;
+    }
 
-	/**
-	 * @return Returns the stackTrace.
-	 */
-	public String getStackTraceText() {
-		return stackTrace;
-	}
+    /**
+     * @return Returns the className.
+     */
+    public String getClassName() {
+        return className;
+    }
 
-	/* (non-Javadoc)
-	 * @see groovy.lang.GroovyRuntimeException#getMessage()
-	 */
-	public String getMessage() {
-		return gre.getMessage();
-	}
+    /**
+     * @return Returns the lineNumber.
+     */
+    public int getLineNumber() {
+        return lineNumber;
+    }
 
-	/* (non-Javadoc)
-	 * @see groovy.lang.GroovyRuntimeException#getMessageWithoutLocationText()
-	 */
-	public String getMessageWithoutLocationText() {
-		return gre.getMessageWithoutLocationText();
-	}
+    /**
+     * @return Returns the stackTrace.
+     */
+    public String getStackTraceText() {
+        return stackTrace;
+    }
 
-	/* (non-Javadoc)
-	 * @see groovy.lang.GroovyRuntimeException#getModule()
-	 */
-	public ModuleNode getModule() {
-		return gre.getModule();
-	}
+    /* (non-Javadoc)
+      * @see groovy.lang.GroovyRuntimeException#getMessage()
+      */
+    public String getMessage() {
+        return t.getMessage();
+    }
 
-	/* (non-Javadoc)
-	 * @see groovy.lang.GroovyRuntimeException#getNode()
-	 */
-	public ASTNode getNode() {
-		return gre.getNode();
-	}
-
-	/* (non-Javadoc)
-	 * @see groovy.lang.GroovyRuntimeException#setModule(org.codehaus.groovy.ast.ModuleNode)
-	 */
-	public void setModule(ModuleNode module) {
-		gre.setModule(module);
-	}
 
 }
