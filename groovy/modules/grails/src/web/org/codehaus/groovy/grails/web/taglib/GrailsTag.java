@@ -13,7 +13,7 @@ import java.util.Map;
  */
 public interface GrailsTag {
 
-    void init(GrailsTagContext context);
+    void init(Map tagContext);
     /**
      *
      * @return The tag registry instance
@@ -60,3 +60,4 @@ public interface GrailsTag {
      */
     boolean isDynamicAttribute(String attr);
 }
+                            

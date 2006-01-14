@@ -15,6 +15,7 @@
 package org.codehaus.groovy.grails.web.taglib;
 
 import org.codehaus.groovy.grails.web.taglib.exceptions.GrailsTagException;
+import org.codehaus.groovy.grails.web.pages.GroovyPage;
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
@@ -50,24 +51,20 @@ public abstract class AbstractTag implements GrailsTag {
     protected GrailsApplication grailsApplication;
 
 
-    public void init(GrailsTagContext context) {
+    public void init(Map context) {
         if(context == null)
             throw new IllegalArgumentException("Argument 'context' cannot be null");
-        try {
-            this.out = context.getOut();
-        } catch (IOException e) {
-            throw new GrailsTagException("I/O error obtaining response writer: " + e.getMessage(),e);
-        }
-        this.request = context.getRequest();
-        this.servletContext = context.getServletContext();
-        this.response = context.getResponse();
+        this.out = (Writer)context.get(GroovyPage.OUT);
+        this.request = (ServletRequest)context.get(GroovyPage.REQUEST);
+        this.servletContext = (ServletContext)context.get(GroovyPage.SERVLET_CONTEXT);
+        this.response = (ServletResponse)context.get(GroovyPage.RESPONSE);
         this.applicationContext = RequestContextUtils.getWebApplicationContext(request, servletContext);
         this.grailsApplication = (GrailsApplication)this.applicationContext.getBean(GrailsApplication.APPLICATION_ID);
         this.bean = new BeanWrapperImpl(this);
-        if(context.getAttributes() == null)
+        if(context.get(GroovyPage.ATTRIBUTES) == null)
             this.attributes = new HashMap();
         else {
-            this.attributes = context.getAttributes();
+            this.attributes = (Map)context.get(GroovyPage.ATTRIBUTES);
         }
         this.contextPath = urlPathHelper.getContextPath( (HttpServletRequest)this.request );
         this.init = true;

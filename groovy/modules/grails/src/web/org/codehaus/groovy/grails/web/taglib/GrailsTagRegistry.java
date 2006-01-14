@@ -15,6 +15,7 @@
 package org.codehaus.groovy.grails.web.taglib;
 
 import org.codehaus.groovy.grails.web.taglib.exceptions.GrailsTagException;
+import org.codehaus.groovy.grails.web.pages.GroovyPage;
 
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
@@ -81,12 +82,13 @@ public class GrailsTagRegistry {
             } catch (IllegalAccessException e) {
                 throw new GrailsTagException("Illegal access error loading tag ["+tagName+"]: " + e.getMessage(), e);
             }
-            DefaultGrailsTagContext context = new DefaultGrailsTagContext();
-            context.setRequest(request);
-            context.setResponse(response);
-            context.setServletContext(servletContext);
+            Map context = new HashMap();
+            context.put(GroovyPage.REQUEST,request);
+            context.put(GroovyPage.RESPONSE,response);
+            context.put(GroovyPage.SERVLET_CONTEXT, servletContext);
+
             if(out != null)
-                context.setOut(out);
+                context.put(GroovyPage.OUT,out);
             tag.init(context);
             return tag;
         }

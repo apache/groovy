@@ -34,6 +34,11 @@ import java.io.IOException;
  *
  */
 public abstract class GroovyPage extends Script {
+    public static final String REQUEST = "request";
+    public static final String SERVLET_CONTEXT = "application";
+    public static final String RESPONSE = "response";
+    public static final String OUT = "out";
+    public static final String ATTRIBUTES = "attributes";
 
 /*	do noething in here for the moment
 */
