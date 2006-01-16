@@ -121,4 +121,27 @@ public interface GrailsApplication {
 	 * @return An array of BootStrap classes
 	 */
 	public GrailsBootstrapClass[] getGrailsBootstrapClasses();
+
+    /**
+     * <p>Returns all the tag lib classes for the Grails application
+     *
+     * @return An array of TagLib classes
+     */
+    public GrailsTagLibClass[] getGrailsTabLibClasses();
+
+    /**
+     * <p>Returns a tag lib class for the specified name
+     *
+     * @param tagLibName The name of the taglib class
+     * @return A taglib class instance or null if non exists
+     */
+    public GrailsTagLibClass getGrailsTagLibClass(String tagLibName);
+
+    /**
+     * <p>Retrieves all of the tag lib classes appropriate for the specified controller
+     *
+     * @param controllerName The name of the controller
+     * @return A array of tag lib classes
+     */
+    public GrailsTagLibClass getTagLibClassForController(String controllerName);
 }

@@ -16,14 +16,13 @@
 package org.codehaus.groovy.grails.web.taglib.jsp;
 
 import org.apache.commons.lang.StringUtils;
+import org.codehaus.groovy.grails.web.pages.GroovyPage;
 import org.codehaus.groovy.grails.web.taglib.GrailsTag;
 import org.codehaus.groovy.grails.web.taglib.GrailsTagRegistry;
 import org.codehaus.groovy.grails.web.taglib.LinkTag;
 import org.springframework.web.util.ExpressionEvaluationUtils;
 import org.springframework.web.util.UrlPathHelper;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspTagException;
 import javax.servlet.jsp.JspWriter;
@@ -100,18 +99,16 @@ public class JspLinkTag extends BodyTagSupport implements DynamicAttributes {
             attributes.put(LinkTag.ATTRIBUTE_ID, evalId);
         }
 
-        try {
-            GrailsTagRegistry tagRegistry = GrailsTagRegistry.getInstance();
-            this.tag = tagRegistry.loadTag( LinkTag.TAG_NAME,
-                                pageContext.getServletContext(),
-                                (HttpServletRequest)pageContext.getRequest(),
-                                (HttpServletResponse)pageContext.getResponse());
+        GrailsTagRegistry tagRegistry = GrailsTagRegistry.getInstance();
 
-            this.tag.setAttributes(attributes);            
-            tag.doStartTag();
-		} catch (IOException e) {
-			throw new JspTagException(e.getMessage(),e);
-		}
+        Map tagContext = new HashMap();
+        tagContext.put(GroovyPage.REQUEST, pageContext.getRequest());
+        tagContext.put(GroovyPage.RESPONSE, pageContext.getResponse());
+        tagContext.put(GroovyPage.SERVLET_CONTEXT, pageContext.getServletContext());
+        this.tag = tagRegistry.newTag( LinkTag.TAG_NAME );
+        this.tag.init(tagContext);
+        this.tag.setAttributes(attributes);
+        tag.doStartTag();
 		return EVAL_BODY_BUFFERED;
 	}
 
@@ -134,11 +131,7 @@ public class JspLinkTag extends BodyTagSupport implements DynamicAttributes {
 	 * @see javax.servlet.jsp.tagext.BodyTagSupport#doEndTag()
 	 */
 	public int doEndTag() throws JspException {
-		try {
-			tag.doEndTag();
-		} catch (IOException e) {
-			throw new JspException(e.getMessage(),e);
-		}
+    	tag.doEndTag();
 		return super.doEndTag();
 	}
 

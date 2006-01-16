@@ -249,7 +249,25 @@ public class SpringConfig {
 		if (simpleUrlHandlerMapping != null) {
 			simpleUrlHandlerMapping.setProperty("mappings", SpringConfigUtils.createProperties(urlMappings));
 		}
-	}
+
+        GrailsTagLibClass[] tagLibs = application.getGrailsTabLibClasses();
+        for (int i = 0; i < tagLibs.length; i++) {
+            GrailsTagLibClass grailsTagLib = tagLibs[i];
+            Bean taglibClass = SpringConfigUtils.createSingletonBean(MethodInvokingFactoryBean.class);
+            taglibClass.setProperty("targetObject", SpringConfigUtils.createBeanReference("grailsApplication"));
+            taglibClass.setProperty("targetMethod", SpringConfigUtils.createLiteralValue("getGrailsTagLibClass"));
+            taglibClass.setProperty("arguments", SpringConfigUtils.createLiteralValue(grailsTagLib.getFullName()));
+            beanReferences.add(SpringConfigUtils.createBeanReference(grailsTagLib.getFullName() + "Class", taglibClass));
+            controllerClassBeans.put(grailsTagLib.getFullName() + "Class", taglibClass);
+
+            Bean taglib = SpringConfigUtils.createPrototypeBean();
+            taglib.setFactoryBean(SpringConfigUtils.createBeanReference(grailsTagLib.getFullName() + "Class"));
+            taglib.setFactoryMethod("newInstance");
+            taglib.setAutowire("byName");
+
+            beanReferences.add(SpringConfigUtils.createBeanReference(grailsTagLib.getFullName(), taglib));
+        }
+    }
 
 	private void populateDataSourceReferences(Collection beanReferences) {
 		boolean dependsOnHsqldbServer = false;

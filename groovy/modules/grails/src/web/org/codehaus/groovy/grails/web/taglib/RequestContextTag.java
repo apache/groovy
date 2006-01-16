@@ -14,20 +14,18 @@
  */
 package org.codehaus.groovy.grails.web.taglib;
 
-import org.codehaus.groovy.grails.web.taglib.exceptions.GrailsTagException;
-import org.codehaus.groovy.grails.web.pages.GroovyPage;
 import org.codehaus.groovy.grails.commons.GrailsApplication;
+import org.codehaus.groovy.grails.web.pages.GroovyPage;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
-import org.springframework.web.util.UrlPathHelper;
-import org.springframework.web.servlet.support.RequestContextUtils;
 import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.servlet.support.RequestContextUtils;
+import org.springframework.web.util.UrlPathHelper;
 
-import javax.servlet.ServletRequest;
 import javax.servlet.ServletContext;
+import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
 import java.io.Writer;
 import java.util.HashMap;
 import java.util.Map;
@@ -36,9 +34,9 @@ import java.util.Map;
  * @author Graeme Rocher
  * @since 11-Jan-2006
  */
-public abstract class AbstractTag implements GrailsTag {
+public abstract class RequestContextTag implements GrailsTag {
     protected Writer out;
-    protected Map attributes;
+    protected Map attributes = new HashMap();
     protected ServletRequest request;
     protected String contextPath;
     protected UrlPathHelper urlPathHelper = new UrlPathHelper();
@@ -49,7 +47,16 @@ public abstract class AbstractTag implements GrailsTag {
     protected ServletResponse response;
     protected WebApplicationContext applicationContext;
     protected GrailsApplication grailsApplication;
+    private String name;
 
+    protected RequestContextTag(String name) {
+        this.name = name;
+        this.bean = new BeanWrapperImpl(this);
+    }
+
+    public String getName() {
+        return this.name;
+    }
 
     public void init(Map context) {
         if(context == null)
@@ -60,7 +67,6 @@ public abstract class AbstractTag implements GrailsTag {
         this.response = (ServletResponse)context.get(GroovyPage.RESPONSE);
         this.applicationContext = RequestContextUtils.getWebApplicationContext(request, servletContext);
         this.grailsApplication = (GrailsApplication)this.applicationContext.getBean(GrailsApplication.APPLICATION_ID);
-        this.bean = new BeanWrapperImpl(this);
         if(context.get(GroovyPage.ATTRIBUTES) == null)
             this.attributes = new HashMap();
         else {
@@ -90,17 +96,17 @@ public abstract class AbstractTag implements GrailsTag {
         this.attributes = attributes;
     }
 
-    public void doStartTag() throws IOException {
+    public void doStartTag() {
         if(!init)
             throw new IllegalStateException("Tag not initialised called 'init' first");
 
         doStartTagInternal();
     }
 
-    protected abstract void doStartTagInternal()  throws IOException;
-    protected abstract void doEndTagInternal()  throws IOException;
+    protected abstract void doStartTagInternal() ;
+    protected abstract void doEndTagInternal() ;
 
-    public void doEndTag() throws IOException {
+    public void doEndTag()  {
         if(!init)
             throw new IllegalStateException("Tag not initialised called 'init' first");
 

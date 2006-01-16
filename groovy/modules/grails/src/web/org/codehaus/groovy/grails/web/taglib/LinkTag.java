@@ -14,6 +14,8 @@
  */
 package org.codehaus.groovy.grails.web.taglib;
 
+import org.codehaus.groovy.grails.web.taglib.exceptions.GrailsTagException;
+
 import java.io.IOException;
 import java.util.Iterator;
 
@@ -29,14 +31,18 @@ import java.util.Iterator;
  * @author Graeme Rocher
  * @since 11-Jan-2006
  */
-public class LinkTag extends AbstractTag {
+public class LinkTag extends RequestContextTag {
     public static final String TAG_NAME = "link";
 
     public static final String ATTRIBUTE_CONTROLLER = "controller";
     public static final String ATTRIBUTE_ACTION = "action";
     public static final String ATTRIBUTE_ID = "id";
 
-    protected void doStartTagInternal() throws IOException {
+    protected LinkTag() {
+        super(TAG_NAME);
+    }
+
+    protected void doStartTagInternal() {
        StringBuffer buf = new StringBuffer();
         buf.append("<a href=\"")
             .append(contextPath)
@@ -65,11 +71,19 @@ public class LinkTag extends AbstractTag {
                 }
             }
             buf.append('>');
+        try {
             out.write(buf.toString());
+        } catch (IOException e) {
+            throw new GrailsTagException("I/O error writing tag ["+getName()+"] to writer: " + e.getMessage(),e);
+        }
     }
 
-    protected void doEndTagInternal() throws IOException {
-        out.write("</a>");
+    protected void doEndTagInternal() {
+        try {
+            out.write("</a>");
+        } catch (IOException e) {
+            throw new GrailsTagException("I/O error writing tag ["+getName()+"] to writer: " + e.getMessage(),e);
+        }
     }
 
     public boolean isDynamicAttribute(String attr) {

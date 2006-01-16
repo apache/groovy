@@ -15,13 +15,16 @@
  */
 package org.codehaus.groovy.grails.web.pages;
 
-import groovy.lang.GroovyRuntimeException;
-import groovy.lang.Script;
-import groovy.lang.MissingPropertyException;
-import org.codehaus.groovy.grails.web.taglib.GrailsTag;
+import groovy.lang.*;
 import org.codehaus.groovy.control.CompilationFailedException;
+import org.codehaus.groovy.grails.commons.GrailsTagLibClass;
+import org.codehaus.groovy.grails.web.metaclass.TagLibDynamicMethods;
+import org.codehaus.groovy.grails.web.taglib.GrailsTag;
+import org.codehaus.groovy.grails.web.taglib.exceptions.GrailsTagException;
 
 import java.io.IOException;
+import java.io.Writer;
+import java.util.Map;
 
 /**
  * NOTE: Based on work done by on the GSP standalone project (https://gsp.dev.java.net/)
@@ -39,6 +42,9 @@ public abstract class GroovyPage extends Script {
     public static final String RESPONSE = "response";
     public static final String OUT = "out";
     public static final String ATTRIBUTES = "attributes";
+    public static final String APPLICATION_CONTEXT = "applicationContext";
+    public static final String SESSION = "session";
+    public static final String PARAMS = "params";
 
 /*	do noething in here for the moment
 */
@@ -118,7 +124,7 @@ public abstract class GroovyPage extends Script {
         return buf.toString();
     } // fromHtml()
 
-    
+
 
     public Object resolveVariable(GrailsTag tag,String attr,String expr)
             throws GroovyRuntimeException, IOException, CompilationFailedException {
@@ -129,10 +135,51 @@ public abstract class GroovyPage extends Script {
             }
             catch(MissingPropertyException mpe) {
                 return evaluate(expr);
-            }            
+            }
         }
         else {
             return expr;
+        }
+    }
+
+
+    /**
+     * Attempts to invokes a dynamic tag
+     *
+     * @param tagName The name of the tag
+     * @param attrs The tags attributes
+     * @param body  The body of the tag as a closure
+     */
+    public void invokeTag(String tagName, Map attrs, Closure body) {
+        Binding binding = getBinding();
+
+        Writer out = (Writer)binding.getVariable(GroovyPage.OUT);
+        GroovyObject tagLib = (GroovyObject)binding.getVariable(GrailsTagLibClass.REQUEST_TAG_LIB);
+        if(tagLib != null) {
+            tagLib.setProperty(  TagLibDynamicMethods.OUT_PROPERTY, out );
+            Object tagLibProp;
+            try {
+                tagLibProp = tagLib.getProperty(tagName);
+            } catch (MissingPropertyException mpe) {
+                throw new GrailsTagException("Tag ["+tagName+"] does not exist in tag library ["+tagLib.getClass().getName()+"]");
+            }
+            if(tagLibProp instanceof Closure) {
+                Closure tag = (Closure)tagLibProp;
+                if(tag.getParameterTypes().length == 1) {
+                    tag.call( new Object[]{ attrs });
+                    if(body != null) {
+                        body.call();
+                    }
+                }
+                if(tag.getParameterTypes().length == 2) {
+                    tag.call( new Object[] { attrs, body });
+                }
+            }else {
+               throw new GrailsTagException("Tag ["+tagName+"] does not exist in tag library ["+tagLib.getClass().getName()+"]");
+            }
+        }
+        else {
+            throw new GrailsTagException("Tag ["+tagName+"] does not exist. No tag library found.");
         }
     }
 } // GroovyPage

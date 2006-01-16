@@ -15,16 +15,10 @@
 package org.codehaus.groovy.grails.web.taglib;
 
 import org.codehaus.groovy.grails.web.taglib.exceptions.GrailsTagException;
-import org.codehaus.groovy.grails.web.pages.GroovyPage;
 
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.ServletContext;
-import java.io.IOException;
-import java.io.Writer;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Collections;
 
 /**
  * A registry for holding all Grails tag implementations
@@ -60,17 +54,16 @@ public class GrailsTagRegistry {
     public boolean tagSupported(String tagName) {
         return tagRegistry.containsKey(tagName);
     }
-
-    public GrailsTag loadTag(String tagName, ServletContext context,ServletRequest request, ServletResponse response) {
-        try {
-            return loadTag(tagName,context,request,response,response.getWriter());
-        } catch (IOException e) {
-            throw new GrailsTagException("I/O error retrieving response writer for ["+tagName+"]:" + e.getMessage(), e);
+    
+    public boolean isSyntaxTag(String tagName) {
+        if(tagRegistry.containsKey(tagName)) {
+            Class tagClass = (Class)tagRegistry.get(tagName);
+            return GroovySyntaxTag.class.isAssignableFrom(tagClass);
         }
+        return false;
     }
 
-    public GrailsTag loadTag(String tagName, ServletContext servletContext,ServletRequest request, ServletResponse response, Writer out)
-            throws GrailsTagException {
+    public GrailsTag newTag(String tagName) {
         if(tagRegistry.containsKey(tagName)) {
             Class tagClass = (Class)tagRegistry.get(tagName);
 
@@ -82,18 +75,18 @@ public class GrailsTagRegistry {
             } catch (IllegalAccessException e) {
                 throw new GrailsTagException("Illegal access error loading tag ["+tagName+"]: " + e.getMessage(), e);
             }
-            Map context = new HashMap();
-            context.put(GroovyPage.REQUEST,request);
-            context.put(GroovyPage.RESPONSE,response);
-            context.put(GroovyPage.SERVLET_CONTEXT, servletContext);
-
-            if(out != null)
-                context.put(GroovyPage.OUT,out);
-            tag.init(context);
             return tag;
         }
         else {
             throw new GrailsTagException("Tag ["+tagName+"] is not a a valid grails tag");
         }
+    }
+
+    public boolean isRequestContextTag(String tagName) {
+        if(tagRegistry.containsKey(tagName)) {
+            Class tagClass = (Class)tagRegistry.get(tagName);
+            return RequestContextTag.class.isAssignableFrom(tagClass);
+        }
+        return false;
     }
 }

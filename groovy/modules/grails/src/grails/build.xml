@@ -159,7 +159,8 @@ Targets:
 		<mkdir dir="${path}grails-app/controllers"/>
 		<mkdir dir="${path}grails-app/services"/>		
 		<mkdir dir="${path}grails-app/domain"/>
-		<mkdir dir="${path}grails-app/views"/>
+        <mkdir dir="${path}grails-app/taglib"/>
+        <mkdir dir="${path}grails-app/views"/>
 		<mkdir dir="${path}grails-app/views/layouts"/>		
 		<mkdir dir="${path}grails-app/i18n"/>				
 		<mkdir dir="${path}grails-app/conf"/>

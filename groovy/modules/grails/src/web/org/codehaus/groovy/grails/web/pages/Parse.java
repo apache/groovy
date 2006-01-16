@@ -15,10 +15,15 @@
  */
 package org.codehaus.groovy.grails.web.pages;
 
-import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.commons.lang.StringUtils;
+import org.codehaus.groovy.grails.web.taglib.GrailsTag;
+import org.codehaus.groovy.grails.web.taglib.GrailsTagRegistry;
+import org.codehaus.groovy.grails.web.taglib.exceptions.GrailsTagException;
 
 import java.io.*;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -46,6 +51,10 @@ public class Parse implements Tokens {
     private String className;
     private boolean finalPass = false;
     private int tagIndex;
+    private Map tagContext;
+    private List tagNameStack = new ArrayList();
+    private GrailsTagRegistry tagRegistry = GrailsTagRegistry.getInstance();
+    private List syntaxTagStack = new ArrayList();
 
     public Parse(String name, InputStream in) throws IOException {
         scan = new Scan(readStream(in));
@@ -125,17 +134,17 @@ public class Parse implements Tokens {
     } // html()
 
     private void makeName(String uri) {
-	    String name;
+        String name;
         int slash = uri.lastIndexOf('/');
         if (slash > -1) {
             name = uri.substring(slash + 1);
             uri = uri.substring(0,(uri.length() - 1) - name.length());
             while(uri.endsWith("/")) {
-	            uri = uri.substring(0,uri.length() -1);
+                uri = uri.substring(0,uri.length() -1);
             }
             slash = uri.lastIndexOf('/');
             if(slash > -1) {
-                    name = uri.substring(slash + 1) + '_' + name;                  
+                    name = uri.substring(slash + 1) + '_' + name;
             }
         }
         else {
@@ -209,55 +218,120 @@ public class Parse implements Tokens {
     private void endTag() {
         if (!finalPass) return;
 
-       out.print("tag");
-       out.print(tagIndex);
-       out.println(".doEndTag()\n");
+       String lastInStack = (String)this.tagNameStack.remove(this.tagNameStack.size() - 1);
+       String tagName = scan.getToken().trim();
+
+       // if the tag name is blank then it has been closed by the start tag ie <tag />
+       if(StringUtils.isBlank(tagName))
+               tagName = lastInStack;
+
+       if(!lastInStack.equals(tagName)) {
+           throw new GrailsTagException("Grails tag ["+tagName+"] was not closed");
+       }
+
+       if(tagRegistry.isSyntaxTag(tagName)) {
+           GrailsTag tag = (GrailsTag)this.syntaxTagStack.remove(this.syntaxTagStack.size() - 1);
+           tag.doEndTag();
+       }
+       else if(tagRegistry.isRequestContextTag(tagName)) {
+           out.print("tag");
+           out.print(tagIndex);
+           out.println(".doEndTag()\n");
+       }
+       else {
+          out.println('}');
+          out.println("invokeTag('"+tagName+"',attrs"+tagIndex+",body"+tagIndex+")");
+       }
        tagIndex--;
     }
 
     private void startTag() {
         if (!finalPass) return;
         tagIndex++;
+
         String text = scan.getToken().trim();
-        out.print("tag");
-        out.print(tagIndex);
-        out.print("= grailsTagRegistry.loadTag('");
+        String tagName;
+        Map attrs = new HashMap();
         if(text.indexOf(' ') > -1) {
             String[] tagTokens = text.split( " ");
-            String tagName = tagTokens[0].trim();
-            out.print(tagName);
-            out.println("',application,request,response,out)");
+            tagName = tagTokens[0].trim();
 
             for (int i = 1; i < tagTokens.length; i++) {
                 if(tagTokens[i].indexOf('=') > -1) {
                     String[] attr = tagTokens[i].split("=");
                     String name = attr[0].trim();
+                    name = '\"' + name + '\"';
                     String val = attr[1].trim().substring(1,attr[1].length() - 1);
-
-                    out.print("tag");
-                    out.print(tagIndex);
-                    out.print(".setAttribute('");
-                    out.print(name);
-                    out.print("', resolveVariable(tag");
-                    out.print(tagIndex);
-                    out.print(",'");
-                    out.print(name);
-                    out.print("','");
-                    out.print(val);
-                    out.println("'))");
+                    if(val.startsWith("${") && val.endsWith("}")) {
+                        val = val.substring(2,val.length() -1);
+                    }
+                    else {
+                        val = '\"' + val + '\"';
+                    }
+                    attrs.put(name,val);
                 }
             }
-        } else {
-            out.print(text);
-            out.println("',application,request,response,out)");
         }
+        else {
+            tagName = text;
+        }
+        this.tagNameStack.add(tagName);
+        if (tagRegistry.isSyntaxTag(tagName)) {
+            if(this.tagContext == null) {
+                this.tagContext = new HashMap();
+                this.tagContext.put(GroovyPage.OUT,out);
+            }
+            GrailsTag tag = tagRegistry.newTag(tagName);
+            tag.init(tagContext);
+            tag.setAttributes(attrs);
+            tag.doStartTag();
+            this.syntaxTagStack.add(tag);
+        }
+        else if(tagRegistry.isRequestContextTag(tagName)) {
+            out.print("tag");
+            out.print(tagIndex);
+            out.print("= grailsTagRegistry.newTag('");
+            out.print(tagName);
+            out.println("')");
+            for (Iterator i = attrs.keySet().iterator(); i.hasNext();) {
+                String name = (String) i.next();
+                out.print("tag");
+                out.print(tagIndex);
+                out.print(".setAttribute(");
+                out.print(name);
+                out.print(',');
+                out.print(attrs.get(name));
+                out.println(')');
+            }
+            out.print("tag");
+            out.print(tagIndex);
+            out.print(".init(");
+            out.println("getBinding().getVariables())");
+            out.print("tag");
+            out.print(tagIndex);
+            out.println(".doStartTag()");
+        }
+        else {
+            if(attrs.size() > 0) {
+                out.print("attrs"+tagIndex+" = [");
+                for (Iterator i = attrs.keySet().iterator(); i.hasNext();) {
+                    String name = (String) i.next();
+                    out.print(name);
+                    out.print(':');
+                    out.print(attrs.get(name));
+                    if(i.hasNext())
+                        out.print(',');
+                    else
+                        out.print(']');
+                }
+            }
+            else {
+                out.println("attrs"+tagIndex+" = [:]");
+            }
 
-
-
-        out.print("tag");
-        out.print(tagIndex);
-        out.println(".doStartTag()");
-
+            out.println();
+            out.println("body"+tagIndex+" = {" );
+        }
     }
 
     private void pageImport(String value) {

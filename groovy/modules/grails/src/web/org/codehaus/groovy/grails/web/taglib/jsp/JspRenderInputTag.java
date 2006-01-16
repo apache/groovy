@@ -17,6 +17,7 @@ package org.codehaus.groovy.grails.web.taglib.jsp;
 import org.apache.commons.lang.StringUtils;
 import org.codehaus.groovy.grails.web.taglib.GrailsTagRegistry;
 import org.codehaus.groovy.grails.web.taglib.RenderInputTag;
+import org.codehaus.groovy.grails.web.pages.GroovyPage;
 import org.springframework.beans.InvalidPropertyException;
 import org.springframework.web.servlet.tags.RequestContextAwareTag;
 import org.springframework.web.util.ExpressionEvaluationUtils;
@@ -24,6 +25,8 @@ import org.springframework.web.util.ExpressionEvaluationUtils;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspTagException;
 import java.io.Writer;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * A JSP facade that delegates to the Grails RenderInputTag (@see org.codehaus.groovy.grails.web.taglib.RenderInputTag)
@@ -54,14 +57,15 @@ public class JspRenderInputTag extends RequestContextAwareTag {
                 throw new JspTagException("Bean ["+this.bean+"] referenced by tag [scaffold] cannot be null");
 
             GrailsTagRegistry tagRegistry = GrailsTagRegistry.getInstance();
-            RenderInputTag tag = (RenderInputTag)tagRegistry.loadTag( RenderInputTag.TAG_NAME,
-                                pageContext.getServletContext(),
-                                pageContext.getRequest(),
-                                pageContext.getResponse());
-
-             tag.setBean(beanInstance);
-             tag.setProperty(property);
-             tag.doStartTag();
+            Map tagContext = new HashMap();
+            tagContext.put(GroovyPage.REQUEST, pageContext.getRequest());
+            tagContext.put(GroovyPage.RESPONSE, pageContext.getResponse());
+            tagContext.put(GroovyPage.SERVLET_CONTEXT, pageContext.getServletContext());
+            RenderInputTag tag = (RenderInputTag)tagRegistry.newTag( RenderInputTag.TAG_NAME );
+            tag.init(tagContext);
+            tag.setBean(beanInstance);
+            tag.setProperty(property);
+            tag.doStartTag();
 
          } catch (InvalidPropertyException ipe) {
              throw new JspException("Attribute [property] with value ["+property+"] is not a valid property of bean ["+bean+"] in tag [scaffold]",ipe);

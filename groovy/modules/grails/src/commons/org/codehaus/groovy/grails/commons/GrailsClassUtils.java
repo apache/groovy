@@ -39,18 +39,27 @@ public class GrailsClassUtils {
 	private static Map beanWrapperInstances = new HashMap();
 	
 	/**
-	 * Returns true of the specified Groovy class is a controller
+	 * Returns true of the specified Groovy class is a bootstrap
 	 * @param clazz
-	 * @return
+	 * @return True if the class is a bootstrap class
 	 */
 	public static boolean isBootstrapClass( Class clazz ) {
 		return clazz.getName().endsWith(DefaultGrailsBootstrapClass.BOOT_STRAP)  && !Closure.class.isAssignableFrom(clazz);
 	}
-	
+
 	/**
+	 * Returns true of the specified Groovy class is a taglib
+	 * @param clazz
+	 * @return True if the class is a taglib
+	 */
+    public static boolean isTagLibClass( Class clazz ) {
+        return clazz.getName().endsWith( DefaultGrailsTagLibClass.TAG_LIB )  && !Closure.class.isAssignableFrom(clazz);
+    }
+
+    /**
 	 * Returns true of the specified Groovy class is a controller
 	 * @param clazz
-	 * @return
+	 * @return True if the class is a controller
 	 */
 	public static boolean isControllerClass( Class clazz ) {
 		return clazz.getName().endsWith(DefaultGrailsControllerClass.CONTROLLER)  && !Closure.class.isAssignableFrom(clazz);
@@ -60,7 +69,7 @@ public class GrailsClassUtils {
 	 * <p>Returns true if the specified class is a page flow class type</p>
 	 * 
 	 * @param clazz
-	 * @return
+	 * @return  True if the class is a page flow class
 	 */
 	public static boolean isPageFlowClass( Class clazz ) {
 		return clazz.getName().endsWith(DefaultGrailsPageFlowClass.PAGE_FLOW)  && !Closure.class.isAssignableFrom(clazz);
@@ -70,7 +79,7 @@ public class GrailsClassUtils {
 	 * <p>Returns true if the specified class is a data source.
 	 * 
 	 * @param clazz
-	 * @return
+	 * @return True if the class is a data source
 	 */
 	public static boolean isDataSource(Class clazz) {
 		return clazz.getName().endsWith(DefaultGrailsDataSource.DATA_SOURCE) && !Closure.class.isAssignableFrom(clazz);
@@ -80,7 +89,7 @@ public class GrailsClassUtils {
 	 * <p>Returns true if the specified class is a service.
 	 * 
 	 * @param clazz
-	 * @return
+	 * @return True if the class is a service class
 	 */
 	public static boolean isService(Class clazz) {
 		return clazz.getName().endsWith(DefaultGrailsServiceClass.SERVICE) && !Closure.class.isAssignableFrom(clazz);
@@ -290,7 +299,7 @@ public class GrailsClassUtils {
 	 * Returns the class name without the package prefix
 	 * 
 	 * @param targetClass
-	 * @return
+	 * @return The short name of the class
 	 */
 	public static String getShortName(Class targetClass) {
 		String className = targetClass.getName();

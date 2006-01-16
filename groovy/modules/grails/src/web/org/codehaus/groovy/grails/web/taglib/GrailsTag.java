@@ -1,5 +1,7 @@
 package org.codehaus.groovy.grails.web.taglib;
 
+import org.hsqldb.lib.Set;
+
 import java.io.Writer;
 import java.io.IOException;
 import java.util.Map;
@@ -14,11 +16,6 @@ import java.util.Map;
 public interface GrailsTag {
 
     void init(Map tagContext);
-    /**
-     *
-     * @return The tag registry instance
-     */
-    GrailsTagRegistry getRegistry();
 
     /**
      * Sets the writer that processes the tag
@@ -42,13 +39,12 @@ public interface GrailsTag {
     /**
      * Process the start tag
      */
-    void doStartTag() throws IOException;
+    void doStartTag();
 
     /**
      * process the end tag
-     * @throws IOException
      */
-    void doEndTag() throws IOException;
+    void doEndTag();
 
     /**
      * In GSP files grails tag attributes can be dynamic in that a groovy expression could be placed
@@ -59,5 +55,10 @@ public interface GrailsTag {
      * @return True if the specified attribute is dynamic
      */
     boolean isDynamicAttribute(String attr);
+
+    /**
+     * @return The name of the tag
+     */
+    String getName();
 }
                             

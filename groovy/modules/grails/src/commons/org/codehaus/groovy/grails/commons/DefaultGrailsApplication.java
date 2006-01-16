@@ -17,6 +17,12 @@ package org.codehaus.groovy.grails.commons;
 
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyResourceLoader;
+import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.codehaus.groovy.control.CompilationFailedException;
+import org.codehaus.groovy.grails.exceptions.MoreThanOneActiveDataSourceException;
+import org.springframework.core.io.Resource;
 
 import java.io.IOException;
 import java.lang.reflect.Modifier;
@@ -26,17 +32,12 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.codehaus.groovy.control.CompilationFailedException;
-import org.codehaus.groovy.grails.exceptions.MoreThanOneActiveDataSourceException;
-import org.springframework.core.io.Resource;
-
 /**
  * 
  * 
  * @author Steven Devijver
+ * @author Graeme Rocher
+ *
  * @since Jul 2, 2005
  */
 public class DefaultGrailsApplication implements GrailsApplication {
@@ -48,80 +49,84 @@ public class DefaultGrailsApplication implements GrailsApplication {
 	private GrailsDataSource dataSource = null;
 	private GrailsServiceClass[] services = null;
 	private GrailsBootstrapClass[] bootstrapClasses = null;
-	
-	private Map controllerMap = null;
+    private GrailsTagLibClass[] taglibClasses = null;
+
+    private Map controllerMap = null;
 	private Map domainMap = null;
 	private Map pageFlowMap = null;
 	private Map serviceMap = null;
 	private Map bootstrapMap = null;
-	
-	private Class[] allClasses = null;
+	private Map taglibMap = null;
+
+    private Class[] allClasses = null;
 	
 	
 	private static Log log = LogFactory.getLog(DefaultGrailsApplication.class);
-	
-	public DefaultGrailsApplication(final Class[] classes, GroovyClassLoader classLoader) {
-		if(classes == null)
-			throw new IllegalArgumentException("Constructor argument 'classes' cannot be null");
-		
-		configureLoadedClasses(classes);
-		this.cl = classLoader;
-	}
-	public DefaultGrailsApplication(final Resource[] resources) throws IOException, ClassNotFoundException {
-		super();
-		
-		log.debug("Loading Grails application.");
+    private Map controller2TagMap;
 
-		final Collection loadedResources = new ArrayList();
-		
-		GroovyResourceLoader resourceLoader = new GroovyResourceLoader() {
-			public URL loadGroovySource(String resource) {
-				String filename = resource.replace('.', '/') + ".groovy";
-				Resource foundResource = null;
-				for (int i = 0; resources != null && i < resources.length; i++) {
-					if (resources[i].getFilename().endsWith(filename)) {
-						if (foundResource == null) {
-							foundResource = resources[i];
-						} else {
-							throw new IllegalArgumentException("Resources [" + resources[i].getFilename() + "] and [" + foundResource.getFilename() + "] end with [" + filename + "]. Cannot load because of duplicate match!");
-						}
-					}
-				}
-				try {
-					if (foundResource != null) {
-						loadedResources.add(foundResource);
-						return foundResource.getURL();
-					} else {
-						return null;
-					}
-				} catch (IOException e) {
-					throw new RuntimeException(e);
-				}
-			}
-		};
-		this.cl = new GroovyClassLoader();
-		this.cl.setResourceLoader(resourceLoader);
-		
-		
-			for (int i = 0; resources != null && i < resources.length; i++) {
-				log.debug("Loading groovy file :[" + resources[i].getFile().getAbsolutePath() + "]");
-				if (!loadedResources.contains(resources[i])) {
-					try {
-						cl.parseClass(resources[i].getFile());
-					} catch (CompilationFailedException e) {
-						throw new org.codehaus.groovy.grails.exceptions.CompilationFailedException("Compilation error parsing file ["+resources[i].getFilename()+"]: " + e.getMessage(), e);
-					}						
-				}				
-			}			
-		
-		// get all the classes that were loaded
-		if(log.isDebugEnabled())
-			log.debug( "loaded classes: ["+ArrayUtils.toString(this.cl.getLoadedClasses())+"]" );
-		
-		Class[] classes = this.cl.getLoadedClasses();		
-		this.allClasses = classes;		
-		configureLoadedClasses(classes);
-	}
+
+    public DefaultGrailsApplication(final Class[] classes, GroovyClassLoader classLoader) {
+        if(classes == null)
+            throw new IllegalArgumentException("Constructor argument 'classes' cannot be null");
+
+        configureLoadedClasses(classes);
+        this.cl = classLoader;
+    }
+	public DefaultGrailsApplication(final Resource[] resources) throws IOException {
+        super();
+
+        log.debug("Loading Grails application.");
+
+        final Collection loadedResources = new ArrayList();
+
+        GroovyResourceLoader resourceLoader = new GroovyResourceLoader() {
+            public URL loadGroovySource(String resource) {
+                String filename = resource.replace('.', '/') + ".groovy";
+                Resource foundResource = null;
+                for (int i = 0; resources != null && i < resources.length; i++) {
+                    if (resources[i].getFilename().endsWith(filename)) {
+                        if (foundResource == null) {
+                            foundResource = resources[i];
+                        } else {
+                            throw new IllegalArgumentException("Resources [" + resources[i].getFilename() + "] and [" + foundResource.getFilename() + "] end with [" + filename + "]. Cannot load because of duplicate match!");
+                        }
+                    }
+                }
+                try {
+                    if (foundResource != null) {
+                        loadedResources.add(foundResource);
+                        return foundResource.getURL();
+                    } else {
+                        return null;
+                    }
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        };
+        this.cl = new GroovyClassLoader();
+        this.cl.setResourceLoader(resourceLoader);
+
+
+            for (int i = 0; resources != null && i < resources.length; i++) {
+                log.debug("Loading groovy file :[" + resources[i].getFile().getAbsolutePath() + "]");
+                if (!loadedResources.contains(resources[i])) {
+                    try {
+                        cl.parseClass(resources[i].getFile());
+                    } catch (CompilationFailedException e) {
+                        throw new org.codehaus.groovy.grails.exceptions.CompilationFailedException("Compilation error parsing file ["+resources[i].getFilename()+"]: " + e.getMessage(), e);
+                    }
+                }
+            }
+
+        // get all the classes that were loaded
+        if(log.isDebugEnabled())
+            log.debug( "loaded classes: ["+ArrayUtils.toString(this.cl.getLoadedClasses())+"]" );
+
+        Class[] classes = this.cl.getLoadedClasses();
+        this.allClasses = classes;
+        configureLoadedClasses(classes);
+    }
 
 	private void configureLoadedClasses(Class[] classes) {
 		
@@ -149,7 +154,8 @@ public class DefaultGrailsApplication implements GrailsApplication {
 		this.pageFlowMap = new HashMap();
 		this.serviceMap = new HashMap();
 		this.bootstrapMap = new HashMap();
-		for (int i = 0; i < classes.length; i++) {
+        this.taglibMap = new HashMap();
+        for (int i = 0; i < classes.length; i++) {
 			if (Modifier.isAbstract(classes[i].getModifiers())) {
 				continue;
 			}
@@ -180,57 +186,86 @@ public class DefaultGrailsApplication implements GrailsApplication {
 				GrailsBootstrapClass grailsBootstrapClass = new DefaultGrailsBootstrapClass(classes[i]);
 				this.bootstrapMap.put(grailsBootstrapClass.getFullName(),grailsBootstrapClass);
 			}
-		}
+            else if(GrailsClassUtils.isTagLibClass(classes[i])) {
+                GrailsTagLibClass grailsTagLibClass = new DefaultGrailsTagLibClass(classes[i]);
+                this.taglibMap.put(grailsTagLibClass.getFullName(),grailsTagLibClass);
+            }
+        }
 		
 		this.controllerClasses = ((GrailsControllerClass[])controllerMap.values().toArray(new GrailsControllerClass[controllerMap.size()]));
 		this.pageFlows = ((GrailsPageFlowClass[])pageFlowMap.values().toArray(new GrailsPageFlowClass[pageFlowMap.size()]));
 		this.domainClasses = ((GrailsDomainClass[])this.domainMap.values().toArray(new GrailsDomainClass[domainMap.size()]));
 		this.services = ((GrailsServiceClass[])this.serviceMap.values().toArray(new GrailsServiceClass[serviceMap.size()]));
 		this.bootstrapClasses = ((GrailsBootstrapClass[])this.bootstrapMap.values().toArray(new GrailsBootstrapClass[bootstrapMap.size()]));
-		
-		configureDomainClassRelationships();	
-	}
-	/**
-	 * Sets up the relationships between the domain classes, this has to be done after
-	 * the intial creation to avoid looping
-	 *
-	 */
-	private void configureDomainClassRelationships() {
+		this.taglibClasses = ((GrailsTagLibClass[])this.taglibMap.values().toArray(new GrailsTagLibClass[taglibMap.size()]));
 
-		for (int i = 0; i < this.domainClasses.length; i++) {
-			GrailsDomainClassProperty[] props = this.domainClasses[i].getPersistantProperties();
-			
-			for (int j = 0; j < props.length; j++) {
-				if(props[j].isAssociation()) {
-					DefaultGrailsDomainClassProperty prop = (DefaultGrailsDomainClassProperty)props[j];
-					GrailsDomainClass referencedGrailsDomainClass = (GrailsDomainClass)this.domainMap.get( props[j].getReferencedPropertyType().getName() );
-					prop.setReferencedDomainClass(referencedGrailsDomainClass);
-					
-				}
-			}
-						
-		}
-		
-		for (int i = 0; i < this.domainClasses.length; i++) {
-			GrailsDomainClassProperty[] props = this.domainClasses[i].getPersistantProperties();
-			
-			for (int j = 0; j < props.length; j++) {
-				if(props[j].isAssociation()) {
-					DefaultGrailsDomainClassProperty prop = (DefaultGrailsDomainClassProperty)props[j];
-					GrailsDomainClassProperty[] referencedProperties =  prop.getReferencedDomainClass().getPersistantProperties();					
-					for (int k = 0; k < referencedProperties.length; k++) {
-						if(referencedProperties[k].getReferencedPropertyType().equals( this.domainClasses[i].getClazz())) {
-							prop.setOtherSide(referencedProperties[k]);
-							break;
-						}
-					}		
-				}
-			}
-						
-		}		
-	
-			
-	}
+        configureDomainClassRelationships();
+        configureTagLibraries();
+    }
+
+    /**
+     * Maps the controller to the appropriate tag library
+     */
+    private void configureTagLibraries() {
+        this.controller2TagMap = new HashMap();
+        for (int i = 0; i < controllerClasses.length; i++) {
+            GrailsControllerClass controllerClass = controllerClasses[i];
+            boolean found = false;
+            for (int j = 0; j < taglibClasses.length; j++) {
+                GrailsTagLibClass taglibClass = taglibClasses[j];
+                if(controllerClass.getName().equals(taglibClass.getName())) {
+                    this.controller2TagMap.put(controllerClass.getFullName(),taglibClass);
+                    found = true;
+                    break;
+                }
+            }
+            if(!found) {
+                this.controller2TagMap.put(controllerClass.getFullName(),taglibMap.get(GrailsTagLibClass.APPLICATION_TAG_LIB));
+            }
+        }
+    }
+
+    /**
+     * Sets up the relationships between the domain classes, this has to be done after
+     * the intial creation to avoid looping
+     *
+     */
+    private void configureDomainClassRelationships() {
+
+        for (int i = 0; i < this.domainClasses.length; i++) {
+            GrailsDomainClassProperty[] props = this.domainClasses[i].getPersistantProperties();
+
+            for (int j = 0; j < props.length; j++) {
+                if(props[j].isAssociation()) {
+                    DefaultGrailsDomainClassProperty prop = (DefaultGrailsDomainClassProperty)props[j];
+                    GrailsDomainClass referencedGrailsDomainClass = (GrailsDomainClass)this.domainMap.get( props[j].getReferencedPropertyType().getName() );
+                    prop.setReferencedDomainClass(referencedGrailsDomainClass);
+
+                }
+            }
+
+        }
+
+        for (int i = 0; i < this.domainClasses.length; i++) {
+            GrailsDomainClassProperty[] props = this.domainClasses[i].getPersistantProperties();
+
+            for (int j = 0; j < props.length; j++) {
+                if(props[j].isAssociation()) {
+                    DefaultGrailsDomainClassProperty prop = (DefaultGrailsDomainClassProperty)props[j];
+                    GrailsDomainClassProperty[] referencedProperties =  prop.getReferencedDomainClass().getPersistantProperties();
+                    for (int k = 0; k < referencedProperties.length; k++) {
+                        if(referencedProperties[k].getReferencedPropertyType().equals( this.domainClasses[i].getClazz())) {
+                            prop.setOtherSide(referencedProperties[k]);
+                            break;
+                        }
+                    }
+                }
+            }
+
+        }
+
+
+    }
 
 	public GrailsControllerClass[] getControllers() {
 		return this.controllerClasses;
@@ -289,5 +324,18 @@ public class DefaultGrailsApplication implements GrailsApplication {
 	public GrailsBootstrapClass[] getGrailsBootstrapClasses() {		// 
 		return this.bootstrapClasses;
 	}
-	
+
+    public GrailsTagLibClass[] getGrailsTabLibClasses() {
+        return this.taglibClasses;
+    }
+
+    public GrailsTagLibClass getGrailsTagLibClass(String tagLibName) {
+        return (GrailsTagLibClass)this.taglibMap.get(tagLibName);
+    }
+
+    public GrailsTagLibClass getTagLibClassForController(String controllerName) {
+        return (GrailsTagLibClass)this.controller2TagMap.get(controllerName);
+    }
+
+
 }

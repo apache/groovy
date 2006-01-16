@@ -22,11 +22,13 @@ import groovy.util.Proxy;
 import org.apache.commons.collections.BeanMap;
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.commons.GrailsControllerClass;
+import org.codehaus.groovy.grails.commons.GrailsTagLibClass;
 import org.codehaus.groovy.grails.commons.metaclass.GenericDynamicProperty;
 import org.codehaus.groovy.grails.scaffolding.GrailsScaffolder;
 import org.codehaus.groovy.grails.web.metaclass.ChainDynamicMethod;
 import org.codehaus.groovy.grails.web.metaclass.ControllerDynamicMethods;
 import org.codehaus.groovy.grails.web.metaclass.GetParamsDynamicProperty;
+import org.codehaus.groovy.grails.web.metaclass.TagLibDynamicMethods;
 import org.codehaus.groovy.grails.web.servlet.GrailsHttpServletRequest;
 import org.codehaus.groovy.grails.web.servlet.GrailsHttpServletResponse;
 import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.*;
@@ -126,21 +128,32 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
 		
 		// Step 2: lookup the controller in the application.
 		GrailsControllerClass controllerClass = getControllerClassByURI(uri);
-				
-		if (controllerClass == null) {
+
+        GrailsTagLibClass tagLibClass = this.application.getTagLibClassForController(controllerClass.getFullName());
+
+        if (controllerClass == null) {
 			throw new UnknownControllerException("No controller found for URI [" + uri + "]!");
 		}
 		//String controllerName = WordUtils.uncapitalize(controllerClass.getName());
 		
 		// Step 3: load controller from application context.
 		GroovyObject controller = getControllerInstance(controllerClass);
+
+        // create the tag lib for the controller if there is one
+        GroovyObject tagLib = null;
+        if(tagLibClass != null) {
+            tagLib = (GroovyObject)this.applicationContext.getBean(tagLibClass.getFullName());
+        }
+        request.setAttribute( GrailsTagLibClass.REQUEST_TAG_LIB, tagLib);
         request.setAttribute( GrailsControllerClass.REQUEST_CONTROLLER, controller );
         
         // Step 3a: Configure a proxy interceptor for controller dynamic methods for this request
 		if(this.interceptor == null) {
 			try {
 				interceptor = new ControllerDynamicMethods(controller,this,request,response);
-			}
+                if(tagLib != null)
+                    new TagLibDynamicMethods(tagLib,controller,request,response);
+            }
 			catch(IntrospectionException ie) {
 				throw new ControllerExecutionException("Error creating dynamic controller methods for controller ["+controller.getClass()+"]: " + ie.getMessage(), ie);
 			}		

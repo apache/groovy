@@ -24,6 +24,7 @@ import org.codehaus.groovy.grails.web.pages.GroovyPagesTemplateEngine;
 import org.codehaus.groovy.grails.web.taglib.exceptions.GrailsTagException;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
+import org.springframework.beans.BeansException;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -52,7 +53,7 @@ import java.util.Map;
  * @author Graeme Rocher
  * @since 12-Jan-2006
  */
-public class RenderInputTag extends AbstractTag {
+public class RenderInputTag extends RequestContextTag {
 
     public static final String PATH_PREFIX = "/WEB-INF/grails-app/views/scaffolding/";
     public static final String PATH_SUFFIX = ".gsp";
@@ -68,45 +69,58 @@ public class RenderInputTag extends AbstractTag {
     private Map constrainedProperties = Collections.EMPTY_MAP;
     private Map cachedUris = Collections.synchronizedMap(new HashMap());
 
+    protected RenderInputTag() {
+        super(TAG_NAME);
+    }
 
-    protected void doStartTagInternal() throws IOException {
+
+    protected void doStartTagInternal() {
 
          GrailsDomainClass domainClass = this.grailsApplication.getGrailsDomainClass(bean.getClass().getName());
          if(domainClass != null) {
              this.constrainedProperties = domainClass.getConstrainedProperties();
          }
         this.beanWrapper = new BeanWrapperImpl(bean);
-        PropertyDescriptor pd = this.beanWrapper.getPropertyDescriptor(property);
+        PropertyDescriptor pd = null;
+        try {
+            pd = this.beanWrapper.getPropertyDescriptor(property);
+        } catch (BeansException e) {
+            throw new GrailsTagException("Property ["+property+"] is not a valid bean property in tag [renderInput]:" + e.getMessage(),e);
+        }
         GroovyPagesTemplateEngine engine = (GroovyPagesTemplateEngine)servletContext.getAttribute(GroovyPagesServlet.GSP_TEMPLATE_ENGINE);
-        String uri = findUriForType(pd.getPropertyType());
+
         Template t = null;
         try {
+            String uri = findUriForType(pd.getPropertyType());
             t = engine.createTemplate(uri,
                                                servletContext,
                                                (HttpServletRequest)request,
                                                (HttpServletResponse)response);
+            if(t == null)
+                throw new GrailsTagException("Type ["+pd.getPropertyType()+"] is unsupported by tag [scaffold]. No template found.");
+
+            Map binding = new HashMap();
+            binding.put("name", pd.getName());
+            binding.put("value",this.beanWrapper.getPropertyValue(property));
+            if(this.constrainedProperties.containsKey(property)) {
+                binding.put("constraints",this.constrainedProperties.get(property));
+            }
+            else {
+                binding.put("constraints",null);
+            }
+            Writable  w = t.make(binding);
+            w.writeTo(out);
+
         } catch (ServletException e) {
             throw new GrailsTagException("Error creating template for type ["+pd.getPropertyType()+"] by tag [scaffold]: " + e.getMessage(),e);
+        } catch (IOException e) {
+            throw new GrailsTagException("I/O error writing tag ["+getName()+"] to writer: " + e.getMessage(),e);
         }
 
-        if(t == null)
-            throw new GrailsTagException("Type ["+pd.getPropertyType()+"] is unsupported by tag [scaffold]. No template found.");
-
-        Map binding = new HashMap();
-        binding.put("name", pd.getName());
-        binding.put("value",this.beanWrapper.getPropertyValue(property));
-        if(this.constrainedProperties.containsKey(property)) {
-            binding.put("constraints",this.constrainedProperties.get(property));
-        }
-        else {
-            binding.put("constraints",null);
-        }
-        Writable  w = t.make(binding);
-        w.writeTo(out);
 
     }
 
-    protected void doEndTagInternal() throws IOException {
+    protected void doEndTagInternal() {
         // do nothing
     }
 

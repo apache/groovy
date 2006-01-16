@@ -19,10 +19,13 @@ import groovy.lang.*;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.grails.commons.GrailsControllerClass;
+import org.codehaus.groovy.grails.commons.GrailsApplication;
+import org.codehaus.groovy.grails.commons.GrailsTagLibClass;
 import org.codehaus.groovy.grails.web.metaclass.ControllerDynamicMethods;
 import org.codehaus.groovy.grails.web.metaclass.GetSessionDynamicProperty;
 import org.codehaus.groovy.grails.web.metaclass.GetParamsDynamicProperty;
 import org.codehaus.groovy.grails.web.taglib.GrailsTagRegistry;
+import org.springframework.web.context.WebApplicationContext;
 
 import javax.servlet.ServletException;
 import javax.servlet.ServletContext;
@@ -344,12 +347,17 @@ public class GroovyPagesTemplateEngine {
             // Set up the script context
             Binding binding = new Binding();
             GroovyObject controller = (GroovyObject)request.getAttribute(GrailsControllerClass.REQUEST_CONTROLLER);
-            binding.setVariable("request", controller.getProperty(ControllerDynamicMethods.REQUEST_PROPERTY));
-            binding.setVariable("response", controller.getProperty(ControllerDynamicMethods.RESPONSE_PROPERTY));
-            binding.setVariable("application", context);
-            binding.setVariable("session", controller.getProperty(GetSessionDynamicProperty.PROPERTY_NAME));
-            binding.setVariable("params", controller.getProperty(GetParamsDynamicProperty.PROPERTY_NAME));
-            binding.setVariable("out", out);
+            binding.setVariable(GroovyPage.REQUEST, controller.getProperty(ControllerDynamicMethods.REQUEST_PROPERTY));
+            binding.setVariable(GroovyPage.RESPONSE, controller.getProperty(ControllerDynamicMethods.RESPONSE_PROPERTY));
+            binding.setVariable(GroovyPage.SERVLET_CONTEXT, context);
+            WebApplicationContext appContext = (WebApplicationContext)context.getAttribute(GrailsApplication.APPLICATION_CONTEXT);
+            binding.setVariable(GroovyPage.APPLICATION_CONTEXT, appContext);
+            binding.setVariable(GrailsApplication.APPLICATION_ID, appContext.getBean(GrailsApplication.APPLICATION_ID));
+            binding.setVariable(GrailsControllerClass.REQUEST_CONTROLLER, controller);
+            binding.setVariable(GrailsTagLibClass.REQUEST_TAG_LIB, request.getAttribute(GrailsTagLibClass.REQUEST_TAG_LIB));
+            binding.setVariable(GroovyPage.SESSION, controller.getProperty(GetSessionDynamicProperty.PROPERTY_NAME));
+            binding.setVariable(GroovyPage.PARAMS, controller.getProperty(GetParamsDynamicProperty.PROPERTY_NAME));
+            binding.setVariable(GroovyPage.OUT, out);
             binding.setVariable("grailsTagRegistry", GrailsTagRegistry.getInstance());
 
             // Go through request attributes and add them to the binding as the model
