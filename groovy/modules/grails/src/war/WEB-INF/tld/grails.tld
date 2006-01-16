@@ -55,6 +55,7 @@
             <required>true</required>
             <rtexprvalue>true</rtexprvalue>
         </attribute>
+        <dynamic-attributes>true</dynamic-attributes>
     </tag>
 </taglib>
 
