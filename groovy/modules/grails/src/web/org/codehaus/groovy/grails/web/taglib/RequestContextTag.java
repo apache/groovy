@@ -96,7 +96,7 @@ public abstract class RequestContextTag implements GrailsTag {
         this.attributes = attributes;
     }
 
-    public void doStartTag() {
+    public final void doStartTag() {
         if(!init)
             throw new IllegalStateException("Tag not initialised called 'init' first");
 
@@ -106,7 +106,7 @@ public abstract class RequestContextTag implements GrailsTag {
     protected abstract void doStartTagInternal() ;
     protected abstract void doEndTagInternal() ;
 
-    public void doEndTag()  {
+    public final void doEndTag()  {
         if(!init)
             throw new IllegalStateException("Tag not initialised called 'init' first");
 

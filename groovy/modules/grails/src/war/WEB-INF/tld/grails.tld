@@ -12,8 +12,8 @@
 
     <tag>
 		<name>link</name>
-		<tag-class>org.codehaus.groovy.grails.web.taglib.jsp.JspLinkTag</tag-class>
-        <body-content>scriptless</body-content>
+        <tag-class>org.codehaus.groovy.grails.web.taglib.jsp.JspLinkTag</tag-class>
+        <body-content>JSP</body-content>
         <attribute>
 			<name>action</name>
 			<required>false</required>
@@ -42,6 +42,16 @@
         </attribute>
         <attribute>
             <name>property</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+    </tag>
+    <tag>
+        <name>invokeTag</name>
+        <tag-class>org.codehaus.groovy.grails.web.taglib.jsp.JspInvokeGrailsTagLibTag</tag-class>
+        <body-content>JSP</body-content>
+        <attribute>
+            <name>name</name>
             <required>true</required>
             <rtexprvalue>true</rtexprvalue>
         </attribute>
