@@ -1,9 +1,6 @@
 package org.codehaus.groovy.grails.web.taglib;
 
-import org.hsqldb.lib.Set;
-
 import java.io.Writer;
-import java.io.IOException;
 import java.util.Map;
 
 /**
