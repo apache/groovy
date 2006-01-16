@@ -16,77 +16,89 @@
 package org.codehaus.groovy.grails.web.servlet;
 
 import groovy.lang.GroovyObject;
-
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
+import org.codehaus.groovy.grails.web.metaclass.GetParamsDynamicProperty;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
-
-import org.codehaus.groovy.grails.web.metaclass.GetParamsDynamicProperty;
+import javax.servlet.ServletRequest;
+import java.util.*;
 
 /**
  * <p>Wrapper for HttpServletRequest instance that also implements
- * java.util.Map. Read-only map methods are delegated to the getParameterMap method.
+ * java.util.Map to delegate to request attributes
  *
  * @author Steven Devijver
+ * @author Graeme Rocher
  * @since Jul 2, 2005
  * @see javax.servlet.http.HttpServletRequest
  * @see java.util.Map
  */
 public class GrailsHttpServletRequest extends HttpServletRequestWrapper implements Map {
 
-	Map controllerParams = Collections.EMPTY_MAP;
-	
+    Map controllerParams = Collections.EMPTY_MAP;
+
     public GrailsHttpServletRequest(HttpServletRequest delegate) {
         super(delegate);
     }
 
     public GrailsHttpServletRequest(HttpServletRequest request, GroovyObject controller) {
-    	super(request);
-    	controllerParams = (Map)controller.getProperty(GetParamsDynamicProperty.PROPERTY_NAME);
-	}
+        super(request);
+        controllerParams = (Map)controller.getProperty(GetParamsDynamicProperty.PROPERTY_NAME);
+    }
 
-	/* (non-Javadoc)
-	 * @see javax.servlet.ServletRequestWrapper#getParameter(java.lang.String)
-	 */
-	public String getParameter(String paramName) {
-    	if(controllerParams.containsKey(paramName)) 
-    		return controllerParams.get(paramName).toString();
-		return super.getParameter(paramName);
-	}
+    /* (non-Javadoc)
+      * @see javax.servlet.ServletRequestWrapper#getParameter(java.lang.String)
+      */
+    public String getParameter(String paramName) {
+        if(controllerParams.containsKey(paramName))
+            return controllerParams.get(paramName).toString();
+        return super.getParameter(paramName);
+    }
 
-	public int size() {
-        return getRequest().getParameterMap().size() + controllerParams.size();
+    public int size() {
+        throw new UnsupportedOperationException("Method java.util.Map.size() is not supported by ["+getClass()+"]");
     }
 
     public boolean isEmpty() {
-        return getRequest().getParameterMap().isEmpty() && controllerParams.isEmpty();
+        return getRequest().getAttributeNames().hasMoreElements();
     }
 
     public boolean containsKey(Object key) {
-        return getRequest().getParameterMap().containsKey(key) || controllerParams.containsKey(key);
+        if(key instanceof String)
+            return getRequest().getAttribute((String)key) != null;
+        else
+            return false;
     }
 
     public boolean containsValue(Object value) {
-        return getRequest().getParameterMap().containsValue(value) || controllerParams.containsValue(value);
+        while (getRequest().getAttributeNames().hasMoreElements()) {
+            String s =  (String)getRequest().getAttributeNames().nextElement();
+            if(getAttribute(s).equals(value))
+                return true;
+        }
+        return false;
     }
 
     public Object get(Object key) {
-    	if(controllerParams.containsKey(key)) 
-    		return controllerParams.get(key);
-    	else
-    		return getRequest().getParameterMap().get(key);
+        if(key instanceof String)
+            return getRequest().getAttribute((String)key);
+        else
+            return null;
     }
 
     public Object put(Object key, Object value) {
-        throw new UnsupportedOperationException();
+        if(key instanceof String)
+            getRequest().setAttribute((String)key,value);
+        return value;
     }
 
-    public Object remove(Object arg0) {
-        throw new UnsupportedOperationException();
+    public Object remove(Object key) {
+        if(key instanceof String) {
+            Object v = getRequest().getAttribute((String)key) ;
+            getRequest().removeAttribute((String)key);
+            return v;
+        }
+        return null;
     }
 
     public void putAll(Map arg0) {
@@ -94,19 +106,35 @@ public class GrailsHttpServletRequest extends HttpServletRequestWrapper implemen
     }
 
     public void clear() {
-        throw new UnsupportedOperationException();
+        ServletRequest r = getRequest();
+        while (r.getAttributeNames().hasMoreElements()) {
+            String s =  (String)r.getAttributeNames().nextElement();
+            getRequest().removeAttribute(s);
+        }
     }
 
     public Set keySet() {
-        return getRequest().getParameterMap().keySet();
+        Set set = new HashSet();
+        ServletRequest r = getRequest();
+        while (r.getAttributeNames().hasMoreElements()) {
+            String s =  (String)r.getAttributeNames().nextElement();
+            set.add(s);
+        }
+        return set;
     }
 
     public Collection values() {
-        return getRequest().getParameterMap().values();
+        Collection values = new ArrayList();
+        ServletRequest r = getRequest();
+        while (r.getAttributeNames().hasMoreElements()) {
+            String s =  (String)r.getAttributeNames().nextElement();
+            values.add(r.getAttribute(s));
+        }
+        return values;
     }
 
     public Set entrySet() {
-        return getRequest().getParameterMap().entrySet();
+        throw new UnsupportedOperationException("Method java.util.Map.entrySet() is not supported by ["+getClass()+"]");
     }
 
 }
