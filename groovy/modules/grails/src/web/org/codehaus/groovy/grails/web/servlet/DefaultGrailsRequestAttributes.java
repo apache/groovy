@@ -16,6 +16,7 @@ package org.codehaus.groovy.grails.web.servlet;
 
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.validation.Errors;
+import org.codehaus.groovy.grails.web.pages.GroovyPagesTemplateEngine;
 import groovy.lang.GroovyObject;
 
 import javax.servlet.ServletRequest;
@@ -47,5 +48,9 @@ public class DefaultGrailsRequestAttributes implements GrailsRequestAttributes {
 
     public Errors getErrors(ServletRequest request) {
         return (Errors)request.getAttribute(ERRORS);
+    }
+
+    public GroovyPagesTemplateEngine getPagesTemplateEngine() {
+       return (GroovyPagesTemplateEngine)this.context.getAttribute(GSP_TEMPLATE_ENGINE);
     }
 }

@@ -17,6 +17,7 @@ package org.codehaus.groovy.grails.web.pages;
 
 import groovy.lang.Writable;
 import groovy.text.Template;
+import org.codehaus.groovy.grails.web.servlet.GrailsRequestAttributes;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
@@ -54,17 +55,12 @@ import java.util.Map;
  *
  */
 public class GroovyPagesServlet extends HttpServlet /*implements GroovyObject*/ {
-    /**
-     * The name of the GSP template engine registered in the servlet context
-     */
-    public static final String GSP_TEMPLATE_ENGINE = "gspTemplateEngine";
-
     Object x;
-	private ServletContext context;
-	private boolean showSource = false;
+    private ServletContext context;
+    private boolean showSource = false;
 
-	private static Map pageCache = Collections.synchronizedMap(new HashMap());
-	private static ClassLoader parent;
+    private static Map pageCache = Collections.synchronizedMap(new HashMap());
+    private static ClassLoader parent;
     private GroovyPagesTemplateEngine engine;
 
 
@@ -72,72 +68,72 @@ public class GroovyPagesServlet extends HttpServlet /*implements GroovyObject*/ 
      * @return the servlet context
      */
     public ServletContext getServletContext() { return context; }
-	/**
-	 * Initialize the servlet, set it's parameters.
-	 * @param config servlet settings
-	 */
-	public void init(ServletConfig config) {
-		// Get the servlet context
-		context = config.getServletContext();
-		context.log("Groovy servlet initialized");
+    /**
+     * Initialize the servlet, set it's parameters.
+     * @param config servlet settings
+     */
+    public void init(ServletConfig config) {
+        // Get the servlet context
+        context = config.getServletContext();
+        context.log("Groovy servlet initialized");
 
-		// Ensure that we use the correct classloader so that we can find
-		// classes in an application server.
-		parent = Thread.currentThread().getContextClassLoader();
-		if (parent == null) parent = getClass().getClassLoader();
+        // Ensure that we use the correct classloader so that we can find
+        // classes in an application server.
+        parent = Thread.currentThread().getContextClassLoader();
+        if (parent == null) parent = getClass().getClassLoader();
 
-		showSource = config.getInitParameter("showSource") != null;
+        showSource = config.getInitParameter("showSource") != null;
 
-        this.engine = (GroovyPagesTemplateEngine)context.getAttribute(GSP_TEMPLATE_ENGINE);
+        this.engine = (GroovyPagesTemplateEngine)context.getAttribute(GrailsRequestAttributes.GSP_TEMPLATE_ENGINE);
         if(this.engine == null)   {
             this.engine = new GroovyPagesTemplateEngine();
             this.engine.setShowSource(this.showSource);
-            context.setAttribute(GSP_TEMPLATE_ENGINE,this.engine);
+            context.setAttribute(GrailsRequestAttributes.GSP_TEMPLATE_ENGINE,this.engine);
         }
 
     } // init()
 
-	/**
-	 * Handle HTTP GET requests.
-	 * @param request
-	 * @param response
-	 * @throws ServletException
-	 * @throws IOException
-	 */
-	public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		doPage(request, response);
-	} // doGet()
+    /**
+     * Handle HTTP GET requests.
+     * @param request
+     * @param response
+     * @throws ServletException
+     * @throws IOException
+     */
+    public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        doPage(request, response);
+    } // doGet()
 
-	/**
-	 * Handle HTTP POST requests.
-	 * @param request
-	 * @param response
-	 * @throws ServletException
-	 * @throws IOException
-	 */
-	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		doPage(request, response);
-	} // doPost()
+    /**
+     * Handle HTTP POST requests.
+     * @param request
+     * @param response
+     * @throws ServletException
+     * @throws IOException
+     */
+    public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        doPage(request, response);
+    } // doPost()
 
-	/**
-	 * Execute page and produce output.
-	 * @param request
-	 * @param response
-	 * @throws ServletException
-	 * @throws IOException
-	 */
-	public void doPage(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    /**
+     * Execute page and produce output.
+     * @param request
+     * @param response
+     * @throws ServletException
+     * @throws IOException
+     */
+    public void doPage(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String pageId = engine.getPageId(request);
-		URL pageUrl = engine.getPageUrl(context,pageId);
-		if (pageUrl == null) {
-			context.log("GroovyPagesServlet:  \"" + pageUrl + "\" not found");
-			response.sendError(404, "\"" + pageUrl + "\" not found.");
-			return;
-		}
+        URL pageUrl = engine.getPageUrl(context,pageId);
+        if (pageUrl == null) {
+            context.log("GroovyPagesServlet:  \"" + pageUrl + "\" not found");
+            response.sendError(404, "\"" + pageUrl + "\" not found.");
+            return;
+        }
 
         Template t = engine.createTemplate(context,request,response);
         Writable w = t.make();
-		Writer out = GSPResonseWriter.getInstance(response, 8192);
+        Writer out = GSPResonseWriter.getInstance(response, 8192);
         try {
             w.writeTo(out);
         }
