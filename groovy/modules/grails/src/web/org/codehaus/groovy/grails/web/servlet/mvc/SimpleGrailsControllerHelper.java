@@ -29,13 +29,16 @@ import org.codehaus.groovy.grails.web.metaclass.ChainDynamicMethod;
 import org.codehaus.groovy.grails.web.metaclass.ControllerDynamicMethods;
 import org.codehaus.groovy.grails.web.metaclass.GetParamsDynamicProperty;
 import org.codehaus.groovy.grails.web.metaclass.TagLibDynamicMethods;
-import org.codehaus.groovy.grails.web.servlet.GrailsHttpServletRequest;
-import org.codehaus.groovy.grails.web.servlet.GrailsHttpServletResponse;
+import org.codehaus.groovy.grails.web.servlet.DefaultGrailsRequestAttributes;
 import org.codehaus.groovy.grails.web.servlet.GrailsRequestAttributes;
-import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.*;
+import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.ControllerExecutionException;
+import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.NoClosurePropertyForURIException;
+import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.NoViewNameDefinedException;
+import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.UnknownControllerException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.beans.IntrospectionException;
@@ -52,19 +55,27 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
 	private Map chainModel = Collections.EMPTY_MAP;
 	private ControllerDynamicMethods interceptor;
 	private GrailsScaffolder scaffolder;
+    private ServletContext servletContext;
+    private GrailsRequestAttributes grailsAttributes;
 
-	public SimpleGrailsControllerHelper(GrailsApplication application, ApplicationContext context) {
-		super();
-		this.application = application;
-		this.applicationContext = context;
-	}
+    public SimpleGrailsControllerHelper(GrailsApplication application, ApplicationContext context, ServletContext servletContext) {
+        super();
+        this.application = application;
+        this.applicationContext = context;
+        this.servletContext = servletContext;
+        this.grailsAttributes = new DefaultGrailsRequestAttributes(this.servletContext);
+    }
 
-	/* (non-Javadoc)
-	 * @see org.codehaus.groovy.grails.web.servlet.mvc.GrailsControllerHelper#getControllerClassByName(java.lang.String)
-	 */
-	public GrailsControllerClass getControllerClassByName(String name) {
-		return this.application.getController(name);
-	}
+    public ServletContext getServletContext() {
+        return this.servletContext;
+    }
+
+    /* (non-Javadoc)
+      * @see org.codehaus.groovy.grails.web.servlet.mvc.GrailsControllerHelper#getControllerClassByName(java.lang.String)
+      */
+    public GrailsControllerClass getControllerClassByName(String name) {
+        return this.application.getController(name);
+    }
 	
 	public GrailsScaffolder getScaffolderForController(String controllerName) {
 		GrailsControllerClass controllerClass = getControllerClassByName(controllerName);
@@ -195,9 +206,13 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
 		this.chainModel  = model;
 	}
 
-	public Object handleAction(GroovyObject controller,Closure action, HttpServletRequest request, HttpServletResponse response) {
-		return handleAction(controller,action,request,response,Collections.EMPTY_MAP);
-	}
+    public GrailsRequestAttributes getGrailsAttributes() {
+        return this.grailsAttributes;
+    }
+
+    public Object handleAction(GroovyObject controller,Closure action, HttpServletRequest request, HttpServletResponse response) {
+        return handleAction(controller,action,request,response,Collections.EMPTY_MAP);
+    }
 
 	public Object handleAction(GroovyObject controller,Closure action, HttpServletRequest request, HttpServletResponse response, Map params) {
 			if(interceptor == null) {
@@ -228,16 +243,12 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
 
 		
 		// Step 7: determine argument count and execute.
-		Object returnValue = null;
-		if (action.getParameterTypes() == null || action.getParameterTypes().length == 1) {
-			// closure may have zero or one parameter, we cannot be sure.
-			returnValue = action.call(new GrailsHttpServletRequest(request, controller));
-		} else if (action.getParameterTypes().length == 2) {
-			returnValue = action.call(new Object[] { new  GrailsHttpServletRequest(request,controller), new GrailsHttpServletResponse(response) });
-		} else {
-			throw new IncompatibleParameterCountException("Closure on property [" + action + "] in [" + controller.getClass() + "] has an incompatible parameter count [" + action.getParameterTypes().length + "]! Supported values are 0 and 2.");			
-		}
-		return returnValue;
+		Object returnValue = action.call();
+
+        // Step 8: add any errors to the request
+        request.setAttribute( GrailsRequestAttributes.ERRORS, controller.getProperty(ControllerDynamicMethods.ERRORS_PROPERTY) );
+
+        return returnValue;
 	}
 
 	/* (non-Javadoc)
@@ -263,7 +274,6 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
 				throw new NoViewNameDefinedException("Map instance returned by and no view name specified for closure on property [" + closurePropertyName + "] in controller [" + controller.getClass() + "]!");
 			} else {
 				Map returnMap = (Map)returnValue;
-				returnMap.put( ControllerDynamicMethods.ERRORS_PROPERTY, controller.getProperty(ControllerDynamicMethods.ERRORS_PROPERTY) );
 				if(!this.chainModel.isEmpty()) {
 					this.chainModel.putAll( returnMap );
 					return new ModelAndView(viewName, this.chainModel);
@@ -278,7 +288,6 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
 			// remove any Proxy wrappers and set the adaptee as the value
 			Map modelMap = modelAndView.getModel();
 			removeProxiesFromModelObjects(modelMap);
-			modelAndView.addObject(ControllerDynamicMethods.ERRORS_PROPERTY, controller.getProperty(ControllerDynamicMethods.ERRORS_PROPERTY) );
 			
 			if(!this.chainModel.isEmpty()) {
 				this.chainModel.putAll(modelMap);

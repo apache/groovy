@@ -17,15 +17,15 @@ package org.codehaus.groovy.grails.web.servlet.mvc;
 
 import groovy.lang.Closure;
 import groovy.lang.GroovyObject;
-
-import java.util.Map;
+import org.codehaus.groovy.grails.commons.GrailsControllerClass;
+import org.codehaus.groovy.grails.scaffolding.GrailsScaffolder;
+import org.codehaus.groovy.grails.web.servlet.GrailsRequestAttributes;
+import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import org.codehaus.groovy.grails.commons.GrailsControllerClass;
-import org.codehaus.groovy.grails.scaffolding.GrailsScaffolder;
-import org.springframework.web.servlet.ModelAndView;
+import javax.servlet.ServletContext;
+import java.util.Map;
 /**
  * An interface for a helper class that processes Grails controller requests and responses 
  * 
@@ -34,10 +34,14 @@ import org.springframework.web.servlet.ModelAndView;
  */
 public interface GrailsControllerHelper {
 
-	/**
+    /**
+     * @return The servlet context instance
+     */
+    public abstract ServletContext getServletContext();
+    /**
 	 * Retrieves a controller class for the specified class name
-	 * @param name
-	 * @return
+	 * @param className
+	 * @return  The controller class or null
 	 */
 	public abstract GrailsControllerClass getControllerClassByName(String className);
 
@@ -59,7 +63,7 @@ public interface GrailsControllerHelper {
 	/**
 	 * Retreives the scaffolder for the specified controller
 	 * @param controllerName The controller name
-	 * @return
+	 * @return The scaffolder or null
 	 */
 	public abstract GrailsScaffolder getScaffolderForController(String controllerName);
 	/**
@@ -79,7 +83,7 @@ public interface GrailsControllerHelper {
 	 * @param request The request object
 	 * @param response The response
 	 * 
-	 * @return
+	 * @return The action response
 	 */
 	public abstract Object handleAction(GroovyObject controller,Closure action,HttpServletRequest request, HttpServletResponse response);
 	
@@ -91,14 +95,14 @@ public interface GrailsControllerHelper {
 	 * @param response The response
 	 * @param params A Map of controller parameters
 	 * 
-	 * @return
+	 * @return The action response
 	 */
 	public abstract Object handleAction(GroovyObject controller,Closure action,HttpServletRequest request, HttpServletResponse response, Map params);
 	
 	/**
 	 * Processes an action response for the specified arguments
 	 * 
-	 * @param controllerClass The controller class of the closure
+	 * @param controller The controller instance
 	 * @param returnValue The response from the closure
 	 * @param closurePropertyName The property name of the closure
 	 * @param viewName The name of the view
@@ -126,4 +130,9 @@ public interface GrailsControllerHelper {
 	 */
 	public abstract void setChainModel(Map model);
 
+    /**
+     *
+     * @return Returns the grails request attributes instance
+     */
+    GrailsRequestAttributes getGrailsAttributes();
 }

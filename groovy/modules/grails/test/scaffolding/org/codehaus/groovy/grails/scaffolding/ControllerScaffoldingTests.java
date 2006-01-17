@@ -29,6 +29,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.AbstractDependencyInjectionSpringContextTests;
 import org.springframework.web.servlet.ModelAndView;
 import org.springmodules.beans.factory.drivers.xml.XmlApplicationContextDriver;
@@ -304,7 +305,7 @@ AbstractDependencyInjectionSpringContextTests {
 	localContext.registerBeanDefinition( groovyClass.getName(), bd );
 			
 	
-	GrailsControllerHelper helper = new SimpleGrailsControllerHelper(application,this.appCtx);
+	GrailsControllerHelper helper = new SimpleGrailsControllerHelper(application,this.appCtx, new MockServletContext());
 	GroovyObject go = (GroovyObject)groovyClass.newInstance();
 	pmc.setInterceptor( new ControllerDynamicMethods(go,helper,request,response) );
 	

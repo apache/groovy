@@ -16,16 +16,15 @@ package org.codehaus.groovy.grails.commons;
 
 
 import groovy.lang.Closure;
+import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.BeanWrapper;
+import org.springframework.beans.BeanWrapperImpl;
 
 import java.beans.PropertyDescriptor;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
-import org.apache.commons.lang.StringUtils;
-import org.springframework.beans.BeanWrapper;
-import org.springframework.beans.BeanWrapperImpl;
 
 /**
  * @author Graeme Rocher
@@ -53,29 +52,40 @@ public class GrailsClassUtils {
 	 * @return True if the class is a taglib
 	 */
     public static boolean isTagLibClass( Class clazz ) {
-        return clazz.getName().endsWith( DefaultGrailsTagLibClass.TAG_LIB )  && !Closure.class.isAssignableFrom(clazz);
+        return isTagLibClass(clazz.getName())  && !Closure.class.isAssignableFrom(clazz);
     }
 
+    public static boolean isTagLibClass(String className) {
+        return className.endsWith( DefaultGrailsTagLibClass.TAG_LIB );
+    }
     /**
 	 * Returns true of the specified Groovy class is a controller
 	 * @param clazz
 	 * @return True if the class is a controller
 	 */
 	public static boolean isControllerClass( Class clazz ) {
-		return clazz.getName().endsWith(DefaultGrailsControllerClass.CONTROLLER)  && !Closure.class.isAssignableFrom(clazz);
+		return isControllerClass(clazz.getName())  && !Closure.class.isAssignableFrom(clazz);
 	}
-	
-	/**
+
+    public static boolean isControllerClass(String className) {
+        return className.endsWith(DefaultGrailsControllerClass.CONTROLLER);
+    }
+
+    /**
 	 * <p>Returns true if the specified class is a page flow class type</p>
 	 * 
 	 * @param clazz
 	 * @return  True if the class is a page flow class
 	 */
 	public static boolean isPageFlowClass( Class clazz ) {
-		return clazz.getName().endsWith(DefaultGrailsPageFlowClass.PAGE_FLOW)  && !Closure.class.isAssignableFrom(clazz);
+		return isPageFlowClass(clazz.getName())  && !Closure.class.isAssignableFrom(clazz);
 	}	
-	
-	/**
+
+    public static boolean isPageFlowClass(String className) {
+        return className.endsWith(DefaultGrailsPageFlowClass.PAGE_FLOW);
+    }
+
+    /**
 	 * <p>Returns true if the specified class is a data source.
 	 * 
 	 * @param clazz
@@ -92,10 +102,13 @@ public class GrailsClassUtils {
 	 * @return True if the class is a service class
 	 */
 	public static boolean isService(Class clazz) {
-		return clazz.getName().endsWith(DefaultGrailsServiceClass.SERVICE) && !Closure.class.isAssignableFrom(clazz);
+		return isService(clazz.getName()) && !Closure.class.isAssignableFrom(clazz);
 	}
-	
-	/**
+    public static boolean isService(String className) {
+        return className.endsWith(DefaultGrailsServiceClass.SERVICE);
+    }
+
+    /**
 	 * <p>Returns true if the specified class is a domain class. In Grails a domain class
 	 * is any class that has "id" and "version" properties</p>
 	 * 
@@ -309,5 +322,7 @@ public class GrailsClassUtils {
 		}
 		return className;
 	}
-	
+
+
+
 }

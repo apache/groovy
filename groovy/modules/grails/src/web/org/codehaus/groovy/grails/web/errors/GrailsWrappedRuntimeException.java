@@ -15,18 +15,15 @@
  */ 
 package org.codehaus.groovy.grails.web.errors;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.LineNumberReader;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.groovy.grails.exceptions.GrailsException;
+import org.codehaus.groovy.grails.commons.GrailsClassUtils;
+
+import javax.servlet.ServletContext;
+import java.io.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  *  An exception that wraps a Grails RuntimeException and attempts to extract more relevent diagnostic messages from the stack trace
@@ -36,6 +33,7 @@ import org.codehaus.groovy.grails.exceptions.GrailsException;
  */
 public class GrailsWrappedRuntimeException extends GrailsException {
 
+    public static final String URL_PREFIX = "/WEB-INF/grails-app/";
     private static final Log LOG  = LogFactory.getLog(GrailsWrappedRuntimeException.class);
     private Throwable t;
     private String className = "Unknown";
@@ -43,10 +41,12 @@ public class GrailsWrappedRuntimeException extends GrailsException {
     private String stackTrace;
     private String[] codeSnippet = new String[0];
 
+
     /**
+     * @param servletContext
      * @param t
      */
-    public GrailsWrappedRuntimeException(Throwable t) {
+    public GrailsWrappedRuntimeException(ServletContext servletContext, Throwable t) {
         super(t.getMessage(), t);
         this.t = t;
 
@@ -63,7 +63,17 @@ public class GrailsWrappedRuntimeException extends GrailsException {
                 this.lineNumber = Integer.parseInt(matcher.group(2));
                 if(getLineNumber() > -1) {
                     String fileName = this.className.replace('.', '/') + ".groovy";
-                    InputStream in = getClass().getClassLoader().getResourceAsStream(fileName);
+                    String urlPrefix = URL_PREFIX;
+                    if(GrailsClassUtils.isControllerClass(className) || GrailsClassUtils.isPageFlowClass(className)) {
+                        urlPrefix += "/controllers/";
+                    }
+                    else if(GrailsClassUtils.isTagLibClass(className)) {
+                        urlPrefix += "/taglib/";
+                    }
+                    else if(GrailsClassUtils.isService(className)) {
+                       urlPrefix += "/services/";
+                    }
+                    InputStream in = servletContext.getResourceAsStream(urlPrefix + fileName);
                     if(in != null) {
                         reader = new LineNumberReader(new InputStreamReader( in ));
                         String currentLine = reader.readLine();

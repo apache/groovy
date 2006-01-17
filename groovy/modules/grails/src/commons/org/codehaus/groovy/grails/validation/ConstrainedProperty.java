@@ -465,15 +465,18 @@ public class ConstrainedProperty   {
 		protected void processValidate(Object propertyValue, Errors errors) {
 			if(!this.range.contains(propertyValue)) {
 				Object[] args = new Object[] { constraintPropertyName, constraintOwningClass, propertyValue, range.getFrom(), range.getTo()  };
-				
-				if(range.getFrom().compareTo( propertyValue ) == -1) {
+
+                if(propertyValue == null) {
+                    super.rejectValue(errors,RANGE_CONSTRAINT + INVALID_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_RANGE_MESSAGE, args ));
+                }
+                else if(range.getFrom().compareTo( propertyValue ) == -1) {
 					super.rejectValue(errors,SIZE_CONSTRAINT + TOOSMALL_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_SIZE_MESSAGE, args ));
 				}
 				else if(range.getFrom().compareTo(propertyValue) == 1) {
 					super.rejectValue(errors,SIZE_CONSTRAINT + TOOBIG_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_SIZE_MESSAGE, args ));
 				}		
 				
-				super.rejectValue(errors,RANGE_CONSTRAINT + INVALID_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_RANGE_MESSAGE, args ));
+
 			}
 		}				
 	}

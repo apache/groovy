@@ -15,13 +15,13 @@
  */ 
 package org.codehaus.groovy.grails.web.errors;
 
-import groovy.lang.GroovyRuntimeException;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
+import org.springframework.web.context.ServletContextAware;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.handler.SimpleMappingExceptionResolver;
+
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  *  Exception resolver that wraps any runtime exceptions with a GrailsWrappedException instance
@@ -29,19 +29,21 @@ import org.springframework.web.servlet.handler.SimpleMappingExceptionResolver;
  * @author Graeme Rocher
  * @since 22 Dec, 2005
  */
-public class GrailsExceptionResolver extends SimpleMappingExceptionResolver {
+public class GrailsExceptionResolver  extends SimpleMappingExceptionResolver implements ServletContextAware {
+    private ServletContext servletContext;
 
-	/* (non-Javadoc)
-	 * @see org.springframework.web.servlet.handler.SimpleMappingExceptionResolver#resolveException(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse, java.lang.Object, java.lang.Exception)
-	 */
-	public ModelAndView resolveException(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
-
-		ModelAndView mv = super.resolveException(request, response, handler, ex);
-			
-		GrailsWrappedRuntimeException gwrex = new GrailsWrappedRuntimeException(ex);
-		mv.addObject("exception",gwrex);
-		return mv;
-	}
+    /* (non-Javadoc)
+      * @see org.springframework.web.servlet.handler.SimpleMappingExceptionResolver#resolveException(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse, java.lang.Object, java.lang.Exception)
+      */
+    public ModelAndView resolveException(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
+        ModelAndView mv = super.resolveException(request, response, handler, ex);
+        GrailsWrappedRuntimeException gwrex = new GrailsWrappedRuntimeException(servletContext,ex);
+        mv.addObject("exception",gwrex);
+        return mv;
+    }
 
 
+    public void setServletContext(ServletContext servletContext) {
+        this.servletContext = servletContext;
+    }
 }

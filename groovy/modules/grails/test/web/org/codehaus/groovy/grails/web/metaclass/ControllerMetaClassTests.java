@@ -1,20 +1,7 @@
 package org.codehaus.groovy.grails.web.metaclass;
 
-import groovy.lang.Closure;
-import groovy.lang.GroovyClassLoader;
-import groovy.lang.GroovyObject;
-import groovy.lang.MissingMethodException;
-import groovy.lang.MissingPropertyException;
-import groovy.lang.ProxyMetaClass;
-import groovy.lang.TracingInterceptor;
-
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
+import groovy.lang.*;
 import junit.framework.TestCase;
-
 import org.codehaus.groovy.grails.commons.DefaultGrailsApplication;
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.commons.metaclass.PropertyAccessProxyMetaClass;
@@ -25,7 +12,12 @@ import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.mock.web.MockServletContext;
 import org.springframework.web.servlet.ModelAndView;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.util.Map;
 
 public class ControllerMetaClassTests extends TestCase {
 
@@ -233,8 +225,9 @@ public class ControllerMetaClassTests extends TestCase {
 		BeanDefinition bd = new RootBeanDefinition(groovyClass,false);
 		context.registerBeanDefinition( groovyClass.getName(), bd );
 				
-		
-		GrailsControllerHelper helper = new SimpleGrailsControllerHelper(application,context);
+
+
+        GrailsControllerHelper helper = new SimpleGrailsControllerHelper(application,context,new MockServletContext());
 		GroovyObject go = (GroovyObject)groovyClass.newInstance();
 		pmc.setInterceptor( new ControllerDynamicMethods(go,helper,request,response) );
 		

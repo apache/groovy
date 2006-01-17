@@ -208,7 +208,7 @@ public class SpringConfig {
 		Bean grailsViewResolver = SpringConfigUtils.createSingletonBean(GrailsViewResolver.class);
 		
 		grailsViewResolver.setProperty("viewClass",SpringConfigUtils.createLiteralValue("org.springframework.web.servlet.view.JstlView"));
-		grailsViewResolver.setProperty("prefix", SpringConfigUtils.createLiteralValue("/WEB-INF/grails-app/views"));
+		grailsViewResolver.setProperty("prefix", SpringConfigUtils.createLiteralValue("/WEB-INF/grails-app/views/"));
 		grailsViewResolver.setProperty("suffix", SpringConfigUtils.createLiteralValue(".jsp"));
 		beanReferences.add(SpringConfigUtils.createBeanReference("jspViewResolver", grailsViewResolver));
 		

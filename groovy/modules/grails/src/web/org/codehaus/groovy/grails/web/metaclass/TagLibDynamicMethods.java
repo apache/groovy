@@ -16,8 +16,7 @@
 package org.codehaus.groovy.grails.web.metaclass;
 
 import groovy.lang.GroovyObject;
-import org.codehaus.groovy.grails.web.servlet.mvc.GrailsControllerHelper;
-import org.codehaus.groovy.grails.web.servlet.GrailsHttpServletRequest;
+import groovy.lang.ProxyMetaClass;
 import org.codehaus.groovy.grails.commons.metaclass.GenericDynamicProperty;
 import org.codehaus.groovy.grails.commons.metaclass.GroovyDynamicMethodsInterceptor;
 
@@ -36,17 +35,23 @@ public class TagLibDynamicMethods extends GroovyDynamicMethodsInterceptor {
     public static final String REQUEST_PROPERTY = "request";
     public static final String RESPONSE_PROPERTY = "response";
     public static final String OUT_PROPERTY = "out";
+    public static final String GRAILS_ATTRIBUTES = "grailsAttributes";
 
     public TagLibDynamicMethods(GroovyObject taglib, GroovyObject controller, HttpServletRequest request, HttpServletResponse response) throws IntrospectionException {
         super(taglib);
 
+        ProxyMetaClass controllerMetaClass = (ProxyMetaClass)controller.getMetaClass();
+        ControllerDynamicMethods controllerDynamicMethods = (ControllerDynamicMethods)controllerMetaClass.getInterceptor();
+
+
         addDynamicProperty(new GenericDynamicProperty(OUT_PROPERTY, Writer.class,false));
 
-        // add dynamic properties
-        addDynamicProperty(new GetParamsDynamicProperty(request,response));
-        addDynamicProperty(new GetSessionDynamicProperty(request,response));
-        addDynamicProperty(new GenericDynamicProperty(REQUEST_PROPERTY, HttpServletRequest.class,new GrailsHttpServletRequest( request,controller),true) );
-        addDynamicProperty(new GenericDynamicProperty(RESPONSE_PROPERTY, HttpServletResponse.class,response,true) );
-        
+        // add dynamic properties (shared with controller)
+        addDynamicProperty(controllerDynamicMethods.getDynamicProperty(GetParamsDynamicProperty.PROPERTY_NAME));
+        addDynamicProperty(controllerDynamicMethods.getDynamicProperty(GetSessionDynamicProperty.PROPERTY_NAME));
+        addDynamicProperty(controllerDynamicMethods.getDynamicProperty(ControllerDynamicMethods.REQUEST_PROPERTY));
+        addDynamicProperty(controllerDynamicMethods.getDynamicProperty(ControllerDynamicMethods.RESPONSE_PROPERTY) );
+        addDynamicProperty(controllerDynamicMethods.getDynamicProperty(ControllerDynamicMethods.SERVLET_CONTEXT) );
+        addDynamicProperty(controllerDynamicMethods.getDynamicProperty(ControllerDynamicMethods.GRAILS_ATTRIBUTES) );
     }
 }
