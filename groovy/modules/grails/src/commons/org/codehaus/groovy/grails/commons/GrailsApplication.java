@@ -28,10 +28,6 @@ public interface GrailsApplication {
      * The id of the grails application within a bean context
      */
     String APPLICATION_ID = "grailsApplication";
-    /**
-     * The application context name
-     */
-    String APPLICATION_CONTEXT = "grailsApplicationContext";
 
     /**
      * <p>Returns all controllers in an application

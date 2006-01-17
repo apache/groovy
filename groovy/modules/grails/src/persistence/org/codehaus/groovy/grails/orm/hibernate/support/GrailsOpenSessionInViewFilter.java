@@ -17,6 +17,7 @@ package org.codehaus.groovy.grails.orm.hibernate.support;
 
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.commons.spring.SpringConfig;
+import org.codehaus.groovy.grails.web.servlet.GrailsRequestAttributes;
 import org.hibernate.FlushMode;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -40,7 +41,8 @@ public class GrailsOpenSessionInViewFilter extends OpenSessionInViewFilter {
 			WebApplicationContextUtils.getRequiredWebApplicationContext(getServletContext());
 		
 		ApplicationContext context;
-		if(getServletContext().getAttribute(GrailsApplication.APPLICATION_CONTEXT) == null) {
+
+        if(getServletContext().getAttribute(GrailsRequestAttributes.APPLICATION_CONTEXT) == null) {
 	        // construct the SpringConfig for the container managed application
 	        GrailsApplication application = (GrailsApplication) parent.getBean(GrailsApplication.APPLICATION_ID, GrailsApplication.class);
 	        SpringConfig springConfig = new SpringConfig(application);
@@ -51,10 +53,10 @@ public class GrailsOpenSessionInViewFilter extends OpenSessionInViewFilter {
 	        			parent
 	        		); 
 	                
-	       getServletContext().setAttribute(GrailsApplication.APPLICATION_CONTEXT, context );
+	       getServletContext().setAttribute(GrailsRequestAttributes.APPLICATION_CONTEXT, context );
 		}
 		else {
-			context = (ApplicationContext)getServletContext().getAttribute(GrailsApplication.APPLICATION_CONTEXT);
+			context = (ApplicationContext)getServletContext().getAttribute(GrailsRequestAttributes.APPLICATION_CONTEXT);
 		}
        
        return (SessionFactory) context.getBean(getSessionFactoryBeanName(), SessionFactory.class);

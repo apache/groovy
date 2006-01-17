@@ -26,7 +26,6 @@ public interface GrailsTagLibClass extends GrailsClass {
      * The name of the application (ie global) tag library appropriate for all controller classes
      */
     String APPLICATION_TAG_LIB = "ApplicationTagLib";
-    String REQUEST_TAG_LIB = "grailsRequestTagLib";
 
     /**
      * Whether this tag library supports the specified controller

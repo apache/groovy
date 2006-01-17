@@ -31,6 +31,7 @@ import org.codehaus.groovy.grails.web.metaclass.GetParamsDynamicProperty;
 import org.codehaus.groovy.grails.web.metaclass.TagLibDynamicMethods;
 import org.codehaus.groovy.grails.web.servlet.GrailsHttpServletRequest;
 import org.codehaus.groovy.grails.web.servlet.GrailsHttpServletResponse;
+import org.codehaus.groovy.grails.web.servlet.GrailsRequestAttributes;
 import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.*;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.servlet.ModelAndView;
@@ -144,8 +145,8 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
         if(tagLibClass != null) {
             tagLib = (GroovyObject)this.applicationContext.getBean(tagLibClass.getFullName());
         }
-        request.setAttribute( GrailsTagLibClass.REQUEST_TAG_LIB, tagLib);
-        request.setAttribute( GrailsControllerClass.REQUEST_CONTROLLER, controller );
+        request.setAttribute( GrailsRequestAttributes.TAG_LIB, tagLib);
+        request.setAttribute( GrailsRequestAttributes.CONTROLLER, controller );
         
         // Step 3a: Configure a proxy interceptor for controller dynamic methods for this request
 		if(this.interceptor == null) {

@@ -17,8 +17,8 @@ package org.codehaus.groovy.grails.web.taglib.jsp;
 import groovy.lang.Closure;
 import groovy.lang.GroovyObject;
 import groovy.lang.MissingPropertyException;
-import org.codehaus.groovy.grails.commons.GrailsTagLibClass;
 import org.codehaus.groovy.grails.web.metaclass.TagLibDynamicMethods;
+import org.codehaus.groovy.grails.web.servlet.GrailsRequestAttributes;
 import org.codehaus.groovy.grails.web.taglib.exceptions.GrailsTagException;
 import org.springframework.web.util.ExpressionEvaluationUtils;
 
@@ -55,7 +55,7 @@ public class JspInvokeGrailsTagLibTag extends BodyTagSupport implements DynamicA
     }
 
     public int doAfterBody() throws JspException {
-        GroovyObject tagLib = (GroovyObject)pageContext.getRequest().getAttribute(GrailsTagLibClass.REQUEST_TAG_LIB);
+        GroovyObject tagLib = (GroovyObject)pageContext.getRequest().getAttribute(GrailsRequestAttributes.TAG_LIB);
         if(tagLib != null) {
             tagLib.setProperty( TagLibDynamicMethods.OUT_PROPERTY, pageContext.getOut() );
             Object tagLibProp;
