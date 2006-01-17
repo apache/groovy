@@ -150,6 +150,16 @@
 
   <developers>
     <developer>
+      <name>Guillaume Laforge</name>
+      <id>glaforge</id>
+      <email></email>
+      <organization>Octo Technology</organization>
+      <roles>
+        <role>Project Manager</role>
+        <role>Developer</role>
+      </roles>
+    </developer>
+    <developer>
       <name>bob mcwhirter</name>
       <id>bob</id>
       <email>bob@werken.com</email>
@@ -224,15 +234,6 @@
     <developer>
       <name>Travis Kay</name>
       <id>travis</id>
-      <email></email>
-      <organization></organization>
-      <roles>
-        <role>Developer</role>
-      </roles>
-    </developer>
-    <developer>
-      <name>Guillaume Laforge</name>
-      <id>glaforge</id>
       <email></email>
       <organization></organization>
       <roles>
