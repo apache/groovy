@@ -49,10 +49,13 @@ public class ControllerDynamicMethods extends
 	public static final String ERRORS_PROPERTY = "errors";
 	public static final String HAS_ERRORS_METHOD = "hasErrors";
 	public static final String MODEL_AND_VIEW_PROPERTY = "modelAndView";
+    public static final String ACTION_URI_PROPERTY = "actionUri";
+    public static final String CONTROLLER_URI_PROPERTY = "controllerUri";
 
     protected GrailsControllerClass controllerClass;
 	protected GrailsScaffolder scaffolder;
 	private boolean scaffolding;
+
 
 
     public ControllerDynamicMethods( GroovyObject controller,GrailsControllerHelper helper,HttpServletRequest request, HttpServletResponse response) throws IntrospectionException {
@@ -69,6 +72,8 @@ public class ControllerDynamicMethods extends
         addDynamicProperty(new GenericDynamicProperty(ERRORS_PROPERTY, Errors.class, null, false));
         addDynamicProperty(new GenericDynamicProperty(MODEL_AND_VIEW_PROPERTY, ModelAndView.class,null,false));
         addDynamicProperty(new GenericDynamicProperty(GRAILS_ATTRIBUTES, GrailsRequestAttributes.class,helper.getGrailsAttributes(),true));
+        addDynamicProperty(new GenericDynamicProperty(ACTION_URI_PROPERTY,String.class,null,false));
+        addDynamicProperty(new GenericDynamicProperty(CONTROLLER_URI_PROPERTY,String.class,null,false));
 
         // add dynamic methods
         addDynamicMethodInvocation( new RedirectDynamicMethod(helper,request,response) );

@@ -17,6 +17,7 @@ package org.codehaus.groovy.grails.web.servlet;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.validation.Errors;
 import org.codehaus.groovy.grails.web.pages.GroovyPagesTemplateEngine;
+import org.codehaus.groovy.grails.web.metaclass.ControllerDynamicMethods;
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import groovy.lang.GroovyObject;
 
@@ -41,6 +42,18 @@ public class DefaultGrailsRequestAttributes implements GrailsRequestAttributes {
 
     public GroovyObject getController(ServletRequest request) {
         return (GroovyObject)request.getAttribute(CONTROLLER);
+    }
+
+    public String getControllerUri(ServletRequest request) {
+        GroovyObject controller = getController(request);
+
+        return (String)controller.getProperty(ControllerDynamicMethods.ACTION_URI_PROPERTY);
+    }
+
+    public String getControllerActionUri(ServletRequest request) {
+        GroovyObject controller = getController(request);
+
+        return (String)controller.getProperty(ControllerDynamicMethods.CONTROLLER_URI_PROPERTY);
     }
 
     public GroovyObject getTagLib(ServletRequest request) {

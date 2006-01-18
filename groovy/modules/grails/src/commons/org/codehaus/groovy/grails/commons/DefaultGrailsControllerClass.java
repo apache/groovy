@@ -80,6 +80,7 @@ public class DefaultGrailsControllerClass extends AbstractInjectableGrailsClass
                     this.viewNames.put( DefaultGrailsScaffolder.ACTION_NAMES[i], viewUri );
                 }
                 this.uri2closureMap.put(tmpUri, DefaultGrailsScaffolder.ACTION_NAMES[i]);
+                this.uri2closureMap.put(tmpUri + "/**", DefaultGrailsScaffolder.ACTION_NAMES[i]);
             }
         }
 
@@ -105,6 +106,7 @@ public class DefaultGrailsControllerClass extends AbstractInjectableGrailsClass
                 closure = (Closure)getPropertyValue(propertyDescriptor.getName(), Closure.class);
                 if (closure != null) {
                     this.uri2closureMap.put(tmpUri, propertyDescriptor.getName());
+                    this.uri2closureMap.put(tmpUri + "/**", propertyDescriptor.getName());
                     // TODO: This code is likely broken and needs re-thinking as there may be a better way to
                     // handle typed views
                     if (typedViews != null) {

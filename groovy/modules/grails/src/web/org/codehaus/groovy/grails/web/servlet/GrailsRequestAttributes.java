@@ -21,6 +21,7 @@ public interface GrailsRequestAttributes {
     String CONTROLLER = "org.codehaus.groovy.grails.CONTROLLER";
     String TAG_LIB = "org.codehaus.groovy.grails.TAG_LIB";
     String ERRORS =  "org.codehaus.groovy.grails.ERRORS";
+    String ID_PARAM = "id";
 
     /**
      * @return The application context for servlet
@@ -31,6 +32,20 @@ public interface GrailsRequestAttributes {
      * @return The controller for the request
      */
     GroovyObject getController(ServletRequest request);
+
+    /**
+     *
+     * @param request
+     * @return The uri of the controller within the request
+     */
+    String getControllerUri(ServletRequest request);
+
+    /**
+     *
+     * @param request
+     * @return The uri of the action called within the controller
+     */
+    String getControllerActionUri(ServletRequest request);
 
     /**
      * @return The tag library for the request
