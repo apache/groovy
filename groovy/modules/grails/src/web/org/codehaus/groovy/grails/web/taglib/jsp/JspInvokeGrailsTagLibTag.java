@@ -28,10 +28,7 @@ import javax.servlet.jsp.tagext.BodyContent;
 import javax.servlet.jsp.tagext.BodyTagSupport;
 import javax.servlet.jsp.tagext.DynamicAttributes;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.List;
-import java.util.ArrayList;
+import java.util.*;
 
 /**
  * A tag that invokes a tag defined in a the Grails dynamic tag library. Authors of Grails tags
@@ -108,10 +105,13 @@ public class JspInvokeGrailsTagLibTag extends BodyTagSupport implements DynamicA
         else {
             throw new GrailsTagException("Tag ["+getName()+"] does not exist. No tag library found.");
         }
+
+        Collections.reverse(invocationArgs);
+        setCurrentArgument();
         return EVAL_BODY_BUFFERED;
     }
 
-    public void doInitBody() throws JspException {
+    private void setCurrentArgument() {
         if(invocationCount > 0) {
             Object arg = invocationArgs.get(invocationCount - 1);
             if(arg.equals(ZERO_ARGUMENTS)) {
@@ -124,6 +124,7 @@ public class JspInvokeGrailsTagLibTag extends BodyTagSupport implements DynamicA
     }
 
     public int doAfterBody() throws JspException {
+
         BodyContent b = getBodyContent();
         if(invocationCount > 0) {
             if(b != null) {
@@ -139,6 +140,7 @@ public class JspInvokeGrailsTagLibTag extends BodyTagSupport implements DynamicA
 
 
         invocationCount--;
+        setCurrentArgument();
         if(invocationCount <= 0)  {
             return SKIP_BODY;
         }
