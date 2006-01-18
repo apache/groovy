@@ -19,8 +19,8 @@ import groovy.text.Template;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.groovy.grails.commons.GrailsDomainClass;
-import org.codehaus.groovy.grails.web.pages.GroovyPagesServlet;
 import org.codehaus.groovy.grails.web.pages.GroovyPagesTemplateEngine;
+import org.codehaus.groovy.grails.web.servlet.GrailsRequestAttributes;
 import org.codehaus.groovy.grails.web.taglib.exceptions.GrailsTagException;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
@@ -87,7 +87,7 @@ public class RenderInputTag extends RequestContextTag {
         } catch (BeansException e) {
             throw new GrailsTagException("Property ["+property+"] is not a valid bean property in tag [renderInput]:" + e.getMessage(),e);
         }
-        GroovyPagesTemplateEngine engine = (GroovyPagesTemplateEngine)servletContext.getAttribute(GroovyPagesServlet.GSP_TEMPLATE_ENGINE);
+        GroovyPagesTemplateEngine engine = (GroovyPagesTemplateEngine)servletContext.getAttribute(GrailsRequestAttributes.GSP_TEMPLATE_ENGINE);
 
         Template t = null;
         try {

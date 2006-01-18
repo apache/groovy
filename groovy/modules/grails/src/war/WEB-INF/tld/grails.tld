@@ -50,6 +50,12 @@
         <name>invokeTag</name>
         <tag-class>org.codehaus.groovy.grails.web.taglib.jsp.JspInvokeGrailsTagLibTag</tag-class>
         <body-content>JSP</body-content>
+        <variable>
+            <name-given>it</name-given>
+            <variable-class>java.lang.Object</variable-class>
+            <declare>true</declare>
+            <scope>AT_BEGIN</scope>
+        </variable>
         <attribute>
             <name>name</name>
             <required>true</required>

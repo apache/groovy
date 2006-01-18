@@ -3,6 +3,7 @@ package org.codehaus.groovy.grails.web.servlet;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.validation.Errors;
 import org.codehaus.groovy.grails.web.pages.GroovyPagesTemplateEngine;
+import org.codehaus.groovy.grails.commons.GrailsApplication;
 import groovy.lang.GroovyObject;
 
 import javax.servlet.ServletRequest;
@@ -48,4 +49,10 @@ public interface GrailsRequestAttributes {
      * @return Retrieves the shared GSP template engine
      */
     GroovyPagesTemplateEngine getPagesTemplateEngine();
+
+    /**
+     *
+     * @return Retrieves the grails application instance
+     */
+    GrailsApplication getGrailsApplication();
 }

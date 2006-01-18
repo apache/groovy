@@ -30,6 +30,8 @@ import javax.servlet.jsp.tagext.DynamicAttributes;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * A tag that invokes a tag defined in a the Grails dynamic tag library. Authors of Grails tags
@@ -47,14 +49,17 @@ import java.util.Map;
  */
 public class JspInvokeGrailsTagLibTag extends BodyTagSupport implements DynamicAttributes  {
 
+    private static final String ZERO_ARGUMENTS = "zeroArgumentsFlag";
+    private static final String GROOVY_DEFAULT_ARGUMENT = "it";
+
     private String name;
+    private int invocationCount;
+    private List invocationArgs = new ArrayList();
     protected Map attributes = new HashMap();
 
-    public int doStartTag()  {
-        return EVAL_BODY_BUFFERED;
-    }
 
-    public int doAfterBody() throws JspException {
+
+    public int doStartTag()  {
         GroovyObject tagLib = (GroovyObject)pageContext.getRequest().getAttribute(GrailsRequestAttributes.TAG_LIB);
         if(tagLib != null) {
             tagLib.setProperty( TagLibDynamicMethods.OUT_PROPERTY, pageContext.getOut() );
@@ -65,20 +70,23 @@ public class JspInvokeGrailsTagLibTag extends BodyTagSupport implements DynamicA
                 throw new GrailsTagException("Tag ["+getName()+"] does not exist in tag library ["+tagLib.getClass().getName()+"]");
             }
             if(tagLibProp instanceof Closure) {
-
                 Closure body = new Closure(this) {
                     public Object doCall() {
                         return call();
                     }
-                    public Object call() {
-                        BodyContent b = getBodyContent();
-                        if(b != null) {
-                            JspWriter out = b.getEnclosingWriter();
-                            try {
-                                out.write(b.getString());
-                            } catch (IOException e) {
-                                throw new GrailsTagException("I/O error writing body of tag ["+getName()+"]: " + e.getMessage(),e);
-                            }
+                    public Object doCall(Object o) {
+                        return call(new Object[]{o});
+                    }
+                    public Object doCall(Object[] args) {
+                        return call(args);
+                    }
+                    public Object call(Object[] args) {
+                        invocationCount++;
+                        if(args.length > 0) {
+                            invocationArgs.add(args[0]);
+                        }
+                        else {
+                            invocationArgs.add(ZERO_ARGUMENTS);
                         }
                         return null;
                     }
@@ -100,9 +108,42 @@ public class JspInvokeGrailsTagLibTag extends BodyTagSupport implements DynamicA
         else {
             throw new GrailsTagException("Tag ["+getName()+"] does not exist. No tag library found.");
         }
+        return EVAL_BODY_BUFFERED;
+    }
+
+    public void doInitBody() throws JspException {
+        if(invocationCount > 0) {
+            Object arg = invocationArgs.get(invocationCount - 1);
+            if(arg.equals(ZERO_ARGUMENTS)) {
+                pageContext.setAttribute(GROOVY_DEFAULT_ARGUMENT, null);
+            }
+            else {
+                pageContext.setAttribute(GROOVY_DEFAULT_ARGUMENT, arg);
+            }
+        }
+    }
+
+    public int doAfterBody() throws JspException {
         BodyContent b = getBodyContent();
-        b.clearBody();
-        return SKIP_BODY;
+        if(invocationCount > 0) {
+            if(b != null) {
+                JspWriter out = b.getEnclosingWriter();
+                try {
+                    out.write(b.getString());
+                } catch (IOException e) {
+                    throw new GrailsTagException("I/O error writing body of tag ["+getName()+"]: " + e.getMessage(),e);
+                }
+                 b.clearBody();
+            }
+        }
+
+
+        invocationCount--;
+        if(invocationCount <= 0)  {
+            return SKIP_BODY;
+        }
+        else
+            return EVAL_BODY_BUFFERED;
     }
 
     public String getName() {
