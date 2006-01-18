@@ -209,6 +209,129 @@ public class GroovyScriptEngine implements ResourceConnector {
         this.parentClassLoader = parentClassLoader;
     }
 
+    /**
+     * Get the class of the script in question, so that you can instantiate Groovy objects with caching and reloading.
+     *
+     * @param script
+     * @return the loaded script as a compiled class
+     * @throws ResourceException
+     * @throws ScriptException
+     */
+    public Class loadScriptByName(String script) throws ResourceException, ScriptException {
+        return loadScriptByName( script, getClass().getClassLoader());
+    }
+
+
+    /**
+     * Get the class of the script in question, so that you can instantiate Groovy objects with caching and reloading.
+     *
+     * @param script
+     * @return the loaded script as a compiled class
+     * @throws ResourceException
+     * @throws ScriptException
+     */
+    public Class loadScriptByName(String script, ClassLoader parentClassLoader)
+            throws ResourceException, ScriptException {
+        script = script.replace('.', File.separatorChar) + ".groovy";
+        ScriptCacheEntry entry = updateCacheEntry(script, parentClassLoader);
+        return entry.scriptClass;
+    }
+
+    /**
+     * Locate the class and reload it or any of its dependencies
+     *
+     * @param script
+     * @param parentClassLoader
+     * @return the script cache entry
+     * @throws ResourceException
+     * @throws ScriptException
+     */
+    private ScriptCacheEntry updateCacheEntry(String script, final ClassLoader parentClassLoader)
+            throws ResourceException, ScriptException
+    {
+        ScriptCacheEntry entry;
+
+        script = script.intern();
+        synchronized (script) {
+
+            URLConnection groovyScriptConn = rc.getResourceConnection(script);
+
+            // URL last modified
+            long lastModified = groovyScriptConn.getLastModified();
+            // Check the cache for the script
+            entry = (ScriptCacheEntry) scriptCache.get(script);
+            // If the entry isn't null check all the dependencies
+
+            boolean dependencyOutOfDate = false;
+            if (entry != null) {
+
+                for (Iterator i = entry.dependencies.keySet().iterator(); i.hasNext();) {
+                    URLConnection urlc = null;
+                    URL url = (URL) i.next();
+                    try {
+                        urlc = url.openConnection();
+                        urlc.setDoInput(false);
+                        urlc.setDoOutput(false);
+                        long dependentLastModified = urlc.getLastModified();
+                        if (dependentLastModified > ((Long) entry.dependencies.get(url)).longValue()) {
+                            dependencyOutOfDate = true;
+                            break;
+                        }
+                    } catch (IOException ioe) {
+                        dependencyOutOfDate = true;
+                        break;
+                    }
+                }
+            }
+
+            if (entry == null || entry.lastModified < lastModified || dependencyOutOfDate) {
+                // Make a new entry
+                entry = new ScriptCacheEntry();
+
+                // Closure variable
+                final ScriptCacheEntry finalEntry = entry;
+
+                // Compile the script into an object
+                GroovyClassLoader groovyLoader =
+                        (GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
+                            public Object run() {
+                                return new GroovyClassLoader(parentClassLoader) {
+                                    protected Class findClass(String className) throws ClassNotFoundException {
+                                        String filename = className.replace('.', File.separatorChar) + ".groovy";
+                                        URLConnection dependentScriptConn = null;
+                                        try {
+                                            dependentScriptConn = rc.getResourceConnection(filename);
+                                            finalEntry.dependencies.put(
+                                                    dependentScriptConn.getURL(),
+                                                    new Long(dependentScriptConn.getLastModified()));
+                                        } catch (ResourceException e1) {
+                                            throw new ClassNotFoundException("Could not read " + className + ": " + e1);
+                                        }
+                                        try {
+                                            return parseClass(dependentScriptConn.getInputStream(), filename);
+                                        } catch (CompilationFailedException e2) {
+                                            throw new ClassNotFoundException("Syntax error in " + className + ": " + e2);
+                                        } catch (IOException e2) {
+                                            throw new ClassNotFoundException("Problem reading " + className + ": " + e2);
+                                        }
+                                    }
+                                };
+                            }
+                        });
+
+                try {
+                    entry.scriptClass = groovyLoader.parseClass(groovyScriptConn.getInputStream(), script);
+                } catch (Exception e) {
+                    throw new ScriptException("Could not parse script: " + script, e);
+                }
+                entry.lastModified = lastModified;
+
+                scriptCache.put(script, entry);
+            }
+        }
+        return entry;
+    }
+
     public String run(String script, String argument) throws ResourceException, ScriptException {
 		Binding binding = new Binding();
 		binding.setVariable("arg", argument);
