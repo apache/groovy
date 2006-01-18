@@ -92,8 +92,9 @@ public class GroovyScriptEngine implements ResourceConnector {
 	private URL[] roots;
 	private Map scriptCache = Collections.synchronizedMap(new HashMap());
 	private ResourceConnector rc;
+    private ClassLoader parentClassLoader = getClass().getClassLoader();
 
-	private static class ScriptCacheEntry {
+    private static class ScriptCacheEntry {
 		private Class scriptClass;
 		private long lastModified;
 		private Map dependencies = new HashMap();
@@ -149,7 +150,12 @@ public class GroovyScriptEngine implements ResourceConnector {
 		this.rc = this;
 	}
 
-	public GroovyScriptEngine(String[] args) throws IOException {
+    public GroovyScriptEngine(URL[] roots, ClassLoader parentClassLoader) {
+        this(roots);
+        this.parentClassLoader = parentClassLoader;
+    }
+
+    public GroovyScriptEngine(String[] args) throws IOException {
 		roots = new URL[args.length];
 		for (int i = 0; i < roots.length; i++) {
 			roots[i] = new File(args[i]).toURL();
@@ -157,17 +163,53 @@ public class GroovyScriptEngine implements ResourceConnector {
 		this.rc = this;
 	}
 
-	public GroovyScriptEngine(String arg) throws IOException {
+    public GroovyScriptEngine(String[] args, ClassLoader parentClassLoader) throws IOException {
+        this(args);
+        this.parentClassLoader = parentClassLoader;
+    }
+
+    public GroovyScriptEngine(String arg) throws IOException {
 		roots = new URL[1];
 		roots[0] = new File(arg).toURL();
 		this.rc = this;
 	}
 
-	public GroovyScriptEngine(ResourceConnector rc) {
+    public GroovyScriptEngine(String arg, ClassLoader parentClassLoader) throws IOException {
+        this(arg);
+        this.parentClassLoader = parentClassLoader;
+    }
+
+    public GroovyScriptEngine(ResourceConnector rc) {
 		this.rc = rc;
 	}
 
-	public String run(String script, String argument) throws ResourceException, ScriptException {
+    public GroovyScriptEngine(ResourceConnector rc, ClassLoader parentClassLoader) {
+        this(rc);
+        this.parentClassLoader = parentClassLoader;
+    }
+
+    /**
+     * Get the <code>ClassLoader</code> that will serve as the parent ClassLoader of the
+     * {@link GroovyClassLoader} in which scripts will be executed. By default, this is the
+     * ClassLoader that loaded the <code>GroovyScriptEngine</code> class.
+     *
+     * @return parent classloader used to load scripts
+     */
+    public ClassLoader getParentClassLoader() {
+        return parentClassLoader;
+    }
+
+    /**
+     * @param parentClassLoader ClassLoader to be used as the parent ClassLoader for scripts executed by the engine
+     */
+    public void setParentClassLoader(ClassLoader parentClassLoader) {
+        if (parentClassLoader == null) {
+            throw new IllegalArgumentException("The parent class loader must not be null.");
+        }
+        this.parentClassLoader = parentClassLoader;
+    }
+
+    public String run(String script, String argument) throws ResourceException, ScriptException {
 		Binding binding = new Binding();
 		binding.setVariable("arg", argument);
 		Object result = run(script, binding);
@@ -220,7 +262,7 @@ public class GroovyScriptEngine implements ResourceConnector {
 				GroovyClassLoader groovyLoader = 
 					(GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
 						public Object run() {
-							return new GroovyClassLoader(getClass().getClassLoader()) {
+							return new GroovyClassLoader(getParentClassLoader()) {
 								protected Class findClass(String className) throws ClassNotFoundException {
 									String filename = className.replace('.', File.separatorChar) + ".groovy";
 									URLConnection dependentScriptConn = null;
