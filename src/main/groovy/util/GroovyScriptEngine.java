@@ -100,42 +100,48 @@ public class GroovyScriptEngine implements ResourceConnector {
 		private Map dependencies = new HashMap();
 	}
 
-	public URLConnection getResourceConnection(String resourceName) throws ResourceException {
-		// Get the URLConnection
-		URLConnection groovyScriptConn = null;
+    public URLConnection getResourceConnection(String resourceName) throws ResourceException {
+        // Get the URLConnection
+        URLConnection groovyScriptConn = null;
 
-		ResourceException se = null;
-		for (int i = 0; i < roots.length; i++) {
-			URL scriptURL = null;
-			try {
-				scriptURL = new URL(roots[i], resourceName);
-				groovyScriptConn = scriptURL.openConnection();
-			} catch (MalformedURLException e) {
-				String message = "Malformed URL: " + roots[i] + ", " + resourceName;
-				if (se == null) {
-					se = new ResourceException(message);
-				} else {
-					se = new ResourceException(message, se);
-				}
-			} catch (IOException e1) {
-				String message = "Cannot open URL: " + scriptURL;
-				if (se == null) {
-					se = new ResourceException(message);
-				} else {
-					se = new ResourceException(message, se);
-				}
-			}
+        ResourceException se = null;
+        for (int i = 0; i < roots.length; i++) {
+            URL scriptURL = null;
+            try {
+                scriptURL = new URL(roots[i], resourceName);
 
-		}
+                groovyScriptConn = scriptURL.openConnection();
 
-		// If we didn't find anything, report on all the exceptions that
-		// occurred.
-		if (groovyScriptConn == null) {
-			throw se;
-		}
+                // Make sure we can open it, if we can't it doesn't exist.
+                // Could be very slow if there are any non-file:// URLs in there
+                groovyScriptConn.getInputStream();
 
-		return groovyScriptConn;
-	}
+                break; // Now this is a bit unusual
+
+            } catch (MalformedURLException e) {
+                String message = "Malformed URL: " + roots[i] + ", " + resourceName;
+                if (se == null) {
+                    se = new ResourceException(message);
+                } else {
+                    se = new ResourceException(message, se);
+                }
+            } catch (IOException e1) {
+                String message = "Cannot open URL: " + scriptURL;
+                if (se == null) {
+                    se = new ResourceException(message);
+                } else {
+                    se = new ResourceException(message, se);
+                }
+            }
+        }
+
+        // If we didn't find anything, report on all the exceptions that occurred.
+        if (groovyScriptConn == null) {
+            throw se;
+        }
+
+        return groovyScriptConn;
+    }
 
 	/**
 	 * The groovy script engine will run groovy scripts and reload them and
