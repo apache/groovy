@@ -47,6 +47,8 @@ package org.codehaus.groovy.ast.stmt;
 
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
+import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.Expression;
 
 /**
@@ -57,15 +59,14 @@ import org.codehaus.groovy.ast.expr.Expression;
  */
 public class ForStatement extends Statement {
 
-    private String variable;
+    private Parameter variable;
     private Expression collectionExpression;
     private Statement loopBlock;
-    private ClassNode variableType;
+    private VariableScope scope;
     
 
-    public ForStatement(String variable, ClassNode variableType, Expression collectionExpression, Statement loopBlock) {
+    public ForStatement(Parameter variable, Expression collectionExpression, Statement loopBlock) {
         this.variable = variable;
-        this.variableType = variableType;
         this.collectionExpression = collectionExpression;
         this.loopBlock = loopBlock;
     }
@@ -82,18 +83,23 @@ public class ForStatement extends Statement {
         return loopBlock;
     }
 
-    public String getVariable() {
+    public Parameter getVariable() {
         return variable;
     }
     
     public ClassNode getVariableType() {
-        return variableType;
+        return variable.getType();
     }
-
-    public void setVariableType(ClassNode varType) {
-        variableType = varType;
-    }
+    
     public void setCollectionExpression(Expression collectionExpression) {
         this.collectionExpression = collectionExpression;
+    }
+
+    public void setVariableScope(VariableScope variableScope) {
+       scope = variableScope;        
+    }
+
+    public VariableScope getVariableScope() {
+        return scope;
     }
 }

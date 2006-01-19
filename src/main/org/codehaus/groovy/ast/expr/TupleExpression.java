@@ -87,7 +87,9 @@ public class TupleExpression extends Expression {
     }
 
     public Expression transformExpression(ExpressionTransformer transformer) {
-        return new TupleExpression(transformExpressions(getExpressions(), transformer));
+        Expression ret = new TupleExpression(transformExpressions(getExpressions(), transformer)); 
+        ret.setSourcePosition(this);
+        return ret;
     }
 
     public Expression getExpression(int i) {

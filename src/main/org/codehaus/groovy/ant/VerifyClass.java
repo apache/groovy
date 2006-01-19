@@ -64,23 +64,13 @@ import org.objectweb.asm.tree.analysis.Frame ;
 import org.objectweb.asm.tree.analysis.SimpleVerifier ;
 
 /**
- * Compiles Groovy source files. This task can take the following
+ * Verify Class files. This task can take the following
  * arguments:
  * <ul>
- * <li>sourcedir
- * <li>destdir
- * <li>classpath
+ * <li>dir
  * </ul>
- * Of these arguments, the <b>sourcedir</b> and <b>destdir</b> are required.
- * <p>
- * When this task executes, it will recursively scan the sourcedir and
- * destdir looking for Groovy source files to compile. This task makes its
- * compile decision based on timestamp.
- * 
- * Based heavily on the Javac implementation in Ant
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$ 
+ * When this task executes, it will recursively scan the dir and 
+ * look for class files to verify.  
  */
 public class VerifyClass extends MatchingTask {
     private String topDir=null;

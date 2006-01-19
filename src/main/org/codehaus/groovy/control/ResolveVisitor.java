@@ -54,11 +54,14 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.ConstructorNode;
+import org.codehaus.groovy.ast.DynamicVariable;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.Variable;
+import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
@@ -71,6 +74,7 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.AssertStatement;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.CaseStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.ast.stmt.DoWhileStatement;
@@ -93,7 +97,7 @@ import org.codehaus.groovy.syntax.Types;
  * Visitor to resolve Types and convert VariableExpression to
  * ClassExpressions if needed.
  *
- * Note: the method to start the resolving is @see ResolveVisitor#startResolving(ClassNode, SourceUnit).
+ * Note: the method to start the resolving is  startResolving(ClassNode, SourceUnit).
  *
  *
  * @author Jochen Theodorou
@@ -106,6 +110,7 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
     private static final Object NO_CLASS = new Object();
     private static final Object SCRIPT = new Object();
     private SourceUnit source;
+    private VariableScope currentScope;
 
     private boolean isTopLevelProperty = true;
 
@@ -119,6 +124,8 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
     }
 
     public void visitConstructor(ConstructorNode node) {
+        VariableScope oldScope = currentScope;
+        currentScope = node.getVariableScope();
         Parameter[] paras = node.getParameters();
         for (int i=0; i<paras.length; i++) {
             ClassNode t = paras[i].getType();
@@ -131,6 +138,7 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
         }
         Statement code = node.getCode();
         if (code!=null) code.visit(this);
+        currentScope = oldScope;
     }
 
     public void visitSwitch(SwitchStatement statement) {
@@ -145,6 +153,8 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
     }
 
     public void visitMethod(MethodNode node) {
+        VariableScope oldScope = currentScope;
+        currentScope = node.getVariableScope();
         Parameter[] paras = node.getParameters();
         for (int i=0; i<paras.length; i++) {
             ClassNode t = paras[i].getType();
@@ -158,6 +168,7 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
         resolveOrFail(node.getReturnType(),node);
         Statement code = node.getCode();
         if (code!=null) code.visit(this);
+        currentScope = oldScope;
     }
 
     public void visitField(FieldNode node) {
@@ -581,8 +592,21 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
     protected Expression transformVariableExpression(VariableExpression ve) {
         if (ve.getName().equals("this"))  return VariableExpression.THIS_EXPRESSION;
         if (ve.getName().equals("super")) return VariableExpression.SUPER_EXPRESSION;
-        ClassNode t = ClassHelper.make(ve.getName());
-        if (resolve(t)) return new ClassExpression(t);
+        Variable v = ve.getAccessedVariable();
+        if (v instanceof DynamicVariable) {
+            ClassNode t = ClassHelper.make(ve.getName());
+            if (resolve(t)) {
+                // the name is a type so remove it from the scoping
+                // as it is only a classvariable, it is only in 
+                // referencedClassVariables, but must be removed
+                // for each parentscope too
+                for (VariableScope scope = currentScope; scope!=null && !scope.isRoot(); scope = scope.getParent()) {
+                    if (scope.isRoot()) break;
+                    if (scope.getReferencedClassVariables().remove(ve.getName())==null) break;
+                }
+                return new ClassExpression(t);
+            }
+        }
         resolveOrFail(ve.getType(),ve);
         return ve;
     }
@@ -595,7 +619,9 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
             return be;
         }
         Expression right = transform(be.getRightExpression());
-        return new BinaryExpression(left,be.getOperation(),right);
+        Expression ret = new BinaryExpression(left,be.getOperation(),right);
+        ret.setSourcePosition(be);
+        return ret;
     }
     
     protected Expression transformClosureExpression(ClosureExpression ce) {
@@ -606,7 +632,10 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
         }
         Statement code = ce.getCode();
         if (code!=null) code.visit(this);
-    	return new ClosureExpression(paras,code);
+    	ClosureExpression newCe= new ClosureExpression(paras,code);
+        newCe.setVariableScope(ce.getVariableScope());
+        newCe.setSourcePosition(ce);
+        return newCe;
     }
     
     protected Expression transformConstructorCallExpression(ConstructorCallExpression cce){
@@ -614,7 +643,9 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
     	resolveOrFail(type,cce);
     	Expression args = cce.getArguments();
     	args = transform(args);
-    	return new ConstructorCallExpression(type,args);
+    	Expression expr = new ConstructorCallExpression(type,args);
+        expr.setSourcePosition(cce);
+        return expr;
     }
     
     protected Expression transformMethodCallExpression(MethodCallExpression mce) {
@@ -631,6 +662,7 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
         ret.setSafe(mce.isSafe());
         ret.setImplicitThis(mce.isImplicitThis());
         ret.setSpreadSafe(mce.isSpreadSafe());
+        ret.setSourcePosition(mce);
         return ret;
     }
     
@@ -663,7 +695,7 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
     public void visitClass(ClassNode node) {
         ClassNode oldNode = currentClass;
         currentClass = node;
-        ClassNode sn = node.getSuperClass();
+        ClassNode sn = node.getUnresolvedSuperClass();
         if (sn!=null) resolveOrFail(sn,node);
         ClassNode[] interfaces = node.getInterfaces();
         for (int i=0; i<interfaces.length; i++) {
@@ -727,5 +759,12 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
         compilationUnit.getErrorCollector().addErrorAndContinue(
           new SyntaxErrorMessage(new SyntaxException(msg + '\n', line, col), source)
         );
+    }
+    
+    public void visitBlockStatement(BlockStatement block) {
+        VariableScope oldScope = currentScope;
+        currentScope = block.getVariableScope();
+        super.visitBlockStatement(block);
+        currentScope = oldScope;
     }
 }

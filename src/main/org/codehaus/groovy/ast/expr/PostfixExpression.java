@@ -74,7 +74,9 @@ public class PostfixExpression extends Expression {
     }
 
     public Expression transformExpression(ExpressionTransformer transformer) {
-        return new PostfixExpression(transformer.transform(expression), operation);
+        Expression ret = new PostfixExpression(transformer.transform(expression), operation); 
+        ret.setSourcePosition(this);
+        return ret;
     }
 
     public void setExpression(Expression expression) {

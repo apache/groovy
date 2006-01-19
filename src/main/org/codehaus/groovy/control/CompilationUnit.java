@@ -70,7 +70,7 @@ import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.ClassCompletionVerifier;
 import org.codehaus.groovy.classgen.ClassGenerator;
 import org.codehaus.groovy.classgen.GeneratorContext;
-import org.codehaus.groovy.classgen.JSRVariableScopeCodeVisitor;
+import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.io.InputStreamReaderSource;
 import org.codehaus.groovy.control.io.ReaderSource;
@@ -116,10 +116,7 @@ public class CompilationUnit extends ProcessingUnit {
 
     protected Verifier verifier;   // For use by verify().
 
-
-    protected ClassCompletionVerifier completionVerifier; // for use by checkClassCompletion
-
-
+    
     protected boolean debug;      // Controls behaviour of classgen() and other routines.
     protected boolean configured; // Set true after the first configure() operation
 
@@ -173,7 +170,6 @@ public class CompilationUnit extends ProcessingUnit {
 
 
         this.verifier = new Verifier();
-        this.completionVerifier = new ClassCompletionVerifier();
         this.resolveVisitor = new ResolveVisitor(this);
 
 
@@ -249,25 +245,12 @@ public class CompilationUnit extends ProcessingUnit {
     public ClassNode getClassNode(final String name) {
         final ClassNode[] result = new ClassNode[]{null};
         LoopBodyForPrimaryClassNodeOperations handler = new LoopBodyForPrimaryClassNodeOperations() {
-
-
             public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
-
-
                 if (classNode.getName().equals(name)) {
-
-
                     result[0] = classNode;
-
-
                 }
-
-
             }
-
-
         };
-
 
         try {
             applyToPrimaryClassNodes(handler,false);
@@ -582,6 +565,10 @@ public class CompilationUnit extends ProcessingUnit {
             List classes = source.ast.getClasses();
             for (Iterator it = classes.iterator(); it.hasNext();) {
                 ClassNode node = (ClassNode) it.next();
+                
+                VariableScopeVisitor scopeVisitor = new VariableScopeVisitor(source);
+                scopeVisitor.visitClass(node);
+                
                 resolveVisitor.startResolving(node,source);
             }
             
@@ -671,15 +658,9 @@ public class CompilationUnit extends ProcessingUnit {
                         source
                 );
             }
-
-            //
-            // do scope checking
-            //
-            if (source!=null && (!classNode.isSynthetic()) && (!"false".equals(System.getProperty("groovy.jsr.check")))) {
-                JSRVariableScopeCodeVisitor scopeVisitor = new JSRVariableScopeCodeVisitor(null ,source);
-                scopeVisitor.visitClass(classNode);
-                source.getErrorCollector().failIfErrors();
-            }
+            
+            LabelVerifier lv = new LabelVerifier(source);
+            lv.visitClass(classNode);
 
             //
             // Prep the generator machinery
@@ -699,28 +680,17 @@ public class CompilationUnit extends ProcessingUnit {
             // Run the generation and create the class (if required)
             //
             generator.visitClass(classNode);
+            ClassCompletionVerifier completionVerifier = new ClassCompletionVerifier(source);
             completionVerifier.visitClass(classNode);
 
 
             byte[] bytes = ((ClassWriter) visitor).toByteArray();
             generatedClasses.add(new GroovyClass(classNode.getName(), bytes));
 
-/*
-            byte[] bytes = ((ClassWriter) visitor).toByteArray();
-            FileOutputStream fos;
-            try {
-                fos = new FileOutputStream(classNode.getType().getName());
-                fos.write(bytes);
-                fos.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }*/
-
 
             //
             // Handle any callback that's been set
-
-
+            //
             if (CompilationUnit.this.classgenCallback != null) {
                 classgenCallback.call(visitor, classNode);
             }
@@ -728,7 +698,7 @@ public class CompilationUnit extends ProcessingUnit {
 
             //
             // Recurse for inner classes
-
+            //
             LinkedList innerClasses = generator.getInnerClasses();
             while (!innerClasses.isEmpty()) {
                 classgen.call(source, context, (ClassNode) innerClasses.removeFirst());
@@ -886,7 +856,12 @@ public class CompilationUnit extends ProcessingUnit {
                 } catch (CompilationFailedException e) {
                     throw e;
                 } catch (Exception e) {
-                    throw new GroovyBugError(e);
+                    GroovyBugError gbe = new GroovyBugError(e);
+                    changeBugText(gbe,source);
+                    throw gbe;
+                } catch (GroovyBugError e) {
+                    changeBugText(e,source);
+                    throw e;
                 }
             }
         }
@@ -967,9 +942,10 @@ public class CompilationUnit extends ProcessingUnit {
 
         Iterator classNodes = getPrimaryClassNodes(sort).iterator();
         while (classNodes.hasNext()) {
+            SourceUnit context=null;
             try {
                ClassNode classNode = (ClassNode) classNodes.next();
-               SourceUnit context = classNode.getModule().getContext();
+               context = classNode.getModule().getContext();
                if (context == null || context.phase <= phase) {
                    body.call(context, new GeneratorContext(this.ast), classNode);
                }
@@ -977,6 +953,9 @@ public class CompilationUnit extends ProcessingUnit {
                 // fall thorugh, getErrorREporter().failIfErrors() will triger
             } catch (NullPointerException npe){
                 throw npe;
+            } catch (GroovyBugError e) {
+                changeBugText(e,context);
+                throw e;
             } catch (Exception e) {
                 failures = true;
 
@@ -1000,4 +979,7 @@ public class CompilationUnit extends ProcessingUnit {
         getErrorCollector().failIfErrors();
     }
 
+    private void changeBugText(GroovyBugError e, SourceUnit context) {
+        e.setBugText("exception in phase '"+getPhaseDescription()+"' in source unit '"+((context!=null)?context.getName():"?")+"' "+e.getBugText());
+    }
 }

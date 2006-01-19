@@ -187,5 +187,4 @@ public class DummyClassGenerator extends ClassGenerator {
 
     public void visitAnnotations(AnnotatedNode node) {
     }
-
 }

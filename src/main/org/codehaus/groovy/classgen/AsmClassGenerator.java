@@ -45,11 +45,17 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package org.codehaus.groovy.classgen;
 
-import groovy.lang.*;
+import groovy.lang.GroovyRuntimeException;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 
+import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -58,13 +64,45 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
-import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.VariableScope;
-import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.expr.ArgumentListExpression;
+import org.codehaus.groovy.ast.expr.ArrayExpression;
+import org.codehaus.groovy.ast.expr.AttributeExpression;
+import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.BitwiseNegExpression;
+import org.codehaus.groovy.ast.expr.BooleanExpression;
+import org.codehaus.groovy.ast.expr.CastExpression;
+import org.codehaus.groovy.ast.expr.ClassExpression;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
+import org.codehaus.groovy.ast.expr.DeclarationExpression;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.ExpressionTransformer;
+import org.codehaus.groovy.ast.expr.FieldExpression;
+import org.codehaus.groovy.ast.expr.GStringExpression;
+import org.codehaus.groovy.ast.expr.ListExpression;
+import org.codehaus.groovy.ast.expr.MapEntryExpression;
+import org.codehaus.groovy.ast.expr.MapExpression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.MethodPointerExpression;
+import org.codehaus.groovy.ast.expr.NegationExpression;
+import org.codehaus.groovy.ast.expr.NotExpression;
+import org.codehaus.groovy.ast.expr.PostfixExpression;
+import org.codehaus.groovy.ast.expr.PrefixExpression;
+import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.ast.expr.RangeExpression;
+import org.codehaus.groovy.ast.expr.RegexExpression;
+import org.codehaus.groovy.ast.expr.SpreadExpression;
+import org.codehaus.groovy.ast.expr.SpreadMapExpression;
+import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
+import org.codehaus.groovy.ast.expr.TernaryExpression;
+import org.codehaus.groovy.ast.expr.TupleExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.AssertStatement;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.BreakStatement;
@@ -82,15 +120,16 @@ import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
 import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
+import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
+import org.codehaus.groovy.syntax.RuntimeParserException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
-import org.codehaus.groovy.syntax.RuntimeParserException;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Label;
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Label;
+import org.objectweb.asm.MethodVisitor;
 
 
 /**
@@ -119,7 +158,7 @@ public class AsmClassGenerator extends ClassGenerator {
     private String internalBaseClassName;
 
     /** maps the variable names to the JVM indices */
-    private Map variableStack = new HashMap();
+    private CompileStack compileStack;
 
     /** have we output a return statement yet */
     private boolean outputReturn;
@@ -197,27 +236,18 @@ public class AsmClassGenerator extends ClassGenerator {
     MethodCaller iteratorNextMethod = MethodCaller.newInterface(Iterator.class, "next");
     MethodCaller iteratorHasNextMethod = MethodCaller.newInterface(Iterator.class, "hasNext");
 
-
-    // current stack index
-    private int lastVariableIndex;
-    private static int tempVariableNameCounter;
-
+    
     // exception blocks list
     private List exceptionBlocks = new ArrayList();
 
-    private boolean definingParameters;
     private Set syntheticStaticFields = new HashSet();
-    private Set mutableVars = new HashSet();
     private boolean passingClosureParams;
 
     private ConstructorNode constructorNode;
     private MethodNode methodNode;
-    //private PropertyNode propertyNode;
-    private BlockScope scope;
     private BytecodeHelper helper = new BytecodeHelper(null);
 
-    private VariableScope variableScope;
-    public static final boolean CREATE_DEBUG_INFO = false;
+    public static final boolean CREATE_DEBUG_INFO = true;
     public static final boolean CREATE_LINE_NUMBER_INFO = true;
     private static final boolean MARK_START = true;
 
@@ -248,12 +278,12 @@ public class AsmClassGenerator extends ClassGenerator {
 
     private DummyClassGenerator dummyGen = null;
     private ClassWriter dummyClassWriter = null;
+    
 
     public AsmClassGenerator(
-        GeneratorContext context,
-        ClassVisitor classVisitor,
-        ClassLoader classLoader,
-        String sourceFile) {
+            GeneratorContext context, ClassVisitor classVisitor,
+            ClassLoader classLoader, String sourceFile
+    ) {
         super(classLoader);
         this.context = context;
         this.cw = classVisitor;
@@ -261,7 +291,13 @@ public class AsmClassGenerator extends ClassGenerator {
 
         this.dummyClassWriter = new ClassWriter(true);
         dummyGen  = new DummyClassGenerator(context, dummyClassWriter, classLoader, sourceFile);
+        compileStack = new CompileStack();
 
+    }
+    
+    protected SourceUnit getSourceUnit() {
+        // TODO Auto-generated method stub
+        return null;
     }
 
     // GroovyClassVisitor interface
@@ -276,8 +312,6 @@ public class AsmClassGenerator extends ClassGenerator {
             this.outermostClass = null;
             this.internalClassName = BytecodeHelper.getClassInternalName(classNode);
 
-            //System.out.println("Generating class: " + classNode.getName());
-
             this.internalBaseClassName = BytecodeHelper.getClassInternalName(classNode.getSuperClass());
 
             cw.visit(
@@ -289,7 +323,8 @@ public class AsmClassGenerator extends ClassGenerator {
                 BytecodeHelper.getClassInternalNames(classNode.getInterfaces())
             );            
             cw.visitSource(sourceFile,null);
-            visitAnnotations(classNode);
+            
+            super.visitClass(classNode);
 
             // set the optional enclosing method attribute of the current inner class
 //          br comment out once Groovy uses the latest CVS HEAD of ASM
@@ -298,8 +333,6 @@ public class AsmClassGenerator extends ClassGenerator {
 //            String descriptor = BytecodeHelper.getMethodDescriptor(enclosingMethod.getReturnType(), enclosingMethod.getParameters());
 //            EnclosingMethodAttribute attr = new EnclosingMethodAttribute(ownerName,enclosingMethod.getName(),descriptor);
 //            cw.visitAttribute(attr);
-
-            classNode.visitContents(this);
 
             createSyntheticStaticFields();
 
@@ -324,7 +357,7 @@ public class AsmClassGenerator extends ClassGenerator {
                     innerClassName,
                     innerClass.getModifiers());
             }
-// br TODO an inner class should have an entry of itself
+            // br TODO an inner class should have an entry of itself
             cw.visitEnd();
         }
         catch (GroovyRuntimeException e) {
@@ -332,73 +365,40 @@ public class AsmClassGenerator extends ClassGenerator {
             throw e;
         }
     }
-
-    public void visitConstructor(ConstructorNode node) {
-        // creates a MethodWriter for the (implicit) constructor
-        //String methodType = ClassNode.getMethodDescriptor(VOID_TYPE, )
-
-        this.constructorNode = node;
-        this.methodNode = null;
-        this.variableScope = null;
-
-        String methodType = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, node.getParameters());
-        ClassNode[] nodeExceptions = node.getExceptions();
-        String[] exceptions = new String[nodeExceptions.length];
-        for (int i=0; i< nodeExceptions.length; i++) {
-        	exceptions[i] = BytecodeHelper.getClassInternalName(nodeExceptions[i]);
+    
+    private String[] buildExceptions(ClassNode[] exceptions) {
+        if (exceptions==null) return null;
+        String[] ret = new String[exceptions.length];
+        for (int i = 0; i < exceptions.length; i++) {
+            ret[i] = BytecodeHelper.getClassInternalName(exceptions[i]);
         }
-        cv = cw.visitMethod(node.getModifiers(), "<init>", methodType, null, exceptions);
-        helper = new BytecodeHelper(cv);
-
-        findMutableVariables();
-        resetVariableStack(node.getParameters());
-
-        Statement code = node.getCode();
-        if (code == null || !firstStatementIsSuperInit(code)) {
-            // invokes the super class constructor
-            cv.visitVarInsn(ALOAD, 0);
-            cv.visitMethodInsn(INVOKESPECIAL, internalBaseClassName, "<init>", "()V");
-        }
-        if (code != null) {
-            code.visit(this);
-        }
-
-        cv.visitInsn(RETURN);
-        cv.visitMaxs(0, 0);
+        return ret;
     }
-
-    public void visitMethod(MethodNode node) {
-        //System.out.println("Visiting method: " + node.getName() + " with
-        // return type: " + node.getReturnType());
-        this.constructorNode = null;
-        this.methodNode = node;
-        this.variableScope = null;
-
+    
+    protected void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {
         String methodType = BytecodeHelper.getMethodDescriptor(node.getReturnType(), node.getParameters());
-        ClassNode[] nodeExceptions = node.getExceptions();
-        String[] exceptions = new String[nodeExceptions.length];
-        for (int i=0; i< nodeExceptions.length; i++) {
-        	exceptions[i] = BytecodeHelper.getClassInternalName(nodeExceptions[i]);
-        }
-        cv = cw.visitMethod(node.getModifiers(), node.getName(), methodType, null, exceptions);
-        visitAnnotations(node);
-        if (node.getCode()!=null) {
-            Label labelStart = new Label();
-            cv.visitLabel(labelStart);
-            helper = new BytecodeHelper(cv);
-    
-            findMutableVariables();
-            resetVariableStack(node.getParameters());
-    
-    
-            outputReturn = false;
-    
-            node.getCode().visit(this);
-    
-            if (!outputReturn) {
+
+        cv = cw.visitMethod(node.getModifiers(), node.getName(), methodType, null, buildExceptions(node.getExceptions()));
+        helper = new BytecodeHelper(cv);
+        if (!node.isAbstract()) { 
+            Statement code = node.getCode();
+            if (isConstructor && (code == null || !firstStatementIsSuperInit(code))) {
+                // invokes the super class constructor
+                //cv.visitLabel(new Label());
+                cv.visitVarInsn(ALOAD, 0);
+                cv.visitMethodInsn(INVOKESPECIAL, internalBaseClassName, "<init>", "()V");
+            }
+            
+            compileStack.init(node.getVariableScope(),node.getParameters(),cv);
+            
+            super.visitConstructorOrMethod(node, isConstructor);
+            
+            compileStack.clear();
+            
+            if (!outputReturn || node.isVoidMethod()) {
                 cv.visitInsn(RETURN);
             }
-    
+            
             // lets do all the exception blocks
             for (Iterator iter = exceptionBlocks.iterator(); iter.hasNext();) {
                 Runnable runnable = (Runnable) iter.next();
@@ -406,23 +406,23 @@ public class AsmClassGenerator extends ClassGenerator {
             }
             exceptionBlocks.clear();
     
-            Label labelEnd = new Label();
-            cv.visitLabel(labelEnd);
-    
-            // br experiment with local var table so debuggers can retrieve variable names
-            if (CREATE_DEBUG_INFO) {
-                Set vars = this.variableStack.keySet();
-                for (Iterator iterator = vars.iterator(); iterator.hasNext();) {
-                    String varName = (String) iterator.next();
-                    Variable v = (Variable)variableStack.get(varName);
-                    String type = BytecodeHelper.getTypeDescription(v.getType());
-                    Label start = v.getStartLabel() != null ? v.getStartLabel() : labelStart;
-                    Label end = v.getEndLabel() != null ? v.getEndLabel() : labelEnd;
-                    cv.visitLocalVariable(varName, type, null, start, end, v.getIndex());
-                }
-            }
             cv.visitMaxs(0, 0);
         }
+    }
+
+    public void visitConstructor(ConstructorNode node) {
+        this.constructorNode = node;
+        this.methodNode = null;
+        outputReturn = false;
+        super.visitConstructor(node);
+    }
+
+    public void visitMethod(MethodNode node) {
+        this.constructorNode = null;
+        this.methodNode = node;
+        outputReturn = false;
+        
+        super.visitMethod(node);
     }
 
     public void visitField(FieldNode fieldNode) {
@@ -437,13 +437,10 @@ public class AsmClassGenerator extends ClassGenerator {
         visitAnnotations(fieldNode);
     }
 
-
-    /**
-     * Creates a getter, setter and field
-     */
     public void visitProperty(PropertyNode statement) {
+        // the verifyer created the field and the setter/getter methods, so here is
+        // not really something to do
         onLineNumber(statement, "visitProperty:" + statement.getField().getName());
-        //this.propertyNode = statement;
         this.methodNode = null;
     }
 
@@ -453,134 +450,116 @@ public class AsmClassGenerator extends ClassGenerator {
     // Statements
     //-------------------------------------------------------------------------
 
+    protected void visitStatement(Statement statement) {
+        String name = statement.getStatementLabel();
+        if (name!=null) {
+            Label label = compileStack.createLocalLabel(name);
+            cv.visitLabel(label);
+        }
+    }
+    
+    public void visitBlockStatement(BlockStatement block) {
+        onLineNumber(block, "visitBlockStatement");
+        visitStatement(block);
+        
+        compileStack.pushVariableScope(block.getVariableScope());
+        super.visitBlockStatement(block);
+        compileStack.pop();
+    }
+
     public void visitForLoop(ForStatement loop) {
         onLineNumber(loop, "visitForLoop");
-        Class elemType = null;
+        visitStatement(loop);
+
+        compileStack.pushLoop(loop.getVariableScope(),loop.getStatementLabel());
 
         //
         // Declare the loop counter.
-        ClassNode variableType = loop.getVariableType();
-        Variable variable = defineVariable(loop.getVariable(), variableType, true);
-
-        if( isInScriptBody() ) {
-            variable.setProperty( true );
-        }
-
+        Variable variable = compileStack.defineVariable(loop.getVariable(),false);
 
         //
         // Then initialize the iterator and generate the loop control
-
         loop.getCollectionExpression().visit(this);
 
         asIteratorMethod.call(cv);
 
-        final Variable iterTemp = storeInTemp("iterator", ClassHelper.make(java.util.Iterator.class));
-        final int iteratorIdx = iterTemp.getIndex();
+        final int iteratorIdx = compileStack.defineTemporaryVariable("iterator", ClassHelper.make(java.util.Iterator.class),true);
 
-        // to push scope here allows the iterator available after the loop, such as the i in: for (i in 1..5)
-        // move it to the top will make the iterator a local var in the for loop.
-        pushBlockScope();
-
-        Label continueLabel = scope.getContinueLabel();
-        cv.visitJumpInsn(GOTO, continueLabel);
-        Label label2 = new Label();
-        cv.visitLabel(label2);
-
-        BytecodeExpression expression = new BytecodeExpression() {
-            public void visit(GroovyCodeVisitor visitor) {
-                cv.visitVarInsn(ALOAD, iteratorIdx);
-                iteratorNextMethod.call(cv);
-            }
-        };
-
-        evaluateEqual( BinaryExpression.newAssignmentExpression(loop.getVariable(), expression) );
-        cv.visitInsn(POP); // br now the evaluateEqual() will leave a value on the stack. pop it.
-
-        //
-        // Generate the loop body
-
-        loop.getLoopBlock().visit(this);
-
-
-        //
-        // Generate the loop tail
-
+        Label continueLabel = compileStack.getContinueLabel();
+        Label breakLabel = compileStack.getBreakLabel();
+        
         cv.visitLabel(continueLabel);
         cv.visitVarInsn(ALOAD, iteratorIdx);
-
         iteratorHasNextMethod.call(cv);
+        // note: ifeq tests for ==0, a boolean is 0 if it is false
+        cv.visitJumpInsn(IFEQ, breakLabel);
+        
+        cv.visitVarInsn(ALOAD, iteratorIdx);
+        iteratorNextMethod.call(cv);
+        helper.storeVar(variable);
 
-        cv.visitJumpInsn(IFNE, label2);
+        // Generate the loop body
+        loop.getLoopBlock().visit(this);
 
-        cv.visitLabel(scope.getBreakLabel());
-        popScope();
+        cv.visitJumpInsn(GOTO, continueLabel);        
+        cv.visitLabel(breakLabel);
+        
+        compileStack.pop();
     }
 
     public void visitWhileLoop(WhileStatement loop) {
         onLineNumber(loop, "visitWhileLoop");
+        visitStatement(loop);
 
-        pushBlockScope();
-
-        Label continueLabel = scope.getContinueLabel();
-
-        cv.visitJumpInsn(GOTO, continueLabel);
-        Label l1 = new Label();
-        cv.visitLabel(l1);
-
-        loop.getLoopBlock().visit(this);
-
+        compileStack.pushLoop(loop.getStatementLabel());
+        Label continueLabel = compileStack.getContinueLabel();
+        Label breakLabel = compileStack.getBreakLabel();
+        
         cv.visitLabel(continueLabel);
-
         loop.getBooleanExpression().visit(this);
-
-        cv.visitJumpInsn(IFNE, l1);
-
-        cv.visitLabel(scope.getBreakLabel());
-        popScope();
+        cv.visitJumpInsn(IFEQ, breakLabel);
+        
+        loop.getLoopBlock().visit(this);
+        
+        cv.visitJumpInsn(GOTO, continueLabel);
+        cv.visitLabel(breakLabel);
     }
 
     public void visitDoWhileLoop(DoWhileStatement loop) {
         onLineNumber(loop, "visitDoWhileLoop");
+        visitStatement(loop);
 
-        pushBlockScope();
-
-        Label breakLabel = scope.getBreakLabel();
-
-        Label continueLabel = scope.getContinueLabel();
+        compileStack.pushLoop(loop.getStatementLabel());
+        Label breakLabel = compileStack.getBreakLabel();
+        Label continueLabel = compileStack.getContinueLabel();
         cv.visitLabel(continueLabel);
-        Label l1 = new Label();
 
         loop.getLoopBlock().visit(this);
 
-        cv.visitLabel(l1);
-
         loop.getBooleanExpression().visit(this);
-
-        cv.visitJumpInsn(IFNE, continueLabel);
-
+        cv.visitJumpInsn(IFEQ, continueLabel);
         cv.visitLabel(breakLabel);
-        popScope();
+        
+        compileStack.pop();
     }
 
     public void visitIfElse(IfStatement ifElse) {
         onLineNumber(ifElse, "visitIfElse");
-
+        visitStatement(ifElse);
+        
         ifElse.getBooleanExpression().visit(this);
 
         Label l0 = new Label();
         cv.visitJumpInsn(IFEQ, l0);
-        pushBlockScope(false, false);
+
         ifElse.getIfBlock().visit(this);
-        popScope();
 
         Label l1 = new Label();
         cv.visitJumpInsn(GOTO, l1);
         cv.visitLabel(l0);
 
-        pushBlockScope(false, false);
         ifElse.getElseBlock().visit(this);
         cv.visitLabel(l1);
-        popScope();
     }
 
     public void visitTernaryExpression(TernaryExpression expression) {
@@ -602,9 +581,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
     public void visitAssertStatement(AssertStatement statement) {
         onLineNumber(statement, "visitAssertStatement");
-
-        //System.out.println("Assert: " + statement.getLineNumber() + " for: "
-        // + statement.getText());
+        visitStatement(statement);
 
         BooleanExpression booleanExpression = statement.getBooleanExpression();
         booleanExpression.visit(this);
@@ -635,8 +612,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
             cv.visitMethodInsn(INVOKESPECIAL, "java/lang/StringBuffer", "<init>", "(Ljava/lang/String;)V");
 
-            Variable assertTemp = visitASTOREInTemp("assert");
-            int tempIndex  = assertTemp.getIndex();
+            int tempIndex = compileStack.defineTemporaryVariable("assert",true);
 
             for (Iterator iter = list.iterator(); iter.hasNext();) {
                 String name = (String) iter.next();
@@ -668,7 +644,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
             }
             cv.visitVarInsn(ALOAD, tempIndex);
-            removeVar(assertTemp);
+            compileStack.removeVar(tempIndex);
         }
         // now the optional exception expression
         statement.getMessageExpression().visit(this);
@@ -695,6 +671,8 @@ public class AsmClassGenerator extends ClassGenerator {
 
     public void visitTryCatchFinally(TryCatchStatement statement) {
         onLineNumber(statement, "visitTryCatchFinally");
+        visitStatement(statement);
+        
 // todo need to add blockscope handling
         CatchStatement catchStatement = statement.getCatchStatement(0);
 
@@ -707,8 +685,8 @@ public class AsmClassGenerator extends ClassGenerator {
             tryStatement.visit(this);
 
 
-            int index1 = defineVariable(this.createVariableName("exception"), ClassHelper.OBJECT_TYPE).getIndex();
-            int index2 = defineVariable(this.createVariableName("exception"), ClassHelper.OBJECT_TYPE).getIndex();
+            int index1 = compileStack.defineTemporaryVariable("exception",false);
+            int index2 = compileStack.defineTemporaryVariable("exception",false);
 
             final Label l1 = new Label();
             cv.visitJumpInsn(JSR, l1);
@@ -741,8 +719,8 @@ public class AsmClassGenerator extends ClassGenerator {
 
         }
         else {
-            int finallySubAddress = defineVariable(this.createVariableName("exception"), ClassHelper.OBJECT_TYPE).getIndex();
-            int anyExceptionIndex = defineVariable(this.createVariableName("exception"), ClassHelper.OBJECT_TYPE).getIndex();
+            int finallySubAddress = compileStack.defineTemporaryVariable("exception",false);
+            int anyExceptionIndex = compileStack.defineTemporaryVariable("exception",false);
 
             // start try block, label needed for exception table
             final Label tryStart = new Label();
@@ -758,7 +736,7 @@ public class AsmClassGenerator extends ClassGenerator {
             for (Iterator it=statement.getCatchStatements().iterator(); it.hasNext();) {
                 catchStatement = (CatchStatement) it.next();
                 ClassNode exceptionType = catchStatement.getExceptionType();
-                int exceptionIndex = defineVariable(catchStatement.getVariable(), exceptionType, false).getIndex();
+                int exceptionIndex = compileStack.defineVariable(catchStatement.getVariable(),false).getIndex();
                 
                 // start catch block, label needed for exception table
                 final Label catchStart = new Label();
@@ -821,27 +799,17 @@ public class AsmClassGenerator extends ClassGenerator {
             });
         }
     }
-
-    private Variable storeInTemp(String name, ClassNode type) {
-        Variable var  = defineVariable(createVariableName(name), type, false);
-        int varIdx = var.getIndex();
-        cv.visitVarInsn(ASTORE, varIdx);
-        if (CREATE_DEBUG_INFO) cv.visitLabel(var.getStartLabel());
-        return var;
-    }
-
+    
     public void visitSwitch(SwitchStatement statement) {
         onLineNumber(statement, "visitSwitch");
+        visitStatement(statement);
 
         statement.getExpression().visit(this);
 
         // switch does not have a continue label. use its parent's for continue
-        pushBlockScope(false, true);
-        //scope.setContinueLabel(scope.getParent().getContinueLabel());
-
-
-        int switchVariableIndex = defineVariable(createVariableName("switch"), ClassHelper.OBJECT_TYPE).getIndex();
-        cv.visitVarInsn(ASTORE, switchVariableIndex);
+        Label breakLabel = compileStack.pushSwitch();
+        
+        int switchVariableIndex = compileStack.defineTemporaryVariable("switch",true);
 
         List caseStatements = statement.getCaseStatements();
         int caseCount = caseStatements.size();
@@ -858,9 +826,9 @@ public class AsmClassGenerator extends ClassGenerator {
 
         statement.getDefaultStatement().visit(this);
 
-        cv.visitLabel(scope.getBreakLabel());
+        cv.visitLabel(breakLabel);
 
-        popScope();
+        compileStack.pop();
     }
 
     public void visitCaseStatement(CaseStatement statement) {
@@ -897,34 +865,36 @@ public class AsmClassGenerator extends ClassGenerator {
 
     public void visitBreakStatement(BreakStatement statement) {
         onLineNumber(statement, "visitBreakStatement");
-
-        Label breakLabel = scope.getBreakLabel();
-        if (breakLabel != null ) {
-            cv.visitJumpInsn(GOTO, breakLabel);
+        visitStatement(statement);
+        
+        String name = statement.getLabel();
+        Label breakLabel;
+        if (name!=null) {
+        	breakLabel = compileStack.getNamedBreakLabel(name);
         } else {
-            // should warn that break is not allowed in the context.
+        	breakLabel= compileStack.getBreakLabel();
         }
+        cv.visitJumpInsn(GOTO, breakLabel);
     }
 
     public void visitContinueStatement(ContinueStatement statement) {
         onLineNumber(statement, "visitContinueStatement");
-
-        Label continueLabel = scope.getContinueLabel();
-        if (continueLabel != null ) {
-            cv.visitJumpInsn(GOTO, continueLabel);
-        } else {
-            // should warn that continue is not allowed in the context.
-        }
+        visitStatement(statement);
+        
+        String name = statement.getLabel();
+        Label continueLabel = compileStack.getContinueLabel();
+        if (name!=null) continueLabel = compileStack.getLabel(name);
+        cv.visitJumpInsn(GOTO, continueLabel);
     }
 
     public void visitSynchronizedStatement(SynchronizedStatement statement) {
         onLineNumber(statement, "visitSynchronizedStatement");
-
+        visitStatement(statement);
+        
         statement.getExpression().visit(this);
 
-        int index = defineVariable(createVariableName("synchronized"), ClassHelper.Integer_TYPE).getIndex();
+        int index = compileStack.defineTemporaryVariable("synchronized", ClassHelper.Integer_TYPE,true);
 
-        cv.visitVarInsn(ASTORE, index);
         cv.visitVarInsn(ALOAD, index);
         cv.visitInsn(MONITORENTER);
         final Label l0 = new Label();
@@ -951,6 +921,9 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     public void visitThrowStatement(ThrowStatement statement) {
+        onLineNumber(statement, "visitThrowStatement");
+        visitStatement(statement);
+        
         statement.getExpression().visit(this);
 
         // we should infer the type of the exception from the expression
@@ -961,6 +934,8 @@ public class AsmClassGenerator extends ClassGenerator {
 
     public void visitReturnStatement(ReturnStatement statement) {
         onLineNumber(statement, "visitReturnStatement");
+        visitStatement(statement);
+        
         ClassNode returnType = methodNode.getReturnType();
         if (returnType==ClassHelper.VOID_TYPE) {
         	if (!(statement == ReturnStatement.RETURN_NULL_OR_VOID)) {
@@ -977,8 +952,7 @@ public class AsmClassGenerator extends ClassGenerator {
             cv.visitInsn(ACONST_NULL); // cheat the caller
             cv.visitInsn(ARETURN);
         } else {
-            //return is based on class type
-            //TODO: make work with arrays
+            // return is based on class type
             // we may need to cast
             helper.unbox(returnType);
             if (returnType==ClassHelper.double_TYPE) {
@@ -1040,7 +1014,8 @@ public class AsmClassGenerator extends ClassGenerator {
 
     public void visitExpressionStatement(ExpressionStatement statement) {
         onLineNumber(statement, "visitExpressionStatement: " + statement.getExpression().getClass().getName());
-
+        visitStatement(statement);
+        
         Expression expression = statement.getExpression();
 // disabled in favor of JIT resolving
 //        if (ENABLE_EARLY_BINDING)
@@ -1056,6 +1031,26 @@ public class AsmClassGenerator extends ClassGenerator {
     // Expressions
     //-------------------------------------------------------------------------
 
+    public void visitDeclarationExpression(DeclarationExpression expression) {
+        onLineNumber(expression, "visitDeclarationExpression: \""+expression.getVariableExpression().getName()+"\"");
+
+        Expression rightExpression = expression.getRightExpression();
+        // no need to visit left side, just get the variable name
+        VariableExpression vex = expression.getVariableExpression();
+        ClassNode type = getLHSType(vex);
+        // lets not cast for primitive types as we handle these in field setting etc
+        if (ClassHelper.isPrimitiveType(type)) {
+            rightExpression.visit(this);
+        } else {
+            if (type!=ClassHelper.OBJECT_TYPE){
+                visitCastExpression(new CastExpression(type, rightExpression));
+            } else {
+                visitAndAutoboxBoolean(rightExpression);
+            }
+        }
+        compileStack.defineVariable(vex,true);
+    }
+    
     public void visitBinaryExpression(BinaryExpression expression) {
         onLineNumber(expression, "visitBinaryExpression: \"" + expression.getOperation().getText() + "\" ");
         switch (expression.getOperation().getType()) {
@@ -1282,7 +1277,6 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     private void throwException(String s) {
-        //throw new ClassGeneratorException(s + ". Source: " + classNode.getName() + ":[" + this.lineNumber + ":" + this.columnNumber + "]");
         throw new RuntimeParserException(s, currentASTNode);
     }
 
@@ -1309,22 +1303,6 @@ public class AsmClassGenerator extends ClassGenerator {
         ConstructorNode node = (ConstructorNode) constructors.get(0);
         Parameter[] localVariableParams = node.getParameters();
 
-
-        //
-        // Define in the context any variables that will be
-        // created inside the closure.  Note that the first two
-        // parameters are always _outerInstance and _delegate,
-        // so we don't worry about them.
-		//
-        for (int i = 2; i < localVariableParams.length; i++) {
-            Parameter param = localVariableParams[i];
-            String name = param.getName();
-
-            if (variableStack.get(name) == null && classNode.getField(name) == null) {
-                defineVariable(name, ClassHelper.OBJECT_TYPE); // todo  should use param type is available
-            }
-        }
-
         cv.visitTypeInsn(NEW, innerClassinternalName);
         cv.visitInsn(DUP);
         if (isStaticMethod() || classNode.isStaticClass()) {
@@ -1347,20 +1325,36 @@ public class AsmClassGenerator extends ClassGenerator {
             }
         }
 
-        //String prototype = "(L" + BytecodeHelper.getClassInternalName(ownerTypeName) + ";Ljava/lang/Object;";
-
         // now lets load the various parameters we're passing
+        // we start at index 2 because the first 2 variables we pass
+        // are always the delegate and the outer instance and at this
+        // point they are already on the stack
         for (int i = 2; i < localVariableParams.length; i++) {
             Parameter param = localVariableParams[i];
             String name = param.getName();
 
-            if (variableStack.get(name) == null) {
+            if (compileStack.getScope().isReferencedClassVariable(name)) {
                 visitFieldExpression(new FieldExpression(classNode.getField(name)));
+            } else { 
+                Variable v = compileStack.getVariable(name,classNode.getSuperClass()!=ClassHelper.CLOSURE_TYPE);
+                if (v==null) {
+                    // variable is not on stack because we are
+                    // inside a nested Closure and this variable
+                    // was not used before
+                    // then load it from the Closure field
+                    FieldNode field = classNode.getField(name);
+                    cv.visitVarInsn(ALOAD, 0);
+                    cv.visitFieldInsn(GETFIELD, internalClassName, name, BytecodeHelper.getTypeDescription(field.getType()));
+                    // and define it
+                    // Note:
+                    // we can simply define it here and don't have to
+                    // be afraid about name problems because a second
+                    // variable with that name is not allowed inside the closure
+                    v = compileStack.defineVariable(param,true);
+                    v.setHolder(true);
+                } 
+                cv.visitVarInsn(ALOAD, v.getIndex());
             }
-            else {
-                visitVariableExpression(new VariableExpression(name));
-            }
-            //prototype = prototype + "L" + BytecodeHelper.getClassInternalName(param.getType()) + ";";
         }
         passingClosureParams = false;
 
@@ -1544,15 +1538,14 @@ public class AsmClassGenerator extends ClassGenerator {
 
                             arguments.visit(this);
 
-                            Variable tv = visitASTOREInTemp(method + "_arg");
-                            int paramIdx = tv.getIndex();
+                            int paramIdx = compileStack.defineTemporaryVariable(method + "_arg",true);
 
                             call.getObjectExpression().visit(this); // xxx
 
                             cv.visitLdcInsn(method);
 
                             cv.visitVarInsn(ALOAD, paramIdx);
-                            removeVar(tv);
+                            compileStack.removeVar(paramIdx);
                         }
                         else {
                             call.getObjectExpression().visit(this);
@@ -1918,13 +1911,10 @@ public class AsmClassGenerator extends ClassGenerator {
         String ownerName =  (field.getOwner().equals(classNode)) ?
         		internalClassName : BytecodeHelper.getClassInternalName(field.getOwner());
         if (holder) {
-            Variable tv = visitASTOREInTemp(field.getName());
-            int tempIndex = tv.getIndex();
             cv.visitVarInsn(ALOAD, 0);
             cv.visitFieldInsn(GETFIELD, ownerName, expression.getFieldName(), BytecodeHelper.getTypeDescription(type));
-            cv.visitVarInsn(ALOAD, tempIndex);
+            cv.visitInsn(SWAP);
             cv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Reference", "set", "(Ljava/lang/Object;)V");
-            removeVar(tv);
         }
         else {
             if (isInClosureConstructor()) {
@@ -1933,17 +1923,9 @@ public class AsmClassGenerator extends ClassGenerator {
             else {
                 doConvertAndCast(type);
             }
-            //Variable tmpVar = defineVariable(createVariableName(field.getName()), "java.lang.Object", false);
-            Variable tmpVar = defineVariable(createVariableName(field.getName()), field.getType(), false);
-            //int tempIndex = tmpVar.getIndex();
-            //helper.store(field.getType(), tempIndex);
-            helper.store(tmpVar, MARK_START);
-            helper.loadThis(); //cv.visitVarInsn(ALOAD, 0);
-            helper.load(tmpVar);
+            helper.loadThis();
+            helper.swapObjectWith(type);
             helper.putField(field, ownerName);
-            //cv.visitFieldInsn(PUTFIELD, ownerName, expression.getFieldName(), BytecodeHelper.getTypeDescription(type));
-            // let's remove the temp var
-            removeVar(tmpVar);
         }
     }
 
@@ -1959,12 +1941,9 @@ public class AsmClassGenerator extends ClassGenerator {
                 ? internalClassName
                 : helper.getClassInternalName(field.getOwner());
         if (holder) {
-            Variable tv = visitASTOREInTemp(field.getName());
-            int tempIndex = tv.getIndex();
             cv.visitFieldInsn(GETSTATIC, ownerName, expression.getFieldName(), BytecodeHelper.getTypeDescription(type));
-            cv.visitVarInsn(ALOAD, tempIndex);
+            cv.visitInsn(SWAP);
             cv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Reference", "set", "(Ljava/lang/Object;)V");
-            removeVar(tv);
         }
         else {
             if (isInClosureConstructor()) {
@@ -1984,12 +1963,11 @@ public class AsmClassGenerator extends ClassGenerator {
         FieldNode field = expression.getField();
         boolean isStatic = field.isStatic();
 
-        Variable fieldTemp = defineVariable(createVariableName(field.getName()), ClassHelper.OBJECT_TYPE, false);
-        int valueIdx = fieldTemp.getIndex();
+        int tempIdx = compileStack.defineTemporaryVariable(field,false);
 
         if (leftHandExpression && first) {
-            cv.visitVarInsn(ASTORE, valueIdx);
-            visitVariableStartLabel(fieldTemp);
+            cv.visitVarInsn(ASTORE, tempIdx);
+            visitVariableStartLabel(compileStack.getTemporaryVariable(tempIdx));
         }
 
         if (steps > 1 || !isStatic) {
@@ -2006,7 +1984,7 @@ public class AsmClassGenerator extends ClassGenerator {
             String ownerName = BytecodeHelper.getClassInternalName(outerClassNode);
 
             if (leftHandExpression) {
-                cv.visitVarInsn(ALOAD, valueIdx);
+                cv.visitVarInsn(ALOAD, tempIdx);
                 boolean holder = field.isHolder() && !isInClosureConstructor();
                 if ( !holder) {
                     doConvertAndCast(field.getType());
@@ -2054,109 +2032,22 @@ public class AsmClassGenerator extends ClassGenerator {
             return;                                               // <<< FLOW CONTROL <<<<<<<<<
         }
 
+        Variable variable = compileStack.getVariable(variableName, false);
 
-        //
-        // class names return a Class instance, too
-
-//        if (!variableName.equals("this")) {
-//            String className = resolveClassName(variableName);
-//            if (className != null) {
-//                if (leftHandExpression) {
-//                    throw new RuntimeParserException(
-//                        "Cannot use a class expression on the left hand side of an assignment",
-//                        expression);
-//                }
-//                visitClassExpression(new ClassExpression(className));
-//                return;                                               // <<< FLOW CONTROL <<<<<<<<<
-//            }
-//        }
-
-
-      //-----------------------------------------------------------------------
-      // GENERAL VARIABLE LOOKUP
-
-
-        //
-        // We are handling only unqualified variables here.  Therefore,
-        // we do not care about accessors, because local access doesn't
-        // go through them.  Therefore, precedence is as follows:
-        //   1) local variables, nearest block first
-        //   2) class fields
-        //   3) repeat search from 2) in next outer class
-
-        boolean  handled  = false;
-        Variable variable = (Variable)variableStack.get( variableName );
-
-        if( variable != null ) {
-
-            if( variable.isProperty() ) {
-                processPropertyVariable(variable );
-            }
-            else {
-                processStackVariable(variable );
-            }
-
-            handled = true;
+        VariableScope scope = compileStack.getScope();
+        if (variable==null) {
+            processClassVariable(variableName);
         } else {
-            //
-            // Loop through outer classes for fields
-
-            int       steps   = 0;
-            ClassNode currentClassNode = classNode;
-            FieldNode field   = null;
-
-            do {
-                if( (field = currentClassNode.getField(variableName)) != null ) {
-                    if (methodNode == null || !methodNode.isStatic() || field.isStatic() )
-                        break; //this is a match. break out. todo to be tested
-                }
-                steps++;
-
-            } while( (currentClassNode = currentClassNode.getOuterClass()) != null );
-
-            if( field != null ) {
-                processFieldAccess( variableName, field, steps );
-                handled = true;
-            }
-        }
-
-        //
-        // Finally, if unhandled, create a variable for it.
-        // Except there a stack variable should be created,
-        // we define the variable as a property accessor and
-        // let other parts of the classgen report the error
-        // if the property doesn't exist.
-
-        if( !handled ) {
-            ClassNode variableType = expression.getType();
-            variable = defineVariable( variableName, variableType );
-
-            if (leftHandExpression && variableType==ClassHelper.DYNAMIC_TYPE) {
-                variable.setDynamicTyped(true); // false  by default
-            }
-            else {
-                variable.setDynamicTyped(false);
-            }
-
-            if( isInScriptBody() || !leftHandExpression ) { // todo problematic: if on right hand not defined, should I report undefined var error?
-                variable.setProperty( true );
-                processPropertyVariable(variable );
-            }
-            else {
-                processStackVariable(variable );
-            }
+            processStackVariable(variable);
         }
     }
 
 
-    protected void processStackVariable(Variable variable ) {
-        boolean holder = variable.isHolder() && !passingClosureParams;
-
+    protected void processStackVariable(Variable variable) {
         if( leftHandExpression ) {
-            helper.storeVar(variable, holder);
-        }
-        else {
-        	helper.loadVar(variable, holder);
+            helper.storeVar(variable);
+        } else {
+        	helper.loadVar(variable);
         }
         if (ASM_DEBUG) {
             helper.mark("var: " + variable.getName());
@@ -2169,14 +2060,13 @@ public class AsmClassGenerator extends ClassGenerator {
             if (l != null) {
                 cv.visitLabel(l);
             } else {
-                System.out.println("start label == null! what to do about this?");
+                throw new GroovyBugError("start label == null! what to do about this?");
             }
         }
     }
 
-    protected void processPropertyVariable(Variable variable ) {
-    	String name = variable.getName();
-        if (variable.isHolder() && passingClosureParams && isInScriptBody() ) {
+    protected void processClassVariable(String name) {
+        if (passingClosureParams && isInScriptBody() ) {
             // lets create a ScriptReference to pass into the closure
             cv.visitTypeInsn(NEW, "org/codehaus/groovy/runtime/ScriptReference");
             cv.visitInsn(DUP);
@@ -2233,6 +2123,9 @@ public class AsmClassGenerator extends ClassGenerator {
             } else {
                 return !MethodCallExpression.isSuperMethodCall((MethodCallExpression) expression);
             }
+        }
+        if (expression instanceof DeclarationExpression) {
+            return false;
         }
         if (expression instanceof BinaryExpression) {
             BinaryExpression binExp = (BinaryExpression) expression;
@@ -2401,7 +2294,6 @@ public class AsmClassGenerator extends ClassGenerator {
             visitAndAutoboxBoolean(expression.getExpression(i));
             cv.visitInsn(AASTORE);
         }
-        //createTupleMethod.call(cv);
     }
     
     public void visitArrayExpression(ArrayExpression expression) {
@@ -2478,8 +2370,7 @@ public class AsmClassGenerator extends ClassGenerator {
         }
         
         if (sizeExpression==null && ClassHelper.isPrimitiveType(type)) {
-            int par = defineVariable("par",ClassHelper.OBJECT_TYPE).getIndex();
-            cv.visitVarInsn(ASTORE, par);
+            int par = compileStack.defineTemporaryVariable("par",true);
             cv.visitVarInsn(ALOAD, par);
         }
     }
@@ -2512,8 +2403,7 @@ public class AsmClassGenerator extends ClassGenerator {
             cv.visitInsn(AASTORE);
         }
 
-        Variable tv = visitASTOREInTemp("iterator");
-        int paramIdx = tv.getIndex();
+        int paramIdx = compileStack.defineTemporaryVariable("iterator",true);
 
         ClassNode innerClass = createGStringClass(expression);
         addInnerClass(innerClass);
@@ -2524,11 +2414,7 @@ public class AsmClassGenerator extends ClassGenerator {
         cv.visitVarInsn(ALOAD, paramIdx);
 
         cv.visitMethodInsn(INVOKESPECIAL, innerClassinternalName, "<init>", "([Ljava/lang/Object;)V");
-        removeVar(tv);
-    }
-
-    private Variable visitASTOREInTemp(String s) {
-        return storeInTemp(s, ClassHelper.OBJECT_TYPE);
+        compileStack.removeVar(paramIdx);
     }
     
     public void visitAnnotations(AnnotatedNode node) {
@@ -2572,14 +2458,16 @@ public class AsmClassGenerator extends ClassGenerator {
             outerClass = ClassHelper.make(Class.class);
         }
         Parameter[] parameters = expression.getParameters();
-        if (parameters == null || parameters.length == 0) {
+        if (parameters==null){
+            parameters = new Parameter[0];
+        } else if (parameters.length == 0) {
             // lets create a default 'it' parameter
             parameters = new Parameter[] { new Parameter(ClassHelper.OBJECT_TYPE, "it", ConstantExpression.NULL)};
-        }
+        } 
 
         Parameter[] localVariableParams = getClosureSharedVariables(expression);
 
-        InnerClassNode answer = new InnerClassNode(owner, name, 0, ClassHelper.CLOSURE_TYPE); // clsures are local inners and not public
+        InnerClassNode answer = new InnerClassNode(owner, name, 0, ClassHelper.CLOSURE_TYPE); // closures are local inners and not public
         answer.setEnclosingMethod(this.methodNode);
         answer.setSynthetic(true);
         
@@ -2591,17 +2479,14 @@ public class AsmClassGenerator extends ClassGenerator {
         }
         MethodNode method =
             answer.addMethod("doCall", ACC_PUBLIC, ClassHelper.OBJECT_TYPE, parameters, ClassNode.EMPTY_ARRAY, expression.getCode());
-
-        method.setLineNumber(expression.getLineNumber());
-        method.setColumnNumber(expression.getColumnNumber());
+        method.setSourcePosition(expression);
 
         VariableScope varScope = expression.getVariableScope();
         if (varScope == null) {
             throw new RuntimeException(
                 "Must have a VariableScope by now! for expression: " + expression + " class: " + name);
-        }
-        else {
-            method.setVariableScope(varScope);
+        } else {
+            method.setVariableScope(varScope.copy());
         }
         if (parameters.length > 1
             || (parameters.length == 1
@@ -2609,7 +2494,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 && parameters[0].getType() != ClassHelper.OBJECT_TYPE)) {
 
             // lets add a typesafe call method
-            answer.addMethod(
+            MethodNode call = answer.addMethod(
                 "call",
                 ACC_PUBLIC,
                 ClassHelper.OBJECT_TYPE,
@@ -2620,34 +2505,39 @@ public class AsmClassGenerator extends ClassGenerator {
                         VariableExpression.THIS_EXPRESSION,
                         "doCall",
                         new ArgumentListExpression(parameters))));
+            call.setSourcePosition(expression);
         }
 
         FieldNode ownerField = answer.addField("owner", ACC_PRIVATE, outerClass, null);
+        ownerField.setSourcePosition(expression);
 
         // lets make the constructor
         BlockStatement block = new BlockStatement();
+        block.setSourcePosition(expression);
+        VariableExpression outer = new VariableExpression("_outerInstance");
+        outer.setSourcePosition(expression);
+        block.getVariableScope().getReferencedLocalVariables().put("_outerInstance",outer);
         block.addStatement(
             new ExpressionStatement(
                 new MethodCallExpression(
                     new VariableExpression("super"),
                     "<init>",
-                    new VariableExpression("_outerInstance"))));
+                    outer)));
         block.addStatement(
             new ExpressionStatement(
                 new BinaryExpression(
                     new FieldExpression(ownerField),
                     Token.newSymbol(Types.EQUAL, -1, -1),
-                    new VariableExpression("_outerInstance"))));
+                    outer)));
 
         // lets assign all the parameter fields from the outer context
         for (int i = 0; i < localVariableParams.length; i++) {
             Parameter param = localVariableParams[i];
             String paramName = param.getName();
-            boolean holder = mutableVars.contains(paramName);
             Expression initialValue = null;
             ClassNode type = param.getType();
             FieldNode paramField = null;
-            if (holder) {
+            if (true) {
             	initialValue = new VariableExpression(paramName);
                 ClassNode realType = type;
                 type = ClassHelper.makeReference();
@@ -2676,16 +2566,6 @@ public class AsmClassGenerator extends ClassGenerator {
                         new BinaryExpression(expression, Token.newSymbol(Types.EQUAL, 0, 0), new VariableExpression("__value"))));
                         */
             }
-            else {
-            	PropertyNode propertyNode = answer.addProperty(paramName, ACC_PUBLIC, type, initialValue, null, null);
-                paramField = propertyNode.getField();
-                block.addStatement(
-                    new ExpressionStatement(
-                        new BinaryExpression(
-                            new FieldExpression(paramField),
-                            Token.newSymbol(Types.EQUAL, -1, -1),
-                            new VariableExpression(paramName))));
-            }
         }
 
         Parameter[] params = new Parameter[2 + localVariableParams.length];
@@ -2693,8 +2573,27 @@ public class AsmClassGenerator extends ClassGenerator {
         params[1] = new Parameter(ClassHelper.OBJECT_TYPE, "_delegate");
         System.arraycopy(localVariableParams, 0, params, 2, localVariableParams.length);
 
-        answer.addConstructor(ACC_PUBLIC, params, ClassNode.EMPTY_ARRAY, block);
+        ASTNode sn = answer.addConstructor(ACC_PUBLIC, params, ClassNode.EMPTY_ARRAY, block);
+        sn.setSourcePosition(expression);
         return answer;
+    }
+    
+    protected Parameter[] getClosureSharedVariables(ClosureExpression ce){
+        VariableScope scope =  ce.getVariableScope();
+        Map references = scope.getReferencedLocalVariables();
+        Parameter[] ret = new Parameter[references.size()];
+        int index = 0;
+        for (Iterator iter = references.values().iterator(); iter.hasNext();) {
+            org.codehaus.groovy.ast.Variable element = (org.codehaus.groovy.ast.Variable) iter.next();
+            if (element instanceof Parameter) {
+                ret[index] = (Parameter) element;
+            } else {
+                Parameter p = new Parameter(element.getType(),element.getName());
+                ret[index] = p;
+            }
+            index++;
+        }
+        return ret;
     }
 
     protected ClassNode getOutermostClass() {
@@ -2744,7 +2643,7 @@ public class AsmClassGenerator extends ClassGenerator {
         if (isValidTypeForCast(type)) {
             visitClassExpression(new ClassExpression(type));
             asTypeMethod.call(cv);
-        }
+        } 
         helper.doCast(type);
     }
 
@@ -2922,30 +2821,19 @@ public class AsmClassGenerator extends ClassGenerator {
      * @return the type of the given (LHS) expression or null if it is java.lang.Object or it cannot be deduced
      */
     protected ClassNode getLHSType(Expression leftExpression) {
-        do {
-// commented out. not quiteworking yet. would complain something like:
-//java.lang.ClassFormatError: Foo$1 (Illegal Field name "class$[Ljava$lang$String;")
-//
-//            if (ENABLE_EARLY_BINDING) {
-//                String type = leftExpression.getType();
-//                if (type == null)
-//                    break;
-//                return isValidTypeForCast(type) ? type : null;
-//            }
-        } while (false);
-
         if (leftExpression instanceof VariableExpression) {
-            VariableExpression varExp = (VariableExpression) leftExpression;
+            VariableExpression varExp = (VariableExpression) leftExpression; 
             ClassNode type = varExp.getType();
             if (isValidTypeForCast(type)) {
                 return type;
             }
             String variableName = varExp.getName();
-            Variable variable = (Variable) variableStack.get(variableName);
+            Variable variable = compileStack.getVariable(variableName,false);
             if (variable != null) {
-                if (variable.isHolder() || variable.isProperty()) {
-                    return variable.getType();
+                if (variable.isHolder()) {
+                    return type;
                 }
+                if (variable.isProperty()) return variable.getType();
                 type = variable.getType();
                 if (isValidTypeForCast(type)) {
                     return type;
@@ -2975,7 +2863,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     protected boolean isValidTypeForCast(ClassNode type) {
-        return type!=ClassHelper.DYNAMIC_TYPE && !type.getName().equals("groovy.lang.Reference") && !ClassHelper.isPrimitiveType(type);
+        return type!=ClassHelper.DYNAMIC_TYPE && !type.getName().equals("groovy.lang.Reference");
     }
 
     protected void visitAndAutoboxBoolean(Expression expression) {
@@ -3004,8 +2892,7 @@ public class AsmClassGenerator extends ClassGenerator {
         leftHandExpression = false;
         expression.visit(this);
 
-        Variable tv = visitASTOREInTemp("postfix_" + method);
-        int tempIdx  = tv.getIndex();
+        int tempIdx = compileStack.defineTemporaryVariable("postfix_" + method, true);
         cv.visitVarInsn(ALOAD, tempIdx);
 
         cv.visitLdcInsn(method);
@@ -3014,26 +2901,7 @@ public class AsmClassGenerator extends ClassGenerator {
         store(expression);
 
         cv.visitVarInsn(ALOAD, tempIdx);
-        removeVar(tv);
-    }
-
-    protected boolean isHolderVariable(Expression expression) {
-        if (expression instanceof FieldExpression) {
-            FieldExpression fieldExp = (FieldExpression) expression;
-            return fieldExp.getField().isHolder();
-        }
-        if (expression instanceof VariableExpression) {
-            VariableExpression varExp = (VariableExpression) expression;
-            Variable variable = (Variable) variableStack.get(varExp.getName());
-            if (variable != null) {
-                return variable.isHolder();
-            }
-            FieldNode field = classNode.getField(varExp.getName());
-            if (field != null) {
-                return field.isHolder();
-            }
-        }
-        return false;
+        compileStack.removeVar(tempIdx);
     }
 
     protected void evaluateInstanceof(BinaryExpression expression) {
@@ -3166,348 +3034,17 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
-    protected VariableScope getVariableScope() {
-        if (variableScope == null) {
-            if (methodNode != null) {
-                // if we're a closure method we'll have our variable scope already created
-                variableScope = methodNode.getVariableScope();
-            }
-            else if (constructorNode != null) {
-                variableScope = constructorNode.getVariableScope();
-            }
-            else {
-                throw new RuntimeException("Can't create a variable scope outside of a method or constructor");
-            }
-        }
-        return variableScope;
-    }
-
-    /**
-     * @return a list of parameters for each local variable which needs to be
-     *         passed into a closure
-     */
-    protected Parameter[] getClosureSharedVariables(ClosureExpression expression) {
-        List vars = new ArrayList();
-
-        //
-        // First up, get the scopes for outside and inside the closure.
-        // The inner scope must cover all nested closures, as well, as
-        // everything that will be needed must be imported.
-
-        VariableScope outerScope = getVariableScope().createRecursiveParentScope();
-        VariableScope innerScope = expression.getVariableScope();
-        if (innerScope == null) {
-            System.out.println(
-                "No variable scope for: " + expression + " method: " + methodNode + " constructor: " + constructorNode);
-            innerScope = new VariableScope(getVariableScope());
-        }
-        else {
-            innerScope = innerScope.createRecursiveChildScope();
-        }
-
-
-        //
-        // DeclaredVariables include any name that was assigned to within
-        // the scope.  ReferencedVariables include any name that was read
-        // from within the scope.  We get the sets from each and must piece
-        // together the stack variable import list for the closure.  Note
-        // that we don't worry about field variables here, as we don't have
-        // to do anything special with them.  Stack variables, on the other
-        // hand, have to be wrapped up in References for use.
-
-        Set outerDecls = outerScope.getDeclaredVariables();
-        Set outerRefs  = outerScope.getReferencedVariables();
-        Set innerDecls = innerScope.getDeclaredVariables();
-        Set innerRefs  = innerScope.getReferencedVariables();
-
-
-        //
-        // So, we care about any name referenced in the closure UNLESS:
-        //   1) it's not declared in the outer context;
-        //   2) it's a parameter;
-        //   3) it's a field in the context class that isn't overridden
-        //      by a stack variable in the outer context.
-        //
-        // BUG: We don't actually have the necessary information to do
-        //      this right!  The outer declarations don't distinguish
-        //      between assignments and variable declarations.  Therefore
-        //      we can't tell when field variables have been overridden
-        //      by stack variables in the outer context.  This must
-        //      be fixed!
-
-        Set varSet = new HashSet();
-        for (Iterator iter = innerRefs.iterator(); iter.hasNext();) {
-            String var = (String) iter.next();
-            // lets not pass in fields from the most-outer class, but pass in values from an outer closure
-            if (outerDecls.contains(var) && (isNotFieldOfOutermostClass(var))) {
-                ClassNode type = getVariableType(var);
-                vars.add(new Parameter(type, var));
-                varSet.add(var);
-            }
-        }
-        for (Iterator iter = outerRefs.iterator(); iter.hasNext();) {
-            String var = (String) iter.next();
-            // lets not pass in fields from the most-outer class, but pass in values from an outer closure
-            if (innerDecls.contains(var) && (isNotFieldOfOutermostClass(var)) && !varSet.contains(var)) {
-                ClassNode type = getVariableType(var);
-                vars.add(new Parameter(type, var));
-            }
-        }
-
-
-        Parameter[] answer = new Parameter[vars.size()];
-        vars.toArray(answer);
-        return answer;
-    }
-
     protected boolean isNotFieldOfOutermostClass(String var) {
-        //return classNode.getField(var) == null || isInnerClass();
         return getOutermostClass().getField(var) == null;
-    }
-
-    protected void findMutableVariables() {
-        /*
-        VariableScopeCodeVisitor outerVisitor = new VariableScopeCodeVisitor(true);
-        node.getCode().visit(outerVisitor);
-
-        addFieldsToVisitor(outerVisitor);
-
-        VariableScopeCodeVisitor innerVisitor = outerVisitor.getClosureVisitor();
-        */
-        VariableScope outerScope = getVariableScope();
-
-        // lets create a scope concatenating all the closure expressions
-        VariableScope innerScope = outerScope.createCompositeChildScope();
-
-        Set outerDecls = outerScope.getDeclaredVariables();
-        Set outerRefs = outerScope.getReferencedVariables();
-        Set innerDecls = innerScope.getDeclaredVariables();
-        Set innerRefs = innerScope.getReferencedVariables();
-
-        mutableVars.clear();
-
-        for (Iterator iter = innerDecls.iterator(); iter.hasNext();) {
-            String var = (String) iter.next();
-            if ((outerDecls.contains(var) || outerRefs.contains(var)) && classNode.getField(var) == null) {
-                mutableVars.add(var);
-            }
-        }
-
-        // we may call the closure twice and modify the variable in the outer scope
-        // so for now lets assume that all variables are mutable
-        for (Iterator iter = innerRefs.iterator(); iter.hasNext();) {
-            String var = (String) iter.next();
-            if (outerDecls.contains(var) && classNode.getField(var) == null) {
-                mutableVars.add(var);
-            }
-        }
-
-        //                System.out.println();
-        //                System.out.println("method: " + methodNode + " classNode: " + classNode);
-        //                System.out.println("child scopes: " + outerScope.getChildren());
-        //                System.out.println("outerDecls: " + outerDecls);
-        //                System.out.println("outerRefs: " + outerRefs);
-        //                System.out.println("innerDecls: " + innerDecls);
-        //                System.out.println("innerRefs: " + innerRefs);
     }
 
     private boolean isInnerClass() {
         return classNode instanceof InnerClassNode;
     }
 
-    protected ClassNode getVariableType(String name) {
-        Variable variable = (Variable) variableStack.get(name);
-        if (variable != null) {
-            return variable.getType();
-        }
-        return ClassHelper.DYNAMIC_TYPE;
-    }
-
-    protected void resetVariableStack(Parameter[] parameters) {
-        lastVariableIndex = -1;
-        variableStack.clear();
-
-        scope = new BlockScope(null);
-        //pushBlockScope();
-
-        // lets push this onto the stack
-        definingParameters = true;
-        if (!isStaticMethod()) {
-            defineVariable("this", classNode).getIndex();
-        } // now lets create indices for the parameteres
-        for (int i = 0; i < parameters.length; i++) {
-            Parameter parameter = parameters[i];
-            ClassNode type = parameter.getType();
-            Variable v = defineVariable(parameter.getName(), type);
-            int idx = v.getIndex();
-            if (ClassHelper.isPrimitiveType(type)) {
-                helper.load(type, idx);
-                helper.box(type);
-                cv.visitVarInsn(ASTORE, idx);
-            }
-        }
-        definingParameters = false;
-    }
-
-    protected void popScope() {
-        int lastID = scope.getFirstVariableIndex();
-
-        List removeKeys = new ArrayList();
-        for (Iterator iter = variableStack.entrySet().iterator(); iter.hasNext();) {
-            Map.Entry entry = (Map.Entry) iter.next();
-            String name = (String) entry.getKey();
-            Variable value = (Variable) entry.getValue();
-            if (value.getIndex() >= lastID) {
-                removeKeys.add(name);
-            }
-        }
-        for (Iterator iter = removeKeys.iterator(); iter.hasNext();) {
-            Variable v  = (Variable) variableStack.remove(iter.next());
-            if (CREATE_DEBUG_INFO) { // set localvartable
-                if (v != null) {
-                    visitVariableEndLabel(v);
-                    cv.visitLocalVariable(
-                                          v.getName(),
-                                          BytecodeHelper.getTypeDescription(v.getType()),
-                                          null,
-                                          v.getStartLabel(),
-                                          v.getEndLabel(),
-                                          v.getIndex()
-                                          );
-                }
-            }
-        }
-        scope = scope.getParent();
-    }
-
-    void removeVar(Variable v ) {
-    	variableStack.remove(v.getName());
-        if (CREATE_DEBUG_INFO) { // set localvartable
-        	Label endl = new Label();
-        	cv.visitLabel(endl);
-        	cv.visitLocalVariable(
-                                v.getName(),
-                                BytecodeHelper.getTypeDescription(v.getType()),
-                                null,
-                                v.getStartLabel(),
-                                endl,
-                                v.getIndex()
-                                );
-        }
-    }
-    private void visitVariableEndLabel(Variable v) {
-        if (CREATE_DEBUG_INFO) {
-            if(v.getEndLabel() == null) {
-                Label end = new Label();
-                v.setEndLabel(end);
-            }
-            cv.visitLabel(v.getEndLabel());
-        }
-    }
-
-    protected void pushBlockScope() {
-        pushBlockScope(true, true);
-    }
-
-    /**
-     * create a new scope. Set break/continue label if the canXXX parameter is true. Otherwise
-     * inherit parent's label.
-     * @param canContinue   true if the start of the scope can take continue label
-     * @param canBreak  true if the end of the scope can take break label
-     */
-    protected void pushBlockScope(boolean canContinue, boolean canBreak) {
-        BlockScope parentScope = scope;
-        scope = new BlockScope(parentScope);
-        scope.setContinueLabel(canContinue ? new Label() : (parentScope == null ? null : parentScope.getContinueLabel()));
-        scope.setBreakLabel(canBreak? new Label() : (parentScope == null ? null : parentScope.getBreakLabel()));
-        scope.setFirstVariableIndex(getNextVariableID());
-    }
-
-    /**
-     * Defines the given variable in scope and assigns it to the stack
-     */
-    protected Variable defineVariable(String name, ClassNode type) {
-        return defineVariable(name, type, true);
-    }
-
-    private Variable defineVariable(String name, ClassNode type, boolean define) {
-        Variable answer = (Variable) variableStack.get(name);
-        if (answer == null) {
-            lastVariableIndex = getNextVariableID();
-            answer = new Variable(lastVariableIndex, type, name);
-            if (mutableVars.contains(name)) {
-                answer.setHolder(true);
-            }
-            variableStack.put(name, answer);
-
-            Label startLabel  = new Label();
-            answer.setStartLabel(startLabel);
-            if (define) {
-                if (definingParameters) {
-                    if (answer.isHolder()) {
-                        cv.visitTypeInsn(NEW, "groovy/lang/Reference"); // br todo to associate a label with the variable
-                        cv.visitInsn(DUP);
-                        cv.visitVarInsn(ALOAD, lastVariableIndex);
-                        cv.visitMethodInsn(INVOKESPECIAL, "groovy/lang/Reference", "<init>", "(Ljava/lang/Object;)V");
-                        cv.visitVarInsn(ASTORE, lastVariableIndex);
-                        cv.visitLabel(startLabel);
-                    }
-                }
-                else {
-                    // using new variable inside a comparison expression
-                    // so lets initialize it too
-                    if (answer.isHolder() && !isInScriptBody()) {
-                        //cv.visitVarInsn(ASTORE, lastVariableIndex + 1); // I might need this to set the reference value
-
-                        cv.visitTypeInsn(NEW, "groovy/lang/Reference");
-                        cv.visitInsn(DUP);
-                        cv.visitMethodInsn(INVOKESPECIAL, "groovy/lang/Reference", "<init>", "()V");
-
-                        cv.visitVarInsn(ASTORE, lastVariableIndex);
-                        cv.visitLabel(startLabel);
-                        //cv.visitVarInsn(ALOAD, idx + 1);
-                    }
-                    else {
-                        if (!leftHandExpression) { // new var on the RHS: init with null
-                            cv.visitInsn(ACONST_NULL);
-                            cv.visitVarInsn(ASTORE, lastVariableIndex);
-                            cv.visitLabel(startLabel);
-                        }
-                    }
-                }
-            }
-        }
-        return answer;
-    }
-
-    private boolean isDoubleSizeVariable(ClassNode type) {
-        return type==ClassHelper.long_TYPE || type==ClassHelper.double_TYPE;
-    }
-
-    private int getNextVariableID() {
-    	int index = 0;
-    	for (Iterator iter = variableStack.values().iterator(); iter.hasNext();) {
-    		Variable var = (Variable) iter.next();
-    		if (isDoubleSizeVariable(var.getType())) {
-    			index += 2;
-    		} else {
-    			index++;
-    		}
-    	}
-    	return index;
-    }
-
     /** @return true if the given name is a local variable or a field */
     protected boolean isFieldOrVariable(String name) {
-        return variableStack.containsKey(name) || classNode.getField(name) != null;
-    }
-
-    /*protected String resolveClassName(String type) {
-        return classNode.resolveClassName(type);
-    }*/
-
-    protected String createVariableName(String type) {
-        return "__" + type + (++tempVariableNameCounter);
+        return compileStack.containsVariable(name) || classNode.getField(name) != null;
     }
 
     /**
@@ -3520,10 +3057,14 @@ public class AsmClassGenerator extends ClassGenerator {
         }
         if (expression instanceof VariableExpression) {
             VariableExpression varExpr = (VariableExpression) expression;
-            Variable variable = (Variable) variableStack.get(varExpr.getName());
+            Variable variable = compileStack.getVariable(varExpr.getName(),false);
             if (variable != null && !variable.isHolder()) {
                 ClassNode type = variable.getType();
                 if (! variable.isDynamicTyped()) return type;
+            }
+            if (variable == null) {
+                org.codehaus.groovy.ast.Variable var = (org.codehaus.groovy.ast.Variable) compileStack.getScope().getReferencedClassVariables().get(varExpr.getName());
+                if (var!=null && !var.isDynamicTyped()) return var.getType();
             }
         }
         return expression.getType();
@@ -3550,4 +3091,22 @@ public class AsmClassGenerator extends ClassGenerator {
         return answer;
     }
 
+    protected boolean isHolderVariable(Expression expression) {
+        if (expression instanceof FieldExpression) {
+            FieldExpression fieldExp = (FieldExpression) expression;
+            return fieldExp.getField().isHolder();
+        }
+        if (expression instanceof VariableExpression) {
+            VariableExpression varExp = (VariableExpression) expression;
+            Variable variable = compileStack.getVariable(varExp.getName(),false);
+            if (variable != null) {
+                return variable.isHolder();
+            }
+            FieldNode field = classNode.getField(varExp.getName());
+            if (field != null) {
+                return field.isHolder();
+            }
+        }
+        return false;
+    }
 }

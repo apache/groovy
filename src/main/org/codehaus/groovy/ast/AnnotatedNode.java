@@ -117,16 +117,6 @@ public class AnnotatedNode extends ASTNode {
         this.synthetic = synthetic;
     }
 
-    protected void addFieldsToVisitor(VariableScope scope) {
-        for (Iterator iter = getDeclaringClass().getFields().iterator(); iter.hasNext();) {
-            FieldNode field = (FieldNode) iter.next();
-            String name = field.getName();
-
-            scope.getDeclaredVariables().add(name);
-            scope.getReferencedVariables().add(name);
-        }
-    }
-
     public ClassNode getDeclaringClass() {
         return declaringClass;
     }

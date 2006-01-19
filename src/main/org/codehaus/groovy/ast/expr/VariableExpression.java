@@ -64,6 +64,16 @@ public class VariableExpression extends Expression implements Variable {
     private String variable;
     private boolean inStaticContext;
     private boolean isDynamicTyped=false;
+    private Variable accessedVariable;
+    boolean closureShare=false;
+
+    public Variable getAccessedVariable() {
+        return accessedVariable;
+    }
+
+    public void setAccessedVariable(Variable origin) {
+        this.accessedVariable = origin;
+    }
 
     public VariableExpression(String variable, ClassNode type) {
         this.variable = variable;
@@ -72,6 +82,11 @@ public class VariableExpression extends Expression implements Variable {
     
     public VariableExpression(String variable) {
         this(variable, ClassHelper.DYNAMIC_TYPE);
+    }
+    
+    public VariableExpression(Variable variable) {
+        this(variable.getName(), variable.getType());
+        setAccessedVariable(variable);
     }
 
     public void visit(GroovyCodeVisitor visitor) {
@@ -106,6 +121,7 @@ public class VariableExpression extends Expression implements Variable {
     }
     
     public boolean isInStaticContext() {
+        if (accessedVariable!=null && accessedVariable!=this) return accessedVariable.isInStaticContext();
         return inStaticContext;
     }
     
@@ -120,5 +136,19 @@ public class VariableExpression extends Expression implements Variable {
     
     public boolean isDynamicTyped() {
         return isDynamicTyped;
+    }
+
+    public boolean isClosureSharedVariable() {
+        if (accessedVariable!=null && accessedVariable!=this) return accessedVariable.isClosureSharedVariable();
+        return closureShare;
+    }
+    
+    public void setClosureSharedVariable(boolean inClosure) {
+        closureShare = inClosure;        
+    }
+    
+    public ClassNode getType() {
+        if (accessedVariable!=null && accessedVariable!=this) return accessedVariable.getType();
+        return super.getType();
     }
 }

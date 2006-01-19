@@ -69,7 +69,9 @@ public class RegexExpression extends Expression {
     }
 
     public Expression transformExpression(ExpressionTransformer transformer) {
-        return new RegexExpression(transformer.transform(string));
+        Expression ret = new RegexExpression(transformer.transform(string)); 
+        ret.setSourcePosition(this);
+        return ret;       
     }
 
     public Expression getRegex() {

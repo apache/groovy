@@ -72,7 +72,9 @@ public class RangeExpression extends Expression {
     }
 
     public Expression transformExpression(ExpressionTransformer transformer) {
-        return new RangeExpression(transformer.transform(from), transformer.transform(to), inclusive); 
+        Expression ret = new RangeExpression(transformer.transform(from), transformer.transform(to), inclusive); 
+        ret.setSourcePosition(this);
+        return ret;
     }
 
     public Expression getFrom() {

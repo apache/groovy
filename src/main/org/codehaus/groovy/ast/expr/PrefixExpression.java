@@ -74,7 +74,9 @@ public class PrefixExpression extends Expression {
     }
 
     public Expression transformExpression(ExpressionTransformer transformer) {
-        return new PrefixExpression(operation, transformer.transform(expression));
+        Expression ret = new PrefixExpression(operation, transformer.transform(expression)); 
+        ret.setSourcePosition(this);
+        return ret;
     }
 
     public void setExpression(Expression expression) {

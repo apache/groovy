@@ -51,6 +51,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
+import org.codehaus.groovy.ast.VariableScope;
 
 /**
  * A list of statements
@@ -60,19 +61,21 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  */
 public class BlockStatement extends Statement {
 
-    private List statements;
+    private List statements = new ArrayList();
+    private VariableScope scope;
     
     public BlockStatement() {
-        this(new ArrayList());
+        this(new ArrayList(), new VariableScope());
     }
     
-    public BlockStatement(List statements) {
+    public BlockStatement(List statements, VariableScope scope) {
         this.statements = statements;
+        this.scope = scope;
     }
     
-    public BlockStatement(Statement[] statements) {
-        this();
+    public BlockStatement(Statement[] statements, VariableScope scope) {
         this.statements.addAll(Arrays.asList(statements));
+        this.scope = scope;
     }
 
     public void visit(GroovyCodeVisitor visitor) {
@@ -116,4 +119,11 @@ public class BlockStatement extends Statement {
         return statements.isEmpty();
     }
 
+    public void setVariableScope(VariableScope scope) {
+        this.scope = scope;
+    }
+    
+    public VariableScope getVariableScope() {
+        return scope;
+    }
 }

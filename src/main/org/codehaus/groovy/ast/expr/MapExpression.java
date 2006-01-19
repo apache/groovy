@@ -88,7 +88,9 @@ public class MapExpression extends Expression {
     }
 
     public Expression transformExpression(ExpressionTransformer transformer) {
-        return new MapExpression(transformExpressions(getMapEntryExpressions(), transformer));
+        Expression ret = new MapExpression(transformExpressions(getMapEntryExpressions(), transformer));
+        ret.setSourcePosition(this);
+        return ret;        
     }
     
     public String toString() {

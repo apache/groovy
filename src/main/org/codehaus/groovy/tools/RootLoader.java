@@ -99,7 +99,6 @@ import java.util.Enumeration;
  */
 public class RootLoader extends ClassLoader {
 
-    private ClassLoader parent; 
     private InnerLoader inner;
     
     private class InnerLoader extends URLClassLoader {

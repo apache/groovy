@@ -57,6 +57,9 @@ import org.objectweb.asm.Label;
  * @version $Revision$
  */
 public class Variable {
+    
+    public static Variable THIS_VARIABLE = new Variable();
+    public static Variable SUPER_VARIABLE = new Variable();
 
     private int index;
     private ClassNode type;
@@ -70,6 +73,13 @@ public class Variable {
     private Label endLabel = null;
     private boolean dynamicTyped;
 
+    private Variable(){
+        dynamicTyped = false;
+        index=0;
+        holder=false;
+        property=false;
+    }
+    
     public Variable(int index, ClassNode type, String name) {
         this.index = index;
         this.type = type;

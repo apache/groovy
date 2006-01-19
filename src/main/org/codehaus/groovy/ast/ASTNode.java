@@ -98,4 +98,18 @@ public class ASTNode {
     public void setLastColumnNumber(int lastColumnNumber) {
         this.lastColumnNumber = lastColumnNumber;
     }
+    
+    /**
+     * Sets the source position using another ASTNode.
+     * The sourcePosition consists of a line/column pair for
+     * the start and a line/column pair for the end of the
+     * expression or statement 
+     * 
+     */
+    public void setSourcePosition(ASTNode node) {
+        this.columnNumber = node.getColumnNumber();
+        this.lastLineNumber = node.getLastLineNumber();
+        this.lastColumnNumber = node.getLastColumnNumber();
+        this.lineNumber = node.getLineNumber();
+    }
 }

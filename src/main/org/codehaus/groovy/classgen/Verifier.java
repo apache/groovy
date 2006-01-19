@@ -64,6 +64,7 @@ import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
@@ -155,7 +156,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 ClassHelper.make(MetaClass.class),
                 Parameter.EMPTY_ARRAY,
                 ClassNode.EMPTY_ARRAY,
-                new BlockStatement(new Statement[] { initMetaClassField, new ReturnStatement(metaClassVar)})
+                new BlockStatement(new Statement[] { initMetaClassField, new ReturnStatement(metaClassVar)}, new VariableScope())
             );
 
             // @todo we should check if the base class implements the invokeMethod method
@@ -168,6 +169,13 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
             // don't do anything as the base class implements the invokeMethod
             if (!addDelegateObject) {
+                
+                VariableExpression vMethods = new VariableExpression("method");
+                VariableExpression vArguments = new VariableExpression("arguments");
+                VariableScope blockScope = new VariableScope();
+                blockScope.getReferencedLocalVariables().put("method",vMethods);
+                blockScope.getReferencedLocalVariables().put("arguments",vArguments);
+                
                 node.addSyntheticMethod(
                     "invokeMethod",
                     ACC_PUBLIC,
@@ -187,9 +195,16 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                                     new ArgumentListExpression(
                                         new Expression[] {
                                             VariableExpression.THIS_EXPRESSION,
-                                            new VariableExpression("method"),
-                                            new VariableExpression("arguments")})))
-                }));
+                                            vMethods,
+                                            vArguments}
+                                        )
+                                    )
+                                )
+                        },
+                        blockScope
+                    )
+                );
+                
 
                 if (!node.isScript()) {
                     node.addSyntheticMethod(
@@ -209,8 +224,15 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                                             new Expression[] {
                                                 VariableExpression.THIS_EXPRESSION,
                                                 new VariableExpression("property")})))
-                    }));
-
+                            },
+                            new VariableScope()
+                        ));
+                    VariableExpression vProp = new VariableExpression("property");
+                    VariableExpression vValue = new VariableExpression("value");
+                    blockScope = new VariableScope();
+                    blockScope.getReferencedLocalVariables().put("property",vProp);
+                    blockScope.getReferencedLocalVariables().put("value",vValue);
+                    
                     node.addSyntheticMethod(
                         "setProperty",
                         ACC_PUBLIC,
@@ -230,9 +252,11 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                                         new ArgumentListExpression(
                                             new Expression[] {
                                                 VariableExpression.THIS_EXPRESSION,
-                                                new VariableExpression("property"),
-                                                new VariableExpression("value")})))
-                    }));
+                                                vProp,
+                                                vValue})))
+                            },
+                            blockScope
+                    ));
                 }
             }
         }
@@ -304,7 +328,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     Statement last = (Statement) list.get(idx);
                     if (last instanceof ExpressionStatement) {
                         ExpressionStatement expStmt = (ExpressionStatement) last;
-                        list.set(idx, new ReturnStatement(expStmt.getExpression()));
+                        list.set(idx, new ReturnStatement(expStmt));
                     }
                     else if (!(last instanceof ReturnStatement)) {
                         list.add(new ReturnStatement(ConstantExpression.NULL));
@@ -314,7 +338,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     list.add(new ReturnStatement(ConstantExpression.NULL));
                 }
 
-                node.setCode(new BlockStatement(filterStatements(list)));
+                node.setCode(new BlockStatement(filterStatements(list),block.getVariableScope()));
             }
         }
         else if (!node.isAbstract()) {
@@ -550,10 +574,11 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
         if (!statements.isEmpty()) {
             Statement code = constructorNode.getCode();
-            List otherStatements = new ArrayList();
+            BlockStatement block = new BlockStatement();
+            List otherStatements = block.getStatements();
             if (code instanceof BlockStatement) {
-                BlockStatement block = (BlockStatement) code;
-                otherStatements.addAll(block.getStatements());
+                block = (BlockStatement) code;
+                otherStatements=block.getStatements();
             }
             else if (code != null) {
                 otherStatements.add(code);
@@ -566,7 +591,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 }
                 statements.addAll(otherStatements);
             }
-            constructorNode.setCode(new BlockStatement(statements));
+            constructorNode.setCode(new BlockStatement(statements, block.getVariableScope()));
         }
 
         if (!staticStatements.isEmpty()) {

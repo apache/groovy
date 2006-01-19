@@ -65,6 +65,7 @@ public class Parameter implements Variable {
     private Expression defaultValue;
     private boolean hasDefaultValue;
     private boolean inStaticContext;
+    private boolean closureShare=false;
 
     public Parameter(ClassNode type, String name) {
         this.name = name;
@@ -117,5 +118,13 @@ public class Parameter implements Variable {
 
     public boolean isDynamicTyped() {
         return dynamicTyped;
+    }
+
+    public boolean isClosureSharedVariable() {
+        return closureShare;
+    }
+
+    public void setClosureSharedVariable(boolean inClosure) {
+        closureShare = inClosure;        
     }
 }

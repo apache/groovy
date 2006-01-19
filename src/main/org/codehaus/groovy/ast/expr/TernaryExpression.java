@@ -73,10 +73,12 @@ public class TernaryExpression extends Expression {
     }
 
     public Expression transformExpression(ExpressionTransformer transformer) {
-        return new TernaryExpression(
-            (BooleanExpression) transformer.transform(booleanExpression),
-            transformer.transform(trueExpression),
-            transformer.transform(falseExpression));
+        Expression ret = new TernaryExpression(
+                (BooleanExpression) transformer.transform(booleanExpression),
+                transformer.transform(trueExpression),
+                transformer.transform(falseExpression)); 
+        ret.setSourcePosition(this);
+        return ret; 
     }
 
     public String toString() {
