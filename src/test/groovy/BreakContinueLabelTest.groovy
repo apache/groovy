@@ -17,7 +17,7 @@ class BreakContinueLabelTest extends GroovyTestCase {
         }
     }
 
-    void testBreakLabelInNestedForLoop_FAILS() { if (notYetImplemented()) return
+    void testBreakLabelInNestedForLoop() {
         label: for (i in [1]) {
             for (j in [1]){
                 break label
@@ -46,7 +46,7 @@ class BreakContinueLabelTest extends GroovyTestCase {
         }
     }
 
-    void testBreakLabelInNestedWhileLoop_FAILS() { if (notYetImplemented()) return
+    void testBreakLabelInNestedWhileLoop() {
         def count = 0
         label: while (count < 1) {
             count++
@@ -58,7 +58,7 @@ class BreakContinueLabelTest extends GroovyTestCase {
         }
     }
 
-    void testBreakLabelInNestedMixedForAndWhileLoop_FAILS() { if (notYetImplemented()) return
+    void testBreakLabelInNestedMixedForAndWhileLoop() {
         def count = 0
         label_1: while (count < 1) {
             count++
@@ -89,7 +89,7 @@ class BreakContinueLabelTest extends GroovyTestCase {
         assertEquals '1424',log
     }
 
-    void testContinueLabelInNestedForLoop_FAILS() { if (notYetImplemented()) return
+    void testContinueLabelInNestedForLoop() {
         def log = ''
         label: for (i in [1,2]) {
             log += i
