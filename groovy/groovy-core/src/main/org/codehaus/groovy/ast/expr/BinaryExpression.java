@@ -47,6 +47,7 @@ package org.codehaus.groovy.ast.expr;
 
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
+import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 
@@ -79,7 +80,9 @@ public class BinaryExpression extends Expression {
     }
 
     public Expression transformExpression(ExpressionTransformer transformer) {
-        return new BinaryExpression(transformer.transform(leftExpression), operation, transformer.transform(rightExpression));
+        Expression ret = new BinaryExpression(transformer.transform(leftExpression), operation, transformer.transform(rightExpression));
+        ret.setSourcePosition(this);
+        return ret;
     }
 
     public Expression getLeftExpression() {
@@ -115,7 +118,7 @@ public class BinaryExpression extends Expression {
     *  is written into the specified variable name.   
     */
     
-    public static BinaryExpression newAssignmentExpression( String variable, Expression rhs ) {
+    public static BinaryExpression newAssignmentExpression( Variable variable, Expression rhs ) {
     	VariableExpression lhs = new VariableExpression( variable );
     	Token         operator = Token.newPlaceholder( Types.ASSIGN );
     

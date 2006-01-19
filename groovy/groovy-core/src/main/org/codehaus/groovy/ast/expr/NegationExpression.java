@@ -56,7 +56,9 @@ public class NegationExpression extends Expression {
 	}
 
 	public Expression transformExpression(ExpressionTransformer transformer) {
-	    return new NegationExpression(transformer.transform(expression));
+        Expression ret = new NegationExpression(transformer.transform(expression)); 
+        ret.setSourcePosition(this);
+        return ret;
 	}
 
     public String getText() {

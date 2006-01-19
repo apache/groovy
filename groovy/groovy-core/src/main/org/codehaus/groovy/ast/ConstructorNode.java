@@ -45,8 +45,9 @@
  */
 package org.codehaus.groovy.ast;
 
+import java.util.Map;
+
 import org.codehaus.groovy.ast.stmt.*;
-import org.codehaus.groovy.classgen.VariableScopeCodeVisitor;
 
 
 /**
@@ -55,66 +56,21 @@ import org.codehaus.groovy.classgen.VariableScopeCodeVisitor;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class ConstructorNode extends AnnotatedNode {
-
-    private int modifiers;
-    private Parameter[] parameters;   
-    private Statement code;
-    private VariableScope variableScope;
-    private ClassNode[] exceptions;
+public class ConstructorNode extends MethodNode {
     
     public ConstructorNode(int modifiers, Statement code) {
         this(modifiers, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, code);
     }
     
     public ConstructorNode(int modifiers, Parameter[] parameters, ClassNode[] exceptions, Statement code) {
-        this.modifiers = modifiers;
-        this.parameters = parameters;
-        this.code = code;
-        this.exceptions = exceptions;
-    }
-    
-    public Statement getCode() {
-        return code;
-    }
-
-    public void setCode(Statement code) {
-        this.code = code;
-    }
-
-    public int getModifiers() {
-        return modifiers;
-    }
-
-    public Parameter[] getParameters() {
-        return parameters;
-    }
-
-    public VariableScope getVariableScope() {
-        if (variableScope == null) {
-            variableScope = createVariableScope();
+        super("<init>",modifiers,ClassHelper.VOID_TYPE,parameters,exceptions,code);
+        
+        VariableScope scope = new VariableScope();
+        Map declares = scope.getDeclaredVariables(); 
+        for (int i = 0; i < parameters.length; i++) {
+            declares.put(parameters[i].getName(),parameters[i]);
         }
-        return variableScope;
+        this.setVariableScope(scope);
     }
-
-    public void setVariableScope(VariableScope variableScope) {
-        this.variableScope = variableScope;
-    }
-    
-    protected VariableScope createVariableScope() {
-        VariableScope variableScope = new VariableScope();
-        VariableScopeCodeVisitor visitor = new VariableScopeCodeVisitor(variableScope);
-        visitor.setParameters(getParameters());
-        Statement code = getCode();
-        if (code != null) {
-            code.visit(visitor);
-        }
-        addFieldsToVisitor(variableScope);
-        return variableScope;
-    }
-
-	public ClassNode[] getExceptions() {
-		return exceptions;
-	}
 
 }

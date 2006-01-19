@@ -859,8 +859,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
         Expression collectionExpression = expression(collectionNode);
         Statement block = statement(inNode.getNextSibling());
+        Parameter forParameter = new Parameter(type,variable);
 
-        ForStatement forStatement = new ForStatement(variable, type, collectionExpression, block);
+        ForStatement forStatement = new ForStatement(forParameter, collectionExpression, block);
         configureAST(forStatement, forNode);
         return forStatement;
     }
@@ -1046,7 +1047,8 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         String variable = parameter.getName();
         node = node.getNextSibling();
         Statement code = statement(node);
-        CatchStatement answer = new CatchStatement(exceptionType, variable, code);
+        Parameter catchParameter = new Parameter(exceptionType,variable);
+        CatchStatement answer = new CatchStatement(catchParameter, code);
         configureAST(answer, catchNode);
         return answer;
     }
@@ -1866,7 +1868,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
     protected ClosureExpression closureExpression(AST node) {
         AST paramNode = node.getFirstChild();
-        Parameter[] parameters = Parameter.EMPTY_ARRAY;
+        Parameter[] parameters = null;
         AST codeNode = paramNode;
         if (isType(PARAMETERS, paramNode) || isType(IMPLICIT_PARAMETERS, paramNode)) {
             parameters = parameters(paramNode);

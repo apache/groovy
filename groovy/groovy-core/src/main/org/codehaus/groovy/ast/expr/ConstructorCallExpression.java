@@ -78,7 +78,9 @@ public class ConstructorCallExpression extends Expression {
     }
     
     public Expression transformExpression(ExpressionTransformer transformer) {
-        return new ConstructorCallExpression(getType(), transformer.transform(arguments)); 
+        Expression ret =  new ConstructorCallExpression(getType(), transformer.transform(arguments));
+        ret.setSourcePosition(this);
+        return ret;
     }
 
     public Expression getArguments() {

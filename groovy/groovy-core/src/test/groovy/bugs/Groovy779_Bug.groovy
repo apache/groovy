@@ -14,9 +14,6 @@ class Groovy779_Bug extends GroovyTestCase {
 
     public void testFieldProperty() {
 
-        def exceptionCalled = false
-        def finallyCalled = false
-
         try {
             def p = new Groovy779OnePerson(nameID:"foo-", age:12.2)
             assert p.age == 12
@@ -37,8 +34,6 @@ class Groovy779_Bug extends GroovyTestCase {
     }
 
     public void testBeanProperty() {
-        def exceptionCalled = false
-        def finallyCalled = false
 
         try {
             def p2 = new Groovy779AnotherPerson(nameID:1234, age:12.2)

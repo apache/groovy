@@ -65,6 +65,7 @@ public class FieldNode extends AnnotatedNode implements Opcodes, Variable {
     private Expression initialValueExpression;
     private boolean dynamicTyped;
     private boolean holder;
+    private boolean closureShare = false;
 
     public static FieldNode newStatic(Class theClass, String name) throws SecurityException, NoSuchFieldException {
         Field field = theClass.getField(name);
@@ -77,7 +78,7 @@ public class FieldNode extends AnnotatedNode implements Opcodes, Variable {
         this.modifiers = modifiers;
         this.type = type;
         if (this.type==ClassHelper.DYNAMIC_TYPE && initialValueExpression!=null) this.setType(initialValueExpression.getType());
-        this.setType(ClassHelper.getWrapper(type));
+        this.setType(type);
         this.owner = owner;
         this.initialValueExpression = initialValueExpression;
     }
@@ -148,5 +149,13 @@ public class FieldNode extends AnnotatedNode implements Opcodes, Variable {
     }
     public void setInitialValueExpression(Expression initialValueExpression) {
         this.initialValueExpression = initialValueExpression;
+    }
+
+    public boolean isClosureSharedVariable() {
+        return false;
+    }
+    
+    public void setClosureSharedVariable(boolean inClosure) {
+        closureShare = inClosure;        
     }
 }

@@ -56,7 +56,9 @@ public class BitwiseNegExpression extends Expression {
     }
 
     public Expression transformExpression(ExpressionTransformer transformer) {
-        return new BitwiseNegExpression(transformer.transform(expression));
+        Expression ret = new BitwiseNegExpression(transformer.transform(expression));
+        ret.setSourcePosition(this);
+        return ret;
     }
 
     public String getText() {

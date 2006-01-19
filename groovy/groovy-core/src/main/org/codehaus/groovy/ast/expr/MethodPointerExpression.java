@@ -86,17 +86,22 @@ public class MethodPointerExpression extends Expression {
     }
 
     public Expression transformExpression(ExpressionTransformer transformer) {
-	if (expression == null)
-	        return new MethodPointerExpression(VariableExpression.THIS_EXPRESSION, methodName);
-	else
-	        return new MethodPointerExpression(transformer.transform(expression), methodName);
+        Expression ret;
+        if (expression == null) {
+	        ret = new MethodPointerExpression(VariableExpression.THIS_EXPRESSION, methodName);
+        } else {
+	        ret = new MethodPointerExpression(transformer.transform(expression), methodName);
+        }
+        ret.setSourcePosition(this);
+        return ret;        
     }
 
     public String getText() {
-	if (expression == null)
-		return "&" + methodName;
-	else
-		return expression.getText() + ".&" + methodName;
+        if (expression == null) {
+            return "&" + methodName;
+        } else {
+            return expression.getText() + ".&" + methodName;
+        }
     }
 
     public ClassNode getType() {

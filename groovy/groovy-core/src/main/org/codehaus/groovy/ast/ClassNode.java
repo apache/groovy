@@ -56,15 +56,27 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Represents a class declaration
+ * Represents a class in the AST.<br/>
+ * A ClassNode should be created using the methods in ClassHelper. 
+ * This ClassNode may be used to represent a class declaration or
+ * any other type. This class uses a proxy meschanism allowing to
+ * create a class for a plain name at ast creation time. In another 
+ * phase of the compiler the real ClassNode for the plain name may be
+ * found. To avoid the need of exchanging this ClassNode with an 
+ * instance of the correct ClassNode the correct ClassNode is set as 
+ * redirect. All method calls are then redirected to that ClassNode.
+ * <br>
+ * Note: the proxy mechanism is only allowed for classes being marked
+ * as primary ClassNode which means they represent no actual class. 
+ * The redirect itself can be any type of ClassNode
  *
+ * @see org.codehaus.groovy.ast.ClassHelper
+ * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * @author Jochen Theodorou
  * @version $Revision$
  */
 public class ClassNode extends AnnotatedNode implements Opcodes {
-
-    //private static final String[] defaultImports = {"java.lang", "java.util", "groovy.lang", "groovy.util"};
-    //private transient Logger log = Logger.getLogger(getClass().getName());
 
 	public static ClassNode[] EMPTY_ARRAY = new ClassNode[0];
 	
@@ -86,24 +98,35 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     boolean isPrimaryNode;
 
     // clazz!=null when resolved
-    private Class clazz;
+    protected Class clazz;
     // only false when this classNode is constructed from a class 
     private boolean lazyInitDone=true;
-    protected boolean resolved=true;
+    // not null if if the ClassNode is an array 
     private ClassNode componentType = null;
-    
+    // if not null this instance is handled as proxy 
+    // for the redirect
     private ClassNode redirect=null; 
     
+    /**
+     * Returns the ClassNode this ClassNode is redirecting to.
+     */
     protected ClassNode redirect(){
         if (redirect==null) return this;
         return redirect.redirect();
     }
     
+    /**
+     * Sets this instance as proxy for the given ClassNode
+     */
     public void setRedirect(ClassNode cn) {
         if (isPrimaryNode) throw new GroovyBugError("tried to set a redirect for a primary ClassNode ("+getName()+"->"+cn.getName()+").");
         redirect = cn.redirect();        
     }
-        
+    
+    /**
+     * Returns a ClassNode representing an array of the class
+     * represented by this ClassNode
+     */
     public ClassNode makeArray() {
         if (redirect!=null) return redirect().makeArray();
         ClassNode cn;
@@ -117,35 +140,46 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         return cn;
     }
     
+    /**
+     * Returns if this instance is a primary ClassNode
+     */
     public boolean isPrimaryClassNode(){
     	return redirect().isPrimaryNode || (componentType!= null && componentType.isPrimaryClassNode());
     }
     
+    /**
+     * Constructor used by makeArray() if no real class is available
+     */
     private ClassNode(ClassNode componentType) {
         this(componentType.getName()+"[]", ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
         this.componentType = componentType.redirect();
         isPrimaryNode=false;
-        resolved = false;
     }
     
+    /**
+     * Constructor used by makeArray() if a real class is available
+     */
     private ClassNode(Class c, ClassNode componentType) {
         this(c);
         this.componentType = componentType;
         isPrimaryNode=false;
     }
     
+    /**
+     * Creates a ClassNode from a real class. The resulting 
+     * ClassNode will be no primary ClassNode.
+     */
     public ClassNode(Class c) {
         this(c.getName(), c.getModifiers(), null, null ,MixinNode.EMPTY_ARRAY);
         clazz=c;
         lazyInitDone=false;
-        resolved = true;
         CompileUnit cu = getCompileUnit();
         if (cu!=null) cu.addClass(this);
         isPrimaryNode=false;
     }    
     
     /**
-     * the complete class structure will be initialized only when really
+     * The complete class structure will be initialized only when really
      * needed to avoid having too much objects during compilation
      */
     private void lazyClassInit() {       
@@ -170,7 +204,6 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         buildInterfaceTypes(clazz);       
         lazyInitDone=true;
     }
-    
     private void buildInterfaceTypes(Class c) {
         Class[] interfaces = c.getInterfaces();
         ClassNode[] ret = new ClassNode[interfaces.length];
@@ -181,7 +214,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
     
     
-    //br added to track the enclosing method for local inner classes
+    // added to track the enclosing method for local inner classes
     private MethodNode enclosingMethod = null;
 
     public MethodNode getEnclosingMethod() {
@@ -217,14 +250,21 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         this.superClass = superClass;
         this.interfaces = interfaces;
         this.mixins = mixins;
-        this.resolved = true;
         isPrimaryNode = true;
     }
 
+    
+    /**
+     * Sets the superclass of this ClassNode
+     */
     public void setSuperClass(ClassNode superClass) {
         redirect().superClass = superClass;
     }
 
+    /**
+     * Returns a list containing FieldNode objects for
+     * each field in the class represented by this ClassNode
+     */
     public List getFields() {
         if (!lazyInitDone) {
             lazyClassInit();
@@ -233,6 +273,10 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         return fields;
     }
 
+    /**
+     * Returns an array of ClassNodes representing the
+     * interfaces the class implements
+     */
     public ClassNode[] getInterfaces() {
         if (!lazyInitDone) {
             lazyClassInit();
@@ -245,6 +289,10 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         return redirect().mixins;
     }
 
+    /**
+     * Returns a list containing MethodNode objects for
+     * each method in the class represented by this ClassNode
+     */    
     public List getMethods() {
         if (!lazyInitDone) {
             lazyClassInit();
@@ -253,6 +301,11 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         return methods;
     }
 
+    /**
+     * Returns a list containing MethodNode objects for
+     * each abstract method in the class represented by 
+     * this ClassNode
+     */   
     public List getAbstractMethods() {
         
         HashSet abstractNodes = new HashSet();
@@ -647,11 +700,15 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * @return the ClassNode of the super class of this type
      */
     public ClassNode getSuperClass() {
+        if (!lazyInitDone && !isResolved()) {
+            throw new GroovyBugError("Classnode#getSuperClass for "+getName()+" called before class resolving");
+        }
+        return getUnresolvedSuperClass();
+    }
+    
+    public ClassNode getUnresolvedSuperClass() {
         if (!lazyInitDone) {
             lazyClassInit();
-        }
-        if (!isResolved()) {
-            throw new GroovyBugError("Classnode#getSuperClass for "+getName()+" called before class resolving");
         }
         return redirect().superClass;
     }
@@ -847,7 +904,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
     
     public boolean isResolved(){
-        return redirect().resolved || (componentType != null && componentType.isResolved());
+        return redirect().clazz!=null || (componentType != null && componentType.isResolved());
     }
     
     public boolean isArray(){

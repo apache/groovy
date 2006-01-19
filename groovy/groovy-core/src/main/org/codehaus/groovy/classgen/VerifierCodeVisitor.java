@@ -75,7 +75,7 @@ public class VerifierCodeVisitor extends CodeVisitorSupport implements Opcodes {
     }
 
     public void visitForLoop(ForStatement expression) {
-        assertValidIdentifier(expression.getVariable(), "for loop variable name", expression);
+        assertValidIdentifier(expression.getVariable().getName(), "for loop variable name", expression);
         super.visitForLoop(expression);
     }
 

@@ -127,7 +127,9 @@ public class ArrayExpression extends Expression {
     	List exprList = transformExpressions(expressions, transformer);
     	List sizes = null;
     	if (sizeExpression!=null) sizes = transformExpressions(sizeExpression,transformer);
-        return new ArrayExpression(elementType, exprList, sizes);
+        Expression ret = new ArrayExpression(elementType, exprList, sizes);
+        ret.setSourcePosition(this);
+        return ret;
     }
 
     public Expression getExpression(int i) {

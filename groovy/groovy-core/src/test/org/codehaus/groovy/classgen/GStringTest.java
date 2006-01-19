@@ -43,14 +43,15 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-
-package org.codehaus.groovy.classgen;
+ 
+ package org.codehaus.groovy.classgen;
 
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.GStringExpression;
@@ -83,20 +84,20 @@ public class GStringTest extends TestSupport {
         BlockStatement block = new BlockStatement();
         block.addStatement(
             new ExpressionStatement(
-                new BinaryExpression(
+                new DeclarationExpression(
                     new VariableExpression("user"),
                     Token.newSymbol("=", -1, -1),
                     new ConstantExpression("World"))));
         block.addStatement(
             new ExpressionStatement(
-                new BinaryExpression(new VariableExpression("str"), Token.newSymbol( "=", -1, -1), compositeStringExpr)));
+                new DeclarationExpression(new VariableExpression("str"), Token.newSymbol( "=", -1, -1), compositeStringExpr)));
         block.addStatement(
             new ExpressionStatement(
                 new MethodCallExpression(VariableExpression.THIS_EXPRESSION, "println", new VariableExpression("str"))));
 
         block.addStatement(
             new ExpressionStatement(
-                new BinaryExpression(
+                new DeclarationExpression(
                     new VariableExpression("text"),
                     Token.newSymbol( "=", -1, -1),
                     new MethodCallExpression(new VariableExpression("str"), "toString", ConstantExpression.NULL))));

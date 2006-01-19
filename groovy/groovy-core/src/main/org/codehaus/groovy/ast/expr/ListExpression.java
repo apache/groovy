@@ -85,7 +85,9 @@ public class ListExpression extends Expression {
     }
 
     public Expression transformExpression(ExpressionTransformer transformer) {
-        return new ListExpression(transformExpressions(getExpressions(), transformer));
+        Expression ret = new ListExpression(transformExpressions(getExpressions(), transformer));
+        ret.setSourcePosition(this);
+        return ret;       
     }
 
     public Expression getExpression(int i) {

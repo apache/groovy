@@ -61,6 +61,11 @@ public class ReturnStatement extends Statement {
 
     private Expression expression;
     
+    public ReturnStatement(ExpressionStatement statement) {
+        this(statement.getExpression());
+        setStatementLabel(statement.getStatementLabel());
+    }
+    
     public ReturnStatement(Expression expression) {
         this.expression = expression;
     }

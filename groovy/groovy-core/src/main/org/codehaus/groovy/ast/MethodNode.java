@@ -46,7 +46,6 @@
 package org.codehaus.groovy.ast;
 
 import org.codehaus.groovy.ast.stmt.Statement;
-import org.codehaus.groovy.classgen.VariableScopeCodeVisitor;
 import org.objectweb.asm.Opcodes;
 
 /**
@@ -75,12 +74,15 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
         this.returnType = returnType;
         if (returnType==null) this.returnType = ClassHelper.OBJECT_TYPE; 
 
+        variableScope = new VariableScope();
         if (parameters != null && parameters.length > 0) {
             for (int i = 0; i < parameters.length; i++) {
-                if (parameters[i].hasInitialExpression()) {
+                Parameter para = parameters[i];
+                if (para.hasInitialExpression()) {
                     this.hasDefaultValue = true;
                 }
-                parameters[i].setInStaticContext(isStatic());
+                para.setInStaticContext(isStatic());
+                variableScope.getDeclaredVariables().put(para.getName(),para);
             }
         }
         
@@ -148,9 +150,6 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
     }
 
     public VariableScope getVariableScope() {
-        if (variableScope == null) {
-            variableScope = createVariableScope();
-        }
         return variableScope;
     }
 
@@ -182,20 +181,7 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
         this.returnType = returnType;
     }
 
-
-    protected VariableScope createVariableScope() {
-        VariableScope variableScope = new VariableScope();
-        VariableScopeCodeVisitor visitor = new VariableScopeCodeVisitor(variableScope);
-        visitor.setParameters(getParameters());
-        Statement code = getCode();
-        if (code != null) {
-            code.visit(visitor);
-        }
-        addFieldsToVisitor(variableScope);
-        return variableScope;
+    public ClassNode[] getExceptions() {
+        return exceptions;
     }
-
-	public ClassNode[] getExceptions() {
-		return exceptions;
-	}
 }

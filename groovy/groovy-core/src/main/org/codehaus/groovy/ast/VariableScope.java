@@ -45,167 +45,98 @@
  */
 package org.codehaus.groovy.ast;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Represents a variable scope. This is primarily used to determine variable sharing
  * across method and closure boundaries.
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * @author Jochen Theodorou
  * @version $Revision$
  */
 public class VariableScope  {
-	static int i = 0;
-    private Set declaredVariables = new HashSet(); // contain var names
-    private Set referencedVariables = new HashSet(); // contain var names
-
-    /**
-     *  br contain vars really declared and defined in the current scope.
-     * to be filler later by comparing with parent scope all the ancestors.
-     */
-    private Set varsDeclaredHere = null;
-    // each var should really have a scope decarator
-    // for now it's a naked name, which has the problem of name clashing with parameters
-    // and ancesters' vars with the same name. Effectively this means we cannot have a
-    // local var defined with the same name with any parameters or vars in any of the
-    // ancestors.
-    // we need to reengineer the scope and vars framework.
-
+    private Map declaredVariables = new HashMap();
+    private Map referencedLocalVariables = new HashMap();
+    private Map referencedClassVariables = new HashMap();
+ 
+    private boolean inStaticContext = false;
+    private boolean resolvesDynamic = false; 
+    private ClassNode clazzScope;
     private VariableScope parent;
-    private List children = new ArrayList();
-    String name = null;
 
     public VariableScope() {
-    	name = String.valueOf(i++);  // should give it a more meaningful name, w/ class, methed, blockstatement etc.
     }
-
     public VariableScope(VariableScope parent) {
         this.parent = parent;
-        parent.children.add(this);
-        name = String.valueOf(i);
     }
-
-    public Set getDeclaredVariables() {
+    public Map getDeclaredVariables() {
         return declaredVariables;
     }
-
-    public Set getReferencedVariables() {
-        return referencedVariables;
+    public Variable getDeclaredVariable(String name) {
+        return (Variable) declaredVariables.get(name);
     }
-
-    /**
-     * @return all the child scopes
-     */
-    public List getChildren() {
-        return children;
+    public Map getReferencedLocalVariables() {
+        return referencedLocalVariables;
     }
-
-    /**
-     * Creates a composite variable scope combining all the variable references
-     * and declarations from all the child scopes not including this scope
-     *
-     * @return
-     */
-    public VariableScope createCompositeChildScope() {
-        VariableScope answer = new VariableScope();
-        for (Iterator iter = children.iterator(); iter.hasNext(); ) {
-            answer.appendRecursive((VariableScope) iter.next());
-        }
-        answer.parent = this;  // shall we cache this for better performance?
-        return answer;
-    }
-
-    /**
-     * Creates a scope including this scope and all nested scopes combined together
-     *
-     * @return
-     */
-    public VariableScope createRecursiveChildScope() {
-        VariableScope answer = createCompositeChildScope();
-        answer.referencedVariables.addAll(referencedVariables);
-        answer.declaredVariables.addAll(declaredVariables);
-        return answer;
-    }
-
-    /**
-     * Creates a scope including this scope and all parent scopes combined together
-     *
-     * @return
-     */
-    public VariableScope createRecursiveParentScope() {
-        VariableScope answer = new VariableScope();
-        VariableScope node = this;
-        do {
-            answer.append(node);
-            node = node.parent;
-        }
-        while (node != null);
-        return answer;
-    }
-
-    /**
-     * Appends all of the references and declarations from the given scope
-     * to this one
-     *
-     * @param scope
-     */
-    protected void append(VariableScope scope) {
-        referencedVariables.addAll(scope.referencedVariables);
-        declaredVariables.addAll(scope.declaredVariables);
-    }
-
-    /**
-     * Appends all of the references and declarations from the given scope
-     * and all its children to this one
-     *
-     * @param scope
-     */
-    protected void appendRecursive(VariableScope scope) {
-        append(scope);
-
-        // now lets traverse the children
-        for (Iterator iter = scope.children.iterator(); iter.hasNext(); ) {
-            appendRecursive((VariableScope) iter.next());
-        }
-     }
-
-    /*
-     * compute the real declares in the current scope
-     * @author bran
-     *
-     * To change the template for this generated type comment go to
-     * Window - Preferences - Java - Code Generation - Code and Comments
-     */
-    public void computeRealDeclares() {
-    	if (this.varsDeclaredHere == null) this.varsDeclaredHere = new HashSet();
-    	Set decls = this.declaredVariables;
-    	for (Iterator iter = decls.iterator(); iter.hasNext();) {
-			String var = (String) iter.next();
-			// simplistic way of determing declares by simple name matching
-			if (!createRecursiveParentScope().getDeclaredVariables().contains(var)) {
-				this.varsDeclaredHere.add(var);
-			}
-		}
-    }
-	/**
-	 * @return Returns the varsDeclaredHere.
-	 */
-	public Set getVarsDeclaredHere() {
-		if (this.varsDeclaredHere == null) computeRealDeclares();
-		return varsDeclaredHere;
-	}
-	/**
-	 * @param varsDeclaredHere The varsDeclaredHere to set.
-	 */
-	public void setVarsDeclaredHere(Set varsDeclaredHere) {
-		this.varsDeclaredHere = varsDeclaredHere;
-	}
     
+    public boolean isReferencedLocalVariable(String name) {
+        return referencedLocalVariables.containsKey(name);
+    }
+    
+    public Map getReferencedClassVariables() {
+        return referencedClassVariables;
+    }
+    
+    public boolean isReferencedClassVariable(String name) {
+        return referencedClassVariables.containsKey(name);
+    }
     public VariableScope getParent() {
         return parent;
+    }
+
+    public boolean isInStaticContext() {
+        return inStaticContext;
+    }
+
+    public void setInStaticContext(boolean inStaticContext) {
+        this.inStaticContext = inStaticContext;
+    }
+
+    public boolean isResolvingDynamic() {
+        return resolvesDynamic;
+    }
+
+    public void setDynamicResolving(boolean resolvesDynamic) {
+        this.resolvesDynamic = resolvesDynamic;
+    }
+
+    public void setClassScope(ClassNode node) {
+        this.clazzScope = node;
+    }
+    
+    public ClassNode getClassScope(){
+        return clazzScope;
+    }
+    
+    public boolean isClassScope(){
+        return clazzScope!=null;
+    }
+    
+    public boolean isRoot() {
+        return parent==null;
+    }
+    
+    public VariableScope copy() {
+        VariableScope copy = new VariableScope();
+        copy.clazzScope = clazzScope;
+        copy.declaredVariables.putAll(declaredVariables);
+        copy.inStaticContext = inStaticContext;
+        copy.parent = parent;
+        copy.referencedClassVariables.putAll(referencedClassVariables);
+        copy.referencedLocalVariables.putAll(referencedLocalVariables);
+        copy.resolvesDynamic = resolvesDynamic;
+        return copy;
     }
 }

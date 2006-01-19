@@ -90,6 +90,7 @@ public class MethodCallExpression extends Expression {
         MethodCallExpression answer =
             new MethodCallExpression(transformer.transform(objectExpression), method, transformer.transform(arguments));
         answer.setSafe(safe);
+        answer.setSourcePosition(this);
         return answer;
     }
 

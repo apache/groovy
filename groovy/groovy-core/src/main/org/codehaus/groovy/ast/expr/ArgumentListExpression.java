@@ -81,6 +81,8 @@ public class ArgumentListExpression extends TupleExpression {
     }
 
     public Expression transformExpression(ExpressionTransformer transformer) {
-        return new ArgumentListExpression(transformExpressions(getExpressions(), transformer));
+        Expression ret = new ArgumentListExpression(transformExpressions(getExpressions(), transformer));
+        ret.setSourcePosition(this);
+        return ret;
     }
 }

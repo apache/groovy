@@ -393,14 +393,6 @@ public class BytecodeHelper implements Opcodes {
         else {
             cv.visitVarInsn(ASTORE, idx);
         }
-        if (AsmClassGenerator.CREATE_DEBUG_INFO && markStart) {
-            Label l = v.getStartLabel();
-            if (l != null) {
-                cv.visitLabel(l);
-            } else {
-                System.out.println("start label == null! what to do about this?");
-            }
-        }
     }
 
     public void store(Variable v) {
@@ -499,44 +491,32 @@ public class BytecodeHelper implements Opcodes {
      * @param variable
      * @param holder
      */
-    public void loadVar(Variable variable, boolean holder) {
-		String type = variable.getTypeName();
+    public void loadVar(Variable variable) {
 		int index = variable.getIndex();
-		if (holder) {
+		if (variable.isHolder()) {
 			cv.visitVarInsn(ALOAD, index);
 			cv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Reference", "get", "()Ljava/lang/Object;");
 		} else {
-			cv.visitVarInsn(ALOAD, index); // todo? shall xload based on the type?
+            load(variable);
+            if (variable!=Variable.THIS_VARIABLE && variable!=Variable.SUPER_VARIABLE) {
+                box(variable.getType());
+            }
 		}
 	}
     
-    public void storeVar(Variable variable, boolean holder) {
+    public void storeVar(Variable variable) {
         String  type   = variable.getTypeName();
         int     index  = variable.getIndex();
         
-    	if (holder) {
-            //int tempIndex = visitASTOREInTemp("reference", type);
+    	if (variable.isHolder()) {
             cv.visitVarInsn(ALOAD, index);
-            cv.visitInsn(SWAP);  // assuming the value on stack is single word
-            //cv.visitVarInsn(ALOAD, tempIndex);
+            cv.visitInsn(SWAP);  
             cv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Reference", "set", "(Ljava/lang/Object;)V");
         }
         else {
             store(variable.deriveBoxedVersion()); // todo br seems right hand values on the stack are always object refs, primitives boxed
-//            if (!varStored) {
-//                //visitVariableStartLabel(variable);
-//                varStored = true;
-//            }
         }
     }
-    
-//    private int visitASTOREInTemp(String name, String type) {
-//        Variable var  = defineVariable(createVariableName(name), type, false);
-//        int varIdx = var.getIndex();
-//        cv.visitVarInsn(ASTORE, varIdx);
-//        if (CREATE_DEBUG_INFO) cv.visitLabel(var.getStartLabel());
-//        return varIdx;
-//    }
 
     public void putField(FieldNode fld) {
     	putField(fld, getClassInternalName(fld.getOwner()));
@@ -548,6 +528,15 @@ public class BytecodeHelper implements Opcodes {
 
     public void loadThis() {
         cv.visitVarInsn(ALOAD, 0);
+    }
+    
+    public void swapObjectWith(ClassNode type) {
+        if (type==ClassHelper.long_TYPE || type==ClassHelper.double_TYPE) {
+            cv.visitInsn(DUP_X2);
+            cv.visitInsn(POP);
+        } else {
+            cv.visitInsn(SWAP);
+        }
     }
 
     public static ClassNode boxOnPrimitive(ClassNode type) {

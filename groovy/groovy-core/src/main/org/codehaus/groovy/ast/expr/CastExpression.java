@@ -97,7 +97,9 @@ public class CastExpression extends Expression {
     }
 
     public Expression transformExpression(ExpressionTransformer transformer) {
-        return new CastExpression(getType(), transformer.transform(expression));
+        Expression ret =  new CastExpression(getType(), transformer.transform(expression));
+        ret.setSourcePosition(this);
+        return ret;
     }
     
     public String getText() {

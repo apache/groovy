@@ -82,10 +82,12 @@ public class GStringExpression extends Expression {
     }
 
     public Expression transformExpression(ExpressionTransformer transformer) {
-        return new GStringExpression(
-            verbatimText,
-            transformExpressions(strings, transformer),
-            transformExpressions(values, transformer));
+        Expression ret = new GStringExpression(
+                verbatimText,
+                transformExpressions(strings, transformer),
+                transformExpressions(values, transformer));
+        ret.setSourcePosition(this);
+        return ret;        
     }
 
     public String toString() {

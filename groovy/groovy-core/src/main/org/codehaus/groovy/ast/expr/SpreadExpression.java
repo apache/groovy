@@ -70,7 +70,9 @@ public class SpreadExpression extends Expression {
     }
 
     public Expression transformExpression(ExpressionTransformer transformer) {
-        return new SpreadExpression(transformer.transform(expression));
+        Expression ret = new SpreadExpression(transformer.transform(expression)); 
+        ret.setSourcePosition(this);
+        return ret;
     }
 
     public String getText() {

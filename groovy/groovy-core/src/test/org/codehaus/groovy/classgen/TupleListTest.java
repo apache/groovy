@@ -53,6 +53,7 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
@@ -109,8 +110,8 @@ public class TupleListTest extends TestSupport {
         Statement loopStatement = createPrintlnStatement(new VariableExpression("i"));
 
         BlockStatement block = new BlockStatement();
-        block.addStatement(new ExpressionStatement(new BinaryExpression(new VariableExpression("list"), Token.newSymbol("=", 0, 0), listExpression)));
-        block.addStatement(new ForStatement("i", ClassHelper.DYNAMIC_TYPE, new VariableExpression("list"), loopStatement));
+        block.addStatement(new ExpressionStatement(new DeclarationExpression(new VariableExpression("list"), Token.newSymbol("=", 0, 0), listExpression)));
+        block.addStatement(new ForStatement(new Parameter(ClassHelper.DYNAMIC_TYPE,"i"), new VariableExpression("list"), loopStatement));
         classNode.addMethod(new MethodNode(methodName, ACC_PUBLIC, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, block));
 
         Class fooClass = loadClass(classNode);

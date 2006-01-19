@@ -72,7 +72,9 @@ public class SpreadMapExpression extends Expression {
     }
 
     public Expression transformExpression(ExpressionTransformer transformer) {
-        return new SpreadMapExpression(transformer.transform(expression));
+        Expression ret = new SpreadMapExpression(transformer.transform(expression)); 
+        ret.setSourcePosition(this);
+        return ret;
     }
 
     public String getText() {

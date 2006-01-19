@@ -63,7 +63,9 @@ public class NamedArgumentListExpression extends MapExpression {
     }
 
     public Expression transformExpression(ExpressionTransformer transformer) {
-        return new NamedArgumentListExpression(transformExpressions(getMapEntryExpressions(), transformer));
+        Expression ret = new NamedArgumentListExpression(transformExpressions(getMapEntryExpressions(), transformer)); 
+        ret.setSourcePosition(this);
+        return ret;        
     }
     
 }

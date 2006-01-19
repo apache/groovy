@@ -68,7 +68,9 @@ public class MapEntryExpression extends Expression {
     }
 
     public Expression transformExpression(ExpressionTransformer transformer) {
-        return new MapEntryExpression(transformer.transform(keyExpression), transformer.transform(valueExpression)); 
+        Expression ret = new MapEntryExpression(transformer.transform(keyExpression), transformer.transform(valueExpression));
+        ret.setSourcePosition(this);
+        return ret;        
     }
 
     public String toString() {

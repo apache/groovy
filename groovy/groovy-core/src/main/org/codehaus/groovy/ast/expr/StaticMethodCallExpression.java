@@ -74,7 +74,9 @@ public class StaticMethodCallExpression extends Expression {
     }
     
     public Expression transformExpression(ExpressionTransformer transformer) {
-        return new StaticMethodCallExpression(getType(), method, transformer.transform(arguments)); 
+        Expression ret = new StaticMethodCallExpression(getType(), method, transformer.transform(arguments)); 
+        ret.setSourcePosition(this);
+        return ret; 
     }
 
     public Expression getArguments() {

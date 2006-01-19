@@ -90,7 +90,9 @@ public class AttributeExpression extends Expression {
     }
 
     public Expression transformExpression(ExpressionTransformer transformer) {
-        return new AttributeExpression(transformer.transform(objectExpression),property,safe);
+        Expression ret = new AttributeExpression(transformer.transform(objectExpression),property,safe);
+        ret.setSourcePosition(this);
+        return ret;
     }
 
     public Expression getObjectExpression() {

@@ -98,7 +98,7 @@ public class ForTest extends TestSupport {
 
         Statement loopStatement = createPrintlnStatement(new VariableExpression("i"));
 
-        ForStatement statement = new ForStatement("i", ClassHelper.DYNAMIC_TYPE, new VariableExpression("coll"), loopStatement);
+        ForStatement statement = new ForStatement(new Parameter(ClassHelper.OBJECT_TYPE,"i"), new VariableExpression("coll"), loopStatement);
         classNode.addMethod(new MethodNode("iterateDemo", ACC_PUBLIC, ClassHelper.VOID_TYPE, parameters, ClassNode.EMPTY_ARRAY, statement));
 
         Class fooClass = loadClass(classNode);
