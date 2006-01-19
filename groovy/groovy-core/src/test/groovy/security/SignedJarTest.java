@@ -34,7 +34,7 @@ public class SignedJarTest extends SecurityTestSupport {
     }
 
     public void testReadSignedJar() throws Exception {
-    	if (isSecurityAvailable()) if (
+    	if (!isSecurityAvailable()) return;
 
         Class c = loader.loadClass("groovy.security.JarTest"); // ClassNotFoundException !
     	executeTest(c, null);
