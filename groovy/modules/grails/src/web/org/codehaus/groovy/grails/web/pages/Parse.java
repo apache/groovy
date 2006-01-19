@@ -18,8 +18,7 @@ package org.codehaus.groovy.grails.web.pages;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.lang.StringUtils;
-import org.codehaus.groovy.grails.web.taglib.GrailsTag;
-import org.codehaus.groovy.grails.web.taglib.GrailsTagRegistry;
+import org.codehaus.groovy.grails.web.taglib.*;
 import org.codehaus.groovy.grails.web.taglib.exceptions.GrailsTagException;
 
 import java.io.*;
@@ -43,6 +42,8 @@ public class Parse implements Tokens {
 
     private static final Pattern paraBreak = Pattern.compile("/p>\\s*<p[^>]*>", Pattern.CASE_INSENSITIVE);
     private static final Pattern rowBreak = Pattern.compile("((/td>\\s*</tr>\\s*<)?tr[^>]*>\\s*<)?td[^>]*>", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PARSE_TAG_FIRST_PASS = Pattern.compile("(\\s*(\\S+)\\s*=\\s*[\"]([^\"]*)[\"][\\s|>]{1}){1}");
+    private static final Pattern PARSE_TAG_SECOND_PASS = Pattern.compile("(\\s*(\\S+)\\s*=\\s*[']([^']*)['][\\s|>]{1}){1}");
 
     private Scan scan;
     //private StringBuffer buf;
@@ -55,6 +56,8 @@ public class Parse implements Tokens {
     private List tagNameStack = new ArrayList();
     private GrailsTagRegistry tagRegistry = GrailsTagRegistry.getInstance();
     private List syntaxTagStack = new ArrayList();
+    private boolean bufferWhiteSpace ;
+    private StringBuffer whiteSpaceBuffer = new StringBuffer();
 
     public Parse(String name, InputStream in) throws IOException {
         scan = new Scan(readStream(in));
@@ -230,7 +233,9 @@ public class Parse implements Tokens {
        }
 
        if(tagRegistry.isSyntaxTag(tagName)) {
-           GrailsTag tag = (GrailsTag)this.syntaxTagStack.remove(this.syntaxTagStack.size() - 1);
+           GroovySyntaxTag tag = (GroovySyntaxTag)this.syntaxTagStack.remove(this.syntaxTagStack.size() - 1);
+           if(tag.isBufferWhiteSpace())
+                bufferWhiteSpace = true;
            tag.doEndTag();
        }
        else if(tagRegistry.isRequestContextTag(tagName)) {
@@ -253,37 +258,45 @@ public class Parse implements Tokens {
         String tagName;
         Map attrs = new HashMap();
         if(text.indexOf(' ') > -1) {
-            String[] tagTokens = text.split( " ");
-            tagName = tagTokens[0].trim();
+               int i = text.indexOf(' ');
+               tagName = text.substring(0,i);
+               String attrTokens = text.substring(i,text.length());
+               attrTokens += '>'; // closing bracket marker
 
-            for (int i = 1; i < tagTokens.length; i++) {
-                if(tagTokens[i].indexOf('=') > -1) {
-                    String[] attr = tagTokens[i].split("=");
-                    String name = attr[0].trim();
-                    name = '\"' + name + '\"';
-                    String val = attr[1].trim().substring(1,attr[1].length() - 1);
-                    if(val.startsWith("${") && val.endsWith("}")) {
-                        val = val.substring(2,val.length() -1);
-                    }
-                    else {
-                        val = '\"' + val + '\"';
-                    }
-                    attrs.put(name,val);
-                }
-            }
+               // do first pass parse which retrieves double quoted attributes
+                Matcher m = PARSE_TAG_FIRST_PASS.matcher(attrTokens);
+                populateAttributesFromMatcher(m,attrs);
+
+               // do second pass parse which retrieves single quoted attributes
+               m = PARSE_TAG_SECOND_PASS.matcher(attrTokens);
+               populateAttributesFromMatcher(m,attrs);
         }
         else {
             tagName = text;
         }
+
         this.tagNameStack.add(tagName);
         if (tagRegistry.isSyntaxTag(tagName)) {
             if(this.tagContext == null) {
                 this.tagContext = new HashMap();
                 this.tagContext.put(GroovyPage.OUT,out);
             }
-            GrailsTag tag = tagRegistry.newTag(tagName);
+            GroovySyntaxTag tag = (GroovySyntaxTag)tagRegistry.newTag(tagName);
             tag.init(tagContext);
             tag.setAttributes(attrs);
+            if(!tag.hasPrecedingContent() && !bufferWhiteSpace) {
+                throw new GrailsTagException("Tag ["+tag.getName()+"] cannot have non-whitespace characters directly preceding it.");
+            }
+            else if(!tag.hasPrecedingContent() && bufferWhiteSpace) {
+                whiteSpaceBuffer.delete(0,whiteSpaceBuffer.length());
+                bufferWhiteSpace = false;
+            } else {
+                if(whiteSpaceBuffer.length() > 0) {
+                    out.printlnToOut(whiteSpaceBuffer.toString());
+                    whiteSpaceBuffer.delete(0,whiteSpaceBuffer.length());
+                }
+                bufferWhiteSpace = false;
+            }
             tag.doStartTag();
             this.syntaxTagStack.add(tag);
         }
@@ -334,6 +347,21 @@ public class Parse implements Tokens {
         }
     }
 
+    private void populateAttributesFromMatcher(Matcher m, Map attrs) {
+        while(m.find()) {
+            String name = m.group(2);
+            String val = m.group(3);
+            name = '\"' + name + '\"';
+            if(val.startsWith("${") && val.endsWith("}")) {
+                val = val.substring(2,val.length() -1);
+            }
+            else {
+                val = '\"' + val + '\"';
+            }
+             attrs.put(name,val);
+        }
+    }
+
     private void pageImport(String value) {
 //		LOG.debug("pageImport(" + value + ')');
         String[] imports = Pattern.compile(";").split(value.subSequence(0, value.length()));
@@ -346,6 +374,9 @@ public class Parse implements Tokens {
 
     private void print(CharSequence text) {
         StringBuffer buf = new StringBuffer();
+        if(Pattern.compile("\\S").matcher(text).find())
+            bufferWhiteSpace = false;
+
         buf.append('\'');
         for (int ix = 0, ixz = text.length(); ix < ixz; ix++) {
             char c = text.charAt(ix);
@@ -359,7 +390,14 @@ public class Parse implements Tokens {
             else buf.append(c);
         }
         buf.append('\'');
-        out.printlnToOut(buf.toString());
+        if(!bufferWhiteSpace) {
+            out.printlnToOut(buf.toString());
+        }
+        else {
+            whiteSpaceBuffer.append(buf.toString());
+            whiteSpaceBuffer.delete(0,whiteSpaceBuffer.length());
+        }
+
     } // print()
 
     private String readStream(InputStream in) throws IOException {

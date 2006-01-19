@@ -31,7 +31,7 @@ import java.io.PrintWriter;
 public abstract class GroovySyntaxTag implements GrailsTag {
     protected Map tagContext;
     protected PrintWriter out;
-    private Map attributes = new HashMap();
+    protected Map attributes = new HashMap();
 
     public void init(Map tagContext) {
         this.tagContext = tagContext;
@@ -60,10 +60,15 @@ public abstract class GroovySyntaxTag implements GrailsTag {
             if(stringValue.startsWith("${") && stringValue.endsWith("}")) {
                 stringValue = stringValue.substring(2,stringValue.length() -1);
             }
-            this.attributes.put(name,stringValue);
+
+            this.attributes.put(name.substring(1,name.length()-1),stringValue);
         }
         else {
             throw new IllegalArgumentException("A GroovySynax tag requires only string valued attributes");
         }
     }
+
+    public abstract boolean isBufferWhiteSpace();
+
+    public abstract boolean hasPrecedingContent();
 }
