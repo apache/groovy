@@ -183,7 +183,7 @@ Targets:
 			</fileset>
 		</copy>
 		<copy todir="${path}grails-app">
-			<fileset dir="${grails.home}/src/grails/templates/grails-app" />
+			<fileset dir="${grails.home}/src/grails/grails-app" />
 		</copy>		
 		<copy file="${grails.home}/src/war/WEB-INF/web${servlet.version}.template.xml" tofile="${path}web-app/WEB-INF/web.template.xml"/>
 		<copy file="${grails.home}/src/war/WEB-INF/sitemesh.xml" tofile="${path}web-app/WEB-INF/sitemesh.xml"/>		
