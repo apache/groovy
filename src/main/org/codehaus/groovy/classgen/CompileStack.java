@@ -122,9 +122,12 @@ public class CompileStack implements Opcodes {
     // all parameters of a method 
     private int localVariableOffset;
     // this is used to store the goals for a "break foo" call
-    // where foo is a label.
+    // in a loop where foo is a label.
 	private HashMap namedLoopBreakLabel = new HashMap();
-    
+	//this is used to store the goals for a "continue foo" call
+    // in a loop where foo is a label.
+	private HashMap namedLoopContinueLabel = new HashMap();
+	
     private class StateStackElement {
         VariableScope _scope;
         Label _continueLabel;
@@ -339,7 +342,10 @@ public class CompileStack implements Opcodes {
     private void initLoopLabels(String labelName) {
         continueLabel = new Label();
         breakLabel = new Label();
-        if (labelName!=null) namedLoopBreakLabel.put(labelName,breakLabel);
+        if (labelName!=null) {
+        	namedLoopBreakLabel.put(labelName,breakLabel);
+        	namedLoopContinueLabel.put(labelName,continueLabel);
+        }
     }
     
     /**
@@ -361,6 +367,19 @@ public class CompileStack implements Opcodes {
     protected Label getNamedBreakLabel(String name) {
     	Label label = getBreakLabel();
     	Label endLabel = (Label) namedLoopBreakLabel.get(name);
+    	if (endLabel!=null) label = endLabel;
+        return label;
+    }
+    
+    /**
+     * Used for <code>continue foo</code> inside a loop to continue
+     * the execution of the marked loop. This method will return 
+     * the break label of the loop if there is one found for the 
+     * name. If not, getLabel is used.
+     */
+    protected Label getNamedContinueLabel(String name) {
+    	Label label = getLabel(name);
+    	Label endLabel = (Label) namedLoopContinueLabel.get(name);
     	if (endLabel!=null) label = endLabel;
         return label;
     }
