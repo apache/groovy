@@ -33,7 +33,6 @@ public class GrailsTagRegistry {
 
     static {
         GrailsTagRegistry tagRegistry = getInstance();
-        tagRegistry.registerTag(LinkTag.TAG_NAME, LinkTag.class);
         tagRegistry.registerTag(RenderInputTag.TAG_NAME, RenderInputTag.class);
         tagRegistry.registerTag(GroovyEachTag.TAG_NAME, GroovyEachTag.class);
         tagRegistry.registerTag(GroovyIfTag.TAG_NAME, GroovyIfTag.class);

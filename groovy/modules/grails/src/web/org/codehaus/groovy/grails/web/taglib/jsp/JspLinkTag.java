@@ -15,129 +15,35 @@
  */ 
 package org.codehaus.groovy.grails.web.taglib.jsp;
 
-import org.apache.commons.lang.StringUtils;
-import org.codehaus.groovy.grails.web.pages.GroovyPage;
-import org.codehaus.groovy.grails.web.taglib.GrailsTag;
-import org.codehaus.groovy.grails.web.taglib.GrailsTagRegistry;
-import org.codehaus.groovy.grails.web.taglib.LinkTag;
-import org.springframework.web.util.ExpressionEvaluationUtils;
-import org.springframework.web.util.UrlPathHelper;
-
-import javax.servlet.jsp.JspException;
-import javax.servlet.jsp.JspTagException;
-import javax.servlet.jsp.JspWriter;
-import javax.servlet.jsp.tagext.BodyContent;
-import javax.servlet.jsp.tagext.BodyTagSupport;
-import javax.servlet.jsp.tagext.DynamicAttributes;
-import java.io.IOException;
-import java.io.Writer;
-import java.util.HashMap;
-import java.util.Map;
 /**
- * A JSP facade that delegates to the Grails LinkTag (@see org.codehaus.groovy.grails.web.taglib.LinkTag)
+ * A JSP facade that delegates to the Grails taglib link tag
  *
  * @author Graeme Rocher
  * @since Jan 3, 2006
  */
-public class JspLinkTag extends BodyTagSupport implements DynamicAttributes {
+public class JspLinkTag extends JspInvokeGrailsTagLibTag {
+    private static final String TAG_NAME = "link";
 
-	Map dyanmicAttributes = new HashMap();
-	private UrlPathHelper urlPathHelper = new UrlPathHelper();
-	
-	private String action;
-	private String controller;
-	private String id;
-    private GrailsTag tag;
+    private String controller;
+    private String action;
 
-    /**
-     * @param action The action to set.
-     */
+    public JspLinkTag() {
+        super.setName(TAG_NAME);
+    }
+
+    public String getController() {
+        return controller;
+    }
+
+    public void setController(String controller) {
+        this.controller = controller;
+    }
+
+    public String getAction() {
+        return action;
+    }
+
     public void setAction(String action) {
         this.action = action;
     }
-
-	/**
-	 * @param controller The controller to set.
-	 */
-	public void setController(String controller) {
-		this.controller = controller;
-	}
-
-	/**
-	 * @param id The id to set.
-	 */
-	public void setId(String id) {
-		this.id = id;
-	}
-
-	/* (non-Javadoc)
-	 * @see javax.servlet.jsp.tagext.BodyTagSupport#doStartTag()
-	 */
-	public int doStartTag() throws JspException {
-        if(StringUtils.isBlank(controller)) {
-            throw new JspTagException("Tag link missing required attribute 'controller'");
-        }
-        Writer out = super.pageContext.getOut();
-
-
-        Map attributes = new HashMap();
-        attributes.putAll(this.dyanmicAttributes);
-        attributes.put(LinkTag.ATTRIBUTE_CONTROLLER, controller);
-        if(!StringUtils.isBlank(action)) {
-            attributes.put(LinkTag.ATTRIBUTE_ACTION, action);
-        }
-        if(!StringUtils.isBlank(id)) {
-            Object evalId;
-            if(ExpressionEvaluationUtils.isExpressionLanguage(id)) {
-                evalId = ExpressionEvaluationUtils.evaluate("id",id, Object.class, pageContext);
-            }
-            else {
-                evalId = pageContext.findAttribute(id);
-                if(evalId == null)
-                    evalId = id;
-            }
-            attributes.put(LinkTag.ATTRIBUTE_ID, evalId);
-        }
-
-        GrailsTagRegistry tagRegistry = GrailsTagRegistry.getInstance();
-
-        Map tagContext = new HashMap();
-        tagContext.put(GroovyPage.REQUEST, pageContext.getRequest());
-        tagContext.put(GroovyPage.RESPONSE, pageContext.getResponse());
-        tagContext.put(GroovyPage.SERVLET_CONTEXT, pageContext.getServletContext());
-        this.tag = tagRegistry.newTag( LinkTag.TAG_NAME );
-        this.tag.init(tagContext);
-        this.tag.setAttributes(attributes);
-        tag.doStartTag();
-		return EVAL_BODY_BUFFERED;
-	}
-
-	/* (non-Javadoc)
-	 * @see javax.servlet.jsp.tagext.BodyTagSupport#doAfterBody()
-	 */
-	public int doAfterBody() throws JspException {
-		BodyContent b = getBodyContent();
-		JspWriter out = b.getEnclosingWriter();
-		try {
-			out.write(b.getString());
-		} catch (IOException e) {
-			throw new JspException(e.getMessage(),e);
-		}
-		b.clearBody();
-		return SKIP_BODY;
-	}
-
-	/* (non-Javadoc)
-	 * @see javax.servlet.jsp.tagext.BodyTagSupport#doEndTag()
-	 */
-	public int doEndTag() throws JspException {
-    	tag.doEndTag();
-		return super.doEndTag();
-	}
-
-
-
-	public void setDynamicAttribute(String uri, String localName, Object value) throws JspException {
-		dyanmicAttributes.put(localName,value);
-	}
 }

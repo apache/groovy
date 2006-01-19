@@ -54,7 +54,7 @@
             <name-given>it</name-given>
             <variable-class>java.lang.Object</variable-class>
             <declare>true</declare>
-            <scope>AT_BEGIN</scope>
+            <scope>NESTED</scope>
         </variable>
         <attribute>
             <name>name</name>

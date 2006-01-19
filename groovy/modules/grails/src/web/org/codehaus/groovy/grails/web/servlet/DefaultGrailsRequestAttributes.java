@@ -15,6 +15,7 @@
 package org.codehaus.groovy.grails.web.servlet;
 
 import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.util.UrlPathHelper;
 import org.springframework.validation.Errors;
 import org.codehaus.groovy.grails.web.pages.GroovyPagesTemplateEngine;
 import org.codehaus.groovy.grails.web.metaclass.ControllerDynamicMethods;
@@ -23,6 +24,7 @@ import groovy.lang.GroovyObject;
 
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * @author Graeme Rocher
@@ -30,6 +32,7 @@ import javax.servlet.ServletContext;
  */
 public class DefaultGrailsRequestAttributes implements GrailsRequestAttributes {
 
+    private UrlPathHelper urlHelper = new UrlPathHelper();
     private ServletContext context;
 
     public DefaultGrailsRequestAttributes(ServletContext context) {
@@ -48,6 +51,10 @@ public class DefaultGrailsRequestAttributes implements GrailsRequestAttributes {
         GroovyObject controller = getController(request);
 
         return (String)controller.getProperty(ControllerDynamicMethods.ACTION_URI_PROPERTY);
+    }
+
+    public String getApplicationUri(ServletRequest request) {
+        return this.urlHelper.getContextPath((HttpServletRequest)request);
     }
 
     public String getControllerActionUri(ServletRequest request) {

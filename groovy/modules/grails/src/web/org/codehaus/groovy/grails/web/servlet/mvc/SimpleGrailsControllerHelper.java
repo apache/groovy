@@ -47,11 +47,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.beans.IntrospectionException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.HashMap;
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
 
@@ -66,6 +66,7 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
     private GrailsRequestAttributes grailsAttributes;
     private Pattern uriPattern = Pattern.compile("/(\\w+)/?(\\w*)/?(\\w*)/?(.*)");
     private static final Log LOG = LogFactory.getLog(SimpleGrailsControllerHelper.class);
+    private TagLibDynamicMethods tagLibInterceptor;
 
     public SimpleGrailsControllerHelper(GrailsApplication application, ApplicationContext context, ServletContext servletContext) {
         super();
@@ -205,12 +206,18 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
         if(this.interceptor == null) {
             try {
                 interceptor = new ControllerDynamicMethods(controller,this,request,response);
-                if(tagLib != null)
-                    new TagLibDynamicMethods(tagLib,controller,request,response);
             }
             catch(IntrospectionException ie) {
                 throw new ControllerExecutionException("Error creating dynamic controller methods for controller ["+controller.getClass()+"]: " + ie.getMessage(), ie);
             }
+        }
+        if(this.tagLibInterceptor == null && tagLib != null) {
+            try {
+                tagLibInterceptor =  new TagLibDynamicMethods(tagLib,controller,request,response);
+            }
+            catch(IntrospectionException ie) {
+                throw new ControllerExecutionException("Error creating dynamic controller methods for controller ["+controller.getClass()+"]: " + ie.getMessage(), ie);
+            }                                      
         }
         // Step 3b: if scaffolding retrieve scaffolder
         if(controllerClass.isScaffolding())  {

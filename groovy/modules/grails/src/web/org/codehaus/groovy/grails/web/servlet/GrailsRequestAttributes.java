@@ -43,6 +43,13 @@ public interface GrailsRequestAttributes {
     /**
      *
      * @param request
+     * @return The uri of the application relative to the server root
+     */
+    String getApplicationUri(ServletRequest request);
+
+    /**
+     *
+     * @param request
      * @return The uri of the action called within the controller
      */
     String getControllerActionUri(ServletRequest request);

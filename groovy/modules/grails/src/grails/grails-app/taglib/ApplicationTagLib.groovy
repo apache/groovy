@@ -22,11 +22,37 @@
 class ApplicationTagLib {
 
     @Property link = { attrs, body ->
+        out << "<a href=\""
+        out << grailsAttributes.getApplicationUri(request)
+        out << '/'
+        // if the current attribute null set the controller uri to the current controller
+        if(attrs["controller"] == null) {
+            out << grailsAttributes.getControllerUri(request)
+        }
+        else {
+            out << attrs.remove("controller")
+        }
+        if(attrs["action"] != null) {
+            out << '/' << attrs.remove("action")
+        }
+        if(attrs["id"] != null) {
+            out << '/' << attrs.remove("id")
+        }
+        out << '\" '
+        // process remaining attributes
+        attrs.each { k,v ->
+            out << k << "=\"" << v << "\" "
+        }
+        out << ">"
+        // invoke body
+        body()
 
+        // close tag
+        out << "</a>"
     }
 
     @Property linkToRemote = { attrs, body ->
-    
+        // TODO
     }
 
     /**
@@ -78,18 +104,6 @@ class ApplicationTagLib {
     @Property validate = { attrs, body ->
         def form = attrs["form"]
         def dcAttr = attrs["against"]
-        // do some validation of attributes here
-        def app = this.grailsAttributes.getGrailsApplication()
-        def domainClass = app.getGrailsDomainClass(dcAttr)
-        if(domainClass != null) {
-            def template = """<script type='text/javascript'>\n
-                                    document.getElementById('${form}').onsubmit = function(e) {
-                                        if(!e)e = window.event;
-		                                var src = e.srcElement;
-				                        if(!src) src = this;
-                                        return validateForm(src)
-                                    }
-                              </script>"""
-        }
+        // TODO
     }
 }

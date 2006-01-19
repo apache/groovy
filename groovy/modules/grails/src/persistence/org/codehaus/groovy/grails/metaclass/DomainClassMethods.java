@@ -17,7 +17,7 @@ package org.codehaus.groovy.grails.metaclass;
 
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.commons.metaclass.AbstractDynamicMethods;
-import org.codehaus.groovy.grails.commons.metaclass.GenericDynamicProperty;
+import org.codehaus.groovy.grails.commons.metaclass.WeakGenericDynamicProperty;
 import org.codehaus.groovy.grails.orm.hibernate.metaclass.*;
 import org.codehaus.groovy.grails.validation.metaclass.ConstraintsDynamicProperty;
 import org.hibernate.SessionFactory;
@@ -59,8 +59,8 @@ public class DomainClassMethods extends AbstractDynamicMethods {
 		// add dynamic properties
 		addDynamicProperty( new SetPropertiesDynamicProperty() );
 		addDynamicProperty( new ConstraintsDynamicProperty() );
-		addDynamicProperty( new GenericDynamicProperty(HAS_ERRORS_PROPERTY, Boolean.class,new Boolean(false), false) );
-		addDynamicProperty( new GenericDynamicProperty(ERRORS_PROPERTY, Errors.class,null,false) );
+		addDynamicProperty( new WeakGenericDynamicProperty(HAS_ERRORS_PROPERTY, Boolean.class,new Boolean(false), false) );
+		addDynamicProperty( new WeakGenericDynamicProperty(ERRORS_PROPERTY, Errors.class,null,false) );
 		
 	}
 	

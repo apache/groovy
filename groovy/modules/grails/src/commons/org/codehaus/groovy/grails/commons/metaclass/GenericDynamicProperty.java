@@ -15,11 +15,11 @@
  */
 package org.codehaus.groovy.grails.commons.metaclass;
 
-import java.util.Collections;
-import java.util.Map;
-import java.util.WeakHashMap;
-
 import groovy.lang.MissingPropertyException;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * A generic dyanmic property for any type
@@ -31,7 +31,7 @@ public class GenericDynamicProperty extends AbstractDynamicProperty {
 
 	private Class type;
 	private boolean readyOnly;
-	private Map propertyToInstanceMap = Collections.synchronizedMap(new WeakHashMap());
+	private Map propertyToInstanceMap = Collections.synchronizedMap(new HashMap());
 	private Object initialValue;
 	/**
 	 * 
