@@ -883,7 +883,7 @@ public class AsmClassGenerator extends ClassGenerator {
         
         String name = statement.getLabel();
         Label continueLabel = compileStack.getContinueLabel();
-        if (name!=null) continueLabel = compileStack.getLabel(name);
+        if (name!=null) continueLabel = compileStack.getNamedContinueLabel(name);
         cv.visitJumpInsn(GOTO, continueLabel);
     }
 

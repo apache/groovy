@@ -65,7 +65,7 @@ public class MultipleCompilationErrorsException extends
         return collector;
     }
     
-    public String toString() {
+    public String getMessage() {
         
         StringWriter data = new StringWriter();
         PrintWriter writer = new PrintWriter(data);
@@ -78,6 +78,6 @@ public class MultipleCompilationErrorsException extends
             janitor.cleanup();
         }
 
-        return data.toString();
+        return super.getMessage() + ", " + data.toString();
     }
 }
