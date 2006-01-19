@@ -293,6 +293,7 @@ public class CompileStack implements Opcodes {
         superBlockNamedLabels.clear();
         currentBlockNamedLabels.clear();
         namedLoopBreakLabel.clear();
+        namedLoopContinueLabel.clear();
         continueLabel=null;
         breakLabel=null;
         finallyLabel=null;
