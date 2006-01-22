@@ -21,7 +21,7 @@ class AllTestSuiteTest extends GroovyLogTestCase {
 
     void testSuiteForThisFileOnly() {
         def result = stringLog(Level.FINEST, 'groovy.util.AllTestSuite') {
-            withProps('src/test','**/AllTestSuiteTest.groovy') {
+            withProps('src/test','AllTestSuiteTest.groovy') {
                 suite = AllTestSuite.suite()
             }
         }
@@ -32,7 +32,7 @@ class AllTestSuiteTest extends GroovyLogTestCase {
     }
 
     void testAddingScriptsThatDoNotInheritFromTestCase() {
-        withProps('src/test','**/util/suite/*.groovy') {
+        withProps('src/test','util.suite.*groovy') {
             suite = AllTestSuite.suite()
         }
         assert suite
