@@ -26,6 +26,7 @@ import java.util.logging.Logger;
  *
  * See also groovy.util.AllTestSuiteTest.groovy
  * @author Dierk Koenig based on a prototype by Andrew Glover
+ * todo: dk: make FileNameFinder injectable
  */
 public class AllTestSuite extends TestSuite {
 
@@ -37,10 +38,10 @@ public class AllTestSuite extends TestSuite {
     public static final String SYSPROP_TEST_DIR = "groovy.test.dir";
 
     /** The System Property to set as the filename pattern for collection of Test Cases.
-     * The pattern will be used as an Ant fileset include pattern and must comply to that
-     * format. That also means that a comma-separated list of patterns is allowed as well.
+     * The pattern will be used as Regualar Expression pattern applied with the find
+     * operator agains each candidate file.path.
      * Key is "groovy.test.pattern".
-     * Default value is "&#42;&#42;/&#42;Test.groovy".
+     * Default value is "Test.groovy".
      */
     public static final String SYSPROP_TEST_PATTERN = "groovy.test.pattern";
 
@@ -53,7 +54,7 @@ public class AllTestSuite extends TestSuite {
 
     static { // this is only needed since the Groovy Build compiles *.groovy files after *.java files
         try {
-            Class finderClass = Class.forName("groovy.util.FileNameFinder");
+            Class finderClass = Class.forName("groovy.util.FileNameByRegexFinder");
             FINDER = (IFileNameFinder) finderClass.newInstance();
         } catch (Exception e) {
             throw new RuntimeException("Cannot find and instantiate class FileNameFinder", e);
@@ -62,7 +63,7 @@ public class AllTestSuite extends TestSuite {
 
     public static Test suite() {
         String basedir = System.getProperty(SYSPROP_TEST_DIR, "./test/");
-        String pattern = System.getProperty(SYSPROP_TEST_PATTERN, "**/*Test.groovy");
+        String pattern = System.getProperty(SYSPROP_TEST_PATTERN, "Test.groovy");
         return suite(basedir, pattern);
     }    
 

@@ -7,12 +7,12 @@
  */
 import junit.framework.Test;
 import junit.framework.TestCase;
-import junit.framework.TestSuite;
 import groovy.util.AllTestSuite;
 
 public class UberTestCase3 extends TestCase {
     public static Test suite() {
-        return AllTestSuite.suite("./src/test/groovy","*/**/*Test.groovy");
+        String inSubDir = "groovy(/.*/|\\\\.*\\\\).*"; // two slashes or backslashes
+        return AllTestSuite.suite("./src/test/groovy", inSubDir + "Test.groovy");
     }
 
 // no tests inside (should we have an AbstractGroovyTestCase???)
