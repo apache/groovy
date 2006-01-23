@@ -382,7 +382,12 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
             log("verbose = " + verbose); // this *is* verbose! ;)
             log("reflection = " + reflection);
             log("logGROOVY861 = " + logGROOVY861);
-            log("resource.name.regex = " + resourceNameMatcher.pattern().pattern());
+            if (resourceNameMatcher != null) {
+                log("resource.name.regex = " + resourceNameMatcher.pattern().pattern());
+            }
+            else {
+                log("resource.name.regex = null");
+            }
             log("resource.name.replacement = " + resourceNameReplacement);
         }
     }
