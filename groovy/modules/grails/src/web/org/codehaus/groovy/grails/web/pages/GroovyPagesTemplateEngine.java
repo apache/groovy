@@ -183,7 +183,7 @@ public class GroovyPagesTemplateEngine {
         Parse parse = new Parse(uri, groovyScriptConn.getInputStream());
         InputStream in = parse.parse();
 
-            // Make a new pageMeta
+        // Make a new pageMeta
         PageMeta pageMeta = new PageMeta();
 
             // just return groovy and don't compile if asked

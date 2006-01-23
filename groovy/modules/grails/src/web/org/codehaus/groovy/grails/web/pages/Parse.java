@@ -40,8 +40,9 @@ import java.util.regex.Pattern;
 public class Parse implements Tokens {
     public static final Log LOG = LogFactory.getLog(Parse.class);
 
-    private static final Pattern paraBreak = Pattern.compile("/p>\\s*<p[^>]*>", Pattern.CASE_INSENSITIVE);
-    private static final Pattern rowBreak = Pattern.compile("((/td>\\s*</tr>\\s*<)?tr[^>]*>\\s*<)?td[^>]*>", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PARA_BREAK = Pattern.compile("/p>\\s*<p[^>]*>", Pattern.CASE_INSENSITIVE);
+    private static final Pattern LINE_BREAK = Pattern.compile("\\r\\n|\\n|\\r");
+    private static final Pattern ROW_BREAK = Pattern.compile("((/td>\\s*</tr>\\s*<)?tr[^>]*>\\s*<)?td[^>]*>", Pattern.CASE_INSENSITIVE);
     private static final Pattern PARSE_TAG_FIRST_PASS = Pattern.compile("(\\s*(\\S+)\\s*=\\s*[\"]([^\"]*)[\"][\\s|>]{1}){1}");
     private static final Pattern PARSE_TAG_SECOND_PASS = Pattern.compile("(\\s*(\\S+)\\s*=\\s*[']([^']*)['][\\s|>]{1}){1}");
 
@@ -52,18 +53,31 @@ public class Parse implements Tokens {
     private String className;
     private boolean finalPass = false;
     private int tagIndex;
+    private int dynamicTagIndex;
     private Map tagContext;
-    private List tagNameStack = new ArrayList();
+    private List tagMetaStack = new ArrayList();
     private GrailsTagRegistry tagRegistry = GrailsTagRegistry.getInstance();
-    private List syntaxTagStack = new ArrayList();
     private boolean bufferWhiteSpace ;
+
     private StringBuffer whiteSpaceBuffer = new StringBuffer();
+    private int[] lineNumbers = new int[1000];
+    private int currentOutputLine;
+
+    class TagMeta  {
+        String name;
+        Object instance;
+        boolean isDynamic;
+        boolean hasAttributes;
+    }
 
     public Parse(String name, InputStream in) throws IOException {
         scan = new Scan(readStream(in));
         makeName(name);
     } // Parse()
 
+    public int[] getLineNumberMatrix() {
+        return this.lineNumbers;
+    }
     public InputStream parse() {
 
         sw = new StringWriter();
@@ -116,8 +130,7 @@ public class Parse implements Tokens {
         if (LOG.isDebugEnabled()) LOG.debug("parse: expr");
 
         String text = scan.getToken().trim();
-        out.printlnToOut(GroovyPage.fromHtml(text));
-
+        out.printlnToResponse(GroovyPage.fromHtml(text));
     } // expr()
 
     private void html() {
@@ -221,8 +234,12 @@ public class Parse implements Tokens {
     private void endTag() {
         if (!finalPass) return;
 
-       String lastInStack = (String)this.tagNameStack.remove(this.tagNameStack.size() - 1);
        String tagName = scan.getToken().trim();
+       if(tagMetaStack.isEmpty())
+             throw new GrailsTagException("Found closing Grails tag with no opening ["+tagName+"]");
+
+       TagMeta tm = (TagMeta)tagMetaStack.remove(this.tagMetaStack.size() - 1);
+       String lastInStack = tm.name;
 
        // if the tag name is blank then it has been closed by the start tag ie <tag />
        if(StringUtils.isBlank(tagName))
@@ -233,19 +250,25 @@ public class Parse implements Tokens {
        }
 
        if(tagRegistry.isSyntaxTag(tagName)) {
-           GroovySyntaxTag tag = (GroovySyntaxTag)this.syntaxTagStack.remove(this.syntaxTagStack.size() - 1);
-           if(tag.isBufferWhiteSpace())
-                bufferWhiteSpace = true;
-           tag.doEndTag();
-       }
-       else if(tagRegistry.isRequestContextTag(tagName)) {
-           out.print("tag");
-           out.print(tagIndex);
-           out.println(".doEndTag()\n");
+           if(tm.instance instanceof GroovySyntaxTag) {
+               GroovySyntaxTag tag = (GroovySyntaxTag)tm.instance;
+               if(tag.isBufferWhiteSpace())
+                    bufferWhiteSpace = true;
+               tag.doEndTag();
+           }
+           else {
+              throw new GrailsTagException("Grails tag ["+tagName+"] was not closed");
+           }
        }
        else {
-          out.println('}');
-          out.println("invokeTag('"+tagName+"',attrs"+tagIndex+",body"+tagIndex+")");
+          out.println("}");
+          if(tm.hasAttributes) {
+               out.println("invokeTag('"+tagName+"',attrs"+tagIndex+",body"+tagIndex+")");
+          }
+          else {
+               out.println("invokeTag('"+tagName+"',[:],body"+tagIndex+")");
+          }
+          dynamicTagIndex--;
        }
        tagIndex--;
     }
@@ -274,8 +297,11 @@ public class Parse implements Tokens {
         else {
             tagName = text;
         }
+        TagMeta tm = new TagMeta();
+        tm.name = tagName;
+        tm.hasAttributes = !attrs.isEmpty();
+        tagMetaStack.add(tm);
 
-        this.tagNameStack.add(tagName);
         if (tagRegistry.isSyntaxTag(tagName)) {
             if(this.tagContext == null) {
                 this.tagContext = new HashMap();
@@ -292,39 +318,16 @@ public class Parse implements Tokens {
                 bufferWhiteSpace = false;
             } else {
                 if(whiteSpaceBuffer.length() > 0) {
-                    out.printlnToOut(whiteSpaceBuffer.toString());
+                    out.printlnToResponse(whiteSpaceBuffer.toString());
                     whiteSpaceBuffer.delete(0,whiteSpaceBuffer.length());
                 }
                 bufferWhiteSpace = false;
             }
             tag.doStartTag();
-            this.syntaxTagStack.add(tag);
-        }
-        else if(tagRegistry.isRequestContextTag(tagName)) {
-            out.print("tag");
-            out.print(tagIndex);
-            out.print("= grailsTagRegistry.newTag('");
-            out.print(tagName);
-            out.println("')");
-            for (Iterator i = attrs.keySet().iterator(); i.hasNext();) {
-                String name = (String) i.next();
-                out.print("tag");
-                out.print(tagIndex);
-                out.print(".setAttribute(");
-                out.print(name);
-                out.print(',');
-                out.print(attrs.get(name));
-                out.println(')');
-            }
-            out.print("tag");
-            out.print(tagIndex);
-            out.print(".init(");
-            out.println("getBinding().getVariables())");
-            out.print("tag");
-            out.print(tagIndex);
-            out.println(".doStartTag()");
+            tm.instance = tag;
         }
         else {
+            dynamicTagIndex++;
             if(attrs.size() > 0) {
                 out.print("attrs"+tagIndex+" = [");
                 for (Iterator i = attrs.keySet().iterator(); i.hasNext();) {
@@ -335,14 +338,9 @@ public class Parse implements Tokens {
                     if(i.hasNext())
                         out.print(',');
                     else
-                        out.print(']');
+                        out.println(']');
                 }
             }
-            else {
-                out.println("attrs"+tagIndex+" = [:]");
-            }
-
-            out.println();
             out.println("body"+tagIndex+" = {" );
         }
     }
@@ -377,6 +375,11 @@ public class Parse implements Tokens {
         if(Pattern.compile("\\S").matcher(text).find())
             bufferWhiteSpace = false;
 
+        Matcher m = LINE_BREAK.matcher(text);
+        while(m.find()) {
+            incrementLineNumber();
+        }
+
         buf.append('\'');
         for (int ix = 0, ixz = text.length(); ix < ixz; ix++) {
             char c = text.charAt(ix);
@@ -391,7 +394,7 @@ public class Parse implements Tokens {
         }
         buf.append('\'');
         if(!bufferWhiteSpace) {
-            out.printlnToOut(buf.toString());
+           out.printlnToResponse(buf.toString());
         }
         else {
             whiteSpaceBuffer.append(buf.toString());
@@ -457,12 +460,14 @@ public class Parse implements Tokens {
             } else if (c == '<') {
                 if (match("<br>", text, ix) || match("<hr>", text, ix)) {
                     rep = "\n";
+                    incrementLineNumber();
                     ix += 3;
                 } else {
-                    int end = match(paraBreak, text, ix);
-                    if (end <= 0) end = match(rowBreak, text, ix);
+                    int end = match(PARA_BREAK, text, ix);
+                    if (end <= 0) end = match(ROW_BREAK, text, ix);
                     if (end > 0) {
                         rep = "\n";
+                        incrementLineNumber();
                         ix = end;
                     }
                 }
@@ -472,4 +477,23 @@ public class Parse implements Tokens {
         }
     } // write()
 
+    private void incrementLineNumber() {
+        if(currentOutputLine >= lineNumbers.length) {
+            lineNumbers = (int[])resizeArray(lineNumbers, lineNumbers.length * 2);
+        }
+        else {
+            lineNumbers[currentOutputLine++] = out.getCurrentLineNumber();
+        }
+    }
+
+    private Object resizeArray (Object oldArray, int newSize) {
+       int oldSize = java.lang.reflect.Array.getLength(oldArray);
+       Class elementType = oldArray.getClass().getComponentType();
+       Object newArray = java.lang.reflect.Array.newInstance(
+             elementType,newSize);
+       int preserveLength = Math.min(oldSize,newSize);
+       if (preserveLength > 0)
+          System.arraycopy (oldArray,0,newArray,0,preserveLength);
+       return newArray;
+   }
 } // Parse

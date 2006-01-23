@@ -16,15 +16,14 @@
 package org.codehaus.groovy.grails.web.pages;
 
 import groovy.lang.*;
-import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.grails.web.metaclass.TagLibDynamicMethods;
 import org.codehaus.groovy.grails.web.servlet.GrailsRequestAttributes;
-import org.codehaus.groovy.grails.web.taglib.GrailsTag;
 import org.codehaus.groovy.grails.web.taglib.exceptions.GrailsTagException;
 
-import java.io.IOException;
 import java.io.Writer;
+import java.io.IOException;
 import java.util.Map;
+import java.util.HashMap;
 
 /**
  * NOTE: Based on work done by on the GSP standalone project (https://gsp.dev.java.net/)
@@ -45,6 +44,7 @@ public abstract class GroovyPage extends Script {
     public static final String APPLICATION_CONTEXT = "applicationContext";
     public static final String SESSION = "session";
     public static final String PARAMS = "params";
+
 
 /*	do noething in here for the moment
 */
@@ -125,24 +125,6 @@ public abstract class GroovyPage extends Script {
     } // fromHtml()
 
 
-
-    public Object resolveVariable(GrailsTag tag,String attr,String expr)
-            throws GroovyRuntimeException, IOException, CompilationFailedException {
-        if(expr.startsWith("${") && expr.endsWith("}")) {
-            expr = expr.substring(2, expr.length()-1);
-            try {
-                return getBinding().getVariable(expr);
-            }
-            catch(MissingPropertyException mpe) {
-                return evaluate(expr);
-            }
-        }
-        else {
-            return expr;
-        }
-    }
-
-
     /**
      * Attempts to invokes a dynamic tag
      *
@@ -180,6 +162,109 @@ public abstract class GroovyPage extends Script {
         }
         else {
             throw new GrailsTagException("Tag ["+tagName+"] does not exist. No tag library found.");
+        }
+    }
+
+    /**
+     * Allows invoking of taglibs as method calls with simple bodies. The bodies should only contain text
+     *
+     * @param methodName The methodName of the tag to call or the methodName of a method on GroovPage
+     * @param args The Arguments
+     *
+     * @return The result of the invocation
+     */
+    public Object invokeMethod(final String methodName, Object args) {
+
+        try {
+            return super.invokeMethod(methodName, args);
+        }
+        catch(MissingMethodException mme) {
+            Map attrs = null;
+            Closure body = null;
+            // retrieve tag lib and writer from binding
+            Binding binding = getBinding();
+            final Writer out = (Writer)binding.getVariable(GroovyPage.OUT);
+            GroovyObject tagLib = (GroovyObject)binding.getVariable(GrailsRequestAttributes.TAG_LIB);
+
+            // get attributes and body closure
+            if (args instanceof Object[]) {
+                Object[] argArray = (Object[])args;
+                if(argArray.length > 0 && argArray[0] instanceof Map)
+                    attrs = (Map)argArray[0];
+                if(argArray.length > 1) {
+                    Object closureArg = argArray[1];
+                    if(closureArg instanceof Closure) {
+                        body = (Closure)closureArg;
+                    }
+                }
+            }
+            else if(args instanceof Map) {
+                attrs = (Map)args;
+            }
+
+            if(attrs == null) {
+                attrs = new HashMap();
+            }
+
+            // in a direct invocation the body is expected to return a string
+            // invoke the body closure and create a new closure that outputs
+            // to the response writer on each body invokation
+            final Closure body1 = body;
+            Closure actualBody = new Closure(this) {
+                public Object doCall(Object obj) {
+                    return call(new Object[] {obj} );
+                }
+                public Object doCall() {
+                    return call(new Object[0]);
+                }
+                public Object doCall(Object[] args) {
+                    return call(args);
+                }
+                public Object call(Object[] args) {
+                    if(body1 != null) {
+                        Object bodyResponse = body1.call();
+                        if(bodyResponse instanceof String) {
+                            try {
+                                out.write((String)bodyResponse);
+                            } catch (IOException e) {
+                                throw new GrailsTagException("I/O error invoking tag library closure ["+methodName+"] as method");
+                            }
+                        }
+                    }
+                    return null;
+                }
+            };
+
+            if(tagLib != null) {
+                tagLib.setProperty(  TagLibDynamicMethods.OUT_PROPERTY, out );
+                Object tagLibProp;
+                try {
+                    tagLibProp = tagLib.getProperty(methodName);
+                    if(tagLibProp instanceof Closure) {
+                        Closure tag = (Closure)tagLibProp;
+                        if(tag.getParameterTypes().length == 1) {
+                            tag.call( new Object[]{ attrs });
+                            if(actualBody != null) {
+                                actualBody.call();
+                            }
+                            return null;
+                        }
+                        if(tag.getParameterTypes().length == 2) {
+                            tag.call( new Object[] { attrs, actualBody });
+                            return null;
+                        }
+                    }else {
+                       throw new GrailsTagException("Tag ["+methodName+"] does not exist in tag library ["+tagLib.getClass().getName()+"]");
+                    }
+                } catch (MissingPropertyException mpe) {
+                    if(args instanceof Object[])
+                        throw new MissingMethodException(methodName,GroovyPage.class, (Object[])args);
+                    else
+                        throw new MissingMethodException(methodName,GroovyPage.class, new Object[]{ args });
+                }
+
+            }
+            throw new MissingMethodException(methodName,GroovyPage.class, new Object[]{ args });
         }
     }
 } // GroovyPage

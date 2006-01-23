@@ -24,18 +24,17 @@ class ApplicationTagLib {
     @Property link = { attrs, body ->
         out << "<a href=\""
         out << grailsAttributes.getApplicationUri(request)
-        out << '/'
         // if the current attribute null set the controller uri to the current controller
-        if(attrs["controller"] == null) {
-            out << grailsAttributes.getControllerUri(request)
+        if(attrs["controller"]) {
+            out << '/' << attrs.remove("controller")
         }
         else {
-            out << attrs.remove("controller")
+           out << grailsAttributes.getControllerUri(request)
         }
-        if(attrs["action"] != null) {
+        if(attrs["action"]) {
             out << '/' << attrs.remove("action")
         }
-        if(attrs["id"] != null) {
+        if(attrs["id"]) {
             out << '/' << attrs.remove("id")
         }
         out << '\" '
@@ -44,14 +43,14 @@ class ApplicationTagLib {
             out << k << "=\"" << v << "\" "
         }
         out << ">"
-        // invoke body
+        // output the body
         body()
 
         // close tag
         out << "</a>"
     }
 
-    @Property linkToRemote = { attrs, body ->
+    @Property ajaxLink = { attrs, body ->
         // TODO
     }
 
@@ -87,7 +86,7 @@ class ApplicationTagLib {
         if(attrs["field"] != null) {
             if(errors.hasFieldErrors( attrs["field"] )) {
                 errors.getFieldErrors( attrs["field"] ).each {
-                    body( it )
+                   body( it )
                 }
             }
         }

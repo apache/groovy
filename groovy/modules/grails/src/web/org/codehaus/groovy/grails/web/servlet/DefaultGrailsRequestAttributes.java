@@ -50,7 +50,7 @@ public class DefaultGrailsRequestAttributes implements GrailsRequestAttributes {
     public String getControllerUri(ServletRequest request) {
         GroovyObject controller = getController(request);
 
-        return (String)controller.getProperty(ControllerDynamicMethods.ACTION_URI_PROPERTY);
+        return (String)controller.getProperty(ControllerDynamicMethods.CONTROLLER_URI_PROPERTY);
     }
 
     public String getApplicationUri(ServletRequest request) {
@@ -60,7 +60,7 @@ public class DefaultGrailsRequestAttributes implements GrailsRequestAttributes {
     public String getControllerActionUri(ServletRequest request) {
         GroovyObject controller = getController(request);
 
-        return (String)controller.getProperty(ControllerDynamicMethods.CONTROLLER_URI_PROPERTY);
+        return (String)controller.getProperty(ControllerDynamicMethods.ACTION_URI_PROPERTY);
     }
 
     public GroovyObject getTagLib(ServletRequest request) {
