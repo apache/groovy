@@ -349,11 +349,12 @@ public class Parse implements Tokens {
         while(m.find()) {
             String name = m.group(2);
             String val = m.group(3);
+            val = val.trim();
             name = '\"' + name + '\"';
             if(val.startsWith("${") && val.endsWith("}")) {
                 val = val.substring(2,val.length() -1);
             }
-            else {
+            else if(!val.startsWith("[") && !val.endsWith("]")) {
                 val = '\"' + val + '\"';
             }
              attrs.put(name,val);
