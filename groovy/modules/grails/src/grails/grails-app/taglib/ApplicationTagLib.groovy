@@ -113,7 +113,8 @@ class ApplicationTagLib {
         out << ');'
 
         // after remote function
-        out <<  after
+        if(after)
+           out <<  after
     }
 
     // helper function to build ajax options
@@ -142,6 +143,9 @@ class ApplicationTagLib {
             else
                 ajaxOptions << "evalScripts:true"
 
+            if(options['parameters']) {
+                ajaxOptions << "parameters:${options.remove('parameters')}"
+            }
             // remaining options
             options.each { k, v ->
                  switch(v) {
@@ -161,11 +165,14 @@ class ApplicationTagLib {
         return "{${ajaxOptions.join(',')}}"
     }
 
+    /**
+     * A link to a remote uri that used the prototype library to invoke the link via ajax
+     */
     @Property remoteLink = { attrs, body ->
        out << "<a href=\"#\" onclick=\""
         // create remote function
         remoteFunction(attrs)
-        out << 'return false;\" '
+        out << 'return false;" '
         // process remaining attributes
         attrs.each { k,v ->
             out << k << "=\"" << v << "\" "
@@ -178,8 +185,19 @@ class ApplicationTagLib {
         out << "</a>"
     }
 
-    @Propert remoteForm = { attrs, body ->
-           // TODO
+    /**
+     * A form which used prototype to serialize its parameters and submit via an asynchronous ajax call
+     */
+    @Property formRemote = { attrs, body ->
+       attrs['parameters'] = "Form.serialize(this)"
+       out << '<form onsubmit="' << remoteFunction(attrs) << ';return false;" '
+       out << 'method="' <<  (attrs['method'] ? attrs['method'] : 'post') << '" '
+       out << 'action="' <<  (attrs['action'] ? attrs['action'] : createLink(attrs)) << '">'
+
+        // output body
+           body()
+        // close tag
+       out << '</form>'
     }
 
     /**
