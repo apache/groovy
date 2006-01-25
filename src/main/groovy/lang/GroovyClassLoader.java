@@ -86,8 +86,19 @@ public class GroovyClassLoader extends SecureClassLoader {
     private Map cache = new HashMap();
 
     private GroovyResourceLoader resourceLoader = new GroovyResourceLoader() {
+        private HashMap filenameCache = new HashMap();
+        
         public URL loadGroovySource(String filename) throws MalformedURLException {
-            File file = getSourceFile(filename);
+            File file=null;
+            synchronized (filenameCache) {
+                file = (File) filenameCache.get(filename);
+            
+                if (file==null || !file.exists()) {
+                    file = getSourceFile(filename);
+                }
+
+                filenameCache.put(filename,file);
+            }
             return file == null ? null : file.toURL();
         }
     };
@@ -490,10 +501,10 @@ public class GroovyClassLoader extends SecureClassLoader {
         }
         return c;
     }
-
+    
     /**
      * loads a class from a file or a parent classloader.
-     * This method does call @see #loadClass(String, boolean, boolean, boolean)
+     * This method does call loadClass(String, boolean, boolean, boolean)
      * with the last parameter set to false.
      */
     public Class loadClass(final String name, boolean lookupScriptFiles, boolean preferClassOverScript)
@@ -519,7 +530,10 @@ public class GroovyClassLoader extends SecureClassLoader {
         synchronized (cache) {
             Class cls = (Class) cache.get(name);
             if (cls == NOT_RESOLVED.class) throw new ClassNotFoundException(name);
-            if (cls!=null) return cls;
+            if (cls!=null) {
+                boolean reloadable = GroovyObject.class.isAssignableFrom(cls);
+                if (!reloadable) return cls;
+            }
         }
 
         // check security manager
@@ -574,9 +588,9 @@ public class GroovyClassLoader extends SecureClassLoader {
                     // found a source, compile it then
                     if ((cls!=null && isSourceNewer(source, cls)) || (cls==null)) {
                         synchronized (cache) {
-                            cache.put(name,PARSING.class);
+                            cache.put(name,null);
                         }
-                        cls = parseClass(source.openStream(),source.getFile());
+                        cls = parseClass(source.openStream(),name);
                     }
                 }
             } catch (Exception e) {
