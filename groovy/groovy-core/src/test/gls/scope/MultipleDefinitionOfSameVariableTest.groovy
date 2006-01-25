@@ -1,5 +1,6 @@
+package gls.scope
 
-import gls.scope.CompilableTestSupport;
+import gls.scope.CompilableTestSupport
 
 public class MultipleDefinitionOfSameVariableTest extends CompilableTestSupport {
 
