@@ -20,6 +20,9 @@
  * @author Graeme Rocher
  * @since 17-Jan-2006
  */
+import org.springframework.validation.Errors;
+import org.codehaus.groovy.grails.commons.GrailsClassUtils as GCU;
+
 class ApplicationTagLib {
 
     /**
@@ -204,20 +207,59 @@ class ApplicationTagLib {
      * Checks if the request has errors either for a field or global errors
      */
     @Property hasErrors = { attrs, body ->
-        def errors = grailsAttributes.getErrors( request )
-        if(!errors)
-            return false
-        // if there is a field attribute check errors for that field
-        if(attrs["field"]) {
-            if(errors.hasFieldErrors( attrs["field"] )) {
-                body()
+        // prefer model over bean
+        def model = attrs['model']
+        if(!model && attrs['bean']) {
+            if(GCU.isDomainClass(attrs['bean'].class)) {
+                return attrs['bean'].hasErrors();
+            }
+            else {
+                model = GCU.getPropertyNameRepresentation(attrs['bean'].class)
             }
         }
-        // otherwise check all errors
+
+        if(model) {
+            def errors = request["${model}Errors"]
+            if(errors) {
+                 if(attrs['field']) {
+                    if(errors.hasFieldErrors(attrs['field'])) {
+                        body()
+                    }
+                 }
+                 else {
+                    if(errors.hasErrors()) {
+                        body()
+                    }
+                 }
+            }
+        }
         else {
-           if(errors.hasErrors()) {
-                body()
-           }
+            // otherwise get all of the errors instances
+            def errorsList = request.attributeNames.findAll {
+                def ra = request[it]
+                if(ra instanceof Errors)
+                    return ra
+            }
+            if(!errorsList)
+                return
+            // if there is a field attribute check errors for that field
+            if(attrs["field"]) {
+                for(errors in errorsList) {
+                    if(errors.hasFieldErrors( attrs["field"] )) {
+                        body()
+                        break;
+                    }
+                }
+            }
+            // otherwise check all errors
+            else {
+               for(errors in errorsList) {
+                   if(errors.hasErrors()) {
+                        body()
+                        break;
+                   }
+                }
+            }
         }
     }
 
@@ -225,31 +267,281 @@ class ApplicationTagLib {
      * Loops through each error for either field or global errors
      */
     @Property eachError = { attrs, body ->
-        def errors = grailsAttributes.getErrors( request )
-        if(!errors)
-            return;
-        // if there is a field attribute iterative only the field
-        if(attrs["field"]) {
-            if(errors.hasFieldErrors( attrs["field"] )) {
-                errors.getFieldErrors( attrs["field"] ).each {
-                   body( it )
+        // prefer model over bean
+        def model = attrs['model']
+        def errors = null
+        if(!model && attrs['bean']) {
+            if(GCU.isDomainClass(attrs['bean'].class)) {
+                errors = attrs['bean'].errors
+            }
+            else {
+                model = GCU.getPropertyNameRepresentation(attrs['bean'].class)
+            }
+        }
+
+        if(model || errors) {
+            if(!model)
+                errors = request["${model}Errors"]
+            if(errors) {
+                 if(attrs['field']) {
+                    if(errors.hasFieldErrors(attrs['field'])) {
+                        errors.getFieldErrors( attrs["field"] ).each {
+                           body( it )
+                        }
+                    }
+                 }
+                 else {
+                    if(errors.hasErrors()) {
+                        errors.allErrors.each {
+                            body( it )
+                        }
+                    }
+                 }
+            }
+        }
+        else {
+            // otherwise get all of the errors instances
+            def errorsList = request.attributeNames.findAll {
+                def ra = request[it]
+                if(ra instanceof Errors)
+                    return ra
+            }
+            if(!errorsList)
+                return
+            // if there is a field attribute check errors for that field
+            if(attrs["field"]) {
+                for(e in errorsList) {
+                    if(e.hasFieldErrors( attrs["field"] )) {
+                       e.getFieldErrors( attrs["field"] ).each {
+                           body( it )
+                        }
+                    }
+                }
+            }
+            // otherwise check all errors
+            else {
+               for(e in errorsList) {
+                   if(e.hasErrors()) {
+                        e.allErrors.each {
+                            body( it )
+                        }
+                   }
                 }
             }
         }
-        // otherwise check all errors
-        else {
-           if(errors.hasErrors()) {
-                errors.allErrors.each {
-                    body( it )
-                }
-           }
+    }
+
+    /**
+     *  allows rendering of templates inside views for collections, models and beans. Examples:
+     *
+     *  <gr:render template="atemplate" collection="${users}" />
+     *  <gr:render template="atemplate" model="[user:user,company:company]" />
+     *  <gr:render template="atemplate" bean="${user}" />
+     */
+    @Property render = { attrs, body ->
+        if(!attrs['template'])
+            throwTagError("Tag [render] is missing required attribute [template]")
+
+        def engine = grailsAttributes.getPagesTemplateEngine()
+        def uri = '/WEB-INF/grails-app/views' << grailsAttributes.getControllerUri(request)
+        uri << "/_${attrs['template']}.gsp"
+        uri = uri.toString()
+
+        def url = servletContext.getResource(uri)
+        if(!url)
+            throwTagError("No template found for name [${attrs['template']}] in tag [render]")
+
+        def t = engine.createTemplate(  uri,
+                                        servletContext,
+                                        request,
+                                        response)
+
+        if(attrs['model'] instanceof Map) {
+            t.make( attrs['model'] ).writeTo(out)
+        }
+        else if(attrs['collection']) {
+            attrs['collection'].each {
+                t.make( ['it': it] ).writeTo(out)
+            }
+        }
+        else if(attrs['bean']) {
+            t.make( [ 'it' : attrs['bean'] ] ).writeTo(out)
         }
     }
 
+    /**
+     * Loops through each error and renders it using one of the supported mechanisms (defaults to "list" if unsupported)
+     */
+    @Property renderErrors = { attrs, body ->
+        def renderAs = attrs.remove('as')
+        if(!renderAs) renderAs = 'list'
+
+        if(renderAs == 'list') {
+            out << "<ul>"
+            eachError(attrs, {
+                out << "<li>"
+                body(it)
+                out << "</li>"
+              }
+            )
+            out << "</ul>"
+        }
+    }
+
+    /**
+     * Attempts to render input for a property value based by attempting to choose a rendering component
+     * to use based on the property type
+     */
+    @Property renderInput = { attrs, body ->
+        def bean = attrs['bean']
+        if(!bean) {
+            throwTagError("Tag [renderInput] is missing required attribute [bean]")
+        }
+        if(!attrs['property']) {
+            throwTagError("Tag [renderInput] is missing required attribute [property]")
+        }
+
+       def app = grailsAttributes.getGrailsApplication()
+       def dc = app.getGrailsDomainClass(bean.class.name)
+       def pv = bean.metaPropertyValues.find {
+            it.name == attrs['property']
+       }
+       if(!pv) {
+          throwTagError("Property [${attrs['property']}] does not exist in tag [renderInput] for bean [${bean}]")
+       }
+       def engine = grailsAttributes.getPagesTemplateEngine()
+       def uri = findUriForType(pv.type)
+
+       if(!uri)
+            throwTagError("Type [${pv.type}] is unsupported by tag [renderInput]. No template found.")
+
+       def t = engine.createTemplate(   uri,
+                                        servletContext,
+                                        request,
+                                        response)
+       if(!t) {
+            throwTagError("Type [${pv.type}] is unsupported by tag [renderInput]. No template found.")
+       }
+
+       def binding = [ name:pv.name,value:pv.value]
+       binding['constraints'] = (dc ? dc.constrainedProperties : null)
+
+       t.make(binding).writeTo(out)
+    }
+
+    private String findUriForType(type) {
+        if(type == Object.class)
+            return null;
+        def uri = "/WEB-INF/grails-app/views/scaffolding/${type.name}.gsp";
+        def url = servletContext.getResource(uri)
+
+        if(url != null) {
+            return uri
+        }
+        else {
+            return findUriForType(type.superClass)
+        }
+    }
+
+    // Maps out how Grails contraints map to Apache commons validators
+    static CONSTRAINT_TYPE_MAP = [ email : 'email',
+                                             creditCard : 'creditCard',
+                                             match : 'mask',
+                                             blank: 'required',
+                                             nullable: 'required',
+                                             maxSize: 'maxLength',
+                                             minSize: 'minLength',
+                                             range: 'intRange',
+                                             size: 'intRange',
+                                             length: 'maxLength,minLength' ]
+    /**
+     * Validates a form using Apache commons validator javascript against constraints defined in a Grails
+     * domain class
+     */
     @Property validate = { attrs, body ->
         def form = attrs["form"]
         def againstClass = attrs["against"]
-        // TODO
+        if(!form)
+            throwTagError("Tag [validate] is missing required attribute [form]")
+
+        if(!againstClass) {
+            againstClass = form.substring(0,1).toUpperCase() + form.substring(1)
+        }
+
+        def app = grailsAttributes.getGrailsApplication()
+        def dc = app.getGrailsDomainClass(againstClass)
+
+        if(!dc)
+            throwTagError("Tag [validate] could not find a domain class to validate against for name [${againstClass}]")
+
+        def constrainedProperties = dc.constrainedProperties.collect { k,v -> return v }
+        def appliedConstraints = []
+
+        constrainedProperties.each {
+           appliedConstraints += it.collect{ it.appliedConstraints }
+        }
+
+        appliedConstraints = appliedConstraints.flatten()
+        def fieldValidations = [:]
+        appliedConstraints.each {
+            def validateType = CONSTRAINT_TYPE_MAP[it.name]
+            if(validateType) {
+                if(fieldValidations[validateType]) {
+                    fieldValidations[validateType] << it
+                }
+                else {
+                     fieldValidations[validateType] =  [it]
+                }
+            }
+        }
+
+        out << '<script type="text/javascript">\n'
+        fieldValidations.each { k,v ->
+           def validateType = k
+
+           if(validateType) {
+
+                def validateTypes = [validateType]
+
+                if(validateType.contains(",")) {
+                    validateTypes = validateType.split(",")
+                }
+
+
+                validateTypes.each { vt ->
+                    // import required script
+                    def scriptName = "org/apache/commons/validator/javascript/validate" + vt.substring(0,1).toUpperCase() + vt.substring(1) + ".js"
+                    def inStream = getClass().classLoader.getResourceAsStream(scriptName)
+                    if(inStream) {
+                        out << inStream.text
+                    }
+
+                    v.each { constraint ->
+                           out << "this.${constraint.propertyName} = new Array("
+                           out << "document.forms['${form}'].elements['${constraint.propertyName}']," // the field
+                           out << '"Test message"' // the message
+                           switch(vt) {
+                                case 'mask': out << ",function() { return '${constraint.regex}'; }";break;
+                                case 'intRange': out << ",function() { if(arguments[0]=='min') return ${constraint.range.from}; else return ${constraint.range.to} }";break;
+                                case 'floatRange': out << ",function() { if(arguments[0]=='min') return ${constraint.range.from}; else return ${constraint.range.to} }";break;
+                                case 'maxLength': out << ",function() { return ${constraint.maxSize};  }";break;
+                                case 'minLength': out << ",function() { return ${constraint.minSize};  }";break;
+                           }
+                           out << ');\n'
+                    }
+                    out << "}\n"
+                }
+            }
+        }
+        out << 'function validateForm(form) {\n'
+         fieldValidations.each { k,v ->
+               def validateType = k.substring(0,1).toUpperCase() + k.substring(1)
+               out << "if(!validate${validateType}(form)) return false;\n"
+         }
+        out << 'return true;\n';
+        out << '}\n'
+      //  out << "document.forms['${attrs['form']}'].onsubmit = function(e) {return validateForm(this)}\n"
+        out << '</script>'
     }
 
 

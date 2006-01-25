@@ -157,7 +157,12 @@ public class ConstrainedProperty   {
 		protected String constraintPropertyName;
 		protected Class constraintOwningClass;
 		protected Object constraintParameter;
-		/**
+
+        public String getPropertyName() {
+            return this.constraintPropertyName;
+        }
+
+        /**
 		 * @param constraintOwningClass The constraintOwningClass to set.
 		 */
 		public void setOwningClass(Class constraintOwningClass) {
@@ -218,12 +223,16 @@ public class ConstrainedProperty   {
 			return true;
 		}
 
-		/**
-		 * @return Returns the notEqualTo.
-		 */
-		public Object getNotEqualTo() {
-			return this.constraintParameter;
-		}
+        public String getName() {
+            return NOT_EQUAL_CONSTRAINT;
+        }
+
+        /**
+         * @return Returns the notEqualTo.
+         */
+        public Object getNotEqualTo() {
+            return this.constraintParameter;
+        }
 
 		protected void processValidate(Object propertyValue, Errors errors) {			
 			if(!this.constraintParameter.equals( propertyValue )) {
@@ -258,12 +267,16 @@ public class ConstrainedProperty   {
 			super.setParameter(constraintParameter);
 		}
 
-		protected void processValidate(Object propertyValue, Errors errors) {			
-			if(!nullable && propertyValue == null) {
-				Object[] args = new Object[] { constraintPropertyName, constraintOwningClass};
-				super.rejectValue( errors, NULLABLE_CONSTRAINT,args, MessageFormat.format( DEFAULT_NULL_MESSAGE, args ) );
-			}			
-		}
+        public String getName() {
+            return NULLABLE_CONSTRAINT;
+        }
+
+        protected void processValidate(Object propertyValue, Errors errors) {
+            if(!nullable && propertyValue == null) {
+                Object[] args = new Object[] { constraintPropertyName, constraintOwningClass};
+                super.rejectValue( errors, NULLABLE_CONSTRAINT,args, MessageFormat.format( DEFAULT_NULL_MESSAGE, args ) );
+            }
+        }
 		
 	}	
 	/**
@@ -295,17 +308,21 @@ public class ConstrainedProperty   {
 			super.setParameter(constraintParameter);
 		}
 
-		protected void processValidate(Object propertyValue, Errors errors) {
+        public String getName() {
+            return BLANK_CONSTRAINT;
+        }
 
-			if(!blank) {
-				if(propertyValue instanceof String) {
-					if(StringUtils.isBlank((String)propertyValue)) {
-						Object[] args = new Object[] { constraintPropertyName, constraintOwningClass };
-						super.rejectValue( errors, BLANK_CONSTRAINT,args, MessageFormat.format( DEFAULT_BLANK_MESSAGE, args ) );
-					}
-				}
-			}
-		}
+        protected void processValidate(Object propertyValue, Errors errors) {
+
+            if(!blank) {
+                if(propertyValue instanceof String) {
+                    if(StringUtils.isBlank((String)propertyValue)) {
+                        Object[] args = new Object[] { constraintPropertyName, constraintOwningClass };
+                        super.rejectValue( errors, BLANK_CONSTRAINT,args, MessageFormat.format( DEFAULT_BLANK_MESSAGE, args ) );
+                    }
+                }
+            }
+        }
 	}
 
     /**
@@ -334,11 +351,15 @@ public class ConstrainedProperty   {
 			super.setParameter(constraintParameter);
         }
 
-        public boolean supports(Class type) {
-			if(type == null)
-				return false;
+        public String getName() {
+            return CREDIT_CARD_CONSTRAINT;
+        }
 
-			return String.class.isAssignableFrom(type);
+        public boolean supports(Class type) {
+            if(type == null)
+                return false;
+
+            return String.class.isAssignableFrom(type);
         }
     }
     /**
@@ -372,15 +393,19 @@ public class ConstrainedProperty   {
 			super.setParameter(constraintParameter);
 		}
 
-		protected void processValidate(Object propertyValue, Errors errors) {
-			if(email) {
-				EmailValidator emailValidator = EmailValidator.getInstance();
-				if(!emailValidator.isValid(propertyValue.toString())  ) {
-					Object[] args = new Object[] { constraintPropertyName, constraintOwningClass, propertyValue };
-					super.rejectValue(errors,EMAIL_CONSTRAINT + INVALID_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_EMAIL_MESSAGE, args ));
-				}
-			}
-		}
+        public String getName() {
+            return EMAIL_CONSTRAINT;
+        }
+
+        protected void processValidate(Object propertyValue, Errors errors) {
+            if(email) {
+                EmailValidator emailValidator = EmailValidator.getInstance();
+                if(!emailValidator.isValid(propertyValue.toString())  ) {
+                    Object[] args = new Object[] { constraintPropertyName, constraintOwningClass, propertyValue };
+                    super.rejectValue(errors,EMAIL_CONSTRAINT + INVALID_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_EMAIL_MESSAGE, args ));
+                }
+            }
+        }
 	}
 	
 	/**
@@ -413,16 +438,20 @@ public class ConstrainedProperty   {
 			super.setParameter(constraintParameter);
 		}
 
-		protected void processValidate(Object propertyValue, Errors errors) {
-			if(url) {
-				UrlValidator urlValidator = new UrlValidator(UrlValidator.ALLOW_ALL_SCHEMES + UrlValidator.ALLOW_2_SLASHES);
-								
-				if(!urlValidator.isValid(propertyValue.toString())) {
-					Object[] args = new Object[] { constraintPropertyName, constraintOwningClass, propertyValue };
-					super.rejectValue(errors,URL_CONSTRAINT + INVALID_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_URL_MESSAGE, args ));				
-				}
-			}
-		}
+        public String getName() {
+            return URL_CONSTRAINT;
+        }
+
+        protected void processValidate(Object propertyValue, Errors errors) {
+            if(url) {
+                UrlValidator urlValidator = new UrlValidator(UrlValidator.ALLOW_ALL_SCHEMES + UrlValidator.ALLOW_2_SLASHES);
+
+                if(!urlValidator.isValid(propertyValue.toString())) {
+                    Object[] args = new Object[] { constraintPropertyName, constraintOwningClass, propertyValue };
+                    super.rejectValue(errors,URL_CONSTRAINT + INVALID_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_URL_MESSAGE, args ));
+                }
+            }
+        }
 		
 	}
 	/**
@@ -462,23 +491,27 @@ public class ConstrainedProperty   {
 			super.setParameter(constraintParameter);
 		}
 
-		protected void processValidate(Object propertyValue, Errors errors) {
-			if(!this.range.contains(propertyValue)) {
-				Object[] args = new Object[] { constraintPropertyName, constraintOwningClass, propertyValue, range.getFrom(), range.getTo()  };
+        public String getName() {
+            return RANGE_CONSTRAINT;
+        }
+
+        protected void processValidate(Object propertyValue, Errors errors) {
+            if(!this.range.contains(propertyValue)) {
+                Object[] args = new Object[] { constraintPropertyName, constraintOwningClass, propertyValue, range.getFrom(), range.getTo()  };
 
                 if(propertyValue == null) {
                     super.rejectValue(errors,RANGE_CONSTRAINT + INVALID_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_RANGE_MESSAGE, args ));
                 }
                 else if(range.getFrom().compareTo( propertyValue ) == -1) {
-					super.rejectValue(errors,SIZE_CONSTRAINT + TOOSMALL_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_SIZE_MESSAGE, args ));
-				}
-				else if(range.getFrom().compareTo(propertyValue) == 1) {
-					super.rejectValue(errors,SIZE_CONSTRAINT + TOOBIG_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_SIZE_MESSAGE, args ));
-				}		
-				
+                    super.rejectValue(errors,SIZE_CONSTRAINT + TOOSMALL_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_SIZE_MESSAGE, args ));
+                }
+                else if(range.getFrom().compareTo(propertyValue) == 1) {
+                    super.rejectValue(errors,SIZE_CONSTRAINT + TOOBIG_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_SIZE_MESSAGE, args ));
+                }
 
-			}
-		}				
+
+            }
+        }
 	}
 	
 	/**
@@ -521,13 +554,17 @@ public class ConstrainedProperty   {
 			super.setParameter(constraintParameter);
 		}
 
+        public String getName() {
+            return MAX_CONSTRAINT;
+        }
 
-		protected void processValidate(Object propertyValue, Errors errors) {
-			if(maxValue.compareTo((Comparable)propertyValue) > 0) {
-				Object[] args = new Object[] { constraintPropertyName, constraintOwningClass, propertyValue, maxValue  };
-				super.rejectValue(errors,MAX_CONSTRAINT + EXCEEDED_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_MAX_MESSAGE, args ));
-			}
-		}		
+
+        protected void processValidate(Object propertyValue, Errors errors) {
+            if(maxValue.compareTo(propertyValue) > 0) {
+                Object[] args = new Object[] { constraintPropertyName, constraintOwningClass, propertyValue, maxValue  };
+                super.rejectValue(errors,MAX_CONSTRAINT + EXCEEDED_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_MAX_MESSAGE, args ));
+            }
+        }
 	}
 	
 	/**
@@ -570,13 +607,17 @@ public class ConstrainedProperty   {
 			super.setParameter(constraintParameter);
 		}
 
+        public String getName() {
+            return MIN_CONSTRAINT;
+        }
 
-		protected void processValidate(Object propertyValue, Errors errors)		{
-			if(minValue.compareTo((Comparable)propertyValue) < 0) {
-				Object[] args = new Object[] { constraintPropertyName, constraintOwningClass, propertyValue, minValue  };
-				super.rejectValue(errors,MIN_CONSTRAINT + NOTMET_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_MIN_MESSAGE, args ));
-			}
-		}		
+
+        protected void processValidate(Object propertyValue, Errors errors)		{
+            if(minValue.compareTo(propertyValue) < 0) {
+                Object[] args = new Object[] { constraintPropertyName, constraintOwningClass, propertyValue, minValue  };
+                super.rejectValue(errors,MIN_CONSTRAINT + NOTMET_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_MIN_MESSAGE, args ));
+            }
+        }
 	}	
 	/**
 	 * A constraint that validates the property is contained within the supplied list
@@ -610,12 +651,16 @@ public class ConstrainedProperty   {
 			super.setParameter(constraintParameter);
 		}
 
-		protected void processValidate(Object propertyValue, Errors errors) {
-			if(!this.list.contains(propertyValue)) {
-				Object[] args = new Object[] { constraintPropertyName, constraintOwningClass, propertyValue, list  };
-				super.rejectValue(errors,NOT_PREFIX + IN_LIST_CONSTRAINT,args,MessageFormat.format( DEFAULT_NOT_IN_LIST_MESSAGE,args ));
-			}
-		}
+        public String getName() {
+            return IN_LIST_CONSTRAINT;
+        }
+
+        protected void processValidate(Object propertyValue, Errors errors) {
+            if(!this.list.contains(propertyValue)) {
+                Object[] args = new Object[] { constraintPropertyName, constraintOwningClass, propertyValue, list  };
+                super.rejectValue(errors,NOT_PREFIX + IN_LIST_CONSTRAINT,args,MessageFormat.format( DEFAULT_NOT_IN_LIST_MESSAGE,args ));
+            }
+        }
 		
 	}
 	
@@ -654,13 +699,17 @@ public class ConstrainedProperty   {
 			super.setParameter(constraintParameter);
 		}
 
-		protected void processValidate(Object propertyValue, Errors errors) {
-			if(propertyValue.toString().matches( regex )) {
-				Object[] args = new Object[] { constraintPropertyName, constraintOwningClass, propertyValue, regex  };
-				super.rejectValue(errors,MATCHES_CONSTRAINT + INVALID_SUFFIX,args,MessageFormat.format( DEFAULT_DOESNT_MATCH_MESSAGE, args ));
-			}
-			
-		}
+        public String getName() {
+            return MATCHES_CONSTRAINT;
+        }
+
+        protected void processValidate(Object propertyValue, Errors errors) {
+            if(propertyValue.toString().matches( regex )) {
+                Object[] args = new Object[] { constraintPropertyName, constraintOwningClass, propertyValue, regex  };
+                super.rejectValue(errors,MATCHES_CONSTRAINT + INVALID_SUFFIX,args,MessageFormat.format( DEFAULT_DOESNT_MATCH_MESSAGE, args ));
+            }
+
+        }
 		
 	}
 	
@@ -670,13 +719,13 @@ public class ConstrainedProperty   {
 	 */		
 	static class SizeConstraint extends AbstractConstraint {
 
-		private IntRange sizeRange;
+		private IntRange range;
 
 		/**
-		 * @return Returns the sizeRange.
+		 * @return Returns the range.
 		 */
-		public IntRange getSizeRange() {
-			return sizeRange;
+		public IntRange getRange() {
+			return range;
 		}
 		
 		
@@ -703,66 +752,66 @@ public class ConstrainedProperty   {
 			if(!(constraintParameter instanceof IntRange))
 				throw new IllegalArgumentException("Parameter for constraint ["+SIZE_CONSTRAINT+"] of property ["+constraintPropertyName+"] of class ["+constraintOwningClass+"] must be a of type [groovy.lang.IntRange]");
 			
-			this.sizeRange = (IntRange)constraintParameter;
+			this.range = (IntRange)constraintParameter;
 			super.setParameter(constraintParameter);
 		}
 
+        public String getName() {
+            return SIZE_CONSTRAINT;
+        }
 
 
-		protected void processValidate(Object propertyValue, Errors errors) {
-			
-			Object[] args = new Object[] { constraintPropertyName, constraintOwningClass, propertyValue,  sizeRange.getFrom(), sizeRange.getTo()  };
-			if(propertyValue == null) {
-				super.rejectValue(errors,SIZE_CONSTRAINT + INVALID_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_SIZE_MESSAGE, args ));
-				return;
-			}
-			if(propertyValue.getClass().isArray()) {
-				Integer length = new Integer(Array.getLength( propertyValue ));
-				if(!sizeRange.contains(length)) {	
-					
-					if(sizeRange.getFrom().compareTo( length ) == -1) {
-						super.rejectValue(errors,LENGTH_CONSTRAINT + TOOSHORT_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_LENGTH_MESSAGE, args ));
-					}
-					else if(sizeRange.getFrom().compareTo(length) == 1) {
-						super.rejectValue(errors,LENGTH_CONSTRAINT + TOOLONG_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_LENGTH_MESSAGE, args ));
-					}						
-					return;
-				}
-			}
-			if(propertyValue instanceof Collection) {
-				Integer collectionSize = new Integer(((Collection)propertyValue).size());
-				if(!sizeRange.contains( collectionSize )) {
-					if(sizeRange.getFrom().compareTo( collectionSize ) == -1) {
-						super.rejectValue(errors,SIZE_CONSTRAINT + TOOSMALL_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_SIZE_MESSAGE, args ));
-					}
-					else if(sizeRange.getFrom().compareTo(collectionSize) == 1) {
-						super.rejectValue(errors,SIZE_CONSTRAINT + TOOBIG_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_SIZE_MESSAGE, args ));
-					}						
-					return;
-				}
-			}
-			else if(propertyValue instanceof Number) {				
-				if(sizeRange.getFrom().compareTo( propertyValue ) == -1) {
-					super.rejectValue(errors,SIZE_CONSTRAINT + TOOSMALL_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_SIZE_MESSAGE, args ));
-				}
-				else if(sizeRange.getFrom().compareTo(propertyValue) == 1) {
-					super.rejectValue(errors,SIZE_CONSTRAINT + TOOBIG_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_SIZE_MESSAGE, args ));
-				}		
-				return;
-			}
-			else if(propertyValue instanceof String) {
-				Integer stringLength =  new Integer(((String)propertyValue ).length());
-				if(!sizeRange.contains(stringLength)) {
-					if(sizeRange.getFrom().compareTo( stringLength ) == -1) {
-						super.rejectValue(errors,LENGTH_CONSTRAINT + TOOSHORT_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_LENGTH_MESSAGE, args ));
-					}
-					else if(sizeRange.getFrom().compareTo(stringLength) == 1) {
-						super.rejectValue(errors,LENGTH_CONSTRAINT + TOOLONG_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_LENGTH_MESSAGE, args ));
-					}											
-					return;
-				}
-			}			
-		}		
+        protected void processValidate(Object propertyValue, Errors errors) {
+
+            Object[] args = new Object[] { constraintPropertyName, constraintOwningClass, propertyValue,  range.getFrom(), range.getTo()  };
+            if(propertyValue == null) {
+                super.rejectValue(errors,SIZE_CONSTRAINT + INVALID_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_SIZE_MESSAGE, args ));
+                return;
+            }
+            if(propertyValue.getClass().isArray()) {
+                Integer length = new Integer(Array.getLength( propertyValue ));
+                if(!range.contains(length)) {
+
+                    if(range.getFrom().compareTo( length ) == -1) {
+                        super.rejectValue(errors,LENGTH_CONSTRAINT + TOOSHORT_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_LENGTH_MESSAGE, args ));
+                    }
+                    else if(range.getFrom().compareTo(length) == 1) {
+                        super.rejectValue(errors,LENGTH_CONSTRAINT + TOOLONG_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_LENGTH_MESSAGE, args ));
+                    }
+                    return;
+                }
+            }
+            if(propertyValue instanceof Collection) {
+                Integer collectionSize = new Integer(((Collection)propertyValue).size());
+                if(!range.contains( collectionSize )) {
+                    if(range.getFrom().compareTo( collectionSize ) == -1) {
+                        super.rejectValue(errors,SIZE_CONSTRAINT + TOOSMALL_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_SIZE_MESSAGE, args ));
+                    }
+                    else if(range.getFrom().compareTo(collectionSize) == 1) {
+                        super.rejectValue(errors,SIZE_CONSTRAINT + TOOBIG_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_SIZE_MESSAGE, args ));
+                    }
+                }
+            }
+            else if(propertyValue instanceof Number) {
+                if(range.getFrom().compareTo( propertyValue ) == -1) {
+                    super.rejectValue(errors,SIZE_CONSTRAINT + TOOSMALL_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_SIZE_MESSAGE, args ));
+                }
+                else if(range.getFrom().compareTo(propertyValue) == 1) {
+                    super.rejectValue(errors,SIZE_CONSTRAINT + TOOBIG_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_SIZE_MESSAGE, args ));
+                }
+            }
+            else if(propertyValue instanceof String) {
+                Integer stringLength =  new Integer(((String)propertyValue ).length());
+                if(!range.contains(stringLength)) {
+                    if(range.getFrom().compareTo( stringLength ) == -1) {
+                        super.rejectValue(errors,LENGTH_CONSTRAINT + TOOSHORT_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_LENGTH_MESSAGE, args ));
+                    }
+                    else if(range.getFrom().compareTo(stringLength) == 1) {
+                        super.rejectValue(errors,LENGTH_CONSTRAINT + TOOLONG_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_LENGTH_MESSAGE, args ));
+                    }
+                }
+            }
+        }
 	}
 	
 	/**
@@ -790,52 +839,50 @@ public class ConstrainedProperty   {
 			super.setParameter(constraintParameter);
 		}
 
-		/* (non-Javadoc)
-		 * @see org.codehaus.groovy.grails.validation.Constraint#supports(java.lang.Class)
-		 */
-		public boolean supports(Class type) {
-			if(type == null)
-				return false;
-			
-			return Comparable.class.isAssignableFrom(type) ||
-					Number.class.isAssignableFrom(type) ||
-					Collection.class.isAssignableFrom(type) ||
-					type.isArray();
-		}
+        public String getName() {
+            return MAX_SIZE_CONSTRAINT;
+        }
+
+        /* (non-Javadoc)
+           * @see org.codehaus.groovy.grails.validation.Constraint#supports(java.lang.Class)
+           */
+        public boolean supports(Class type) {
+            if(type == null)
+                return false;
+
+            return Comparable.class.isAssignableFrom(type) ||
+                    Number.class.isAssignableFrom(type) ||
+                    Collection.class.isAssignableFrom(type) ||
+                    type.isArray();
+        }
 
 		protected void processValidate(Object propertyValue, Errors errors) {
 			Object[] args = new Object[] { constraintPropertyName, constraintOwningClass, propertyValue, new Integer(maxSize) };
 			if(propertyValue == null) {
 				super.rejectValue(errors,MAX_LENGTH_CONSTRAINT + EXCEEDED_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_MAX_LENGTH_MESSAGE, args ));
-				return;
-			}
-			if(propertyValue.getClass().isArray()) {
+            }
+			else if(propertyValue.getClass().isArray()) {
 				int length = Array.getLength( propertyValue );
 				if(length > maxSize) {
 					super.rejectValue(errors,MAX_LENGTH_CONSTRAINT + EXCEEDED_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_MAX_LENGTH_MESSAGE, args ));
-					return;
-				}
+                }
 			}
-			if(propertyValue instanceof Collection) {
-				if( ((Collection)propertyValue).size() > maxSize ) {
-					super.rejectValue(errors,MAX_SIZE_CONSTRAINT + EXCEEDED_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_MAX_SIZE_MESSAGE, args ));
-					return;
-				}
-			}
-			else if(propertyValue instanceof Number) {				
-				int numberSize = ((Number)propertyValue).intValue();
-				if( numberSize > maxSize ) {
-					super.rejectValue(errors,MAX_SIZE_CONSTRAINT + EXCEEDED_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_MAX_SIZE_MESSAGE, args ));
-					return;
-				}
-			}
-			else if(propertyValue instanceof String) {
-				if(((String)propertyValue ).length() > maxSize) {
-					super.rejectValue(errors,MAX_LENGTH_CONSTRAINT + EXCEEDED_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_MAX_LENGTH_MESSAGE, args ));
-					return;
-				}
-			}			
-		}		
+			else if(propertyValue instanceof Collection) {
+                if (((Collection) propertyValue).size() > maxSize) {
+                    super.rejectValue(errors, MAX_SIZE_CONSTRAINT + EXCEEDED_SUFFIX, args, MessageFormat.format(DEFAULT_INVALID_MAX_SIZE_MESSAGE, args));
+                } else if (propertyValue instanceof Number) {
+                    int numberSize = ((Number) propertyValue).intValue();
+                    if (numberSize > maxSize) {
+                        super.rejectValue(errors, MAX_SIZE_CONSTRAINT + EXCEEDED_SUFFIX, args, MessageFormat.format(DEFAULT_INVALID_MAX_SIZE_MESSAGE, args));
+                    }
+                }
+            }
+            else if (propertyValue instanceof String) {
+                if (((String) propertyValue).length() > maxSize) {
+                    super.rejectValue(errors, MAX_LENGTH_CONSTRAINT + EXCEEDED_SUFFIX, args, MessageFormat.format(DEFAULT_INVALID_MAX_LENGTH_MESSAGE, args));
+                }
+            }
+        }
 	}
 	
 	/**
@@ -865,52 +912,51 @@ public class ConstrainedProperty   {
 			super.setParameter(constraintParameter);
 		}
 
+        public String getName() {
+            return MIN_SIZE_CONSTRAINT;
+        }
 
-		/* (non-Javadoc)
-		 * @see org.codehaus.groovy.grails.validation.Constraint#supports(java.lang.Class)
-		 */
-		public boolean supports(Class type) {
-			if(type == null)
-				return false;
-			
-			return Comparable.class.isAssignableFrom(type) ||
-					Number.class.isAssignableFrom(type) ||
-					Collection.class.isAssignableFrom(type) ||
-					type.isArray();
-		}
+
+        /* (non-Javadoc)
+           * @see org.codehaus.groovy.grails.validation.Constraint#supports(java.lang.Class)
+           */
+        public boolean supports(Class type) {
+            if(type == null)
+                return false;
+
+            return Comparable.class.isAssignableFrom(type) ||
+                    Number.class.isAssignableFrom(type) ||
+                    Collection.class.isAssignableFrom(type) ||
+                    type.isArray();
+        }
 		
 		protected void processValidate(Object propertyValue, Errors errors) {
 			Object[] args = new Object[] { constraintPropertyName, constraintOwningClass, propertyValue, new Integer(minSize) };
 			if(propertyValue == null) {
 				super.rejectValue(errors,MIN_LENGTH_CONSTRAINT + NOTMET_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_MIN_LENGTH_MESSAGE, args ));
-				return;
-			}
-			if(propertyValue.getClass().isArray()) {
+            }
+			else if(propertyValue.getClass().isArray()) {
 				int length = Array.getLength( propertyValue );
 				if(length < minSize) {
 					super.rejectValue(errors,MIN_LENGTH_CONSTRAINT + NOTMET_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_MIN_LENGTH_MESSAGE, args ));
-					return;
-				}
+                }
 			}
-			if(propertyValue instanceof Collection) {
+			else if(propertyValue instanceof Collection) {
 				if( ((Collection)propertyValue).size() < minSize ) {
 					super.rejectValue(errors,MIN_SIZE_CONSTRAINT + NOTMET_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_MIN_SIZE_MESSAGE, args ));
-					return;
 				}
 			}
 			else if(propertyValue instanceof Number) {				
 				int numberSize = ((Number)propertyValue).intValue();
 				if( numberSize < minSize ) {
 					super.rejectValue(errors,MIN_SIZE_CONSTRAINT + NOTMET_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_MIN_SIZE_MESSAGE, args ));
-					return;
-				}
+                }
 			}
 			else if(propertyValue instanceof String) {
 				if(((String)propertyValue ).length() < minSize) {
 					super.rejectValue(errors,MIN_LENGTH_CONSTRAINT + NOTMET_SUFFIX,args,MessageFormat.format( DEFAULT_INVALID_MIN_LENGTH_MESSAGE, args ));
-					return;
 				}
-			}			
+			}
 		}		
 	}	
 	
@@ -960,12 +1006,12 @@ public class ConstrainedProperty   {
 	 * @param max The max to set.
 	 */
 	public void setMax(Comparable max) {
-		if(!propertyType.equals( max.getClass() )) {
-			throw new MissingPropertyException(MAX_CONSTRAINT,propertyType);
-		}
 		if(max == null) {
 			this.appliedConstraints.remove( MAX_CONSTRAINT );
 			return;
+		}
+        if(!propertyType.equals( max.getClass() )) {
+			throw new MissingPropertyException(MAX_CONSTRAINT,propertyType);
 		}
 		Range r = getRange();
 		if(r != null) {
@@ -1008,12 +1054,12 @@ public class ConstrainedProperty   {
 	 * @param min The min to set.
 	 */
 	public void setMin(Comparable min) {
-		if(!propertyType.equals( min.getClass() )) {
-			throw new MissingPropertyException(MIN_CONSTRAINT,propertyType);
-		}
 		if(min == null) {
 			this.appliedConstraints.remove( MIN_CONSTRAINT );
 			return;
+		}
+        if(!propertyType.equals( min.getClass() )) {
+			throw new MissingPropertyException(MIN_CONSTRAINT,propertyType);
 		}
 		Range r = getRange();
 		if(r != null) {
@@ -1120,7 +1166,7 @@ public class ConstrainedProperty   {
 		if(c == null)
 			return null;
 			
-		return (IntRange)c.getSizeRange();
+		return c.getRange();
 	}
 
 	/**
@@ -1157,7 +1203,7 @@ public class ConstrainedProperty   {
 		if(c == null)
 			return null;
 			
-		return c.getSizeRange();
+		return c.getRange();
 	}
 
 
@@ -1201,13 +1247,13 @@ public class ConstrainedProperty   {
 		
 		Constraint c = (Constraint)this.appliedConstraints.get( BLANK_CONSTRAINT );
 		if(c != null) {
-			c.setParameter( new Boolean(blank) );				
+			c.setParameter(Boolean.valueOf(blank) );
 		}
 		else {
 			c = new BlankConstraint();
 			c.setOwningClass(this.owningClass);
 			c.setPropertyName(this.propertyName);
-			c.setParameter(new Boolean(blank));					
+			c.setParameter(Boolean.valueOf(blank));
 			this.appliedConstraints.put( BLANK_CONSTRAINT,c );				
 		}		
 
@@ -1237,13 +1283,13 @@ public class ConstrainedProperty   {
 		Constraint c = (Constraint)this.appliedConstraints.get( EMAIL_CONSTRAINT );
 		if(email) {			
 			if(c != null) {
-				c.setParameter( new Boolean(email) );				
+				c.setParameter(Boolean.valueOf(email) );
 			}
 			else {
 				c = new EmailConstraint();
 				c.setOwningClass(this.owningClass);
 				c.setPropertyName(this.propertyName);
-				c.setParameter(new Boolean(email));					
+				c.setParameter(Boolean.valueOf(email));
 				this.appliedConstraints.put( EMAIL_CONSTRAINT,c );				
 			}
 		}
@@ -1278,13 +1324,13 @@ public class ConstrainedProperty   {
         Constraint c = (Constraint)this.appliedConstraints.get( CREDIT_CARD_CONSTRAINT );
         if(creditCard) {
             if(c != null) {
-                c.setParameter( new Boolean(creditCard) );
+                c.setParameter(Boolean.valueOf(creditCard) );
             }
             else {
                 c = new CreditCardConstraint();
                 c.setOwningClass(this.owningClass);
                 c.setPropertyName(this.propertyName);
-                c.setParameter(new Boolean(creditCard));
+                c.setParameter(Boolean.valueOf(creditCard));
                 this.appliedConstraints.put( CREDIT_CARD_CONSTRAINT,c );
             }
         }
@@ -1346,7 +1392,7 @@ public class ConstrainedProperty   {
         if(c == null) {
             if(this.appliedConstraints.containsKey( LENGTH_CONSTRAINT )) {
                 SizeConstraint sc = (SizeConstraint)this.appliedConstraints.get(LENGTH_CONSTRAINT);
-                return sc.getSizeRange().getToInt();
+                return sc.getRange().getToInt();
             }
             return Integer.MAX_VALUE;
         }
@@ -1383,7 +1429,7 @@ public class ConstrainedProperty   {
 		if(c == null) {
             if(this.appliedConstraints.containsKey( LENGTH_CONSTRAINT )) {
                 SizeConstraint sc = (SizeConstraint)this.appliedConstraints.get(LENGTH_CONSTRAINT);
-                return sc.getSizeRange().getFromInt();
+                return sc.getRange().getFromInt();
             }
             return 0;
         }
@@ -1519,7 +1565,7 @@ public class ConstrainedProperty   {
 			Constraint c = new NullableConstraint();
 			c.setOwningClass(owningClass);
 			c.setPropertyName(propertyName);
-			c.setParameter(new Boolean(nullable));
+			c.setParameter(Boolean.valueOf(nullable));
 			this.appliedConstraints.put( NULLABLE_CONSTRAINT, c );			
 		}
 	}
@@ -1560,13 +1606,13 @@ public class ConstrainedProperty   {
 		Constraint c = (Constraint)this.appliedConstraints.get( URL_CONSTRAINT );		
 		if(url) {			
 			if(c != null) {
-				c.setParameter(new Boolean(url));
+				c.setParameter(Boolean.valueOf(url));
 			}
 			else {
 				c = new UrlConstraint();
 				c.setOwningClass(owningClass);
 				c.setPropertyName(propertyName);
-				c.setParameter(new Boolean(url));				
+				c.setParameter(Boolean.valueOf(url));
 				this.appliedConstraints.put( URL_CONSTRAINT, c );
 			}
 		}
@@ -1679,10 +1725,7 @@ public class ConstrainedProperty   {
 	public boolean supportsContraint(String constraintName) {
 		
 		if(!constraints.containsKey(constraintName)) {
-			if(!this.bean.isWritableProperty(constraintName))
-				return false;
-			else
-				return true;
+            return this.bean.isWritableProperty(constraintName);
 		}					
 		Class constraintClass = (Class)constraints.get(constraintName);
 		try {

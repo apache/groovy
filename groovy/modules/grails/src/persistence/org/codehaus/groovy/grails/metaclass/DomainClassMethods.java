@@ -18,6 +18,7 @@ package org.codehaus.groovy.grails.metaclass;
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.commons.metaclass.AbstractDynamicMethods;
 import org.codehaus.groovy.grails.commons.metaclass.WeakGenericDynamicProperty;
+import org.codehaus.groovy.grails.commons.metaclass.AbstractDynamicMethodInvocation;
 import org.codehaus.groovy.grails.orm.hibernate.metaclass.*;
 import org.codehaus.groovy.grails.validation.metaclass.ConstraintsDynamicProperty;
 import org.hibernate.SessionFactory;
@@ -44,8 +45,19 @@ public class DomainClassMethods extends AbstractDynamicMethods {
 		addDynamicMethodInvocation(new DeletePersistentMethod(sessionFactory, classLoader));
 		addDynamicMethodInvocation(new RefreshPersistentMethod(sessionFactory, classLoader));		
 		addDynamicMethodInvocation(new ValidatePersistentMethod(sessionFactory, classLoader, application ));
-		
-		// static methods
+        addDynamicMethodInvocation(new AbstractDynamicMethodInvocation(HAS_ERRORS_PROPERTY) {
+            public Object invoke(Object target, Object[] arguments) {
+                Errors errors = (Errors)getDynamicProperty(ERRORS_PROPERTY).get(target);
+                if(errors == null || !errors.hasErrors()) {
+                    return new Boolean(false);
+                }
+                else {
+                    return new Boolean(true);
+                }
+            }
+        });
+
+        // static methods
 		addStaticMethodInvocation(new FindAllPersistentMethod(sessionFactory, classLoader));
 		addStaticMethodInvocation(new FindAllByPersistentMethod(application,sessionFactory, classLoader));
 		addStaticMethodInvocation(new FindByPersistentMethod(application,sessionFactory, classLoader));
@@ -58,8 +70,7 @@ public class DomainClassMethods extends AbstractDynamicMethods {
 		
 		// add dynamic properties
 		addDynamicProperty( new SetPropertiesDynamicProperty() );
-		addDynamicProperty( new ConstraintsDynamicProperty() );
-		addDynamicProperty( new WeakGenericDynamicProperty(HAS_ERRORS_PROPERTY, Boolean.class,new Boolean(false), false) );
+		addDynamicProperty( new ConstraintsDynamicProperty() );		
 		addDynamicProperty( new WeakGenericDynamicProperty(ERRORS_PROPERTY, Errors.class,null,false) );
 		
 	}

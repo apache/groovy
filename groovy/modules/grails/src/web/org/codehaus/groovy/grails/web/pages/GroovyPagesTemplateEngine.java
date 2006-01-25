@@ -25,6 +25,8 @@ import org.codehaus.groovy.grails.web.servlet.GrailsRequestAttributes;
 import org.codehaus.groovy.grails.web.taglib.GrailsTagRegistry;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.springframework.web.context.WebApplicationContext;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -52,6 +54,7 @@ import java.util.*;
  */
 public class GroovyPagesTemplateEngine {
 
+    private static final Log LOG = LogFactory.getLog(GroovyPagesTemplateEngine.class);
     private static Map pageCache = Collections.synchronizedMap(new HashMap());
     private ClassLoader parent;
     private boolean showSource;
@@ -134,6 +137,9 @@ public class GroovyPagesTemplateEngine {
      */
     protected URL getPageUrl(ServletContext context, String pageId) throws MalformedURLException {
         // Check to make sure that the file exists in the web application
+        if(LOG.isDebugEnabled()) {
+            LOG.debug("Loading GSP for url ["+pageId+"]");
+        }
         return context.getResource(pageId);
     } // getPageUrl()
 

@@ -323,6 +323,16 @@ public class GrailsClassUtils {
 		return className;
 	}
 
+    /**
+     * Returns the property name equivalent for the specified class
+     *
+     * @param targetClass The class to get the property name for
+     * @return A property name reperesentation of the class name (eg. MyClass becomes myClass)
+     */
+    public static String getPropertyNameRepresentation(Class targetClass) {
+        String shortName = getShortName(targetClass);
+        return shortName.substring(0,1).toLowerCase() + shortName.substring(1);
+    }
 
 
 }

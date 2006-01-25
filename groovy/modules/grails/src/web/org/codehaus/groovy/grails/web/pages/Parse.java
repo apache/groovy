@@ -357,7 +357,7 @@ public class Parse implements Tokens {
             else if(!val.startsWith("[") && !val.endsWith("]")) {
                 val = '\"' + val + '\"';
             }
-             attrs.put(name,val);
+            attrs.put(name,val);
         }
     }
 

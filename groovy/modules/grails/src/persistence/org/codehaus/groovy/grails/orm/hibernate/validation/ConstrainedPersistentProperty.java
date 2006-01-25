@@ -14,20 +14,19 @@
  */ 
 package org.codehaus.groovy.grails.orm.hibernate.validation;
 
-import java.sql.SQLException;
-import java.text.MessageFormat;
-import java.util.Iterator;
-import java.util.List;
-
 import org.codehaus.groovy.grails.validation.ConstrainedProperty;
 import org.codehaus.groovy.grails.validation.Constraint;
-
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.orm.hibernate3.HibernateTemplate;
 import org.springframework.validation.Errors;
+
+import java.sql.SQLException;
+import java.text.MessageFormat;
+import java.util.Iterator;
+import java.util.List;
 /**
  * Extends ConstrainedProperty to provide additional validation against database specific constraints
  * 
@@ -94,25 +93,29 @@ public class ConstrainedPersistentProperty extends ConstrainedProperty {
 			super.setParameter(constraintParameter);
 		}
 
-		protected void processValidate(final Object propertyValue, Errors errors) {
-			
-			if(unique) {
-				List results = this.constraintHibernateTemplate.executeFind( new HibernateCallback() {
+        public String getName() {
+            return UNIQUE_CONSTRAINT;
+        }
 
-					public Object doInHibernate(Session session) throws HibernateException, SQLException {
-						return session.createCriteria( constraintOwningClass )
-											.add( Restrictions.eq( constraintPropertyName, propertyValue ) )
-											.list();
-							
-					}
-					
-				});
-				if(results.size() > 0) {
-					Object[] args = new Object[] { constraintPropertyName, constraintOwningClass, propertyValue };
-					super.rejectValue(errors,UNIQUE_CONSTRAINT,args,MessageFormat.format( DEFAULT_NOT_UNIQUE_MESSAGE, args ));					
-				}
-			}			
-		}
+        protected void processValidate(final Object propertyValue, Errors errors) {
+
+            if(unique) {
+                List results = this.constraintHibernateTemplate.executeFind( new HibernateCallback() {
+
+                    public Object doInHibernate(Session session) throws HibernateException, SQLException {
+                        return session.createCriteria( constraintOwningClass )
+                                            .add( Restrictions.eq( constraintPropertyName, propertyValue ) )
+                                            .list();
+
+                    }
+
+                });
+                if(results.size() > 0) {
+                    Object[] args = new Object[] { constraintPropertyName, constraintOwningClass, propertyValue };
+                    super.rejectValue(errors,UNIQUE_CONSTRAINT,args,MessageFormat.format( DEFAULT_NOT_UNIQUE_MESSAGE, args ));
+                }
+            }
+        }
 
 		public boolean supports(Class type) {
 			return true;

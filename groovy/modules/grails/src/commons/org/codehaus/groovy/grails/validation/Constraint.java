@@ -26,7 +26,7 @@ public interface Constraint {
 	 * Returns whether the constraint supports being applied against the specified type;
 	 * 
 	 * @param type The type to support
-	 * @return
+	 * @return True if the constraint can be applied against the specified type
 	 */
 	boolean supports(Class type);
 	/**
@@ -57,4 +57,18 @@ public interface Constraint {
 	 * @param propertyName
 	 */
 	void setPropertyName(String propertyName);
+
+    /**
+     *
+     * @return The name of the constraint
+     */
+    String getName();
+
+    /**
+     *
+     * @return The property name of the constraint
+     */
+    String getPropertyName();
+
+    
 }
