@@ -1462,6 +1462,16 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
+    private void loadMethodName(Expression objectExpression, boolean objectExpressionIsMethodName, String method) {
+        if (objectExpressionIsMethodName) {
+            VariableExpression.THIS_EXPRESSION.visit(this);
+            objectExpression.visit(this);
+        } else {
+            objectExpression.visit(this);
+            cv.visitLdcInsn(method);    
+        }
+    }
+
     public void visitMethodCallExpression(MethodCallExpression call) {
         onLineNumber(call, "visitMethodCallExpression: \"" + call.getMethod() + "\":");
 
@@ -1503,8 +1513,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 visitVariableExpression(new VariableExpression(method));
                 arguments.visit(this);
                 invokeClosureMethod.call(cv);
-            }
-            else {
+            } else {
                 if (superMethodCall) {
                     if (method.equals("super") || method.equals("<init>")) {
                         ConstructorNode superConstructorNode = findSuperConstructor(call);
@@ -1528,28 +1537,37 @@ public class AsmClassGenerator extends ClassGenerator {
                     }
                 }
                 else {
-                    if (emptyArguments(arguments) && !call.isSafe() && !call.isSpreadSafe()) {
-                        call.getObjectExpression().visit(this);
-                        cv.visitLdcInsn(method);
-                        invokeNoArgumentsMethod.call(cv); // todo try if we can do early binding
+                    Expression objectExpression = call.getObjectExpression();
+                    boolean objectExpressionIsMethodName = false;
+                    if (method.equals("call")) {
+                        if (objectExpression instanceof GStringExpression) {
+                            objectExpressionIsMethodName=true;
+                            objectExpression = new CastExpression(ClassHelper.STRING_TYPE, objectExpression);
+                        } else if (objectExpression instanceof ConstantExpression) {
+                            Object value = ((ConstantExpression) objectExpression).getValue();
+                            if ( value != null && value instanceof String) objectExpressionIsMethodName=true;
+                        }
                     }
-                    else {
+                    
+                    if (emptyArguments(arguments) && !call.isSafe() && !call.isSpreadSafe()) {
+                        loadMethodName(objectExpression, objectExpressionIsMethodName,method);
+                        invokeNoArgumentsMethod.call(cv);
+                    } else {
                         if (argumentsUseStack(arguments)) {
 
                             arguments.visit(this);
 
                             int paramIdx = compileStack.defineTemporaryVariable(method + "_arg",true);
 
-                            call.getObjectExpression().visit(this); // xxx
+                            objectExpression.visit(this); // xxx
 
-                            cv.visitLdcInsn(method);
+                            loadMethodName(objectExpression, objectExpressionIsMethodName,method);
 
                             cv.visitVarInsn(ALOAD, paramIdx);
                             compileStack.removeVar(paramIdx);
-                        }
-                        else {
-                            call.getObjectExpression().visit(this);
-                            cv.visitLdcInsn(method);
+                        } else {
+                            objectExpression.visit(this);
+                            loadMethodName(objectExpression, objectExpressionIsMethodName,method);
                             arguments.visit(this);
                         }
 
