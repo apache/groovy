@@ -2319,7 +2319,8 @@ public class AsmClassGenerator extends ClassGenerator {
 
         int storeIns=AASTORE;
         if (sizeExpression!=null) {
-        	typeName =  BytecodeHelper.getClassInternalName(expression.getType()); 
+        	if (!ClassHelper.isPrimitiveType(type)) typeName = "L"+typeName+";";
+        	for (int i=0; i<dimensions; i++) typeName = "["+typeName;
         	cv.visitMultiANewArrayInsn(typeName, dimensions);
         } else if (ClassHelper.isPrimitiveType(type)) {
             int primType=0;
