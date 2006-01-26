@@ -571,7 +571,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         return null;
     }
 
-    public void addStaticInitializerStatements(List staticStatements) {
+    public void addStaticInitializerStatements(List staticStatements, boolean fieldInit) {
         MethodNode method = null;
         List declaredMethods = getDeclaredMethods("<clinit>");
         if (declaredMethods.isEmpty()) {
@@ -594,7 +594,19 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
             block = new BlockStatement();
             block.addStatement(statement);
         }
-        block.addStatements(staticStatements);
+        
+        // while anything inside a static initializer block is appended 
+        // we don't want to append in the case we have a initialization
+        // expression of a static field. In that case we want to add
+        // before the other statements
+        if (!fieldInit) {
+            block.addStatements(staticStatements);
+        } else {
+            List blockStatements = block.getStatements();
+            staticStatements.addAll(blockStatements);
+            blockStatements.clear();
+            blockStatements.addAll(staticStatements);
+        }
     }
 
     /**

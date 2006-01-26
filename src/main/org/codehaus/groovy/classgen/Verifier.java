@@ -595,7 +595,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
 
         if (!staticStatements.isEmpty()) {
-            node.addStaticInitializerStatements(staticStatements);
+            node.addStaticInitializerStatements(staticStatements,true);
         }
     }
 
