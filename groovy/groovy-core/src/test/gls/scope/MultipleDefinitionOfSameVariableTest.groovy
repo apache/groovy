@@ -47,6 +47,12 @@ public class MultipleDefinitionOfSameVariableTest extends CompilableTestSupport 
        def foo = 1
        5.times { 6.times {def foo=2 }
      """)
+     
+     assertScript ("""
+       def foo = 1
+       5.times { 6.times {foo=2 } }
+       assert foo == 2
+     """)
    }
    
    public void testBindingHiding() {
@@ -54,7 +60,25 @@ public class MultipleDefinitionOfSameVariableTest extends CompilableTestSupport 
        foo = 1
        def foo = 3
        assert foo==3
+       assert this.foo == 1
+       assert binding.foo == 1
      """)
    }
+   
+   public void testBindingAccessInMethod() {
+	   assertScript("""
+	     def methodUsingBinding() {
+	       try {
+	         s = "  bbb  ";
+	       } finally {
+	         s = s.trim();
+	       }
+	       assert s == "bbb"
+	     } 
+	     methodUsingBinding()
+	     assert s == "bbb"
+	   """)
+   }
+   
+   
 }
- 
