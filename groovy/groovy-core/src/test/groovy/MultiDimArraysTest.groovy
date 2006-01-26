@@ -51,4 +51,11 @@ public class MultiDimArraysTest extends GroovyTestCase {
        assert array[0].class.name == "[[I"
        assert array[0][0] == null
     }
+    
+    void testMultiDimArrayForCustomClass() {
+		def ff = new MultiDimArraysTest[3][4]
+		assert "[[Lgroovy/MultiDimArraysTest;" == ff.class.name;
+    }
+
 }
+
