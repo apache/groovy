@@ -626,9 +626,11 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
     
     protected Expression transformClosureExpression(ClosureExpression ce) {
         Parameter[] paras = ce.getParameters();
-        for (int i=0; i<paras.length; i++) {
-            ClassNode t = paras[i].getType();
-            resolveOrFail(t,ce);
+        if (paras!=null) {
+	        for (int i=0; i<paras.length; i++) {
+	            ClassNode t = paras[i].getType();
+	            resolveOrFail(t,ce);
+	        }
         }
         Statement code = ce.getCode();
         if (code!=null) code.visit(this);
