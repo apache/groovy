@@ -397,6 +397,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
         assertNodeType(PARAMETERS, node);
         Parameter[] parameters = parameters(node);
+        if (parameters==null) parameters = Parameter.EMPTY_ARRAY;
         node = node.getNextSibling();
         
         ClassNode[] exceptions=new ClassNode[0];
@@ -439,6 +440,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
         assertNodeType(PARAMETERS, node);
         Parameter[] parameters = parameters(node);
+        if (parameters == null) parameters = Parameter.EMPTY_ARRAY;
         node = node.getNextSibling();
 
         ClassNode[] exceptions=new ClassNode[0];
@@ -555,7 +557,8 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     protected Parameter[] parameters(AST parametersNode) {
         AST node = parametersNode.getFirstChild();
         if (node == null) {
-            return Parameter.EMPTY_ARRAY;
+        	if (isType(IMPLICIT_PARAMETERS, parametersNode)) return Parameter.EMPTY_ARRAY;
+            return null;
         }
         else {
             List parameters = new ArrayList();
