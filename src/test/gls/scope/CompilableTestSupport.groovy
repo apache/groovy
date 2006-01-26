@@ -6,12 +6,12 @@ import groovy.util.GroovyTestCase;
 public class CompilableTestSupport extends GroovyTestCase {
 	protected void shouldNotCompile(String script) {
 	  try {
-        GroovyShell shell = new GroovyShell();
-        shell.evaluate(script, getTestClassName());
+        GroovyShell shell = new GroovyShell()
+        shell.parse(script, getTestClassName())
       } catch (CompilationFailedException cfe) {
         assert true
         return
       }
-      assert false
+      fail("the compilation succeeded but should have failed")
 	}
 }
