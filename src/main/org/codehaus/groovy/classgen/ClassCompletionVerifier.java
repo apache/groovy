@@ -18,6 +18,7 @@ import java.util.List;
 
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
@@ -158,6 +159,13 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     public void visitMethod(MethodNode node) {
         checkAbstractDeclaration(node);
         super.visitMethod(node);
+    }
+    
+    public void visitField(FieldNode node) {
+    	if (currentClass.getField(node.getName())!=node) {
+    		addError("The field "+node.getName()+" is declared multiple times.", node);
+    	}
+    	super.visitField(node);
     }
 
 }
