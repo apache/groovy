@@ -662,6 +662,14 @@ public class CompilationUnit extends ProcessingUnit {
             LabelVerifier lv = new LabelVerifier(source);
             lv.visitClass(classNode);
 
+            ClassCompletionVerifier completionVerifier = new ClassCompletionVerifier(source);
+            completionVerifier.visitClass(classNode);
+            
+            
+            // because the class may be generated even if a error was found
+            // and that class may have an invalid format we fail here if needed
+            getErrorCollector().failIfErrors();
+            
             //
             // Prep the generator machinery
             //
@@ -680,9 +688,7 @@ public class CompilationUnit extends ProcessingUnit {
             // Run the generation and create the class (if required)
             //
             generator.visitClass(classNode);
-            ClassCompletionVerifier completionVerifier = new ClassCompletionVerifier(source);
-            completionVerifier.visitClass(classNode);
-
+ 
 
             byte[] bytes = ((ClassWriter) visitor).toByteArray();
             generatedClasses.add(new GroovyClass(classNode.getName(), bytes));
