@@ -64,7 +64,7 @@ class SpreadListOperatorTest extends GroovyTestCase {
     }
 
     void testSpreadingInClosureParameters() {
-        def twice = {-> it*2}
+        def twice = {it*2}
         assert twice(3) == 6
         assert twice("abcd") == 'abcdabcd'
 

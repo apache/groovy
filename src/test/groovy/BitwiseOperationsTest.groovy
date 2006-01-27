@@ -215,7 +215,7 @@ class BitwiseOperationsTest extends GroovyTestCase {
         assert d11(0xF0) == 0xF0
         assert d12(0xF0) == 0x03
         assert d13(0xF0) == 0xF0
-        assert d14(0xF0) == 0x03
+        assert d14() == 0x03
     }
 
     void testBitwiseNegation() {
