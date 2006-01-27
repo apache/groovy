@@ -16,13 +16,13 @@
 package org.codehaus.groovy.grails.commons.metaclass;
 
 import groovy.lang.MissingPropertyException;
+import org.apache.commons.collections.map.ReferenceMap;
 
 import java.util.Collections;
 import java.util.Map;
-import java.util.WeakHashMap;
 
 /**
- * A generic dyanmic property for any type used a weak hashmap implementation for generic properties
+ * A generic dyanmic property for any type used a soft hashmap implementation for generic properties
  * registered as global in the MetaClass
  * 
  * @author Graeme Rocher
@@ -32,7 +32,7 @@ public class WeakGenericDynamicProperty extends AbstractDynamicProperty {
 
     private Class type;
     private boolean readyOnly;
-    private Map propertyToInstanceMap = Collections.synchronizedMap(new WeakHashMap());
+    private Map propertyToInstanceMap = Collections.synchronizedMap(new ReferenceMap(ReferenceMap.SOFT,ReferenceMap.SOFT,true));
     private Object initialValue;
     /**
      *
@@ -78,12 +78,9 @@ public class WeakGenericDynamicProperty extends AbstractDynamicProperty {
 
     public void set(Object object, Object newValue) {
         if(!readyOnly) {
-            if(newValue == null) {
-                propertyToInstanceMap.put(String.valueOf(System.identityHashCode(object)) + getPropertyName(), null );
-            }
-            else if(this.type.isInstance(newValue))
+            if(this.type.isInstance(newValue))
                 propertyToInstanceMap.put(String.valueOf(System.identityHashCode(object)) + getPropertyName(), newValue );
-            else
+            else if(newValue != null)
                 throw new MissingPropertyException("Property '"+this.getPropertyName()+"' for object '"+object.getClass()+"' cannot be set with value '"+newValue+"'. Incorrect type.",object.getClass());
         }
         else {
