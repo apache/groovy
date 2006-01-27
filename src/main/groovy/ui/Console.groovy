@@ -41,32 +41,32 @@ class Console implements CaretListener {
 	@Property int maxOutputChars = 10000
 
 	// UI
-    def SwingBuilder swing
-    def JFrame frame
-    def JTextArea inputArea
-    def JTextPane outputArea
-    def JLabel statusLabel
-    def JDialog runWaitDialog
+    SwingBuilder swing
+    JFrame frame
+    JTextArea inputArea
+    JTextPane outputArea
+    JLabel statusLabel
+    JDialog runWaitDialog
     
     // Styles for output area
-    def Style promptStyle;
-    def Style commandStyle;
-    def Style outputStyle;
-    def Style resultStyle;
+    Style promptStyle;
+    Style commandStyle;
+    Style outputStyle;
+    Style resultStyle;
     
 	// Internal history
-    def List history = []
-    def int historyIndex = 1 // valid values are 0..history.length()
+    List history = []
+    int historyIndex = 1 // valid values are 0..history.length()
 
 	// Current editor state
-    def boolean dirty
-    def int textSelectionStart  // keep track of selections in inputArea
-    def int textSelectionEnd
+    boolean dirty
+    int textSelectionStart  // keep track of selections in inputArea
+    int textSelectionEnd
     def scriptFile
 
 	// Running scripts
-	def GroovyShell shell 
-    def int scriptNameCounter = 0
+	GroovyShell shell
+    int scriptNameCounter = 0
     def systemOutInterceptor
     def runThread = null
     
@@ -91,8 +91,8 @@ class Console implements CaretListener {
         def menuModifier = KeyEvent.getKeyModifiersText(
             Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()).toLowerCase() + ' '
 
-        def swing = new SwingBuilder()
-        def frame = swing.frame(
+        swing = new SwingBuilder()
+        frame = swing.frame(
             title:'GroovyConsole',
             location:[100,100],
             size:[500,400],
@@ -367,18 +367,19 @@ class Console implements CaretListener {
         }
     }
     
-    def finishException(Throwable t) {
+    //def finishException(Throwable t) { // todo: re-enable commented lines as soon as no more VerifierError
+    def finishException(String t) {
     	statusLabel.text = 'Execution terminated with exception.'
     	history[-1].exception = t
-    	
+
 		appendOutputNl("Exception thrown: ", promptStyle)
 		appendOutput(t.toString(), resultStyle)
-		
-		StringWriter sw = new StringWriter()
-		new PrintWriter(sw).withWriter { pw -> t.printStackTrace(pw) }
-		
-		appendOutputNl("\n${sw.buffer}\n", outputStyle)
-		bindResults()	
+
+		// StringWriter sw = new StringWriter()
+		// new PrintWriter(sw).withWriter { pw -> t.printStackTrace(pw) }
+
+		// appendOutputNl("\n${sw.buffer}\n", outputStyle)
+		bindResults()
     }
     
     def finishNormal(Object result) {
@@ -497,16 +498,17 @@ class Console implements CaretListener {
     		try {
     			SwingUtilities.invokeLater { showRunWaitDialog() }
 		        String name = "Script${scriptNameCounter++}"
-				def result = shell.evaluate(record.textToRun, name); 
+				def result = shell.evaluate(record.textToRun, name);
 				SwingUtilities.invokeLater { finishNormal(result) }
-	    	} catch (Throwable e) {
+	    	} catch (Throwable t) {
 	    		// This assignment required because closure can't see 'e'
-	    		def t = e
-	    		SwingUtilities.invokeLater { finishException(t) }
+	    		// def local = t
+	    		// SwingUtilities.invokeLater { finishException(local) }   // todo: VerifierError
+	    		SwingUtilities.invokeLater { finishException(" FIX ME !! ") } // remove as soon as above works again
 	    	} finally {
-                SwingUtilities.invokeLater { 
-                	runWaitDialog.hide(); 
-                	runThread = null 
+                SwingUtilities.invokeLater {
+                	runWaitDialog.hide();
+                	runThread = null
                 }
 	    	}
     	}
