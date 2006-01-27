@@ -55,6 +55,10 @@ class ApplicationTagLib {
      */
     @Property createLink = { attrs ->
         out << grailsAttributes.getApplicationUri(request)
+        // prefer a URL attribute
+        if(attrs['url']) {
+             attrs = attrs['url']
+        }
         // if the current attribute null set the controller uri to the current controller
         if(attrs["controller"]) {
             out << '/' << attrs.remove("controller")
@@ -206,6 +210,17 @@ class ApplicationTagLib {
            body()
         // close tag
        out << '</form>'
+    }
+
+    /**
+     *  Creates a form submit button that submits the current form to a remote ajax call
+     */
+    @Property submitToRemote = { attrs, body ->
+        attrs['parameters'] = "Form.serialize(this.form)"
+        out << "<input type='button' name='${attrs.remove('name')}' value='${attrs.remove('value')}' "
+        out << 'onclick="'
+        remoteFunction(attrs)
+        out << ';return false;" />'
     }
 
     /**
