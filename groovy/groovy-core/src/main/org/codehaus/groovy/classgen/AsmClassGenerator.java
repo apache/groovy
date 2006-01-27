@@ -1462,7 +1462,7 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
-    private void loadMethodName(Expression objectExpression, boolean objectExpressionIsMethodName, String method) {
+    private void prepareMethodcallObjectAndName(Expression objectExpression, boolean objectExpressionIsMethodName, String method) {
         if (objectExpressionIsMethodName) {
             VariableExpression.THIS_EXPRESSION.visit(this);
             objectExpression.visit(this);
@@ -1550,7 +1550,7 @@ public class AsmClassGenerator extends ClassGenerator {
                     }
                     
                     if (emptyArguments(arguments) && !call.isSafe() && !call.isSpreadSafe()) {
-                        loadMethodName(objectExpression, objectExpressionIsMethodName,method);
+                        prepareMethodcallObjectAndName(objectExpression, objectExpressionIsMethodName,method);
                         invokeNoArgumentsMethod.call(cv);
                     } else {
                         if (argumentsUseStack(arguments)) {
@@ -1559,15 +1559,12 @@ public class AsmClassGenerator extends ClassGenerator {
 
                             int paramIdx = compileStack.defineTemporaryVariable(method + "_arg",true);
 
-                            objectExpression.visit(this); // xxx
-
-                            loadMethodName(objectExpression, objectExpressionIsMethodName,method);
+                            prepareMethodcallObjectAndName(objectExpression, objectExpressionIsMethodName,method);
 
                             cv.visitVarInsn(ALOAD, paramIdx);
                             compileStack.removeVar(paramIdx);
                         } else {
-                            objectExpression.visit(this);
-                            loadMethodName(objectExpression, objectExpressionIsMethodName,method);
+                            prepareMethodcallObjectAndName(objectExpression, objectExpressionIsMethodName,method);
                             arguments.visit(this);
                         }
 
