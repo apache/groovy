@@ -55,7 +55,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.jar.Attributes;
-import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
@@ -526,9 +525,10 @@ public class GroovyClassLoader extends SecureClassLoader {
     public Class loadClass(final String name, boolean lookupScriptFiles, boolean preferClassOverScript, boolean resolve)
         throws ClassNotFoundException
     {
+        Class cls=null;
         // look into cache
         synchronized (cache) {
-            Class cls = (Class) cache.get(name);
+            cls = (Class) cache.get(name);
             if (cls == NOT_RESOLVED.class) throw new ClassNotFoundException(name);
             if (cls!=null) {
                 boolean reloadable = GroovyObject.class.isAssignableFrom(cls);
@@ -547,7 +547,6 @@ public class GroovyClassLoader extends SecureClassLoader {
         }
 
         // try parent loader
-        Class cls = null;
         ClassNotFoundException last = null;
         try {
             cls = super.loadClass(name, resolve);
