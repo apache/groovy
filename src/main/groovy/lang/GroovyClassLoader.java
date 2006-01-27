@@ -674,7 +674,7 @@ public class GroovyClassLoader extends SecureClassLoader {
         return source;
     }
 
-    private boolean isSourceNewer(URL source, Class cls) throws IOException {
+    protected boolean isSourceNewer(URL source, Class cls) throws IOException {
         long lastMod;
 
         // Special handling for file:// protocol, as getLastModified() often reports
