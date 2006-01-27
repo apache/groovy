@@ -1,4 +1,4 @@
-package gls.scope;
+package gls.scope
 
 import org.codehaus.groovy.control.CompilationFailedException;
 import groovy.util.GroovyTestCase;

@@ -2312,8 +2312,8 @@ public class AsmClassGenerator extends ClassGenerator {
     }
     
     public void visitArrayExpression(ArrayExpression expression) {
-        ClassNode type = expression.getElementType();
-        String typeName = BytecodeHelper.getClassInternalName(type);        
+        ClassNode elementType = expression.getElementType();
+        String arrayTypeName = BytecodeHelper.getClassInternalName(elementType);        
         List sizeExpression = expression.getSizeExpression();
 
         int size=0;
@@ -2334,39 +2334,38 @@ public class AsmClassGenerator extends ClassGenerator {
 
         int storeIns=AASTORE;
         if (sizeExpression!=null) {
-        	if (!ClassHelper.isPrimitiveType(type)) typeName = "L"+typeName+";";
-        	for (int i=0; i<dimensions; i++) typeName = "["+typeName;
-        	cv.visitMultiANewArrayInsn(typeName, dimensions);
-        } else if (ClassHelper.isPrimitiveType(type)) {
+            arrayTypeName = BytecodeHelper.getTypeDescription(expression.getType());
+        	cv.visitMultiANewArrayInsn(arrayTypeName, dimensions);
+        } else if (ClassHelper.isPrimitiveType(elementType)) {
             int primType=0;
-            if (type==ClassHelper.boolean_TYPE) {
+            if (elementType==ClassHelper.boolean_TYPE) {
                 primType = T_BOOLEAN;
                 storeIns = BASTORE;
-            } else if (type==ClassHelper.char_TYPE) {
+            } else if (elementType==ClassHelper.char_TYPE) {
                 primType = T_CHAR;
                 storeIns = CASTORE;
-            } else if (type==ClassHelper.float_TYPE) {
+            } else if (elementType==ClassHelper.float_TYPE) {
                 primType = T_FLOAT;
                 storeIns = FASTORE;
-            } else if (type==ClassHelper.double_TYPE) {
+            } else if (elementType==ClassHelper.double_TYPE) {
                 primType = T_DOUBLE;
                 storeIns = DASTORE;
-            } else if (type==ClassHelper.byte_TYPE) {
+            } else if (elementType==ClassHelper.byte_TYPE) {
                 primType = T_BYTE;
                 storeIns = BASTORE;
-            } else if (type==ClassHelper.short_TYPE) {
+            } else if (elementType==ClassHelper.short_TYPE) {
                 primType = T_SHORT;
                 storeIns = SASTORE;
-            } else if (type==ClassHelper.int_TYPE) {
+            } else if (elementType==ClassHelper.int_TYPE) {
                 primType = T_INT;
                 storeIns=IASTORE;
-            } else if (type==ClassHelper.long_TYPE) {
+            } else if (elementType==ClassHelper.long_TYPE) {
                 primType = T_LONG;
                 storeIns = LASTORE;
             } 
             cv.visitIntInsn(NEWARRAY, primType);
         } else {
-            cv.visitTypeInsn(ANEWARRAY, typeName);
+            cv.visitTypeInsn(ANEWARRAY, arrayTypeName);
         } 
 
         for (int i = 0; i < size; i++) {
@@ -2376,8 +2375,8 @@ public class AsmClassGenerator extends ClassGenerator {
             if (elementExpression == null) {
                 ConstantExpression.NULL.visit(this);
             } else {
-                if (!type.equals(elementExpression.getType())) {
-                    visitCastExpression(new CastExpression(type, elementExpression, true));
+                if (!elementType.equals(elementExpression.getType())) {
+                    visitCastExpression(new CastExpression(elementType, elementExpression, true));
                 } else {
                     visitAndAutoboxBoolean(elementExpression);
                 }
@@ -2385,7 +2384,7 @@ public class AsmClassGenerator extends ClassGenerator {
             cv.visitInsn(storeIns);            
         }
         
-        if (sizeExpression==null && ClassHelper.isPrimitiveType(type)) {
+        if (sizeExpression==null && ClassHelper.isPrimitiveType(elementType)) {
             int par = compileStack.defineTemporaryVariable("par",true);
             cv.visitVarInsn(ALOAD, par);
         }

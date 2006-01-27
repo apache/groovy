@@ -70,4 +70,29 @@ class ExpandoPropertyTest extends GroovyTestCase {
         println("toString: " + foo.toString())
         assert foo.toString() == "Type: myfoo, Value: 42"
     }
+    
+    void testArrayAccessOnThis() {
+        def a = new FancyExpando([a:1,b:2])
+        a.update([b:5,a:2])
+        
+        assert a.a == 2
+        assert a.b == 5
+    }
+    
+    void testExpandoClassProperty() {
+        def e = new Expando()
+        e.class = "hello world"
+        
+        assert e.class = "hello world"
+    }
+}
+
+class FancyExpando extends Expando {
+ FancyExpando(args) { super(args) }
+ 
+ def update(args) {
+   for (e in args) this[e.key] = e.value // using 'this'
+ }
+ 
+ String toString() { dump() }
 }
