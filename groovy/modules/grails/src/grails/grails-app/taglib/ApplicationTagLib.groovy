@@ -14,8 +14,7 @@
  */
 
  /**
- *  The global application tag library for Grails many of which are based off of Rails
- *  helpers
+ *  The global application tag library for Grails many of which take inspiration from Rails helpers (thanks guys! :)
  *
  * @author Graeme Rocher
  * @since 17-Jan-2006
@@ -107,7 +106,13 @@ class ApplicationTagLib {
         }
 
         out << "'"
-        createLink(attrs)
+        if(attrs['url']) {
+            createLink(attrs['url'])
+        }
+        else {
+            createLink(attrs)
+        }
+
         out << "',"
 
         // process options
@@ -195,7 +200,7 @@ class ApplicationTagLib {
        attrs['parameters'] = "Form.serialize(this)"
        out << '<form onsubmit="' << remoteFunction(attrs) << ';return false;" '
        out << 'method="' <<  (attrs['method'] ? attrs['method'] : 'post') << '" '
-       out << 'action="' <<  (attrs['action'] ? attrs['action'] : createLink(attrs)) << '">'
+       out << 'action="' <<  (attrs['action'] ? attrs['action'] : createLink(attrs['url'])) << '">'
 
         // output body
            body()
@@ -207,57 +212,43 @@ class ApplicationTagLib {
      * Checks if the request has errors either for a field or global errors
      */
     @Property hasErrors = { attrs, body ->
-        // prefer model over bean
         def model = attrs['model']
-        if(!model && attrs['bean']) {
-            if(GCU.isDomainClass(attrs['bean'].class)) {
-                return attrs['bean'].hasErrors();
+        def checkList = []
+        if(model) {
+            checkList = model.findAll { k,v ->
+                GCU.isDomainClass(v.class)
             }
-            else {
-                model = GCU.getPropertyNameRepresentation(attrs['bean'].class)
+        }
+        if(attrs['bean']) {
+            checkList << attrs['bean']
+        }
+        else {
+            request.attributeNames.each {
+                def ra = request[it]
+                if(ra instanceof Errors)
+                    checkList << ra
+                else if(GCU.isDomainClass(ra.class))
+                    checkList << ra
             }
         }
 
-        if(model) {
-            def errors = request["${model}Errors"]
+        for(i in checkList) {
+            def errors = null
+            if(GCU.isDomainClass(i.class)) {
+                if(i.hasErrors())
+                    errors = i.errors
+            }
+            else if(i instanceof Errors) {
+               errors = i
+            }
             if(errors) {
-                 if(attrs['field']) {
+                if(attrs['field']) {
                     if(errors.hasFieldErrors(attrs['field'])) {
                         body()
                     }
-                 }
-                 else {
-                    if(errors.hasErrors()) {
-                        body()
-                    }
-                 }
-            }
-        }
-        else {
-            // otherwise get all of the errors instances
-            def errorsList = request.attributeNames.findAll {
-                def ra = request[it]
-                if(ra instanceof Errors)
-                    return ra
-            }
-            if(!errorsList)
-                return
-            // if there is a field attribute check errors for that field
-            if(attrs["field"]) {
-                for(errors in errorsList) {
-                    if(errors.hasFieldErrors( attrs["field"] )) {
-                        body()
-                        break;
-                    }
                 }
-            }
-            // otherwise check all errors
-            else {
-               for(errors in errorsList) {
-                   if(errors.hasErrors()) {
-                        body()
-                        break;
-                   }
+                else {
+                    body()
                 }
             }
         }
@@ -267,65 +258,47 @@ class ApplicationTagLib {
      * Loops through each error for either field or global errors
      */
     @Property eachError = { attrs, body ->
-        // prefer model over bean
         def model = attrs['model']
-        def errors = null
-        if(!model && attrs['bean']) {
-            if(GCU.isDomainClass(attrs['bean'].class)) {
-                errors = attrs['bean'].errors
+        def errorList = []
+        if(model) {
+            errorList = model.findAll { k,v ->
+                GCU.isDomainClass(v.class)
             }
-            else {
-                model = GCU.getPropertyNameRepresentation(attrs['bean'].class)
+        }
+        if(attrs['bean']) {
+            errorList << attrs['bean']
+        }
+        else {
+            request.attributeNames.each {
+                def ra = request[it]
+                if(ra instanceof Errors)
+                    errorList << ra
+                else if(GCU.isDomainClass(ra.class))
+                    errorList << ra
             }
         }
 
-        if(model || errors) {
-            if(!model)
-                errors = request["${model}Errors"]
-            if(errors) {
-                 if(attrs['field']) {
+        for(i in errorList) {
+            def errors = null
+            if(GCU.isDomainClass(i.class)) {
+                if(i.hasErrors())
+                    errors = i.errors
+            }
+            else if(i instanceof Errors) {
+               errors = i
+            }
+            if(errors && errors.hasErrors()) {
+                if(attrs['field']) {
                     if(errors.hasFieldErrors(attrs['field'])) {
                         errors.getFieldErrors( attrs["field"] ).each {
-                           body( it )
-                        }
-                    }
-                 }
-                 else {
-                    if(errors.hasErrors()) {
-                        errors.allErrors.each {
-                            body( it )
-                        }
-                    }
-                 }
-            }
-        }
-        else {
-            // otherwise get all of the errors instances
-            def errorsList = request.attributeNames.findAll {
-                def ra = request[it]
-                if(ra instanceof Errors)
-                    return ra
-            }
-            if(!errorsList)
-                return
-            // if there is a field attribute check errors for that field
-            if(attrs["field"]) {
-                for(e in errorsList) {
-                    if(e.hasFieldErrors( attrs["field"] )) {
-                       e.getFieldErrors( attrs["field"] ).each {
-                           body( it )
+                            body(it)
                         }
                     }
                 }
-            }
-            // otherwise check all errors
-            else {
-               for(e in errorsList) {
-                   if(e.hasErrors()) {
-                        e.allErrors.each {
-                            body( it )
-                        }
-                   }
+                else {
+                    errors.allErrors.each {
+                        body( it )
+                    }
                 }
             }
         }
@@ -543,6 +516,4 @@ class ApplicationTagLib {
       //  out << "document.forms['${attrs['form']}'].onsubmit = function(e) {return validateForm(this)}\n"
         out << '</script>'
     }
-
-
 }
