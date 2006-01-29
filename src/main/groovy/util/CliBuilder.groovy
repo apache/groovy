@@ -40,9 +40,9 @@ class CliBuilder {
         Make a CommandLine object from commant line args with parser (default: Posix).
         Exits on bad command lines.
     */
-    CommandLine cmd (args) {
+    GroovyCommandLine cmd (args) {
         try {
-            return parser.parse(options, args as String[], true)
+            return new GroovyCommandLine( parser.parse(options, args as String[], true) )
         } catch (ParseException pe) {
             println("error: " + pe.getMessage())
             help()
@@ -71,5 +71,26 @@ class CliBuilder {
                 option[key] = value
         }
         return option
+    }
+}
+
+class GroovyCommandLine {
+    CommandLine inner
+    GroovyCommandLine(CommandLine inner){
+        this.inner = inner
+    }
+    def invokeMethod(String name, Object args){
+        return InvokerHelper.getMetaClass(inner).invokeMethod(inner, name, args)
+    }
+    def getProperty(String name) {
+        def methodname = 'getOptionValue'
+        if (name.size() > 1 && name.endsWith('s')) {
+            name = name[0..-2]
+            methodname += 's'
+        }
+        if (name.size() == 1) name = name as char
+        def result = InvokerHelper.getMetaClass(inner).invokeMethod(inner, methodname, name)
+        if (null == result) result = inner.hasOption(name)
+        return result
     }
 }
