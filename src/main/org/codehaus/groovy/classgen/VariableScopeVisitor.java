@@ -66,6 +66,7 @@ import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
@@ -443,10 +444,12 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     }
     
     public void visitMethodCallExpression(MethodCallExpression call) {
-        Variable v = checkVariableNameForDeclaration(call.getMethod(),call);
-        if (v!=null && !(v instanceof DynamicVariable)) {
-            checkVariableContextAccess(v,call);
-        }
+    	if (call.isImplicitThis()) {
+	        Variable v = checkVariableNameForDeclaration(call.getMethod(),call);
+	        if (v!=null && !(v instanceof DynamicVariable)) {
+	            checkVariableContextAccess(v,call);
+	        }
+    	}
         super.visitMethodCallExpression(call);
     }
 }

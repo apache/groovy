@@ -736,13 +736,12 @@ public class AsmClassGenerator extends ClassGenerator {
             for (Iterator it=statement.getCatchStatements().iterator(); it.hasNext();) {
                 catchStatement = (CatchStatement) it.next();
                 ClassNode exceptionType = catchStatement.getExceptionType();
-                int exceptionIndex = compileStack.defineVariable(catchStatement.getVariable(),false).getIndex();
-                
                 // start catch block, label needed for exception table
                 final Label catchStart = new Label();
                 cv.visitLabel(catchStart);
-                // store the exception 
-                cv.visitVarInsn(ASTORE, exceptionIndex);
+                // create exception variable and store the exception 
+                compileStack.defineVariable(catchStatement.getVariable(),true);
+                // handle catch body
                 catchStatement.visit(this);
                 // goto finally start
                 cv.visitJumpInsn(GOTO, finallyStart);
