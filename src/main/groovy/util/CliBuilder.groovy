@@ -19,7 +19,7 @@ import org.codehaus.groovy.runtime.InvokerHelper
 class CliBuilder {
 
     // default settings: use setters to override
-    @Property String usage             = ''
+    @Property String usage             = 'groovy'
     @Property CommandLineParser parser = new PosixParser()
     @Property HelpFormatter formatter  = new HelpFormatter()
     @Property PrintWriter writer       = new PrintWriter(System.out)
@@ -39,15 +39,15 @@ class CliBuilder {
 
     /**
         Make options accessible from command line args with parser (default: Posix).
-        Exits on bad command lines.
+        Returns null on bad command lines.
     */
     OptionAccessor parse(args) {
         try {
             return new OptionAccessor( parser.parse(options, args as String[], true) )
         } catch (ParseException pe) {
-            println("error: " + pe.getMessage())
+            writer.println("error: " + pe.getMessage())
             usage()
-            System.exit(1)
+            return null
         }
     }
 
@@ -55,8 +55,8 @@ class CliBuilder {
         Print the usage message with writer (default: System.out) and formatter (default: HelpFormatter)
     */
     void usage(){
-        // formatter.printHelp(writer, usage, options)
         formatter.printHelp(writer, formatter.width, usage, '', options, formatter.leftPadding, formatter.descPadding, '')
+        writer.flush()
     }
 
     // implementation details -------------------------------------
@@ -95,5 +95,8 @@ class OptionAccessor {
         if (null == result) result = inner.hasOption(name)
         if (result instanceof String[]) result = result.toList()
         return result
+    }
+    List arguments() {
+        inner.getArgs().toList()
     }
 }
