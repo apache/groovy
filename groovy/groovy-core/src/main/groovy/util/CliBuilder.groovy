@@ -21,7 +21,8 @@ class CliBuilder {
     // default settings: use setters to override
     @Property String usage             = ''
     @Property CommandLineParser parser = new PosixParser()
-    @Property HelpFormatter printer    = new HelpFormatter()
+    @Property HelpFormatter formatter  = new HelpFormatter()
+    @Property PrintWriter writer       = new PrintWriter(System.out)
 
     @Property Options options          = new Options()
 
@@ -37,24 +38,25 @@ class CliBuilder {
     }
 
     /**
-        Make a CommandLine object from commant line args with parser (default: Posix).
+        Make options accessible from command line args with parser (default: Posix).
         Exits on bad command lines.
     */
-    GroovyCommandLine cmd (args) {
+    OptionAccessor parse(args) {
         try {
-            return new GroovyCommandLine( parser.parse(options, args as String[], true) )
+            return new OptionAccessor( parser.parse(options, args as String[], true) )
         } catch (ParseException pe) {
             println("error: " + pe.getMessage())
-            help()
+            usage()
             System.exit(1)
         }
     }
 
     /**
-        Print the help and usage message with printer (default: HelpFormatter)
+        Print the usage message with writer (default: System.out) and formatter (default: HelpFormatter)
     */
-    void help(){
-        printer.printHelp(usage, options)
+    void usage(){
+        // formatter.printHelp(writer, usage, options)
+        formatter.printHelp(writer, formatter.width, usage, '', options, formatter.leftPadding, formatter.descPadding, '')
     }
 
     // implementation details -------------------------------------
@@ -74,9 +76,9 @@ class CliBuilder {
     }
 }
 
-class GroovyCommandLine {
+class OptionAccessor {
     CommandLine inner
-    GroovyCommandLine(CommandLine inner){
+    OptionAccessor(CommandLine inner){
         this.inner = inner
     }
     def invokeMethod(String name, Object args){
@@ -91,6 +93,7 @@ class GroovyCommandLine {
         if (name.size() == 1) name = name as char
         def result = InvokerHelper.getMetaClass(inner).invokeMethod(inner, methodname, name)
         if (null == result) result = inner.hasOption(name)
+        if (result instanceof String[]) result = result.toList()
         return result
     }
 }
