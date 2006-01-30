@@ -46,6 +46,20 @@ class CliBuilderTest extends GroovyTestCase {
         def cli = new CliBuilder()
         cli.a([:],'')
         def options = cli.parse(['-a','1','2'])
-        assertEquals(['1','2'], options.getArgs().toList())
+        assertEquals(['1','2'], options.arguments())
+    }
+
+    void testFailedParsePrintsUsage() {
+        def writer = new StringWriter()
+        def cli = new CliBuilder(writer: new PrintWriter(writer))
+        cli.x(required:true, 'message')
+
+        def options = cli.parse([])
+
+        assert writer.toString().tokenize("\r\n").join("\n") ==
+'''error: x
+usage: groovy
+ -x   message'''
+
     }
 }
