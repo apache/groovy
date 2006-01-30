@@ -367,18 +367,17 @@ class Console implements CaretListener {
         }
     }
     
-    //def finishException(Throwable t) { // todo: re-enable commented lines as soon as no more VerifierError
-    def finishException(String t) {
+    def finishException(Throwable t) {
     	statusLabel.text = 'Execution terminated with exception.'
     	history[-1].exception = t
 
 		appendOutputNl("Exception thrown: ", promptStyle)
 		appendOutput(t.toString(), resultStyle)
 
-		// StringWriter sw = new StringWriter()
-		// new PrintWriter(sw).withWriter { pw -> t.printStackTrace(pw) }
+		StringWriter sw = new StringWriter()
+		new PrintWriter(sw).withWriter { pw -> t.printStackTrace(pw) }
 
-		// appendOutputNl("\n${sw.buffer}\n", outputStyle)
+		appendOutputNl("\n${sw.buffer}\n", outputStyle)
 		bindResults()
     }
     
@@ -501,10 +500,7 @@ class Console implements CaretListener {
 				def result = shell.evaluate(record.textToRun, name);
 				SwingUtilities.invokeLater { finishNormal(result) }
 	    	} catch (Throwable t) {
-	    		// This assignment required because closure can't see 'e'
-	    		// def local = t
-	    		// SwingUtilities.invokeLater { finishException(local) }   // todo: VerifierError
-	    		SwingUtilities.invokeLater { finishException(" FIX ME !! ") } // remove as soon as above works again
+	    		SwingUtilities.invokeLater { finishException(t) }
 	    	} finally {
                 SwingUtilities.invokeLater {
                 	runWaitDialog.hide();
