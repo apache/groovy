@@ -23,6 +23,7 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.control.SourceUnit;
+import org.objectweb.asm.Opcodes;
 
 
 /**
@@ -165,7 +166,15 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     	if (currentClass.getField(node.getName())!=node) {
     		addError("The field "+node.getName()+" is declared multiple times.", node);
     	}
+    	checkInterfaceFieldModifiers(node);
     	super.visitField(node);
+    }
+    
+    private void checkInterfaceFieldModifiers(FieldNode node) {
+    	if (!currentClass.isInterface()) return;
+    	if ((node.getModifiers() & (Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL))==0) {
+    		addError("The field "+node.getName()+" is not 'public final static' but part of the interface "+currentClass.getName()+".", node);
+    	}
     }
 
 }
