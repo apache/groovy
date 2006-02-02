@@ -18,17 +18,16 @@ package org.codehaus.groovy.grails.web.servlet.mvc;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.groovy.grails.commons.GrailsApplication;
-import org.springframework.beans.BeansException;
+import org.codehaus.groovy.grails.web.servlet.GrailsApplicationAttributes;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
+import org.springframework.web.context.ServletContextAware;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 import org.springframework.web.util.UrlPathHelper;
-import org.springframework.web.context.ServletContextAware;
 
+import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.ServletContext;
 
 /**
  * <p>Base class for Grails controllers.
@@ -36,12 +35,12 @@ import javax.servlet.ServletContext;
  * @author Steven Devijver
  * @since Jul 2, 2005
  */
-public class SimpleGrailsController implements Controller, ServletContextAware, ApplicationContextAware {
+public class SimpleGrailsController implements Controller, ServletContextAware {
 
-
+    public static final String APPLICATION_CONTEXT_ID = "simpleGrailsController";
+    
     private UrlPathHelper urlPathHelper = new UrlPathHelper();
     private GrailsApplication application = null;
-    private ApplicationContext applicationContext = null;
     private ServletContext servletContext;
     private GrailsControllerHelper helper;
 
@@ -52,10 +51,6 @@ public class SimpleGrailsController implements Controller, ServletContextAware, 
         super();
     }
 
-    public void setApplicationContext(ApplicationContext applicationContext)
-            throws BeansException {
-        this.applicationContext = applicationContext;
-    }
 
     public void setGrailsApplication(GrailsApplication application) {
         this.application = application;
@@ -78,8 +73,8 @@ public class SimpleGrailsController implements Controller, ServletContextAware, 
             LOG.debug("[SimpleGrailsController] Processing request for uri ["+uri+"]");
         }
 
-
-        this.helper = new SimpleGrailsControllerHelper(this.application,this.applicationContext,this.servletContext);
+        ApplicationContext context = (ApplicationContext)this.servletContext.getAttribute(GrailsApplicationAttributes.APPLICATION_CONTEXT);
+        this.helper = new SimpleGrailsControllerHelper(this.application,context,this.servletContext);
 
         return helper.handleURI(uri,request,response);
     }
