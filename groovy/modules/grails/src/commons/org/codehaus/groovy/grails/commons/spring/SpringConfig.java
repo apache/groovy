@@ -42,6 +42,7 @@ import org.springframework.transaction.interceptor.TransactionProxyFactoryBean;
 import org.springframework.util.Assert;
 import org.springframework.web.servlet.i18n.CookieLocaleResolver;
 import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
+import org.springframework.web.multipart.commons.CommonsMultipartResolver;
 import org.springframework.webflow.config.FlowFactoryBean;
 import org.springframework.webflow.mvc.FlowController;
 import org.springframework.aop.target.HotSwappableTargetSource;
@@ -96,8 +97,12 @@ public class SpringConfig {
 		Bean exceptionHandler = SpringConfigUtils.createSingletonBean(GrailsExceptionResolver.class);
 		exceptionHandler.setProperty("exceptionMappings", SpringConfigUtils.createLiteralValue("java.lang.Exception=error"));
 		beanReferences.add(SpringConfigUtils.createBeanReference("exceptionHandler", exceptionHandler));
-		
-		// configure data source & hibernate
+
+        // configure multipart support
+        Bean multipartResolver = SpringConfigUtils.createSingletonBean(CommonsMultipartResolver.class);
+        beanReferences.add(SpringConfigUtils.createBeanReference("multipartResolver", multipartResolver));
+
+        // configure data source & hibernate
 		LOG.info("[SpringConfig] Configuring i18n support");
 		populateI18nSupport(beanReferences);		
 		

@@ -14,18 +14,23 @@
  */
 package org.codehaus.groovy.grails.web.binding;
 
-import org.springframework.web.bind.ServletRequestDataBinder;
-import org.springframework.web.bind.ServletRequestParameterPropertyValues;
-import org.springframework.beans.MutablePropertyValues;
-import org.springframework.beans.PropertyValue;
-import org.springframework.beans.InvalidPropertyException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.InvalidPropertyException;
+import org.springframework.beans.MutablePropertyValues;
+import org.springframework.beans.PropertyValue;
+import org.springframework.beans.propertyeditors.CustomDateEditor;
+import org.springframework.web.bind.ServletRequestDataBinder;
+import org.springframework.web.bind.ServletRequestParameterPropertyValues;
+import org.springframework.web.multipart.support.ByteArrayMultipartFileEditor;
+import org.springframework.web.multipart.support.StringMultipartFileEditor;
 
 import javax.servlet.ServletRequest;
+import javax.servlet.http.HttpServletRequest;
+import java.text.DateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.Calendar;
 
 /**
  * A data binder that handles binding dates that are specified with a "struct"-like syntax in request parameters.
@@ -54,6 +59,34 @@ public class GrailsDataBinder extends ServletRequestDataBinder {
      */
     public GrailsDataBinder(Object target, String objectName) {
         super(target, objectName);
+    }
+
+    /**
+     * Utility method for creating a GrailsDataBinder instance
+     *
+     * @param target
+     * @param objectName
+     * @param request
+     * @return A GrailsDataBinder instance
+     */
+    public static GrailsDataBinder createBinder(Object target, String objectName, HttpServletRequest request) {
+        GrailsDataBinder binder = createBinder(target,objectName);
+        binder.registerCustomEditor( Date.class, new CustomDateEditor(DateFormat.getDateInstance( DateFormat.SHORT, request.getLocale() ),true) );
+        return binder;
+    }
+
+    /**
+     * Utility method for creating a GrailsDataBinder instance
+     *
+     * @param target
+     * @param objectName
+     * @return A GrailsDataBinder instance
+     */
+    public static GrailsDataBinder createBinder(Object target, String objectName) {
+        GrailsDataBinder binder = new GrailsDataBinder(target,objectName);
+        binder.registerCustomEditor( byte[].class, new ByteArrayMultipartFileEditor());
+        binder.registerCustomEditor( String.class, new StringMultipartFileEditor());
+        return binder;
     }
 
     public void bind(ServletRequest request) {

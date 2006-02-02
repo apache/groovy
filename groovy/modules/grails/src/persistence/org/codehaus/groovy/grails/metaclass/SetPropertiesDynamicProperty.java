@@ -25,12 +25,9 @@ import org.apache.commons.logging.LogFactory;
 import org.codehaus.groovy.grails.commons.metaclass.AbstractDynamicProperty;
 import org.codehaus.groovy.grails.web.binding.GrailsDataBinder;
 import org.codehaus.groovy.grails.web.metaclass.GrailsParameterMap;
-import org.springframework.beans.propertyeditors.CustomDateEditor;
 import org.springframework.web.bind.ServletRequestDataBinder;
 
 import javax.servlet.http.HttpServletRequest;
-import java.text.DateFormat;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -73,14 +70,13 @@ public class SetPropertiesDynamicProperty extends AbstractDynamicProperty {
 		if(newValue instanceof GrailsParameterMap) {
 			GrailsParameterMap parameterMap = (GrailsParameterMap)newValue;
 			HttpServletRequest request = parameterMap.getRequest();
-			ServletRequestDataBinder dataBinder = new GrailsDataBinder(object, object.getClass().getName());			
-			dataBinder.registerCustomEditor( Date.class, new CustomDateEditor(DateFormat.getDateInstance( DateFormat.SHORT, request.getLocale() ),true) );
-			dataBinder.bind(request);			
+			ServletRequestDataBinder dataBinder = GrailsDataBinder.createBinder(object, object.getClass().getName(),request); 
+			dataBinder.bind(request);
 		}
 		else if(newValue instanceof Map) {
 			
 			Map propertyMap = (Map)newValue;
-			
+
 			for (Iterator i = propertyMap.keySet().iterator(); i.hasNext();) {
 				String propertyName = (String) i.next();
 				Object propertyValue = propertyMap.get(propertyName);				

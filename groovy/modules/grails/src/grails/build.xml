@@ -386,6 +386,7 @@ Targets:
                 <include name="commons-dbcp-1.2.1.jar"/>
                 <include name="commons-cli-1.0.jar"/>
                 <include name="commons-validator.jar"/>
+                <include name="commons-fileupload.jar"/>               
                 <include name="jakarta-oro-2.0.8.jar"/>
             </fileset>
             <fileset dir="${grails.home}/dist"/>

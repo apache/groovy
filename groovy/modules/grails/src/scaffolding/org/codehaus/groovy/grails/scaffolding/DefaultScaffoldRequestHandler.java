@@ -21,14 +21,11 @@ import org.apache.commons.logging.LogFactory;
 import org.codehaus.groovy.grails.web.binding.GrailsDataBinder;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
-import org.springframework.beans.propertyeditors.CustomDateEditor;
 import org.springframework.web.bind.ServletRequestDataBinder;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.text.DateFormat;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -135,8 +132,7 @@ public class DefaultScaffoldRequestHandler implements ScaffoldRequestHandler {
                           HttpServletResponse reponse, ScaffoldCallback callback) {
 
         Object domainObject = domain.newInstance();
-        ServletRequestDataBinder dataBinder = new GrailsDataBinder(domainObject, domain.getName());
-        dataBinder.registerCustomEditor( Date.class, new CustomDateEditor(DateFormat.getDateInstance( DateFormat.SHORT, request.getLocale() ),true) );
+        ServletRequestDataBinder dataBinder = GrailsDataBinder.createBinder(domainObject, domain.getName(),request);
         dataBinder.bind(request);
 
         Map model = new HashMap();
@@ -161,8 +157,7 @@ public class DefaultScaffoldRequestHandler implements ScaffoldRequestHandler {
         }
 
         Object domainObject = this.domain.get(id);
-        ServletRequestDataBinder dataBinder = new GrailsDataBinder(domainObject, domain.getName());
-        dataBinder.registerCustomEditor( Date.class, new CustomDateEditor(DateFormat.getDateInstance( DateFormat.SHORT, request.getLocale() ),true) );
+        ServletRequestDataBinder dataBinder = GrailsDataBinder.createBinder(domainObject, domain.getName(),request);
         dataBinder.bind(request);
 
         Map model = new HashMap();

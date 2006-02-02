@@ -16,8 +16,8 @@ package org.codehaus.groovy.grails.web.metaclass;
 
 import groovy.lang.MissingMethodException;
 import org.codehaus.groovy.grails.web.binding.GrailsDataBinder;
-import org.springframework.beans.PropertyValues;
 import org.springframework.beans.MutablePropertyValues;
+import org.springframework.beans.PropertyValues;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -51,16 +51,24 @@ public class BindDynamicMethod extends AbstractDynamicControllerMethod {
         Object targetObject = arguments[0];
         Object bindParams = arguments[1];
 
-         GrailsDataBinder dataBinder = new GrailsDataBinder(targetObject, targetObject.getClass().getName());
-        if(bindParams instanceof Map) {
-
+        GrailsDataBinder dataBinder;
+        if(bindParams instanceof GrailsParameterMap) {
+            GrailsParameterMap parameterMap = (GrailsParameterMap)bindParams;
+            HttpServletRequest request = parameterMap.getRequest();
+            dataBinder = GrailsDataBinder.createBinder(targetObject, targetObject.getClass().getName(),request); 
+            dataBinder.bind(request);
+        }
+        else if(bindParams instanceof HttpServletRequest) {
+            dataBinder = GrailsDataBinder.createBinder(targetObject, targetObject.getClass().getName(),request);
+            dataBinder.bind((HttpServletRequest)arguments[1]);
+        }
+        else if(bindParams instanceof Map) {
+            dataBinder = new GrailsDataBinder(targetObject, targetObject.getClass().getName());
             PropertyValues pv = new MutablePropertyValues((Map)bindParams);
             dataBinder.bind(pv);
         }
-        else if(bindParams instanceof HttpServletRequest) {
-            dataBinder.bind((HttpServletRequest)arguments[1]);
-        }
         else {
+            dataBinder = GrailsDataBinder.createBinder(targetObject, targetObject.getClass().getName(),request);
             dataBinder.bind(request);
         }
         return targetObject;
