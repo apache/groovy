@@ -65,8 +65,7 @@ public class SavePersistentMethod extends AbstractDynamicPersistentMethod {
 				validator.validate(target,errors);
 				
 				if(errors.hasErrors()) {
-					DelegatingMetaClass metaClass = (DelegatingMetaClass)InvokerHelper.getInstance().getMetaRegistry().getMetaClass(target.getClass());
-					metaClass.setProperty(target,DomainClassMethods.HAS_ERRORS_PROPERTY,success);
+					DelegatingMetaClass metaClass = (DelegatingMetaClass)InvokerHelper.getInstance().getMetaRegistry().getMetaClass(target.getClass());			
 					metaClass.setProperty(target,DomainClassMethods.ERRORS_PROPERTY,errors);
 					return new Boolean(!errors.hasErrors());	
 				}
