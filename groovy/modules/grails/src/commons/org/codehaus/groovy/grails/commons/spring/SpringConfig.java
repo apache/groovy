@@ -44,6 +44,8 @@ import org.springframework.web.servlet.i18n.CookieLocaleResolver;
 import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
 import org.springframework.webflow.config.FlowFactoryBean;
 import org.springframework.webflow.mvc.FlowController;
+import org.springframework.aop.target.HotSwappableTargetSource;
+import org.springframework.aop.framework.ProxyFactoryBean;
 import org.springmodules.beans.factory.config.MapToPropertiesFactoryBean;
 import org.springmodules.beans.factory.drivers.Bean;
 import org.springmodules.db.hsqldb.ServerBean;
@@ -64,8 +66,7 @@ public class SpringConfig {
 
 	private GrailsApplication application = null;
 	private static final Log LOG = LogFactory.getLog(SpringConfig.class);
-	private Map controllerClassBeans = new HashMap();
-	
+
 	public SpringConfig(GrailsApplication application) {
 		super();
 		this.application = application;
@@ -147,63 +148,59 @@ public class SpringConfig {
 		// go through all the controllers
 		GrailsControllerClass[] simpleControllers = application.getControllers();
 		for (int i = 0; i < simpleControllers.length; i++) {
-			
-			// if the controller is scaffolding
-			if(simpleControllers[i].isScaffolding()) {
-				// retrieve appropriate domain class
-				GrailsDomainClass domainClass = application.getGrailsDomainClass(simpleControllers[i].getName());
-				if(domainClass == null) {
-					LOG.info("[Spring] Unable to scaffold controller ["+simpleControllers[i].getFullName()+"], no equivalent domain class named ["+simpleControllers[i].getName()+"]");
-				}
-				else {
-					Bean scaffolder = SpringConfigUtils.createSingletonBean(DefaultGrailsScaffolder.class);				
-										
-					// create scaffold domain
-					Collection constructorArguments = new ArrayList();
-					constructorArguments.add(SpringConfigUtils.createBeanReference(domainClass.getFullName() + "PersistentClass"));
-					constructorArguments.add(SpringConfigUtils.createLiteralValue(domainClass.getIdentifier().getName()));
-					constructorArguments.add(SpringConfigUtils.createBeanReference("sessionFactory"));
-					
-					Bean domain = SpringConfigUtils.createSingletonBean(DefaultScaffoldDomain.class, constructorArguments);
-					domain.setProperty("validator", SpringConfigUtils.createBeanReference( domainClass.getFullName() + "Validator"));
-					
-					beanReferences.add( SpringConfigUtils.createBeanReference( domainClass.getFullName() + "ScaffoldDomain",domain ) );
-					
-					// create and configure request handler
-					Bean requestHandler = SpringConfigUtils.createSingletonBean(DefaultScaffoldRequestHandler.class);
-					requestHandler.setProperty("scaffoldDomain", SpringConfigUtils.createBeanReference(domainClass.getFullName() + "ScaffoldDomain"));
-					
-					// create response factory
-					constructorArguments = new ArrayList();
-					constructorArguments.add(SpringConfigUtils.createBeanReference("grailsApplication"));
-					
-					// configure default response handler
-					Bean defaultResponseHandler = SpringConfigUtils.createSingletonBean(ViewDelegatingScaffoldResponseHandler.class);
-					
-					// configure a simple view delegating resolver
-					Bean defaultViewResolver = SpringConfigUtils.createSingletonBean(DefaultGrailsScaffoldViewResolver.class,constructorArguments);
-					defaultResponseHandler.setProperty("scaffoldViewResolver", defaultViewResolver);
-					
-					// create constructor arguments response handler factory
-					constructorArguments = new ArrayList();
-					constructorArguments.add(SpringConfigUtils.createBeanReference("grailsApplication"));
-					constructorArguments.add(defaultResponseHandler);
-					
-					Bean responseHandlerFactory = SpringConfigUtils.createSingletonBean( DefaultGrailsResponseHandlerFactory.class,constructorArguments );
-					
-					scaffolder.setProperty( "scaffoldResponseHandlerFactory", responseHandlerFactory );					
-					scaffolder.setProperty("scaffoldRequestHandler", requestHandler);					
-					
-					beanReferences.add( SpringConfigUtils.createBeanReference( simpleControllers[i].getFullName() + "Scaffolder",scaffolder  ) );					
-				}								
-			}
+            // retrieve appropriate domain class
+            GrailsDomainClass domainClass = application.getGrailsDomainClass(simpleControllers[i].getName());
+            if(domainClass == null) {
+                LOG.info("[Spring] Scaffolding disabled for controller ["+simpleControllers[i].getFullName()+"], no equivalent domain class named ["+simpleControllers[i].getName()+"]");
+            }
+            else {
+                Bean scaffolder = SpringConfigUtils.createSingletonBean(DefaultGrailsScaffolder.class);
+
+                // create scaffold domain
+                Collection constructorArguments = new ArrayList();
+                constructorArguments.add(SpringConfigUtils.createBeanReference(domainClass.getFullName() + "PersistentClass"));
+                constructorArguments.add(SpringConfigUtils.createLiteralValue(domainClass.getIdentifier().getName()));
+                constructorArguments.add(SpringConfigUtils.createBeanReference("sessionFactory"));
+
+                Bean domain = SpringConfigUtils.createSingletonBean(DefaultScaffoldDomain.class, constructorArguments);
+                domain.setProperty("validator", SpringConfigUtils.createBeanReference( domainClass.getFullName() + "Validator"));
+
+                beanReferences.add( SpringConfigUtils.createBeanReference( domainClass.getFullName() + "ScaffoldDomain",domain ) );
+
+                // create and configure request handler
+                Bean requestHandler = SpringConfigUtils.createSingletonBean(DefaultScaffoldRequestHandler.class);
+                requestHandler.setProperty("scaffoldDomain", SpringConfigUtils.createBeanReference(domainClass.getFullName() + "ScaffoldDomain"));
+
+                // create response factory
+                constructorArguments = new ArrayList();
+                constructorArguments.add(SpringConfigUtils.createBeanReference("grailsApplication"));
+
+                // configure default response handler
+                Bean defaultResponseHandler = SpringConfigUtils.createSingletonBean(ViewDelegatingScaffoldResponseHandler.class);
+
+                // configure a simple view delegating resolver
+                Bean defaultViewResolver = SpringConfigUtils.createSingletonBean(DefaultGrailsScaffoldViewResolver.class,constructorArguments);
+                defaultResponseHandler.setProperty("scaffoldViewResolver", defaultViewResolver);
+
+                // create constructor arguments response handler factory
+                constructorArguments = new ArrayList();
+                constructorArguments.add(SpringConfigUtils.createBeanReference("grailsApplication"));
+                constructorArguments.add(defaultResponseHandler);
+
+                Bean responseHandlerFactory = SpringConfigUtils.createSingletonBean( DefaultGrailsResponseHandlerFactory.class,constructorArguments );
+
+                scaffolder.setProperty( "scaffoldResponseHandlerFactory", responseHandlerFactory );
+                scaffolder.setProperty("scaffoldRequestHandler", requestHandler);
+
+                beanReferences.add( SpringConfigUtils.createBeanReference( simpleControllers[i].getFullName() + "Scaffolder",scaffolder  ) );
+            }
 		}
 	}
 
 	private void populateControllerReferences(Collection beanReferences, Map urlMappings) {
 		Bean simpleGrailsController = SpringConfigUtils.createSingletonBean(SimpleGrailsController.class);
 		simpleGrailsController.setAutowire("byType");
-		beanReferences.add(SpringConfigUtils.createBeanReference("simpleGrailsController", simpleGrailsController));
+		beanReferences.add(SpringConfigUtils.createBeanReference(SimpleGrailsController.APPLICATION_CONTEXT_ID, simpleGrailsController));
 		
 		Bean grailsViewResolver = SpringConfigUtils.createSingletonBean(GrailsViewResolver.class);
 		
@@ -215,8 +212,18 @@ public class SpringConfig {
 		Bean simpleUrlHandlerMapping = null;
 		if (application.getControllers().length > 0 || application.getPageFlows().length > 0) {
 			simpleUrlHandlerMapping = SpringConfigUtils.createSingletonBean(GrailsUrlHandlerMapping.class);
-			beanReferences.add(SpringConfigUtils.createBeanReference("handlerMapping", simpleUrlHandlerMapping));
-		}
+			//beanReferences.add(SpringConfigUtils.createBeanReference(GrailsUrlHandlerMapping.APPLICATION_CONTEXT_ID + "Target", simpleUrlHandlerMapping));
+
+            Collection args = new ArrayList();
+            args.add(simpleUrlHandlerMapping);
+            Bean simpleUrlHandlerMappingTargetSource = SpringConfigUtils.createSingletonBean(HotSwappableTargetSource.class, args);
+            beanReferences.add(SpringConfigUtils.createBeanReference(GrailsUrlHandlerMapping.APPLICATION_CONTEXT_TARGET_SOURCE,simpleUrlHandlerMappingTargetSource));
+
+            Bean simpleUrlHandlerMappingProxy = SpringConfigUtils.createSingletonBean(ProxyFactoryBean.class);
+            simpleUrlHandlerMappingProxy.setProperty("targetSource", SpringConfigUtils.createBeanReference(GrailsUrlHandlerMapping.APPLICATION_CONTEXT_TARGET_SOURCE));
+            simpleUrlHandlerMappingProxy.setProperty("proxyInterfaces", SpringConfigUtils.createLiteralValue("org.springframework.web.servlet.HandlerMapping"));
+            beanReferences.add(SpringConfigUtils.createBeanReference(GrailsUrlHandlerMapping.APPLICATION_CONTEXT_ID, simpleUrlHandlerMappingProxy));
+        }
 		
 		GrailsControllerClass[] simpleControllers = application.getControllers();
 		for (int i = 0; i < simpleControllers.length; i++) {
@@ -224,26 +231,35 @@ public class SpringConfig {
 			if (!simpleController.getAvailable()) {
 				continue;
 			}
-			Bean controllerClass = SpringConfigUtils.createSingletonBean(MethodInvokingFactoryBean.class);
+            // setup controller class by retrieving it from the  grails application
+            Bean controllerClass = SpringConfigUtils.createSingletonBean(MethodInvokingFactoryBean.class);
 			controllerClass.setProperty("targetObject", SpringConfigUtils.createBeanReference("grailsApplication"));
 			controllerClass.setProperty("targetMethod", SpringConfigUtils.createLiteralValue("getController"));
 			controllerClass.setProperty("arguments", SpringConfigUtils.createLiteralValue(simpleController.getFullName()));
 			beanReferences.add(SpringConfigUtils.createBeanReference(simpleController.getFullName() + "Class", controllerClass));
-			controllerClassBeans.put(simpleController.getFullName() + "Class", controllerClass);
-			
-			Bean controller = SpringConfigUtils.createPrototypeBean();
-			controller.setFactoryBean(SpringConfigUtils.createBeanReference(simpleController.getFullName() + "Class"));
+
+            // configure controller class as hot swappable target source
+            Collection args = new ArrayList();
+            args.add(SpringConfigUtils.createBeanReference(simpleController.getFullName() + "Class"));
+            Bean controllerTargetSource = SpringConfigUtils.createSingletonBean(HotSwappableTargetSource.class, args);
+            beanReferences.add(SpringConfigUtils.createBeanReference(simpleController.getFullName() + "TargetSource", controllerTargetSource));
+
+            // setup AOP proxy that uses hot swappable target source
+            Bean controllerClassProxy = SpringConfigUtils.createSingletonBean(ProxyFactoryBean.class);
+            controllerClassProxy.setProperty("targetSource", SpringConfigUtils.createBeanReference(simpleController.getFullName() + "TargetSource"));
+            controllerClassProxy.setProperty("proxyInterfaces", SpringConfigUtils.createLiteralValue("org.codehaus.groovy.grails.commons.GrailsControllerClass"));
+            beanReferences.add(SpringConfigUtils.createBeanReference(simpleController.getFullName() + "Proxy", controllerClassProxy));
+
+            // create prototype bean that uses the controller AOP proxy controller class bean as a factory
+            Bean controller = SpringConfigUtils.createPrototypeBean();
+			controller.setFactoryBean(SpringConfigUtils.createBeanReference(simpleController.getFullName() + "Proxy"));
 			controller.setFactoryMethod("newInstance");
 			controller.setAutowire("byName");
-			/*if (simpleController.byType()) {
-				controller.setAutowire("byType");
-			} else if (simpleController.byName()) {
-				controller.setAutowire("byName");
-			}*/
-			beanReferences.add(SpringConfigUtils.createBeanReference(simpleController.getFullName(), controller));
+
+            beanReferences.add(SpringConfigUtils.createBeanReference(simpleController.getFullName(), controller));
 			for (int x = 0; x < simpleController.getURIs().length; x++) {
 				if(!urlMappings.containsKey(simpleController.getURIs()[x]))
-					urlMappings.put(simpleController.getURIs()[x], "simpleGrailsController");
+					urlMappings.put(simpleController.getURIs()[x], SimpleGrailsController.APPLICATION_CONTEXT_ID);
 			}		
 		}		
 		if (simpleUrlHandlerMapping != null) {
@@ -253,15 +269,28 @@ public class SpringConfig {
         GrailsTagLibClass[] tagLibs = application.getGrailsTabLibClasses();
         for (int i = 0; i < tagLibs.length; i++) {
             GrailsTagLibClass grailsTagLib = tagLibs[i];
+            // setup taglib class by retrieving it from the grails application bean
             Bean taglibClass = SpringConfigUtils.createSingletonBean(MethodInvokingFactoryBean.class);
             taglibClass.setProperty("targetObject", SpringConfigUtils.createBeanReference("grailsApplication"));
             taglibClass.setProperty("targetMethod", SpringConfigUtils.createLiteralValue("getGrailsTagLibClass"));
             taglibClass.setProperty("arguments", SpringConfigUtils.createLiteralValue(grailsTagLib.getFullName()));
             beanReferences.add(SpringConfigUtils.createBeanReference(grailsTagLib.getFullName() + "Class", taglibClass));
-            controllerClassBeans.put(grailsTagLib.getFullName() + "Class", taglibClass);
 
+            // configure taglib class as hot swappable target source
+            Collection args = new ArrayList();
+            args.add(SpringConfigUtils.createBeanReference(grailsTagLib.getFullName() + "Class"));
+            Bean taglibTargetSource = SpringConfigUtils.createSingletonBean(HotSwappableTargetSource.class, args);
+
+            // setup AOP proxy that uses hot swappable target source
+            beanReferences.add(SpringConfigUtils.createBeanReference(grailsTagLib.getFullName() + "TargetSource", taglibTargetSource));
+            Bean taglibClassProxy = SpringConfigUtils.createSingletonBean(ProxyFactoryBean.class);
+            taglibClassProxy.setProperty("targetSource", SpringConfigUtils.createBeanReference(grailsTagLib.getFullName() + "TargetSource"));
+            taglibClassProxy.setProperty("proxyInterfaces", SpringConfigUtils.createLiteralValue("org.codehaus.groovy.grails.commons.GrailsTagLibClass"));
+            beanReferences.add(SpringConfigUtils.createBeanReference(grailsTagLib.getFullName() + "Proxy", taglibClassProxy));
+
+            // create prototype bean that refers to the AOP proxied taglib class uses it as a factory
             Bean taglib = SpringConfigUtils.createPrototypeBean();
-            taglib.setFactoryBean(SpringConfigUtils.createBeanReference(grailsTagLib.getFullName() + "Class"));
+            taglib.setFactoryBean(SpringConfigUtils.createBeanReference(grailsTagLib.getFullName() + "Proxy"));
             taglib.setFactoryMethod("newInstance");
             taglib.setAutowire("byName");
 
@@ -274,7 +303,7 @@ public class SpringConfig {
 		GrailsDataSource grailsDataSource = application.getGrailsDataSource();
 		if (grailsDataSource != null) {
 			
-			Bean dataSource = null;
+			Bean dataSource;
 			if (grailsDataSource.isPooled()) {
 				dataSource = SpringConfigUtils.createSingletonBean(BasicDataSource.class);
 				dataSource.setDestroyMethod("close");
@@ -405,9 +434,10 @@ public class SpringConfig {
 			} else if (grailsServiceClass.byType()) {
 				serviceInstance.setAutowire("byType");
 			}
-			
-			
-			if (grailsServiceClass.isTransactional()) {
+            // configure the service instance as a hotswappable target source
+
+            // if its transactional configure transactional proxy
+            if (grailsServiceClass.isTransactional()) {
 				Map transactionAttributes = new HashMap();
 				transactionAttributes.put("*", "PROPAGATION_REQUIRED");
 				Bean transactionalProxy = SpringConfigUtils.createSingletonBean(TransactionProxyFactoryBean.class);
@@ -417,7 +447,8 @@ public class SpringConfig {
 				transactionalProxy.setProperty("transactionManager", SpringConfigUtils.createBeanReference("transactionManager"));
 				beanReferences.add(SpringConfigUtils.createBeanReference(WordUtils.uncapitalize(grailsServiceClass.getName()) + "Service", transactionalProxy));
 			} else {
-				beanReferences.add(SpringConfigUtils.createBeanReference(WordUtils.uncapitalize(grailsServiceClass.getName()) + "Service", serviceInstance));
+                // otherwise configure a standard proxy
+                beanReferences.add(SpringConfigUtils.createBeanReference(WordUtils.uncapitalize(grailsServiceClass.getName()) + "Service", serviceInstance));
 			}
 		}
 	}
