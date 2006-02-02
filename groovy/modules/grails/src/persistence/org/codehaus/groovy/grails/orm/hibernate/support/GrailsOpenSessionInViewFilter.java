@@ -15,9 +15,7 @@
  */ 
 package org.codehaus.groovy.grails.orm.hibernate.support;
 
-import org.codehaus.groovy.grails.commons.GrailsApplication;
-import org.codehaus.groovy.grails.commons.spring.SpringConfig;
-import org.codehaus.groovy.grails.web.servlet.GrailsRequestAttributes;
+import org.codehaus.groovy.grails.web.servlet.GrailsApplicationAttributes;
 import org.hibernate.FlushMode;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -27,7 +25,13 @@ import org.springframework.orm.hibernate3.SessionFactoryUtils;
 import org.springframework.orm.hibernate3.support.OpenSessionInViewFilter;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
-import org.springmodules.beans.factory.drivers.xml.XmlApplicationContextDriver;
+
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+
 /**
  * <p>Uses the GrailsApplication sesssionFactory to apply the filter
  * 
@@ -36,37 +40,31 @@ import org.springmodules.beans.factory.drivers.xml.XmlApplicationContextDriver;
  */
 public class GrailsOpenSessionInViewFilter extends OpenSessionInViewFilter {
 
-	protected SessionFactory lookupSessionFactory() {
-		WebApplicationContext parent =
-			WebApplicationContextUtils.getRequiredWebApplicationContext(getServletContext());
-		
-		ApplicationContext context;
+    protected SessionFactory lookupSessionFactory() {
+        WebApplicationContext parent =
+            WebApplicationContextUtils.getRequiredWebApplicationContext(getServletContext());
 
-        if(getServletContext().getAttribute(GrailsRequestAttributes.APPLICATION_CONTEXT) == null) {
-	        // construct the SpringConfig for the container managed application
-	        GrailsApplication application = (GrailsApplication) parent.getBean(GrailsApplication.APPLICATION_ID, GrailsApplication.class);
-	        SpringConfig springConfig = new SpringConfig(application);
-	        // return a context that obeys grails' settings
-	        
-	        context = new XmlApplicationContextDriver().getApplicationContext(
-	        			springConfig.getBeanReferences(),
-	        			parent
-	        		); 
-	                
-	       getServletContext().setAttribute(GrailsRequestAttributes.APPLICATION_CONTEXT, context );
-		}
-		else {
-			context = (ApplicationContext)getServletContext().getAttribute(GrailsRequestAttributes.APPLICATION_CONTEXT);
-		}
-       
-       return (SessionFactory) context.getBean(getSessionFactoryBeanName(), SessionFactory.class);
-	}
+        ApplicationContext context = (ApplicationContext)getServletContext().getAttribute(GrailsApplicationAttributes.APPLICATION_CONTEXT);
 
-	protected Session getSession(SessionFactory sessionFactory) throws DataAccessResourceFailureException {
-		Session session = SessionFactoryUtils.getSession(sessionFactory, true);
-		session.setFlushMode(FlushMode.AUTO);
-		return session;
-	}
-	
-	
+        if(context != null) {
+            return (SessionFactory) context.getBean(getSessionFactoryBeanName(), SessionFactory.class);
+        }
+        return null;
+    }
+
+    protected Session getSession(SessionFactory sessionFactory) throws DataAccessResourceFailureException {
+        Session session = SessionFactoryUtils.getSession(sessionFactory, true);
+        session.setFlushMode(FlushMode.AUTO);
+        return session;
+    }
+
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+        SessionFactory sf = lookupSessionFactory();
+        if(sf != null) {
+            super.doFilterInternal(request,response,filterChain);
+        }
+        else {
+            filterChain.doFilter(request,response);
+        }
+    }
 }

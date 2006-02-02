@@ -39,11 +39,13 @@ import org.springmodules.beans.factory.drivers.xml.XmlWebApplicationContextDrive
 public class GrailsDispatcherServlet extends DispatcherServlet {
     public GrailsDispatcherServlet() {
         super();
+        setDetectAllHandlerMappings(false);
     }
 
     protected WebApplicationContext createWebApplicationContext(WebApplicationContext parent) throws BeansException {
         // use config file locations if available
-    	ApplicationContext grailsContext = (ApplicationContext)getServletContext().getAttribute(GrailsRequestAttributes.APPLICATION_CONTEXT);
+        getServletContext().setAttribute(GrailsApplicationAttributes.PARENT_APPLICATION_CONTEXT,parent);
+        ApplicationContext grailsContext = (ApplicationContext)getServletContext().getAttribute(GrailsApplicationAttributes.APPLICATION_CONTEXT);
     	GrailsApplication application;
     	WebApplicationContext webContext;
     	
@@ -71,7 +73,7 @@ public class GrailsDispatcherServlet extends DispatcherServlet {
 	                getServletContext(),
 	                getNamespace(),
 	                locations);
-	        getServletContext().setAttribute(GrailsRequestAttributes.APPLICATION_CONTEXT,webContext );
+	        getServletContext().setAttribute(GrailsApplicationAttributes.APPLICATION_CONTEXT,webContext );
     	}
     	
     	// init the Grails application
