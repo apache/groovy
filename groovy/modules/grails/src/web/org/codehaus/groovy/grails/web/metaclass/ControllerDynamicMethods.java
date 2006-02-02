@@ -24,7 +24,7 @@ import org.codehaus.groovy.grails.commons.metaclass.GenericDynamicProperty;
 import org.codehaus.groovy.grails.commons.metaclass.GroovyDynamicMethodsInterceptor;
 import org.codehaus.groovy.grails.scaffolding.GrailsScaffolder;
 import org.codehaus.groovy.grails.web.servlet.GrailsHttpServletRequest;
-import org.codehaus.groovy.grails.web.servlet.GrailsRequestAttributes;
+import org.codehaus.groovy.grails.web.servlet.GrailsApplicationAttributes;
 import org.codehaus.groovy.grails.web.servlet.mvc.GrailsControllerHelper;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -71,7 +71,7 @@ public class ControllerDynamicMethods extends
         addDynamicProperty(new GenericDynamicProperty(SERVLET_CONTEXT, ServletContext.class,helper.getServletContext(),true) );
         addDynamicProperty(new GenericDynamicProperty(ERRORS_PROPERTY, Errors.class, null, false));
         addDynamicProperty(new GenericDynamicProperty(MODEL_AND_VIEW_PROPERTY, ModelAndView.class,null,false));
-        addDynamicProperty(new GenericDynamicProperty(GRAILS_ATTRIBUTES, GrailsRequestAttributes.class,helper.getGrailsAttributes(),true));
+        addDynamicProperty(new GenericDynamicProperty(GRAILS_ATTRIBUTES, GrailsApplicationAttributes.class,helper.getGrailsAttributes(),true));
         addDynamicProperty(new GenericDynamicProperty(ACTION_URI_PROPERTY,String.class,null,false));
         addDynamicProperty(new GenericDynamicProperty(CONTROLLER_URI_PROPERTY,String.class,null,false));
 

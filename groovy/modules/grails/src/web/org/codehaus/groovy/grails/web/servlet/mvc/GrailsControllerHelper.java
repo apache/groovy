@@ -19,7 +19,7 @@ import groovy.lang.Closure;
 import groovy.lang.GroovyObject;
 import org.codehaus.groovy.grails.commons.GrailsControllerClass;
 import org.codehaus.groovy.grails.scaffolding.GrailsScaffolder;
-import org.codehaus.groovy.grails.web.servlet.GrailsRequestAttributes;
+import org.codehaus.groovy.grails.web.servlet.GrailsApplicationAttributes;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
@@ -134,5 +134,5 @@ public interface GrailsControllerHelper {
      *
      * @return Returns the grails request attributes instance
      */
-    GrailsRequestAttributes getGrailsAttributes();
+    GrailsApplicationAttributes getGrailsAttributes();
 }

@@ -33,8 +33,8 @@ import org.codehaus.groovy.grails.web.metaclass.ChainDynamicMethod;
 import org.codehaus.groovy.grails.web.metaclass.ControllerDynamicMethods;
 import org.codehaus.groovy.grails.web.metaclass.GetParamsDynamicProperty;
 import org.codehaus.groovy.grails.web.metaclass.TagLibDynamicMethods;
-import org.codehaus.groovy.grails.web.servlet.DefaultGrailsRequestAttributes;
-import org.codehaus.groovy.grails.web.servlet.GrailsRequestAttributes;
+import org.codehaus.groovy.grails.web.servlet.DefaultGrailsApplicationAttributes;
+import org.codehaus.groovy.grails.web.servlet.GrailsApplicationAttributes;
 import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.ControllerExecutionException;
 import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.NoClosurePropertyForURIException;
 import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.NoViewNameDefinedException;
@@ -63,7 +63,7 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
     private ControllerDynamicMethods interceptor;
     private GrailsScaffolder scaffolder;
     private ServletContext servletContext;
-    private GrailsRequestAttributes grailsAttributes;
+    private GrailsApplicationAttributes grailsAttributes;
     private Pattern uriPattern = Pattern.compile("/(\\w+)/?(\\w*)/?(\\w*)/?(.*)");
     private static final Log LOG = LogFactory.getLog(SimpleGrailsControllerHelper.class);
     private TagLibDynamicMethods tagLibInterceptor;
@@ -73,7 +73,7 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
         this.application = application;
         this.applicationContext = context;
         this.servletContext = servletContext;
-        this.grailsAttributes = new DefaultGrailsRequestAttributes(this.servletContext);
+        this.grailsAttributes = new DefaultGrailsApplicationAttributes(this.servletContext);
     }
 
     public ServletContext getServletContext() {
@@ -199,8 +199,8 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
         if(tagLibClass != null) {
             tagLib = (GroovyObject)this.applicationContext.getBean(tagLibClass.getFullName());
         }
-        request.setAttribute( GrailsRequestAttributes.TAG_LIB, tagLib);
-        request.setAttribute( GrailsRequestAttributes.CONTROLLER, controller );
+        request.setAttribute( GrailsApplicationAttributes.TAG_LIB, tagLib);
+        request.setAttribute( GrailsApplicationAttributes.CONTROLLER, controller );
 
         // Step 3a: Configure a proxy interceptor for controller dynamic methods for this request
         if(this.interceptor == null) {
@@ -245,7 +245,7 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
         controller.setProperty(ControllerDynamicMethods.ACTION_URI_PROPERTY, '/' + controllerName + '/' + actionPropertyName);
         Map controllerParams = (Map)controller.getProperty(GetParamsDynamicProperty.PROPERTY_NAME);
         if(!StringUtils.isBlank(id)) {
-            controllerParams.put(GrailsRequestAttributes.ID_PARAM, id);
+            controllerParams.put(GrailsApplicationAttributes.ID_PARAM, id);
         }
         if(!extraParams.isEmpty()) {
             for (Iterator i = extraParams.keySet().iterator(); i.hasNext();) {
@@ -275,7 +275,7 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
         this.chainModel  = model;
     }
 
-    public GrailsRequestAttributes getGrailsAttributes() {
+    public GrailsApplicationAttributes getGrailsAttributes() {
         return this.grailsAttributes;
     }
 
@@ -315,7 +315,7 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
         Object returnValue = action.call();
 
         // Step 8: add any errors to the request
-        request.setAttribute( GrailsRequestAttributes.ERRORS, controller.getProperty(ControllerDynamicMethods.ERRORS_PROPERTY) );
+        request.setAttribute( GrailsApplicationAttributes.ERRORS, controller.getProperty(ControllerDynamicMethods.ERRORS_PROPERTY) );
 
         return returnValue;
     }
