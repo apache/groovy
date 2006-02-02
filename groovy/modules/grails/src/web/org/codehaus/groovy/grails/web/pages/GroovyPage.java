@@ -17,7 +17,7 @@ package org.codehaus.groovy.grails.web.pages;
 
 import groovy.lang.*;
 import org.codehaus.groovy.grails.web.metaclass.TagLibDynamicMethods;
-import org.codehaus.groovy.grails.web.servlet.GrailsRequestAttributes;
+import org.codehaus.groovy.grails.web.servlet.GrailsApplicationAttributes;
 import org.codehaus.groovy.grails.web.taglib.exceptions.GrailsTagException;
 
 import java.io.Writer;
@@ -136,7 +136,7 @@ public abstract class GroovyPage extends Script {
         Binding binding = getBinding();
 
         Writer out = (Writer)binding.getVariable(GroovyPage.OUT);
-        GroovyObject tagLib = (GroovyObject)binding.getVariable(GrailsRequestAttributes.TAG_LIB);
+        GroovyObject tagLib = (GroovyObject)binding.getVariable(GrailsApplicationAttributes.TAG_LIB);
         if(tagLib != null) {
             tagLib.setProperty(  TagLibDynamicMethods.OUT_PROPERTY, out );
             Object tagLibProp;
@@ -184,7 +184,7 @@ public abstract class GroovyPage extends Script {
             // retrieve tag lib and writer from binding
             Binding binding = getBinding();
             final Writer out = (Writer)binding.getVariable(GroovyPage.OUT);
-            GroovyObject tagLib = (GroovyObject)binding.getVariable(GrailsRequestAttributes.TAG_LIB);
+            GroovyObject tagLib = (GroovyObject)binding.getVariable(GrailsApplicationAttributes.TAG_LIB);
 
             // get attributes and body closure
             if (args instanceof Object[]) {

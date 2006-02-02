@@ -16,17 +16,17 @@ package org.codehaus.groovy.grails.web.pages;
 
 import groovy.lang.*;
 import groovy.text.Template;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.web.metaclass.ControllerDynamicMethods;
 import org.codehaus.groovy.grails.web.metaclass.GetParamsDynamicProperty;
 import org.codehaus.groovy.grails.web.metaclass.GetSessionDynamicProperty;
-import org.codehaus.groovy.grails.web.servlet.GrailsRequestAttributes;
+import org.codehaus.groovy.grails.web.servlet.GrailsApplicationAttributes;
 import org.codehaus.groovy.grails.web.taglib.GrailsTagRegistry;
 import org.codehaus.groovy.runtime.InvokerHelper;
-import org.springframework.web.context.WebApplicationContext;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.springframework.context.ApplicationContext;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -219,7 +219,7 @@ public class GroovyPagesTemplateEngine {
      */
     private boolean isPageNew(PageMeta pageMeta) {
         for (Iterator i = pageMeta.dependencies.keySet().iterator(); i.hasNext(); ) {
-            URLConnection urlc = null;
+            URLConnection urlc;
             URL url = (URL)i.next();
             try {
                 urlc = url.openConnection();
@@ -351,15 +351,15 @@ public class GroovyPagesTemplateEngine {
                 throws IOException {
             // Set up the script context
             Binding binding = new Binding();
-            GroovyObject controller = (GroovyObject)request.getAttribute(GrailsRequestAttributes.CONTROLLER);
+            GroovyObject controller = (GroovyObject)request.getAttribute(GrailsApplicationAttributes.CONTROLLER);
             binding.setVariable(GroovyPage.REQUEST, controller.getProperty(ControllerDynamicMethods.REQUEST_PROPERTY));
             binding.setVariable(GroovyPage.RESPONSE, controller.getProperty(ControllerDynamicMethods.RESPONSE_PROPERTY));
             binding.setVariable(GroovyPage.SERVLET_CONTEXT, context);
-            WebApplicationContext appContext = (WebApplicationContext)context.getAttribute(GrailsRequestAttributes.APPLICATION_CONTEXT);
+            ApplicationContext appContext = (ApplicationContext)context.getAttribute(GrailsApplicationAttributes.APPLICATION_CONTEXT);
             binding.setVariable(GroovyPage.APPLICATION_CONTEXT, appContext);
             binding.setVariable(GrailsApplication.APPLICATION_ID, appContext.getBean(GrailsApplication.APPLICATION_ID));
-            binding.setVariable(GrailsRequestAttributes.CONTROLLER, controller);
-            binding.setVariable(GrailsRequestAttributes.TAG_LIB, request.getAttribute(GrailsRequestAttributes.TAG_LIB));
+            binding.setVariable(GrailsApplicationAttributes.CONTROLLER, controller);
+            binding.setVariable(GrailsApplicationAttributes.TAG_LIB, request.getAttribute(GrailsApplicationAttributes.TAG_LIB));
             binding.setVariable(GroovyPage.SESSION, controller.getProperty(GetSessionDynamicProperty.PROPERTY_NAME));
             binding.setVariable(GroovyPage.PARAMS, controller.getProperty(GetParamsDynamicProperty.PROPERTY_NAME));
             binding.setVariable(GroovyPage.OUT, out);

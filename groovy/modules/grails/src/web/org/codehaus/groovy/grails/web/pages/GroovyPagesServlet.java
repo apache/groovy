@@ -17,7 +17,7 @@ package org.codehaus.groovy.grails.web.pages;
 
 import groovy.lang.Writable;
 import groovy.text.Template;
-import org.codehaus.groovy.grails.web.servlet.GrailsRequestAttributes;
+import org.codehaus.groovy.grails.web.servlet.GrailsApplicationAttributes;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
@@ -84,11 +84,11 @@ public class GroovyPagesServlet extends HttpServlet /*implements GroovyObject*/ 
 
         showSource = config.getInitParameter("showSource") != null;
 
-        this.engine = (GroovyPagesTemplateEngine)context.getAttribute(GrailsRequestAttributes.GSP_TEMPLATE_ENGINE);
+        this.engine = (GroovyPagesTemplateEngine)context.getAttribute(GrailsApplicationAttributes.GSP_TEMPLATE_ENGINE);
         if(this.engine == null)   {
             this.engine = new GroovyPagesTemplateEngine();
             this.engine.setShowSource(this.showSource);
-            context.setAttribute(GrailsRequestAttributes.GSP_TEMPLATE_ENGINE,this.engine);
+            context.setAttribute(GrailsApplicationAttributes.GSP_TEMPLATE_ENGINE,this.engine);
         }
 
     } // init()
