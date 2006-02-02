@@ -9,5 +9,11 @@
 			<value>**/*.groovy</value>
 		</property>
 	</bean>
+
+    <bean id="grailsResourceHolder" singleton="false" class="org.codehaus.groovy.grails.commons.spring.GrailsResourceHolder">
+        <property name="resources">
+              <value>**/*.groovy</value>
+        </property>
+    </bean>
 	
 </beans>
