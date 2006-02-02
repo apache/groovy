@@ -80,7 +80,7 @@ public interface GrailsApplication {
 	 * @param name The name of the domain class to retrieve
 	 * @return The retrieved domain class
 	 */
-	public GrailsDomainClass getGrailsDomainClass(String name);	
+	public GrailsDomainClass getGrailsDomainClass(String name);
 
 	/**
 	 * <p>Returns the active data source for this Grails application or null if not available.
@@ -140,4 +140,34 @@ public interface GrailsApplication {
      * @return A array of tag lib classes
      */
     public GrailsTagLibClass getTagLibClassForController(String controllerName);
+
+    /**
+     * Adds a new Grails controller class to the application
+     * @param controllerClass The grails controller class to add
+     * @return A GrailsControllerClass instance
+     */
+    GrailsControllerClass addControllerClass(Class controllerClass);
+
+    /**
+     * Adds a new Grails taglib class to the application. If it already exists the old one will be replaced
+     * 
+     * @param tagLibClass The taglib class to add
+     * @return The newly added class
+     */
+    GrailsTagLibClass addTagLibClass(Class tagLibClass);
+
+    /**
+     * Adds a new Grails service class to the application. If it already exists the old one will be replaced
+     *
+     * @param serviceClass The service class to add
+     * @return The newly added class or null if the class is abstract and was not added
+     */
+    GrailsServiceClass addServiceClass(Class serviceClass);
+
+    /**
+     * Adds a new domain class to the grails application
+     * @param domainClass The domain class to add
+     * @return The GrailsDomainClass instance or null if the class is abstract and was not added
+     */
+    GrailsDomainClass addDomainClass(Class domainClass);
 }
