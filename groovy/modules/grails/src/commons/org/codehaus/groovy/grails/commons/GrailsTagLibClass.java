@@ -20,7 +20,7 @@ package org.codehaus.groovy.grails.commons;
  * @author Graeme Rocher
  * @since Jan 14, 2006
  */
-public interface GrailsTagLibClass extends GrailsClass {
+public interface GrailsTagLibClass extends InjectableGrailsClass {
 
     /**
      * The name of the application (ie global) tag library appropriate for all controller classes

@@ -21,7 +21,7 @@ package org.codehaus.groovy.grails.commons;
  * Default implementation of a tag lib class
  *
  */
-public class DefaultGrailsTagLibClass extends AbstractGrailsClass implements GrailsTagLibClass {
+public class DefaultGrailsTagLibClass extends AbstractInjectableGrailsClass implements GrailsTagLibClass {
     protected static final String TAG_LIB = "TagLib";
     private static final String APPLICATION_TAG_LIB = "Application";
 
