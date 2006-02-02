@@ -15,10 +15,10 @@
  */
 package org.codehaus.groovy.grails.web.servlet.mvc;
 
-import javax.servlet.http.HttpServletRequest;
-
 import org.springframework.web.servlet.handler.SimpleUrlHandlerMapping;
 import org.springframework.web.util.UrlPathHelper;
+
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * <p>Class that handles URL mapping for Grails
@@ -28,7 +28,10 @@ import org.springframework.web.util.UrlPathHelper;
  */
 public class GrailsUrlHandlerMapping extends SimpleUrlHandlerMapping {
 
-	private UrlPathHelper urlPathHelper = new UrlPathHelper();
+    public static final String APPLICATION_CONTEXT_ID = "handlerMapping";
+    public static final String APPLICATION_CONTEXT_TARGET_SOURCE = "handlerMappingTargetSource";
+
+    private UrlPathHelper urlPathHelper = new UrlPathHelper();
 	
 	/* (non-Javadoc)
 	 * @see org.springframework.web.servlet.handler.AbstractUrlHandlerMapping#getHandlerInternal(javax.servlet.http.HttpServletRequest)
@@ -38,6 +41,6 @@ public class GrailsUrlHandlerMapping extends SimpleUrlHandlerMapping {
 		if (logger.isDebugEnabled()) {
 			logger.debug("Looking up handler for [" + appPath + "]");
 		}
-		return lookupHandler(appPath);		
+		return lookupHandler(appPath);
 	}
 }
