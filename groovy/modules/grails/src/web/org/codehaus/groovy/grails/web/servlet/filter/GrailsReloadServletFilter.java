@@ -189,8 +189,7 @@ public class GrailsReloadServletFilter extends OncePerRequestFilter {
         else {
             // reload whole context
             reloadApplicationContext();
-
-            if(serviceClass != null) {
+            /* if(serviceClass != null) {
                 // if its a new taglib, reload app context
                 if(isNew) {
                     reloadApplicationContext();
@@ -200,7 +199,7 @@ public class GrailsReloadServletFilter extends OncePerRequestFilter {
                     HotSwappableTargetSource targetSource = (HotSwappableTargetSource)context.getBean(serviceClass.getFullName() + "TargetSource");
                     targetSource.swap(serviceClass.newInstance());
                 }
-            }
+            }*/
         }
     }
 
@@ -227,39 +226,39 @@ public class GrailsReloadServletFilter extends OncePerRequestFilter {
     private void loadControllerClass(Class loadedClass, boolean isNew) {
         GrailsControllerClass controllerClass = application.addControllerClass(loadedClass);
         if(controllerClass != null) {
-            // regenerate controller urlMap
-
-            Properties mappings = new Properties();
-            for (int i = 0; i < application.getControllers().length; i++) {
-                GrailsControllerClass simpleController = application.getControllers()[i];
-                for (int x = 0; x < simpleController.getURIs().length; x++) {
-                    if(!mappings.containsKey(simpleController.getURIs()[x]))
-                        mappings.put(simpleController.getURIs()[x], SimpleGrailsController.APPLICATION_CONTEXT_ID);
-                }
-            }
-            for (int i = 0; i < application.getPageFlows().length; i++) {
-                GrailsPageFlowClass pageFlow = application.getPageFlows()[i];
-                mappings.put(pageFlow.getUri(), pageFlow.getFullName() + "Controller");
-            }
-
-            HotSwappableTargetSource urlMappingsTargetSource = (HotSwappableTargetSource)context.getBean(GrailsUrlHandlerMapping.APPLICATION_CONTEXT_TARGET_SOURCE);
-
-            GrailsUrlHandlerMapping urlMappings = new GrailsUrlHandlerMapping();
-            urlMappings.setApplicationContext(context);
-            urlMappings.setMappings(mappings);
-            urlMappings.initApplicationContext();
-
-            urlMappingsTargetSource.swap(urlMappings);
-
-
-            // swap target source in app context
-            HotSwappableTargetSource controllerTargetSource = (HotSwappableTargetSource)context.getBean(controllerClass.getFullName() + "TargetSource");
-            controllerTargetSource.swap(controllerClass);
-            // if its a new controller re-generate web.xml, reload app context
+             // if its a new controller re-generate web.xml, reload app context
             if(isNew) {
                 // TODO re-generate web.xml
-
                 reloadApplicationContext();
+            }
+            else {
+                // regenerate controller urlMap
+                Properties mappings = new Properties();
+                for (int i = 0; i < application.getControllers().length; i++) {
+                    GrailsControllerClass simpleController = application.getControllers()[i];
+                    for (int x = 0; x < simpleController.getURIs().length; x++) {
+                        if(!mappings.containsKey(simpleController.getURIs()[x]))
+                            mappings.put(simpleController.getURIs()[x], SimpleGrailsController.APPLICATION_CONTEXT_ID);
+                    }
+                }
+                for (int i = 0; i < application.getPageFlows().length; i++) {
+                    GrailsPageFlowClass pageFlow = application.getPageFlows()[i];
+                    mappings.put(pageFlow.getUri(), pageFlow.getFullName() + "Controller");
+                }
+
+                HotSwappableTargetSource urlMappingsTargetSource = (HotSwappableTargetSource)context.getBean(GrailsUrlHandlerMapping.APPLICATION_CONTEXT_TARGET_SOURCE);
+
+                GrailsUrlHandlerMapping urlMappings = new GrailsUrlHandlerMapping();
+                urlMappings.setApplicationContext(context);
+                urlMappings.setMappings(mappings);
+                urlMappings.initApplicationContext();
+
+                urlMappingsTargetSource.swap(urlMappings);
+
+
+                // swap target source in app context
+                HotSwappableTargetSource controllerTargetSource = (HotSwappableTargetSource)context.getBean(controllerClass.getFullName() + "TargetSource");
+                controllerTargetSource.swap(controllerClass);
             }
         }
     }
