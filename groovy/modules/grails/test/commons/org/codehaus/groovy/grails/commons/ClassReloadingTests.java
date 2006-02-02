@@ -1,14 +1,14 @@
 package org.codehaus.groovy.grails.commons;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.net.MalformedURLException;
-import java.net.URL;
-
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyResourceLoader;
 import junit.framework.TestCase;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 public class ClassReloadingTests extends TestCase {
 
@@ -45,9 +45,10 @@ public class ClassReloadingTests extends TestCase {
 			fw.write(  "package org.codehaus.groovy.grails.commons;\n" +
 					"class TestReload { \n" +
 						"@Property hello = \"goodbye\"\n" +
-					"}");		
-		
-			// reload		
+					"}");
+            fw.close();
+
+            // reload
 			groovyClass = cl.loadClass("org.codehaus.groovy.grails.commons.TestReload",true,false);			
 			go = (GroovyObject)groovyClass.newInstance();			
 			assertEquals("goodbye", go.getProperty("hello"));			
