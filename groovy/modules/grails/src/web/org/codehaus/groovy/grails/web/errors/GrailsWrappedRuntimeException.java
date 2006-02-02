@@ -33,6 +33,8 @@ import java.util.regex.Pattern;
  */
 public class GrailsWrappedRuntimeException extends GrailsException {
 
+    private static final Pattern PARSE_DETAILS_STEP1 = Pattern.compile("\\((\\w+)\\.groovy:(\\d+)\\)");
+    private static final Pattern PARSE_DETAILS_STEP2 = Pattern.compile("at\\s{1}(\\w+)\\$_closure\\d+\\.doCall\\(\\1:(\\d+)\\)");
     public static final String URL_PREFIX = "/WEB-INF/grails-app/";
     private static final Log LOG  = LogFactory.getLog(GrailsWrappedRuntimeException.class);
     private Throwable t;
@@ -54,66 +56,73 @@ public class GrailsWrappedRuntimeException extends GrailsException {
         PrintWriter pw = new PrintWriter(sw);
         this.t.printStackTrace(pw);
         this.stackTrace = sw.toString();
-        Pattern extractDetails = Pattern.compile("\\((\\w+)\\.groovy:(\\d+)\\)");
-        Matcher matcher = extractDetails.matcher(stackTrace);
-        if(matcher.find()) {
-            this.className = matcher.group(1);
-            LineNumberReader reader = null;
-            try {
-                this.lineNumber = Integer.parseInt(matcher.group(2));
-                if(getLineNumber() > -1) {
-                    String fileName = this.className.replace('.', '/') + ".groovy";
-                    String urlPrefix = URL_PREFIX;
-                    if(GrailsClassUtils.isControllerClass(className) || GrailsClassUtils.isPageFlowClass(className)) {
-                        urlPrefix += "/controllers/";
-                    }
-                    else if(GrailsClassUtils.isTagLibClass(className)) {
-                        urlPrefix += "/taglib/";
-                    }
-                    else if(GrailsClassUtils.isService(className)) {
-                       urlPrefix += "/services/";
-                    }
-                    InputStream in = servletContext.getResourceAsStream(urlPrefix + fileName);
-                    if(in != null) {
-                        reader = new LineNumberReader(new InputStreamReader( in ));
-                        String currentLine = reader.readLine();
-                        StringBuffer buf = new StringBuffer();
-                        while(currentLine != null) {
 
-                            int currentLineNumber = reader.getLineNumber();
-                            if(currentLineNumber == this.lineNumber) {
-                                buf.append(currentLineNumber)
-                                   .append(": ")
-                                   .append(currentLine)
-                                   .append("\n");
-                            }
-                            else if(currentLineNumber == this.lineNumber + 1) {
-                                buf.append(currentLineNumber)
-                                   .append(": ")
-                                   .append(currentLine);
-                                break;
-                            }
-                            currentLine = reader.readLine();
+        Matcher m1 = PARSE_DETAILS_STEP1.matcher(stackTrace);
+        Matcher m2 = PARSE_DETAILS_STEP2.matcher(stackTrace);
+        try {
+            if(m1.find()) {
+                this.className = m1.group(1);
+                this.lineNumber = Integer.parseInt(m1.group(2));
+            }
+            else if(m2.find()) {
+                this.className = m2.group(1);
+                this.lineNumber = Integer.parseInt(m2.group(2));
+            }
+        }
+        catch(NumberFormatException nfex) {
+            // ignore
+        }
+
+        LineNumberReader reader = null;
+        try {
+            if(getLineNumber() > -1) {
+                String fileName = this.className.replace('.', '/') + ".groovy";
+                String urlPrefix = URL_PREFIX;
+                if(GrailsClassUtils.isControllerClass(className) || GrailsClassUtils.isPageFlowClass(className)) {
+                    urlPrefix += "/controllers/";
+                }
+                else if(GrailsClassUtils.isTagLibClass(className)) {
+                    urlPrefix += "/taglib/";
+                }
+                else if(GrailsClassUtils.isService(className)) {
+                   urlPrefix += "/services/";
+                }
+                InputStream in = servletContext.getResourceAsStream(urlPrefix + fileName);
+                if(in != null) {
+                    reader = new LineNumberReader(new InputStreamReader( in ));
+                    String currentLine = reader.readLine();
+                    StringBuffer buf = new StringBuffer();
+                    while(currentLine != null) {
+
+                        int currentLineNumber = reader.getLineNumber();
+                        if(currentLineNumber == this.lineNumber) {
+                            buf.append(currentLineNumber)
+                               .append(": ")
+                               .append(currentLine)
+                               .append("\n");
                         }
-                        this.codeSnippet = buf.toString().split("\n");
+                        else if(currentLineNumber == this.lineNumber + 1) {
+                            buf.append(currentLineNumber)
+                               .append(": ")
+                               .append(currentLine);
+                            break;
+                        }
+                        currentLine = reader.readLine();
                     }
+                    this.codeSnippet = buf.toString().split("\n");
                 }
             }
-            catch(NumberFormatException nfex) {
-                // ignore
-            }
-            catch (IOException e) {
-                LOG.warn("[GrailsWrappedRuntimeException] I/O error reading line diagnostics: " + e.getMessage(), e);
-            }
-            finally {
-                if(reader != null)
-                    try {
-                        reader.close();
-                    } catch (IOException e) {
-                        // ignore
-                    }
-            }
-
+        }
+        catch (IOException e) {
+            LOG.warn("[GrailsWrappedRuntimeException] I/O error reading line diagnostics: " + e.getMessage(), e);
+        }
+        finally {
+            if(reader != null)
+                try {
+                    reader.close();
+                } catch (IOException e) {
+                    // ignore
+                }
         }
     }
 
