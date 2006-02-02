@@ -54,7 +54,7 @@ public class GetSessionDynamicProperty extends AbstractDynamicControllerProperty
 		HttpSession session = null;
 		
 		public int size() {
-			if(session == null || session.isNew())
+			if(session == null)
 				return 0;			
 			// count as there is no way to access size from the session directly
 			int count = 0;
@@ -63,11 +63,12 @@ public class GetSessionDynamicProperty extends AbstractDynamicControllerProperty
 		}
 
 		public boolean isEmpty() {
-			if(session == null || session.isNew())
-				return true;
-			else
-				return false;			
-		}
+            if(session == null)
+               return true;
+
+           Enumeration e = session.getAttributeNames();
+           return !e.hasMoreElements();
+       }
 
 		public boolean containsKey(Object key) {
 			if(!(key instanceof String))
@@ -84,7 +85,7 @@ public class GetSessionDynamicProperty extends AbstractDynamicControllerProperty
 		}
 
 		public boolean containsValue(Object value) {
-			if(session == null || session.isNew())
+			if(session == null)
 				return false;
 			
 			for(Enumeration e = session.getAttributeNames();e.hasMoreElements();) {
@@ -100,9 +101,12 @@ public class GetSessionDynamicProperty extends AbstractDynamicControllerProperty
 			if(!(key instanceof String))
 				throw new IllegalArgumentException("The 'session' property key '"+key+"' must be a string value");
 			
-			if(session == null || session.isNew())
-				return null;
-			
+
+           if(session == null)
+               session = request.getSession(false);
+           if(session == null)
+               return null;
+
 			return session.getAttribute((String)key);
 		}
 
@@ -110,7 +114,7 @@ public class GetSessionDynamicProperty extends AbstractDynamicControllerProperty
 			if(!(key instanceof String))
 				throw new IllegalArgumentException("The 'session' property key '"+key+"' must be a string value");
 			
-			if(session == null || session.isNew())
+			if(session == null)
 				session = request.getSession();
 			
 			session.setAttribute((String)key, value);
@@ -121,7 +125,7 @@ public class GetSessionDynamicProperty extends AbstractDynamicControllerProperty
 			if(!(key instanceof String))
 				throw new IllegalArgumentException("The 'session' property key '"+key+"' must be a string value");
 
-			if(session == null || session.isNew())
+			if(session == null)
 				return null;
 			
 			Object value = session.getAttribute((String)key);
@@ -139,7 +143,7 @@ public class GetSessionDynamicProperty extends AbstractDynamicControllerProperty
 		}
 
 		public void clear() {
-			if(session == null || session.isNew())
+			if(session == null)
 				return;
 			
 			for(Enumeration e = session.getAttributeNames();e.hasMoreElements();) {
