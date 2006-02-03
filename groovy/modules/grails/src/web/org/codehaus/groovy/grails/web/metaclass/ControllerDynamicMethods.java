@@ -81,7 +81,6 @@ public class ControllerDynamicMethods extends
         addDynamicMethodInvocation( new RedirectDynamicMethod(helper,request,response) );
         addDynamicMethodInvocation( new ChainDynamicMethod(helper, request, response ) );
         addDynamicMethodInvocation( new RenderDynamicMethod(helper,request,response));
-        addDynamicMethodInvocation( new RicoDynamicMethod(request,response));
         addDynamicMethodInvocation( new BindDynamicMethod(request,response));
 
         // the hasErrors() dynamic method that checks of there are any errors in the controller
@@ -89,7 +88,7 @@ public class ControllerDynamicMethods extends
             public Object invoke(Object target, Object[] arguments) {
                 GroovyObject controller = (GroovyObject)target;
                 Errors errors = (Errors)controller.getProperty(ERRORS_PROPERTY);
-                return new Boolean(errors.hasErrors());
+                return Boolean.valueOf(errors.hasErrors());
             }
         });
 
