@@ -7,6 +7,7 @@ import org.codehaus.groovy.grails.commons.GrailsApplication;
 import groovy.lang.GroovyObject;
 
 import javax.servlet.ServletRequest;
+import javax.servlet.ServletContext;
 
 /**
  * An interface defining the names of and methods to retrieve Grails specific request and servlet attributes
@@ -47,6 +48,19 @@ public interface GrailsApplicationAttributes {
      * @return The uri of the application relative to the server root
      */
     String getApplicationUri(ServletRequest request);
+
+    /**
+     * Retrieves the servlet context instance
+     * @return The servlet context instance
+     */
+    ServletContext getServletContext();
+    /**
+     *
+     * @param templateName
+     * @param request
+     * @return The uri of a named template for the current controller
+     */
+    String getTemplateUri(String templateName, ServletRequest request);
 
     /**
      *

@@ -57,6 +57,19 @@ public class DefaultGrailsApplicationAttributes implements GrailsApplicationAttr
         return this.urlHelper.getContextPath((HttpServletRequest)request);
     }
 
+    public ServletContext getServletContext() {
+        return this.context;
+    }
+
+    public String getTemplateUri(String templateName, ServletRequest request) {
+       return new StringBuffer("/WEB-INF/grails-app/views")
+                                   .append(getControllerUri(request))
+                                   .append("/_")
+                                   .append(templateName)
+                                   .append(".gsp")
+                                   .toString();
+   }
+
     public String getControllerActionUri(ServletRequest request) {
         GroovyObject controller = getController(request);
 
@@ -72,7 +85,12 @@ public class DefaultGrailsApplicationAttributes implements GrailsApplicationAttr
     }
 
     public GroovyPagesTemplateEngine getPagesTemplateEngine() {
-       return (GroovyPagesTemplateEngine)this.context.getAttribute(GSP_TEMPLATE_ENGINE);
+       GroovyPagesTemplateEngine engine = (GroovyPagesTemplateEngine)this.context.getAttribute(GSP_TEMPLATE_ENGINE);
+       if(engine == null) {
+           engine = new GroovyPagesTemplateEngine();
+           this.context.setAttribute(GSP_TEMPLATE_ENGINE,engine);
+       }
+       return engine;
     }
 
     public GrailsApplication getGrailsApplication() {
