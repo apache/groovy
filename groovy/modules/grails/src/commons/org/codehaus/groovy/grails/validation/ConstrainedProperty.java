@@ -26,6 +26,7 @@ import org.apache.commons.validator.CreditCardValidator;
 import org.apache.commons.validator.EmailValidator;
 import org.apache.commons.validator.UrlValidator;
 import org.codehaus.groovy.grails.validation.exceptions.ConstraintException;
+import org.codehaus.groovy.grails.commons.GrailsClassUtils;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.validation.Errors;
@@ -157,6 +158,7 @@ public class ConstrainedProperty   {
 		protected String constraintPropertyName;
 		protected Class constraintOwningClass;
 		protected Object constraintParameter;
+        protected String classShortName;
 
         public String getPropertyName() {
             return this.constraintPropertyName;
@@ -167,7 +169,8 @@ public class ConstrainedProperty   {
 		 */
 		public void setOwningClass(Class constraintOwningClass) {
 			this.constraintOwningClass = constraintOwningClass;
-		}
+            this.classShortName = GrailsClassUtils.getPropertyNameRepresentation(constraintOwningClass);
+        }
 		/**
 		 * @param constraintPropertyName The constraintPropertyName to set.
 		 */
@@ -192,10 +195,10 @@ public class ConstrainedProperty   {
 			processValidate(propertyValue, errors);
 		}		
 		public void rejectValue(Errors errors, String code,String defaultMessage) {
-			errors.rejectValue(constraintPropertyName, constraintPropertyName + '.' + code, defaultMessage);
+			errors.rejectValue(constraintPropertyName,classShortName + '.'  + constraintPropertyName + '.' + code, defaultMessage);
 		}
 		public void rejectValue(Errors errors, String code,Object[] args,String defaultMessage) {
-			errors.rejectValue(constraintPropertyName, constraintPropertyName + '.' + code, args,defaultMessage);
+			errors.rejectValue(constraintPropertyName,classShortName + '.'  + constraintPropertyName + '.' + code, args,defaultMessage);
 		}		
 		protected abstract void processValidate(Object propertyValue, Errors errors);
 
