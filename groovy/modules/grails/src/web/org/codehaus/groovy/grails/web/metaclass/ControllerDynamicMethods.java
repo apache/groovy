@@ -46,7 +46,8 @@ public class ControllerDynamicMethods extends
     public static final String SERVLET_CONTEXT = "servletContext";
     public static final String GRAILS_ATTRIBUTES = "grailsAttributes";
     public static final String RESPONSE_PROPERTY = "response";
-	public static final String ERRORS_PROPERTY = "errors";
+    public static final String RENDER_VIEW_PROPERTY = "renderView";
+    public static final String ERRORS_PROPERTY = "errors";
 	public static final String HAS_ERRORS_METHOD = "hasErrors";
 	public static final String MODEL_AND_VIEW_PROPERTY = "modelAndView";
     public static final String ACTION_URI_PROPERTY = "actionUri";
@@ -74,6 +75,7 @@ public class ControllerDynamicMethods extends
         addDynamicProperty(new GenericDynamicProperty(GRAILS_ATTRIBUTES, GrailsApplicationAttributes.class,helper.getGrailsAttributes(),true));
         addDynamicProperty(new GenericDynamicProperty(ACTION_URI_PROPERTY,String.class,null,false));
         addDynamicProperty(new GenericDynamicProperty(CONTROLLER_URI_PROPERTY,String.class,null,false));
+        addDynamicProperty(new GenericDynamicProperty(RENDER_VIEW_PROPERTY,Boolean.class, Boolean.TRUE,false));
 
         // add dynamic methods
         addDynamicMethodInvocation( new RedirectDynamicMethod(helper,request,response) );

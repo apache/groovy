@@ -327,7 +327,13 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
         boolean viewNameBlank = (viewName == null || viewName.length() == 0);
         // reset the metaclass
         ModelAndView explicityModelAndView = (ModelAndView)controller.getProperty(ControllerDynamicMethods.MODEL_AND_VIEW_PROPERTY);
-        if(explicityModelAndView != null) {
+        Boolean renderView = (Boolean)controller.getProperty(ControllerDynamicMethods.RENDER_VIEW_PROPERTY);
+        if(renderView == null) renderView = Boolean.TRUE;
+
+        if(!renderView.booleanValue()) {
+            return null;
+        }
+        else if(explicityModelAndView != null) {
             return explicityModelAndView;
         }
         else if (returnValue == null) {
