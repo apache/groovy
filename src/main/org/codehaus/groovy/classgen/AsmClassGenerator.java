@@ -1036,7 +1036,7 @@ public class AsmClassGenerator extends ClassGenerator {
         Expression rightExpression = expression.getRightExpression();
         // no need to visit left side, just get the variable name
         VariableExpression vex = expression.getVariableExpression();
-        ClassNode type = getLHSType(vex);
+        ClassNode type = vex.getType();
         // lets not cast for primitive types as we handle these in field setting etc
         if (ClassHelper.isPrimitiveType(type)) {
             rightExpression.visit(this);
