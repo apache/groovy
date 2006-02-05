@@ -52,10 +52,7 @@ import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.lang.reflect.Constructor;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -407,7 +404,11 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param args       the command line arguments to pass in
      */
     public Object run(String scriptText, String fileName, String[] args) throws CompilationFailedException {
-        return run(new ByteArrayInputStream(scriptText.getBytes()), fileName, args);
+        try {
+            return run(new ByteArrayInputStream(scriptText.getBytes(config.getSourceEncoding())), fileName, args);
+        } catch (UnsupportedEncodingException e) {
+            throw new CompilationFailedException(0, null, e);
+        }
     }
 
     /**
@@ -455,7 +456,11 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param fileName   is the logical file name of the script (which is used to create the class name of the script)
      */
     public Object evaluate(String scriptText, String fileName) throws CompilationFailedException {
-        return evaluate(new ByteArrayInputStream(scriptText.getBytes()), fileName);
+        try {
+            return evaluate(new ByteArrayInputStream(scriptText.getBytes(config.getSourceEncoding())), fileName);
+        } catch (UnsupportedEncodingException e) {
+            throw new CompilationFailedException(0, null, e);
+        }
     }
 
     /**
@@ -463,7 +468,11 @@ public class GroovyShell extends GroovyObjectSupport {
      * The .class file created from the script is given the supplied codeBase
      */
     public Object evaluate(String scriptText, String fileName, String codeBase) throws CompilationFailedException {
-        return evaluate(new GroovyCodeSource(new ByteArrayInputStream(scriptText.getBytes()), fileName, codeBase));
+        try {
+            return evaluate(new GroovyCodeSource(new ByteArrayInputStream(scriptText.getBytes(config.getSourceEncoding())), fileName, codeBase));
+        } catch (UnsupportedEncodingException e) {
+            throw new CompilationFailedException(0, null, e);
+        }
     }
 
     /**
@@ -481,7 +490,11 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param scriptText the text of the script
      */
     public Object evaluate(String scriptText) throws CompilationFailedException {
-        return evaluate(new ByteArrayInputStream(scriptText.getBytes()), generateScriptName());
+        try {
+            return evaluate(new ByteArrayInputStream(scriptText.getBytes(config.getSourceEncoding())), generateScriptName());
+        } catch (UnsupportedEncodingException e) {
+            throw new CompilationFailedException(0, null, e);
+        }
     }
 
     /**
@@ -563,11 +576,19 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param scriptText the text of the script
      */
     public Script parse(String scriptText) throws CompilationFailedException {
-        return parse(new ByteArrayInputStream(scriptText.getBytes()), generateScriptName());
+        try {
+            return parse(new ByteArrayInputStream(scriptText.getBytes(config.getSourceEncoding())), generateScriptName());
+        } catch (UnsupportedEncodingException e) {
+            throw new CompilationFailedException(0, null, e);
+        }
     }
 
     public Script parse(String scriptText, String fileName) throws CompilationFailedException {
-        return parse(new ByteArrayInputStream(scriptText.getBytes()), fileName);
+        try {
+            return parse(new ByteArrayInputStream(scriptText.getBytes(config.getSourceEncoding())), fileName);
+        } catch (UnsupportedEncodingException e) {
+            throw new CompilationFailedException(0, null, e);
+        }
     }
 
     /**
