@@ -20,6 +20,7 @@ import org.codehaus.groovy.grails.exceptions.GrailsConfigurationException;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.io.IOException;
+import java.io.File;
 
 /**
  * A class that holds references to all the Grails resource instances to support class reloading
@@ -30,6 +31,14 @@ import java.io.IOException;
 public class GrailsResourceHolder {
 
     public static Pattern GRAILS_RESOURCE_PATTERN = Pattern.compile(".+\\\\grails-app\\\\\\w+\\\\(.+)\\.groovy");
+    static{
+            if(File.separator.equals("/")){
+                GRAILS_RESOURCE_PATTERN =
+                    Pattern.compile(".+/grails-app/\\w+/(.+)\\.groovy");
+            }
+    }
+
+
     public static final String APPLICATION_CONTEXT_ID = "grailsResourceHolder";
 
     private Resource[] resources;
