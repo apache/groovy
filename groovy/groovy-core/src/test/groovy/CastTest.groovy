@@ -34,7 +34,7 @@ class CastTest extends GroovyTestCase {
         
         assert b.class == Short , "Type is ${b.class}"
         
-        def b = 5
+        b = 5
         
         println("Updated field ${b} with type ${b.class}")
  
