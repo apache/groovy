@@ -20,6 +20,8 @@
  * @since 17-Jan-2006
  */
 import org.springframework.validation.Errors;
+import org.springframework.context.NoSuchMessageException;
+import org.springframework.web.servlet.support.RequestContextUtils as RCU;
 import org.codehaus.groovy.grails.commons.GrailsClassUtils as GCU;
 
 class ApplicationTagLib {
@@ -431,6 +433,48 @@ class ApplicationTagLib {
         }
     }
 
+    /**
+     * Resolves a message code for a given error or code from the resource bundle
+     */
+    @Property message = { attrs ->
+          def messageSource = grailsAttributes
+                                .getApplicationContext()
+                                .getBean("messageSource")
+
+          def locale = RCU.getLocale(request)
+
+          if(attrs['error']) {
+                def error = attrs['error']
+                def defaultMessage = ( attrs['default'] ? attrs['default'] : error.defaultMessage )
+                def message = messageSource.getMessage( error.code,
+                                                        error.arguments,
+                                                        defaultMessage,
+                                                        locale )
+                if(message) {
+                    out << message
+                }
+                else {
+                    out << error.code
+                }
+          }
+          if(attrs['code']) {
+                def code = attrs['code']
+                def defaultMessage = ( attrs['default'] ? attrs['default'] : error.defaultMessage )
+                if(!defaultMessage)
+                    defaultMessage = code
+
+                def message = messageSource.getMessage( code,
+                                                        null,
+                                                        defaultMessage,
+                                                        locale )
+                if(message) {
+                    out << message
+                }
+                else {
+                    out << code
+                }
+          }
+    }
     // Maps out how Grails contraints map to Apache commons validators
     static CONSTRAINT_TYPE_MAP = [ email : 'email',
                                              creditCard : 'creditCard',
@@ -445,6 +489,8 @@ class ApplicationTagLib {
     /**
      * Validates a form using Apache commons validator javascript against constraints defined in a Grails
      * domain class
+     *
+     * TODO: This tag is a work in progress     
      */
     @Property validate = { attrs, body ->
         def form = attrs["form"]
@@ -504,10 +550,11 @@ class ApplicationTagLib {
                         out << inStream.text
                     }
 
+                    out << "function ${form}_${vt}() {"
                     v.each { constraint ->
                            out << "this.${constraint.propertyName} = new Array("
                            out << "document.forms['${form}'].elements['${constraint.propertyName}']," // the field
-                           out << '"Test message"' // the message
+                           out << '"Test message"' // TODO: Resolve the actual message
                            switch(vt) {
                                 case 'mask': out << ",function() { return '${constraint.regex}'; }";break;
                                 case 'intRange': out << ",function() { if(arguments[0]=='min') return ${constraint.range.from}; else return ${constraint.range.to} }";break;
