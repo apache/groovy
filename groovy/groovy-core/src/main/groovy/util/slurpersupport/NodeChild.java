@@ -26,6 +26,8 @@ import java.io.Writer;
 import java.util.Iterator;
 import java.util.Map;
 
+import org.codehaus.groovy.runtime.InvokerHelper;
+
 /**
  * @author John Wilson
  *
@@ -137,10 +139,10 @@ public class NodeChild extends GPathResult {
    * @see org.codehaus.groovy.sandbox.util.slurpersupport.Node#find(groovy.lang.Closure)
    */
   public GPathResult find(final Closure closure) {
-    if (((Boolean)closure.call(new Object[]{this})).booleanValue()) {
+    if (InvokerHelper.asBool(closure.call(new Object[]{this}))) {
       return this;
     } else {
-      return null;
+      return new NoChildren(this, "", this.namespaceTagHints);
     }
   }
 

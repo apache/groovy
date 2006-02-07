@@ -20,6 +20,8 @@ package groovy.util.slurpersupport;
 import java.util.Iterator;
 import java.util.Map;
 
+import org.codehaus.groovy.runtime.InvokerHelper;
+
 import groovy.lang.Closure;
 
 /**
@@ -46,9 +48,8 @@ public class FilteredNodeChildren extends NodeChildren {
               protected Object getNextNode(final Iterator iter) {
                 while (iter.hasNext()) {
                 final Object node = iter.next();
-                final Boolean result = (Boolean)FilteredNodeChildren.this.closure.call(new Object[]{node});
                 
-                  if (result != null && result.booleanValue()) {
+                  if (InvokerHelper.asBool(FilteredNodeChildren.this.closure.call(new Object[]{node}))) {
                     return node;
                   }
                 }
