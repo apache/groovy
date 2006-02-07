@@ -111,7 +111,10 @@ public class CompileStack implements Opcodes {
     private HashMap superBlockNamedLabels = new HashMap();
     // map containing named labels of current block
     private HashMap currentBlockNamedLabels = new HashMap();
+    
+    private Label thisStartLabel, thisEndLabel;
 
+    
     private MethodVisitor mv;
     private BytecodeHelper helper;
     
@@ -127,6 +130,7 @@ public class CompileStack implements Opcodes {
 	//this is used to store the goals for a "continue foo" call
     // in a loop where foo is a label.
 	private HashMap namedLoopContinueLabel = new HashMap();
+    private String className;
 	
     private class StateStackElement {
         VariableScope _scope;
@@ -192,7 +196,18 @@ public class CompileStack implements Opcodes {
         throw new GroovyBugError("CompileStack#removeVar: tried to remove a temporary variable with a non existent index");
     }
 
+    private void setEndLabels(){
+        Label endLabel = new Label();
+        mv.visitLabel(endLabel);
+        for (Iterator iter = stackVariables.values().iterator(); iter.hasNext();) {
+            Variable var = (Variable) iter.next();
+            var.setEndLabel(endLabel);
+        }
+        thisEndLabel = endLabel;
+    }
+    
     public void pop() {
+        setEndLabels();
         popState();
     }
 
@@ -246,13 +261,10 @@ public class CompileStack implements Opcodes {
     public int defineTemporaryVariable(String name, ClassNode node, boolean store) {
         Variable answer = defineVar(name,node,false);
         temporaryVariables.add(answer);
-        Label startLabel  = new Label();
-        answer.setStartLabel(startLabel);
+        usedVariables.removeLast();
         
-        if (store) {
-            mv.visitVarInsn(ASTORE, currentVariableIndex);
-            mv.visitLabel(startLabel);
-        }
+        if (store) mv.visitVarInsn(ASTORE, currentVariableIndex);
+        
         return answer.getIndex();
     }
     
@@ -273,15 +285,20 @@ public class CompileStack implements Opcodes {
      */
     public void clear() {
         clear = true;
-        Label endBlock = new Label();
         // br experiment with local var table so debuggers can retrieve variable names
-        if (false && AsmClassGenerator.CREATE_DEBUG_INFO) {
+        if (true) {//AsmClassGenerator.CREATE_DEBUG_INFO) {
+            if (thisEndLabel==null) setEndLabels();
+            
+            if (!scope.isInStaticContext()) {
+                // write "this"
+                mv.visitLocalVariable("this", className, null, thisStartLabel, thisEndLabel, 0);
+            }
+           
             for (Iterator iterator = usedVariables.iterator(); iterator.hasNext();) {
                 Variable v = (Variable) iterator.next();
                 String type = BytecodeHelper.getTypeDescription(v.getType());
                 Label start = v.getStartLabel();
                 Label end = v.getEndLabel();
-                if (end==null) end = endBlock;
                 mv.visitLocalVariable(v.getName(), type, null, start, end, v.getIndex());
             }
         }
@@ -298,6 +315,8 @@ public class CompileStack implements Opcodes {
         breakLabel=null;
         finallyLabel=null;
         helper = null;
+        thisStartLabel=null;
+        thisEndLabel=null;
     }
     
     /**
@@ -307,13 +326,14 @@ public class CompileStack implements Opcodes {
      * can be get by getVariable
      * 
      */
-    protected void init(VariableScope el, Parameter[] parameters, MethodVisitor mv) {
+    protected void init(VariableScope el, Parameter[] parameters, MethodVisitor mv, String className) {
         if (!clear) throw new GroovyBugError("CompileStack#init called without calling clear before");
         clear=false;
         pushVariableScope(el);
         this.mv = mv;
         this.helper = helper = new BytecodeHelper(mv);
         defineMethodVariables(parameters,el.isInStaticContext());
+        this.className = className;
     }
 
     /**
@@ -437,6 +457,7 @@ public class CompileStack implements Opcodes {
     
     private void defineMethodVariables(Parameter[] paras,boolean isInStaticContext) {
         Label startLabel  = new Label();
+        thisStartLabel = startLabel;
         mv.visitLabel(startLabel);
         
         makeLocalVariablesOffset(paras,isInStaticContext);      
@@ -515,17 +536,6 @@ public class CompileStack implements Opcodes {
             nextVariableIndex++;
         }
         nextVariableIndex++;
-    }
-
-    /**
-     * Returns the temporary Variable at the given index.
-     */
-    public Variable getTemporaryVariable(int tmpIdx) {
-        for (Iterator iter = temporaryVariables.iterator(); iter.hasNext();) {
-            Variable element = (Variable) iter.next();
-            if (element.getIndex()==tmpIdx) return element;
-        }
-        throw new GroovyBugError("tried to get temporary variable with wrong index");
     }
     
     /**
