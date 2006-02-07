@@ -27,6 +27,8 @@ import java.io.Writer;
 import java.util.Iterator;
 import java.util.Map;
 
+import org.codehaus.groovy.runtime.InvokerHelper;
+
 /**
  * @author John Wilson
  *
@@ -225,9 +227,8 @@ class NodeChildren extends GPathResult {
   
     while (iter.hasNext()) {
     final Object node = iter.next();
-    final Boolean result = (Boolean)closure.call(new Object[]{node});
     
-      if (result != null && result.booleanValue()) {
+      if (InvokerHelper.asBool(closure.call(new Object[]{node}))) {
         return (GPathResult)node;
       }
     }
