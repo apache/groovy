@@ -17,14 +17,16 @@ package org.codehaus.groovy.grails.orm.hibernate;
 
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.orm.hibernate.cfg.DefaultGrailsDomainConfiguration;
+import org.codehaus.groovy.grails.orm.hibernate.cfg.GrailsDomainConfiguration;
 import org.hibernate.HibernateException;
+import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
 import org.springframework.orm.hibernate3.LocalSessionFactoryBean;
 
 import java.io.IOException;
 
 /**
- * A SessionFactory bean that allows the configuration class to be changed and customise for usage within Grails 
+ * A SessionFactory bean that allows the configuration class to be changed and customise for usage within Grails
  *
  * @author Graeme Rocher
  * @since 07-Jul-2005
@@ -63,7 +65,10 @@ public class ConfigurableLocalSessionFactoryBean extends
 	protected Configuration newConfiguration() {
 		DefaultGrailsDomainConfiguration config = new DefaultGrailsDomainConfiguration();
 		config.setGrailsApplication(grailsApplication);
-		return config;
+        // we set this to false as Spring might wrap the session factory in a transactional proxy
+        // if configured as such
+        config.setConfigureDynamicMethods(false);
+        return config;
 	}
 
 
@@ -78,8 +83,17 @@ public class ConfigurableLocalSessionFactoryBean extends
 			originalClassLoader = Thread.currentThread().getContextClassLoader();
 			Thread.currentThread().setContextClassLoader(this.classLoader);
 		}
-		super.afterPropertiesSet();
-		if (originalClassLoader != null) {
+        super.afterPropertiesSet();
+
+        SessionFactory sf = (SessionFactory)getObject();
+        if(sf != null) {
+            Configuration c = getConfiguration();
+            if(c instanceof GrailsDomainConfiguration) {
+                GrailsDomainConfiguration gc = (GrailsDomainConfiguration)c;
+                gc.configureDynamicMethods(sf);
+            }
+        }
+        if (originalClassLoader != null) {
 			Thread.currentThread().setContextClassLoader(originalClassLoader);
 		}
 	}

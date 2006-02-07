@@ -14,23 +14,23 @@
  */ 
 package org.codehaus.groovy.grails.orm.hibernate.cfg;
 
-import java.beans.IntrospectionException;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.commons.GrailsDomainClass;
 import org.codehaus.groovy.grails.metaclass.DomainClassMethods;
-import org.hibernate.EntityMode;
 import org.hibernate.HibernateException;
 import org.hibernate.MappingException;
 import org.hibernate.SessionFactory;
-import org.hibernate.cfg.Configuration;
+import org.hibernate.EntityMode;
 import org.hibernate.metadata.ClassMetadata;
+import org.hibernate.cfg.Configuration;
+
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
+import java.util.Collection;
+import java.beans.IntrospectionException;
 
 /**
  * Creates runtime configuration mappings for the Grails domain classes
@@ -41,88 +41,101 @@ import org.hibernate.metadata.ClassMetadata;
  */
 public class DefaultGrailsDomainConfiguration extends Configuration implements GrailsDomainConfiguration {
 
-	private static final Log LOG  = LogFactory.getLog(DefaultGrailsDomainConfiguration.class);
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -7115087342689305517L;
-	private GrailsApplication grailsApplication;
-	private Set domainClasses;
-	private boolean configLocked;
+    private static final Log LOG  = LogFactory.getLog(DefaultGrailsDomainConfiguration.class);
+    /**
+     *
+     */
+    private static final long serialVersionUID = -7115087342689305517L;
+    private GrailsApplication grailsApplication;
+    private Set domainClasses;
+    private boolean configLocked;
+    private boolean configureDynamicMethods = true;
 
-	/**
-	 * 
-	 */
-	public DefaultGrailsDomainConfiguration() {
-		super();		
-		this.domainClasses = new HashSet();
-	}
+    /**
+     *
+     */
+    public DefaultGrailsDomainConfiguration() {
+        super();
+        this.domainClasses = new HashSet();
+    }
 
-	/* (non-Javadoc)
-	 * @see org.codehaus.groovy.grails.orm.hibernate.cfg.GrailsDomainConfiguration#addDomainClass(org.codehaus.groovy.grails.commons.GrailsDomainClass)
-	 */
-	public GrailsDomainConfiguration addDomainClass( GrailsDomainClass domainClass ) {
-		if(domainClass.getMappedBy().equalsIgnoreCase( GrailsDomainClass.GORM )) {
-			this.domainClasses.add(domainClass);
-		}
-				
-		return this;		
-	}
-	/* (non-Javadoc)
-	 * @see org.codehaus.groovy.grails.orm.hibernate.cfg.GrailsDomainConfiguration#setGrailsApplication(org.codehaus.groovy.grails.commons.GrailsApplication)
-	 */
-	public void setGrailsApplication(GrailsApplication application) {
-		this.grailsApplication = application;
-		if(this.grailsApplication != null) {
-			GrailsDomainClass[] existingDomainClasses = this.grailsApplication.getGrailsDomainClasses();
-			for(int i = 0; i < existingDomainClasses.length;i++) {
-				addDomainClass(existingDomainClasses[i]);
-			}		
-		}
-	}
-	
-	
-	/* (non-Javadoc)
-	 * @see org.hibernate.cfg.Configuration#buildSessionFactory()
-	 */
-	public SessionFactory buildSessionFactory() throws HibernateException {
+    /* (non-Javadoc)
+      * @see org.codehaus.groovy.grails.orm.hibernate.cfg.GrailsDomainConfiguration#addDomainClass(org.codehaus.groovy.grails.commons.GrailsDomainClass)
+      */
+    public GrailsDomainConfiguration addDomainClass( GrailsDomainClass domainClass ) {
+        if(domainClass.getMappedBy().equalsIgnoreCase( GrailsDomainClass.GORM )) {
+            this.domainClasses.add(domainClass);
+        }
 
-		SessionFactory sessionFactory =  super.buildSessionFactory();
-		Collection classMetaData = sessionFactory.getAllClassMetadata().values();
-		for (Iterator i = classMetaData.iterator(); i.hasNext();) {
-			ClassMetadata cmd = (ClassMetadata) i.next();
-			Class persistentClass = cmd.getMappedClass(EntityMode.POJO);
-			LOG.info("[GrailsDomainConfiguration] Registering dynamic methods on externally configured hibernate persistent class ["+persistentClass+"]");
-			try {
-				new DomainClassMethods(this.grailsApplication,persistentClass,sessionFactory,this.grailsApplication.getClassLoader());
-			} catch (IntrospectionException e) {
-				LOG.warn("[GrailsDomainConfiguration] Introspection exception registering dynamic methods for ["+persistentClass+"]:" + e.getMessage(), e);
-			}
-		}	
-		return sessionFactory;
-	}
+        return this;
+    }
+    /* (non-Javadoc)
+      * @see org.codehaus.groovy.grails.orm.hibernate.cfg.GrailsDomainConfiguration#setGrailsApplication(org.codehaus.groovy.grails.commons.GrailsApplication)
+      */
+    public void setGrailsApplication(GrailsApplication application) {
+        this.grailsApplication = application;
+        if(this.grailsApplication != null) {
+            GrailsDomainClass[] existingDomainClasses = this.grailsApplication.getGrailsDomainClasses();
+            for(int i = 0; i < existingDomainClasses.length;i++) {
+                addDomainClass(existingDomainClasses[i]);
+            }
+        }
+    }
 
-	/**
-	 *  Overrides the default behaviour to including binding of Grails
-	 *  domain classes
-	 */
-	protected void secondPassCompile() throws MappingException {
-		if (configLocked) {
-			return;
-		}		
-		// set the class loader to load Groovy classes
-		if(this.grailsApplication != null)
-			Thread.currentThread().setContextClassLoader( this.grailsApplication.getClassLoader() );
-		// do Grails class configuration
-		for(Iterator i = this.domainClasses.iterator();i.hasNext();) {
-			GrailsDomainClass domainClass = (GrailsDomainClass)i.next();
-			
-			GrailsDomainBinder.bindClass(domainClass, super.createMappings());
-		}
-		
-		// call super
-		super.secondPassCompile();
-		this.configLocked = true;
-	}
-	
+
+
+
+    /* (non-Javadoc)
+      * @see org.hibernate.cfg.Configuration#buildSessionFactory()
+      */
+    public SessionFactory buildSessionFactory() throws HibernateException {
+
+        SessionFactory sessionFactory =  super.buildSessionFactory();
+        if(configureDynamicMethods) {
+            configureDynamicMethods(sessionFactory);
+        }
+        return sessionFactory;
+    }
+
+    public void configureDynamicMethods(SessionFactory sf) {
+        Collection classMetaData = sf.getAllClassMetadata().values();
+        for (Iterator i = classMetaData.iterator(); i.hasNext();) {
+            ClassMetadata cmd = (ClassMetadata) i.next();
+            Class persistentClass = cmd.getMappedClass(EntityMode.POJO);
+            LOG.info("[GrailsDomainConfiguration] Registering dynamic methods on externally configured hibernate persistent class ["+persistentClass+"]");
+            try {
+                new DomainClassMethods(this.grailsApplication,persistentClass,sf,this.grailsApplication.getClassLoader());
+            } catch (IntrospectionException e) {
+                LOG.warn("[GrailsDomainConfiguration] Introspection exception registering dynamic methods for ["+persistentClass+"]:" + e.getMessage(), e);
+            }
+        }
+    }
+
+    public void setConfigureDynamicMethods(boolean shouldConfigure) {
+        this.configureDynamicMethods = shouldConfigure;
+    }
+
+    /**
+     *  Overrides the default behaviour to including binding of Grails
+     *  domain classes
+     */
+    protected void secondPassCompile() throws MappingException {
+        if (configLocked) {
+            return;
+        }
+        // set the class loader to load Groovy classes
+        if(this.grailsApplication != null)
+            Thread.currentThread().setContextClassLoader( this.grailsApplication.getClassLoader() );
+        // do Grails class configuration
+        for(Iterator i = this.domainClasses.iterator();i.hasNext();) {
+            GrailsDomainClass domainClass = (GrailsDomainClass)i.next();
+
+            GrailsDomainBinder.bindClass(domainClass, super.createMappings());
+        }
+
+        // call super
+        super.secondPassCompile();
+        this.configLocked = true;
+    }
+
 }

@@ -16,6 +16,7 @@ package org.codehaus.groovy.grails.orm.hibernate.cfg;
 
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.commons.GrailsDomainClass;
+import org.hibernate.SessionFactory;
 
 /**
  * @author Graeme Rocher
@@ -23,18 +24,30 @@ import org.codehaus.groovy.grails.commons.GrailsDomainClass;
  */
 
 public interface GrailsDomainConfiguration {
-	/**
-	 * Adds a domain class to the configuration
-	 * @param domainClass
-	 * @return this
-	 */
-	public abstract GrailsDomainConfiguration addDomainClass(
-			GrailsDomainClass domainClass);
+    /**
+     * Adds a domain class to the configuration
+     * @param domainClass
+     * @return this
+     */
+    public abstract GrailsDomainConfiguration addDomainClass(
+            GrailsDomainClass domainClass);
 
-	/**
-	 * Sets the grails application instance
-	 * @param domain The domain to set.
-	 */
-	public abstract void setGrailsApplication(GrailsApplication application);
+    /**
+     * Sets the grails application instance
+     * @param application The grails application to use or null if none.
+     */
+    public abstract void setGrailsApplication(GrailsApplication application);
+
+    /**
+     * Configures Grails dynamic methods for the specified session factory
+      * @param sf
+     */
+    public abstract void configureDynamicMethods(SessionFactory sf);
+
+    /**
+     * Whether the configuration should configure dynamic methods (defaults to true)
+     * @param shouldConfigure
+     */
+    public abstract void setConfigureDynamicMethods(boolean shouldConfigure);
 
 }
