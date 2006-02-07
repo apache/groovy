@@ -80,14 +80,14 @@ public class FileSystemCompiler
     }
 
 
-    public static void displayHelp() 
+    public static void displayHelp() // todo: use HelpFormatter to avoid duplication between help and OptionBuilder
     {
-        System.err.println("Usage: groovy <options> <source files>");
+        System.err.println("Usage: groovyc <options> <source files>");
         System.err.println("where possible options include: ");
         System.err.println("  --classpath <path>        Specify where to find user class files");
         System.err.println("  -d <directory>            Specify where to place generated class files");
         System.err.println("  --encoding <encoding>     Specify the encoding of the user class files");
-        System.err.println("  --strict                  Turn on strict type safety");
+//        System.err.println("  --strict                  Turn on strict type safety");
         System.err.println("  --version                 Print the verion");
         System.err.println("  --help                    Print a synopsis of standard options");
         System.err.println("  --exception               Print stack trace on error");
@@ -155,7 +155,7 @@ public class FileSystemCompiler
             options.addOption(OptionBuilder.withLongOpt("sourcepath").hasArg().withArgName("sourcepath").create());
             options.addOption(OptionBuilder.withLongOpt("encoding").hasArg().withArgName("encoding").create());
             options.addOption(OptionBuilder.hasArg().create('d'));
-            options.addOption(OptionBuilder.withLongOpt("strict").create('s'));
+//            options.addOption(OptionBuilder.withLongOpt("strict").create('s'));
             options.addOption(OptionBuilder.withLongOpt("help").create('h'));
             options.addOption(OptionBuilder.withLongOpt("version").create('v'));
             options.addOption(OptionBuilder.withLongOpt("exception").create('e'));
