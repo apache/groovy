@@ -15,19 +15,21 @@
  */ 
 package org.codehaus.groovy.grails.orm.hibernate;
 
-import java.io.IOException;
-
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.orm.hibernate.cfg.DefaultGrailsDomainConfiguration;
 import org.hibernate.HibernateException;
 import org.hibernate.cfg.Configuration;
 import org.springframework.orm.hibernate3.LocalSessionFactoryBean;
 
+import java.io.IOException;
+
 /**
+ * A SessionFactory bean that allows the configuration class to be changed and customise for usage within Grails 
+ *
  * @author Graeme Rocher
  * @since 07-Jul-2005
  */
-public class ConfigurableLocalsSessionFactoryBean extends
+public class ConfigurableLocalSessionFactoryBean extends
 		LocalSessionFactoryBean {
 
 	
@@ -37,7 +39,7 @@ public class ConfigurableLocalsSessionFactoryBean extends
 	/**
 	 * 
 	 */
-	public ConfigurableLocalsSessionFactoryBean() {
+	public ConfigurableLocalSessionFactoryBean() {
 		super();		
 	}
 	

@@ -20,7 +20,7 @@ import org.apache.commons.lang.WordUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.groovy.grails.commons.*;
-import org.codehaus.groovy.grails.orm.hibernate.ConfigurableLocalsSessionFactoryBean;
+import org.codehaus.groovy.grails.orm.hibernate.ConfigurableLocalSessionFactoryBean;
 import org.codehaus.groovy.grails.orm.hibernate.support.HibernateDialectDetectorFactoryBean;
 import org.codehaus.groovy.grails.orm.hibernate.validation.GrailsDomainClassValidator;
 import org.codehaus.groovy.grails.scaffolding.*;
@@ -369,7 +369,7 @@ public class SpringConfig {
 		grailsClassLoader.setProperty("targetObject", SpringConfigUtils.createBeanReference("grailsApplication"));
 		grailsClassLoader.setProperty("targetMethod", SpringConfigUtils.createLiteralValue("getClassLoader"));
 		
-		Bean localSessionFactoryBean = SpringConfigUtils.createSingletonBean(ConfigurableLocalsSessionFactoryBean.class);
+		Bean localSessionFactoryBean = SpringConfigUtils.createSingletonBean(ConfigurableLocalSessionFactoryBean.class);
 		localSessionFactoryBean.setProperty("dataSource", SpringConfigUtils.createBeanReference("dataSource"));
 		ClassLoader cl = this.application.getClassLoader();
 		URL hibernateConfig = cl.getResource("hibernate.cfg.xml");

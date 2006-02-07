@@ -27,7 +27,7 @@
 	
 	
 	
-	<bean id="sessionFactory" class="org.codehaus.groovy.grails.orm.hibernate.ConfigurableLocalsSessionFactoryBean">
+	<bean id="sessionFactory" class="org.codehaus.groovy.grails.orm.hibernate.ConfigurableLocalSessionFactoryBean">
 		<property name="grailsApplication">
 			<ref bean="grailsApplication" />
 		</property>
