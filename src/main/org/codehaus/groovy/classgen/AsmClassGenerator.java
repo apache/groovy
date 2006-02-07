@@ -389,15 +389,15 @@ public class AsmClassGenerator extends ClassGenerator {
                 cv.visitMethodInsn(INVOKESPECIAL, internalBaseClassName, "<init>", "()V");
             }
             
-            compileStack.init(node.getVariableScope(),node.getParameters(),cv);
+            compileStack.init(node.getVariableScope(),node.getParameters(),cv, BytecodeHelper.getTypeDescription(classNode));
             
             super.visitConstructorOrMethod(node, isConstructor);
-            
-            compileStack.clear();
             
             if (!outputReturn || node.isVoidMethod()) {
                 cv.visitInsn(RETURN);
             }
+
+            compileStack.clear();
             
             // lets do all the exception blocks
             for (Iterator iter = exceptionBlocks.iterator(); iter.hasNext();) {
@@ -1977,12 +1977,7 @@ public class AsmClassGenerator extends ClassGenerator {
         FieldNode field = expression.getField();
         boolean isStatic = field.isStatic();
 
-        int tempIdx = compileStack.defineTemporaryVariable(field,false);
-
-        if (leftHandExpression && first) {
-            cv.visitVarInsn(ASTORE, tempIdx);
-            visitVariableStartLabel(compileStack.getTemporaryVariable(tempIdx));
-        }
+        int tempIdx = compileStack.defineTemporaryVariable(field, leftHandExpression && first);
 
         if (steps > 1 || !isStatic) {
             cv.visitVarInsn(ALOAD, 0);
@@ -2065,17 +2060,6 @@ public class AsmClassGenerator extends ClassGenerator {
         }
         if (ASM_DEBUG) {
             helper.mark("var: " + variable.getName());
-        }
-    }
-
-    private void visitVariableStartLabel(Variable variable) {
-        if (CREATE_DEBUG_INFO) {
-            Label l = variable.getStartLabel();
-            if (l != null) {
-                cv.visitLabel(l);
-            } else {
-                throw new GroovyBugError("start label == null! what to do about this?");
-            }
         }
     }
 

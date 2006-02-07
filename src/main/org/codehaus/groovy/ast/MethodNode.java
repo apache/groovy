@@ -85,6 +85,7 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
                 variableScope.getDeclaredVariables().put(para.getName(),para);
             }
         }
+        variableScope.setInStaticContext(isStatic());
         
         this.exceptions = exceptions;
     }
