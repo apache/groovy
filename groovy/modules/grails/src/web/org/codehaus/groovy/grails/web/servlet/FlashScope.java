@@ -17,8 +17,11 @@ package org.codehaus.groovy.grails.web.servlet;
 import java.util.Map;
 
 /**
- * An interface that represents flow scope and allows a flow scope map to be set to the next
- * state
+ * An interface that represents flash scope and allows a flash scope map to be set to the next
+ * state. Flash scope essentially allows variables to be maintained for the next state and the next
+ * state only, what this means is if objects are stored inside FlashScope on the first call to
+ * "next()" they will be still there, but on the subsequent call they will be cleared unless they
+ * have been set again since the last call to "next()"
  *
  * @author Graeme Rocher
  * @since 07-Feb-2006
