@@ -124,11 +124,6 @@ public interface GrailsControllerHelper {
 	public abstract ModelAndView handleURI(String uri,
 			HttpServletRequest request, HttpServletResponse response, Map params);
 
-	/**
-	 * Sets the chain model on the helper
-	 * @param model
-	 */
-	public abstract void setChainModel(Map model);
 
     /**
      *

@@ -19,6 +19,7 @@ public interface GrailsApplicationAttributes {
 
     String GSP_TEMPLATE_ENGINE = "org.codehaus.groovy.grails.GSP_TEMPLATE_ENGINE";
     String APPLICATION_CONTEXT = "org.codehaus.groovy.grails.APPLICATION_CONTEXT";
+    String FLASH_SCOPE = "org.codehaus.groovy.grails.FLASH_SCOPE";
     String CONTROLLER = "org.codehaus.groovy.grails.CONTROLLER";
     String TAG_LIB = "org.codehaus.groovy.grails.TAG_LIB";
     String ERRORS =  "org.codehaus.groovy.grails.ERRORS";
@@ -54,6 +55,13 @@ public interface GrailsApplicationAttributes {
      * @return The servlet context instance
      */
     ServletContext getServletContext();
+
+    /**
+     * Retrieves the flash scope instance for the given requeste
+     * @param request
+     * @return The FlashScope instance
+     */
+    FlashScope getFlashScope(ServletRequest request);
     /**
      *
      * @param templateName

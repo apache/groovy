@@ -24,7 +24,6 @@ import org.codehaus.groovy.grails.web.metaclass.ControllerDynamicMethods;
 import org.codehaus.groovy.grails.web.metaclass.GetParamsDynamicProperty;
 import org.codehaus.groovy.grails.web.metaclass.GetSessionDynamicProperty;
 import org.codehaus.groovy.grails.web.servlet.GrailsApplicationAttributes;
-import org.codehaus.groovy.grails.web.taglib.GrailsTagRegistry;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.springframework.context.ApplicationContext;
 
@@ -354,6 +353,7 @@ public class GroovyPagesTemplateEngine {
             GroovyObject controller = (GroovyObject)request.getAttribute(GrailsApplicationAttributes.CONTROLLER);
             binding.setVariable(GroovyPage.REQUEST, controller.getProperty(ControllerDynamicMethods.REQUEST_PROPERTY));
             binding.setVariable(GroovyPage.RESPONSE, controller.getProperty(ControllerDynamicMethods.RESPONSE_PROPERTY));
+            binding.setVariable(GroovyPage.FLASH, controller.getProperty(ControllerDynamicMethods.FLASH_SCOPE_PROPERTY));
             binding.setVariable(GroovyPage.SERVLET_CONTEXT, context);
             ApplicationContext appContext = (ApplicationContext)context.getAttribute(GrailsApplicationAttributes.APPLICATION_CONTEXT);
             binding.setVariable(GroovyPage.APPLICATION_CONTEXT, appContext);
@@ -363,7 +363,7 @@ public class GroovyPagesTemplateEngine {
             binding.setVariable(GroovyPage.SESSION, controller.getProperty(GetSessionDynamicProperty.PROPERTY_NAME));
             binding.setVariable(GroovyPage.PARAMS, controller.getProperty(GetParamsDynamicProperty.PROPERTY_NAME));
             binding.setVariable(GroovyPage.OUT, out);
-            binding.setVariable("grailsTagRegistry", GrailsTagRegistry.getInstance());
+
 
             // Go through request attributes and add them to the binding as the model
             for (Enumeration attributeEnum =  request.getAttributeNames(); attributeEnum.hasMoreElements();) {

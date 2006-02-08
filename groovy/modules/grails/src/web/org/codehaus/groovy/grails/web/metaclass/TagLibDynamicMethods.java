@@ -57,6 +57,7 @@ public class TagLibDynamicMethods extends GroovyDynamicMethodsInterceptor {
         addDynamicProperty(controllerDynamicMethods.getDynamicProperty(ControllerDynamicMethods.RESPONSE_PROPERTY) );
         addDynamicProperty(controllerDynamicMethods.getDynamicProperty(ControllerDynamicMethods.SERVLET_CONTEXT) );
         addDynamicProperty(controllerDynamicMethods.getDynamicProperty(ControllerDynamicMethods.GRAILS_ATTRIBUTES) );
+        addDynamicProperty(controllerDynamicMethods.getDynamicProperty(ControllerDynamicMethods.FLASH_SCOPE_PROPERTY) );
 
         addDynamicMethodInvocation(new AbstractDynamicMethodInvocation(THROW_TAG_ERROR_METHOD) {
             public Object invoke(Object target, Object[] arguments) {

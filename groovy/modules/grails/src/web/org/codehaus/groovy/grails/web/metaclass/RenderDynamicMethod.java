@@ -26,6 +26,7 @@ import org.apache.commons.collections.BeanMap;
 import org.codehaus.groovy.grails.commons.GrailsControllerClass;
 import org.codehaus.groovy.grails.web.pages.GroovyPagesTemplateEngine;
 import org.codehaus.groovy.grails.web.servlet.GrailsApplicationAttributes;
+import org.codehaus.groovy.grails.web.servlet.GrailsHttpServletResponse;
 import org.codehaus.groovy.grails.web.servlet.mvc.GrailsControllerHelper;
 import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.ControllerExecutionException;
 import org.springframework.web.servlet.ModelAndView;
@@ -61,12 +62,13 @@ public class RenderDynamicMethod extends AbstractDynamicControllerMethod {
     private static final String BUILDER_TYPE_RICO = "rico";
 
     private GrailsControllerHelper helper;
-
+    protected GrailsHttpServletResponse response;
 
 
     public RenderDynamicMethod(GrailsControllerHelper helper, HttpServletRequest request, HttpServletResponse response) {
         super(METHOD_SIGNATURE, request, response);
         this.helper = helper;
+        this.response = new GrailsHttpServletResponse(response);
     }
 
     public Object invoke(Object target, Object[] arguments) {

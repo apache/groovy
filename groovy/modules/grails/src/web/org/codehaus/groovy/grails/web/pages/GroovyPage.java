@@ -44,7 +44,7 @@ public abstract class GroovyPage extends Script {
     public static final String APPLICATION_CONTEXT = "applicationContext";
     public static final String SESSION = "session";
     public static final String PARAMS = "params";
-
+    public static final String FLASH = "flash";
 
 /*	do noething in here for the moment
 */

@@ -35,6 +35,7 @@ import org.codehaus.groovy.grails.web.metaclass.GetParamsDynamicProperty;
 import org.codehaus.groovy.grails.web.metaclass.TagLibDynamicMethods;
 import org.codehaus.groovy.grails.web.servlet.DefaultGrailsApplicationAttributes;
 import org.codehaus.groovy.grails.web.servlet.GrailsApplicationAttributes;
+import org.codehaus.groovy.grails.web.servlet.FlashScope;
 import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.ControllerExecutionException;
 import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.NoClosurePropertyForURIException;
 import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.NoViewNameDefinedException;
@@ -168,9 +169,6 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
                             extraParams.put(token, tokens[i + 1]);
                         }
                     }
-                    else {
-                        continue;
-                    }
                 }
 
             }
@@ -243,6 +241,8 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
         }
         controller.setProperty(ControllerDynamicMethods.CONTROLLER_URI_PROPERTY, '/' + controllerName);
         controller.setProperty(ControllerDynamicMethods.ACTION_URI_PROPERTY, '/' + controllerName + '/' + actionPropertyName);
+
+        // populate additional params from url
         Map controllerParams = (Map)controller.getProperty(GetParamsDynamicProperty.PROPERTY_NAME);
         if(!StringUtils.isBlank(id)) {
             controllerParams.put(GrailsApplicationAttributes.ID_PARAM, id);
@@ -254,6 +254,12 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
             }
         }
 
+        // set the flash scope instance to its next state and set on controller
+        FlashScope fs = this.grailsAttributes.getFlashScope(request);
+        fs.next();
+
+        controller.setProperty(ControllerDynamicMethods.FLASH_SCOPE_PROPERTY,fs);
+
         // Step 5: get the view name for this URI.
         String viewName = controllerClass.getViewByURI(uri);
 
@@ -263,16 +269,13 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
         if(action == null)
             throw new IllegalStateException("Scaffolder supports action ["+actionPropertyName+"] for controller ["+controllerClass.getFullName()+"] but getAction returned null!");
 
+
         // Step 7: process the action
         Object returnValue = handleAction( controller,action,request,response,params );
 
 
         // Step 8: determine return value type and handle accordingly
         return handleActionResponse(controller,returnValue,actionPropertyName,viewName);
-    }
-
-    public void setChainModel(Map model) {
-        this.chainModel  = model;
     }
 
     public GrailsApplicationAttributes getGrailsAttributes() {
@@ -328,6 +331,9 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
         // reset the metaclass
         ModelAndView explicityModelAndView = (ModelAndView)controller.getProperty(ControllerDynamicMethods.MODEL_AND_VIEW_PROPERTY);
         Boolean renderView = (Boolean)controller.getProperty(ControllerDynamicMethods.RENDER_VIEW_PROPERTY);
+        FlashScope fs = this.grailsAttributes.getFlashScope((HttpServletRequest)controller.getProperty(ControllerDynamicMethods.REQUEST_PROPERTY));
+        this.chainModel = (Map)fs.get(ChainDynamicMethod.PROPERTY_CHAIN_MODEL);
+
         if(renderView == null) renderView = Boolean.TRUE;
 
         if(!renderView.booleanValue()) {
@@ -344,17 +350,18 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
             }
         } else if (returnValue instanceof Map) {
             // remove any Proxy wrappers and set the adaptee as the value
-            removeProxiesFromModelObjects((Map)returnValue);
+            Map model = (Map)returnValue;
+            removeProxiesFromModelObjects(model);
             if (viewNameBlank) {
                 throw new NoViewNameDefinedException("Map instance returned by and no view name specified for closure on property [" + closurePropertyName + "] in controller [" + controller.getClass() + "]!");
             } else {
-                Map returnMap = (Map)returnValue;
+
                 if(!this.chainModel.isEmpty()) {
-                    this.chainModel.putAll( returnMap );
-                    return new ModelAndView(viewName, this.chainModel);
+                    model.putAll(this.chainModel);
+                    return new ModelAndView(viewName, model);
                 }
                 else {
-                    return new ModelAndView(viewName, returnMap);
+                    return new ModelAndView(viewName, model);
                 }
             }
         } else if (returnValue instanceof ModelAndView) {
@@ -365,7 +372,6 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
             removeProxiesFromModelObjects(modelMap);
 
             if(!this.chainModel.isEmpty()) {
-                this.chainModel.putAll(modelMap);
                 modelAndView.addAllObjects(this.chainModel);
             }
 
@@ -382,8 +388,8 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
             Map modelMap = new BeanMap(controller);
             ModelAndView modelAndView = new ModelAndView(viewName, modelMap);
             if(!this.chainModel.isEmpty()) {
-                this.chainModel.putAll(modelMap);
-                modelAndView.addAllObjects(this.chainModel);
+                modelMap.putAll(chainModel);
+                modelAndView.addAllObjects(modelMap);
             }
             return modelAndView;
         }

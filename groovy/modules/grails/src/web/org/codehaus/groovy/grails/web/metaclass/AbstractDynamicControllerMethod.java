@@ -15,11 +15,10 @@
  */
 package org.codehaus.groovy.grails.web.metaclass;
 
+import org.codehaus.groovy.grails.commons.metaclass.AbstractDynamicMethodInvocation;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import org.codehaus.groovy.grails.commons.metaclass.AbstractDynamicMethodInvocation;
-import org.codehaus.groovy.grails.web.servlet.GrailsHttpServletResponse;
 
 /**
  * An abstract class for dynamic controller methods to implement
@@ -31,15 +30,11 @@ public abstract class AbstractDynamicControllerMethod extends
         AbstractDynamicMethodInvocation {
 
     protected HttpServletRequest request;
-    protected GrailsHttpServletResponse response;
+    protected HttpServletResponse response;
 
     public AbstractDynamicControllerMethod(String methodName,HttpServletRequest request, HttpServletResponse response) {
         super(methodName);
         this.request = request;
-        if(response instanceof GrailsHttpServletResponse)
-            this.response = (GrailsHttpServletResponse)response;
-        else {
-            this.response = new GrailsHttpServletResponse(response);
-        }
+        this.response = response;
     }
 }

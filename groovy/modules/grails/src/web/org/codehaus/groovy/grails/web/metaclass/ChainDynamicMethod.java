@@ -18,17 +18,22 @@ package org.codehaus.groovy.grails.web.metaclass;
 import groovy.lang.Closure;
 import groovy.lang.GroovyObject;
 import groovy.lang.MissingMethodException;
-
-import java.beans.PropertyDescriptor;
-import java.util.Map;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.codehaus.groovy.grails.commons.GrailsClassUtils;
+import org.codehaus.groovy.grails.scaffolding.GrailsScaffolder;
+import org.codehaus.groovy.grails.web.servlet.GrailsApplicationAttributes;
+import org.codehaus.groovy.grails.web.servlet.FlashScope;
+import org.codehaus.groovy.grails.web.servlet.mvc.GrailsControllerHelper;
+import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.ControllerExecutionException;
+import org.springframework.validation.Errors;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import org.codehaus.groovy.grails.commons.GrailsClassUtils;
-import org.codehaus.groovy.grails.commons.GrailsControllerClass;
-import org.codehaus.groovy.grails.scaffolding.GrailsScaffolder;
-import org.codehaus.groovy.grails.web.servlet.mvc.GrailsControllerHelper;
+import java.beans.PropertyDescriptor;
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * Implements the "chain" Controller method for action chaining
@@ -38,90 +43,134 @@ import org.codehaus.groovy.grails.web.servlet.mvc.GrailsControllerHelper;
  */
 public class ChainDynamicMethod extends AbstractDynamicControllerMethod {
 
-	public static final String METHOD_SIGNATURE = "chain";
-	public static final String ARGUMENT_ACTION = "action";
-	public static final String ARGUMENT_PARAMS = "params";
-	public static final Object ARGUMENT_MODEL = "model";
-	
-	static public final String PROPERTY_CHAIN_MODEL = "chainModel";
-	
-	private GrailsControllerHelper helper;
+    private static final Log LOG = LogFactory.getLog(ChainDynamicMethod.class);
 
-	public ChainDynamicMethod(GrailsControllerHelper helper, HttpServletRequest request, HttpServletResponse response) {
-		super(METHOD_SIGNATURE, request, response);
-		if(helper == null)
-			throw new IllegalStateException("Constructor argument 'helper' cannot be null");
-		
-		this.helper = helper;
-	}
+    public static final String METHOD_SIGNATURE = "chain";
+    public static final String ARGUMENT_CONTROLLER = "controller";
+    public static final String ARGUMENT_ACTION = "action";
+    public static final String ARGUMENT_ID = "id";
+    public static final String ARGUMENT_PARAMS = "params";
+    public static final String ARGUMENT_ERRORS = "errors";
+    public static final Object ARGUMENT_MODEL = "model";
 
-	public Object invoke(Object target, Object[] arguments) {
-		if(arguments.length == 0)
-			throw new MissingMethodException(METHOD_SIGNATURE,target.getClass(),arguments);
-				
-		Object actionRef;
-		Map params = null;
-		Map model = null;
-		GroovyObject controller = (GroovyObject)target;
-		
-		if(arguments[0] instanceof Map) {
-			Map argMap = (Map)arguments[0];
-			actionRef = argMap.get(ARGUMENT_ACTION);
-			if(argMap.get(ARGUMENT_PARAMS) instanceof Map)
-				params = (Map)argMap.get(ARGUMENT_PARAMS);
-			if(argMap.get(ARGUMENT_MODEL) instanceof Map)
-				model = (Map)argMap.get(ARGUMENT_MODEL);
-			else
-				throw new MissingMethodException(METHOD_SIGNATURE,target.getClass(),arguments);
-		}
-		else {
-			actionRef = arguments[0];
-			if(!(arguments[1] instanceof Map))
-				throw new MissingMethodException(METHOD_SIGNATURE,target.getClass(),arguments);
-			
-			model = (Map)arguments[1];
-			if(arguments.length > 2) {
-				if(arguments[2] instanceof Map) {
-					params = (Map)arguments[2];
-				}
-			}			
-		}		
+    static public final String PROPERTY_CHAIN_MODEL = "chainModel";
 
-		if(actionRef instanceof String) {
-			String uri = (String)actionRef;
-			if(params != null ) {
-				helper.setChainModel(model);
-				return helper.handleURI(uri,this.request,this.response, params);
-			}
-			else {
-				helper.setChainModel(model);
-				return helper.handleURI(uri,this.request,this.response);
-			}
-		}
-		else if(actionRef instanceof Closure) {
-			Closure c = (Closure)actionRef;
-			PropertyDescriptor prop = GrailsClassUtils.getPropertyDescriptorForValue(target,c);
-			String closureName = null;
-			if(prop != null) {
-				closureName = prop.getName();
-			}
-			else {
-				GrailsScaffolder scaffolder = helper.getScaffolderForController(target.getClass().getName());
-				if(scaffolder != null) {
-						closureName = scaffolder.getActionName(c);
-				}
-			}
-			
-			GrailsControllerClass controllerClass = helper.getControllerClassByName( target.getClass().getName() );
-			String viewName  = controllerClass.getViewByName(closureName);
+    private GrailsControllerHelper helper;
 
-			helper.setChainModel(model);			
-			Object returnValue = helper.handleAction(controller,c,request,response,params);
+    public ChainDynamicMethod(GrailsControllerHelper helper, HttpServletRequest request, HttpServletResponse response) {
+        super(METHOD_SIGNATURE, request, response);
+        if(helper == null)
+            throw new IllegalStateException("Constructor argument 'helper' cannot be null");
 
-			return helper.handleActionResponse(controller,returnValue,closureName,viewName);
-		}
+        this.helper = helper;
+    }
 
-		throw new MissingMethodException(METHOD_SIGNATURE,target.getClass(),arguments);			
-	}
+    public Object invoke(Object target, Object[] arguments) {
+        if(arguments.length == 0)
+            throw new MissingMethodException(METHOD_SIGNATURE,target.getClass(),arguments);
+
+        Object actionRef;
+        String controllerName;
+        Object id;
+        Map params;
+        Map model;
+        Errors errors;
+        GroovyObject controller = (GroovyObject)target;
+
+        if(arguments[0] instanceof Map) {
+            Map argMap = (Map)arguments[0];
+            actionRef = argMap.get(ARGUMENT_ACTION);
+            controllerName = (String)argMap.get(ARGUMENT_CONTROLLER);
+            id =  argMap.get(ARGUMENT_ID);
+            params = (Map)argMap.get(ARGUMENT_PARAMS);
+            model = (Map)argMap.get(ARGUMENT_MODEL);
+            errors = (Errors)argMap.get(ARGUMENT_ERRORS);
+        }
+        else {
+            throw new MissingMethodException(METHOD_SIGNATURE,target.getClass(),arguments);
+        }
+        // place the chain model in flash scope
+        GrailsApplicationAttributes attrs = helper.getGrailsAttributes();
+        FlashScope fs = attrs.getFlashScope(request);
+        if(fs.containsKey(PROPERTY_CHAIN_MODEL)) {
+            Map chainModel = (Map)fs.get(PROPERTY_CHAIN_MODEL);
+            if(chainModel != null) {
+                chainModel.putAll(model);
+                model = chainModel;
+            }
+        }
+
+        fs.put(PROPERTY_CHAIN_MODEL, model);
+
+        // if there are errors add it to the list of errors
+        Errors controllerErrors = (Errors)controller.getProperty( ControllerDynamicMethods.ERRORS_PROPERTY );
+        if(controllerErrors != null) {
+            controllerErrors.addAllErrors(errors);
+        }
+        else {
+            controller.setProperty( ControllerDynamicMethods.ERRORS_PROPERTY, errors);
+        }
+
+        String actionName = null;
+        if(actionRef instanceof String) {
+           actionName = (String)actionRef;
+        }
+        else if(actionRef instanceof Closure) {
+            Closure c = (Closure)actionRef;
+            PropertyDescriptor prop = GrailsClassUtils.getPropertyDescriptorForValue(target,c);
+            if(prop != null) {
+                actionName = prop.getName();
+            }
+            else {
+                GrailsScaffolder scaffolder = helper.getScaffolderForController(target.getClass().getName());
+                if(scaffolder != null) {
+                        actionName = scaffolder.getActionName(c);
+                }
+            }
+        }
+
+        if(actionName != null) {
+            StringBuffer actualUri = new StringBuffer(attrs.getApplicationUri(request));
+            if(controllerName != null) {
+                actualUri.append('/')
+                         .append(controllerName);
+            }
+            else {
+                actualUri.append(attrs.getControllerUri(request));
+            }
+            actualUri.append('/')
+                     .append(actionName);
+            if(id != null) {
+                actualUri.append('/')
+                         .append(id);
+            }
+            if(params != null) {
+                actualUri.append('?');
+                for (Iterator i = params.keySet().iterator(); i.hasNext();) {
+                    Object name = i.next();
+                    actualUri.append(name)
+                             .append('=')
+                             .append(params.get(name));
+                    if(i.hasNext())
+                        actualUri.append('&');
+                }
+            }
+            if(LOG.isDebugEnabled()) {
+                LOG.debug("Dynamic method [chain] redirecting request to ["+actualUri+"]");
+            }
+
+            try {
+                response.sendRedirect(response.encodeRedirectURL(actualUri.toString()));
+            } catch (IOException e) {
+                throw new ControllerExecutionException("Error redirecting request for url ["+actualUri+"]: " + e.getMessage(),e);
+            }
+
+        }
+        else {
+            throw new ControllerExecutionException("Action not found in redirect for name ["+actionName+"]");
+        }
+
+        return null;
+    }
 
 }

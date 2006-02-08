@@ -25,6 +25,7 @@ import groovy.lang.GroovyObject;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 /**
  * @author Graeme Rocher
@@ -49,8 +50,10 @@ public class DefaultGrailsApplicationAttributes implements GrailsApplicationAttr
 
     public String getControllerUri(ServletRequest request) {
         GroovyObject controller = getController(request);
-
-        return (String)controller.getProperty(ControllerDynamicMethods.CONTROLLER_URI_PROPERTY);
+        if(controller != null)
+            return (String)controller.getProperty(ControllerDynamicMethods.CONTROLLER_URI_PROPERTY);
+        else
+            return null;
     }
 
     public String getApplicationUri(ServletRequest request) {
@@ -59,6 +62,19 @@ public class DefaultGrailsApplicationAttributes implements GrailsApplicationAttr
 
     public ServletContext getServletContext() {
         return this.context;
+    }
+
+    public FlashScope getFlashScope(ServletRequest request) {
+        if(request instanceof HttpServletRequest) {
+            HttpSession session = ((HttpServletRequest)request).getSession(true);
+            FlashScope fs = (FlashScope)session.getAttribute(FLASH_SCOPE);
+            if(fs == null) {
+                fs = new GrailsFlashScope();
+                session.setAttribute(FLASH_SCOPE,fs);
+            }
+            return fs;
+        }
+        return null;
     }
 
     public String getTemplateUri(String templateName, ServletRequest request) {

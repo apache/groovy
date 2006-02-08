@@ -25,6 +25,7 @@ import org.codehaus.groovy.grails.commons.metaclass.GroovyDynamicMethodsIntercep
 import org.codehaus.groovy.grails.scaffolding.GrailsScaffolder;
 import org.codehaus.groovy.grails.web.servlet.GrailsHttpServletRequest;
 import org.codehaus.groovy.grails.web.servlet.GrailsApplicationAttributes;
+import org.codehaus.groovy.grails.web.servlet.FlashScope;
 import org.codehaus.groovy.grails.web.servlet.mvc.GrailsControllerHelper;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -44,6 +45,7 @@ public class ControllerDynamicMethods extends
 
 	public static final String REQUEST_PROPERTY = "request";
     public static final String SERVLET_CONTEXT = "servletContext";
+    public static final String FLASH_SCOPE_PROPERTY = "flash";
     public static final String GRAILS_ATTRIBUTES = "grailsAttributes";
     public static final String RESPONSE_PROPERTY = "response";
     public static final String RENDER_VIEW_PROPERTY = "renderView";
@@ -52,6 +54,7 @@ public class ControllerDynamicMethods extends
 	public static final String MODEL_AND_VIEW_PROPERTY = "modelAndView";
     public static final String ACTION_URI_PROPERTY = "actionUri";
     public static final String CONTROLLER_URI_PROPERTY = "controllerUri";
+
 
     protected GrailsControllerClass controllerClass;
 	protected GrailsScaffolder scaffolder;
@@ -70,6 +73,7 @@ public class ControllerDynamicMethods extends
         addDynamicProperty(new GenericDynamicProperty(REQUEST_PROPERTY, HttpServletRequest.class,new GrailsHttpServletRequest( request,controller),true) );
         addDynamicProperty(new GenericDynamicProperty(RESPONSE_PROPERTY, HttpServletResponse.class,response,true) );
         addDynamicProperty(new GenericDynamicProperty(SERVLET_CONTEXT, ServletContext.class,helper.getServletContext(),true) );
+        addDynamicProperty(new GenericDynamicProperty(FLASH_SCOPE_PROPERTY, FlashScope.class,helper.getGrailsAttributes().getFlashScope(request),false) );
         addDynamicProperty(new GenericDynamicProperty(ERRORS_PROPERTY, Errors.class, null, false));
         addDynamicProperty(new GenericDynamicProperty(MODEL_AND_VIEW_PROPERTY, ModelAndView.class,null,false));
         addDynamicProperty(new GenericDynamicProperty(GRAILS_ATTRIBUTES, GrailsApplicationAttributes.class,helper.getGrailsAttributes(),true));
