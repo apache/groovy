@@ -75,8 +75,14 @@ public class SimpleGrailsController implements Controller, ServletContextAware {
 
         ApplicationContext context = (ApplicationContext)this.servletContext.getAttribute(GrailsApplicationAttributes.APPLICATION_CONTEXT);
         this.helper = new SimpleGrailsControllerHelper(this.application,context,this.servletContext);
+        ModelAndView mv = helper.handleURI(uri,request,response);
 
-        return helper.handleURI(uri,request,response);
+        if(LOG.isDebugEnabled()) {
+            if(mv != null) {
+                LOG.debug("[SimpleGrailsController] Forwarding to view ["+mv.getViewName()+"] with model ["+mv.getModel()+"]");    
+            }
+        }
+        return mv;
     }
 
     public void setServletContext(ServletContext servletContext) {

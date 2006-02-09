@@ -20,6 +20,7 @@ import groovy.lang.GroovyObject;
 import groovy.lang.ProxyMetaClass;
 import groovy.util.Proxy;
 import org.apache.commons.collections.BeanMap;
+import org.apache.commons.collections.map.CompositeMap;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.WordUtils;
 import org.apache.commons.logging.Log;
@@ -332,7 +333,12 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
         ModelAndView explicityModelAndView = (ModelAndView)controller.getProperty(ControllerDynamicMethods.MODEL_AND_VIEW_PROPERTY);
         Boolean renderView = (Boolean)controller.getProperty(ControllerDynamicMethods.RENDER_VIEW_PROPERTY);
         FlashScope fs = this.grailsAttributes.getFlashScope((HttpServletRequest)controller.getProperty(ControllerDynamicMethods.REQUEST_PROPERTY));
-        this.chainModel = (Map)fs.get(ChainDynamicMethod.PROPERTY_CHAIN_MODEL);
+        if(fs.containsKey(ChainDynamicMethod.PROPERTY_CHAIN_MODEL)) {
+            this.chainModel = (Map)fs.get(ChainDynamicMethod.PROPERTY_CHAIN_MODEL);
+            if(this.chainModel == null)
+                this.chainModel = Collections.EMPTY_MAP;
+        }
+
 
         if(renderView == null) renderView = Boolean.TRUE;
 
@@ -346,24 +352,26 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
             if (viewNameBlank) {
                 return null;
             } else {
-                return new ModelAndView(viewName, new BeanMap(controller));
+                Map model;
+                if(!this.chainModel.isEmpty()) {
+                    model = new CompositeMap(this.chainModel, new BeanMap(controller));
+                }
+                else {
+                    model = new BeanMap(controller);
+                }
+
+                return new ModelAndView(viewName, model);
             }
         } else if (returnValue instanceof Map) {
             // remove any Proxy wrappers and set the adaptee as the value
-            Map model = (Map)returnValue;
-            removeProxiesFromModelObjects(model);
-            if (viewNameBlank) {
-                throw new NoViewNameDefinedException("Map instance returned by and no view name specified for closure on property [" + closurePropertyName + "] in controller [" + controller.getClass() + "]!");
-            } else {
-
-                if(!this.chainModel.isEmpty()) {
-                    model.putAll(this.chainModel);
-                    return new ModelAndView(viewName, model);
-                }
-                else {
-                    return new ModelAndView(viewName, model);
-                }
+            Map returnModel = (Map)returnValue;
+            Map model;
+            removeProxiesFromModelObjects(returnModel);
+            if(!this.chainModel.isEmpty()) {
+                returnModel.putAll(this.chainModel);
             }
+            return new ModelAndView(viewName, returnModel);
+
         } else if (returnValue instanceof ModelAndView) {
             ModelAndView modelAndView = (ModelAndView)returnValue;
 
@@ -385,12 +393,14 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
             return modelAndView;
         }
         else {
-            Map modelMap = new BeanMap(controller);
-            ModelAndView modelAndView = new ModelAndView(viewName, modelMap);
+            Map model;
             if(!this.chainModel.isEmpty()) {
-                modelMap.putAll(chainModel);
-                modelAndView.addAllObjects(modelMap);
+                model = new CompositeMap(this.chainModel, new BeanMap(controller));
             }
+            else {
+                model = new BeanMap(controller);
+            }
+            ModelAndView modelAndView = new ModelAndView(viewName, model);
             return modelAndView;
         }
     }
