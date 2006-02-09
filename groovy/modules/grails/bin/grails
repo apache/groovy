@@ -2,13 +2,7 @@
 
 if [ -z "$JAVA_HOME" ] ; then
   echo "Error: JAVA_HOME is not defined"
-  echo "Please define JAVA_HOME and start Grails again"
-  exit 1
-fi
-
-if [ -z "$ANT_HOME" ] ; then
-  echo "Error: ANT_HOME is not defined"
-  echo "Please define ANT_HOME and start Grails again"
+  echo "Please set the JAVA_HOME environment variable and start Grails again"
   exit 1
 fi
 
@@ -18,6 +12,7 @@ if [ -z "$GRAILS_HOME" ] ; then
   exit 1
 fi
 
+ANT_HOME=${GRAILS_HOME}
 GRAILS_ANT_CLASSPATH=$GRAILS_HOME/lib/bsf.jar
 GRAILS_ANT_CLASSPATH=$GRAILS_ANT_CLASSPATH:$GRAILS_HOME/lib/groovy-all-1.0-jsr-05-SNAPSHOT.jar
 GRAILS_ANT_CLASSPATH=$GRAILS_ANT_CLASSPATH:$GRAILS_HOME/lib/org.mortbay.jetty.jar

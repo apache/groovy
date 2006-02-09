@@ -1,23 +1,17 @@
 @echo off
 
 if "%JAVA_HOME%"=="" goto javaHomeNotSet
-if "%ANT_HOME%"=="" goto antHomeNotSet
 if "%GRAILS_HOME"=="" goto grailsHomeNotSet
 goto getArguments
 
 :javaHomeNotSet
 echo Error: JAVA_HOME is not defined
-echo Please define JAVA_HOME and start Grails again
-goto errorExit
-
-:antHomeNotSet
-echo Error: ANT_HOME is not defined
-echo Please define ANT_HOME and start Grails again
+echo Please set the JAVA_HOME environment variable and start Grails again
 goto errorExit
 
 :grailsHomeNotSet
 echo Error: GRAILS_HOME is not defined
-echo Please defined GRAILS_HOME and start Grails again
+echo Please set the GRAILS_HOME environment variable and start Grails again
 goto errorExit
 
 :getArguments
@@ -35,6 +29,7 @@ set GRAILS_ANT_CLASSPATH="%GRAILS_HOME%\lib\bsf.jar;%GRAILS_HOME%\lib\groovy-all
 goto startGrails
 
 :startGrails
+set ANT_HOME=%GRAILS_HOME%
 call %ANT_HOME%\bin\ant.bat -lib %GRAILS_ANT_CLASSPATH% -f %GRAILS_HOME%\src\grails\build.xml -Dbasedir=%CD% %GRAILS_ARGUMENTS%
 
 :errorExit
