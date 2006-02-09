@@ -19,6 +19,8 @@ import groovy.lang.*;
 import org.codehaus.groovy.grails.web.metaclass.TagLibDynamicMethods;
 import org.codehaus.groovy.grails.web.servlet.GrailsApplicationAttributes;
 import org.codehaus.groovy.grails.web.taglib.exceptions.GrailsTagException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import java.io.Writer;
 import java.io.IOException;
@@ -32,10 +34,14 @@ import java.util.HashMap;
  * etc.
  *
  * @author Troy Heninger
+ * @author Graeme Rocher
+ *
  * Date: Jan 10, 2004
  *
  */
 public abstract class GroovyPage extends Script {
+    private static final Log LOG = LogFactory.getLog(GroovyPage.class);
+
     public static final String REQUEST = "request";
     public static final String SERVLET_CONTEXT = "application";
     public static final String RESPONSE = "response";
@@ -46,8 +52,6 @@ public abstract class GroovyPage extends Script {
     public static final String PARAMS = "params";
     public static final String FLASH = "flash";
 
-/*	do noething in here for the moment
-*/
     /**
      * Convert from HTML to Unicode text.  This function converts many of the encoded HTML
      * characters to normal Unicode text.  Example: &amp;lt&semi; to &lt;.
@@ -124,6 +128,19 @@ public abstract class GroovyPage extends Script {
         return buf.toString();
     } // fromHtml()
 
+    public Object getProperty(String property) {
+        // in GSP we assume if a property doesn't exist that
+        // it is null rather than throw an error this works nicely
+        // with the Groovy Truth
+        try {
+            return super.getProperty(property);
+        } catch (MissingPropertyException mpe) {
+              if(LOG.isDebugEnabled()) {
+                  LOG.debug("No property ["+property+"] found in GSP returning null");
+              }
+              return null;
+        }
+    }
 
     /**
      * Attempts to invokes a dynamic tag
@@ -179,6 +196,9 @@ public abstract class GroovyPage extends Script {
             return super.invokeMethod(methodName, args);
         }
         catch(MissingMethodException mme) {
+          if(LOG.isDebugEnabled()) {
+              LOG.debug("No method ["+methodName+"] found invoking as tag");
+          }
             Map attrs = null;
             Closure body = null;
             // retrieve tag lib and writer from binding
