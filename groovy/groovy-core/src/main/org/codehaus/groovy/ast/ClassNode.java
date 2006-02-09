@@ -96,6 +96,9 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     private boolean script;
     private ClassNode superClass;
     boolean isPrimaryNode;
+    
+    // use this to synchronize access for the lazy intit
+    protected Object lazyInitLock = new Object();
 
     // clazz!=null when resolved
     protected Class clazz;
@@ -183,27 +186,31 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * needed to avoid having too much objects during compilation
      */
     private void lazyClassInit() {       
-        
-        Field[] fields = clazz.getDeclaredFields();
-        for (int i=0;i<fields.length;i++){
-            addField(fields[i].getName(),fields[i].getModifiers(),this,null);
+        synchronized (lazyInitLock) {
+            if (lazyInitDone) return;
+            
+            Field[] fields = clazz.getDeclaredFields();
+            for (int i=0;i<fields.length;i++){
+                addField(fields[i].getName(),fields[i].getModifiers(),this,null);
+            }
+            Method[] methods = clazz.getDeclaredMethods();
+            for (int i=0;i<methods.length;i++){
+                Method m = methods[i];
+                MethodNode mn = new MethodNode(m.getName(), m.getModifiers(), ClassHelper.make(m.getReturnType()), createParameters(m.getParameterTypes()), ClassHelper.make(m.getExceptionTypes()), null);
+                addMethod(mn);
+            }
+            Constructor[] constructors = clazz.getConstructors();
+            for (int i=0;i<constructors.length;i++){
+                Constructor ctor = constructors[i];
+                addConstructor(ctor.getModifiers(),createParameters(ctor.getParameterTypes()),ClassHelper.make(ctor.getExceptionTypes()),null);
+            }
+            Class sc = clazz.getSuperclass();
+            if (sc!=null) superClass = ClassHelper.make(sc);
+            buildInterfaceTypes(clazz);       
+            lazyInitDone=true;
         }
-        Method[] methods = clazz.getDeclaredMethods();
-        for (int i=0;i<methods.length;i++){
-            Method m = methods[i];
-            MethodNode mn = new MethodNode(m.getName(), m.getModifiers(), ClassHelper.make(m.getReturnType()), createParameters(m.getParameterTypes()), ClassHelper.make(m.getExceptionTypes()), null);
-            addMethod(mn);
-        }
-        Constructor[] constructors = clazz.getConstructors();
-        for (int i=0;i<constructors.length;i++){
-            Constructor ctor = constructors[i];
-            addConstructor(ctor.getModifiers(),createParameters(ctor.getParameterTypes()),ClassHelper.make(ctor.getExceptionTypes()),null);
-        }
-        Class sc = clazz.getSuperclass();
-        if (sc!=null) superClass = ClassHelper.make(sc);
-        buildInterfaceTypes(clazz);       
-        lazyInitDone=true;
     }
+    
     private void buildInterfaceTypes(Class c) {
         Class[] interfaces = c.getInterfaces();
         ClassNode[] ret = new ClassNode[interfaces.length];
