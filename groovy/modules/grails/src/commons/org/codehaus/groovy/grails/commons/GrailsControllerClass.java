@@ -71,4 +71,10 @@ public interface GrailsControllerClass extends InjectableGrailsClass {
 	 */
 	public boolean isScaffolding();
 
+    /**
+     *
+     * @return The class that is being scaffolded by this controller
+     */
+    public Class getScaffoldedClass();
+
 }

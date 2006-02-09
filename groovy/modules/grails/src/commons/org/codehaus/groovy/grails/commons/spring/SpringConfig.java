@@ -154,7 +154,15 @@ public class SpringConfig {
 		GrailsControllerClass[] simpleControllers = application.getControllers();
 		for (int i = 0; i < simpleControllers.length; i++) {
             // retrieve appropriate domain class
-            GrailsDomainClass domainClass = application.getGrailsDomainClass(simpleControllers[i].getName());
+            Class scaffoldedClass = simpleControllers[i].getScaffoldedClass();
+            GrailsDomainClass domainClass;
+            if(scaffoldedClass == null) {
+                domainClass = application.getGrailsDomainClass(simpleControllers[i].getName());
+            }
+            else {
+                domainClass = application.getGrailsDomainClass(scaffoldedClass.getName());
+            }
+
             if(domainClass == null) {
                 LOG.info("[Spring] Scaffolding disabled for controller ["+simpleControllers[i].getFullName()+"], no equivalent domain class named ["+simpleControllers[i].getName()+"]");
             }

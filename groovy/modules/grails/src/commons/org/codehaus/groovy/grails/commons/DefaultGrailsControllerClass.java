@@ -49,7 +49,7 @@ public class DefaultGrailsControllerClass extends AbstractInjectableGrailsClass
     private String uri;
 
     private boolean scaffolding;
-
+    private Class scaffoldedClass;
 
 
     public DefaultGrailsControllerClass(Class clazz) {
@@ -60,6 +60,11 @@ public class DefaultGrailsControllerClass extends AbstractInjectableGrailsClass
         if(tmp != null) {
             this.scaffolding = tmp.booleanValue();
         }
+        this.scaffoldedClass = (Class)getPropertyValue(SCAFFOLDING_PROPERTY, Class.class);
+        if(this.scaffoldedClass != null) {
+            this.scaffolding = true;
+        }
+
         Collection closureNames = new ArrayList();
         this.uri2viewMap = new HashMap();
         this.uri2closureMap = new HashMap();
@@ -186,12 +191,17 @@ public class DefaultGrailsControllerClass extends AbstractInjectableGrailsClass
 	public boolean isScaffolding() {
 		return this.scaffolding;
 	}
-	/**
-	 * @param scaffolding The scaffolding to set.
-	 */
-	public void setScaffolding(boolean scaffolding) {
-		this.scaffolding = scaffolding;
-	}
+
+    public Class getScaffoldedClass() {
+        return this.scaffoldedClass;
+    }
+
+    /**
+     * @param scaffolding The scaffolding to set.
+     */
+    public void setScaffolding(boolean scaffolding) {
+        this.scaffolding = scaffolding;
+    }
 	
 	
 }
