@@ -29,7 +29,7 @@ set GRAILS_ANT_CLASSPATH="%GRAILS_HOME%\lib\bsf.jar;%GRAILS_HOME%\lib\groovy-all
 goto startGrails
 
 :startGrails
-set ANT_HOME=%GRAILS_HOME%
+set ANT_HOME=%GRAILS_HOME%\ant
 call %ANT_HOME%\bin\ant.bat -lib %GRAILS_ANT_CLASSPATH% -f %GRAILS_HOME%\src\grails\build.xml -Dbasedir=%CD% %GRAILS_ARGUMENTS%
 
 :errorExit
