@@ -104,6 +104,7 @@ public class DefaultGrailsApplicationAttributes implements GrailsApplicationAttr
        GroovyPagesTemplateEngine engine = (GroovyPagesTemplateEngine)this.context.getAttribute(GSP_TEMPLATE_ENGINE);
        if(engine == null) {
            engine = new GroovyPagesTemplateEngine();
+           engine.setClassLoader(getGrailsApplication().getClassLoader());
            this.context.setAttribute(GSP_TEMPLATE_ENGINE,engine);
        }
        return engine;

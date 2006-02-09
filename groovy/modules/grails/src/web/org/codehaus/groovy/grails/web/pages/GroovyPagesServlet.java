@@ -18,6 +18,7 @@ package org.codehaus.groovy.grails.web.pages;
 import groovy.lang.Writable;
 import groovy.text.Template;
 import org.codehaus.groovy.grails.web.servlet.GrailsApplicationAttributes;
+import org.codehaus.groovy.grails.web.servlet.DefaultGrailsApplicationAttributes;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
@@ -62,6 +63,7 @@ public class GroovyPagesServlet extends HttpServlet /*implements GroovyObject*/ 
     private static Map pageCache = Collections.synchronizedMap(new HashMap());
     private static ClassLoader parent;
     private GroovyPagesTemplateEngine engine;
+    private GrailsApplicationAttributes grailsAttributes;
 
 
     /**
@@ -75,7 +77,7 @@ public class GroovyPagesServlet extends HttpServlet /*implements GroovyObject*/ 
     public void init(ServletConfig config) {
         // Get the servlet context
         context = config.getServletContext();
-        context.log("Groovy servlet initialized");
+        context.log("GSP servlet initialized");
 
         // Ensure that we use the correct classloader so that we can find
         // classes in an application server.
@@ -83,14 +85,7 @@ public class GroovyPagesServlet extends HttpServlet /*implements GroovyObject*/ 
         if (parent == null) parent = getClass().getClassLoader();
 
         showSource = config.getInitParameter("showSource") != null;
-
-        this.engine = (GroovyPagesTemplateEngine)context.getAttribute(GrailsApplicationAttributes.GSP_TEMPLATE_ENGINE);
-        if(this.engine == null)   {
-            this.engine = new GroovyPagesTemplateEngine();
-            this.engine.setShowSource(this.showSource);
-            context.setAttribute(GrailsApplicationAttributes.GSP_TEMPLATE_ENGINE,this.engine);
-        }
-
+        this.grailsAttributes = new DefaultGrailsApplicationAttributes(context);
     } // init()
 
     /**
@@ -123,6 +118,9 @@ public class GroovyPagesServlet extends HttpServlet /*implements GroovyObject*/ 
      * @throws IOException
      */
     public void doPage(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        this.engine = grailsAttributes.getPagesTemplateEngine();
+        this.engine.setShowSource(this.showSource);
+        
         String pageId = engine.getPageId(request);
         URL pageUrl = engine.getPageUrl(context,pageId);
         if (pageUrl == null) {

@@ -57,6 +57,11 @@ public class GroovyPagesTemplateEngine {
     private static Map pageCache = Collections.synchronizedMap(new HashMap());
     private ClassLoader parent;
     private boolean showSource;
+    private GroovyClassLoader classLoader;
+
+    public void setClassLoader(GroovyClassLoader classLoader) {
+        this.classLoader = classLoader;
+    }
 
     public void setShowSource(boolean showSource) {
         this.showSource = showSource;
@@ -197,11 +202,12 @@ public class GroovyPagesTemplateEngine {
             return pageMeta;
         }
             // Compile the script into an object
-        GroovyClassLoader groovyLoader = new Loader(parent, context, uri, pageMeta.dependencies);
+        if(classLoader == null)
+            classLoader= new Loader(parent, context, uri, pageMeta.dependencies);
         Class scriptClass;
         try {
             scriptClass =
-                groovyLoader.parseClass(in, uri.substring(1));
+                classLoader.parseClass(in, uri.substring(1));
         } catch (CompilationFailedException e) {
             throw new ServletException("Could not parse script: " + uri, e);
         }
