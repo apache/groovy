@@ -149,6 +149,7 @@ public class RedirectDynamicMethod extends AbstractDynamicControllerMethod {
                             actualUriBuf.append('&');
                     }
                 }
+                actualUri = actualUriBuf.toString();
             }
             else {
                 throw new ControllerExecutionException("Action not found in redirect for name ["+actionName+"]");
