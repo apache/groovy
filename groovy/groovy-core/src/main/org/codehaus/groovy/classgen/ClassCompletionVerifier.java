@@ -169,13 +169,15 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         for (Iterator iter = methods.iterator(); iter.hasNext();) {
             MethodNode element = (MethodNode) iter.next();
             if (element==node) continue;
+            if (!element.getDeclaringClass().equals(node.getDeclaringClass())) continue;
             Parameter[] p1 = node.getParameters();
             Parameter[] p2 = element.getParameters();
             if (p1.length!=p2.length) continue;
             boolean isEqual=true;
             for (int i = 0; i < p2.length; i++) {
-                isEqual |= p1[i].equals(p2[i]);
+                isEqual &= p1[i].equals(p2[i]);
             }
+            isEqual &= node.getReturnType().equals(element.getReturnType());
             if (isEqual) {
                 addError("Repetitive method name/signature in class "+currentClass.getName(),node);
             }
