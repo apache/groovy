@@ -103,8 +103,7 @@ public class GroovyShell extends GroovyObjectSupport {
             return super.loadClass(name,resolve);
         }
     }
-    
-    
+       
     public static final String[] EMPTY_ARGS = {};
 
     
@@ -142,14 +141,18 @@ public class GroovyShell extends GroovyObjectSupport {
         this(parent, new Binding(), CompilerConfiguration.DEFAULT);
     }
     
-    public GroovyShell(ClassLoader parent, Binding binding, CompilerConfiguration config) {
+    public GroovyShell(final ClassLoader parent, Binding binding, CompilerConfiguration config) {
         if (binding == null) {
             throw new IllegalArgumentException("Binding must not be null.");
         }
         if (config == null) {
             throw new IllegalArgumentException("Compiler configuration must not be null.");
         }
-        this.loader = new MainClassLoader(parent);
+        this.loader = (MainClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
+            public Object run() {
+                return new MainClassLoader(parent);
+            }
+        });
         this.context = binding;        
         this.config = config;
     }
@@ -256,11 +259,10 @@ public class GroovyShell extends GroovyObjectSupport {
         // Parse the script, generate the class, and invoke the main method.  This is a little looser than
         // if you are compiling the script because the JVM isn't executing the main method.
         Class scriptClass;
-        final ShellLoader loader = new ShellLoader();
         try {
             scriptClass = (Class) AccessController.doPrivileged(new PrivilegedExceptionAction() {
                 public Object run() throws CompilationFailedException, IOException {
-                    return loader.parseClass(scriptFile);
+                    return new ShellLoader().parseClass(scriptFile);
                 }
             });
         } catch (PrivilegedActionException pae) {
@@ -545,7 +547,11 @@ public class GroovyShell extends GroovyObjectSupport {
      */
     private Class parseClass(final GroovyCodeSource codeSource) throws CompilationFailedException {
         // Don't cache scripts
-        ShellLoader loader = new ShellLoader();
+        ShellLoader loader = (ShellLoader) AccessController.doPrivileged(new PrivilegedAction() {
+            public Object run() {
+                return new ShellLoader();
+            }
+        }); 
         return loader.parseClass(codeSource, false);
     }
 

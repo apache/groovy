@@ -87,14 +87,19 @@ public class GroovyClassLoader extends SecureClassLoader {
     private GroovyResourceLoader resourceLoader = new GroovyResourceLoader() {
         private HashMap filenameCache = new HashMap();
         
-        public URL loadGroovySource(String filename) throws MalformedURLException {
+        public URL loadGroovySource(final String filename) throws MalformedURLException {
             File file=null;
             synchronized (filenameCache) {
-                file = (File) filenameCache.get(filename);
-            
-                if (file==null || !file.exists()) {
-                    file = getSourceFile(filename);
-                }
+            	file = (File) AccessController.doPrivileged(new PrivilegedAction() {
+                	public Object run() {
+                        File f = (File) filenameCache.get(filename);
+                        
+                        if (f==null || !f.exists()) {
+                            f = getSourceFile(filename);
+                        }
+                        return f;
+                	}
+                });
 
                 filenameCache.put(filename,file);
             }
@@ -445,7 +450,12 @@ public class GroovyClassLoader extends SecureClassLoader {
     
 
     protected ClassCollector createCollector(CompilationUnit unit,SourceUnit su) {
-        return new ClassCollector(new InnerLoader(), unit, su);
+    	InnerLoader loader = (InnerLoader) AccessController.doPrivileged(new PrivilegedAction() {
+            public Object run() {
+                return new InnerLoader();
+            }
+        }); 
+        return new ClassCollector(loader, unit, su);
     }
 
     public static class ClassCollector extends CompilationUnit.ClassgenCallback {
@@ -574,15 +584,7 @@ public class GroovyClassLoader extends SecureClassLoader {
         if (lookupScriptFiles) {
             // try groovy file
             try {
-                URL source = (URL) AccessController.doPrivileged(new PrivilegedAction() {
-                    public Object run() {
-                        try {
-                            return resourceLoader.loadGroovySource(name);
-                        } catch (MalformedURLException e) {
-                            return null; // ugly to return null
-                        }
-                    }
-                });
+                URL source = resourceLoader.loadGroovySource(name);
                 if (source != null) {
                     // found a source, compile it then
                     if ((cls!=null && isSourceNewer(source, cls)) || (cls==null)) {

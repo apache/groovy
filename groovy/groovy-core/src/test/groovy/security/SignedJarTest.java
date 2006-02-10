@@ -36,6 +36,9 @@ public class SignedJarTest extends SecurityTestSupport {
     public void testReadSignedJar() throws Exception {
     	if (!isSecurityAvailable()) return;
 
+    	//spg 2006-02-09 The GroovyClassLoader code that checked jar files
+    	//for source files was removed last July.  This test will not function
+    	//without that capability.
         Class c = loader.loadClass("groovy.security.JarTest");  // ClassNotFoundException !
     	executeTest(c, null);
 

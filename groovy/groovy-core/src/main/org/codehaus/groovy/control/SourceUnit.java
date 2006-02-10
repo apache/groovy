@@ -53,6 +53,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Reader;
 import java.net.URL;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ModuleNode;
@@ -317,7 +319,13 @@ public class SourceUnit extends ProcessingUnit {
             getErrorCollector().addError(new SyntaxErrorMessage(e,this));
         }
 
-        if ("xml".equals(System.getProperty("groovy.ast"))) {
+        String property = (String) AccessController.doPrivileged(new PrivilegedAction() {
+        	public Object run() {
+        		return System.getProperty("groovy.ast");
+        	}
+        });
+        
+        if ("xml".equals(property)) {
             saveAsXML(name,ast);
         }
     }

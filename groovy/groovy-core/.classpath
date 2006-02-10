@@ -3,15 +3,15 @@
 	<classpathentry kind="src" path="src/main"/>
 	<classpathentry excluding="**/.cvsignore" kind="src" path="src/test"/>
 	<classpathentry kind="lib" path="target/test-classes"/>
-	<classpathentry kind="var" path="MAVEN_REPO/ant/jars/ant-1.6.2.jar"/>
-	<classpathentry kind="var" path="MAVEN_REPO/ant/jars/ant-junit-1.6.2.jar"/>
-	<classpathentry kind="var" path="MAVEN_REPO/ant/jars/ant-launcher-1.6.2.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/ant/jars/ant-1.6.5.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/ant/jars/ant-junit-1.6.5.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/ant/jars/ant-launcher-1.6.5.jar"/>
 	<classpathentry exported="true" kind="var" path="MAVEN_REPO/antlr/jars/antlr-2.7.5.jar"/>
-	<classpathentry exported="true" kind="var" path="MAVEN_REPO/asm/jars/asm-2.0.jar"/>
-	<classpathentry kind="var" path="MAVEN_REPO/asm/jars/asm-analysis-2.0.jar"/>
-	<classpathentry kind="var" path="MAVEN_REPO/asm/jars/asm-attrs-2.0.jar"/>
-	<classpathentry kind="var" path="MAVEN_REPO/asm/jars/asm-tree-2.0.jar"/>
-	<classpathentry kind="var" path="MAVEN_REPO/asm/jars/asm-util-2.0.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/asm/jars/asm-2.2.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/asm/jars/asm-analysis-2.2.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/asm/jars/asm-attrs-2.2.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/asm/jars/asm-tree-2.2.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/asm/jars/asm-util-2.2.jar"/>
 	<classpathentry kind="var" path="MAVEN_REPO/axion/jars/axion-1.0-M3-dev.jar"/>
 	<classpathentry kind="var" path="MAVEN_REPO/bsf/jars/bsf-2.3.0-rc1.jar"/>
 	<classpathentry kind="var" path="MAVEN_REPO/commons-cli/jars/commons-cli-1.0.jar"/>
@@ -33,5 +33,6 @@
 	<classpathentry kind="var" path="MAVEN_REPO/xml-apis/jars/xml-apis-1.0.b2.jar"/>
 	<classpathentry kind="var" path="MAVEN_REPO/xstream/jars/xstream-1.1.1.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="security/GroovyJarTest.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
