@@ -383,7 +383,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
         Statement setterBlock = node.getSetterBlock();
         if (setterBlock == null) {
-            if (!node.isPrivate() && classNode.getSetterMethod(setterName) == null) {
+            if (!node.isPrivate() && (node.getModifiers()&ACC_FINAL)==0 && classNode.getSetterMethod(setterName) == null) {
                 setterBlock = createSetterBlock(node, field);
             }
         }
