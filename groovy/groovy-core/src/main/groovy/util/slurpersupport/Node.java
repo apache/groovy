@@ -63,7 +63,7 @@ public class Node implements Writable {
   }
 
   public List children() {
-    return this.children();
+    return this.children;
   }
 
   public void addChild(final Object child) {
