@@ -168,6 +168,9 @@ grant codeBase "file:${user.dir}/src/test/groovy/ClosureMethodTest.groovy" {
 
 grant codeBase "file:${user.dir}/src/test/groovy/GroovyMethodsTest.groovy" {
 	permission java.util.PropertyPermission "*", "read,write";
+	//spg 2006-02-09 added ALL FILES execute because a test case 
+	//invokes Runtime.exec().  This is OK and permission should be granted here.
+	permission java.io.FilePermission "<<ALL FILES>>", "execute";
 };
 
 grant codeBase "file:${user.dir}/src/test/groovy/ClosureWithDefaultParamTest.groovy" {

@@ -38,6 +38,8 @@ import org.codehaus.groovy.syntax.*;
 import org.objectweb.asm.Opcodes;
 
 import java.io.*;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -55,7 +57,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     private String[] tokenNames;
 
 
-    public Reduction parseCST(SourceUnit sourceUnit, Reader reader) throws CompilationFailedException {
+    public Reduction parseCST(final SourceUnit sourceUnit, Reader reader) throws CompilationFailedException {
         ast = null;
 
         setController(sourceUnit);
@@ -92,9 +94,14 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
         AntlrASTProcessor snippets = new AntlrASTProcessSnippets(sourceBuffer);
         ast = snippets.process(ast);
-
-        outputASTInVariousFormsIfNeeded(sourceUnit);
-
+        
+        AccessController.doPrivileged(new PrivilegedAction() {
+            public Object run() {
+            	outputASTInVariousFormsIfNeeded(sourceUnit);
+                return null;
+            }
+        });
+        
         return null; //new Reduction(Tpken.EOF);
     }
 
