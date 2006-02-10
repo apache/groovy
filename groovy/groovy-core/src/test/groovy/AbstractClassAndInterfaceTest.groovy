@@ -1,4 +1,3 @@
-import java.lang.reflect.Modifier
 
 class AbstractClassAndInterfaceTest extends GroovyTestCase {
 
@@ -179,6 +178,8 @@ class AbstractClassAndInterfaceTest extends GroovyTestCase {
 	void testDefaultModifiersForInterfaces() {
     	def shell = new GroovyShell()
         def text = """
+            import java.lang.reflect.Modifier
+            
 			interface A {
 				def foo
 			}
