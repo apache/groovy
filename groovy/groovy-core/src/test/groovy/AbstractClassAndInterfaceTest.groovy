@@ -1,3 +1,5 @@
+import java.lang.reflect.Modifier
+
 class AbstractClassAndInterfaceTest extends GroovyTestCase {
 
 	void testInterface() {
