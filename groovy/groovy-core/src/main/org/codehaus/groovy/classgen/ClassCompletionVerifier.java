@@ -159,9 +159,29 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     
     public void visitMethod(MethodNode node) {
         checkAbstractDeclaration(node);
+        checkRepetitiveMethod(node);
         super.visitMethod(node);
     }
     
+    private void checkRepetitiveMethod(MethodNode node) {
+        if (node.getName().equals("<clinit>")) return;
+        List methods = currentClass.getMethods(node.getName());
+        for (Iterator iter = methods.iterator(); iter.hasNext();) {
+            MethodNode element = (MethodNode) iter.next();
+            if (element==node) continue;
+            Parameter[] p1 = node.getParameters();
+            Parameter[] p2 = element.getParameters();
+            if (p1.length!=p2.length) continue;
+            boolean isEqual=true;
+            for (int i = 0; i < p2.length; i++) {
+                isEqual |= p1[i].equals(p2[i]);
+            }
+            if (isEqual) {
+                addError("Repetitive method name/signature in class "+currentClass.getName(),node);
+            }
+        }        
+    }
+
     public void visitField(FieldNode node) {
     	if (currentClass.getField(node.getName())!=node) {
     		addError("The field "+node.getName()+" is declared multiple times.", node);
