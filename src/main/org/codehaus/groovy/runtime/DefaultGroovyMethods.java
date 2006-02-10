@@ -488,6 +488,10 @@ public class DefaultGroovyMethods {
     }
 
     public static boolean isCase(Class caseValue, Object switchValue) {
+        if (switchValue instanceof Class) {
+            Class val = (Class) switchValue;
+            return caseValue.isAssignableFrom(val);
+        }
         return caseValue.isInstance(switchValue);
     }
 
