@@ -114,5 +114,20 @@ class PropertyTest extends GroovyTestCase {
         foo.body = "${foo.name}"
         assert foo.body == "James"
     }
+    
+    void testFinalProperty() {
+      def shell = new GroovyShell();
+      def text = """
+        class A {
+           final @Property foo = 1
+        }
+        A.class.declaredMethods.each {
+          assert it.name!="setFoo"
+          
+        }
+        assert new A().foo==1
+      """
+      shell.evaluate(text);
+    }
 }
 
