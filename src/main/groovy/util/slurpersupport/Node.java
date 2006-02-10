@@ -78,7 +78,13 @@ public class Node implements Writable {
   final Iterator iter = this.children.iterator();
   
     while (iter.hasNext()) {
-      buff.append(iter.next());
+    final Object child = iter.next();
+    
+        if (child instanceof Node) {
+            buff.append(((Node)child).text());
+        } else {
+            buff.append(child);
+        }
     }
   
     return buff.toString();
