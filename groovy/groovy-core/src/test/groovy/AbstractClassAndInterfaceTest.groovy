@@ -173,4 +173,35 @@ class AbstractClassAndInterfaceTest extends GroovyTestCase {
 			shell.evaluate(text)
 		}	
 	}
+	
+	void testDefaultModifiersForInterfaces() {
+    	def shell = new GroovyShell()
+        def text = """
+			interface A {
+				def foo
+			}
+			
+			def fields = A.class.declaredFields
+            assert fields.length==1
+            assert fields[0].name == "foo"
+            assert Modifier.isPublic (fields[0].modifiers)
+            assert Modifier.isStatic (fields[0].modifiers)
+            assert Modifier.isFinal  (fields[0].modifiers)
+			"""
+		shell.evaluate(text)
+	}
+	
+	void testAccessToInterfaceField() {
+    	def shell = new GroovyShell()
+        def text = """
+			interface A {
+				def foo=1
+			}
+            class B implements A {
+              def foo(){foo}
+            }
+            assert new B().foo()==1
+	   """
+	   shell.evaluate(text)
+	}
 }
