@@ -78,7 +78,6 @@ public abstract class Script extends GroovyObjectSupport {
     }
 
     public Object getProperty(String property) {
-        //System.out.println("Script.getProperty for: " + property + " with binding: " + binding.getVariables());
         try {
             return binding.getVariable(property);
         } catch (MissingPropertyException e) {
@@ -87,9 +86,10 @@ public abstract class Script extends GroovyObjectSupport {
     }
 
     public void setProperty(String property, Object newValue) {
-        //System.out.println("Script.setProperty for: " + property + " with newValue: " + newValue);
-        binding.setVariable(property, newValue);
-        //System.out.println("binding are now: " + binding.getVariables());
+        if ("binding".equals(property))
+            setBinding((Binding) newValue);
+        else
+            binding.setVariable(property, newValue);
     }
 
     /**
