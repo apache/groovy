@@ -3,7 +3,7 @@ package groovy.lang
 class ClassReloadingTest extends GroovyTestCase {
 
 	public void testRealoding() {
-		def file = File.createTempFile("TestReload",".groovy")
+		def file = File.createTempFile("TestReload",".groovy", new File("target"))
 		file.deleteOnExit()
 		def className = file.name-".groovy"
 
