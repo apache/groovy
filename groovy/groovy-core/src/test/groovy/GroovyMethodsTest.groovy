@@ -141,7 +141,7 @@ class GroovyMethodsTest extends GroovyTestCase {
     String getCmd() {
         def cmd = "ls -l"
         if (System.properties.'os.name'.contains('Win')) {
-            cmd = "dir"
+            cmd = "cmd /c dir"
         }
         return cmd
     }
