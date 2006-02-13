@@ -89,6 +89,20 @@ class BuilderSupportTest extends GroovyTestCase{
         def b = new SpoofBuilder()
         shouldFail(MissingMethodException, {def node = b.foo('arg1', 'arg2', 'arg3', 'arg4') })
     }
+
+    void testNestedMethodCallsResolution() {
+        def b = new SpoofBuilder()
+        b.outest {
+            b.outer {
+                nestedBuilderCall(b)
+            }
+        }
+        assert b.log.contains('inner') 
+    }
+
+    void nestedBuilderCall(builder) {
+        builder.inner()
+    }
 }
 
 /**
