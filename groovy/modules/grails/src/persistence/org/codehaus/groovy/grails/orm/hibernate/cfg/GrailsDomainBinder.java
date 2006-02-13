@@ -16,36 +16,22 @@ package org.codehaus.groovy.grails.orm.hibernate.cfg;
 
 
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.groovy.grails.commons.GrailsDomainClass;
 import org.codehaus.groovy.grails.commons.GrailsDomainClassProperty;
 import org.hibernate.FetchMode;
 import org.hibernate.MappingException;
-import org.hibernate.cfg.GrailsSecondPass;
 import org.hibernate.cfg.Mappings;
+import org.hibernate.cfg.SecondPass;
 import org.hibernate.id.PersistentIdentifierGenerator;
-import org.hibernate.mapping.Backref;
+import org.hibernate.mapping.*;
 import org.hibernate.mapping.Collection;
-import org.hibernate.mapping.Column;
-import org.hibernate.mapping.DependantValue;
-import org.hibernate.mapping.KeyValue;
-import org.hibernate.mapping.ManyToOne;
-import org.hibernate.mapping.OneToMany;
-import org.hibernate.mapping.PersistentClass;
-import org.hibernate.mapping.Property;
-import org.hibernate.mapping.RootClass;
-import org.hibernate.mapping.SimpleValue;
-import org.hibernate.mapping.Table;
-import org.hibernate.mapping.ToOne;
-import org.hibernate.mapping.Value;
 import org.hibernate.util.StringHelper;
+
+import java.util.*;
+import java.util.Map;
+import java.util.Set;
 
 
 
@@ -113,21 +99,20 @@ public final class GrailsDomainBinder {
 	 * @author Graeme
 	 *
 	 */
-	static class GrailsCollectionSecondPass extends GrailsSecondPass {
+	static class GrailsCollectionSecondPass implements SecondPass {
 
 		private static final long serialVersionUID = -5540526942092611348L;
 		private GrailsDomainClassProperty property;
 		private Mappings mappings;
 		private Collection collection;
 
-		public GrailsCollectionSecondPass(GrailsDomainClassProperty property, Mappings mappings, Collection coll) {			
-			super(mappings, coll);
+		public GrailsCollectionSecondPass(GrailsDomainClassProperty property, Mappings mappings, Collection coll) {
 			this.property = property;
 			this.mappings = mappings;
 			this.collection = coll;
 		}
 
-		public void secondPass(Map persistentClasses, Map inheritedMetas) throws MappingException {
+		public void doSecondPass(Map persistentClasses, Map inheritedMetas) throws MappingException {
 			bindCollectionSecondPass( this.property, mappings, persistentClasses, collection,inheritedMetas );			
 		}
 
@@ -436,9 +421,7 @@ public final class GrailsDomainBinder {
 	 * 
 	 * @param value
 	 * @param persistentClass
-	 * @param property
 	 * @param mappings
-	 * @return
 	 */
 	private static Property createProperty(Value value, PersistentClass persistentClass, GrailsDomainClassProperty grailsProperty, Mappings mappings) {
 		// set type
@@ -526,7 +509,6 @@ public final class GrailsDomainBinder {
 
 	/**
 	 * @param version
-	 * @param root
 	 * @param mappings
 	 */
 	private static void bindVersion(GrailsDomainClassProperty version, RootClass entity, Mappings mappings) {
