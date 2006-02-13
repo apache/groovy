@@ -320,20 +320,20 @@ public class MetaClassImpl extends MetaClass {
                // still no methods found, test if delegate or owner are GroovyObjects
                // and invoke the method on them if so.
                MissingMethodException last = null;
-               if (delegate!=closure && (delegate instanceof GroovyObject)) {
-                   try {
-                       GroovyObject go = (GroovyObject) delegate;
-                       return go.invokeMethod(methodName,arguments);
-                   } catch (MissingMethodException mme) {
-                       last = mme;
-                   }
-               }
                if (owner!=closure && (owner instanceof GroovyObject)) {
                    try {
                        GroovyObject go = (GroovyObject) owner;
                        return go.invokeMethod(methodName,arguments);
                    } catch (MissingMethodException mme) {
                        if (last==null) last = mme;
+                   }
+               }
+               if (delegate!=closure && (delegate instanceof GroovyObject)) {
+                   try {
+                       GroovyObject go = (GroovyObject) delegate;
+                       return go.invokeMethod(methodName,arguments);
+                   } catch (MissingMethodException mme) {
+                       last = mme;
                    }
                }
                if (last!=null) throw last;
