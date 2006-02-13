@@ -13,12 +13,7 @@ import java.io.IOException;
 
 public class UberTestCase extends TestCase {
     public static Test suite() {
-        try {
-            System.out.println("*** " + new File(".").getCanonicalPath());
-        } catch (IOException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-        }
-        TestSuite suite = (TestSuite) AllTestSuite.suite("./src/test/groovy","src.test.groovy.[^/\\\\]*Test.groovy");
+        TestSuite suite = (TestSuite) AllTestSuite.suite("src/test/groovy", "*Test.groovy");
 
         String osName = System.getProperty ( "os.name" ) ;
         if ( osName.equals ( "Linux" ) || osName.equals ( "SunOS" ) ) {

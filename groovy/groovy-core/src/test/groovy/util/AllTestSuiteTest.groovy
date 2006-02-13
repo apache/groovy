@@ -21,25 +21,24 @@ class AllTestSuiteTest extends GroovyLogTestCase {
 
     void testSuiteForThisFileOnly() {
         def result = stringLog(Level.FINEST, 'groovy.util.AllTestSuite') {
-            withProps('src/test','AllTestSuiteTest.groovy') {
+            withProps('src/test/groovy/util','AllTestSuiteTest.groovy') {
                 suite = AllTestSuite.suite()
             }
         }
         assertTrue result, result.contains('AllTestSuiteTest.groovy')
         assertEquals 1+1, result.count("\n")   // only one entry in the log
-        assert suite
+        assert suite, 'Resulting suite should not be null'
         assertEquals 2, suite.countTestCases() // the 2 test methods in this file
     }
 
     void testAddingScriptsThatDoNotInheritFromTestCase() {
-        withProps('src/test','util.suite.*groovy') {
+        withProps('src/test/groovy/util','suite/*.groovy') {
             suite = AllTestSuite.suite()
         }
         assert suite
         assertEquals 1, suite.countTestCases()
         suite.testAt(0) // call the contained Script to makes sure it is testable
     }
-
 
     /** store old System property values for not overriding them accidentally */
     void withProps(dir, pattern, yield) {

@@ -12,7 +12,7 @@ import groovy.util.AllTestSuite;
 
 public class UberTestCaseTCK extends TestCase {
     public static Test suite() {
-        TestSuite suite = (TestSuite) AllTestSuite.suite("./src/test/gls","Test.groovy");
+        TestSuite suite = (TestSuite) AllTestSuite.suite("src/test/gls","**/*Test.groovy");
         suite.addTest(AllGlsJavaTestsSuite.suite());
         return suite;
     }

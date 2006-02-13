@@ -54,7 +54,7 @@ public class AllTestSuite extends TestSuite {
 
     static { // this is only needed since the Groovy Build compiles *.groovy files after *.java files
         try {
-            Class finderClass = Class.forName("groovy.util.FileNameByRegexFinder");
+            Class finderClass = Class.forName("groovy.util.FileNameFinder");
             FINDER = (IFileNameFinder) finderClass.newInstance();
         } catch (Exception e) {
             throw new RuntimeException("Cannot find and instantiate class FileNameFinder", e);
