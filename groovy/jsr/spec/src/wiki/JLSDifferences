@@ -1,5 +1,0 @@
-This is a systematic account of the differences between Java and Groovy, organized as a set of annotations to the [Java Language Specification|http://java.sun.com/docs/books/jls/second_edition/html/j.title.doc.html].  Every chapter and section of the JLS has a corresponding chapter and section (with the same number) in this account.
-
-_(This is an experiment under construction!  --jrose)_
-
-{children:all=true}
