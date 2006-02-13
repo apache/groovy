@@ -17,13 +17,36 @@ Targets:
 "create-service" - Create a new service
 "create-domain-class" - Create a new domain class
 "create-test-suite" - Create a new test suite
+"generate-controller" - Generates a controller from a domain class
 "test-app" - Run current app's unit tests
 "run-app" - Run the application (coming soon)
 		</echo>
 	</target>
 	
+    <target name="generate-controller" depends="package">
+		<property environment="env"/>
+		<fail unless="env.GRAILS_HOME" message="GRAILS_HOME is not set."/>
+		<property name="grails.home" location="${env.GRAILS_HOME}"/>
 
-	<target name="create-app">
+		<input addproperty="domain.class.name" message="Enter domain class name:" />
+
+		<path id="test.classpath">
+			<!--<pathelement location="${grails.home}/src/web-app/WEB-INF"/>-->
+            <pathelement location="${basedir}/tmp/war/WEB-INF"/>
+            <pathelement location="${basedir}/tmp/war/WEB-INF/classes"/>
+            <fileset dir="${grails.home}/lib"/>
+			<fileset dir="${grails.home}/dist"/>
+			<fileset dir="lib"/>
+		</path>
+		<java classpathref="test.classpath" classname="grails.util.GenerateUtils" fork="true">
+             <arg value="controller" />
+             <arg value="${domain.class.name}" />
+<!--			<jvmarg value="-Xdebug"/>
+			<jvmarg value="-Xrunjdwp:transport=dt_socket,address=50010,suspend=y,server=y"/> -->
+		</java>
+    </target>
+
+    <target name="create-app">
 		<property environment="env"/>
 		<fail unless="env.GRAILS_HOME" message="GRAILS_HOME is not set."/>
 		<property name="grails.home" location="${env.GRAILS_HOME}"/>
@@ -140,12 +163,12 @@ Targets:
 		</script>
 				
 		<copy 	file="${grails.home}/src/grails/templates/artifacts/Tests.groovy" 
-				tofile="grails-test/${test.suite.name}Tests.groovy"/>
+				tofile="grails-tests/${test.suite.name}Tests.groovy"/>
 		
-		<replace 	file="grails-test/${test.suite.name}Tests.groovy" 
+		<replace 	file="grails-tests/${test.suite.name}Tests.groovy"
 					token="@test.suite.name@" 
 					value="${test.suite.name}" />	
-		<echo>Created test suite: grails-test/${test.suite.name}Tests.groovy</echo>
+		<echo>Created test suite: grails-app/tests/${test.suite.name}Tests.groovy</echo>
 	</target>	
 	
 	<target name="init">
@@ -164,7 +187,7 @@ Targets:
 		<mkdir dir="${path}grails-app/views/layouts"/>		
 		<mkdir dir="${path}grails-app/i18n"/>				
 		<mkdir dir="${path}grails-app/conf"/>
-		<mkdir dir="${path}grails-test"/>
+		<mkdir dir="${path}grails-tests"/>
 		<mkdir dir="${path}web-app"/>
 		<mkdir dir="${path}web-app"/>
 		<mkdir dir="${path}web-app"/>
@@ -240,34 +263,19 @@ Targets:
 		</junit>
 	</target>
 
-	<target name="test-app" depends="build">
+	<target name="test-app" depends="package">
 		<property environment="env"/>
 		<fail unless="env.GRAILS_HOME" message="GRAILS_HOME is not set."/>
 		<property name="grails.home" location="${env.GRAILS_HOME}"/>
-		<delete dir="tmp/tests/classpath"/>
-		<mkdir dir="tmp/tests/classpath/spring"/>
-		<copy todir="tmp/tests/classpath">
-			<fileset dir="${grails.home}/src/war/WEB-INF">
-				<include name="log4j.properties"/>
-			</fileset>
-			<fileset dir="grails-app/controllers"/>
-			<fileset dir="grails-app/domain"/>			
-			<fileset dir="grails-app/services"/>			
-			<fileset dir="grails-app/i18n"/>			
-			<fileset dir="grails-app/conf"/>				
-			<fileset dir="grails-test"/>			
-			<fileset dir="hibernate" />		
-			<fileset dir="web-app/WEB-INF/classes" />										
+		<mkdir dir="${basedir}/tmp/war/WEB-INF/grails-app/tests" />		
+		<copy todir="${basedir}/tmp/war/WEB-INF/grails-app/tests">
+			<fileset dir="${basedir}/grails-tests/" includes="**"></fileset>
 		</copy>
-		<copy todir="tmp/tests/classpath/spring">
-			<fileset dir="spring" includes="**"/>
-		</copy>
-		<copy tofile="tmp/tests/classpath/test-applicationContext.xml" file="${basedir}/web-app/WEB-INF/applicationContext.xml" />
 		<path id="test.classpath">
-			<pathelement location="tmp/tests/classpath"/>			
 			<!--<pathelement location="${grails.home}/src/web-app/WEB-INF"/>-->
-			<pathelement location="${basedir}/grails-test"/>
-			<fileset dir="${grails.home}/lib"/>
+            <pathelement location="${basedir}/tmp/war/WEB-INF"/>
+            <pathelement location="${basedir}/tmp/war/WEB-INF/classes"/>
+            <fileset dir="${grails.home}/lib"/>
 			<fileset dir="${grails.home}/dist"/>
 			<fileset dir="lib"/>
 		</path>
@@ -275,6 +283,7 @@ Targets:
 <!--			<jvmarg value="-Xdebug"/>
 			<jvmarg value="-Xrunjdwp:transport=dt_socket,address=50010,suspend=y,server=y"/> -->
 		</java>
+		<delete dir="${basedir}/tmp/war/WEB-INF/grails-app/tests"></delete>
 	</target>
 
     <target name="dev">
@@ -353,11 +362,11 @@ Targets:
         </copy>
         <copy todir="tmp/war/WEB-INF/lib">
             <fileset dir="${grails.home}/lib">
-                <include name="antlr-2.7.5.jar"/>
+                <include name="antlr-2.7.6rc1.jar"/>
                 <include name="asm.jar"/>
                 <include name="asm-attrs.jar"/>
-                <include name="cglib-2.1.jar"/>
-                <include name="dom4j-1.6.jar"/>
+                <include name="cglib-2.1.3.jar"/>
+                <include name="dom4j-1.6.1.jar"/>
                 <include name="ehcache-1.1.jar"/>
                 <include name="ejb-3.0-edr2.jar"/>
                 <include name="hibernate3.jar"/>
