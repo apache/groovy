@@ -120,8 +120,8 @@
       <tag>GROOVY_1_0_JSR_04</tag>
     </version>
       <version>
-        <id>jsr04</id>
-        <name>1.0-JSR-04</name>
+        <id>jsr05</id>
+        <name>1.0-JSR-05</name>
         <tag>GROOVY_1_0_JSR_05</tag>
       </version>
   </versions>
