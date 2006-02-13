@@ -24,6 +24,7 @@ import org.hibernate.SessionFactory;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
+import org.springframework.orm.hibernate3.HibernateTemplate;
 
 /**
  * 
@@ -32,48 +33,56 @@ import org.springframework.validation.Validator;
  * @since Aug 7, 2005
  */
 public class SavePersistentMethod extends AbstractDynamicPersistentMethod {
-	
-	private static final String METHOD_SIGNATURE = "save";
-	private GrailsApplication application;
-	
-	public SavePersistentMethod(SessionFactory sessionFactory, ClassLoader classLoader, GrailsApplication application) {
-		super(METHOD_SIGNATURE,sessionFactory, classLoader);
-		
-		if(application == null)
-			throw new IllegalArgumentException("Constructor argument 'application' cannot be null");
-		this.application = application;		
-	}
 
-	protected Object doInvokeInternal(Object target, Object[] arguments) {
-		
-		Errors errors = new BindException(target, target.getClass().getName());
-		GrailsDomainClass domainClass = application.getGrailsDomainClass( target.getClass().getName() );
-		Validator validator = null;
-		boolean doValidation = true;
-		Boolean success = new Boolean(true);
-		if(domainClass != null) {
-			validator = domainClass.getValidator();
-			doValidation = true;
-			if(arguments.length > 0) {
-				if(arguments[0] instanceof Boolean) {
-					doValidation = ((Boolean)arguments[0]).booleanValue();
-				}
-			}
-		}
-		if(doValidation) {
-			if(validator != null) {
-				validator.validate(target,errors);
-				
-				if(errors.hasErrors()) {
-					DelegatingMetaClass metaClass = (DelegatingMetaClass)InvokerHelper.getInstance().getMetaRegistry().getMetaClass(target.getClass());			
-					metaClass.setProperty(target,DomainClassMethods.ERRORS_PROPERTY,errors);
-					return new Boolean(!errors.hasErrors());	
-				}
-			}
-		}		
-		getHibernateTemplate().saveOrUpdate(target);			
-		
-		return success;
-	}
+    private static final String METHOD_SIGNATURE = "save";
+    private GrailsApplication application;
+
+    public SavePersistentMethod(SessionFactory sessionFactory, ClassLoader classLoader, GrailsApplication application) {
+        super(METHOD_SIGNATURE,sessionFactory, classLoader);
+
+        if(application == null)
+            throw new IllegalArgumentException("Constructor argument 'application' cannot be null");
+        this.application = application;
+    }
+
+    protected Object doInvokeInternal(Object target, Object[] arguments) {
+
+        Errors errors = new BindException(target, target.getClass().getName());
+        GrailsDomainClass domainClass = application.getGrailsDomainClass( target.getClass().getName() );
+        Validator validator = null;
+        boolean doValidation = true;
+        Boolean success = Boolean.TRUE;
+        if(domainClass != null) {
+            validator = domainClass.getValidator();
+            doValidation = true;
+            if(arguments.length > 0) {
+                if(arguments[0] instanceof Boolean) {
+                    doValidation = ((Boolean)arguments[0]).booleanValue();
+                }
+            }
+        }
+        if(doValidation) {
+            if(validator != null) {
+                validator.validate(target,errors);
+
+                if(errors.hasErrors()) {
+                    DelegatingMetaClass metaClass = (DelegatingMetaClass)InvokerHelper.getInstance().getMetaRegistry().getMetaClass(target.getClass());
+                    metaClass.setProperty(target,DomainClassMethods.ERRORS_PROPERTY,errors);
+                    return Boolean.valueOf(!errors.hasErrors());
+                }
+            }
+        }
+        HibernateTemplate ht = getHibernateTemplate();
+        if(ht.contains(target)) {
+            ht.flush();
+            ht.update(target);
+        }
+        else {
+            ht.saveOrUpdate(target);
+        }
+
+
+        return success;
+    }
 
 }
