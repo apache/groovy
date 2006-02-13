@@ -5,7 +5,7 @@
   <name>groovy</name>
   <groupId>groovy</groupId>
   <id>groovy</id>
-  <currentVersion>1.0-jsr-05-SNAPSHOT</currentVersion>
+  <currentVersion>1.0-jsr-05</currentVersion>
   <organization>
     <name>The Codehaus</name>
     <url>http://codehaus.org</url>
@@ -315,7 +315,7 @@
     <developer>
         <name>Jochen Theodorou</name>
         <id>blackdrag</id>
-        <email>blackdrag@uni.de</email>
+        <email>blackdrag@gmx.org</email>
         <organization></organization>
         <roles>
           <role>Developer</role>
