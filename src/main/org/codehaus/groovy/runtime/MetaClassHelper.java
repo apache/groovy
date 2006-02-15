@@ -37,6 +37,8 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.codehaus.groovy.GroovyBugError;
+
 /**
  * @author John Wilson
  *
@@ -597,7 +599,7 @@ public class MetaClassHelper {
         }
     }
     
-    private static Object makeCommonArray(Object[] arguments, int offset) {
+    private static Object makeCommonArray(Object[] arguments, int offset, Class fallback) {
     	// arguments.leght>0 && !=null
     	Class baseClass = null;
     	for (int i = offset; i < arguments.length; i++) {
@@ -611,6 +613,10 @@ public class MetaClassHelper {
 				}
 			}
 		}
+        if (baseClass==null) {
+            // all arguments were null
+            baseClass = fallback;
+        }
     	Object result = makeArray(null,baseClass,arguments.length-offset);
     	System.arraycopy(arguments,offset,result,0,arguments.length-offset);
     	return result;
@@ -638,70 +644,42 @@ public class MetaClassHelper {
     private static Object[] fitToVargs(Object[] argumentArray, Class[] paramTypes) {
     	Class vargsClass = autoboxType(paramTypes[paramTypes.length-1].getComponentType());
     	
-    	// paramTypes.length is at last 1
-    	if (paramTypes.length==1) {
-    		// the method takes all arguments in one array
-    		// if argumentArray length is 1 we have to look into the array 
-    		// and see if it is the same type as the parameters component
-    		// type. If so, we have to wrap the argument in an array
-    		if (argumentArray.length==1) {
-    			Object argument = argumentArray[0];
-    			if (argument== null || !argument.getClass().isArray()){
-    				// no array, so wrap it
-    				Object result = makeArray(argument,vargsClass,1);
-    				System.arraycopy(argumentArray,0,result,0,1);
-    				argumentArray[0] = result;
-    				return argumentArray;
-    			} else {
-    				// argument is an array no convertion is needed
-    				return argumentArray;
-    			}
-    		} else {
-	    		// argumentArray is too big, create a new array and copy all
-	    		// parameters in the new Array. Since we are in the special case
-	    		// that the number of parameters is 1, this means argumentArray 
-	    		// has to be stored in an array, but we have to make sure the type
-    			// is correct
-    			Object result = makeCommonArray(argumentArray,0);
-	    		return new Object[]{result};
-    		}
-    	} else {
-    		// the method takes more than one argument, so all
-    		// arguments before the alst one are normal arguments and the 
-    		// last argument is the vargs argument. so we test first if
-    		// the number of arguments used to call the method is equal the 
-    		// number of parameters the method takes
-    		
-    		if (argumentArray.length==paramTypes.length) {
-    			// the number of arguments is correct, but if the last argument 
-    			// is no array we have to wrap it in a array
-    			Object lastArgument = argumentArray[argumentArray.length-1];
-    			if (lastArgument==null || !lastArgument.getClass().isArray()) {
-    				// no array so wrap it
-    				Object result = makeArray(lastArgument,vargsClass,1);
-    				System.arraycopy(argumentArray,argumentArray.length-1,result,0,1);
-    				argumentArray[argumentArray.length-1]=result;
-    				return argumentArray;
-    			} else {
-    				// nothing to do!
-    				return argumentArray;
-    			}
-    		} else if (argumentArray.length>paramTypes.length) {
-    			// the number of arguments is too big, wrap all exceeding elements
-    			// in an array, but keep the old elements
-    			Object[] newArgs = new Object[paramTypes.length];
-    			// copy arguments that are not a varg
-    			System.arraycopy(argumentArray,0,newArgs,0,paramTypes.length-1);
-    			// create a new array for the vargs and copy them
-    			int numberOfVargs = argumentArray.length-paramTypes.length;
-    			//TODO: what about GString here?
-    			Object vargs = makeCommonArray(argumentArray,paramTypes.length-1);
-    			newArgs[newArgs.length-1] = vargs;
-    			return newArgs;
-    		}
-    	}
-    	
-    	return argumentArray;
+        if (argumentArray.length == paramTypes.length-1) {
+            // the vargs argument is missing, so fill it with an empty array
+            Object[] newArgs = new Object[paramTypes.length];
+            System.arraycopy(argumentArray,0,newArgs,0,argumentArray.length);
+            Object result = makeArray(null,vargsClass,0);
+            newArgs[newArgs.length-1] = result;
+            return newArgs;
+        } else if (argumentArray.length==paramTypes.length) {
+            // the number of arguments is correct, but if the last argument 
+            // is no array we have to wrap it in a array. if the last argument
+            // is null, then we don't have to do anything
+            Object lastArgument = argumentArray[argumentArray.length-1];
+            if (lastArgument!= null && !lastArgument.getClass().isArray()) {
+                // no array so wrap it
+                Object result = makeArray(lastArgument,vargsClass,1);
+                System.arraycopy(argumentArray,argumentArray.length-1,result,0,1);
+                argumentArray[argumentArray.length-1]=result;
+                return argumentArray;
+            } else {
+                // nothing to do!
+                return argumentArray;
+            }
+        } else if (argumentArray.length>paramTypes.length) {
+            // the number of arguments is too big, wrap all exceeding elements
+            // in an array, but keep the old elements that are no vargs
+            Object[] newArgs = new Object[paramTypes.length];
+            // copy arguments that are not a varg
+            System.arraycopy(argumentArray,0,newArgs,0,paramTypes.length-1);
+            // create a new array for the vargs and copy them
+            int numberOfVargs = argumentArray.length-paramTypes.length;
+            Object vargs = makeCommonArray(argumentArray,paramTypes.length-1,vargsClass);
+            newArgs[newArgs.length-1] = vargs;
+            return newArgs;
+        } else {
+            throw new GroovyBugError("trying to call a vargs method without enough arguments");
+        }
     }
     
     public static Object doMethodInvoke(Object object, MetaMethod method, Object[] argumentArray) {
