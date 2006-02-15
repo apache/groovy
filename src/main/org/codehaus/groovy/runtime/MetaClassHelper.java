@@ -46,7 +46,6 @@ public class MetaClassHelper {
 
     public static final Object[] EMPTY_ARRAY = {};
     public static Class[] EMPTY_TYPE_ARRAY = {};
-    protected static final Object[] ARRAY_WITH_EMPTY_ARRAY = { EMPTY_ARRAY };
     protected static final Object[] ARRAY_WITH_NULL = { null };
     protected static final Logger log = Logger.getLogger(MetaClassHelper.class.getName());
     private static final int MAX_ARG_LEN = 12;
@@ -344,6 +343,15 @@ public class MetaClassHelper {
             if (argument instanceof GString) {
                 arguments[i] = argument.toString();
                 coerced = true;
+            } else if (argument instanceof GString[]) {
+            	GString[] gstrings = (GString[]) arguments[i];
+            	String[] strings = new String[gstrings.length];
+            	for (int j=0; j<gstrings.length; j++) {
+            		if (gstrings[j]==null) continue;
+            		strings[j]=gstrings[j].toString();
+            	}
+            	arguments[i] = strings;
+            	coerced=true;
             }
         }
         return coerced;
@@ -589,6 +597,113 @@ public class MetaClassHelper {
         }
     }
     
+    private static Object makeCommonArray(Object[] arguments, int offset) {
+    	// arguments.leght>0 && !=null
+    	Class baseClass = null;
+    	for (int i = offset; i < arguments.length; i++) {
+			if (arguments[i]==null) continue;
+			Class argClass = arguments[i].getClass();
+			if (baseClass==null) {
+				baseClass = argClass;
+			} else {
+				for (;baseClass!=Object.class; baseClass=baseClass.getSuperclass()){
+					if (baseClass.isAssignableFrom(argClass)) break;
+				}
+			}
+		}
+    	Object result = makeArray(null,baseClass,arguments.length-offset);
+    	System.arraycopy(arguments,offset,result,0,arguments.length-offset);
+    	return result;
+    }
+    
+    private static Object makeArray(Object obj, Class secondary, int length) {
+    	Class baseClass = secondary;
+    	if (obj!=null) {
+    		baseClass = obj.getClass();
+    	}
+    	/*if (GString.class.isAssignableFrom(baseClass)) {
+    		baseClass = GString.class;
+    	}*/
+    	return Array.newInstance(baseClass,length);
+    }
+    
+    /**
+     * this method is called when the number of arguments to a method is greater than 1
+     * and if the method is a vargs method. This method will then transform the given
+     * arguments to make the method callable
+     * 
+     * @param argumentArray the arguments used to call the method
+     * @param paramTypes the types of the paramters the method takes
+     */
+    private static Object[] fitToVargs(Object[] argumentArray, Class[] paramTypes) {
+    	Class vargsClass = autoboxType(paramTypes[paramTypes.length-1].getComponentType());
+    	
+    	// paramTypes.length is at last 1
+    	if (paramTypes.length==1) {
+    		// the method takes all arguments in one array
+    		// if argumentArray length is 1 we have to look into the array 
+    		// and see if it is the same type as the parameters component
+    		// type. If so, we have to wrap the argument in an array
+    		if (argumentArray.length==1) {
+    			Object argument = argumentArray[0];
+    			if (argument== null || !argument.getClass().isArray()){
+    				// no array, so wrap it
+    				Object result = makeArray(argument,vargsClass,1);
+    				System.arraycopy(argumentArray,0,result,0,1);
+    				argumentArray[0] = result;
+    				return argumentArray;
+    			} else {
+    				// argument is an array no convertion is needed
+    				return argumentArray;
+    			}
+    		} else {
+	    		// argumentArray is too big, create a new array and copy all
+	    		// parameters in the new Array. Since we are in the special case
+	    		// that the number of parameters is 1, this means argumentArray 
+	    		// has to be stored in an array, but we have to make sure the type
+    			// is correct
+    			Object result = makeCommonArray(argumentArray,0);
+	    		return new Object[]{result};
+    		}
+    	} else {
+    		// the method takes more than one argument, so all
+    		// arguments before the alst one are normal arguments and the 
+    		// last argument is the vargs argument. so we test first if
+    		// the number of arguments used to call the method is equal the 
+    		// number of parameters the method takes
+    		
+    		if (argumentArray.length==paramTypes.length) {
+    			// the number of arguments is correct, but if the last argument 
+    			// is no array we have to wrap it in a array
+    			Object lastArgument = argumentArray[argumentArray.length-1];
+    			if (lastArgument==null || !lastArgument.getClass().isArray()) {
+    				// no array so wrap it
+    				Object result = makeArray(lastArgument,vargsClass,1);
+    				System.arraycopy(argumentArray,argumentArray.length-1,result,0,1);
+    				argumentArray[argumentArray.length-1]=result;
+    				return argumentArray;
+    			} else {
+    				// nothing to do!
+    				return argumentArray;
+    			}
+    		} else if (argumentArray.length>paramTypes.length) {
+    			// the number of arguments is too big, wrap all exceeding elements
+    			// in an array, but keep the old elements
+    			Object[] newArgs = new Object[paramTypes.length];
+    			// copy arguments that are not a varg
+    			System.arraycopy(argumentArray,0,newArgs,0,paramTypes.length-1);
+    			// create a new array for the vargs and copy them
+    			int numberOfVargs = argumentArray.length-paramTypes.length;
+    			//TODO: what about GString here?
+    			Object vargs = makeCommonArray(argumentArray,paramTypes.length-1);
+    			newArgs[newArgs.length-1] = vargs;
+    			return newArgs;
+    		}
+    	}
+    	
+    	return argumentArray;
+    }
+    
     public static Object doMethodInvoke(Object object, MetaMethod method, Object[] argumentArray) {
         Class[] paramTypes = method.getParameterTypes();
         try {
@@ -596,42 +711,11 @@ public class MetaClassHelper {
                 argumentArray = EMPTY_ARRAY;
             } else if (paramTypes.length == 1 && argumentArray.length == 0) {
                 if (isVargsMethod(paramTypes,argumentArray))
-                    argumentArray = ARRAY_WITH_EMPTY_ARRAY;
+                    argumentArray = new Object[]{Array.newInstance(paramTypes[0].getComponentType(),0)};
                 else
                     argumentArray = ARRAY_WITH_NULL;
             } else if (isVargsMethod(paramTypes,argumentArray)) {
-                // vargs
-                
-                // copy nonvargs arguments
-                Object[] newArg = new Object[paramTypes.length];
-                System.arraycopy(argumentArray,0,newArg,0,newArg.length-1);
-                // make vargs argument
-                Object[] vargs = new Object[argumentArray.length-newArg.length+1];
-                
-                Class lastArgumentClass = null;
-                Object lastArgument = argumentArray[argumentArray.length-1];
-                if (lastArgument!=null) {
-                    lastArgumentClass = lastArgument.getClass();
-                }
-                if (argumentArray.length==paramTypes.length && lastArgumentClass!=null && lastArgumentClass.isArray()) {
-                    // we are calling a vargs method with an array
-                    lastArgumentClass = lastArgumentClass.getComponentType();
-                    if (lastArgumentClass.isPrimitive()) {
-                        // primmitive arrays don't fit in a Object array, so we have to convert it first
-                        lastArgument = asWrapperArray(lastArgument,lastArgumentClass);
-                    }
-                    System.arraycopy(lastArgument,newArg.length-1,vargs,0,vargs.length);
-                    argumentArray = newArg;
-                } else {
-                    System.arraycopy(argumentArray,newArg.length-1,vargs,0,vargs.length);
-                }
-                
-                if (vargs.length == 1 && vargs[0] == null)
-                    newArg[newArg.length-1] = null;
-                else {
-                    newArg[newArg.length-1] = vargs;
-                }
-                argumentArray = newArg;
+            	argumentArray = fitToVargs(argumentArray, paramTypes);
             }
             return method.invoke(object, argumentArray);
         }
