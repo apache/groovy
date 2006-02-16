@@ -8,6 +8,12 @@ import java.beans.IntrospectionException;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
 
+/**
+ * The ProxyMetaClass for the MockInterceptor.
+ * Instance and class methods are intercepted, but constructors are not to allow mocking of aggregated objects.
+ * @author Dierk Koenig
+ */
+
 public class MockProxyMetaClass extends ProxyMetaClass {
 
     /**

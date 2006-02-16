@@ -2,6 +2,14 @@ package groovy.mock.interceptor
 
 import junit.framework.AssertionFailedError
 
+/**
+    Expects demanded call cardinalities to match demanded ranges.
+    The calls are allowed to be out of the recorded sequence.
+    If a method is demanded multiple times, the ranges are filled by order of recording.
+    @See StrictExpectation
+    @author Dierk Koenig
+*/
+
 class LooseExpectation {
     Demand fDemand  = null
     List fCalls      = []

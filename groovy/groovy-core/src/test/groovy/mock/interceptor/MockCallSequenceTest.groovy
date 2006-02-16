@@ -2,6 +2,12 @@ package groovy.mock.interceptor
 
 import junit.framework.AssertionFailedError
 
+/*
+    Testing Groovy Mock support for multiple calls to the Collaborator with
+    demanding one or two methods multiple and and various ranges.
+    @author Dierk Koenig
+*/
+
 class MockCallSequenceTest extends GroovyTestCase {
 
     MockFor mocker
