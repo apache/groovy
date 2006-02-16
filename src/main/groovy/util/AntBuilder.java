@@ -169,6 +169,7 @@ public class AntBuilder extends BuilderSupport {
 
         Task task = null;
         if (nested == null) {
+            // create and set its project reference
             task = createTask(tagName);
             if (task != null) {
                 if (log.isLoggable(Level.FINE)) {
@@ -179,7 +180,6 @@ public class AntBuilder extends BuilderSupport {
                 // http://jakarta.apache.org/ant/manual/develop.html#writingowntask
                 // kindly recommended by Stefan Bodewig
 
-                // create and set its project reference
                 if (task instanceof TaskAdapter) {
                     answer = ((TaskAdapter) task).getProxy();
                 }
