@@ -11,24 +11,22 @@
 		<echo>Usage: grails [target]
 
 Targets:		
-"init" - initialise the current app
-"create-app" - Create a new grails app
-"create-controller" - Create a new controller
-"create-service" - Create a new service
+"init"                - initialise the current app
+"create-app"          - Create a new grails app
+"create-controller"   - Create a new controller
+"create-service"      - Create a new service
 "create-domain-class" - Create a new domain class
-"create-test-suite" - Create a new test suite
+"create-test-suite"   - Create a new test suite
 "generate-controller" - Generates a controller from a domain class
-"test-app" - Run current app's unit tests
-"run-app" - Run the application (coming soon)
+"test-app"            - Run current app's unit tests
+"run-app"             - Run the application (coming soon)
 		</echo>
 	</target>
 	
-    <target name="generate-controller" depends="package">
+    <target name="init:grailsHome">
 		<property environment="env"/>
 		<fail unless="env.GRAILS_HOME" message="GRAILS_HOME is not set."/>
 		<property name="grails.home" location="${env.GRAILS_HOME}"/>
-
-		<input addproperty="domain.class.name" message="Enter domain class name:" />
 
 		<path id="test.classpath">
 			<!--<pathelement location="${grails.home}/src/web-app/WEB-INF"/>-->
@@ -46,10 +44,8 @@ Targets:
 		</java>
     </target>
 
-    <target name="create-app">
-		<property environment="env"/>
-		<fail unless="env.GRAILS_HOME" message="GRAILS_HOME is not set."/>
-		<property name="grails.home" location="${env.GRAILS_HOME}"/>
+
+    <target name="create-app" depends="init:grailsHome">
 		
 		<input addproperty="project.name" message="Enter application name:" />
 		
@@ -59,7 +55,7 @@ Targets:
 		
 		<script language="groovy">
 			def projName = grails.getProperty("project.name")			
-			grails.setProperty("project.class.name", projName.substring(0,1).toUpperCase() + projName.substring(1,projName.length()))
+			grails.setProperty("project.class.name", projName[0].toUpperCase() + projName[1..-1])
 		</script>		
 		
 			<copy 	file="${grails.home}/src/grails/templates/artifacts/DataSource.groovy"
@@ -69,20 +65,14 @@ Targets:
 		
 	</target>
 	
-	<target name="create-controller">
-		<property environment="env"/>
-		<fail unless="env.GRAILS_HOME" message="GRAILS_HOME is not set."/>
-		<property name="grails.home" location="${env.GRAILS_HOME}"/>
+	<target name="create-controller" depends="init:grailsHome">
 		
 		<input addproperty="controller.name" message="Enter controller name:" />
 		
 		<script language="groovy">
 			def ctrlName = grails.getProperty("controller.name")		
-			ctrlName = ctrlName.substring(0,1).toUpperCase() + ctrlName.substring(1,ctrlName.length())
-			if(ctrlName.endsWith("Controller")) {
-				def i = ctrlName.lastIndexOf("Controller");
-				ctrlName = ctrlName.substring(0, i);
-			}			
+			ctrlName = ctrlName[0].toUpperCase() + ctrlName[1..-1]
+			ctrlName = ctrlName - 'Controller'
 			grails.setProperty("controller.class.name", ctrlName)
 		</script>
 				
@@ -95,20 +85,14 @@ Targets:
 		<echo>Created controller: grails-app/controllers/${controller.class.name}Controller.groovy</echo>
 	</target>
 	
-	<target name="create-service">
-		<property environment="env"/>
-		<fail unless="env.GRAILS_HOME" message="GRAILS_HOME is not set."/>
-		<property name="grails.home" location="${env.GRAILS_HOME}"/>
+	<target name="create-service" depends="init:grailsHome">
 		
 		<input addproperty="service.name" message="Enter service name:" />
 		
 		<script language="groovy">
 			def serviceName = grails.getProperty("service.name")		
-			serviceName = serviceName.substring(0,1).toUpperCase() + serviceName.substring(1,serviceName.length())
-			if(serviceName.endsWith("Service")) {
-				def i = serviceName.lastIndexOf("Service");
-				serviceName = serviceName.substring(0, i);
-			}			
+			serviceName = serviceName[0].toUpperCase() + serviceName.substring[1..-1]
+		    serviceName = serviceName - "Service"
 			serviceName = serviceName.replaceAll(" ", "" )
 			grails.setProperty("service.class.name", serviceName)
 		</script>
@@ -122,16 +106,13 @@ Targets:
 		<echo>Created service: grails-app/services/${service.class.name}Service.groovy</echo>
 	</target>
 			
-	<target name="create-domain-class">
-		<property environment="env"/>
-		<fail unless="env.GRAILS_HOME" message="GRAILS_HOME is not set."/>
-		<property name="grails.home" location="${env.GRAILS_HOME}"/>
+	<target name="create-domain-class" depends="init:grailsHome">
 		
 		<input addproperty="domain.class.name" message="Enter domain class name:" />
 		
 		<script language="groovy">
 			def className = grails.getProperty("domain.class.name")		
-			className = className.substring(0,1).toUpperCase() + className.substring(1,className.length())
+			className = className[0].toUpperCase() + className.substring[1..-1]
 			grails.setProperty("domain.class.name", className)
 		</script>
 				
@@ -144,20 +125,14 @@ Targets:
 		<echo>Domain class created: grails-app/domain/${domain.class.name}.groovy</echo>
 	</target>	
 	
-	<target name="create-test-suite">
-		<property environment="env"/>
-		<fail unless="env.GRAILS_HOME" message="GRAILS_HOME is not set."/>
-		<property name="grails.home" location="${env.GRAILS_HOME}"/>
+	<target name="create-test-suite" depends="init:grailsHome">
 		
 		<input addproperty="test.suite.name" message="Enter test suite name:" />
 		
 		<script language="groovy">
 			def suiteName = grails.getProperty("test.suite.name")		
-			suiteName = suiteName.substring(0,1).toUpperCase() + suiteName.substring(1,suiteName.length())
-			if(suiteName.endsWith("Tests")) {
-				def i = suiteName.lastIndexOf("Tests");
-				suiteName = suiteName.substring(0, i);
-			}			
+			suiteName = suiteName[0].toUpperCase() + suiteName.substring[1..-1]
+			suiteName = suiteName - "Tests"
 			suiteName = suiteName.replaceAll(" ", "" )			
 			grails.setProperty("test.suite.name", suiteName)
 		</script>
@@ -171,10 +146,7 @@ Targets:
 		<echo>Created test suite: grails-app/tests/${test.suite.name}Tests.groovy</echo>
 	</target>	
 	
-	<target name="init">
-		<property environment="env"/>
-		<fail unless="env.GRAILS_HOME" message="GRAILS_HOME is not set."/>
-		<property name="grails.home" location="${env.GRAILS_HOME}"/>
+	<target name="init" depends="init:grailsHome">
 		<mkdir dir="${path}src"/>
 		<mkdir dir="${path}src/java"/>
 		<mkdir dir="${path}src/groovy"/>		
@@ -223,10 +195,7 @@ Targets:
 		<delete dir="tmp" />
 	</target>
 	
-	<target name="build">
-		<property environment="env"/>
-		<fail unless="env.GRAILS_HOME" message="GRAILS_HOME is not set."/>
-		<property name="grails.home" location="${env.GRAILS_HOME}"/>
+	<target name="build" depends="init:grailsHome">
 		<path id="classpath">
 			<fileset dir="lib"/>
 			<fileset dir="${grails.home}/lib"/>
@@ -241,9 +210,6 @@ Targets:
 	</target>
 	
 	<target name="test" depends="build">
-		<property environment="env"/>
-		<fail unless="env.GRAILS_HOME" message="GRAILS_HOME is not set."/>
-		<property name="grails.home" location="${env.GRAILS_HOME}"/>
 		<delete dir="tmp/reports"/>
 		<mkdir dir="tmp/reports"/>
 		<path id="test_classpath">
@@ -264,9 +230,6 @@ Targets:
 	</target>
 
 	<target name="test-app" depends="package">
-		<property environment="env"/>
-		<fail unless="env.GRAILS_HOME" message="GRAILS_HOME is not set."/>
-		<property name="grails.home" location="${env.GRAILS_HOME}"/>
 		<mkdir dir="${basedir}/tmp/war/WEB-INF/grails-app/tests" />		
 		<copy todir="${basedir}/tmp/war/WEB-INF/grails-app/tests">
 			<fileset dir="${basedir}/grails-tests/" includes="**"></fileset>
@@ -291,9 +254,6 @@ Targets:
     </target>
 
     <target name="package" depends="build">
-        <property environment="env"/>
-        <fail unless="env.GRAILS_HOME" message="GRAILS_HOME is not set."/>
-        <property name="grails.home" location="${env.GRAILS_HOME}"/>
         <mkdir dir="tmp/war"/>
         <copy todir="tmp/war">
             <fileset dir="web-app">
@@ -308,7 +268,7 @@ Targets:
         <property name="tmp.war.dir"  location="tmp/war"></property>
         <property name="project.base.dir"  location="."></property>
 
-        <script language="groovy">
+        <script language="groovy"><![CDATA[
             import groovy.text.SimpleTemplateEngine
 
             def controllersHome = grails.getProperty("controllers.home")
@@ -318,14 +278,14 @@ Targets:
                 def match = it.name =~ "(\\w+)(Controller.groovy\$)"
                 if(match) {
                     def controllerName = match[0][1]
-                    controllerName = controllerName.substring(0,1).toLowerCase() + controllerName.substring(1)
-                    controllers &lt;&lt; controllerName
+                    controllerName = controllerName[0].toLowerCase() + controllerName[1..-1]
+                    controllers << controllerName
                 }
                 match = it.name =~ "(\\w+)(PageFlow.groovy\$)"
                 if(match) {
                     def flowName = match[0][1]
-                    flowName = flowName.substring(0,1).toLowerCase() + flowName.substring(1)
-                    flows &lt;&lt; flowName
+                    flowName = flowName[0].toLowerCase() + flowName[1..-1]
+                    flows << flowName
                 }
             }
 
@@ -340,7 +300,7 @@ Targets:
             def template = engine.createTemplate( new File( grails.getProperty("web.xml.template") ).text ).make(binding)
 
             new File( grails.getProperty("target.web.xml") ).write( template.toString() )
-        </script>
+        ]]></script>
 
 
         <mkdir dir="tmp/war/WEB-INF/classes"/>
@@ -425,7 +385,7 @@ Targets:
 		<jar destfile="${project.dir}.war" basedir="tmp/war" />
 	</target>
 
-	<target name="run-app" depends="dev,package">
+    <target name="run-app:impl" depends="war">
 	    <property location="tmp/war" name="tmp.war.location" />
 		<basename property="project.dir" file="."/>
 		
@@ -439,18 +399,43 @@ Targets:
 				server.addListener(listener);
 				server.addWebApplication("/" + grails.getProperty("project.dir"),grails.getProperty("tmp.war.location"));
 				server.start();		
-				// we put this here because ant drops out of its process when the script tag finishes 
-				// and hence stops the web server		
-				while(true) {
-					Thread.sleep(Long.MAX_VALUE)
 				}
+            catch(Throwable t) {
+                t.printStackTrace();
 			}
-			catch(Error er) {
-				er.printStackTrace();			
-			}
-			catch(Exception e) {
-				e.printStackTrace();
+        </script>
+    </target>
+
+    <target name="wait-forever" >
+        <script language="groovy">
+            while(true) {
+                sleep(Long.MAX_VALUE)
 			}
 		</script>
 	</target>	
+
+    <target name="run-app" depends="war">
+        <antcall target="run-app:impl" />
+        <antcall target="wait-forever" />
+    </target>
+
+    <target name="webtest" depends="init:grailsHome">
+        <!-- <parallel>
+            <daemons>
+                <antcall target="run-app:impl" />
+            </daemons>
+        </parallel>
+        <echoproperties /> -->
+        <java classname="groovy.ui.GroovyMain" >
+            <arg line="build test"/>
+            <classpath>
+                <pathelement location="."/>
+                <fileset dir="/java/groovy/lib" includes="*.jar"/>
+                <fileset dir="${grails.home}/lib" includes="*.jar"/>
+                <pathelement location="${grails.home}/downloads/webtest/lib"/>
+                <fileset dir="${grails.home}/downloads/webtest/lib" includes="*.jar"/>
+            </classpath>
+
+        </java>
+    </target>
 </project>
