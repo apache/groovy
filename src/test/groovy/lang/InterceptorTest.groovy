@@ -78,12 +78,12 @@ after  java.lang.String.valueOf(java.lang.Boolean)
         def proxy = ProxyMetaClass.getInstance(slicer.class)
         proxy.setInterceptor(logInterceptor)
         proxy.use(slicer) {
-            slicer.sliceSomeCheese('')
+            slicer.coffeeBreak('')
         }
         assertEquals(
 """
-before groovy.mock.example.CheeseSlicer.sliceSomeCheese(java.lang.String)
-after  groovy.mock.example.CheeseSlicer.sliceSomeCheese(java.lang.String)
+before groovy.mock.example.CheeseSlicer.coffeeBreak(java.lang.String)
+after  groovy.mock.example.CheeseSlicer.coffeeBreak(java.lang.String)
 """, log.toString())
     }
 }

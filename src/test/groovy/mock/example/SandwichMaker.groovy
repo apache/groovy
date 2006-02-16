@@ -2,18 +2,10 @@ package groovy.mock.example
 
 class SandwichMaker {
 
-    @Property cheeseSlicer
+    @Property cheeseSlicer = new CheeseSlicer()
 
     void makeFattySandwich() {
-        cheeseSlicer.sliceCheese("cheddar")
-    }
-
-    void makeLiteSandwich() {
-        cheeseSlicer.sliceCheese("dairylea")
-    }
-
-    void makeCrappySandwich() {
-        cheeseSlicer.sliceCheese("dairylea")
+        cheeseSlicer.slice("cheddar")
     }
 
 }

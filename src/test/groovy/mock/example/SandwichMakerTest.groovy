@@ -1,23 +1,20 @@
 package groovy.mock.example
 
-import groovy.mock.GroovyMock
+import groovy.mock.interceptor.MockFor
 
 class SandwichMakerTest extends GroovyTestCase {
 
     void testStuff(){
 
-        def mockCheeseSlicer = GroovyMock.newInstance()
+        def mocker = new MockFor(CheeseSlicer.class)
+
+        mocker.demand.slice { name -> assert name.startsWith("ch") }
+
         def sandwichMaker = new SandwichMaker()
-        sandwichMaker.cheeseSlicer = mockCheeseSlicer.instance
 
-        // expectation
-        mockCheeseSlicer.sliceCheese {arg -> assert arg.startsWith("ch")}
-
-        // execute
-        sandwichMaker.makeFattySandwich()
-
-        // verify
-        mockCheeseSlicer.verify()
+        mocker.use(sandwichMaker.cheeseSlicer) { // todo: should also work without giving the object!
+            sandwichMaker.makeFattySandwich()
+        }
 
     }
 
