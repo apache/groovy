@@ -4,7 +4,7 @@
 // todo: maybe make a selfrunning psvm
 
 abstract class WebTest {
-    
+
     @Property grailsHome
     @Property props
     @Property ant = new AntBuilder()
@@ -59,11 +59,15 @@ abstract class WebTest {
     // prepare the ant taskdef, classpath and filesystem for reporting
     void prepare() {        
         def rootLoader = this.class.classLoader.rootLoader
-        def loadDir = new File("$webtestHome/lib/")
-        rootLoader.addURL(loadDir.toURL())
-        loadDir.eachFileMatch(~/.*\.jar$/){
-            rootLoader.addURL(it.toURL())
-        }        
+        if (rootLoader) {
+            def loadDir = new File("$webtestHome/lib/")
+            rootLoader.addURL(loadDir.toURL())
+            loadDir.eachFileMatch(~/.*\.jar$/){
+                rootLoader.addURL(it.toURL())
+            }
+        } else {
+            println 'No RootLoader, assuming CP set by ANT call.'
+        }
         ant.taskdef(file:"${webtestHome}/webtestTaskdefs.properties")
         
         ant.delete(dir: props.webtest_resultpath)

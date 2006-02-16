@@ -14,6 +14,9 @@ if (args.toList().contains('test')){
     startTests()
     return
 }
+/*
+withJetty { startTests() }
+*/
 
 warApplication()
 deploy()
@@ -21,6 +24,8 @@ deploy()
 withServer {
     startTests()
 }
+
+
 
 
 // method implementations ---------------------------------
@@ -91,4 +96,15 @@ def withTomcat5 (Closure yield) {
     tomcat('deploy')
     ant.echo(message:'tomcat deployment done')
     yield()
+}
+
+def withJetty (Closure yield) {
+    def server   = new org.mortbay.jetty.Server()
+    def listener = new org.mortbay.http.SocketListener()
+    listener.setPort(8080);
+    server.addListener(listener)
+    server.addWebApplication("/.","books.war")
+    server.start()
+        Thread.start { yield() }
+    server.stop()
 }
