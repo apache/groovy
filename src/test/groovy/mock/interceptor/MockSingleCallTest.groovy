@@ -2,7 +2,7 @@ package groovy.mock.interceptor
 
 import junit.framework.AssertionFailedError
 
-/*
+/**
     Testing Groovy Mock support for single calls to the Collaborator with
     no, one, multiple, or arbitrary arguments, exceptions and failures.
     @author Dierk Koenig
@@ -56,11 +56,12 @@ class MockSingleCallTest extends GroovyTestCase {
     }
     void testVerifyFailsIfOneDemandedButNoneExcecuted() {
         mocker.demand.one { 1 }
-        shouldFail(AssertionFailedError.class) {
+        def msg = shouldFail(AssertionFailedError.class) {
             mocker.use {
                 // no call
             }
         }
+        assert msg =~ /0.*1..1.*never called/
     }
     void testSingleCallExceptionDemanded() {
         mocker.demand.one { throw new IllegalArgumentException() }

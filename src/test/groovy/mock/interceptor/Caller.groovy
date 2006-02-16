@@ -1,5 +1,10 @@
 package groovy.mock.interceptor
 
+/**
+    Helper class for testing.
+    @author Dierk Koenig
+*/
+
 class Caller {
     int collaborateOne() {
         return new Collaborator().one()

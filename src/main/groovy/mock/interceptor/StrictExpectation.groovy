@@ -2,6 +2,12 @@ package groovy.mock.interceptor
 
 import junit.framework.AssertionFailedError
 
+/**
+    Expects demanded call cardinalities to match demanded ranges in the sequence of recording.
+    @See LooseExpectation
+    @author Dierk Koenig
+*/
+
 class StrictExpectation {
     Demand fDemand  = null
     int fCallSpecIdx = 0

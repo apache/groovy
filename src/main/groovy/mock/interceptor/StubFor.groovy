@@ -3,7 +3,8 @@ package groovy.mock.interceptor
 /**
     Facade over the Stubbing details.
     A Stub's expectation is sequence independent and use of verify() is left to the user.
-    See also MockFor.
+    @See MockFor.
+    @author Dierk Koenig
 */
 
 class StubFor {

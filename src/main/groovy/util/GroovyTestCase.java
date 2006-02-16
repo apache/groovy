@@ -64,7 +64,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  *
  * @author <a href="mailto:bob@werken.com">bob mcwhirter</a>
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author Dierk Koenig (the notYetImplemented feature)
+ * @author Dierk Koenig (the notYetImplemented feature, changes to shouldFail)
  * @version $Revision$
  */
 public class GroovyTestCase extends TestCase {
@@ -242,16 +242,20 @@ public class GroovyTestCase extends TestCase {
      * Asserts that the given code closure fails when it is evaluated
      *
      * @param code
+     * @return the message of the thrown Throwable
      */
-    protected void shouldFail(Closure code) {
+    protected String shouldFail(Closure code) {
         boolean failed = false;
+        String result = null;
         try {
             code.call();
         }
-        catch (Exception e) {
-            failed = true;
+        catch (Throwable e) {
+                failed = true;
+                result = e.getMessage();
         }
         assertTrue("Closure " + code + " should have failed", failed);
+        return result;
     }
 
     /**
@@ -260,28 +264,30 @@ public class GroovyTestCase extends TestCase {
      *
      * @param clazz the class of the expected exception
      * @param code the closure that should fail
+     * @return the message of the expected Throwable
      */
-    protected void shouldFail(Class clazz, Closure code) {
+    protected String shouldFail(Class clazz, Closure code) {
         Throwable th = null;
         try {
             code.call();
         } catch (GroovyRuntimeException gre) {
             th = gre;
-            while (th.getCause()!=null && th.getCause()!=gre){
+            while (th.getCause()!=null && th.getCause()!=gre){ // if wrapped, find the root cause
                 th=th.getCause();
                 if (th!=gre && (th instanceof GroovyRuntimeException)) {
                     gre = (GroovyRuntimeException) th;
                 }
             }            
-        } catch (Exception e) {
+        } catch (Throwable e) {
             th = e;
         }
 
         if (th==null) {
-            assertTrue("Closure " + code + " should have failed with an exception of type " + clazz.getName(), false);
+            fail("Closure " + code + " should have failed with an exception of type " + clazz.getName());
         } else if (! clazz.isInstance(th)) {
-            assertTrue("Closure " + code + " should have failed with an exception of type " + clazz.getName() + ", instead got Exception " + th, false);
-        } 
+            fail("Closure " + code + " should have failed with an exception of type " + clazz.getName() + ", instead got Exception " + th);
+        }
+        return th.getMessage();
     }
 
     /**

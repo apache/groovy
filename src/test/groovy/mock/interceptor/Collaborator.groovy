@@ -1,5 +1,10 @@
 package groovy.mock.interceptor
 
+/**
+    Helper class for testing.
+    @author Dierk Koenig
+*/
+
 class Collaborator {
     def one() {
         throw new RuntimeException('Never reach here. Should have been mocked.')
