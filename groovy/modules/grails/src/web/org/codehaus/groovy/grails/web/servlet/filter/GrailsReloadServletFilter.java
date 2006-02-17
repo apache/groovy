@@ -16,7 +16,6 @@
 package org.codehaus.groovy.grails.web.servlet.filter;
 
 import groovy.lang.GroovyClassLoader;
-import groovy.lang.GroovyObject;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.groovy.control.CompilationFailedException;
@@ -26,6 +25,7 @@ import org.codehaus.groovy.grails.commons.spring.SpringConfig;
 import org.codehaus.groovy.grails.web.servlet.GrailsApplicationAttributes;
 import org.codehaus.groovy.grails.web.servlet.mvc.GrailsUrlHandlerMapping;
 import org.codehaus.groovy.grails.web.servlet.mvc.SimpleGrailsController;
+import org.codehaus.groovy.grails.scaffolding.GrailsTemplateGenerator;
 import org.springframework.aop.target.HotSwappableTargetSource;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.io.Resource;
@@ -55,11 +55,12 @@ public class GrailsReloadServletFilter extends OncePerRequestFilter {
 
     public static final Log LOG = LogFactory.getLog(GrailsReloadServletFilter.class);
 
-    private GroovyObject copyScript;
+    private ResourceCopier copyScript;
     private ApplicationContext context;
     private GrailsApplication application;
     private boolean initialised = false;
     private Map resourceMetas = Collections.synchronizedMap(new HashMap());
+    private GrailsTemplateGenerator templateGenerator;
 
     class ResourceMeta {
         long lastModified;
@@ -87,7 +88,31 @@ public class GrailsReloadServletFilter extends OncePerRequestFilter {
           Class groovyClass;
           try {
               groovyClass = gcl.parseClass(gcl.getResource("org/codehaus/groovy/grails/web/servlet/filter/GrailsResourceCopier.groovy").openStream());
-              copyScript = (GroovyObject)groovyClass.newInstance();
+              copyScript = (ResourceCopier)groovyClass.newInstance();
+              groovyClass = gcl.parseClass(gcl.getResource("org/codehaus/groovy/grails/scaffolding/DefaultGrailsTemplateGenerator.groovy").openStream());
+              templateGenerator = (GrailsTemplateGenerator)groovyClass.newInstance();
+              templateGenerator.setOverwrite(true);
+              // perform initial generation of views
+              GrailsControllerClass[] controllers = application.getControllers();
+              for (int i = 0; i < controllers.length; i++) {
+                  GrailsControllerClass controller = controllers[i];
+                  if(controller.isScaffolding()) {
+                    Class clazz = controller.getScaffoldedClass();
+                    GrailsDomainClass domainClass;
+                    if(clazz != null) {
+                       domainClass = application.getGrailsDomainClass(clazz.getName());
+                    }
+                    else {
+                       domainClass = application.getGrailsDomainClass(controller.getName());
+                    }
+                    if(domainClass != null) {
+                        // generate new views
+                        templateGenerator.generateViews(domainClass,getServletContext().getRealPath("/WEB-INF"));
+                    }
+                  }
+              }
+            // overwrite with user defined views
+            copyScript.copyViews(true);
           } catch (IllegalAccessException e) {
               LOG.error("Illegal access creating resource copier. Save/reload disabled: " + e.getMessage(), e);
           } catch (InstantiationException e) {
@@ -99,7 +124,7 @@ public class GrailsReloadServletFilter extends OncePerRequestFilter {
           }
         }
         if(copyScript != null) {
-            copyScript.invokeMethod("run", new Object[0]);
+            copyScript.copyGrailsApp();
         }
 
         GrailsResourceHolder resourceHolder = (GrailsResourceHolder)context.getBean(GrailsResourceHolder.APPLICATION_CONTEXT_ID);
@@ -219,8 +244,16 @@ public class GrailsReloadServletFilter extends OncePerRequestFilter {
     }
 
     private void loadDomainClass(Class loadedClass, boolean isNew) {
-        application.addDomainClass(loadedClass);
+        GrailsDomainClass domainClass = application.addDomainClass(loadedClass);
+
         reloadApplicationContext();
+        GrailsControllerClass controllerClass = application.getScaffoldingController(domainClass);
+        if(controllerClass != null && controllerClass.isScaffolding()) {
+            // generate new views
+            templateGenerator.generateViews(domainClass,getServletContext().getRealPath("/WEB-INF"));
+            // overwrite with user defined views
+            copyScript.copyViews(true);
+        }
     }
 
     private void loadControllerClass(Class loadedClass, boolean isNew) {
