@@ -17,23 +17,30 @@ package org.codehaus.groovy.grails.web.taglib.jsp;
 import groovy.lang.Closure;
 import groovy.lang.GroovyObject;
 import groovy.lang.MissingPropertyException;
+import org.codehaus.groovy.grails.commons.GrailsApplication;
+import org.codehaus.groovy.grails.commons.GrailsTagLibClass;
 import org.codehaus.groovy.grails.web.metaclass.TagLibDynamicMethods;
+import org.codehaus.groovy.grails.web.servlet.DefaultGrailsApplicationAttributes;
 import org.codehaus.groovy.grails.web.servlet.GrailsApplicationAttributes;
 import org.codehaus.groovy.grails.web.taglib.exceptions.GrailsTagException;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
+import org.springframework.context.ApplicationContext;
 import org.springframework.web.util.ExpressionEvaluationUtils;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspTagException;
 import javax.servlet.jsp.JspWriter;
 import javax.servlet.jsp.tagext.BodyContent;
 import javax.servlet.jsp.tagext.BodyTagSupport;
 import javax.servlet.jsp.tagext.DynamicAttributes;
+import java.beans.IntrospectionException;
 import java.beans.PropertyDescriptor;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.io.IOException;
 import java.util.*;
 
 /**
@@ -65,6 +72,10 @@ public class JspInvokeGrailsTagLibTag extends BodyTagSupport implements DynamicA
     private StringWriter sw;
     private PrintWriter out;
     private JspWriter jspWriter;
+    private GrailsApplicationAttributes grailsAttributes;
+    private GrailsApplication application;
+    private ApplicationContext appContext;;
+    private static final String TAG_LIBS_ATTRIBUTE = "org.codehaus.groovy.grails.TAG_LIBS";
 
 
     public JspInvokeGrailsTagLibTag() {
@@ -93,8 +104,44 @@ public class JspInvokeGrailsTagLibTag extends BodyTagSupport implements DynamicA
         return doStartTagInternal();
     }
 
+    private GroovyObject getTagLib(String tagName) {
+        if(this.application == null)
+            initPageState();
+
+        HttpServletRequest request = (HttpServletRequest)this.pageContext.getRequest();
+        HttpServletResponse response = (HttpServletResponse)this.pageContext.getResponse();
+        Map tagLibs = (Map)pageContext.getAttribute(TAG_LIBS_ATTRIBUTE);
+        if(tagLibs == null) {
+            tagLibs = new HashMap();
+            pageContext.setAttribute(TAG_LIBS_ATTRIBUTE, tagLibs);
+        }
+        GrailsTagLibClass tagLibClass = application.getTagLibClassForTag(tagName);
+        GroovyObject tagLib;
+        if(tagLibs.containsKey(tagLibClass.getFullName())) {
+             tagLib = (GroovyObject)tagLibs.get(tagLibClass.getFullName());
+        }
+        else {
+            tagLib = (GroovyObject)appContext.getBean(tagLibClass.getFullName());
+            try {
+                new TagLibDynamicMethods(tagLib,grailsAttributes.getController(request),request,response);
+            } catch (IntrospectionException e) {
+                throw new GrailsTagException("Error instantiating taglib ["+tagLibClass.getFullName()+"]: " + e.getMessage(),e);
+            }
+            tagLibs.put(tagLibClass.getFullName(),tagLib);
+        }
+        return tagLib;
+    }
+
+    private void initPageState() {
+        if(this.application == null) {
+            this.grailsAttributes = new DefaultGrailsApplicationAttributes(pageContext.getServletContext());
+            this.application = grailsAttributes.getGrailsApplication();
+            this.appContext = grailsAttributes.getApplicationContext();
+        }
+    }
+
     protected int doStartTagInternal() {
-      GroovyObject tagLib = (GroovyObject)pageContext.getRequest().getAttribute(GrailsApplicationAttributes.TAG_LIB);
+      GroovyObject tagLib = getTagLib(getName());
         if(tagLib != null) {
             sw = new StringWriter();
             out = new PrintWriter(sw);

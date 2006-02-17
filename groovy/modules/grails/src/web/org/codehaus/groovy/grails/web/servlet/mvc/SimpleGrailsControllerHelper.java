@@ -27,16 +27,14 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.commons.GrailsControllerClass;
-import org.codehaus.groovy.grails.commons.GrailsTagLibClass;
 import org.codehaus.groovy.grails.commons.metaclass.GenericDynamicProperty;
 import org.codehaus.groovy.grails.scaffolding.GrailsScaffolder;
 import org.codehaus.groovy.grails.web.metaclass.ChainDynamicMethod;
 import org.codehaus.groovy.grails.web.metaclass.ControllerDynamicMethods;
 import org.codehaus.groovy.grails.web.metaclass.GetParamsDynamicProperty;
-import org.codehaus.groovy.grails.web.metaclass.TagLibDynamicMethods;
 import org.codehaus.groovy.grails.web.servlet.DefaultGrailsApplicationAttributes;
-import org.codehaus.groovy.grails.web.servlet.GrailsApplicationAttributes;
 import org.codehaus.groovy.grails.web.servlet.FlashScope;
+import org.codehaus.groovy.grails.web.servlet.GrailsApplicationAttributes;
 import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.ControllerExecutionException;
 import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.NoClosurePropertyForURIException;
 import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.NoViewNameDefinedException;
@@ -68,7 +66,6 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
     private GrailsApplicationAttributes grailsAttributes;
     private Pattern uriPattern = Pattern.compile("/(\\w+)/?(\\w*)/?(\\w*)/?(.*)");
     private static final Log LOG = LogFactory.getLog(SimpleGrailsControllerHelper.class);
-    private TagLibDynamicMethods tagLibInterceptor;
 
     public SimpleGrailsControllerHelper(GrailsApplication application, ApplicationContext context, ServletContext servletContext) {
         super();
@@ -179,11 +176,7 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
         GrailsControllerClass controllerClass = getControllerClassByURI(uri);
 
         // parse the uri in its individual tokens
-        String controllerName = WordUtils.uncapitalize(controllerClass.getName());;
-
-
-
-        GrailsTagLibClass tagLibClass = this.application.getTagLibClassForController(controllerClass.getFullName());
+        String controllerName = WordUtils.uncapitalize(controllerClass.getName());
 
         if (controllerClass == null) {
             throw new UnknownControllerException("No controller found for URI [" + uri + "]!");
@@ -193,12 +186,6 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
         // Step 3: load controller from application context.
         GroovyObject controller = getControllerInstance(controllerClass);
 
-        // create the tag lib for the controller if there is one
-        GroovyObject tagLib = null;
-        if(tagLibClass != null) {
-            tagLib = (GroovyObject)this.applicationContext.getBean(tagLibClass.getFullName());
-        }
-        request.setAttribute( GrailsApplicationAttributes.TAG_LIB, tagLib);
         request.setAttribute( GrailsApplicationAttributes.CONTROLLER, controller );
 
         // Step 3a: Configure a proxy interceptor for controller dynamic methods for this request
@@ -209,14 +196,6 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
             catch(IntrospectionException ie) {
                 throw new ControllerExecutionException("Error creating dynamic controller methods for controller ["+controller.getClass()+"]: " + ie.getMessage(), ie);
             }
-        }
-        if(this.tagLibInterceptor == null && tagLib != null) {
-            try {
-                tagLibInterceptor =  new TagLibDynamicMethods(tagLib,controller,request,response);
-            }
-            catch(IntrospectionException ie) {
-                throw new ControllerExecutionException("Error creating dynamic controller methods for controller ["+controller.getClass()+"]: " + ie.getMessage(), ie);
-            }                                      
         }
         // Step 3b: if scaffolding retrieve scaffolder
         if(controllerClass.isScaffolding())  {
@@ -365,7 +344,6 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
         } else if (returnValue instanceof Map) {
             // remove any Proxy wrappers and set the adaptee as the value
             Map returnModel = (Map)returnValue;
-            Map model;
             removeProxiesFromModelObjects(returnModel);
             if(!this.chainModel.isEmpty()) {
                 returnModel.putAll(this.chainModel);
@@ -400,8 +378,7 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
             else {
                 model = new BeanMap(controller);
             }
-            ModelAndView modelAndView = new ModelAndView(viewName, model);
-            return modelAndView;
+            return new ModelAndView(viewName, model);
         }
     }
 

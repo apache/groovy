@@ -16,16 +16,24 @@
 package org.codehaus.groovy.grails.web.pages;
 
 import groovy.lang.*;
-import org.codehaus.groovy.grails.web.metaclass.TagLibDynamicMethods;
-import org.codehaus.groovy.grails.web.servlet.GrailsApplicationAttributes;
-import org.codehaus.groovy.grails.web.taglib.exceptions.GrailsTagException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.codehaus.groovy.grails.commons.GrailsApplication;
+import org.codehaus.groovy.grails.commons.GrailsTagLibClass;
+import org.codehaus.groovy.grails.web.metaclass.TagLibDynamicMethods;
+import org.codehaus.groovy.grails.web.servlet.DefaultGrailsApplicationAttributes;
+import org.codehaus.groovy.grails.web.servlet.GrailsApplicationAttributes;
+import org.codehaus.groovy.grails.web.taglib.exceptions.GrailsTagException;
+import org.springframework.context.ApplicationContext;
 
-import java.io.Writer;
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.beans.IntrospectionException;
 import java.io.IOException;
-import java.util.Map;
+import java.io.Writer;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * NOTE: Based on work done by on the GSP standalone project (https://gsp.dev.java.net/)
@@ -51,6 +59,10 @@ public abstract class GroovyPage extends Script {
     public static final String SESSION = "session";
     public static final String PARAMS = "params";
     public static final String FLASH = "flash";
+    private GrailsApplication application;
+    private GrailsApplicationAttributes grailsAttributes;
+    private ApplicationContext appContext;
+    private Map tagLibs = new HashMap();
 
     /**
      * Convert from HTML to Unicode text.  This function converts many of the encoded HTML
@@ -153,7 +165,12 @@ public abstract class GroovyPage extends Script {
         Binding binding = getBinding();
 
         Writer out = (Writer)binding.getVariable(GroovyPage.OUT);
-        GroovyObject tagLib = (GroovyObject)binding.getVariable(GrailsApplicationAttributes.TAG_LIB);
+
+        if(this.application == null)
+            initPageState();
+
+        GroovyObject tagLib = getTagLib(tagName);
+
         if(tagLib != null) {
             tagLib.setProperty(  TagLibDynamicMethods.OUT_PROPERTY, out );
             Object tagLibProp;
@@ -182,6 +199,42 @@ public abstract class GroovyPage extends Script {
         }
     }
 
+    private void initPageState() {
+        if(this.application == null) {
+            ServletContext context = (ServletContext)getBinding().getVariable(SERVLET_CONTEXT);
+            this.grailsAttributes = new DefaultGrailsApplicationAttributes(context);
+            this.application = grailsAttributes.getGrailsApplication();
+            this.appContext = grailsAttributes.getApplicationContext();
+        }
+    }
+
+    private GroovyObject getTagLib(String tagName) {
+        if(this.application == null)
+            initPageState();
+        Binding binding = getBinding();
+        HttpServletRequest request = (HttpServletRequest)binding.getVariable(GroovyPage.REQUEST);
+        HttpServletResponse response = (HttpServletResponse)binding.getVariable(GroovyPage.RESPONSE);
+
+        GrailsTagLibClass tagLibClass = application.getTagLibClassForTag(tagName);
+        if(tagLibClass == null)
+            return null;
+        
+        GroovyObject tagLib;
+        if(tagLibs.containsKey(tagLibClass.getFullName())) {
+             tagLib = (GroovyObject)tagLibs.get(tagLibClass.getFullName());
+        }
+        else {
+            tagLib = (GroovyObject)appContext.getBean(tagLibClass.getFullName());
+            try {
+                new TagLibDynamicMethods(tagLib,grailsAttributes.getController(request),request,response);
+            } catch (IntrospectionException e) {
+                throw new GrailsTagException("Error instantiating taglib ["+tagLibClass.getFullName()+"]: " + e.getMessage(),e);
+            }
+            tagLibs.put(tagLibClass.getFullName(),tagLib);
+        }
+        return tagLib;
+    }
+
     /**
      * Allows invoking of taglibs as method calls with simple bodies. The bodies should only contain text
      *
@@ -200,11 +253,11 @@ public abstract class GroovyPage extends Script {
               LOG.debug("No method ["+methodName+"] found invoking as tag");
           }
             Map attrs = null;
-            Closure body = null;
+            Object body = null;
             // retrieve tag lib and writer from binding
             Binding binding = getBinding();
             final Writer out = (Writer)binding.getVariable(GroovyPage.OUT);
-            GroovyObject tagLib = (GroovyObject)binding.getVariable(GrailsApplicationAttributes.TAG_LIB);
+            GroovyObject tagLib = getTagLib(methodName);
 
             // get attributes and body closure
             if (args instanceof Object[]) {
@@ -212,10 +265,8 @@ public abstract class GroovyPage extends Script {
                 if(argArray.length > 0 && argArray[0] instanceof Map)
                     attrs = (Map)argArray[0];
                 if(argArray.length > 1) {
-                    Object closureArg = argArray[1];
-                    if(closureArg instanceof Closure) {
-                        body = (Closure)closureArg;
-                    }
+                    body = argArray[1];
+
                 }
             }
             else if(args instanceof Map) {
@@ -229,7 +280,7 @@ public abstract class GroovyPage extends Script {
             // in a direct invocation the body is expected to return a string
             // invoke the body closure and create a new closure that outputs
             // to the response writer on each body invokation
-            final Closure body1 = body;
+            final Object body1 = body;
             Closure actualBody = new Closure(this) {
                 public Object doCall(Object obj) {
                     return call(new Object[] {obj} );
@@ -242,10 +293,17 @@ public abstract class GroovyPage extends Script {
                 }
                 public Object call(Object[] args) {
                     if(body1 != null) {
-                        Object bodyResponse = body1.call();
+                        Object bodyResponse;
+                        if(body1 instanceof Closure) {
+                            bodyResponse = ((Closure)body1).call();
+                        }
+                        else {
+                            bodyResponse = body1;
+                        }
+
                         if(bodyResponse instanceof String) {
                             try {
-                                out.write((String)bodyResponse);
+                                out.write(bodyResponse.toString());
                             } catch (IOException e) {
                                 throw new GrailsTagException("I/O error invoking tag library closure ["+methodName+"] as method");
                             }

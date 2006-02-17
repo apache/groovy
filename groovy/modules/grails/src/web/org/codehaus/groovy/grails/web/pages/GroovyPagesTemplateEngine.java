@@ -202,12 +202,12 @@ public class GroovyPagesTemplateEngine {
             return pageMeta;
         }
             // Compile the script into an object
-        if(classLoader == null)
-            classLoader= new Loader(parent, context, uri, pageMeta.dependencies);
+
+        Loader loader = new Loader(classLoader, context, uri, pageMeta.dependencies);
         Class scriptClass;
         try {
             scriptClass =
-                classLoader.parseClass(in, uri.substring(1));
+                loader.parseClass(in, uri.substring(1));
         } catch (CompilationFailedException e) {
             throw new ServletException("Could not parse script: " + uri, e);
         }
@@ -356,6 +356,7 @@ public class GroovyPagesTemplateEngine {
                 throws IOException {
             // Set up the script context
             Binding binding = new Binding();
+            
             GroovyObject controller = (GroovyObject)request.getAttribute(GrailsApplicationAttributes.CONTROLLER);
             binding.setVariable(GroovyPage.REQUEST, controller.getProperty(ControllerDynamicMethods.REQUEST_PROPERTY));
             binding.setVariable(GroovyPage.RESPONSE, controller.getProperty(ControllerDynamicMethods.RESPONSE_PROPERTY));
@@ -365,7 +366,6 @@ public class GroovyPagesTemplateEngine {
             binding.setVariable(GroovyPage.APPLICATION_CONTEXT, appContext);
             binding.setVariable(GrailsApplication.APPLICATION_ID, appContext.getBean(GrailsApplication.APPLICATION_ID));
             binding.setVariable(GrailsApplicationAttributes.CONTROLLER, controller);
-            binding.setVariable(GrailsApplicationAttributes.TAG_LIB, request.getAttribute(GrailsApplicationAttributes.TAG_LIB));
             binding.setVariable(GroovyPage.SESSION, controller.getProperty(GetSessionDynamicProperty.PROPERTY_NAME));
             binding.setVariable(GroovyPage.PARAMS, controller.getProperty(GetParamsDynamicProperty.PROPERTY_NAME));
             binding.setVariable(GroovyPage.OUT, out);
