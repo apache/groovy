@@ -1,0 +1,109 @@
+.menuButton { 
+	background-color:#80B0DA;
+	border: 1px solid white;
+	border-style: none solid none none ;
+	margin-left:0px;
+	padding-bottom: 5px;
+}
+
+.menuButton a:active,.menuButton a:link,.menuButton a:visited,.menuButton a:hover {
+	font-family:Arial,sans-serif;
+	color: white;	
+	text-decoration:none;
+	padding:20px;
+}
+.actionButton a:active,.actionButton a:link,.actionButton a:visited,.actionButton a:hover {
+	font-family:Arial,sans-serif;
+	font-size:0.8em;
+	font-weight:bold;
+	color: #578BB8;	
+}
+
+
+h1 {
+	font-family:Arial,sans-serif;
+	color:#578BB8;
+	font-size:1.6em;
+}
+
+body {
+	margin:0px;
+	font-family:Arial,sans-serif;
+	color: #616161;
+}
+textarea {
+	width: 300px;
+	height: 100px;
+}
+table {
+	width: 100%;
+}
+.body {
+	padding: 25px;
+}
+.nav {
+	width:100%;
+	margin-top: 30px;
+	background-color:#D6D6D6;
+	height: 30px;
+	border: 2px solid #578BB8;
+	border-style: solid none none none ;	
+}
+
+th {
+	background-color:#578BB8;
+	color:white;
+	width:30px;
+	font-family:Arial,sans-serif;
+	padding:5px;
+	
+}
+td {
+	background-color:#F0F0F0;
+	text-align:center;
+}
+.dialog 
+{
+	padding: 15px;
+	background-color:#F0F0F0;
+	
+}
+.dialog label{
+	float: left;
+	width: 120px;
+	font-weight: bold;
+}
+
+.dialog .textfield, textarea{
+	width: 180px;
+	margin-bottom: 5px;
+}
+
+textarea{
+	width: 250px;
+	height: 150px;
+}
+.prop {
+	padding: 5px;
+}
+.buttons {
+	margin-top: 15px;
+}
+.actionButtons {
+	width:100px;
+}
+.errors {
+	border: 1px solid red;
+	padding: 5px;
+	margin-top:10px;
+	margin-bottom:10px;
+}
+.message {
+	border: 1px solid #FFCC00;
+	padding: 5px;
+	margin-top:10px;
+	margin-bottom:10px;
+}
+.prop .name {
+	font-weight:bold;
+}
