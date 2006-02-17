@@ -116,11 +116,6 @@
 	</taglib>
 	
 	<taglib>
-		<taglib-uri>http://www.taobits.net/gvtags</taglib-uri>
-		<taglib-location>/WEB-INF/tld/gvtags.tld</taglib-location>
-	</taglib>	
-	
-	<taglib>
 		<taglib-uri>http://grails.codehaus.org/tags</taglib-uri>
 		<taglib-location>/WEB-INF/tld/grails.tld</taglib-location>
 	</taglib>		
