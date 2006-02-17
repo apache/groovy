@@ -480,7 +480,7 @@ Targets:
 		</script>
 	</target>	
 
-    <target name="run-app" depends="war">
+    <target name="run-app" depends="dev,package">
         <antcall target="run-app:impl" />
         <antcall target="wait-forever" />
     </target>
