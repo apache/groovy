@@ -31,8 +31,13 @@ public interface GrailsDomainClass extends GrailsClass {
 	 * The name of the default ORM implementation used to map the class
 	 */
 	String GORM = "GORM";
-	
-	/**
+
+    /**
+     * @param domainClass
+     * @return True if the specifying domain class is on the owning side of a relationship
+     */
+    public boolean isOwningClass(Class domainClass);
+    /**
 	 * Returns all of the properties of the domain class
 	 * @return The domain class properties
 	 */

@@ -14,14 +14,14 @@
  */ 
 package org.codehaus.groovy.grails.commons;
 
+import org.apache.commons.lang.ClassUtils;
+import org.apache.commons.lang.builder.ToStringBuilder;
+
 import java.beans.PropertyDescriptor;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-
-import org.apache.commons.lang.ClassUtils;
-import org.apache.commons.lang.builder.ToStringBuilder;
 
 /**
  * @author Graeme Rocher
@@ -47,71 +47,71 @@ public class DefaultGrailsDomainClassProperty implements GrailsDomainClassProper
 	private Class referencedPropertyType;
 	private GrailsDomainClass referencedDomainClass;
 	private GrailsDomainClassProperty otherSide;
-	
+    private String naturalName;
 
-	
-		
-	public DefaultGrailsDomainClassProperty(DefaultGrailsDomainClass domainClass, PropertyDescriptor descriptor)  {
-		this.domainClass = domainClass;
-		this.descriptor = descriptor;
-		// required by default
-		this.optional = false;
-		// persistant by default
-		this.persistant = true;
-		this.name = this.descriptor.getName();
-		this.type = this.descriptor.getPropertyType();
-		this.identity = this.descriptor.getName().equals( IDENTITY );
-		// get the not required descritor from the owner bean
-		List optionalProps = null;
-		List transientProps = null;
 
-		optionalProps = (List)domainClass.getPropertyValue( OPTIONAL, List.class );
-		transientProps= (List)domainClass.getPropertyValue( TRANSIENT, List.class );		
-				
-		// Undocumented feature alert! Steve insisted on this :-)
-		List evanescent = (List)domainClass.getPropertyValue( EVANESCENT, List.class );
-		if(evanescent != null) {
-			if(transientProps == null) 
-				transientProps = new ArrayList();
-			
-			transientProps.addAll(evanescent);
-		}
-		// establish of property is required
-		if(optionalProps != null) {
-			for(Iterator i = optionalProps.iterator();i.hasNext();) {
-				
-				// make sure its a string otherwise ignore. Note: Maybe put a warning here?
-				Object currentObj = i.next();
-				if(currentObj instanceof String) {
-					String propertyName = (String)currentObj;
-					// if the property name in the not required list
-					// matches this property name set not required
-					if(propertyName.equals( this.name )) {
-						this.optional = true;
-						break;
-					}
-				}
-			}
-		}
-		// establish if property is persistant
-		if(transientProps != null) {
-			for(Iterator i = transientProps.iterator();i.hasNext();) {
-				
-				// make sure its a string otherwise ignore. Note: Again maybe a warning?
-				Object currentObj = i.next();
-				if(currentObj instanceof String) {
-					String propertyName = (String)currentObj;
-					// if the property name is on the not persistant list
-					// then set persistant to false
-					if(propertyName.equals( this.name )) {
-						this.persistant = false;
-						break;
-					}
-				}
-			}
-		}
+    public DefaultGrailsDomainClassProperty(DefaultGrailsDomainClass domainClass, PropertyDescriptor descriptor)  {
+        this.domainClass = domainClass;
+        this.descriptor = descriptor;
+        // required by default
+        this.optional = false;
+        // persistant by default
+        this.persistant = true;
+        this.name = this.descriptor.getName();
+        this.naturalName = GrailsClassUtils.getNaturalName(this.descriptor.getName());
+        this.type = this.descriptor.getPropertyType();
+        this.identity = this.descriptor.getName().equals( IDENTITY );
+        // get the not required descritor from the owner bean
+        List optionalProps = null;
+        List transientProps = null;
 
-	}
+        optionalProps = (List)domainClass.getPropertyValue( OPTIONAL, List.class );
+        transientProps= (List)domainClass.getPropertyValue( TRANSIENT, List.class );
+
+        // Undocumented feature alert! Steve insisted on this :-)
+        List evanescent = (List)domainClass.getPropertyValue( EVANESCENT, List.class );
+        if(evanescent != null) {
+            if(transientProps == null)
+                transientProps = new ArrayList();
+
+            transientProps.addAll(evanescent);
+        }
+        // establish of property is required
+        if(optionalProps != null) {
+            for(Iterator i = optionalProps.iterator();i.hasNext();) {
+
+                // make sure its a string otherwise ignore. Note: Maybe put a warning here?
+                Object currentObj = i.next();
+                if(currentObj instanceof String) {
+                    String propertyName = (String)currentObj;
+                    // if the property name in the not required list
+                    // matches this property name set not required
+                    if(propertyName.equals( this.name )) {
+                        this.optional = true;
+                        break;
+                    }
+                }
+            }
+        }
+        // establish if property is persistant
+        if(transientProps != null) {
+            for(Iterator i = transientProps.iterator();i.hasNext();) {
+
+                // make sure its a string otherwise ignore. Note: Again maybe a warning?
+                Object currentObj = i.next();
+                if(currentObj instanceof String) {
+                    String propertyName = (String)currentObj;
+                    // if the property name is on the not persistant list
+                    // then set persistant to false
+                    if(propertyName.equals( this.name )) {
+                        this.persistant = false;
+                        break;
+                    }
+                }
+            }
+        }
+
+    }
 	
 
 	/* (non-Javadoc)
@@ -299,34 +299,38 @@ public class DefaultGrailsDomainClassProperty implements GrailsDomainClassProper
 			return false;
 	}
 
+    public String getNaturalName() {
+        return this.naturalName;
+    }
 
-	/* (non-Javadoc)
-	 * @see java.lang.Object#toString()
-	 */
-	public String toString() {
-		String assType = null;
-		if(isManyToMany()) {
-			assType = "many-to-many";
-		}
-		else if(isOneToMany()) {
-			assType = "one-to-many";
-		}
-		else if(isOneToOne()) {
-			assType = "one-to-one";
-		}
-		else if(isManyToOne()) {
-			assType = "many-to-one";
-		}
-		return new ToStringBuilder(this)
-						.append("name", this.name)
-						.append("type", this.type)
-						.append("persistent", isPersistant())
-						.append("optional", isOptional())
-						.append("association", isAssociation())
-						.append("bidirectional", isBidirectional())
-						.append("association-type", assType)
-						.toString();
-	}
+
+    /* (non-Javadoc)
+      * @see java.lang.Object#toString()
+      */
+    public String toString() {
+        String assType = null;
+        if(isManyToMany()) {
+            assType = "many-to-many";
+        }
+        else if(isOneToMany()) {
+            assType = "one-to-many";
+        }
+        else if(isOneToOne()) {
+            assType = "one-to-one";
+        }
+        else if(isManyToOne()) {
+            assType = "many-to-one";
+        }
+        return new ToStringBuilder(this)
+                        .append("name", this.name)
+                        .append("type", this.type)
+                        .append("persistent", isPersistant())
+                        .append("optional", isOptional())
+                        .append("association", isAssociation())
+                        .append("bidirectional", isBidirectional())
+                        .append("association-type", assType)
+                        .toString();
+    }
 
 	/* (non-Javadoc)
 	 * @see org.codehaus.groovy.grails.commons.GrailsDomainClassProperty#getOtherSide()

@@ -29,18 +29,19 @@ public interface GrailsDomainClassProperty {
 	String CONSTRAINTS = "constraints";
 	String EVANESCENT = "evanescent";
 	String RELATIONSHIPS = "relationships";
-	Object META_CLASS = "metaClass";
+	String META_CLASS = "metaClass";
 	String CLASS = "class";
-	String MAPPED_BY = "mappedBy";	
-	
-	/**
+	String MAPPED_BY = "mappedBy";
+    String BELONGS_TO = "belongsTo";
+
+    /**
 	 * Returns the name of the property
 	 * @return The property name
 	 */
 	public String getName();
 	/**
 	 * Returns the type for the domain class
-	 * @return
+	 * @return  The property type
 	 */
 	public Class getType();
 	
@@ -56,7 +57,7 @@ public interface GrailsDomainClassProperty {
 	/**
 	 * <p>Returns the other side of a bidirectional association
 	 * 
-	 * @return
+	 * @return The other side of the relationship or null if not known
 	 */
 	public GrailsDomainClassProperty getOtherSide();
 	
@@ -74,35 +75,35 @@ public interface GrailsDomainClassProperty {
 	public GrailsDomainClass getDomainClass();
 	/**
 	 * Returns true if the domain class property is a persistant property
-	 * @return 
+	 * @return Whether the property is persistent
 	 */
 	public boolean isPersistant();
 	/**
 	 * Returns true if the property is required
-	 * @return
+	 * @return Whether the property is optional
 	 */
 	public boolean isOptional();
 	/**
 	 * Returns true of the property is an identifier
-	 * @return
+	 * @return Whether the property is the identifier
 	 */
 	public boolean isIdentity();
 	
 	/**
 	 * Returns true if the property is a one-to-many relationship
-	 * @return
+	 * @return Whether it is a oneToMany
 	 */
 	public boolean isOneToMany();
 	
 	/**
 	 * Returns true if the property is a many-to-one relationship
-	 * @return
+	 * @return Whether it is a manyToOne
 	 */
 	public boolean isManyToOne();
 	
 	/**
 	 * Returns true if the property is a many-to-many relationship
-	 * @return
+	 * @return True if it is a manyToMany
 	 */	
 	public boolean isManyToMany();
 	
@@ -117,7 +118,7 @@ public interface GrailsDomainClassProperty {
 	public String getFieldName();
 	/**
 	 * Returns true if the property is a one-to-one relationship 
-	 * @return
+	 * @return True if it is a one-to-one relationship
 	 */
 	public boolean isOneToOne();
 	/**
@@ -130,7 +131,12 @@ public interface GrailsDomainClassProperty {
 	
 	/**
 	 * Returns true if this property is a relationship property
-	 * @return
+	 * @return True if it is an associative property
 	 */
 	public boolean isAssociation();
+
+    /**
+     * @return The natural name representation of the property (eg. 'lastName' becomes 'Last Name'
+     */
+    public String getNaturalName();
 }

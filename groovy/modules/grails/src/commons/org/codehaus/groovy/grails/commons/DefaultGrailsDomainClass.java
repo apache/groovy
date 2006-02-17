@@ -17,26 +17,19 @@ package org.codehaus.groovy.grails.commons;
 
 import groovy.lang.Closure;
 import groovy.lang.GroovyObject;
-
-import java.beans.IntrospectionException;
-import java.beans.PropertyDescriptor;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-
 import org.apache.commons.lang.ClassUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.groovy.grails.commons.metaclass.GroovyDynamicMethodsInterceptor;
 import org.codehaus.groovy.grails.commons.metaclass.DynamicMethods;
+import org.codehaus.groovy.grails.commons.metaclass.GroovyDynamicMethodsInterceptor;
 import org.codehaus.groovy.grails.exceptions.GrailsDomainException;
 import org.codehaus.groovy.grails.exceptions.InvalidPropertyException;
 import org.codehaus.groovy.grails.validation.metaclass.ConstraintsDynamicProperty;
 import org.springframework.validation.Validator;
+
+import java.beans.IntrospectionException;
+import java.beans.PropertyDescriptor;
+import java.util.*;
 
 /**
  * @author Graeme Rocher
@@ -56,7 +49,7 @@ public class DefaultGrailsDomainClass extends AbstractGrailsClass  implements Gr
 	private Map constraints = new HashMap();
 	private Validator validator;
 	private String mappedBy = GrailsDomainClass.GORM;
-
+    private List owners = new ArrayList();
 	
 	public DefaultGrailsDomainClass(Class clazz) {
 		super(clazz, "");
@@ -74,8 +67,20 @@ public class DefaultGrailsDomainClass extends AbstractGrailsClass  implements Gr
 		// get mapped by setting
 		if(getPropertyValue(GrailsDomainClassProperty.MAPPED_BY, String.class) != null)
 			this.mappedBy = (String)getPropertyValue(GrailsDomainClassProperty.MAPPED_BY, String.class);
-		
-		// First go through the properties of the class and create domain properties
+
+        Class belongsTo = (Class)getPropertyValue(GrailsDomainClassProperty.BELONGS_TO, Class.class);
+        if(belongsTo == null) {
+            List ownersProp = (List)getPropertyValue(GrailsDomainClassProperty.BELONGS_TO, List.class);
+            if(ownersProp != null) {
+                this.owners = ownersProp;
+            }
+        }
+        else {
+            this.owners = new ArrayList();
+            this.owners.add(belongsTo);
+        }
+
+        // First go through the properties of the class and create domain properties
 		// populating into a map
 		for(int i = 0; i < propertyDescriptors.length; i++) {
 			
@@ -88,7 +93,8 @@ public class DefaultGrailsDomainClass extends AbstractGrailsClass  implements Gr
 				   !descriptor.getName().equals( GrailsDomainClassProperty.EVANESCENT) &&
 				   !descriptor.getName().equals( GrailsDomainClassProperty.OPTIONAL) &&
 				   !descriptor.getName().equals( GrailsDomainClassProperty.CONSTRAINTS )&&
-				   !descriptor.getName().equals( GrailsDomainClassProperty.MAPPED_BY ))  {
+				   !descriptor.getName().equals( GrailsDomainClassProperty.MAPPED_BY ) &&
+                   !descriptor.getName().equals( GrailsDomainClassProperty.BELONGS_TO ) )  {
 					
 					
 					GrailsDomainClassProperty property = new DefaultGrailsDomainClassProperty(this, descriptor);
@@ -177,9 +183,8 @@ public class DefaultGrailsDomainClass extends AbstractGrailsClass  implements Gr
 	
 	/**
 	 * Establishes a relationship for a java.util.Set
-	 * 
-	 * @param currentProp
-	 * @param currentPropType
+	 *
+	 * @param property
 	 */
 	private void establishRelationshipForSet(DefaultGrailsDomainClassProperty property) {
 		// is it a relationship
@@ -249,7 +254,7 @@ public class DefaultGrailsDomainClass extends AbstractGrailsClass  implements Gr
 	 * and applies the appropriate settings to the specified property
 	 * 
 	 * @param property The property to apply settings to
-	 * @param relType The related type
+	 * @param relatedClassPropertyType The related type
 	 */	
 	private void establishRelationshipForSetToType(DefaultGrailsDomainClassProperty property, Class relatedClassPropertyType) {
 		
@@ -339,13 +344,16 @@ public class DefaultGrailsDomainClass extends AbstractGrailsClass  implements Gr
 	}
 
 
+    public boolean isOwningClass(Class domainClass) {
+        return this.owners.contains(domainClass);
+    }
 
-	/* (non-Javadoc)
-	 * @see org.codehaus.groovy.grails.domain.GrailsDomainClass#getProperties()
-	 */
-	public GrailsDomainClassProperty[] getProperties() {
-		return this.properties;
-	}
+    /* (non-Javadoc)
+      * @see org.codehaus.groovy.grails.domain.GrailsDomainClass#getProperties()
+      */
+    public GrailsDomainClassProperty[] getProperties() {
+        return this.properties;
+    }
 
 	/* (non-Javadoc)
 	 * @see org.codehaus.groovy.grails.domain.GrailsDomainClass#getIdentifier()
@@ -423,8 +431,7 @@ public class DefaultGrailsDomainClass extends AbstractGrailsClass  implements Gr
 	 * @see org.codehaus.groovy.grails.commons.GrailsDomainClass#getPropertyName()
 	 */
 	public String getPropertyName() {
-		String shortTypeName = ClassUtils.getShortClassName( getName() );
-		return shortTypeName.substring(0,0).toLowerCase() + shortTypeName.substring(1);
+        return GrailsClassUtils.getPropertyNameRepresentation(getClazz());
 	}
 
 	/* (non-Javadoc)
