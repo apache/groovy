@@ -16,24 +16,29 @@
 package org.codehaus.groovy.grails.orm.hibernate.metaclass;
 
 import org.hibernate.SessionFactory;
+import org.springframework.orm.hibernate3.HibernateTemplate;
 
 /**
  * 
  * 
  * @author Steven Devijver
+ * @author Graeme Rocher
+ * 
  * @since Aug 7, 2005
  */
 public class DeletePersistentMethod extends AbstractDynamicPersistentMethod {
 
-	private static final String METHOD_SIGNATURE = "delete";
-	
-	public DeletePersistentMethod(SessionFactory sessionFactory, ClassLoader classLoader) {
-		super(METHOD_SIGNATURE,sessionFactory, classLoader);
-	}
+    private static final String METHOD_SIGNATURE = "delete";
 
-	protected Object doInvokeInternal(Object target, Object[] arguments) {
-		getHibernateTemplate().delete(target);
-		return null;
-	}
+    public DeletePersistentMethod(SessionFactory sessionFactory, ClassLoader classLoader) {
+        super(METHOD_SIGNATURE,sessionFactory, classLoader);
+    }
+
+    protected Object doInvokeInternal(Object target, Object[] arguments) {
+        HibernateTemplate t = getHibernateTemplate();
+        t.setFlushMode(HibernateTemplate.FLUSH_COMMIT);
+        t.delete(target);
+        return null;
+    }
 
 }

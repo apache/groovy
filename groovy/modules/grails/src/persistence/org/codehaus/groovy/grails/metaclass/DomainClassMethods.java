@@ -66,7 +66,9 @@ public class DomainClassMethods extends AbstractDynamicMethods {
 		addStaticMethodInvocation(new ListPersistentMethod(sessionFactory, classLoader));
 		addStaticMethodInvocation(new FindWherePersistentMethod(sessionFactory, classLoader));
 		addStaticMethodInvocation(new GetPersistentMethod(application,sessionFactory, classLoader));
-		addStaticMethodInvocation(new CreateCriteriaPersistentMethod(sessionFactory, classLoader));
+        addStaticMethodInvocation(new ExistsPersistentMethod(application,sessionFactory, classLoader));
+        addStaticMethodInvocation(new CountPersistentMethod(sessionFactory, classLoader));
+        addStaticMethodInvocation(new CreateCriteriaPersistentMethod(sessionFactory, classLoader));
 		
 		// add dynamic properties
 		addDynamicProperty( new SetPropertiesDynamicProperty() );

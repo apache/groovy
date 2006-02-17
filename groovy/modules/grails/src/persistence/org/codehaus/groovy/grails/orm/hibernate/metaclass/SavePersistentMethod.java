@@ -17,6 +17,7 @@ package org.codehaus.groovy.grails.orm.hibernate.metaclass;
 
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.commons.GrailsDomainClass;
+import org.codehaus.groovy.grails.commons.GrailsDomainClassProperty;
 import org.codehaus.groovy.grails.commons.metaclass.DelegatingMetaClass;
 import org.codehaus.groovy.grails.metaclass.DomainClassMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -25,11 +26,17 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
 import org.springframework.orm.hibernate3.HibernateTemplate;
+import org.springframework.beans.BeanWrapper;
+import org.springframework.beans.BeanWrapperImpl;
+
+import java.io.Serializable;
 
 /**
  * 
  * 
  * @author Steven Devijver
+ * @author Graeme Rocher
+ * 
  * @since Aug 7, 2005
  */
 public class SavePersistentMethod extends AbstractDynamicPersistentMethod {
@@ -72,13 +79,38 @@ public class SavePersistentMethod extends AbstractDynamicPersistentMethod {
                 }
             }
         }
-        HibernateTemplate ht = getHibernateTemplate();
-        if(ht.contains(target)) {
-            ht.flush();
-            ht.update(target);
+        HibernateTemplate t = getHibernateTemplate();
+        t.setFlushMode(HibernateTemplate.FLUSH_COMMIT);
+
+        // this piece of code will retrieve a persistent instant
+        // of a domain class property is only the id is set thus
+        // relieving this burden off the developer
+        if(domainClass != null) {
+            BeanWrapper bean = new BeanWrapperImpl(target);
+            GrailsDomainClassProperty[] props = domainClass.getPersistantProperties();
+            for (int i = 0; i < props.length; i++) {
+                GrailsDomainClassProperty prop = props[i];
+                if(prop.isManyToOne() || prop.isOneToOne()) {
+                    Object propValue = bean.getPropertyValue(prop.getName());
+                    if(propValue != null && !t.contains(propValue)) {
+                        GrailsDomainClass otherSide = application.getGrailsDomainClass(prop.getType().getName());
+                        if(otherSide != null) {
+                            BeanWrapper propBean = new BeanWrapperImpl(propValue);
+
+                            Serializable id = (Serializable)propBean.getPropertyValue(otherSide.getIdentifier().getName());
+                            bean.setPropertyValue(prop.getName(),t.get(prop.getType(),id));
+                        }
+                    }
+                }
+            }
+        }
+
+
+        if(t.contains(target)) {
+            t.update(target);
         }
         else {
-            ht.saveOrUpdate(target);
+            t.saveOrUpdate(target);
         }
 
 
