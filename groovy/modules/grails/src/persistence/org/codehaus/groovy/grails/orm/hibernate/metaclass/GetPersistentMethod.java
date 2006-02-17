@@ -15,17 +15,15 @@
 package org.codehaus.groovy.grails.orm.hibernate.metaclass;
 
 import groovy.lang.MissingMethodException;
+import ognl.DefaultTypeConverter;
+import ognl.Ognl;
+import org.codehaus.groovy.grails.commons.GrailsApplication;
+import org.codehaus.groovy.grails.commons.GrailsDomainClass;
+import org.hibernate.SessionFactory;
 
 import java.io.Serializable;
 import java.util.Map;
 import java.util.regex.Pattern;
-
-import ognl.DefaultTypeConverter;
-import ognl.Ognl;
-
-import org.codehaus.groovy.grails.commons.GrailsApplication;
-import org.codehaus.groovy.grails.commons.GrailsDomainClass;
-import org.hibernate.SessionFactory;
 /**
  * The "get" static persistent method for Grails domain classes. This method
  * takes an id and returns the instance 
@@ -41,14 +39,14 @@ import org.hibernate.SessionFactory;
  */
 public class GetPersistentMethod extends AbstractStaticPersistentMethod {
 
-	private static final String METHOD_PATTERN = "^get$";
+	private static final Pattern METHOD_PATTERN = Pattern.compile("^get$");
 	private static final String METHOD_SIGNATURE = "get";
 	private GrailsApplication application;
 	private Map context = Ognl.createDefaultContext(this);
 	private DefaultTypeConverter typeConverter = new DefaultTypeConverter();
 
 	public GetPersistentMethod(GrailsApplication application, SessionFactory sessionFactory, ClassLoader classLoader) {
-		super(sessionFactory, classLoader, Pattern.compile(METHOD_PATTERN));
+		super(sessionFactory, classLoader, METHOD_PATTERN);
 		this.application = application;
 	}
 
@@ -59,8 +57,11 @@ public class GetPersistentMethod extends AbstractStaticPersistentMethod {
 			throw new MissingMethodException(METHOD_SIGNATURE, clazz,arguments);
 		// if its not a map throw exception
 		Object arg = arguments[0];
+        
+        if(arg == null)
+            return null;
 
-		GrailsDomainClass domainClass = this.application.getGrailsDomainClass(clazz.getName());
+        GrailsDomainClass domainClass = this.application.getGrailsDomainClass(clazz.getName());
 		if(domainClass != null) {
 			Class identityType = domainClass.getIdentifier().getType();
 			if(!identityType.isAssignableFrom(arg.getClass())) {
