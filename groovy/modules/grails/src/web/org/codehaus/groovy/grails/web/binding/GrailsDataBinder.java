@@ -20,6 +20,7 @@ import org.springframework.beans.InvalidPropertyException;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.propertyeditors.CustomDateEditor;
+import org.springframework.beans.propertyeditors.LocaleEditor;
 import org.springframework.web.bind.ServletRequestDataBinder;
 import org.springframework.web.bind.ServletRequestParameterPropertyValues;
 import org.springframework.web.multipart.support.ByteArrayMultipartFileEditor;
@@ -28,9 +29,7 @@ import org.springframework.web.multipart.support.StringMultipartFileEditor;
 import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
 import java.text.DateFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
+import java.util.*;
 
 /**
  * A data binder that handles binding dates that are specified with a "struct"-like syntax in request parameters.
@@ -86,6 +85,8 @@ public class GrailsDataBinder extends ServletRequestDataBinder {
         GrailsDataBinder binder = new GrailsDataBinder(target,objectName);
         binder.registerCustomEditor( byte[].class, new ByteArrayMultipartFileEditor());
         binder.registerCustomEditor( String.class, new StringMultipartFileEditor());
+        binder.registerCustomEditor( Currency.class, new CurrencyEditor());
+        binder.registerCustomEditor( Locale.class, new LocaleEditor());
         return binder;
     }
 
