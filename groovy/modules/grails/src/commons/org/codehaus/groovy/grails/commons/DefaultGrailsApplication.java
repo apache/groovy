@@ -27,10 +27,7 @@ import org.springframework.core.io.Resource;
 import java.io.IOException;
 import java.lang.reflect.Modifier;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -65,7 +62,7 @@ public class DefaultGrailsApplication implements GrailsApplication {
 
 
     private static Log log = LogFactory.getLog(DefaultGrailsApplication.class);
-    private Map controller2TagMap;
+    private Map tag2libMap;
 
 
     public DefaultGrailsApplication(final Class[] classes, GroovyClassLoader classLoader) {
@@ -242,7 +239,7 @@ public class DefaultGrailsApplication implements GrailsApplication {
             this.taglibClasses = ((GrailsTagLibClass[])this.taglibMap.values().toArray(new GrailsTagLibClass[taglibMap.size()]));
             // reconfigure controller mappings
             configureTagLibraries();
-            
+
             return grailsTagLibClass;
         }
         else {
@@ -291,24 +288,47 @@ public class DefaultGrailsApplication implements GrailsApplication {
         }
     }
 
-    /**
-     * Maps the controller to the appropriate tag library
-     */
-    private void configureTagLibraries() {
-        this.controller2TagMap = new HashMap();
+    public GrailsControllerClass getScaffoldingController(GrailsDomainClass domainClass) {
+        if(domainClass == null)
+            return null;
+
         for (int i = 0; i < controllerClasses.length; i++) {
             GrailsControllerClass controllerClass = controllerClasses[i];
-            boolean found = false;
-            for (int j = 0; j < taglibClasses.length; j++) {
-                GrailsTagLibClass taglibClass = taglibClasses[j];
-                if(controllerClass.getName().equals(taglibClass.getName())) {
-                    this.controller2TagMap.put(controllerClass.getFullName(),taglibClass);
-                    found = true;
-                    break;
+            if(controllerClass.isScaffolding()) {
+                Class scaffoldedClass = controllerClass.getScaffoldedClass();
+                if(scaffoldedClass == null && domainClass.getName().equals(controllerClass.getName())) {
+                    return controllerClass;
                 }
+                else if(domainClass.getClazz().equals(scaffoldedClass)) {
+                    return controllerClass;
+                }
+
             }
-            if(!found) {
-                this.controller2TagMap.put(controllerClass.getFullName(),taglibMap.get(GrailsTagLibClass.APPLICATION_TAG_LIB));
+        }
+        return null;
+    }
+
+    /**
+     * Creates a map of tags to tag libraries
+     */
+    private void configureTagLibraries() {
+        this.tag2libMap = new HashMap();
+        for (int i = 0; i < taglibClasses.length; i++) {
+            GrailsTagLibClass taglibClass = taglibClasses[i];
+            for (Iterator j = taglibClass.getTagNames().iterator(); j.hasNext();) {
+                String tagName = (String) j.next();
+                if(!this.taglibMap.containsKey(tagName)) {
+                    this.tag2libMap.put(tagName,taglibClass);
+                }
+                else {
+                    GrailsTagLibClass current = (GrailsTagLibClass)this.taglibMap.get(tagName);
+                    if(!taglibClass.equals(current)) {
+                        this.tag2libMap.put(tagName,taglibClass);
+                    }
+                    else {
+                        throw new GrailsConfigurationException("Cannot configure tag library ["+taglibClass.getName()+"]. Library ["+current.getName()+"] already contains a tag called ["+tagName+"]");
+                    }
+                }
             }
         }
     }
@@ -421,8 +441,8 @@ public class DefaultGrailsApplication implements GrailsApplication {
         return (GrailsTagLibClass)this.taglibMap.get(tagLibName);
     }
 
-    public GrailsTagLibClass getTagLibClassForController(String controllerName) {
-        return (GrailsTagLibClass)this.controller2TagMap.get(controllerName);
+    public GrailsTagLibClass getTagLibClassForTag(String tagName) {
+        return (GrailsTagLibClass)this.tag2libMap.get(tagName);
     }
 
 

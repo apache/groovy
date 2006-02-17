@@ -134,12 +134,12 @@ public interface GrailsApplication {
     public GrailsTagLibClass getGrailsTagLibClass(String tagLibName);
 
     /**
-     * <p>Retrieves all of the tag lib classes appropriate for the specified controller
+     * <p>Retrieves the tag lib class for the specified tag
      *
-     * @param controllerName The name of the controller
+     * @param tagName The name of the tag
      * @return A array of tag lib classes
      */
-    public GrailsTagLibClass getTagLibClassForController(String controllerName);
+    public GrailsTagLibClass getTagLibClassForTag(String tagName);
 
     /**
      * Adds a new Grails controller class to the application
@@ -170,4 +170,12 @@ public interface GrailsApplication {
      * @return The GrailsDomainClass instance or null if the class is abstract and was not added
      */
     GrailsDomainClass addDomainClass(Class domainClass);
+
+    /**
+     * Retrieves the controller that is scaffolding the specified domain class
+     *
+     * @param domainClass The domain class to check
+     * @return An instance of GrailsControllerClass                                      
+     */
+    GrailsControllerClass getScaffoldingController(GrailsDomainClass domainClass);
 }
