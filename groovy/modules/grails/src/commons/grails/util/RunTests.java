@@ -15,12 +15,9 @@
  */ 
 package grails.util;
 
-import java.lang.reflect.Modifier;
-
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import junit.textui.TestRunner;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.groovy.grails.commons.DefaultGrailsApplication;
@@ -30,6 +27,8 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springmodules.beans.factory.drivers.xml.XmlApplicationContextDriver;
+
+import java.lang.reflect.Modifier;
 
 /**
  * 
@@ -42,7 +41,7 @@ public class RunTests {
 	private static Log log = LogFactory.getLog(RunTests.class);
 	
 	public static void main(String[] args) {
-		ApplicationContext parent = new ClassPathXmlApplicationContext("test-applicationContext.xml");
+		ApplicationContext parent = new ClassPathXmlApplicationContext("applicationContext.xml");
 		DefaultGrailsApplication application = (DefaultGrailsApplication)parent.getBean("grailsApplication", DefaultGrailsApplication.class);
 		SpringConfig config = new SpringConfig(application);
 		ConfigurableApplicationContext appCtx = (ConfigurableApplicationContext) 
@@ -50,7 +49,8 @@ public class RunTests {
 				config.getBeanReferences(), parent);
 		
 		Class[] allClasses = application.getAllClasses();
-		TestSuite s = new TestSuite();
+        log.debug("Going through ["+allClasses.length+"] classes");
+        TestSuite s = new TestSuite();
 		for (int i = 0; i < allClasses.length; i++) {
 			Class clazz = allClasses[i];
 			if (TestCase.class.isAssignableFrom(clazz) && !Modifier.isAbstract(clazz.getModifiers())) {
