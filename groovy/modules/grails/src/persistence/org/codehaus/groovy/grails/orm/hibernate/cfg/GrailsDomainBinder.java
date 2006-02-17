@@ -583,17 +583,35 @@ public final class GrailsDomainBinder {
 		prop.setOptional( grailsProperty.isOptional() );
 		// set to cascade all for the moment
 		if(grailsProperty.isAssociation()) {
-			prop.setCascade("all");
-			if(LOG.isTraceEnabled()) 
-				LOG.trace( "[GrailsDomainBinder] Set cascading strategy on property ["+grailsProperty.getName()+"] to [all]" );
-		}
-		// lazy to true
+            if(grailsProperty.isOneToMany()) {
+                prop.setCascade("all");
+            }
+            else if(grailsProperty.isManyToOne() || grailsProperty.isOneToOne()) {
+                GrailsDomainClass domainClass = grailsProperty.getDomainClass();
+                if(domainClass.isOwningClass(grailsProperty.getType())) {
+                    prop.setCascade("save-update");
+                }
+                else {
+                    GrailsDomainClassProperty otherSide = grailsProperty.getOtherSide();
+                    if(otherSide != null && otherSide.isOneToMany()) {
+                        prop.setCascade("save-update");
+                    }
+                    else {
+                        prop.setCascade("all");
+                    }
+                }
+            }
+        }
+
+        if(LOG.isTraceEnabled())
+            LOG.trace( "[GrailsDomainBinder] Set cascading strategy on property ["+grailsProperty.getName()+"] to ["+prop.getCascade()+"]" );
+        // lazy to true
 		prop.setLazy(true);
 		
 	}
 
 	/**
-	 * Binds a simple value to the Hibernate metamodel. A simple value is 
+w	 * Binds a simple value to the Hibernate metamodel. A simple value is 
 	 * any type within the Hibernate type system
 	 * 
 	 * @param grailsProp The grails domain class property
