@@ -77,7 +77,7 @@ class ApplicationTagLib {
         out << grailsAttributes.getApplicationUri(request)
         // prefer a URL attribute
         if(attrs['url']) {
-             attrs = attrs['url']
+             attrs = attrs.remove('url')
         }
         // if the current attribute null set the controller uri to the current controller
         if(attrs["controller"]) {
