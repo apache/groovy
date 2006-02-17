@@ -63,7 +63,7 @@ class FormTagLib extends ApplicationTagLib {
         def year = c.get(GregorianCalendar.YEAR)
         def hour = c.get(GregorianCalendar.HOUR_OF_DAY)
         def minute = c.get(GregorianCalendar.MINUTE)
-		def dfs = new java.text.DateFormatSymbols(request.getLocale())
+		def dfs = new java.text.DateFormatSymbols(RCU.getLocale(request))
 
 
         out << "<input type='hidden' name='${name}' value='struct' />"
@@ -159,7 +159,7 @@ class FormTagLib extends ApplicationTagLib {
      */
     @Property localeSelect = {attrs ->
         attrs['from'] = Locale.getAvailableLocales()
-        attrs['value'] = (attrs['value'] ? attrs['value'] : request.getLocale() )
+        attrs['value'] = (attrs['value'] ? attrs['value'] : RCU.getLocale(request) )
         // set the key as a closure that formats the locale
         attrs['optionKey'] = { "${it.language}_${it.country}" }
         // set the option value as a closure that formats the locale for display
@@ -178,7 +178,7 @@ class FormTagLib extends ApplicationTagLib {
         if(!attrs['from']) {
             attrs['from'] = ['EUR', 'XCD','USD','XOF','NOK','AUD','XAF','NZD','MAD','DKK','GBP','CHF','XPF','ILS','ROL','TRL']
         }
-        def currency = (attrs['value'] ? attrs['value'] : Currency.getInstance( request.getLocale() ))
+        def currency = (attrs['value'] ? attrs['value'] : Currency.getInstance( RCU.getLocale(request) ))
         attrs['value'] = currency.currencyCode
         // invoke generic select
         select( attrs )
