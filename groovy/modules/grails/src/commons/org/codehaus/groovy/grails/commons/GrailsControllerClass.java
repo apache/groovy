@@ -24,10 +24,9 @@ package org.codehaus.groovy.grails.commons;
  */
 public interface GrailsControllerClass extends InjectableGrailsClass {
     /**
-     * The name of the controller contained within the request scope
+     * The name of the index action
      */
-    String REQUEST_CONTROLLER = "grailsController";
-
+    public String INDEX_ACTION = "index";
     /**
      * <p>Gets the list of all possible URI's available in this controller.
      *

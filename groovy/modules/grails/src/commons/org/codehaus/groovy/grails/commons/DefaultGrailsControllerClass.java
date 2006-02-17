@@ -55,7 +55,10 @@ public class DefaultGrailsControllerClass extends AbstractInjectableGrailsClass
     public DefaultGrailsControllerClass(Class clazz) {
         super(clazz, CONTROLLER);
         this.uri = SLASH + (StringUtils.isNotBlank(getPackageName()) ? getPackageName().replace('.', '/')  + SLASH : "" ) + WordUtils.uncapitalize(getName());
-        String defaultClosureName = (String)getPropertyValue(DEFAULT_CLOSURE_PROPERTY, String.class);
+        String defaultActionName = (String)getPropertyValue(DEFAULT_CLOSURE_PROPERTY, String.class);
+        if(defaultActionName == null) {
+            defaultActionName = INDEX_ACTION;
+        }
         Boolean tmp = (Boolean)getPropertyValue(SCAFFOLDING_PROPERTY, Boolean.class);
         if(tmp != null) {
             this.scaffolding = tmp.booleanValue();
@@ -121,7 +124,7 @@ public class DefaultGrailsControllerClass extends AbstractInjectableGrailsClass
                             String typedUri = tmpUri + SLASH + viewType;
                             this.uri2viewMap.put(typedUri, typedViewName);
                             this.uri2closureMap.put(typedUri, propertyDescriptor.getName());
-                            if (defaultClosureName != null && defaultClosureName.equals(propertyDescriptor.getName())) {
+                            if (defaultActionName != null && defaultActionName.equals(propertyDescriptor.getName())) {
                                 this.uri2closureMap.put(uri + SLASH + viewType, propertyDescriptor.getName());
                                 this.uri2viewMap.put(uri + SLASH + viewType, typedViewName);
                             }
@@ -131,12 +134,12 @@ public class DefaultGrailsControllerClass extends AbstractInjectableGrailsClass
             }
         }
 
-        if (defaultClosureName != null) {
-            this.uri2closureMap.put(uri, defaultClosureName);
-            this.uri2closureMap.put(uri + SLASH, defaultClosureName);
-            this.uri2viewMap.put(uri + SLASH, uri + SLASH + defaultClosureName);
-            this.uri2viewMap.put(uri,uri + SLASH +  defaultClosureName);
-            this.viewNames.put( defaultClosureName, uri + SLASH + defaultClosureName );
+        if (defaultActionName != null) {
+            this.uri2closureMap.put(uri, defaultActionName);
+            this.uri2closureMap.put(uri + SLASH, defaultActionName);
+            this.uri2viewMap.put(uri + SLASH, uri + SLASH + defaultActionName);
+            this.uri2viewMap.put(uri,uri + SLASH +  defaultActionName);
+            this.viewNames.put( defaultActionName, uri + SLASH + defaultActionName );
         }
 
         if (closureNames.size() == 1) {
