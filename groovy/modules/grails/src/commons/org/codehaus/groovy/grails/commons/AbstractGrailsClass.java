@@ -15,17 +15,16 @@
  */ 
 package org.codehaus.groovy.grails.commons;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Modifier;
-
+import groovy.lang.GroovyObject;
 import org.apache.commons.lang.ClassUtils;
 import org.apache.commons.lang.StringUtils;
 import org.codehaus.groovy.grails.exceptions.NewInstanceCreationException;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
 
-import groovy.lang.GroovyObject;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
 
 /**
  * 
@@ -40,33 +39,36 @@ public abstract class AbstractGrailsClass implements GrailsClass {
 	private String name = null;
 	private String packageName = null;
 	private BeanWrapper reference = null;
-	
-	/**
-	 * <p>Contructor to be used by all child classes to create a
-	 * new instance and get the name right.
-	 * 
-	 * @param clazz the Grails class
-	 * @param trailingName the trailing part of the name for this class type
-	 */
-	public AbstractGrailsClass(Class clazz, String trailingName) {
-		super();
-		setClazz(clazz);
-		
-		this.reference = new BeanWrapperImpl(newInstance());
-		this.fullName = clazz.getName();
-		this.packageName = ClassUtils.getPackageName(clazz);
-		if (StringUtils.isBlank(trailingName)) {
-			this.name = fullName;
-		} else {
-			String shortName = getShortClassname(clazz);
-			if(shortName.indexOf( trailingName ) > - 1) {
-				this.name = shortName.substring(0, shortName.length() - trailingName.length());
-			}
-			else {
-				this.name = fullName;
-			}
-		}
-	}
+    private String naturalName;
+
+
+    /**
+     * <p>Contructor to be used by all child classes to create a
+     * new instance and get the name right.
+     *
+     * @param clazz the Grails class
+     * @param trailingName the trailing part of the name for this class type
+     */
+    public AbstractGrailsClass(Class clazz, String trailingName) {
+        super();
+        setClazz(clazz);
+
+        this.reference = new BeanWrapperImpl(newInstance());
+        this.fullName = clazz.getName();
+        this.packageName = ClassUtils.getPackageName(clazz);
+        this.naturalName = GrailsClassUtils.getNaturalName(clazz.getName());
+        if (StringUtils.isBlank(trailingName)) {
+            this.name = fullName;
+        } else {
+            String shortName = getShortClassname(clazz);
+            if(shortName.indexOf( trailingName ) > - 1) {
+                this.name = shortName.substring(0, shortName.length() - trailingName.length());
+            }
+            else {
+                this.name = fullName;
+            }
+        }
+    }
 
 	private void setClazz(Class clazz) {
 		if (clazz == null) {
@@ -97,11 +99,19 @@ public abstract class AbstractGrailsClass implements GrailsClass {
 		return this.name;
 	}
 
-	public String getFullName() {
+    public String getNaturalName() {
+        return this.naturalName;
+    }
+
+    public String getFullName() {
 		return this.fullName;
 	}
 
-	public String getPackageName() {
+    public String getPropertyName() {
+        return GrailsClassUtils.getPropertyNameRepresentation(getClazz());
+    }
+
+    public String getPackageName() {
 		return this.packageName;
 	}
 	

@@ -47,8 +47,21 @@ public interface GrailsClass {
 	 * @return the full name
 	 */
 	public String getFullName();
-	
-	/**
+
+    /**
+     * <p>Returns the name of the class as a property name
+     *
+     * @return The property name representation
+     */
+    public String getPropertyName();
+
+    /**
+     * <p>Returns the name of the property in natural terms (eg. 'lastName' becomes 'Last Name')
+     * @return The natural property name
+     */
+    public String getNaturalName();
+
+    /**
 	 * <p>Returns the package name of the class.
 	 * 
 	 * @return the package name
