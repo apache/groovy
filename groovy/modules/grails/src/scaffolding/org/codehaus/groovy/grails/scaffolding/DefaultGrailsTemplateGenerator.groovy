@@ -435,7 +435,7 @@ class ${className}Controller {
 	      <input type="hidden" name="${propertyName}.id" value="\\${${propertyName}?.id}" />
            </div>           
            <g:form url="[action:'update',id:${propertyName}?.id]" method="post">
-               <div class="edit">
+               <div class="dialog">
 
                        <%
                             props = domainClass.properties.findAll { it.name != 'version' && it.name != 'id' }
