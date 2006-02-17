@@ -1,4 +1,4 @@
-<project name="grails" default="jar">
+<project name="grails-build" default="jar">
 
 	<property file="build.properties"/>
 	
