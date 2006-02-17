@@ -15,16 +15,12 @@
  */ 
 package org.codehaus.groovy.grails.commons.metaclass;
 
-import java.beans.IntrospectionException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
+import java.beans.IntrospectionException;
+import java.util.*;
 
 
 
@@ -150,7 +146,7 @@ public abstract class AbstractDynamicMethods implements DynamicMethods {
 			Object[] arguments, InvocationCallback callBack) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("[DynamicMethods] Attempting invocation of dynamic static method ["+methodName+"] on target ["+object+"] with arguments ["+ArrayUtils.toString( arguments )+"]");
-			LOG.trace("[DynamicMethods] Registered dynamic static methods: ["+this.staticMethodInvocations+"]");
+			//LOG.trace("[DynamicMethods] Registered dynamic static methods: ["+this.staticMethodInvocations+"]");
 		}
 		for (Iterator iter = this.staticMethodInvocations.iterator(); iter.hasNext();) {
 			StaticMethodInvocation methodInvocation = (StaticMethodInvocation)iter.next();
