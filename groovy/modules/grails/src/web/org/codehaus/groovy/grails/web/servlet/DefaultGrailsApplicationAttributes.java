@@ -14,9 +14,9 @@
  */
 package org.codehaus.groovy.grails.web.servlet;
 
-import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.util.UrlPathHelper;
 import org.springframework.validation.Errors;
+import org.springframework.context.ApplicationContext;
 import org.codehaus.groovy.grails.web.pages.GroovyPagesTemplateEngine;
 import org.codehaus.groovy.grails.web.metaclass.ControllerDynamicMethods;
 import org.codehaus.groovy.grails.commons.GrailsApplication;
@@ -40,8 +40,8 @@ public class DefaultGrailsApplicationAttributes implements GrailsApplicationAttr
         this.context = context;
     }
 
-    public WebApplicationContext getApplicationContext() {
-        return (WebApplicationContext)this.context.getAttribute(APPLICATION_CONTEXT);
+    public ApplicationContext getApplicationContext() {
+        return (ApplicationContext)this.context.getAttribute(APPLICATION_CONTEXT);
     }
 
     public GroovyObject getController(ServletRequest request) {
@@ -90,10 +90,6 @@ public class DefaultGrailsApplicationAttributes implements GrailsApplicationAttr
         GroovyObject controller = getController(request);
 
         return (String)controller.getProperty(ControllerDynamicMethods.ACTION_URI_PROPERTY);
-    }
-
-    public GroovyObject getTagLib(ServletRequest request) {
-        return (GroovyObject)request.getAttribute(TAG_LIB);
     }
 
     public Errors getErrors(ServletRequest request) {

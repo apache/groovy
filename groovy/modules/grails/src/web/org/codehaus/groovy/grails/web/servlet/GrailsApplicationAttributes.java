@@ -2,6 +2,7 @@ package org.codehaus.groovy.grails.web.servlet;
 
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.validation.Errors;
+import org.springframework.context.ApplicationContext;
 import org.codehaus.groovy.grails.web.pages.GroovyPagesTemplateEngine;
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import groovy.lang.GroovyObject;
@@ -21,7 +22,6 @@ public interface GrailsApplicationAttributes {
     String APPLICATION_CONTEXT = "org.codehaus.groovy.grails.APPLICATION_CONTEXT";
     String FLASH_SCOPE = "org.codehaus.groovy.grails.FLASH_SCOPE";
     String CONTROLLER = "org.codehaus.groovy.grails.CONTROLLER";
-    String TAG_LIB = "org.codehaus.groovy.grails.TAG_LIB";
     String ERRORS =  "org.codehaus.groovy.grails.ERRORS";
     String ID_PARAM = "id";
     String PARENT_APPLICATION_CONTEXT = "org.codehaus.groovy.grails.PARENT_APPLICATION_CONTEXT";
@@ -29,7 +29,7 @@ public interface GrailsApplicationAttributes {
     /**
      * @return The application context for servlet
      */
-    WebApplicationContext getApplicationContext();
+    ApplicationContext getApplicationContext();
 
     /**
      * @return The controller for the request
@@ -76,11 +76,6 @@ public interface GrailsApplicationAttributes {
      * @return The uri of the action called within the controller
      */
     String getControllerActionUri(ServletRequest request);
-
-    /**
-     * @return The tag library for the request
-     */
-    GroovyObject getTagLib(ServletRequest request);
 
     /**
      *
