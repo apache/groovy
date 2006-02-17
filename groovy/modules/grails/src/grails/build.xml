@@ -10,22 +10,24 @@
 	<target name="help">
 		<echo>Usage: grails [target]
 
-Targets:		
-"init"                - initialise the current app
+Targets:
 "create-app"          - Create a new grails app
 "create-controller"   - Create a new controller
 "create-service"      - Create a new service
 "create-domain-class" - Create a new domain class
 "create-test-suite"   - Create a new test suite
 "generate-controller" - Generates a controller from a domain class
-"generate-views" - Generates the views from a domain class
-"generate-all" - Generates the all artifacts from a domain class
-"test-app" - Run current app's unit tests
-"run-app" - Run the application (coming soon)
-		</echo>
+"generate-views"      - Generates the views from a domain class
+"generate-all"        - Generates the all artifacts from a domain class
+"test-app"            - Run current app's unit tests
+"run-app"             - Run the application locally and wait
+"create-webtest"      - Create the functional test layout              (coming soon)
+"generate-webtest"    - Generate a functional test from a domain class (coming soon)
+"run-webtest"         - Run the functional tests for a running app     (coming soon)
+        </echo>
 	</target>
 	
-    <target name="generate-controller">
+    <target name="generate-controller" description="Generates a controller from a domain class">
 		<property environment="env"/>
 		<fail unless="env.GRAILS_HOME" message="GRAILS_HOME is not set."/>
 		<property name="grails.home" location="${env.GRAILS_HOME}"/>
@@ -46,7 +48,7 @@ Targets:
 		</java>
     </target>
 	
-    <target name="generate-views" depends="package">
+    <target name="generate-views" depends="package" description="Generates the views from a domain class">
 		<property environment="env"/>
 		<fail unless="env.GRAILS_HOME" message="GRAILS_HOME is not set."/>
 		<property name="grails.home" location="${env.GRAILS_HOME}"/>
@@ -66,10 +68,7 @@ Targets:
 		</java>
     </target>
 
-    <target name="generate-all" depends="package">
-		<property environment="env"/>
-		<fail unless="env.GRAILS_HOME" message="GRAILS_HOME is not set."/>
-		<property name="grails.home" location="${env.GRAILS_HOME}"/>
+    <target name="generate-all" depends="package" description="Generates the all artifacts from a domain class">
 
 		<input addproperty="domain.class.name" message="Enter domain class name:" />
 
@@ -91,7 +90,7 @@ Targets:
     </target>	
 
 
-    <target name="create-app" depends="init:grailsHome">
+    <target name="create-app" description="Create a new grails app">
 		
 		<input addproperty="project.name" message="Enter application name:" />
 		
@@ -105,20 +104,20 @@ Targets:
 		</script>		
 		
 			<copy 	file="${grails.home}/src/grails/templates/artifacts/DataSource.groovy"
-				tofile="${project.name}/grails-app/conf/ApplicationDataSource.groovy"/>
+				    tofile="${project.name}/grails-app/conf/ApplicationDataSource.groovy"/>
 			<copy 	file="${grails.home}/src/grails/templates/artifacts/BootStrap.groovy" 
 					tofile="${project.name}/grails-app/conf/ApplicationBootStrap.groovy"/>		
 		
 	</target>
 	
-	<target name="create-controller" depends="init:grailsHome">
+	<target name="create-controller" depends="init:grailsHome" description="Create a new controller">
 		
 		<input addproperty="controller.name" message="Enter controller name:" />
 		
 		<script language="groovy">
 			def ctrlName = grails.getProperty("controller.name")		
-			ctrlName = ctrlName[0].toUpperCase() + ctrlName[1..-1]
-			ctrlName = ctrlName - 'Controller'
+			ctrlName     = ctrlName[0].toUpperCase() + ctrlName[1..-1]
+			if (ctrlName.endsWith('Controller')) ctrlName = ctrlName[0..-11]
 			grails.setProperty("controller.class.name", ctrlName)
 		</script>
 				
@@ -134,15 +133,15 @@ Targets:
         <antcall target="internal-create-test-suite"  />
     </target>
 	
-	<target name="create-service" depends="init:grailsHome">
+	<target name="create-service" depends="init:grailsHome" description="Create a new service">
 		
 		<input addproperty="service.name" message="Enter service name:" />
 		
 		<script language="groovy">
 			def serviceName = grails.getProperty("service.name")		
-			serviceName = serviceName[0].toUpperCase() + serviceName.substring[1..-1]
-		    serviceName = serviceName - "Service"
-			serviceName = serviceName.replaceAll(" ", "" )
+			serviceName     = serviceName[0].toUpperCase() + serviceName.substring[1..-1]
+		    if (serviceName.endsWith('Service')) serviceName = serviceName[0..-8]
+			serviceName     = serviceName.replaceAll(" ", "" )
 			grails.setProperty("service.class.name", serviceName)
 		</script>
 				
@@ -158,7 +157,7 @@ Targets:
         <antcall target="internal-create-test-suite" inheritall="true" />
     </target>
 			
-	<target name="create-domain-class" depends="init:grailsHome">
+	<target name="create-domain-class" depends="init:grailsHome" description="Create a new domain class">
 		
 		<input addproperty="domain.class.name" message="Enter domain class name:" />
 		
@@ -180,7 +179,7 @@ Targets:
         <antcall target="internal-create-test-suite" inheritall="true" />
     </target>
 	
-	<target name="create-test-suite" depends="init:grailsHome">
+	<target name="create-test-suite" depends="init:grailsHome" description="Create a new test suite">
 		
 		<input addproperty="test.suite.name" message="Enter test suite name:" />
 
@@ -192,8 +191,8 @@ Targets:
 		<script language="groovy">
 			def suiteName = grails.getProperty("test.suite.name")		
 			suiteName = suiteName[0].toUpperCase() + suiteName.substring[1..-1]
-			suiteName = suiteName - "Tests"
-			suiteName = suiteName.replaceAll(" ", "" )			
+		    if (suiteName.endsWith('Tests')) suiteName = suiteName[0..-6]
+			suiteName = suiteName.replaceAll(" ", "" )
 			grails.setProperty("test.suite.name", suiteName)
 		</script>
 
@@ -208,9 +207,12 @@ Targets:
     </target>
 
     <target name="init:grailsHome">
-		<property environment="env"/>
+        <property environment="env"/>
 		<fail unless="env.GRAILS_HOME" message="GRAILS_HOME is not set."/>
 		<property name="grails.home" location="${env.GRAILS_HOME}"/>
+    </target>
+
+    <target name="init" depends="init:grailsHome" description="Initialise the current app">
 		<mkdir dir="${path}src"/>
 		<mkdir dir="${path}src/java"/>
 		<mkdir dir="${path}src/groovy"/>		
@@ -306,10 +308,10 @@ Targets:
 		</junit>
 	</target>
 
-	<target name="test-app" depends="package">
+	<target name="test-app" depends="package" description="Run current app's unit tests">
 		<mkdir dir="${basedir}/tmp/war/WEB-INF/grails-app/tests" />		
 		<copy todir="${basedir}/tmp/war/WEB-INF/grails-app/tests">
-			<fileset dir="${basedir}/grails-tests/" includes="**"></fileset>
+			<fileset dir="${basedir}/grails-tests/" includes="**" />
 		</copy>
 		<path id="test.classpath">
 			<!--<pathelement location="${grails.home}/src/web-app/WEB-INF"/>-->
@@ -480,12 +482,28 @@ Targets:
 		</script>
 	</target>	
 
-    <target name="run-app" depends="dev,package">
+    <target name="run-app" depends="dev, package" description="Run the application locally and wait">
         <antcall target="run-app:impl" />
         <antcall target="wait-forever" />
     </target>
 
-    <target name="webtest" depends="init:grailsHome">
+    <target name="create-webtest" description="Create a functional layout">
+<!--
+    Download WebTest distro if needed.
+    Create subdirs as needed.
+    Create a starter build.groovy.
+    Create a suite to be started.
+-->
+    </target>
+
+     <target name="generate-webtest" description="Generate a functional test from a domain class">
+<!--
+    Scaffold an intitial cycle of show / list / details / add / remove
+    with typical verifications.
+-->
+    </target>
+
+    <target name="run-webtest" depends="init:grailsHome" description="Run the functional tests for a running app">
         <!-- <parallel>
             <daemons>
                 <antcall target="run-app:impl" />
@@ -496,12 +514,11 @@ Targets:
             <arg line="build test"/>
             <classpath>
                 <pathelement location="."/>
-                <fileset dir="/java/groovy/lib" includes="*.jar"/>
+                <fileset dir="/java/groovy/lib" includes="*.jar"/> <!--todo: refer to groovy.home-->
                 <fileset dir="${grails.home}/lib" includes="*.jar"/>
                 <pathelement location="${grails.home}/downloads/webtest/lib"/>
                 <fileset dir="${grails.home}/downloads/webtest/lib" includes="*.jar"/>
             </classpath>
-
         </java>
     </target>
 </project>
