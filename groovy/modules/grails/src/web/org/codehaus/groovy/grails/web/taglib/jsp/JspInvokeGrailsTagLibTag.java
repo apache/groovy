@@ -42,6 +42,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.*;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 /**
  * A tag that invokes a tag defined in a the Grails dynamic tag library. Authors of Grails tags
@@ -62,6 +64,7 @@ public class JspInvokeGrailsTagLibTag extends BodyTagSupport implements DynamicA
     private static final String ZERO_ARGUMENTS = "zeroArgumentsFlag";
     private static final String GROOVY_DEFAULT_ARGUMENT = "it";
     private static final String NAME_ATTRIBUTE = "name";
+    private static final Pattern ATTRIBUTE_MAP = Pattern.compile("(\\s*(\\S+)\\s*:\\s*(\\S+?)(,|$){1}){1}");
 
     private String name;
     private int invocationCount;
@@ -91,12 +94,32 @@ public class JspInvokeGrailsTagLibTag extends BodyTagSupport implements DynamicA
                 this.bean.isWritableProperty(pd.getName()) &&
                 this.bean.isReadableProperty(pd.getName())) {
                 String propertyValue = (String)this.bean.getPropertyValue(pd.getName());
+
                 if(propertyValue != null) {
-                    if(ExpressionEvaluationUtils.isExpressionLanguage(propertyValue)) {
-                        this.attributes.put(pd.getName(), ExpressionEvaluationUtils.evaluate(pd.getName(),propertyValue,Object.class,super.pageContext));
+                    String trimmed = propertyValue.trim();
+                    if(trimmed.startsWith("[") && trimmed.endsWith("]")) {
+                        trimmed = trimmed.substring(1,trimmed.length() - 1);
+                        Matcher m = ATTRIBUTE_MAP.matcher(trimmed);
+                        Map attributeMap = new HashMap();
+                        while(m.find()) {
+                            String attributeName = m.group(1);
+                            String attributeValue = m.group(2);
+                            if(ExpressionEvaluationUtils.isExpressionLanguage(attributeValue)) {
+                                attributeMap.put(attributeName, ExpressionEvaluationUtils.evaluate(attributeName,attributeValue,Object.class,super.pageContext));
+                            }
+                            else {
+                                attributeMap.put(attributeName, attributeValue);
+                            }
+                        }
+                        this.attributes.put(pd.getName(), attributeMap);
                     }
                     else {
-                        this.attributes.put(pd.getName(), propertyValue);
+                        if(ExpressionEvaluationUtils.isExpressionLanguage(propertyValue)) {
+                            this.attributes.put(pd.getName(), ExpressionEvaluationUtils.evaluate(pd.getName(),propertyValue,Object.class,super.pageContext));
+                        }
+                        else {
+                            this.attributes.put(pd.getName(), propertyValue);
+                        }
                     }
                 }
             }
@@ -263,10 +286,29 @@ public class JspInvokeGrailsTagLibTag extends BodyTagSupport implements DynamicA
     public final void setDynamicAttribute(String uri, String localName, Object value) throws JspException {
         if(value instanceof String) {
             String stringValue = (String)value;
-            if(ExpressionEvaluationUtils.isExpressionLanguage(stringValue)) {
-                 this.attributes.put(localName,ExpressionEvaluationUtils.evaluate(localName,stringValue,Object.class,this.pageContext));
-            } else {
-                this.attributes.put(localName,value);
+            String trimmed = stringValue.trim();
+            if(trimmed.startsWith("[") && trimmed.endsWith("]")) {
+                trimmed = trimmed.substring(1,trimmed.length() - 1);
+                Matcher m = ATTRIBUTE_MAP.matcher(trimmed);
+                Map attributeMap = new HashMap();
+                while(m.find()) {
+                    String attributeName = m.group(1);
+                    String attributeValue = m.group(2);
+                    if(ExpressionEvaluationUtils.isExpressionLanguage(attributeValue)) {
+                        attributeMap.put(attributeName, ExpressionEvaluationUtils.evaluate(attributeName,attributeValue,Object.class,super.pageContext));
+                    }
+                    else {
+                        attributeMap.put(attributeName, attributeValue);
+                    }
+                }
+                this.attributes.put(localName, attributeMap);
+            }
+            else {
+                if(ExpressionEvaluationUtils.isExpressionLanguage(stringValue)) {
+                     this.attributes.put(localName,ExpressionEvaluationUtils.evaluate(localName,stringValue,Object.class,this.pageContext));
+                } else {
+                    this.attributes.put(localName,value);
+                }
             }
         }else {
             this.attributes.put(localName,value);
