@@ -14,6 +14,14 @@
  */
 package org.codehaus.groovy.grails.commons;
 
+import groovy.lang.Closure;
+
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Set;
+import java.util.HashSet;
+import java.beans.PropertyDescriptor;
+
 /**
  * @author Graeme Rocher
  * @since 14-Jan-2006
@@ -23,8 +31,9 @@ package org.codehaus.groovy.grails.commons;
  */
 public class DefaultGrailsTagLibClass extends AbstractInjectableGrailsClass implements GrailsTagLibClass {
     protected static final String TAG_LIB = "TagLib";
-    private static final String APPLICATION_TAG_LIB = "Application";
 
+    private List supportedControllers;
+    private Set tags = new HashSet();
     /**
      * <p>Default contructor
      *
@@ -32,17 +41,47 @@ public class DefaultGrailsTagLibClass extends AbstractInjectableGrailsClass impl
      */
     public DefaultGrailsTagLibClass(Class clazz) {
         super(clazz, TAG_LIB);
+        Class supportedControllerClass = (Class)getPropertyValue(SUPPORTS_CONTROLLER, Class.class);
+        if(supportedControllerClass != null) {
+            supportedControllers = new ArrayList();
+            supportedControllers.add(supportedControllerClass);
+        }
+        else {
+            List tmp = (List)getPropertyValue(SUPPORTS_CONTROLLER, List.class);
+            if(tmp != null) {
+                supportedControllers = tmp;
+            }
+        }
+
+        PropertyDescriptor[] props = getReference().getPropertyDescriptors();
+        for (int i = 0; i < props.length; i++) {
+            PropertyDescriptor prop = props[i];
+            Closure tag = (Closure)getPropertyValue(prop.getName(),Closure.class);
+            if(tag != null) {
+                tags.add(prop.getName());
+            }
+        }
     }
 
     public boolean supportsController(GrailsControllerClass controllerClass) {
         if(controllerClass == null)
             return false;
-        if(getName().equals(APPLICATION_TAG_LIB))
-            return true;
-        else {
-             if(getName().equals(controllerClass.getName()))
-                return true;
+        else if(supportedControllers != null) {
+           if(supportedControllers.contains(controllerClass.getClazz())) {
+               return true;
+           }
+           else {
+               return false;
+           }
         }
-        return false;
+        return true;
+    }
+
+    public boolean hasTag(String tagName) {
+        return tags.contains(tagName);
+    }
+
+    public Set getTagNames() {
+        return tags;
     }
 }

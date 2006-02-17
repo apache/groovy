@@ -14,6 +14,8 @@
  */
 package org.codehaus.groovy.grails.commons;
 
+import java.util.Set;
+
 /**
  * <p>Represents a Grails tab library class</p>
  *
@@ -25,7 +27,7 @@ public interface GrailsTagLibClass extends InjectableGrailsClass {
     /**
      * The name of the application (ie global) tag library appropriate for all controller classes
      */
-    String APPLICATION_TAG_LIB = "ApplicationTagLib";
+    String SUPPORTS_CONTROLLER = "supportsController";
 
     /**
      * Whether this tag library supports the specified controller
@@ -33,4 +35,17 @@ public interface GrailsTagLibClass extends InjectableGrailsClass {
      * @return True if the controller is supported
      */
     boolean supportsController(GrailsControllerClass controllerClass);
+
+    /**
+     *
+     * @param tagName The name of the tag
+     * @return Whether the tag library contains the specified tag
+     */
+    boolean hasTag(String tagName);
+
+    /**
+     *
+     * @return The tag names in this library
+     */
+    Set getTagNames();
 }
