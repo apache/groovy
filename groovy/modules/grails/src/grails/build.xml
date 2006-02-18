@@ -27,10 +27,7 @@ Targets:
         </echo>
 	</target>
 	
-    <target name="generate-controller" description="Generates a controller from a domain class">
-		<property environment="env"/>
-		<fail unless="env.GRAILS_HOME" message="GRAILS_HOME is not set."/>
-		<property name="grails.home" location="${env.GRAILS_HOME}"/>
+    <target name="generate-controller" depends="init:grailsHome" description="Generates a controller from a domain class">
 
 		<path id="test.classpath">
 			<!--<pathelement location="${grails.home}/src/web-app/WEB-INF"/>-->
@@ -49,9 +46,6 @@ Targets:
     </target>
 	
     <target name="generate-views" depends="package" description="Generates the views from a domain class">
-		<property environment="env"/>
-		<fail unless="env.GRAILS_HOME" message="GRAILS_HOME is not set."/>
-		<property name="grails.home" location="${env.GRAILS_HOME}"/>
 
 		<input addproperty="domain.class.name" message="Enter domain class name:" />
 
@@ -90,7 +84,7 @@ Targets:
     </target>	
 
 
-    <target name="create-app" description="Create a new grails app">
+    <target name="create-app" depends="init:grailsHome" description="Create a new grails app">
 		
 		<input addproperty="project.name" message="Enter application name:" />
 		
@@ -167,7 +161,7 @@ Targets:
 			grails.setProperty("domain.class.name", className)
 		</script>
 				
-		<copy 	file="${grails.home}/src/grails/templates/artifacts/DomainClass.groovy" 
+		<copy 	file="${grails.home}/src/grails/templates/artifacts/DomainClass.groovy"
 				tofile="grails-app/domain/${domain.class.name}.groovy"
                 overwrite="false"/>
 		
@@ -487,20 +481,44 @@ Targets:
         <antcall target="wait-forever" />
     </target>
 
-    <target name="create-webtest" description="Create a functional layout">
-<!--
-    Download WebTest distro if needed.
-    Create subdirs as needed.
-    Create a starter build.groovy.
-    Create a suite to be started.
--->
+    <target name="init-webtest" depends="init:grailsHome" >
+        <!--
+            Download WebTest distro if needed.
+            Users may need to use the <setproxy/> task to when behind a firewall!
+            Downloads are expanded below the downloads dir.
+            Todo: expanded dirs need to deleted if download cache is updated
+            Todo: fail gracefully if not online
+        -->
+        <mkdir  dir="${grails.home}/downloads/webtest" />
+        <get    dest="${grails.home}/downloads/webtest.zip" src="http://webtest.canoo.com/webtest/build.zip"
+                verbose="true" usetimestamp="true"/>
+        <unzip  dest="${grails.home}/downloads/webtest" src="${grails.home}/downloads/webtest.zip" overwrite="false" />
+
+    </target>
+
+    <target name="create-webtest" description="Create a functional testing layout" depends="init-webtest" >
+        <copy todir=".">
+            <fileset dir="${grails.home}/src/grails/templates/" includes="webtest/"/>
+        </copy>
+        <script language="groovy">
+            def projectName = new File('.').absolutePath.tokenize('./\\')[-1]
+            projectName = projectName[0].toUpperCase() + projectName[1..-1]
+            grails.setProperty('webtest.name', projectName)
+        </script>
+        <copy file="${grails.home}/src/grails/templates/artifacts/WebTest.groovy"
+              tofile="webtest/tests/${webtest.name}Test.groovy" />
+        <replace 	file="webtest/tests/${webtest.name}Test.groovy"
+            token="@webtest.name@"
+            value="${webtest.name}" />
+
     </target>
 
      <target name="generate-webtest" description="Generate a functional test from a domain class">
-<!--
-    Scaffold an intitial cycle of show / list / details / add / remove
-    with typical verifications.
--->
+         <echo>Sorry, this functionality is not yet implemented.</echo>
+        <!--
+            Scaffold an intitial cycle of show / list / details / add / remove
+            with typical verifications.
+        -->
     </target>
 
     <target name="run-webtest" depends="init:grailsHome" description="Run the functional tests for a running app">
@@ -511,13 +529,12 @@ Targets:
         </parallel>
         <echoproperties /> -->
         <java classname="groovy.ui.GroovyMain" >
-            <arg line="build test"/>
+            <arg line="webtest/tests/TestSuite"/>
             <classpath>
-                <pathelement location="."/>
-                <fileset dir="/java/groovy/lib" includes="*.jar"/> <!--todo: refer to groovy.home-->
+                <pathelement location="webtest/tests"/>
                 <fileset dir="${grails.home}/lib" includes="*.jar"/>
                 <pathelement location="${grails.home}/downloads/webtest/lib"/>
-                <fileset dir="${grails.home}/downloads/webtest/lib" includes="*.jar"/>
+                <fileset dir="${grails.home}/downloads/webtest/lib" includes="**/*.jar"/>
             </classpath>
         </java>
     </target>
