@@ -387,7 +387,7 @@ public class CompilerConfiguration {
 
 
     /**
-     * Sets the output writer.
+     * Sets the classpath.
      */
 
     public void setClasspath(String classpath) {
