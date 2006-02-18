@@ -1,14 +1,17 @@
 <project name="grails-build" default="jar">
 
 	<property file="build.properties"/>
-	
-	<path id="classpath">
-		<fileset dir="${grails.lib}">
-			<include name="*.jar"/>
-		</fileset>
-		<pathelement location="${grails.src.war}/WEB-INF"/>
-	</path>
-	
+
+
+    <path id="classpath">
+        <fileset dir="${grails.lib}">
+            <include name="*.jar"/>
+        </fileset>
+        <pathelement location="${grails.src.war}/WEB-INF"/>
+    </path>
+
+    <taskdef name="groovyc"  classname="org.codehaus.groovy.ant.Groovyc" classpathref="classpath" />
+
 	<target name="clean">
 		<delete dir="${grails.build}"/>
 		<delete dir="${grails.test.build}"/>
@@ -29,6 +32,10 @@
 			<src path="${grails.src.scaffolding}"/>			
 			<classpath refid="classpath"/>
 		</javac>
+        <groovyc destdir="${grails.build}" >
+			<src path="${grails.src.commons}"/>
+			<classpath refid="classpath"/>
+		</groovyc>
 		<copy todir="${grails.build}">
 			<fileset dir="${grails.src.commons}" excludes="**/*.java" />
 			<fileset dir="${grails.src.web}" excludes="**/*.java" />
