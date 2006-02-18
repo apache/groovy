@@ -21,9 +21,8 @@ Targets:
 "generate-all"        - Generates the all artifacts from a domain class
 "test-app"            - Run current app's unit tests
 "run-app"             - Run the application locally and wait
-"create-webtest"      - Create the functional test layout              (coming soon)
-"generate-webtest"    - Generate a functional test from a domain class (coming soon)
-"run-webtest"         - Run the functional tests for a running app     (coming soon)
+"create-webtest"      - Create the functional test layout        
+"run-webtest"         - Run the functional tests for a running app
         </echo>
 	</target>
 	
@@ -513,14 +512,6 @@ Targets:
 
     </target>
 
-     <target name="generate-webtest" description="Generate a functional test from a domain class">
-         <echo>Sorry, this functionality is not yet implemented.</echo>
-        <!--
-            Scaffold an intitial cycle of show / list / details / add / remove
-            with typical verifications.
-        -->
-    </target>
-
     <target name="run-webtest" depends="init:grailsHome" description="Run the functional tests for a running app">
         <!-- <parallel>
             <daemons>
@@ -533,6 +524,7 @@ Targets:
             <classpath>
                 <pathelement location="webtest/tests"/>
                 <fileset dir="${grails.home}/lib" includes="*.jar"/>
+                <fileset dir="${grails.home}/dist" includes="*.jar"/>
                 <pathelement location="${grails.home}/downloads/webtest/lib"/>
                 <fileset dir="${grails.home}/downloads/webtest/lib" includes="**/*.jar"/>
             </classpath>
