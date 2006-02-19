@@ -132,7 +132,7 @@ Targets:
 
 		<script language="groovy">
 			def serviceName = grails.getProperty("service.name")
-			serviceName     = serviceName[0].toUpperCase() + serviceName.substring[1..-1]
+			serviceName     = serviceName[0].toUpperCase() + serviceName[1..-1]
 		    if (serviceName.endsWith('Service')) serviceName = serviceName[0..-8]
 			serviceName     = serviceName.replaceAll(" ", "" )
 			grails.setProperty("service.class.name", serviceName)
@@ -156,7 +156,7 @@ Targets:
 
 		<script language="groovy">
 			def className = grails.getProperty("domain.class.name")
-			className = className[0].toUpperCase() + className.substring[1..-1]
+			className = className[0].toUpperCase() + className[1..-1]
 			grails.setProperty("domain.class.name", className)
 		</script>
 
@@ -183,7 +183,7 @@ Targets:
     <target name="internal-create-test-suite">
 		<script language="groovy">
 			def suiteName = grails.getProperty("test.suite.name")
-			suiteName = suiteName[0].toUpperCase() + suiteName.substring[1..-1]
+			suiteName = suiteName[0].toUpperCase() + suiteName[1..-1]
 		    if (suiteName.endsWith('Tests')) suiteName = suiteName[0..-6]
 			suiteName = suiteName.replaceAll(" ", "" )
 			grails.setProperty("test.suite.name", suiteName)
