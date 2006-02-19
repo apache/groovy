@@ -22,6 +22,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.groovy.grails.exceptions.MoreThanOneActiveDataSourceException;
 import org.codehaus.groovy.grails.exceptions.GrailsConfigurationException;
+import org.codehaus.groovy.grails.scaffolding.GrailsScaffolder;
+import org.codehaus.groovy.grails.scaffolding.ScaffoldDomain;
 import org.springframework.core.io.Resource;
 
 import java.io.IOException;
@@ -286,6 +288,20 @@ public class DefaultGrailsApplication implements GrailsApplication {
         else {
             throw new GrailsConfigurationException("Cannot load domain class ["+domainClass+"]. It is not a valid domain class!");
         }
+    }
+
+    public GrailsDomainClass addDomainClass(GrailsDomainClass domainClass) {
+        if(domainClass != null) {
+            this.domainMap.put(domainClass.getFullName(),domainClass);
+
+            // reset domain class list
+            this.domainClasses = ((GrailsDomainClass[])this.domainMap.values().toArray(new GrailsDomainClass[domainMap.size()]));
+            if(!(domainClass instanceof ExternalGrailsDomainClass)) {
+                // reconfigure relationships
+                configureDomainClassRelationships();
+            }
+        }
+        return domainClass;
     }
 
     public GrailsControllerClass getScaffoldingController(GrailsDomainClass domainClass) {

@@ -50,6 +50,11 @@ public class DefaultScaffoldRequestHandler implements ScaffoldRequestHandler {
     public void setScaffoldDomain(ScaffoldDomain domain) {
         this.domain = domain;
     }
+
+    public ScaffoldDomain getScaffoldDomain() {
+        return this.domain;
+    }
+
     public Map handleList(HttpServletRequest request,
                           HttpServletResponse response) {
         int max = 10;

@@ -15,6 +15,8 @@
  */ 
 package org.codehaus.groovy.grails.scaffolding;
 
+import org.springframework.validation.Validator;
+
 import java.io.Serializable;
 import java.util.List;
 
@@ -25,8 +27,19 @@ import java.util.List;
  * @since 30 Nov 2005
  */
 public interface ScaffoldDomain {
-	
-	/**
+
+    /**
+     * Sets the name of the identity property so that type conversion can be performed
+     * @param identityPropertyName
+     */
+    void setIdentityPropertyName(String identityPropertyName);
+
+    /**
+     * Sets the validator to use
+     * @param validator
+     */
+    void setValidator(Validator validator);
+    /**
 	 * Retrieves the scaffolded persistent class
 	 */
 	Class getPersistentClass();

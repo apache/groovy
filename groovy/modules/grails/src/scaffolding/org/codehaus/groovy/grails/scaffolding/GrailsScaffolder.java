@@ -49,4 +49,10 @@ public interface GrailsScaffolder {
 	 */
 	String getActionName(Closure action);
 
+    /**
+     *
+     *  @return The ScaffoldRequestHandler instance
+     */
+    ScaffoldRequestHandler getScaffoldRequestHandler();
+
 }

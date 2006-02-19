@@ -81,9 +81,9 @@ public abstract class AbstractGrailsClass implements GrailsClass {
 		return this.clazz;
 	}
 	
-	public GroovyObject newInstance() {
+	public Object newInstance() {
 		try {
-			return ((GroovyObject)getClazz().newInstance());
+			return getClazz().newInstance();
 		} catch (Exception e) {
 			Throwable targetException = null;
 			if (e instanceof InvocationTargetException) {

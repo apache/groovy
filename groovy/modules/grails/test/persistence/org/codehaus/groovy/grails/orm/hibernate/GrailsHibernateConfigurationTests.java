@@ -115,7 +115,7 @@ public class GrailsHibernateConfigurationTests extends AbstractDependencyInjecti
 		assertNotNull(this.sessionFactory);
 		
 		HibernateTemplate template = new HibernateTemplate(this.sessionFactory);
-		GroovyObject obj = grailsApplication.getGrailsDomainClass("org.codehaus.groovy.grails.domain.Test1").newInstance();
+		GroovyObject obj = (GroovyObject)grailsApplication.getGrailsDomainClass("org.codehaus.groovy.grails.domain.Test1").newInstance();
 		assertNotNull(obj);
 		
 		obj.setProperty("firstName", "Joe");
@@ -129,7 +129,7 @@ public class GrailsHibernateConfigurationTests extends AbstractDependencyInjecti
 		
 		HibernateTemplate template = new HibernateTemplate(this.sessionFactory);
 		
-		GroovyObject obj = grailsApplication.getGrailsDomainClass("org.codehaus.groovy.grails.domain.Test1").newInstance();
+		GroovyObject obj = (GroovyObject)grailsApplication.getGrailsDomainClass("org.codehaus.groovy.grails.domain.Test1").newInstance();
 		assertNotNull(obj);
 		
 		obj.setProperty("firstName", "Joe");
@@ -160,8 +160,8 @@ public class GrailsHibernateConfigurationTests extends AbstractDependencyInjecti
 	public void testHibernateOneToOne() {
 
 		HibernateTemplate template = new HibernateTemplate(this.sessionFactory);
-		GroovyObject parent = grailsApplication.getGrailsDomainClass( "org.codehaus.groovy.grails.domain.RelationshipsTest" ).newInstance();
-		GroovyObject child = grailsApplication.getGrailsDomainClass( "org.codehaus.groovy.grails.domain.OneToOneTest" ).newInstance();
+		GroovyObject parent = (GroovyObject)grailsApplication.getGrailsDomainClass( "org.codehaus.groovy.grails.domain.RelationshipsTest" ).newInstance();
+		GroovyObject child = (GroovyObject)grailsApplication.getGrailsDomainClass( "org.codehaus.groovy.grails.domain.OneToOneTest" ).newInstance();
 		
 		assertNotNull(child);
 		
@@ -173,10 +173,10 @@ public class GrailsHibernateConfigurationTests extends AbstractDependencyInjecti
 	
 	public void testHibernateUniOneToMany() {
 		GrailsDomainClass one2ManyDomain = grailsApplication.getGrailsDomainClass( "org.codehaus.groovy.grails.domain.RelationshipsTest" );
-		GroovyObject one2many = one2ManyDomain.newInstance();
+		GroovyObject one2many = (GroovyObject)one2ManyDomain.newInstance();
 
 		
-		GroovyObject child = grailsApplication.getGrailsDomainClass( "org.codehaus.groovy.grails.domain.UniOneToManyTest" ).newInstance();
+		GroovyObject child = (GroovyObject)grailsApplication.getGrailsDomainClass( "org.codehaus.groovy.grails.domain.UniOneToManyTest" ).newInstance();
 		
 		HibernateTemplate template = new HibernateTemplate(this.sessionFactory);
 		
@@ -205,10 +205,10 @@ public class GrailsHibernateConfigurationTests extends AbstractDependencyInjecti
 	
 	public void testHibernateOneToMany() {
 		GrailsDomainClass one2ManyDomain = grailsApplication.getGrailsDomainClass( "org.codehaus.groovy.grails.domain.RelationshipsTest" );
-		GroovyObject one2many = one2ManyDomain.newInstance();
+		GroovyObject one2many = (GroovyObject)one2ManyDomain.newInstance();
 
 		
-		GroovyObject child = grailsApplication.getGrailsDomainClass( "org.codehaus.groovy.grails.domain.OneToManyTest2" ).newInstance();
+		GroovyObject child = (GroovyObject)grailsApplication.getGrailsDomainClass( "org.codehaus.groovy.grails.domain.OneToManyTest2" ).newInstance();
 		
 		HibernateTemplate template = new HibernateTemplate(this.sessionFactory);
 		
@@ -236,10 +236,10 @@ public class GrailsHibernateConfigurationTests extends AbstractDependencyInjecti
 	
 	public void testHibernateManyToOne() {
 		GrailsDomainClass one2ManyDomain = grailsApplication.getGrailsDomainClass( "org.codehaus.groovy.grails.domain.RelationshipsTest" );
-		GroovyObject one2many = one2ManyDomain.newInstance();
+		GroovyObject one2many = (GroovyObject)one2ManyDomain.newInstance();
 
 		
-		GroovyObject many2one = grailsApplication.getGrailsDomainClass( "org.codehaus.groovy.grails.domain.OneToManyTest2" ).newInstance();
+		GroovyObject many2one = (GroovyObject)grailsApplication.getGrailsDomainClass( "org.codehaus.groovy.grails.domain.OneToManyTest2" ).newInstance();
 		
 		HibernateTemplate template = new HibernateTemplate(this.sessionFactory);
 		

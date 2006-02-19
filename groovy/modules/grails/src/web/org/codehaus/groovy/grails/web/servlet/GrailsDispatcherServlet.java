@@ -17,11 +17,16 @@ package org.codehaus.groovy.grails.web.servlet;
 
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.commons.GrailsBootstrapClass;
+import org.codehaus.groovy.grails.commons.GrailsControllerClass;
+import org.codehaus.groovy.grails.commons.GrailsDomainClass;
 import org.codehaus.groovy.grails.commons.spring.SpringConfig;
+import org.codehaus.groovy.grails.scaffolding.GrailsScaffolder;
+import org.codehaus.groovy.grails.scaffolding.ScaffoldDomain;
 import org.hibernate.SessionFactory;
 import org.hibernate.Session;
 import org.hibernate.FlushMode;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.util.StringUtils;
 import org.springframework.web.context.ConfigurableWebApplicationContext;
@@ -81,6 +86,29 @@ public class GrailsDispatcherServlet extends DispatcherServlet {
                     getNamespace(),
                     locations);
             getServletContext().setAttribute(GrailsApplicationAttributes.APPLICATION_CONTEXT,webContext );
+        }
+
+        // configure scaffolders
+        GrailsControllerClass[] controllerClasses = application.getControllers();
+        for (int i = 0; i < controllerClasses.length; i++) {
+            GrailsControllerClass controllerClass = controllerClasses[i];
+            if(controllerClass.isScaffolding()) {
+                try {
+                    GrailsScaffolder gs = (GrailsScaffolder)webContext.getBean(controllerClass.getFullName() + "Scaffolder");
+                    if(gs != null) {
+                        ScaffoldDomain sd = gs.getScaffoldRequestHandler()
+                                                .getScaffoldDomain();
+
+                        GrailsDomainClass dc = application.getGrailsDomainClass(sd.getPersistentClass().getName());
+                        if(dc != null) {
+                            sd.setIdentityPropertyName(dc.getIdentifier().getName());
+                            sd.setValidator(dc.getValidator());
+                        }
+                    }
+                } catch (NoSuchBeanDefinitionException e) {
+                    // ignore
+                }
+            }
         }
 
         SessionFactory sessionFactory = (SessionFactory)webContext.getBean("sessionFactory");

@@ -15,6 +15,8 @@
  */ 
 package org.codehaus.groovy.grails.commons;
 
+import org.codehaus.groovy.grails.scaffolding.GrailsScaffolder;
+
 
 /**
  * <p>Represents a controller class in Grails.
@@ -33,47 +35,46 @@ public interface GrailsControllerClass extends InjectableGrailsClass {
      * @return list of all possible URI's
      */
     public String[] getURIs();
-	
-	/**
-	 * <p>Tests if a controller maps to a given URI.
-	 * 
-	 * @return true if controller maps to URI
-	 */
-	public boolean mapsToURI(String uri);
-	
-	/**
+
+    /**
+     * <p>Tests if a controller maps to a given URI.
+     *
+     * @return true if controller maps to URI
+     */
+    public boolean mapsToURI(String uri);
+
+    /**
      * Retrieves the view name for the specified URI
-	 * 
-	 * @param uri the name of URI
-	 * @return the view name of null if not found
-	 */
-	public String getViewByURI(String uri);
-	
-	/**
-	 * Retrieves the view name for the specified closure name
-	 * 
-	 * @param closureName The name of the closure
-	 * @return The view for the specified closure action
-	 */
-	public String getViewByName(String closureName);
+     *
+     * @param uri the name of URI
+     * @return the view name of null if not found
+     */
+    public String getViewByURI(String uri);
 
-	/**
-	 * <p>Returns a closure property name for a specific URI or null if the URI does not map to a closure.
-	 * 
-	 * @param uri the URI of the request
-	 * @return the closure property name mapped to the URI or null is no closure was found
-	 */
-	public String getClosurePropertyName(String uri);
+    /**
+     * Retrieves the view name for the specified closure name
+     *
+     * @param closureName The name of the closure
+     * @return The view for the specified closure action
+     */
+    public String getViewByName(String closureName);
 
-	/**
-	 * @return True of the controller class is scaffolding
-	 */
-	public boolean isScaffolding();
+    /**
+     * <p>Returns a closure property name for a specific URI or null if the URI does not map to a closure.
+     *
+     * @param uri the URI of the request
+     * @return the closure property name mapped to the URI or null is no closure was found
+     */
+    public String getClosurePropertyName(String uri);
+
+    /**
+     * @return True of the controller class is scaffolding
+     */
+    public boolean isScaffolding();
 
     /**
      *
      * @return The class that is being scaffolded by this controller
      */
     public Class getScaffoldedClass();
-
 }

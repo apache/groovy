@@ -64,11 +64,9 @@ public class DefaultScaffoldDomain implements ScaffoldDomain {
 	private String identityPropertyName;
 	
 	public DefaultScaffoldDomain(Class persistentClass,
-			String identityPropertyName,
 			SessionFactory sessionFactory) {
 		
 		setPersistentClass(persistentClass);
-		setIdentityPropertyName(identityPropertyName);
 		setSessionFactory(sessionFactory);		
 	}
 	
@@ -81,7 +79,7 @@ public class DefaultScaffoldDomain implements ScaffoldDomain {
 	}
 
 
-	protected void setIdentityPropertyName(String identityPropertyName) {
+	public void setIdentityPropertyName(String identityPropertyName) {
 		PropertyDescriptor identityProp = this.bean.getPropertyDescriptor(identityPropertyName);
 		identityClass = identityProp.getPropertyType();
 		this.identityPropertyName = identityPropertyName;
@@ -315,9 +313,10 @@ public class DefaultScaffoldDomain implements ScaffoldDomain {
 	public Object get(Serializable id) {
 		if(id == null)
 			throw new IllegalArgumentException("Argument 'id' cannot be null");
-		
-		id = (Serializable)converter.convertValue(context,id,identityClass);
-		return template.get(persistentClass,id);
+		if(identityClass != null)
+		    id = (Serializable)converter.convertValue(context,id,identityClass);
+
+        return template.get(persistentClass,id);
 	}
 
 	public String getPluralName() {

@@ -30,7 +30,7 @@ public interface GrailsClass {
 	 * 
 	 * <p>This method can be used as factory method in the Spring application context.
 	 */
-	public GroovyObject newInstance();
+	public Object newInstance();
 	
 	/**
 	 * <p>Returns the logical name of the class in the application without the trailing convention part if applicable

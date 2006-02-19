@@ -22,6 +22,7 @@ import org.hibernate.HibernateException;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
 import org.springframework.orm.hibernate3.LocalSessionFactoryBean;
+import org.springframework.beans.BeanUtils;
 
 import java.io.IOException;
 
@@ -36,9 +37,14 @@ public class ConfigurableLocalSessionFactoryBean extends
 
 	
 	private ClassLoader classLoader = null;
-	private GrailsApplication grailsApplication;	
+	private GrailsApplication grailsApplication;
+    private Class configClass = DefaultGrailsDomainConfiguration.class;
 
-	/**
+    public void setConfigClass(Class configClass) {
+        this.configClass = configClass;
+    }
+
+    /**
 	 * 
 	 */
 	public ConfigurableLocalSessionFactoryBean() {
@@ -63,12 +69,12 @@ public class ConfigurableLocalSessionFactoryBean extends
 	 * Overrides default behaviour to allow for a configurable configuration class 
 	 */
 	protected Configuration newConfiguration() {
-		DefaultGrailsDomainConfiguration config = new DefaultGrailsDomainConfiguration();
+		GrailsDomainConfiguration config = (GrailsDomainConfiguration)BeanUtils.instantiateClass(configClass);
 		config.setGrailsApplication(grailsApplication);
         // we set this to false as Spring might wrap the session factory in a transactional proxy
         // if configured as such
         config.setConfigureDynamicMethods(false);
-        return config;
+        return (Configuration)config;
 	}
 
 

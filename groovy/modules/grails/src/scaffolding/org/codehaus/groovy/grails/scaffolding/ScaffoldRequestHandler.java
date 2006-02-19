@@ -34,8 +34,13 @@ public interface ScaffoldRequestHandler {
 	 * @param domain
 	 */
 	void setScaffoldDomain(ScaffoldDomain domain);
-	
-	/**
+
+    /**
+     * @return The domain being scaffolded
+     */
+    ScaffoldDomain getScaffoldDomain();
+
+    /**
 	 * Handles a request to list all scaffolded instances
 	 * @param request 
 	 * @param reponse

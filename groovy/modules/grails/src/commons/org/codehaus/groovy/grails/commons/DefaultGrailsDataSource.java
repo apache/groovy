@@ -23,6 +23,8 @@ import org.codehaus.groovy.grails.exceptions.DataSourceRequiredPropertyMissingEx
  * 
  * 
  * @author Steven Devijver
+ * @author Graeme Rocher
+ *
  * @since Aug 6, 2005
  */
 public class DefaultGrailsDataSource extends AbstractInjectableGrailsClass
@@ -35,50 +37,55 @@ public class DefaultGrailsDataSource extends AbstractInjectableGrailsClass
 	private static final String PASSWORD = "password";
 	private static final String POOLING = "pooling";
 	private static final String DB_CREATE = "dbCreate";
-	
-	private boolean pooled = true;
+	private static final String CONFIG_CLASS = "configClass";
+
+    private boolean pooled = true;
 	private String driverClassName = null;
 	private String url = null;
 	private String username = null;
 	private String password = null;
 	private String dbCreate = null;
-	
-	public DefaultGrailsDataSource(Class clazz) {
-		super(clazz, DATA_SOURCE);
-		
-		if (getPropertyValue(POOLING, boolean.class) != null) {
-			this.pooled = getPropertyValue(POOLING, boolean.class).equals(Boolean.TRUE) ? true : false;
-		}
-		if (getPropertyValue(DB_CREATE, String.class) != null) {
-			String _dbCreate = (String)getPropertyValue(DB_CREATE, String.class);
-			if(_dbCreate.equals( "create-drop" ) || _dbCreate.equals("create") || _dbCreate.equals("update"))
-				this.dbCreate = _dbCreate;
-		}		
-				
-		if (getPropertyValue(DRIVER_CLASS_NAME, String.class) != null) {
-			this.driverClassName = (String)getPropertyValue(DRIVER_CLASS_NAME, String.class);
-		} else {
-			throw new DataSourceRequiredPropertyMissingException("Required property [" + DRIVER_CLASS_NAME + "] is missing on [" + getFullName() + "]!");
-		}
-		
-		if (getPropertyValue(URL, String.class) != null) {
-			this.url = (String)getPropertyValue(URL, String.class);
-		} else {
-			throw new DataSourceRequiredPropertyMissingException("Required property [" + URL + "] is missing on [" + getFullName() + "]!");
-		}
-		
-		if (getPropertyValue(USERNAME, String.class) != null) {
-			this.username = (String)getPropertyValue(USERNAME, String.class);
-		} else {
-			throw new DataSourceRequiredPropertyMissingException("Required property [" + USERNAME + "] is missing on [" + getFullName() + "]!");
-		}
-		
-		if (getPropertyValue(PASSWORD, String.class) != null) {
-			this.password = (String)getPropertyValue(PASSWORD, String.class);
-		} else {
-			throw new DataSourceRequiredPropertyMissingException("Required property [" + PASSWORD + "] is missing on [" + getFullName() + "]!");
-		}
-	}
+    private Class configClass = null;
+
+
+    public DefaultGrailsDataSource(Class clazz) {
+        super(clazz, DATA_SOURCE);
+
+        configClass = (Class)getPropertyValue(CONFIG_CLASS,Class.class);
+
+        if (getPropertyValue(POOLING, boolean.class) != null) {
+            this.pooled = getPropertyValue(POOLING, boolean.class).equals(Boolean.TRUE) ? true : false;
+        }
+        if (getPropertyValue(DB_CREATE, String.class) != null) {
+            String _dbCreate = (String)getPropertyValue(DB_CREATE, String.class);
+            if(_dbCreate.equals( "create-drop" ) || _dbCreate.equals("create") || _dbCreate.equals("update"))
+                this.dbCreate = _dbCreate;
+        }
+
+        if (getPropertyValue(DRIVER_CLASS_NAME, String.class) != null) {
+            this.driverClassName = (String)getPropertyValue(DRIVER_CLASS_NAME, String.class);
+        } else {
+            throw new DataSourceRequiredPropertyMissingException("Required property [" + DRIVER_CLASS_NAME + "] is missing on [" + getFullName() + "]!");
+        }
+
+        if (getPropertyValue(URL, String.class) != null) {
+            this.url = (String)getPropertyValue(URL, String.class);
+        } else {
+            throw new DataSourceRequiredPropertyMissingException("Required property [" + URL + "] is missing on [" + getFullName() + "]!");
+        }
+
+        if (getPropertyValue(USERNAME, String.class) != null) {
+            this.username = (String)getPropertyValue(USERNAME, String.class);
+        } else {
+            throw new DataSourceRequiredPropertyMissingException("Required property [" + USERNAME + "] is missing on [" + getFullName() + "]!");
+        }
+
+        if (getPropertyValue(PASSWORD, String.class) != null) {
+            this.password = (String)getPropertyValue(PASSWORD, String.class);
+        } else {
+            throw new DataSourceRequiredPropertyMissingException("Required property [" + PASSWORD + "] is missing on [" + getFullName() + "]!");
+        }
+    }
 
 	public boolean isPooled() {
 		return this.pooled;
@@ -107,5 +114,9 @@ public class DefaultGrailsDataSource extends AbstractInjectableGrailsClass
 	public String getDbCreate() {
 		return dbCreate;
 	}
+
+    public Class getConfigurationClass() {
+        return this.configClass;
+    }
 
 }

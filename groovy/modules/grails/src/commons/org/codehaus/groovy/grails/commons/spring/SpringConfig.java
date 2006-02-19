@@ -158,12 +158,15 @@ public class SpringConfig {
             GrailsDomainClass domainClass;
             if(scaffoldedClass == null) {
                 domainClass = application.getGrailsDomainClass(simpleControllers[i].getName());
+                if(domainClass != null) {
+                    scaffoldedClass = domainClass.getClazz();
+                }
             }
             else {
                 domainClass = application.getGrailsDomainClass(scaffoldedClass.getName());
             }
 
-            if(domainClass == null) {
+            if(scaffoldedClass == null) {
                 LOG.info("[Spring] Scaffolding disabled for controller ["+simpleControllers[i].getFullName()+"], no equivalent domain class named ["+simpleControllers[i].getName()+"]");
             }
             else {
@@ -171,18 +174,18 @@ public class SpringConfig {
 
                 // create scaffold domain
                 Collection constructorArguments = new ArrayList();
-                constructorArguments.add(SpringConfigUtils.createBeanReference(domainClass.getFullName() + "PersistentClass"));
-                constructorArguments.add(SpringConfigUtils.createLiteralValue(domainClass.getIdentifier().getName()));
+                constructorArguments.add(SpringConfigUtils.createLiteralValue(scaffoldedClass.getName()));
+
                 constructorArguments.add(SpringConfigUtils.createBeanReference("sessionFactory"));
 
                 Bean domain = SpringConfigUtils.createSingletonBean(DefaultScaffoldDomain.class, constructorArguments);
-                domain.setProperty("validator", SpringConfigUtils.createBeanReference( domainClass.getFullName() + "Validator"));
+//                domain.setProperty("validator", SpringConfigUtils.createBeanReference( domainClass.getFullName() + "Validator"));
 
-                beanReferences.add( SpringConfigUtils.createBeanReference( domainClass.getFullName() + "ScaffoldDomain",domain ) );
+                beanReferences.add( SpringConfigUtils.createBeanReference( scaffoldedClass.getName() + "ScaffoldDomain",domain ) );
 
                 // create and configure request handler
                 Bean requestHandler = SpringConfigUtils.createSingletonBean(DefaultScaffoldRequestHandler.class);
-                requestHandler.setProperty("scaffoldDomain", SpringConfigUtils.createBeanReference(domainClass.getFullName() + "ScaffoldDomain"));
+                requestHandler.setProperty("scaffoldDomain", SpringConfigUtils.createBeanReference(scaffoldedClass.getName() + "ScaffoldDomain"));
 
                 // create response factory
                 constructorArguments = new ArrayList();
@@ -314,7 +317,9 @@ public class SpringConfig {
 	private void populateDataSourceReferences(Collection beanReferences) {
 		boolean dependsOnHsqldbServer = false;
 		GrailsDataSource grailsDataSource = application.getGrailsDataSource();
-		if (grailsDataSource != null) {
+        Bean localSessionFactoryBean = SpringConfigUtils.createSingletonBean(ConfigurableLocalSessionFactoryBean.class);
+
+        if (grailsDataSource != null) {
 			
 			Bean dataSource;
 			if (grailsDataSource.isPooled()) {
@@ -326,8 +331,12 @@ public class SpringConfig {
 			dataSource.setProperty("driverClassName", SpringConfigUtils.createLiteralValue(grailsDataSource.getDriverClassName()));
 			dataSource.setProperty("url", SpringConfigUtils.createLiteralValue(grailsDataSource.getUrl()));
 			dataSource.setProperty("username", SpringConfigUtils.createLiteralValue(grailsDataSource.getUsername()));
-			dataSource.setProperty("password", SpringConfigUtils.createLiteralValue(grailsDataSource.getPassword()));	
-			beanReferences.add(SpringConfigUtils.createBeanReference("dataSource", dataSource));
+			dataSource.setProperty("password", SpringConfigUtils.createLiteralValue(grailsDataSource.getPassword()));
+            if(grailsDataSource.getConfigurationClass() != null) {
+                LOG.info("[SpringConfig] Using custom Hibernate configuration class ["+grailsDataSource.getConfigurationClass()+"]");
+                localSessionFactoryBean.setProperty("configClass", SpringConfigUtils.createLiteralValue(grailsDataSource.getConfigurationClass().getName()));
+            }
+            beanReferences.add(SpringConfigUtils.createBeanReference("dataSource", dataSource));
 		} else {
 			Bean dataSource = SpringConfigUtils.createSingletonBean(BasicDataSource.class);
 			dataSource.setDestroyMethod("close");
@@ -377,14 +386,14 @@ public class SpringConfig {
 		grailsClassLoader.setProperty("targetObject", SpringConfigUtils.createBeanReference("grailsApplication"));
 		grailsClassLoader.setProperty("targetMethod", SpringConfigUtils.createLiteralValue("getClassLoader"));
 		
-		Bean localSessionFactoryBean = SpringConfigUtils.createSingletonBean(ConfigurableLocalSessionFactoryBean.class);
+
 		localSessionFactoryBean.setProperty("dataSource", SpringConfigUtils.createBeanReference("dataSource"));
 		ClassLoader cl = this.application.getClassLoader();
 		URL hibernateConfig = cl.getResource("hibernate.cfg.xml");
 		if(hibernateConfig != null) {
-			localSessionFactoryBean.setProperty("configLocation", SpringConfigUtils.createLiteralValue("hibernate.cfg.xml"));			
+			localSessionFactoryBean.setProperty("configLocation", SpringConfigUtils.createLiteralValue("/WEB-INF/classes/hibernate.cfg.xml"));
 		}
-		localSessionFactoryBean.setProperty("hibernateProperties", hibernateProperties);
+        localSessionFactoryBean.setProperty("hibernateProperties", hibernateProperties);
 		localSessionFactoryBean.setProperty("grailsApplication", SpringConfigUtils.createBeanReference("grailsApplication"));
 		localSessionFactoryBean.setProperty("classLoader", grailsClassLoader);
 		beanReferences.add(SpringConfigUtils.createBeanReference("sessionFactory", localSessionFactoryBean));

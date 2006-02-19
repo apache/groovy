@@ -19,6 +19,7 @@ import groovy.lang.Closure;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.WordUtils;
 import org.codehaus.groovy.grails.scaffolding.DefaultGrailsScaffolder;
+import org.codehaus.groovy.grails.scaffolding.GrailsScaffolder;
 
 import java.beans.PropertyDescriptor;
 import java.util.*;
@@ -205,6 +206,5 @@ public class DefaultGrailsControllerClass extends AbstractInjectableGrailsClass
     public void setScaffolding(boolean scaffolding) {
         this.scaffolding = scaffolding;
     }
-	
-	
+
 }

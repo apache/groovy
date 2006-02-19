@@ -42,8 +42,20 @@
 			<fileset dir="${grails.src.persistence}" excludes="**/*.java"/>
 			<fileset dir="${grails.src.scaffolding}" excludes="**/*.java"/>							
 		</copy>
-	</target>
-	
+        <antcall target="build:java5" />
+    </target>
+
+    <target name="build:checkj5">
+        <condition property="is.java.5">
+              <equals arg1="${ant.java.version}" arg2="1.5"/>
+        </condition>
+    </target>
+
+    <target name="build:java5" depends="build:checkj5" if="is.java.5">
+        <!--build java 5 sources-->
+        <javac srcdir="${grails.src.tiger}" destdir="${grails.build}" classpathref="classpath" debug="on" deprecation="on" optimize="off"/>
+    </target>
+
 	<target name="build-test" depends="build">
 		<javac debug="on" deprecation="on" destdir="${grails.test.build}" source="1.3" target="1.3" includes="**/*">			
 			<src path="${grails.test.src.commons}"/>

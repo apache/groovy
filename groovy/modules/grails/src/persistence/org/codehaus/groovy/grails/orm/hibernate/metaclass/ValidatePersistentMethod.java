@@ -20,6 +20,7 @@ import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.commons.GrailsDomainClass;
 import org.codehaus.groovy.grails.commons.metaclass.DelegatingMetaClass;
 import org.codehaus.groovy.grails.metaclass.DomainClassMethods;
+import org.codehaus.groovy.grails.orm.hibernate.validation.GrailsDomainClassValidator;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.hibernate.SessionFactory;
 import org.springframework.validation.BindException;
@@ -56,7 +57,10 @@ public class ValidatePersistentMethod extends AbstractDynamicPersistentMethod {
 		
 		Boolean valid = new Boolean(true);
 		if(validator != null) {
-			validator.validate(target,errors);
+            if(validator instanceof GrailsDomainClassValidator) {
+                 ((GrailsDomainClassValidator)validator).setHibernateTemplate(getHibernateTemplate());
+            }
+            validator.validate(target,errors);
 			
 			if(errors.hasErrors()) {
 				valid = new Boolean(!errors.hasErrors());	

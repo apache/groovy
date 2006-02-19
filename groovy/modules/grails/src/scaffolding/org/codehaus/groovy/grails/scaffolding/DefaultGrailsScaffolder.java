@@ -379,4 +379,8 @@ public class DefaultGrailsScaffolder implements GrailsScaffolder {
 		return (String)actionClassToNameMap.get(action.getClass());
 	}
 
+    public ScaffoldRequestHandler getScaffoldRequestHandler() {
+        return this.scaffoldRequestHandler;
+    }
+
 }

@@ -50,7 +50,7 @@ public class PersistentMethodTests extends AbstractDependencyInjectionSpringCont
 		
 		GrailsDomainClass domainClass = this.grailsApplication.getGrailsDomainClass("org.codehaus.groovy.grails.orm.hibernate.PersistentMethodTestClass");
 		
-		GroovyObject obj = domainClass.newInstance();
+		GroovyObject obj = (GroovyObject)domainClass.newInstance();
 		obj.setProperty( "id", new Long(1) );
 		obj.setProperty( "firstName", "fred" );
 		obj.setProperty( "lastName", "flintstone" );
@@ -65,7 +65,7 @@ public class PersistentMethodTests extends AbstractDependencyInjectionSpringCont
 		
 		GrailsDomainClass domainClass = this.grailsApplication.getGrailsDomainClass("org.codehaus.groovy.grails.orm.hibernate.PersistentMethodTestClass");
 		
-		GroovyObject obj = domainClass.newInstance();
+		GroovyObject obj = (GroovyObject)domainClass.newInstance();
 		obj.setProperty( "id", new Long(1) );
 		obj.setProperty( "firstName", "fr" );
 		obj.setProperty( "lastName", "flintstone" );
@@ -81,7 +81,7 @@ public class PersistentMethodTests extends AbstractDependencyInjectionSpringCont
 	public void testFindByPersistentMethods() {
 		GrailsDomainClass domainClass = this.grailsApplication.getGrailsDomainClass("org.codehaus.groovy.grails.orm.hibernate.PersistentMethodTestClass");
 		
-		GroovyObject obj = domainClass.newInstance();
+		GroovyObject obj = (GroovyObject)domainClass.newInstance();
 		obj.setProperty( "id", new Long(1) );
 		obj.setProperty( "firstName", "fred" );
 		obj.setProperty( "lastName", "flintstone" );
@@ -89,14 +89,14 @@ public class PersistentMethodTests extends AbstractDependencyInjectionSpringCont
 		
 		obj.invokeMethod("save", null);
 		
-		GroovyObject obj2 = domainClass.newInstance();
+		GroovyObject obj2 = (GroovyObject)domainClass.newInstance();
 		obj2.setProperty( "id", new Long(2) );
 		obj2.setProperty( "firstName", "wilma" );
 		obj2.setProperty( "lastName", "flintstone" );
 		obj2.setProperty( "age", new Integer(42));
 		obj2.invokeMethod("save", null);	
 		
-		GroovyObject obj3 = domainClass.newInstance();
+		GroovyObject obj3 = (GroovyObject)domainClass.newInstance();
 		obj3.setProperty( "id", new Long(3) );
 		obj3.setProperty( "firstName", "dino" );
 		obj3.setProperty( "lastName", "dinosaur" );
@@ -174,14 +174,14 @@ public class PersistentMethodTests extends AbstractDependencyInjectionSpringCont
 	public void testGetPersistentMethod() {
 		GrailsDomainClass domainClass = this.grailsApplication.getGrailsDomainClass("org.codehaus.groovy.grails.orm.hibernate.PersistentMethodTestClass");
 		
-		GroovyObject obj = domainClass.newInstance();
+		GroovyObject obj = (GroovyObject)domainClass.newInstance();
 		obj.setProperty( "id", new Long(1) );
 		obj.setProperty( "firstName", "fred" );
 		obj.setProperty( "lastName", "flintstone" );
 		
 		obj.invokeMethod("save", null);
 		
-		GroovyObject obj2 = domainClass.newInstance();
+		GroovyObject obj2 = (GroovyObject)domainClass.newInstance();
 		obj2.setProperty( "id", new Long(2) );
 		obj2.setProperty( "firstName", "wilma" );
 		obj2.setProperty( "lastName", "flintstone" );
@@ -197,14 +197,14 @@ public class PersistentMethodTests extends AbstractDependencyInjectionSpringCont
 	public void testFindAllPersistentMethod() {
 		GrailsDomainClass domainClass = this.grailsApplication.getGrailsDomainClass("org.codehaus.groovy.grails.orm.hibernate.PersistentMethodTestClass");
 		
-		GroovyObject obj = domainClass.newInstance();
+		GroovyObject obj = (GroovyObject)domainClass.newInstance();
 		obj.setProperty( "id", new Long(1) );
 		obj.setProperty( "firstName", "fred" );
 		obj.setProperty( "lastName", "flintstone" );
 		
 		obj.invokeMethod("save", null);
 		
-		GroovyObject obj2 = domainClass.newInstance();
+		GroovyObject obj2 = (GroovyObject)domainClass.newInstance();
 		obj2.setProperty( "id", new Long(2) );
 		obj2.setProperty( "firstName", "wilma" );
 		obj2.setProperty( "lastName", "flintstone" );
@@ -228,7 +228,7 @@ public class PersistentMethodTests extends AbstractDependencyInjectionSpringCont
 		assertEquals(1, listResult.size());	
 		
 		// test find by example
-		GroovyObject example = domainClass.newInstance();
+		GroovyObject example = (GroovyObject)domainClass.newInstance();
 		example.setProperty( "firstName", "fred" );
 		returnValue = obj.getMetaClass().invokeStaticMethod(obj, "findAll", new Object[] { example });
 		assertNotNull(returnValue);
@@ -249,21 +249,21 @@ public class PersistentMethodTests extends AbstractDependencyInjectionSpringCont
 	public void testListPersistentMethods() {
 		GrailsDomainClass domainClass = this.grailsApplication.getGrailsDomainClass("org.codehaus.groovy.grails.orm.hibernate.PersistentMethodTestClass");
 		
-		GroovyObject obj = domainClass.newInstance();
+		GroovyObject obj = (GroovyObject)domainClass.newInstance();
 		obj.setProperty( "id", new Long(1) );
 		obj.setProperty( "firstName", "fred" );
 		obj.setProperty( "lastName", "flintstone" );
 		
 		obj.invokeMethod("save", null);
 		
-		GroovyObject obj2 = domainClass.newInstance();
+		GroovyObject obj2 = (GroovyObject)domainClass.newInstance();
 		obj2.setProperty( "id", new Long(2) );
 		obj2.setProperty( "firstName", "wilma" );
 		obj2.setProperty( "lastName", "flintstone" );
 		
 		obj2.invokeMethod("save", null);	
 		
-		GroovyObject obj3 = domainClass.newInstance();
+		GroovyObject obj3 = (GroovyObject)domainClass.newInstance();
 		obj3.setProperty( "id", new Long(3) );
 		obj3.setProperty( "firstName", "dino" );
 		obj3.setProperty( "lastName", "dinosaur" );

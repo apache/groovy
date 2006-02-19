@@ -1,47 +1,41 @@
 /* Copyright 2004-2005 the original author or authors.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */ 
+ */
 package org.codehaus.groovy.grails.orm.hibernate.cfg;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.codehaus.groovy.grails.commons.GrailsApplication;
-import org.codehaus.groovy.grails.commons.GrailsDomainClass;
-import org.codehaus.groovy.grails.metaclass.DomainClassMethods;
+import org.hibernate.cfg.AnnotationConfiguration;
+import org.hibernate.SessionFactory;
 import org.hibernate.HibernateException;
 import org.hibernate.MappingException;
-import org.hibernate.SessionFactory;
-import org.hibernate.EntityMode;
-import org.hibernate.metadata.ClassMetadata;
-import org.hibernate.cfg.Configuration;
+import org.codehaus.groovy.grails.commons.GrailsDomainClass;
+import org.codehaus.groovy.grails.commons.GrailsApplication;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
+import java.util.Set;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Set;
-import java.util.Collection;
-import java.beans.IntrospectionException;
 
 /**
- * Creates runtime configuration mappings for the Grails domain classes
- * based on the work done in the Hibernate Annotations project
- * 
+ * Allows configuring Grails' hibernate support to work in conjuntion with Hibernate's annotation
+ * support
+ *
  * @author Graeme Rocher
- * @since 06-Jul-2005
+ * @since 18-Feb-2006
  */
-public class DefaultGrailsDomainConfiguration extends Configuration implements GrailsDomainConfiguration {
-
-    private static final Log LOG  = LogFactory.getLog(DefaultGrailsDomainConfiguration.class);
+public class GrailsAnnotationConfiguration  extends AnnotationConfiguration implements GrailsDomainConfiguration{
+    private static final Log LOG  = LogFactory.getLog(GrailsAnnotationConfiguration.class);
     /**
      *
      */
@@ -54,7 +48,7 @@ public class DefaultGrailsDomainConfiguration extends Configuration implements G
     /**
      *
      */
-    public DefaultGrailsDomainConfiguration() {
+    public GrailsAnnotationConfiguration() {
         super();
         this.domainClasses = new HashSet();
     }
@@ -126,6 +120,4 @@ public class DefaultGrailsDomainConfiguration extends Configuration implements G
         // call super
         super.secondPassCompile();
         this.configLocked = true;
-    }
-
-}
+    }}
