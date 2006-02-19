@@ -63,7 +63,7 @@ public class AllTestSuite extends TestSuite {
 
     public static Test suite() {
         String basedir = System.getProperty(SYSPROP_TEST_DIR, "./test/");
-        String pattern = System.getProperty(SYSPROP_TEST_PATTERN, "Test.groovy");
+        String pattern = System.getProperty(SYSPROP_TEST_PATTERN, "**/*Test.groovy");
         return suite(basedir, pattern);
     }    
 
