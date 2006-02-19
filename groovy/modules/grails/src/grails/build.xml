@@ -3,11 +3,10 @@
 	<property name="servlet.version" value="2.3"/>
 	<property name="path" value="" />
 
-    <taskdef name="groovyc"
-	    classname="org.codehaus.groovy.ant.Groovyc">
-	</taskdef>
+    <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" />
+    <taskdef name="groovy"  classname="org.codehaus.groovy.ant.Groovy" />
 
-	<target name="help">
+    <target name="help">
 		<echo>Usage: grails [target]
 
 Targets:
@@ -26,7 +25,81 @@ Targets:
         </echo>
 	</target>
 
-    <target name="generate-controller" depends="init:grailsHome" description="Generates a controller from a domain class">
+
+    <target name="init-props">
+        <property environment="env"/>
+        <fail unless="env.GRAILS_HOME" message="GRAILS_HOME is not set."/>
+        <property name="grails.home" location="${env.GRAILS_HOME}"/>
+        <groovy >
+            // reusable code blocks, a pitty we cannot store Closures in the project...
+            properties.caps = 'x[0].toUpperCase() + x[1..-1]'
+            properties.norm = '''
+                x = x.replaceAll(' ','')
+                x = x[0].toUpperCase() + x[1..-1]
+                if (x.endsWith(y)) x = x[0..(x.size()-y.size()-1)]
+                return x
+            '''
+        </groovy>
+    </target>
+
+    <target name="init" depends="init-props" description="Initialise the current app">
+        <mkdir dir="${path}src"/>
+        <mkdir dir="${path}src/java"/>
+        <mkdir dir="${path}src/groovy"/>
+        <mkdir dir="${path}grails-app"/>
+        <mkdir dir="${path}grails-app/controllers"/>
+        <mkdir dir="${path}grails-app/services"/>
+        <mkdir dir="${path}grails-app/domain"/>
+        <mkdir dir="${path}grails-app/taglib"/>
+        <mkdir dir="${path}grails-app/views"/>
+        <mkdir dir="${path}grails-app/views/layouts"/>
+        <mkdir dir="${path}grails-app/i18n"/>
+        <mkdir dir="${path}grails-app/conf"/>
+        <mkdir dir="${path}grails-tests"/>
+        <mkdir dir="${path}web-app"/>
+        <mkdir dir="${path}web-app"/>
+        <mkdir dir="${path}web-app"/>
+        <mkdir dir="${path}web-app/js"/>
+        <mkdir dir="${path}web-app/css"/>
+        <mkdir dir="${path}web-app/WEB-INF/classes"/>
+        <!--<mkdir dir="${path}
+"/>-->
+        <!--<mkdir dir="${path}html"/>-->
+        <mkdir dir="${path}lib"/>
+        <mkdir dir="${path}spring"/>
+        <mkdir dir="${path}hibernate"/>
+        <mkdir dir="${grails.home}/dist"/>
+
+        <copy todir="${path}web-app/WEB-INF">
+            <fileset dir="${grails.home}/src/war/WEB-INF">
+                <include name="applicationContext.xml"/>
+            </fileset>
+        </copy>
+        <copy todir="${path}grails-app">
+            <fileset dir="${grails.home}/src/grails/grails-app" />
+        </copy>
+        <copy file="${grails.home}/src/war/WEB-INF/web${servlet.version}.template.xml" tofile="${path}web-app/WEB-INF/web.template.xml"/>
+        <copy file="${grails.home}/src/war/WEB-INF/sitemesh.xml" tofile="${path}web-app/WEB-INF/sitemesh.xml"/>
+        <copy todir="${path}web-app/js">
+            <fileset dir="${grails.home}/src/war/js"/>
+        </copy>
+        <copy todir="${path}web-app/css">
+            <fileset dir="${grails.home}/src/war/css"/>
+        </copy>
+        <copy todir="${path}web-app/WEB-INF/tld">
+            <fileset dir="${grails.home}/src/war/WEB-INF/tld/${servlet.version}"/>
+            <fileset dir="${grails.home}/src/war/WEB-INF/tld" includes="spring.tld"/>
+            <fileset dir="${grails.home}/src/war/WEB-INF/tld" includes="grails.tld"/>
+        </copy>
+        <copy todir="${path}spring">
+            <fileset dir="${grails.home}/src/war/WEB-INF/spring">
+                <include name="*.xml"/>
+            </fileset>
+        </copy>
+        <touch file="${path}grails-app/i18n/messages.properties"></touch>
+    </target>
+
+    <target name="generate-controller" depends="init-props" description="Generates a controller from a domain class">
 
 		<path id="test.classpath">
 			<!--<pathelement location="${grails.home}/src/web-app/WEB-INF"/>-->
@@ -83,7 +156,7 @@ Targets:
     </target>
 
 
-    <target name="create-app" depends="init:grailsHome" description="Create a new grails app">
+    <target name="create-app" depends="init-props" description="Create a new grails app">
 
 		<input addproperty="project.name" message="Enter application name:" />
 
@@ -91,28 +164,25 @@ Targets:
 			<param name="path" value="${project.name}/"/>
 		</antcall>
 
-		<script language="groovy">
-			def projName = grails.getProperty("project.name")
-			grails.setProperty("project.class.name", projName[0].toUpperCase() + projName[1..-1])
-		</script>
+		<groovy>
+			def projName = properties."project.name"
+			properties."project.class.name" =  Eval.x(projName, properties.caps)
+		</groovy>
 
 			<copy 	file="${grails.home}/src/grails/templates/artifacts/DataSource.groovy"
 				    tofile="${project.name}/grails-app/conf/ApplicationDataSource.groovy"/>
 			<copy 	file="${grails.home}/src/grails/templates/artifacts/BootStrap.groovy"
 					tofile="${project.name}/grails-app/conf/ApplicationBootStrap.groovy"/>
-
 	</target>
 
-	<target name="create-controller" depends="init:grailsHome" description="Create a new controller">
+	<target name="create-controller" depends="init-props" description="Create a new controller">
 
 		<input addproperty="controller.name" message="Enter controller name:" />
 
-		<script language="groovy">
-			def ctrlName = grails.getProperty("controller.name")
-			ctrlName     = ctrlName[0].toUpperCase() + ctrlName[1..-1]
-			if (ctrlName.endsWith('Controller')) ctrlName = ctrlName[0..-11]
-			grails.setProperty("controller.class.name", ctrlName)
-		</script>
+		<groovy>
+			def ctrlName = properties."controller.name"
+			properties."controller.class.name" = Eval.xy(ctrlName,'Controller', properties.norm)
+		</groovy>
 
 		<copy 	file="${grails.home}/src/grails/templates/artifacts/Controller.groovy"
 				tofile="grails-app/controllers/${controller.class.name}Controller.groovy"
@@ -126,19 +196,16 @@ Targets:
         <antcall target="internal-create-test-suite"  />
     </target>
 
-	<target name="create-service" depends="init:grailsHome" description="Create a new service">
+	<target name="create-service" depends="init-props" description="Create a new service">
 
 		<input addproperty="service.name" message="Enter service name:" />
 
-		<script language="groovy">
-			def serviceName = grails.getProperty("service.name")
-			serviceName     = serviceName[0].toUpperCase() + serviceName[1..-1]
-		    if (serviceName.endsWith('Service')) serviceName = serviceName[0..-8]
-			serviceName     = serviceName.replaceAll(" ", "" )
-			grails.setProperty("service.class.name", serviceName)
-		</script>
+        <groovy>
+			def serviceName = properties."service.name"
+			properties."service.class.name" = Eval.xy(serviceName,'Service', properties.norm)
+		</groovy>
 
-		<copy 	file="${grails.home}/src/grails/templates/artifacts/Service.groovy"
+        <copy 	file="${grails.home}/src/grails/templates/artifacts/Service.groovy"
 				tofile="grails-app/services/${service.class.name}Service.groovy"
                 overwrite="false"/>
 
@@ -150,124 +217,58 @@ Targets:
         <antcall target="internal-create-test-suite" inheritall="true" />
     </target>
 
-	<target name="create-domain-class" depends="init:grailsHome" description="Create a new domain class">
+	<target name="create-domain-class" depends="init-props" description="Create a new domain class">
 
 		<input addproperty="domain.class.name" message="Enter domain class name:" />
 
-		<script language="groovy">
-			def className = grails.getProperty("domain.class.name")
-			className = className[0].toUpperCase() + className[1..-1]
-			grails.setProperty("domain.class.name", className)
-		</script>
+         <groovy>
+			def domainName = properties."domain.class.name"
+			properties."domain.class.name" = Eval.x(domainName, properties.caps)
+		</groovy>
 
-		<copy 	file="${grails.home}/src/grails/templates/artifacts/DomainClass.groovy"
-				tofile="grails-app/domain/${domain.class.name}.groovy"
-                overwrite="false"/>
 
-		<replace 	file="grails-app/domain/${domain.class.name}.groovy"
-					token="@domain.class.name@"
-					value="${domain.class.name}" />
-		<echo>Domain class created: grails-app/domain/${domain.class.name}.groovy</echo>
+        <copy 	file="${grails.home}/src/grails/templates/artifacts/DomainClass.groovy"
+            tofile="grails-app/domain/${domain.class.name}.groovy"
+            overwrite="false"/>
+
+        <replace 	file="grails-app/domain/${domain.class.name}.groovy"
+            token="@domain.class.name@"
+            value="${domain.class.name}" />
+        <echo>Domain class created: grails-app/domain/${domain.class.name}.groovy</echo>
         <property name="test.suite.name" value="${domain.class.name}" />
         <antcall target="internal-create-test-suite" inheritall="true" />
     </target>
 
-	<target name="create-test-suite" depends="init:grailsHome" description="Create a new test suite">
+    <target name="create-test-suite" depends="init-props" description="Create a new test suite">
 
-		<input addproperty="test.suite.name" message="Enter test suite name:" />
+        <input addproperty="test.suite.name" message="Enter test suite name:" />
 
         <antcall target="internal-create-test-suite" inheritall="true" />
 
     </target>
 
     <target name="internal-create-test-suite">
-		<script language="groovy">
-			def suiteName = grails.getProperty("test.suite.name")
-			suiteName = suiteName[0].toUpperCase() + suiteName[1..-1]
-		    if (suiteName.endsWith('Tests')) suiteName = suiteName[0..-6]
-			suiteName = suiteName.replaceAll(" ", "" )
-			grails.setProperty("test.suite.name", suiteName)
-		</script>
+        <groovy>
+			def suiteName = properties."test.suite.name"
+			properties."test.suite.name" = Eval.xy(suiteName,'Tests', properties.norm)
+		</groovy>
 
-		<copy 	file="${grails.home}/src/grails/templates/artifacts/Tests.groovy"
-				tofile="grails-tests/${test.suite.name}Tests.groovy"
-                overwrite="false"/>
+        <copy 	file="${grails.home}/src/grails/templates/artifacts/Tests.groovy"
+            tofile="grails-tests/${test.suite.name}Tests.groovy"
+            overwrite="false"/>
 
-		<replace 	file="grails-tests/${test.suite.name}Tests.groovy"
-					token="@test.suite.name@"
-					value="${test.suite.name}" />
-		<echo>Created test suite: grails-tests/${test.suite.name}Tests.groovy</echo>
+        <replace 	file="grails-tests/${test.suite.name}Tests.groovy"
+            token="@test.suite.name@"
+            value="${test.suite.name}" />
+        <echo>Created test suite: grails-tests/${test.suite.name}Tests.groovy</echo>
     </target>
-
-    <target name="init:grailsHome">
-        <property environment="env"/>
-		<fail unless="env.GRAILS_HOME" message="GRAILS_HOME is not set."/>
-		<property name="grails.home" location="${env.GRAILS_HOME}"/>
-    </target>
-
-    <target name="init" depends="init:grailsHome" description="Initialise the current app">
-		<mkdir dir="${path}src"/>
-		<mkdir dir="${path}src/java"/>
-		<mkdir dir="${path}src/groovy"/>
-		<mkdir dir="${path}grails-app"/>
-		<mkdir dir="${path}grails-app/controllers"/>
-		<mkdir dir="${path}grails-app/services"/>
-		<mkdir dir="${path}grails-app/domain"/>
-        <mkdir dir="${path}grails-app/taglib"/>
-        <mkdir dir="${path}grails-app/views"/>
-		<mkdir dir="${path}grails-app/views/layouts"/>
-		<mkdir dir="${path}grails-app/i18n"/>
-		<mkdir dir="${path}grails-app/conf"/>
-		<mkdir dir="${path}grails-tests"/>
-		<mkdir dir="${path}web-app"/>
-		<mkdir dir="${path}web-app"/>
-		<mkdir dir="${path}web-app"/>
-		<mkdir dir="${path}web-app/js"/>
-		<mkdir dir="${path}web-app/css"/>
-		<mkdir dir="${path}web-app/WEB-INF/classes"/>
-		<!--<mkdir dir="${path}
-		"/>-->
-		<!--<mkdir dir="${path}html"/>-->
-		<mkdir dir="${path}lib"/>
-		<mkdir dir="${path}spring"/>
-		<mkdir dir="${path}hibernate"/>
-		<mkdir dir="${grails.home}/dist"/>
-
-		<copy todir="${path}web-app/WEB-INF">
-			<fileset dir="${grails.home}/src/war/WEB-INF">
-				<include name="applicationContext.xml"/>
-			</fileset>
-		</copy>
-		<copy todir="${path}grails-app">
-			<fileset dir="${grails.home}/src/grails/grails-app" />
-		</copy>
-		<copy file="${grails.home}/src/war/WEB-INF/web${servlet.version}.template.xml" tofile="${path}web-app/WEB-INF/web.template.xml"/>
-		<copy file="${grails.home}/src/war/WEB-INF/sitemesh.xml" tofile="${path}web-app/WEB-INF/sitemesh.xml"/>
-		<copy todir="${path}web-app/js">
-		    <fileset dir="${grails.home}/src/war/js"/>
-		</copy>
-		<copy todir="${path}web-app/css">
-		    <fileset dir="${grails.home}/src/war/css"/>
-		</copy>
-		<copy todir="${path}web-app/WEB-INF/tld">
-		    <fileset dir="${grails.home}/src/war/WEB-INF/tld/${servlet.version}"/>
-		    <fileset dir="${grails.home}/src/war/WEB-INF/tld" includes="spring.tld"/>
-		    <fileset dir="${grails.home}/src/war/WEB-INF/tld" includes="grails.tld"/>
-		</copy>
-		<copy todir="${path}spring">
-			<fileset dir="${grails.home}/src/war/WEB-INF/spring">
-				<include name="*.xml"/>
-			</fileset>
-		</copy>
-		<touch file="${path}grails-app/i18n/messages.properties"></touch>
-	</target>
 
 	<target name="clean">
 		<delete file="grails-app.war"/>
 		<delete dir="tmp" />
 	</target>
 
-	<target name="build" depends="init:grailsHome">
+	<target name="build" depends="init-props">
 		<path id="classpath">
 			<fileset dir="lib"/>
 			<fileset dir="${grails.home}/lib"/>
@@ -340,39 +341,39 @@ Targets:
         <property name="tmp.war.dir"  location="tmp/war"></property>
         <property name="project.base.dir"  location="."></property>
 
-        <script language="groovy"><![CDATA[
+        <groovy><![CDATA[
             import groovy.text.SimpleTemplateEngine
 
-            def controllersHome = grails.getProperty("controllers.home")
+            def controllersHome = properties."controllers.home"
             def controllers = []
             def flows = []
             new File("${controllersHome}").eachFileRecurse {
                 def match = it.name =~ "(\\w+)(Controller.groovy\$)"
                 if(match) {
                     def controllerName = match[0][1]
-                    controllerName = controllerName[0].toLowerCase() + controllerName[1..-1]
+                    controllerName = Eval.x(controllerName, properties.caps)
                     controllers << controllerName
                 }
                 match = it.name =~ "(\\w+)(PageFlow.groovy\$)"
                 if(match) {
                     def flowName = match[0][1]
-                    flowName = flowName[0].toLowerCase() + flowName[1..-1]
+                    flowName = Eval.x(flowName, properties.caps)
                     flows << flowName
                 }
             }
 
-            def devRun = ("true" == grails.getProperty("dev.run"))
+            def devRun = ("true" == properties."dev.run")
 
             def binding = [ "controllers" : controllers,
                             "flows" : flows,
-                            "basedir" : grails.getProperty("project.base.dir"),
-                            "destdir" : grails.getProperty("tmp.war.dir"),
+                            "basedir" : properties."project.base.dir",
+                            "destdir" : properties."tmp.war.dir",
                             "dev" : devRun     ]
             def engine = new SimpleTemplateEngine()
-            def template = engine.createTemplate( new File( grails.getProperty("web.xml.template") ).text ).make(binding)
+            def template = engine.createTemplate( new File( properties."web.xml.template" ).text ).make(binding)
 
-            new File( grails.getProperty("target.web.xml") ).write( template.toString() )
-        ]]></script>
+            new File( properties."target.web.xml" ).write( template.toString() )
+        ]]></groovy>
 
 
         <mkdir dir="tmp/war/WEB-INF/classes"/>
@@ -465,7 +466,7 @@ Targets:
 	    <property location="tmp/war" name="tmp.war.location" />
 		<basename property="project.dir" file="."/>
 
-		<script language="groovy">
+		<groovy>
 			import org.mortbay.jetty.*;
 			import org.mortbay.http.*;
 			try {
@@ -473,13 +474,13 @@ Targets:
 				def listener = new SocketListener();
 				listener.setPort(8080);
 				server.addListener(listener);
-				server.addWebApplication("/" + grails.getProperty("project.dir"),grails.getProperty("tmp.war.location"));
+				server.addWebApplication("/" + properties."project.dir", properties."tmp.war.location");
 				server.start();
 				}
             catch(Throwable t) {
                 t.printStackTrace();
 			}
-        </script>
+        </groovy>
     </target>
 
     <target name="wait-forever" >
@@ -495,7 +496,7 @@ Targets:
         <antcall target="wait-forever" />
     </target>
 
-    <target name="init-webtest" depends="init:grailsHome" >
+    <target name="init-webtest" depends="init-props" >
         <!--
             Download WebTest distro if needed.
             Users may need to use the <setproxy/> task to when behind a firewall!
@@ -514,11 +515,11 @@ Targets:
         <copy todir=".">
             <fileset dir="${grails.home}/src/grails/templates/" includes="webtest/"/>
         </copy>
-        <script language="groovy">
-            def projectName = new File('.').absolutePath.tokenize('./\\')[-1]
-            projectName = projectName[0].toUpperCase() + projectName[1..-1]
-            grails.setProperty('webtest.name', projectName)
-        </script>
+        <groovy>
+			def projectName = new File('.').absolutePath.tokenize('./\\')[-1]
+			properties."webtest.name" = Eval.x(projectName, properties.caps)
+		</groovy>
+
         <copy file="${grails.home}/src/grails/templates/artifacts/WebTest.groovy"
               tofile="webtest/tests/${webtest.name}Test.groovy" />
         <replace 	file="webtest/tests/${webtest.name}Test.groovy"
@@ -527,7 +528,7 @@ Targets:
 
     </target>
 
-    <target name="run-webtest" depends="init:grailsHome" description="Run the functional tests for a running app">
+    <target name="run-webtest" depends="init-props" description="Run the functional tests for a running app">
         <!-- <parallel>
             <daemons>
                 <antcall target="run-app:impl" />
@@ -545,4 +546,5 @@ Targets:
             </classpath>
         </java>
     </target>
+
 </project>
