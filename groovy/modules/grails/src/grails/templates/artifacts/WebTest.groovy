@@ -1,50 +1,41 @@
-// to be called by WebTest.groovy via
-// grails run-webtest
 
-class @webtest.name@Test extends grails.util.WebTest {
+class @webtest.name.caps@Test extends grails.util.WebTest {
 
     // Unlike unit tests, functional tests are often sequence dependent.
     // Specify that sequence here.
     void suite() {
-        testInitial@webtest.name@s()
-        testAdd@webtest.name@s()
+        test@webtest.name.caps@ListNewDelete()
         // add tests for more operations here
     }
 
-    /** Example of an intial test. It can rely on bootstrapped data. */
-    def testInitial@webtest.name@s(){
-        webtest('@webtest.name@: verify initial page'){
-            invoke(url:'@webtest.name@')
-            verifyTitle(text:'@webtest.name@ list')
-            selectForm(index: 0)
-            clickButton(label:'Details')
-            verifyTitle(text: '@webtest.name@ detail')
-            verifyXPath(
-                description:  "hidden index id must be 0",
-                xpath:"//input[@type='hidden'][@name='id'][@value='0']")
-            clickButton(label:'Save')
-            verifyTitle(text: '@webtest.name@ detail')
-            clickButton(label:'Close')
+    def test@webtest.name.caps@ListNewDelete() {
+        webtest('@webtest.name.caps@ basic operations: view list, create new entry, back to view, delete, view'){
+            invoke(url:'@webtest.name.lower@')
+            verifyText(text:'Home')
+
+            verifyListPage(0)
+
+            clickLink(label:'New @webtest.name.caps@')
+            verifyText(text:'Create @webtest.name.caps@')
+            clickButton(label:'Create')
+            verifyText(text:'Show @webtest.name.caps@', description:'Detail page')
+            clickElement(xpath:"//button[text()='Back']")
+
+            verifyListPage(1)
+
+            clickLink(href:'delete', description:'delete the first element (there is only one)')
+            verifyXPath(xpath:"//div[@class='message']", text:/@webtest.name.caps@.*deleted./, regex:true)
+
+            verifyListPage(0)
+
     }   }
 
-    /** Example of a test for an operation on the domain object XXX.*/
-    def testAdd@webtest.name@s() {
-        webtest('@webtest.name@: add new domain object, make sure it\'s there'){
-            invoke(url:'@webtest.name@')
-            verifyTitle(text:'@webtest.name@ list')
-                addXXX('argument1', 'argument2')                // tests can be factored into methods
-            verifyTitle(text:'@webtest.name@ list')
-            verifyText(text:'argument1.*argument2', regex:true)
-            clickButton(label:'End')
+    String ROW_COUNT_XPATH = "count(//td[@class='actionButtons']/..)"
+
+    def verifyListPage(int count) {
+        ant.group(description:"verify @webtest.name.caps@ list view with $count row(s)"){
+            verifyText(text:'@webtest.name.caps@ List')
+            verifyXPath(xpath:ROW_COUNT_XPATH, text:count, description:"$count row(s) of data expected")
     }   }
 
-    def addXXX(param1, param2){
-        ant.group(description:"adding a new XXX with param1 = '$param1' and param2 '$param2'"){
-            clickButton(label:'Add XXX ...')
-            verifyTitle(text:'XXX detail')
-            setInputField(name:'param1', value: param1)
-            setInputField(name:'param2', value: param2)
-            clickButton(label:'Save')
-        }
-    }
 }

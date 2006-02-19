@@ -503,6 +503,7 @@ Targets:
             Downloads are expanded below the downloads dir.
             Todo: expanded dirs need to deleted if download cache is updated
             Todo: fail gracefully if not online
+            Todo: fetch by release tag
         -->
         <mkdir  dir="${grails.home}/downloads/webtest" />
         <get    dest="${grails.home}/downloads/webtest.zip" src="http://webtest.canoo.com/webtest/build.zip"
@@ -515,18 +516,28 @@ Targets:
         <copy todir=".">
             <fileset dir="${grails.home}/src/grails/templates/" includes="webtest/"/>
         </copy>
+    </target>
+
+    <target name="generate-webtest" description="Create a webtest for a domain class" depends="init-props" >
+        <input addproperty="domain.class.name" message="Enter domain class name:" />
+
         <groovy>
-			def projectName = new File('.').absolutePath.tokenize('./\\')[-1]
-			properties."webtest.name" = Eval.x(projectName, properties.caps)
-		</groovy>
+            def domainName = properties."domain.class.name"
+            properties."webtest.name" = Eval.x(domainName, properties.caps)
+        </groovy>
 
         <copy file="${grails.home}/src/grails/templates/artifacts/WebTest.groovy"
-              tofile="webtest/tests/${webtest.name}Test.groovy" />
-        <replace 	file="webtest/tests/${webtest.name}Test.groovy"
-            token="@webtest.name@"
+            tofile="webtest/tests/${webtest.name}Test.groovy" />
+        <replace file="webtest/tests/${webtest.name}Test.groovy"
+            token="@webtest.name.caps@"
             value="${webtest.name}" />
+        <replace file="webtest/tests/${webtest.name}Test.groovy"
+            token="@webtest.name.lower@"
+            value="${domain.class.name}" />
+        <echo>Webtest created: webtest/tests/${webtest.name}Test.groovy</echo>
 
     </target>
+
 
     <target name="run-webtest" depends="init-props" description="Run the functional tests for a running app">
         <!-- <parallel>

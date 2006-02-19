@@ -19,9 +19,12 @@ appConsole('grails generate-all', BO_NAME)
 
 // unit testing, building etc. here?
 
-appConsole('grails create-webtest', BO_NAME)
+appConsole('grails create-webtest', '')
+
+appConsole('grails generate-webtest', BO_NAME)
 
 // start the jetty server as external process
+// or rely on tomcat hot deployment
 
 appConsole('grails run-webtest', BO_NAME)
 
