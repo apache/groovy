@@ -16,7 +16,6 @@
 package org.codehaus.groovy.grails.commons;
 
 import groovy.lang.GroovyClassLoader;
-import org.codehaus.groovy.grails.orm.hibernate.GrailsHibernateDomainClass;
 
 /**
  *  <p>Exposes all classes for a Grails application.
@@ -74,6 +73,13 @@ public interface GrailsApplication {
      * @return The domain classes in the domain
      */
     public GrailsDomainClass[] getGrailsDomainClasses();
+
+    /**
+     * Check whether the specified class is a grails domain class
+     * @param domainClass The class to check
+     * @return True if it is
+     */
+    public boolean isGrailsDomainClass(Class domainClass);
 
     /**
      * <p>Retrieves a domain class for the specified name</p>

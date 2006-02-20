@@ -33,7 +33,7 @@ class ValidationTagLib extends ApplicationTagLib {
         def checkList = []
         if(model) {
             checkList = model.findAll { k,v ->
-                GCU.isDomainClass(v.class)
+                grailsApplication.isGrailsDomainClass(v.class)
             }
         }
         if(attrs['bean']) {
@@ -45,7 +45,7 @@ class ValidationTagLib extends ApplicationTagLib {
 					def ra = request[it]
 					if(ra instanceof Errors)
 						checkList << ra
-					else if(GCU.isDomainClass(ra.class))
+					else if(grailsApplication.isGrailsDomainClass(ra.class))
 						checkList << ra
 				}
 			}
@@ -53,7 +53,7 @@ class ValidationTagLib extends ApplicationTagLib {
 
         for(i in checkList) {
             def errors = null
-            if(GCU.isDomainClass(i.class)) {
+            if(grailsApplication.isGrailsDomainClass(i.class)) {
                 if(i.hasErrors())
                     errors = i.errors
             }
@@ -81,7 +81,7 @@ class ValidationTagLib extends ApplicationTagLib {
         def errorList = []
         if(model) {
             errorList = model.findAll { k,v ->
-                GCU.isDomainClass(v.class)
+                grailsApplication.isGrailsDomainClass(v.class)
             }
         }
         if(attrs['bean']) {
@@ -92,14 +92,14 @@ class ValidationTagLib extends ApplicationTagLib {
                 def ra = request[it]
                 if(ra instanceof Errors)
                     errorList << ra
-                else if(GCU.isDomainClass(ra.class))
+                else if(grailsApplication.isGrailsDomainClass(ra.class))
                     errorList << ra
             }
         }
 
         for(i in errorList) {
             def errors = null
-            if(GCU.isDomainClass(i.class)) {
+            if(grailsApplication.isGrailsDomainClass(i.class)) {
                 if(i.hasErrors())
                     errors = i.errors
             }

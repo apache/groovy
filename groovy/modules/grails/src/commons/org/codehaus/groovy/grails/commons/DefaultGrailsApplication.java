@@ -20,10 +20,8 @@ import groovy.lang.GroovyResourceLoader;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.groovy.grails.exceptions.MoreThanOneActiveDataSourceException;
 import org.codehaus.groovy.grails.exceptions.GrailsConfigurationException;
-import org.codehaus.groovy.grails.scaffolding.GrailsScaffolder;
-import org.codehaus.groovy.grails.scaffolding.ScaffoldDomain;
+import org.codehaus.groovy.grails.exceptions.MoreThanOneActiveDataSourceException;
 import org.springframework.core.io.Resource;
 
 import java.io.IOException;
@@ -422,6 +420,16 @@ public class DefaultGrailsApplication implements GrailsApplication {
 
     public GrailsDomainClass[] getGrailsDomainClasses() {
         return this.domainClasses;
+    }
+
+    public boolean isGrailsDomainClass(Class domainClass) {
+        if(domainClass == null)
+            return false;
+
+        if(domainMap.containsKey(domainClass.getName())) {
+            return true;
+        }
+        return false;  
     }
 
     public GrailsDomainClass getGrailsDomainClass(String name) {
