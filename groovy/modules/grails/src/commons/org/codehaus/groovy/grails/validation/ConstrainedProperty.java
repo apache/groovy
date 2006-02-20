@@ -1162,7 +1162,7 @@ public class ConstrainedProperty   {
 	 * @return Returns the length.
 	 */
 	public IntRange getLength() {
-		if(!String.class.isInstance( propertyType ) || !propertyType.isArray()) {
+		if(!(String.class == propertyType) && !propertyType.isArray()) {
 			throw new MissingPropertyException("Length constraint only applies to a String or Array property",LENGTH_CONSTRAINT,owningClass);
 		}		
 		SizeConstraint c = (SizeConstraint)this.appliedConstraints.get( LENGTH_CONSTRAINT );
@@ -1176,7 +1176,7 @@ public class ConstrainedProperty   {
 	 * @param length The length to set.
 	 */
 	public void setLength(IntRange length) {
-		if(!String.class.isInstance( propertyType ) || !propertyType.isArray()) {
+		if(!(String.class == propertyType)  && !propertyType.isArray()) {
 			throw new MissingPropertyException("Length constraint can only be applied to a String or Array property",LENGTH_CONSTRAINT,owningClass);
 		}			
 		Constraint c = (Constraint)this.appliedConstraints.get( LENGTH_CONSTRAINT );
