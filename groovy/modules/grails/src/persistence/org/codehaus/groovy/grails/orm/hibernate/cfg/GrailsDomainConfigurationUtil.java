@@ -14,22 +14,18 @@
  */
 package org.codehaus.groovy.grails.orm.hibernate.cfg;
 
-import org.hibernate.SessionFactory;
-import org.hibernate.EntityMode;
-import org.hibernate.metadata.ClassMetadata;
-import org.codehaus.groovy.grails.metaclass.DomainClassMethods;
-import org.codehaus.groovy.grails.commons.GrailsApplication;
-import org.codehaus.groovy.grails.commons.GrailsControllerClass;
-import org.codehaus.groovy.grails.commons.GrailsDomainClass;
-import org.codehaus.groovy.grails.orm.hibernate.GrailsHibernateDomainClass;
-import org.codehaus.groovy.grails.scaffolding.GrailsScaffolder;
-import org.codehaus.groovy.grails.scaffolding.ScaffoldDomain;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.codehaus.groovy.grails.commons.GrailsApplication;
+import org.codehaus.groovy.grails.metaclass.DomainClassMethods;
+import org.codehaus.groovy.grails.orm.hibernate.GrailsHibernateDomainClass;
+import org.hibernate.EntityMode;
+import org.hibernate.SessionFactory;
+import org.hibernate.metadata.ClassMetadata;
 
+import java.beans.IntrospectionException;
 import java.util.Collection;
 import java.util.Iterator;
-import java.beans.IntrospectionException;
 
 /**
  * Utility methods used in configuring the Grails Hibernate integration
@@ -52,7 +48,7 @@ public class GrailsDomainConfigurationUtil {
             if(application.getGrailsDomainClass(persistentClass.getName()) == null) {
                     application.addDomainClass(new GrailsHibernateDomainClass(persistentClass, cmd));
             }
-            LOG.info("[GrailsDomainConfiguration] Registering dynamic methods on externally configured hibernate persistent class ["+persistentClass+"]");
+            LOG.info("[GrailsDomainConfiguration] Registering dynamic methods on class ["+persistentClass+"]");
             try {
                 new DomainClassMethods(application,persistentClass,sf,application.getClassLoader());
             } catch (IntrospectionException e) {
