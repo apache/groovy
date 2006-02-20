@@ -48,16 +48,16 @@ import java.util.Map;
  * @since Oct 27, 2005
  */
 public class RenderDynamicMethod extends AbstractDynamicControllerMethod {
-    private static final String METHOD_SIGNATURE = "render";
-    private static final String ARGUMENT_TEXT = "text";
-    private static final String ARGUMENT_CONTENT_TYPE = "contentType";
-    private static final String ARGUMENT_ENCODING = "encoding";
-    private static final String ARGUMENT_VIEW = "view";
-    private static final String ARGUMENT_MODEL = "model";
-    private static final String ARGUMENT_TEMPLATE = "template";
-    private static final String ARGUMENT_BEAN = "bean";
-    private static final String ARGUMENT_COLLECTION = "collection";
-    private static final String ARGUMENT_BUILDER = "builder";
+    public static final String METHOD_SIGNATURE = "render";
+    public static final String ARGUMENT_TEXT = "text";
+    public static final String ARGUMENT_CONTENT_TYPE = "contentType";
+    public static final String ARGUMENT_ENCODING = "encoding";
+    public static final String ARGUMENT_VIEW = "view";
+    public static final String ARGUMENT_MODEL = "model";
+    public static final String ARGUMENT_TEMPLATE = "template";
+    public static final String ARGUMENT_BEAN = "bean";
+    public static final String ARGUMENT_COLLECTION = "collection";
+    public static final String ARGUMENT_BUILDER = "builder";
     private static final String DEFAULT_ARGUMENT = "it";
     private static final String BUILDER_TYPE_RICO = "rico";
 
@@ -116,7 +116,7 @@ public class RenderDynamicMethod extends AbstractDynamicControllerMethod {
 
             if(arguments[arguments.length - 1] instanceof Closure) {
                 if(BUILDER_TYPE_RICO.equals(argMap.get(ARGUMENT_BUILDER))) {
-                    OpenRicoBuilder orb = null;
+                    OpenRicoBuilder orb;
                     try {
                         orb = new OpenRicoBuilder(response);
                         renderView = false;
