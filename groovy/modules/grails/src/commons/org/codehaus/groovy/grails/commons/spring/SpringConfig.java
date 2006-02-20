@@ -391,7 +391,7 @@ public class SpringConfig {
 		ClassLoader cl = this.application.getClassLoader();
 		URL hibernateConfig = cl.getResource("hibernate.cfg.xml");
 		if(hibernateConfig != null) {
-			localSessionFactoryBean.setProperty("configLocation", SpringConfigUtils.createLiteralValue("/WEB-INF/classes/hibernate.cfg.xml"));
+			localSessionFactoryBean.setProperty("configLocation", SpringConfigUtils.createLiteralValue("classpath:hibernate.cfg.xml"));
 		}
         localSessionFactoryBean.setProperty("hibernateProperties", hibernateProperties);
 		localSessionFactoryBean.setProperty("grailsApplication", SpringConfigUtils.createBeanReference("grailsApplication"));
