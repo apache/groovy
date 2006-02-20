@@ -55,10 +55,11 @@ import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
+ * Specific script engine able to reload modified scripts as well as dealing properly with dependent scripts.
+ *
  * @author sam
- * 
- * To change the template for this generated type comment go to Window -
- * Preferences - Java - Code Generation - Code and Comments
+ * @author Marc Palmer
+ * @author Guillaume Laforge
  */
 public class GroovyScriptEngine implements ResourceConnector {
 
@@ -100,6 +101,14 @@ public class GroovyScriptEngine implements ResourceConnector {
 		private Map dependencies = new HashMap();
 	}
 
+    /**
+     * Get a resource connection as a <code>URLConnection</code> to retrieve a script
+     * from the <code>ResourceConnector</code>
+     *
+     * @param resourceName name of the resource to be retrieved
+     * @return a URLConnection to the resource
+     * @throws ResourceException
+     */
     public URLConnection getResourceConnection(String resourceName) throws ResourceException {
         // Get the URLConnection
         URLConnection groovyScriptConn = null;
@@ -216,56 +225,56 @@ public class GroovyScriptEngine implements ResourceConnector {
     }
 
     /**
-     * Get the class of the script in question, so that you can instantiate Groovy objects with caching and reloading.
+     * Get the class of the scriptName in question, so that you can instantiate Groovy objects with caching and reloading.
      *
-     * @param script
-     * @return the loaded script as a compiled class
+     * @param scriptName
+     * @return the loaded scriptName as a compiled class
      * @throws ResourceException
      * @throws ScriptException
      */
-    public Class loadScriptByName(String script) throws ResourceException, ScriptException {
-        return loadScriptByName( script, getClass().getClassLoader());
+    public Class loadScriptByName(String scriptName) throws ResourceException, ScriptException {
+        return loadScriptByName( scriptName, getClass().getClassLoader());
     }
 
 
     /**
-     * Get the class of the script in question, so that you can instantiate Groovy objects with caching and reloading.
+     * Get the class of the scriptName in question, so that you can instantiate Groovy objects with caching and reloading.
      *
-     * @param script
-     * @return the loaded script as a compiled class
+     * @param scriptName
+     * @return the loaded scriptName as a compiled class
      * @throws ResourceException
      * @throws ScriptException
      */
-    public Class loadScriptByName(String script, ClassLoader parentClassLoader)
+    public Class loadScriptByName(String scriptName, ClassLoader parentClassLoader)
             throws ResourceException, ScriptException {
-        script = script.replace('.', File.separatorChar) + ".groovy";
-        ScriptCacheEntry entry = updateCacheEntry(script, parentClassLoader);
+        scriptName = scriptName.replace('.', File.separatorChar) + ".groovy";
+        ScriptCacheEntry entry = updateCacheEntry(scriptName, parentClassLoader);
         return entry.scriptClass;
     }
 
     /**
      * Locate the class and reload it or any of its dependencies
      *
-     * @param script
+     * @param scriptName
      * @param parentClassLoader
-     * @return the script cache entry
+     * @return the scriptName cache entry
      * @throws ResourceException
      * @throws ScriptException
      */
-    private ScriptCacheEntry updateCacheEntry(String script, final ClassLoader parentClassLoader)
+    private ScriptCacheEntry updateCacheEntry(String scriptName, final ClassLoader parentClassLoader)
             throws ResourceException, ScriptException
     {
         ScriptCacheEntry entry;
 
-        script = script.intern();
-        synchronized (script) {
+        scriptName = scriptName.intern();
+        synchronized (scriptName) {
 
-            URLConnection groovyScriptConn = rc.getResourceConnection(script);
+            URLConnection groovyScriptConn = rc.getResourceConnection(scriptName);
 
             // URL last modified
             long lastModified = groovyScriptConn.getLastModified();
-            // Check the cache for the script
-            entry = (ScriptCacheEntry) scriptCache.get(script);
+            // Check the cache for the scriptName
+            entry = (ScriptCacheEntry) scriptCache.get(scriptName);
             // If the entry isn't null check all the dependencies
 
             boolean dependencyOutOfDate = false;
@@ -297,7 +306,7 @@ public class GroovyScriptEngine implements ResourceConnector {
                 // Closure variable
                 final ScriptCacheEntry finalEntry = entry;
 
-                // Compile the script into an object
+                // Compile the scriptName into an object
                 GroovyClassLoader groovyLoader =
                         (GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
                             public Object run() {
@@ -326,38 +335,56 @@ public class GroovyScriptEngine implements ResourceConnector {
                         });
 
                 try {
-                    entry.scriptClass = groovyLoader.parseClass(groovyScriptConn.getInputStream(), script);
+                    entry.scriptClass = groovyLoader.parseClass(groovyScriptConn.getInputStream(), scriptName);
                 } catch (Exception e) {
-                    throw new ScriptException("Could not parse script: " + script, e);
+                    throw new ScriptException("Could not parse scriptName: " + scriptName, e);
                 }
                 entry.lastModified = lastModified;
 
-                scriptCache.put(script, entry);
+                scriptCache.put(scriptName, entry);
             }
         }
         return entry;
     }
 
-    public String run(String script, String argument) throws ResourceException, ScriptException {
+    /**
+     * Run a script identified by name.
+     *
+     * @param scriptName name of the script to run
+     * @param argument a single argument passed as a variable named <code>arg</code> in the binding
+     * @return a <code>toString()</code> representation of the result of the execution of the script
+     * @throws ResourceException
+     * @throws ScriptException
+     */
+    public String run(String scriptName, String argument) throws ResourceException, ScriptException {
 		Binding binding = new Binding();
 		binding.setVariable("arg", argument);
-		Object result = run(script, binding);
+		Object result = run(scriptName, binding);
 		return result == null ? "" : result.toString();
 	}
 
-	public Object run(String script, Binding binding) throws ResourceException, ScriptException {
+    /**
+     * Run a script identified by name.
+     *
+     * @param scriptName name of the script to run
+     * @param binding binding to pass to the script
+     * @return an object
+     * @throws ResourceException
+     * @throws ScriptException
+     */
+    public Object run(String scriptName, Binding binding) throws ResourceException, ScriptException {
 
 		ScriptCacheEntry entry;
 
-		script = script.intern();
-		synchronized (script) {
+		scriptName = scriptName.intern();
+		synchronized (scriptName) {
 
-			URLConnection groovyScriptConn = rc.getResourceConnection(script);
+			URLConnection groovyScriptConn = rc.getResourceConnection(scriptName);
 
 			// URL last modified
 			long lastModified = groovyScriptConn.getLastModified();
-			// Check the cache for the script
-			entry = (ScriptCacheEntry) scriptCache.get(script);
+			// Check the cache for the scriptName
+			entry = (ScriptCacheEntry) scriptCache.get(scriptName);
 			// If the entry isn't null check all the dependencies
 			boolean dependencyOutOfDate = false;
 			if (entry != null) {
@@ -387,7 +414,7 @@ public class GroovyScriptEngine implements ResourceConnector {
 				// Closure variable
 				final ScriptCacheEntry finalEntry = entry;
 
-				// Compile the script into an object
+				// Compile the scriptName into an object
 				GroovyClassLoader groovyLoader = 
 					(GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
 						public Object run() {
@@ -416,12 +443,12 @@ public class GroovyScriptEngine implements ResourceConnector {
 					});
 
 				try {
-					entry.scriptClass = groovyLoader.parseClass(groovyScriptConn.getInputStream(), script);
+					entry.scriptClass = groovyLoader.parseClass(groovyScriptConn.getInputStream(), scriptName);
 				} catch (Exception e) {
-					throw new ScriptException("Could not parse script: " + script, e);
+					throw new ScriptException("Could not parse script: " + scriptName, e);
 				}
 				entry.lastModified = lastModified;
-				scriptCache.put(script, entry);
+				scriptCache.put(scriptName, entry);
 			}
 		}
 		Script scriptObject = InvokerHelper.createScript(entry.scriptClass, binding);

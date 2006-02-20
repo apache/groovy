@@ -36,11 +36,18 @@ package groovy.util;
 import java.net.URLConnection;
 
 /**
+ * Base interface for customizing where resources can be found for the <code>GroovyScriptEngine</code>.
+ *
  * @author sam
- * 
- * To change the template for this generated type comment go to Window -
- * Preferences - Java - Code Generation - Code and Comments
  */
 public interface ResourceConnector {
-	public URLConnection getResourceConnection(String name) throws ResourceException;
+
+    /**
+     * Retrieve a URLConnection to a script referenced by name.
+     *
+     * @param name
+     * @return
+     * @throws ResourceException
+     */
+    public URLConnection getResourceConnection(String name) throws ResourceException;
 }
