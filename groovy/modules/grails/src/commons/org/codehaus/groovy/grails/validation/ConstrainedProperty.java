@@ -109,7 +109,7 @@ public class ConstrainedProperty   {
 		constraints.put( NOT_EQUAL_CONSTRAINT, NotEqualConstraint.class );
 	}
 	
-	protected static final ResourceBundle bundle = ResourceBundle.getBundle( "org.codehaus.groovy.grails.validation.DefaultErrorMessages" );
+	protected static final ResourceBundle bundle = ResourceBundle.getBundle( "defaultErrorMessages" );
 	protected static final Log LOG = LogFactory.getLog(ConstrainedProperty.class);
 	
 	private static final String DEFAULT_BLANK_MESSAGE = bundle.getString( "default.blank.message" );
