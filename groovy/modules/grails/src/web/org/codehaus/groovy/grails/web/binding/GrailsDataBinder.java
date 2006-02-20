@@ -25,6 +25,7 @@ import org.springframework.web.bind.ServletRequestDataBinder;
 import org.springframework.web.bind.ServletRequestParameterPropertyValues;
 import org.springframework.web.multipart.support.ByteArrayMultipartFileEditor;
 import org.springframework.web.multipart.support.StringMultipartFileEditor;
+import org.springframework.web.servlet.support.RequestContextUtils;
 
 import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
@@ -70,7 +71,7 @@ public class GrailsDataBinder extends ServletRequestDataBinder {
      */
     public static GrailsDataBinder createBinder(Object target, String objectName, HttpServletRequest request) {
         GrailsDataBinder binder = createBinder(target,objectName);
-        binder.registerCustomEditor( Date.class, new CustomDateEditor(DateFormat.getDateInstance( DateFormat.SHORT, request.getLocale() ),true) );
+        binder.registerCustomEditor( Date.class, new CustomDateEditor(DateFormat.getDateInstance( DateFormat.SHORT, RequestContextUtils.getLocale(request) ),true) );
         return binder;
     }
 
@@ -87,6 +88,7 @@ public class GrailsDataBinder extends ServletRequestDataBinder {
         binder.registerCustomEditor( String.class, new StringMultipartFileEditor());
         binder.registerCustomEditor( Currency.class, new CurrencyEditor());
         binder.registerCustomEditor( Locale.class, new LocaleEditor());
+        binder.registerCustomEditor( TimeZone.class, new TimeZoneEditor());
         return binder;
     }
 
