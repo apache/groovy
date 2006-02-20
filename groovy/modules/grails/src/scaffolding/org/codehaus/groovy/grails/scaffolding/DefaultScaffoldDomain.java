@@ -15,24 +15,14 @@
  */ 
 package org.codehaus.groovy.grails.scaffolding;
 
-import java.beans.PropertyDescriptor;
-import java.io.Serializable;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import ognl.DefaultTypeConverter;
 import ognl.Ognl;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.groovy.grails.scaffolding.exceptions.ScaffoldingException;
-import org.hibernate.Criteria;
-import org.hibernate.HibernateException;
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
-import org.hibernate.Transaction;
+import org.codehaus.groovy.grails.commons.GrailsClassUtils;
+import org.hibernate.*;
 import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.beans.BeanWrapper;
@@ -42,6 +32,14 @@ import org.springframework.orm.hibernate3.HibernateTemplate;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
+
+import java.beans.PropertyDescriptor;
+import java.io.Serializable;
+import java.lang.InstantiationException;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 /**
  * The default implementation of a Scaffolding application that uses Hibernate as the persistence mechanism
  * 
@@ -320,14 +318,7 @@ public class DefaultScaffoldDomain implements ScaffoldDomain {
 	}
 
 	public String getPluralName() {
-		String pluralName =  persistentClass.getName();
-		int dot = pluralName.lastIndexOf('.');
-		if(dot > -1) {
-			pluralName = pluralName.substring(dot, pluralName.length());						
-		}
-		pluralName = pluralName.substring(0,1).toLowerCase() + pluralName.substring(1);
-		pluralName = pluralName + LIST_SUFFIX;
-		return pluralName;
+		return GrailsClassUtils.getPropertyNameRepresentation(persistentClass) + LIST_SUFFIX;
 	}
 
 	public Class getPersistentClass() {
@@ -335,13 +326,7 @@ public class DefaultScaffoldDomain implements ScaffoldDomain {
 	}
 
 	public String getSingularName() {
-		String singularName =  persistentClass.getName();
-		int dot = singularName.lastIndexOf('.');
-		if(dot > -1) {
-			singularName = singularName.substring(dot, singularName.length());						
-		}
-		singularName = singularName.substring(0,1).toLowerCase() + singularName.substring(1);
-		return singularName;
+        return GrailsClassUtils.getPropertyNameRepresentation(persistentClass);
 	}
 
 
