@@ -226,7 +226,7 @@ public abstract class GroovyPage extends Script {
         else {
             tagLib = (GroovyObject)appContext.getBean(tagLibClass.getFullName());
             try {
-                new TagLibDynamicMethods(tagLib,grailsAttributes.getController(request),request,response);
+                new TagLibDynamicMethods(tagLib,grailsAttributes.getController(request));
             } catch (IntrospectionException e) {
                 throw new GrailsTagException("Error instantiating taglib ["+tagLibClass.getFullName()+"]: " + e.getMessage(),e);
             }
