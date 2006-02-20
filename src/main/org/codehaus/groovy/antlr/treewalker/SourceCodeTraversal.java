@@ -79,7 +79,7 @@ public class SourceCodeTraversal extends TraversalHelper {
             if (!(unvisitedNodes.contains(currentNode))) {
                 return;
             }
-
+            push(t);
             switch (t.getType()) {
                 case GroovyTokenTypes.QUESTION: // expr?foo:bar
                     accept_FirstChild_v_SecondChild_v_ThirdChild_v(t);
@@ -186,6 +186,7 @@ public class SourceCodeTraversal extends TraversalHelper {
                     accept_v_FirstChild_v(t);
                     break;
             }
+            pop();
         }
     }
 }

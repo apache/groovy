@@ -17,10 +17,8 @@
  **/
 package org.codehaus.groovy.antlr.treewalker;
 
-import java.util.List;
-import java.util.Iterator;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.*;
+
 import org.codehaus.groovy.antlr.GroovySourceAST;
 
 /**
@@ -40,6 +38,7 @@ import org.codehaus.groovy.antlr.GroovySourceAST;
 public class CompositeVisitor implements Visitor{
     List visitors;
     List backToFrontVisitors;
+    private Stack stack;
 
     /**
      * A composite of the supplied list of antlr AST visitors.
@@ -47,6 +46,7 @@ public class CompositeVisitor implements Visitor{
      */
     public CompositeVisitor(List visitors) {
         this.visitors = visitors;
+        this.stack = new Stack();
         backToFrontVisitors = new ArrayList();
         backToFrontVisitors.addAll(visitors);
         Collections.reverse(backToFrontVisitors);
@@ -1162,6 +1162,17 @@ public class CompositeVisitor implements Visitor{
     public void tearDown() {
         Iterator itr = backToFrontVisitors.iterator();
         while (itr.hasNext()) {((Visitor)itr.next()).tearDown();}
+    }
+
+    public void push(GroovySourceAST t) {
+        Iterator itr = visitors.iterator();
+        while (itr.hasNext()) {((Visitor)itr.next()).push(t);}
+    }
+    public GroovySourceAST pop() {
+        GroovySourceAST lastNodePopped = null;
+        Iterator itr = backToFrontVisitors.iterator();
+        while (itr.hasNext()) {lastNodePopped = (GroovySourceAST) ((Visitor)itr.next()).pop();}
+        return lastNodePopped;
     }
 
 }

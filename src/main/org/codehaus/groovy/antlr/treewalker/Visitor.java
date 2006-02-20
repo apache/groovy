@@ -252,4 +252,7 @@ public interface Visitor {
 
     void visitDefault(GroovySourceAST t,int visit);
     void tearDown();
+
+    void push(GroovySourceAST t);
+    GroovySourceAST pop();
 }

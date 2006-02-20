@@ -36,8 +36,10 @@ public class PreOrderTraversal extends TraversalHelper {
     }
 
     public void accept(GroovySourceAST currentNode) {
+        push(currentNode);
         openingVisit(currentNode);
         acceptChildren(currentNode);
         closingVisit(currentNode);
+        pop();
     }
 }

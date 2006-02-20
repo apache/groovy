@@ -18,6 +18,7 @@
 package org.codehaus.groovy.antlr.treewalker;
 
 import java.io.PrintStream;
+import java.util.Stack;
 
 import org.codehaus.groovy.antlr.GroovySourceAST;
 import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
@@ -37,6 +38,8 @@ public class SourcePrinter extends VisitorAdapter {
     private boolean newLines;
     protected PrintStream out;
     private String className;
+    private Stack stack;
+    private int stringConstructorCounter;
 
     /**
      * A visitor that prints groovy source code for each node visited.
@@ -59,10 +62,11 @@ public class SourcePrinter extends VisitorAdapter {
         lastLinePrinted = 0;
         this.out = out;
         this.newLines = newLines;
+        this.stack = new Stack();
     }
 
     public void visitAnnotation(GroovySourceAST t, int visit) {
-        print(t,visit,"@",null,null);
+        print(t,visit,"@",null," ");
     }
 
     public void visitAnnotations(GroovySourceAST t, int visit) {
@@ -270,7 +274,7 @@ public class SourcePrinter extends VisitorAdapter {
         print(t,visit,"try ",null,null);
     }
     public void visitLiteralVoid(GroovySourceAST t,int visit) {
-        print(t,visit,"void",null,null);
+        print(t,visit,"void",null," ");
     }
     public void visitLiteralWhile(GroovySourceAST t,int visit) {
         printUpdatingTabLevel(t,visit,"while (",null,") ");
@@ -372,11 +376,31 @@ public class SourcePrinter extends VisitorAdapter {
         print(t,visit,"*",null,null);
     }
     public void visitStringConstructor(GroovySourceAST t,int visit) {
-        print(t,visit,null," + ",null); // string concatenate, so ("abc$foo") becomes ("abc" + foo) for now (todo)
+        if (visit == OPENING_VISIT) {
+            stringConstructorCounter = 0;
+            print(t,visit,"\"");
+        }
+        if (visit == SUBSEQUENT_VISIT) {
+            // every other subsequent visit use an escaping $
+            if (stringConstructorCounter % 2 == 0) {
+               print(t,visit,"$");
+            }
+            stringConstructorCounter++;
+        }
+        if (visit == CLOSING_VISIT) {
+            print(t,visit,"\"");
+        }
     }
 
     public void visitStringLiteral(GroovySourceAST t,int visit) {
-        print(t,visit,"\"" + escape(t.getText()) + "\"",null,null);
+        if (visit == OPENING_VISIT) {
+            String theString = escape(t.getText());
+        if (getParentNode().getType() != GroovyTokenTypes.LABELED_ARG &&
+            getParentNode().getType() != GroovyTokenTypes.STRING_CONSTRUCTOR) {
+                theString = "\"" + theString + "\"";
+            }
+            print(t,visit,theString);
+        }
     }
 
     private String escape(String literal) {
@@ -386,13 +410,20 @@ public class SourcePrinter extends VisitorAdapter {
     }
 
     public void visitType(GroovySourceAST t,int visit) {
-        if (visit == OPENING_VISIT) {
-            if (t.getNumberOfChildren() == 0) {
-                print(t,visit,"def");
+        GroovySourceAST parent = getParentNode();
+        GroovySourceAST modifiers = parent.childOfType(GroovyTokenTypes.MODIFIERS);
+
+        // No need to print 'def' if we already have some modifiers
+        if (modifiers == null || modifiers.getNumberOfChildren() == 0) {
+
+            if (visit == OPENING_VISIT) {
+                if (t.getNumberOfChildren() == 0) {
+                    print(t,visit,"def");
+                }
             }
-        }
-        if (visit == CLOSING_VISIT) {
-            print(t,visit," ");
+            if (visit == CLOSING_VISIT) {
+                print(t,visit," ");
+            }
         }
     }
 
@@ -413,6 +444,7 @@ public class SourcePrinter extends VisitorAdapter {
             //out.print("</" + t.getType() + ">");
         }
     }
+
     protected void printUpdatingTabLevel(GroovySourceAST t,int visit,String opening, String subsequent, String closing) {
         if (visit == OPENING_VISIT && opening != null) {
             print(t,visit,opening);
@@ -470,4 +502,22 @@ public class SourcePrinter extends VisitorAdapter {
             lastLinePrinted = Math.max(currentLine,lastLinePrinted);
         }
     }
+
+    public void push(GroovySourceAST t) {
+        stack.push(t);
+    }
+    public GroovySourceAST pop() {
+        if (!stack.empty()) {
+            return (GroovySourceAST) stack.pop();
+        }
+        return null;
+    }
+
+    private GroovySourceAST getParentNode() {
+        Object currentNode = stack.pop();
+        Object parentNode = stack.peek();
+        stack.push(currentNode);
+        return (GroovySourceAST) parentNode;
+    }
+
 }

@@ -19,6 +19,8 @@ package org.codehaus.groovy.antlr.treewalker;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Stack;
+
 import org.codehaus.groovy.antlr.GroovySourceAST;
 import org.codehaus.groovy.antlr.AntlrASTProcessor;
 import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
@@ -46,6 +48,13 @@ public abstract class TraversalHelper implements AntlrASTProcessor {
     }
     protected void tearDown(GroovySourceAST ast) {
         v.tearDown();
+    }
+
+    protected void push(GroovySourceAST ast) {
+        v.push(ast);
+    }
+    protected GroovySourceAST pop() {
+        return v.pop();
     }
 
     protected void visitNode(GroovySourceAST ast, int n) {
