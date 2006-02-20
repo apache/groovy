@@ -32,7 +32,7 @@ Targets:
         <property name="grails.home" location="${env.GRAILS_HOME}"/>
         <groovy >
             // reusable code blocks, a pitty we cannot store Closures in the project...
-            properties.caps = 'x[0].toUpperCase() + x[1..-1]'
+            properties.caps = 'x[0].toLowerCase() + x[1..-1]'
             properties.norm = '''
                 x = x.replaceAll(' ','')
                 x = x[0].toUpperCase() + x[1..-1]
