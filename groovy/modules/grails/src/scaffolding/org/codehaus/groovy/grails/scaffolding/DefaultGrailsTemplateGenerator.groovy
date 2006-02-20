@@ -127,7 +127,7 @@ class ${className}Controller {
                 redirect(action:list)
         }
         else {
-            return [ ${propertyName} :  ]
+            return [ ${propertyName} : ${propertyName} ]
         }
     }
 
