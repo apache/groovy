@@ -15,8 +15,6 @@
  */ 
 package org.codehaus.groovy.grails.commons;
 
-import groovy.lang.GroovyObject;
-
 /**
  * <p>This interface represents any class in a Grails application.
  * 
@@ -25,28 +23,35 @@ import groovy.lang.GroovyObject;
  */
 public interface GrailsClass {
 
-	/**
-	 * <p>Creates a new instance of this class.
-	 * 
-	 * <p>This method can be used as factory method in the Spring application context.
-	 */
-	public Object newInstance();
-	
-	/**
-	 * <p>Returns the logical name of the class in the application without the trailing convention part if applicable
-	 * and without the package name.
-	 * 
-	 * @return the logical name
-	 */
-	public String getName();
-	
-	/**
-	 * <p>Returns the full name of the class in the application with the the trailing convention part and with
-	 * the package name.
-	 * 
-	 * @return the full name
-	 */
-	public String getFullName();
+    /**
+     * <p>Creates a new instance of this class.
+     *
+     * <p>This method can be used as factory method in the Spring application context.
+     */
+    public Object newInstance();
+
+    /**
+     * <p>Returns the logical name of the class in the application without the trailing convention part if applicable
+     * and without the package name.
+     *
+     * @return the logical name
+     */
+    public String getName();
+
+
+    /**
+     * <p>Returns the short name of the class without package prefix
+     *
+     * @return The short name
+     */
+    public String getShortName();
+    /**
+     * <p>Returns the full name of the class in the application with the the trailing convention part and with
+     * the package name.
+     *
+     * @return the full name
+     */
+    public String getFullName();
 
     /**
      * <p>Returns the name of the class as a property name
@@ -62,16 +67,16 @@ public interface GrailsClass {
     public String getNaturalName();
 
     /**
-	 * <p>Returns the package name of the class.
-	 * 
-	 * @return the package name
-	 */
-	public String getPackageName();
-	
-	/**
-	 * <p> Returns the actual clazz represented by the GrailsClass
-	 * 
-	 * @return the class
-	 */
-	public Class getClazz();
+     * <p>Returns the package name of the class.
+     *
+     * @return the package name
+     */
+    public String getPackageName();
+
+    /**
+     * <p> Returns the actual clazz represented by the GrailsClass
+     *
+     * @return the class
+     */
+    public Class getClazz();
 }

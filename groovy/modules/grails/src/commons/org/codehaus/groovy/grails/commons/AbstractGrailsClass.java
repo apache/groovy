@@ -15,7 +15,6 @@
  */ 
 package org.codehaus.groovy.grails.commons;
 
-import groovy.lang.GroovyObject;
 import org.apache.commons.lang.ClassUtils;
 import org.apache.commons.lang.StringUtils;
 import org.codehaus.groovy.grails.exceptions.NewInstanceCreationException;
@@ -40,6 +39,8 @@ public abstract class AbstractGrailsClass implements GrailsClass {
 	private String packageName = null;
 	private BeanWrapper reference = null;
     private String naturalName;
+    private String shortName;
+
 
 
     /**
@@ -59,8 +60,9 @@ public abstract class AbstractGrailsClass implements GrailsClass {
         this.naturalName = GrailsClassUtils.getNaturalName(clazz.getName());
         if (StringUtils.isBlank(trailingName)) {
             this.name = fullName;
+            this.shortName = getShortClassname(clazz);
         } else {
-            String shortName = getShortClassname(clazz);
+            this.shortName = getShortClassname(clazz);
             if(shortName.indexOf( trailingName ) > - 1) {
                 this.name = shortName.substring(0, shortName.length() - trailingName.length());
             }
@@ -70,7 +72,11 @@ public abstract class AbstractGrailsClass implements GrailsClass {
         }
     }
 
-	private void setClazz(Class clazz) {
+    public String getShortName() {
+        return this.shortName;
+    }
+
+    private void setClazz(Class clazz) {
 		if (clazz == null) {
 			throw new IllegalArgumentException("Clazz parameter should not be null");
 		}
