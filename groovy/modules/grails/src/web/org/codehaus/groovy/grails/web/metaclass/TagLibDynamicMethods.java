@@ -16,15 +16,13 @@
 package org.codehaus.groovy.grails.web.metaclass;
 
 import groovy.lang.GroovyObject;
-import groovy.lang.ProxyMetaClass;
 import groovy.lang.MissingMethodException;
+import groovy.lang.ProxyMetaClass;
+import org.codehaus.groovy.grails.commons.metaclass.AbstractDynamicMethodInvocation;
 import org.codehaus.groovy.grails.commons.metaclass.GenericDynamicProperty;
 import org.codehaus.groovy.grails.commons.metaclass.GroovyDynamicMethodsInterceptor;
-import org.codehaus.groovy.grails.commons.metaclass.AbstractDynamicMethodInvocation;
 import org.codehaus.groovy.grails.web.taglib.exceptions.GrailsTagException;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.beans.IntrospectionException;
 import java.io.Writer;
 
@@ -35,13 +33,10 @@ import java.io.Writer;
  * @since Jan 14, 20056
  */
 public class TagLibDynamicMethods extends GroovyDynamicMethodsInterceptor {
-    public static final String REQUEST_PROPERTY = "request";
-    public static final String RESPONSE_PROPERTY = "response";
     public static final String OUT_PROPERTY = "out";
-    public static final String GRAILS_ATTRIBUTES = "grailsAttributes";
     private static final String THROW_TAG_ERROR_METHOD = "throwTagError";
 
-    public TagLibDynamicMethods(GroovyObject taglib, GroovyObject controller, HttpServletRequest request, HttpServletResponse response) throws IntrospectionException {
+    public TagLibDynamicMethods(GroovyObject taglib, GroovyObject controller) throws IntrospectionException {
         super(taglib);
 
         ProxyMetaClass controllerMetaClass = (ProxyMetaClass)controller.getMetaClass();
@@ -58,6 +53,7 @@ public class TagLibDynamicMethods extends GroovyDynamicMethodsInterceptor {
         addDynamicProperty(controllerDynamicMethods.getDynamicProperty(ControllerDynamicMethods.SERVLET_CONTEXT) );
         addDynamicProperty(controllerDynamicMethods.getDynamicProperty(ControllerDynamicMethods.GRAILS_ATTRIBUTES) );
         addDynamicProperty(controllerDynamicMethods.getDynamicProperty(ControllerDynamicMethods.FLASH_SCOPE_PROPERTY) );
+        addDynamicProperty(controllerDynamicMethods.getDynamicProperty(ControllerDynamicMethods.GRAILS_APPLICATION));        
 
         addDynamicMethodInvocation(new AbstractDynamicMethodInvocation(THROW_TAG_ERROR_METHOD) {
             public Object invoke(Object target, Object[] arguments) {
