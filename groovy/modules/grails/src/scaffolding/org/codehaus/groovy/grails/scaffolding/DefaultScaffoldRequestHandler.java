@@ -141,12 +141,12 @@ public class DefaultScaffoldRequestHandler implements ScaffoldRequestHandler {
         dataBinder.bind(request);
 
         Map model = new HashMap();
+        model.put( domain.getSingularName(), domainObject);
 
         if( this.domain.save(domainObject,callback) ) {
             BeanWrapper domainBean = new BeanWrapperImpl(domainObject);
             Object identity = domainBean.getPropertyValue(domain.getIdentityPropertyName());
             model.put( PARAM_ID, identity );
-            model.put( domain.getSingularName(), domainObject);
             callback.setInvoked(true);
         }
         return model;

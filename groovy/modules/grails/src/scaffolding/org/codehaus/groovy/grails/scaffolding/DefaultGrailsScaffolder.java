@@ -17,20 +17,18 @@ package org.codehaus.groovy.grails.scaffolding;
 
 import groovy.lang.Closure;
 import groovy.lang.GroovyObject;
-
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.codehaus.groovy.grails.scaffolding.exceptions.ScaffoldingException;
 import org.codehaus.groovy.grails.web.metaclass.ChainDynamicMethod;
 import org.codehaus.groovy.grails.web.metaclass.ControllerDynamicMethods;
 import org.codehaus.groovy.grails.web.metaclass.RedirectDynamicMethod;
+import org.codehaus.groovy.grails.web.metaclass.RenderDynamicMethod;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
+import java.util.Map;
 /**
  * The default implementation of scaffolding for Grails domain class and controller
  * 
@@ -151,7 +149,6 @@ public class DefaultGrailsScaffolder implements GrailsScaffolder {
 				Closure listAction = (Closure)controller.getProperty(LIST_ACTION);
 				Map arguments = new HashMap();
 				arguments.put( RedirectDynamicMethod.ARGUMENT_ACTION, listAction );
-				arguments.put( RedirectDynamicMethod.ARGUMENT_ERRORS, callback.getErrors() != null ? callback.getErrors().getAllErrors() : new ArrayList() );
 				return controller.invokeMethod(RedirectDynamicMethod.METHOD_SIGNATURE,new Object[]{ arguments });
 			}
 		}
@@ -184,7 +181,7 @@ public class DefaultGrailsScaffolder implements GrailsScaffolder {
 				Closure listAction = (Closure)controller.getProperty(LIST_ACTION);
 				Map arguments = new HashMap();
 				arguments.put( RedirectDynamicMethod.ARGUMENT_ACTION, listAction );
-				arguments.put( RedirectDynamicMethod.ARGUMENT_ERRORS, callback.getErrors().getAllErrors() );
+				arguments.put( RedirectDynamicMethod.ARGUMENT_ERRORS, callback.getErrors() );
 				return controller.invokeMethod(RedirectDynamicMethod.METHOD_SIGNATURE,new Object[]{ arguments });
 			}
 		}
@@ -240,18 +237,15 @@ public class DefaultGrailsScaffolder implements GrailsScaffolder {
 			if(callback.isInvoked()) {
 				Closure showAction = (Closure)controller.getProperty(SHOW_ACTION);
 				Map arguments = new HashMap();
-				arguments.put( ChainDynamicMethod.ARGUMENT_ACTION, showAction );				
-				arguments.put( ChainDynamicMethod.ARGUMENT_MODEL, model );
-				arguments.put( ChainDynamicMethod.ARGUMENT_PARAMS, model );
-				return controller.invokeMethod(ChainDynamicMethod.METHOD_SIGNATURE,new Object[]{ arguments });				
+				arguments.put( RedirectDynamicMethod.ARGUMENT_ACTION, showAction );
+                arguments.put( RedirectDynamicMethod.ARGUMENT_ID, model.get(ChainDynamicMethod.ARGUMENT_ID) );
+				return controller.invokeMethod(RedirectDynamicMethod.METHOD_SIGNATURE,new Object[]{ arguments });
 			}
 			else {
-				Closure createAction = (Closure)controller.getProperty(CREATE_ACTION);
 				Map arguments = new HashMap();
-				arguments.put( RedirectDynamicMethod.ARGUMENT_ACTION, createAction );
-				arguments.put( RedirectDynamicMethod.ARGUMENT_ERRORS, 
-								callback.getErrors() != null ? callback.getErrors().getAllErrors() : new ArrayList() );
-				return controller.invokeMethod(RedirectDynamicMethod.METHOD_SIGNATURE,new Object[]{ arguments });				
+				arguments.put( RenderDynamicMethod.ARGUMENT_VIEW, CREATE_ACTION );
+				arguments.put( RenderDynamicMethod.ARGUMENT_MODEL,model );
+				return controller.invokeMethod(RenderDynamicMethod.METHOD_SIGNATURE,new Object[]{ arguments });
 			}
 			
 		}
@@ -285,12 +279,10 @@ public class DefaultGrailsScaffolder implements GrailsScaffolder {
 				return controller.invokeMethod(ChainDynamicMethod.METHOD_SIGNATURE,new Object[]{ arguments });				
 			}
 			else {
-				Closure editAction = (Closure)controller.getProperty(EDIT_ACTION);
 				Map arguments = new HashMap();
-				arguments.put( RedirectDynamicMethod.ARGUMENT_ACTION, editAction );
-				arguments.put( RedirectDynamicMethod.ARGUMENT_ERRORS, 
-								callback.getErrors() != null ? callback.getErrors().getAllErrors() : new ArrayList() );
-				return controller.invokeMethod(RedirectDynamicMethod.METHOD_SIGNATURE,new Object[]{ arguments });				
+				arguments.put( RenderDynamicMethod.ARGUMENT_VIEW, EDIT_ACTION );
+				arguments.put( RenderDynamicMethod.ARGUMENT_MODEL,model );
+				return controller.invokeMethod(RenderDynamicMethod.METHOD_SIGNATURE,new Object[]{ arguments });
 			}
 			
 		}
