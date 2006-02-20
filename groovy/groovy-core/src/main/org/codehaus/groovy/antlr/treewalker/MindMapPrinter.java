@@ -18,6 +18,7 @@
 package org.codehaus.groovy.antlr.treewalker;
 
 import java.io.PrintStream;
+
 import org.codehaus.groovy.antlr.GroovySourceAST;
 import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
 
@@ -356,5 +357,4 @@ public class MindMapPrinter extends VisitorAdapter {
         name = name.trim();
         return name;
     }
-
 }

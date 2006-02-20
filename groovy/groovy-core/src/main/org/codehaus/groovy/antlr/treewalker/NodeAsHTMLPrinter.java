@@ -18,6 +18,8 @@
 package org.codehaus.groovy.antlr.treewalker;
 
 import java.io.PrintStream;
+import java.util.Stack;
+
 import org.codehaus.groovy.antlr.GroovySourceAST;
 import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
 
@@ -31,6 +33,7 @@ import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
 public class NodeAsHTMLPrinter extends VisitorAdapter {
     private String[] tokenNames;
     private PrintStream out;
+    private Stack stack;
 
     /**
      * A visitor that prints a html tags, for each node, to the supplied PrintStream.
@@ -40,6 +43,7 @@ public class NodeAsHTMLPrinter extends VisitorAdapter {
     public NodeAsHTMLPrinter(PrintStream out,String[] tokenNames) {
         this.tokenNames = tokenNames;
         this.out = out;
+        this.stack = new Stack();
     }
 
     public void setUp() {
@@ -296,5 +300,15 @@ public class NodeAsHTMLPrinter extends VisitorAdapter {
                 break;
         }
         return colour;
+    }
+
+    public void push(GroovySourceAST t) {
+        stack.push(t);
+    }
+    public GroovySourceAST pop() {
+        if (!stack.empty()) {
+            return (GroovySourceAST) stack.pop();
+        }
+        return null;
     }
 }

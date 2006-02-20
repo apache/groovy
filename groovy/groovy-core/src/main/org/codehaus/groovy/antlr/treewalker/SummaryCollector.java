@@ -52,6 +52,8 @@ import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
 import org.codehaus.groovy.syntax.ClassSource;
 import org.codehaus.groovy.syntax.SourceSummary;
 
+import java.util.Stack;
+
 /**
  * A visitor for the antlr ast that creates a summary of the parsed source unit
  *
@@ -59,6 +61,7 @@ import org.codehaus.groovy.syntax.SourceSummary;
  */
 public class SummaryCollector extends VisitorAdapter {
     private SourceSummary sourceSummary;
+    private Stack stack;
 
     public SourceSummary getSourceSummary() {
         return sourceSummary;
@@ -66,6 +69,7 @@ public class SummaryCollector extends VisitorAdapter {
 
     public SummaryCollector() {
         sourceSummary = new AntlrSourceSummary();
+        stack = new Stack();
     }
 
     public void setUp() {
@@ -101,6 +105,16 @@ public class SummaryCollector extends VisitorAdapter {
     }
 
     public void tearDown() {
+    }
+
+    public void push(GroovySourceAST t) {
+        stack.push(t);
+    }
+    public GroovySourceAST pop() {
+        if (!stack.empty()) {
+            return (GroovySourceAST) stack.pop();
+        }
+        return null;
     }
 
 }

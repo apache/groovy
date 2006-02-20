@@ -40,7 +40,7 @@ import antlr.collections.AST;
 public class SourcePrinterTest extends GroovyTestCase {
 
 
-    public void testAnnotations_FAILS() throws Exception{ if (notYetImplemented()) return;
+    public void testAnnotations() throws Exception{
         assertEquals("@Property foo", pretty("@Property foo"));
     }
 
@@ -72,8 +72,8 @@ public class SourcePrinterTest extends GroovyTestCase {
         assertEquals("a == b", pretty("a==b"));
     }
 
-    public void testExpr_FAILS() throws Exception{ if (notYetImplemented()) return;
-        assertEquals("foo(bar) mooky(bar)", pretty("foo(bar) mooky(bar)"));
+    public void testExpr_FAILS() throws Exception { if (notYetImplemented()) return;
+        assertEquals("foo(bar);mooky(bar)", pretty("foo(bar);mooky(bar)"));
     }
 
     public void testExtendsClause() throws Exception {
@@ -102,8 +102,8 @@ public class SourcePrinterTest extends GroovyTestCase {
         assertEquals("foo.bar()[fred.wilma()]", pretty("foo.bar()[fred.wilma()]"));
     }
 
-    public void testLabeledArg_FAILS() throws Exception{ if (notYetImplemented()) return;
-        assertEquals("myMethod(argOne:123,argTwo:123)", pretty("myMethod(argOne:123,argTwo:123)"));
+    public void testLabeledArg() throws Exception {
+        assertEquals("myMethod(argOne:123, argTwo:123)", pretty("myMethod(argOne:123,argTwo:123)"));
     }
     public void testLand() throws Exception {
         assertEquals("true && false", pretty("true && false"));
@@ -156,15 +156,15 @@ public class SourcePrinterTest extends GroovyTestCase {
         assertEquals("def foo = null", pretty("def foo=null"));
     }
 
-    public void testLiteralPrivate_FAILS() throws Exception{ if (notYetImplemented()) return;
+    public void testLiteralPrivate() throws Exception{
         assertEquals("private bar", pretty("private bar"));
     }
 
-    public void testLiteralProtected_FAILS() throws Exception{ if (notYetImplemented()) return;
+    public void testLiteralProtected() throws Exception{
         assertEquals("protected mooky", pretty("protected mooky"));
     }
 
-    public void testLiteralPublic_FAILS() throws Exception{ if (notYetImplemented()) return;
+    public void testLiteralPublic() throws Exception{
         assertEquals("public foo", pretty("public foo"));
     }
 
@@ -190,7 +190,7 @@ public class SourcePrinterTest extends GroovyTestCase {
         assertEquals("try {} catch (Exception e) {}", pretty("try {} catch (Exception e) {}"));
     }
 
-    public void testLiteralVoid() throws Exception {
+    public void testLiteralVoid_FAILS() throws Exception { if (notYetImplemented()) return;
         assertEquals("void foo() {}", pretty("void foo(){}"));
     }
 
@@ -205,9 +205,9 @@ public class SourcePrinterTest extends GroovyTestCase {
     public void testLt() throws Exception {
         assertEquals("if (3.4f < 12f) {}", pretty("if (3.4f < 12f) {}"));
     }
-    public void testMapConstructor_FAILS() throws Exception{ if (notYetImplemented()) return;
+    public void testMapConstructor() throws Exception{
         assertEquals("Map foo = [:]", pretty("Map foo = [:]"));
-        assertEquals("[a:1,b:2]", pretty("[a:1,b:2]"));
+        assertEquals("[a:1, b:2]", pretty("[a:1,b:2]"));
     }
 
     public void testMemberPointer() throws Exception {
@@ -278,7 +278,7 @@ public class SourcePrinterTest extends GroovyTestCase {
         assertEquals("a*b", pretty("a*b"));
     }
 
-    public void testStringConstructor_FAILS() throws Exception{ if (notYetImplemented()) return;
+    public void testStringConstructor() throws Exception{
         assertEquals("\"foo$bar\"", pretty("\"foo$bar\""));
     }
 
