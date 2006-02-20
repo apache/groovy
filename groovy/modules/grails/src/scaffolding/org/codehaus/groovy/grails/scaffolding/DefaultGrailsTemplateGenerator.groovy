@@ -86,7 +86,7 @@ class DefaultGrailsTemplateGenerator implements GrailsTemplateGenerator  {
             throw new IllegalArgumentException("Argument [destdir] not specified")
 
         if(domainClass) {
-            def destFile = new File("${destdir}/grails-app/controllers/${domainClass.name}Controller.groovy")
+            def destFile = new File("${destdir}/grails-app/controllers/${domainClass.shortName}Controller.groovy")
             if(destFile.exists()) {
                 println "Controller ${destFile.name} already exists skipping"
                 return
@@ -167,7 +167,7 @@ class ${className}Controller {
 
 }'''
 
-            def binding = [ className: domainClass.name, propertyName:domainClass.propertyName ]
+            def binding = [ className: domainClass.shortName, propertyName:domainClass.propertyName ]
             def t = engine.createTemplate(templateText)
 
             destFile.withWriter { w ->
@@ -344,7 +344,7 @@ class ${className}Controller {
             '''
 
             def t = engine.createTemplate(templateText)
-            def binding = [ domainClass: domainClass, className:domainClass.name,propertyName:domainClass.propertyName ]
+            def binding = [ domainClass: domainClass, className:domainClass.shortName,propertyName:domainClass.propertyName ]
 
             listFile.withWriter { w ->
                 t.make(binding).writeTo(w)
@@ -396,7 +396,7 @@ class ${className}Controller {
             '''
 
             def t = engine.createTemplate(templateText)
-            def binding = [ domainClass: domainClass, className:domainClass.name,propertyName:domainClass.propertyName ]
+            def binding = [ domainClass: domainClass, className:domainClass.shortName,propertyName:domainClass.propertyName ]
 
             showFile.withWriter { w ->
                 t.make(binding).writeTo(w)
@@ -458,7 +458,7 @@ class ${className}Controller {
 
             def t = engine.createTemplate(templateText)
             def binding = [ domainClass: domainClass,
-                            className:domainClass.name,
+                            className:domainClass.shortName,
                             propertyName:domainClass.propertyName,
                             renderEditor:renderEditor ]
 
@@ -517,7 +517,7 @@ class ${className}Controller {
 
             def t = engine.createTemplate(templateText)
             def binding = [ domainClass: domainClass,
-                            className:domainClass.name,
+                            className:domainClass.shortName,
                             propertyName:domainClass.propertyName,
                             renderEditor:renderEditor ]
 
