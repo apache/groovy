@@ -32,8 +32,9 @@ Targets:
         <property name="grails.home" location="${env.GRAILS_HOME}"/>
         <groovy >
             // reusable code blocks, a pitty we cannot store Closures in the project...
-            properties.caps = 'x[0].toLowerCase() + x[1..-1]'
-            properties.norm = '''
+            properties.lower = 'x[0].toLowerCase() + x[1..-1]'
+            properties.caps  = 'x[0].toUpperCase() + x[1..-1]'
+            properties.normCaps = '''
                 x = x.replaceAll(' ','')
                 x = x[0].toUpperCase() + x[1..-1]
                 if (x.endsWith(y)) x = x[0..(x.size()-y.size()-1)]
@@ -166,7 +167,7 @@ Targets:
 
 		<groovy>
 			def projName = properties."project.name"
-			properties."project.class.name" =  Eval.x(projName, properties.caps)
+			properties."project.class.name" =  Eval.x(projName, properties.lower)
 		</groovy>
 
 			<copy 	file="${grails.home}/src/grails/templates/artifacts/DataSource.groovy"
@@ -181,7 +182,7 @@ Targets:
 
 		<groovy>
 			def ctrlName = properties."controller.name"
-			properties."controller.class.name" = Eval.xy(ctrlName,'Controller', properties.norm)
+			properties."controller.class.name" = Eval.xy(ctrlName,'Controller', properties.normCaps)
 		</groovy>
 
 		<copy 	file="${grails.home}/src/grails/templates/artifacts/Controller.groovy"
@@ -202,7 +203,7 @@ Targets:
 
         <groovy>
 			def serviceName = properties."service.name"
-			properties."service.class.name" = Eval.xy(serviceName,'Service', properties.norm)
+			properties."service.class.name" = Eval.xy(serviceName,'Service', properties.normCaps)
 		</groovy>
 
         <copy 	file="${grails.home}/src/grails/templates/artifacts/Service.groovy"
@@ -250,7 +251,7 @@ Targets:
     <target name="internal-create-test-suite">
         <groovy>
 			def suiteName = properties."test.suite.name"
-			properties."test.suite.name" = Eval.xy(suiteName,'Tests', properties.norm)
+			properties."test.suite.name" = Eval.xy(suiteName,'Tests', properties.normCaps)
 		</groovy>
 
         <copy 	file="${grails.home}/src/grails/templates/artifacts/Tests.groovy"
@@ -557,5 +558,6 @@ Targets:
             </classpath>
         </java>
     </target>
+
 
 </project>
