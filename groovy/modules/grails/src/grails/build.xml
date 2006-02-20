@@ -352,13 +352,13 @@ Targets:
                 def match = it.name =~ "(\\w+)(Controller.groovy\$)"
                 if(match) {
                     def controllerName = match[0][1]
-                    controllerName = Eval.x(controllerName, properties.caps)
+                    controllerName = Eval.x(controllerName, properties.lower)
                     controllers << controllerName
                 }
                 match = it.name =~ "(\\w+)(PageFlow.groovy\$)"
                 if(match) {
                     def flowName = match[0][1]
-                    flowName = Eval.x(flowName, properties.caps)
+                    flowName = Eval.x(flowName, properties.lower)
                     flows << flowName
                 }
             }
