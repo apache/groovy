@@ -67,13 +67,13 @@ public class GroovyScriptEngine implements ResourceConnector {
 	 * Simple testing harness for the GSE. Enter script roots as arguments and
 	 * then input script names to run them.
 	 * 
-	 * @param args
+	 * @param urls
 	 * @throws Exception
 	 */
-	public static void main(String[] args) throws Exception {
-		URL[] roots = new URL[args.length];
+	public static void main(String[] urls) throws Exception {
+		URL[] roots = new URL[urls.length];
 		for (int i = 0; i < roots.length; i++) {
-			roots[i] = new File(args[i]).toURL();
+			roots[i] = new File(urls[i]).toURL();
 		}
 		GroovyScriptEngine gse = new GroovyScriptEngine(roots);
 		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
@@ -170,27 +170,27 @@ public class GroovyScriptEngine implements ResourceConnector {
         this.parentClassLoader = parentClassLoader;
     }
 
-    public GroovyScriptEngine(String[] args) throws IOException {
-		roots = new URL[args.length];
+    public GroovyScriptEngine(String[] urls) throws IOException {
+		roots = new URL[urls.length];
 		for (int i = 0; i < roots.length; i++) {
-			roots[i] = new File(args[i]).toURL();
+			roots[i] = new File(urls[i]).toURL();
 		}
 		this.rc = this;
 	}
 
-    public GroovyScriptEngine(String[] args, ClassLoader parentClassLoader) throws IOException {
-        this(args);
+    public GroovyScriptEngine(String[] urls, ClassLoader parentClassLoader) throws IOException {
+        this(urls);
         this.parentClassLoader = parentClassLoader;
     }
 
-    public GroovyScriptEngine(String arg) throws IOException {
+    public GroovyScriptEngine(String url) throws IOException {
 		roots = new URL[1];
-		roots[0] = new File(arg).toURL();
+		roots[0] = new File(url).toURL();
 		this.rc = this;
 	}
 
-    public GroovyScriptEngine(String arg, ClassLoader parentClassLoader) throws IOException {
-        this(arg);
+    public GroovyScriptEngine(String url, ClassLoader parentClassLoader) throws IOException {
+        this(url);
         this.parentClassLoader = parentClassLoader;
     }
 
