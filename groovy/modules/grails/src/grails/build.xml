@@ -464,23 +464,29 @@ Targets:
 	</target>
 
     <target name="run-app:impl">
-	    <property location="tmp/war" name="tmp.war.location" />
 		<basename property="project.dir" file="."/>
 
 		<groovy>
-			import org.mortbay.jetty.*;
-			import org.mortbay.http.*;
-			try {
-				def server = new Server();
-				def listener = new SocketListener();
-				listener.setPort(8080);
-				server.addListener(listener);
-				server.addWebApplication("/" + properties."project.dir", properties."tmp.war.location");
-				server.start();
-				}
-            catch(Throwable t) {
-                t.printStackTrace();
-			}
+			import org.mortbay.jetty.*
+			import org.mortbay.http.*
+
+            System.setProperty('org.mortbay.xml.XmlParser.NotValidating', 'true')
+            def server = new Server()
+            try {
+				def listener = new SocketListener()
+				listener.setPort(8080)
+				server.addListener(listener)
+				server.addWebApplication("/" + properties."project.dir", 'tmp/war')
+				server.start()
+                if (properties.'runTests') {
+                    def gse = new GroovyScriptEngine('webtest/tests', getClass().classLoader)
+                    gse.run('TestSuite.groovy', binding)
+                }
+            } catch(Throwable t) {
+                t.printStackTrace()
+			} finally {
+                if (properties.'runTests') server.stop()
+            }
         </groovy>
     </target>
 
@@ -539,24 +545,10 @@ Targets:
 
     </target>
 
-
     <target name="run-webtest" depends="init-props" description="Run the functional tests for a running app">
-        <!-- <parallel>
-            <daemons>
-                <antcall target="run-app:impl" />
-            </daemons>
-        </parallel>
-        <echoproperties /> -->
-        <java classname="groovy.ui.GroovyMain" >
-            <arg line="webtest/tests/TestSuite"/>
-            <classpath>
-                <pathelement location="webtest/tests"/>
-                <fileset dir="${grails.home}/lib" includes="*.jar"/>
-                <fileset dir="${grails.home}/dist" includes="*.jar"/>
-                <pathelement location="${grails.home}/downloads/webtest/lib"/>
-                <fileset dir="${grails.home}/downloads/webtest/lib" includes="**/*.jar"/>
-            </classpath>
-        </java>
+        <antcall target="run-app:impl">
+            <param name="runTests" value="true"/>
+        </antcall>
     </target>
 
 
