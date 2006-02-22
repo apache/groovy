@@ -37,7 +37,8 @@ import java.util.Map;
  */
 public class DefaultGrailsScaffolder implements GrailsScaffolder {
 
-	private static final String LIST_ACTION = "list";
+    private static final String INDEX_ACTION = "index";
+    private static final String LIST_ACTION = "list";
 	private static final String SHOW_ACTION = "show";
 	private static final String EDIT_ACTION = "edit";		
 	private static final String DELETE_ACTION = "delete";
@@ -104,8 +105,27 @@ public class DefaultGrailsScaffolder implements GrailsScaffolder {
 		}
 		
 	}
-	
+
 	/**
+	 * A closure that handles a call to a scaffolded list action
+	 */
+	class IndexAction extends AbstractAction {
+		public IndexAction(Object owner) {
+			super(owner);
+		}
+
+		/* (non-Javadoc)
+		 * @see groovy.lang.Closure#call(java.lang.Object[])
+		 */
+		public Object call(Object[] args) {
+            Map arguments = new HashMap();
+            arguments.put( RedirectDynamicMethod.ARGUMENT_ACTION, LIST_ACTION );
+            return controller.invokeMethod(RedirectDynamicMethod.METHOD_SIGNATURE,new Object[]{ arguments });
+		}
+
+	}
+
+    /**
 	 * A closure that handles a call to a scaffolded list action    
 	 */
 	class CreateAction extends AbstractAction {
@@ -146,9 +166,8 @@ public class DefaultGrailsScaffolder implements GrailsScaffolder {
 				return scaffoldResponseHandler.handleResponse(request,response,SHOW_ACTION,model);
 			}
 			else {
-				Closure listAction = (Closure)controller.getProperty(LIST_ACTION);
 				Map arguments = new HashMap();
-				arguments.put( RedirectDynamicMethod.ARGUMENT_ACTION, listAction );
+				arguments.put( RedirectDynamicMethod.ARGUMENT_ACTION, LIST_ACTION );
 				return controller.invokeMethod(RedirectDynamicMethod.METHOD_SIGNATURE,new Object[]{ arguments });
 			}
 		}
@@ -294,7 +313,10 @@ public class DefaultGrailsScaffolder implements GrailsScaffolder {
 	public static String[] ACTION_NAMES;
 	
 	static {
-		actions.put( LIST_ACTION, ListAction.class.getConstructors()[0] );
+		actions.put( INDEX_ACTION, IndexAction.class.getConstructors()[0] );
+		actionClassToNameMap.put(IndexAction.class, INDEX_ACTION);
+
+        actions.put( LIST_ACTION, ListAction.class.getConstructors()[0] );
 		actionClassToNameMap.put(ListAction.class, LIST_ACTION);
 		
 		actions.put( SHOW_ACTION, ShowAction.class.getConstructors()[0] );
