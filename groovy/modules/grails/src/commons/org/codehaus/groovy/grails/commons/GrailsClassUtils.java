@@ -328,7 +328,21 @@ public class GrailsClassUtils {
      */
     public static String getPropertyNameRepresentation(Class targetClass) {
         String shortName = getShortName(targetClass);
-        return shortName.substring(0,1).toLowerCase() + shortName.substring(1);
+        return getPropertyNameRepresentation(shortName);
+    }
+
+    /**
+     * Returns the property name representation of the given name
+     *
+     * @param name The name to convert
+     * @return The property name representation
+     */
+    public static String getPropertyNameRepresentation(String name) {
+        String propertyName = name.substring(0,1).toLowerCase() + name.substring(1);
+        if(propertyName.contains(" ")) {
+            propertyName = propertyName.replaceAll("\\s", "");
+        }
+        return propertyName;
     }
 
     /**
@@ -382,5 +396,6 @@ public class GrailsClassUtils {
         }
         return buf.toString();
     }
+
 
 }
