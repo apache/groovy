@@ -1,0 +1,4 @@
+* Handle properly the namespaces
+
+* Proper handle of server side
+   - ? through closure ?
