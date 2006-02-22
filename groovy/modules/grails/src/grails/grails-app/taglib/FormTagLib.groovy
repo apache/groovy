@@ -37,6 +37,10 @@ class FormTagLib extends ApplicationTagLib {
         createLink(attrs)
 
         out << '\" '
+        // default to post
+        if(!attrs['method']) {
+            out << 'method="post" '
+        }
         // process remaining attributes
         attrs.each { k,v ->
 
