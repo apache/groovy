@@ -27,6 +27,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.commons.GrailsControllerClass;
+import org.codehaus.groovy.grails.commons.GrailsClassUtils;
 import org.codehaus.groovy.grails.commons.metaclass.GenericDynamicProperty;
 import org.codehaus.groovy.grails.scaffolding.GrailsScaffolder;
 import org.codehaus.groovy.grails.web.metaclass.ChainDynamicMethod;
@@ -66,6 +67,8 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
     private GrailsApplicationAttributes grailsAttributes;
     private Pattern uriPattern = Pattern.compile("/(\\w+)/?(\\w*)/?(\\w*)/?(.*)");
     private static final Log LOG = LogFactory.getLog(SimpleGrailsControllerHelper.class);
+    private static final String DISPATCH_ACTION_PARAMETER = "_action";
+    private static final String ID_PARAMETER = "id";
 
     public SimpleGrailsControllerHelper(GrailsApplication application, ApplicationContext context, ServletContext servletContext) {
         super();
@@ -151,10 +154,14 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
             uri = uri.substring(0,uri.length() - 1);
 
         String id = null;
+        String controllerName = null;
+        String actionName = null;
         Map extraParams = Collections.EMPTY_MAP;
         Matcher m = uriPattern.matcher(uri);
         if(m.find()) {
-            uri = '/' + m.group(1) + '/' + m.group(2);
+            controllerName = m.group(1);
+            actionName =  m.group(2);
+            uri = '/' + controllerName + '/' + actionName;
             id = m.group(3);
             String extraParamsString = m.group(4);
             if(extraParamsString != null && extraParamsString.indexOf('/') > - 1) {
@@ -171,12 +178,26 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
 
             }
         }
-
+        // if the action name is blank check its included as dispatch parameter
+        if(StringUtils.isBlank(actionName) && request.getParameter(DISPATCH_ACTION_PARAMETER) != null) {
+            actionName = GrailsClassUtils.getPropertyNameRepresentation(request.getParameter(DISPATCH_ACTION_PARAMETER));
+            uri = '/' + controllerName + '/' + actionName;
+        }
+        // if the id is blank check if its a request parameter
+        if(StringUtils.isBlank(id) && request.getParameter(ID_PARAMETER) != null) {
+            id = request.getParameter(ID_PARAMETER);
+        }
+        if(LOG.isDebugEnabled()) {
+            LOG.debug("Processing request for controller ["+controllerName+"], action ["+actionName+"], and id ["+id+"]");
+        }
+        if(LOG.isTraceEnabled()) {
+            LOG.trace("Extra params from uri ["+extraParams+"] ");
+        }
         // Step 2: lookup the controller in the application.
         GrailsControllerClass controllerClass = getControllerClassByURI(uri);
 
         // parse the uri in its individual tokens
-        String controllerName = WordUtils.uncapitalize(controllerClass.getName());
+        controllerName = WordUtils.uncapitalize(controllerClass.getName());
 
         if (controllerClass == null) {
             throw new UnknownControllerException("No controller found for URI [" + uri + "]!");
@@ -205,22 +226,19 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
         }
 
         // Step 4: get closure property name for URI.
-        String actionPropertyName = controllerClass.getClosurePropertyName(uri);
-        if (actionPropertyName == null) {
+        if(StringUtils.isBlank(actionName))
+            actionName = controllerClass.getClosurePropertyName(uri);
+
+        if (StringUtils.isBlank(actionName)) {
             // Step 4a: Check if scaffolding
-            if( controllerClass.isScaffolding() && !scaffolder.supportsAction(actionPropertyName))
+            if( controllerClass.isScaffolding() && !scaffolder.supportsAction(actionName))
                 throw new NoClosurePropertyForURIException("Could not find closure property for URI [" + uri + "] for controller [" + controllerClass.getFullName() + "]!");
         }
 
         // Step 4a: Set dynamic properties on controller
-        if(LOG.isDebugEnabled()) {
-            LOG.debug("Processing request for controller ["+controllerName+"], action ["+actionPropertyName+"], and id ["+id+"]");
-        }
-        if(LOG.isTraceEnabled()) {
-            LOG.trace("Extra params from uri ["+extraParams+"] ");
-        }
+
         controller.setProperty(ControllerDynamicMethods.CONTROLLER_URI_PROPERTY, '/' + controllerName);
-        controller.setProperty(ControllerDynamicMethods.ACTION_URI_PROPERTY, '/' + controllerName + '/' + actionPropertyName);
+        controller.setProperty(ControllerDynamicMethods.ACTION_URI_PROPERTY, '/' + controllerName + '/' + actionName);
 
         // populate additional params from url
         Map controllerParams = (Map)controller.getProperty(GetParamsDynamicProperty.PROPERTY_NAME);
@@ -244,10 +262,10 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
         String viewName = controllerClass.getViewByURI(uri);
 
         // Step 6: get closure from closure property
-        Closure action = (Closure)controller.getProperty(actionPropertyName);
+        Closure action = (Closure)controller.getProperty(actionName);
 
         if(action == null)
-            throw new IllegalStateException("Scaffolder supports action ["+actionPropertyName+"] for controller ["+controllerClass.getFullName()+"] but getAction returned null!");
+            throw new IllegalStateException("Scaffolder supports action ["+actionName +"] for controller ["+controllerClass.getFullName()+"] but getAction returned null!");
 
 
         // Step 7: process the action
@@ -255,7 +273,7 @@ public class SimpleGrailsControllerHelper implements GrailsControllerHelper {
 
 
         // Step 8: determine return value type and handle accordingly
-        return handleActionResponse(controller,returnValue,actionPropertyName,viewName);
+        return handleActionResponse(controller,returnValue,actionName,viewName);
     }
 
     public GrailsApplicationAttributes getGrailsAttributes() {
