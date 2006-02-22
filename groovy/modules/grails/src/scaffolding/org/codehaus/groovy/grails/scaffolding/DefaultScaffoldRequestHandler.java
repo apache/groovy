@@ -166,10 +166,11 @@ public class DefaultScaffoldRequestHandler implements ScaffoldRequestHandler {
         dataBinder.bind(request);
 
         Map model = new HashMap();
-        if( this.domain.update(domainObject,callback) ) {
-            model.put( PARAM_ID, id );
-            model.put(	this.domain.getSingularName(), domainObject);
-        }
+        model.put(	this.domain.getSingularName(), domainObject);
+        model.put( PARAM_ID, id );
+        // execute update
+        this.domain.update(domainObject,callback);
+
         return model;
     }
 
