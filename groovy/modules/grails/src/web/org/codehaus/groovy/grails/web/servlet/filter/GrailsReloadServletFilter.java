@@ -160,10 +160,24 @@ public class GrailsReloadServletFilter extends OncePerRequestFilter {
                 // if its not in the resource metas its new.. so load it
                 try {
                     if(!resourceMetas.containsKey(className)) {
-                       loadedClass = application
-                                        .getClassLoader()
-                                        .loadClass(className,true,false);
-                       isNew = true;
+                        // add to resource metas
+                        URL url = resource.getURL();
+                        URLConnection c = url.openConnection();
+                        c.setDoInput(false);
+                        c.setDoOutput(false);
+                        long lastModified = c.getLastModified();
+
+                        ResourceMeta rm = new ResourceMeta();
+                        rm.className = className;
+                        rm.lastModified = lastModified;
+                        rm.url = url;
+                        resourceMetas.put(className, rm);
+                        // load class
+                        GroovyClassLoader gcl = application.getClassLoader();
+                        ((GrailsResourceLoader)gcl.getResourceLoader()).setResources(resources);
+                        loadedClass = gcl.loadClass(className,true,false);
+                        // set as new
+                        isNew = true;
                     }
                     // otherwise check the last modified date
                     else {
@@ -261,8 +275,9 @@ public class GrailsReloadServletFilter extends OncePerRequestFilter {
         if(controllerClass != null) {
              // if its a new controller re-generate web.xml, reload app context
             if(isNew) {
-                // TODO re-generate web.xml
                 reloadApplicationContext();
+                LOG.info("New controller added, re-generating web.xml");
+                copyScript.generateWebXml();
             }
             else {
                 // regenerate controller urlMap

@@ -44,4 +44,9 @@ public interface ResourceCopier {
      * @param destdir
      */
     void setDestdir(String destdir);
+
+    /**
+     * Re-generates the web.xml file
+     */
+    void generateWebXml();
 }
