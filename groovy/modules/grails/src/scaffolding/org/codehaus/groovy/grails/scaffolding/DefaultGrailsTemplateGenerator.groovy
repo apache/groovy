@@ -32,7 +32,7 @@ class DefaultGrailsTemplateGenerator implements GrailsTemplateGenerator  {
 
     Log LOG = LogFactory.getLog(DefaultGrailsTemplateGenerator.class);
     @Property String basedir
-    @Property boolean overwrite = true
+    @Property boolean overwrite = false
     def engine = new groovy.text.SimpleTemplateEngine()
 
     // a closure that uses the type to render the appropriate editor
@@ -48,7 +48,7 @@ class DefaultGrailsTemplateGenerator implements GrailsTemplateGenerator  {
                 buf << renderNumberEditor(domainClass,property)
             else if(property.type == String.class)
                 buf << renderStringEditor(domainClass,property)
-            else if(property.type == Boolean.class)
+            else if(property.type == Boolean.class || property.type == boolean.class)
                 buf << renderBooleanEditor(domainClass,property)
             else if(property.type == Date.class)
                 buf << renderDateEditor(domainClass,property)
@@ -190,16 +190,27 @@ class ${className}Controller {
             return "<input type='text' name='${property.name}' value='\${${domainClass.propertyName}?.${property.name}}' />"
         }
         else {
-            if(cp.maxLength > 250 && !cp.password) {
+            if(cp.maxLength > 250 && !cp.password && !cp.inList) {
                 return "<textarea rows='1' cols='1' name='${property.name}'>\${${domainClass.propertyName}?.${property.name}}</textarea>"
             }
             else {
-                def sb = new StringBuffer('<input ')
-                cp.password ? sb << 'type="password" ' : sb << 'type="text" '
-                if(!cp.editable) sb << 'readonly="readonly" '
-                if(cp.maxLength < Integer.MAX_VALUE ) sb << "maxlength='${cp.maxLength}' "
-                sb << "name='${property.name}' value='\${${domainClass.propertyName}?.${property.name}}'></input>"
-                return sb.toString()
+                if(cp.inList) {
+                   def sb = new StringBuffer('<select ')
+                   sb << "name='${property.name}'>">
+                   cp.inList.each {
+                        sb << "<option value='${it}'>${it}</option>"
+                   }
+                   sb << '</select>'
+                   return sb.toString()
+                }
+                else {
+                    def sb = new StringBuffer('<input ')
+                    cp.password ? sb << 'type="password" ' : sb << 'type="text" '
+                    if(!cp.editable) sb << 'readonly="readonly" '
+                    if(cp.maxLength < Integer.MAX_VALUE ) sb << "maxlength='${cp.maxLength}' "
+                    sb << "name='${property.name}' value='\${${domainClass.propertyName}?.${property.name}}'></input>"
+                    return sb.toString()
+                }
             }
         }
     }
@@ -339,7 +350,6 @@ class ${className}Controller {
                        <%}}%>
                        <td class="actionButtons">
                             <span class="actionButton"><g:link action="show" id="\\${it.id}">Show</g:link></span>
-                            <span class="actionButton"><g:link action="delete" id="\\${it.id}">Delete</g:link></span>
                        </td>
                     </tr>
                </g:each>
@@ -372,6 +382,7 @@ class ${className}Controller {
         <div class="nav">
             <span class="menuButton"><g:link action="index">Home</g:link></span>
             <span class="menuButton"><g:link action="list">${className} List</g:link></span>
+            <span class="menuButton"><g:link action="create">New ${className}</g:link></span>
         </div>
         <div class="body">
            <h1>Show ${className}</h1>
@@ -392,9 +403,11 @@ class ${className}Controller {
                    <%}%>
            </div>
            <div class="buttons">
-                 <span class="button"><button onclick="location.href='\\${createLink(action:'edit',id:${propertyName}?.id)}'">Edit</button></span>
-                 <span class="button"><button onclick="location.href='\\${createLink(action:'delete',id:${propertyName}?.id)}'">Delete</button></span>
-                 <span class="button"><button onclick="location.href='\\${createLink(action:'list')}'">Back</button></span>
+               <g:form controller="${propertyName}">
+                 <input type="hidden" name="id" value="\\${${propertyName}?.id}" />
+                 <span class="button"><g:actionSubmit value="Edit" /></span>
+                 <span class="button"><g:actionSubmit value="Delete" /></span>
+               </g:form>
            </div>
         </div>
     </body>
@@ -424,6 +437,7 @@ class ${className}Controller {
         <div class="nav">
             <span class="menuButton"><g:link action="index">Home</g:link></span>
             <span class="menuButton"><g:link action="list">${className} List</g:link></span>
+            <span class="menuButton"><g:link action="create">New ${className}</g:link></span>
         </div>
         <div class="body">
            <h1>Edit ${className}</h1>
@@ -440,7 +454,8 @@ class ${className}Controller {
 	      <span class="value">\\${${propertyName}?.id}</span>
 	      <input type="hidden" name="${propertyName}.id" value="\\${${propertyName}?.id}" />
            </div>           
-           <g:form url="[action:'update',id:${propertyName}?.id]" method="post">
+           <g:form controller="${propertyName}" method="post">
+               <input type="hidden" name="id" value="\\${${propertyName}?.id}" />
                <div class="dialog">
 
                        <%
@@ -452,9 +467,8 @@ class ${className}Controller {
                        <%}%>
                </div>
                <div class="buttons">
-                     <span class="formButton">
-                        <input type="submit" value="Update"></input>
-                     </span>
+                     <span class="button"><g:actionSubmit value="Update" /></span>
+                     <span class="button"><g:actionSubmit value="Delete" /></span>
                </div>
             </g:form>
         </div>
