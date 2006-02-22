@@ -326,5 +326,8 @@ public class GrailsReloadServletFilter extends OncePerRequestFilter {
                 );
 
        getServletContext().setAttribute(GrailsApplicationAttributes.APPLICATION_CONTEXT, context );
+
+        // re-configure scaffolders
+        GrailsConfigUtils.configureScaffolders(application,context);
     }
 }
