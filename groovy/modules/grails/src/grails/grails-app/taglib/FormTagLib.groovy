@@ -279,7 +279,7 @@ class FormTagLib extends ApplicationTagLib {
           out << "name='_${name}' />"
           out << '<input type="checkbox" '
           out << "name='${name}' "
-          if(attrs['value']) {
+          if(value) {
                 out << 'checked="checked" '
           }
           out << "value='true' "
