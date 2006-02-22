@@ -16,7 +16,6 @@
 package org.codehaus.groovy.grails.commons;
 
 import groovy.lang.GroovyClassLoader;
-import groovy.lang.GroovyResourceLoader;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -26,7 +25,6 @@ import org.springframework.core.io.Resource;
 
 import java.io.IOException;
 import java.lang.reflect.Modifier;
-import java.net.URL;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -76,37 +74,11 @@ public class DefaultGrailsApplication implements GrailsApplication {
         super();
 
         log.debug("Loading Grails application.");
-
-        final Collection loadedResources = new ArrayList();
-
-        GroovyResourceLoader resourceLoader = new GroovyResourceLoader() {
-            public URL loadGroovySource(String resource) {
-                String filename = resource.replace('.', '/') + ".groovy";
-                Resource foundResource = null;
-                for (int i = 0; resources != null && i < resources.length; i++) {
-                    if (resources[i].getFilename().endsWith(filename)) {
-                        if (foundResource == null) {
-                            foundResource = resources[i];
-                        } else {
-                            throw new IllegalArgumentException("Resources [" + resources[i].getFilename() + "] and [" + foundResource.getFilename() + "] end with [" + filename + "]. Cannot load because of duplicate match!");
-                        }
-                    }
-                }
-                try {
-                    if (foundResource != null) {
-                        loadedResources.add(foundResource);
-                        return foundResource.getURL();
-                    } else {
-                        return null;
-                    }
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        };
+       
+        GrailsResourceLoader resourceLoader = new GrailsResourceLoader(resources);
         this.cl = new GroovyClassLoader();
         this.cl.setResourceLoader(resourceLoader);
-
+           Collection loadedResources = new ArrayList();
 
             for (int i = 0; resources != null && i < resources.length; i++) {
                 log.debug("Loading groovy file :[" + resources[i].getFile().getAbsolutePath() + "]");
@@ -115,6 +87,7 @@ public class DefaultGrailsApplication implements GrailsApplication {
                         Matcher m = GRAILS_RESOURCE_PATTERN.matcher(resources[i].getFile().getAbsolutePath());
                         if(m.find()) {
                             cl.loadClass(m.group(1),true,false);
+                            loadedResources = resourceLoader.getLoadedResources();
                         }
                     } catch (ClassNotFoundException e) {
                         throw new org.codehaus.groovy.grails.exceptions.CompilationFailedException("Compilation error parsing file ["+resources[i].getFilename()+"]: " + e.getMessage(), e);
