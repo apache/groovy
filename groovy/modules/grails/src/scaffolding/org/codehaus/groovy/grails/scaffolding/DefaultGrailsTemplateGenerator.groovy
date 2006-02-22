@@ -15,6 +15,8 @@
  */
 package org.codehaus.groovy.grails.scaffolding;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.codehaus.groovy.grails.commons.GrailsDomainClass;
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.scaffolding.GrailsTemplateGenerator;
@@ -28,8 +30,9 @@ import org.codehaus.groovy.grails.commons.GrailsClassUtils as GCU;
  */
 class DefaultGrailsTemplateGenerator implements GrailsTemplateGenerator  {
 
+    Log LOG = LogFactory.getLog(DefaultGrailsTemplateGenerator.class);
     @Property String basedir
-    @Property boolean overwrite = false
+    @Property boolean overwrite = true
     def engine = new groovy.text.SimpleTemplateEngine()
 
     // a closure that uses the type to render the appropriate editor
@@ -74,10 +77,13 @@ class DefaultGrailsTemplateGenerator implements GrailsTemplateGenerator  {
         if(!viewsDir.exists())
             viewsDir.mkdirs()
 
-
+        LOG.info("Generating list view for domain class [${domainClass.fullName}]")
         generateListView(domainClass,viewsDir)
+        LOG.info("Generating show view for domain class [${domainClass.fullName}]")
         generateShowView(domainClass,viewsDir)
+        LOG.info("Generating edit view for domain class [${domainClass.fullName}]")
         generateEditView(domainClass,viewsDir)
+        LOG.info("Generating create view for domain class [${domainClass.fullName}]")
         generateCreateView(domainClass,viewsDir)
     }
 
@@ -88,7 +94,7 @@ class DefaultGrailsTemplateGenerator implements GrailsTemplateGenerator  {
         if(domainClass) {
             def destFile = new File("${destdir}/grails-app/controllers/${domainClass.shortName}Controller.groovy")
             if(destFile.exists()) {
-                println "Controller ${destFile.name} already exists skipping"
+                LOG.info("Controller ${destFile.name} already exists skipping")
                 return
             }
             destFile.parentFile.mkdirs()
@@ -174,7 +180,7 @@ class ${className}Controller {
                 t.make(binding).writeTo(w)
             }
 
-            println "Controller generated at ${destFile}"
+            LOG.info("Controller generated at ${destFile}")
         }
     }
 
@@ -349,7 +355,7 @@ class ${className}Controller {
             listFile.withWriter { w ->
                 t.make(binding).writeTo(w)
             }
-
+            LOG.info("list view generated at ${listFile.absolutePath}")
         }
     }
 
@@ -401,7 +407,7 @@ class ${className}Controller {
             showFile.withWriter { w ->
                 t.make(binding).writeTo(w)
             }
-
+            LOG.info("Show view generated at ${showFile.absolutePath}")
         }
     }
 
@@ -465,7 +471,7 @@ class ${className}Controller {
             editFile.withWriter { w ->
                 t.make(binding).writeTo(w)
             }
-
+            LOG.info("Edit view generated at ${editFile.absolutePath}")
         }
     }
 
@@ -524,7 +530,7 @@ class ${className}Controller {
             createFile.withWriter { w ->
                 t.make(binding).writeTo(w)
             }
-
+            LOG.info("Create view generated at ${createFile.absolutePath}")
         }
     }
 }

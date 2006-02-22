@@ -19,9 +19,12 @@ import org.apache.commons.logging.LogFactory;
 import org.codehaus.groovy.grails.commons.DefaultGrailsApplication;
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.commons.GrailsDomainClass;
+import org.codehaus.groovy.grails.commons.spring.SpringConfig;
 import org.codehaus.groovy.grails.scaffolding.GrailsTemplateGenerator;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springmodules.beans.factory.drivers.xml.XmlApplicationContextDriver;
 import groovy.lang.GroovyClassLoader;
 
 /**
@@ -48,14 +51,21 @@ public class GenerateUtils {
         ApplicationContext parent = new ClassPathXmlApplicationContext("applicationContext.xml");
         GrailsApplication application = (DefaultGrailsApplication)parent.getBean("grailsApplication", DefaultGrailsApplication.class);
 
-        GrailsDomainClass domainClass = application.getGrailsDomainClass(domainClassName);
+        GrailsDomainClass domainClass = getDomainCallFromApplication(application,domainClassName);
+
+        // bootstrap application to try hibernate domain classes
         if(domainClass == null) {
-            domainClassName = domainClassName.substring(0,1).toUpperCase() + domainClassName.substring(1);
-            domainClass = application.getGrailsDomainClass(domainClassName);
-            if(domainClass == null) {
-                LOG.debug("Unable to generate ["+type+"] domain class not found for name ["+domainClassName+"]");
-                return;
-            }
+            SpringConfig config = new SpringConfig(application);
+            ConfigurableApplicationContext appCtx = (ConfigurableApplicationContext)
+                new XmlApplicationContextDriver().getApplicationContext(
+                    config.getBeanReferences(), parent);
+        }
+
+        // retry
+        domainClass = getDomainCallFromApplication(application,domainClassName);
+        if(domainClass == null) {
+            LOG.debug("Unable to generate ["+type+"] domain class not found for name ["+domainClassName+"]");
+            return;
         }
 
         GroovyClassLoader gcl = new GroovyClassLoader(Thread.currentThread().getContextClassLoader());
@@ -74,5 +84,13 @@ public class GenerateUtils {
         else {
             LOG.info("Grails was unable to generate templates for unsupported type ["+type+"]");
         }
+    }
+
+    private static GrailsDomainClass getDomainCallFromApplication(GrailsApplication application, String domainClassName) {
+        GrailsDomainClass domainClass = application.getGrailsDomainClass(domainClassName);
+        if(domainClass == null) {
+            domainClass = application.getGrailsDomainClass(domainClassName.substring(0,1).toUpperCase() + domainClassName.substring(1));
+        }
+        return domainClass;
     }
 }
