@@ -50,6 +50,28 @@ class FormTagLib extends ApplicationTagLib {
         out << "</form>"
     }
     /**
+     * Creates a submit button that submits to an action in the controller specified by the form action
+     * The value of the action attribute is translated into the action name, for example "Edit" becomes
+     * "edit" or "List People" becomes "listPeople"
+     *
+     *  <g:actionSubmit value="Edit" />
+     *
+     */
+    @Property actionSubmit = { attrs ->
+        out << '<input type="submit" name="_action" '
+        def value = attrs.remove('value')
+        if(value) {
+             out << "value='${value}'"
+        }
+        // process remaining attributes
+        attrs.each { k,v ->
+            out << k << "=\"" << v << "\" "
+        }
+        // close tag
+        out.println '/>'
+
+    }
+    /**
      * A simple date picker that renders a date as selects
      * eg. <g:datePicker name="myDate" value="${new Date()}" />
      */
@@ -260,7 +282,7 @@ class FormTagLib extends ApplicationTagLib {
           if(attrs['value']) {
                 out << 'checked="checked" '
           }
-          out << "value='${value}' "
+          out << "value='true' "
         // process remaining attributes
         attrs.each { k,v ->
             out << k << "=\"" << v << "\" "
