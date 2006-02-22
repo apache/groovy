@@ -473,15 +473,12 @@ Targets:
             System.setProperty('org.mortbay.xml.XmlParser.NotValidating', 'true')
             def server = new Server()
             try {
-				def listener = new SocketListener()
-				listener.setPort(8080)
-				server.addListener(listener)
-				server.addWebApplication("/" + properties."project.dir", 'tmp/war')
-				server.start()
-                if (properties.'runTests') {
-                    def gse = new GroovyScriptEngine('webtest/tests', getClass().classLoader)
-                    gse.run('TestSuite.groovy', binding)
-                }
+                def listener = new SocketListener()
+                listener.setPort(8080)
+                server.addListener(listener)
+                server.addWebApplication("/" + properties."project.dir", 'tmp/war')
+                server.start()
+                if (properties.'runTests') ant.antcall(target:'webtest-impl')
             } catch(Throwable t) {
                 t.printStackTrace()
 			} finally {
@@ -549,6 +546,19 @@ Targets:
         <antcall target="run-app:impl">
             <param name="runTests" value="true"/>
         </antcall>
+    </target>
+
+    <target name="webtest-impl">
+        <java classname="groovy.ui.GroovyMain" >
+            <arg line="webtest/tests/TestSuite"/>
+            <classpath>
+                <pathelement location="webtest/tests"/>
+                <fileset dir="${grails.home}/lib" includes="*.jar"/>
+                <fileset dir="${grails.home}/dist" includes="*.jar"/>
+                <pathelement location="${grails.home}/downloads/webtest/lib"/>
+                <fileset dir="${grails.home}/downloads/webtest/lib" includes="**/*.jar"/>
+            </classpath>
+        </java>
     </target>
 
 

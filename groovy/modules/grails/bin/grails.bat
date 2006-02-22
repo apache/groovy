@@ -25,7 +25,7 @@ shift
 goto loopArguments
 
 :getClasspath
-set GRAILS_ANT_CLASSPATH="%GRAILS_HOME%\lib\bsf.jar;%GRAILS_HOME%\lib\groovy-all-1.0-jsr-05-SNAPSHOT.jar;%GRAILS_HOME%\lib\org.mortbay.jetty.jar;%GRAILS_HOME%\lib\commons-logging.jar;%GRAILS_HOME%\lib\commons-el.jar;%GRAILS_HOME%\lib\javax.servlet.jar;%GRAILS_HOME%\lib\log4j-1.2.8.jar;%GRAILS_HOME%\lib\jasper-compiler.jar;%GRAILS_HOME%\lib\jasper-runtime.jar"
+set GRAILS_ANT_CLASSPATH="%GRAILS_HOME%\lib\bsf.jar;%GRAILS_HOME%\lib\groovy-all-1.0-jsr-05-SNAPSHOT.jar;%GRAILS_HOME%\lib\org.mortbay.jetty.jar;%GRAILS_HOME%\lib\commons-logging.jar;%GRAILS_HOME%\lib\commons-el.jar;%GRAILS_HOME%\lib\javax.servlet.jar;%GRAILS_HOME%\lib\log4j-1.2.8.jar;%GRAILS_HOME%\lib\jasper-compiler.jar;%GRAILS_HOME%\lib\jasper-runtime.jar;%GRAILS_HOME%\lib\xml-apis.jar;%GRAILS_HOME%\lib\xercesImpl.jar"
 goto startGrails
 
 :startGrails
