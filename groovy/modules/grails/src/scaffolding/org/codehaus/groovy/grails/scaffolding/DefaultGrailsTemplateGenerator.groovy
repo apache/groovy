@@ -43,7 +43,9 @@ class DefaultGrailsTemplateGenerator implements GrailsTemplateGenerator  {
         def display = (cp ? cp.display : true)        
         if(!display) return ''
         
-	def buf = new StringBuffer("<div class='prop \${hasErrors(bean:${domainClass.propertyName},field:'${property.name}','errors')}'><label for='${property.name}'>${property.naturalName}:</label>")
+	def buf = new StringBuffer("<tr class='prop'>")
+	buf << "<td valign='top' style='text-align:left;' width='20%'><label for='${property.name}'>${property.naturalName}:</label></td>"
+	buf << "<td valign='top' style='text-align:left;' width='80%' class='\${hasErrors(bean:${domainClass.propertyName},field:'${property.name}','errors')}'>"
             if(Number.class.isAssignableFrom(property.type))
                 buf << renderNumberEditor(domainClass,property)
             else if(property.type == String.class)
@@ -65,7 +67,7 @@ class DefaultGrailsTemplateGenerator implements GrailsTemplateGenerator  {
             else if(property.oneToMany || property.manyToMany)
                 buf << renderOneToMany(domainClass,property)
                 
-       buf << '</div>'
+       buf << '</td></tr>'
        return buf.toString()
     }
 
@@ -226,7 +228,15 @@ class ${className}Controller {
     }
 
     private renderOneToMany(domainClass,property) {
-        return "Number of ${property.name}: \${${property.type.name}.count()}"
+        def sw = new StringWriter()
+        def pw = new PrintWriter(sw)
+        pw.println '<ul>'
+        pw.println "    <g:each var='${property.name[0]}' in='\${${domainClass.propertyName}.${property.name}}'>"
+        pw.println "        <li><g:link controller='${property.referencedDomainClass.propertyName}' action='show' id='\${${property.name[0]}.id}'>\${${property.name[0]}}</g:link></li>"
+        pw.println "    </g:each>"
+        pw.println "</ul>"
+        pw.println "<g:link controller='${property.referencedDomainClass.propertyName}' params='[\"${domainClass.propertyName}.id\":${domainClass.propertyName}?.id]' action='create'>Add ${property.referencedDomainClass.shortName}</g:link>"
+        return sw.toString()
     }
 
     private renderNumberEditor(domainClass,property) {
@@ -333,7 +343,7 @@ class ${className}Controller {
            <table>
                <tr>
                    <%
-                        props = domainClass.properties.findAll { it.name != 'version' }
+                        props = domainClass.properties.findAll { it.name != 'version' && it.type != Set.class }
                         Collections.sort(props, new org.codehaus.groovy.grails.scaffolding.DomainClassPropertyComparator(domainClass))
                    %>
                    <%props.eachWithIndex { p,i ->
@@ -390,17 +400,30 @@ class ${className}Controller {
                  <div class="message">\\${flash['message']}</div>
            </g:if>
            <div class="dialog">
-
+                 <table>
                    <%
                         props = domainClass.properties.findAll { it.name != 'version' }
                         Collections.sort(props, new org.codehaus.groovy.grails.scaffolding.DomainClassPropertyComparator(domainClass))
                    %>
                    <%props.each { p ->%>
-                        <div class="prop">
-                              <span class="name">${p.naturalName}:</span>
-                              <span class="value">\\${${propertyName}.${p.name}}</span>
-                        </div>
+                        <tr class="prop">
+                              <td valign="top" style="text-align:left;" width="20%" class="name">${p.naturalName}:</td>
+                              <% if(p.oneToMany) { %>
+                                     <td  valign="top" style="text-align:left;" class="value">
+                                        <ul>
+                                            <g:each var="${p.name[0]}" in="\\${${propertyName}.${p.name}}">
+                                                <li><g:link controller="${p.referencedDomainClass?.propertyName}" action="show" id="\\${${p.name[0]}.id}">\\${${p.name[0]}}</g:link></li>
+                                            </g:each>
+                                        </ul>
+                                     </td>
+                              <% } else if(p.manyToOne || p.oneToOne) { %>
+                                    <td valign="top" style="text-align:left;" class="value"><g:link controller="${p.referencedDomainClass?.propertyName}" action="show" id="\\${${propertyName}?.${p.name}?.id}">\\${${propertyName}?.${p.name}}</g:link></td>
+                              <% } else  { %>
+                                    <td valign="top" style="text-align:left;" class="value">\\${${propertyName}.${p.name}}</td>
+                              <% } %>
+                        </tr>
                    <%}%>
+                 </table>
            </div>
            <div class="buttons">
                <g:form controller="${propertyName}">
@@ -457,6 +480,7 @@ class ${className}Controller {
            <g:form controller="${propertyName}" method="post">
                <input type="hidden" name="id" value="\\${${propertyName}?.id}" />
                <div class="dialog">
+                <table>
 
                        <%
                             props = domainClass.properties.findAll { it.name != 'version' && it.name != 'id' }
@@ -465,7 +489,9 @@ class ${className}Controller {
                        <%props.each { p ->%>
 				${renderEditor(p)}
                        <%}%>
+                </table>
                </div>
+
                <div class="buttons">
                      <span class="button"><g:actionSubmit value="Update" /></span>
                      <span class="button"><g:actionSubmit value="Delete" /></span>
@@ -515,14 +541,17 @@ class ${className}Controller {
            </g:hasErrors>
            <g:form action="save" method="post">
                <div class="dialog">
+                <table>
 
                        <%
                             props = domainClass.properties.findAll { it.name != 'version' && it.name != 'id' }
                             Collections.sort(props, new org.codehaus.groovy.grails.scaffolding.DomainClassPropertyComparator(domainClass))
                        %>
-                       <%props.each { p ->%>                                                              
+                       <%props.each { p ->
+                            if(p.type != Set.class) { %>
                                   ${renderEditor(p)}
-                       <%}%>
+                       <%}}%>
+               </table>
                </div>
                <div class="buttons">
                      <span class="formButton">

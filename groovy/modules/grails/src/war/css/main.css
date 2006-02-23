@@ -1,4 +1,7 @@
-.menuButton { 
+a:active,a:link,a:visited,a:hover {
+    color:#0D5798;    
+}
+.menuButton {
 	background-color:#80B0DA;
 	border: 1px solid white;
 	border-style: none solid none none ;
@@ -69,7 +72,6 @@ td {
 	
 }
 .dialog label{
-	float: left;
 	width: 120px;
 	font-weight: bold;
 }
@@ -92,11 +94,14 @@ textarea{
 .actionButtons {
 	width:100px;
 }
-.errors {
-	border: 1px solid red;
+div .errors {
+	border: 2px solid red;
 	padding: 5px;
 	margin-top:10px;
 	margin-bottom:10px;
+}
+td .errors {
+   border: 1px solid red;
 }
 .message {
 	border: 1px solid #FFCC00;
