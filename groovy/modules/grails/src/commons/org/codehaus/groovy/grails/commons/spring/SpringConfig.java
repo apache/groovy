@@ -162,9 +162,6 @@ public class SpringConfig {
                     scaffoldedClass = domainClass.getClazz();
                 }
             }
-            else {
-                domainClass = application.getGrailsDomainClass(scaffoldedClass.getName());
-            }
 
             if(scaffoldedClass == null) {
                 LOG.info("[Spring] Scaffolding disabled for controller ["+simpleControllers[i].getFullName()+"], no equivalent domain class named ["+simpleControllers[i].getName()+"]");
@@ -178,7 +175,7 @@ public class SpringConfig {
 
                 constructorArguments.add(SpringConfigUtils.createBeanReference("sessionFactory"));
 
-                Bean domain = SpringConfigUtils.createSingletonBean(DefaultScaffoldDomain.class, constructorArguments);
+                Bean domain = SpringConfigUtils.createSingletonBean(GrailsScaffoldDomain.class, constructorArguments);
 //                domain.setProperty("validator", SpringConfigUtils.createBeanReference( domainClass.getFullName() + "Validator"));
 
                 beanReferences.add( SpringConfigUtils.createBeanReference( scaffoldedClass.getName() + "ScaffoldDomain",domain ) );

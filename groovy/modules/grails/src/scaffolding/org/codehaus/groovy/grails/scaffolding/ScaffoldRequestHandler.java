@@ -15,10 +15,9 @@
  */ 
 package org.codehaus.groovy.grails.scaffolding;
 
-import java.util.Map;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.Map;
 
 /**
  * An interface defining methods to handle CRUD operations involved in scaffolding
@@ -65,7 +64,17 @@ public interface ScaffoldRequestHandler {
 	 * @return Optionally a map which represents the generated model
 	 */	
 	Map handleDelete(HttpServletRequest request, HttpServletResponse reponse, ScaffoldCallback callback);
-	/**
+
+    /**
+     * Handles a create request
+     *
+     * @param request
+     * @param reponse
+     * @param callback
+     * @return Optionally a map which reperesents the generated model
+     */
+    Map handleCreate(HttpServletRequest request, HttpServletResponse reponse, ScaffoldCallback callback);
+    /**
 	 * Handles a request to save a scaffolded instance
 	 * 
 	 * @param request

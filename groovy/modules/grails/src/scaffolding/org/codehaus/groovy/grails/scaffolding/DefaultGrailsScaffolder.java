@@ -137,9 +137,8 @@ public class DefaultGrailsScaffolder implements GrailsScaffolder {
 		 * @see groovy.lang.Closure#call(java.lang.Object[])
 		 */
 		public Object call(Object[] args) {
-			// do nothing for the moment
-			Map model = new HashMap();
-			return scaffoldResponseHandler.handleResponse(request,response,CREATE_ACTION,model);
+            Map model = this.scaffoldRequestHandler.handleCreate(request,response,new DefaultScaffoldCallback());
+            return scaffoldResponseHandler.handleResponse(request,response,CREATE_ACTION,model);
 		}
 		
 	}	

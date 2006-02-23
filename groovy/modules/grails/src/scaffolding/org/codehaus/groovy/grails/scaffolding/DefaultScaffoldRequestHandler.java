@@ -133,6 +133,17 @@ public class DefaultScaffoldRequestHandler implements ScaffoldRequestHandler {
         return model;
     }
 
+    public Map handleCreate(HttpServletRequest request, HttpServletResponse reponse, ScaffoldCallback callback) {
+       Object domainObject = domain.newInstance();
+        ServletRequestDataBinder dataBinder = GrailsDataBinder.createBinder(domainObject, domain.getName(),request);
+        dataBinder.bind(request);
+
+        Map model = new HashMap();
+        model.put( domain.getSingularName(), domainObject);
+
+        return model;
+    }
+
     public Map handleSave(HttpServletRequest request,
                           HttpServletResponse reponse, ScaffoldCallback callback) {
 
