@@ -92,6 +92,16 @@ class ApplicationTagLib {
         if(attrs["id"]) {
             out << '/' << attrs.remove("id")
         }
+        if(attrs['params']) {
+            def pms = attrs.remove('params')
+            out << '?'
+            def i = 0
+            pms.each { k,v ->
+                out << "${k}=${v}"
+                if(++i < pms.size())
+                   out << '&'
+            }
+        }
     }
 
 
