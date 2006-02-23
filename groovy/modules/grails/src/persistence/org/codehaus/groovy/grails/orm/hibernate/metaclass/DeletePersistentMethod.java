@@ -28,7 +28,7 @@ import org.springframework.orm.hibernate3.HibernateTemplate;
  */
 public class DeletePersistentMethod extends AbstractDynamicPersistentMethod {
 
-    private static final String METHOD_SIGNATURE = "delete";
+    public static final String METHOD_SIGNATURE = "delete";
 
     public DeletePersistentMethod(SessionFactory sessionFactory, ClassLoader classLoader) {
         super(METHOD_SIGNATURE,sessionFactory, classLoader);

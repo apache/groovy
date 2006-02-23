@@ -42,7 +42,7 @@ import java.io.Serializable;
  */
 public class SavePersistentMethod extends AbstractDynamicPersistentMethod {
 
-    private static final String METHOD_SIGNATURE = "save";
+    public static final String METHOD_SIGNATURE = "save";
     private GrailsApplication application;
 
     public SavePersistentMethod(SessionFactory sessionFactory, ClassLoader classLoader, GrailsApplication application) {

@@ -40,7 +40,7 @@ import java.util.regex.Pattern;
 public class GetPersistentMethod extends AbstractStaticPersistentMethod {
 
 	private static final Pattern METHOD_PATTERN = Pattern.compile("^get$");
-	private static final String METHOD_SIGNATURE = "get";
+	public static final String METHOD_SIGNATURE = "get";
 	private GrailsApplication application;
 	private Map context = Ognl.createDefaultContext(this);
 	private DefaultTypeConverter typeConverter = new DefaultTypeConverter();
