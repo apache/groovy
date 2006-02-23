@@ -15,18 +15,20 @@
 package org.codehaus.groovy.grails.orm.hibernate;
 
 import org.codehaus.groovy.grails.commons.AbstractGrailsClass;
-import org.codehaus.groovy.grails.commons.GrailsDomainClass;
-import org.codehaus.groovy.grails.commons.GrailsDomainClassProperty;
 import org.codehaus.groovy.grails.commons.ExternalGrailsDomainClass;
+import org.codehaus.groovy.grails.commons.GrailsDomainClassProperty;
 import org.codehaus.groovy.grails.orm.hibernate.validation.GrailsDomainClassValidator;
+import org.codehaus.groovy.grails.validation.ConstrainedProperty;
+import org.hibernate.SessionFactory;
+import org.hibernate.EntityMode;
+import org.hibernate.engine.SessionFactoryImplementor;
 import org.hibernate.metadata.ClassMetadata;
 import org.hibernate.type.Type;
+import org.hibernate.type.AssociationType;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.validation.Validator;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Collections;
+import java.util.*;
 
 /**
  * An implementation of the GrailsDomainClass interface that allows Classes mapped in
@@ -48,7 +50,7 @@ public class GrailsHibernateDomainClass extends AbstractGrailsClass implements E
      *
      * @param clazz        the Grails class
      */
-    public GrailsHibernateDomainClass(Class clazz,ClassMetadata metaData) {
+    public GrailsHibernateDomainClass(Class clazz, SessionFactory sessionFactory,ClassMetadata metaData) {
         super(clazz, "");
 
         BeanWrapper bean = getReference();
@@ -69,8 +71,16 @@ public class GrailsHibernateDomainClass extends AbstractGrailsClass implements E
                 GrailsHibernateDomainClassProperty prop = new GrailsHibernateDomainClassProperty(this,propertyName);
                 prop.setType(bean.getPropertyType(propertyName));
                 Type hibernateType = metaData.getPropertyType(propertyName);
+                // if its an association type
                 if(hibernateType.isAssociationType()) {
                     prop.setAssociation(true);
+                    // get the associated type from the session factory
+                    // and set it on the property
+                    AssociationType assType = (AssociationType)hibernateType;
+                    String associatedEntity = assType.getAssociatedEntityName((SessionFactoryImplementor)sessionFactory);
+                    ClassMetadata associatedMetaData = sessionFactory.getClassMetadata(associatedEntity);
+                    prop.setRelatedClassType(associatedMetaData.getMappedClass(EntityMode.POJO));
+                    // configure type of relationship
                     if(hibernateType.isCollectionType()) {
                         prop.setOneToMany(true);
                     }
@@ -142,12 +152,34 @@ public class GrailsHibernateDomainClass extends AbstractGrailsClass implements E
     }
 
     public Class getRelatedClassType(String propertyName) {
-        throw new UnsupportedOperationException("Method 'getRelatedClassType' is not supported by implementation");
+        GrailsDomainClassProperty prop = getPropertyByName(propertyName);
+        if(prop == null)
+            return null;
+        else {
+            return prop.getReferencedPropertyType();
+        }
     }
 
     public Map getConstrainedProperties() {
         if(getReference().isReadableProperty(GrailsDomainClassProperty.CONSTRAINTS)) {
-            return (Map)getReference().getPropertyValue(GrailsDomainClassProperty.CONSTRAINTS);
+            List constraintsList = (List)getPropertyValue(GrailsDomainClassProperty.CONSTRAINTS,List.class);
+            if(constraintsList != null) {
+                Map constraintsMap = new HashMap();
+                for (Iterator i = constraintsList.iterator(); i.hasNext();) {
+                    ConstrainedProperty cp = (ConstrainedProperty) i.next();
+                    constraintsMap.put(cp.getPropertyName(),cp);
+                }
+                return constraintsMap;
+            }
+            else {
+               Map constraintsMap = (Map)getPropertyValue(GrailsDomainClassProperty.CONSTRAINTS,Map.class);
+               if(constraintsMap == null) {
+                   return Collections.EMPTY_MAP;
+               }
+               else {
+                    return constraintsMap;
+               }
+            }
         }
         return Collections.EMPTY_MAP;
     }

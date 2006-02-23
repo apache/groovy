@@ -21,6 +21,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.groovy.grails.exceptions.GrailsConfigurationException;
 import org.codehaus.groovy.grails.exceptions.MoreThanOneActiveDataSourceException;
+import org.codehaus.groovy.grails.orm.hibernate.cfg.GrailsDomainConfigurationUtil;
 import org.springframework.core.io.Resource;
 
 import java.io.IOException;
@@ -74,7 +75,7 @@ public class DefaultGrailsApplication implements GrailsApplication {
         super();
 
         log.debug("Loading Grails application.");
-       
+
         GrailsResourceLoader resourceLoader = new GrailsResourceLoader(resources);
         this.cl = new GroovyClassLoader();
         this.cl.setResourceLoader(resourceLoader);
@@ -267,10 +268,10 @@ public class DefaultGrailsApplication implements GrailsApplication {
 
             // reset domain class list
             this.domainClasses = ((GrailsDomainClass[])this.domainMap.values().toArray(new GrailsDomainClass[domainMap.size()]));
-            if(!(domainClass instanceof ExternalGrailsDomainClass)) {
+           // if(!(domainClass instanceof ExternalGrailsDomainClass)) {
                 // reconfigure relationships
                 configureDomainClassRelationships();
-            }
+           // }
         }
         return domainClass;
     }
@@ -326,40 +327,7 @@ public class DefaultGrailsApplication implements GrailsApplication {
      *
      */
     private void configureDomainClassRelationships() {
-
-        for (int i = 0; i < this.domainClasses.length; i++) {
-            GrailsDomainClassProperty[] props = this.domainClasses[i].getPersistantProperties();
-
-            for (int j = 0; j < props.length; j++) {
-                if(props[j].isAssociation()) {
-                    DefaultGrailsDomainClassProperty prop = (DefaultGrailsDomainClassProperty)props[j];
-                    GrailsDomainClass referencedGrailsDomainClass = (GrailsDomainClass)this.domainMap.get( props[j].getReferencedPropertyType().getName() );
-                    prop.setReferencedDomainClass(referencedGrailsDomainClass);
-
-                }
-            }
-
-        }
-
-        for (int i = 0; i < this.domainClasses.length; i++) {
-            GrailsDomainClassProperty[] props = this.domainClasses[i].getPersistantProperties();
-
-            for (int j = 0; j < props.length; j++) {
-                if(props[j].isAssociation()) {
-                    DefaultGrailsDomainClassProperty prop = (DefaultGrailsDomainClassProperty)props[j];
-                    GrailsDomainClassProperty[] referencedProperties =  prop.getReferencedDomainClass().getPersistantProperties();
-                    for (int k = 0; k < referencedProperties.length; k++) {
-                        if(referencedProperties[k].getReferencedPropertyType().equals( this.domainClasses[i].getClazz())) {
-                            prop.setOtherSide(referencedProperties[k]);
-                            break;
-                        }
-                    }
-                }
-            }
-
-        }
-
-
+       GrailsDomainConfigurationUtil.configureDomainClassRelationships(this.domainClasses,this.domainMap);
     }
 
     public GrailsControllerClass[] getControllers() {

@@ -31,8 +31,7 @@ public class DefaultGrailsDomainClassProperty implements GrailsDomainClassProper
 
 	
 	private GrailsDomainClass domainClass;
-	private PropertyDescriptor descriptor;
-	private boolean persistant;
+    private boolean persistant;
 	private boolean optional;
 	private boolean identity;
 	private boolean oneToMany;
@@ -52,18 +51,17 @@ public class DefaultGrailsDomainClassProperty implements GrailsDomainClassProper
 
     public DefaultGrailsDomainClassProperty(DefaultGrailsDomainClass domainClass, PropertyDescriptor descriptor)  {
         this.domainClass = domainClass;
-        this.descriptor = descriptor;
         // required by default
         this.optional = false;
         // persistant by default
         this.persistant = true;
-        this.name = this.descriptor.getName();
-        this.naturalName = GrailsClassUtils.getNaturalName(this.descriptor.getName());
-        this.type = this.descriptor.getPropertyType();
-        this.identity = this.descriptor.getName().equals( IDENTITY );
+        this.name = descriptor.getName();
+        this.naturalName = GrailsClassUtils.getNaturalName(descriptor.getName());
+        this.type = descriptor.getPropertyType();
+        this.identity = descriptor.getName().equals( IDENTITY );
         // get the not required descritor from the owner bean
-        List optionalProps = null;
-        List transientProps = null;
+        List optionalProps;
+        List transientProps;
 
         optionalProps = (List)domainClass.getPropertyValue( OPTIONAL, List.class );
         transientProps= (List)domainClass.getPropertyValue( TRANSIENT, List.class );
@@ -278,7 +276,7 @@ public class DefaultGrailsDomainClassProperty implements GrailsDomainClassProper
 	}
 
 
-	protected void setReferencedDomainClass(GrailsDomainClass referencedDomainClass) {
+	public void setReferencedDomainClass(GrailsDomainClass referencedDomainClass) {
 		if(referencedDomainClass != null) {
 			this.referencedDomainClass = referencedDomainClass;
 			this.referencedPropertyType = referencedDomainClass.getClazz();
@@ -290,13 +288,10 @@ public class DefaultGrailsDomainClassProperty implements GrailsDomainClassProper
 	 * @see org.codehaus.groovy.grails.commons.GrailsDomainClassProperty#isAssociation()
 	 */
 	public boolean isAssociation() {
-		if(	isOneToMany() ||
-			isOneToOne() ||
-			isManyToOne() ||
-			isManyToMany() )
-			return true;
-		else
-			return false;
+        return isOneToMany() ||
+                isOneToOne() ||
+                isManyToOne() ||
+                isManyToMany();
 	}
 
     public String getNaturalName() {
@@ -340,7 +335,7 @@ public class DefaultGrailsDomainClassProperty implements GrailsDomainClassProper
 	}
 
 
-	protected void setOtherSide(GrailsDomainClassProperty property) {
+	public void setOtherSide(GrailsDomainClassProperty property) {
 		this.otherSide = property;
 	}
 

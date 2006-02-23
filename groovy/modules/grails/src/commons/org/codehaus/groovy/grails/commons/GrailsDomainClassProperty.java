@@ -139,4 +139,16 @@ public interface GrailsDomainClassProperty {
      * @return The natural name representation of the property (eg. 'lastName' becomes 'Last Name'
      */
     public String getNaturalName();
+
+    /**
+     * Sets the references domain class on the property
+     * @param referencedGrailsDomainClass
+     */
+    void setReferencedDomainClass(GrailsDomainClass referencedGrailsDomainClass);
+
+    /**
+     * Sets the other side of an associative property
+     * @param referencedProperty
+     */
+    void setOtherSide(GrailsDomainClassProperty referencedProperty);
 }

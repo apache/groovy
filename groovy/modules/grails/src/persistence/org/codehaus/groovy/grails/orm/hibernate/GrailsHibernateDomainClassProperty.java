@@ -14,10 +14,9 @@
  */
 package org.codehaus.groovy.grails.orm.hibernate;
 
-import org.codehaus.groovy.grails.commons.GrailsDomainClassProperty;
-import org.codehaus.groovy.grails.commons.GrailsDomainClass;
 import org.codehaus.groovy.grails.commons.GrailsClassUtils;
-import org.hibernate.type.Type;
+import org.codehaus.groovy.grails.commons.GrailsDomainClass;
+import org.codehaus.groovy.grails.commons.GrailsDomainClassProperty;
 
 /**
  * An implementation of the GrailsDomainClassProperty interface that allows Classes mapped in
@@ -40,7 +39,9 @@ public class GrailsHibernateDomainClassProperty implements GrailsDomainClassProp
     private boolean manyToMany;
     private boolean bidirectional;
     private boolean optional;
-
+    private Class relatedClassType;
+    private GrailsDomainClass referencedDomainClass;
+    private GrailsDomainClassProperty otherSide;
 
 
     public GrailsHibernateDomainClassProperty(GrailsHibernateDomainClass domainClass, String propertyName) {
@@ -77,12 +78,20 @@ public class GrailsHibernateDomainClassProperty implements GrailsDomainClassProp
         return this.naturalName;
     }
 
+    public void setReferencedDomainClass(GrailsDomainClass referencedGrailsDomainClass) {
+        this.referencedDomainClass =   referencedGrailsDomainClass;
+    }
+
+    public void setOtherSide(GrailsDomainClassProperty referencedProperty) {
+        this.otherSide = referencedProperty;
+    }
+
     public GrailsDomainClassProperty getOtherSide() {
-         throw new UnsupportedOperationException("Method 'getReferencedPropertyType' is not supported by implementation");
+        return this.otherSide;
     }
 
     public Class getReferencedPropertyType() {
-        throw new UnsupportedOperationException("Method 'getReferencedPropertyType' is not supported by implementation");
+        return this.relatedClassType;
     }
 
     public boolean isIdentity() {
@@ -154,9 +163,11 @@ public class GrailsHibernateDomainClassProperty implements GrailsDomainClassProp
     }
 
     public GrailsDomainClass getReferencedDomainClass() {
-        throw new UnsupportedOperationException("Method 'getReferencedDomainClass' is not supported by implementation");
+        return this.referencedDomainClass;
     }
 
 
-
+    public void setRelatedClassType(Class relatedType) {
+        this.relatedClassType = relatedType;
+    }
 }
