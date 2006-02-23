@@ -18,35 +18,33 @@ import org.apache.commons.lang.StringUtils;
 import org.codehaus.groovy.grails.web.taglib.exceptions.GrailsTagException;
 
 /**
+ * Allows defining of variables within the page context
+ *
  * @author Graeme Rocher
- * @since 18-Jan-2006
+ * @since 23-Feb-2006
  */
-public class GroovyEachTag extends GroovySyntaxTag {
-    public static final String TAG_NAME = "each";
-    private static final String ATTRIBUTE_IN = "in";
+public class GroovyDefTag extends GroovySyntaxTag {
+    public static final String TAG_NAME = "def";
+    private static final String ATTRIBUTE_EXPR = "expr";
     private static final String ATTRIBUTE_VAR = "var";
 
     public void doStartTag() {
-        String in = (String) attributes.get(ATTRIBUTE_IN);
+        String expr = (String) attributes.get(ATTRIBUTE_EXPR);
         String var = (String) attributes.get(ATTRIBUTE_VAR);
 
-        if(StringUtils.isBlank(in))
-            throw new GrailsTagException("Tag ["+TAG_NAME+"] missing required attribute ["+ATTRIBUTE_IN+"]");
+        if(StringUtils.isBlank(var))
+            throw new GrailsTagException("Tag ["+TAG_NAME+"] missing required attribute ["+ATTRIBUTE_VAR+"]");
+        if(StringUtils.isBlank(expr))
+            throw new GrailsTagException("Tag ["+TAG_NAME+"] missing required attribute ["+ATTRIBUTE_EXPR+"]");
 
-        out.print(in);
-        if(StringUtils.isBlank(var)) {
-            out.println(".each {");
-        }
-        else {
-            out.print(".each { ");
-            out.print(var.substring(1,var.length() -1));
-            out.println(" ->");
-        }
-
+        out.print("def ");
+        out.print(var.substring(1,var.length() -1));
+        out.print('=');
+        out.println(expr);
     }
 
     public void doEndTag() {
-        out.println("}");
+        // do nothing
     }
 
     public String getName() {
@@ -58,6 +56,6 @@ public class GroovyEachTag extends GroovySyntaxTag {
     }
 
     public boolean hasPrecedingContent() {
-        return true;
+        return false;
     }
 }

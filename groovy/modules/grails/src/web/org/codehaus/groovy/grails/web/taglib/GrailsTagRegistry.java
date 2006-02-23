@@ -42,6 +42,8 @@ public class GrailsTagRegistry {
         tagRegistry.registerTag(GroovyCollectTag.TAG_NAME, GroovyCollectTag.class);
         tagRegistry.registerTag(GroovyGrepTag.TAG_NAME, GroovyGrepTag.class);
         tagRegistry.registerTag(GroovyWhileTag.TAG_NAME, GroovyWhileTag.class);
+        tagRegistry.registerTag(GroovyDefTag.TAG_NAME, GroovyDefTag.class);
+        tagRegistry.registerTag(GroovySetTag.TAG_NAME, GroovySetTag.class);
     }
 
     private GrailsTagRegistry() {
