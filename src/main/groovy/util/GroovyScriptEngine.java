@@ -63,36 +63,36 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  */
 public class GroovyScriptEngine implements ResourceConnector {
 
-	/**
-	 * Simple testing harness for the GSE. Enter script roots as arguments and
-	 * then input script names to run them.
-	 * 
-	 * @param urls
-	 * @throws Exception
-	 */
-	public static void main(String[] urls) throws Exception {
-		URL[] roots = new URL[urls.length];
-		for (int i = 0; i < roots.length; i++) {
-			roots[i] = new File(urls[i]).toURL();
-		}
-		GroovyScriptEngine gse = new GroovyScriptEngine(roots);
-		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-		String line;
-		while (true) {
-			System.out.print("groovy> ");
-			if ((line = br.readLine()) == null || line.equals("quit"))
-				break;
-			try {
-				System.out.println(gse.run(line, new Binding()));
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
-	}
+    /**
+     * Simple testing harness for the GSE. Enter script roots as arguments and
+     * then input script names to run them.
+     *
+     * @param urls
+     * @throws Exception
+     */
+    public static void main(String[] urls) throws Exception {
+        URL[] roots = new URL[urls.length];
+        for (int i = 0; i < roots.length; i++) {
+            roots[i] = new File(urls[i]).toURL();
+        }
+        GroovyScriptEngine gse = new GroovyScriptEngine(roots);
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        String line;
+        while (true) {
+            System.out.print("groovy> ");
+            if ((line = br.readLine()) == null || line.equals("quit"))
+                break;
+            try {
+                System.out.println(gse.run(line, new Binding()));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
-	private URL[] roots;
-	private Map scriptCache = Collections.synchronizedMap(new HashMap());
-	private ResourceConnector rc;
+    private URL[] roots;
+    private Map scriptCache = Collections.synchronizedMap(new HashMap());
+    private ResourceConnector rc;
     private ClassLoader parentClassLoader = getClass().getClassLoader();
 
     private static class ScriptCacheEntry {
@@ -152,18 +152,18 @@ public class GroovyScriptEngine implements ResourceConnector {
         return groovyScriptConn;
     }
 
-	/**
-	 * The groovy script engine will run groovy scripts and reload them and
-	 * their dependencies when they are modified. This is useful for embedding
-	 * groovy in other containers like games and application servers.
+    /**
+     * The groovy script engine will run groovy scripts and reload them and
+     * their dependencies when they are modified. This is useful for embedding
+     * groovy in other containers like games and application servers.
      *
      * @param roots This an array of URLs where Groovy scripts will be stored. They should
      * be layed out using their package structure like Java classes 
-	 */
-	public GroovyScriptEngine(URL[] roots) {
-		this.roots = roots;
-		this.rc = this;
-	}
+     */
+    public GroovyScriptEngine(URL[] roots) {
+        this.roots = roots;
+        this.rc = this;
+    }
 
     public GroovyScriptEngine(URL[] roots, ClassLoader parentClassLoader) {
         this(roots);
@@ -373,8 +373,8 @@ public class GroovyScriptEngine implements ResourceConnector {
      */
     public Object run(String scriptName, Binding binding) throws ResourceException, ScriptException {
 
-		ScriptCacheEntry entry = updateCacheEntry(scriptName, getParentClassLoader());
+        ScriptCacheEntry entry = updateCacheEntry(scriptName, getParentClassLoader());
         Script scriptObject = InvokerHelper.createScript(entry.scriptClass, binding);
-		return scriptObject.run();
-	}
+        return scriptObject.run();
+    }
 }
