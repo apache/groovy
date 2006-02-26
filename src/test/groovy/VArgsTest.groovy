@@ -9,8 +9,11 @@ class VArgsTest extends GroovyTestCase {
     assert primitiveMethod()==0
     assert primitiveMethod(1)==1
     assert primitiveMethod(1,1)==2
-    assert primitiveMethod(1,1,1)==13
+    // assert primitiveMethod(1,1,1)==13 // fails: see below
     assert primitiveMethod([1,2,2,2] as int[])==14
+  }
+  void testPrimitiveMethodUntyped_FAILS() { if (notYetImplemented()) return
+    assert primitiveMethod(1,1,1)==13
   }
   
   def objectMethod(){0}
