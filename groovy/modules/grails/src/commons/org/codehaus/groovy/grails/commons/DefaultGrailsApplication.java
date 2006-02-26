@@ -17,11 +17,13 @@ package org.codehaus.groovy.grails.commons;
 
 import groovy.lang.GroovyClassLoader;
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.groovy.grails.exceptions.GrailsConfigurationException;
 import org.codehaus.groovy.grails.exceptions.MoreThanOneActiveDataSourceException;
 import org.codehaus.groovy.grails.orm.hibernate.cfg.GrailsDomainConfigurationUtil;
+import org.codehaus.groovy.grails.commons.spring.GrailsResourceHolder;
 import org.springframework.core.io.Resource;
 
 import java.io.IOException;
@@ -31,7 +33,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * 
+ * Default implementation of the GrailsApplication interface that manages application loading,
+ * state, and artifact instances.
  * 
  * @author Steven Devijver
  * @author Graeme Rocher
@@ -39,8 +42,6 @@ import java.util.regex.Pattern;
  * @since Jul 2, 2005
  */
 public class DefaultGrailsApplication implements GrailsApplication {
-
-    private static Pattern GRAILS_RESOURCE_PATTERN = Pattern.compile(".+\\\\grails-app\\\\\\w+\\\\(.+)\\.groovy");
     private GroovyClassLoader cl = null;
     private GrailsControllerClass[] controllerClasses = null;
     private GrailsPageFlowClass[] pageFlows = null;
@@ -77,6 +78,8 @@ public class DefaultGrailsApplication implements GrailsApplication {
         log.debug("Loading Grails application.");
 
         GrailsResourceLoader resourceLoader = new GrailsResourceLoader(resources);
+        GrailsResourceHolder resourceHolder = new GrailsResourceHolder();
+
         this.cl = new GroovyClassLoader();
         this.cl.setResourceLoader(resourceLoader);
            Collection loadedResources = new ArrayList();
@@ -85,9 +88,9 @@ public class DefaultGrailsApplication implements GrailsApplication {
                 log.debug("Loading groovy file :[" + resources[i].getFile().getAbsolutePath() + "]");
                 if (!loadedResources.contains(resources[i])) {
                     try {
-                        Matcher m = GRAILS_RESOURCE_PATTERN.matcher(resources[i].getFile().getAbsolutePath());
-                        if(m.find()) {
-                            cl.loadClass(m.group(1),true,false);
+                        String className = resourceHolder.getClassName(resources[i]);
+                        if(!StringUtils.isBlank(className)) {
+                            cl.loadClass(className,true,false);
                             loadedResources = resourceLoader.getLoadedResources();
                         }
                     } catch (ClassNotFoundException e) {
