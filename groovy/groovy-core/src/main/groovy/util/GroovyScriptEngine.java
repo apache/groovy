@@ -96,10 +96,10 @@ public class GroovyScriptEngine implements ResourceConnector {
     private ClassLoader parentClassLoader = getClass().getClassLoader();
 
     private static class ScriptCacheEntry {
-		private Class scriptClass;
-		private long lastModified;
-		private Map dependencies = new HashMap();
-	}
+        private Class scriptClass;
+        private long lastModified;
+        private Map dependencies = new HashMap();
+    }
 
     /**
      * Get a resource connection as a <code>URLConnection</code> to retrieve a script
@@ -171,12 +171,12 @@ public class GroovyScriptEngine implements ResourceConnector {
     }
 
     public GroovyScriptEngine(String[] urls) throws IOException {
-		roots = new URL[urls.length];
-		for (int i = 0; i < roots.length; i++) {
-			roots[i] = new File(urls[i]).toURL();
-		}
-		this.rc = this;
-	}
+        roots = new URL[urls.length];
+        for (int i = 0; i < roots.length; i++) {
+            roots[i] = new File(urls[i]).toURL();
+        }
+        this.rc = this;
+    }
 
     public GroovyScriptEngine(String[] urls, ClassLoader parentClassLoader) throws IOException {
         this(urls);
@@ -184,10 +184,10 @@ public class GroovyScriptEngine implements ResourceConnector {
     }
 
     public GroovyScriptEngine(String url) throws IOException {
-		roots = new URL[1];
-		roots[0] = new File(url).toURL();
-		this.rc = this;
-	}
+        roots = new URL[1];
+        roots[0] = new File(url).toURL();
+        this.rc = this;
+    }
 
     public GroovyScriptEngine(String url, ClassLoader parentClassLoader) throws IOException {
         this(url);
@@ -195,8 +195,8 @@ public class GroovyScriptEngine implements ResourceConnector {
     }
 
     public GroovyScriptEngine(ResourceConnector rc) {
-		this.rc = rc;
-	}
+        this.rc = rc;
+    }
 
     public GroovyScriptEngine(ResourceConnector rc, ClassLoader parentClassLoader) {
         this(rc);
@@ -356,11 +356,11 @@ public class GroovyScriptEngine implements ResourceConnector {
      * @throws ScriptException
      */
     public String run(String scriptName, String argument) throws ResourceException, ScriptException {
-		Binding binding = new Binding();
-		binding.setVariable("arg", argument);
-		Object result = run(scriptName, binding);
-		return result == null ? "" : result.toString();
-	}
+        Binding binding = new Binding();
+        binding.setVariable("arg", argument);
+        Object result = run(scriptName, binding);
+        return result == null ? "" : result.toString();
+    }
 
     /**
      * Run a script identified by name.
