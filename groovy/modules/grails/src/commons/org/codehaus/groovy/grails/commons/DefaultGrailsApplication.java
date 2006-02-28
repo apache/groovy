@@ -20,22 +20,20 @@ import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.codehaus.groovy.grails.commons.spring.GrailsResourceHolder;
 import org.codehaus.groovy.grails.exceptions.GrailsConfigurationException;
 import org.codehaus.groovy.grails.exceptions.MoreThanOneActiveDataSourceException;
 import org.codehaus.groovy.grails.orm.hibernate.cfg.GrailsDomainConfigurationUtil;
-import org.codehaus.groovy.grails.commons.spring.GrailsResourceHolder;
 import org.springframework.core.io.Resource;
 
 import java.io.IOException;
 import java.lang.reflect.Modifier;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Default implementation of the GrailsApplication interface that manages application loading,
  * state, and artifact instances.
- * 
+ *
  * @author Steven Devijver
  * @author Graeme Rocher
  *
@@ -279,6 +277,7 @@ public class DefaultGrailsApplication implements GrailsApplication {
         return domainClass;
     }
 
+
     public GrailsControllerClass getScaffoldingController(GrailsDomainClass domainClass) {
         if(domainClass == null)
             return null;
@@ -287,17 +286,19 @@ public class DefaultGrailsApplication implements GrailsApplication {
             GrailsControllerClass controllerClass = controllerClasses[i];
             if(controllerClass.isScaffolding()) {
                 Class scaffoldedClass = controllerClass.getScaffoldedClass();
-                if(scaffoldedClass == null && domainClass.getName().equals(controllerClass.getName())) {
-                    return controllerClass;
+                if(scaffoldedClass != null) {
+                    if(domainClass.getClazz().getName().equals(scaffoldedClass.getName())) {
+                        return controllerClass;
+                    }
                 }
-                else if(domainClass.getClazz().equals(scaffoldedClass)) {
-                    return controllerClass;
+                else if(domainClass.getName().equals(controllerClass.getName())) {
+                       return controllerClass;
                 }
-
             }
         }
         return null;
     }
+
 
     /**
      * Creates a map of tags to tag libraries
