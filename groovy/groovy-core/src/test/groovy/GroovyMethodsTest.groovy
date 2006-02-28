@@ -5,6 +5,7 @@ import java.io.InputStreamReader
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Guillaume Laforge
+ * @author Dierk Koenig
  * @version $Revision$
  */
 class GroovyMethodsTest extends GroovyTestCase {
@@ -89,6 +90,17 @@ class GroovyMethodsTest extends GroovyTestCase {
 
         assert l.containsAll(c)
         assert c.size() == l.size()
+    }
+
+    void testFileSize() {
+        assert new File('project.properties').size()
+    }
+
+    void testMatcherSize() {
+        assertEquals 3, ( 'aaa' =~ /./ ).count
+        assertEquals 3, ( 'aaa' =~ /./ ).size()
+        assertEquals 1, ( 'a' =~ /./ ).size()
+        assertEquals 0, ( 'a' =~ /x/ ).size()
     }
 
     void testJoinString() {

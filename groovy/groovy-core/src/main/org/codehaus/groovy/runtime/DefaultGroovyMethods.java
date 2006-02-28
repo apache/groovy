@@ -1266,6 +1266,21 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * Provide the standard Groovy size method
+     */
+    public static long size(File file){
+        return file.length();
+    }
+
+
+    /**
+     * Provide the standard Groovy size method
+     */
+    public static long size(Matcher matcher){
+        return getCount(matcher);
+    }
+
+    /**
      * Makes an Array look like a Collection by adding support for the size() method
      *
      * @param self an Array of Object
