@@ -1719,7 +1719,13 @@ public class AsmClassGenerator extends ClassGenerator {
     }
     
     private static String getStaticFieldName(ClassNode type) {
-    	String name = "class$" + BytecodeHelper.getClassInternalName(type).replace('/', '$').replace('[', '_').replace(';', '_').replace(']','_');
+        ClassNode componentType = type;
+        String prefix = "";
+        for (; componentType.isArray(); componentType=componentType.getComponentType()){
+            prefix+="$";
+        }
+        if (prefix.length()!=0) prefix = "array"+prefix;
+    	String name = prefix+"class$" + BytecodeHelper.getClassInternalName(componentType).replace('/', '$').replace(";", "");
         return name;
     }
     

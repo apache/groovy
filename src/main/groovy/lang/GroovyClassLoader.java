@@ -41,11 +41,11 @@ import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.security.AccessController;
 import java.security.CodeSource;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
-import java.security.SecureClassLoader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -53,10 +53,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.jar.Attributes;
-import java.util.jar.JarFile;
-import java.util.jar.Manifest;
 
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ModuleNode;
@@ -72,7 +68,7 @@ import org.objectweb.asm.ClassWriter;
 /**
  * A ClassLoader which can load Groovy classes
  *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan </a>
+ * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Guillaume Laforge
  * @author Steve Goetze
  * @author Bing Ran
@@ -80,35 +76,23 @@ import org.objectweb.asm.ClassWriter;
  * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
  * @version $Revision$
  */
-public class GroovyClassLoader extends SecureClassLoader {
+public class GroovyClassLoader extends URLClassLoader {
 
     private Map cache = new HashMap();
 
     private GroovyResourceLoader resourceLoader = new GroovyResourceLoader() {
-        private HashMap filenameCache = new HashMap();
-        
         public URL loadGroovySource(final String filename) throws MalformedURLException {
-            File file=null;
-            synchronized (filenameCache) {
-            	file = (File) AccessController.doPrivileged(new PrivilegedAction() {
-                	public Object run() {
-                        File f = (File) filenameCache.get(filename);
-                        
-                        if (f==null || !f.exists()) {
-                            f = getSourceFile(filename);
-                        }
-                        return f;
-                	}
-                });
-
-                filenameCache.put(filename,file);
-            }
-            return file == null ? null : file.toURL();
+            URL file = (URL) AccessController.doPrivileged(new PrivilegedAction() {
+                public Object run() {
+                    return  getSourceFile(filename);
+                }
+            });
+            return file;
         }
     };
 
     public void removeFromCache(Class aClass) {
-        cache.remove(aClass);
+        cache.remove(aClass.getName());
     }
 
     public static class PARSING {
@@ -118,8 +102,6 @@ public class GroovyClassLoader extends SecureClassLoader {
     }
 
     private CompilerConfiguration config;
-    private String[] searchPaths;
-    private Set additionalPaths = new HashSet();
 
     /**
      * creates a GroovyClassLoader using the current Thread's context
@@ -133,7 +115,7 @@ public class GroovyClassLoader extends SecureClassLoader {
      * creates a GroovyClassLoader using the given ClassLoader as parent
      */
     public GroovyClassLoader(ClassLoader loader) {
-        this(loader, null);
+        this(loader, null, true);
     }
 
     /**
@@ -141,17 +123,28 @@ public class GroovyClassLoader extends SecureClassLoader {
      * This loader will get the parent's CompilerConfiguration
      */
     public GroovyClassLoader(GroovyClassLoader parent) {
-        this(parent, parent.config);
+        this(parent, parent.config, true);
     }
 
     /**
      * creates a GroovyClassLoader using the given ClassLoader as parent.
      */
     public GroovyClassLoader(ClassLoader loader, CompilerConfiguration config) {
-        super(loader);
+        this(loader,config,false);
+    }
+    
+    private GroovyClassLoader(ClassLoader loader, CompilerConfiguration config, boolean skipConfigClassPath) {
+        super(new URL[0],loader);
         if (config==null) config = CompilerConfiguration.DEFAULT;
         this.config = config;
+        if (!skipConfigClassPath) {
+            for (Iterator iter = config.getClasspath().iterator(); iter.hasNext();) {
+                String path = (String) iter.next();
+                addClasspath(path);
+            }
+        }
     }
+    
 
     public void setResourceLoader(GroovyResourceLoader resourceLoader) {
         if (resourceLoader == null) {
@@ -270,9 +263,6 @@ public class GroovyClassLoader extends SecureClassLoader {
     public Class parseClass(GroovyCodeSource codeSource, boolean shouldCache) throws CompilationFailedException {
         String name = codeSource.getName();
         Class answer = null;
-        //ASTBuilder.resolveName can call this recursively -- for example when
-        // resolving a Constructor
-        //invocation for a class that is currently being compiled.
         synchronized (cache) {
             answer = (Class) cache.get(name);
             if (answer != null) {
@@ -321,95 +311,28 @@ public class GroovyClassLoader extends SecureClassLoader {
         }
         return answer;
     }
-
-      /**
-       * Workaround for Groovy-835
-       *
-       * @return the classpath as an array of strings, uses the classpath in the CompilerConfiguration object if possible,
-       *         otherwise defaults to the value of the <tt>java.class.path</tt> system property
-       */
-      protected String[] getClassPath() {
-        if (null == searchPaths) {
-          String classpath;
-          if(null != config && null != config.getClasspath()) {
-            //there's probably a better way to do this knowing the internals of
-            //Groovy, but it works for now
-            StringBuffer sb = new StringBuffer();
-            for(Iterator iter = config.getClasspath().iterator(); iter.hasNext(); ) {
-              sb.append(iter.next().toString());
-              sb.append(File.pathSeparatorChar);
-            }
-            //remove extra path separator
-            sb.deleteCharAt(sb.length()-1);
-            classpath = sb.toString();
-          } else {
-            classpath = System.getProperty("java.class.path", ".");
-          }
-          List pathList = new ArrayList(additionalPaths);
-          expandClassPath(pathList, null, classpath, false);
-          searchPaths = new String[pathList.size()];
-          searchPaths = (String[]) pathList.toArray(searchPaths);
+    
+    /**
+     *
+     * @return the classpath as an array of strings, uses the classpath in the CompilerConfiguration object if possible,
+     *         otherwise defaults to the value of the <tt>java.class.path</tt> system property
+     */
+    protected String[] getClassPath() {
+        //workaround for Groovy-835
+        URL[] urls = getURLs();
+        String[] ret = new String[urls.length];
+        for (int i = 0; i < ret.length; i++) {
+            ret[i] =  urls[i].getFile();
         }
-        return searchPaths;
-      }
+        return ret;
+    }
 
     /**
      * @param pathList an empty list that will contain the elements of the classpath
      * @param classpath the classpath specified as a single string
      */
     protected void expandClassPath(List pathList, String base, String classpath, boolean isManifestClasspath) {
-
-        // checking against null prevents an NPE when recursevely expanding the
-        // classpath
-        // in case the classpath is malformed
-        if (classpath != null) {
-
-            // Sun's convention for the class-path attribute is to seperate each
-            // entry with spaces
-            // but some libraries don't respect that convention and add commas,
-            // colons, semi-colons
-            String[] paths;
-            if (isManifestClasspath) {
-                paths = classpath.split("[\\ ,:;]");
-            } else {
-                paths = classpath.split(File.pathSeparator);
-            }
-
-            for (int i = 0; i < paths.length; i++) {
-                if (paths.length > 0) {
-                    File path = null;
-
-                    if ("".equals(base)) {
-                        path = new File(paths[i]);
-                    } else {
-                        path = new File(base, paths[i]);
-                    }
-
-                    if (path.exists()) {
-                        if (!path.isDirectory()) {
-                            try {
-                                JarFile jar = new JarFile(path);
-                                pathList.add(paths[i]);
-
-                                Manifest manifest = jar.getManifest();
-                                if (manifest != null) {
-                                    Attributes classPathAttributes = manifest.getMainAttributes();
-                                    String manifestClassPath = classPathAttributes.getValue("Class-Path");
-
-                                    if (manifestClassPath != null)
-                                        expandClassPath(pathList, paths[i], manifestClassPath, true);
-                                }
-                            } catch (IOException e) {
-                                // Bad jar, ignore
-                                continue;
-                            }
-                        } else {
-                            pathList.add(paths[i]);
-                        }
-                    }
-                }
-            }
-        }
+        throw new DeprecationException("the method groovy.lang.GroovyClassLoader#expandClassPath(List,String,String,boolean) is no longer used internally and removed");
     }
 
     /**
@@ -566,16 +489,8 @@ public class GroovyClassLoader extends SecureClassLoader {
 
         if (cls!=null) {
             boolean recompile = false;
-            if (getTimeStamp(cls) < Long.MAX_VALUE) {
-                Class[] inters = cls.getInterfaces();
-                for (int i = 0; i < inters.length; i++) {
-                    if (inters[i].getName().equals(GroovyObject.class.getName())) {
-                        recompile=true;
-                        break;
-                    }
-                }
-            }
-
+            recompile = getTimeStamp(cls) < Long.MAX_VALUE &&
+                        GroovyObject.class.isAssignableFrom(cls);
             preferClassOverScript |= cls.getClassLoader()==this;
             preferClassOverScript |= !recompile;
             if(preferClassOverScript) return cls;
@@ -626,10 +541,9 @@ public class GroovyClassLoader extends SecureClassLoader {
     }
 
     private long getTimeStamp(Class cls) {
-        Field field;
         Long o;
         try {
-            field = cls.getField(Verifier.__TIMESTAMP);
+            Field field = cls.getField(Verifier.__TIMESTAMP);
             o = (Long) field.get(null);
         } catch (Exception e) {
             return Long.MAX_VALUE;
@@ -637,43 +551,9 @@ public class GroovyClassLoader extends SecureClassLoader {
         return o.longValue();
     }
 
-    private File getSourceFile(String name) {
-        File source = null;
-        String filename = name.replace('.', '/') + ".groovy";
-        String[] paths = getClassPath();
-        for (int i = 0; i < paths.length; i++) {
-            String pathName = paths[i];
-            File path = new File(pathName);
-            if (path.exists()) { // case sensitivity depending on OS!
-                if (path.isDirectory()) {
-                    File file = new File(path, filename);
-                    if (file.exists()) {
-                        // file.exists() might be case insensitive. Let's do
-                        // case sensitive match for the filename
-                        boolean fileExists = false;
-                        int sepp = filename.lastIndexOf('/');
-                        String fn = filename;
-                        if (sepp >= 0) {
-                            fn = filename.substring(++sepp);
-                        }
-                        File parent = file.getParentFile();
-                        String[] files = parent.list();
-                        for (int j = 0; j < files.length; j++) {
-                            if (files[j].equals(fn)) {
-                                fileExists = true;
-                                break;
-                            }
-                        }
-
-                        if (fileExists) {
-                            source = file;
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-        return source;
+    private URL getSourceFile(String name) {
+        String filename = name.replace('.', '/') + config.getDefaultScriptExtension();
+        return getResource(filename);
     }
 
     protected boolean isSourceNewer(URL source, Class cls) throws IOException {
@@ -694,8 +574,16 @@ public class GroovyClassLoader extends SecureClassLoader {
     }
 
     public void addClasspath(String path) {
-        additionalPaths.add(path);
-        searchPaths = null;
+        try {
+            URL newURL = new URL("file://"+path);
+            URL[] urls = getURLs();
+            for (int i=0; i<urls.length; i++) {
+                if (urls[i].equals(newURL)) return;
+            }
+            addURL(newURL);
+        } catch (MalformedURLException e) {
+            //TODO: fail through ?
+        }
     }
 
     /**
