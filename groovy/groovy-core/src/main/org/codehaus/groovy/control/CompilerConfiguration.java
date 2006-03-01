@@ -115,11 +115,14 @@ public class CompilerConfiguration {
 
     private ParserPluginFactory pluginFactory;
 
+    /**
+     * extension used to find a groovy file
+     */
+    private String defaultScriptExtension = ".groovy";
 
     /**
      * Sets the Flags to defaults.
      */
-
     public CompilerConfiguration() {
         //
         // Set in safe defaults
@@ -284,7 +287,6 @@ public class CompilerConfiguration {
      * Gets the currently configured warning level.  See WarningMessage
      * for level details.
      */
-
     public int getWarningLevel() {
         return this.warningLevel;
     }
@@ -293,7 +295,6 @@ public class CompilerConfiguration {
     /**
      * Sets the warning level.  See WarningMessage for level details.
      */
-
     public void setWarningLevel(int level) {
         if (level < WarningMessage.NONE || level > WarningMessage.PARANOIA) {
             this.warningLevel = WarningMessage.LIKELY_ERRORS;
@@ -307,7 +308,6 @@ public class CompilerConfiguration {
     /**
      * Gets the currently configured source file encoding.
      */
-
     public String getSourceEncoding() {
         return this.sourceEncoding;
     }
@@ -316,7 +316,6 @@ public class CompilerConfiguration {
     /**
      * Sets the encoding to be used when reading source files.
      */
-
     public void setSourceEncoding(String encoding) {
         this.sourceEncoding = encoding;
     }
@@ -325,7 +324,6 @@ public class CompilerConfiguration {
     /**
      * Gets the currently configured output writer.
      */
-
     public PrintWriter getOutput() {
         return this.output;
     }
@@ -334,7 +332,6 @@ public class CompilerConfiguration {
     /**
      * Sets the output writer.
      */
-
     public void setOutput(PrintWriter output) {
         if (this.output == null) {
             this.output = new PrintWriter(NullWriter.DEFAULT);
@@ -348,7 +345,6 @@ public class CompilerConfiguration {
     /**
      * Gets the target directory for writing classes.
      */
-
     public File getTargetDirectory() {
         return this.targetDirectory;
     }
@@ -357,7 +353,6 @@ public class CompilerConfiguration {
     /**
      * Sets the target directory.
      */
-
     public void setTargetDirectory(String directory) {
         if (directory != null && directory.length() > 0) {
             this.targetDirectory = new File(directory);
@@ -371,7 +366,6 @@ public class CompilerConfiguration {
     /**
      * Sets the target directory.
      */
-
     public void setTargetDirectory(File directory) {
         this.targetDirectory = directory;
     }
@@ -380,7 +374,6 @@ public class CompilerConfiguration {
     /**
      * Gets the classpath.
      */
-
     public List getClasspath() {
         return this.classpath;
     }
@@ -389,7 +382,6 @@ public class CompilerConfiguration {
     /**
      * Sets the classpath.
      */
-
     public void setClasspath(String classpath) {
         this.classpath = new LinkedList();
 
@@ -403,7 +395,6 @@ public class CompilerConfiguration {
     /**
      * Returns true if verbose operation has been requested.
      */
-
     public boolean getVerbose() {
         return this.verbose;
     }
@@ -412,7 +403,6 @@ public class CompilerConfiguration {
     /**
      * Turns verbose operation on or off.
      */
-
     public void setVerbose(boolean verbose) {
         this.verbose = verbose;
     }
@@ -421,7 +411,6 @@ public class CompilerConfiguration {
     /**
      * Returns true if debugging operation has been requested.
      */
-
     public boolean getDebug() {
         return this.debug;
     }
@@ -430,7 +419,6 @@ public class CompilerConfiguration {
     /**
      * Turns debugging operation on or off.
      */
-
     public void setDebug(boolean debug) {
         this.debug = debug;
     }
@@ -439,7 +427,6 @@ public class CompilerConfiguration {
     /**
      * Returns the requested error tolerance.
      */
-
     public int getTolerance() {
         return this.tolerance;
     }
@@ -450,7 +437,6 @@ public class CompilerConfiguration {
      * non-fatal errors (per unit) that should be tolerated before
      * compilation is aborted.
      */
-
     public void setTolerance(int tolerance) {
         this.tolerance = tolerance;
     }
@@ -460,7 +446,6 @@ public class CompilerConfiguration {
      * Gets the name of the base class for scripts.  It must be a subclass
      * of Script.
      */
-
     public String getScriptBaseClass() {
         return this.scriptBaseClass;
     }
@@ -525,8 +510,14 @@ public class CompilerConfiguration {
         return DEFAULT_JSR_FLAG;
     }
 
+
+    public String getDefaultScriptExtension() {
+        return defaultScriptExtension;
+    }
+
+
+    public void setDefaultScriptExtension(String defaultScriptExtension) {
+        this.defaultScriptExtension = defaultScriptExtension;
+    }
+
 }
-
-
-
-

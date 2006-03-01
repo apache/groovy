@@ -648,24 +648,24 @@ public class MetaClassHelper {
             // the vargs argument is missing, so fill it with an empty array
             Object[] newArgs = new Object[paramTypes.length];
             System.arraycopy(argumentArray,0,newArgs,0,argumentArray.length);
-            Object result = makeArray(null,vargsClass,0);
-            newArgs[newArgs.length-1] = result;
+            Object vargs = makeArray(null,vargsClass,0);
+            newArgs[newArgs.length-1] = vargs;
             return newArgs;
         } else if (argumentArray.length==paramTypes.length) {
             // the number of arguments is correct, but if the last argument 
             // is no array we have to wrap it in a array. if the last argument
             // is null, then we don't have to do anything
             Object lastArgument = argumentArray[argumentArray.length-1];
-            if (lastArgument!= null && !lastArgument.getClass().isArray()) {
+            if (lastArgument!=null && !lastArgument.getClass().isArray()) {
                 // no array so wrap it
-                Object result = makeArray(lastArgument,vargsClass,1);
-                System.arraycopy(argumentArray,argumentArray.length-1,result,0,1);
-                argumentArray[argumentArray.length-1]=result;
+                Object vargs = makeArray(lastArgument,vargsClass,1);
+                System.arraycopy(argumentArray,argumentArray.length-1,vargs,0,1);
+                argumentArray[argumentArray.length-1]=vargs;
                 return argumentArray;
             } else {
-                // nothing to do!
+                // we may have to box the arguemnt!
                 return argumentArray;
-            }
+            } 
         } else if (argumentArray.length>paramTypes.length) {
             // the number of arguments is too big, wrap all exceeding elements
             // in an array, but keep the old elements that are no vargs
