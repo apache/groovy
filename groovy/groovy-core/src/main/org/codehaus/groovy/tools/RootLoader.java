@@ -172,7 +172,7 @@ public class RootLoader extends ClassLoader {
      */
     public URL getResource(String name) {
         URL url = inner.getResource(name);
-        url = super.getResource(name);
+        if (url==null) url = super.getResource(name);
         return url;
     }    
     

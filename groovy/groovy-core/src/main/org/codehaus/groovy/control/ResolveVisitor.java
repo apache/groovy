@@ -467,10 +467,16 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
         } catch (ClassNotFoundException cnfe) {
             cachedClasses.put(name,SCRIPT);
             return false;
-        } catch (NoClassDefFoundError ncdfe) {
+        } 
+        //TODO: the case of a NoClassDefFoundError needs a bit more research
+        // a simple recompilation is not possible it seems. The current class
+        // we are searching for is there, so we should mark that somehow. 
+        // Basically the missing class needs to be completly compiled before
+        // we can again search for the current name.
+        /*catch (NoClassDefFoundError ncdfe) {
             cachedClasses.put(name,SCRIPT);
             return false;
-        }
+        }*/
         if (cls==null) return false;
         cachedClasses.put(name,cls);
         setClass(type,cls);
@@ -517,8 +523,9 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
                 }
                 name= ve.getName()+"."+name;
                 break;
-            }
-            // anything other than PropertyExpressions and VariableExpressions will stop resolving
+            } 
+            // anything other than PropertyExpressions, ClassExpression or
+            // VariableExpressions will stop resolving
             else if (!(it instanceof PropertyExpression)) {
                 return null;
             } else {

@@ -553,7 +553,8 @@ public class GroovyClassLoader extends URLClassLoader {
 
     private URL getSourceFile(String name) {
         String filename = name.replace('.', '/') + config.getDefaultScriptExtension();
-        return getResource(filename);
+        URL ret = getResource(filename);
+        return ret;
     }
 
     protected boolean isSourceNewer(URL source, Class cls) throws IOException {
@@ -575,7 +576,8 @@ public class GroovyClassLoader extends URLClassLoader {
 
     public void addClasspath(String path) {
         try {
-            URL newURL = new URL("file://"+path);
+            File f = new File(path);
+            URL newURL = f.toURI().toURL();
             URL[] urls = getURLs();
             for (int i=0; i<urls.length; i++) {
                 if (urls[i].equals(newURL)) return;
