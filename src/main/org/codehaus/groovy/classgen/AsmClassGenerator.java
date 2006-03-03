@@ -1727,7 +1727,7 @@ public class AsmClassGenerator extends ClassGenerator {
             prefix+="$";
         }
         if (prefix.length()!=0) prefix = "array"+prefix;
-    	String name = prefix+"class$" + BytecodeHelper.getClassInternalName(componentType).replace('/', '$').replace(";", "");
+        String name = prefix+"class$" + BytecodeHelper.getClassInternalName(componentType).replace('/', '$').replace(';', ' ');
         return name;
     }
     
