@@ -265,7 +265,7 @@ public class InvokeMethodTest extends GroovyTestCase {
     public void testBadBDToDoubleCoerce() throws Throwable {
         try {
             Object value = invoke(Math.class, "floor", new BigDecimal("1.7E309"));
-        } catch (GroovyRuntimeException e) {
+        } catch (IllegalArgumentException e) {
             assertTrue("Math.floor(1.7E309) should fail because it is out of range for a Double. "
                     +e,e.getMessage().indexOf("out of range") > 0);
             return;

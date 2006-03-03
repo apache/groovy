@@ -485,6 +485,12 @@ public class GroovyClassLoader extends URLClassLoader {
             cls = super.loadClass(name, resolve);
         } catch (ClassNotFoundException cnfe) {
             last = cnfe;
+        } catch (NoClassDefFoundError ncdfe) {
+            if (ncdfe.getMessage().indexOf("wrong name")>0) {
+                last = new ClassNotFoundException(name);
+            } else {
+                throw ncdfe;
+            }
         }
 
         if (cls!=null) {
@@ -554,6 +560,28 @@ public class GroovyClassLoader extends URLClassLoader {
     private URL getSourceFile(String name) {
         String filename = name.replace('.', '/') + config.getDefaultScriptExtension();
         URL ret = getResource(filename);
+        if (ret!=null && ret.getProtocol().equals("file")) {
+            File path = new File(ret.getFile());
+            if (path.exists()) { // case sensitivity depending on OS!
+                if (path.isDirectory()) {
+                    File file = new File(path, filename);
+                    if (file.exists()) {
+                        // file.exists() might be case insensitive. Let's do
+                        // case sensitive match for the filename
+                        int sepp = filename.lastIndexOf('/');
+                        String fn = filename;
+                        if (sepp >= 0) fn = filename.substring(sepp+1);
+                        File parent = file.getParentFile();
+                        String[] files = parent.list();
+                        for (int j = 0; j < files.length; j++) {
+                            if (files[j].equals(fn)) return ret;
+                        }
+                    }
+                }
+            }
+            //file does not exist!
+            return null;
+        }
         return ret;
     }
 
@@ -574,18 +602,23 @@ public class GroovyClassLoader extends URLClassLoader {
         return lastMod > getTimeStamp(cls);
     }
 
-    public void addClasspath(String path) {
-        try {
-            File f = new File(path);
-            URL newURL = f.toURI().toURL();
-            URL[] urls = getURLs();
-            for (int i=0; i<urls.length; i++) {
-                if (urls[i].equals(newURL)) return;
+    public void addClasspath(final String path) {
+        GroovyCodeSource gcs = (GroovyCodeSource) AccessController.doPrivileged(new PrivilegedAction() {
+            public Object run() {
+                try {
+                    File f = new File(path);
+                    URL newURL = f.toURI().toURL();
+                    URL[] urls = getURLs();
+                    for (int i=0; i<urls.length; i++) {
+                        if (urls[i].equals(newURL)) return null;
+                    }
+                    addURL(newURL);
+                } catch (MalformedURLException e) {
+                    //TODO: fail through ?
+                }
+                return null;
             }
-            addURL(newURL);
-        } catch (MalformedURLException e) {
-            //TODO: fail through ?
-        }
+        });
     }
 
     /**
