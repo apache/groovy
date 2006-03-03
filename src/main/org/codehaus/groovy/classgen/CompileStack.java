@@ -426,6 +426,14 @@ public class CompileStack implements Opcodes {
     }
     
     /**
+     * because a boolean Expression may not be evaluated completly
+     * it is important to keep the registers clean
+     */
+    protected void pushBooleanExpression(){
+        pushState();
+    }
+    
+    /**
      * returns the current finally label
      */
     public Label getFinallyLabel() {

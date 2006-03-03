@@ -545,9 +545,8 @@ public class AsmClassGenerator extends ClassGenerator {
     public void visitIfElse(IfStatement ifElse) {
         onLineNumber(ifElse, "visitIfElse");
         visitStatement(ifElse);
-        
         ifElse.getBooleanExpression().visit(this);
-
+        
         Label l0 = new Label();
         cv.visitJumpInsn(IFEQ, l0);
 
@@ -1348,7 +1347,9 @@ public class AsmClassGenerator extends ClassGenerator {
                     // we can simply define it here and don't have to
                     // be afraid about name problems because a second
                     // variable with that name is not allowed inside the closure
+                    param.setClosureSharedVariable(false);
                     v = compileStack.defineVariable(param,true);
+                    param.setClosureSharedVariable(true);
                     v.setHolder(true);
                 } 
                 cv.visitVarInsn(ALOAD, v.getIndex());
@@ -1449,6 +1450,7 @@ public class AsmClassGenerator extends ClassGenerator {
      * @param expression
      */
     public void visitBooleanExpression(BooleanExpression expression) {
+        compileStack.pushBooleanExpression();
         expression.getExpression().visit(this);
 
         if (!isComparisonExpression(expression.getExpression())) {
@@ -1458,6 +1460,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 asBool.call(cv); // to return a primitive boolean
 //            }
         }
+        compileStack.pop();
     }
 
     private void prepareMethodcallObjectAndName(Expression objectExpression, boolean objectExpressionIsMethodName, String method) {
