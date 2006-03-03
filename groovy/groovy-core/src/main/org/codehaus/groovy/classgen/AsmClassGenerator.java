@@ -1720,6 +1720,22 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
     
+    private static String makeFiledClassName(ClassNode type) {
+        String internalName = BytecodeHelper.getClassInternalName(type);
+        StringBuffer ret = new StringBuffer(internalName.length());
+        for (int i=0; i<internalName.length(); i++) {
+            char c = internalName.charAt(i);
+            if (c=='/') {
+                ret.append('$');
+            } else if (c==';') {
+                //append nothing -> delete ';'
+            } else {
+                ret.append(c);
+            }
+        }
+        return ret.toString();
+    }
+    
     private static String getStaticFieldName(ClassNode type) {
         ClassNode componentType = type;
         String prefix = "";
@@ -1727,7 +1743,7 @@ public class AsmClassGenerator extends ClassGenerator {
             prefix+="$";
         }
         if (prefix.length()!=0) prefix = "array"+prefix;
-        String name = prefix+"class$" + BytecodeHelper.getClassInternalName(componentType).replace('/', '$').replace(';', ' ');
+        String name = prefix+"class$" + makeFiledClassName(componentType);
         return name;
     }
     
