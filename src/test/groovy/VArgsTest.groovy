@@ -10,9 +10,7 @@ class VArgsTest extends GroovyTestCase {
     assert primitiveMethod(1)==1
     assert primitiveMethod(1,1)==2
     assert primitiveMethod(1,1,1)==13 
-    // TODO: the following test case prudces a ClassCastException [Ljava.lang.Integer;
-    // but only when executed as part of the test run
-    //assert primitiveMethod([1,2,2,2] as int[])==14
+    assert primitiveMethod([1,2,2,2] as int[])==14
   }
   
   def objectMethod(){0}
