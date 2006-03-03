@@ -276,9 +276,13 @@ public class MetaClassHelper {
                 // remove one to dist to be sure Object is prefered
                 dist--;
                 Class clazz = parameters[i];
-                while (clazz!=Object.class) {
-                    clazz = clazz.getSuperclass();
+                if (clazz.isPrimitive()) {
                     dist+=2;
+                } else {
+                    while (clazz!=Object.class) {
+                        clazz = clazz.getSuperclass();
+                        dist+=2;
+                    }
                 }
             }
         }
