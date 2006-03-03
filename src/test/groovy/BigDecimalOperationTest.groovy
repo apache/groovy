@@ -79,4 +79,11 @@ class BigDecimalOperationTest extends GroovyTestCase {
         y = 34.00000000000 / 3
         assert y == 11.33333333333 , "y = " + y
     }
+    
+    BigDecimal echoX ( BigDecimal x, BigDecimal y) {x}
+    
+    // test for Groovy-1250
+    void testBigDecimalCoerce() {
+        assert echoX(9.95, 1.0) == echoX(9.95, 1)
+    }
 }
