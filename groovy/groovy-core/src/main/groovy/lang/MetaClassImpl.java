@@ -53,7 +53,6 @@ import java.beans.PropertyDescriptor;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.URL;
@@ -81,7 +80,6 @@ import org.codehaus.groovy.runtime.CurriedClosure;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.MethodClosure;
 import org.codehaus.groovy.runtime.MethodKey;
@@ -484,25 +482,7 @@ public class MetaClassImpl extends MetaClass {
        if (method != null) {
            return MetaClassHelper.doMethodInvoke(object, method, arguments);
        }
-       /*
-       List methods = getStaticMethods(methodName);
 
-       if (!methods.isEmpty()) {
-           MetaMethod method = (MetaMethod) chooseMethod(methodName, methods, arguments, false);
-           if (method != null) {
-               return doMethodInvoke(theClass, method, arguments);
-           }
-       }
-
-       if (theClass != Class.class) {
-           try {
-               return registry.getMetaClass(Class.class).invokeMethod(object, methodName, arguments);
-           }
-           catch (GroovyRuntimeException e) {
-               // throw our own exception
-           }
-       }
-       */
        throw new MissingMethodException(methodName, theClass, arguments);
    }
 
@@ -1372,70 +1352,18 @@ public class MetaClassImpl extends MetaClass {
            MetaClassHelper.logMethodCall(constructor.getDeclaringClass(), constructor.getName(), argumentArray);
        }
 
-       try {
-           // To fix JIRA 435
-           // Every constructor should be opened to the accessible classes.
-           final boolean accessible = MetaClassHelper.accessibleToConstructor(at, constructor);
+       // To fix JIRA 435
+       // Every constructor should be opened to the accessible classes.
+       final boolean accessible = MetaClassHelper.accessibleToConstructor(at, constructor);
 
-           final Constructor ctor = constructor;
-           AccessController.doPrivileged(new PrivilegedAction() {
-               public Object run() {
-                   ctor.setAccessible(accessible);
-                   return null;
-               }
-           });
-           // end of patch
-
-           return constructor.newInstance(argumentArray);
-       }
-       catch (InvocationTargetException e) {
-           /*Throwable t = e.getTargetException();
-           if (t instanceof Error) {
-               Error error = (Error) t;
-               throw error;
+       final Constructor ctor = constructor;
+       AccessController.doPrivileged(new PrivilegedAction() {
+           public Object run() {
+               ctor.setAccessible(accessible);
+               return null;
            }
-           if (t instanceof RuntimeException) {
-               RuntimeException runtimeEx = (RuntimeException) t;
-               throw runtimeEx;
-           }*/
-           throw new InvokerInvocationException(e);
-       }
-       catch (IllegalArgumentException e) {
-           if (MetaClassHelper.coerceGStrings(argumentArray)) {
-               try {
-                   return constructor.newInstance(argumentArray);
-               }
-               catch (Exception e2) {
-                   // allow fall through
-               }
-           }
-           throw new GroovyRuntimeException(
-               "failed to invoke constructor: "
-                   + constructor
-                   + " with arguments: "
-                   + InvokerHelper.toString(argumentArray)
-                   + " reason: "
-                   + e);
-       }
-       catch (IllegalAccessException e) {
-           throw new GroovyRuntimeException(
-               "could not access constructor: "
-                   + constructor
-                   + " with arguments: "
-                   + InvokerHelper.toString(argumentArray)
-                   + " reason: "
-                   + e);
-       }
-       catch (Exception e) {
-           throw new GroovyRuntimeException(
-               "failed to invoke constructor: "
-                   + constructor
-                   + " with arguments: "
-                   + InvokerHelper.toString(argumentArray)
-                   + " reason: "
-                   + e,
-                   e);
-       }
+       });
+       return MetaClassHelper.doConstructorInvoke(constructor,argumentArray);
    }
 
    /**

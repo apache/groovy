@@ -164,7 +164,15 @@ public class RootLoader extends ClassLoader {
                 // fall through
             }
         }
-        return super.loadClass(name,true);
+        try {
+            return super.loadClass(name,resolve);
+        } catch (NoClassDefFoundError ncdfe) {
+            if (ncdfe.getMessage().indexOf("wrong name")>0) {
+                throw new ClassNotFoundException(name);
+            } else {
+                throw ncdfe;
+            }
+        }
     }
     
     /**

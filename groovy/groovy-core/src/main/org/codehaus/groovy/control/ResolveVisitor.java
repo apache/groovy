@@ -428,12 +428,12 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
 
         //testModuleImports &= !type.hasPackageName();
         if (testModuleImports) {
-            String packageName = "";
-            if (module.hasPackageName()) packageName = module.getPackageName();
-            // check package this class is defined in
-            type.setName(packageName+name);
-            boolean resolved = resolve(type,false,false,false);
-
+            boolean resolved = false;
+            if (module.hasPackageName()) { 
+                // check package this class is defined in
+                type.setName(module.getPackageName()+name);
+                resolved = resolve(type,false,false,false);
+            }
             // check module node imports packages
             List packages = module.getImportPackages();
             ClassNode iType = ClassHelper.makeWithoutCaching(name);

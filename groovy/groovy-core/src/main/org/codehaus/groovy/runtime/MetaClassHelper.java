@@ -31,7 +31,6 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
@@ -41,9 +40,8 @@ import org.codehaus.groovy.GroovyBugError;
 
 /**
  * @author John Wilson
- *
+ * @author Jochen Theodorou
  */
-
 public class MetaClassHelper {
 
     public static final Object[] EMPTY_ARRAY = {};
@@ -334,136 +332,102 @@ public class MetaClassHelper {
     }
     
     /**
-     * Coerces any GString instances into Strings
+     * Coerces a GString instance into String if needed
      *
-     * @return true if some coercion was done.
+     * @return the coerced argument
      */
-    public static boolean coerceGStrings(Object[] arguments) {
-        boolean coerced = false;
-        for (int i = 0, size = arguments.length; i < size; i++) {
-            Object argument = arguments[i];
-            if (argument instanceof GString) {
-                arguments[i] = argument.toString();
-                coerced = true;
-            } else if (argument instanceof GString[]) {
-            	GString[] gstrings = (GString[]) arguments[i];
-            	String[] strings = new String[gstrings.length];
-            	for (int j=0; j<gstrings.length; j++) {
-            		if (gstrings[j]==null) continue;
-            		strings[j]=gstrings[j].toString();
-            	}
-            	arguments[i] = strings;
-            	coerced=true;
-            }
-        }
-        return coerced;
+    protected static Object coerceGString(Object argument, Class clazz) {
+        if (clazz!=String.class) return argument;
+        if (!(argument instanceof GString)) return argument;
+        return argument.toString();
     }
     
-    protected static Object[] coerceNumbers(MetaMethod method, Object[] arguments) {
-        Object[] ans = null;
-        boolean coerced = false; // to indicate that at least one param is coerced
-        
-        Class[] params = method.getParameterTypes();
-        
-        if (params.length != arguments.length) {
-            return null;
-        }
-        
-        ans = new Object[arguments.length];
-        
-        for (int i = 0, size = arguments.length; i < size; i++) {
-            Object argument = arguments[i];
-            Class param = params[i];
-            if ((Number.class.isAssignableFrom(param) || param.isPrimitive()) && argument instanceof Number) { // Number types
-                if (param == Byte.class || param == Byte.TYPE ) {
-                    ans[i] = new Byte(((Number)argument).byteValue());
-                    coerced = true; continue;
-                }
-                if (param == Double.class || param == Double.TYPE) {
-                    ans[i] = new Double(((Number)argument).doubleValue());
-                    coerced = true; continue;
-                }
-                if (param == Float.class || param == Float.TYPE) {
-                    ans[i] = new Float(((Number)argument).floatValue());
-                    coerced = true; continue;
-                }
-                if (param == Integer.class || param == Integer.TYPE) {
-                    ans[i] = new Integer(((Number)argument).intValue());
-                    coerced = true; continue;
-                }
-                if (param == Long.class || param == Long.TYPE) {
-                    ans[i] = new Long(((Number)argument).longValue());
-                    coerced = true; continue;
-                }
-                if (param == Short.class || param == Short.TYPE) {
-                    ans[i] = new Short(((Number)argument).shortValue());
-                    coerced = true; continue;
-                }
-                if (param == BigDecimal.class ) {
-                    ans[i] = new BigDecimal(((Number)argument).doubleValue());
-                    coerced = true; continue;
-                }
-                if (param == BigInteger.class) {
-                    ans[i] = new BigInteger(String.valueOf(((Number)argument).longValue()));
-                    coerced = true; continue;
-                }
+    protected static Object coerceNumber(Object argument, Class param) {
+        if ((Number.class.isAssignableFrom(param) || param.isPrimitive()) && argument instanceof Number) { // Number types
+            Object oldArgument = argument;
+            boolean wasDouble = false;
+            boolean wasFloat = false;
+            if (param == Byte.class || param == Byte.TYPE ) {
+                argument = new Byte(((Number)argument).byteValue());
+            } else if (param == Double.class || param == Double.TYPE) {
+                wasDouble = true;
+                argument = new Double(((Number)argument).doubleValue());
+            } else if (param == Float.class || param == Float.TYPE) {
+                wasFloat = true;
+                argument = new Float(((Number)argument).floatValue());
+            } else if (param == Integer.class || param == Integer.TYPE) {
+                argument = new Integer(((Number)argument).intValue());
+            } else if (param == Long.class || param == Long.TYPE) {
+                argument = new Long(((Number)argument).longValue());
+            } else if (param == Short.class || param == Short.TYPE) {
+                argument = new Short(((Number)argument).shortValue());
+            } else if (param == BigDecimal.class ) {
+                argument = new BigDecimal(String.valueOf((Number)argument));
+            } else if (param == BigInteger.class) {
+                argument = new BigInteger(String.valueOf((Number)argument));
             }
-            else if (param.isArray() && argument.getClass().isArray()) {
-                Class paramElem = param.getComponentType();
-                if (paramElem.isPrimitive()) {
-                    if (paramElem == boolean.class && argument.getClass().getName().equals("[Ljava.lang.Boolean;")) {
-                        ans[i] = InvokerHelper.convertToBooleanArray(argument);
-                        coerced = true;
-                        continue;
-                    }
-                    if (paramElem == byte.class && argument.getClass().getName().equals("[Ljava.lang.Byte;")) {
-                        ans[i] = InvokerHelper.convertToByteArray(argument);
-                        coerced = true;
-                        continue;
-                    }
-                    if (paramElem == char.class && argument.getClass().getName().equals("[Ljava.lang.Character;")) {
-                        ans[i] = InvokerHelper.convertToCharArray(argument);
-                        coerced = true;
-                        continue;
-                    }
-                    if (paramElem == short.class && argument.getClass().getName().equals("[Ljava.lang.Short;")) {
-                        ans[i] = InvokerHelper.convertToShortArray(argument);
-                        coerced = true;
-                        continue;
-                    }
-                    if (paramElem == int.class && argument.getClass().getName().equals("[Ljava.lang.Integer;")) {
-                        ans[i] = InvokerHelper.convertToIntArray(argument);
-                        coerced = true;
-                        continue;
-                    }
-                    if (paramElem == long.class
-                            && argument.getClass().getName().equals("[Ljava.lang.Long;")
-                            && argument.getClass().getName().equals("[Ljava.lang.Integer;")
-                    ) {
-                        ans[i] = InvokerHelper.convertToLongArray(argument);
-                        coerced = true;
-                        continue;
-                    }
-                    if (paramElem == float.class
-                            && argument.getClass().getName().equals("[Ljava.lang.Float;")
-                            && argument.getClass().getName().equals("[Ljava.lang.Integer;")
-                    ) {
-                        ans[i] = InvokerHelper.convertToFloatArray(argument);
-                        coerced = true;
-                        continue;
-                    }
-                    if (paramElem == double.class &&
-                            argument.getClass().getName().equals("[Ljava.lang.Double;") &&
-                            argument.getClass().getName().equals("[Ljava.lang.BigDecimal;") &&
-                            argument.getClass().getName().equals("[Ljava.lang.Float;")) {
-                        ans[i] = InvokerHelper.convertToDoubleArray(argument);
-                        coerced = true;
-                        continue;
-                    }
+            
+            if (oldArgument instanceof BigDecimal) {
+                BigDecimal oldbd = (BigDecimal) oldArgument;
+                boolean throwException = false;
+                if (wasDouble) {
+                    Double d = (Double) argument;
+                    if (d.isInfinite()) throwException = true;
+                } else if (wasFloat) {
+                    Float f = (Float) argument;
+                    if (f.isInfinite()) throwException = true;
+                } else {
+                    BigDecimal newbd = new BigDecimal(String.valueOf((Number)argument));
+                    throwException = !oldArgument.equals(newbd);
                 }
+                
+                if (throwException) throw new IllegalArgumentException(param+" out of range while converting from BigDecimal");
             }
+
         }
-        return coerced ? ans : null;
+        return argument;
+    }
+        
+     protected static Object coerceArray(Object argument, Class param) {
+         if (!param.isArray()) return argument;
+         Class argumentClass = argument.getClass();
+         if (!argumentClass.isArray()) return argument;
+            
+         Class paramComponent = param.getComponentType();
+         if (paramComponent.isPrimitive()) {
+             if (paramComponent == boolean.class && argumentClass==Boolean[].class) {
+                 argument = InvokerHelper.convertToBooleanArray(argument);
+             } else if (paramComponent == byte.class && argumentClass==Byte[].class) {
+                 argument = InvokerHelper.convertToByteArray(argument);
+             } else if (paramComponent == char.class && argumentClass==Character[].class) {
+                 argument = InvokerHelper.convertToCharArray(argument);
+             } else if (paramComponent == short.class && argumentClass==Short[].class) {
+                 argument = InvokerHelper.convertToShortArray(argument);
+             } else if (paramComponent == int.class && argumentClass==Integer[].class) {
+                 argument = InvokerHelper.convertToIntArray(argument);
+             } else if (paramComponent == long.class &&
+                        (argumentClass == Long[].class || argumentClass  == Integer[].class))
+             {
+                 argument = InvokerHelper.convertToLongArray(argument);
+             } else if (paramComponent == float.class &&
+                        (argumentClass == Float[].class || argumentClass == Integer[].class))
+             {
+                 argument = InvokerHelper.convertToFloatArray(argument);
+             } else if (paramComponent == double.class &&
+                        (argumentClass == Double[].class || argumentClass==Float[].class  
+                         || BigDecimal.class.isAssignableFrom(argumentClass)))
+             {
+                 argument = InvokerHelper.convertToDoubleArray(argument);
+             }
+         } else if (paramComponent==String.class && argument instanceof GString[]) {
+             GString[] strings = (GString[]) argument;
+             String[] ret = new String[strings.length];
+             for (int i=0; i<strings.length; i++) {
+                 ret[i] = strings[i].toString();
+             }
+             argument = ret;
+         }
+         return argument;
     }
     
     /**
@@ -533,43 +497,12 @@ public class MetaClassHelper {
         if (log.isLoggable(Level.FINER)){
             logMethodCall(constructor.getDeclaringClass(), constructor.getName(), argumentArray);
         }
-        
+        argumentArray = coerceArgumentsToClasses(argumentArray,constructor.getParameterTypes());
         try {
-            // the following patch was provided by Mori Kouhei to fix JIRA 435
-            /* but it opens the ctor up to everyone, so it is no longer private!
-             final Constructor ctor = constructor;
-             AccessController.doPrivileged(new PrivilegedAction() {
-             public Object run() {
-             ctor.setAccessible(ctor.getDeclaringClass().equals(theClass));
-             return null;
-             }
-             });
-             */
-            // end of patch
-            
             return constructor.newInstance(argumentArray);
-        }
-        catch (InvocationTargetException e) {
-            /*Throwable t = e.getTargetException();
-             if (t instanceof Error) {
-             Error error = (Error) t;
-             throw error;
-             }
-             if (t instanceof RuntimeException) {
-             RuntimeException runtimeEx = (RuntimeException) t;
-             throw runtimeEx;
-             }*/
+        } catch (InvocationTargetException e) {
             throw new InvokerInvocationException(e);
-        }
-        catch (IllegalArgumentException e) {
-            if (coerceGStrings(argumentArray)) {
-                try {
-                    return constructor.newInstance(argumentArray);
-                }
-                catch (Exception e2) {
-                    // allow fall through
-                }
-            }
+        } catch (IllegalArgumentException e) {
             throw new GroovyRuntimeException(
                     "failed to invoke constructor: "
                     + constructor
@@ -577,8 +510,7 @@ public class MetaClassHelper {
                     + InvokerHelper.toString(argumentArray)
                     + " reason: "
                     + e);
-        }
-        catch (IllegalAccessException e) {
+        } catch (IllegalAccessException e) {
             throw new GroovyRuntimeException(
                     "could not access constructor: "
                     + constructor
@@ -586,8 +518,7 @@ public class MetaClassHelper {
                     + InvokerHelper.toString(argumentArray)
                     + " reason: "
                     + e);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             throw new GroovyRuntimeException(
                     "failed to invoke constructor: "
                     + constructor
@@ -599,6 +530,34 @@ public class MetaClassHelper {
         }
     }
     
+    public static Object[] coerceArgumentsToClasses(Object[] argumentArray, Class[] paramTypes) {
+        // correct argumentArray's length
+        if (argumentArray == null) {
+            argumentArray = EMPTY_ARRAY;
+        } else if (paramTypes.length == 1 && argumentArray.length == 0) {
+            if (isVargsMethod(paramTypes,argumentArray))
+                argumentArray = new Object[]{Array.newInstance(paramTypes[0].getComponentType(),0)};
+            else
+                argumentArray = ARRAY_WITH_NULL;
+        } else if (isVargsMethod(paramTypes,argumentArray)) {
+            argumentArray = fitToVargs(argumentArray, paramTypes);
+        }
+        
+        //correct Type
+        for (int i=0; i<argumentArray.length; i++) {
+            Object argument = argumentArray[i];
+            if (argument==null) continue;
+            Class parameterType = paramTypes[i];
+            if (parameterType.isInstance(argument)) continue;
+            
+            argument = coerceGString(argument,parameterType);
+            argument = coerceNumber(argument,parameterType);
+            argument = coerceArray(argument,parameterType);
+            argumentArray[i] = argument;
+        }
+        return argumentArray;
+    }
+
     private static Object makeCommonArray(Object[] arguments, int offset, Class fallback) {
     	// arguments.leght>0 && !=null
     	Class baseClass = null;
@@ -684,52 +643,12 @@ public class MetaClassHelper {
     
     public static Object doMethodInvoke(Object object, MetaMethod method, Object[] argumentArray) {
         Class[] paramTypes = method.getParameterTypes();
+        argumentArray = coerceArgumentsToClasses(argumentArray,paramTypes);
         try {
-            if (argumentArray == null) {
-                argumentArray = EMPTY_ARRAY;
-            } else if (paramTypes.length == 1 && argumentArray.length == 0) {
-                if (isVargsMethod(paramTypes,argumentArray))
-                    argumentArray = new Object[]{Array.newInstance(paramTypes[0].getComponentType(),0)};
-                else
-                    argumentArray = ARRAY_WITH_NULL;
-            } else if (isVargsMethod(paramTypes,argumentArray)) {
-            	argumentArray = fitToVargs(argumentArray, paramTypes);
-            }
             return method.invoke(object, argumentArray);
-        }
-        catch (ClassCastException e) {
-            if (coerceGStrings(argumentArray)) {
-                try {
-                    return doMethodInvoke(object, method, argumentArray);
-                }
-                catch (Exception e2) {
-                    // allow fall through
-                }
-            }
-            throw new GroovyRuntimeException(
-                    "failed to invoke method: "
-                    + method
-                    + " on: "
-                    + object
-                    + " with arguments: "
-                    + InvokerHelper.toString(argumentArray)
-                    + " reason: "
-                    + e,
-                    e);
-        }
-        catch (InvocationTargetException e) {
-            /*Throwable t = e.getTargetException();
-             if (t instanceof Error) {
-             Error error = (Error) t;
-             throw error;
-             }
-             if (t instanceof RuntimeException) {
-             RuntimeException runtimeEx = (RuntimeException) t;
-             throw runtimeEx;
-             }*/
+        } catch (InvocationTargetException e) {
             throw new InvokerInvocationException(e);
-        }
-        catch (IllegalAccessException e) {
+        } catch (IllegalAccessException e) {
             throw new GroovyRuntimeException(
                     "could not access method: "
                     + method
@@ -740,25 +659,7 @@ public class MetaClassHelper {
                     + " reason: "
                     + e,
                     e);
-        }
-        catch (IllegalArgumentException e) {
-            if (coerceGStrings(argumentArray)) {
-                try {
-                    return doMethodInvoke(object, method, argumentArray);
-                }
-                catch (Exception e2) {
-                    // allow fall through
-                }
-            }
-            Object[] args = coerceNumbers(method, argumentArray);
-            if (args != null && !Arrays.equals(argumentArray,args)) {
-                try {
-                    return doMethodInvoke(object, method, args);
-                }
-                catch (Exception e3) {
-                    // allow fall through
-                }
-            }
+        } catch (IllegalArgumentException e) {
             throw new GroovyRuntimeException(
                     "failed to invoke method: "
                     + method
@@ -769,11 +670,9 @@ public class MetaClassHelper {
                     + "reason: "
                     + e
             );
-        }
-        catch (RuntimeException e) {
+        } catch (RuntimeException e) {
             throw e;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             throw new GroovyRuntimeException(
                     "failed to invoke method: "
                     + method
