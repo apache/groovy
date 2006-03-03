@@ -290,12 +290,15 @@ public class GroovyClassLoader extends URLClassLoader {
             unit.compile(goalPhase);
 
             answer = collector.generatedClass;
-            if (shouldCache) {
-	            for (Iterator iter = collector.getLoadedClasses().iterator(); iter.hasNext();) {
-					Class clazz = (Class) iter.next();
+            for (Iterator iter = collector.getLoadedClasses().iterator(); iter.hasNext();) {
+                Class clazz = (Class) iter.next();
+                if (shouldCache) {
 					cache.put(clazz.getName(),clazz);
 				}
+                if (name.equals(clazz.getName())) answer = clazz;
             }
+            shouldCache = shouldCache && name.equals(answer.getName());
+            
         } finally {
             synchronized (cache) {
             	cache.remove(name);
@@ -561,21 +564,19 @@ public class GroovyClassLoader extends URLClassLoader {
         String filename = name.replace('.', '/') + config.getDefaultScriptExtension();
         URL ret = getResource(filename);
         if (ret!=null && ret.getProtocol().equals("file")) {
-            File path = new File(ret.getFile());
-            if (path.exists()) { // case sensitivity depending on OS!
-                if (path.isDirectory()) {
-                    File file = new File(path, filename);
-                    if (file.exists()) {
-                        // file.exists() might be case insensitive. Let's do
-                        // case sensitive match for the filename
-                        int sepp = filename.lastIndexOf('/');
-                        String fn = filename;
-                        if (sepp >= 0) fn = filename.substring(sepp+1);
-                        File parent = file.getParentFile();
-                        String[] files = parent.list();
-                        for (int j = 0; j < files.length; j++) {
-                            if (files[j].equals(fn)) return ret;
-                        }
+            File path = new File(ret.getFile()).getParentFile();
+            if (path.exists() && path.isDirectory()) {
+                File file = new File(path, filename);
+                if (file.exists()) {
+                    // file.exists() might be case insensitive. Let's do
+                    // case sensitive match for the filename
+                    int sepp = filename.lastIndexOf('/');
+                    String fn = filename;
+                    if (sepp >= 0) fn = filename.substring(sepp+1);
+                    File parent = file.getParentFile();
+                    String[] files = parent.list();
+                    for (int j = 0; j < files.length; j++) {
+                        if (files[j].equals(fn)) return ret;
                     }
                 }
             }
