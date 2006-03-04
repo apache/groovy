@@ -167,6 +167,9 @@ public class CompileStack implements Opcodes {
     }
     
     private void popState() {
+        if (stateStack.size()==0) {
+            throw new GroovyBugError("Tried to do a pop on the compile stack without push.");
+        }
         StateStackElement element = (StateStackElement) stateStack.removeLast();
         scope = element._scope;
         continueLabel = element._continueLabel;
@@ -284,6 +287,10 @@ public class CompileStack implements Opcodes {
      * fail if clear is not called before
      */
     public void clear() {
+        if (stateStack.size()>1) {
+            int size = stateStack.size()-1;
+            throw new GroovyBugError("the compile stack contains "+size+" more push instruction"+(size==1?"":"s")+" than pops.");
+        }
         clear = true;
         // br experiment with local var table so debuggers can retrieve variable names
         if (true) {//AsmClassGenerator.CREATE_DEBUG_INFO) {
@@ -302,6 +309,7 @@ public class CompileStack implements Opcodes {
                 mv.visitLocalVariable(v.getName(), type, null, start, end, v.getIndex());
             }
         }
+        pop();
         stackVariables.clear();
         usedVariables.clear();
         scope = null;
