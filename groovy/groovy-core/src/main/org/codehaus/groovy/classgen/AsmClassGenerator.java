@@ -395,7 +395,7 @@ public class AsmClassGenerator extends ClassGenerator {
             if (!outputReturn || node.isVoidMethod()) {
                 cv.visitInsn(RETURN);
             }
-
+            
             compileStack.clear();
             
             // lets do all the exception blocks
@@ -522,6 +522,8 @@ public class AsmClassGenerator extends ClassGenerator {
         
         cv.visitJumpInsn(GOTO, continueLabel);
         cv.visitLabel(breakLabel);
+        
+        compileStack.pop();
     }
 
     public void visitDoWhileLoop(DoWhileStatement loop) {
