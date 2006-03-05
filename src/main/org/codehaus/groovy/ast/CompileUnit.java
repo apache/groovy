@@ -60,6 +60,7 @@ public class CompileUnit {
     private GroovyClassLoader classLoader;
     private CodeSource codeSource;
     private Map classesToCompile = new HashMap();
+    private Map classNameToSource = new HashMap();
     
     public CompileUnit(GroovyClassLoader classLoader, CompilerConfiguration config) {
     	this(classLoader, null, config);
@@ -154,11 +155,20 @@ public class CompileUnit {
      * a marker that this type has to be compiled by the CompilationUnit
      * at the end of a parse step no node should be be left.
      */
-    public void addClassNodeToCompile(ClassNode node) {
+    public void addClassNodeToCompile(ClassNode node, String location) {
         classesToCompile.put(node.getName(),node);
+        classNameToSource.put(node.getName(),location);
+    }
+    
+    public String getScriptSourceLocation(String className) {
+        return (String) classNameToSource.get(className);
     }
 
     public boolean hasClassNodeToCompile(){
         return classesToCompile.size()!=0;
+    }
+    
+    public Iterator iterateClassNodeToCompile(){
+        return classesToCompile.keySet().iterator();
     }
 }
