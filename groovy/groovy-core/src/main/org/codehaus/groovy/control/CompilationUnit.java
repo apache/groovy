@@ -76,6 +76,8 @@ import org.codehaus.groovy.control.io.InputStreamReaderSource;
 import org.codehaus.groovy.control.io.ReaderSource;
 import org.codehaus.groovy.control.messages.ExceptionMessage;
 import org.codehaus.groovy.control.messages.Message;
+import org.codehaus.groovy.control.messages.SimpleMessage;
+import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.ClassSource;
 import org.codehaus.groovy.syntax.SourceSummary;
@@ -123,8 +125,7 @@ public class CompilationUnit extends ProcessingUnit {
 
     protected ClassgenCallback classgenCallback;  // A callback for use during classgen()
     protected ProgressCallback progressCallback;  // A callback for use during compile()
-    private ResolveVisitor resolveVisitor;
-
+    protected ResolveVisitor resolveVisitor;
 
 
     /**
@@ -164,7 +165,7 @@ public class CompilationUnit extends ProcessingUnit {
         this.summariesBySourceName = new HashMap();
         this.summariesByPublicClassName = new HashMap();
         this.classSourcesByPublicClassName = new HashMap();
-
+        
         this.ast = new CompileUnit(this.classLoader, security, this.configuration);
         this.generatedClasses = new ArrayList();
 
@@ -432,7 +433,6 @@ public class CompilationUnit extends ProcessingUnit {
         // for not reprocessing old code.
         gotoPhase(Phases.INITIALIZATION);
 
-
         do {
             if (dequeued()) continue;
             if (throughPhase < Phases.PARSING) break;
@@ -454,6 +454,7 @@ public class CompilationUnit extends ProcessingUnit {
             
             if (dequeued()) continue;
             if (throughPhase < Phases.CLASS_GENERATION) break;
+            if (ast.hasClassNodeToCompile()) break;
             
             gotoPhase(Phases.CLASS_GENERATION);
             Iterator modules = this.ast.getModules().iterator();
@@ -475,6 +476,15 @@ public class CompilationUnit extends ProcessingUnit {
             gotoPhase(Phases.FINALIZATION);
             break;
         } while (true);
+        
+        for (Iterator iter = ast.iterateClassNodeToCompile(); iter.hasNext();) {
+            String name = (String) iter.next();
+            String location = ast.getScriptSourceLocation(name);
+            getErrorCollector().addErrorAndContinue(
+                    new SimpleMessage("Compilation incomplete: expected to find the class "+name+" in "+location,this)
+            );
+        }
+        errorCollector.failIfErrors();
     }
     
     /**

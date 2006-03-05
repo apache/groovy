@@ -309,7 +309,7 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
                 type.setRedirect(null);
             }
             compilationUnit.addSource(url);
-            currentClass.getCompileUnit().addClassNodeToCompile(type);
+            currentClass.getCompileUnit().addClassNodeToCompile(type,url.toString());
             return true;
         }
         // type may be resolved through the classloader before
