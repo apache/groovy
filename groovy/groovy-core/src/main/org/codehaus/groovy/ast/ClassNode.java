@@ -119,11 +119,13 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
     
     /**
-     * Sets this instance as proxy for the given ClassNode
+     * Sets this instance as proxy for the given ClassNode. 
+     * @param cn the class to redirect to. If set to null the redirect will be removed
      */
     public void setRedirect(ClassNode cn) {
         if (isPrimaryNode) throw new GroovyBugError("tried to set a redirect for a primary ClassNode ("+getName()+"->"+cn.getName()+").");
-        redirect = cn.redirect();        
+        if (cn!=null) cn = cn.redirect();
+        redirect = cn;
     }
     
     /**
