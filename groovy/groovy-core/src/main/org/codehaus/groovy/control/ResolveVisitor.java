@@ -544,7 +544,7 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
 
     // iterate from the inner most to the outer and check for classes
     // this check will ignore a .class property, for Exmaple Integer.class will be
-    // a PropertyExpression with the ClassExpression of Integer as objectExprsssion
+    // a PropertyExpression with the ClassExpression of Integer as objectExpression
     // and class as property
     private Expression correctClassClassChain(PropertyExpression pe){
         LinkedList stack = new LinkedList();
@@ -589,8 +589,13 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
         if (className!=null) {
             ClassNode type = ClassHelper.make(className);
             if (resolve(type)) return new ClassExpression(type);
+        }  
+        if (objectExpression instanceof ClassExpression ){
+            // possibly a inner class
+            ClassExpression ce = (ClassExpression) objectExpression;
+            ClassNode type = ClassHelper.make(ce.getType().getName()+"$"+pe.getProperty());
+            if (resolve(type,false,false,false)) return new ClassExpression(type);
         }
-        
         if (isTopLevelProperty) return correctClassClassChain(pe);
         
         return pe;
