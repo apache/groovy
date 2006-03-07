@@ -104,6 +104,7 @@ import org.codehaus.groovy.syntax.Types;
  */
 public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTransformer, GroovyClassVisitor {
     private ClassNode currentClass;
+    // note: BidInteger and BigDecimal are also imported by default
     private static final String[] DEFAULT_IMPORTS = {"java.lang.", "java.io.", "java.net.", "java.util.", "groovy.lang.", "groovy.util."};
     private CompilationUnit compilationUnit;
     private Map cachedClasses = new HashMap();
@@ -347,6 +348,14 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
                 type.setName(fqn);
                 if (resolve(type,false,false,false)) return true;
                 type.setName(name);
+            }
+            String name = type.getName();
+            if (name.equals("BigInteger")) {
+                type.setRedirect(ClassHelper.BigInteger_TYPE);
+                return true;
+            } else if (name.equals("BigDecimal")) {
+                type.setRedirect(ClassHelper.BigDecimal_TYPE);
+                return true;    
             }
         }
         return false;
