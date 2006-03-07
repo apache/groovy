@@ -457,11 +457,7 @@ public class CompilationUnit extends ProcessingUnit {
             if (ast.hasClassNodeToCompile()) break;
             
             gotoPhase(Phases.CLASS_GENERATION);
-            Iterator modules = this.ast.getModules().iterator();
-            while (modules.hasNext()) {
-            	ModuleNode module = (ModuleNode) modules.next();
-            	module.sortClasses();
-            }
+            sortClasses();
             classgen();
 
             if (dequeued()) continue;
@@ -486,6 +482,37 @@ public class CompilationUnit extends ProcessingUnit {
         }
         errorCollector.failIfErrors();
     }
+    
+    private void sortClasses() throws CompilationFailedException {
+        Iterator modules = this.ast.getModules().iterator();
+        while (modules.hasNext()) {
+            ModuleNode module = (ModuleNode) modules.next();
+            
+            // before we actually do the sorting we should check
+            // for cyclic references
+            List classes = module.getClasses();
+            for (Iterator iter = classes.iterator(); iter.hasNext();) {
+                ClassNode start = (ClassNode) iter.next();
+                ClassNode cn = start;
+                HashSet parents = new HashSet();
+                do {
+                    if (parents.contains(cn.getName())) {
+                        getErrorCollector().addErrorAndContinue(
+                                new SimpleMessage("cyclic inheritance involving "+cn.getName()+" in class "+start.getName(),this)
+                        );
+                        cn=null;
+                    } else {
+                        parents.add(cn.getName());
+                        cn = cn.getSuperClass();
+                    }
+                } while (cn!=null);
+            }
+            errorCollector.failIfErrors();
+            module.sortClasses();
+            
+        }
+    }
+    
     
     /**
      * Dequeues any source units add through addSource and resets the compiler phase
