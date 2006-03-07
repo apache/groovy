@@ -56,7 +56,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         
         currentClass = oldClass;
     }
-    
+
     private void checkNoAbstractMethodsNonabstractClass(ClassNode node) {
         if (Modifier.isAbstract(node.getModifiers())) return;
         List abstractMethods = node.getAbstractMethods();

@@ -2624,7 +2624,6 @@ public class AsmClassGenerator extends ClassGenerator {
             new ReturnStatement(new FieldExpression(stringsField)));
         // lets make the constructor
         BlockStatement block = new BlockStatement();
-        TupleExpression values = new TupleExpression();
         block.addStatement(
             new ExpressionStatement(
                 new ConstructorCallExpression(ClassNode.SUPER, new VariableExpression("values"))));
