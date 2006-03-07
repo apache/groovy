@@ -381,11 +381,10 @@ public class AsmClassGenerator extends ClassGenerator {
         helper = new BytecodeHelper(cv);
         if (!node.isAbstract()) { 
             Statement code = node.getCode();
-            if (isConstructor && (code == null || !firstStatementIsSuperInit(code))) {
+            if (isConstructor && (code == null || !firstStatementIsSpecialConstructorCall(node))) {
                 // invokes the super class constructor
-                //cv.visitLabel(new Label());
                 cv.visitVarInsn(ALOAD, 0);
-                cv.visitMethodInsn(INVOKESPECIAL, internalBaseClassName, "<init>", "()V");
+                cv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(classNode.getSuperClass()), "<init>", "()V");
             }
             
             compileStack.init(node.getVariableScope(),node.getParameters(),cv, BytecodeHelper.getTypeDescription(classNode));
@@ -407,6 +406,16 @@ public class AsmClassGenerator extends ClassGenerator {
     
             cv.visitMaxs(0, 0);
         }
+    }
+
+    private boolean firstStatementIsSpecialConstructorCall(MethodNode node) {
+        Statement code = node.getFirstStatement();
+        if (code == null || !(code instanceof ExpressionStatement)) return false;
+
+        Expression expression = ((ExpressionStatement)code).getExpression();
+        if (!(expression instanceof ConstructorCallExpression)) return false;
+        ConstructorCallExpression cce = (ConstructorCallExpression) expression;
+        return cce.isSpecialCall();
     }
 
     public void visitConstructor(ConstructorNode node) {
@@ -1489,97 +1498,71 @@ public class AsmClassGenerator extends ClassGenerator {
          */
         boolean superMethodCall = MethodCallExpression.isSuperMethodCall(call);
         String method = call.getMethod();
-        if (superMethodCall && method.equals("<init>")) {
-            /** todo handle method types! */
-            cv.visitVarInsn(ALOAD, 0);
-            if (isInClosureConstructor()) { // br use the second param to init the super class (Closure)
-                cv.visitVarInsn(ALOAD, 2);
-                cv.visitMethodInsn(INVOKESPECIAL, internalBaseClassName, "<init>", "(Ljava/lang/Object;)V");
+        // are we a local variable
+        if (isThisExpression(call.getObjectExpression()) && isFieldOrVariable(method) && ! classNode.hasPossibleMethod(method, arguments)) {
+            /*
+             * if (arguments instanceof TupleExpression) { TupleExpression
+             * tupleExpression = (TupleExpression) arguments; int size =
+             * tupleExpression.getExpressions().size(); if (size == 1) {
+             * arguments = (Expression)
+             * tupleExpression.getExpressions().get(0); } }
+             */
+            
+            // lets invoke the closure method
+            visitVariableExpression(new VariableExpression(method));
+            arguments.visit(this);
+            invokeClosureMethod.call(cv);
+        } else {
+            if (superMethodCall) {
+                MethodNode superMethodNode = findSuperMethod(call);
+                
+                cv.visitVarInsn(ALOAD, 0);
+                
+                loadArguments(superMethodNode.getParameters(), arguments);
+                
+                String descriptor = BytecodeHelper.getMethodDescriptor(superMethodNode.getReturnType(), superMethodNode.getParameters());
+                cv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(superMethodNode.getDeclaringClass()), method, descriptor);
             }
             else {
-                cv.visitVarInsn(ALOAD, 1);
-                cv.visitMethodInsn(INVOKESPECIAL, internalBaseClassName, "<init>", "(Ljava/lang/Object;)V");
-            }
-        }
-        else {
-            // are we a local variable
-            if (isThisExpression(call.getObjectExpression()) && isFieldOrVariable(method) && ! classNode.hasPossibleMethod(method, arguments)) {
-                /*
-                 * if (arguments instanceof TupleExpression) { TupleExpression
-                 * tupleExpression = (TupleExpression) arguments; int size =
-                 * tupleExpression.getExpressions().size(); if (size == 1) {
-                 * arguments = (Expression)
-                 * tupleExpression.getExpressions().get(0); } }
-                 */
-
-                // lets invoke the closure method
-                visitVariableExpression(new VariableExpression(method));
-                arguments.visit(this);
-                invokeClosureMethod.call(cv);
-            } else {
-                if (superMethodCall) {
-                    if (method.equals("super") || method.equals("<init>")) {
-                        ConstructorNode superConstructorNode = findSuperConstructor(call);
-
-                        cv.visitVarInsn(ALOAD, 0);
-
-                        loadArguments(superConstructorNode.getParameters(), arguments);
-
-                        String descriptor = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, superConstructorNode.getParameters());
-                        cv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(classNode.getSuperClass()), "<init>", descriptor);
-                    }
-                    else {
-                        MethodNode superMethodNode = findSuperMethod(call);
-
-                        cv.visitVarInsn(ALOAD, 0);
-
-                        loadArguments(superMethodNode.getParameters(), arguments);
-
-                        String descriptor = BytecodeHelper.getMethodDescriptor(superMethodNode.getReturnType(), superMethodNode.getParameters());
-                        cv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(superMethodNode.getDeclaringClass()), method, descriptor);
+                Expression objectExpression = call.getObjectExpression();
+                boolean objectExpressionIsMethodName = false;
+                if (method.equals("call")) {
+                    if (objectExpression instanceof GStringExpression) {
+                        objectExpressionIsMethodName=true;
+                        objectExpression = new CastExpression(ClassHelper.STRING_TYPE, objectExpression);
+                    } else if (objectExpression instanceof ConstantExpression) {
+                        Object value = ((ConstantExpression) objectExpression).getValue();
+                        if ( value != null && value instanceof String) objectExpressionIsMethodName=true;
                     }
                 }
-                else {
-                    Expression objectExpression = call.getObjectExpression();
-                    boolean objectExpressionIsMethodName = false;
-                    if (method.equals("call")) {
-                        if (objectExpression instanceof GStringExpression) {
-                            objectExpressionIsMethodName=true;
-                            objectExpression = new CastExpression(ClassHelper.STRING_TYPE, objectExpression);
-                        } else if (objectExpression instanceof ConstantExpression) {
-                            Object value = ((ConstantExpression) objectExpression).getValue();
-                            if ( value != null && value instanceof String) objectExpressionIsMethodName=true;
-                        }
+                
+                if (emptyArguments(arguments) && !call.isSafe() && !call.isSpreadSafe()) {
+                    prepareMethodcallObjectAndName(objectExpression, objectExpressionIsMethodName,method);
+                    invokeNoArgumentsMethod.call(cv);
+                } else {
+                    if (argumentsUseStack(arguments)) {
+                        
+                        arguments.visit(this);
+                        
+                        int paramIdx = compileStack.defineTemporaryVariable(method + "_arg",true);
+                        
+                        prepareMethodcallObjectAndName(objectExpression, objectExpressionIsMethodName,method);
+                        
+                        cv.visitVarInsn(ALOAD, paramIdx);
+                        compileStack.removeVar(paramIdx);
+                    } else {
+                        prepareMethodcallObjectAndName(objectExpression, objectExpressionIsMethodName,method);
+                        arguments.visit(this);
                     }
                     
-                    if (emptyArguments(arguments) && !call.isSafe() && !call.isSpreadSafe()) {
-                        prepareMethodcallObjectAndName(objectExpression, objectExpressionIsMethodName,method);
-                        invokeNoArgumentsMethod.call(cv);
-                    } else {
-                        if (argumentsUseStack(arguments)) {
-
-                            arguments.visit(this);
-
-                            int paramIdx = compileStack.defineTemporaryVariable(method + "_arg",true);
-
-                            prepareMethodcallObjectAndName(objectExpression, objectExpressionIsMethodName,method);
-
-                            cv.visitVarInsn(ALOAD, paramIdx);
-                            compileStack.removeVar(paramIdx);
-                        } else {
-                            prepareMethodcallObjectAndName(objectExpression, objectExpressionIsMethodName,method);
-                            arguments.visit(this);
-                        }
-
-                        if (call.isSpreadSafe()) {
-                            invokeMethodSpreadSafeMethod.call(cv);
-                        }
-                        else if (call.isSafe()) {
-                            invokeMethodSafeMethod.call(cv);
-                        }
-                        else {
-                            invokeMethodMethod.call(cv);
-                        }
+                    if (call.isSpreadSafe()) {
+                        invokeMethodSpreadSafeMethod.call(cv);
+                    }
+                    else if (call.isSafe()) {
+                        invokeMethodSafeMethod.call(cv);
+                    }
+                    else {
+                        invokeMethodMethod.call(cv);
                     }
                 }
             }
@@ -1629,12 +1612,11 @@ public class AsmClassGenerator extends ClassGenerator {
     /**
      * Attempts to find the constructor in a super class
      */
-    protected ConstructorNode findSuperConstructor(MethodCallExpression call) {
+    protected ConstructorNode findConstructor(ConstructorCallExpression call, ClassNode searchNode) {
         TupleExpression argExpr = (TupleExpression) call.getArguments();
         int argCount = argExpr.getExpressions().size();
-        ClassNode superClassNode = classNode.getSuperClass();
-        if (superClassNode != null) {
-            List constructors = superClassNode.getDeclaredConstructors();
+        if (searchNode != null) {
+            List constructors = searchNode.getDeclaredConstructors();
             for (Iterator iter = constructors.iterator(); iter.hasNext(); ) {
                 ConstructorNode constructor = (ConstructorNode) iter.next();
                 if (constructor.getParameters().length == argCount) {
@@ -1686,6 +1668,18 @@ public class AsmClassGenerator extends ClassGenerator {
         onLineNumber(call, "visitConstructorCallExpression: \"" + call.getType().getName() + "\":");
         this.leftHandExpression = false;
 
+        if (call.isSpecialCall()){
+            ClassNode callNode = classNode;
+            if (call.isSuperCall()) callNode = callNode.getSuperClass();
+            ConstructorNode constructorNode = findConstructor(call, callNode);
+            cv.visitVarInsn(ALOAD, 0);
+            loadArguments(constructorNode.getParameters(), call.getArguments());
+
+            String descriptor = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, constructorNode.getParameters());
+            cv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(callNode), "<init>", descriptor);
+            return;
+        }
+        
         Expression arguments = call.getArguments();
         if (arguments instanceof TupleExpression) {
             TupleExpression tupleExpression = (TupleExpression) arguments;
@@ -2164,34 +2158,11 @@ public class AsmClassGenerator extends ClassGenerator {
 //                    return false;
             }
         }
+        if (expression instanceof ConstructorCallExpression) {
+            ConstructorCallExpression cce = (ConstructorCallExpression) expression;
+            return !cce.isSpecialCall();
+        }
         return true;
-    }
-
-    protected boolean firstStatementIsSuperInit(Statement code) {
-        ExpressionStatement expStmt = null;
-        if (code instanceof ExpressionStatement) {
-            expStmt = (ExpressionStatement) code;
-        }
-        else if (code instanceof BlockStatement) {
-            BlockStatement block = (BlockStatement) code;
-            if (!block.getStatements().isEmpty()) {
-                Object expr = block.getStatements().get(0);
-                if (expr instanceof ExpressionStatement) {
-                    expStmt = (ExpressionStatement) expr;
-                }
-            }
-        }
-        if (expStmt != null) {
-            Expression expr = expStmt.getExpression();
-            if (expr instanceof MethodCallExpression) {
-            	MethodCallExpression call = (MethodCallExpression) expr;
-                if (MethodCallExpression.isSuperMethodCall(call)) {
-                    // not sure which one is constantly used as the super class ctor call. To cover both for now
-                	return call.getMethod().equals("<init>") || call.getMethod().equals("super");
-                }
-            }
-        }
-        return false;
     }
 
     protected void createSyntheticStaticFields() {
@@ -2543,9 +2514,8 @@ public class AsmClassGenerator extends ClassGenerator {
         block.getVariableScope().getReferencedLocalVariables().put("_outerInstance",outer);
         block.addStatement(
             new ExpressionStatement(
-                new MethodCallExpression(
-                    new VariableExpression("super"),
-                    "<init>",
+                new ConstructorCallExpression(
+                    VariableExpression.SUPER_EXPRESSION,
                     outer)));
         block.addStatement(
             new ExpressionStatement(

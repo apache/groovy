@@ -1124,7 +1124,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 return closureExpression(node);
 
             case SUPER_CTOR_CALL:
-                return superMethodCallExpression(node);
+                return specialConstructorCallExpression(node,ClassNode.SUPER);
 
             case METHOD_CALL:
                 return methodCallExpression(node);
@@ -1133,7 +1133,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 return constructorCallExpression(node.getFirstChild());
 
             case CTOR_CALL:
-                return constructorCallExpression(node);
+                return specialConstructorCallExpression(node,ClassNode.THIS);
 
             case QUESTION:
                 return ternaryExpression(node);
@@ -1686,15 +1686,12 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         }
         return methodCallExpression(node);
     }
-
-    protected Expression superMethodCallExpression(AST methodCallNode) {
+    
+    protected Expression specialConstructorCallExpression(AST methodCallNode, ClassNode special) {
         AST node = methodCallNode.getFirstChild();
-
-        String name = "super";
-        Expression objectExpression = VariableExpression.SUPER_EXPRESSION;
-
         Expression arguments = arguments(node);
-        MethodCallExpression expression = new MethodCallExpression(objectExpression, name, arguments);
+        
+        ConstructorCallExpression expression = new ConstructorCallExpression(special, arguments);
         configureAST(expression, methodCallNode);
         return expression;
     }

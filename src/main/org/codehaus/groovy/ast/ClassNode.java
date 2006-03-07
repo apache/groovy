@@ -79,7 +79,10 @@ import java.util.Map;
 public class ClassNode extends AnnotatedNode implements Opcodes {
 
 	public static ClassNode[] EMPTY_ARRAY = new ClassNode[0];
-	
+    
+    public static ClassNode THIS = new ClassNode(Object.class);
+    public static ClassNode SUPER = new ClassNode(Object.class);
+    
     private String name;
     private int modifiers;
     private ClassNode[] interfaces;
