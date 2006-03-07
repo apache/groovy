@@ -2515,7 +2515,7 @@ public class AsmClassGenerator extends ClassGenerator {
         block.addStatement(
             new ExpressionStatement(
                 new ConstructorCallExpression(
-                    VariableExpression.SUPER_EXPRESSION,
+                    ClassNode.SUPER,
                     outer)));
         block.addStatement(
             new ExpressionStatement(
