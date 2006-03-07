@@ -45,6 +45,9 @@
  */
 package org.codehaus.groovy.ast;
 
+import java.util.List;
+
+import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.objectweb.asm.Opcodes;
 
@@ -184,5 +187,15 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
 
     public ClassNode[] getExceptions() {
         return exceptions;
+    }
+    
+    public Statement getFirstStatement(){
+        if (code == null) return null;
+        if (code instanceof BlockStatement) {
+            List list = ((BlockStatement) code).getStatements();
+            if (list.size()>0) return (Statement) list.get(0);
+            return null;
+        }
+        return code;
     }
 }

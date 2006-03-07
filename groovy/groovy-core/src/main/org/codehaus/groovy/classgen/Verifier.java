@@ -70,6 +70,7 @@ import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
@@ -567,10 +568,15 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     }
 
     protected void addFieldInitialization(ClassNode node, ConstructorNode constructorNode) {
+        ConstructorCallExpression first = getFirstIfSpecialConstructorCall(constructorNode);
+
+        // in case of this(...) let the other constructor do the intit
+        if (first!=null && first.isThisCall()) return;
+        
         List statements = new ArrayList();
         List staticStatements = new ArrayList();
         for (Iterator iter = node.getFields().iterator(); iter.hasNext();) {
-            addFieldInitialization(statements, staticStatements, constructorNode, (FieldNode) iter.next());
+            addFieldInitialization(statements, staticStatements, (FieldNode) iter.next());
         }
         if (!statements.isEmpty()) {
             Statement code = constructorNode.getCode();
@@ -584,11 +590,11 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 otherStatements.add(code);
             }
             if (!otherStatements.isEmpty()) {
-                Statement first = (Statement) otherStatements.get(0);
-                if (isSuperMethodCall(first)) {
+                if (first!=null) {
+                    // it is super(..) since this(..) is already covered
                     otherStatements.remove(0);
                     statements.add(0, first);
-                }
+                } 
                 statements.addAll(otherStatements);
             }
             constructorNode.setCode(new BlockStatement(statements, block.getVariableScope()));
@@ -599,10 +605,20 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
     }
 
+    private ConstructorCallExpression getFirstIfSpecialConstructorCall(ConstructorNode node) {
+        Statement code = node.getFirstStatement();
+        if (code == null || !(code instanceof ExpressionStatement)) return null;
+
+        Expression expression = ((ExpressionStatement)code).getExpression();
+        if (!(expression instanceof ConstructorCallExpression)) return null;
+        ConstructorCallExpression cce = (ConstructorCallExpression) expression;
+        if (cce.isSpecialCall()) return cce;
+        return null;
+    }
+
     protected void addFieldInitialization(
         List list,
         List staticList,
-        ConstructorNode constructorNode,
         FieldNode fieldNode) {
         Expression expression = fieldNode.getInitialExpression();
         if (expression != null) {
@@ -619,17 +635,6 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 list.add(statement);
             }
         }
-    }
-
-    protected boolean isSuperMethodCall(Statement first) {
-        if (first instanceof ExpressionStatement) {
-            ExpressionStatement exprStmt = (ExpressionStatement) first;
-            Expression expr = exprStmt.getExpression();
-            if (expr instanceof MethodCallExpression) {
-                return MethodCallExpression.isSuperMethodCall((MethodCallExpression) expr);
-            }
-        }
-        return false;
     }
 
     /**

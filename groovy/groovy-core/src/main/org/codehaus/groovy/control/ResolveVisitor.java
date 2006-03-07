@@ -655,10 +655,7 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
     protected Expression transformConstructorCallExpression(ConstructorCallExpression cce){
     	ClassNode type = cce.getType();
     	resolveOrFail(type,cce);
-    	Expression args = cce.getArguments();
-    	args = transform(args);
-    	Expression expr = new ConstructorCallExpression(type,args);
-        expr.setSourcePosition(cce);
+    	Expression expr = cce.transformExpression(this);
         return expr;
     }
     

@@ -45,9 +45,6 @@
  */
 package org.codehaus.groovy.ast.expr;
 
-import java.lang.reflect.Constructor;
-
-import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
@@ -55,18 +52,12 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * A constructor call
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * @author Jochen Theodorou
  * @version $Revision$
  */
 public class ConstructorCallExpression extends Expression {
 
     private Expression arguments;
-
-    public Constructor getConstructor() {
-        return constructor;
-    }
-
-    private Constructor constructor = null;
-
 
     public ConstructorCallExpression(ClassNode type, Expression arguments) {
         super.setType(type);
@@ -78,7 +69,8 @@ public class ConstructorCallExpression extends Expression {
     }
     
     public Expression transformExpression(ExpressionTransformer transformer) {
-        Expression ret =  new ConstructorCallExpression(getType(), transformer.transform(arguments));
+        Expression args = transformer.transform(arguments);
+        Expression ret = new ConstructorCallExpression(getType(), args);
         ret.setSourcePosition(this);
         return ret;
     }
@@ -94,9 +86,16 @@ public class ConstructorCallExpression extends Expression {
     public String toString() {
         return super.toString() + "[type: " + getType() + " arguments: " + arguments + "]";
     }
-
-    public void setConstructor(Constructor ctor) {
-        constructor = ctor;
-        super.setType(ClassHelper.make(ctor.getDeclaringClass()));
+    
+    public boolean isSuperCall() {
+        return getType()==ClassNode.SUPER;
+    }
+    
+    public boolean isSpecialCall(){
+        return isThisCall() || isSuperCall();
+    }
+    
+    public boolean isThisCall() {
+        return getType()==ClassNode.THIS;
     }
 }
