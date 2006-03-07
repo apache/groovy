@@ -61,7 +61,13 @@ public class ConstructorCallExpression extends Expression {
 
     public ConstructorCallExpression(ClassNode type, Expression arguments) {
         super.setType(type);
-        this.arguments = arguments;
+        if (!(arguments instanceof TupleExpression)){
+            TupleExpression tuple = new TupleExpression();
+            tuple.addExpression(arguments);
+            this.arguments = tuple;
+        } else {
+            this.arguments = arguments;
+        }
     }
     
     public void visit(GroovyCodeVisitor visitor) {

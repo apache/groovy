@@ -568,8 +568,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     }
 
     protected void addFieldInitialization(ClassNode node, ConstructorNode constructorNode) {
-        ConstructorCallExpression first = getFirstIfSpecialConstructorCall(constructorNode);
-
+        Statement firstStatement = constructorNode.getFirstStatement();
+        ConstructorCallExpression first = getFirstIfSpecialConstructorCall(firstStatement);
+        
         // in case of this(...) let the other constructor do the intit
         if (first!=null && first.isThisCall()) return;
         
@@ -593,7 +594,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 if (first!=null) {
                     // it is super(..) since this(..) is already covered
                     otherStatements.remove(0);
-                    statements.add(0, first);
+                    statements.add(0, firstStatement);
                 } 
                 statements.addAll(otherStatements);
             }
@@ -605,8 +606,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
     }
 
-    private ConstructorCallExpression getFirstIfSpecialConstructorCall(ConstructorNode node) {
-        Statement code = node.getFirstStatement();
+    private ConstructorCallExpression getFirstIfSpecialConstructorCall(Statement code) {
         if (code == null || !(code instanceof ExpressionStatement)) return null;
 
         Expression expression = ((ExpressionStatement)code).getExpression();
