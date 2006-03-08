@@ -1,5 +1,17 @@
+import org.codehaus.groovy.control.CompilationFailedException
 
 class AbstractClassAndInterfaceTest extends GroovyTestCase {
+
+	def shouldNotCompile(String script) {
+	  try {
+        GroovyShell shell = new GroovyShell()
+        shell.parse(script, getTestClassName())
+      } catch (CompilationFailedException cfe) {
+        assert true
+        return
+      }
+      fail("the compilation succeeded but should have failed")
+	}
 
 	void testInterface() {
     	def shell = new GroovyShell()
@@ -26,8 +38,7 @@ class AbstractClassAndInterfaceTest extends GroovyTestCase {
 	}
 	
 	void testClassImplementingAnInterfaceButMissesMethod() {
-    	def shell = new GroovyShell()
-        def text = """
+        shouldNotCompile """
         	interface A {
 				void methodOne(Object o)
 				Object methodTwo()
@@ -40,10 +51,8 @@ class AbstractClassAndInterfaceTest extends GroovyTestCase {
 			def b = new B();
 			return b.methodTwo()
 			"""
-		shouldFail {
-			shell.evaluate(text)
-		}
-		text = """
+		
+		shouldNotCompile """
 			interface A {
 				Object methodTwo()
 		    }
@@ -58,9 +67,6 @@ class AbstractClassAndInterfaceTest extends GroovyTestCase {
 			def b = new C();
 			return b.methodTwo()
 			"""
-		shouldFail {
-			shell.evaluate(text)
-		}			
 	}
 	
 	void testAbstractClass() {
@@ -87,8 +93,7 @@ class AbstractClassAndInterfaceTest extends GroovyTestCase {
 	}	
 	
 	void testClassExtendingAnAbstractClassButMissesMethod() {
-    	def shell = new GroovyShell()
-        def text = """
+        shouldNotCompile """
         	abstract class A {
 				abstract void methodOne(Object o)
 				Object methodTwo(){
@@ -107,12 +112,9 @@ class AbstractClassAndInterfaceTest extends GroovyTestCase {
 			
 			def b = new C();
 			return b.methodTwo()
-			"""
-		shouldFail {
-			shell.evaluate(text)
-		}			
+			"""	
 		
-        text = """
+       shouldNotCompile """
         	abstract class A {
 				abstract void methodOne(Object o)
 				Object methodTwo(){
@@ -130,9 +132,6 @@ class AbstractClassAndInterfaceTest extends GroovyTestCase {
 			def b = new B();
 			return b.methodTwo()
 			"""
-		shouldFail {
-			shell.evaluate(text)
-		}
 	}
 	
 	void testInterfaceAbstractClassCombination() {
@@ -157,7 +156,7 @@ class AbstractClassAndInterfaceTest extends GroovyTestCase {
 			"""
 		shell.evaluate(text)
 		
-		text = """
+		shouldNotCompile """
 			interface A {
 				void methodOne()
 			}
@@ -170,9 +169,6 @@ class AbstractClassAndInterfaceTest extends GroovyTestCase {
 			def c = new c()
 			c.methodTwo()
 			"""
-		shouldFail {
-			shell.evaluate(text)
-		}	
 	}
 	
 	void testDefaultModifiersForInterfaces() {

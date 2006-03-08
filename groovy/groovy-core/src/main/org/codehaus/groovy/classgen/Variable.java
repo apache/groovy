@@ -74,7 +74,7 @@ public class Variable {
     private boolean dynamicTyped;
 
     private Variable(){
-        dynamicTyped = false;
+        dynamicTyped = true;
         index=0;
         holder=false;
         property=false;

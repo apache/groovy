@@ -295,7 +295,6 @@ public class AsmClassGenerator extends ClassGenerator {
     }
     
     protected SourceUnit getSourceUnit() {
-        // TODO Auto-generated method stub
         return null;
     }
 
@@ -3050,6 +3049,12 @@ public class AsmClassGenerator extends ClassGenerator {
             return ClassHelper.boolean_TYPE;
         }
         if (expression instanceof VariableExpression) {
+        	if (expression == VariableExpression.THIS_EXPRESSION) {
+        		return classNode;
+        	}else  if (expression==VariableExpression.SUPER_EXPRESSION) {
+        		return classNode.getSuperClass();
+        	}
+        	
             VariableExpression varExpr = (VariableExpression) expression;
             Variable variable = compileStack.getVariable(varExpr.getName(),false);
             if (variable != null && !variable.isHolder()) {
