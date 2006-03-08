@@ -327,6 +327,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         // No need to be extra carefull here for that.
         ClassNode parent = this.redirect();
         do {
+        	abstractNodes.add(parent);
             ClassNode[] interfaces = parent.getInterfaces();
             for (int i = 0; i < interfaces.length; i++) {
                 abstractNodes.add(interfaces[i].redirect());
