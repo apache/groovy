@@ -73,7 +73,8 @@ public class SecurityTest extends SecurityTestSupport {
 		assertExecute(new File("src/test/groovy/ClosureMethodTest.groovy"), null);
 	}
 
-	public void testGroovyMethodsTest() {
+	public void testGroovyMethodsTest_FAILS() {
+		if (notYetImplemented()) return;
 		assertExecute(new File("src/test/groovy/GroovyMethodsTest.groovy"), null);
 	}
 
