@@ -564,19 +564,21 @@ public class GroovyClassLoader extends URLClassLoader {
         String filename = name.replace('.', '/') + config.getDefaultScriptExtension();
         URL ret = getResource(filename);
         if (ret!=null && ret.getProtocol().equals("file")) {
+            String fileWithoutPackage = filename;
+            if (fileWithoutPackage.indexOf('/')!=-1){
+                int index = fileWithoutPackage.lastIndexOf('/');
+                fileWithoutPackage = fileWithoutPackage.substring(index+1);
+            }
             File path = new File(ret.getFile()).getParentFile();
             if (path.exists() && path.isDirectory()) {
-                File file = new File(path, filename);
+                File file = new File(path, fileWithoutPackage);
                 if (file.exists()) {
                     // file.exists() might be case insensitive. Let's do
                     // case sensitive match for the filename
-                    int sepp = filename.lastIndexOf('/');
-                    String fn = filename;
-                    if (sepp >= 0) fn = filename.substring(sepp+1);
                     File parent = file.getParentFile();
                     String[] files = parent.list();
                     for (int j = 0; j < files.length; j++) {
-                        if (files[j].equals(fn)) return ret;
+                        if (files[j].equals(fileWithoutPackage)) return ret;
                     }
                 }
             }
