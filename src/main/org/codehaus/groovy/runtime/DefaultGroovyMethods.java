@@ -6112,6 +6112,22 @@ public class DefaultGroovyMethods {
         thread.start();
         runnable.waitForOrKill(numberOfMillis);
     }
+    
+    /**
+     * gets the input and error streams from a process and reads them
+     * to avoid the process to block due to a full ouput buffer. For this
+     * two Threads are started, so this method will return immediately
+     *
+     * @param self           a Process
+     */
+    public static void consumeProcessOutput(Process self) {
+        Dumper d = new Dumper(self.getErrorStream());
+        Thread t = new Thread(d);
+        t.start();
+        d = new Dumper(self.getInputStream());
+        t = new Thread(d);
+        t.start();
+    }    
 
     /**
      * Process each regex group matched substring of the given string. If the closure
@@ -6237,6 +6253,7 @@ public class DefaultGroovyMethods {
             }
         }
     }
+    
     protected static class RangeInfo {
         protected int from, to;
         protected boolean reverse;
@@ -6245,6 +6262,24 @@ public class DefaultGroovyMethods {
             this.from = from;
             this.to = to;
             this.reverse = reverse;
+        }
+    }
+    
+    private static class Dumper implements Runnable{
+        InputStream in;
+        
+        public Dumper(InputStream in) {
+            this.in = in;
+        }
+
+        public void run() {
+            InputStreamReader isr = new InputStreamReader(in);
+            BufferedReader br = new BufferedReader(isr);
+            try {
+                while (br.readLine()!=null) {}
+            } catch (IOException e) {
+                throw new GroovyRuntimeException("exception while reading process stream",e);
+            }
         }
     }
 }
