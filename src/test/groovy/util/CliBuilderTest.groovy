@@ -1,7 +1,6 @@
 class CliBuilderTest extends GroovyTestCase {
 
     void testSample() {
-        if (notYetImplemented()) return
         def writer = new StringWriter()
         def cli = new CliBuilder(usage:'groovy [option]* filename', writer: new PrintWriter(writer))
         cli.h(longOpt: 'help', 'usage information')
@@ -39,7 +38,6 @@ class CliBuilderTest extends GroovyTestCase {
     }
 
     void testMultipleArgs() {
-        if (notYetImplemented()) return
         def cli = new CliBuilder()
         cli.a(longOpt:'arg', args:2, valueSeparator:',' as char, 'arguments')
         def options = cli.parse(['-a','1,2'])
@@ -57,7 +55,6 @@ class CliBuilderTest extends GroovyTestCase {
     }
 
     void testFailedParsePrintsUsage() {
-        if (notYetImplemented()) return
         def writer = new StringWriter()
         def cli = new CliBuilder(writer: new PrintWriter(writer))
         cli.x(required:true, 'message')
