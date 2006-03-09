@@ -184,18 +184,20 @@ class GroovyMethodsTest extends GroovyTestCase {
     }
     
     void testExecuteCommandLineProcessAndUseWaitForOrKill_FAILS_UNLESS_MAC() {
-        if (!System.properties.'java.vendor'.contains('Apple') && notYetImplemented()) return
+        if (System.properties.'java.vendor'.contains('Apple') && notYetImplemented()) return
 
         println "executing command: ${cmd}"
 
         def process = cmd.execute()
 
+        process.consumeProcessOutput()
         process.waitForOrKill(1000)
         def value = process.exitValue()
         println "Exit value of command line is ${value}"
 
         process = cmd.execute()
 
+        process.consumeProcessOutput()
         process.waitForOrKill(1)
         value = process.exitValue()
         println "Exit value of command line is ${value}"
