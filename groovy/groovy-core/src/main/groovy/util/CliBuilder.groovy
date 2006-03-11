@@ -58,7 +58,7 @@ class CliBuilder {
         Print the usage message with writer (default: System.out) and formatter (default: HelpFormatter)
     */
     void usage(){
-        formatter.printHelp(writer, formatter.width, usage, '', options, formatter.leftPadding, formatter.descPadding, '')
+        formatter.printHelp(writer, formatter.defaultWidth, usage, '', options, formatter.defaultLeftPad, formatter.defaultDescPad, '')
         writer.flush()
     }
 
