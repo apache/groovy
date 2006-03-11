@@ -31,7 +31,7 @@ class CliBuilderTest extends GroovyTestCase {
         assert options.c
         assertEquals 'ASCII', options.getOptionValue('c')
         assertEquals 'ASCII', options.c
-        assertEquals 'ASCII', options.encoding
+        assertEquals false, options.encoding
 
         assertEquals false, options.noSuchOptionGiven
         assertEquals false, options.x
@@ -43,8 +43,8 @@ class CliBuilderTest extends GroovyTestCase {
         def options = cli.parse(['-a','1,2'])
         assertEquals '1', options.a
         assertEquals(['1','2'], options.as)
-        assertEquals '1', options.arg
-        assertEquals(['1','2'], options.args)
+        assertEquals false, options.arg
+        assertEquals(false, options.args)
     }
 
     void testArgs() {
@@ -62,7 +62,7 @@ class CliBuilderTest extends GroovyTestCase {
         def options = cli.parse([])
 
         assert writer.toString().tokenize("\r\n").join("\n") ==
-'''error: x
+'''error: -x
 usage: groovy
  -x   message'''
 
