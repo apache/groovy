@@ -360,7 +360,7 @@ public class Groovy extends Task {
                 throw new BuildException(e, getLocation());
             }
 
-            log("statements executed successfully");
+            log("statements executed successfully", Project.MSG_VERBOSE);
         } finally{}
     }
 
