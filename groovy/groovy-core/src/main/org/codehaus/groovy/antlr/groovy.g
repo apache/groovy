@@ -272,15 +272,8 @@ tokens {
         if ((t instanceof GroovySourceAST) && last != null) {
             GroovySourceAST node = (GroovySourceAST)t;
             node.setLast(last);
-
-            // todo - we can populate AST snippets on the fly, but this may be better done as a post-parse decoration
-            if (sourceBuffer != null) {
-                String snippet = sourceBuffer.getSnippet(
-                                        new LineColumn(first.getLine(),first.getColumn()),
-                                        new LineColumn(last.getLine(),last.getColumn())
-                );
-                node.setSnippet(snippet);
-            }
+            // This is a good point to call node.setSnippet(),
+            // but it bulks up the AST too much for production code.
         }
         return t;
     }
