@@ -82,8 +82,8 @@ public class AntlrASTProcessSnippets implements AntlrASTProcessor{
                 }
                 t.setLineLast(nextLine);
                 t.setColumnLast(nextColumn);
-                t.setSnippet(sourceBuffer.getSnippet(new LineColumn(t.getLine(),t.getColumn()),
-                                new LineColumn(t.getLineLast(),t.getColumnLast())));
+                // This is a good point to call t.setSnippet(),
+                // but it bulks up the AST too much for production code.
             }
         }
 
