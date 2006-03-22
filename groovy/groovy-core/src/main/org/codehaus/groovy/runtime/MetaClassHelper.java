@@ -731,7 +731,8 @@ public class MetaClassHelper {
         else if (classToTransformTo == Integer.class) {
         	if (	classToTransformFrom == Integer.class
         			|| classToTransformFrom == Short.class
-        			|| classToTransformFrom == Byte.class)
+        			|| classToTransformFrom == Byte.class
+                    || classToTransformFrom == BigInteger.class)
         	return true;
         }
         else if (classToTransformTo == Double.class) {
