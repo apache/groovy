@@ -507,33 +507,25 @@ public class MetaClassHelper {
         } catch (InvocationTargetException e) {
             throw new InvokerInvocationException(e);
         } catch (IllegalArgumentException e) {
-            throw new GroovyRuntimeException(
-                    "failed to invoke constructor: "
-                    + constructor
-                    + " with arguments: "
-                    + InvokerHelper.toString(argumentArray)
-                    + " reason: "
-                    + e);
+            throw createExceptionText("failed to invoke constructor: ", constructor, argumentArray, e, false);
         } catch (IllegalAccessException e) {
-            throw new GroovyRuntimeException(
-                    "could not access constructor: "
-                    + constructor
-                    + " with arguments: "
-                    + InvokerHelper.toString(argumentArray)
-                    + " reason: "
-                    + e);
+            throw createExceptionText("could not access constructor: ", constructor, argumentArray, e, false);
         } catch (Exception e) {
-            throw new GroovyRuntimeException(
-                    "failed to invoke constructor: "
-                    + constructor
-                    + " with arguments: "
-                    + InvokerHelper.toString(argumentArray)
-                    + " reason: "
-                    + e,
-                    e);
+            throw createExceptionText("failed to invoke constructor: ", constructor, argumentArray, e, true);
         }
     }
     
+    private static GroovyRuntimeException createExceptionText(String init, Constructor constructor, Object[] argumentArray, Throwable e, boolean setReason) {
+        throw new GroovyRuntimeException(
+                init
+                + constructor
+                + " with arguments: "
+                + InvokerHelper.toString(argumentArray)
+                + " reason: "
+                + e,
+                setReason?e:null);
+    }
+
     public static Object[] coerceArgumentsToClasses(Object[] argumentArray, Class[] paramTypes) {
         // correct argumentArray's length
         if (argumentArray == null) {
@@ -645,6 +637,19 @@ public class MetaClassHelper {
         }
     }
     
+    private static GroovyRuntimeException createExceptionText(String init, MetaMethod method, Object object, Object[] args, Throwable reason, boolean setReason) {
+        return new GroovyRuntimeException(
+                init
+                + method
+                + " on: "
+                + object
+                + " with arguments: "
+                + InvokerHelper.toString(args)
+                + " reason: "
+                + reason,
+                setReason?reason:null);
+    }
+    
     public static Object doMethodInvoke(Object object, MetaMethod method, Object[] argumentArray) {
         Class[] paramTypes = method.getParameterTypes();
         argumentArray = coerceArgumentsToClasses(argumentArray,paramTypes);
@@ -653,40 +658,23 @@ public class MetaClassHelper {
         } catch (InvocationTargetException e) {
             throw new InvokerInvocationException(e);
         } catch (IllegalAccessException e) {
-            throw new GroovyRuntimeException(
-                    "could not access method: "
-                    + method
-                    + " on: "
-                    + object
-                    + " with arguments: "
-                    + InvokerHelper.toString(argumentArray)
-                    + " reason: "
-                    + e,
-                    e);
+            throw createExceptionText("could not access method: ", method, object, argumentArray, e, true);
         } catch (IllegalArgumentException e) {
-            throw new GroovyRuntimeException(
-                    "failed to invoke method: "
-                    + method
-                    + " on: "
-                    + object
-                    + " with arguments: "
-                    + InvokerHelper.toString(argumentArray)
-                    + "reason: "
-                    + e
-            );
+            //TODO: test if this is ok with new MOP, should be changed!
+            // we don't want the exception being unwrapped if it is a IllegalArgumentException
+            // but in the case it is for example a IllegalThreadStateException, we want the unwrapping
+            // from the runtime
+            //Note: the reason we want unwrapping sometimes and sometimes not is that the method
+            // invokation tries to invoke the method with and then reacts with type transformation
+            // if the invokation failed here. This is ok for IllegalArgumentException, but it is
+            // possible that a Reflector will be used to execute the call and then an Exception from inside
+            // the method is not wrapped in a InvocationTargetException and we will end here.
+            boolean setReason = e.getClass() != IllegalArgumentException.class;
+            throw createExceptionText("failed to invoke method: ", method, object, argumentArray, e, setReason);
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
-            throw new GroovyRuntimeException(
-                    "failed to invoke method: "
-                    + method
-                    + " on: "
-                    + object
-                    + " with arguments: "
-                    + InvokerHelper.toString(argumentArray)
-                    + " reason: "
-                    + e,
-                    e);
+            throw createExceptionText("failed to invoke method: ", method, object, argumentArray, e, true);
         }
     }
     
