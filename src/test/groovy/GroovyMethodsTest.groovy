@@ -183,8 +183,8 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert count > 1
     }
     
-    void testExecuteCommandLineProcessAndUseWaitForOrKill_FAILS_UNLESS_MAC() {
-        if (System.properties.'java.vendor'.contains('Apple') && notYetImplemented()) return
+    void testExecuteCommandLineProcessAndUseWaitForOrKill_FAILS_ON_WINDOWS() {
+        if (System.properties.'os.name'.contains('Windows') && notYetImplemented()) return
 
         println "executing command: ${cmd}"
 
@@ -201,6 +201,7 @@ class GroovyMethodsTest extends GroovyTestCase {
         process.waitForOrKill(1)
         value = process.exitValue()
         println "Exit value of command line is ${value}"
+        
     }
     
     void testExecuteCommandLineUnderWorkingDirectory_FAILS() { if (notYetImplemented()) return
