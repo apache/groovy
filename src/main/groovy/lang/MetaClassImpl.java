@@ -120,7 +120,9 @@ public class MetaClassImpl extends MetaClass {
    private boolean initialised;
    // we only need one of these that can be reused over and over.
    private MetaProperty arrayLengthProperty = new MetaArrayLengthProperty();
-
+   private final static MetaMethod AMBIGOUS_LISTENER_METHOD = new MetaMethod(null,null,new Class[]{},null,0);
+   
+   
    public MetaClassImpl(MetaClassRegistry registry, final Class theClass) throws IntrospectionException {
        super(theClass);
        this.registry = registry;
@@ -169,7 +171,12 @@ public class MetaClassImpl extends MetaClass {
            for (int j = 0; j < listenerMethods.length; j++) {
                Method listenerMethod = listenerMethods[j];
                MetaMethod metaMethod = createMetaMethod(descriptor.getAddListenerMethod());
-               listeners.put(listenerMethod.getName(), metaMethod);
+               String name = listenerMethod.getName();
+               if (listeners.containsKey(name)) {
+                   listeners.put(name, AMBIGOUS_LISTENER_METHOD);
+               } else{
+                   listeners.put(name, metaMethod);
+               }
            }
        }
    }
@@ -956,8 +963,10 @@ public class MetaClassImpl extends MetaClass {
            }
        }
 
-       try {
-           MetaMethod addListenerMethod = (MetaMethod) listeners.get(property);
+       RuntimeException runtimeException = null;
+       MetaMethod addListenerMethod = (MetaMethod) listeners.get(property);
+       
+       try {           
            if (addListenerMethod != null && newValue instanceof Closure) {
                // lets create a dynamic proxy
                Object proxy =
@@ -1004,8 +1013,15 @@ public class MetaClassImpl extends MetaClass {
 
        }
        catch (GroovyRuntimeException e) {
-           throw new MissingPropertyException(property, theClass, e);
+           runtimeException = e;
        }
+       
+       if (addListenerMethod==AMBIGOUS_LISTENER_METHOD){
+           throw new GroovyRuntimeException("There are multiple listeners for the property "+property+". Please do not use the bean short form to access this listener.");
+       } else if (runtimeException!=null) {
+           throw new MissingPropertyException(property, theClass, runtimeException);
+       }
+       
 
    }
 
