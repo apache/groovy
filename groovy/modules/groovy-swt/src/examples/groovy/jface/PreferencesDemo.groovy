@@ -3,11 +3,11 @@ package groovy.jface.examples
 import groovy.jface.JFaceBuilder
 
 class PreferencesDemo {
-	property pd
+	@Property pd
 
     void run() {
-        jface = new JFaceBuilder()
-		mainapp = jface.applicationWindow() { 	        
+        def jface = new JFaceBuilder()
+		def mainapp = jface.applicationWindow() { 	        
 		
 			pd = preferenceDialog() {
 				

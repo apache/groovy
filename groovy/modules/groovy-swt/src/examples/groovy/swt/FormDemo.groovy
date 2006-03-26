@@ -3,10 +3,10 @@ package groovy.swt.examples
 import groovy.jface.JFaceBuilder
 
 class ApplicationDemo {
-    property mainapp
-        
+    @Property  mainapp
+    
     void run() {
-        jface = new JFaceBuilder()
+        def jface = new JFaceBuilder()
 
         mainapp = jface.applicationWindow( title:"The forms demo", size:[700,800], location:[0,0] ) { 	
          	gridLayout ( numColumns:2 )
@@ -20,7 +20,7 @@ class ApplicationDemo {
 					expansionListener( type:"expansionStateChanging", closure: { println "expansionStateChanging ... " + it } )
 					expansionListener( type:"expansionStateChanged", closure: { println "expansionStateChanged ... " + it } )
 					
-					htmlText = "<form>"
+					def htmlText = "<form>"
 					htmlText += "<li>list item</li>"
 					htmlText += "<p>this html code with an url: http://groovy.codehaus.org</p>"
 					htmlText += "<li style=\"text\" value=\"1.\">list item 2</li>"

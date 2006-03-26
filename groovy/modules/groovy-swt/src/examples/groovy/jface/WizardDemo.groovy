@@ -3,12 +3,12 @@ package groovy.jface.examples
 import groovy.jface.JFaceBuilder
 
 class WizardDemo extends Script {
-    property mainapp
-    property wizardPage1
-    property text    
-    property wizardDialog1
+    @Property mainapp
+    @Property wizardPage1
+    @Property text    
+    @Property wizardDialog1
     
-    run() {
+    def run() {
 		jface = new JFaceBuilder()
 
 		mainapp = jface.applicationWindow() { 	
@@ -61,14 +61,11 @@ class WizardDemo extends Script {
 						button( text:"Do nothing" )
 					}
 				})	
-				
 			} 
+				wizardDialog1.open()
+				wizardPage1.setPageComplete(false)
 			
 		}
-		
-		wizardPage1.setPageComplete(false)
-		wizardDialog1.open()
-
 	}
 	
 	void onPerformFinish() {

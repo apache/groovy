@@ -9,11 +9,11 @@ import org.eclipse.swt.graphics.Rectangle
 */
 
 class SwtDemo {
-    property shell    
-    property sashForm1    
+    @Property shell    
+    @Property sashForm1    
     
     void run() {
-        builder = new SwtBuilder()
+        def builder = new SwtBuilder()
         shell = builder.shell ( text:'The SashForm Demo' ) {
         	fillLayout()
         

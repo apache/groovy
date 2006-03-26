@@ -3,14 +3,14 @@ package groovy.swt.examples
 import groovy.swt.SwtBuilder
 
 class TrayDemo {
-    property swt
+    @Property swt
         
     void run() {
         swt = new SwtBuilder()
         
-        shell = swt.shell ( text:'The tray Demo' ) {
+        def shell = swt.shell ( text:'The tray Demo' ) {
          	
-         	trayMenu = menu {
+         	def trayMenu = menu {
          		menuItem( text:"menuItem1" )
          		menuItem( text:"menuItem2" )
          	}
@@ -18,7 +18,7 @@ class TrayDemo {
          	tray() {
 	         	
          		trayItem( text:"trayItem1" ) {
-	         		image( src:"src/test/groovy/swt/groovy-logo.png" )
+	         		image( src:"src/test/groovy/swt/groovy-logo.png" ) 
 	         		
 	         		onEvent( type:"Selection", closure:{
 	         			println "Selection event ..."

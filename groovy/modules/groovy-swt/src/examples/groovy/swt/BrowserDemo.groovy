@@ -3,14 +3,14 @@ package groovy.swt.examples
 import groovy.swt.SwtBuilder
 
 class BrowserSwtDemo extends Script {
-    property swt
-    property shell
-    property browser
-    property location
-    property status
-    property progressBar
+    @Property swt
+    @Propert shell
+    @Propert browser
+    @Propert location
+    @Propert status
+    @Propert progressBar
         
-    run() {
+    def run() {
         swt = new SwtBuilder()
         
         shell = swt.shell( text:"The Browser Test", location:[100,100], size:[700,600] ) {
@@ -72,7 +72,7 @@ class BrowserSwtDemo extends Script {
 				})
 				
 			}
-		
+			browser.setUrl( "http://feeds.codehaus.org/" )
 			status = label( style:"none", text:"" ) {
 				gridData( style:"fill_horizontal", horizontalSpan:2) 
 			}
@@ -83,7 +83,7 @@ class BrowserSwtDemo extends Script {
 				
         }
         
-		browser.setUrl( "http://feeds.codehaus.org/" )
+//		browser.setUrl( "http://feeds.codehaus.org/" )
 		shell.open()
 	
 		while(! shell.isDisposed()) { 

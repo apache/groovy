@@ -3,10 +3,10 @@ package groovy.jface.examples
 import groovy.jface.JFaceBuilder
 
 class ApplicationWindowDemo {
-    property mainapp
+    @Property mainapp
         
     void run() {
-        swt = new JFaceBuilder()
+        def swt = new JFaceBuilder()
         
 	    mainapp = swt.applicationWindow() { 	
 	         	
