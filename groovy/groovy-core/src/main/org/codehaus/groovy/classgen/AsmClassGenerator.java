@@ -2793,7 +2793,8 @@ public class AsmClassGenerator extends ClassGenerator {
         ClassNode type = getLHSType(leftExpression);
         // lets not cast for primitive types as we handle these in field setting etc
         if (ClassHelper.isPrimitiveType(type)) {
-            rightExpression.visit(this);
+            visitAndAutoboxBoolean(rightExpression);
+            helper.unbox(type);
         } else {
             if (type!=ClassHelper.OBJECT_TYPE){
                 visitCastExpression(new CastExpression(type, rightExpression));

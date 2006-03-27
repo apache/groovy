@@ -514,7 +514,7 @@ public class BytecodeHelper implements Opcodes {
             cv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Reference", "set", "(Ljava/lang/Object;)V");
         }
         else {
-            store(variable.deriveBoxedVersion()); // todo br seems right hand values on the stack are always object refs, primitives boxed
+            store(variable,false);
         }
     }
 
@@ -643,4 +643,5 @@ public class BytecodeHelper implements Opcodes {
     public void dup() {
         cv.visitInsn(DUP);
     }
+    
 }
