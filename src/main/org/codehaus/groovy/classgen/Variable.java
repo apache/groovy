@@ -145,19 +145,6 @@ public class Variable {
         return super.toString() + "[" + type + " " + name + " (" + index + ")";
     }
 
-    /**
-     * derive a new Variable from this if this is a primitive variable, or return this instance
-     * @return
-     */
-    public Variable deriveBoxedVersion() {
-        if (ClassHelper.isPrimitiveType(getType())) {
-            ClassNode t = ClassHelper.getWrapper(getType());
-            return new Variable(index, t, name);
-        } else {
-            return this;
-        }
-    }
-
     public void setType(ClassNode type) {
         this.type = type;
         dynamicTyped |= type==ClassHelper.DYNAMIC_TYPE;
