@@ -1953,11 +1953,13 @@ public class AsmClassGenerator extends ClassGenerator {
             if (isInClosureConstructor()) {
                 helper.doCast(type);
             }
-            else {
+            else if (!ClassHelper.isPrimitiveType(type)){
                 doConvertAndCast(type);
             }
             helper.loadThis();
-            helper.swapObjectWith(type);
+            //helper.swapObjectWith(type);
+            cv.visitInsn(SWAP);
+            helper.unbox(type);
             helper.putField(field, ownerName);
         }
     }
@@ -2793,15 +2795,11 @@ public class AsmClassGenerator extends ClassGenerator {
         ClassNode type = getLHSType(leftExpression);
         // lets not cast for primitive types as we handle these in field setting etc
         if (ClassHelper.isPrimitiveType(type)) {
-            rightExpression.visit(this);
-            helper.box(rightExpression.getType());
-            helper.unbox(type);
+            visitAndAutoboxBoolean(rightExpression);
+        } else if (type!=ClassHelper.OBJECT_TYPE){
+            visitCastExpression(new CastExpression(type, rightExpression));
         } else {
-            if (type!=ClassHelper.OBJECT_TYPE){
-                visitCastExpression(new CastExpression(type, rightExpression));
-            } else {
-                visitAndAutoboxBoolean(rightExpression);
-            }
+            visitAndAutoboxBoolean(rightExpression);
         }
 
         cv.visitInsn(DUP);  // to leave a copy of the rightexpression value on the stack after the assignment.
@@ -2858,8 +2856,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     protected boolean isValidTypeForCast(ClassNode type) {
-        return !ClassHelper.isPrimitiveType(type) && 
-               type!=ClassHelper.DYNAMIC_TYPE && 
+        return type!=ClassHelper.DYNAMIC_TYPE && 
                type!=ClassHelper.REFERENCE_TYPE;
     }
 
