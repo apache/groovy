@@ -2793,7 +2793,8 @@ public class AsmClassGenerator extends ClassGenerator {
         ClassNode type = getLHSType(leftExpression);
         // lets not cast for primitive types as we handle these in field setting etc
         if (ClassHelper.isPrimitiveType(type)) {
-            visitAndAutoboxBoolean(rightExpression);
+            rightExpression.visit(this);
+            helper.box(rightExpression.getType());
             helper.unbox(type);
         } else {
             if (type!=ClassHelper.OBJECT_TYPE){
@@ -2857,7 +2858,9 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     protected boolean isValidTypeForCast(ClassNode type) {
-        return type!=ClassHelper.DYNAMIC_TYPE && !type.getName().equals("groovy.lang.Reference");
+        return !ClassHelper.isPrimitiveType(type) && 
+               type!=ClassHelper.DYNAMIC_TYPE && 
+               type!=ClassHelper.REFERENCE_TYPE;
     }
 
     protected void visitAndAutoboxBoolean(Expression expression) {
