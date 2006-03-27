@@ -370,24 +370,25 @@ public class BytecodeHelper implements Opcodes {
     }
 
     public void store(Variable v, boolean markStart) {
-        String type = v.getTypeName();
+        ClassNode type = v.getType();
+        unbox(type);
         int idx = v.getIndex();
 
-        if (type.equals("double")) {
+        if (type==ClassHelper.double_TYPE) {
             cv.visitVarInsn(DSTORE, idx);
         }
-        else if (type.equals("float")) {
+        else if (type==ClassHelper.float_TYPE) {
             cv.visitVarInsn(FSTORE, idx);
         }
-        else if (type.equals("long")) {
+        else if (type==ClassHelper.long_TYPE) {
             cv.visitVarInsn(LSTORE, idx);
         }
         else if (
-            type.equals("boolean")
-                || type.equals("char")
-                || type.equals("byte")
-                || type.equals("int")
-                || type.equals("short")) {
+                type==ClassHelper.boolean_TYPE
+                || type==ClassHelper.char_TYPE
+                || type==ClassHelper.byte_TYPE
+                || type==ClassHelper.int_TYPE
+                || type==ClassHelper.short_TYPE) {
             cv.visitVarInsn(ISTORE, idx);
         }
         else {
