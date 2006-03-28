@@ -21,9 +21,12 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
+import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.control.SourceUnit;
 import org.objectweb.asm.Opcodes;
+import org.codehaus.groovy.syntax.Types;
 
 
 /**
@@ -197,6 +200,16 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     	if ((node.getModifiers() & (Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL))==0) {
     		addError("The field "+node.getName()+" is not 'public final static' but part of the interface "+currentClass.getName()+".", node);
     	}
+    }
+    
+    public void visitBinaryExpression(BinaryExpression expression) {
+        if (expression.getOperation().getType()==Types.LEFT_SQUARE_BRACKET && 
+            expression.getRightExpression() instanceof MapEntryExpression){
+            addError("You tried to use a map entry for an index operation, this is not "+
+                     "allowed. Maybe something should be set in parentheses?",
+                     expression.getRightExpression());
+        }
+        super.visitBinaryExpression(expression);
     }
 
 }
