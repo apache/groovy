@@ -206,7 +206,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         if (expression.getOperation().getType()==Types.LEFT_SQUARE_BRACKET && 
             expression.getRightExpression() instanceof MapEntryExpression){
             addError("You tried to use a map entry for an index operation, this is not "+
-                     "allowed. Maybe something should be set in parentheses?",
+                     "allowed. Maybe something should be set in parentheses or a comma is missing?",
                      expression.getRightExpression());
         }
         super.visitBinaryExpression(expression);
