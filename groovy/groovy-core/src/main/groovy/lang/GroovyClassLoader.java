@@ -602,6 +602,7 @@ public class GroovyClassLoader extends URLClassLoader {
         else {
             lastMod = source.openConnection().getLastModified();
         }
+        if (lastMod>System.currentTimeMillis()) return false;
         return lastMod > getTimeStamp(cls);
     }
 
