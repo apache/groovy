@@ -47,6 +47,18 @@ class SuperMethod2Bug extends GroovyTestCase {
     	value = base.name
     	assert value == "CheeseDerived"
     }
+    
+    void testCallsToSuperMethodsReturningPrimitives(){
+       def base = new SuperBase("super cheese")
+       assert base.longMethod() == 1
+       assert base.intMethod() == 1
+       assert base.boolMethod() == true
+       
+       base = new SuperDerived("derived super cheese")
+       assert base.longMethod() == 1
+       assert base.intMethod() == 1
+       assert base.boolMethod() == true       
+    }
 }
 
 class SuperBase {
@@ -70,6 +82,10 @@ class SuperBase {
     def foo(x, y) {
     	"foo(x,y)Base" + x + "," + y
     }
+    
+    boolean boolMethod(){true}
+    long longMethod(){1l}
+    int intMethod(){1i}
 }
 
 class SuperDerived extends SuperBase {
@@ -101,5 +117,11 @@ class SuperDerived extends SuperBase {
     def foo(x, y) {
     	"foo(x,y)Derived" + x + "," + y + super.foo(x, y)
     }
+    
+    // we want to ensure that a call with super, which is directly added into 
+    // bytecode without calling MetaClass does correct boxing
+    boolean booMethod(){super.boolMethod()}
+    int intMethod(){super.intMethod()}
+    long longMethod(){super.longMethod()}
 }
 
