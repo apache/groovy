@@ -51,4 +51,16 @@ class MarkupTest extends TestXmlSupport {
             }
         }
     }
+    
+    void testObjectOperationsInMarkup() {
+        def doc = new StreamingMarkupBuilder().bind {
+          root {
+            (1..3).each {
+             item() 
+            }
+          }
+        }
+        
+        assert doc.toString() == "<root><item/><item/><item/></root>"    
+    }
 }
