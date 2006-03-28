@@ -51,9 +51,11 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         currentClass = node;
         
         checkImplementsAndExtends(node);
-        checkClassForOverwritingFinal(node);
-        checkMethodsForOverwritingFinal(node);
-        checkNoAbstractMethodsNonabstractClass(node);
+        if (!getSourceUnit().getErrorCollector().hasErrors()) {
+            checkClassForOverwritingFinal(node);
+            checkMethodsForOverwritingFinal(node);
+            checkNoAbstractMethodsNonabstractClass(node);
+        }
         
         super.visitClass(node);
         
@@ -94,7 +96,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     
     private void checkImplementsAndExtends(ClassNode node) {
         ClassNode cn = node.getSuperClass();
-        if (cn.isInterface()) addError("you are not allowed to extend the Interface "+cn.getName()+", use implements instead", node);
+        if (cn.isInterface() && !node.isInterface()) addError("you are not allowed to extend the Interface "+cn.getName()+", use implements instead", node);
         ClassNode[] interfaces = node.getInterfaces();
         for (int i = 0; i < interfaces.length; i++) {
             cn = interfaces[i];
