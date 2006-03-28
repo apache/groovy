@@ -1303,8 +1303,6 @@ public class AsmClassGenerator extends ClassGenerator {
         addInnerClass(innerClass);
         String innerClassinternalName = BytecodeHelper.getClassInternalName(innerClass);
 
-        ClassNode owner = innerClass.getOuterClass();
-
         passingClosureParams = true;
         List constructors = innerClass.getDeclaredConstructors();
         ConstructorNode node = (ConstructorNode) constructors.get(0);
@@ -1313,30 +1311,16 @@ public class AsmClassGenerator extends ClassGenerator {
         cv.visitTypeInsn(NEW, innerClassinternalName);
         cv.visitInsn(DUP);
         if (isStaticMethod() || classNode.isStaticClass()) {
-            visitClassExpression(new ClassExpression(owner));
-        }
-        else {
-            loadThisOrOwner();
-        }
-
-        if (innerClass.getSuperClass()==ClassHelper.CLOSURE_TYPE) {
-            if (isStaticMethod()) {
-                /**
-                 * todo could maybe stash this expression in a JVM variable
-                 * from previous statement above
-                 */
-                visitClassExpression(new ClassExpression(owner));
-            }
-            else {
-              cv.visitVarInsn(ALOAD, 0);
-            }
+            visitClassExpression(new ClassExpression(classNode));
+        } else {
+            cv.visitVarInsn(ALOAD, 0);
         }
 
         // now lets load the various parameters we're passing
-        // we start at index 2 because the first 2 variables we pass
-        // are always the delegate and the outer instance and at this
-        // point they are already on the stack
-        for (int i = 2; i < localVariableParams.length; i++) {
+        // we start at index 1 because the first variable we pass
+        // is the owner instance and at this point it is already 
+        // on the stack
+        for (int i = 1; i < localVariableParams.length; i++) {
             Parameter param = localVariableParams[i];
             String name = param.getName();
 
@@ -2451,14 +2435,11 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     protected ClassNode createClosureClass(ClosureExpression expression) {
-        ClassNode owner = getOutermostClass();
-        ClassNode outerClass = owner;
-        String name = owner.getName() + "$"
-                + context.getNextClosureInnerName(owner, classNode, methodNode); // br added a more infomative name
+        ClassNode outerClass = getOutermostClass();
+        String name = outerClass.getName() + "$"
+                + context.getNextClosureInnerName(outerClass, classNode, methodNode); // br added a more infomative name
         boolean staticMethodOrInStaticClass = isStaticMethod() || classNode.isStaticClass();
-        if (staticMethodOrInStaticClass) {
-            outerClass = ClassHelper.make(Class.class);
-        }
+
         Parameter[] parameters = expression.getParameters();
         if (parameters==null){
             parameters = new Parameter[0];
@@ -2469,7 +2450,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
         Parameter[] localVariableParams = getClosureSharedVariables(expression);
 
-        InnerClassNode answer = new InnerClassNode(owner, name, 0, ClassHelper.CLOSURE_TYPE); // closures are local inners and not public
+        InnerClassNode answer = new InnerClassNode(outerClass, name, 0, ClassHelper.CLOSURE_TYPE); // closures are local inners and not public
         answer.setEnclosingMethod(this.methodNode);
         answer.setSynthetic(true);
         
@@ -2510,9 +2491,6 @@ public class AsmClassGenerator extends ClassGenerator {
             call.setSourcePosition(expression);
         }
 
-        FieldNode ownerField = answer.addField("owner", ACC_PRIVATE, outerClass, null);
-        ownerField.setSourcePosition(expression);
-
         // lets make the constructor
         BlockStatement block = new BlockStatement();
         block.setSourcePosition(expression);
@@ -2523,12 +2501,6 @@ public class AsmClassGenerator extends ClassGenerator {
             new ExpressionStatement(
                 new ConstructorCallExpression(
                     ClassNode.SUPER,
-                    outer)));
-        block.addStatement(
-            new ExpressionStatement(
-                new BinaryExpression(
-                    new FieldExpression(ownerField),
-                    Token.newSymbol(Types.EQUAL, -1, -1),
                     outer)));
 
         // lets assign all the parameter fields from the outer context
@@ -2569,10 +2541,9 @@ public class AsmClassGenerator extends ClassGenerator {
             }
         }
 
-        Parameter[] params = new Parameter[2 + localVariableParams.length];
-        params[0] = new Parameter(outerClass, "_outerInstance");
-        params[1] = new Parameter(ClassHelper.OBJECT_TYPE, "_delegate");
-        System.arraycopy(localVariableParams, 0, params, 2, localVariableParams.length);
+        Parameter[] params = new Parameter[1 + localVariableParams.length];
+        params[0] = new Parameter(ClassHelper.OBJECT_TYPE, "_outerInstance");
+        System.arraycopy(localVariableParams, 0, params, 1, localVariableParams.length);
 
         ASTNode sn = answer.addConstructor(ACC_PUBLIC, params, ClassNode.EMPTY_ARRAY, block);
         sn.setSourcePosition(expression);
@@ -3033,11 +3004,7 @@ public class AsmClassGenerator extends ClassGenerator {
             }
         }
     }
-
-    protected boolean isNotFieldOfOutermostClass(String var) {
-        return getOutermostClass().getField(var) == null;
-    }
-
+    
     private boolean isInnerClass() {
         return classNode instanceof InnerClassNode;
     }
