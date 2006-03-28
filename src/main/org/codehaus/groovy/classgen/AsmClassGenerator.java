@@ -1521,6 +1521,11 @@ public class AsmClassGenerator extends ClassGenerator {
                 
                 String descriptor = BytecodeHelper.getMethodDescriptor(superMethodNode.getReturnType(), superMethodNode.getParameters());
                 cv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(superMethodNode.getDeclaringClass()), method, descriptor);
+                // as long as we want to work with objects where possible, we may have to
+                // box the value here. This can be removed when we know the return type 
+                // and save it in the MethodCallExpression. By default it returns Object
+                // so boxing is always save.
+                helper.box(superMethodNode.getReturnType());
             }
             else {
                 Expression objectExpression = call.getObjectExpression();
@@ -2250,6 +2255,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     public void visitMapEntryExpression(MapEntryExpression expression) {
+    System.out.println("here");
     }
 
     public void visitMapExpression(MapExpression expression) {
