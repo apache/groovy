@@ -198,6 +198,11 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
         addError("unable to resolve class "+type.getName()+" "+msg,node);
     }
 
+    private void resolveOrFail(ClassNode type, ASTNode node, boolean prefereImports) {
+        if (prefereImports && resolveAliasFromModule(type)) return;
+        resolveOrFail(type,node);
+    }
+    
     private void resolveOrFail(ClassNode type, ASTNode node) {
         resolveOrFail(type,"",node);
     }
@@ -386,6 +391,39 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
             type.setRedirect(iType);
         }
     }
+    
+    private boolean resolveAliasFromModule(ClassNode type) {
+        ModuleNode module = currentClass.getModule();
+        if (module==null) return false;
+        String name = type.getName();
+        
+        // check module node imports aliases
+        // the while loop enables a check for inner classes which are not fully imported,
+        // but visible as the surrounding class is imported and the inner class is public/protected static
+        String pname = name;
+        int index = name.length();
+        /*
+         * we have a name foo.bar and an import foo.foo. This means foo.bar is possibly
+         * foo.foo.bar rather than foo.bar. This means to cut at the dot in foo.bar and
+         * foo for import
+         */
+        while (true) {
+            pname = name.substring(0,index);
+            String aliased = module.getImport(pname);
+            if (aliased!=null && !aliased.equals(name)) {
+                if (pname.length()<name.length()){
+                    aliased +=  name.substring(pname.length());
+                }
+                type.setName(aliased);
+                if (resolve(type,true,true,true)) return true;
+                type.setName(name);
+            }
+            index = pname.lastIndexOf('.');
+            if (index==-1) break;
+        }
+         return false;
+        
+    }
 
     private boolean resolveFromModule(ClassNode type, boolean testModuleImports) {
         ModuleNode module = currentClass.getModule();
@@ -407,35 +445,8 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
         }
         type.setName(name);
 
-        {
-            // check module node imports aliases
-        	// the while loop enables a check for inner classes which are not fully imported,
-        	// but visible as the surrounding class is imported and the inner class is public/protected static
-        	String pname = name;
-        	int index = name.length();
-            /*
-             * we have a name foo.bar and an import foo.foo. This means foo.bar is possibly
-             * foo.foo.bar rather than foo.bar. This means to cut at the dot in foo.bar and
-             * foo for import
-             */
+        if (resolveAliasFromModule(type)) return true;
 
-        	while (true) {
-        		pname = name.substring(0,index);
-        		String aliased = module.getImport(pname);
-        		if (aliased!=null && !aliased.equals(name)) {
-        			if (pname.length()<name.length()){
-        				aliased +=  name.substring(pname.length());
-        			}
-	        		type.setName(aliased);
-	                if (resolve(type,true,true,true)) return true;
-	                type.setName(name);
-        		}
-        		index = pname.lastIndexOf('.');
-                if (index==-1) break;
-        	}
-        }
-
-        //testModuleImports &= !type.hasPackageName();
         if (testModuleImports) {
             boolean resolved = false;
             if (module.hasPackageName()) { 
@@ -716,10 +727,10 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
         ClassNode oldNode = currentClass;
         currentClass = node;
         ClassNode sn = node.getUnresolvedSuperClass();
-        if (sn!=null) resolveOrFail(sn,node);
+        if (sn!=null) resolveOrFail(sn,node,true);
         ClassNode[] interfaces = node.getInterfaces();
         for (int i=0; i<interfaces.length; i++) {
-            resolveOrFail(interfaces[i],node);
+            resolveOrFail(interfaces[i],node,true);
         }        
         node.visitContents(this);
         currentClass = oldNode;        
