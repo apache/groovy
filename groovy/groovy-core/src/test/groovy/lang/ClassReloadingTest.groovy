@@ -22,7 +22,7 @@ class ClassReloadingTest extends GroovyTestCase {
     		def object = groovyClass.newInstance()
     		assert "hello"== object.hello
 
-                Thread.sleep(1000)
+                sleep 1000
     					
     		// change class
     		file.write """
