@@ -51,7 +51,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         currentClass = node;
         
         checkImplementsAndExtends(node);
-        if (!getSourceUnit().getErrorCollector().hasErrors()) {
+        if (source!=null && !source.getErrorCollector().hasErrors()) {
             checkClassForOverwritingFinal(node);
             checkMethodsForOverwritingFinal(node);
             checkNoAbstractMethodsNonabstractClass(node);

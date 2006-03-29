@@ -295,8 +295,7 @@ public class CompilationUnit extends ProcessingUnit {
     public SourceUnit addSource(File file) {
         return addSource(new SourceUnit(file, configuration, classLoader, getErrorCollector()));
     }
-
-
+    
     /**
      * Adds a source file to the unit.
      */
@@ -357,7 +356,9 @@ public class CompilationUnit extends ProcessingUnit {
 
     /**
      * Adds a ClassNode directly to the unit (ie. without source).
-     * Used primarily for testing support.
+     * WARNING: the source is needed for error reporting, using
+     *          this method without setting a SourceUnit will cause
+     *          NullPinterExceptions
      */
     public void addClassNode(ClassNode node) {
         ModuleNode module = new ModuleNode(this.ast);
