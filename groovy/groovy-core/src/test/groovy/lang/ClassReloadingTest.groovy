@@ -21,6 +21,8 @@ class ClassReloadingTest extends GroovyTestCase {
     		def groovyClass = cl.loadClass(className,true,false)
     		def object = groovyClass.newInstance()
     		assert "hello"== object.hello
+
+                Thread.sleep(1000)
     					
     		// change class
     		file.write """
