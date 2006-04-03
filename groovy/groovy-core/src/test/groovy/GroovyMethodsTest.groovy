@@ -25,7 +25,7 @@ class GroovyMethodsTest extends GroovyTestCase {
     }
 
     void testSum() {
-    	assert [].sum() == 0
+    	assert [].sum() == null
     	assert [1].sum() == 1
     	assert [1, 2, 3].sum() == 6
 

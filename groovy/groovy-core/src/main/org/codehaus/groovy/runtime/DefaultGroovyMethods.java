@@ -1040,15 +1040,39 @@ public class DefaultGroovyMethods {
      * @return The sum of all of the list itmems.
      */
     public static Object sum(Collection self) {
-    	Object result = new Integer(0);
-		Object[] param = new Object[1];
-		for (Iterator iter = self.iterator(); iter.hasNext();) {
-			Object operand = iter.next();
-			param[0] = operand;
-			MetaClass metaClass = InvokerHelper.getMetaClass(result);
-			result = metaClass.invokeMethod(result, "plus", param);
-		}
-		return result;
+        Object result = null;
+
+        if (self.size() == 0) return result;
+
+        boolean isNumber = true;
+
+        Class classref = null;
+        try {
+          classref = Class.forName("java.lang.Number");
+        } catch (Exception ex) {
+        }
+
+        for (Iterator iter = self.iterator(); iter.hasNext(); ) {
+          if (!classref.isInstance(iter.next())) {
+            isNumber = false;
+            break;
+          }
+        }
+
+        if (isNumber) {
+    	  result = new Integer(0);
+        } else {
+          result = new String();
+        }
+
+        Object[] param = new Object[1];
+        for (Iterator iter = self.iterator(); iter.hasNext();) {
+          Object operand = iter.next();
+          param[0] = operand;
+          MetaClass metaClass = InvokerHelper.getMetaClass(result);
+          result = metaClass.invokeMethod(result, "plus", param);
+        }
+        return result;
     }
 
     /**
@@ -1085,6 +1109,9 @@ public class DefaultGroovyMethods {
     public static String join(Collection self, String separator) {
         StringBuffer buffer = new StringBuffer();
         boolean first = true;
+
+        if (separator == null) separator = "";
+
         for (Iterator iter = self.iterator(); iter.hasNext();) {
             Object value = iter.next();
             if (first) {
@@ -1107,6 +1134,9 @@ public class DefaultGroovyMethods {
     public static String join(Object[] self, String separator) {
         StringBuffer buffer = new StringBuffer();
         boolean first = true;
+
+        if (separator == null) separator = "";
+
         for (int i = 0; i < self.length; i++) {
             String value = InvokerHelper.toString(self[i]);
             if (first) {
