@@ -50,6 +50,10 @@ import groovy.lang.GroovyRuntimeException;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Collection;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Iterator;
 import java.io.IOException;
 
 import javax.management.Attribute;
@@ -60,16 +64,18 @@ import javax.management.MBeanOperationInfo;
 import javax.management.MBeanParameterInfo;
 import javax.management.ObjectName;
 import javax.management.MBeanServerConnection;
+import javax.management.MBeanAttributeInfo;
 
 
 /**
- * A GroovyObject facade for an underlying MBean which acts like a normal 
- * groovy object but which is actually implemented via 
- * an underlying JMX MBean. 
+ * A GroovyObject facade for an underlying MBean which acts like a normal
+ * groovy object but which is actually implemented via
+ * an underlying JMX MBean.
  * Properties and normal method invocations
  * delegate to the MBeanServer to the actual MBean.
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * @author Tugdual Grall
  * @version $Revision$
  */
 public class GroovyMBean extends GroovyObjectSupport {
@@ -83,7 +89,7 @@ public class GroovyMBean extends GroovyObjectSupport {
         this.server = server;
         this.name = name;
         this.beanInfo = server.getMBeanInfo(name);
-        
+
         MBeanOperationInfo[] operationInfos = beanInfo.getOperations();
         for (int i = 0; i < operationInfos.length; i++ ) {
             MBeanOperationInfo info = operationInfos[i];
@@ -94,15 +100,15 @@ public class GroovyMBean extends GroovyObjectSupport {
     public MBeanServerConnection server() {
         return server;
     }
-    
+
     public ObjectName name() {
         return name;
     }
-    
+
     public MBeanInfo info() {
         return beanInfo;
     }
-    
+
     public Object getProperty(String property) {
         try {
             return server.getAttribute(name, property);
@@ -114,7 +120,7 @@ public class GroovyMBean extends GroovyObjectSupport {
             throw new GroovyRuntimeException("Could not access property: " + property + ". Reason: " + e, e);
         }
     }
-    
+
     public void setProperty(String property, Object value) {
         try {
             server.setAttribute(name, new Attribute(property, value));
@@ -126,7 +132,7 @@ public class GroovyMBean extends GroovyObjectSupport {
             throw new GroovyRuntimeException("Could not set property: " + property + ". Reason: " + e, e);
         }
     }
-    
+
     public Object invokeMethod(String method, Object arguments) {
         String[] signature = (String[]) operations.get(method);
         if (signature != null) {
@@ -160,4 +166,224 @@ public class GroovyMBean extends GroovyObjectSupport {
         }
         return answer;
     }
+
+  /**
+   * List of the names of each of the attributes on the MBean
+   * @return list of attribute names
+   */
+  public Collection listAttributeNames() {
+    ArrayList list = new ArrayList();
+    try {
+      MBeanAttributeInfo[] attrs = beanInfo.getAttributes();
+      for (int i = 0; i < attrs.length; i++) {
+        MBeanAttributeInfo attr = attrs[i];
+        list.add(attr.getName());
+      }
+    }
+    catch (Throwable t) {
+    }
+    finally {
+    }
+    return list;
+  }
+
+  /**
+   * The values of each of the attributes on the MBean
+   * @return list of values of each attribute
+   */
+  public List listAttributeValues() {
+    ArrayList list = new ArrayList();
+    Collection names = listAttributeNames();
+    for (Iterator iterator = names.iterator(); iterator.hasNext();) {
+      String name = (String) iterator.next();
+      try {
+        Object val = this.getProperty(name);
+        if (val != null) {
+          list.add(name + " : " + val.toString());
+        }
+      }
+      catch (RuntimeException e) {
+        // todo: fix this behaviour properly
+        // Do nothing here, just handle the error silently.
+        //e.printStackTrace();
+      }
+    }
+    return list;
+  }
+
+
+  /**
+   * List of string representations of all of the attributes on the MBean.
+   * @return list of descriptions of each attribute on the mbean
+   */
+  public Collection listAttributeDescriptions() {
+    ArrayList list = new ArrayList();
+    try {
+      MBeanAttributeInfo[] attrs = beanInfo.getAttributes();
+      for (int i = 0; i < attrs.length; i++) {
+        MBeanAttributeInfo attr = attrs[i];
+        list.add(describeAttribute(attr));
+      }
+    }
+    catch (Throwable t) {
+    }
+    finally {
+    }
+    return list;
+  }
+
+  /**
+   * Description of the specified attribute name.
+   * @param attr - the attribute
+   * @return String the description
+   */
+  protected String describeAttribute(MBeanAttributeInfo attr) {
+    StringBuffer buf = new StringBuffer();
+    buf.append("(");
+    if (attr.isReadable()) {
+      buf.append("r");
+    }
+    if (attr.isWritable()) {
+      buf.append("w");
+    }
+    buf.append(") ")
+      .append(attr.getType())
+      .append(" ")
+      .append(attr.getName());
+    return buf.toString();
+  }
+
+  /**
+   * Description of the specified attribute name.
+   * @param attributeName - stringified name of the attribute
+   * @return the description
+   */
+  public String describeAttribute(String attributeName) {
+    String ret = "Attribute not found";
+    try {
+      MBeanAttributeInfo[] attributes = beanInfo.getAttributes();
+      for (int i = 0; i < attributes.length; i++) {
+        MBeanAttributeInfo attribute = attributes[i];
+        if (attribute.getName().equals(attributeName)) {
+          return describeAttribute(attribute);
+        }
+      }
+    }
+    catch (Throwable t) {
+    }
+    return ret;
+  }
+
+  /**
+   * Names of all the operations available on the MBean.
+   * @return all the operations on the MBean
+   */
+  public Collection listOperationNames() {
+    ArrayList list = new ArrayList();
+    try {
+      MBeanOperationInfo[] operations = beanInfo.getOperations();
+      for (int i = 0; i < operations.length; i++) {
+        MBeanOperationInfo operation = operations[i];
+        list.add(operation.getName());
+      }
+    }
+    catch (Throwable t) {
+    }
+    return list;
+  }
+
+
+  /**
+   * Description of all of the operations available on the MBean.
+   * @return full description of each operation on the MBean
+   */
+  public Collection listOperationDescriptions() {
+    ArrayList list = new ArrayList();
+    try {
+      MBeanOperationInfo[] operations = beanInfo.getOperations();
+      for (int i = 0; i < operations.length; i++) {
+        MBeanOperationInfo operation = operations[i];
+        list.add(describeOperation(operation));
+      }
+    }
+    catch (Throwable t) {
+    }
+    return list;
+  }
+
+  /**
+   * Get the dessciptions of the named operation.  This returns a Collection since
+   * operations can be overloaded and one operationName can have multiple forms.
+   * @param operationName
+   * @return Collection of operation description
+   */
+  public List describeOperation(String operationName) {
+    ArrayList list = new ArrayList();
+    try {
+      MBeanOperationInfo[] operations = beanInfo.getOperations();
+      for (int i = 0; i < operations.length; i++) {
+        MBeanOperationInfo operation = operations[i];
+        if (operation.getName().equals(operationName)) {
+          list.add(describeOperation(operation));
+        }
+      }
+    }
+    catch (Throwable t) {
+    }
+    return list;
+  }
+
+  /**
+   * Dessciption of the named operation.
+   * @param operation
+   * @return description
+   */
+  protected String describeOperation(MBeanOperationInfo operation) {
+    StringBuffer buf = new StringBuffer();
+    buf.append(operation.getReturnType())
+      .append(" ")
+      .append(operation.getName())
+      .append("(");
+
+    MBeanParameterInfo[] params = operation.getSignature();
+    for (int j = 0; j < params.length; j++) {
+      MBeanParameterInfo param = params[j];
+      if (j != 0) {
+        buf.append(", ");
+      }
+      buf.append(param.getType())
+        .append(" ")
+        .append(param.getName());
+    }
+    buf.append(")");
+    return buf.toString();
+  }
+
+
+  /**
+   * Return an end user readable representation of the underlying MBean
+   * @return the user readable description
+   */
+  public String toString() {
+    StringBuffer buf = new StringBuffer();
+    buf.append("MBean Name:")
+      .append("\n  ")
+      .append(name.getCanonicalName())
+      .append("\n  ");
+    if (!listAttributeDescriptions().isEmpty()) {
+      buf.append("\nAttributes:");
+      for (Iterator iterator = listAttributeDescriptions().iterator(); iterator.hasNext();) {
+        buf.append("\n  ")
+          .append((String) iterator.next());
+      }
+    }
+    if (!listOperationDescriptions().isEmpty()) {
+      buf.append("\nOperations:");
+      for (Iterator iterator = listOperationDescriptions().iterator(); iterator.hasNext();) {
+        buf.append("\n  ")
+          .append((String) iterator.next());
+      }
+    }
+    return buf.toString();
+  }
 }
