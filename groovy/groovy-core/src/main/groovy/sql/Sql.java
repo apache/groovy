@@ -47,6 +47,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -188,6 +189,140 @@ public class Sql {
         }
     }
 
+    public static final OutParameter ARRAY         = new OutParameter(){ public int getType() { return Types.ARRAY; }};
+    public static final OutParameter BIGINT        = new OutParameter(){ public int getType() { return Types.BIGINT; }};
+    public static final OutParameter BINARY        = new OutParameter(){ public int getType() { return Types.BINARY; }};
+    public static final OutParameter BIT           = new OutParameter(){ public int getType() { return Types.BIT; }};
+    public static final OutParameter BLOB          = new OutParameter(){ public int getType() { return Types.BLOB; }};
+    public static final OutParameter BOOLEAN       = new OutParameter(){ public int getType() { return Types.BOOLEAN; }};
+    public static final OutParameter CHAR          = new OutParameter(){ public int getType() { return Types.CHAR; }};
+    public static final OutParameter CLOB          = new OutParameter(){ public int getType() { return Types.CLOB; }};
+    public static final OutParameter DATALINK      = new OutParameter(){ public int getType() { return Types.DATALINK; }};
+    public static final OutParameter DATE          = new OutParameter(){ public int getType() { return Types.DATE; }};
+    public static final OutParameter DECIMAL       = new OutParameter(){ public int getType() { return Types.DECIMAL; }};
+    public static final OutParameter DISTINCT      = new OutParameter(){ public int getType() { return Types.DISTINCT; }};
+    public static final OutParameter DOUBLE        = new OutParameter(){ public int getType() { return Types.DOUBLE; }};
+    public static final OutParameter FLOAT         = new OutParameter(){ public int getType() { return Types.FLOAT; }};
+    public static final OutParameter INTEGER       = new OutParameter(){ public int getType() { return Types.INTEGER; }};
+    public static final OutParameter JAVA_OBJECT   = new OutParameter(){ public int getType() { return Types.JAVA_OBJECT; }};
+    public static final OutParameter LONGVARBINARY = new OutParameter(){ public int getType() { return Types.LONGVARBINARY; }};
+    public static final OutParameter LONGVARCHAR   = new OutParameter(){ public int getType() { return Types.LONGVARCHAR; }};
+    public static final OutParameter NULL          = new OutParameter(){ public int getType() { return Types.NULL; }};
+    public static final OutParameter NUMERIC       = new OutParameter(){ public int getType() { return Types.NUMERIC; }};
+    public static final OutParameter OTHER         = new OutParameter(){ public int getType() { return Types.OTHER; }};
+    public static final OutParameter REAL          = new OutParameter(){ public int getType() { return Types.REAL; }};
+    public static final OutParameter REF           = new OutParameter(){ public int getType() { return Types.REF; }};
+    public static final OutParameter SMALLINT      = new OutParameter(){ public int getType() { return Types.SMALLINT; }};
+    public static final OutParameter STRUCT        = new OutParameter(){ public int getType() { return Types.STRUCT; }};
+    public static final OutParameter TIME          = new OutParameter(){ public int getType() { return Types.TIME; }};
+    public static final OutParameter TIMESTAMP     = new OutParameter(){ public int getType() { return Types.TIMESTAMP; }};
+    public static final OutParameter TINYINT       = new OutParameter(){ public int getType() { return Types.TINYINT; }};
+    public static final OutParameter VARBINARY     = new OutParameter(){ public int getType() { return Types.VARBINARY; }};
+    public static final OutParameter VARCHAR       = new OutParameter(){ public int getType() { return Types.VARCHAR; }};
+
+    public static InParameter ARRAY(Object value) { return in(Types.ARRAY, value); }
+    public static InParameter BIGINT(Object value) { return in(Types.BIGINT, value); }
+    public static InParameter BINARY(Object value) { return in(Types.BINARY, value); }
+    public static InParameter BIT(Object value) { return in(Types.BIT, value); }
+    public static InParameter BLOB(Object value) { return in(Types.BLOB, value); }
+    public static InParameter BOOLEAN(Object value) { return in(Types.BOOLEAN, value); }
+    public static InParameter CHAR(Object value) { return in(Types.CHAR, value); }
+    public static InParameter CLOB(Object value) { return in(Types.CLOB, value); }
+    public static InParameter DATALINK(Object value) { return in(Types.DATALINK, value); }
+    public static InParameter DATE(Object value) { return in(Types.DATE, value); }
+    public static InParameter DECIMAL(Object value) { return in(Types.DECIMAL, value); }
+    public static InParameter DISTINCT(Object value) { return in(Types.DISTINCT, value); }
+    public static InParameter DOUBLE(Object value) { return in(Types.DOUBLE, value); }
+    public static InParameter FLOAT(Object value) { return in(Types.FLOAT, value); }
+    public static InParameter INTEGER(Object value) { return in(Types.INTEGER, value); }
+    public static InParameter JAVA_OBJECT(Object value) { return in(Types.JAVA_OBJECT, value); }
+    public static InParameter LONGVARBINARY(Object value) { return in(Types.LONGVARBINARY, value); }
+    public static InParameter LONGVARCHAR(Object value) { return in(Types.LONGVARCHAR, value); }
+    public static InParameter NULL(Object value) { return in(Types.NULL, value); }
+    public static InParameter NUMERIC(Object value) { return in(Types.NUMERIC, value); }
+    public static InParameter OTHER(Object value) { return in(Types.OTHER, value); }
+    public static InParameter REAL(Object value) { return in(Types.REAL, value); }
+    public static InParameter REF(Object value) { return in(Types.REF, value); }
+    public static InParameter SMALLINT(Object value) { return in(Types.SMALLINT, value); }
+    public static InParameter STRUCT(Object value) { return in(Types.STRUCT, value); }
+    public static InParameter TIME(Object value) { return in(Types.TIME, value); }
+    public static InParameter TIMESTAMP(Object value) { return in(Types.TIMESTAMP, value); }
+    public static InParameter TINYINT(Object value) { return in(Types.TINYINT, value); }
+    public static InParameter VARBINARY(Object value) { return in(Types.VARBINARY, value); }
+    public static InParameter VARCHAR(Object value) { return in(Types.VARCHAR, value); }
+
+    /**
+     * Create a new InParameter
+     * @param type the JDBC data type
+     * @param value the object value
+     * @return an InParameter
+     */
+    public static InParameter in(final int type, final Object value) {
+        return new InParameter() {
+            public int getType() {
+                return type;
+            }
+            public Object getValue() {
+                return value;
+            }
+        };
+    }
+    
+    /**
+     * Create a new OutParameter
+     * @param type the JDBC data type.
+     * @return an OutParameter
+     */
+    public static OutParameter out(final int type){
+        return new OutParameter(){
+            public int getType() {
+                return type;
+            }
+        };
+    }
+    
+    /**
+     * Create an inout parameter using this in parameter.
+     * @param in
+     * @return
+     */
+    public static InOutParameter inout(final InParameter in){
+        return new InOutParameter(){
+            public int getType() {
+                return in.getType();
+            }
+            public Object getValue() {
+                return in.getValue();
+            }            
+        };
+    }
+    
+    /**
+     * Create a new ResultSetOutParameter
+     * @param type the JDBC data type.
+     * @return a ResultSetOutParameter
+     */
+    public static ResultSetOutParameter resultSet(final int type){
+        return new ResultSetOutParameter(){
+            public int getType() {
+                return type;
+            }
+        };
+    }
+        
+    /**
+     * Creates a variable to be expanded in the Sql string rather
+     * than representing an sql parameter.
+     * @param object
+     * @return
+     */
+    public static ExpandedVariable expand(final Object object){
+        return new ExpandedVariable(){
+            public Object getObject() {
+                return object;
+            }};
+    }
+    
     /**
      * Constructs an SQL instance using the given DataSource. Each operation
      * will use a Connection from the DataSource pool and close it when the
@@ -375,7 +510,7 @@ public class Sql {
      * Performs the given SQL query and return the rows of the result set
      */
      public List rows(String sql) throws SQLException {
-    	List results = new ArrayList();
+        List results = new ArrayList();
         Connection connection = createConnection();
         Statement statement = connection.createStatement();
         configure(statement);
@@ -384,13 +519,13 @@ public class Sql {
             log.fine(sql);
             rs = statement.executeQuery(sql);
             while (rs.next()) {
-            	ResultSetMetaData metadata = rs.getMetaData();
+                ResultSetMetaData metadata = rs.getMetaData();
                 LinkedHashMap lhm = new LinkedHashMap(metadata.getColumnCount(),1,true);
-            	for(int i=1 ; i<=metadata.getColumnCount() ; i++) {
-            	      lhm.put(metadata.getColumnName(i),rs.getObject(i));
+                for(int i=1 ; i<=metadata.getColumnCount() ; i++) {
+                      lhm.put(metadata.getColumnName(i),rs.getObject(i));
                 }
                 GroovyRowResult row = new GroovyRowResult(lhm);
-            	results.add(row);
+                results.add(row);
             }
             return(results);
         }
@@ -407,15 +542,15 @@ public class Sql {
      * Performs the given SQL query and return the first row of the result set
      */
     public Object firstRow(String sql) throws SQLException {
-    	return( rows(sql).get(0));
+        return( rows(sql).get(0));
     }
 
     /**
      * Performs the given SQL query with the list of params and return
      * the rows of the result set
      */
-     public List rows(String sql, List params) throws SQLException {
-    	List results = new ArrayList();
+    public List rows(String sql, List params) throws SQLException {
+        List results = new ArrayList();
         Connection connection = createConnection();
         PreparedStatement statement = null;
         ResultSet rs = null;
@@ -426,13 +561,13 @@ public class Sql {
             configure(statement);
             rs = statement.executeQuery();
             while (rs.next()) {
-            	ResultSetMetaData metadata = rs.getMetaData();
-            	LinkedHashMap lhm = new LinkedHashMap(metadata.getColumnCount(),1,true);
-            	for(int i=1 ; i<=metadata.getColumnCount() ; i++) {
-            	      lhm.put(metadata.getColumnName(i),rs.getObject(i));
+                ResultSetMetaData metadata = rs.getMetaData();
+                LinkedHashMap lhm = new LinkedHashMap(metadata.getColumnCount(),1,true);
+                for(int i=1 ; i<=metadata.getColumnCount() ; i++) {
+                    lhm.put(metadata.getColumnName(i),rs.getObject(i));
                 }
                 GroovyRowResult row = new GroovyRowResult(lhm);
-            	results.add(row);
+                results.add(row);
             }
             return(results);
         }
@@ -450,8 +585,8 @@ public class Sql {
       * the first row of the result set
       */
     public Object firstRow(String sql, List params) throws SQLException {
-    	return( rows(sql, params).get(0));
-    }
+         return( rows(sql, params).get(0));
+     }
 
     /**
      * Executes the given piece of SQL
@@ -598,6 +733,46 @@ public class Sql {
     }
 
     /**
+     * Performs a stored procedure call with the given parameters.  The closure
+     * is called once with all the out parameters.
+     */
+    public void call(String sql, List params, Closure closure) throws Exception {
+        Connection connection = createConnection();
+        CallableStatement statement = connection.prepareCall(sql);
+        try {
+            log.fine(sql);
+            setParameters(params, statement);
+            statement.execute();
+            List results = new ArrayList();
+            int indx = 0;
+            int inouts = 0;
+            for (Iterator iter = params.iterator(); iter.hasNext();) {
+                Object value = iter.next();
+                if(value instanceof OutParameter){
+                    if(value instanceof ResultSetOutParameter){
+                        results.add(new CallResultSet(statement,indx));
+                    }else{
+                        Object o = statement.getObject(indx+1);
+                        if(o instanceof ResultSet){
+                            results.add(new GroovyResultSet((ResultSet)o));
+                        }else{
+                            results.add(o);
+                        }
+                    }
+                    inouts++;
+                }
+                indx++;
+            }
+            closure.call(results.toArray(new Object[inouts]));
+        } catch (SQLException e) {
+            log.log(Level.WARNING, "Failed to execute: " + sql, e);
+            throw e;
+        } finally {
+            closeResources(connection, statement);
+        }
+    }
+    
+    /**
      * Performs a stored procedure call with the given parameters
      */
     public int call(GString gstring) throws Exception {
@@ -606,6 +781,17 @@ public class Sql {
         return call(sql, params);
     }
 
+
+    /**
+     * Performs a stored procedure call with the given parameters,
+     * calling the closure once with all result objects.
+     */
+    public void call(GString gstring, Closure closure) throws Exception {
+        List params = getParameters(gstring);
+        String sql = asSql(gstring,params);
+        call(sql, params,closure);
+    }
+    
     /**
      * If this SQL object was created with a Connection then this method closes
      * the connection. If this SQL object was created from a DataSource then
@@ -680,11 +866,11 @@ public class Sql {
      *         parameter
      */
     protected String asSql(GString gstring, List values) {
-        boolean nulls = false;
         String[] strings = gstring.getStrings();
         if (strings.length <= 0) {
             throw new IllegalArgumentException("No SQL specified in GString: " + gstring);
         }
+        boolean nulls = false;
         StringBuffer buffer = new StringBuffer();
         boolean warned = false;
         Iterator iter = values.iterator();
@@ -696,23 +882,29 @@ public class Sql {
             if (iter.hasNext()) {
                 Object value = iter.next();
                 if (value != null) {
-                    boolean validBinding = true;
-                    if (i < strings.length - 1) {
-                        String nextText = strings[i + 1];
-                        if ((text.endsWith("\"") || text.endsWith("'")) && (nextText.startsWith("'") || nextText.startsWith("\""))) {
-                            if (!warned) {
-                                log.warning("In Groovy SQL please do not use quotes around dynamic expressions "
-                                        + "(which start with $) as this means we cannot use a JDBC PreparedStatement "
-                                        + "and so is a security hole. Groovy has worked around your mistake but the security hole is still there. The expression so far is: " + buffer.toString() + "?" + nextText);
-                                warned = true;
+                    if(value instanceof ExpandedVariable){
+                        buffer.append(((ExpandedVariable)value).getObject());
+                        iter.remove();
+                    }else{
+                        boolean validBinding = true;
+                        if (i < strings.length - 1) {
+                            String nextText = strings[i + 1];
+                            if ((text.endsWith("\"") || text.endsWith("'")) && (nextText.startsWith("'") || nextText.startsWith("\""))) {
+                                if (!warned) {
+                                    log.warning("In Groovy SQL please do not use quotes around dynamic expressions " +
+                                            "(which start with $) as this means we cannot use a JDBC PreparedStatement " +
+                                            "and so is a security hole. Groovy has worked around your mistake but the security hole is still there. " +
+                                            "The expression so far is: " + buffer.toString() + "?" + nextText);
+                                    warned = true;
+                                }
+                                buffer.append(value);
+                                iter.remove();
+                                validBinding = false;
                             }
-                            buffer.append(value);
-                            iter.remove();
-                            validBinding = false;
                         }
-                    }
-                    if (validBinding) {
-                        buffer.append("?");
+                        if (validBinding) {
+                            buffer.append("?");
+                        }
                     }
                 }
                 else {
@@ -821,11 +1013,32 @@ public class Sql {
     }
 
     /**
-     * Strategy method allowing derived classes to handle types differently such
-     * as for CLOBs etc.
+     * Strategy method allowing derived classes to handle types differently
+     * such as for CLOBs etc.
      */
-    protected void setObject(PreparedStatement statement, int i, Object value) throws SQLException {
-        statement.setObject(i, value);
+    protected void setObject(PreparedStatement statement, int i, Object value)
+        throws SQLException {
+        if (value instanceof InParameter  || value instanceof OutParameter) {
+            if(value instanceof InParameter){
+                InParameter in = (InParameter) value;
+                Object val = in.getValue();
+                if (null == val) {
+                    statement.setNull(i, in.getType());
+                } else {
+                    statement.setObject(i, val, in.getType());
+                }
+            }
+            if(value instanceof OutParameter){
+                try{
+                    OutParameter out = (OutParameter)value;
+                    ((CallableStatement)statement).registerOutParameter(i,out.getType());
+                }catch(ClassCastException e){
+                    throw new SQLException("Cannot register out parameter.");
+                }
+            }
+        } else {
+            statement.setObject(i, value);
+        }
     }
 
     protected Connection createConnection() throws SQLException {

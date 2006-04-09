@@ -52,72 +52,73 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 
 /**
-* Represents an extent of objects.
-* It's used in the oneRow method to be able to access the result
-* of a SQL query by the name of the column, or by the column number.
-* 
-* @Author Jean-Louis Berliet
-* @version $Revision$
-*/
+ * Represents an extent of objects.
+ * It's used in the oneRow method to be able to access the result
+ * of a SQL query by the name of the column, or by the column number.
+ *
+ * @version $Revision$
+ * @Author Jean-Louis Berliet
+ */
 public class GroovyRowResult extends GroovyObjectSupport {
 
-   private LinkedHashMap result;
+    private LinkedHashMap result;
 
-   public GroovyRowResult(LinkedHashMap result) {
-       this.result = result;
-   }
+    public GroovyRowResult(LinkedHashMap result) {
+        this.result = result;
+    }
 
-   /**
-    * Retrieve the value of the property by its name    * 
-    * @param property is the name of the property to look at
-    * @return the value of the property
-    */
-   public Object getProperty(String property) {
-       try {
-           Object value = result.get(property);
-           if (value==null) {
-           	   // with some databases/drivers, the columns names are stored uppercase.
-               value = result.get(property.toUpperCase());
-               if (value==null) 
-                   throw new MissingPropertyException(property, GroovyRowResult.class);
-           }
-           return(value); 
-       }
-       catch (Exception e) {
-           throw new MissingPropertyException(property, GroovyRowResult.class, e);
-       }
-   }
+    /**
+     * Retrieve the value of the property by its name    *
+     *
+     * @param property is the name of the property to look at
+     * @return the value of the property
+     */
+    public Object getProperty(String property) {
+        try {
+            Object value = result.get(property);
+            if (value == null) {
+                // with some databases/drivers, the columns names are stored uppercase.
+                value = result.get(property.toUpperCase());
+                if (value == null)
+                    throw new MissingPropertyException(property, GroovyRowResult.class);
+            }
+            return (value);
+        }
+        catch (Exception e) {
+            throw new MissingPropertyException(property, GroovyRowResult.class, e);
+        }
+    }
 
-   /**
-    * Retrieve the value of the property by its index.
-    * A negative index will count backwards from the last column.
-    * @param index is the number of the column to look at
-    * @return the value of the property
-    */
-  public Object getAt(int index) {
-       try {
-           // a negative index will count backwards from the last column.
-           if (index<0) 
-               index += result.size();
-           Iterator it = result.values().iterator();
-           int i = 0;
-           Object obj = null;
-           while ( (obj==null) && (it.hasNext())  ) {
-               if (i==index)
-                   obj = it.next();
-               else
-                   it.next();
-               i++;
-           }
-           return(obj); 
-       }
-       catch (Exception e) {
-           throw new MissingPropertyException(Integer.toString(index), GroovyRowResult.class, e);
-       }
-   }
-  
-  public String toString() {
-  	return(result.toString() );
-  }
-  
+    /**
+     * Retrieve the value of the property by its index.
+     * A negative index will count backwards from the last column.
+     *
+     * @param index is the number of the column to look at
+     * @return the value of the property
+     */
+    public Object getAt(int index) {
+        try {
+            // a negative index will count backwards from the last column.
+            if (index < 0)
+                index += result.size();
+            Iterator it = result.values().iterator();
+            int i = 0;
+            Object obj = null;
+            while ((obj == null) && (it.hasNext())) {
+                if (i == index)
+                    obj = it.next();
+                else
+                    it.next();
+                i++;
+            }
+            return (obj);
+        }
+        catch (Exception e) {
+            throw new MissingPropertyException(Integer.toString(index), GroovyRowResult.class, e);
+        }
+    }
+
+    public String toString() {
+        return (result.toString());
+    }
 }
