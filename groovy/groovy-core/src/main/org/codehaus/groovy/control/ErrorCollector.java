@@ -342,7 +342,7 @@ public class ErrorCollector {
 
             writer.println();
             writer.print(warnings.size());
-            writer.print(" Warning");
+            writer.print(" warning");
             if (warnings.size()>1) writer.print("s");
             writer.println();
             
@@ -364,7 +364,7 @@ public class ErrorCollector {
 
             writer.println();
             writer.print(errors.size());
-            writer.print(" Error");
+            writer.print(" error");
             if (errors.size()>1) writer.print("s");
             writer.println();
         }
