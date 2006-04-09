@@ -158,6 +158,7 @@ public class InteractiveShell {
                 // We have a command that parses, so evaluate it.
                 try {
                     lastResult = shell.evaluate(command, "CommandLine.groovy");
+                    out.println("\n===> " + lastResult);
                 } catch (CompilationFailedException e) {
                     err.println(e);
                 } catch (Throwable e) {
@@ -165,20 +166,28 @@ public class InteractiveShell {
                         InvokerInvocationException iie = (InvokerInvocationException) e;
                         e = iie.getCause();
                     }
-                    err.println("Caught: " + e);
-                    StackTraceElement[] stackTrace = e.getStackTrace();
-                    for (int i = 0; i < stackTrace.length; i++) {
-                        StackTraceElement element = stackTrace[i];
-                        String fileName = element.getFileName();
-                        if (fileName==null || (!fileName.endsWith(".java"))) {
-                            err.println("\tat " + element);
-                        }
-                    }
+                    filterAndPrintStackTrace(e);
                 }
             }
         }
     }
 
+    /**
+     * Filter stacktraces to show only relevant lines of the exception thrown.
+     *
+     * @param e the throwable whose stacktrace needs to be filtered
+     */
+    private void filterAndPrintStackTrace(Throwable e) {
+        err.println("Caught: " + e);
+        StackTraceElement[] stackTrace = e.getStackTrace();
+        for (int i = 0; i < stackTrace.length; i++) {
+            StackTraceElement element = stackTrace[i];
+            String fileName = element.getFileName();
+            if ((fileName==null || (!fileName.endsWith(".java")) && (!element.getClassName().startsWith("gjdk")))) {
+                err.println("\tat " + element);
+            }
+        }
+    }
 
     protected void close() {
         prompt.close();
@@ -295,7 +304,7 @@ public class InteractiveShell {
 
             freshen();
 
-            if (pending.trim().equals("")) {
+            if (pending.trim().length() == 0) {
                 accept();
                 continue;                                     // <<<< LOOP CONTROL <<<<<<<<
             }
@@ -399,13 +408,6 @@ public class InteractiveShell {
             parser = SourceUnit.create("groovysh script", code, tolerance);
             parser.parse();
 
-            /* see note on read():
-             * tree = parser.topLevelStatement();
-             *
-             * if( stream.atEnd() ) {
-             *     parsed = true;
-             * }
-             */
             parsed = true;
         }
 
@@ -447,7 +449,7 @@ public class InteractiveShell {
 
     private static final int LAST_COMMAND_ID = 8;
 
-    private static final String[] COMMANDS = {"exit", "help", "discard", "display", "explain", "execute", "binding", "discardclasses", "inspect"};
+    private static final String[] COMMANDS = { "exit", "help", "discard", "display", "explain", "execute", "binding", "discardclasses", "inspect" };
 
     private static final Map COMMAND_MAPPINGS = new HashMap();
 
@@ -465,14 +467,15 @@ public class InteractiveShell {
     private static final Map COMMAND_HELP = new HashMap();
 
     static {
-        COMMAND_HELP.put(COMMANDS[COMMAND_ID_EXIT], "exit/quit        - terminates processing");
-        COMMAND_HELP.put(COMMANDS[COMMAND_ID_HELP], "help             - displays this help text");
+        COMMAND_HELP.put(COMMANDS[COMMAND_ID_EXIT],    "exit/quit         - terminates processing");
+        COMMAND_HELP.put(COMMANDS[COMMAND_ID_HELP],    "help              - displays this help text");
         COMMAND_HELP.put(COMMANDS[COMMAND_ID_DISCARD], "discard           - discards the current statement");
         COMMAND_HELP.put(COMMANDS[COMMAND_ID_DISPLAY], "display           - displays the current statement");
         COMMAND_HELP.put(COMMANDS[COMMAND_ID_EXPLAIN], "explain           - explains the parsing of the current statement (currently disabled)");
         COMMAND_HELP.put(COMMANDS[COMMAND_ID_EXECUTE], "execute/go        - temporary command to cause statement execution");
         COMMAND_HELP.put(COMMANDS[COMMAND_ID_BINDING], "binding           - shows the binding used by this interactive shell");
-        COMMAND_HELP.put(COMMANDS[COMMAND_ID_DISCARD_LOADED_CLASSES], "discardclasses    - discards all former unbound class definitions");
+        COMMAND_HELP.put(COMMANDS[COMMAND_ID_DISCARD_LOADED_CLASSES],
+                                                       "discardclasses    - discards all former unbound class definitions");
         COMMAND_HELP.put(COMMANDS[COMMAND_ID_INSPECT], "inspect           - opens ObjectBrowser on expression returned from previous \"go\"");
     }
 
