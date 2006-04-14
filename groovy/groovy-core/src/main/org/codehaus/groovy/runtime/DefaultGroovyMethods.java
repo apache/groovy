@@ -48,6 +48,8 @@ import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -1437,6 +1439,18 @@ public class DefaultGroovyMethods {
      */
     public static URL toURL(String self) throws MalformedURLException {
         return new URL(self);
+    }
+
+    /**
+     * Transforms a String representing a URI into a URI object.
+     *
+     * @param self the String representing a URI
+     * @return a URI
+     * @throws URISyntaxException 
+     * @throws URISyntaxException is thrown if the URI is not well formed.
+     */
+    public static URI toURI(String self) throws URISyntaxException {
+        return new URI(self);
     }
 
     /**
@@ -3495,6 +3509,24 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * Converts the given string into a Boolean object
+     * If the trimmed string is "true", "y" or "1" (ignoring case)
+     * then the result is true othewrwise it is false
+     *
+     * @param self a String
+     * @return The Boolean value
+     */
+    public static Boolean toBoolean(String self) {
+    final String trimmed = self.trim();
+    
+        if ("true".equalsIgnoreCase(trimmed) || "y".equalsIgnoreCase(trimmed) || "1".equals(trimmed)) {
+            return Boolean.TRUE;
+        } else {
+            return Boolean.FALSE;
+        }
+    }
+
+    /**
      * Tokenize a String
      *
      * @param self  a String
@@ -4674,7 +4706,7 @@ public class DefaultGroovyMethods {
      * @return an Integer
      */
     public static Integer toInteger(String self) {
-        return Integer.valueOf(self);
+        return Integer.valueOf(self.trim());
     }
 
     /**
@@ -4684,7 +4716,7 @@ public class DefaultGroovyMethods {
      * @return a Long
      */
     public static Long toLong(String self) {
-        return Long.valueOf(self);
+        return Long.valueOf(self.trim());
     }
 
     /**
@@ -4694,7 +4726,7 @@ public class DefaultGroovyMethods {
      * @return a Float
      */
     public static Float toFloat(String self) {
-        return Float.valueOf(self);
+        return Float.valueOf(self.trim());
     }
 
     /**
@@ -4704,7 +4736,27 @@ public class DefaultGroovyMethods {
      * @return a Double
      */
     public static Double toDouble(String self) {
-        return Double.valueOf(self);
+        return Double.valueOf(self.trim());
+    }
+
+    /**
+     * Parse a String into a BigInteger
+     *
+     * @param self a String
+     * @return a BigInteger
+     */
+    public static BigInteger toBigInteger(String self) {
+        return new BigInteger(self.trim());
+    }
+
+    /**
+     * Parse a String into a BigDecimal
+     *
+     * @param self a String
+     * @return a BigDecimal
+     */
+    public static BigDecimal toBigDecimal(String self) {
+        return new BigDecimal(self.trim());
     }
 
     /**
@@ -4715,6 +4767,56 @@ public class DefaultGroovyMethods {
      */
     public static Integer toInteger(Number self) {
         return new Integer(self.intValue());
+    }
+
+    /**
+     * Transform a Number into a Long
+     *
+     * @param self a Number
+     * @return an Long
+     */
+    public static Long toLong(Number self) {
+        return new Long(self.longValue());
+    }
+
+    /**
+     * Transform a Number into a Float
+     *
+     * @param self a Number
+     * @return an Float
+     */
+    public static Float toFloat(Number self) {
+        return new Float(self.floatValue());
+    }
+
+    /**
+     * Transform a Number into a Double
+     *
+     * @param self a Number
+     * @return an Double
+     */
+    public static Double toDouble(Number self) {
+        return new Double(self.doubleValue());
+    }
+
+    /**
+     * Transform a Number into a BigDecimal
+     *
+     * @param self a Number
+     * @return an BigDecimal
+     */
+    public static BigDecimal toBigDecimal(Number self) {
+        return new BigDecimal(self.doubleValue());
+    }
+
+    /**
+     * Transform a Number into a BigInteger
+     *
+     * @param self a Number
+     * @return an BigInteger
+     */
+    public static BigInteger toBigInteger(Number self) {
+        return new BigInteger(Long.toString(self.longValue()));
     }
 
     // Date methods

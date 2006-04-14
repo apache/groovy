@@ -48,6 +48,10 @@ package org.codehaus.groovy.runtime;
 
 import groovy.util.GroovyTestCase;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.net.URI;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -85,5 +89,31 @@ public class DefaultGroovyMethodsTest extends GroovyTestCase {
 
         System.out.println(answer);
         assertTrue(InvokerHelper.compareLessThan(answer, original));
+    }
+    
+    public void testToMethods() throws Exception {
+        Number n = new Long(7);
+        
+        assertEquals(DefaultGroovyMethods.toInteger("1"), new Integer(1));
+        assertEquals(DefaultGroovyMethods.toInteger(n), new Integer(7));
+        assertEquals(DefaultGroovyMethods.toLong("1"), new Long(1));
+        assertEquals(DefaultGroovyMethods.toLong(n), new Long(7));
+        assertEquals(DefaultGroovyMethods.toFloat("1"), new Float(1));
+        assertEquals(DefaultGroovyMethods.toFloat(n), new Float(7));
+        assertEquals(DefaultGroovyMethods.toDouble("1"), new Double(1));
+        assertEquals(DefaultGroovyMethods.toDouble(n), new Double(7));
+        assertEquals(DefaultGroovyMethods.toBigInteger("1"), new BigInteger("1"));
+        assertEquals(DefaultGroovyMethods.toBigInteger(n), new BigInteger("7"));
+        assertEquals(DefaultGroovyMethods.toBigDecimal("1"), new BigDecimal("1"));
+        assertEquals(DefaultGroovyMethods.toBigDecimal(n), new BigDecimal("7"));
+        assertEquals(DefaultGroovyMethods.toURL("http://example.org/"), new URL("http://example.org/"));
+        assertEquals(DefaultGroovyMethods.toURI("http://example.org/"), new URI("http://example.org/"));   
+        assertEquals(DefaultGroovyMethods.toBoolean("True"), Boolean.TRUE);   
+        assertEquals(DefaultGroovyMethods.toBoolean("Y"), Boolean.TRUE);   
+        assertEquals(DefaultGroovyMethods.toBoolean(" y "), Boolean.TRUE);   
+        assertEquals(DefaultGroovyMethods.toBoolean("1"), Boolean.TRUE);   
+        assertEquals(DefaultGroovyMethods.toBoolean("false"), Boolean.FALSE);   
+        assertEquals(DefaultGroovyMethods.toBoolean("n"), Boolean.FALSE);   
+        assertEquals(DefaultGroovyMethods.toBoolean("0"), Boolean.FALSE);   
     }
 }

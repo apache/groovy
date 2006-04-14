@@ -24,12 +24,20 @@ import groovy.lang.GroovyObjectSupport;
 import groovy.lang.MetaClass;
 import groovy.lang.Writable;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
+
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 
 /**
@@ -122,6 +130,42 @@ public Object getProperty(final String property) {
     return text();
   }
   
+  public Integer toInteger() {
+      return DefaultGroovyMethods.toInteger(text());
+  }
+  
+  public Long toLong() {
+      return DefaultGroovyMethods.toLong(text());
+  }
+  
+  public Float toFloat() {
+      return DefaultGroovyMethods.toFloat(text());
+  }
+  
+  public Double toDouble() {
+      return DefaultGroovyMethods.toDouble(text());
+  }
+  
+  public BigDecimal toBigDecimal() {
+      return DefaultGroovyMethods.toBigDecimal(text());
+  }
+  
+  public BigInteger toBigInteger() {
+      return DefaultGroovyMethods.toBigInteger(text());
+  }
+  
+  public URL toURL() throws MalformedURLException {
+      return DefaultGroovyMethods.toURL(text());
+  }
+  
+  public URI toURI() throws URISyntaxException {
+      return DefaultGroovyMethods.toURI(text());
+  }
+  
+  public Boolean toBoolean() {
+      return DefaultGroovyMethods.toBoolean(text());
+  }
+  
   public GPathResult declareNamespace(final Map newNamespaceMapping) {
     this.namespaceMap.putAll(newNamespaceMapping);
     
@@ -197,7 +241,7 @@ public Object getProperty(final String property) {
   final List result = new LinkedList();
   
     while (iter.hasNext()) {
-      result.add(iter.next());
+      result.add(new NodeChild((Node)iter.next(), this.parent, this.namespacePrefix, this.namespaceTagHints));
     }
     
     return result;

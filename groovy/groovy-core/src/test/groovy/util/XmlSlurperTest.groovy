@@ -11,18 +11,22 @@ class XmlSlurperTest extends GroovyTestCase {
     <character id="2" name="Gromit">
 	    <likes>sleep</likes>
     </character>
+    <numericValue>1</numericValue>
+    <booleanValue>y</booleanValue>
+    <uriValue>http://example.org/</uriValue>
+    <urlValue>http://example.org/</urlValue>
 </characters>
 """
         
         def node = new XmlSlurper().parseText(text);
         
         assert node != null
-        assert node.children().size() == 2 , "Children ${node.children()}"
+        assert node.children().size() == 6 , "Children ${node.children()}"
         
         def characters = node.character
         
         for (c in characters) {
-            println c['@name']
+            println c.@name
         }
         
         assert characters.size() == 2
@@ -30,18 +34,31 @@ class XmlSlurperTest extends GroovyTestCase {
         assert node.character.likes.size() == 2 , "Likes ${node.character.likes}"
         
         // lets find Gromit
-        def gromit = node.character.find { it['@id'] == '2' }
+        def gromit = node.character.find { it.@id == '2' }
         assert gromit != null , "Should have found Gromit!"
-        assert gromit['@name'] == "Gromit"
+        assert gromit.@name == "Gromit"
         
         
         // lets find what Wallace likes in 1 query
-        def answer = node.character.find { it['@id'] == '1' }.likes.text()
+        def answer = node.character.find { it.@id.toInteger() == 1 }.likes.text()
         assert answer == "cheese"
         
         //test parent()
         assert gromit.likes.parent()==gromit
         assert gromit.parent()==node
         assert node.parent()==node
+        
+        assert node.numericValue.toInteger() == 1
+        assert node.numericValue.toLong() == 1
+        assert node.numericValue.toFloat() == 1
+        assert node.numericValue.toDouble() == 1
+        assert node.numericValue.toBigInteger() == 1
+        assert node.numericValue.toBigDecimal() == 1
+        
+        assert node.booleanValue.toBoolean() == true
+        
+        assert node.uriValue.toURI() == "http://example.org/".toURI()
+        
+        assert node.urlValue.toURL() == "http://example.org/".toURL()
     }
 }
