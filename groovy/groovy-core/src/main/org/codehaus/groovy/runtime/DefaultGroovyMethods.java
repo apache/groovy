@@ -6333,6 +6333,30 @@ public class DefaultGroovyMethods {
         }
         return i;
     }
+    
+    /**
+     * use() a list of categories, specifying the list as varargs:<br>
+     * use(CategoryClass1, CategoryClass2) { ... }<br>
+     * This method prevents the error of forgetting to wrap the the category 
+     * classes in a list.
+     * @param self
+     * @param array
+     */
+	public static void use(Object self, Object[] array) {
+		if (array.length < 2)
+			throw new IllegalArgumentException(
+				"Expecting at least 2 arguments, a category class and a Closure");
+		Closure closure;
+		try {
+			closure = (Closure)array[array.length - 1];
+		} catch (ClassCastException e) {
+			throw new IllegalArgumentException("Expecting a Closure to be the last argument");
+		}
+		List list = new ArrayList(array.length - 1);
+		for (int i = 0; i < array.length - 1; ++i)
+			list.add(array[i]);
+		GroovyCategorySupport.use(list, closure);
+	}    
 
     /**
      * Iterates through the class loader parents until it finds a loader with a class
