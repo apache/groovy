@@ -36,6 +36,6 @@ public class Duration extends BaseDuration {
     }
     
     public ContextDependentDuration minus(final ContextDependentDuration rhs) {
-        return new ContextDependentDuration(rhs.getYears(), rhs.getMonths(), this.getMillis() - rhs.getMillis());
+        return new ContextDependentDuration(-rhs.getYears(), -rhs.getMonths(), this.getMillis() - rhs.getMillis());
     }
 }
