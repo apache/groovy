@@ -18,19 +18,13 @@
  */
 package groovy.google.gdata.data;
 
-public class ContextDependantDuration {
+public class ContextDependantDuration extends BaseDuration {
     private final int years;
     private final int months;
-    private final long millis;
-    
     public ContextDependantDuration(final int years, final int months, final long millis) {
+        super(millis);
         this.years = years;
         this.months = months;
-        this.millis = millis;
-    }
-
-    public long getMillis() {
-        return this.millis;
     }
 
     public int getMonths() {

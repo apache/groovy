@@ -18,15 +18,9 @@
  */
 package groovy.google.gdata.data;
 
-public class Duration {
-    private final long duration;
-    
-    public Duration(final long duration) {
-        this.duration = duration;
-    }
-    
-    public long getMillis() {
-        return this.duration;
+public class Duration extends BaseDuration {
+    public Duration(final long millis) {
+        super(millis);
     }
     
     public Duration plus(final Duration rhs) {
@@ -43,9 +37,5 @@ public class Duration {
     
     public ContextDependantDuration minus(final ContextDependantDuration rhs) {
         return new ContextDependantDuration(rhs.getYears(), rhs.getMonths(), this.getMillis() - rhs.getMillis());
-    }
-    
-    public String toUiString() {
-        return String.valueOf(this.duration);
     }
 }

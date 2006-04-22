@@ -48,6 +48,16 @@ public class GDataCategory {
         self.setUserCredentials(creds.get(0), creds.get(1));
     }
     
+    public static String toUiString(final Duration self) {
+        // TODO: make this format more user friendly
+        return Long.toString(self.getMillis()) + " Milliseconds";
+    }
+    
+    public static String toUiString(final ContextDependantDuration self) {
+        // TODO: make this format more user friendly
+        return Integer.toString(self.getYears()) + " Years " + Integer.toString(self.getMonths()) + " Months " + Long.toString(self.getMillis()) + " Milliseconds";
+    }
+    
     /*
      * Methods to support date and time arithmetic
      * These are in the Category to avoid putting Google related methods on Duration
@@ -81,10 +91,6 @@ public class GDataCategory {
     
     public static DateTime plus (final ContextDependantDuration self, final DateTime rhs) {
         return plus(rhs, self);
-    }
-    
-    public static ContextDependantDuration plus (final Duration self, final ContextDependantDuration rhs) {
-        return rhs.plus(self);
     }
     
     public static DateTime minus (final DateTime self, final Duration rhs) {

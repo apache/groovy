@@ -19,8 +19,9 @@ use (GDataCategory) {
     
     myFeed.entries.each {entry ->
         entry.times.each {time ->
-            println "${entry.title.text} From: ${time.startTime.toUiString()} To: ${(time.endTime - 1.week).toUiString()}"
+            println "${entry.title.text} From: ${time.startTime.toUiString()} To: ${(time.endTime.toUiString())}"
             println "${(time.endTime - time.startTime + 2.weeks + 1.day + 5.seconds).toUiString()}"
+            println "${(time.endTime - time.startTime + + 1.year + 7.months + 2.weeks + 1.day + 5.seconds).toUiString()}"
         }
     }
 }
