@@ -19,7 +19,7 @@
 
 package groovy.google.gdata;
 
-import groovy.google.gdata.data.ContextDependantDuration;
+import groovy.google.gdata.data.ContextDependentDuration;
 import groovy.google.gdata.data.Duration;
 
 import java.io.IOException;
@@ -53,7 +53,7 @@ public class GDataCategory {
         return Long.toString(self.getMillis()) + " Milliseconds";
     }
     
-    public static String toUiString(final ContextDependantDuration self) {
+    public static String toUiString(final ContextDependentDuration self) {
         // TODO: make this format more user friendly
         return Integer.toString(self.getYears()) + " Years " + Integer.toString(self.getMonths()) + " Months " + Long.toString(self.getMillis()) + " Milliseconds";
     }
@@ -67,7 +67,7 @@ public class GDataCategory {
         return new DateTime(self.getValue() + rhs.getMillis());
     }
     
-    public static DateTime plus (final DateTime self, final ContextDependantDuration rhs) {
+    public static DateTime plus (final DateTime self, final ContextDependentDuration rhs) {
     // TODO: handle TIMEZONE
     final Calendar cal = new GregorianCalendar();
     long diff = self.getValue() - cal.getTimeInMillis();
@@ -89,7 +89,7 @@ public class GDataCategory {
         return plus(rhs, self);
     }
     
-    public static DateTime plus (final ContextDependantDuration self, final DateTime rhs) {
+    public static DateTime plus (final ContextDependentDuration self, final DateTime rhs) {
         return plus(rhs, self);
     }
     
@@ -97,7 +97,7 @@ public class GDataCategory {
         return new DateTime(self.getValue() - rhs.getMillis());
     }
     
-    public static DateTime minus (final DateTime self, final ContextDependantDuration rhs) {
+    public static DateTime minus (final DateTime self, final ContextDependentDuration rhs) {
         // TODO: handle TIMEZONE
         final Calendar cal = new GregorianCalendar();
         long diff = self.getValue() - cal.getTimeInMillis();
@@ -169,19 +169,19 @@ public class GDataCategory {
      * These are Google dependant
      */
     
-    public static ContextDependantDuration getMonths(final Integer self) {
-        return new ContextDependantDuration(0, self.intValue(), 0l);
+    public static ContextDependentDuration getMonths(final Integer self) {
+        return new ContextDependentDuration(0, self.intValue(), 0l);
     }
     
-    public static ContextDependantDuration getMonth(final Integer self) {
+    public static ContextDependentDuration getMonth(final Integer self) {
         return getMonths(self);
     }
     
-    public static ContextDependantDuration getYears(final Integer self) {
-        return new ContextDependantDuration(self.intValue(), 0, 0l);
+    public static ContextDependentDuration getYears(final Integer self) {
+        return new ContextDependentDuration(self.intValue(), 0, 0l);
     }
     
-    public static ContextDependantDuration getYear(final Integer self) {
+    public static ContextDependentDuration getYear(final Integer self) {
         return getYears(self);
     }
 }

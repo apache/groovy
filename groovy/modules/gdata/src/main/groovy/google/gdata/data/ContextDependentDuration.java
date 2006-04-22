@@ -18,10 +18,10 @@
  */
 package groovy.google.gdata.data;
 
-public class ContextDependantDuration extends BaseDuration {
+public class ContextDependentDuration extends BaseDuration {
     private final int years;
     private final int months;
-    public ContextDependantDuration(final int years, final int months, final long millis) {
+    public ContextDependentDuration(final int years, final int months, final long millis) {
         super(millis);
         this.years = years;
         this.months = months;
@@ -35,19 +35,19 @@ public class ContextDependantDuration extends BaseDuration {
         return this.years;
     }
     
-    public ContextDependantDuration plus(final ContextDependantDuration rhs) {
-        return new ContextDependantDuration(this.getYears() + rhs.getYears(), this.getMonths() + rhs.getMonths(), this.getMillis() + rhs.getMillis());
+    public ContextDependentDuration plus(final ContextDependentDuration rhs) {
+        return new ContextDependentDuration(this.getYears() + rhs.getYears(), this.getMonths() + rhs.getMonths(), this.getMillis() + rhs.getMillis());
     }
     
-    public ContextDependantDuration plus(final Duration rhs) {
-        return new ContextDependantDuration(this.getYears(), this.getMonths(), this.getMillis() + rhs.getMillis());
+    public ContextDependentDuration plus(final Duration rhs) {
+        return new ContextDependentDuration(this.getYears(), this.getMonths(), this.getMillis() + rhs.getMillis());
     }
     
-    public ContextDependantDuration minus(final ContextDependantDuration rhs) {
-        return new ContextDependantDuration(this.getYears() - rhs.getYears(), this.getMonths() - rhs.getMonths(), this.getMillis() - rhs.getMillis());
+    public ContextDependentDuration minus(final ContextDependentDuration rhs) {
+        return new ContextDependentDuration(this.getYears() - rhs.getYears(), this.getMonths() - rhs.getMonths(), this.getMillis() - rhs.getMillis());
     }
     
-    public ContextDependantDuration minus(final Duration rhs) {
-        return new ContextDependantDuration(this.getYears(), this.getMonths(), this.getMillis() - rhs.getMillis());
+    public ContextDependentDuration minus(final Duration rhs) {
+        return new ContextDependentDuration(this.getYears(), this.getMonths(), this.getMillis() - rhs.getMillis());
     }
 }
