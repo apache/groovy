@@ -18,6 +18,9 @@
  */
 package groovy.google.gdata.data;
 
+import java.util.Calendar;
+import java.util.Date;
+
 public class Duration extends BaseDuration {
     public Duration(final long millis) {
         super(millis);
@@ -37,5 +40,26 @@ public class Duration extends BaseDuration {
     
     public ContextDependentDuration minus(final ContextDependentDuration rhs) {
         return new ContextDependentDuration(-rhs.getYears(), -rhs.getMonths(), this.getMillis() - rhs.getMillis());
+    }
+    
+    public Date getAgo() {
+    final Calendar cal = Calendar.getInstance();
+        
+        BaseDuration.addMillisToCalendar(cal, -this.millis);
+        
+        return cal.getTime();
+    }
+    
+    
+    public From getFrom() {
+        return new From() {
+            public Date getNow() {
+            final Calendar cal = Calendar.getInstance();
+            
+                BaseDuration.addMillisToCalendar(cal, Duration.this.millis);
+                
+                return cal.getTime();
+            }
+        };
     }
 }

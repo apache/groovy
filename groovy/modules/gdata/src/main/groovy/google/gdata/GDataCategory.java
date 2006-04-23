@@ -19,29 +19,96 @@
 
 package groovy.google.gdata;
 
+import groovy.google.gdata.data.BaseDuration;
 import groovy.google.gdata.data.ContextDependentDuration;
 import groovy.google.gdata.data.Duration;
 
 import java.io.IOException;
 import java.net.URL;
 import java.util.Calendar;
-import java.util.GregorianCalendar;
+import java.util.Date;
 import java.util.List;
 
-
-import com.google.gdata.client.*;
-import com.google.gdata.client.calendar.*;
-import com.google.gdata.data.*;
-import com.google.gdata.data.extensions.*;
-import com.google.gdata.util.*;
+import com.google.gdata.client.GoogleService;
+import com.google.gdata.client.calendar.CalendarService;
+import com.google.gdata.data.DateTime;
+import com.google.gdata.data.extensions.EventFeed;
+import com.google.gdata.util.AuthenticationException;
+import com.google.gdata.util.ServiceException;
 
 public class GDataCategory {
     public static EventFeed getFeed(final CalendarService self, final URL url) throws IOException, ServiceException {
         return self.getFeed(url, EventFeed.class);
     }
     
+    public static EventFeed getFeed(final CalendarService self, final URL url, final Date from, final Date to, int maxEntries) throws IOException, ServiceException {
+        return getFeed(self, url.toExternalForm(), from, to, maxEntries);
+    }
+    
+    public static EventFeed getFeed(final CalendarService self, final URL url, final Date from, final Date to) throws IOException, ServiceException {
+        return getFeed(self, url.toExternalForm(), from, to);
+    }
+    
+    public static EventFeed getFeed(final CalendarService self, final URL url, final Date from, final ContextDependentDuration duration, int maxEntries) throws IOException, ServiceException {
+        return getFeed(self, url.toExternalForm(), from, duration, maxEntries);
+    }
+    
+    public static EventFeed getFeed(final CalendarService self, final URL url, final Date from, final ContextDependentDuration duration) throws IOException, ServiceException {
+        return getFeed(self, url.toExternalForm(), from, duration);
+    }
+    
+    public static EventFeed getFeed(final CalendarService self, final URL url, final Date from, final Duration duration, int maxEntries) throws IOException, ServiceException {
+        return getFeed(self, url.toExternalForm(), from, duration, maxEntries);
+    }
+    
+    public static EventFeed getFeed(final CalendarService self, final URL url, final Date from, final Duration duration) throws IOException, ServiceException {
+        return getFeed(self, url.toExternalForm(), from, duration);
+    }
+    
     public static EventFeed getFeed(final CalendarService self, final String url) throws IOException, ServiceException {
         return self.getFeed(new URL(url), EventFeed.class);
+    }
+    
+    public static EventFeed getFeed(final CalendarService self, final String url, final Date from, final Date to, int maxEntries) throws IOException, ServiceException {
+    final DateTime from1 = new DateTime(from.getTime());
+    final DateTime to1 = new DateTime(to.getTime());
+System.out.println(new URL(url + "?start-min=" + from1 + "&start-max=" + to1 + "&max-results=" + maxEntries).toExternalForm());
+        return self.getFeed(new URL(url + "?start-min=" + from1 + "&start-max=" + to1+ "&max-results=" + maxEntries), EventFeed.class);
+    }
+    
+    public static EventFeed getFeed(final CalendarService self, final String url, final Date from, final Date to) throws IOException, ServiceException {
+    final DateTime from1 = new DateTime(from.getTime());
+    final DateTime to1 = new DateTime(to.getTime());
+        
+        return self.getFeed(new URL(url + "?start-min=" + from1 + "&start-max=" + to1), EventFeed.class);
+    }
+    
+    public static EventFeed getFeed(final CalendarService self, final String url, final Date from, final ContextDependentDuration duration, int maxEntries) throws IOException, ServiceException {
+    final DateTime from1 = new DateTime(from.getTime());
+    final DateTime to1 = plus(from1, duration);
+System.out.println(new URL(url + "?start-min=" + from1 + "&start-max=" + to1 + "&max-results=" + maxEntries).toExternalForm());
+        return self.getFeed(new URL(url + "?start-min=" + from1 + "&start-max=" + to1 + "&max-results=" + maxEntries), EventFeed.class);
+    }
+    
+    public static EventFeed getFeed(final CalendarService self, final String url, final Date from, final ContextDependentDuration duration) throws IOException, ServiceException {
+    final DateTime from1 = new DateTime(from.getTime());
+    final DateTime to1 = plus(from1, duration);
+        
+        return self.getFeed(new URL(url + "?start-min=" + from1 + "&start-max=" + to1), EventFeed.class);
+    }
+    
+    public static EventFeed getFeed(final CalendarService self, final String url, final Date from, final Duration duration, int maxEntries) throws IOException, ServiceException {
+    final DateTime from1 = new DateTime(from.getTime());
+    final DateTime to1 = plus(from1, duration);
+System.out.println(new URL(url + "?start-min=" + from1 + "&start-max=" + to1 + "&max-results=" + maxEntries).toExternalForm());
+        return self.getFeed(new URL(url + "?start-min=" + from1 + "&start-max=" + to1 + "&max-results=" + maxEntries), EventFeed.class);
+    }
+    
+    public static EventFeed getFeed(final CalendarService self, final String url, final Date from, final Duration duration) throws IOException, ServiceException {
+    final DateTime from1 = new DateTime(from.getTime());
+    final DateTime to1 = plus(from1, duration);
+        
+        return self.getFeed(new URL(url + "?start-min=" + from1 + "&start-max=" + to1), EventFeed.class);
     }
     
     public static void setUserCredentials(final GoogleService self, final List<String> creds) throws AuthenticationException {
@@ -69,15 +136,13 @@ public class GDataCategory {
     
     public static DateTime plus (final DateTime self, final ContextDependentDuration rhs) {
     // TODO: handle TIMEZONE
-    final Calendar cal = new GregorianCalendar();
+    final Calendar cal = Calendar.getInstance();
     long diff = self.getValue() - cal.getTimeInMillis();
     
-        assert diff < 0X10000;        
-        cal.add(Calendar.MILLISECOND, (int)diff);
+        BaseDuration.addMillisToCalendar(cal, diff);
         
         diff = rhs.getMillis() - cal.getTimeInMillis();
-        assert diff < 0X10000;        
-        cal.add(Calendar.MILLISECOND, (int)diff);
+        BaseDuration.addMillisToCalendar(cal, diff);
         
         cal.add(Calendar.YEAR, rhs.getYears());
         cal.add(Calendar.MONTH, rhs.getMonths());
@@ -99,15 +164,13 @@ public class GDataCategory {
     
     public static DateTime minus (final DateTime self, final ContextDependentDuration rhs) {
         // TODO: handle TIMEZONE
-        final Calendar cal = new GregorianCalendar();
+        final Calendar cal = Calendar.getInstance();;
         long diff = self.getValue() - cal.getTimeInMillis();
         
-            assert diff < 0X10000;        
-            cal.add(Calendar.MILLISECOND, (int)diff);
+            BaseDuration.addMillisToCalendar(cal, diff);
             
             diff = rhs.getMillis() - cal.getTimeInMillis();
-            assert diff < 0X10000;        
-            cal.add(Calendar.MILLISECOND, -(int)diff);
+            BaseDuration.addMillisToCalendar(cal, diff);
             
             cal.add(Calendar.YEAR, -rhs.getYears());
             cal.add(Calendar.MONTH, -rhs.getMonths());
@@ -117,71 +180,5 @@ public class GDataCategory {
     
     public static Duration minus (final DateTime self, final DateTime rhs) {
         return new Duration(self.getValue() - rhs.getValue());
-    }
-    
-    /*
-     * Methods on Integer to implement 1.week, 4.days etc.
-     * Not Google depandant
-     */
-    
-    public static Duration getWeeks(final Integer self) {
-        return new Duration(self.intValue() * (7 * 24 * 60 * 60 * 1000));
-    }
-    
-    public static Duration getWeek(final Integer self) {
-        return getWeeks(self);
-    }
-    
-    public static Duration getDays(final Integer self) {
-        return new Duration(self.intValue() * (24 * 60 * 60 * 1000));
-    }
-    
-    public static Duration getDay(final Integer self) {
-        return getDays(self);
-    }
-    
-    public static Duration getHours(final Integer self) {
-        return new Duration(self.intValue() * (60 * 60 * 1000));
-    }
-    
-    public static Duration getHour(final Integer self) {
-        return getHours(self);
-    }
-    
-    public static Duration getMinutes(final Integer self) {
-        return new Duration(self.intValue() * (60 * 1000));
-    }
-    
-    public static Duration getMinute(final Integer self) {
-        return getMinutes(self);
-    }
-    
-    public static Duration getSeconds(final Integer self) {
-        return new Duration(self.intValue() * (1000));
-    }
-    
-    public static Duration getSecond(final Integer self) {
-        return getSeconds(self);
-    }
-    
-    /*
-     * Methods on Integer to implement 1.month, 4.years etc.
-     * These are Google dependant
-     */
-    
-    public static ContextDependentDuration getMonths(final Integer self) {
-        return new ContextDependentDuration(0, self.intValue(), 0l);
-    }
-    
-    public static ContextDependentDuration getMonth(final Integer self) {
-        return getMonths(self);
-    }
-    
-    public static ContextDependentDuration getYears(final Integer self) {
-        return new ContextDependentDuration(self.intValue(), 0, 0l);
-    }
-    
-    public static ContextDependentDuration getYear(final Integer self) {
-        return getYears(self);
     }
 }
