@@ -19,9 +19,9 @@
 
 package groovy.google.gdata;
 
-import groovy.google.gdata.data.BaseDuration;
-import groovy.google.gdata.data.ContextDependentDuration;
-import groovy.google.gdata.data.Duration;
+import groovy.time.BaseDuration;
+import groovy.time.ContextDependentDuration;
+import groovy.time.Duration;
 
 import java.io.IOException;
 import java.net.URL;

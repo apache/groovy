@@ -18,8 +18,8 @@
  */
 package org.codehaus.groovy.runtime;
 
-import groovy.google.gdata.data.ContextDependentDuration;
-import groovy.google.gdata.data.Duration;
+import groovy.time.ContextDependentDuration;
+import groovy.time.Duration;
 
 public class TimeCategory {
     

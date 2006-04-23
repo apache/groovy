@@ -16,7 +16,7 @@
  *   limitations under the License.
  *
  */
-package groovy.google.gdata.data;
+package groovy.time;
 
 import java.util.Calendar;
 import java.util.Date;
