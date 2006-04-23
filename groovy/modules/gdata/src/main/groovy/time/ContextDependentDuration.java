@@ -56,10 +56,11 @@ public class ContextDependentDuration extends BaseDuration {
     
     public Date getAgo() {
     final Calendar cal = Calendar.getInstance();
-        
+    final long now = cal.getTimeInMillis();
+    
+        cal.setTimeInMillis(now - this.millis);
         cal.add(Calendar.YEAR, -this.years);
         cal.add(Calendar.MONTH, -this.months);
-        BaseDuration.addMillisToCalendar(cal, -this.millis);
         
         return cal.getTime();
     }
@@ -68,10 +69,11 @@ public class ContextDependentDuration extends BaseDuration {
         return new From() {
             public Date getNow() {
             final Calendar cal = Calendar.getInstance();
-                
+            final long now = cal.getTimeInMillis();
+            
+                cal.setTimeInMillis(now + ContextDependentDuration.this.millis);
                 cal.add(Calendar.YEAR, ContextDependentDuration.this.years);
                 cal.add(Calendar.MONTH, ContextDependentDuration.this.months);
-                BaseDuration.addMillisToCalendar(cal, ContextDependentDuration.this.millis);
                 
                 return cal.getTime();
             }

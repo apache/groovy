@@ -18,7 +18,6 @@
  */
 package groovy.time;
 
-import java.util.Calendar;
 import java.util.Date;
 
 public abstract class BaseDuration {
@@ -26,25 +25,6 @@ public abstract class BaseDuration {
 
     protected BaseDuration(final long millis) {
         this.millis = millis;
-    }
-    
-    /**
-     * @param cal
-     * @param millis
-     * 
-     * Helper function to add a long number of Milliseconds to a Calendar
-     * Calendar is brain dead and only allows an int to be added
-     */
-    public static void addMillisToCalendar(final Calendar cal, long millis) {
-        if (millis > 0X100000000L) {
-        final int days = (int)(millis / (24 * 60 * 60 * 1000));
-        
-            cal.add(Calendar.DATE, days);
-            
-            millis -= days * (24 * 60 * 60 * 1000);
-        }
-        
-        cal.add(Calendar.MILLISECOND, (int)millis);
     }
     
     public long getMillis() {

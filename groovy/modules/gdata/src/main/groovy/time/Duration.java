@@ -44,8 +44,9 @@ public class Duration extends BaseDuration {
     
     public Date getAgo() {
     final Calendar cal = Calendar.getInstance();
-        
-        BaseDuration.addMillisToCalendar(cal, -this.millis);
+    final long now = cal.getTimeInMillis();
+    
+        cal.setTimeInMillis(now - this.millis);
         
         return cal.getTime();
     }
@@ -55,8 +56,9 @@ public class Duration extends BaseDuration {
         return new From() {
             public Date getNow() {
             final Calendar cal = Calendar.getInstance();
+            final long now = cal.getTimeInMillis();
             
-                BaseDuration.addMillisToCalendar(cal, Duration.this.millis);
+                cal.setTimeInMillis(now + Duration.this.millis);
                 
                 return cal.getTime();
             }

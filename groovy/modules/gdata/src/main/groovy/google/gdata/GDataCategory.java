@@ -137,13 +137,8 @@ System.out.println(new URL(url + "?start-min=" + from1 + "&start-max=" + to1 + "
     public static DateTime plus (final DateTime self, final ContextDependentDuration rhs) {
     // TODO: handle TIMEZONE
     final Calendar cal = Calendar.getInstance();
-    long diff = self.getValue() - cal.getTimeInMillis();
     
-        BaseDuration.addMillisToCalendar(cal, diff);
-        
-        diff = rhs.getMillis() - cal.getTimeInMillis();
-        BaseDuration.addMillisToCalendar(cal, diff);
-        
+        cal.setTimeInMillis(self.getValue() + rhs.getMillis());
         cal.add(Calendar.YEAR, rhs.getYears());
         cal.add(Calendar.MONTH, rhs.getMonths());
         
@@ -164,14 +159,9 @@ System.out.println(new URL(url + "?start-min=" + from1 + "&start-max=" + to1 + "
     
     public static DateTime minus (final DateTime self, final ContextDependentDuration rhs) {
         // TODO: handle TIMEZONE
-        final Calendar cal = Calendar.getInstance();;
-        long diff = self.getValue() - cal.getTimeInMillis();
+        final Calendar cal = Calendar.getInstance();
         
-            BaseDuration.addMillisToCalendar(cal, diff);
-            
-            diff = rhs.getMillis() - cal.getTimeInMillis();
-            BaseDuration.addMillisToCalendar(cal, diff);
-            
+            cal.setTimeInMillis(self.getValue() - rhs.getMillis());
             cal.add(Calendar.YEAR, -rhs.getYears());
             cal.add(Calendar.MONTH, -rhs.getMonths());
             
