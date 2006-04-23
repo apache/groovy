@@ -62,6 +62,20 @@ public class Duration extends BaseDuration {
                 
                 return cal.getTime();
             }
+            
+            public Date getToday() {
+            final Calendar cal = Calendar.getInstance();
+            final long now = cal.getTimeInMillis();
+            
+                cal.setTimeInMillis(now + Duration.this.millis);
+                
+                cal.set(Calendar.HOUR_OF_DAY, 0);
+                cal.set(Calendar.MINUTE, 0);
+                cal.set(Calendar.SECOND, 0);
+                cal.set(Calendar.MILLISECOND, 0);
+                
+                return cal.getTime();
+            }
         };
     }
 }

@@ -18,6 +18,9 @@
  */
 package org.codehaus.groovy.runtime;
 
+import java.util.Calendar;
+import java.util.Date;
+
 import groovy.time.ContextDependentDuration;
 import groovy.time.Duration;
 
@@ -69,7 +72,6 @@ public class TimeCategory {
     
     /*
      * Methods on Integer to implement 1.month, 4.years etc.
-     * These are Google dependant
      */
     
     public static ContextDependentDuration getMonths(final Integer self) {
@@ -87,5 +89,4 @@ public class TimeCategory {
     public static ContextDependentDuration getYear(final Integer self) {
         return getYears(self);
     }
-
 }

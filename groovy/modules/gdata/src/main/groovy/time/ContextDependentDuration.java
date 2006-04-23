@@ -76,6 +76,22 @@ public class ContextDependentDuration extends BaseDuration {
                 cal.add(Calendar.MONTH, ContextDependentDuration.this.months);
                 
                 return cal.getTime();
+             }
+            
+            public Date getToday() {
+            final Calendar cal = Calendar.getInstance();
+            final long now = cal.getTimeInMillis();
+            
+                cal.setTimeInMillis(now + ContextDependentDuration.this.millis);
+                cal.add(Calendar.YEAR, ContextDependentDuration.this.years);
+                cal.add(Calendar.MONTH, ContextDependentDuration.this.months);
+                
+                cal.set(Calendar.HOUR_OF_DAY, 0);
+                cal.set(Calendar.MINUTE, 0);
+                cal.set(Calendar.SECOND, 0);
+                cal.set(Calendar.MILLISECOND, 0);
+                
+                return cal.getTime();
             }
         };
     }

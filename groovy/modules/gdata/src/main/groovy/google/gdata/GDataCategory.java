@@ -19,7 +19,6 @@
 
 package groovy.google.gdata;
 
-import groovy.time.BaseDuration;
 import groovy.time.ContextDependentDuration;
 import groovy.time.Duration;
 
@@ -72,7 +71,7 @@ public class GDataCategory {
     public static EventFeed getFeed(final CalendarService self, final String url, final Date from, final Date to, int maxEntries) throws IOException, ServiceException {
     final DateTime from1 = new DateTime(from.getTime());
     final DateTime to1 = new DateTime(to.getTime());
-System.out.println(new URL(url + "?start-min=" + from1 + "&start-max=" + to1 + "&max-results=" + maxEntries).toExternalForm());
+
         return self.getFeed(new URL(url + "?start-min=" + from1 + "&start-max=" + to1+ "&max-results=" + maxEntries), EventFeed.class);
     }
     
@@ -86,7 +85,7 @@ System.out.println(new URL(url + "?start-min=" + from1 + "&start-max=" + to1 + "
     public static EventFeed getFeed(final CalendarService self, final String url, final Date from, final ContextDependentDuration duration, int maxEntries) throws IOException, ServiceException {
     final DateTime from1 = new DateTime(from.getTime());
     final DateTime to1 = plus(from1, duration);
-System.out.println(new URL(url + "?start-min=" + from1 + "&start-max=" + to1 + "&max-results=" + maxEntries).toExternalForm());
+
         return self.getFeed(new URL(url + "?start-min=" + from1 + "&start-max=" + to1 + "&max-results=" + maxEntries), EventFeed.class);
     }
     
@@ -100,7 +99,7 @@ System.out.println(new URL(url + "?start-min=" + from1 + "&start-max=" + to1 + "
     public static EventFeed getFeed(final CalendarService self, final String url, final Date from, final Duration duration, int maxEntries) throws IOException, ServiceException {
     final DateTime from1 = new DateTime(from.getTime());
     final DateTime to1 = plus(from1, duration);
-System.out.println(new URL(url + "?start-min=" + from1 + "&start-max=" + to1 + "&max-results=" + maxEntries).toExternalForm());
+
         return self.getFeed(new URL(url + "?start-min=" + from1 + "&start-max=" + to1 + "&max-results=" + maxEntries), EventFeed.class);
     }
     
