@@ -16,12 +16,18 @@ use (TimeCategory, GDataCategory) {
 
     myService.userCredentials = [myId, myPassword]
 
+    //
+    //  Get at most 20 events in the period starting 1 week ago and ending 4 weeks in the future
+    //
     myService.getFeed(feedUrl, 1.week.ago, 4.weeks.from.now, 20).entries.each {entry ->
         entry.times.each {time ->
              println "${entry.title.text} From: ${time.startTime.toUiString()} To: ${(time.endTime.toUiString())}"
         }
     }
 
+    //
+    //  Get at most 20 events in the period starting 1 year ago lasting 2 years
+    //
     myService.getFeed(feedUrl, 1.year.ago, 2.years, 20).entries.each {entry ->
         entry.times.each {time ->
             println "${entry.title.text} From: ${time.startTime.toUiString()} To: ${(time.endTime.toUiString())}"
