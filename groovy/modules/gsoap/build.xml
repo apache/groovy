@@ -57,7 +57,7 @@
             <manifest>
                 <attribute name="Main-Class" value="${main-class}"/>
             </manifest>
-            <fileset dir="${classes.dir}" includes="org/**"/>
+            <fileset dir="${classes.dir}" includes="groovy/**"/>
             <fileset dir="." includes="log4j.properties"/>
         </jar>
     </target>
