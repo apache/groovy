@@ -1,5 +1,7 @@
 package groovy.google.gdata
 
+import org.codehaus.groovy.runtime.TimeCategory
+
 class DurationTest extends GroovyTestCase {
     void testFixedDurationArithmetic() {
         use(TimeCategory) {
