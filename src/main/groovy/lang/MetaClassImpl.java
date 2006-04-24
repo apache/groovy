@@ -600,10 +600,6 @@ public class MetaClassImpl extends MetaClass {
            Map.Entry entry = (Map.Entry) iter.next();
            String key = entry.getKey().toString();
 
-           // do we have this property?
-           if(propertyMap.get(key) == null)
-               continue;
-
            Object value = entry.getValue();
            try {
                setProperty(bean, key, value);
