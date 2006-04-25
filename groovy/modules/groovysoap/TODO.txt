@@ -1,0 +1,3 @@
+* Handle properly the namespaces
+
+* Have you any suggestion ?

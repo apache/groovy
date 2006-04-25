@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="groovysoap" basedir="." default="main">
+    <!--
+    <taskdef name="groovy"  classname="org.codehaus.groovy.ant.Groovy" />
+    -->
+    
+    <property file="build.properties" />
+    <!--
+    <echo message="javac-classpath: ${javac.classpath}" />
+    -->
+    <path id="test.classpath">
+        <pathelement location="${javac.classpath}"/>
+        <pathelement location="${test.classes.dir}"/>
+    </path>
+
+    <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpath="${javac.classpath}"/>
+    <taskdef name="groovy" classname="org.codehaus.groovy.ant.Groovy" classpath="${javac.classpath}"/>
+ 
+    <target name="init">
+        <property file="build.properties"/>
+        <tstamp/>
+        <property name="version" value="${DSTAMP}"/>
+    </target>
+
+    <target name="clean" depends="init">
+        <delete dir="${build.dir}"/>
+        <delete dir="${javadoc.dir}"/>
+    </target>
+
+    <target name="compile" depends="init">
+        <mkdir dir="${classes.dir}"/>
+        <javac srcdir="${src.dir}" destdir="${classes.dir}">
+            <classpath>
+                <path path="${javac.classpath}"/>
+            </classpath>
+        </javac>
+    </target>
+    
+    <target name="compile-test" depends="init,compile">
+        <javac srcdir="${src.test.dir}" destdir="${classes.dir}">
+            <classpath>
+                <path path="${javac.classpath}"/>
+            </classpath>
+        </javac>
+        <groovyc destdir="${classes.dir}" >
+            <src path="${src.test.dir}"/>
+            <classpath>
+                <path path="${javac.classpath}"/>
+                <path path="${classes.dir}"/>
+            </classpath>
+        </groovyc>
+    </target>
+    
+    <target name="jar" depends="compile">
+        <mkdir dir="${jar.dir}"/>
+        <jar destfile="${jar.dir}/${ant.project.name}-${version}.jar">
+            <manifest>
+                <attribute name="Main-Class" value="${main-class}"/>
+            </manifest>
+            <fileset dir="${classes.dir}" includes="groovy/**"/>
+            <fileset dir="." includes="log4j.properties"/>
+        </jar>
+	<taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${jarjar.jar}"/>
+        <jarjar jarfile="${jar.dir}/${ant.project.name}-all-${version}.jar">
+            <manifest>
+                <attribute name="Main-Class" value="${main-class}"/>
+            </manifest>
+            <fileset dir="${classes.dir}" includes="groovy/**"/>
+            <zipfileset src="${org.mortbay.jetty.jar}"/>
+            <zipfileset src="${log4j.jar}"/>
+            <zipfileset src="${wsdl4j.jar}"/>
+            <zipfileset src="${xfire-core.jar}"/>
+            <zipfileset src="${xfire-java5.jar}"/>
+            <zipfileset src="${XmlSchema.jar}"/>
+            <zipfileset src="${commons-logging.jar}"/>
+            <zipfileset src="${servletapi.jar}"/>
+            <zipfileset src="${stax-api.jar}"/>
+            <zipfileset src="${wstx-asl.jar}"/>
+            <zipfileset src="${jaxen.jar}"/>
+            <zipfileset src="${jdom.jar}"/>
+            <zipfileset src="${xfire-aegis.jar}"/>
+            <zipfileset src="${commons-httpclient.jar}"/>
+            <zipfileset src="${commons-codec.jar}"/>
+        </jarjar>
+    </target>
+    
+    <target name="docs" depends="init" description="generate documentation">
+        <mkdir dir="${javadoc.dir}" />
+        <javadoc destdir="${javadoc.dir}"  packagenames="groovy.net.soap.*">
+            <!--destdir="${javadoc.dir}"
+            packagenames="${javadoc.packages}"
+            use="true"
+            windowtitle="gsoap"
+            private="true" -->
+            <classpath>
+                <path path="${javac.classpath}"/>
+                <path path="${classes.dir}"/>
+            </classpath>
+            <sourcepath>
+                <pathelement location="${src.dir}"/>
+            </sourcepath>
+        </javadoc>
+    </target>
+
+    <target name="run" depends="jar,compile-test">
+        <delete dir="${test.reports}"/>
+        <mkdir dir="${test.reports}"/>
+        <!--
+        <parallel>
+            <java classname="test.SoapServer" fork="true">
+                <jvmarg value="-Dlog4j.configuration=${src.test.dir}log4j.properties" />
+                <classpath>
+                    <path path="${javac.classpath}"/>
+                    <pathelement location="${classes.dir}" />
+                </classpath>
+            </java>
+            -->
+            <sequential>
+                <!--
+                <waitfor maxwait="10" maxwaitunit="second" >
+                    <http url="http://localhost:6969/PersonService?wsdl"/>
+                </waitfor>
+                -->
+                <junit>
+                    <classpath>
+                        <path path="${javac.classpath}"/>
+                        <pathelement location="${classes.dir}" />
+                    </classpath>
+                    <formatter type="brief" />
+                    <batchtest todir="${test.reports}" fork="yes" failureproperty="test.failure">
+                        <fileset dir="${classes.dir}" includes="**/Test*.class"/>
+                    </batchtest>
+                </junit>
+                <fail if="test.failure">The tests failed. Have a look at ${test.reports}</fail>
+            </sequential>
+            <!--
+            <groovy src="${src.test.scripts}client1.groovy"/>
+            -->
+        <!--
+        </parallel>
+        -->
+    </target>
+    
+    <target name="clean-build" depends="clean,jar"/>
+
+    <target name="main" depends="clean,run"/>
+
+</project>
