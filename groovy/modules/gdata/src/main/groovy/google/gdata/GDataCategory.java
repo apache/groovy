@@ -19,6 +19,8 @@
 
 package groovy.google.gdata;
 
+import groovy.lang.Buildable;
+import groovy.lang.Closure;
 import groovy.time.ContextDependentDuration;
 import groovy.time.Duration;
 
@@ -31,11 +33,20 @@ import java.util.List;
 import com.google.gdata.client.GoogleService;
 import com.google.gdata.client.calendar.CalendarService;
 import com.google.gdata.data.DateTime;
+import com.google.gdata.data.Person;
+import com.google.gdata.data.PlainTextConstruct;
+import com.google.gdata.data.extensions.EventEntry;
 import com.google.gdata.data.extensions.EventFeed;
+import com.google.gdata.data.extensions.When;
 import com.google.gdata.util.AuthenticationException;
 import com.google.gdata.util.ServiceException;
 
 public class GDataCategory {
+    
+    //
+    // Extra CalendarService methods
+    //
+    
     public static EventFeed getFeed(final CalendarService self, final URL url) throws IOException, ServiceException {
         return self.getFeed(url, EventFeed.class);
     }
@@ -110,6 +121,10 @@ public class GDataCategory {
         return self.getFeed(new URL(url + "?start-min=" + from1 + "&start-max=" + to1), EventFeed.class);
     }
     
+    public static EventEntry insert(final CalendarService self, final String url, EventEntry entry) throws IOException, ServiceException {
+        return self.insert(new URL(url), entry);
+    }
+    
     public static void setUserCredentials(final GoogleService self, final List<String> creds) throws AuthenticationException {
         self.setUserCredentials(creds.get(0), creds.get(1));
     }
@@ -122,6 +137,62 @@ public class GDataCategory {
     public static String toUiString(final ContextDependentDuration self) {
         // TODO: make this format more user friendly
         return Integer.toString(self.getYears()) + " Years " + Integer.toString(self.getMonths()) + " Months " + Long.toString(self.getMillis()) + " Milliseconds";
+    }
+    
+    //
+    // Extra EventEntry methods
+    //
+    
+    public static void setTitle1(final EventEntry self, final String title) {
+        self.setTitle(new PlainTextConstruct(title));
+    }
+    
+    public static void setTitle(final EventEntry self, final Closure titleBuilder) {
+        // TODO: implement this
+    }
+    
+    public static void setTitle(final EventEntry self, final Buildable titleBuilder) {
+        // TODO: implement this
+    }
+    
+    public static void setContent1(final EventEntry self, final String content) {
+        self.setTitle(new PlainTextConstruct(content));
+    }
+    
+    public static void setContent(final EventEntry self, final Closure contentBuilder) {
+        // TODO: implement this
+    }
+    
+    public static void setContent(final EventEntry self, final Buildable contentBuilder) {
+        // TODO: implement this
+    }
+    
+    public static void setAuthor(final EventEntry self, final Person author) {
+        self.getAuthors().add(author);
+    }
+    
+    public static void setAuthor(final EventEntry self, final List<Person> authors) {
+        self.getAuthors().addAll(authors);
+    }
+    
+    public static void setTime(final EventEntry self, final When when) {
+        self.addTime(when);
+    }
+    
+    public static void setTime(final EventEntry self, final List<When> whens) {
+        self.getTimes().addAll(whens);
+    }
+    
+    //
+    // Extra When methods
+    //
+    
+    public static void setStart(final When self, final Date start) {
+        self.setStartTime(new DateTime(start));
+    }
+    
+    public static void setEnd(final When self, final Date end) {
+        self.setEndTime(new DateTime(end));
     }
     
     /*

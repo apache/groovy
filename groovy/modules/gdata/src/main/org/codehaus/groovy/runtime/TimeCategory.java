@@ -18,9 +18,6 @@
  */
 package org.codehaus.groovy.runtime;
 
-import java.util.Calendar;
-import java.util.Date;
-
 import groovy.time.ContextDependentDuration;
 import groovy.time.Duration;
 
