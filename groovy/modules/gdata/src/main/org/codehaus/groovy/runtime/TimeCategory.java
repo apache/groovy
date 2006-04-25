@@ -28,7 +28,7 @@ public class TimeCategory {
      */
     
     public static Duration getWeeks(final Integer self) {
-        return new Duration(self.longValue() * (7 * 24 * 60 * 60 * 1000));
+        return new Duration(self.intValue() * 7, 0, 0, 0, 0);
     }
     
     public static Duration getWeek(final Integer self) {
@@ -36,7 +36,7 @@ public class TimeCategory {
     }
     
     public static Duration getDays(final Integer self) {
-        return new Duration(self.longValue() * (24 * 60 * 60 * 1000));
+        return new Duration(self.intValue(), 0, 0, 0, 0);
     }
     
     public static Duration getDay(final Integer self) {
@@ -44,7 +44,7 @@ public class TimeCategory {
     }
     
     public static Duration getHours(final Integer self) {
-        return new Duration(self.longValue() * (60 * 60 * 1000));
+        return new Duration(0, self.intValue(), 0, 0, 0);
     }
     
     public static Duration getHour(final Integer self) {
@@ -52,7 +52,7 @@ public class TimeCategory {
     }
     
     public static Duration getMinutes(final Integer self) {
-        return new Duration(self.longValue() * (60 * 1000));
+        return new Duration(0, 0, self.intValue(), 0, 0);
     }
     
     public static Duration getMinute(final Integer self) {
@@ -60,10 +60,18 @@ public class TimeCategory {
     }
     
     public static Duration getSeconds(final Integer self) {
-        return new Duration(self.longValue() * (1000));
+        return new Duration(0, 0, 0, self.intValue(), 0);
     }
     
     public static Duration getSecond(final Integer self) {
+        return getSeconds(self);
+    }
+    
+    public static Duration getMilliseconds(final Integer self) {
+        return new Duration(0, 0, 0, 0, self.intValue());
+    }
+    
+    public static Duration getMillisecond(final Integer self) {
         return getSeconds(self);
     }
     
@@ -72,7 +80,7 @@ public class TimeCategory {
      */
     
     public static ContextDependentDuration getMonths(final Integer self) {
-        return new ContextDependentDuration(0, self.intValue(), 0l);
+        return new ContextDependentDuration(0, self.intValue(), 0, 0, 0, 0, 0);
     }
     
     public static ContextDependentDuration getMonth(final Integer self) {
@@ -80,7 +88,7 @@ public class TimeCategory {
     }
     
     public static ContextDependentDuration getYears(final Integer self) {
-        return new ContextDependentDuration(self.intValue(), 0, 0l);
+        return new ContextDependentDuration(self.intValue(), 0, 0, 0, 0, 0, 0);
     }
     
     public static ContextDependentDuration getYear(final Integer self) {

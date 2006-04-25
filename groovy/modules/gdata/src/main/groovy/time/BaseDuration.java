@@ -21,15 +21,40 @@ package groovy.time;
 import java.util.Date;
 
 public abstract class BaseDuration {
-    protected final long millis;
+    protected final int days;
+    protected final int hours;
+    protected final int minutes;
+    protected final int seconds;    
+    protected final int millis;
 
-    protected BaseDuration(final long millis) {
+    protected BaseDuration(final int days, final int hours, final int minutes, final int seconds, final int millis) {
+        this.days = days;
+        this.hours = hours;
+        this.minutes = minutes;
+        this.seconds = seconds;
         this.millis = millis;
     }
     
-    public long getMillis() {
+    public int getDays() {
+        return this.days;
+    }
+    
+    public int getHours() {
+        return this.hours;
+    }
+    
+    public int getMinutes() {
+        return this.minutes;
+    }
+    
+    public int getSeconds() {
+        return this.seconds;
+    }
+    
+    public int getMillis() {
         return this.millis;
     }
+    
     public abstract Date getAgo();
     
     public abstract From getFrom();

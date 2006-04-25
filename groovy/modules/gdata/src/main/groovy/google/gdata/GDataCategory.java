@@ -201,16 +201,31 @@ public class GDataCategory {
      */
     
     public static DateTime plus (final DateTime self, final Duration rhs) {
-        return new DateTime(self.getValue() + rhs.getMillis());
+    // TODO: handle TIMEZONE
+    final Calendar cal = Calendar.getInstance();
+    
+        cal.setTimeInMillis(self.getValue());
+        cal.add(Calendar.DAY_OF_YEAR, rhs.getDays());
+        cal.add(Calendar.HOUR_OF_DAY, rhs.getHours());
+        cal.add(Calendar.MINUTE, rhs.getMinutes());
+        cal.add(Calendar.SECOND, rhs.getSeconds());
+        cal.add(Calendar.MILLISECOND, rhs.getMillis());
+        
+        return new DateTime(cal.getTimeInMillis());
     }
     
     public static DateTime plus (final DateTime self, final ContextDependentDuration rhs) {
     // TODO: handle TIMEZONE
     final Calendar cal = Calendar.getInstance();
     
-        cal.setTimeInMillis(self.getValue() + rhs.getMillis());
+        cal.setTimeInMillis(self.getValue());
         cal.add(Calendar.YEAR, rhs.getYears());
         cal.add(Calendar.MONTH, rhs.getMonths());
+        cal.add(Calendar.DAY_OF_YEAR, rhs.getDays());
+        cal.add(Calendar.HOUR_OF_DAY, rhs.getHours());
+        cal.add(Calendar.MINUTE, rhs.getMinutes());
+        cal.add(Calendar.SECOND, rhs.getSeconds());
+        cal.add(Calendar.MILLISECOND, rhs.getMillis());
         
         return new DateTime(cal.getTimeInMillis());
     }
@@ -231,14 +246,14 @@ public class GDataCategory {
         // TODO: handle TIMEZONE
         final Calendar cal = Calendar.getInstance();
         
-            cal.setTimeInMillis(self.getValue() - rhs.getMillis());
             cal.add(Calendar.YEAR, -rhs.getYears());
             cal.add(Calendar.MONTH, -rhs.getMonths());
-            
+            cal.add(Calendar.DAY_OF_YEAR, -rhs.getDays());
+            cal.add(Calendar.HOUR_OF_DAY, -rhs.getHours());
+            cal.add(Calendar.MINUTE, -rhs.getMinutes());
+            cal.add(Calendar.SECOND, -rhs.getSeconds());
+            cal.add(Calendar.MILLISECOND, -rhs.getMillis());
+           
             return new DateTime(cal.getTimeInMillis());
-    }
-    
-    public static Duration minus (final DateTime self, final DateTime rhs) {
-        return new Duration(self.getValue() - rhs.getValue());
     }
 }

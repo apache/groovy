@@ -21,11 +21,22 @@ package groovy.time;
 import java.util.Calendar;
 import java.util.Date;
 
+/**
+ * @author John Wilson tug@wilson.co.uk
+ *
+ * ContextDependentDuration represents durations whose length in milliseconds cannot be determined withou knowing the datum point.
+ *
+ * I don't know how many days in a year unless I know if it's a leap year or not.
+ * 
+ * I don't know how many days in a month unless I know the name of the month (and if it's a leap yaer if the month is February)
+ * 
+ */
 public class ContextDependentDuration extends BaseDuration {
     private final int years;
     private final int months;
-    public ContextDependentDuration(final int years, final int months, final long millis) {
-        super(millis);
+    
+    public ContextDependentDuration(final int years, final int months, final int days, final int hours, final int minutes, final int seconds, final int millis) {
+        super(days, hours, minutes, seconds, millis);
         this.years = years;
         this.months = months;
     }
@@ -39,28 +50,46 @@ public class ContextDependentDuration extends BaseDuration {
     }
     
     public ContextDependentDuration plus(final ContextDependentDuration rhs) {
-        return new ContextDependentDuration(this.getYears() + rhs.getYears(), this.getMonths() + rhs.getMonths(), this.getMillis() + rhs.getMillis());
+        return new ContextDependentDuration(this.getYears() + rhs.getYears(), this.getMonths() + rhs.getMonths(),
+                                            this.getDays() + rhs.getDays(), this.getHours() + rhs.getHours(),
+                                            this.getMinutes() + rhs.getMinutes(), this.getSeconds() + rhs.getSeconds(),
+                                            this.getMillis() + rhs.getMillis());
     }
     
     public ContextDependentDuration plus(final Duration rhs) {
-        return new ContextDependentDuration(this.getYears(), this.getMonths(), this.getMillis() + rhs.getMillis());
+        return new ContextDependentDuration(this.getYears(), this.getMonths(),
+                                            this.getDays() + rhs.getDays(), this.getHours() + rhs.getHours(),
+                                            this.getMinutes() + rhs.getMinutes(), this.getSeconds() + rhs.getSeconds(),
+                                            this.getMillis() + rhs.getMillis());
+
     }
     
     public ContextDependentDuration minus(final ContextDependentDuration rhs) {
-        return new ContextDependentDuration(this.getYears() - rhs.getYears(), this.getMonths() - rhs.getMonths(), this.getMillis() - rhs.getMillis());
+        return new ContextDependentDuration(this.getYears() - rhs.getYears(), this.getMonths() - rhs.getMonths(),
+                                            this.getDays() - rhs.getDays(), this.getHours() - rhs.getHours(),
+                                            this.getMinutes() - rhs.getMinutes(), this.getSeconds() - rhs.getSeconds(),
+                                            this.getMillis() - rhs.getMillis());
+
     }
     
     public ContextDependentDuration minus(final Duration rhs) {
-        return new ContextDependentDuration(this.getYears(), this.getMonths(), this.getMillis() - rhs.getMillis());
+        return new ContextDependentDuration(this.getYears(), this.getMonths(),
+                                            this.getDays() - rhs.getDays(), this.getHours() - rhs.getHours(),
+                                            this.getMinutes() - rhs.getMinutes(), this.getSeconds() - rhs.getSeconds(),
+                                            this.getMillis() - rhs.getMillis());
+
     }
     
     public Date getAgo() {
     final Calendar cal = Calendar.getInstance();
-    final long now = cal.getTimeInMillis();
-    
-        cal.setTimeInMillis(now - this.millis);
-        cal.add(Calendar.YEAR, -this.years);
-        cal.add(Calendar.MONTH, -this.months);
+
+        cal.add(Calendar.YEAR, -this.getYears());
+        cal.add(Calendar.MONTH, -this.getMonths());
+        cal.add(Calendar.DAY_OF_YEAR, -this.getDays());
+        cal.add(Calendar.HOUR_OF_DAY, -this.getHours());
+        cal.add(Calendar.MINUTE, -this.getMinutes());
+        cal.add(Calendar.SECOND, -this.getSeconds());
+        cal.add(Calendar.MILLISECOND, -this.getMillis());
         
         return cal.getTime();
     }
@@ -69,27 +98,28 @@ public class ContextDependentDuration extends BaseDuration {
         return new From() {
             public Date getNow() {
             final Calendar cal = Calendar.getInstance();
-            final long now = cal.getTimeInMillis();
-            
-                cal.setTimeInMillis(now + ContextDependentDuration.this.millis);
-                cal.add(Calendar.YEAR, ContextDependentDuration.this.years);
-                cal.add(Calendar.MONTH, ContextDependentDuration.this.months);
+
+                cal.add(Calendar.YEAR, ContextDependentDuration.this.getYears());
+                cal.add(Calendar.MONTH, ContextDependentDuration.this.getMonths());
+                cal.add(Calendar.DAY_OF_YEAR, ContextDependentDuration.this.getDays());
+                cal.add(Calendar.HOUR_OF_DAY, ContextDependentDuration.this.getHours());
+                cal.add(Calendar.MINUTE, ContextDependentDuration.this.getMinutes());
+                cal.add(Calendar.SECOND, ContextDependentDuration.this.getSeconds());
+                cal.add(Calendar.MILLISECOND, ContextDependentDuration.this.getMillis());
                 
                 return cal.getTime();
              }
             
             public Date getToday() {
             final Calendar cal = Calendar.getInstance();
-            final long now = cal.getTimeInMillis();
-            
-                cal.setTimeInMillis(now + ContextDependentDuration.this.millis);
+
                 cal.add(Calendar.YEAR, ContextDependentDuration.this.years);
                 cal.add(Calendar.MONTH, ContextDependentDuration.this.months);
-                
-                cal.set(Calendar.HOUR_OF_DAY, 0);
-                cal.set(Calendar.MINUTE, 0);
-                cal.set(Calendar.SECOND, 0);
-                cal.set(Calendar.MILLISECOND, 0);
+                cal.add(Calendar.DAY_OF_YEAR, ContextDependentDuration.this.getDays());
+                cal.set(Calendar.HOUR_OF_DAY, ContextDependentDuration.this.getHours());
+                cal.set(Calendar.MINUTE, ContextDependentDuration.this.getMinutes());
+                cal.set(Calendar.SECOND, ContextDependentDuration.this.getSeconds());
+                cal.set(Calendar.MILLISECOND, ContextDependentDuration.this.getMillis());
                 
                 return cal.getTime();
             }
