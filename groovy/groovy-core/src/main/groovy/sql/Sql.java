@@ -636,6 +636,53 @@ public class Sql {
     }
 
     /**
+     * Executes the given SQL statement. See {@link #executeInsert(GString)}
+     * for more details. 
+     * @param sql The SQL statement to execute.
+     * @return A list of the auto-generated column values for each
+     * inserted row.
+     */
+    public List executeInsert(String sql) throws SQLException {
+        Connection connection = createConnection();
+        Statement statement = null;
+        try {
+            log.fine(sql);
+            statement = connection.createStatement();
+            configure(statement);
+            boolean hasResultSet = statement.execute(sql, Statement.RETURN_GENERATED_KEYS);
+
+            // Prepare a list to contain the auto-generated column
+            // values, and then fetch them from the statement.
+            List autoKeys = new ArrayList();
+        	ResultSet keys = statement.getGeneratedKeys();
+        	int count = keys.getMetaData().getColumnCount();
+
+        	// Copy the column values into a list of a list.
+        	while (keys.next()) {
+        		List rowKeys = new ArrayList(count);
+        		for (int i = 1; i <= count; i++) {
+        			rowKeys.add(keys.getObject(i));
+        		}
+
+        		autoKeys.add(rowKeys);
+        	}
+
+        	// Store the update count so that it can be retrieved by
+        	// clients, and then return the list of auto-generated
+        	// values.
+        	this.updateCount = statement.getUpdateCount();
+        	return autoKeys;
+        }
+        catch (SQLException e) {
+            log.log(Level.FINE, "Failed to execute: " + sql, e);
+            throw e;
+        }
+        finally {
+            closeResources(connection, statement);
+        }
+    }
+
+    /**
      * Executes the given piece of SQL with parameters
      */
     public boolean execute(String sql, List params) throws SQLException {
@@ -685,6 +732,60 @@ public class Sql {
     }
 
     /**
+     * Executes the given SQL statement with a particular list of
+     * parameter values. See {@link #executeInsert(GString)} for
+     * more details. 
+     * @param sql The SQL statement to execute.
+     * @param params The parameter values that will be substituted
+     * into the SQL statement's parameter slots.
+     * @return A list of the auto-generated column values for each
+     * inserted row.
+     */
+    public List executeInsert(String sql, List params) throws SQLException {
+        // Now send the SQL to the database.
+        Connection connection = createConnection();
+        PreparedStatement statement = null;
+        try {
+            log.fine(sql);
+
+            // Prepare a statement for the SQL and then execute it.
+            statement = connection.prepareStatement(sql);
+            setParameters(params, statement);
+            configure(statement);
+            boolean hasResultSet = statement.execute(sql, Statement.RETURN_GENERATED_KEYS);
+
+            // Prepare a list to contain the auto-generated column
+            // values, and then fetch them from the statement.
+            List autoKeys = new ArrayList();
+        	ResultSet keys = statement.getGeneratedKeys();
+        	int count = keys.getMetaData().getColumnCount();
+
+        	// Copy the column values into a list of a list.
+        	while (keys.next()) {
+        		List rowKeys = new ArrayList(count);
+        		for (int i = 1; i <= count; i++) {
+        			rowKeys.add(keys.getObject(i));
+        		}
+
+        		autoKeys.add(rowKeys);
+        	}
+
+        	// Store the update count so that it can be retrieved by
+        	// clients, and then return the list of auto-generated
+        	// values.
+        	this.updateCount = statement.getUpdateCount();
+        	return autoKeys;
+        }
+        catch (SQLException e) {
+            log.log(Level.FINE, "Failed to execute: " + sql, e);
+            throw e;
+        }
+        finally {
+            closeResources(connection, statement);
+        }
+    }
+
+    /**
      * Executes the given SQL with embedded expressions inside
      */
     public boolean execute(GString gstring) throws SQLException {
@@ -702,6 +803,44 @@ public class Sql {
         List params = getParameters(gstring);
         String sql = asSql(gstring, params);
         return executeUpdate(sql, params);
+    }
+
+    /**
+     * <p>Executes the given SQL with embedded expressions inside, and
+     * returns the values of any auto-generated colums, such as an
+     * autoincrement ID field. These values can be accessed using
+     * array notation. For example, to return the second auto-generated
+     * column value of the third row, use <code>keys[3][1]</code>. The
+     * method is designed to be used with SQL INSERT statements, but is
+     * not limited to them.</p>
+     * <p>The standard use for this method is when a table has an
+     * autoincrement ID column and you want to know what the ID is for
+     * a newly inserted row. In this example, we insert a single row
+     * into a table in which the first column contains the autoincrement
+     * ID:</p>
+     * <pre>
+     *     def sql = Sql.newInstance("jdbc:mysql://localhost:3306/groovy",
+     *                               "user", 
+     *                               "password",
+     *                               "com.mysql.jdbc.Driver")
+     *
+     *     def keys = sql.insert("insert into test_table (INT_DATA, STRING_DATA) "
+     *                           + "VALUES (1, 'Key Largo')")
+     *
+     *     def id = keys[0][0]
+     *
+     *     // 'id' now contains the value of the new row's ID column.
+     *     // It can be used to update an object representation's
+     *     // id attribute for example.
+     *     ...
+     * </pre>
+     * @return A list of column values representing each row's
+     * auto-generated keys.
+     */
+    public List executeInsert(GString gstring) throws SQLException {
+        List params = getParameters(gstring);
+        String sql = asSql(gstring, params);
+        return executeInsert(sql, params);
     }
 
     /**
