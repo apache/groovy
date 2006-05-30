@@ -61,6 +61,7 @@ import java.util.StringTokenizer;
  * Compilation control flags and coordination stuff.
  *
  * @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
+ * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
  * @version $Id$
  */
 
@@ -119,6 +120,16 @@ public class CompilerConfiguration {
      * extension used to find a groovy file
      */
     private String defaultScriptExtension = ".groovy";
+    
+    /**
+     * if set to true recompilation is enabled
+     */
+    private boolean recompileGroovySource;
+    
+    /**
+     * sets the minimum of time after a script can be recompiled.
+     */
+    private int minimumRecompilationIntervall;
 
     /**
      * Sets the Flags to defaults.
@@ -136,6 +147,8 @@ public class CompilerConfiguration {
         setDebug(false);
         setTolerance(10);
         setScriptBaseClass(null);
+        setRecompileGroovySource(false);
+        setMinimumRecompilationIntervall(100);
 
 
         //
@@ -151,11 +164,11 @@ public class CompilerConfiguration {
         }
         catch (Exception e) {
         }
-        try {
+        /*try {
             setClasspath(System.getProperty("java.class.path"));
         }
         catch (Exception e) {
-        }
+        }*/
 
         try {
             String target = System.getProperty("groovy.target.directory");
@@ -280,6 +293,27 @@ public class CompilerConfiguration {
         if (text != null) {
             setUseNewGroovy(text.equalsIgnoreCase("true"));
         }
+        
+        
+        //
+        // recompilation options
+        //
+        text = configuration.getProperty("groovy.recompile");
+        if (text != null) {
+            setRecompileGroovySource(text.equalsIgnoreCase("true"));
+        }
+        
+        numeric = 1000;
+        try {
+            text = configuration.getProperty("groovy.recompile.minimumIntervall", "1000");
+            numeric = Integer.parseInt(text);
+        }
+        catch (NumberFormatException e) {
+            throw new ConfigurationException(e);
+        }
+        setMinimumRecompilationIntervall(numeric);
+        
+        
     }
 
 
@@ -518,6 +552,22 @@ public class CompilerConfiguration {
 
     public void setDefaultScriptExtension(String defaultScriptExtension) {
         this.defaultScriptExtension = defaultScriptExtension;
+    }
+    
+    public void setRecompileGroovySource(boolean recompile) {
+        recompileGroovySource = recompile;
+    }
+    
+    public boolean getRecompileGroovySource(){
+        return recompileGroovySource;
+    }
+    
+    public void setMinimumRecompilationIntervall(int time) {
+        minimumRecompilationIntervall = Math.max(0,time);
+    }
+    
+    public int getMinimumRecompilationIntervall() {
+        return minimumRecompilationIntervall;
     }
 
 }
