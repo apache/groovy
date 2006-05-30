@@ -60,6 +60,7 @@ import java.util.WeakHashMap;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
 import org.codehaus.groovy.runtime.MethodHelper;
+import org.codehaus.groovy.runtime.ReflectorLoader;
 
 /**
  * A registery of MetaClass instances which caches introspection &
@@ -77,12 +78,6 @@ public class MetaClassRegistry {
     private Map metaClasses = Collections.synchronizedMap(new WeakHashMap());
     private boolean useAccessible;
     private Map loaderMap = Collections.synchronizedMap(new WeakHashMap());
-    private GroovyClassLoader loader =
-            (GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
-                    return new GroovyClassLoader(getClass().getClassLoader());
-                }
-            });
 
     public static final int LOAD_DEFAULT = 0;
     public static final int DONT_LOAD_DEFAULT = 1;
@@ -171,66 +166,26 @@ public class MetaClassRegistry {
     /**
      * A helper class to load meta class bytecode into the class loader
      */
-    public Class loadClass(final String name, final byte[] bytecode) throws ClassNotFoundException {
+    public Class createReflectorClass(final ClassLoader parent, final String name, final byte[] bytecode) throws ClassNotFoundException {
         return (Class) AccessController.doPrivileged(new PrivilegedAction() {
             public Object run() {
-                return getGroovyLoader(loader).defineClass(name, bytecode, getClass().getProtectionDomain());
+                return getReflectorLoader(parent).defineClass(name, bytecode, getClass().getProtectionDomain());
             }
         });
     }
 
-    public Class loadClass(final ClassLoader loader, final String name, final byte[] bytecode) throws ClassNotFoundException {
-        return (Class) AccessController.doPrivileged(new PrivilegedAction() {
-            public Object run() {
-                return getGroovyLoader(loader).defineClass(name, bytecode, getClass().getProtectionDomain());
-            }
-        });
-         }
-
-    public Class loadClass(ClassLoader loader, String name) throws ClassNotFoundException {
-        return getGroovyLoader(loader).loadClass(name);
-    }
-
-    public Class loadClass(String name) throws ClassNotFoundException {
-        return getGroovyLoader(loader).loadClass(name);
-    }
-
-    private GroovyClassLoader getGroovyLoader(ClassLoader loader) {
-        if (loader instanceof GroovyClassLoader) {
-            return (GroovyClassLoader) loader;
-        }
-        
+    private ReflectorLoader getReflectorLoader(final ClassLoader loader) {
         synchronized (loaderMap) {
-            GroovyClassLoader groovyLoader = (GroovyClassLoader) loaderMap.get(loader);
-            if (groovyLoader == null) {
-                if (loader == null || loader == getClass().getClassLoader()) {
-                    groovyLoader = this.loader;
-                }
-                else {
-                    // lets check that the class loader can see the Groovy classes
-                    // if so we'll use that, otherwise lets use the local class loader
-                    try {
-                        loader.loadClass(getClass().getName());
-
-                        // thats fine, lets use the loader
-                        groovyLoader = new GroovyClassLoader(loader);
+            ReflectorLoader reflectorLoader = (ReflectorLoader) loaderMap.get(loader);
+            if (reflectorLoader == null) {
+                reflectorLoader = (ReflectorLoader) AccessController.doPrivileged(new PrivilegedAction() {
+                    public Object run() {
+                        return new ReflectorLoader(loader);
                     }
-                    catch (ClassNotFoundException e) {
-
-                        // we can't see the groovy classes here
-                        // so lets try create a new loader
-                        final ClassLoader localLoader = getClass().getClassLoader();
-                        groovyLoader = (GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
-                            public Object run() {
-                                return new GroovyClassLoader(localLoader);
-                            }
-                        }); 
-                    }
-                }
-                loaderMap.put(loader, groovyLoader);
+                }); 
+                loaderMap.put(loader, reflectorLoader);
             }
-
-            return groovyLoader;
+            return reflectorLoader;
         }
     }
 
