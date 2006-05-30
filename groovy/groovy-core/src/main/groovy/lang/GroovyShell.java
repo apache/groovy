@@ -47,7 +47,6 @@ package groovy.lang;
 
 import groovy.ui.GroovyMain;
 
-import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -58,7 +57,6 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -70,48 +68,14 @@ import java.util.Map;
  * @version $Revision$
  */
 public class GroovyShell extends GroovyObjectSupport {
-    
-    private class ShellLoader extends GroovyClassLoader {
-        public ShellLoader() {
-            super(loader, config);
-        }
-        public Class defineClass(ClassNode classNode, String file, String newCodeBase) {
-            Class c = super.defineClass(classNode,file,newCodeBase);
-            classMap.put(c.getName(),this);
-            return c;
-        }
-    }
-
-    private static ClassLoader getLoader(ClassLoader cl) {
-        if (cl!=null) return cl;
-        cl = Thread.currentThread().getContextClassLoader();
-        if (cl!=null) return cl;
-        cl = GroovyShell.class.getClassLoader();
-        if (cl!=null) return cl;
-        return null;
-    }
-    
-    private class MainClassLoader extends ClassLoader {
-        public MainClassLoader(ClassLoader parent) {
-            super(getLoader(parent));
-        }
-        protected synchronized Class loadClass(String name, boolean resolve) throws ClassNotFoundException {
-            Object cached = classMap.get(name);
-            if (cached!=null) return (Class) cached;
-            ClassLoader parent = getParent();
-            if (parent!=null) return parent.loadClass(name);
-            return super.loadClass(name,resolve);
-        }
-    }
        
     public static final String[] EMPTY_ARGS = {};
 
     
-    private HashMap classMap = new HashMap();
-    private MainClassLoader loader;
     private Binding context;
     private int counter;
     private CompilerConfiguration config;
+    private GroovyClassLoader loader;
 
     public static void main(String[] args) {
         GroovyMain.main(args);
@@ -141,16 +105,17 @@ public class GroovyShell extends GroovyObjectSupport {
         this(parent, new Binding(), CompilerConfiguration.DEFAULT);
     }
     
-    public GroovyShell(final ClassLoader parent, Binding binding, CompilerConfiguration config) {
+    public GroovyShell(ClassLoader parent, Binding binding, final CompilerConfiguration config) {
         if (binding == null) {
             throw new IllegalArgumentException("Binding must not be null.");
         }
         if (config == null) {
             throw new IllegalArgumentException("Compiler configuration must not be null.");
         }
-        this.loader = (MainClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
+        final ClassLoader parentLoader = (parent!=null)?parent:GroovyShell.class.getClassLoader();
+        this.loader = (GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
             public Object run() {
-                return new MainClassLoader(parent);
+                return new GroovyClassLoader(parentLoader,config);
             }
         });
         this.context = binding;        
@@ -163,7 +128,7 @@ public class GroovyShell extends GroovyObjectSupport {
     }
     
     public void resetLoadedClasses() {
-        classMap.clear();
+        loader.clearCache();
     }
 
     /**
@@ -262,7 +227,7 @@ public class GroovyShell extends GroovyObjectSupport {
         try {
             scriptClass = (Class) AccessController.doPrivileged(new PrivilegedExceptionAction() {
                 public Object run() throws CompilationFailedException, IOException {
-                    return new ShellLoader().parseClass(scriptFile);
+                    return loader.parseClass(scriptFile);
                 }
             });
         } catch (PrivilegedActionException pae) {
@@ -380,7 +345,6 @@ public class GroovyShell extends GroovyObjectSupport {
     private boolean isUnitTestCase(Class scriptClass) {
         // check if the parsed class is a GroovyTestCase,
         // so that it is possible to run it as a JUnit test
-        final ShellLoader loader = new ShellLoader();
         boolean isUnitTestCase = false;
         try {
             try {
@@ -547,11 +511,6 @@ public class GroovyShell extends GroovyObjectSupport {
      */
     private Class parseClass(final GroovyCodeSource codeSource) throws CompilationFailedException {
         // Don't cache scripts
-        ShellLoader loader = (ShellLoader) AccessController.doPrivileged(new PrivilegedAction() {
-            public Object run() {
-                return new ShellLoader();
-            }
-        }); 
         return loader.parseClass(codeSource, false);
     }
 

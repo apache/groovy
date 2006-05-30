@@ -106,17 +106,17 @@ public class GroovyCodeSource {
 		//The calls below require access to user.dir - allow here since getName() and getCodeSource() are
 		//package private and used only by the GroovyClassLoader.
 		try {
-			Object[] info = (Object[]) AccessController.doPrivileged( new PrivilegedExceptionAction() {
+            Object[] info = (Object[]) AccessController.doPrivileged( new PrivilegedExceptionAction() {
 				public Object run() throws MalformedURLException {
-					Object[] info = new Object[2];
-					info[0] = file.getAbsolutePath();
+                    Object[] info = new Object[2];
+                    info[0] = file.getName();
 					//toURI().toURL() will encode, but toURL() will not.
 					info[1] = new CodeSource(file.toURI().toURL(), (Certificate[]) null);
-					return info;
+                    return info;
 				}
 			});
 			this.name = (String) info[0];
-			this.codeSource = (CodeSource) info[1];
+            this.codeSource = (CodeSource) info[1];
 		} catch (PrivilegedActionException pae) {
 			throw new RuntimeException("Could not construct a URL from: " + file);
 		}

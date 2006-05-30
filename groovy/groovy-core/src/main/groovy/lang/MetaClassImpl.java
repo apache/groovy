@@ -1593,7 +1593,6 @@ public class MetaClassImpl extends MetaClass {
        // lets set the reflector on all the methods
        for (Iterator iter = allMethods.iterator(); iter.hasNext();) {
            MetaMethod metaMethod = (MetaMethod) iter.next();
-           //System.out.println("Setting reflector for method: " + metaMethod + " with index: " + metaMethod.getMethodIndex());
            metaMethod.setReflector(reflector);
        }
    }
@@ -1618,79 +1617,33 @@ public class MetaClassImpl extends MetaClass {
    }
 
    private Reflector loadReflector(List methods) {
-       ReflectorGenerator generator = new ReflectorGenerator(methods);
        String name = getReflectorName();
-       /* 
-        * Lets see if its already loaded.
-        */
+       /*
+        * Lets generate it && load it.
+        */                        
+       ReflectorGenerator generator = new ReflectorGenerator(methods);
        try {
-           Class type = loadReflectorClass(name);
+           ClassWriter cw = new ClassWriter(true);
+           generator.generate(cw, name);
+           byte[] bytecode = cw.toByteArray();
+           
+           /*try {
+            FileOutputStream fis = new FileOutputStream(name);
+            fis.write(bytecode);
+            fis.close();
+            } catch (IOException ioe){}*/
+           ClassLoader loader = (ClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
+               public Object run() {
+                   return theClass.getClassLoader();
+               }
+           });           
+           Class type = registry.createReflectorClass(loader, name, bytecode);
            return (Reflector) type.newInstance();
        }
-       catch (ClassNotFoundException cnfe) {
-           /*
-            * Lets generate it && load it.
-            */                        
-           try {
-               ClassWriter cw = new ClassWriter(true);
-               generator.generate(cw, name);
-               byte[] bytecode = cw.toByteArray();
-               
-               Class type = loadReflectorClass(name, bytecode);
-               if  (Reflector.class.getClassLoader()!=type.getSuperclass().getClassLoader()) {
-                   throw new Error(
-                     name+" does have Reflector.class as superclass, "+
-                     "Reflector.class is loaded through the loader "+
-                     Reflector.class.getClassLoader()+
-                     " and "+name+"'s superclass is loaded through "+
-                     type.getSuperclass().getClassLoader()+
-                     ". This should never happen, check your classloader configuration."
-                   );  
-               }
-               return (Reflector) type.newInstance();
-           }
-           catch (Exception e) {
-               e.printStackTrace();
-               throw new GroovyRuntimeException("Could not generate and load the reflector for class: " + name + ". Reason: " + e, e);
-           }
-       } catch (Error e) {
-           throw e;
-       } catch (Throwable t) {
-           /*
-            * All other exception and error types are reported at once.
-            */
-           throw new GroovyRuntimeException("Could not load the reflector for class: " + name + ". Reason: " + t, t);
+       catch (Exception e) {
+           e.printStackTrace();
+           throw new GroovyRuntimeException("Could not generate and load the reflector for class: " + name + ". Reason: " + e, e);
        }
-   }
-
-   private Class loadReflectorClass(final String name, final byte[] bytecode) throws ClassNotFoundException {
-       ClassLoader loader = (ClassLoader) AccessController.doPrivileged(new  PrivilegedAction() {
-           public Object run() {
-               return theClass.getClassLoader();
-           }
-       }); 
-       if (loader instanceof GroovyClassLoader) {
-           final GroovyClassLoader gloader = (GroovyClassLoader) loader;
-           return (Class) AccessController.doPrivileged(new PrivilegedAction() {
-               public Object run() {
-                   return gloader.defineClass(name, bytecode, getClass().getProtectionDomain());
-               }
-           });
-       }
-       return registry.loadClass(loader, name, bytecode);
-   }
-
-   private Class loadReflectorClass(String name) throws ClassNotFoundException {
-       ClassLoader loader = (ClassLoader) AccessController.doPrivileged(new  PrivilegedAction() {
-           public Object run() {
-               return theClass.getClassLoader();
-           }
-       }); 
-       if (loader instanceof GroovyClassLoader) {
-           GroovyClassLoader gloader = (GroovyClassLoader) loader;
-           return gloader.loadClass(name);
-       }
-       return registry.loadClass(loader, name);
    }
 
    public List getMethods() {
