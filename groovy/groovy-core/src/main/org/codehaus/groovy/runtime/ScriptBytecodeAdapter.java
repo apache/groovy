@@ -525,8 +525,11 @@ public class ScriptBytecodeAdapter {
     public static boolean compareGreaterThanEqual(Object left, Object right) throws Throwable{
         return compareTo(left, right).intValue() >= 0;
     }
-    
+
     public static boolean isCase(Object switchValue, Object caseExpression) throws Throwable{
+    	if (caseExpression == null) {
+    		return switchValue == null;
+    	}
         return asBool(invokeMethod(caseExpression, "isCase", new Object[]{switchValue}));
     }
     

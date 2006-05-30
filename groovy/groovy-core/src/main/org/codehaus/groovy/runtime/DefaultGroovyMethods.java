@@ -502,7 +502,10 @@ public class DefaultGroovyMethods {
     }
 
     public static boolean isCase(Pattern caseValue, Object switchValue) {
-        Matcher matcher = caseValue.matcher(switchValue.toString());
+        if (switchValue == null) {
+            return caseValue == null;
+        }
+        final Matcher matcher = caseValue.matcher(switchValue.toString());
         if (matcher.matches()) {
             RegexSupport.setLastMatcher(matcher);
             return true;
