@@ -82,7 +82,7 @@ public class DumpingClassLoader extends GroovyClassLoader implements Opcodes {
     protected class DebugCollector extends ClassCollector {
 
         DebugCollector(GroovyClassLoader cl, CompilationUnit unit, SourceUnit su) {
-            super(cl, unit, su);
+            super(new GroovyClassLoader.InnerLoader(cl), unit, su);
         }
         
         public void call(ClassVisitor classWriter, ClassNode classNode) {
@@ -100,7 +100,7 @@ public class DumpingClassLoader extends GroovyClassLoader implements Opcodes {
     }
     
     protected ClassCollector createCollector(CompilationUnit unit) {
-        return new DebugCollector(this, unit, null);
+        return new DebugCollector(this,unit, null);
     }
 
     protected ASMifierClassVisitor dumpVisitor = new ASMifierClassVisitor(new PrintWriter(new OutputStreamWriter(System.out)));

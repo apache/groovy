@@ -107,7 +107,7 @@ public class ReflectorGeneratorTest extends GroovyTestCase {
 
         // now lets try class load it
         MetaClassRegistry registry = new MetaClassRegistry();
-        Class type = registry.loadClass(name, bytecode);
+        Class type = registry.createReflectorClass(getClass().getClassLoader(),name, bytecode);
         
         Object reflector = type.newInstance();
         
