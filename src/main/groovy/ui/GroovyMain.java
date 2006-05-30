@@ -439,7 +439,16 @@ public class GroovyMain {
             }
         }
     }
-
+    
+    private static ClassLoader getLoader(ClassLoader cl) {
+        if (cl!=null) return cl;
+        cl = Thread.currentThread().getContextClassLoader();
+        if (cl!=null) return cl;
+        cl = GroovyMain.class.getClassLoader();
+        if (cl!=null) return cl;
+        return null;
+    }
+    
     /**
      * Process the standard, single script with args.
      */

@@ -108,7 +108,7 @@ public class RootLoader extends ClassLoader {
         public void addPathEntry(URL url) {
             addURL(url);
         }
-        protected synchronized Class loadClass(String name, boolean resolve) throws ClassNotFoundException {
+        protected Class loadClass(String name, boolean resolve) throws ClassNotFoundException {
             try {
                 return super.loadClass(name, resolve);
             } catch (ClassNotFoundException cnfe) {
@@ -147,7 +147,7 @@ public class RootLoader extends ClassLoader {
     /**
      * loads a class using the name of the class
      */
-    protected synchronized Class loadClass(final String name, boolean resolve) throws ClassNotFoundException {
+    protected Class loadClass(final String name, boolean resolve) throws ClassNotFoundException {
         return loadClassByName(name,false,resolve);
     }
     

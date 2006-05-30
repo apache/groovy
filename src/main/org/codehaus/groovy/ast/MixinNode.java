@@ -70,6 +70,6 @@ public class MixinNode extends ClassNode {
      * @param superClass the base class name - use "java.lang.Object" if no direct base class
      */
     public MixinNode(String name, int modifiers, ClassNode superType, ClassNode[] interfaces) {
-        super(name, modifiers, superType, interfaces, EMPTY_ARRAY);
+        super(name, modifiers, superType, interfaces, MixinNode.EMPTY_ARRAY);
     }
 }

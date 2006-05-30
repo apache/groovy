@@ -126,6 +126,8 @@ public class CompilationUnit extends ProcessingUnit {
     protected ProgressCallback progressCallback;  // A callback for use during compile()
     protected ResolveVisitor resolveVisitor;
 
+    LinkedList[] phaseOperations;
+    
 
     /**
      * Initializes the CompilationUnit with defaults.
@@ -171,10 +173,43 @@ public class CompilationUnit extends ProcessingUnit {
 
         this.verifier = new Verifier();
         this.resolveVisitor = new ResolveVisitor(this);
-
-
+        
+        phaseOperations = new LinkedList[Phases.ALL+1];
+        for (int i=0; i<phaseOperations.length; i++) {
+            phaseOperations[i] = new LinkedList();
+        }
+        addPhaseOperation(new LoopBodyForSourceUnitOperations() {
+            public void call(SourceUnit source) throws CompilationFailedException {
+                source.parse();
+            }
+        }, Phases.PARSING);
+        addPhaseOperation(summarize, Phases.PARSING);
+        addPhaseOperation(convert,   Phases.CONVERSION);
+        addPhaseOperation(resolve,   Phases.SEMANTIC_ANALYSIS);
+        addPhaseOperation(classgen,  Phases.CLASS_GENERATION);
+        addPhaseOperation(output);
+        
         this.classgenCallback = null;
     }
+    
+    
+    
+    
+    
+    public void addPhaseOperation(LoopBodyForSourceUnitOperations op, int phase) {
+        if (phase<0 || phase>Phases.ALL) throw new IllegalArgumentException("phase "+phase+" is unknown");
+        phaseOperations[phase].add(op);
+    }
+    
+    public void addPhaseOperation(LoopBodyForPrimaryClassNodeOperations op, int phase) {
+        if (phase<0 || phase>Phases.ALL) throw new IllegalArgumentException("phase "+phase+" is unknown");
+        phaseOperations[phase].add(op);        
+    }
+    
+    public void addPhaseOperation(LoopBodyForGeneratedGroovyClassOperations op) {
+        phaseOperations[Phases.OUTPUT].addFirst(op);
+    }
+    
 
     /**
      * Configures its debugging mode and classloader classpath from a given compiler configuration.
@@ -192,9 +227,9 @@ public class CompilationUnit extends ProcessingUnit {
     }
 
     private void appendCompilerConfigurationClasspathToClassLoader(CompilerConfiguration configuration, GroovyClassLoader classLoader) {
-        for (Iterator iterator = configuration.getClasspath().iterator(); iterator.hasNext(); ) {
+        /*for (Iterator iterator = configuration.getClasspath().iterator(); iterator.hasNext(); ) {
             classLoader.addClasspath((String) iterator.next());
-        }
+        }*/
     }
 
     /**
@@ -253,7 +288,7 @@ public class CompilationUnit extends ProcessingUnit {
         };
 
         try {
-            applyToPrimaryClassNodes(handler,false);
+            applyToPrimaryClassNodes(handler);
         } catch (CompilationFailedException e) {
             if (debug) e.printStackTrace();
         }
@@ -422,7 +457,6 @@ public class CompilationUnit extends ProcessingUnit {
         compile(Phases.ALL);
     }
 
-
     /**
      * Compiles the compilation unit from sources.
      */
@@ -432,47 +466,38 @@ public class CompilationUnit extends ProcessingUnit {
         // the compiler.  The individual passes are responsible
         // for not reprocessing old code.
         gotoPhase(Phases.INITIALIZATION);
+        throughPhase = Math.min(throughPhase,Phases.ALL);
 
-        do {
-            if (dequeued()) continue;
-            if (throughPhase < Phases.PARSING) break;
+        while (throughPhase >= phase && phase <= Phases.ALL) {
             
-            gotoPhase(Phases.PARSING);
-            parse();
-
-            if (dequeued()) continue;
-            if (throughPhase < Phases.CONVERSION) break;
-
-            gotoPhase(Phases.CONVERSION);
-            convert();
-            
-            if (dequeued()) continue;
-            if (throughPhase < Phases.CLASS_GENERATION) break;
-
-            gotoPhase(Phases.SEMANTIC_ANALYSIS);
-            semanticAnalysis();
+            for (Iterator it = phaseOperations[phase].iterator(); it.hasNext();) {
+                Object operation = it.next();
+                if (operation instanceof LoopBodyForPrimaryClassNodeOperations) {
+                    applyToPrimaryClassNodes((LoopBodyForPrimaryClassNodeOperations) operation);
+                } else if (operation instanceof LoopBodyForSourceUnitOperations) {
+                    applyToSourceUnits((LoopBodyForSourceUnitOperations)operation);
+                } else {
+                    applyToGeneratedGroovyClasses((LoopBodyForGeneratedGroovyClassOperations)operation);
+                }
+            }
             
             if (dequeued()) continue;
-            if (throughPhase < Phases.CLASS_GENERATION) break;
-            if (ast.hasClassNodeToCompile()) break;
             
-            gotoPhase(Phases.CLASS_GENERATION);
-            sortClasses();
-            classgen();
-
-            if (dequeued()) continue;
-            if (throughPhase < Phases.OUTPUT) break;
-
-            gotoPhase(Phases.OUTPUT);
-            output();
-
-            if (dequeued()) continue;
-            if (throughPhase < Phases.FINALIZATION) break;
-
-            gotoPhase(Phases.FINALIZATION);
-            break;
-        } while (true);
-        
+            if (  phase==Phases.CLASS_GENERATION && 
+                  ast.hasClassNodeToCompile()) {
+                break;
+            }            
+            if (progressCallback != null) progressCallback.call(this, phase);
+            completePhase();
+            applyToSourceUnits(mark);
+            
+            gotoPhase(phase+1);
+            
+            if (phase==Phases.CLASS_GENERATION) {
+                sortClasses();
+            }
+        }
+            
         for (Iterator iter = ast.iterateClassNodeToCompile(); iter.hasNext();) {
             String name = (String) iter.next();
             String location = ast.getScriptSourceLocation(name);
@@ -540,36 +565,6 @@ public class CompilationUnit extends ProcessingUnit {
 
 
     /**
-     * Parses all sources.
-     */
-    public void parse() throws CompilationFailedException {
-        if (this.phase != Phases.PARSING) {
-            throw new GroovyBugError("CompilationUnit not read for parse()");
-        }
-        
-        applyToSourceUnits(parse);
-        applyToSourceUnits(summarize);
-        
-        completePhase();
-        applyToSourceUnits(mark);
-    }
-
-
-    /**
-     * Runs parse() on a single SourceUnit.
-     */
-    private LoopBodyForSourceUnitOperations parse = new LoopBodyForSourceUnitOperations() {
-        public void call(SourceUnit source) throws CompilationFailedException {
-            source.parse();
-
-
-            if (CompilationUnit.this.progressCallback != null) {
-                CompilationUnit.this.progressCallback.call(source, CompilationUnit.this.phase);
-            }
-        }
-    };
-
-    /**
      * Adds summary of each class to maps
      */
     private LoopBodyForSourceUnitOperations summarize = new LoopBodyForSourceUnitOperations() {
@@ -611,22 +606,7 @@ public class CompilationUnit extends ProcessingUnit {
             
         }
     };
-
-
-    /**
-     * Builds ASTs for all parsed sources.
-     */
-    public void convert() throws CompilationFailedException {
-        if (this.phase != Phases.CONVERSION) {
-            throw new GroovyBugError("CompilationUnit not ready for convert()");
-        }
-
-        applyToSourceUnits(convert);
-
-        completePhase();
-        applyToSourceUnits(mark);
-    }
-
+    
     /**
      * Runs convert() on a single SourceUnit.
      */
@@ -641,46 +621,52 @@ public class CompilationUnit extends ProcessingUnit {
             }
         }
     };
-
-    public void semanticAnalysis() throws CompilationFailedException {
-        if (this.phase != Phases.SEMANTIC_ANALYSIS) {
-            throw new GroovyBugError("CompilationUnit not ready for semanticAnalysis()");
+    
+    private LoopBodyForGeneratedGroovyClassOperations output = new LoopBodyForGeneratedGroovyClassOperations() {
+        public void call(GroovyClass gclass) throws CompilationFailedException {
+            boolean failures = false;
+            String name = gclass.getName().replace('.', File.separatorChar) + ".class";
+            File path = new File(configuration.getTargetDirectory(), name);
+            
+            //
+            // Ensure the path is ready for the file
+            //
+            File directory = path.getParentFile();
+            if (directory != null && !directory.exists()) {
+                directory.mkdirs();
+            }
+            
+            //
+            // Create the file and write out the data
+            //
+            byte[] bytes = gclass.getBytes();
+            
+            FileOutputStream stream = null;
+            try {
+                stream = new FileOutputStream(path);
+                stream.write(bytes, 0, bytes.length);
+            } catch (IOException e) {
+                getErrorCollector().addError(Message.create(e.getMessage(),CompilationUnit.this));
+                failures = true;
+            } finally {
+                if (stream != null) {
+                    try {
+                        stream.close();
+                    } catch (Exception e) {
+                    }
+                }
+            }            
         }
-
-        applyToSourceUnits(resolve);
-
-        completePhase();
-        applyToSourceUnits(mark);
-    }
-
-    /**
-     * Expands and canonicalizes the ASTs generated during
-     * parsing and conversion, then generates classes.
-     */
-    public void classgen() throws CompilationFailedException {
-        if (this.phase != Phases.CLASS_GENERATION) {
-            throw new GroovyBugError("CompilationUnit not ready for classgen()");
-        }
-
-        
-        applyToPrimaryClassNodes(classgen,true);
-
-        completePhase();
-        applyToSourceUnits(mark);
-
-        //
-        // Callback progress, if necessary
-
-
-        if (this.progressCallback != null) {
-            this.progressCallback.call(this, CompilationUnit.this.phase);
-        }
-    }
+    };
+    
 
     /**
      * Runs classgen() on a single ClassNode.
      */
     private LoopBodyForPrimaryClassNodeOperations classgen = new LoopBodyForPrimaryClassNodeOperations() {
+        public boolean needSortedInput() {
+            return true;
+        }
         public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
 
         	//
@@ -751,89 +737,7 @@ public class CompilationUnit extends ProcessingUnit {
 
 
     protected ClassVisitor createClassVisitor() {
-        /** avoid runtime dependency on asm util
-         ClassVisitor visitor;
-         if( debug )
-         {
-         visitor = new DumpClassVisitor(output);
-         }
-         else
-         {
-         visitor = new ClassWriter(true);
-         }
-         return visitor;
-         */
         return new ClassWriter(true);
-    }
-
-
-    /**
-     * Outputs the generated class files to permanent storage.
-     */
-    public void output() throws CompilationFailedException {
-        if (this.phase != Phases.OUTPUT && !(this.phase == Phases.CLASS_GENERATION && this.phaseComplete)) {
-            throw new GroovyBugError("CompilationUnit not ready for output()");
-        }
-
-
-        boolean failures = false;
-
-
-        Iterator iterator = this.generatedClasses.iterator();
-        while (iterator.hasNext()) {
-            //
-            // Get the class and calculate its filesystem name
-            //
-            GroovyClass gclass = (GroovyClass) iterator.next();
-            String name = gclass.getName().replace('.', File.separatorChar) + ".class";
-            File path = new File(configuration.getTargetDirectory(), name);
-
-
-            //
-            // Ensure the path is ready for the file
-            //
-            File directory = path.getParentFile();
-            if (directory != null && !directory.exists()) {
-                directory.mkdirs();
-            }
-
-            
-            //
-            // Create the file and write out the data
-            //
-            byte[] bytes = gclass.getBytes();
-
-            FileOutputStream stream = null;
-            try {
-                stream = new FileOutputStream(path);
-                stream.write(bytes, 0, bytes.length);
-            } catch (IOException e) {
-                getErrorCollector().addError(Message.create(e.getMessage(),this));
-                failures = true;
-            } finally {
-                if (stream != null) {
-                    try {
-                        stream.close();
-                    } catch (Exception e) {
-                    }
-                }
-            }
-        }
-
-
-        getErrorCollector().failIfErrors();
-
-
-        completePhase();
-        applyToSourceUnits(mark);
-
-
-        //
-        // Callback progress, if necessary
-        //
-        if (CompilationUnit.this.progressCallback != null) {
-            CompilationUnit.this.progressCallback.call(this, this.phase);
-        }
     }
 
     //---------------------------------------------------------------------------
@@ -876,7 +780,7 @@ public class CompilationUnit extends ProcessingUnit {
     /**
      * An callback interface for use in the applyToSourceUnits loop driver.
      */
-    public abstract class LoopBodyForSourceUnitOperations {
+    public static abstract class LoopBodyForSourceUnitOperations {
         public abstract void call(SourceUnit source) throws CompilationFailedException;
     }
   
@@ -887,8 +791,6 @@ public class CompilationUnit extends ProcessingUnit {
      * through the current phase.
      */
     public void applyToSourceUnits(LoopBodyForSourceUnitOperations body) throws CompilationFailedException {
-        boolean failures = false;
-
         Iterator keys = names.iterator();
         while (keys.hasNext()) {
             String name = (String) keys.next();
@@ -922,10 +824,16 @@ public class CompilationUnit extends ProcessingUnit {
     /**
      * An callback interface for use in the applyToSourceUnits loop driver.
      */
-    public abstract class LoopBodyForPrimaryClassNodeOperations {
+    public static abstract class LoopBodyForPrimaryClassNodeOperations {
         public abstract void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException;
+        public boolean needSortedInput(){
+            return false;
+        }
     }
 
+    public static abstract class LoopBodyForGeneratedGroovyClassOperations {
+        public abstract void call(GroovyClass gclass) throws CompilationFailedException;
+    }
 
     private List getPrimaryClassNodes(boolean sort) {
         ArrayList unsorted = new ArrayList();
@@ -980,10 +888,8 @@ public class CompilationUnit extends ProcessingUnit {
      * our AST.  Automatically skips units that have already been processed
      * through the current phase.
      */
-    public void applyToPrimaryClassNodes(LoopBodyForPrimaryClassNodeOperations body,boolean sort) throws CompilationFailedException {
-        boolean failures = false;
-
-        Iterator classNodes = getPrimaryClassNodes(sort).iterator();
+    public void applyToPrimaryClassNodes(LoopBodyForPrimaryClassNodeOperations body) throws CompilationFailedException {
+        Iterator classNodes = getPrimaryClassNodes(body.needSortedInput()).iterator();
         while (classNodes.hasNext()) {
             SourceUnit context=null;
             try {
@@ -1000,8 +906,6 @@ public class CompilationUnit extends ProcessingUnit {
                 changeBugText(e,context);
                 throw e;
             } catch (Exception e) {
-                failures = true;
-
                 // check the exception for a nested compilation exception
                 ErrorCollector nestedCollector = null;
                 for (Throwable next = e.getCause(); next!=e && next!=null; next=next.getCause()) {
@@ -1019,6 +923,37 @@ public class CompilationUnit extends ProcessingUnit {
             }
         }
 
+        getErrorCollector().failIfErrors();
+    }
+    
+    public void applyToGeneratedGroovyClasses(LoopBodyForGeneratedGroovyClassOperations body) throws CompilationFailedException {
+        if (this.phase != Phases.OUTPUT && !(this.phase == Phases.CLASS_GENERATION && this.phaseComplete)) {
+            throw new GroovyBugError("CompilationUnit not ready for output(). Current phase="+getPhaseDescription());
+        }
+
+        boolean failures = false;
+
+        Iterator iterator = this.generatedClasses.iterator();
+        while (iterator.hasNext()) {
+            //
+            // Get the class and calculate its filesystem name
+            //
+            GroovyClass gclass = (GroovyClass) iterator.next();
+            try {
+                body.call(gclass);
+            } catch (CompilationFailedException e) {
+                // fall thorugh, getErrorREporter().failIfErrors() will triger
+            } catch (NullPointerException npe){
+                throw npe;
+            } catch (GroovyBugError e) {
+                changeBugText(e,null);
+                throw e;
+            } catch (Exception e) {
+                GroovyBugError gbe = new GroovyBugError(e);
+                throw gbe;
+            }
+        }
+        
         getErrorCollector().failIfErrors();
     }
 
