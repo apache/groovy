@@ -20,7 +20,6 @@ package groovy.lang;
 
 import java.io.File;
 import java.net.MalformedURLException;
-import java.util.Arrays;
 
 import junit.framework.TestCase;
 

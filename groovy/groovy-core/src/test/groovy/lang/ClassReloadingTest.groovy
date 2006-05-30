@@ -10,6 +10,7 @@ class ClassReloadingTest extends GroovyTestCase {
 		def cl = new GroovyClassLoader(this.class.classLoader);
 		def currentDir = file.parentFile.absolutePath
 		cl.addClasspath(currentDir)
+		cl.shouldRecompile = true
 			
 		
         try {
@@ -22,7 +23,7 @@ class ClassReloadingTest extends GroovyTestCase {
     		def object = groovyClass.newInstance()
     		assert "hello"== object.hello
 
-                sleep 1000
+            sleep 1000
     					
     		// change class
     		file.write """
@@ -30,6 +31,7 @@ class ClassReloadingTest extends GroovyTestCase {
     		    @Property hello = "goodbye"
     		  }
     		  """
+    		file.lastModified = System.currentTimeMillis()
     		
     		// reload		
     		groovyClass = cl.loadClass(className,true,false)
