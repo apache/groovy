@@ -72,7 +72,7 @@ public class TimeCategory {
     }
     
     public static Duration getMillisecond(final Integer self) {
-        return getSeconds(self);
+        return getMilliseconds(self);
     }
     
     /*
