@@ -96,7 +96,7 @@ public class Duration extends BaseDuration {
                 return cal.getTime();
             }
             
-            public Date getToday() {
+            public java.sql.Date getToday() {
             final Calendar cal = Calendar.getInstance();
                 
                 cal.add(Calendar.DAY_OF_YEAR, Duration.this.getDays());
@@ -105,7 +105,7 @@ public class Duration extends BaseDuration {
                 cal.set(Calendar.SECOND, Duration.this.getSeconds());
                 cal.set(Calendar.MILLISECOND, Duration.this.getMillis());
                
-                return cal.getTime();
+                return new java.sql.Date(cal.getTimeInMillis());
             }
         };
     }

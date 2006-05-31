@@ -91,6 +91,8 @@ public class ContextDependentDuration extends BaseDuration {
         cal.add(Calendar.SECOND, -this.getSeconds());
         cal.add(Calendar.MILLISECOND, -this.getMillis());
         
+        
+        // TODO: work out when to return java.sql.Date instead
         return cal.getTime();
     }
     
@@ -110,7 +112,7 @@ public class ContextDependentDuration extends BaseDuration {
                 return cal.getTime();
              }
             
-            public Date getToday() {
+            public java.sql.Date getToday() {
             final Calendar cal = Calendar.getInstance();
 
                 cal.add(Calendar.YEAR, ContextDependentDuration.this.years);
@@ -121,7 +123,7 @@ public class ContextDependentDuration extends BaseDuration {
                 cal.set(Calendar.SECOND, ContextDependentDuration.this.getSeconds());
                 cal.set(Calendar.MILLISECOND, ContextDependentDuration.this.getMillis());
                 
-                return cal.getTime();
+                return new java.sql.Date(cal.getTimeInMillis());
             }
         };
     }
