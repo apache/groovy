@@ -1,5 +1,6 @@
 package groovy.net.soap;
 
+import java.io.FileInputStream;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -66,12 +67,19 @@ public class SoapClient extends GroovyObjectSupport {
     private void generateType(Node node, Map type) {
         // TODO rajouter le test d'existence
         if (node.hasChildNodes() && !type.containsKey(node.getNodeName())) {
-            Set members = new HashSet();
+            Map members = new HashMap();
             NodeList children = node.getChildNodes();
             for (int i = 0; i < children.getLength(); i++){
                 Node n = children.item(i);
-                if(n.getNodeType()==Node.ELEMENT_NODE)
-                    members.add(n.getNodeName());
+                if (n.getNodeType()==Node.ELEMENT_NODE) {
+                  Integer valence = (Integer)members.get(n.getNodeName());
+                  if (valence == null) {
+                    valence = new Integer(1);
+                  } else {
+                    valence ++;
+                  }
+                  members.put(n.getNodeName(), valence);
+                }
                 generateType(n, type);
             }
             if(members.size()!=0)
@@ -88,41 +96,59 @@ public class SoapClient extends GroovyObjectSupport {
      */
     private Object toReturn(Object obj) {
         if (obj instanceof Document) {
+
             Map type = new HashMap();
             StringBuffer classSource = new StringBuffer();
             
             // Extract the root node from the Document
             Element root = ((Document) obj).getDocumentElement();
+
             // Clean the XML document
             cleanNode(root);
-//            try {
-//                DOMUtils.writeXml((Node) root, System.out);
-//            } catch (TransformerException ex) {
-//                ex.printStackTrace();
-//            }
+
+//          if (logger.isDebugEnabled()) {
+//              try {
+//                  DOMUtils.writeXml((Node) root, System.out);
+//              } catch (TransformerException ex) {
+//                  ex.printStackTrace();
+//              }
+//          }
+
+            // generate a map that associates to each type its members
             generateType(root, type);
-            
-            for (Iterator iterator = type.keySet().iterator(); iterator.hasNext();) {
-                String aType = (String) iterator.next();
-                classSource.append("class ")
-                .append(uncapitalize(aType))
-                .append(" {\n");
-                Set members = (Set) type.get(aType);
-                for (Iterator it1 = members.iterator(); it1.hasNext();) {
-                    String member = (String)it1.next();
-                    classSource.append("  @Property ");
-                    if (type.containsKey(member)) classSource.append("List ");
-                    classSource.append(uncapitalize(member))
-                    .append("\n");
+
+            // Test if we have a complex type
+            if ((type.keySet().size() != 1) || (((Map)type.get(root.getNodeName())).keySet().size() != 1)) {
+                for (Iterator iterator = type.keySet().iterator(); iterator.hasNext();) {
+                    String aType = (String) iterator.next();
+//                  classSource.append("class ")
+//                  .append(uncapitalize(aType))
+//                  .append(" {\n");
+                    String tt = new String(uncapitalize(aType));
+                    if ("return".equals(tt)) tt = "out";
+                    classSource.append("class ")
+                    .append(tt)
+                    .append(" {\n");
+                    Map members = (Map) type.get(aType);
+                    for (Iterator it1 = members.keySet().iterator(); it1.hasNext();) {
+                        String member = (String)it1.next();
+                        classSource.append("  @Property ");
+                        if ((Integer)members.get(member) > 1) classSource.append("List ");
+                        classSource.append(uncapitalize(member))
+                        .append("\n");
+                    }
+                    classSource.append("}\n");
                 }
-                classSource.append("}\n");
             }
-            
-            classSource.append("result = ");
-            createCode(root, classSource);
-            
+
+            // Test if the return type is different from void
+            if (type.get(root.getNodeName()) != null) {
+              classSource.append("result = ");
+              createCode(root, type, classSource);
+            }
+
             if (logger.isDebugEnabled()) logger.debug(classSource);
-            
+
             Binding binding = new Binding();
             
             try {
@@ -169,66 +195,110 @@ public class SoapClient extends GroovyObjectSupport {
      * @param element     Element of the XML document.
      * @param classSource StringBuffer containing the generated code.
      */
-    private void createCode(Element element, StringBuffer classSource){
+    private void createCode(Element root, Map type, StringBuffer classSource){
+        if ((type.keySet().size() == 1) && (((Map)type.get(root.getNodeName())).keySet().size() == 1)) {
+            createCodeST(root, classSource);
+        } else {
+            createCodeCT(root, type, classSource);
+        }
+    }
+
+    /**
+     * <p>Create Complex types instances of the data types previously generated
+     * from the XML document.</p>
+     *
+     * @param element     Element of the XML document.
+     * @param classSource StringBuffer containing the generated code.
+     */
+    private void createCodeCT(Element element, Map type, StringBuffer classSource){
         Node child = null;
         Node fnode = (Node)element.getFirstChild();
         Node lnode = (Node)element.getLastChild();
         
         Node next = fnode;
         Node prev = null;
-        
+
         boolean opened = false;
+
+        Map  members = (Map)type.get(element.getNodeName());
         
         if (logger.isDebugEnabled()) logger.debug("Entering createCode");
         
-        classSource.append("new "+ uncapitalize(element.getNodeName())+"(");
-        while ((child = next) != null){
-            next = child.getNextSibling();
-            
-            if (logger.isDebugEnabled()) {
-                logger.debug("1");
-                if (child != null) logger.debug(" child = "+child.getNodeName()+child.hasChildNodes()+child.getChildNodes().getLength());
-                if (next  != null) logger.debug(" next  = "+next.getNodeName());
-                if (prev  != null) logger.debug(" prev  = "+prev.getNodeName());
-                logger.debug("\n");
-            }
-            
-            if (child.hasChildNodes() && (child.getChildNodes().getLength() == 1) && (child.getFirstChild().getNodeType() == Node.TEXT_NODE)) {
-                if (logger.isDebugEnabled()) logger.debug("Create basic type for"+child.getNodeName());
-                classSource.append(uncapitalize(child.getNodeName())+":\""+child.getFirstChild().getNodeValue()+"\"");
-            } else {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("2");
-                    if (child != null) logger.debug(" child = "+child.getNodeName());
-                    if (next  != null) logger.debug(" next  = "+next.getNodeName());
-                    if (prev  != null) logger.debug(" prev  = "+prev.getNodeName());
-                    logger.debug("\n");
-                }
-                if ( (prev == null) || !((prev.getNodeName()).equals(child.getNodeName()))) {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("...Opening [");
-                        if (prev !=null) logger.debug(">"+prev.getNodeName()+"<>"+child.getNodeName()+"<");
+        String tt = new String(uncapitalize(element.getNodeName()));
+        if ("return".equals(tt)) tt = "out";
+
+        if (members == null) {
+            classSource.append("\"\"");
+        } else {
+//          classSource.append("new " + uncapitalize(element.getNodeName()) + "(");
+            classSource.append("new " + tt + "(");
+
+            while ((child = next) != null){
+                next = child.getNextSibling();
+ 
+                if (!opened) {
+                    classSource.append(uncapitalize(child.getNodeName()) + ":");
+                    if ((Integer)members.get(child.getNodeName()) > 1) {
+                      classSource.append("[");
+                      opened = true;
                     }
-                    opened = true;
-                    classSource.append(uncapitalize(child.getNodeName())+":[");
                 }
-                createCode((Element)child, classSource);
-                //if ((next == null) && (prev.getNodeName() == child.getNodeName())) classSource.append("]");
-                if ((next == null) && opened) {
-                    opened = false;
-                    classSource.append("]");
+
+                if (child.hasChildNodes() && (child.getChildNodes().getLength() == 1) && (child.getFirstChild().getNodeType() == Node.TEXT_NODE)) {
+                    // Test for the depth 
+                    classSource.append("\""+child.getFirstChild().getNodeValue()+"\"");
+                } else {
+                    createCodeCT((Element)child, type, classSource);
                 }
-            }
+           
+                if (child != lnode) {
+                    classSource.append(",");
+                }
             
-            if (child != lnode) {
-                classSource.append(",");
-            }
+                prev = child;
             
-            prev = child;
+            }
+            if (opened) classSource.append("]");
+            classSource.append(")");
+        }
+    }
+
+    /**
+     * <p>Create Simple types instances of the data types previously generated
+     * from the XML document.</p>
+     *
+     * @param element     Element of the XML document.
+     * @param classSource StringBuffer containing the generated code.
+     */
+    private void createCodeST(Element element, StringBuffer classSource){
+        Node child = null;
+        Node fnode = (Node)element.getFirstChild();
+        Node lnode = (Node)element.getLastChild();
+        
+        Node next = fnode;
+        Node prev = null;
+
+        boolean opened = false;
+
+        if (logger.isDebugEnabled()) logger.debug("Entering createCodeST");
+        
+        classSource.append("[");
+
+        while ((child = next) != null){
+          next = child.getNextSibling();
+
+          classSource.append("\""+child.getFirstChild().getNodeValue()+"\"");
+           
+          if (child != lnode) {
+              classSource.append(",");
+          }
+            
+          prev = child;
             
         }
-        classSource.append(")");
+        classSource.append("]");
     }
+
     /**
      * Invoke a method on a gsoap component using the xfire
      * dynamic client </p>
@@ -244,17 +314,34 @@ public class SoapClient extends GroovyObjectSupport {
      */
     public Object invokeMethod(String name, Object args) {
         Object[] objs = InvokerHelper.getInstance().asArray(args);
-        
+
         try {
             Object[] response = client.invoke(name, objs);
+
             // TODO Parse the answer
-            return toReturn(response[0]);
+            if (response.length == 0) {
+              return true;
+            } else {
+              return toReturn(response[0]);
+            }
         } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
         
     }
+
+    Object testGoogle(String fileName) {
+        try {
+            return toReturn(DOMUtils.readXml(new FileInputStream(fileName)));
+        } catch(Exception ex){
+            ex.printStackTrace();
+        }
+        return null;
+    }
+
+    public SoapClient() {}
+
     /**
      * Create a SoapClient using a URL
      * <p>Example of Groovy code:</p>

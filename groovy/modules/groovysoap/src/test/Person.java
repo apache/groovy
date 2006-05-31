@@ -11,7 +11,7 @@ package test;
 
 /**
  *
- * @author SU16766
+ * @author Guillaume Alleon
  */
 public class Person {
     private String firstName;

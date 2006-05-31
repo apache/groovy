@@ -18,17 +18,23 @@ import org.codehaus.xfire.server.http.XFireHttpServer;
 import org.codehaus.xfire.service.Service;
 import org.codehaus.xfire.service.invoker.ObjectInvoker;
 import org.codehaus.xfire.service.binding.ObjectServiceFactory;
+import org.codehaus.xfire.xmlbeans.XmlBeansServiceFactory;
+import org.codehaus.xfire.xmlbeans.XmlBeansType;
 
 import groovy.lang.GroovyClassLoader;
 
+import org.apache.log4j.Logger;
+
 /**
  *
- * @author SU16766
+ * @author Guillaume Alleon
  */
 public class SoapServer {
     
     private XFire xfire = null;
     private XFireHttpServer server = null;
+
+    static private Logger logger=Logger.getLogger(SoapServer.class);
     
     /**
      * <p>Creates a new instance of SoapServer.</p>
@@ -109,10 +115,17 @@ public class SoapServer {
             } else if (Modifier.isPublic(methods[i].getModifiers())) {
                 hasMethod = true;
                 
-                sInterface.append("  " + methods[i].getReturnType())
+                String returnType = methods[i].getReturnType().getName();
+
+                if (returnType.startsWith("[L")) {
+                  returnType = returnType.substring(2, returnType.length()-1);
+                  returnType = returnType.concat("[]");
+                }
+
+                sInterface.append("  " + returnType)
                 .append(" " + methods[i].getName()+"(");
                 
-                sImpl.append("\n  "+methods[i].getReturnType())
+                sImpl.append("\n  " + returnType)
                 .append(" " + methods[i].getName()+"(");
                 
                 Class[] params = methods[i].getParameterTypes();
@@ -126,8 +139,12 @@ public class SoapServer {
                     }
                 }
                 sInterface.append(");\n");
-                sImpl.append(") {\n")
-                .append("    return service." + methods[i].getName() + "(");
+                sImpl.append(") {\n    ");
+
+                if (methods[i].getReturnType() != void.class) {
+                  sImpl.append("return ");
+                }
+                sImpl.append("service." + methods[i].getName() + "(");
                 
                 j = 0;
                 while (j < params.length) {
@@ -143,7 +160,10 @@ public class SoapServer {
         sInterface.append("}");
         
         if (hasMethod == false) throw new PublicMethodNotFoundException("Groovy script should have public method");
-        
+
+        if (logger.isDebugEnabled()) logger.debug(sImpl.toString());
+        if (logger.isDebugEnabled()) logger.debug(sInterface.toString());
+
         Class interfaceClass = null;
         try {
             interfaceClass = gcl.parseClass(sInterface.toString());
@@ -160,9 +180,15 @@ public class SoapServer {
             ex.printStackTrace();
         }
         
+
         ObjectServiceFactory serviceFactory = new ObjectServiceFactory(xfire.getTransportManager());
         Service service = serviceFactory.create(interfaceClass);
         service.setProperty(ObjectInvoker.SERVICE_IMPL_CLASS, implClass);
+/*
+        XmlBeansServiceFactory serviceFactory = new XmlBeansServiceFactory(xfire.getTransportManager());
+        Service service = serviceFactory.create(implClass);
+        service.setProperty(XmlBeansType.XMLBEANS_NAMESPACE_HACK, "true");
+*/
         
         xfire.getServiceRegistry().register(service);
     }

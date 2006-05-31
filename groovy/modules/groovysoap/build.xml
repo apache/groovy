@@ -79,6 +79,7 @@
             <zipfileset src="${jaxen.jar}"/>
             <zipfileset src="${jdom.jar}"/>
             <zipfileset src="${xfire-aegis.jar}"/>
+            <zipfileset src="${xfire-xmlbeans.jar}"/>
             <zipfileset src="${commons-httpclient.jar}"/>
             <zipfileset src="${commons-codec.jar}"/>
         </jarjar>

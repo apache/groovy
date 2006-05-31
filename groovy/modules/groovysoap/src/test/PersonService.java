@@ -11,11 +11,9 @@ package test;
 
 /**
  *
- * @author SU16766
+ * @author Guillaume Alleon
  */
 public interface PersonService {
     Person findPerson(Integer id);
-//    Person trouvePerson(String lastName);
     Person[] getPersons();
-    
 }

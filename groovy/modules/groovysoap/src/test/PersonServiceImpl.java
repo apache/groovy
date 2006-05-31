@@ -16,7 +16,7 @@ import org.apache.log4j.Logger;
 
 /**
  *
- * @author SU16766
+ * @author Guillaume Alleon
  */
 public class PersonServiceImpl implements PersonService {
     
