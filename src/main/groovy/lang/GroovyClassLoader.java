@@ -376,9 +376,6 @@ public class GroovyClassLoader extends URLClassLoader {
         public GroovyResourceLoader getResourceLoader() {
             return delegate.getResourceLoader();
         }
-        public Enumeration getResources(String name) throws IOException {
-            return delegate.getResources(name);
-        }
         public URL[] getURLs() {
             return delegate.getURLs();
         }
