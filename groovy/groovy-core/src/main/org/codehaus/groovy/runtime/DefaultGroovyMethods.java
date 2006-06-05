@@ -4836,6 +4836,16 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * Increments a java.sql.Date by a day
+     *
+     * @param self a java.sql.Date
+     * @return the next days date
+     */
+    public static java.sql.Date next(java.sql.Date self) {
+    	return new java.sql.Date(next((Date)self).getTime());
+    }
+
+    /**
      * Decrement a Date by a day
      *
      * @param self a Date
@@ -4843,6 +4853,16 @@ public class DefaultGroovyMethods {
      */
     public static Date previous(Date self) {
         return minus(self, 1);
+    }
+    
+    /**
+     * Decrement a java.sql.Date by a day
+     *
+     * @param self a java.sql.Date
+     * @return the previous days date
+     */
+    public static java.sql.Date previous(java.sql.Date self) {
+    	return new java.sql.Date(previous((Date)self).getTime());
     }
 
     /**
@@ -4860,6 +4880,17 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * Adds a number of days to this date and returns the new date
+     *
+     * @param self a java.sql.Date
+     * @param days the number of days to increase
+     * @return the new date
+     */
+    public static java.sql.Date plus(java.sql.Date self, int days) {
+    	return new java.sql.Date(plus((Date)self, days).getTime());
+    }
+    
+    /**
      * Subtracts a number of days from this date and returns the new date
      *
      * @param self a Date
@@ -4869,6 +4900,16 @@ public class DefaultGroovyMethods {
         return plus(self, -days);
     }
 
+    /**
+     * Subtracts a number of days from this date and returns the new date
+     *
+     * @param self a java.sql.Date
+     * @return the new date
+     */
+    public static java.sql.Date minus(java.sql.Date self, int days) {
+    	return new java.sql.Date(minus((Date)self, days).getTime());
+    }
+    
     // Boolean based methods
     //-------------------------------------------------------------------------
 
