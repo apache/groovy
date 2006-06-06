@@ -142,7 +142,6 @@ public class CompileStack implements Opcodes {
         HashMap _stackVariables;
         LinkedList _temporaryVariables = new LinkedList();
         LinkedList _usedVariables = new LinkedList();
-        MethodVisitor _mv;
         HashMap _superBlockNamedLabels;
         HashMap _currentBlockNamedLabels;
         
@@ -153,7 +152,6 @@ public class CompileStack implements Opcodes {
             _lastVariableIndex = CompileStack.this.currentVariableIndex;
             _stackVariables = CompileStack.this.stackVariables;
             _temporaryVariables = CompileStack.this.temporaryVariables;
-            _mv = CompileStack.this.mv;
             _nextVariableIndex = nextVariableIndex;
             _finallyLabel = finallyLabel;
             _superBlockNamedLabels = superBlockNamedLabels;
