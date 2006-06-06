@@ -105,12 +105,7 @@ public class SpreadMap extends HashMap {
     }
 
     public boolean equals(SpreadMap that) {
-        if (this == null && that == null)
-            return true;
-        else if (this != null && that == null)
-            return false;
-        else if (this == null && that != null)
-            return false;
+        if (that == null) return false;        
 
         if (size() == that.size()) {
             SpreadMap other = (SpreadMap) that;

@@ -46,7 +46,8 @@
 
 package org.codehaus.groovy.control;
 
-import org.codehaus.groovy.GroovyException;
+import groovy.lang.GroovyRuntimeException;
+
 
 /**
  * Thrown when compilation fails from source errors.
@@ -55,7 +56,7 @@ import org.codehaus.groovy.GroovyException;
  * @version $Id$
  */
 
-public class CompilationFailedException extends GroovyException {
+public class CompilationFailedException extends GroovyRuntimeException {
 
     protected int phase;   // The phase in which the failures occurred
     protected ProcessingUnit unit;    // The *Unit object this exception wraps
