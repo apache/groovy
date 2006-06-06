@@ -26,15 +26,13 @@ import java.util.Date;
  * 
  * Duration represents time periods which have values independant of the context.
  * So, whilst we can't say how long a month is without knowing the year and the name of the month,
- * we know how long a second is independant of the date.
+ * we know how long a day is independant of the date.
  * 
- * This is not 100% true for days and minutes.
- * Days can atually be 23, 24 or 25 hours long (due to daylight saving adjustments)
- * Minutes can be 59, 60 or 61 seconds long (due to leap seconds)
+ * This is not 100% true for days.
+ * Days can actually be 23, 24 or 25 hours long (due to daylight saving adjustments)
  * 
- * If you ask Duration to convert itself to milisaconds then it will work on the basis of 24 hours
- * in a day and 60 seconds in a minute. If you add or subtract it from a date it will take daylight
- * saving, etc. into account.
+ * If you ask Duration to convert itself to milliseconds then it will work on the basis of 24 hours
+ * in a day. If you add or subtract it from a date it will take daylight saving into account.
  *
  */
 public class Duration extends BaseDuration {
@@ -48,7 +46,11 @@ public class Duration extends BaseDuration {
                             this.getMillis() + rhs.getMillis());
     }
     
-    public ContextDependentDuration plus(final ContextDependentDuration rhs) {
+    public TimeDuration plus(final TimeDuration rhs) {
+        return rhs.plus(this);
+    }
+    
+    public DatumDependentDuration plus(final DatumDependentDuration rhs) {
         return rhs.plus(this);
     }
     
@@ -58,11 +60,24 @@ public class Duration extends BaseDuration {
                             this.getMillis() - rhs.getMillis());
     }
     
-    public ContextDependentDuration minus(final ContextDependentDuration rhs) {
-        return new ContextDependentDuration(-rhs.getYears(), -rhs.getMonths(),
-                                            this.getDays() - rhs.getDays(), this.getHours() - rhs.getHours(),
-                                            this.getMinutes() - rhs.getMinutes(), this.getSeconds() - rhs.getSeconds(),
-                                            this.getMillis() - rhs.getMillis());
+    public TimeDuration minus(final TimeDuration rhs) {
+        return new TimeDuration(this.getDays() - rhs.getDays(), this.getHours() - rhs.getHours(),
+                                this.getMinutes() - rhs.getMinutes(), this.getSeconds() - rhs.getSeconds(),
+                                this.getMillis() - rhs.getMillis());
+    }
+    
+    public DatumDependentDuration minus(final DatumDependentDuration rhs) {
+        return new DatumDependentDuration(-rhs.getYears(), -rhs.getMonths(),
+                                          this.getDays() - rhs.getDays(), this.getHours() - rhs.getHours(),
+                                          this.getMinutes() - rhs.getMinutes(), this.getSeconds() - rhs.getSeconds(),
+                                          this.getMillis() - rhs.getMillis());
+    }
+    
+    public TimeDatumDependentDuration minus(final TimeDatumDependentDuration rhs) {
+        return new TimeDatumDependentDuration(-rhs.getYears(), -rhs.getMonths(),
+                                              this.getDays() - rhs.getDays(), this.getHours() - rhs.getHours(),
+                                              this.getMinutes() - rhs.getMinutes(), this.getSeconds() - rhs.getSeconds(),
+                                              this.getMillis() - rhs.getMillis());
     }
     
     public long toMilliseconds() {
@@ -80,31 +95,14 @@ public class Duration extends BaseDuration {
         
         return cal.getTime();
     }
-    
-    
+     
     public From getFrom() {
         return new From() {
             public Date getNow() {
             final Calendar cal = Calendar.getInstance();
 
                 cal.add(Calendar.DAY_OF_YEAR, Duration.this.getDays());
-                cal.add(Calendar.HOUR_OF_DAY, Duration.this.getHours());
-                cal.add(Calendar.MINUTE, Duration.this.getMinutes());
-                cal.add(Calendar.SECOND, Duration.this.getSeconds());
-                cal.add(Calendar.MILLISECOND, Duration.this.getMillis());
                 
-                return cal.getTime();
-            }
-            
-            public java.sql.Date getToday() {
-            final Calendar cal = Calendar.getInstance();
-                
-                cal.add(Calendar.DAY_OF_YEAR, Duration.this.getDays());
-                cal.set(Calendar.HOUR_OF_DAY, Duration.this.getHours());
-                cal.set(Calendar.MINUTE, Duration.this.getMinutes());
-                cal.set(Calendar.SECOND, Duration.this.getSeconds());
-                cal.set(Calendar.MILLISECOND, Duration.this.getMillis());
-               
                 return new java.sql.Date(cal.getTimeInMillis());
             }
         };

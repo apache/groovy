@@ -61,6 +61,9 @@ public abstract class BaseDuration {
     
     public static abstract class From {
         public abstract Date getNow();
-        public abstract java.sql.Date getToday();
+        
+        public Date getToday() {
+            return getNow();
+        }
     }
 }

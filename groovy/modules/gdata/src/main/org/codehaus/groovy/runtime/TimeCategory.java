@@ -18,10 +18,31 @@
  */
 package org.codehaus.groovy.runtime;
 
-import groovy.time.ContextDependentDuration;
+import groovy.time.DatumDependentDuration;
 import groovy.time.Duration;
+import groovy.time.TimeDuration;
 
 public class TimeCategory {
+    
+    /*
+     * Methods on Integer to implement 1.month, 4.years etc.
+     */
+    
+    public static DatumDependentDuration getMonths(final Integer self) {
+        return new DatumDependentDuration(0, self.intValue(), 0, 0, 0, 0, 0);
+    }
+    
+    public static DatumDependentDuration getMonth(final Integer self) {
+        return getMonths(self);
+    }
+    
+    public static DatumDependentDuration getYears(final Integer self) {
+        return new DatumDependentDuration(self.intValue(), 0, 0, 0, 0, 0, 0);
+    }
+    
+    public static DatumDependentDuration getYear(final Integer self) {
+        return getYears(self);
+    }
     
     /*
      * Methods on Integer to implement 1.week, 4.days etc.
@@ -43,55 +64,35 @@ public class TimeCategory {
         return getDays(self);
     }
     
-    public static Duration getHours(final Integer self) {
-        return new Duration(0, self.intValue(), 0, 0, 0);
+    public static TimeDuration getHours(final Integer self) {
+        return new TimeDuration(0, self.intValue(), 0, 0, 0);
     }
     
-    public static Duration getHour(final Integer self) {
+    public static TimeDuration getHour(final Integer self) {
         return getHours(self);
     }
     
-    public static Duration getMinutes(final Integer self) {
-        return new Duration(0, 0, self.intValue(), 0, 0);
+    public static TimeDuration getMinutes(final Integer self) {
+        return new TimeDuration(0, 0, self.intValue(), 0, 0);
     }
     
-    public static Duration getMinute(final Integer self) {
+    public static TimeDuration getMinute(final Integer self) {
         return getMinutes(self);
     }
     
-    public static Duration getSeconds(final Integer self) {
-        return new Duration(0, 0, 0, self.intValue(), 0);
+    public static TimeDuration getSeconds(final Integer self) {
+        return new TimeDuration(0, 0, 0, self.intValue(), 0);
     }
     
-    public static Duration getSecond(final Integer self) {
+    public static TimeDuration getSecond(final Integer self) {
         return getSeconds(self);
     }
     
-    public static Duration getMilliseconds(final Integer self) {
-        return new Duration(0, 0, 0, 0, self.intValue());
+    public static TimeDuration getMilliseconds(final Integer self) {
+        return new TimeDuration(0, 0, 0, 0, self.intValue());
     }
     
-    public static Duration getMillisecond(final Integer self) {
+    public static TimeDuration getMillisecond(final Integer self) {
         return getMilliseconds(self);
-    }
-    
-    /*
-     * Methods on Integer to implement 1.month, 4.years etc.
-     */
-    
-    public static ContextDependentDuration getMonths(final Integer self) {
-        return new ContextDependentDuration(0, self.intValue(), 0, 0, 0, 0, 0);
-    }
-    
-    public static ContextDependentDuration getMonth(final Integer self) {
-        return getMonths(self);
-    }
-    
-    public static ContextDependentDuration getYears(final Integer self) {
-        return new ContextDependentDuration(self.intValue(), 0, 0, 0, 0, 0, 0);
-    }
-    
-    public static ContextDependentDuration getYear(final Integer self) {
-        return getYears(self);
     }
 }

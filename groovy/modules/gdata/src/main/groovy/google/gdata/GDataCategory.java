@@ -21,7 +21,7 @@ package groovy.google.gdata;
 
 import groovy.lang.Buildable;
 import groovy.lang.Closure;
-import groovy.time.ContextDependentDuration;
+import groovy.time.DatumDependentDuration;
 import groovy.time.Duration;
 
 import java.io.IOException;
@@ -59,11 +59,11 @@ public class GDataCategory {
         return getFeed(self, url.toExternalForm(), from, to);
     }
     
-    public static EventFeed getFeed(final CalendarService self, final URL url, final Date from, final ContextDependentDuration duration, int maxEntries) throws IOException, ServiceException {
+    public static EventFeed getFeed(final CalendarService self, final URL url, final Date from, final DatumDependentDuration duration, int maxEntries) throws IOException, ServiceException {
         return getFeed(self, url.toExternalForm(), from, duration, maxEntries);
     }
     
-    public static EventFeed getFeed(final CalendarService self, final URL url, final Date from, final ContextDependentDuration duration) throws IOException, ServiceException {
+    public static EventFeed getFeed(final CalendarService self, final URL url, final Date from, final DatumDependentDuration duration) throws IOException, ServiceException {
         return getFeed(self, url.toExternalForm(), from, duration);
     }
     
@@ -93,14 +93,14 @@ public class GDataCategory {
         return self.getFeed(new URL(url + "?start-min=" + from1 + "&start-max=" + to1), EventFeed.class);
     }
     
-    public static EventFeed getFeed(final CalendarService self, final String url, final Date from, final ContextDependentDuration duration, int maxEntries) throws IOException, ServiceException {
+    public static EventFeed getFeed(final CalendarService self, final String url, final Date from, final DatumDependentDuration duration, int maxEntries) throws IOException, ServiceException {
     final DateTime from1 = new DateTime(from.getTime());
     final DateTime to1 = plus(from1, duration);
 
         return self.getFeed(new URL(url + "?start-min=" + from1 + "&start-max=" + to1 + "&max-results=" + maxEntries), EventFeed.class);
     }
     
-    public static EventFeed getFeed(final CalendarService self, final String url, final Date from, final ContextDependentDuration duration) throws IOException, ServiceException {
+    public static EventFeed getFeed(final CalendarService self, final String url, final Date from, final DatumDependentDuration duration) throws IOException, ServiceException {
     final DateTime from1 = new DateTime(from.getTime());
     final DateTime to1 = plus(from1, duration);
         
@@ -134,7 +134,7 @@ public class GDataCategory {
         return Long.toString(self.getMillis()) + " Milliseconds";
     }
     
-    public static String toUiString(final ContextDependentDuration self) {
+    public static String toUiString(final DatumDependentDuration self) {
         // TODO: make this format more user friendly
         return Integer.toString(self.getYears()) + " Years " + Integer.toString(self.getMonths()) + " Months " + Long.toString(self.getMillis()) + " Milliseconds";
     }
@@ -214,7 +214,7 @@ public class GDataCategory {
         return new DateTime(cal.getTimeInMillis());
     }
     
-    public static DateTime plus (final DateTime self, final ContextDependentDuration rhs) {
+    public static DateTime plus (final DateTime self, final DatumDependentDuration rhs) {
     // TODO: handle TIMEZONE
     final Calendar cal = Calendar.getInstance();
     
@@ -234,7 +234,7 @@ public class GDataCategory {
         return plus(rhs, self);
     }
     
-    public static DateTime plus (final ContextDependentDuration self, final DateTime rhs) {
+    public static DateTime plus (final DatumDependentDuration self, final DateTime rhs) {
         return plus(rhs, self);
     }
     
@@ -242,7 +242,7 @@ public class GDataCategory {
         return new DateTime(self.getValue() - rhs.getMillis());
     }
     
-    public static DateTime minus (final DateTime self, final ContextDependentDuration rhs) {
+    public static DateTime minus (final DateTime self, final DatumDependentDuration rhs) {
         // TODO: handle TIMEZONE
         final Calendar cal = Calendar.getInstance();
         
