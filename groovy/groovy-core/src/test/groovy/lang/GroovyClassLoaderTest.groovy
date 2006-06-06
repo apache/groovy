@@ -18,8 +18,10 @@
 
 package groovy.lang;
 
-import org.codehaus.groovy.control.CompilationFailedException
-import org.codehaus.groovy.control.CompilerConfiguration
+import java.security.CodeSource
+import org.codehaus.groovy.control.*
+import org.codehaus.groovy.ast.*
+import org.codehaus.groovy.classgen.*
 
 
 public class GroovyClassLoaderTest extends GroovyTestCase {
@@ -138,6 +140,13 @@ public class GroovyClassLoaderTest extends GroovyTestCase {
 
       assert GroovyClassLoaderTestFoo2==loader.loadClass("Foox")
    }
+   
+   public void testAdditionalPhaseOperation(){
+      def loader = new GroovyClassLoaderTestCustomPhaseOperation()
+      def ret = loader.parseClass("""class Foo{}""")
+      def field = ret.declaredFields.find {it.name=="id" && it.type==Long.TYPE}
+      assert  field != null
+  }
 }
 
 class GroovyClassLoaderTestFoo1{}
@@ -163,4 +172,18 @@ class GroovyClassLoaderTestCustomGCL extends GroovyClassLoader{
     protected boolean isSourceNewer(URL source, Class cls) {
       return true
     }
+}
+
+class GroovyClassLoaderTestPropertyAdder extends CompilationUnit.PrimaryClassNodeOperation {
+  void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
+     classNode.addProperty("id", ClassNode.ACC_PUBLIC, ClassHelper.long_TYPE,null,null,null);
+  }
+} 
+
+class GroovyClassLoaderTestCustomPhaseOperation extends GroovyClassLoader {
+  CompilationUnit createCompilationUnit(CompilerConfiguration config, CodeSource source) {
+      def cu = super.createCompilationUnit(config,source)
+      cu.addPhaseOperation(new GroovyClassLoaderTestPropertyAdder(),Phases.CONVERSION) 
+      return cu
+  }    
 }
