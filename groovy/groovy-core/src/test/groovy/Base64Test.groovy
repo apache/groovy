@@ -1,4 +1,4 @@
-lass Base64Test extends GroovyTestCase {
+class Base64Test extends GroovyTestCase {
 
     void testCodec() {
         def testString ="§1234567890-=±!@£\$%^&*()_+qwertyuiop[]QWERTYUIOP{}asdfghjkl;'\\ASDFGHJKL:\"|`zxcvbnm,./~ZXCVBNM<>?\u0003\u00ff\u00f0\u000f"
