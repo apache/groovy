@@ -407,8 +407,10 @@ public class TemplateServlet extends AbstractHttpServlet {
 
         //
         // Prepare the response buffer content type _before_ getting the writer.
+        // and set status code to ok
         //
         response.setContentType(CONTENT_TYPE_TEXT_HTML);
+        response.setStatus(HttpServletResponse.SC_OK);
 
         //
         // Get the output stream writer from the binding.
@@ -441,9 +443,8 @@ public class TemplateServlet extends AbstractHttpServlet {
         }
 
         //
-        // Set status code and flush the response buffer.
+        // flush the response buffer.
         //
-        response.setStatus(HttpServletResponse.SC_OK);
         response.flushBuffer();
 
         if (verbose) {
