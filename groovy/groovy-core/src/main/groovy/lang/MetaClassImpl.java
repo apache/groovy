@@ -1151,8 +1151,13 @@ public class MetaClassImpl extends MetaClass {
                        }
                    };
 
-
-                   CompilationUnit unit = new CompilationUnit(new GroovyClassLoader(getClass().getClassLoader()) );
+                   final ClassLoader parent = theClass.getClassLoader();
+                   GroovyClassLoader gcl = (GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
+                       public Object run() {
+                           return new GroovyClassLoader(parent);
+                       }
+                   });
+                   CompilationUnit unit = new CompilationUnit( );
                    unit.setClassgenCallback( search );
                    unit.addSource( url );
                    unit.compile( Phases.CLASS_GENERATION );

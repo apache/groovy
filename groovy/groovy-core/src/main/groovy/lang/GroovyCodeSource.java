@@ -109,9 +109,10 @@ public class GroovyCodeSource {
             Object[] info = (Object[]) AccessController.doPrivileged( new PrivilegedExceptionAction() {
 				public Object run() throws MalformedURLException {
                     Object[] info = new Object[2];
-                    info[0] = file.getName();
+                    URL url = file.toURI().toURL();
+                    info[0] = url.toExternalForm();
 					//toURI().toURL() will encode, but toURL() will not.
-					info[1] = new CodeSource(file.toURI().toURL(), (Certificate[]) null);
+					info[1] = new CodeSource(url, (Certificate[]) null);
                     return info;
 				}
 			});

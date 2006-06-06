@@ -303,9 +303,9 @@ public class CompilerConfiguration {
             setRecompileGroovySource(text.equalsIgnoreCase("true"));
         }
         
-        numeric = 1000;
+        numeric = 100;
         try {
-            text = configuration.getProperty("groovy.recompile.minimumIntervall", "1000");
+            text = configuration.getProperty("groovy.recompile.minimumIntervall", ""+numeric);
             numeric = Integer.parseInt(text);
         }
         catch (NumberFormatException e) {

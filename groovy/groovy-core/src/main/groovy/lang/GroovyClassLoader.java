@@ -95,7 +95,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * this cache contains the loaded classes or PARSING, if the class is currently parsed 
      */
     protected Map classCache = new HashMap();
-    private Map sourceCache = new HashMap();
+    protected Map sourceCache = new HashMap();
     private CompilerConfiguration config;
     private Boolean recompile = null; 
     
@@ -269,13 +269,17 @@ public class GroovyClassLoader extends URLClassLoader {
     }
 
     /**
-     * Parses the given code source into a Java class capable of being run
+     * Parses the given code source into a Java class. If there is a class file
+     * for the given code source, then no parsing is done, instead the cached class is returned.
+     * 
+     * @param shouldCacheSource if true then the generated class will be stored in the source cache 
      *
      * @return the main class defined in the given script
      */
-    public Class parseClass(GroovyCodeSource codeSource, boolean shouldCache) throws CompilationFailedException {
+    public Class parseClass(GroovyCodeSource codeSource, boolean shouldCacheSource) throws CompilationFailedException {
         synchronized (classCache) {
-            Class answer=null;
+            Class answer = (Class) sourceCache.get(codeSource.getName());
+            if (answer!=null) return answer;
             
             // Was neither already loaded nor compiling, so compile and add to
             // cache.
@@ -295,12 +299,11 @@ public class GroovyClassLoader extends URLClassLoader {
                 unit.compile(goalPhase);
                 
                 answer = collector.generatedClass;
-                if (shouldCache) {
-                    for (Iterator iter = collector.getLoadedClasses().iterator(); iter.hasNext();) {
-                        Class clazz = (Class) iter.next();
-                        setClassCacheEntry(clazz);
-                    }                
+                for (Iterator iter = collector.getLoadedClasses().iterator(); iter.hasNext();) {
+                    Class clazz = (Class) iter.next();
+                    setClassCacheEntry(clazz);
                 }
+                if (shouldCacheSource) sourceCache.put(codeSource.getName(), answer);
             } finally {
                 try {
                     codeSource.getInputStream().close();
@@ -379,7 +382,7 @@ public class GroovyClassLoader extends URLClassLoader {
         public URL[] getURLs() {
             return delegate.getURLs();
         }
-        public Class loadClass(String name, boolean lookupScriptFiles, boolean preferClassOverScript, boolean resolve) throws ClassNotFoundException {
+        public Class loadClass(String name, boolean lookupScriptFiles, boolean preferClassOverScript, boolean resolve) throws ClassNotFoundException, CompilationFailedException {
             Class c = findLoadedClass(name);
             if (c!=null) return c;
             return delegate.loadClass(name, lookupScriptFiles, preferClassOverScript, resolve);
@@ -479,9 +482,10 @@ public class GroovyClassLoader extends URLClassLoader {
      * loads a class from a file or a parent classloader.
      * This method does call loadClass(String, boolean, boolean, boolean)
      * with the last parameter set to false.
+     * @throws CompilationFailedException 
      */
     public Class loadClass(final String name, boolean lookupScriptFiles, boolean preferClassOverScript)
-        throws ClassNotFoundException
+        throws ClassNotFoundException, CompilationFailedException
     {
         return loadClass(name,lookupScriptFiles,preferClassOverScript,false);
     }
@@ -513,7 +517,9 @@ public class GroovyClassLoader extends URLClassLoader {
      * @see #clearCache()
      */
     protected void setClassCacheEntry(Class cls) {
-        classCache.put(cls.getName(),cls);    
+        synchronized (classCache) {
+            classCache.put(cls.getName(),cls);
+        }
     }    
     
     /**
@@ -527,8 +533,12 @@ public class GroovyClassLoader extends URLClassLoader {
         synchronized (classCache) {
             classCache.remove(name);
         }
-    }
+    }    
     
+    /**
+     * adds a URL to the classloader.
+     * @param url the new classpath element 
+     */
     public void addURL(URL url) {
         super.addURL(url);
     }
@@ -582,8 +592,6 @@ public class GroovyClassLoader extends URLClassLoader {
     public Boolean isShouldRecompile(){
         return recompile;
     }
-    
-    
 
     /**
      * loads a class from a file or a parent classloader.
@@ -596,7 +604,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * @throws ClassNotFoundException
      */
     public Class loadClass(final String name, boolean lookupScriptFiles, boolean preferClassOverScript, boolean resolve)
-        throws ClassNotFoundException
+        throws ClassNotFoundException, CompilationFailedException
     {
         // look into cache
         Class cls=getClassCacheEntry(name);
@@ -621,7 +629,6 @@ public class GroovyClassLoader extends URLClassLoader {
             Class parentClassLoaderClass = super.loadClass(name, resolve);
             // always return if the parent loader was successfull 
             if (cls!=parentClassLoaderClass) return parentClassLoaderClass;
-            cls = parentClassLoaderClass;            
         } catch (ClassNotFoundException cnfe) {
             last = cnfe;
         } catch (NoClassDefFoundError ncdfe) {
@@ -649,10 +656,7 @@ public class GroovyClassLoader extends URLClassLoader {
                     // check if recompilation already happend.
                     if (getClassCacheEntry(name)!=cls) return getClassCacheEntry(name);
                     URL source = resourceLoader.loadGroovySource(name);
-                    Class newCls = recompile(source,name,cls);
-                    if (newCls!=null) cls = newCls;
-                } catch (CompilationFailedException cfe) {
-                    last = new ClassNotFoundException("Failed to parse groovy source: " + name, cfe);
+                    cls = recompile(source,name,cls);
                 } catch (IOException ioe) {
                     last = new ClassNotFoundException("IOException while openening groovy source: " + name, ioe);
                 } finally {
@@ -673,25 +677,52 @@ public class GroovyClassLoader extends URLClassLoader {
         return cls;
     }
 
+    /**
+     * (Re)Comipiles the given source. 
+     * This method starts the compilation of a given source, if
+     * the source has changed since the class was created. For
+     * this isSourceNewer is called.
+     * 
+     * @see #isSourceNewer(URL, Class)
+     * @param source the source pointer for the compilation
+     * @param className the name of the class to be generated
+     * @param oldClass a possible former class
+     * @return the old class if the source wasn't new enough, the new class else
+     * @throws CompilationFailedException if the compilation failed
+     * @throws IOException if the source is not readable
+     * 
+     */
     protected Class recompile(URL source, String className, Class oldClass) throws CompilationFailedException, IOException {
         if (source != null) {
             // found a source, compile it if newer
             if ((oldClass!=null && isSourceNewer(source, oldClass)) || (oldClass==null)) {
+                sourceCache.remove(className);
                 return parseClass(source.openStream(),className);
             }
         }
-        return null;
+        return oldClass;
     }
 
     /**
      * Implemented here to check package access prior to returning an
      * already loaded class.
+     * @throws CompilationFailedException if the compilation failed
+     * @throws ClassNotFoundException if the class was not found
      * @see java.lang.ClassLoader#loadClass(java.lang.String, boolean)
      */
     protected Class loadClass(final String name, boolean resolve) throws ClassNotFoundException {
         return loadClass(name,true,false,resolve);
     }
 
+    /**
+     * gets the time stamp of a given class. For groovy
+     * generated classes this usually means to return the value
+     * of the static field __timeStamp. If the parameter doesn't
+     * have such a field, then Long.MAX_VALUE is returned
+     * 
+     * @param cls the class 
+     * @return the time stamp
+     */
     protected long getTimeStamp(Class cls) {
         Long o;
         try {
@@ -731,6 +762,16 @@ public class GroovyClassLoader extends URLClassLoader {
         return ret;
     }
 
+    /**
+     * Decides if the given source is newer than a class.
+     * 
+     * @see #getTimeStamp(Class)
+     * @param source the source we may want to compile
+     * @param cls the former class
+     * @return true if the source is newer, false else
+     * @throws IOException if it is not possible to open an
+     * connection for the given source
+     */
     protected boolean isSourceNewer(URL source, Class cls) throws IOException {
         long lastMod;
 
@@ -745,9 +786,8 @@ public class GroovyClassLoader extends URLClassLoader {
         else {
             lastMod = source.openConnection().getLastModified();
         }
-        long newTime = System.currentTimeMillis();
-        if (lastMod+config.getMinimumRecompilationIntervall()>newTime) return false;
-        return lastMod > getTimeStamp(cls);
+        long classTime = getTimeStamp(cls);
+        return classTime+config.getMinimumRecompilationIntervall() < lastMod;
     }
 
     /**
@@ -756,7 +796,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * @see #addURL(URL)
      */
     public void addClasspath(final String path) {
-        GroovyCodeSource gcs = (GroovyCodeSource) AccessController.doPrivileged(new PrivilegedAction() {
+        AccessController.doPrivileged(new PrivilegedAction() {
             public Object run() {
                 try {
                     File f = new File(path);

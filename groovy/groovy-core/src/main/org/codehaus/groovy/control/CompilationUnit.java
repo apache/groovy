@@ -178,7 +178,7 @@ public class CompilationUnit extends ProcessingUnit {
         for (int i=0; i<phaseOperations.length; i++) {
             phaseOperations[i] = new LinkedList();
         }
-        addPhaseOperation(new LoopBodyForSourceUnitOperations() {
+        addPhaseOperation(new SourceUnitOperation() {
             public void call(SourceUnit source) throws CompilationFailedException {
                 source.parse();
             }
@@ -196,17 +196,17 @@ public class CompilationUnit extends ProcessingUnit {
     
     
     
-    public void addPhaseOperation(LoopBodyForSourceUnitOperations op, int phase) {
+    public void addPhaseOperation(SourceUnitOperation op, int phase) {
         if (phase<0 || phase>Phases.ALL) throw new IllegalArgumentException("phase "+phase+" is unknown");
         phaseOperations[phase].add(op);
     }
     
-    public void addPhaseOperation(LoopBodyForPrimaryClassNodeOperations op, int phase) {
+    public void addPhaseOperation(PrimaryClassNodeOperation op, int phase) {
         if (phase<0 || phase>Phases.ALL) throw new IllegalArgumentException("phase "+phase+" is unknown");
         phaseOperations[phase].add(op);        
     }
     
-    public void addPhaseOperation(LoopBodyForGeneratedGroovyClassOperations op) {
+    public void addPhaseOperation(GroovyClassOperation op) {
         phaseOperations[Phases.OUTPUT].addFirst(op);
     }
     
@@ -279,7 +279,7 @@ public class CompilationUnit extends ProcessingUnit {
      */
     public ClassNode getClassNode(final String name) {
         final ClassNode[] result = new ClassNode[]{null};
-        LoopBodyForPrimaryClassNodeOperations handler = new LoopBodyForPrimaryClassNodeOperations() {
+        PrimaryClassNodeOperation handler = new PrimaryClassNodeOperation() {
             public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
                 if (classNode.getName().equals(name)) {
                     result[0] = classNode;
@@ -472,12 +472,12 @@ public class CompilationUnit extends ProcessingUnit {
             
             for (Iterator it = phaseOperations[phase].iterator(); it.hasNext();) {
                 Object operation = it.next();
-                if (operation instanceof LoopBodyForPrimaryClassNodeOperations) {
-                    applyToPrimaryClassNodes((LoopBodyForPrimaryClassNodeOperations) operation);
-                } else if (operation instanceof LoopBodyForSourceUnitOperations) {
-                    applyToSourceUnits((LoopBodyForSourceUnitOperations)operation);
+                if (operation instanceof PrimaryClassNodeOperation) {
+                    applyToPrimaryClassNodes((PrimaryClassNodeOperation) operation);
+                } else if (operation instanceof SourceUnitOperation) {
+                    applyToSourceUnits((SourceUnitOperation)operation);
                 } else {
-                    applyToGeneratedGroovyClasses((LoopBodyForGeneratedGroovyClassOperations)operation);
+                    applyToGeneratedGroovyClasses((GroovyClassOperation)operation);
                 }
             }
             
@@ -567,7 +567,7 @@ public class CompilationUnit extends ProcessingUnit {
     /**
      * Adds summary of each class to maps
      */
-    private LoopBodyForSourceUnitOperations summarize = new LoopBodyForSourceUnitOperations() {
+    private SourceUnitOperation summarize = new SourceUnitOperation() {
         public void call(SourceUnit source) throws CompilationFailedException {
             SourceSummary sourceSummary = source.getSourceSummary();
             if (sourceSummary != null) {
@@ -592,7 +592,7 @@ public class CompilationUnit extends ProcessingUnit {
     /**
      * Resolves all types
      */
-    private LoopBodyForSourceUnitOperations resolve = new LoopBodyForSourceUnitOperations() {
+    private SourceUnitOperation resolve = new SourceUnitOperation() {
         public void call(SourceUnit source) throws CompilationFailedException {
             List classes = source.ast.getClasses();
             for (Iterator it = classes.iterator(); it.hasNext();) {
@@ -610,7 +610,7 @@ public class CompilationUnit extends ProcessingUnit {
     /**
      * Runs convert() on a single SourceUnit.
      */
-    private LoopBodyForSourceUnitOperations convert = new LoopBodyForSourceUnitOperations() {
+    private SourceUnitOperation convert = new SourceUnitOperation() {
         public void call(SourceUnit source) throws CompilationFailedException {
             source.convert();
             CompilationUnit.this.ast.addModule(source.getAST());
@@ -622,7 +622,7 @@ public class CompilationUnit extends ProcessingUnit {
         }
     };
     
-    private LoopBodyForGeneratedGroovyClassOperations output = new LoopBodyForGeneratedGroovyClassOperations() {
+    private GroovyClassOperation output = new GroovyClassOperation() {
         public void call(GroovyClass gclass) throws CompilationFailedException {
             boolean failures = false;
             String name = gclass.getName().replace('.', File.separatorChar) + ".class";
@@ -663,7 +663,7 @@ public class CompilationUnit extends ProcessingUnit {
     /**
      * Runs classgen() on a single ClassNode.
      */
-    private LoopBodyForPrimaryClassNodeOperations classgen = new LoopBodyForPrimaryClassNodeOperations() {
+    private PrimaryClassNodeOperation classgen = new PrimaryClassNodeOperation() {
         public boolean needSortedInput() {
             return true;
         }
@@ -756,7 +756,7 @@ public class CompilationUnit extends ProcessingUnit {
      * Marks a single SourceUnit with the current phase,
      * if it isn't already there yet.
      */
-    private LoopBodyForSourceUnitOperations mark = new LoopBodyForSourceUnitOperations() {
+    private SourceUnitOperation mark = new SourceUnitOperation() {
         public void call(SourceUnit source) throws CompilationFailedException {
             if (source.phase < phase) {
                 source.gotoPhase(phase);
@@ -780,7 +780,7 @@ public class CompilationUnit extends ProcessingUnit {
     /**
      * An callback interface for use in the applyToSourceUnits loop driver.
      */
-    public static abstract class LoopBodyForSourceUnitOperations {
+    public static abstract class SourceUnitOperation {
         public abstract void call(SourceUnit source) throws CompilationFailedException;
     }
   
@@ -790,7 +790,7 @@ public class CompilationUnit extends ProcessingUnit {
      * Automatically skips units that have already been processed
      * through the current phase.
      */
-    public void applyToSourceUnits(LoopBodyForSourceUnitOperations body) throws CompilationFailedException {
+    public void applyToSourceUnits(SourceUnitOperation body) throws CompilationFailedException {
         Iterator keys = names.iterator();
         while (keys.hasNext()) {
             String name = (String) keys.next();
@@ -824,14 +824,14 @@ public class CompilationUnit extends ProcessingUnit {
     /**
      * An callback interface for use in the applyToSourceUnits loop driver.
      */
-    public static abstract class LoopBodyForPrimaryClassNodeOperations {
+    public static abstract class PrimaryClassNodeOperation {
         public abstract void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException;
         public boolean needSortedInput(){
             return false;
         }
     }
 
-    public static abstract class LoopBodyForGeneratedGroovyClassOperations {
+    public static abstract class GroovyClassOperation {
         public abstract void call(GroovyClass gclass) throws CompilationFailedException;
     }
 
@@ -888,7 +888,7 @@ public class CompilationUnit extends ProcessingUnit {
      * our AST.  Automatically skips units that have already been processed
      * through the current phase.
      */
-    public void applyToPrimaryClassNodes(LoopBodyForPrimaryClassNodeOperations body) throws CompilationFailedException {
+    public void applyToPrimaryClassNodes(PrimaryClassNodeOperation body) throws CompilationFailedException {
         Iterator classNodes = getPrimaryClassNodes(body.needSortedInput()).iterator();
         while (classNodes.hasNext()) {
             SourceUnit context=null;
@@ -926,7 +926,7 @@ public class CompilationUnit extends ProcessingUnit {
         getErrorCollector().failIfErrors();
     }
     
-    public void applyToGeneratedGroovyClasses(LoopBodyForGeneratedGroovyClassOperations body) throws CompilationFailedException {
+    public void applyToGeneratedGroovyClasses(GroovyClassOperation body) throws CompilationFailedException {
         if (this.phase != Phases.OUTPUT && !(this.phase == Phases.CLASS_GENERATION && this.phaseComplete)) {
             throw new GroovyBugError("CompilationUnit not ready for output(). Current phase="+getPhaseDescription());
         }

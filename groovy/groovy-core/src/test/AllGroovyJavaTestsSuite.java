@@ -21,7 +21,6 @@ public class AllGroovyJavaTestsSuite {
     public static Test suite() {
         TestSuite suite = new TestSuite();
         suite.addTestSuite(InspectorTest.class);
-        suite.addTestSuite(GroovyClassLoaderTest.class);
         suite.addTestSuite(GroovyShellTest.class);
         suite.addTestSuite(GStringTest.class);
         suite.addTestSuite(IntRangeTest.class);

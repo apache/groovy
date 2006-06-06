@@ -89,6 +89,7 @@ import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.ast.GroovyClassVisitor;
 import org.codehaus.groovy.classgen.Verifier;
+import org.codehaus.groovy.control.messages.ExceptionMessage;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Types;
@@ -486,6 +487,9 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
             cls = loader.loadClass(name,false,true);
         } catch (ClassNotFoundException cnfe) {
             cachedClasses.put(name,SCRIPT);
+            return false;
+        } catch (CompilationFailedException cfe) {
+            compilationUnit.getErrorCollector().addErrorAndContinue(new ExceptionMessage(cfe,true,source));
             return false;
         } 
         //TODO: the case of a NoClassDefFoundError needs a bit more research
