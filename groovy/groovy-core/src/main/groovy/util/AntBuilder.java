@@ -46,19 +46,26 @@
 package groovy.util;
 
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.tools.ant.*;
-import org.apache.tools.ant.types.DataType;
+import org.apache.tools.ant.BuildLogger;
+import org.apache.tools.ant.NoBannerLogger;
+import org.apache.tools.ant.Project;
+import org.apache.tools.ant.RuntimeConfigurable;
+import org.apache.tools.ant.Target;
+import org.apache.tools.ant.Task;
+import org.apache.tools.ant.UnknownElement;
+import org.apache.tools.ant.helper.AntXMLContext;
+import org.apache.tools.ant.helper.ProjectHelper2;
 import org.codehaus.groovy.ant.FileScanner;
-import org.codehaus.groovy.runtime.InvokerHelper;
+import org.xml.sax.Attributes;
+import org.xml.sax.Locator;
+import org.xml.sax.SAXParseException;
+import org.xml.sax.helpers.AttributesImpl;
 
 /**
  * Allows Ant tasks to be used with GroovyMarkup 
@@ -72,13 +79,27 @@ public class AntBuilder extends BuilderSupport {
 
     private Logger log = Logger.getLogger(getClass().getName());
     private Project project;
+    private final AntXMLContext antXmlContext;
+    private final ProjectHelper2.ElementHandler antElementHandler = new ProjectHelper2.ElementHandler();
+    private final Target collectorTarget = new Target();
+    private Object lastCompletedNode;
+
+
 
     public AntBuilder() {
-        this.project = createProject();
+        this(createProject());
     }
 
-    public AntBuilder(Project project) {
+    public AntBuilder(final Project project) {
         this.project = project;
+        
+        antXmlContext = new AntXMLContext(project);
+        collectorTarget.setProject(project);
+        antXmlContext.setCurrentTarget(collectorTarget);
+        antXmlContext.setLocator(new AntBuilderLocator());
+        
+        // FileScanner is a Groovy hack (utility?)
+        project.addDataTypeDefinition("fileScanner", FileScanner.class);
     }
 
     // dk: introduced for convenience in subclasses
@@ -89,7 +110,7 @@ public class AntBuilder extends BuilderSupport {
     /**
      * @return Factory method to create new Project instances
      */
-    protected Project createProject() {
+    protected static Project createProject() {
         Project project = new Project();
         BuildLogger logger = new NoBannerLogger();
 
@@ -107,6 +128,20 @@ public class AntBuilder extends BuilderSupport {
     protected void setParent(Object parent, Object child) {
     }
 
+    
+    /**
+     * We don't want to return the node as created in {@link #createNode(Object, Map, Object)}
+     * but the one made ready by {@link #nodeCompleted(Object, Object)}
+     * @see groovy.util.BuilderSupport#doInvokeMethod(java.lang.String, java.lang.Object, java.lang.Object)
+     */
+    protected Object doInvokeMethod(String methodName, Object name, Object args) {
+    	super.doInvokeMethod(methodName, name, args);
+    	
+
+    	// return the completed node
+    	return lastCompletedNode;
+    }
+
     /**
      * Determines, when the ANT Task that is represented by the "node" should perform.
      * Node must be an ANT Task or no "perform" is called.
@@ -116,14 +151,35 @@ public class AntBuilder extends BuilderSupport {
      * @param parent note: null when node is root
      * @param node the node that now has all its children applied
      */
-    protected void nodeCompleted(Object parent, Object node) {
-        if (parent instanceof TaskContainer) {
-            log.finest("parent is TaskContainer: no perform on nodeCompleted");
+    protected void nodeCompleted(final Object parent, final Object node) {
+
+    	antElementHandler.onEndElement(null, null, antXmlContext);
+
+    	lastCompletedNode = node;
+        if (parent != null) {
+            log.finest("parent is not null: no perform on nodeCompleted");
             return; // parent will care about when children perform
         }
+        
+        // as in Target.execute()
         if (node instanceof Task) {
-            Task task = (Task) node;
-            task.perform();
+            Object task = node;
+            // "Unwrap" the UnknownElement to return the real task to the calling code
+            if (node instanceof UnknownElement) {
+            	final UnknownElement unknownElement = (UnknownElement) node;
+            	unknownElement.maybeConfigure();
+                task = unknownElement.getRealThing();
+            }
+            
+            lastCompletedNode = task;
+            // UnknownElement may wrap everything: task, path, ...
+            if (task instanceof Task) {
+            	((Task) task).perform();
+            }
+        }
+        else {
+            final RuntimeConfigurable r = (RuntimeConfigurable) node;
+            r.maybeConfigure(project);
         }
     }
 
@@ -143,352 +199,72 @@ public class AntBuilder extends BuilderSupport {
         return task;
     }
     
-    protected Object createNode(Object name, Map attributes) {
+    /**
+     * Builds an {@link Attributes} from a {@link Map}
+     * @param attributes the attributes to wrap
+     */
+    protected static Attributes buildAttributes(final Map attributes) {
+    	final AttributesImpl attr = new AttributesImpl();
+    	for (final Iterator iter=attributes.entrySet().iterator(); iter.hasNext(); ) {
+    		final Map.Entry entry = (Map.Entry) iter.next();
+    		final String attributeName = (String) entry.getKey();
+    		final String attributeValue = String.valueOf(entry.getValue());
+    		attr.addAttribute(null, attributeName, attributeName, "CDATA", attributeValue);
+    	}
+    	return attr;
+    }
 
-        if (name.equals("fileScanner")) {
-            return new FileScanner(project);
-        }
-        
-        String tagName = name.toString();
-        Object answer = null;
+    protected Object createNode(final Object name, final Map attributes) {
 
-        Object parentObject = getCurrent();
-        Object parentTask = getParentTask();
+    	final String tagName = name.toString();
 
-        // lets assume that Task instances are not nested inside other Task instances
-        // for example <manifest> inside a <jar> should be a nested object, where as 
-        // if the parent is not a Task the <manifest> should create a ManifestTask
-        //
-        // also its possible to have a root Ant tag which isn't a task, such as when
-        // defining <fileset id="...">...</fileset>
-
-        Object nested = null;
-        if (parentObject != null && !(parentTask instanceof TaskContainer)) {
-            nested = createNestedObject(parentObject, tagName);
-        }
-
-        Task task = null;
-        if (nested == null) {
-            // create and set its project reference
-            task = createTask(tagName);
-            if (task != null) {
-                if (log.isLoggable(Level.FINE)) {
-                    log.fine("Creating an ant Task for name: " + tagName);
-                }
-
-                // the following algorithm follows the lifetime of a tag
-                // http://jakarta.apache.org/ant/manual/develop.html#writingowntask
-                // kindly recommended by Stefan Bodewig
-
-                if (task instanceof TaskAdapter) {
-                    answer = ((TaskAdapter) task).getProxy();
-                }
-                else {
-                    answer = task;
-                }
-
-                // set the task ID if one is given
-                Object id = attributes.remove("id");
-                if (id != null) {
-                    project.addReference((String) id, task);
-                }
-
-                // now lets initialize
-                task.init();
-
-                // now lets set any attributes of this tag...
-                setBeanProperties(task, attributes);
-
-                // dk: TaskContainers have their own adding logic
-                if (parentObject instanceof TaskContainer){
-                    ((TaskContainer)parentObject).addTask(task);
-                }
-            }
-        }
-
-        if (task == null) {
-            if (nested == null) {
-                if (log.isLoggable(Level.FINE)) {
-                    log.fine("Trying to create a data type for tag: " + tagName);
-                }
-                nested = createDataType(tagName);
-            }
-            else {
-                if (log.isLoggable(Level.FINE)) {
-                    log.fine("Created nested property tag: " + tagName);
-                }
-            }
-
-            if (nested != null) {
-                answer = nested;
-
-                // set the task ID if one is given
-                Object id = attributes.remove("id");
-                if (id != null) {
-                    project.addReference((String) id, nested);
-                }
-
-                try {
-                    InvokerHelper.setProperty(nested, "name", tagName);
-                }
-                catch (Exception e) {
-                }
-
-                // now lets set any attributes of this tag...
-                setBeanProperties(nested, attributes);
-
-                // now lets add it to its parent
-                if (parentObject != null) {
-                    IntrospectionHelper ih = IntrospectionHelper.getHelper(parentObject.getClass());
-                    try {
-                        if (log.isLoggable(Level.FINE)) {
-                            log.fine(
-                                "About to set the: "
-                                    + tagName
-                                    + " property on: "
-                                    + parentObject
-                                    + " to value: "
-                                    + nested
-                                    + " with type: "
-                                    + nested.getClass());
-                        }
-
-                        ih.storeElement(project, parentObject, nested, tagName);
-                    }
-                    catch (Exception e) {
-                        log.log(Level.WARNING, "Caught exception setting nested: " + tagName, e);
-                    }
-
-                    // now try to set the property for good measure
-                    // as the storeElement() method does not
-                    // seem to call any setter methods of non-String types
-                    try {
-                        InvokerHelper.setProperty(parentObject, tagName, nested);
-                    }
-                    catch (Exception e) {
-                        log.fine("Caught exception trying to set property: " + tagName + " on: " + parentObject);
-                    }
-                }
-            }
-            else {
-                log.log(Level.WARNING, "Could not convert tag: " + tagName + " into an Ant task, data type or property. Maybe the task is not on the classpath?");
-            }
-        }
-
-        return answer;
+        try
+		{
+			antElementHandler.onStartElement("", tagName, tagName, buildAttributes(attributes), antXmlContext);
+		}
+		catch (final SAXParseException e)
+		{
+            log.log(Level.SEVERE, "Caught: " + e, e);
+		}
+    	
+		final RuntimeConfigurable wrapper = (RuntimeConfigurable) antXmlContext.getWrapperStack().lastElement();
+    	return wrapper.getProxy();
     }
 
     protected void setText(Object task, String text) {
-        // now lets set the addText() of the body content, if its applicaable
-        Method method = getAccessibleMethod(task.getClass(), "addText", addTaskParamTypes);
-        if (method != null) {
-            Object[] args = { text };
-            try {
-                method.invoke(task, args);
-            }
-            catch (Exception e) {
-                log.log(Level.WARNING, "Cannot call addText on: " + task + ". Reason: " + e, e);
-            }
+    	final char[] characters = text.toCharArray();
+        try {
+          	antElementHandler.characters(characters, 0, characters.length, antXmlContext);
         }
-    }
-
-    protected Method getAccessibleMethod(Class theClass, String name, Class[] paramTypes) {
-        while (true) {
-            try {
-                Method answer = theClass.getDeclaredMethod(name, paramTypes);
-                if (answer != null) {
-                    return answer;
-                }
-            }
-            catch (Exception e) {
-                // ignore
-            }
-            theClass = theClass.getSuperclass();
-            if (theClass == null) {
-                return null;
-            }
+        catch (final SAXParseException e) {
+            log.log(Level.WARNING, "SetText failed: " + task + ". Reason: " + e, e);
         }
     }
 
     public Project getAntProject() {
         return project;
     }
+}
 
-    // Implementation methods
-    //-------------------------------------------------------------------------
-    protected void setBeanProperties(Object object, Map map) {
-        for (Iterator iter = map.entrySet().iterator(); iter.hasNext();) {
-            Map.Entry entry = (Map.Entry) iter.next();
-            String name = (String) entry.getKey();
-            Object value = entry.getValue();
-            setBeanProperty(object, name, ((value == null) ? null : value.toString()));
-        }
-    }
-
-    protected void setBeanProperty(Object object, String name, Object value) {
-        if (log.isLoggable(Level.FINE)) {
-            String objStr;
-            try {
-                objStr = object.toString(); // e.g. Fileset may throw Exception here when 'dir' is not yet set
-            } catch (Exception e) {
-                objStr = object.getClass().getName();
-            }
-            log.fine("Setting bean property on: " + objStr + " name: " + name + " value: " + value);
-        }
-
-        IntrospectionHelper ih = IntrospectionHelper.getHelper(object.getClass());
-
-        if (value instanceof String) {
-            try {
-                ih.setAttribute(getAntProject(), object, name.toLowerCase(), (String) value);
-                return;
-            }
-            catch (Exception e) {
-                // ignore: not a valid property
-            }
-        }
-
-        try {
-
-            ih.storeElement(getAntProject(), object, value, name);
-        }
-        catch (Exception e) {
-
-            InvokerHelper.setProperty(object, name, value);
-        }
-    }
-
-    /**
-     * Creates a nested object of the given object with the specified name
-     */
-    protected Object createNestedObject(Object object, String name) {
-        Object dataType = null;
-        if (object != null) {
-            IntrospectionHelper ih = IntrospectionHelper.getHelper(object.getClass());
-
-            if (ih != null) {
-                try {
-                    // dk: the line below resolves the deprecation warning but may not work
-                    // properly with namespaces.
-                    String namespaceUri = "";               // todo: how to set this?
-                    UnknownElement unknownElement = null;   // todo: what is expected here?
-                    dataType = ih.getElementCreator(getAntProject(), namespaceUri, object, name.toLowerCase(), unknownElement).create();
-                }
-                catch (BuildException be) {
-                    log.log(Level.SEVERE, "Caught: " + be, be);
-                }
-            }
-        }
-        if (dataType == null) {
-            dataType = createDataType(name);
-        }
-        return dataType;
-    }
-
-    protected Object createDataType(String name) {
-        Object dataType = null;
-
-        Class type = (Class) getAntProject().getDataTypeDefinitions().get(name);
-
-        if (type != null) {
-
-            Constructor ctor = null;
-            boolean noArg = false;
-
-            // DataType can have a "no arg" constructor or take a single
-            // Project argument.
-            try {
-                ctor = type.getConstructor(new Class[0]);
-                noArg = true;
-            }
-            catch (NoSuchMethodException nse) {
-                try {
-                    ctor = type.getConstructor(new Class[] { Project.class });
-                    noArg = false;
-                }
-                catch (NoSuchMethodException nsme) {
-                    log.log(Level.INFO, "datatype '" + name + "' didn't have a constructor with an Ant Project", nsme);
-                }
-            }
-
-            if (noArg) {
-                dataType = createDataType(ctor, new Object[0], name, "no-arg constructor");
-            }
-            else {
-                dataType = createDataType(ctor, new Object[] { getAntProject()}, name, "an Ant project");
-            }
-            if (dataType != null) {
-                ((DataType) dataType).setProject(getAntProject());
-            }
-        }
-
-        return dataType;
-    }
-
-    /**
-     * @return an object create with the given constructor and args.
-     * @param ctor a constructor to use creating the object
-     * @param args the arguments to pass to the constructor
-     * @param name the name of the data type being created
-     * @param argDescription a human readable description of the args passed
-     */
-    protected Object createDataType(Constructor ctor, Object[] args, String name, String argDescription) {
-        try {
-            Object datatype = ctor.newInstance(args);
-            return datatype;
-        }
-        catch (InstantiationException ie) {
-            log.log(Level.SEVERE, "datatype '" + name + "' couldn't be created with " + argDescription, ie);
-        }
-        catch (IllegalAccessException iae) {
-            log.log(Level.SEVERE, "datatype '" + name + "' couldn't be created with " + argDescription, iae);
-        }
-        catch (InvocationTargetException ite) {
-            log.log(Level.SEVERE, "datatype '" + name + "' couldn't be created with " + argDescription, ite);
-        }
-        return null;
-    }
-
-    /**
-     * @param taskName the name of the task to create
-     * @return a newly created task
-     */
-    protected Task createTask(String taskName) {
-        return createTask(taskName, (Class) getAntProject().getTaskDefinitions().get(taskName));
-    }
-
-    protected Task createTask(String taskName, Class taskType) {
-        if (taskType == null) {
-            return null;
-        }
-        try {
-            Object o = taskType.newInstance();
-            Task task = null;
-            if (o instanceof Task) {
-                task = (Task) o;
-            }
-            else {
-                TaskAdapter taskA = new TaskAdapter();
-                taskA.setProxy(o);
-                task = taskA;
-            }
-
-            task.setProject(getAntProject());
-            task.setTaskName(taskName);
-
-            return task;
-        }
-        catch (Exception e) {
-            log.log(Level.WARNING, "Could not create task: " + taskName + ". Reason: " + e, e);
-            return null;
-        }
-    }
-
-    protected Task getParentTask() {
-        Object current = getCurrent();
-        if (current instanceof Task) {
-            return (Task) current;
-        }
-        return null;
-    }
+/**
+ * Would be nice to retrieve location information (from AST?).
+ * In a first time, without info
+ */
+class AntBuilderLocator implements Locator {
+	public int getColumnNumber()
+	{
+		return 0;
+	}
+	public int getLineNumber()
+	{
+		return 0;
+	}
+	public String getPublicId()
+	{
+		return "";
+	}
+	public String getSystemId()
+	{
+		return "";
+	}
 }

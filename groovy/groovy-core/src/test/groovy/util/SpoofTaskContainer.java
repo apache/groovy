@@ -31,6 +31,7 @@ public class SpoofTaskContainer extends Task implements TaskContainer {
     	// to work with ant 1.6
         spoof("in addTask");
         if (task instanceof UnknownElement) {
+            spoof("configuring UnknownElement");
             task.maybeConfigure();
             task = ((UnknownElement) task).getTask();
         }
