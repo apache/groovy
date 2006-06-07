@@ -1,6 +1,8 @@
 package groovy.util
 
 import java.io.File
+import org.apache.tools.ant.Project
+import org.apache.tools.ant.ProjectHelper
 
 class AntTest extends GroovyTestCase {
     
@@ -72,39 +74,49 @@ class AntTest extends GroovyTestCase {
         }
 
         assert value != null
-
-        println "Found path of type ${value.getClass().name}"
-        println value
-    }
-
-    void testTaskContainerAddTaskIsCalled() {
-        def ant = new AntBuilder()
-        def taskContainer = ant.parallel(){ // "Parallel" serves as a sample TaskContainer
-            ant.echo()                  // "Echo" without message to keep tests silent
-        }
-        // not very elegant, but the easiest way to get the ant internals...
-        assert taskContainer.dump() =~ 'nestedTasks=\\[org.apache.tools.ant.taskdefs.Echo@\\w+\\]'
+        assertEquals org.apache.tools.ant.types.Path, value.getClass()
     }
 
     void testTaskContainerExecutionSequence() {
-        def ant = new AntBuilder()
         SpoofTaskContainer.getSpoof().length = 0
+
+        def antFile = new File("src/test/groovy/util/AntTest.xml")
+        assertTrue "Couldn't find ant test script", antFile.exists()
+
+		// run it with ant, to be sure that our assumptions are correct
+		def project = new Project()
+		project.init()
+		ProjectHelper.projectHelper.parse(project, antFile)
+		project.executeTarget(project.defaultTarget);
+		
+        def expectedSpoof =
+"""SpoofTaskContainer ctor
+in addTask
+configuring UnknownElement
+SpoofTask ctor
+begin SpoofTaskContainer execute
+begin SpoofTask execute
+tag name from wrapper: spoof
+attributes map from wrapper: ["foo":"123"]
+param foo: 123
+end SpoofTask execute
+end SpoofTaskContainer execute
+"""
+		println SpoofTaskContainer.getSpoof().toString()
+        assertEquals expectedSpoof, SpoofTaskContainer.getSpoof().toString()
+        SpoofTaskContainer.spoof.length = 0
+
+        def ant = new AntBuilder()
         def PATH = 'task.path'
-        ant.path(id:PATH){ant.pathelement(location:'classes')}
-        ['spoofcontainer':'SpoofTaskContainer', 'spoof':'SpoofTask'].each{ pair ->
-            ant.taskdef(name:pair.key, classname:'groovy.util.'+pair.value, classpathref:PATH)
+
+		// and now run it with the AntBuilder        
+        ant.path(id:PATH) {ant.pathelement(location:'classes')}
+        ['spoofcontainer': SpoofTaskContainer, 'spoof': SpoofTask].each{ pair ->
+            ant.taskdef(name:pair.key, classname: pair.value.name, classpathref: PATH)
         }
         ant.spoofcontainer(){
-            ant.spoof()
+            ant.spoof(foo: 123)
         }
-        def expectedSpoof =
-            "SpoofTaskContainer ctor\n"+
-            "SpoofTask ctor\n"+
-            "in addTask\n"+
-            "begin SpoofTaskContainer execute\n"+
-            "begin SpoofTask execute\n"+
-            "end SpoofTask execute\n"+
-            "end SpoofTaskContainer execute\n"
         assertEquals expectedSpoof, SpoofTaskContainer.getSpoof().toString()
     }
 
@@ -120,5 +132,22 @@ class AntTest extends GroovyTestCase {
             assert properties.testProp1 == project.properties.testProp1
             assert properties.testProp2 == project.properties.testProp2
         """)
+    }
+    
+    /**
+    * Tests that the AntBuilder can handle conditions (conditions aren't tasks)
+    * (test for GROOVY-824)
+    */
+    void testCondition() {
+        def ant = new AntBuilder()
+        ant.condition(property: "containsHi") {
+        	contains([string: "hi", substring: "hi"])
+        }
+        assertEquals "true", ant.project.properties["containsHi"]
+
+        ant.condition(property: "equalsHi", else: "false") {
+        	Equals([arg1: "hi", arg2: "bye"])
+        }
+        assertEquals "false", ant.project.properties["equalsHi"]
     }
 }

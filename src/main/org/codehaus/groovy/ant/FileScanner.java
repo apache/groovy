@@ -66,6 +66,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.tools.ant.Project;
+import org.apache.tools.ant.Task;
 import org.apache.tools.ant.types.FileSet;
 
 /** 
@@ -73,33 +74,27 @@ import org.apache.tools.ant.types.FileSet;
  * over a number of files from a colleciton of FileSet instances.
  *
  * @author <a href="mailto:jstrachan@apache.org">James Strachan</a>
+ * @author Marc Guillemot
  * @version $Revision$
  */
-public class FileScanner {
+public class FileScanner extends Task {
 
     /** FileSets */
     private List filesets = new ArrayList();
 
-    /** The Ant project */
-    private Project project;
-
     public FileScanner() {
     }
     
-    public FileScanner(Project project) {
-        this.project = project;
+    public FileScanner(final Project project) {
+        setProject(project);
     }
     
-    public void setProject(Project project) {
-        this.project = project;
-    }
-
     public Iterator iterator() {
-        return new FileIterator(project, filesets.iterator());
+        return new FileIterator(getProject(), filesets.iterator());
     }
 
     public Iterator directories() {
-        return new FileIterator(project, filesets.iterator(), true);
+        return new FileIterator(getProject(), filesets.iterator(), true);
     }
 
     public boolean hasFiles() {
