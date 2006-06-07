@@ -541,19 +541,20 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         fieldNode.addAnnotations(annotations);
         configureAST(fieldNode, fieldDef);
 
-        // lets check for a property annotation first
-        if (fieldNode.getAnnotations("Property") != null) {
+        if (!hasVisibility(modifiers)) {
             // lets set the modifiers on the field
             int fieldModifiers = 0;
             int flags = Opcodes.ACC_STATIC | Opcodes.ACC_TRANSIENT | Opcodes.ACC_VOLATILE | Opcodes.ACC_FINAL;
 
+            if (!hasVisibility(modifiers)) {
+                modifiers |= Opcodes.ACC_PUBLIC;
+                fieldModifiers |= Opcodes.ACC_PRIVATE;
+            }
+
             // lets pass along any other modifiers we need
             fieldModifiers |= (modifiers & flags);
             fieldNode.setModifiers(fieldModifiers);
-
-            if (!hasVisibility(modifiers)) {
-                modifiers |= Opcodes.ACC_PUBLIC;
-            }
+            
             PropertyNode propertyNode = new PropertyNode(fieldNode, modifiers, null, null);
             configureAST(propertyNode, fieldDef);
             classNode.addProperty(propertyNode);
