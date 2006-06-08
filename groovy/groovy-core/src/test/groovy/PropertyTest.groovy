@@ -119,7 +119,7 @@ class PropertyTest extends GroovyTestCase {
       def shell = new GroovyShell();
       def text = """
         class A {
-           final @Property foo = 1
+           final foo = 1
         }
         A.class.declaredMethods.each {
           assert it.name!="setFoo"

@@ -33,7 +33,7 @@ class Property2Test extends GroovyTestCase {
     }
 
     void testMetaPropertyValuesFromObject() {
-        def foo = new Foo()
+         def foo = new Foo()
 		def metaProps = foo.metaPropertyValues
 		assert metaProps[0] instanceof PropertyValue
 		assertNotNull metaProps[0].name
