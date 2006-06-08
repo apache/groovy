@@ -43,7 +43,7 @@
         <dependency>
             <groupId>groovy</groupId>
             <artifactId>groovy-all</artifactId>
-            <version>1.0-jsr-03</version>
+            <version>1.0-jsr-05</version>
             <type>jar</type>
         </dependency>
     </dependencies>

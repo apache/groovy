@@ -50,6 +50,7 @@ import java.math.BigInteger;
  *
  * @author Guillaume Laforge
  * @author Dierk Koenig, adapted to Jacob 1.9
+ * @author Marc Guillemot, adapted to Jacob 1.10.1
  */
 public class VariantProxy extends GroovyObjectSupport
 {
@@ -142,7 +143,7 @@ public class VariantProxy extends GroovyObjectSupport
             case Variant.VariantTypeMask:
                 return v;
             case Variant.VariantArray:
-                return v.toVariantArray();
+                return v.toSafeArray();
             case Variant.VariantByref:
                 return v;
             default:

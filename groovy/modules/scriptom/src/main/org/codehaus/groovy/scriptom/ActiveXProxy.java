@@ -47,11 +47,13 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  *
  * @author Guillaume Laforge
  * @author Dierk Koenig, adapted to Jacob 1.9
+ * @author Marc Guillemot
  */
 public class ActiveXProxy extends GroovyObjectSupport
 {
     private ActiveXComponent activex;
     private EventSupport eventSupport;
+    private boolean released = false;
 
     /**
      * <p>Build a GroovyObject proxy for an ActiveX component,
@@ -67,7 +69,7 @@ public class ActiveXProxy extends GroovyObjectSupport
      *
      * @param clsId the name of the application or the Class ID of the component.
      */
-    public ActiveXProxy(String clsId)
+    public ActiveXProxy(final String clsId)
     {
         ComThread.InitMTA();
         activex = new ActiveXComponent(clsId);
@@ -80,9 +82,11 @@ public class ActiveXProxy extends GroovyObjectSupport
      * @param propName the name of the property
      * @return the value associated with the property name
      */
-    public Object getProperty(String propName)
+    public Object getProperty(final String propName)
     {
-        if ("events".equals(propName))
+    	checkReleased();
+
+    	if ("events".equals(propName))
             return eventSupport;
 
         return toReturn(activex.getProperty(propName));
@@ -97,7 +101,9 @@ public class ActiveXProxy extends GroovyObjectSupport
      */
     public Object invokeMethod(String methodName, Object parameters)
     {
-        if ("getEvents".equals(methodName))
+    	checkReleased();
+    	
+    	if ("getEvents".equals(methodName))
             return eventSupport;
 
         Object[] objs = InvokerHelper.getInstance().asArray(parameters);
@@ -117,21 +123,25 @@ public class ActiveXProxy extends GroovyObjectSupport
      */
     public void setProperty(String propertyName, Object newValue)
     {
-        if ("events".equals(propertyName))
+    	checkReleased();
+
+    	if ("events".equals(propertyName))
             new DispatchEvents(activex, newValue);
         activex.setProperty(propertyName, new Variant(VariantProxy.toValue(newValue)));
     }
 
     private Object toReturn(Object obj)
     {
-        if (obj instanceof Variant)
+    	checkReleased();
+
+    	if (obj instanceof Variant)
         {
             return new VariantProxy((Variant) obj);
         }
         else if (obj instanceof Dispatch)
         {
-            Variant v = new Variant();
-            v.putDispatch(obj);
+            final Variant v = new Variant();
+            v.putDispatch((Dispatch) obj);
             return new VariantProxy(v);
         }
         else
@@ -139,11 +149,33 @@ public class ActiveXProxy extends GroovyObjectSupport
             return obj;
         }
     }
+    
+    /**
+     * Checks if the object has already been released
+     * @throws IllegalStateException if already released
+     */
+    protected void checkReleased() {
+    	if (released) {
+    		throw new IllegalStateException("Object has already been released");
+    	}
+    }
 
+    /**
+     * Frees the COM resources used by this proxy.
+     * This method is called by {@link #finalize()} but it is safer to explicitely release
+     * the associated resources in particular when used in a script as the JVM may decide that
+     * it is not necessary to call {@link #finalize()}. 
+     */
+    public void release() {
+    	if (!released) {
+	        activex.safeRelease();
+	        ComThread.Release();
+    	}
+    }
+    
     protected void finalize() throws Throwable
     {
-        activex.safeRelease();
-        ComThread.Release();
+    	release();
         super.finalize();
     }
 }
