@@ -9,16 +9,16 @@ import java.io.Serializable
 class Foo implements Serializable {
 
     // public properties
-    @Property def name = "James"
-    @Property def count
-    @Property String location = "London"
+    def name = "James"
+    def count
+    String location = "London"
     
     // declare private variables
-    private def blah = 9
-    private def invisible = "invisible"
+    private blah = 9
+    private invisible = "invisible"
 
     // declare a protected variable
-    protected def prot = "hide me!"
+    protected prot = "hide me!"
 
     // declare a bean with explicit typing
     private String body
