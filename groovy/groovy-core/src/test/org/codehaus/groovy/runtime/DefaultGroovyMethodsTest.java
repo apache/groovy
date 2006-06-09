@@ -46,6 +46,7 @@
 
 package org.codehaus.groovy.runtime;
 
+import groovy.lang.Closure;
 import groovy.util.GroovyTestCase;
 
 import java.math.BigDecimal;
@@ -60,6 +61,7 @@ import java.util.Map;
 /**
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * @author Marc Guillemot
  * @version $Revision$
  */
 public class DefaultGroovyMethodsTest extends GroovyTestCase {
@@ -115,5 +117,23 @@ public class DefaultGroovyMethodsTest extends GroovyTestCase {
         assertEquals(DefaultGroovyMethods.toBoolean("false"), Boolean.FALSE);   
         assertEquals(DefaultGroovyMethods.toBoolean("n"), Boolean.FALSE);   
         assertEquals(DefaultGroovyMethods.toBoolean("0"), Boolean.FALSE);   
+    }
+    
+
+    public void testDownto() {
+    	final List li = new ArrayList();
+    	final Closure closure = new Closure(null) {
+              public Object doCall(final Object params) {
+                li.add(params);
+                return null;
+              }
+            };
+    	
+    	DefaultGroovyMethods.downto(new BigInteger("1"), new BigDecimal("0"), closure);
+    	assertEquals("[1, 0]", DefaultGroovyMethods.toString(li));
+
+    	li.clear();
+    	DefaultGroovyMethods.downto(new BigInteger("1"), new BigDecimal("0.123"), closure);
+    	assertEquals("[1]", DefaultGroovyMethods.toString(li));
     }
 }

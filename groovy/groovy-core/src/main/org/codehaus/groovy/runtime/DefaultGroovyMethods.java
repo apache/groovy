@@ -74,6 +74,7 @@ import org.codehaus.groovy.tools.RootLoader;
  * @author Hein Meling
  * @author Dierk Koenig
  * @author Pilho Kim
+ * @author Marc Guillemot
  * @version $Revision$
  */
 public class DefaultGroovyMethods {
@@ -113,7 +114,6 @@ public class DefaultGroovyMethods {
      * property names.
      *
      * @param self
-     * @return
      */
     public static Object getAt(Object self, String property) {
         return InvokerHelper.getProperty(self, property);
@@ -229,7 +229,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Convenience method that calls {@link this.getMetaPropertyValues}(self)
+     * Convenience method that calls {@link #getMetaPropertyValues(Object)}(self)
      * and provides the data in form of simple key/value pairs, i.e. without
      * type() information.
      * @param self the receiver object
@@ -352,7 +352,6 @@ public class DefaultGroovyMethods {
    *         string.  The type of <code>arg</code> should be one of Object[], List,
    *         int[], short[], byte[], char[], boolean[], long[], float[], or double[].
    *
-   * @return  A formatted string
    * @since  JDK 1.5
    *
    * @author Pilho Kim
@@ -871,7 +870,6 @@ public class DefaultGroovyMethods {
      * as a transformer, returning a list of transformed values.
      *
      * @param self       a Map
-     * @param collection the Collection to which the mapped values are added
      * @param closure    the closure used to map each element of the collection
      * @return the resultant collection
      */
@@ -2162,7 +2160,6 @@ public class DefaultGroovyMethods {
      *
      * @param i
      * @param size
-     * @return
      */
     protected static int normaliseIndex(int i, int size) {
         int temp = i;
@@ -4506,13 +4503,14 @@ public class DefaultGroovyMethods {
             throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to +")");
     }
 
-    public static void downto(BigInteger self, Number to, Closure closure) {
+    public static void downto(final BigInteger self, final Number to, final Closure closure) {
         if (to instanceof BigDecimal) {
             final BigDecimal one = new BigDecimal("1.0");
-            BigDecimal to1 = (BigDecimal) to;
-            if (self.compareTo(to1) >= 0) {
-                for (BigDecimal i = new BigDecimal(self); i.compareTo(to1) >= 0; i = i.subtract(one)) {
-                    closure.call(i);
+            final BigDecimal to1 = (BigDecimal) to;
+            final BigDecimal selfD = new BigDecimal(self);
+            if (selfD.compareTo(to1) >= 0) {
+                for (BigDecimal i = selfD; i.compareTo(to1) >= 0; i = i.subtract(one)) {
+                    closure.call(i.toBigInteger());
                 }
             }
             else
@@ -4520,7 +4518,7 @@ public class DefaultGroovyMethods {
         }
         else if (to instanceof BigInteger) {
             final BigInteger one = new BigInteger("1");
-            BigInteger to1 = (BigInteger) to;
+            final BigInteger to1 = (BigInteger) to;
             if (self.compareTo(to1) >= 0) {
                 for (BigInteger i = self; i.compareTo(to1) >= 0; i = i.subtract(one)) {
                     closure.call(i);
@@ -4531,7 +4529,7 @@ public class DefaultGroovyMethods {
         }
         else {
             final BigInteger one = new BigInteger("1");
-            BigInteger to1 = new BigInteger("" + to);
+            final BigInteger to1 = new BigInteger("" + to);
             if (self.compareTo(to1) >= 0) {
                 for (BigInteger i = self; i.compareTo(to1) >= 0; i = i.subtract(one)) {
                     closure.call(i);
@@ -5492,7 +5490,6 @@ public class DefaultGroovyMethods {
      * Helper method to create a buffered output stream for a file
      *
      * @param file
-     * @return
      * @throws FileNotFoundException
      */
     public static BufferedOutputStream newOutputStream(File file) throws IOException {

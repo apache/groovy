@@ -1,10 +1,18 @@
+import java.math.*
+
 public class DownUpStepTest extends GroovyTestCase {
 
     void testDownto() {
-        def z = 0.0
-        (10.5).downto(5.9) { z += it }
-        assert z == 10.5 + 9.5 + 8.5 + 7.5 + 6.5
-        assert z == 42.5
+        def z = []
+        (10.5).downto(5.9) { z << it }
+        assertEquals( [10.5, 9.5, 8.5, 7.5, 6.5], z)
+    }
+
+    void testBigIntegerDowntoBigDecimal() {
+        def z = []
+        (new BigInteger("10")).downto(new BigDecimal("5.9")) { z << it }
+        assertEquals( [new BigInteger("10"), new BigInteger("9"), new BigInteger("8"), 
+        	new BigInteger("7"), new BigInteger("6")], z)
     }
 
     void testUpto() {
