@@ -59,7 +59,6 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Marc Guillemot
  * @version $Revision$
@@ -92,10 +91,10 @@ public class DefaultGroovyMethodsTest extends GroovyTestCase {
         System.out.println(answer);
         assertTrue(InvokerHelper.compareLessThan(answer, original));
     }
-    
+
     public void testToMethods() throws Exception {
         Number n = new Long(7);
-        
+
         assertEquals(DefaultGroovyMethods.toInteger("1"), new Integer(1));
         assertEquals(DefaultGroovyMethods.toInteger(n), new Integer(7));
         assertEquals(DefaultGroovyMethods.toLong("1"), new Long(1));
@@ -109,31 +108,32 @@ public class DefaultGroovyMethodsTest extends GroovyTestCase {
         assertEquals(DefaultGroovyMethods.toBigDecimal("1"), new BigDecimal("1"));
         assertEquals(DefaultGroovyMethods.toBigDecimal(n), new BigDecimal("7"));
         assertEquals(DefaultGroovyMethods.toURL("http://example.org/"), new URL("http://example.org/"));
-        assertEquals(DefaultGroovyMethods.toURI("http://example.org/"), new URI("http://example.org/"));   
-        assertEquals(DefaultGroovyMethods.toBoolean("True"), Boolean.TRUE);   
-        assertEquals(DefaultGroovyMethods.toBoolean("Y"), Boolean.TRUE);   
-        assertEquals(DefaultGroovyMethods.toBoolean(" y "), Boolean.TRUE);   
-        assertEquals(DefaultGroovyMethods.toBoolean("1"), Boolean.TRUE);   
-        assertEquals(DefaultGroovyMethods.toBoolean("false"), Boolean.FALSE);   
-        assertEquals(DefaultGroovyMethods.toBoolean("n"), Boolean.FALSE);   
-        assertEquals(DefaultGroovyMethods.toBoolean("0"), Boolean.FALSE);   
+        assertEquals(DefaultGroovyMethods.toURI("http://example.org/"), new URI("http://example.org/"));
+        assertEquals(DefaultGroovyMethods.toBoolean("True"), Boolean.TRUE);
+        assertEquals(DefaultGroovyMethods.toBoolean("Y"), Boolean.TRUE);
+        assertEquals(DefaultGroovyMethods.toBoolean(" y "), Boolean.TRUE);
+        assertEquals(DefaultGroovyMethods.toBoolean("1"), Boolean.TRUE);
+        assertEquals(DefaultGroovyMethods.toBoolean("false"), Boolean.FALSE);
+        assertEquals(DefaultGroovyMethods.toBoolean("n"), Boolean.FALSE);
+        assertEquals(DefaultGroovyMethods.toBoolean("0"), Boolean.FALSE);
     }
-    
+
 
     public void testDownto() {
-    	final List li = new ArrayList();
-    	final Closure closure = new Closure(null) {
-              public Object doCall(final Object params) {
-                li.add(params);
+        final int[] count = new int[]{0};
+        final Closure closure = new Closure(null) {
+            public Object doCall(final Object params) {
+                count[0]++;
                 return null;
-              }
-            };
-    	
-    	DefaultGroovyMethods.downto(new BigInteger("1"), new BigDecimal("0"), closure);
-    	assertEquals("[1, 0]", DefaultGroovyMethods.toString(li));
+            }
+        };
 
-    	li.clear();
-    	DefaultGroovyMethods.downto(new BigInteger("1"), new BigDecimal("0.123"), closure);
-    	assertEquals("[1]", DefaultGroovyMethods.toString(li));
+        DefaultGroovyMethods.downto(new BigInteger("1"), new BigDecimal("0"), closure);
+        assertEquals(count[0], 2);
+
+        count[0] = 0;
+
+        DefaultGroovyMethods.downto(new BigInteger("1"), new BigDecimal("0.123"), closure);
+        assertEquals(count[0], 1);
     }
 }
