@@ -45,7 +45,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 	
     class AbstractStreamingBuilder {
-        @Property badTagClosure = {tag, doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, Object[] rest ->
+        def badTagClosure = {tag, doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, Object[] rest ->
                                       def uri = pendingNamespaces[prefix]
           
                                       if (uri == null) {
@@ -54,7 +54,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
           
                                       throw new GroovyRuntimeException("Tag ${tag} is not allowed in namespace ${uri}")
                                   }
-        @Property namespaceSetupClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, Object[] rest ->
+        def namespaceSetupClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, Object[] rest ->
                                               attrs.each { key, value ->
                                                   if ( key == "") {
                                                       key = ":"    // marker for default namespace
@@ -72,7 +72,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
                                                   }
                                               }
                                           }
-        @Property aliasSetupClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, Object[] rest ->
+        def aliasSetupClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, Object[] rest ->
                                         attrs.each { key, value ->
                                             if (value instanceof Map) {
                                                 // key is a namespace prefix value is the mapping
@@ -94,11 +94,11 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
                                           }
                                       }
                                     }
-        @Property getNamespaceClosure = {doc, pendingNamespaces, namespaces, Object[] rest -> [namespaces, pendingNamespaces]}
+        def getNamespaceClosure = {doc, pendingNamespaces, namespaces, Object[] rest -> [namespaces, pendingNamespaces]}
 
-        @Property specialTags = ['declareNamespace':namespaceSetupClosure,
+        def specialTags = ['declareNamespace':namespaceSetupClosure,
                                  'declareAlias':aliasSetupClosure,
                                  'getNamespaces':getNamespaceClosure]
 
-        @Property builder = null
+        def builder = null
     }

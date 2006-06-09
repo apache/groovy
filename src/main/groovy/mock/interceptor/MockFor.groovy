@@ -8,9 +8,9 @@ package groovy.mock.interceptor
 
 class MockFor {
 
-    @Property MockProxyMetaClass proxy
-    @Property Demand demand
-    @Property expect
+    MockProxyMetaClass proxy
+    Demand demand
+    def expect
 
     MockFor(Class clazz) {
         proxy = MockProxyMetaClass.make(clazz)

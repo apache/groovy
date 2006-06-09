@@ -8,8 +8,8 @@ package groovy.bugs
  */
 class Groovy831_Bug extends GroovyTestCase {
     
-    @Property String[] cities = ['Seoul', 'London', 'Wasington']
-    @Property int[] intArrayData = [1, 3, 5]
+    String[] cities = ['Seoul', 'London', 'Wasington']
+    int[] intArrayData = [1, 3, 5]
 
     public String[] countries = [ 'Republic of Korea', 'United Kingdom', 'United State of America']
     public  int[] intArray  = [ 2, 4, 6 ]

@@ -53,15 +53,15 @@ import groovy.xml.streamingmarkupsupport.BaseMarkupBuilder
 
 	
     class StreamingDOMBuilder extends AbstractStreamingBuilder {
-        @Property pendingStack = []
-        @Property commentClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom ->
+        def pendingStack = []
+        def commentClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom ->
                             def comment = dom.document.createComment(body)
 
                             if (comment != null) {
                                 dom.element.appendChild(comment)
                             }
                          }
-        @Property piClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom ->
+        def piClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom ->
                                 attrs.each {target, instruction ->
                                    def pi = null
                                    if (instruction instanceof Map) {
@@ -83,7 +83,7 @@ import groovy.xml.streamingmarkupsupport.BaseMarkupBuilder
                                     }
                                   }
                              }
-        @Property noopClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom ->
+        def noopClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom ->
                         if (body instanceof Closure) {
                           def body1 = body.clone()
                           
@@ -106,7 +106,7 @@ import groovy.xml.streamingmarkupsupport.BaseMarkupBuilder
                           }
                         }
                       }
-        @Property tagClosure = {tag, doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom ->
+        def tagClosure = {tag, doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom ->
                         def attributes = []
                         def nsAttributes = []
 
@@ -212,7 +212,7 @@ import groovy.xml.streamingmarkupsupport.BaseMarkupBuilder
                                                }
                     }
 
-        @Property builder = null
+        def builder = null
 
         StreamingDOMBuilder() {
             specialTags.putAll(['yield':noopClosure,
@@ -227,8 +227,8 @@ import groovy.xml.streamingmarkupsupport.BaseMarkupBuilder
             this.builder = new BaseMarkupBuilder(nsSpecificTags)
         }
 
-        @Property bind(closure) {
-            @Property boundClosure = this.builder.bind(closure)
+        public bind(closure) {
+            def boundClosure = this.builder.bind(closure)
 
             return {
                 if (it instanceof Node) {

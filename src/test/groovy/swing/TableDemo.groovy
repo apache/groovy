@@ -9,8 +9,8 @@ import javax.swing.BorderFactory
 class TableDemo {
     
     // properties
-    @Property frame
-    @Property swing
+    def frame
+    def swing
     
     static void main(args) {
         def demo = new TableDemo()

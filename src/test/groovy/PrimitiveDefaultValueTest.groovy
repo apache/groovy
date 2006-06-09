@@ -76,14 +76,14 @@ class ClassForPrimitiveDefaultValue {
     boolean flag
     char c
 
-    @Property int x1
-    @Property long y1
-    @Property double z1
-    @Property byte b1
-    @Property short s1
-    @Property float f1
-    @Property boolean flag1
-    @Property char c1
+    int x1
+    long y1
+    double z1
+    byte b1
+    short s1
+    float f1
+    boolean flag1
+    char c1
 }
 
 

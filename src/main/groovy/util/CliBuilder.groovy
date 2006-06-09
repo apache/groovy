@@ -22,12 +22,12 @@ import org.codehaus.groovy.runtime.InvokerHelper
 class CliBuilder {
 
     // default settings: use setters to override
-    @Property String usage             = 'groovy'
-    @Property CommandLineParser parser = new PosixParser()
-    @Property HelpFormatter formatter  = new HelpFormatter()
-    @Property PrintWriter writer       = new PrintWriter(System.out)
+    String usage             = 'groovy'
+    CommandLineParser parser = new PosixParser()
+    HelpFormatter formatter  = new HelpFormatter()
+    PrintWriter writer       = new PrintWriter(System.out)
 
-    @Property Options options          = new Options()
+    Options options          = new Options()
 
     /**
         Recognize all one-character method calls as option specifications.

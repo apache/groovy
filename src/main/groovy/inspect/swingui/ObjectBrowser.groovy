@@ -18,7 +18,7 @@ ObjectBrowser.inspect(myObject)
 **/
 class ObjectBrowser {
     
-    @Property inspector
+    def inspector
     def swing, frame, fieldTable, methodTable, itemTable, mapTable
 
     static void main(args) {

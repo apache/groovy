@@ -44,9 +44,9 @@ import org.apache.commons.httpclient.methods.GetMethod
 //Set up global variables and data types
 server = 'rpc.bloglines.com'
 
-class Feed { @Property name; @Property id; @Property unread; String toString() { (unread == "0" ? name : "${name} (${unread})") } }
+class Feed { def name; def id; def unread; String toString() { (unread == "0" ? name : "${name} (${unread})") } }
 
-class Item { @Property title; @Property description; String toString() { title } }
+class Item { def title; def description; String toString() { title } }
 
 //Ask the user for account information (using simple dialogs)
 email = 

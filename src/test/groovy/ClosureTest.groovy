@@ -121,6 +121,6 @@ class ClosureTest extends GroovyTestCase {
 }
 
 public class TinyAgent {
-    @Property int x
+    int x
 }
 
