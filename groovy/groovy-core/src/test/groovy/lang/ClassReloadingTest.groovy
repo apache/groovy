@@ -16,7 +16,7 @@ class ClassReloadingTest extends GroovyTestCase {
         try {
      		file.write """
     		  class $className {
-    		    @Property hello = "hello"
+    		    def hello = "hello"
     		  }
     		  """
     		def groovyClass = cl.loadClass(className,true,false)
@@ -28,7 +28,7 @@ class ClassReloadingTest extends GroovyTestCase {
     		// change class
     		file.write """
     		  class $className {
-    		    @Property hello = "goodbye"
+    		    def hello = "goodbye"
     		  }
     		  """
     		file.lastModified = System.currentTimeMillis()

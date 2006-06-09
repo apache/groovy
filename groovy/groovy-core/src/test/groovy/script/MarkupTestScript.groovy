@@ -1,7 +1,7 @@
 import groovy.xml.MarkupBuilder;
 
 class Bean {
-	@Property String b
+	String b
 };
 
 t = new Bean()

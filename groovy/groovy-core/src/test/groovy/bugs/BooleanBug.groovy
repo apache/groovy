@@ -26,6 +26,6 @@ class BooleanBug extends GroovyTestCase {
 }
 
 class BooleanBean {
-    @Property String name
-    @Property boolean foo
+    String name
+    boolean foo
 }

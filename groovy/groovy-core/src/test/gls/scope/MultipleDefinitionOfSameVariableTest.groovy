@@ -83,8 +83,8 @@ public class MultipleDefinitionOfSameVariableTest extends CompilableTestSupport 
    public void testMultipleOfSameName() {
    		shouldNotCompile("""
    		  class DoubleField {
-			@Property zero = 0
 			def zero = 0
+			public zero = 0
 		  }
 		  
    		""")

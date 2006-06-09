@@ -62,7 +62,7 @@ class SuperMethod2Bug extends GroovyTestCase {
 }
 
 class SuperBase {
-    @Property String name
+    String name
 
     SuperBase() {
     }

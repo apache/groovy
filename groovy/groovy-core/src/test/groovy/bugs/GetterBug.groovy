@@ -3,8 +3,8 @@
  */
 class GetterBug extends GroovyTestCase {
      
-    @Property String foo
-    @Property def bar
+    String foo
+    def bar
 
     String getFoo() {
     	if (foo == null) { 

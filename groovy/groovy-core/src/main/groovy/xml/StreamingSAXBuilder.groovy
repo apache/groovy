@@ -53,13 +53,13 @@ import org.xml.sax.helpers.AttributesImpl
 import org.xml.sax.ext.LexicalHandler
 
     class StreamingSAXBuilder extends AbstractStreamingBuilder {
-        @Property pendingStack = []
-        @Property commentClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, contentHandler ->
+        def pendingStack = []
+        def commentClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, contentHandler ->
                                       if (contentHandler instanceof LexicalHandler) {
                                           contentHandler.comment(body.toCharArray(), 0, body.length())
                                       }
                                    }
-        @Property piClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, contentHandler ->
+        def piClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, contentHandler ->
                                   attrs.each {target, instruction ->
                                      if (instruction instanceof Map) {
                                      def buf = new StringBuffer()
@@ -77,7 +77,7 @@ import org.xml.sax.ext.LexicalHandler
                                       }
                                     }
                                }
-        @Property noopClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, contentHandler ->
+        def noopClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, contentHandler ->
                                   if (body instanceof Closure) {
                                     def body1 = body.clone()
                                     
@@ -101,7 +101,7 @@ import org.xml.sax.ext.LexicalHandler
                                       }
                                   }
                                 }
-        @Property tagClosure = {tag, doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, contentHandler ->
+        def tagClosure = {tag, doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, contentHandler ->
                                   def attributes = new AttributesImpl()
           
                                   attrs.each {key, value ->
@@ -198,7 +198,7 @@ import org.xml.sax.ext.LexicalHandler
                                                          }
                               }
 
-        @Property builder = null
+        def builder = null
 
         StreamingSAXBuilder() {
             specialTags.putAll(['yield':noopClosure,
@@ -213,7 +213,7 @@ import org.xml.sax.ext.LexicalHandler
             this.builder = new BaseMarkupBuilder(nsSpecificTags)
         }
 
-        @Property bind(closure) {
+        public bind(closure) {
             def boundClosure = this.builder.bind(closure)
 
             return {contentHandler ->

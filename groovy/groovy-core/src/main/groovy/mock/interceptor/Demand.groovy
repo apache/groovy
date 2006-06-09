@@ -8,7 +8,7 @@ package groovy.mock.interceptor
 
 class Demand {
 
-    @Property List recorded = []
+    def List recorded = []
 
     Object invokeMethod(String methodName, Object args) {
         def range = 1..1
@@ -23,7 +23,7 @@ class Demand {
 }
 
 class CallSpec {
-    @Property String  name
-    @Property Closure behavior
-    @Property Range   range
+    String  name
+    Closure behavior
+    Range   range
 }

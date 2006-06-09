@@ -3,7 +3,7 @@
  */
 class ChristofsPropertyBug extends GroovyTestCase {
      
-    @Property def mixedCaseProperty
+    def mixedCaseProperty
 
     void testChristofsPropertyBug() {
     	this.mixedCaseProperty = "test"

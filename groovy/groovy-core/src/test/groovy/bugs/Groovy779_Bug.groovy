@@ -89,8 +89,8 @@ class Groovy779OnePerson {
 }
 
 class Groovy779AnotherPerson {
-   @Property def public String nameID
-   @Property def public int age
+   String nameID
+   int age
 }
 
 class Groovy779OneProfit {
@@ -99,6 +99,6 @@ class Groovy779OneProfit {
 }
 
 class Groovy779AnotherProfit {
-   @Property public String signal
-   @Property public double rate
+   String signal
+   double rate
 }

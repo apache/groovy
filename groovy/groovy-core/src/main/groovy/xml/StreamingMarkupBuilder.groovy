@@ -51,13 +51,13 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
     class StreamingMarkupBuilder extends AbstractStreamingBuilder {
-        @Property pendingStack = []
-          @Property commentClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
+        def pendingStack = []
+        def commentClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
                                         out.unescaped() << "<!--"
                                         out.bodyText() << body
                                         out.unescaped() << "-->"
                                      }
-          @Property piClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
+         def piClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
                                     attrs.each {target, instruction ->
                                       out.unescaped() << "<?"
                                       if (instruction instanceof Map) {
@@ -75,7 +75,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
                                       out.unescaped() << "?>"
                                     }
                                  }
-        @Property noopClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
+        def noopClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
                                       if (body instanceof Closure) {
                                         def body1 = body.clone()
                                         
@@ -98,10 +98,10 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
                                           }
                                       }
                                 }
-        @Property unescapedClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
+        def unescapedClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
                                           out.unescaped() << body
                                      }
-        @Property tagClosure = {tag, doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
+        def tagClosure = {tag, doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
                                   if (prefix != "") {
                                       if (!(namespaces.containsKey(prefix) || pendingNamespaces.containsKey(prefix))) {
                                           throw new GroovyRuntimeException("Namespace prefix: ${prefix} is not bound to a URI")
@@ -183,7 +183,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
                                                          }
                               }
 
-        @Property builder = null
+        def builder = null
 
         StreamingMarkupBuilder() {
             specialTags.putAll(['yield':noopClosure,
@@ -198,9 +198,9 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
             this.builder = new BaseMarkupBuilder(nsSpecificTags)
         }
         
-        @Property encoding = null
+        def encoding = null
 
-        @Property bind(closure) {
+        public bind(closure) {
             def boundClosure = this.builder.bind(closure);
             def enc = encoding; // take a snapshot of the encoding when the cosure is bound to the builder
 

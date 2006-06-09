@@ -32,13 +32,13 @@ import org.codehaus.groovy.runtime.InvokerHelper
 class Console implements CaretListener {
 
 	// Whether or not std output should be captured to the console
-	@Property captureStdOut = true
+	def captureStdOut = true
 
 	// Maximum size of history
-	@Property int maxHistory = 10
+	int maxHistory = 10
 	
 	// Maximum number of characters to show on console at any time
-	@Property int maxOutputChars = 10000
+	int maxOutputChars = 10000
 
 	// UI
     SwingBuilder swing
@@ -582,12 +582,12 @@ class Console implements CaretListener {
 
 /** A single time when the user selected "run" */
 class HistoryRecord {
-	@Property allText
-	@Property selectionStart
-	@Property selectionEnd
-	@Property scriptName
-	@Property result
-	@Property exception
+	def allText
+	def selectionStart
+	def selectionEnd
+	def scriptName
+	def result
+	def exception
 	
 	def getTextToRun() {
         if (selectionStart != selectionEnd) {   

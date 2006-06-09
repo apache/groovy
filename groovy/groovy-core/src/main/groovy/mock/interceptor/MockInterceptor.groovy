@@ -7,7 +7,7 @@ package groovy.mock.interceptor
 
 class MockInterceptor implements Interceptor {
 
-    @Property expectation = null
+    def expectation = null
 
     Object beforeInvoke(Object object, String methodName, Object[] arguments) {
         if (!expectation) throw new IllegalStateException("Property 'expectation' must be set before use.")

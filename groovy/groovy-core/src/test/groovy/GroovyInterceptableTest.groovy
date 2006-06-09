@@ -21,7 +21,7 @@ class GroovyInterceptableTest extends GroovyTestCase {
 
 class GI implements GroovyInterceptable {
 
-    @Property foo = 89
+    def foo = 89
 
     int someInt() { 2806 }
     String toString() { "originalToString" }

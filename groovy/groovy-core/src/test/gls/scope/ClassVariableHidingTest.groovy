@@ -3,7 +3,7 @@ package gls.scope;
 public class ClassVariableHidingTest extends CompilableTestSupport {
 
    def foo=1;
-   @Property bar=2;
+   def bar=2;
    
    public void testFooHiding() {
      assert foo==1

@@ -6,12 +6,12 @@ package org.codehaus.groovy.tck
 import java.io.File;
 
 class BatchGenerate {
-    @Property generator;
-    @Property srcDirPath;
-    @Property targetDir;
-    @Property srcEncoding;
-    @Property srcs;
-    @Property spew
+    def generator;
+    def srcDirPath;
+    def targetDir;
+    def srcEncoding;
+    def srcs;
+    def spew
 
     public BatchGenerate() {
         generator = new TestGenerator();
