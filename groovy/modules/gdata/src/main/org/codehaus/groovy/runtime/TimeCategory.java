@@ -18,11 +18,42 @@
  */
 package org.codehaus.groovy.runtime;
 
+import java.util.Calendar;
+import java.util.Date;
+
+import groovy.time.BaseDuration;
 import groovy.time.DatumDependentDuration;
 import groovy.time.Duration;
+import groovy.time.TimeDatumDependentDuration;
 import groovy.time.TimeDuration;
 
 public class TimeCategory {
+    /*
+     * Mthods to allow Data Duration arithmetic
+     */
+    
+    public static Date plus(final Date date, final BaseDuration duration) {
+        return duration.plus(date);
+    }
+    
+    public static Date minus(final Date date, final BaseDuration duration) {
+    final Calendar cal = Calendar.getInstance();
+        
+        cal.setTime(date);
+        cal.add(Calendar.YEAR, -duration.getYears());
+        cal.add(Calendar.MONTH, -duration.getMonths());
+        cal.add(Calendar.DAY_OF_YEAR, -duration.getDays());
+        cal.add(Calendar.HOUR_OF_DAY, -duration.getMinutes());
+        cal.add(Calendar.MINUTE, -duration.getMinutes());
+        cal.add(Calendar.SECOND, -duration.getSeconds());
+        cal.add(Calendar.MILLISECOND, -duration.getMillis());
+        
+        return cal.getTime();
+    }
+    
+    public static TimeDuration minus(final Date lhs, final Date rhs) {
+        return new TimeDuration(0, 0, 0, 0, ((int)(lhs.getTime() - rhs.getTime())));
+    }
     
     /*
      * Methods on Integer to implement 1.month, 4.years etc.

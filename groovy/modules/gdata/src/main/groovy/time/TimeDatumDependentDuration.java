@@ -69,6 +69,7 @@ public class TimeDatumDependentDuration extends DatumDependentDuration {
                 cal.add(Calendar.YEAR, TimeDatumDependentDuration.this.getYears());
                 cal.add(Calendar.MONTH, TimeDatumDependentDuration.this.getMonths());
                 cal.add(Calendar.DAY_OF_YEAR, TimeDatumDependentDuration.this.getDays());
+                cal.add(Calendar.HOUR_OF_DAY, TimeDatumDependentDuration.this.getHours());
                 cal.add(Calendar.MINUTE, TimeDatumDependentDuration.this.getMinutes());
                 cal.add(Calendar.SECOND, TimeDatumDependentDuration.this.getSeconds());
                 cal.add(Calendar.MILLISECOND, TimeDatumDependentDuration.this.getMillis());

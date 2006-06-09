@@ -45,7 +45,7 @@ public class Duration extends BaseDuration {
                             this.getMinutes() + rhs.getMinutes(), this.getSeconds() + rhs.getSeconds(),
                             this.getMillis() + rhs.getMillis());
     }
-    
+
     public TimeDuration plus(final TimeDuration rhs) {
         return rhs.plus(this);
     }

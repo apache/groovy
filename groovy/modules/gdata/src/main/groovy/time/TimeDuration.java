@@ -78,6 +78,7 @@ public class TimeDuration extends Duration {
             final Calendar cal = Calendar.getInstance();
 
                 cal.add(Calendar.DAY_OF_YEAR, TimeDuration.this.getDays());
+                cal.add(Calendar.HOUR_OF_DAY, TimeDuration.this.getHours());
                 cal.add(Calendar.MINUTE, TimeDuration.this.getMinutes());
                 cal.add(Calendar.SECOND, TimeDuration.this.getSeconds());
                 cal.add(Calendar.MILLISECOND, TimeDuration.this.getMillis());

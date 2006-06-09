@@ -18,21 +18,38 @@
  */
 package groovy.time;
 
+import java.util.Calendar;
 import java.util.Date;
 
 public abstract class BaseDuration {
+    protected final int years;
+    protected final int months;    
     protected final int days;
     protected final int hours;
     protected final int minutes;
     protected final int seconds;    
     protected final int millis;
 
-    protected BaseDuration(final int days, final int hours, final int minutes, final int seconds, final int millis) {
+    protected BaseDuration(final int years, final int months, final int days, final int hours, final int minutes, final int seconds, final int millis) {
+        this.years = years;
+        this.months = months;
         this.days = days;
         this.hours = hours;
         this.minutes = minutes;
         this.seconds = seconds;
         this.millis = millis;
+    }
+
+    protected BaseDuration(final int days, final int hours, final int minutes, final int seconds, final int millis) {
+        this(0, 0, days, hours, minutes, seconds, millis);
+    }
+    
+    public int getYears() {
+        return this.years;
+    }
+    
+    public int getMonths() {
+        return this.months;
     }
     
     public int getDays() {
@@ -55,10 +72,25 @@ public abstract class BaseDuration {
         return this.millis;
     }
     
+    public Date plus(final Date date) {
+    final Calendar cal = Calendar.getInstance();
+    
+        cal.setTime(date);
+        cal.add(Calendar.YEAR, this.years);
+        cal.add(Calendar.MONTH, this.months);
+        cal.add(Calendar.DAY_OF_YEAR, this.days);
+        cal.add(Calendar.HOUR_OF_DAY, this.hours);
+        cal.add(Calendar.MINUTE, this.minutes);
+        cal.add(Calendar.SECOND, this.seconds);
+        cal.add(Calendar.MILLISECOND, this.millis);
+        
+        return cal.getTime();
+    }
+    
     public abstract Date getAgo();
     
     public abstract From getFrom();
-    
+
     public static abstract class From {
         public abstract Date getNow();
         

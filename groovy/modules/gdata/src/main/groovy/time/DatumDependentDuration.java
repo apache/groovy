@@ -32,13 +32,8 @@ import java.util.Date;
  * 
  */
 public class DatumDependentDuration extends BaseDuration {
-    private final int years;
-    private final int months;
-    
     public DatumDependentDuration(final int years, final int months, final int days, final int hours, final int minutes, final int seconds, final int millis) {
-        super(days, hours, minutes, seconds, millis);
-        this.years = years;
-        this.months = months;
+        super(years, months, days, hours, minutes, seconds, millis);
     }
 
     public int getMonths() {
@@ -99,10 +94,8 @@ public class DatumDependentDuration extends BaseDuration {
         cal.add(Calendar.MINUTE, -this.getMinutes());
         cal.add(Calendar.SECOND, -this.getSeconds());
         cal.add(Calendar.MILLISECOND, -this.getMillis());
-        
-        
-        // TODO: work out when to return java.sql.Date instead
-        return cal.getTime();
+
+        return new java.sql.Date(cal.getTimeInMillis());
     }
     
     public From getFrom() {
