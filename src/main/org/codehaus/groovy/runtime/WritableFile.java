@@ -100,7 +100,7 @@ public class WritableFile extends File implements Writable {
     }
 
     public int compareTo(Object arg0) {
-        return delegate.compareTo(arg0);
+        return compareTo((File) arg0); // File.compareTo(Object) doesn't compile with Java 5
     }
 
     public boolean createNewFile() throws IOException {
