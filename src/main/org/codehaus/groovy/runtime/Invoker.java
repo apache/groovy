@@ -126,7 +126,8 @@ public class Invoker {
                     */
 
         if (object == null) {
-            throw new NullPointerException("Cannot invoke method " + methodName + "() on null object");
+            object = NullObject.getNullObject();
+            //throw new NullPointerException("Cannot invoke method " + methodName + "() on null object");
         }
         
         // if the object is a Class, call a static method from that class
