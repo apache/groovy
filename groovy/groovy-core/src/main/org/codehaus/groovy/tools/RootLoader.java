@@ -97,32 +97,14 @@ import java.util.Enumeration;
  *   
  * @author Jochen Theodorou
  */
-public class RootLoader extends ClassLoader {
+public class RootLoader extends URLClassLoader {
 
-    private InnerLoader inner;
-    
-    private class InnerLoader extends URLClassLoader {
-        public InnerLoader(URL[] urls) {
-            super(urls,null);
-        }        
-        public void addPathEntry(URL url) {
-            addURL(url);
-        }
-        protected Class loadClass(String name, boolean resolve) throws ClassNotFoundException {
-            try {
-                return super.loadClass(name, resolve);
-            } catch (ClassNotFoundException cnfe) {
-                return RootLoader.this.loadClassByName(name,true,resolve);
-            }
-        }
-    }
-    
     /**
      * constructs a new RootLoader without classpath
      * @param parent the parent Loader
      */   
     private RootLoader(ClassLoader parent) {
-        super(parent);
+        this(new URL[0],parent);
     }
     
     /**
@@ -130,8 +112,13 @@ public class RootLoader extends ClassLoader {
      * array of URLs as classpath
      */
     public RootLoader(URL[] urls, ClassLoader parent) {
-        this(parent);
-        inner = new InnerLoader(urls);
+        super(urls,parent);
+    }
+    
+    private static ClassLoader chooseParent(){
+      ClassLoader cl = RootLoader.class.getClassLoader();
+      if (cl!=null) return cl;
+      return ClassLoader.getSystemClassLoader();
     }
     
     /**
@@ -139,82 +126,45 @@ public class RootLoader extends ClassLoader {
      * object which holds the classpath
      */
     public RootLoader(LoaderConfiguration lc) {
-        this(RootLoader.class.getClassLoader());
+        this(chooseParent());
         Thread.currentThread().setContextClassLoader(this);
-        inner = new InnerLoader(lc.getClassPathUrls());
+        URL[] urls = lc.getClassPathUrls();
+        for (int i=0; i<urls.length; i++) {
+            addURL(urls[i]);
+        }
     }
 
     /**
      * loads a class using the name of the class
      */
     protected Class loadClass(final String name, boolean resolve) throws ClassNotFoundException {
-        return loadClassByName(name,false,resolve);
-    }
-    
-    /**
-     * method to avoid endless loops
-     */
-    private Class loadClassByName(String name, boolean ignoreInner, boolean resolve) throws ClassNotFoundException {
-        // if the searched class can't be found in inner, then try the 
-        // old behavior which searches in parent first
-        if (!ignoreInner) {
-            try {
-                return inner.loadClass(name);
-            } catch (ClassNotFoundException cnfe) {
-                // fall through
-            }
-        }
+        Class c = this.findLoadedClass(name);
+        if (c!=null) return c;
+     
         try {
-            return super.loadClass(name,resolve);
-        } catch (NoClassDefFoundError ncdfe) {
-            if (ncdfe.getMessage().indexOf("wrong name")>0) {
-                throw new ClassNotFoundException(name);
-            } else {
-                throw ncdfe;
-            }
-        }
+            c = findClass(name);
+        } catch (ClassNotFoundException cnfe) {}
+        if (c==null) c= super.loadClass(name,resolve);
+
+        if (resolve) resolveClass(c);
+        
+        return c;
     }
-    
+        
     /**
      * returns the URL of a resource, or null if it is not found
      */
     public URL getResource(String name) {
-        URL url = inner.getResource(name);
-        if (url==null) url = super.getResource(name);
+        URL url = findResource(name);
+        if (url==null) url=super.getResource(name);
         return url;
-    }    
-    
-    /**
-     * returns an Enumeration of all found ressources. Resources found
-     * in the classpath of this loader are at the beginning of the
-     * returned enumeration
-     */
-    protected Enumeration findResources(String name) throws IOException {
-        final Enumeration enum1 = inner.findResources(name);
-        final Enumeration enum2 = super.findResources(name);
-        return new Enumeration() {
-            public boolean hasMoreElements() {
-                return enum1.hasMoreElements() || enum2.hasMoreElements();
-            }
-            public Object nextElement() {
-                if (enum1.hasMoreElements()) return enum1.nextElement();
-                if (enum2.hasMoreElements()) return enum2.nextElement();
-                return null;
-            }
-        };
-    }
+    } 
  
     /**
      * adds an url to the classpath of this classloader
      */
     public void addURL(URL url) {
-        inner.addPathEntry(url);
-    }
-    
-    /**
-     * returns all classpath entries of this classloader
-     */
-    public URL[] getURLs() {
-        return inner.getURLs();
+        System.out.println("RL: added url "+url);
+        super.addURL(url);
     }
 }
