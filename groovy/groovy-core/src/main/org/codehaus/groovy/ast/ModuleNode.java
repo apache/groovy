@@ -234,6 +234,7 @@ public class ModuleNode extends ASTNode implements Opcodes {
         }
         ClassNode classNode = new ClassNode(name, ACC_PUBLIC, baseClass);
         classNode.setScript(true);
+        classNode.setScriptBody(true);
 
         // return new Foo(new ShellContext(args)).run()
         classNode.addMethod(
