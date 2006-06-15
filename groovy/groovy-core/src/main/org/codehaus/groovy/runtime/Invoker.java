@@ -46,6 +46,7 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
+import groovy.lang.GString;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClass;
@@ -495,6 +496,9 @@ public class Invoker {
                 return DefaultGroovyMethods.compareTo(asNumber(left), (Number) right);
             }
             else if (left instanceof String && right instanceof Character) {
+                return ((String) left).compareTo(right.toString());
+            }
+            else if (left instanceof String && right instanceof GString) {
                 return ((String) left).compareTo(right.toString());
             }
             Comparable comparable = (Comparable) left;
