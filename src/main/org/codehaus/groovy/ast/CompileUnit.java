@@ -44,6 +44,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
+import org.codehaus.groovy.syntax.SyntaxException;
 
 /**
  * Represents the entire contents of a compilation step which consists of one
@@ -136,10 +139,31 @@ public class CompileUnit {
     public void addClass(ClassNode node) {
     	node = node.redirect();
         String name = node.getName();
-        Object stored = classes.get(name);
+        ClassNode stored = (ClassNode) classes.get(name);
         if (stored != null && stored != node) {
-            throw new RuntimeException(
-                "Error: duplicate class declaration for name: " + name + " and class: " + node);
+            // we have a duplicate class!
+            // One possibility for this is, that we delcared a script and a 
+            // class in the same file and named the class like the file
+            SourceUnit nodeSource = node.getModule().getContext();
+            SourceUnit storedSource = stored.getModule().getContext();
+            String txt = "Invalid duplicate class definition of class "+node.getName()+" : ";
+            if (nodeSource==storedSource) {
+                // same class in same source
+                txt += "The source "+nodeSource.getName()+" contains at last two defintions of the class "+node.getName()+".\n";
+                if (node.isScriptBody() || stored.isScriptBody()) {
+                    txt += "One of the classes is a explicit generated class using the class statement, the other is a class generated from"+
+                           " the script body based on the file name. Solutions are to change the file name or to change the class name.\n";
+                }
+            } else {
+                txt += "The sources "+nodeSource.getName()+" and "+storedSource.getName()+" are containing both a class of the name "+node.getName()+".\n";
+            }
+            nodeSource.getErrorCollector().addErrorAndContinue(
+                    new SyntaxErrorMessage(new SyntaxException(txt, node.getLineNumber(), node.getColumnNumber()), nodeSource)
+            );
+
+            
+           /* throw new RuntimeException(
+                "Error: duplicate class declaration for name: " + name + " and class: " + node);*/
         }
         classes.put(name, node);
         
