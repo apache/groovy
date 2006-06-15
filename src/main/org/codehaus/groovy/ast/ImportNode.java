@@ -55,11 +55,11 @@ import org.objectweb.asm.Opcodes;
  */
 public class ImportNode extends AnnotatedNode implements Opcodes {
 
-    private String className;
+    private ClassNode type;
     private String alias;
     
-    public ImportNode(String className, String alias) {
-        this.className = className;
+    public ImportNode(ClassNode type, String alias) {
+        this.type = type;
         this.alias = alias;
     }
     
@@ -68,10 +68,10 @@ public class ImportNode extends AnnotatedNode implements Opcodes {
      */
     public String getText() {
         if (alias == null || alias.length() == 0) {
-            return "import " + className;
+            return "import " + type.getName();
         }
         else {
-            return "import " + className + " as " + alias;
+            return "import " + type.getName() + " as " + alias;
         }
     }
     
@@ -79,8 +79,8 @@ public class ImportNode extends AnnotatedNode implements Opcodes {
         return alias;
     }
 
-    public String getClassName() {
-        return className;
+    public ClassNode getType() {
+        return type;
     }
 
 }

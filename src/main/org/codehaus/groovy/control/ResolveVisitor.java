@@ -56,6 +56,7 @@ import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.DynamicVariable;
 import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.ImportNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.ast.Parameter;
@@ -414,14 +415,20 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
          */
         while (true) {
             pname = name.substring(0,index);
-            String aliased = module.getImport(pname);
-            if (aliased!=null && !aliased.equals(name)) {
-                if (pname.length()<name.length()){
-                    aliased +=  name.substring(pname.length());
+            ClassNode aliasedNode = module.getImport(pname);
+            if (aliasedNode!=null) {
+                if (pname.length()==name.length()){
+                    // full match, no need to create a new class
+                    type.setRedirect(aliasedNode);
+                    return true;
+                } else {
+                    //partial match
+                    String newName = aliasedNode.getName()+name.substring(pname.length());
+                    type.setName(newName);
+                    if (resolve(type,true,true,true)) return true;
+                    // was not resolved soit was a fake match
+                    type.setName(name);
                 }
-                type.setName(aliased);
-                if (resolve(type,true,true,true)) return true;
-                type.setName(name);
             }
             index = pname.lastIndexOf('.');
             if (index==-1) break;
@@ -450,9 +457,9 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
         }
         type.setName(name);
 
-        if (resolveAliasFromModule(type)) return true;
-
         if (testModuleImports) {
+            if (resolveAliasFromModule(type)) return true;
+            
             boolean resolved = false;
             if (module.hasPackageName()) { 
                 // check package this class is defined in
@@ -734,6 +741,19 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
     public void visitClass(ClassNode node) {
         ClassNode oldNode = currentClass;
         currentClass = node;
+        
+        ModuleNode module = node.getModule();
+        if (!module.hasImportsResolved()) {
+           List l = module.getImports();
+           for (Iterator iter = l.iterator(); iter.hasNext();) {
+               ImportNode element = (ImportNode) iter.next();
+               ClassNode type = element.getType();
+               if (resolve(type,false,false,false)) continue;
+               addError("unable to resolve class "+type.getName(),type);
+           }
+           module.setImportsResolved(true);
+        }
+        
         ClassNode sn = node.getUnresolvedSuperClass();
         if (sn!=null) resolveOrFail(sn,node,true);
         ClassNode[] interfaces = node.getInterfaces();

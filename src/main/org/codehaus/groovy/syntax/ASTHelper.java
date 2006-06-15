@@ -17,6 +17,8 @@
  **/
 package org.codehaus.groovy.syntax;
 
+import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.control.SourceUnit;
 
@@ -28,6 +30,7 @@ import java.util.Map;
 /**
  * A common base class of AST helper methods which can be shared across the classic and new parsers
  *
+ * @author Jochen Theodorou
  * @author James Strachan
  * @author Bob McWhirter
  * @author Sam Pullara
@@ -290,13 +293,11 @@ public class ASTHelper {
         this.newClasses.add(name);
     }
 
-    protected void importClass(String importPackage, String name, String as) {
+    protected void importClass(ClassNode type, String name, String as) {
         if (as==null) as=name;
 
-        name = dot( importPackage, name );
-
-        output.addImport( as, name ); 
-        imports.put( as, name );
+        output.addImport(as, type); 
+        imports.put(as, type);
     }
 
     protected void importPackageWithStar(String importPackage) {

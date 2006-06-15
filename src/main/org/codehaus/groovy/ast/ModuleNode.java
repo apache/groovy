@@ -72,6 +72,7 @@ import org.objectweb.asm.Opcodes;
  * but could include some imports, some statements and multiple classes
  * intermixed with statements like scripts in Python or Ruby
  *
+ * @author Jochen Theodorou
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -88,6 +89,7 @@ public class ModuleNode extends ASTNode implements Opcodes {
     private String description;
     private boolean createClassForStatements = true;
     private transient SourceUnit context;
+    private boolean importsResolved = false;
 
 
     public ModuleNode (SourceUnit context ) {
@@ -128,13 +130,13 @@ public class ModuleNode extends ASTNode implements Opcodes {
     /**
      * @return the class name for the given alias or null if none is available
      */
-    public String getImport(String alias) {
-        return (String) importIndex.get(alias);
+    public ClassNode getImport(String alias) {
+        return (ClassNode) importIndex.get(alias);
     }
 
-    public void addImport(String alias, String className) {
-        imports.add(new ImportNode(className, alias));
-        importIndex.put(alias, className);
+    public void addImport(String alias, ClassNode type) {
+        imports.add(new ImportNode(type, alias));
+        importIndex.put(alias, type);
     }
 
     public String[]  addImportPackage(String packageName) {
@@ -328,6 +330,14 @@ public class ModuleNode extends ASTNode implements Opcodes {
 	    	level++;
     	}
     	this.classes = sorted;
+    }
+
+    public boolean hasImportsResolved() {
+        return importsResolved;
+    }
+
+    public void setImportsResolved(boolean importsResolved) {
+        this.importsResolved = importsResolved;
     }
 
 }
