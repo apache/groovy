@@ -18,14 +18,13 @@
  */
 package org.codehaus.groovy.runtime;
 
-import java.util.Calendar;
-import java.util.Date;
-
 import groovy.time.BaseDuration;
 import groovy.time.DatumDependentDuration;
 import groovy.time.Duration;
-import groovy.time.TimeDatumDependentDuration;
 import groovy.time.TimeDuration;
+
+import java.util.Calendar;
+import java.util.Date;
 
 public class TimeCategory {
     /*
@@ -52,7 +51,17 @@ public class TimeCategory {
     }
     
     public static TimeDuration minus(final Date lhs, final Date rhs) {
-        return new TimeDuration(0, 0, 0, 0, ((int)(lhs.getTime() - rhs.getTime())));
+        long milliseconds = lhs.getTime() - rhs.getTime();
+        long days = milliseconds / (24 * 60 * 60 * 1000);
+        milliseconds -= days * 24 * 60 * 60 * 1000;
+        int hours = (int)(milliseconds / (60 * 60 * 1000));
+        milliseconds -= hours * 60 * 60 * 1000;
+        int minutes = (int)(milliseconds / (60 * 1000));
+        milliseconds -= minutes * 60 * 1000;
+        int seconds = (int)(milliseconds / 1000);
+        milliseconds -= seconds * 1000;
+        
+        return new TimeDuration((int)days, hours, minutes, seconds, (int)milliseconds);
     }
     
     /*

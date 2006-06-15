@@ -34,6 +34,11 @@ class DurationTest extends GroovyTestCase {
             then = now + monthAndWeek
             week = then - 1.month - now
             assert week.toMilliseconds() == (7 * 24 * 60 * 60 * 1000)
+            
+            assert (now + monthAndWeek) == (monthAndWeek + now)
+            
+            week = then - (now + 1.month)
+            assert week.toMilliseconds() == (7 * 24 * 60 * 60 * 1000)
         }
     }
 }
