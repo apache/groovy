@@ -1,7 +1,7 @@
 /*
  $Id$
 
- Copyright 2003 (C) James Strachan and Bob Mcwhirter. All Rights Reserved.
+ Copyright 2003 (C) Jochen Theodorou. All Rights Reserved.
 
  Redistribution and use of this software and associated documentation
  ("Software"), with or without modification, are permitted provided
