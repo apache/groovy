@@ -97,7 +97,9 @@ public class GroovyClassLoader extends URLClassLoader {
     protected Map classCache = new HashMap();
     protected Map sourceCache = new HashMap();
     private CompilerConfiguration config;
-    private Boolean recompile = null; 
+    private Boolean recompile = null;
+    // use 1000000 as offset to avoid conflicts with names form the GroovyShell 
+    private static int scriptNameCounter = 1000000;
     
     private GroovyResourceLoader resourceLoader = new GroovyResourceLoader() {
         public URL loadGroovySource(final String filename) throws MalformedURLException {
@@ -247,7 +249,12 @@ public class GroovyClassLoader extends URLClassLoader {
      * @return the main class defined in the given script
      */
     public Class parseClass(InputStream in) throws CompilationFailedException {
-        return parseClass(in, "script" + System.currentTimeMillis() + ".groovy");
+        return parseClass(in, generateScriptName());
+    }
+    
+    public synchronized String generateScriptName() {
+        scriptNameCounter++;
+        return "script"+scriptNameCounter+".groovy";
     }
 
     public Class parseClass(final InputStream in, final String fileName) throws CompilationFailedException {
