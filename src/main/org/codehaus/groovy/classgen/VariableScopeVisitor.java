@@ -135,6 +135,9 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     
     private void declare(Parameter[] parameters, ASTNode node) {
         for (int i = 0; i < parameters.length; i++) {
+            if (parameters[i].hasInitialExpression()) {
+                parameters[i].getInitialExpression().visit(this);
+            }
             declare(parameters[i],node);
         }
     }        
@@ -437,7 +440,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         
         node.setVariableScope(currentScope);
         declare(node.getParameters(),node);
-
+        
         super.visitConstructorOrMethod(node, isConstructor);
         popState();
     }

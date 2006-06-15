@@ -161,6 +161,10 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
         for (int i=0; i<paras.length; i++) {
             ClassNode t = paras[i].getType();
             resolveOrFail(t,node);
+            if (paras[i].hasInitialExpression()) {
+                Expression init = paras[i].getInitialExpression(); 
+                paras[i].setInitialExpression(transform(init));
+            }
         }
         ClassNode[] exceptions = node.getExceptions();
         for (int i=0; i<exceptions.length; i++) {
