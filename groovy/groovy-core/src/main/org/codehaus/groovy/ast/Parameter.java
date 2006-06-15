@@ -108,6 +108,10 @@ public class Parameter implements Variable {
         return defaultValue;
     }
     
+    public void setInitialExpression(Expression init) {
+        defaultValue = init;
+    }
+    
     public boolean isInStaticContext() {
         return inStaticContext;
     }
