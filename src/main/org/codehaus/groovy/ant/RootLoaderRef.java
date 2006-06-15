@@ -115,6 +115,9 @@ public class RootLoaderRef extends MatchingTask {
             if (list[i].matches(".*commons-logging-[^/]*jar$")) {
                 continue;
             }
+            if (list[i].matches(".*xerces-[^/]*jar$")) {
+                continue;
+            }
             lc.addFile(list[i]);
         }
         return new RootLoader(lc);
