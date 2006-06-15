@@ -1358,7 +1358,7 @@ ctorHead
 
 // This is a list of exception classes that the method is declared to throw
 throwsClause
-    :   "throws"^ nls! identifier ( COMMA! nls! identifier )* nls!
+    :   "throws"^ nls! identifier ( COMMA! nls! identifier )* 
     ;
 
 /** A list of zero or more formal parameters.
