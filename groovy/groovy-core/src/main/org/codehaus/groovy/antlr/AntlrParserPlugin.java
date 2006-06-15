@@ -233,7 +233,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         String name = qualifiedName(node);
         setPackageName(name);
     }
-
+    
     protected void importDef(AST importNode) {
         // TODO handle static imports
 
@@ -250,7 +250,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         if (node.getNumberOfChildren()==0) {
             // import is like  "import Foo"
             String name = identifier(node);
-            importClass(null, name, alias);
+            ClassNode type = ClassHelper.make(name);
+            configureAST(type,importNode);
+            importClass(type,name,alias);
             return;
         }
 
@@ -266,7 +268,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         } else {
             // import is like "import foo.Bar"
             String name = identifier(nameNode);
-            importClass(packageName, name, alias);
+            ClassNode type = ClassHelper.make(packageName+"."+name);
+            configureAST(type,importNode);
+            importClass(type,name,alias);
         }
     }
 
