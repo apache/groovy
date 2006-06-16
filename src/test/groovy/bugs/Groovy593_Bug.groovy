@@ -23,9 +23,10 @@ class Groovy593_Bug extends GroovyTestCase {
     String expectedXML = 
 """<chars>
   <ampersand a='&amp;'>&amp;</ampersand>
-  <quote>&quot;</quote>
-  <lessthan attr='value'>chars: &amp; &lt; &gt; &quot;</lessthan>
-  <element attr='value 1 &amp; 2'>chars: &amp; &lt; &gt; &quot; in middle</element>
+  <quote attr='"'>"</quote>
+  <apostrophe attr='&apos;'>'</apostrophe>
+  <lessthan attr='value'>chars: &amp; &lt; &gt; '</lessthan>
+  <element attr='value 1 &amp; 2'>chars: &amp; &lt; &gt; " in middle</element>
   <greaterthan>&gt;</greaterthan>
 </chars>"""
 
@@ -33,9 +34,10 @@ class Groovy593_Bug extends GroovyTestCase {
         // XML characters to test with
         chars.chars {
             ampersand(a: "&", "&")
-            quote("\'")
-            lessthan(attr: "value", "chars: & < > \'") 
-            element(attr: "value 1 & 2", "chars: & < > \' in middle")
+            quote(attr: "\"", "\"")
+            apostrophe(attr: "'", "'")
+            lessthan(attr: "value", "chars: & < > '") 
+            element(attr: "value 1 & 2", "chars: & < > \" in middle")
             greaterthan(">")
         }
         //DEBUG
