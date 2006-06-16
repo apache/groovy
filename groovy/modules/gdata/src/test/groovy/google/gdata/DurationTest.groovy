@@ -1,7 +1,7 @@
 package groovy.google.gdata
 
 import org.codehaus.groovy.runtime.TimeCategory
-import java.uti.Date
+import java.util.Date
 
 class DurationTest extends GroovyTestCase {
     void testFixedDurationArithmetic() {
@@ -17,14 +17,14 @@ class DurationTest extends GroovyTestCase {
     void testDatumDependantArithmetic() {
         use(TimeCategory) {
             def twoMonths = 1.month + 1.month
-            shouldFail {
-                println twoMonths.toMilliseconds()
-            }
+            def twoMonthsFromNow = 2.months.from.now - 0.months.from.now 
+            def oneMonthFromNow = 1.month.from.now - 0.months.from.now
+            
+            assert twoMonths.toMilliseconds() == twoMonthsFromNow.toMilliseconds()
             
             def monthAndWeek = 1.month + 1.week
-            shouldFail {
-                println monthAndWeek.toMilliseconds()
-            }
+            
+            assert monthAndWeek.toMilliseconds() == (oneMonthFromNow + 1.week).toMilliseconds()
             
             def now = new Date()
             def then = monthAndWeek + now

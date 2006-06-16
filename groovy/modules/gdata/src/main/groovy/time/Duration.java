@@ -81,7 +81,7 @@ public class Duration extends BaseDuration {
     }
     
     public long toMilliseconds() {
-        return ((((((this.getDays() * 24 ) + this.getHours()) * 60 + this.getMinutes()) * 60) + this.getSeconds()) * 1000) + this.getMillis();
+        return ((((((long)(this.getDays() * 24 ) + this.getHours()) * 60 + this.getMinutes()) * 60) + this.getSeconds()) * 1000) + this.getMillis();
     }
     
     public Date getAgo() {

@@ -21,6 +21,8 @@ package groovy.time;
 import java.util.Calendar;
 import java.util.Date;
 
+import org.codehaus.groovy.runtime.TimeCategory;
+
 /**
  * @author John Wilson tug@wilson.co.uk
  *
@@ -84,6 +86,18 @@ public class DatumDependentDuration extends BaseDuration {
 
     }
     
+    /* (non-Javadoc)
+     * @see groovy.time.BaseDuration#toMilliseconds()
+     * 
+     * Do our best to change the duration into milliseconds
+     * We calculate the duartion relative to now
+     */
+    public long toMilliseconds() {
+    final Date now = new Date();
+    
+        return TimeCategory.minus(plus(now), now).toMilliseconds();
+    }
+    
     public Date getAgo() {
     final Calendar cal = Calendar.getInstance();
 
@@ -94,6 +108,16 @@ public class DatumDependentDuration extends BaseDuration {
         cal.add(Calendar.MINUTE, -this.getMinutes());
         cal.add(Calendar.SECOND, -this.getSeconds());
         cal.add(Calendar.MILLISECOND, -this.getMillis());
+        
+        //
+        // SqlDate should not really care about these values but it seems to "remember" them
+        // so we clear them.
+        // We do the adds first incase we get carry into the day field
+        //
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
 
         return new java.sql.Date(cal.getTimeInMillis());
     }
@@ -110,6 +134,16 @@ public class DatumDependentDuration extends BaseDuration {
                 cal.add(Calendar.MINUTE, DatumDependentDuration.this.getMinutes());
                 cal.add(Calendar.SECOND, DatumDependentDuration.this.getSeconds());
                 cal.add(Calendar.MILLISECOND, DatumDependentDuration.this.getMillis());
+                
+                //
+                // SqlDate should not really care about these values but it seems to "remember" them
+                // so we clear them.
+                // We do the adds first incase we get carry into the day field
+                //
+                cal.set(Calendar.HOUR_OF_DAY, 0);
+                cal.set(Calendar.MINUTE, 0);
+                cal.set(Calendar.SECOND, 0);
+                cal.set(Calendar.MILLISECOND, 0);
                 
                 return new java.sql.Date(cal.getTimeInMillis());
              }

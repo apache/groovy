@@ -87,6 +87,8 @@ public abstract class BaseDuration {
         return cal.getTime();
     }
     
+    public abstract long toMilliseconds();
+    
     public abstract Date getAgo();
     
     public abstract From getFrom();
