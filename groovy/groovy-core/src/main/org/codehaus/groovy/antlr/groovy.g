@@ -2658,13 +2658,17 @@ newExpression
             )?
 
             {#newExpression.addChild(#mca.getFirstChild());}
-        |
-            apb:appendedBlock[null]!
+
+        //|  
+        //from blackrag: new Object.f{} matches this part here
+        //and that shouldn't happen unless we decide to support
+        //this kind of Object initialization        
+            //apb:appendedBlock[null]!
             // FIXME:  This node gets dropped, somehow.
 
-            {#newExpression.addChild(#apb.getFirstChild());}
+            //{#newExpression.addChild(#apb.getFirstChild());}
 
-            /*TODO - NYI* (anonymousInnerClassBlock)? *NYI*/
+            //TODO - NYI* (anonymousInnerClassBlock)? *NYI
 
             //java 1.1
             // Note: This will allow bad constructs like
@@ -2673,7 +2677,6 @@ newExpression
             // to make sure:
             //   a) [ expr ] and [ ] are not mixed
             //   b) [ expr ] and an init are not used together
-
         |   newArrayDeclarator //(arrayInitializer)?
             // Groovy does not support Java syntax for initialized new arrays.
             // Use sequence constructors instead.
