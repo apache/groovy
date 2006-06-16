@@ -112,7 +112,7 @@ public class MarkupBuilder extends BuilderSupport {
     protected Object createNode(Object name, Object value) {
         toState(2, name);
         out.print(">");
-        out.print(transformValue(value.toString()));
+        out.print(escapeElementContent(value.toString()));
         return name;
     }
 
@@ -123,13 +123,13 @@ public class MarkupBuilder extends BuilderSupport {
             out.print(" ");
             print(transformName(entry.getKey().toString()));
             out.print("='");
-            print(transformValue(entry.getValue().toString()));
+            print(escapeAttributeValue(entry.getValue().toString()));
             out.print("'");
         }
         if (value != null)
         {
             nodeIsEmpty = false;
-            out.print(">" + transformValue(value.toString()) + "</" + name + ">");
+            out.print(">" + escapeElementContent(value.toString()) + "</" + name + ">");
         }
         return name;
     }
@@ -161,7 +161,7 @@ public class MarkupBuilder extends BuilderSupport {
      * output XML is valid. Escapes the following characters as corresponding 
      * entities:
      * <ul>
-     *   <li>\' as &amp;quot;</li>
+     *   <li>\' as &amp;apos;</li>
      *   <li>&amp; as &amp;amp;</li>
      *   <li>&lt; as &amp;lt;</li>
      *   <li>&gt; as &amp;gt;</li>
@@ -176,13 +176,78 @@ public class MarkupBuilder extends BuilderSupport {
             value = value.replaceAll("&", "&amp;");
         }
         if (value.matches(".*\\'.*")) {
-            value = value.replaceAll("\\'", "&quot;");
+            value = value.replaceAll("\\'", "&apos;");
         }
         if (value.matches(".*<.*")) {
             value = value.replaceAll("<", "&lt;");
         }
         if (value.matches(".*>.*")) {
             value = value.replaceAll(">", "&gt;");
+        }
+        return value;
+    }
+
+    /**
+     * Escapes a string so that it can be used directly as an XML
+     * attribute value.
+     * @param value The string to escape.
+     * @return A new string in which all characters that require escaping
+     * have been replaced with the corresponding XML entities.
+     * @see #escapeXmlValue(String, boolean)
+     */
+    private String escapeAttributeValue(String value) {
+        return escapeXmlValue(value, true);
+    }
+
+    /**
+     * Escapes a string so that it can be used directly in XML element
+     * content.
+     * @param value The string to escape.
+     * @return A new string in which all characters that require escaping
+     * have been replaced with the corresponding XML entities.
+     * @see #escapeXmlValue(String, boolean)
+     */
+    private String escapeElementContent(String value) {
+        return escapeXmlValue(value, false);
+    }
+
+    /**
+     * Escapes a string so that it can be used in XML text successfully.
+     * It replaces the following characters with the corresponding XML
+     * entities:
+     * <ul>
+     *   <li>&amp; as &amp;amp;</li>
+     *   <li>&lt; as &amp;lt;</li>
+     *   <li>&gt; as &amp;gt;</li>
+     * </ul>
+     * If the string is to be added as an attribute value, these
+     * characters are also escaped:
+     * <ul>
+     *   <li>' as &amp;apos;</li>
+     * </ul>
+     * @param value The string to escape.
+     * @param isAttrValue <code>true</code> if the string is to be used
+     * as an attribute value, otherwise <code>false</code>.
+     * @return A new string in which all characters that require escaping
+     * have been replaced with the corresponding XML entities.
+     */
+    private String escapeXmlValue(String value, boolean isAttrValue){
+        // & has to be checked and replaced before others
+        if (value.matches(".*&.*")) {
+            value = value.replaceAll("&", "&amp;");
+        }
+        if (value.matches(".*<.*")) {
+            value = value.replaceAll("<", "&lt;");
+        }
+        if (value.matches(".*>.*")) {
+            value = value.replaceAll(">", "&gt;");
+        }
+        if (isAttrValue){
+            // The apostrophe is only escaped if the value is for an
+            // attribute, as opposed to element content.
+            if (value.matches(".*\\'.*")) {
+                value = value.replaceAll("\\'", "&apos;");
+            }
         }
         return value;
     }
