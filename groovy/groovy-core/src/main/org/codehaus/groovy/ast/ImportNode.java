@@ -50,6 +50,7 @@ import org.objectweb.asm.Opcodes;
 /**
  * Represents an import statement of a single class
  * 
+ * author Jochen Theodorou
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -81,6 +82,10 @@ public class ImportNode extends AnnotatedNode implements Opcodes {
 
     public ClassNode getType() {
         return type;
+    }
+    
+    public String getClassName() {
+    	return type.getName();
     }
 
 }
