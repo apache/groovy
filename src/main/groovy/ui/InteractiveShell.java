@@ -110,21 +110,47 @@ public class InteractiveShell {
 
 
     public InteractiveShell(final InputStream in, final PrintStream out, final PrintStream err) {
-        this(new Binding(), in, out, err);
+        this(null,new Binding(), in, out, err);
     }
 
+    /**
+     * Constructs a new InteractiveShell instance
+     * 
+     * @param binding The binding instance
+     * @param in The input stream to use
+     * @param out The output stream to use
+     * @param err The error stream to use
+     */    
     public InteractiveShell(Binding binding, final InputStream in, final PrintStream out, final PrintStream err) {
+    	this(null,binding,in,out,err);
+    }
+    
+    /**
+     * Constructs a new InteractiveShell instance
+     * 
+     * @param parent The parent ClassLoader
+     * @param binding The binding instance
+     * @param in The input stream to use
+     * @param out The output stream to use
+     * @param err The error stream to use
+     */
+    public InteractiveShell(ClassLoader parent,Binding binding, final InputStream in, final PrintStream out, final PrintStream err) {
         this.in = in;
         this.out = out;
         this.err = err;
         prompt = PromptFactory.buildPrompt(in, out, err);
         prompt.setPrompt("groovy> ");
-        shell = new GroovyShell(binding);
+        if(parent!= null) {
+        	shell = new GroovyShell(parent,binding);	
+        }
+        else {
+        	shell = new GroovyShell(binding);
+        }        
         Map map = shell.getContext().getVariables();
         if (map.get("shell") != null) {
             map.put("shell", shell);
         }
-    }
+    }    
 
     //---------------------------------------------------------------------------
     // COMMAND LINE PROCESSING LOOP
