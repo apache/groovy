@@ -83,6 +83,10 @@ class Console implements CaretListener {
     Console(Binding binding) {
     	shell = new GroovyShell(binding)
     }
+    
+    Console(ClassLoader parent, Binding binding) {
+    	shell = new GroovyShell(parent,binding)	
+    }
 
     void run() {
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
