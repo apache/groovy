@@ -23,8 +23,8 @@ package org.codehaus.groovy.runtime.wrappers;
  *
  */
 
-public class IntWrapper extends PojoWrapper {
-  public IntWrapper(final int wrapped) {
-    super(new Integer(wrapped), int.class);
+public class ByteWrapper extends PojoWrapper {
+  public ByteWrapper(final byte wrapped) {
+    super(new Byte(wrapped), byte.class);
   }
 }
