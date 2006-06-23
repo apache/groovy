@@ -214,6 +214,33 @@ public class BytecodeHelper implements Opcodes {
     
     /**
      * array types are special:
+     * eg.: String[]: classname: [Ljava.lang.String;
+     *      Object:   classname: java.lang.Object
+     *      no primitives
+     * unlike getTypeDescription, this method doesn't handle primitives
+     * and '.' is not replaces by '/'. it seems that makes problems for
+     * the class loading if '.' is repalced by '/'
+     * @return the ASM type description for class loading
+     */
+    public static String getClassLoadingTypeDescription(ClassNode c) {
+        StringBuffer buf = new StringBuffer();
+        boolean array = false;
+        while (true) {
+            if (c.isArray()) {
+                buf.append('[');
+                c = c.getComponentType();
+                array = true;
+            } else {
+                if (array) buf.append('L');
+                buf.append(c.getName());
+                if(array) buf.append(';');
+                return buf.toString();
+            }
+        }
+    }
+    
+    /**
+     * array types are special:
      * eg.: String[]: classname: [Ljava/lang/String;
      *      int[]: [I
      * @return the ASM type description
