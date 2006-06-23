@@ -89,6 +89,7 @@ import org.codehaus.groovy.runtime.ReflectionMetaMethod;
 import org.codehaus.groovy.runtime.Reflector;
 import org.codehaus.groovy.runtime.TemporaryMethodKey;
 import org.codehaus.groovy.runtime.TransformMetaMethod;
+import org.codehaus.groovy.runtime.wrappers.Wrapper;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 
@@ -248,7 +249,7 @@ public class MetaClassImpl extends MetaClass {
     *
     * @param method
     */
-   protected void addNewInstanceMethod(Method method) {
+   public void addNewInstanceMethod(Method method) {
        if (initialised) {
            throw new RuntimeException("Already initialized, cannot add new method: " + method);
        }
@@ -261,7 +262,7 @@ public class MetaClassImpl extends MetaClass {
        }
    }
 
-   protected void addNewStaticMethod(Method method) {
+   public void addNewStaticMethod(Method method) {
        if (initialised) {
            throw new RuntimeException("Already initialized, cannot add new method: " + method);
        }
@@ -284,6 +285,16 @@ public class MetaClassImpl extends MetaClass {
        }
        if (log.isLoggable(Level.FINER)){
            MetaClassHelper.logMethodCall(object, methodName, arguments);
+       }
+       
+       //
+       // Temp code to ignore wrapped parameters
+       // The New MOP will deal with these properly
+       //
+       for (int i = 0; i != arguments.length; i++) {
+        if (arguments[i] instanceof Wrapper) {
+          arguments[i] = ((Wrapper)arguments[i]).unwrap();
+        }
        }
 
        MetaMethod method = retrieveMethod(object, methodName, arguments);
@@ -417,7 +428,7 @@ public class MetaClassImpl extends MetaClass {
    /**
     * Picks which method to invoke for the given object, method name and arguments
     */
-   protected MetaMethod pickMethod(Object object, String methodName, Object[] arguments) {
+   public MetaMethod pickMethod(Object object, String methodName, Object[] arguments) {
        MetaMethod method = null;
        List methods = getMethods(methodName);
        if (!methods.isEmpty()) {
@@ -459,7 +470,7 @@ public class MetaClassImpl extends MetaClass {
     * @param arguments
     * @return
     */
-   protected MetaMethod pickMethod(String methodName, Class[] arguments) {
+   public MetaMethod pickMethod(String methodName, Class[] arguments) {
        MetaMethod method = null;
        List methods = getMethods(methodName);
        if (!methods.isEmpty()) {
@@ -888,7 +899,12 @@ public class MetaClassImpl extends MetaClass {
    /**
     * Sets the property value on an object
     */
-   public void setProperty(Object object, String property, Object newValue) {
+   public void setProperty(Object object, String property, Object newValue) { 
+       //
+       // Unwrap wrapped values fo now - the new MOP will handle them properly
+       //
+       if (newValue instanceof Wrapper) newValue = ((Wrapper)newValue).unwrap();
+       
        MetaProperty mp = (MetaProperty) propertyMap.get(property);
        if(mp != null) {
            try {
@@ -1502,7 +1518,7 @@ public class MetaClassImpl extends MetaClass {
        reflector = null;
    }
 
-   protected synchronized void checkInitialised() {
+   public synchronized void checkInitialised() {
        if (!initialised) {
            initialised = true;
            addInheritedMethods();

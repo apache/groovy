@@ -39,31 +39,31 @@ public class DelegatingMetaClass extends MetaClass {
     /* (non-Javadoc)
      * @see groovy.lang.MetaClass#addNewInstanceMethod(java.lang.reflect.Method)
      */
-    protected void addNewInstanceMethod(Method method) {
+    public void addNewInstanceMethod(Method method) {
         delegate.addNewInstanceMethod(method);
     }
     /* (non-Javadoc)
      * @see groovy.lang.MetaClass#addNewStaticMethod(java.lang.reflect.Method)
      */
-    protected void addNewStaticMethod(Method method) {
+    public void addNewStaticMethod(Method method) {
         delegate.addNewStaticMethod(method);
     }
     /* (non-Javadoc)
      * @see groovy.lang.MetaClass#checkInitialised()
      */
-    protected void checkInitialised() {
+    public void checkInitialised() {
         delegate.checkInitialised();
     }
     /* (non-Javadoc)
      * @see groovy.lang.MetaClass#pickMethod(java.lang.Object, java.lang.String, java.lang.Object[])
      */
-    protected MetaMethod pickMethod(Object object, String methodName, Object[] arguments) {
+    public MetaMethod pickMethod(Object object, String methodName, Object[] arguments) {
         return delegate.pickMethod(object, methodName, arguments);
     }
     /* (non-Javadoc)
      * @see groovy.lang.MetaClass#pickMethod(java.lang.String, java.lang.Class[])
      */
-    protected MetaMethod pickMethod(String methodName, Class[] arguments) {
+    public MetaMethod pickMethod(String methodName, Class[] arguments) {
         return delegate.pickMethod(methodName, arguments);
     }
     /* (non-Javadoc)
