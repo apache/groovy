@@ -35,6 +35,7 @@ public class GroovyCodeSource {
 	private InputStream inputStream;
 	/** The certificates used to sign the items from the codesource */
 	Certificate[] certs;
+    private boolean cachable = false;
     
 	private File file;
 	
@@ -103,6 +104,7 @@ public class GroovyCodeSource {
 		//this.inputStream = new FileInputStream(file);
 		this.file = file;
 		this.inputStream = null;
+        this.cachable = true;
 		//The calls below require access to user.dir - allow here since getName() and getCodeSource() are
 		//package private and used only by the GroovyClassLoader.
 		try {
@@ -149,5 +151,13 @@ public class GroovyCodeSource {
     
     public File getFile() {
         return file;
+    }
+    
+    public void setCachable(boolean b) {
+        cachable = b;
+    }
+
+    public boolean isCachable() {
+        return cachable;
     }
 }
