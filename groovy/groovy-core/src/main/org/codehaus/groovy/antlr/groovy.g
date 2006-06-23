@@ -1358,7 +1358,7 @@ ctorHead
 
 // This is a list of exception classes that the method is declared to throw
 throwsClause
-    :   "throws"^ nls! identifier ( COMMA! nls! identifier )* 
+    :   nls! "throws"^ nls! identifier ( COMMA! nls! identifier )* 
     ;
 
 /** A list of zero or more formal parameters.
@@ -1607,7 +1607,7 @@ statement[int prevToken]
     |    m:modifiersOpt! typeDefinitionInternal[#m]
 
     // If-else statement
-    |   "if"^ LPAREN! strictContextExpression RPAREN! nlsWarn! compatibleBodyStatement
+    |   "if"^ LPAREN! assignmentLessExpression RPAREN! nlsWarn! compatibleBodyStatement
         (
             // CONFLICT: the old "dangling-else" problem...
             //           ANTLR generates proper code matching
@@ -2480,6 +2480,15 @@ strictContextExpression  {Token first = LT(1);}
         // For the sake of the AST walker, mark nodes like this very clearly.
         {#strictContextExpression = #(create(EXPR,"EXPR",first,LT(1)),#strictContextExpression);}
     ;
+    
+assignmentLessExpression  {Token first = LT(1);}
+    :
+        (   conditionalExpression[0]
+        )
+        // For the sake of the AST walker, mark nodes like this very clearly.
+        {#assignmentLessExpression = #(create(EXPR,"EXPR",first,LT(1)),#assignmentLessExpression);}
+    ;
+
 
 closureConstructorExpression
     :   closedBlock
