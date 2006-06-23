@@ -30,7 +30,8 @@ public class PojoWrapper extends Wrapper {
   protected MetaClass delegate;
   protected final Object wrapped;
   
-  public PojoWrapper(final Object wrapped) {
+  public PojoWrapper(final Object wrapped, final Class constrainedType) {
+    super(constrainedType);
     this.wrapped = wrapped;
     this.delegate = InvokerHelper.getMetaClass(wrapped);
   }
@@ -38,6 +39,10 @@ public class PojoWrapper extends Wrapper {
   public Object unwrap() {
     return this.wrapped;
   }
+  
+  /**
+   * Note the rest of these method will only be used post 1.0
+   */
 
   /* (non-Javadoc)
    * @see groovy.lang.GroovyObject#getProperty(java.lang.String)

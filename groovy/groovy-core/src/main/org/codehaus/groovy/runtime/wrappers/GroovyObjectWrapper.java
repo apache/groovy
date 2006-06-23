@@ -28,13 +28,18 @@ import groovy.lang.MetaClass;
 public class GroovyObjectWrapper extends Wrapper {
   protected final GroovyObject wrapped;
   
-  public GroovyObjectWrapper(final GroovyObject wrapped) {
+  public GroovyObjectWrapper(final GroovyObject wrapped, final Class constrainedType) {
+    super(constrainedType);
     this.wrapped = wrapped;
   }
   
   public Object unwrap() {
     return this.wrapped;
   }
+  
+  /**
+   * Note the rest of these method will only be used post 1.0
+   */
 
   /* (non-Javadoc)
    * @see groovy.lang.GroovyObject#getProperty(java.lang.String)

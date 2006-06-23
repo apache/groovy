@@ -17,14 +17,13 @@
 
 package org.codehaus.groovy.runtime.wrappers;
 
-
 /**
  * @author John Wilson
  *
  */
 
-public class IntWrapper extends PojoWrapper {
-  public IntWrapper(final int wrapped) {
-    super(new Integer(wrapped), int.class);
+public class LongWrapper extends PojoWrapper {
+  public LongWrapper(final long wrapped) {
+    super(new Long(wrapped), long.class);
   }
 }

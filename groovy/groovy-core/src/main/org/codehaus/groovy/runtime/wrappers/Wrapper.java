@@ -268,15 +268,27 @@ public abstract class Wrapper implements GroovyObject {
       return Wrapper.this.getDelegatedMetaClass().pickMethod(methodName, arguments);
     }
   };
+  
+  protected final Class constrainedType;
+  
+  public Wrapper(final Class constrainedType) {
+    this.constrainedType = constrainedType;
+  }
 
   /* (non-Javadoc)
    * @see groovy.lang.GroovyObject#getMetaClass()
+   * 
+   * This will only be useful post 1.0
    */
   public MetaClass getMetaClass() {
     return this.delegatingMetaClass;
   }
   
   public abstract Object unwrap();
+  
+  public Class getType() {
+    return this.constrainedType;
+  }
   
   protected abstract Object getWrapped();
   protected abstract MetaClass getDelegatedMetaClass();
