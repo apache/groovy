@@ -2213,7 +2213,7 @@ public class AsmClassGenerator extends ClassGenerator {
             cv.visitFieldInsn(GETSTATIC, internalClassName, staticFieldName, "Ljava/lang/Class;");
             Label l0 = new Label();
             cv.visitJumpInsn(IFNONNULL, l0);
-            cv.visitLdcInsn(type.getName());
+            cv.visitLdcInsn(BytecodeHelper.getClassLoadingTypeDescription(type));
             cv.visitMethodInsn(INVOKESTATIC, internalClassName, "class$", "(Ljava/lang/String;)Ljava/lang/Class;");
             cv.visitInsn(DUP);
             cv.visitFieldInsn(PUTSTATIC, internalClassName, staticFieldName, "Ljava/lang/Class;");
