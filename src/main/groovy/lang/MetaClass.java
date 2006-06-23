@@ -83,15 +83,15 @@ public abstract class MetaClass {
     
     // Possibly Temp methods
     public abstract List getMethods();
-    protected abstract MetaMethod pickMethod(String methodName, Class[] arguments);
-    protected abstract MetaMethod pickMethod(Object object, String methodName, Object[] arguments);
+    public abstract MetaMethod pickMethod(String methodName, Class[] arguments);
+    public abstract MetaMethod pickMethod(Object object, String methodName, Object[] arguments);
     public abstract MetaMethod retrieveMethod(Object owner, String methodName, Object[] arguments);
     public abstract MetaMethod retrieveMethod(String methodName, Class[] arguments);
     public abstract MetaMethod retrieveStaticMethod(String methodName, Class[] arguments);
     public abstract Constructor retrieveConstructor(Class[] arguments);
-    protected abstract void addNewInstanceMethod(Method method);
-    protected abstract void addNewStaticMethod(Method method);
-    protected abstract void checkInitialised();
+    public abstract void addNewInstanceMethod(Method method);
+    public abstract void addNewStaticMethod(Method method);
+    public abstract void checkInitialised();
     public abstract List getProperties();
     public abstract void setProperties(Object bean, Map map);
     public abstract ClassNode getClassNode();
