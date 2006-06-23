@@ -272,7 +272,7 @@ public class GroovyClassLoader extends URLClassLoader {
 
 
     public Class parseClass(GroovyCodeSource codeSource) throws CompilationFailedException {
-        return parseClass(codeSource, true);
+        return parseClass(codeSource, codeSource.isCachable());
     }
 
     /**
