@@ -88,6 +88,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     private ClassNode[] interfaces;
     private MixinNode[] mixins;
     private List constructors = new ArrayList();
+    private List  objectInitializers = new ArrayList();
     private List methods = new ArrayList();
     private List fields = new ArrayList();
     private List properties = new ArrayList();
@@ -584,6 +585,14 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      */
     public ClassNode getOuterClass() {
         return null;
+    }
+    
+    public void addObjectInitializerStatements(Statement statements) {
+        objectInitializers.add(statements);
+    }
+    
+    public List getObjectInitializerStatements() {
+        return objectInitializers;
     }
 
     public void addStaticInitializerStatements(List staticStatements, boolean fieldInit) {
