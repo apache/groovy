@@ -49,6 +49,7 @@ import java.net.MalformedURLException;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
@@ -104,9 +105,9 @@ import org.codehaus.groovy.syntax.Types;
  *
  * @author Jochen Theodorou
  */
-public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTransformer, GroovyClassVisitor {
+public class ResolveVisitor extends ClassCodeVisitorSupport implements ExpressionTransformer {
     private ClassNode currentClass;
-    // note: BidInteger and BigDecimal are also imported by default
+    // note: BigInteger and BigDecimal are also imported by default
     private static final String[] DEFAULT_IMPORTS = {"java.lang.", "java.io.", "java.net.", "java.util.", "groovy.lang.", "groovy.util."};
     private CompilationUnit compilationUnit;
     private Map cachedClasses = new HashMap();
@@ -698,12 +699,6 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
         Expression obj = mce.getObjectExpression();
         Expression newObject = transform(obj);
         Expression args = transform(mce.getArguments());
-        /*if (! (newObject instanceof ClassExpression)) {
-            obj=newObject;
-        } else if (newObject!=obj) {
-            return new StaticMethodCallExpression(newObject.getType(),mce.getMethod(),args);
-        }
-        return new MethodCallExpression(obj,mce.getMethod(),args);*/
         MethodCallExpression ret = new MethodCallExpression(newObject,mce.getMethod(),args);
         ret.setSafe(mce.isSafe());
         ret.setImplicitThis(mce.isImplicitThis());
@@ -760,7 +755,7 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
         for (int i=0; i<interfaces.length; i++) {
             resolveOrFail(interfaces[i],node,true);
         }        
-        node.visitContents(this);
+        super.visitClass(node);
         currentClass = oldNode;        
     }
     
@@ -812,18 +807,14 @@ public class ResolveVisitor extends CodeVisitorSupport implements ExpressionTran
         es.setExpression(transform(es.getExpression()));
     }
     
-    private void addError(String msg, ASTNode expr) {
-        int line = expr.getLineNumber();
-        int col = expr.getColumnNumber();
-        compilationUnit.getErrorCollector().addErrorAndContinue(
-          new SyntaxErrorMessage(new SyntaxException(msg + '\n', line, col), source)
-        );
-    }
-    
     public void visitBlockStatement(BlockStatement block) {
         VariableScope oldScope = currentScope;
         currentScope = block.getVariableScope();
         super.visitBlockStatement(block);
         currentScope = oldScope;
+    }
+
+    protected SourceUnit getSourceUnit() {
+        return source;
     }
 }

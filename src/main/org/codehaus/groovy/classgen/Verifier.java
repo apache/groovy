@@ -120,7 +120,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             //interfaces have no construcotrs, but this code expects one, 
             //so creta a dummy and don't add it to the class node
             ConstructorNode dummy = new ConstructorNode(0,null);
-            addFieldInitialization(node, dummy);
+            addInitialization(node, dummy);
             node.visitContents(this);
             return;
         }
@@ -280,9 +280,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             timeTagField.setSynthetic(true);
             node.addField(timeTagField);
         }
-
-        addFieldInitialization(node);
-
+        
+        addInitialization(node);
+        node.getObjectInitializerStatements().clear();
         node.visitContents(this);
     }
     public void visitConstructor(ConstructorNode node) {
@@ -561,13 +561,13 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         // add a new invoke
     }
 
-    protected void addFieldInitialization(ClassNode node) {
+    protected void addInitialization(ClassNode node) {
         for (Iterator iter = node.getDeclaredConstructors().iterator(); iter.hasNext();) {
-            addFieldInitialization(node, (ConstructorNode) iter.next());
+            addInitialization(node, (ConstructorNode) iter.next());
         }
     }
 
-    protected void addFieldInitialization(ClassNode node, ConstructorNode constructorNode) {
+    protected void addInitialization(ClassNode node, ConstructorNode constructorNode) {
         Statement firstStatement = constructorNode.getFirstStatement();
         ConstructorCallExpression first = getFirstIfSpecialConstructorCall(firstStatement);
         
@@ -579,6 +579,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         for (Iterator iter = node.getFields().iterator(); iter.hasNext();) {
             addFieldInitialization(statements, staticStatements, (FieldNode) iter.next());
         }
+        statements.addAll(node.getObjectInitializerStatements());
         if (!statements.isEmpty()) {
             Statement code = constructorNode.getCode();
             BlockStatement block = new BlockStatement();

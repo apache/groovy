@@ -4,6 +4,9 @@
  */
 package org.codehaus.groovy.ast;
 
+import java.util.Iterator;
+import java.util.List;
+
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.stmt.AssertStatement;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
@@ -31,6 +34,11 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
     public void visitClass(ClassNode node) {
         visitAnnotations(node);
         node.visitContents(this);
+        List list = node.getObjectInitializerStatements();
+        for (Iterator iter = list.iterator(); iter.hasNext();) {
+            Statement element = (Statement) iter.next();
+            element.visit(this);
+        }
     }
     
     public void visitAnnotations(AnnotatedNode node) {

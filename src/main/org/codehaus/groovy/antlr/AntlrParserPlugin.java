@@ -367,6 +367,10 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                     staticInit(node);
                     break;
                     
+                case INSTANCE_INIT:
+                    objectInit(node);
+                    break;
+                    
                 default:
                     unknownAST(node);
             }
@@ -448,8 +452,12 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         BlockStatement code = (BlockStatement) statementList(staticInit);
         classNode.addStaticInitializerStatements(code.getStatements(),false);
     }
-
-
+    
+    protected void objectInit(AST init) {        
+        BlockStatement code = (BlockStatement) statementList(init);
+        classNode.addObjectInitializerStatements(code);
+    }
+    
     protected void constructorDef(AST constructorDef) {
         List annotations = new ArrayList();
         AST node = constructorDef.getFirstChild();
