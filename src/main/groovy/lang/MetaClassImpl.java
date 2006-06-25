@@ -79,6 +79,7 @@ import org.codehaus.groovy.control.Phases;
 import org.codehaus.groovy.runtime.CurriedClosure;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
+import org.codehaus.groovy.runtime.Invoker;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.MethodClosure;
@@ -122,7 +123,7 @@ public class MetaClassImpl extends MetaClass {
    // we only need one of these that can be reused over and over.
    private MetaProperty arrayLengthProperty = new MetaArrayLengthProperty();
    private final static MetaMethod AMBIGOUS_LISTENER_METHOD = new MetaMethod(null,null,new Class[]{},null,0);
-   
+   private static final Object[] EMPTY_ARGUMENTS = {};
    
    public MetaClassImpl(MetaClassRegistry registry, final Class theClass) throws IntrospectionException {
        super(theClass);
@@ -282,10 +283,11 @@ public class MetaClassImpl extends MetaClass {
    public Object invokeMethod(Object object, String methodName, Object[] arguments) {
        if (object == null) {
            throw new NullPointerException("Cannot invoke method: " + methodName + " on null object");
-       }
+       }              
        if (log.isLoggable(Level.FINER)){
            MetaClassHelper.logMethodCall(object, methodName, arguments);
        }
+       if (arguments==null) arguments = EMPTY_ARGUMENTS;
        
        //
        // Temp code to ignore wrapped parameters
@@ -487,6 +489,7 @@ public class MetaClassImpl extends MetaClass {
        if (log.isLoggable(Level.FINER)){
            MetaClassHelper.logMethodCall(object, methodName, arguments);
        }
+       if (arguments==null) arguments = EMPTY_ARGUMENTS;
        // lets try use the cache to find the method
        MethodKey methodKey = new TemporaryMethodKey(methodName, arguments);
        MetaMethod method = (MetaMethod) staticMethodCache.get(methodKey);
@@ -542,6 +545,7 @@ public class MetaClassImpl extends MetaClass {
    }
 
    public Object invokeConstructor(Object[] arguments) {
+       if (arguments==null) arguments = EMPTY_ARGUMENTS;
        Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
        Constructor constructor = (Constructor) chooseMethod("<init>", constructors, argClasses, false);
        if (constructor != null) {
@@ -572,6 +576,7 @@ public class MetaClassImpl extends MetaClass {
    }
 
    public Object invokeConstructorAt(Class at, Object[] arguments) {
+       if (arguments==null) arguments = EMPTY_ARGUMENTS;
        Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
        Constructor constructor = (Constructor) chooseMethod("<init>", constructors, argClasses, false);
        if (constructor != null) {
