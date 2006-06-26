@@ -1087,7 +1087,7 @@ enumConstantField!  {Token first = LT(1);}
 
                 // get the list of exceptions that this method is
                 // declared to throw
-                ((NLS "throws") => tc:throwsClause)?
+                ((nls "throws") => tc:throwsClause)?
 
                 ( s2:compoundStatement )?
                 // TODO - verify that 't' is useful/correct here, used to be 'rt'
@@ -1224,7 +1224,7 @@ variableDefinitions[AST mods, AST t]  {Token first = LT(1);}
 
         // get the list of exceptions that this method is
         // declared to throw
-        ((NLS "throws") =>  tc:throwsClause!  )? 
+        ((nls "throws") =>  tc:throwsClause!  )? 
 
         // the method body is an open block
         // but, it may have an optional constructor call (for constructors only)
@@ -1255,7 +1255,7 @@ constructorDefinition[AST mods]  {Token first = LT(1);}
 
         // get the list of exceptions that this method is
         // declared to throw
-        ((NLS "throws") => tc:throwsClause!  )? nlsWarn!
+        ((nls "throws") => tc:throwsClause!  )? nlsWarn!
         // the method body is an open block
         // but, it may have an optional constructor call (for constructors only)
 
