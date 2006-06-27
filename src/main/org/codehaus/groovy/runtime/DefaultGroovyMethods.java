@@ -5270,7 +5270,19 @@ public class DefaultGroovyMethods {
      * @param text the text to write to the File
      * @throws IOException
      */
-    public static File leftShift(File file, String text) throws IOException {
+    public static File leftShift(File file, Object text) throws IOException {
+		append(file, text);
+		return file;
+    }
+
+    /**
+     * Write the text to the File.
+     *
+     * @param file a File
+     * @param text the text to write to the File
+     * @throws IOException
+     */
+    public static File leftShift(File file, Writable text) throws IOException {
 		append(file, text);
 		return file;
     }
@@ -5296,12 +5308,45 @@ public class DefaultGroovyMethods {
      * @param text the text to append at the end of the File
      * @throws IOException
      */
-    public static void append(File file, String text) throws IOException {
-        BufferedWriter writer = newWriter(file, true);
-        writer.write(text);
-        writer.close();
+    public static void append(File file, Object text) throws IOException {
+    	BufferedWriter writer = null;
+    	try {
+    		writer = newWriter(file, true);
+    		writer.write(text.toString());
+    	}
+    	finally {
+    		if(writer != null)
+    			try {
+    				writer.close();
+    			}
+    			catch(Exception e){
+    				// ignore this exception
+    			}
+    	}
     }
 
+    /**
+     * Append the text at the end of the File
+     *
+     * @param file a File
+     * @param text the text to append at the end of the File
+     * @throws IOException
+     */
+    public static void append(File file, Writable text) throws IOException {
+		BufferedWriter writer = null; 
+		try {
+			writer = newWriter(file, true);
+			InvokerHelper.write(writer, text);
+		} finally {
+    		if(writer != null)
+    			try {
+    				writer.close();
+    			}
+    			catch(Exception e){
+    				// ignore this exception
+    			}
+		}
+    }
     /**
      * Append the text at the end of the File with a specified encoding
      *
