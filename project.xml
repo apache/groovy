@@ -5,7 +5,7 @@
   <name>groovy</name>
   <groupId>groovy</groupId>
   <id>groovy</id>
-  <currentVersion>1.0-RC-01-SNAPSHOT</currentVersion>
+  <currentVersion>1.0-jsr-06</currentVersion>
   <organization>
     <name>The Codehaus</name>
     <url>http://codehaus.org</url>
@@ -35,17 +35,17 @@
 
   <url>http://groovy.codehaus.org/</url>
   
-  <siteAddress>beaver.codehaus.org</siteAddress>
-  <siteDirectory>/home/projects/groovy/public_html</siteDirectory>
+  <!-- siteAddress>beaver.codehaus.org</siteAddress>
+  <siteDirectory>/home/projects/groovy/public_html</siteDirectory -->
   <issueTrackingUrl>http://jira.codehaus.org/browse/GROOVY</issueTrackingUrl>
 
-  <distributionDirectory>/dist/</distributionDirectory>
-  <distributionSite>beaver.codehaus.org</distributionSite>
+  <!-- distributionDirectory>/dist/</distributionDirectory>
+  <distributionSite>beaver.codehaus.org</distributionSite -->
 
   <repository>
-    <connection>scm:cvs:pserver:anonymous@cvs.groovy.codehaus.org:/home/projects/groovy/scm:groovy/groovy-core</connection>
-    <developerConnection>scm:cvs:ext:${maven.username}@cvs.groovy.codehaus.org:/home/projects/groovy/scm:groovy/groovy-core</developerConnection>
-    <url>http://cvs.groovy.codehaus.org/viewrep/groovy/groovy/groovy-core</url>
+    <connection>scm:cvs:pserver:anonymous@cvs.groovy.codehaus.org:/cvs/groovy:groovy/groovy-core</connection>
+    <developerConnection>scm:cvs:ext:${maven.username}@cvs.groovy.codehaus.org:/cvs/groovy:groovy/groovy-core</developerConnection>
+    <url>http://cvs.groovy.codehaus.org/</url>
   </repository>
   
   <versions>
@@ -123,6 +123,11 @@
         <id>jsr05</id>
         <name>1.0-JSR-05</name>
         <tag>GROOVY_1_0_JSR_05</tag>
+      </version>
+      <version>
+        <id>jsr06</id>
+        <name>1.0-JSR-06</name>
+        <tag>GROOVY_1_0_JSR_06</tag>
       </version>
   </versions>
 
