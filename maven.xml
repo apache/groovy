@@ -13,7 +13,7 @@
   <goal name="modules" description="Builds related modules">
     <maven:reactor
        basedir="${basedir}/../modules"
-       includes="xmlrpc/project.xml"
+       includes="xmlrpc/project.xml" 
        banner="Executing build:"
        ignoreFailures="false"
        postProcessing="true"
@@ -574,7 +574,7 @@
 
   <goal name="groovy:make-full-install" prereqs="groovy:make-install">
     <!-- lets copy xmlrpc into the release -->
-    <attainGoal name="modules"/>
+    <!-- attainGoal name="modules"/ -->
     <!--
     <echo>Copying the xmlrpc jar into the install directory ${groovy.install.staging.dest}/lib</echo>
     -->
