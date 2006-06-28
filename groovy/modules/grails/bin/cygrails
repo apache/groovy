@@ -1,6 +1,0 @@
-#!/bin/sh
-
-# This is the cygwin version of the grails script.
-# It doesn't use the -Dbasedir setting and uses Ant's default
-
-${ANT_HOME}/bin/ant -lib ${GRAILS_ANT_CLASSPATH} -f ${GRAILS_HOME}/src/grails/build.xml $@

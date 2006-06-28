@@ -1,9 +1,0 @@
-Tue Feb 21 20:58:13 CET 2006 Guillaume Alleon <guillaume.alleon@gmail.com>
-
-	* Creation of the new gsoap module
-
-Sun Apr 23 10:49:26 CET 2006 Guillaume Alleon <guillaume.alleon@gmail.com>
-
-	* Rename module gsoap in groovy.net.groovysoap
-        * Add capability to define WebService from Plain Groovy Script
-        * Upgrade to XFire-1.1-SNAPSNOT to correct some bugs (XFIRE-331, XFIRE-343
