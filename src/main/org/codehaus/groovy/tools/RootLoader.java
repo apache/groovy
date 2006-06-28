@@ -45,10 +45,8 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 package org.codehaus.groovy.tools;
 
-import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.Enumeration;
 
 /**
  * This ClassLoader should be used as root of class loaders. Any
@@ -164,7 +162,6 @@ public class RootLoader extends URLClassLoader {
      * adds an url to the classpath of this classloader
      */
     public void addURL(URL url) {
-        System.out.println("RL: added url "+url);
         super.addURL(url);
     }
 }
