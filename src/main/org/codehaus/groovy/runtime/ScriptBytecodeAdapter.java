@@ -54,6 +54,10 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.codehaus.groovy.runtime.wrappers.GroovyObjectWrapper;
+import org.codehaus.groovy.runtime.wrappers.PojoWrapper;
+import org.codehaus.groovy.runtime.wrappers.Wrapper;
+
 /**
  * A static helper class to make bytecode generation easier and act as a facade over the Invoker. 
  *
@@ -63,15 +67,6 @@ import java.util.regex.Pattern;
 public class ScriptBytecodeAdapter {
     public static final Object[] EMPTY_ARGS = {
     };
-/*
-    private static final Object[] EMPTY_MAIN_ARGS = new Object[]{new String[0]};
-
-    private static final Invoker singleton = new Invoker();
-
-    private static final Integer ZERO = new Integer(0);
-    private static final Integer MINUS_ONE = new Integer(-1);
-    private static final Integer ONE = new Integer(1);*/
-
     
     private static Object unwrap(GroovyRuntimeException gre) throws Throwable{
         Throwable th = gre;
@@ -126,14 +121,6 @@ public class ScriptBytecodeAdapter {
         }
     }
 
-    /// public static Object invokeConstructorAt(Class at, String type, Object arguments) throws Throwable{
-    ///     try {
-    ///         return InvokerHelper.invokeConstructorAt(at, type, arguments);
-    ///     } catch (GroovyRuntimeException gre) {
-    ///         return unwrap(gre);
-    ///     }
-    /// }
-
     public static Object invokeNoArgumentsConstructorAt(Class at, Class type) throws Throwable {
         return invokeConstructorAt(at, type, EMPTY_ARGS);
     }
@@ -146,14 +133,6 @@ public class ScriptBytecodeAdapter {
             return unwrap(gre);
         }  
     }
-    
-    /// public static Object invokeConstructorOf(String type, Object arguments) throws Throwable{
-    ///     try {
-    ///         return InvokerHelper.invokeConstructorOf(type, arguments);
-    ///     } catch (GroovyRuntimeException gre) {
-    ///         return unwrap(gre);
-    ///     }  
-    /// }
     
     public static Object invokeNoArgumentsConstructorOf(Class type) throws Throwable {
         return invokeConstructorOf(type, EMPTY_ARGS);
@@ -540,7 +519,15 @@ public class ScriptBytecodeAdapter {
     public static List createList(Object[] values) throws Throwable{
         return InvokerHelper.createList(values);
     }
+    
+    public static Wrapper createPojoWrapper(Object val, Class clazz) {
+        return new PojoWrapper(val,clazz);
+    }
 
+    public static Wrapper createGroovyObjectWrapper(GroovyObject val, Class clazz) {
+        return new GroovyObjectWrapper(val,clazz);
+    }
+    
     public static Map createMap(Object[] values) throws Throwable{
         return InvokerHelper.createMap(values);
     }
@@ -643,273 +630,4 @@ public class ScriptBytecodeAdapter {
         return InvokerHelper.getMetaClass(object);
     }
 
-    /*
-    public static void removeClass(Class clazz) {
-        getInstance().removeMetaClass(clazz);
-        Introspector.flushFromCaches(clazz);
-    }
-
-    public static Invoker getInstance() {
-        return singleton;
-    }
-
-    public static Collection asCollection(Object collection) {
-        return getInstance().asCollection(collection);
-    }
-
-    public static List asList(Object args) {
-        return getInstance().asList(args);
-    }
-
-    public static String toString(Object arguments) {
-        return getInstance().toString(arguments);
-    }
-
-    public static String toTypeString(Object[] arguments) {
-        return getInstance().toTypeString(arguments);
-    }
-
-    public static String inspect(Object self) {
-        return getInstance().inspect(self);
-    }
-
-
-
-    public static Object runScript(Class scriptClass, String[] args) {
-        Binding context = new Binding(args);
-        Script script = createScript(scriptClass, context);
-        return invokeMethod(script, "run", EMPTY_ARGS);
-    }
-
-    public static Script createScript(Class scriptClass, Binding context) {
-        try {
-            final GroovyObject object = (GroovyObject) scriptClass.newInstance();
-            Script script = null;
-            if (object instanceof Script) {
-                script = (Script) object;
-            } else {
-                // it could just be a class, so lets wrap it in a Script wrapper
-                // though the bindings will be ignored
-                script = new Script() {
-                    public Object run() {
-                        object.invokeMethod("main", EMPTY_MAIN_ARGS);
-                        return null;
-                    }
-                };
-                setProperties(object, context.getVariables());
-            }
-            script.setBinding(context);
-            return script;
-        } catch (Exception e) {
-            throw new GroovyRuntimeException("Failed to create Script instance for class: " + scriptClass + ". Reason: " + e,
-                    e);
-        }
-    }
-*/
-    
-    /**
-     * Sets the properties on the given object
-     *
-     * @param object
-     * @param map
-     */
-/*    public static void setProperties(Object object, Map map) {
-        getMetaClass(object).setProperties(object, map);
-    }
-
-    public static String getVersion() {
-        String version = null;
-        Package p = Package.getPackage("groovy.lang");
-        if (p != null) {
-            version = p.getImplementationVersion();
-        }
-        if (version == null) {
-            version = "";
-        }
-        return version;
-    }*/
-
-    /**
-     * Allows conversion of arrays into a mutable List
-     *
-     * @return the array as a List
-     */
-    /*protected static List primitiveArrayToList(Object array) {
-        int size = Array.getLength(array);
-        List list = new ArrayList(size);
-        for (int i = 0; i < size; i++) {
-            list.add(Array.get(array, i));
-        }
-        return list;
-    }*/
-
-    /**
-     * Writes the given object to the given stream
-     */
-/*    public static void write(Writer out, Object object) throws IOException {
-        if (object instanceof String) {
-            out.write((String) object);
-        } else if (object instanceof Writable) {
-            Writable writable = (Writable) object;
-            writable.writeTo(out);
-        } else if (object instanceof InputStream || object instanceof Reader) {
-            // Copy stream to stream
-            Reader reader;
-            if (object instanceof InputStream) {
-                reader = new InputStreamReader((InputStream) object);
-            } else {
-                reader = (Reader) object;
-            }
-            char[] chars = new char[8192];
-            int i;
-            while ((i = reader.read(chars)) != -1) {
-                out.write(chars, 0, i);
-            }
-            reader.close();
-        } else {
-            out.write(toString(object));
-        }
-    }
-
-    public static int[] convertToIntArray(Object a) {
-        int[] ans = null;
-
-        // conservative coding
-        if (a.getClass().getName().equals("[I")) {
-            ans = (int[]) a;
-        } else {
-            Object[] ia = (Object[]) a;
-            ans = new int[ia.length];
-            for (int i = 0; i < ia.length; i++) {
-                ans[i] = ((Number) ia[i]).intValue();
-            }
-        }
-        return ans;
-    }
-
-    public static boolean[] convertToBooleanArray(Object a) {
-        boolean[] ans = null;
-
-        // conservative coding
-        if (a.getClass().getName().equals("[Z")) {
-            ans = (boolean[]) a;
-        } else {
-            Object[] ia = (Object[]) a;
-            ans = new boolean[ia.length];
-            for (int i = 0; i < ia.length; i++) {
-                ans[i] = ((Boolean) ia[i]).booleanValue();
-            }
-        }
-        return ans;
-    }
-
-    public static byte[] convertToByteArray(Object a) {
-        byte[] ans = null;
-
-        // conservative coding
-        if (a.getClass().getName().equals("[B")) {
-            ans = (byte[]) a;
-        } else {
-            Object[] ia = (Object[]) a;
-            ans = new byte[ia.length];
-            for (int i = 0; i < ia.length; i++) {
-                if (ia[i] != null)
-                    ans[i] = ((Number) ia[i]).byteValue();
-            }
-        }
-        return ans;
-    }
-
-    public static short[] convertToShortArray(Object a) {
-        short[] ans = null;
-
-        // conservative coding
-        if (a.getClass().getName().equals("[S")) {
-            ans = (short[]) a;
-        } else {
-            Object[] ia = (Object[]) a;
-            ans = new short[ia.length];
-            for (int i = 0; i < ia.length; i++) {
-                ans[i] = ((Number) ia[i]).shortValue();
-            }
-        }
-        return ans;
-    }
-
-    public static char[] convertToCharArray(Object a) {
-        char[] ans = null;
-
-        // conservative coding
-        if (a.getClass().getName().equals("[C")) {
-            ans = (char[]) a;
-        } else {
-            Object[] ia = (Object[]) a;
-            ans = new char[ia.length];
-            for (int i = 0; i < ia.length; i++) {
-                ans[i] = ((Character) ia[i]).charValue();
-            }
-        }
-        return ans;
-    }
-
-    public static long[] convertToLongArray(Object a) {
-        long[] ans = null;
-
-        // conservative coding
-        if (a.getClass().getName().equals("[J")) {
-            ans = (long[]) a;
-        } else {
-            Object[] ia = (Object[]) a;
-            ans = new long[ia.length];
-            for (int i = 0; i < ia.length; i++) {
-                ans[i] = ((Number) ia[i]).longValue();
-            }
-        }
-        return ans;
-    }
-
-    public static float[] convertToFloatArray(Object a) {
-        float[] ans = null;
-
-        // conservative coding
-        if (a.getClass().getName().equals("[F")) {
-            ans = (float[]) a;
-        } else {
-            Object[] ia = (Object[]) a;
-            ans = new float[ia.length];
-            for (int i = 0; i < ia.length; i++) {
-                ans[i] = ((Number) ia[i]).floatValue();
-            }
-        }
-        return ans;
-    }
-
-    public static double[] convertToDoubleArray(Object a) {
-        double[] ans = null;
-
-        // conservative coding
-        if (a.getClass().getName().equals("[D")) {
-            ans = (double[]) a;
-        } else {
-            Object[] ia = (Object[]) a;
-            ans = new double[ia.length];
-            for (int i = 0; i < ia.length; i++) {
-                ans[i] = ((Number) ia[i]).doubleValue();
-            }
-        }
-        return ans;
-    }
-*/
-    
-    /*
-
-    private static Integer[] SMALL_INTEGERS;
-    private static int INT_CACHE_OFFSET = 128, INT_CACHE_LEN = 256;
-
-    static {
-        SMALL_INTEGERS = new Integer[INT_CACHE_LEN];
-        for (int i = 0; i < SMALL_INTEGERS.length; i++) {
-            SMALL_INTEGERS[i] = new Integer(i - INT_CACHE_OFFSET);
-        }
-    }*/
 }

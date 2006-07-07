@@ -233,7 +233,10 @@ public class AsmClassGenerator extends ClassGenerator {
 
     MethodCaller iteratorNextMethod = MethodCaller.newInterface(Iterator.class, "next");
     MethodCaller iteratorHasNextMethod = MethodCaller.newInterface(Iterator.class, "hasNext");
-
+    
+    // wrapper creation methods
+    MethodCaller createPojoWrapperMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "createPojoWrapper");
+    MethodCaller createGroovyObjectWrapperMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "createGroovyObjectWrapper");
     
     // exception blocks list
     private List exceptionBlocks = new ArrayList();
@@ -1482,14 +1485,6 @@ public class AsmClassGenerator extends ClassGenerator {
         String method = call.getMethod();
         // are we a local variable
         if (isThisExpression(call.getObjectExpression()) && isFieldOrVariable(method) && ! classNode.hasPossibleMethod(method, arguments)) {
-            /*
-             * if (arguments instanceof TupleExpression) { TupleExpression
-             * tupleExpression = (TupleExpression) arguments; int size =
-             * tupleExpression.getExpressions().size(); if (size == 1) {
-             * arguments = (Expression)
-             * tupleExpression.getExpressions().get(0); } }
-             */
-            
             // lets invoke the closure method
             visitVariableExpression(new VariableExpression(method));
             arguments.visit(this);
@@ -1538,6 +1533,7 @@ public class AsmClassGenerator extends ClassGenerator {
                         cv.visitVarInsn(ALOAD, paramIdx);
                         compileStack.removeVar(paramIdx);
                     } else {
+                        // call with map "foo(1:1)"
                         prepareMethodcallObjectAndName(objectExpression, objectExpressionIsMethodName,method);
                         arguments.visit(this);
                     }
@@ -1967,17 +1963,8 @@ public class AsmClassGenerator extends ClassGenerator {
             cv.visitFieldInsn(GETSTATIC, ownerName, expression.getFieldName(), BytecodeHelper.getTypeDescription(type));
             cv.visitInsn(SWAP);
             cv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Reference", "set", "(Ljava/lang/Object;)V");
-        }
-        else {
-            if (isInClosureConstructor()) {
-                helper.doCast(type);
-            }
-            else {
-                // this may be superfluous
-                //doConvertAndCast(type);
-                // use weaker cast
-                helper.doCast(type);
-            }
+        } else {
+            helper.doCast(type);
             cv.visitFieldInsn(PUTSTATIC, ownerName, expression.getFieldName(), BytecodeHelper.getTypeDescription(type));
         }
     }
@@ -2265,8 +2252,16 @@ public class AsmClassGenerator extends ClassGenerator {
         }
         createMapMethod.call(cv);
     }
-
+    
+    public void visitArgumentlistExpression(ArgumentListExpression ale) {
+        visitTupleExpression(ale,true);
+    }
+    
     public void visitTupleExpression(TupleExpression expression) {
+        visitTupleExpression(expression,false);
+    }
+
+    private void visitTupleExpression(TupleExpression expression,boolean useWrapper) {
         int size = expression.getExpressions().size();
 
         helper.pushConstant(size);
@@ -2276,11 +2271,23 @@ public class AsmClassGenerator extends ClassGenerator {
         for (int i = 0; i < size; i++) {
             cv.visitInsn(DUP);
             helper.pushConstant(i);
-            visitAndAutoboxBoolean(expression.getExpression(i));
+            Expression argument = expression.getExpression(i);
+            visitAndAutoboxBoolean(argument);
+            if (useWrapper && argument instanceof CastExpression) loadWrapper(argument);
             cv.visitInsn(AASTORE);
         }
     }
     
+    private void loadWrapper(Expression argument) {
+        ClassNode goalClass = argument.getType();
+        visitClassExpression(new ClassExpression(goalClass));
+        if (goalClass.isDerivedFromGroovyObject()) {
+            createGroovyObjectWrapperMethod.call(cv);
+        } else {
+            createPojoWrapperMethod.call(cv);
+        }
+    }
+
     public void visitArrayExpression(ArrayExpression expression) {
         ClassNode elementType = expression.getElementType();
         String arrayTypeName = BytecodeHelper.getClassInternalName(elementType);        
