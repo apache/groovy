@@ -276,6 +276,18 @@ public class MetaClassImpl extends MetaClass {
        }
    }
 
+   private void unwrap(Object[] arguments) {
+       //
+       // Temp code to ignore wrapped parameters
+       // The New MOP will deal with these properly
+       //
+       for (int i = 0; i != arguments.length; i++) {
+        if (arguments[i] instanceof Wrapper) {
+          arguments[i] = ((Wrapper)arguments[i]).unwrap();
+        }
+       }       
+   }
+   
    /**
     * Invokes the given method on the object.
     *
@@ -288,16 +300,7 @@ public class MetaClassImpl extends MetaClass {
            MetaClassHelper.logMethodCall(object, methodName, arguments);
        }
        if (arguments==null) arguments = EMPTY_ARGUMENTS;
-       
-       //
-       // Temp code to ignore wrapped parameters
-       // The New MOP will deal with these properly
-       //
-       for (int i = 0; i != arguments.length; i++) {
-        if (arguments[i] instanceof Wrapper) {
-          arguments[i] = ((Wrapper)arguments[i]).unwrap();
-        }
-       }
+       unwrap(arguments);       
 
        MetaMethod method = retrieveMethod(object, methodName, arguments);
 
@@ -490,6 +493,7 @@ public class MetaClassImpl extends MetaClass {
            MetaClassHelper.logMethodCall(object, methodName, arguments);
        }
        if (arguments==null) arguments = EMPTY_ARGUMENTS;
+       unwrap(arguments);
        // lets try use the cache to find the method
        MethodKey methodKey = new TemporaryMethodKey(methodName, arguments);
        MetaMethod method = (MetaMethod) staticMethodCache.get(methodKey);
@@ -546,6 +550,7 @@ public class MetaClassImpl extends MetaClass {
 
    public Object invokeConstructor(Object[] arguments) {
        if (arguments==null) arguments = EMPTY_ARGUMENTS;
+       unwrap(arguments);
        Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
        Constructor constructor = (Constructor) chooseMethod("<init>", constructors, argClasses, false);
        if (constructor != null) {
@@ -577,6 +582,7 @@ public class MetaClassImpl extends MetaClass {
 
    public Object invokeConstructorAt(Class at, Object[] arguments) {
        if (arguments==null) arguments = EMPTY_ARGUMENTS;
+       unwrap(arguments);
        Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
        Constructor constructor = (Constructor) chooseMethod("<init>", constructors, argClasses, false);
        if (constructor != null) {
