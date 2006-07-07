@@ -698,14 +698,14 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      *         i.e. it implements GroovyObject
      */
     public boolean isDerivedFromGroovyObject() {
-        return implementsInteface(GroovyObject.class.getName());
+        return implementsInterface(GroovyObject.class.getName());
     }
 
     /**
      * @param name the fully qualified name of the interface
      * @return true if this class or any base class implements the given interface
      */
-    public boolean implementsInteface(String name) {
+    public boolean implementsInterface(String name) {
         ClassNode node = redirect();
         do {
             if (node.declaresInterface(name)) {
