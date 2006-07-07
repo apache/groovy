@@ -47,6 +47,7 @@ package org.codehaus.groovy.ast.expr;
 
 import java.util.List;
 
+import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.Parameter;
 
 /**
@@ -84,5 +85,9 @@ public class ArgumentListExpression extends TupleExpression {
         Expression ret = new ArgumentListExpression(transformExpressions(getExpressions(), transformer));
         ret.setSourcePosition(this);
         return ret;
+    }
+    
+    public void visit(GroovyCodeVisitor visitor) {
+        visitor.visitArgumentlistExpression(this);
     }
 }

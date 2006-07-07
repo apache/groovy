@@ -600,5 +600,8 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
         statement.getCode().visit(this);
     }
 
+    public void visitArgumentlistExpression(ArgumentListExpression ale) {
+        visitTupleExpression(ale);
+    }
 }
 

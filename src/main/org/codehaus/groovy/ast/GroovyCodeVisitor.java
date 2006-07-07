@@ -226,6 +226,6 @@ public interface GroovyCodeVisitor {
     public void visitCastExpression(CastExpression expression);
 
 
-
+    public void visitArgumentlistExpression(ArgumentListExpression expression);
 }
 
