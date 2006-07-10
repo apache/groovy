@@ -1116,9 +1116,26 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     //-------------------------------------------------------------------------
 
     protected Expression expression(AST node) {
+        return expression(node,false);
+    }
+    
+    protected Expression expression(AST node, boolean convertToConstant) {
         Expression expression = expressionSwitch(node);
+        if (convertToConstant) {
+            // a method name can never be a VariableExprssion, so it must converted
+            // to a ConstantExpression then. This is needed as the expression
+            // method doesn't know we want a ConstantExpression instead of a
+            // VariableExpression
+            if ( expression != VariableExpression.THIS_EXPRESSION &&
+                 expression != VariableExpression.SUPER_EXPRESSION &&
+                 expression instanceof VariableExpression) 
+            {
+                VariableExpression ve = (VariableExpression) expression;
+                expression = new ConstantExpression(ve.getName());
+            }
+        }
         configureAST(expression, node);
-        return expression;
+        return expression;       
     }
 
     protected Expression expressionSwitch(AST node) {
@@ -1408,10 +1425,18 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             case RANGE_EXCLUSIVE:
                 return rangeExpression(node, false);
 
+            case DYNAMIC_MEMBER:
+                return dynamicMemberExpression(node);
+                
             default:
                 unknownAST(node);
         }
         return null;
+    }
+
+    private Expression dynamicMemberExpression(AST dynamicMemberNode) {
+        AST node = dynamicMemberNode.getFirstChild();
+        return expression(node);
     }
 
     protected Expression ternaryExpression(AST ternaryNode) {
@@ -1614,7 +1639,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         }
 
         if (Types.ofType(type, Types.ASSIGNMENT_OPERATOR)) {
-            if (leftExpression instanceof VariableExpression || leftExpression instanceof PropertyExpression
+            if (leftExpression instanceof VariableExpression || leftExpression.getClass() == PropertyExpression.class
                                                              || leftExpression instanceof FieldExpression
                                                              || leftExpression instanceof AttributeExpression
                                                              || leftExpression instanceof DeclarationExpression) {
@@ -1680,7 +1705,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             if (identifierNode != null) {
                 Expression leftExpression = expression(leftNode);
                 if (isType(SELECT_SLOT, identifierNode)) {
-                    String field = identifier(identifierNode.getFirstChild());
+                    Expression field = expression(identifierNode.getFirstChild(),true);
                     AttributeExpression attributeExpression = new AttributeExpression(leftExpression, field, node.getType() != DOT);
                     if (node.getType() == SPREAD_DOT) {
                         attributeExpression.setSpreadSafe(true);
@@ -1688,7 +1713,8 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                     configureAST(attributeExpression, node);
                     return attributeExpression;
                 }
-                String property = identifier(identifierNode);
+                Expression property = expression(identifierNode,true);
+                
                 PropertyExpression propertyExpression = new PropertyExpression(leftExpression, property, node.getType() != DOT);
                 if (node.getType() == SPREAD_DOT) {
                     propertyExpression.setSpreadSafe(true);
@@ -1709,6 +1735,14 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         return expression;
     }
 
+    private int getTypeInParenthesis(AST node) {
+        if (! isType(EXPR,node) ) node = node.getFirstChild();
+        while (node!=null &&isType(EXPR,node) && node.getNextSibling()==null) {
+            node = node.getFirstChild();
+        }
+        if (node==null) return -1;
+        return node.getType();
+    }
 
     protected Expression methodCallExpression(AST methodCallNode) {
         AST node = methodCallNode.getFirstChild();
@@ -1722,55 +1756,64 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         Expression objectExpression;
         AST selector;
         AST elist = node.getNextSibling();
+        
+        boolean implicitThis = false;
         boolean safe = isType(OPTIONAL_DOT, node);
         boolean spreadSafe = isType(SPREAD_DOT, node);
         if (isType(DOT, node) || safe || spreadSafe) {
             AST objectNode = node.getFirstChild();
             objectExpression = expression(objectNode);
             selector = objectNode.getNextSibling();
-        } else if (isType(IDENT, node)) {
+        } else {
+            implicitThis = true;
             objectExpression = VariableExpression.THIS_EXPRESSION;
             selector = node;
-        } else {
-            objectExpression = expression(node);
-            selector = null;  // implicit "call"
-        }
+        } 
 
-        String name = null;
-        if (selector == null) {
-            name = "call";
-        }  else if (isType(LITERAL_super, selector)) {
-            name = "super";
+        Expression name = null;
+        if (isType(LITERAL_super, selector)) {
+            implicitThis = true;
+            name = new ConstantExpression("super");
             if (objectExpression == VariableExpression.THIS_EXPRESSION) {
                 objectExpression = VariableExpression.SUPER_EXPRESSION;
             }
-        }
-        else if (isPrimitiveTypeLiteral(selector)) {
+        } else if (isPrimitiveTypeLiteral(selector)) {
             throw new ASTRuntimeException(selector, "Primitive type literal: " + selector.getText()
                     + " cannot be used as a method name");
-        }
-        else if (isType(SELECT_SLOT, selector)) {
-            String field = identifier(selector.getFirstChild());
+        } else if (isType(SELECT_SLOT, selector)) {
+            Expression field = expression(selector.getFirstChild(),true);
             AttributeExpression attributeExpression = new AttributeExpression(objectExpression, field, node.getType() != DOT);
             configureAST(attributeExpression, node);
             Expression arguments = arguments(elist);
             MethodCallExpression expression = new MethodCallExpression(attributeExpression, "call", arguments);
             configureAST(expression, methodCallNode);
             return expression;
-        }
-        else {
-            name = identifier(selector);
-        }
+        } else if  
+               (isType(DYNAMIC_MEMBER, selector) || isType(IDENT,selector) || 
+                isType(STRING_CONSTRUCTOR,selector) || isType (STRING_LITERAL,selector)) 
+        { 
+            name = expression(selector,true);
+        } else {
+            implicitThis = false;
+            name = new ConstantExpression("call");
+            objectExpression = expression(selector,true);
+        } 
 
         Expression arguments = arguments(elist);
         MethodCallExpression expression = new MethodCallExpression(objectExpression, name, arguments);
-        boolean implicitThis = (objectExpression == VariableExpression.THIS_EXPRESSION);
-        implicitThis = implicitThis || (objectExpression == VariableExpression.SUPER_EXPRESSION);
         expression.setSafe(safe);
         expression.setSpreadSafe(spreadSafe);
         expression.setImplicitThis(implicitThis);
-        configureAST(expression, methodCallNode);
-        return expression;
+        Expression ret = expression;
+        //FIXME: do we really want this() to create a new object regardless
+        // the position.. for example not as first statement in a constructor
+        // this=first statement in contructor is handled by specialConstructorCallExpression
+        // we may have to add a check and remove this part of the code
+        if (implicitThis && "this".equals(expression.getMethodAsString())) {
+            ret = new ConstructorCallExpression(this.classNode, arguments);
+        }
+        configureAST(ret, methodCallNode);
+        return ret;
     }
     
     protected Expression constructorCallExpression(AST node) {

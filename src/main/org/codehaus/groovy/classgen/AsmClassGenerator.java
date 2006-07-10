@@ -55,6 +55,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
+import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -1459,14 +1460,10 @@ public class AsmClassGenerator extends ClassGenerator {
         compileStack.pop();
     }
 
-    private void prepareMethodcallObjectAndName(Expression objectExpression, boolean objectExpressionIsMethodName, String method) {
-        if (objectExpressionIsMethodName) {
-            VariableExpression.THIS_EXPRESSION.visit(this);
-            objectExpression.visit(this);
-        } else {
-            objectExpression.visit(this);
-            cv.visitLdcInsn(method);    
-        }
+    private void prepareMethodcallObjectAndName(Expression objectExpression, Expression method) {
+        objectExpression.visit(this);
+        Expression cast = new CastExpression(ClassHelper.STRING_TYPE,method);
+        cast.visit(this);
     }
 
     public void visitMethodCallExpression(MethodCallExpression call) {
@@ -1482,11 +1479,11 @@ public class AsmClassGenerator extends ClassGenerator {
          * ConstantExpression.EMPTY_ARRAY; } }
          */
         boolean superMethodCall = MethodCallExpression.isSuperMethodCall(call);
-        String method = call.getMethod();
+        String methodName = call.getMethodAsString();
         // are we a local variable
-        if (isThisExpression(call.getObjectExpression()) && isFieldOrVariable(method) && ! classNode.hasPossibleMethod(method, arguments)) {
+        if (methodName!=null && isThisExpression(call.getObjectExpression()) && isFieldOrVariable(methodName) && ! classNode.hasPossibleMethod(methodName, arguments)) {
             // lets invoke the closure method
-            visitVariableExpression(new VariableExpression(method));
+            visitVariableExpression(new VariableExpression(methodName));
             arguments.visit(this);
             invokeClosureMethod.call(cv);
         } else {
@@ -1498,7 +1495,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 loadArguments(superMethodNode.getParameters(), arguments);
                 
                 String descriptor = BytecodeHelper.getMethodDescriptor(superMethodNode.getReturnType(), superMethodNode.getParameters());
-                cv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(superMethodNode.getDeclaringClass()), method, descriptor);
+                cv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(superMethodNode.getDeclaringClass()), methodName, descriptor);
                 // as long as we want to work with objects where possible, we may have to
                 // box the value here. This can be removed when we know the return type 
                 // and save it in the MethodCallExpression. By default it returns Object
@@ -1507,34 +1504,24 @@ public class AsmClassGenerator extends ClassGenerator {
             }
             else {
                 Expression objectExpression = call.getObjectExpression();
-                boolean objectExpressionIsMethodName = false;
-                if (method.equals("call")) {
-                    if (objectExpression instanceof GStringExpression) {
-                        objectExpressionIsMethodName=true;
-                        objectExpression = new CastExpression(ClassHelper.STRING_TYPE, objectExpression);
-                    } else if (objectExpression instanceof ConstantExpression) {
-                        Object value = ((ConstantExpression) objectExpression).getValue();
-                        if ( value != null && value instanceof String) objectExpressionIsMethodName=true;
-                    }
-                }
+                Expression method = call.getMethod();
                 
                 if (emptyArguments(arguments) && !call.isSafe() && !call.isSpreadSafe()) {
-                    prepareMethodcallObjectAndName(objectExpression, objectExpressionIsMethodName,method);
+                    prepareMethodcallObjectAndName(objectExpression, method);
                     invokeNoArgumentsMethod.call(cv);
                 } else {
                     if (argumentsUseStack(arguments)) {
-                        
+
                         arguments.visit(this);
+                        int paramIdx = compileStack.defineTemporaryVariable("_arg",true);
                         
-                        int paramIdx = compileStack.defineTemporaryVariable(method + "_arg",true);
-                        
-                        prepareMethodcallObjectAndName(objectExpression, objectExpressionIsMethodName,method);
+                        prepareMethodcallObjectAndName(objectExpression, method);
                         
                         cv.visitVarInsn(ALOAD, paramIdx);
                         compileStack.removeVar(paramIdx);
                     } else {
                         // call with map "foo(1:1)"
-                        prepareMethodcallObjectAndName(objectExpression, objectExpressionIsMethodName,method);
+                        prepareMethodcallObjectAndName(objectExpression, method);
                         arguments.visit(this);
                     }
                     
@@ -1575,7 +1562,8 @@ public class AsmClassGenerator extends ClassGenerator {
      * Attempts to find the method of the given name in a super class
      */
     protected MethodNode findSuperMethod(MethodCallExpression call) {
-        String methodName = call.getMethod();
+        String methodName = call.getMethodAsString();
+        if (methodName==null) throw new GroovyBugError("FIXME: new MOP required to make a super call with a dynamic method name");
         TupleExpression argExpr = (TupleExpression) call.getArguments();
         int argCount = argExpr.getExpressions().size();
         ClassNode superClassNode = classNode.getSuperClass();
@@ -1745,19 +1733,20 @@ public class AsmClassGenerator extends ClassGenerator {
         cv.visitFieldInsn(GETSTATIC, ownerName, staticFieldName, "Ljava/lang/Class;");
         cv.visitLabel(l1);
     }
- 
+
     public void visitPropertyExpression(PropertyExpression expression) {
         Expression objectExpression = expression.getObjectExpression();
         if (isThisExpression(objectExpression)) {
             // lets use the field expression if its available
-            String name = expression.getProperty();
-            FieldNode field = classNode.getField(name);
-            if (field != null) {
-                visitFieldExpression(new FieldExpression(field));
-                return;
+            String name = expression.getPropertyAsString();
+            if (name!=null) {
+                FieldNode field = classNode.getField(name);
+                if (field != null) {
+                    visitFieldExpression(new FieldExpression(field));
+                    return;
+                }
             }
-        }
-
+        }       
         // we need to clear the LHS flag to avoid "this." evaluating as ASTORE
         // rather than ALOAD
         boolean left = leftHandExpression;
@@ -1765,7 +1754,8 @@ public class AsmClassGenerator extends ClassGenerator {
         objectExpression.visit(this);
         leftHandExpression = left;
 
-        cv.visitLdcInsn(expression.getProperty());
+        CastExpression cast = new CastExpression(ClassHelper.STRING_TYPE, expression.getProperty());
+        cast.visit(this);
 
         if (isGroovyObject(objectExpression) && ! expression.isSafe()) {
             if (left) {
@@ -1798,17 +1788,20 @@ public class AsmClassGenerator extends ClassGenerator {
                 }
             }
         }
+
     }
 
     public void visitAttributeExpression(AttributeExpression expression) {
         Expression objectExpression = expression.getObjectExpression();
         if (isThisExpression(objectExpression)) {
             // lets use the field expression if its available
-            String name = expression.getProperty();
-            FieldNode field = classNode.getField(name);
-            if (field != null) {
-                visitFieldExpression(new FieldExpression(field));
-                return;
+            String name = expression.getPropertyAsString();
+            if (name!=null) {
+                FieldNode field = classNode.getField(name);
+                if (field != null) {
+                    visitFieldExpression(new FieldExpression(field));
+                    return;
+                }
             }
         }
 
@@ -1819,7 +1812,8 @@ public class AsmClassGenerator extends ClassGenerator {
         objectExpression.visit(this);
         leftHandExpression = left;
 
-        cv.visitLdcInsn(expression.getProperty());
+        CastExpression cast = new CastExpression(ClassHelper.STRING_TYPE, expression.getProperty());
+        cast.visit(this);
 
         if (expression.isSafe()) {
             if (left) {
@@ -2919,9 +2913,10 @@ public class AsmClassGenerator extends ClassGenerator {
             FieldExpression fieldExp = (FieldExpression) expression;
             field = classNode.getField(fieldExp.getFieldName());
         }
-        else if (expression instanceof PropertyExpression) {
+        else if (expression.getClass()==PropertyExpression.class) {
             PropertyExpression fieldExp = (PropertyExpression) expression;
-            field = classNode.getField(fieldExp.getProperty());
+            String possibleField = fieldExp.getPropertyAsString();
+            if (possibleField!=null) field = classNode.getField(possibleField);
         }
         if (field != null) {
             return !field.isStatic();

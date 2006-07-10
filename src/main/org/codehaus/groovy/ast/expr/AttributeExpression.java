@@ -45,9 +45,6 @@
  */
 package org.codehaus.groovy.ast.expr;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
 
@@ -57,32 +54,14 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class AttributeExpression extends Expression {
+public class AttributeExpression extends PropertyExpression {
 
-    private Expression objectExpression;
-    private String property;
-    private boolean spreadSafe = false;
-    private boolean safe = false;
-    private boolean isStatic = false;
-
-    private Method getter = null;
-    private Method setter = null;
-
-    private Field field = null;
-    private int access = -1;
-
-    public boolean isStatic() {
-        return isStatic;
+    public AttributeExpression(Expression objectExpression, Expression property) {
+        super(objectExpression, property, false);
     }
 
-    public AttributeExpression(Expression objectExpression, String property) {
-        this(objectExpression, property, false);
-    }
-
-    public AttributeExpression(Expression objectExpression, String property, boolean safe) {
-        this.objectExpression = objectExpression;
-        this.property = property;
-        this.safe = safe;
+    public AttributeExpression(Expression objectExpression, Expression property, boolean safe) {
+        super(objectExpression, property, safe);
     }
 
     public void visit(GroovyCodeVisitor visitor) {
@@ -90,64 +69,8 @@ public class AttributeExpression extends Expression {
     }
 
     public Expression transformExpression(ExpressionTransformer transformer) {
-        Expression ret = new AttributeExpression(transformer.transform(objectExpression),property,safe);
+        Expression ret = new AttributeExpression(transformer.transform(getObjectExpression()),transformer.transform(getProperty()),isSafe());
         ret.setSourcePosition(this);
         return ret;
-    }
-
-    public Expression getObjectExpression() {
-        return objectExpression;
-    }
-
-    public String getProperty() {
-        return property;
-    }
-
-    public String getText() {
-        return objectExpression.getText() + "." + property;
-    }
-
-    /**
-     * @return is this a safe navigation, i.e. if true then if the source object is null
-     * then this navigation will return null
-     */
-    public boolean isSafe() {
-        return safe;
-    }
-
-    public boolean isSpreadSafe() {
-        return spreadSafe;
-    }
-
-    public void setSpreadSafe(boolean value) {
-        spreadSafe = value;
-    }
-
-    public String toString() {
-        return super.toString() + "[object: " + objectExpression + " property: " + property + "]";
-    }
-
-    public void setStatic(boolean aStatic) {
-        this.isStatic = aStatic;
-    }
-
-    public Method getGetter() {
-        return getter;
-    }
-
-    public Method getSetter() {
-        return setter;
-    }
-    
-    public Field getField() {
-        return field;
-    }
-
-    public void setAccess(int access) {
-        this.access = access;
-    }
-
-    public int getAccess() {
-        return access;
     }
 }

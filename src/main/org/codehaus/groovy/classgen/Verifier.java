@@ -292,7 +292,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             public void visitMethodCallExpression(MethodCallExpression call) {
                 if (!firstMethodCall) return;
                 firstMethodCall = false;
-                String name = call.getMethod();
+                String name = call.getMethodAsString();
                 if (!name.equals("super") && !name.equals("this")) return;
                 type=name;
                 call.getArguments().visit(this);

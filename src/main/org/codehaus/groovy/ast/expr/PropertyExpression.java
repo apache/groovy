@@ -61,7 +61,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 public class PropertyExpression extends Expression {
 
     private Expression objectExpression;
-    private String property;
+    private Expression property;
     private boolean spreadSafe = false;
     private boolean safe = false;
     private boolean isStatic = false;
@@ -77,10 +77,14 @@ public class PropertyExpression extends Expression {
     }
 
     public PropertyExpression(Expression objectExpression, String property) {
+        this(objectExpression, new ConstantExpression(property), false);
+    }
+    
+    public PropertyExpression(Expression objectExpression, Expression property) {
         this(objectExpression, property, false);
     }
 
-    public PropertyExpression(Expression objectExpression, String property, boolean safe) {
+    public PropertyExpression(Expression objectExpression, Expression property, boolean safe) {
         this.objectExpression = objectExpression;
         this.property = property;
         this.safe = safe;
@@ -106,8 +110,15 @@ public class PropertyExpression extends Expression {
         objectExpression=exp;
     }    
     
-    public String getProperty() {
+    public Expression getProperty() {
         return property;
+    }
+    
+    public String getPropertyAsString() {
+        if (property==null) return null;
+        if (! (property instanceof ConstantExpression)) return null;
+        ConstantExpression constant = (ConstantExpression) property;
+        return constant.getText();
     }
 
     public String getText() {

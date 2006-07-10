@@ -2115,9 +2115,7 @@ namePart  {Token first = LT(1);}
         (   IDENT
         |   sl:STRING_LITERAL {#sl.setType(IDENT);}
             // foo.'bar' is in all ways same as foo.bar, except that bar can have an arbitrary spelling
-        |   dn:dynamicMemberName!
-            { #namePart = #(create(DYNAMIC_MEMBER, "DYNAMIC_MEMBER",first,LT(1)), #dn); }
-            // DECIDE PROPOSAL:  foo.(bar), x.(p?'a':'b') means dynamic lookup on a dynamic name
+        |   dynamicMemberName
         |
             openBlock
             // PROPOSAL, DECIDE:  Is this inline form of the 'with' statement useful?

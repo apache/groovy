@@ -54,7 +54,7 @@ public class SqlWhereVisitor extends CodeVisitorSupport {
     }
 
     public void visitPropertyExpression(PropertyExpression expression) {
-        buffer.append(expression.getProperty());
+        buffer.append(expression.getPropertyAsString());
     }
     
     public List getParameters() {

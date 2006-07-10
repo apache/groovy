@@ -52,7 +52,6 @@ import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.DynamicVariable;
@@ -64,6 +63,7 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.VariableScope;
+import org.codehaus.groovy.ast.expr.AttributeExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
@@ -529,7 +529,7 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
         if (exp==null) return null;
         if (exp instanceof VariableExpression) {
             return transformVariableExpression((VariableExpression) exp);
-        } else if (exp instanceof PropertyExpression) {
+        } else if (exp.getClass()==PropertyExpression.class) {
             return transformPropertyExpression((PropertyExpression) exp);
         } else if (exp instanceof DeclarationExpression) {
             return transformDeclarationExpression((DeclarationExpression)exp);
@@ -562,13 +562,13 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
             } 
             // anything other than PropertyExpressions, ClassExpression or
             // VariableExpressions will stop resolving
-            else if (!(it instanceof PropertyExpression)) {
+            else if (!(it.getClass()==PropertyExpression.class)) {
                 return null;
             } else {
                 PropertyExpression current = (PropertyExpression) it;
-                String propertyPart = current.getProperty();
-                // the class property stops resolving
-                if (propertyPart.equals("class")) {
+                String propertyPart = current.getPropertyAsString();
+                // the class property stops resolving, dynamic property names too
+                if (propertyPart==null || propertyPart.equals("class")) {
                     return null;
                 }
                 name = propertyPart+"."+name;
@@ -589,7 +589,7 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
             if (it instanceof ClassExpression) {
                 found = (ClassExpression) it;
                 break;
-            } else if (! (it instanceof PropertyExpression)) {
+            } else if (! (it.getClass()==PropertyExpression.class)) {
                 return pe;
             }
             stack.addFirst(it);
@@ -598,38 +598,42 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
 
         if (stack.isEmpty()) return pe;
         Object stackElement = stack.removeFirst();
-        if (!(stackElement instanceof PropertyExpression)) return pe;
+        if (!(stackElement.getClass()==PropertyExpression.class)) return pe;
         PropertyExpression classPropertyExpression = (PropertyExpression) stackElement;
-        if (! classPropertyExpression.getProperty().equals("class")) return pe;
+        String propertyNamePart = classPropertyExpression.getPropertyAsString();
+        if (propertyNamePart==null || ! propertyNamePart.equals("class")) return pe;
 
         if (stack.isEmpty()) return found;
         stackElement = stack.removeFirst();
-        if (!(stackElement instanceof PropertyExpression)) return pe;
+        if (!(stackElement.getClass()==PropertyExpression.class)) return pe;
         PropertyExpression classPropertyExpressionContainer = (PropertyExpression) stackElement;
 
         classPropertyExpressionContainer.setObjectExpression(found);
         return pe;
     }
-
+    
     protected Expression transformPropertyExpression(PropertyExpression pe) {
         boolean itlp = isTopLevelProperty;
         
         Expression objectExpression = pe.getObjectExpression();
-        isTopLevelProperty = !(objectExpression instanceof PropertyExpression);
+        isTopLevelProperty = !(objectExpression.getClass()==PropertyExpression.class);
         objectExpression = transform(objectExpression);
+        Expression property = transform(pe.getProperty());
         isTopLevelProperty = itlp;
         
-        pe.setObjectExpression(objectExpression);
+        boolean spreadSafe = pe.isSpreadSafe();
+        pe = new PropertyExpression(objectExpression,property,pe.isSafe());
+        pe.setSpreadSafe(spreadSafe);
         
         String className = lookupClassName(pe);
         if (className!=null) {
             ClassNode type = ClassHelper.make(className);
             if (resolve(type)) return new ClassExpression(type);
         }  
-        if (objectExpression instanceof ClassExpression ){
+        if (objectExpression instanceof ClassExpression && pe.getPropertyAsString()!=null){
             // possibly a inner class
             ClassExpression ce = (ClassExpression) objectExpression;
-            ClassNode type = ClassHelper.make(ce.getType().getName()+"$"+pe.getProperty());
+            ClassNode type = ClassHelper.make(ce.getType().getName()+"$"+pe.getPropertyAsString());
             if (resolve(type,false,false,false)) return new ClassExpression(type);
         }
         if (isTopLevelProperty) return correctClassClassChain(pe);
@@ -699,7 +703,8 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
         Expression obj = mce.getObjectExpression();
         Expression newObject = transform(obj);
         Expression args = transform(mce.getArguments());
-        MethodCallExpression ret = new MethodCallExpression(newObject,mce.getMethod(),args);
+        Expression method = transform(mce.getMethod());
+        MethodCallExpression ret = new MethodCallExpression(newObject,method,args);
         ret.setSafe(mce.isSafe());
         ret.setImplicitThis(mce.isImplicitThis());
         ret.setSpreadSafe(mce.isSpreadSafe());

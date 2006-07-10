@@ -50,6 +50,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -62,6 +63,7 @@ import org.codehaus.groovy.ast.DynamicVariable;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
@@ -446,8 +448,14 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     }
     
     public void visitMethodCallExpression(MethodCallExpression call) {
-    	if (call.isImplicitThis()) {
-	        Variable v = checkVariableNameForDeclaration(call.getMethod(),call);
+    	if (call.isImplicitThis() && call.getMethod() instanceof ConstantExpression) {
+            Object value = ((ConstantExpression) call.getMethod()).getText();
+            if (! (value instanceof String)) {
+                throw new GroovyBugError("tried to make a method call with an constant as"+
+                                         " name, but the constant was no String.");
+            }
+            String methodName = (String) value;
+	        Variable v = checkVariableNameForDeclaration(methodName,call);
 	        if (v!=null && !(v instanceof DynamicVariable)) {
 	            checkVariableContextAccess(v,call);
 	        }

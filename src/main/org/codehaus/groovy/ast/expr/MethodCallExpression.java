@@ -59,7 +59,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 public class MethodCallExpression extends Expression {
 
     private Expression objectExpression;
-    private String method;
+    private Expression method;
     private Expression arguments;
     private boolean spreadSafe = false;
     private boolean safe = false;
@@ -72,6 +72,10 @@ public class MethodCallExpression extends Expression {
     private MetaMethod metaMethod = null;
 
     public MethodCallExpression(Expression objectExpression, String method, Expression arguments) {
+        this(objectExpression,new ConstantExpression(method),arguments);
+    }
+    
+    public MethodCallExpression(Expression objectExpression, Expression method, Expression arguments) {
         this.objectExpression = objectExpression;
         this.method = method;
         this.arguments = arguments;
@@ -88,7 +92,7 @@ public class MethodCallExpression extends Expression {
 
     public Expression transformExpression(ExpressionTransformer transformer) {
         MethodCallExpression answer =
-            new MethodCallExpression(transformer.transform(objectExpression), method, transformer.transform(arguments));
+            new MethodCallExpression(transformer.transform(objectExpression), transformer.transform(method), transformer.transform(arguments));
         answer.setSafe(safe);
         answer.setSourcePosition(this);
         return answer;
@@ -98,8 +102,18 @@ public class MethodCallExpression extends Expression {
         return arguments;
     }
 
-    public String getMethod() {
+    public Expression getMethod() {
         return method;
+    }
+    
+    /**
+     * This method returns the method name as String if it is no dynamic
+     * calculated method name, but an constant.
+     */
+    public String getMethodAsString() {
+        if (! (method instanceof ConstantExpression)) return null;
+        ConstantExpression constant = (ConstantExpression) method;
+        return constant.getText();
     }
 
     public Expression getObjectExpression() {
