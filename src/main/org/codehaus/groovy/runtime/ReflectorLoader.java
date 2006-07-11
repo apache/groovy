@@ -75,7 +75,7 @@ public class ReflectorLoader extends ClassLoader {
      * @param parent the parent loader. This should never be null!
      */
     public ReflectorLoader(ClassLoader parent) {
-        super(parent!=null?parent:getSystemClassLoader());
+        super(parent);
         delegatationLoader = getClass().getClassLoader();
     }
     

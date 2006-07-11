@@ -1665,7 +1665,9 @@ public class MetaClassImpl extends MetaClass {
             } catch (IOException ioe){}*/
            ClassLoader loader = (ClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
                public Object run() {
-                   return theClass.getClassLoader();
+                   ClassLoader loader = theClass.getClassLoader();
+                   if (loader == null) loader = this.getClass().getClassLoader();
+                   return loader;
                }
            });           
            Class type = registry.createReflectorClass(loader, name, bytecode);
