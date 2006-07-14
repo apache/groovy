@@ -139,7 +139,7 @@ public class NodeChild extends GPathResult {
    * @see org.codehaus.groovy.sandbox.util.slurpersupport.Node#find(groovy.lang.Closure)
    */
   public GPathResult find(final Closure closure) {
-    if (InvokerHelper.asBool(closure.call(new Object[]{this}))) {
+    if (InvokerHelper.asBool(closure.call(new Object[]{this.node}))) {
       return this;
     } else {
       return new NoChildren(this, "", this.namespaceTagHints);
