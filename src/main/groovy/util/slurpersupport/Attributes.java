@@ -55,17 +55,27 @@ class Attributes extends NodeChildren {
    * @see org.codehaus.groovy.sandbox.util.slurpersupport.NodeChildren#iterator()
    */
   public Iterator iterator() {
-    return new NodeIterator(this.parent.nodeIterator()) {
+    return new NodeIterator(nodeIterator()) {
                   /* (non-Javadoc)
                    * @see org.codehaus.groovy.sandbox.util.slurpersupport.NodeIterator#getNextNode(java.util.Iterator)
                    */
                   protected Object getNextNode(final Iterator iter) {
                     while (iter.hasNext()) {
-                      final Object value = ((Node)iter.next()).attributes().get(Attributes.this.attributeName);
+                    final Object next = iter.next();
                       
-                        if (value != null) {
-                          return value;
-                        }
+                      if (next instanceof Attribute) {
+                          return next;
+                      } else {
+                          final String value = (String)((Node)next).attributes().get(Attributes.this.attributeName);
+                          
+                          if (value != null) {
+                            return new Attribute(Attributes.this.attributeName,
+                                                 value,
+                                                 new NodeChild((Node)next, Attributes.this.parent.parent, "", Attributes.this.namespaceTagHints),
+                                                 "",
+                                                 Attributes.this.namespaceTagHints);
+                          }
+                      }
                     }
                     
                     return null;
@@ -73,7 +83,11 @@ class Attributes extends NodeChildren {
                 };
   }
   
-  /* (non-Javadoc)
+  public Iterator nodeIterator() {
+    return this.parent.nodeIterator();
+}
+
+/* (non-Javadoc)
    * @see org.codehaus.groovy.sandbox.util.slurpersupport.NodeChildren#parents()
    */
   public GPathResult parents() {
@@ -93,11 +107,11 @@ class Attributes extends NodeChildren {
     
     return buf.toString();
   }
-  
-  /* (non-Javadoc)
-   * @see org.codehaus.groovy.sandbox.util.slurpersupport.NodeChildren#find(groovy.lang.Closure)
+
+/* (non-Javadoc)
+   * @see org.codehaus.groovy.sandbox.util.slurpersupport.NodeChildren#findAll(groovy.lang.Closure)
    */
-  public GPathResult find(final Closure closure) {
+  public GPathResult findAll(final Closure closure) {
     return new FilteredAttributes(this, closure, this.namespaceTagHints);
   }
 

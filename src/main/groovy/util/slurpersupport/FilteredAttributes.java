@@ -21,6 +21,8 @@ package groovy.util.slurpersupport;
 import java.util.Iterator;
 import java.util.Map;
 
+import org.codehaus.groovy.runtime.InvokerHelper;
+
 import groovy.lang.Closure;
 
 /**
@@ -36,7 +38,7 @@ public class FilteredAttributes extends Attributes {
     this.closure = closure;
   }
 
-  /* (non-Javadoc)
+/* (non-Javadoc)
    * @see org.codehaus.groovy.sandbox.util.slurpersupport.NodeChildren#iterator()
    */
   public Iterator nodeIterator() {
@@ -45,17 +47,16 @@ public class FilteredAttributes extends Attributes {
                * @see org.codehaus.groovy.sandbox.util.slurpersupport.NodeIterator#getNextNode(java.util.Iterator)
                */
               protected Object getNextNode(final Iterator iter) {
-                while (iter.hasNext()) {
-                final Object node = iter.next();
-                final Boolean result = (Boolean)FilteredAttributes.this.closure.call(new Object[]{node});
-                
-                  if (result != null && result.booleanValue()) {
-                    return node;
-                  }
+                  while (iter.hasNext()) {
+                  final Object node = iter.next();
+                  
+                    if (InvokerHelper.asBool(FilteredAttributes.this.closure.call(new Object[]{node}))) {
+                      return node;
+                    }
                   }
                   
                   return null;
-              }   
+                }   
             };
   }
   
