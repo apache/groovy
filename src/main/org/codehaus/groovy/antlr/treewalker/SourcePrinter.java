@@ -64,8 +64,13 @@ public class SourcePrinter extends VisitorAdapter {
         this.newLines = newLines;
         this.stack = new Stack();
     }
+    
 
-    public void visitAnnotation(GroovySourceAST t, int visit) {
+	public void visitAbstract(GroovySourceAST t, int visit) {
+		print(t,visit,"abstract ",null,null);
+	}
+
+	public void visitAnnotation(GroovySourceAST t, int visit) {
         print(t,visit,"@",null," ");
     }
 

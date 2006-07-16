@@ -39,7 +39,10 @@ import antlr.collections.AST;
  */
 public class SourcePrinterTest extends GroovyTestCase {
 
-
+	public void testAbstract() throws Exception {
+		assertEquals("public abstract class Foo {}", pretty("public abstract class Foo{}"));
+	}
+	
     public void testAnnotations() throws Exception{
         assertEquals("@Property foo", pretty("@Property foo"));
     }

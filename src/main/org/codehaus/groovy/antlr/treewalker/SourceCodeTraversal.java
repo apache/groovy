@@ -179,6 +179,7 @@ public class SourceCodeTraversal extends TraversalHelper {
 
                 case GroovyTokenTypes.LITERAL_catch:
                 case GroovyTokenTypes.LITERAL_try:
+                case GroovyTokenTypes.MODIFIERS:
                     accept_v_FirstChild_v_RestOfTheChildren(t);
                     break;
 
