@@ -43,10 +43,22 @@ public class SourcePrinterTest extends GroovyTestCase {
 		assertEquals("public abstract class Foo {}", pretty("public abstract class Foo{}"));
 	}
 	
-    public void testAnnotations() throws Exception{
+    public void testAnnotation() throws Exception{
         assertEquals("@Property foo", pretty("@Property foo"));
     }
+    
+    public void testAnnotations() throws Exception{
+    	assertEquals("@Important @Blue package foo.bar",pretty("@Important @Blue package foo.bar"));
+    }
 
+    public void testAnnotationArrayInit() throws Exception{
+    	// obsolete java syntax
+    }
+    
+    public void testAnnotationDef() throws Exception{
+        assertEquals("public @interface Foo{}", pretty("public @interface Foo{}"));
+    }
+    
     public void testAssign() throws Exception {
         assertEquals("a = 12", pretty("a=12"));
     }

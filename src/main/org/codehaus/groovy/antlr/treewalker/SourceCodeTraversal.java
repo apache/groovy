@@ -102,7 +102,6 @@ public class SourceCodeTraversal extends TraversalHelper {
 
                 case GroovyTokenTypes.EXPR:
                 case GroovyTokenTypes.IMPORT:
-                case GroovyTokenTypes.PACKAGE_DEF:
                 case GroovyTokenTypes.VARIABLE_DEF:
                 case GroovyTokenTypes.METHOD_DEF:
                 case GroovyTokenTypes.OBJBLOCK: //class Foo {def bar()}  <-- this block
@@ -121,6 +120,7 @@ public class SourceCodeTraversal extends TraversalHelper {
                     }
                     break;
 
+                case GroovyTokenTypes.ANNOTATION_DEF: // @interface Foo...
                 case GroovyTokenTypes.CLASS_DEF: // class Foo...
                 case GroovyTokenTypes.CTOR_IDENT: // private Foo() {...
                 case GroovyTokenTypes.DOT: // foo.bar
@@ -130,6 +130,7 @@ public class SourceCodeTraversal extends TraversalHelper {
                 case GroovyTokenTypes.LT: // a < b
                 case GroovyTokenTypes.MEMBER_POINTER: // this.&foo()
                 case GroovyTokenTypes.MINUS:
+                case GroovyTokenTypes.PACKAGE_DEF:
                 case GroovyTokenTypes.PLUS:
                 case GroovyTokenTypes.RANGE_EXCLUSIVE:
                 case GroovyTokenTypes.RANGE_INCLUSIVE:
@@ -177,6 +178,7 @@ public class SourceCodeTraversal extends TraversalHelper {
                     accept_v_FirstChild_v_RestOfTheChildren_v(t);
                     break;
 
+                case GroovyTokenTypes.ANNOTATIONS: // just like modifiers but for package/enum declarations
                 case GroovyTokenTypes.LITERAL_catch:
                 case GroovyTokenTypes.LITERAL_try:
                 case GroovyTokenTypes.MODIFIERS:

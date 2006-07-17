@@ -63,7 +63,7 @@ public abstract class TraversalHelper implements AntlrASTProcessor {
                 case GroovyTokenTypes.ABSTRACT                      :   v.visitAbstract(ast,n);                     break;
                 case GroovyTokenTypes.ANNOTATION                    :   v.visitAnnotation(ast,n);                   break;
                 case GroovyTokenTypes.ANNOTATIONS                   :   v.visitAnnotations(ast,n);                  break;
-                case GroovyTokenTypes.ANNOTATION_ARRAY_INIT         :   v.visitAnnotationArrayInit(ast,n);          break;
+                case GroovyTokenTypes.ANNOTATION_ARRAY_INIT         :   v.visitAnnotationArrayInit(ast,n);          break; // obsolete?
                 case GroovyTokenTypes.ANNOTATION_DEF                :   v.visitAnnotationDef(ast,n);                break;
                 case GroovyTokenTypes.ANNOTATION_FIELD_DEF          :   v.visitAnnotationFieldDef(ast,n);           break;
                 case GroovyTokenTypes.ANNOTATION_MEMBER_VALUE_PAIR  :   v.visitAnnotationMemberValuePair(ast,n);    break;

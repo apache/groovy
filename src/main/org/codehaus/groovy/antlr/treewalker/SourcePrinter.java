@@ -75,10 +75,11 @@ public class SourcePrinter extends VisitorAdapter {
     }
 
     public void visitAnnotations(GroovySourceAST t, int visit) {
-        if (t.getNumberOfChildren() > 0) {
-            //todo - default line below is just a placeholder
-            visitDefault(t,visit);
-        }
+    	// do nothing
+    }
+
+    public void visitAnnotationDef(GroovySourceAST t,int visit) {
+        print(t,visit,"@interface ",null,null);
     }
 
     public void visitAssign(GroovySourceAST t,int visit) {
