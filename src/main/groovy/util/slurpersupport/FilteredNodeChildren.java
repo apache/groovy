@@ -38,10 +38,40 @@ public class FilteredNodeChildren extends NodeChildren {
   }
 
   /* (non-Javadoc)
+   * @see org.codehaus.groovy.sandbox.util.slurpersupport.GPathResult#iterator()
+   */
+  public Iterator iterator() {
+    return new Iterator() {
+      final Iterator iter = FilteredNodeChildren.this.parent.iterator();
+      
+      public boolean hasNext() {
+        return this.iter.hasNext();
+      }
+      
+      public Object next() {
+        while (iter.hasNext()) {
+        final Object childNode = iter.next();
+      
+      
+          if (InvokerHelper.asBool(FilteredNodeChildren.this.closure.call(new Object[]{childNode}))) {
+            return childNode;
+          }
+        }
+        
+        return null;
+      }
+      
+      public void remove() {
+        throw new UnsupportedOperationException();
+      }
+    };
+  }
+
+  /* (non-Javadoc)
    * @see org.codehaus.groovy.sandbox.util.slurpersupport.NodeChildren#iterator()
    */
   public Iterator nodeIterator() {
-    return new NodeIterator(this.parent.iterator()) {
+    return new NodeIterator(this.parent.nodeIterator()) {
               /* (non-Javadoc)
                * @see org.codehaus.groovy.sandbox.util.slurpersupport.NodeIterator#getNextNode(java.util.Iterator)
                */
@@ -49,7 +79,7 @@ public class FilteredNodeChildren extends NodeChildren {
                 while (iter.hasNext()) {
                 final Object node = iter.next();
                 
-                  if (InvokerHelper.asBool(FilteredNodeChildren.this.closure.call(new Object[]{node}))) {
+                  if (InvokerHelper.asBool(FilteredNodeChildren.this.closure.call(new Object[]{new NodeChild((Node)node, FilteredNodeChildren.this.parent, FilteredNodeChildren.this.namespaceTagHints)}))) {
                     return node;
                   }
                 }
