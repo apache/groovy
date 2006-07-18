@@ -44,7 +44,7 @@ public class SourcePrinterTest extends GroovyTestCase {
 	}
 	
     public void testAnnotation() throws Exception{
-        assertEquals("@Property foo", pretty("@Property foo"));
+        assertEquals("@Crimson foo", pretty("@Crimson foo"));
     }
     
     public void testAnnotations() throws Exception{
@@ -56,7 +56,16 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
     
     public void testAnnotationDef() throws Exception{
+    	// todo - 17 July 2006 - test fine, however this parses but causes error in AntlrParserPlugin
         assertEquals("public @interface Foo{}", pretty("public @interface Foo{}"));
+    }
+    
+    public void testAnnotationFieldDef() throws Exception{
+    	assertEquals("public @interface Foo{int bar() default 123}", pretty("public @interface Foo{int bar() default 123}"));
+    }
+    
+    public void testAnnotationMemberValuePair() throws Exception{
+    	assertEquals("@Prime(value = 17) int foo",pretty("@Prime(value=17) int foo"));
     }
     
     public void testAssign() throws Exception {
@@ -205,7 +214,7 @@ public class SourcePrinterTest extends GroovyTestCase {
         assertEquals("try {} catch (Exception e) {}", pretty("try {} catch (Exception e) {}"));
     }
 
-    public void testLiteralVoid_FAILS() throws Exception { if (notYetImplemented()) return;
+    public void testLiteralVoid() throws Exception {
         assertEquals("void foo() {}", pretty("void foo(){}"));
     }
 
@@ -303,6 +312,9 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
 
     public void testType() throws Exception {
+    	assertEquals("def bar", pretty("def bar"));
+        assertEquals("public bar", pretty("public bar"));
+        assertEquals("public String bar", pretty("public String bar"));
         assertEquals("String bar", pretty("String bar"));
     }
 
@@ -312,6 +324,7 @@ public class SourcePrinterTest extends GroovyTestCase {
 
     public void testVariableDef() throws Exception {
         assertEquals("def x = 1", pretty("def x = 1"));
+        assertEquals("int y = 2", pretty("int y = 2"));
     }
 
     public String pretty(String input) throws Exception{

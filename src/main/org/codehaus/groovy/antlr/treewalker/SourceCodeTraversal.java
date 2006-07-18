@@ -110,6 +110,7 @@ public class SourceCodeTraversal extends TraversalHelper {
                     accept_v_AllChildren_v(t);
                     break;
 
+                case GroovyTokenTypes.ANNOTATION_MEMBER_VALUE_PAIR: // @Blue(foo=123)
                 case GroovyTokenTypes.ASSIGN: // a=b
                 case GroovyTokenTypes.EQUAL: // a==b
                 case GroovyTokenTypes.NOT_EQUAL:
@@ -120,6 +121,10 @@ public class SourceCodeTraversal extends TraversalHelper {
                     }
                     break;
 
+                case GroovyTokenTypes.ANNOTATION_FIELD_DEF: // @interface Foo{ int bar()...
+                    accept_FirstSecondAndThirdChild_v_v_ForthChild(t);
+                    break;
+                    
                 case GroovyTokenTypes.ANNOTATION_DEF: // @interface Foo...
                 case GroovyTokenTypes.CLASS_DEF: // class Foo...
                 case GroovyTokenTypes.CTOR_IDENT: // private Foo() {...
@@ -171,13 +176,14 @@ public class SourceCodeTraversal extends TraversalHelper {
                     }
                     break;
 
+                case GroovyTokenTypes.ANNOTATION:
                 case GroovyTokenTypes.FOR_IN_ITERABLE:
                 case GroovyTokenTypes.LITERAL_for:
                 case GroovyTokenTypes.LITERAL_new:
                 case GroovyTokenTypes.LITERAL_switch:
                     accept_v_FirstChild_v_RestOfTheChildren_v(t);
                     break;
-
+ 
                 case GroovyTokenTypes.ANNOTATIONS: // just like modifiers but for package/enum declarations
                 case GroovyTokenTypes.LITERAL_catch:
                 case GroovyTokenTypes.LITERAL_try:

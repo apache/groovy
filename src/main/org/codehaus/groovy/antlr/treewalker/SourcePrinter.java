@@ -71,7 +71,22 @@ public class SourcePrinter extends VisitorAdapter {
 	}
 
 	public void visitAnnotation(GroovySourceAST t, int visit) {
-        print(t,visit,"@",null," ");
+		if (visit == OPENING_VISIT) {
+			print(t,visit,"@");
+		}
+		if (visit == SUBSEQUENT_VISIT) {
+			if (t.getNumberOfChildren() > 1) {
+				print(t,visit,"(");
+			}
+		}
+		if (visit == CLOSING_VISIT) {
+			if (t.getNumberOfChildren() > 1) {
+				print(t,visit,") ");
+			} else {
+				print(t,visit," ");
+			}
+		}
+
     }
 
     public void visitAnnotations(GroovySourceAST t, int visit) {
@@ -82,7 +97,15 @@ public class SourcePrinter extends VisitorAdapter {
         print(t,visit,"@interface ",null,null);
     }
 
-    public void visitAssign(GroovySourceAST t,int visit) {
+	public void visitAnnotationFieldDef(GroovySourceAST t, int visit) {
+    	print(t,visit,"() ","default ",null);
+	}
+
+	public void visitAnnotationMemberValuePair(GroovySourceAST t, int visit) {
+		print(t,visit," = ",null,null);
+	}
+	
+	public void visitAssign(GroovySourceAST t,int visit) {
         print(t,visit," = ",null,null);
     }
 
@@ -280,7 +303,7 @@ public class SourcePrinter extends VisitorAdapter {
         print(t,visit,"try ",null,null);
     }
     public void visitLiteralVoid(GroovySourceAST t,int visit) {
-        print(t,visit,"void",null," ");
+        print(t,visit,"void",null,null);
     }
     public void visitLiteralWhile(GroovySourceAST t,int visit) {
         printUpdatingTabLevel(t,visit,"while (",null,") ");
@@ -427,9 +450,15 @@ public class SourcePrinter extends VisitorAdapter {
                     print(t,visit,"def");
                 }
             }
-            if (visit == CLOSING_VISIT) {
-                print(t,visit," ");
+        	if (visit == CLOSING_VISIT) {
+        		print(t,visit," ");
             }
+        } else {
+        	if (visit == CLOSING_VISIT) {
+        		if (t.getNumberOfChildren() != 0) {
+        			print(t,visit," ");
+        		}
+        	}
         }
     }
 
