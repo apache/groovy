@@ -60,5 +60,23 @@ class XmlSlurperTest extends GroovyTestCase {
         assert node.uriValue.toURI() == "http://example.org/".toURI()
         
         assert node.urlValue.toURL() == "http://example.org/".toURL()
+        
+        def wsdl = '''                                                                                
+            <definitions name="AgencyManagementService">                                              
+                <message name="SomeRequest">                                                          
+                    <part name="parameters" element="ns1:SomeReq" />                                  
+                </message>                                                                            
+                <message name="SomeResponse">                                                         
+                    <part name="result" element="ns1:SomeRsp" />                                      
+                </message>                                                                            
+            </definitions>                                                                            
+            '''
+        def xml = new XmlSlurper().parseText(wsdl)
+        assert xml.message.part.@element.findAll {it =~ /.Req$/}.size() == 1
+        assert xml.message.part.findAll { true }.size() == 2
+        assert xml.message.part.find { it.name() == 'part' }.name() == 'part'
+        assert xml.message.findAll { true }.size() == 2
+        xml.message.findAll { true }.each { assert it.name() == "message"}
+        println xml.message.part.findAll { true }
     }
 }
