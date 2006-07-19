@@ -794,7 +794,7 @@ public class GroovyClassLoader extends URLClassLoader {
             lastMod = source.openConnection().getLastModified();
         }
         long classTime = getTimeStamp(cls);
-        return classTime+config.getMinimumRecompilationIntervall() < lastMod;
+        return classTime+config.getMinimumRecompilationInterval() < lastMod;
     }
 
     /**

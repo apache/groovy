@@ -129,7 +129,7 @@ public class CompilerConfiguration {
     /**
      * sets the minimum of time after a script can be recompiled.
      */
-    private int minimumRecompilationIntervall;
+    private int minimumRecompilationInterval;
 
     /**
      * Sets the Flags to defaults.
@@ -148,7 +148,7 @@ public class CompilerConfiguration {
         setTolerance(10);
         setScriptBaseClass(null);
         setRecompileGroovySource(false);
-        setMinimumRecompilationIntervall(100);
+        setMinimumRecompilationInterval(100);
 
 
         //
@@ -311,7 +311,7 @@ public class CompilerConfiguration {
         catch (NumberFormatException e) {
             throw new ConfigurationException(e);
         }
-        setMinimumRecompilationIntervall(numeric);
+        setMinimumRecompilationInterval(numeric);
         
         
     }
@@ -562,12 +562,12 @@ public class CompilerConfiguration {
         return recompileGroovySource;
     }
     
-    public void setMinimumRecompilationIntervall(int time) {
-        minimumRecompilationIntervall = Math.max(0,time);
+    public void setMinimumRecompilationInterval(int time) {
+        minimumRecompilationInterval = Math.max(0,time);
     }
     
-    public int getMinimumRecompilationIntervall() {
-        return minimumRecompilationIntervall;
+    public int getMinimumRecompilationInterval() {
+        return minimumRecompilationInterval;
     }
 
 }
