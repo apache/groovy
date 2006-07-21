@@ -66,6 +66,11 @@ public class SourcePrinterTest extends GroovyTestCase {
     
     public void testAnnotationMemberValuePair() throws Exception{
     	assertEquals("@Prime(value = 17) int foo",pretty("@Prime(value=17) int foo"));
+    	//todo commas between more than one value
+    }
+    
+    public void testArrayDeclarator() throws Exception {
+    	assertEquals("int[] primes = new int[5]", pretty("int[] primes = new int[5]"));
     }
     
     public void testAssign() throws Exception {
@@ -316,6 +321,10 @@ public class SourcePrinterTest extends GroovyTestCase {
         assertEquals("public bar", pretty("public bar"));
         assertEquals("public String bar", pretty("public String bar"));
         assertEquals("String bar", pretty("String bar"));
+    }
+    
+    public void testTypeUpperBounds_FAILS() throws Exception {  if (notYetImplemented()) return;
+    	assertEquals("class Foo<T extends C & I> {T t}",pretty("class Foo<T extends C & I> {T t}"));
     }
 
     public void testTypecast() throws Exception {

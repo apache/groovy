@@ -104,11 +104,30 @@ public class SourcePrinter extends VisitorAdapter {
 	public void visitAnnotationMemberValuePair(GroovySourceAST t, int visit) {
 		print(t,visit," = ",null,null);
 	}
-	
+
+	public void visitArrayDeclarator(GroovySourceAST t, int visit) {
+		//<ARRAY_DECLARATOR>int</ARRAY_DECLARATOR> primes = new int(<ARRAY_DECLARATOR>5</ARRAY_DECLARATOR>)
+		if (getParentNode().getType() == GroovyTokenTypes.TYPE) {
+			// type defintion, i.e.   int[] x;
+			print(t,visit,null,null,"[]");
+		} else {
+			// usually in new, i.e.   def y = new int[5];
+			print(t,visit,"[",null,"]");
+		}
+	}
+
 	public void visitAssign(GroovySourceAST t,int visit) {
         print(t,visit," = ",null,null);
     }
+	
+    // visitAt() ...
+    //   token type 'AT' should never be visited, as annotation defintions and usage, and
+    //   direct field access should have all moved this token out of the way. No test needed.
 
+	// visitBand() ...
+	// todo - more...
+	//   one of the BAND tokens is actually replaced by TYPE_UPPER_BOUNDS (e.g. class Foo<T extends C & I> {T t} )
+	
     public void visitCaseGroup(GroovySourceAST t, int visit) {
         if (visit == OPENING_VISIT) {
             tabLevel++;
@@ -247,7 +266,12 @@ public class SourcePrinter extends VisitorAdapter {
     }
 
     public void visitLiteralNew(GroovySourceAST t,int visit) {
-        print(t,visit,"new ","(",")");
+    	if (t.childOfType(GroovyTokenTypes.ARRAY_DECLARATOR) == null) {
+    		// only print parenthesis if is not of form def x = new int[5]
+    		print(t,visit,"new ","(",")");
+    	} else {
+    		print(t,visit,"new ",null,null);
+    	}
     }
 
     public void visitLiteralNull(GroovySourceAST t, int visit) {
