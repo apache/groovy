@@ -675,5 +675,29 @@ public class BytecodeHelper implements Opcodes {
     public void dup() {
         cv.visitInsn(DUP);
     }
+
+    public void doReturn(ClassNode returnType) {
+        if (returnType==ClassHelper.double_TYPE) {
+            cv.visitInsn(DRETURN);
+        } else if (returnType==ClassHelper.float_TYPE) {
+            cv.visitInsn(FRETURN);
+        } else if (returnType==ClassHelper.long_TYPE) {
+            cv.visitInsn(LRETURN);
+        } else if (
+                   returnType==ClassHelper.boolean_TYPE
+                || returnType==ClassHelper.char_TYPE
+                || returnType==ClassHelper.byte_TYPE
+                || returnType==ClassHelper.int_TYPE
+                || returnType==ClassHelper.short_TYPE) 
+        { 
+            //byte,short,boolean,int are all IRETURN
+            cv.visitInsn(IRETURN);
+        } else if (returnType==ClassHelper.VOID_TYPE){
+            cv.visitInsn(RETURN);
+        } else {
+            cv.visitInsn(ARETURN);
+        }
+        
+    }
     
 }

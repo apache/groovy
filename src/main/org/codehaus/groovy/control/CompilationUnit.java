@@ -688,7 +688,6 @@ public class CompilationUnit extends ProcessingUnit {
             ClassCompletionVerifier completionVerifier = new ClassCompletionVerifier(source);
             completionVerifier.visitClass(classNode);
             
-            
             // because the class may be generated even if a error was found
             // and that class may have an invalid format we fail here if needed
             getErrorCollector().failIfErrors();

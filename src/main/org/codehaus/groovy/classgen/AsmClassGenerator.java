@@ -50,6 +50,7 @@ import groovy.lang.GroovyRuntimeException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -129,6 +130,7 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 
 
 /**
@@ -336,7 +338,8 @@ public class AsmClassGenerator extends ClassGenerator {
 //            cw.visitAttribute(attr);
 
             createSyntheticStaticFields();
-
+            createMopMethods();
+            
             for (Iterator iter = innerClasses.iterator(); iter.hasNext();) {
                 ClassNode innerClass = (ClassNode) iter.next();
                 String innerClassName = innerClass.getName();
@@ -366,7 +369,12 @@ public class AsmClassGenerator extends ClassGenerator {
             throw e;
         }
     }
-    
+   
+    private void createMopMethods() {
+        visitMopMethodList(classNode.getMethods(), true);
+        visitMopMethodList(classNode.getSuperClass().getMethods(), false);
+    }
+
     private String[] buildExceptions(ClassNode[] exceptions) {
         if (exceptions==null) return null;
         String[] ret = new String[exceptions.length];
@@ -374,6 +382,88 @@ public class AsmClassGenerator extends ClassGenerator {
             ret[i] = BytecodeHelper.getClassInternalName(exceptions[i]);
         }
         return ret;
+    }
+    
+    /**
+     * filters a list of method for MOP methods. For all methods that are no 
+     * MOP methods a MOP method is created if the method is not public and the
+     * call would be a call on "this" (isThis == true). If the call is not on
+     * "this", then the call is a call on "super" and all methods are used, 
+     * unless they are already a MOP method
+     *  
+     * @see #generateMopCalls(LinkedList, boolean)
+     *  
+     * @param methods unfiltered list of methods for MOP 
+     * @param isThis  if true, then we are creating a MOP method on "this", "super" else 
+     */
+    private void visitMopMethodList(List methods, boolean isThis){
+        LinkedList mopCalls = new LinkedList();
+        for (Iterator iter = methods.iterator(); iter.hasNext();) {
+            MethodNode mn = (MethodNode) iter.next();
+            if (!isThis && (mn.getModifiers() & Opcodes.ACC_PUBLIC) == 0) continue; 
+            String methodName = mn.getName();
+            if (isMopMethod(methodName) || methodName.startsWith("<")) continue;
+            mopCalls.add(mn);
+        }
+        generateMopCalls(mopCalls, isThis);
+        mopCalls.clear();
+    }
+    
+    /**
+     * generates a Meta Object Protocoll method, that is used to call a non public
+     * method, or to make a call to super.
+     * @param mopCalls list of methods a mop call method should be generated for
+     * @param useThis true if "this" should be used for the naming
+     */
+    private void generateMopCalls(LinkedList mopCalls, boolean useThis) {
+        for (Iterator iter = mopCalls.iterator(); iter.hasNext();) {
+            MethodNode method = (MethodNode) iter.next();
+            String name = getMopMethodName(method,useThis);
+            Parameter[] parameters = method.getParameters();
+            String methodDescriptor = BytecodeHelper.getMethodDescriptor(method.getReturnType(), method.getParameters());
+            cv = cw.visitMethod(Opcodes.ACC_PUBLIC & Opcodes.ACC_SYNTHETIC, name, methodDescriptor, null, null);
+            cv.visitVarInsn(ALOAD,0);
+            BytecodeHelper helper = new BytecodeHelper(cv);
+            int newRegister = 1;
+            for (int i=0; i<parameters.length; i++) {
+                ClassNode type = parameters[i].getType();
+                helper.load(parameters[i].getType(),newRegister);
+                // increment to next register, double/long are using two places
+                newRegister++;
+                if (type == ClassHelper.double_TYPE || type == ClassHelper.long_TYPE) newRegister++;
+            }
+            cv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(method.getDeclaringClass()), method.getName(), methodDescriptor); 
+            helper.doReturn(method.getReturnType());
+            cv.visitMaxs(0, 0);
+            cv.visitEnd();
+        }
+    }
+
+    /**
+     * creates a MOP method name from a method
+     * @param method the method to be called by the mop method
+     * @param useThis if true, then it is a call on "this", "super" else
+     * @return the mop method name
+     */
+    public static String getMopMethodName(MethodNode method, boolean useThis) {
+        ClassNode declaringNode = method.getDeclaringClass();
+        int distance = 0;
+        for (;declaringNode!=ClassHelper.OBJECT_TYPE; declaringNode=declaringNode.getSuperClass()) {
+            distance++;
+        }
+        return (useThis?"this":"super")+"$"+distance+"$"+method.getName();
+    }
+   
+    /**
+     * method to determine if a method is a MOP method. This is done by the
+     * method name. If the name starts with "this$" or "super$", then it is
+     * a MOP method
+     * @param methodName name of the method to test
+     * @return true if the method is a MOP method
+     */
+    public static boolean isMopMethod(String methodName) {
+        return  methodName.startsWith("this$") || 
+                methodName.startsWith("super$");
     }
     
     protected void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {
@@ -960,37 +1050,15 @@ public class AsmClassGenerator extends ClassGenerator {
         evaluateExpression(expression);
         if (returnType==ClassHelper.OBJECT_TYPE && expression.getType() != null && expression.getType()==ClassHelper.VOID_TYPE) {
             cv.visitInsn(ACONST_NULL); // cheat the caller
-            cv.visitInsn(ARETURN);
         } else {
             // return is based on class type
             // we may need to cast
             helper.unbox(returnType);
-            if (returnType==ClassHelper.double_TYPE) {
-                cv.visitInsn(DRETURN);
-            }
-            else if (returnType==ClassHelper.float_TYPE) {
-                cv.visitInsn(FRETURN);
-            }
-            else if (returnType==ClassHelper.long_TYPE) {
-                cv.visitInsn(LRETURN);
-            }
-            else if (returnType==ClassHelper.boolean_TYPE) {
-                cv.visitInsn(IRETURN);
-            }
-            else if (
-                       returnType==ClassHelper.char_TYPE
-                    || returnType==ClassHelper.byte_TYPE
-                    || returnType==ClassHelper.int_TYPE
-                    || returnType==ClassHelper.short_TYPE) 
-            { 
-                //byte,short,boolean,int are all IRETURN
-                cv.visitInsn(IRETURN);
-            }
-            else {
+            if (!returnType.isPrimaryClassNode()) {
                 doConvertAndCast(returnType, expression, false, true);
-                cv.visitInsn(ARETURN);
-            }
+            }    
         }
+        helper.doReturn(returnType);
         outputReturn = true;
     }
 
