@@ -28,6 +28,7 @@ import org.codehaus.groovy.antlr.SourceBuffer;
 import org.codehaus.groovy.antlr.UnicodeEscapingReader;
 import org.codehaus.groovy.antlr.parser.GroovyLexer;
 import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
+import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
 
 import antlr.collections.AST;
 
@@ -88,14 +89,44 @@ public class SourcePrinterTest extends GroovyTestCase {
     public void testBnot() throws Exception {
     	assertEquals("def z = ~123", pretty("def z = ~123"));
     }
+    
+    public void testBor() throws Exception {
+    	assertEquals("def y = 1 | 2", pretty("def y = 1 | 2"));
+    }
+    
+    public void testBorAssign() throws Exception {
+    	assertEquals("y |= 2", pretty("y|=2"));
+    }
 
+    public void testBsr() throws Exception {
+    	// unsigned right shift
+    	assertEquals("def q = 1 >>> 2", pretty("def q = 1 >>> 2"));
+    }
+
+    public void testBsrAssign() throws Exception {
+    	assertEquals("y >>>= 2", pretty("y>>>=2"));
+    }
+    
+    public void testBxor() throws Exception {
+    	assertEquals("def y = true ^ false", pretty("def y = true ^ false"));
+    }
+    
+    public void testBxorAssign() throws Exception {
+    	assertEquals("y ^= false", pretty("y^=false"));
+    }
+
+    public void testCaseGroup() throws Exception {
+        assertEquals("switch (foo) {case bar:x = 1}", pretty("switch(foo){case bar:x=1}"));
+    }
+    
     public void testClassDef() throws Exception {
         assertEquals("class Foo {def bar}", pretty("class Foo{def bar}"));
     }
 
-    public void testClosedBlock_FAILS() throws Exception{ if (notYetImplemented()) return;
+    public void testClosedBlock() throws Exception{
         assertEquals("[1, 2, 3].each {println(it)}", pretty("[1,2,3].each{println it}"));
-        assertEquals("def x = foo.bar(mooky) {x ->wibble(x)}", pretty("def x = foo.bar(mooky) {x-> wibble(x)}"));
+        assertEquals("def x = foo.bar(mooky){ x, y -> wibble(y, x)}", pretty("def x = foo.bar(mooky) {x,y-> wibble(y,x)}"));
+        // todo: above is not quite the spacing I would expect, but good enough for now...
     }
     public void testCtorIdent() throws Exception {
         assertEquals("class Foo {private Foo() {}}", pretty("class Foo {private Foo() {}}"));
@@ -217,6 +248,10 @@ public class SourcePrinterTest extends GroovyTestCase {
         assertEquals("static void foo() {}", pretty("static void foo() {}"));
     }
 
+    public void testLiteralSwitch() throws Exception {
+        assertEquals("switch (foo) {case bar:x = 2}", pretty("switch(foo){case bar:x=2}"));
+    }
+    
     public void testLiteralThis() throws Exception {
         assertEquals("this.x = this.y", pretty("this.x=this.y"));
     }

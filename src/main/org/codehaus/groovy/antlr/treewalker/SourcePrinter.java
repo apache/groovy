@@ -144,6 +144,31 @@ public class SourcePrinter extends VisitorAdapter {
 		print(t,visit,"~",null,null);
 	}
 	
+	// Note: old closure syntax using BOR is deprecated, and also never creates/visits a BOR node
+    public void visitBor(GroovySourceAST t, int visit) {
+        print(t,visit," | ",null,null);
+    }
+	
+	public void visitBorAssign(GroovySourceAST t,int visit) {
+        print(t,visit," |= ",null,null);
+    }
+	
+    public void visitBsr(GroovySourceAST t, int visit) {
+        print(t,visit," >>> ",null,null);
+    }
+	
+	public void visitBsrAssign(GroovySourceAST t,int visit) {
+        print(t,visit," >>>= ",null,null);
+    }
+	
+    public void visitBxor(GroovySourceAST t, int visit) {
+        print(t,visit," ^ ",null,null);
+    }
+	
+	public void visitBxorAssign(GroovySourceAST t,int visit) {
+        print(t,visit," ^= ",null,null);
+    }
+	
     public void visitCaseGroup(GroovySourceAST t, int visit) {
         if (visit == OPENING_VISIT) {
             tabLevel++;
@@ -163,7 +188,7 @@ public class SourcePrinter extends VisitorAdapter {
     }
 
     public void visitClosedBlock(GroovySourceAST t, int visit) {
-        printUpdatingTabLevel(t,visit,"{"," -> ","}");
+        printUpdatingTabLevel(t,visit,"{","-> ","}");
     }
     public void visitCtorIdent(GroovySourceAST t, int visit) {
         // use name of class for constructor from the class definition
@@ -417,7 +442,11 @@ public class SourcePrinter extends VisitorAdapter {
     }
 
     public void visitParameters(GroovySourceAST t,int visit) {
-        printUpdatingTabLevel(t,visit,"(",", ",") ");
+    	if (getParentNode().getType() == GroovyTokenTypes.CLOSED_BLOCK) {
+    		printUpdatingTabLevel(t,visit,null,","," ");
+    	} else {
+    		printUpdatingTabLevel(t,visit,"(",", ",") ");
+    	}
     }
 
     public void visitPlus(GroovySourceAST t, int visit) {
@@ -492,7 +521,8 @@ public class SourcePrinter extends VisitorAdapter {
         if (modifiers == null || modifiers.getNumberOfChildren() == 0) {
 
             if (visit == OPENING_VISIT) {
-                if (t.getNumberOfChildren() == 0) {
+                if (t.getNumberOfChildren() == 0 && 
+                		parent.getType() != GroovyTokenTypes.PARAMETER_DEF) { // no need for 'def' if in a parameter list
                     print(t,visit,"def");
                 }
             }
