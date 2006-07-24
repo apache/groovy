@@ -338,7 +338,7 @@ public class AsmClassGenerator extends ClassGenerator {
 //            cw.visitAttribute(attr);
 
             createSyntheticStaticFields();
-            createMopMethods();
+            if (!classNode.isInterface()) createMopMethods();
             
             for (Iterator iter = innerClasses.iterator(); iter.hasNext();) {
                 ClassNode innerClass = (ClassNode) iter.next();
@@ -400,7 +400,8 @@ public class AsmClassGenerator extends ClassGenerator {
         LinkedList mopCalls = new LinkedList();
         for (Iterator iter = methods.iterator(); iter.hasNext();) {
             MethodNode mn = (MethodNode) iter.next();
-            if (!isThis && (mn.getModifiers() & Opcodes.ACC_PUBLIC) == 0) continue; 
+            if ((mn.getModifiers() & ACC_ABSTRACT) !=0 ) continue;
+            if (!isThis && (mn.getModifiers() & ACC_PUBLIC) == 0) continue; 
             String methodName = mn.getName();
             if (isMopMethod(methodName) || methodName.startsWith("<")) continue;
             mopCalls.add(mn);
@@ -1053,10 +1054,8 @@ public class AsmClassGenerator extends ClassGenerator {
         } else {
             // return is based on class type
             // we may need to cast
+            doConvertAndCast(returnType, expression, false, true);
             helper.unbox(returnType);
-            if (!returnType.isPrimaryClassNode()) {
-                doConvertAndCast(returnType, expression, false, true);
-            }    
         }
         helper.doReturn(returnType);
         outputReturn = true;
