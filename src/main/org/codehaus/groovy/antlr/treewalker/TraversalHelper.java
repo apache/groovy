@@ -369,6 +369,26 @@ public abstract class TraversalHelper implements AntlrASTProcessor {
         }
 	}
 
+	protected void accept_v_FirstChild_2ndv_SecondChild_v___LastChild_v(GroovySourceAST t) {
+        openingVisit(t);
+        GroovySourceAST child = (GroovySourceAST)t.getFirstChild();
+        if (child != null){
+            accept(child);
+            GroovySourceAST sibling = (GroovySourceAST)child.getNextSibling();
+            if (sibling != null) {
+            	secondVisit(t);
+            	accept(sibling);
+                sibling = (GroovySourceAST)sibling.getNextSibling();
+                while (sibling != null) {
+                    subsequentVisit(t);
+                    accept(sibling);
+                    sibling = (GroovySourceAST)sibling.getNextSibling();
+                }
+            }
+        }
+        closingVisit(t);
+    }
+
 	protected void accept_v_FirstChild_v_SecondChild_v___LastChild_v(GroovySourceAST t) {
         openingVisit(t);
         GroovySourceAST child = (GroovySourceAST)t.getFirstChild();
@@ -473,6 +493,11 @@ public abstract class TraversalHelper implements AntlrASTProcessor {
         unvisitedNodes.remove(t);
 
         int n = Visitor.OPENING_VISIT;
+        visitNode(t, n);
+    }
+
+    protected void secondVisit(GroovySourceAST t) {
+        int n = Visitor.SECOND_VISIT;
         visitNode(t, n);
     }
 

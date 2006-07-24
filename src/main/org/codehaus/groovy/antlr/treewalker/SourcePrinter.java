@@ -74,10 +74,11 @@ public class SourcePrinter extends VisitorAdapter {
 		if (visit == OPENING_VISIT) {
 			print(t,visit,"@");
 		}
+		if (visit == SECOND_VISIT) {
+			print(t,visit,"(");
+		}
 		if (visit == SUBSEQUENT_VISIT) {
-			if (t.getNumberOfChildren() > 1) {
-				print(t,visit,"(");
-			}
+			print(t,visit,", ");
 		}
 		if (visit == CLOSING_VISIT) {
 			if (t.getNumberOfChildren() > 1) {
@@ -121,12 +122,27 @@ public class SourcePrinter extends VisitorAdapter {
     }
 	
     // visitAt() ...
-    //   token type 'AT' should never be visited, as annotation defintions and usage, and
+    //   token type 'AT' should never be visited, as annotation definitions and usage, and
     //   direct field access should have all moved this token out of the way. No test needed.
 
-	// visitBand() ...
-	// todo - more...
 	//   one of the BAND tokens is actually replaced by TYPE_UPPER_BOUNDS (e.g. class Foo<T extends C & I> {T t} )
+    public void visitBand(GroovySourceAST t, int visit) {
+        print(t,visit," & ",null,null);
+    }
+
+	public void visitBandAssign(GroovySourceAST t,int visit) {
+        print(t,visit," &= ",null,null);
+    }
+	
+    // visitBigSuffix() ...
+	//   token type BIG_SUFFIX never created/visited, NUM_BIG_INT, NUM_BIG_DECIMAL instead...    
+    
+	// visitBlock() ...
+	//   token type BLOCK never created/visited, see CLOSED_BLOCK etc...
+	
+	public void visitBnot(GroovySourceAST t, int visit) {
+		print(t,visit,"~",null,null);
+	}
 	
     public void visitCaseGroup(GroovySourceAST t, int visit) {
         if (visit == OPENING_VISIT) {
@@ -370,6 +386,12 @@ public class SourcePrinter extends VisitorAdapter {
         print(t,visit," != ",null,null);
     }
 
+    public void visitNumBigDecimal(GroovySourceAST t,int visit) {
+        print(t,visit,t.getText(),null,null);
+    }
+    public void visitNumBigInt(GroovySourceAST t,int visit) {
+        print(t,visit,t.getText(),null,null);
+    }
     public void visitNumInt(GroovySourceAST t,int visit) {
         print(t,visit,t.getText(),null,null);
     }

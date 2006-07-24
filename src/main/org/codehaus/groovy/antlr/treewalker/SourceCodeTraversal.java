@@ -90,6 +90,10 @@ public class SourceCodeTraversal extends TraversalHelper {
                     accept_FirstChild_v_SecondChildsChildren_v(t);
                     break;
 
+                case GroovyTokenTypes.ANNOTATION:
+                    accept_v_FirstChild_2ndv_SecondChild_v___LastChild_v(t);
+                    break;
+
                 case GroovyTokenTypes.ELIST: // a,b,c
                 case GroovyTokenTypes.PARAMETERS: // a,b,c
                 case GroovyTokenTypes.STRING_CONSTRUCTOR: // "foo${bar}wibble"
@@ -111,6 +115,7 @@ public class SourceCodeTraversal extends TraversalHelper {
                     break;
 
                 case GroovyTokenTypes.ANNOTATION_MEMBER_VALUE_PAIR: // @Blue(foo=123)
+                case GroovyTokenTypes.BAND_ASSIGN: // a=b
                 case GroovyTokenTypes.ASSIGN: // a=b
                 case GroovyTokenTypes.EQUAL: // a==b
                 case GroovyTokenTypes.NOT_EQUAL:
@@ -126,6 +131,7 @@ public class SourceCodeTraversal extends TraversalHelper {
                     break;
                     
                 case GroovyTokenTypes.ANNOTATION_DEF: // @interface Foo...
+                case GroovyTokenTypes.BAND: // 1 & 2
                 case GroovyTokenTypes.CLASS_DEF: // class Foo...
                 case GroovyTokenTypes.CTOR_IDENT: // private Foo() {...
                 case GroovyTokenTypes.DOT: // foo.bar
@@ -176,7 +182,6 @@ public class SourceCodeTraversal extends TraversalHelper {
                     }
                     break;
 
-                case GroovyTokenTypes.ANNOTATION:
                 case GroovyTokenTypes.FOR_IN_ITERABLE:
                 case GroovyTokenTypes.LITERAL_for:
                 case GroovyTokenTypes.LITERAL_new:

@@ -66,7 +66,7 @@ public class SourcePrinterTest extends GroovyTestCase {
     
     public void testAnnotationMemberValuePair() throws Exception{
     	assertEquals("@Prime(value = 17) int foo",pretty("@Prime(value=17) int foo"));
-    	//todo commas between more than one value
+    	assertEquals("@Blue(v = 3, v = 5) int bar",pretty("@Blue(v = 3, v = 5) int bar"));
     }
     
     public void testArrayDeclarator() throws Exception {
@@ -75,6 +75,18 @@ public class SourcePrinterTest extends GroovyTestCase {
     
     public void testAssign() throws Exception {
         assertEquals("a = 12", pretty("a=12"));
+    }
+    
+    public void testBand() throws Exception {
+    	assertEquals("def x = 1 & 2", pretty("def x=1&2"));
+    }
+
+    public void testBandAssign() throws Exception {
+    	assertEquals("x &= 2", pretty("x&=2"));
+    }
+    
+    public void testBnot() throws Exception {
+    	assertEquals("def z = ~123", pretty("def z = ~123"));
     }
 
     public void testClassDef() throws Exception {
@@ -263,6 +275,14 @@ public class SourcePrinterTest extends GroovyTestCase {
     public void testNotEqual() throws Exception {
         assertEquals("a != b", pretty("a!=b"));
     }
+
+    public void testNumBigDecimal() throws Exception {
+    	assertEquals("a = 9.8g", pretty("a  =9.8g"));
+    }
+    public void testNumBigInt() throws Exception {
+    	assertEquals("a = 12g", pretty("a=   12g"));
+    }
+    
     public void testNumInt() throws Exception {
         assertEquals("a = 12", pretty("a=12"));
     }
