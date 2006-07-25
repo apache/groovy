@@ -205,7 +205,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
                 MethodNode mn = new MethodNode(m.getName(), m.getModifiers(), ClassHelper.make(m.getReturnType()), createParameters(m.getParameterTypes()), ClassHelper.make(m.getExceptionTypes()), null);
                 addMethod(mn);
             }
-            Constructor[] constructors = clazz.getConstructors();
+            Constructor[] constructors = clazz.getDeclaredConstructors();
             for (int i=0;i<constructors.length;i++){
                 Constructor ctor = constructors[i];
                 addConstructor(ctor.getModifiers(),createParameters(ctor.getParameterTypes()),ClassHelper.make(ctor.getExceptionTypes()),null);
