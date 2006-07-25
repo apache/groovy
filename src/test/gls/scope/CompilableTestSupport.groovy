@@ -14,4 +14,10 @@ public class CompilableTestSupport extends GroovyTestCase {
       }
       fail("the compilation succeeded but should have failed")
 	}
+	
+	protected void shouldCompile(String script) {
+      GroovyShell shell = new GroovyShell()
+      shell.parse(script, getTestClassName())
+      assert true
+	}
 }
