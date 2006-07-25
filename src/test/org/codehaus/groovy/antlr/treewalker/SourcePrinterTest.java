@@ -128,6 +128,17 @@ public class SourcePrinterTest extends GroovyTestCase {
         assertEquals("def x = foo.bar(mooky){ x, y -> wibble(y, x)}", pretty("def x = foo.bar(mooky) {x,y-> wibble(y,x)}"));
         // todo: above is not quite the spacing I would expect, but good enough for now...
     }
+    
+    public void testCompareTo() throws Exception{
+    	assertEquals("1 <=> 2", pretty("1<=>2"));
+    }
+    
+    public void testCtorCall() throws Exception{
+    	assertEquals("class Foo {Foo(int x) {this()}}",pretty("class Foo{Foo(int x) {this()}}"));
+    	assertEquals("class Foo {Foo( x) {this()}}",pretty("class Foo{Foo(x) {this()}}"));
+        // todo: above is not quite the spacing I would expect, but good enough for now...
+    }
+    
     public void testCtorIdent() throws Exception {
         assertEquals("class Foo {private Foo() {}}", pretty("class Foo {private Foo() {}}"));
     }

@@ -190,6 +190,27 @@ public class SourcePrinter extends VisitorAdapter {
     public void visitClosedBlock(GroovySourceAST t, int visit) {
         printUpdatingTabLevel(t,visit,"{","-> ","}");
     }
+    
+    // visitClosureOp ...
+	//   token type CLOSURE_OP never created/visited, see CLOSED_BLOCK...
+	
+
+    // visitColon ...
+    //   token type COLON never created/visited, see LABELED_STAT, FOR_IN_ITERABLE, 
+    //   ASSERT, CASE, QUESTION, MAP_CONSTRUCTOR, LABELED_ARG, SPREAD_MAP_ARG
+
+    // visitComma ...
+    //   token type COMMA never created/visited,
+    //   see TYPE_ARGUMENTS, ANNOTATION, many others ...
+    
+    public void visitCompareTo(GroovySourceAST t,int visit) {
+        print(t,visit," <=> ",null,null);
+    }
+
+    public void visitCtorCall(GroovySourceAST t,int visit) {
+        printUpdatingTabLevel(t,visit,"this("," ",")");
+    }
+
     public void visitCtorIdent(GroovySourceAST t, int visit) {
         // use name of class for constructor from the class definition
         print(t,visit,className,null,null);

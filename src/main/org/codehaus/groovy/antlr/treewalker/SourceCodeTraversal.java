@@ -115,11 +115,12 @@ public class SourceCodeTraversal extends TraversalHelper {
                     break;
 
                 case GroovyTokenTypes.ANNOTATION_MEMBER_VALUE_PAIR: // @Blue(foo=123)
+                case GroovyTokenTypes.ASSIGN: // a = b
                 case GroovyTokenTypes.BAND_ASSIGN: // a &= b
                 case GroovyTokenTypes.BOR_ASSIGN: // a |= b
                 case GroovyTokenTypes.BSR_ASSIGN: // a >>>= b
                 case GroovyTokenTypes.BXOR_ASSIGN: // a ^= b
-                case GroovyTokenTypes.ASSIGN: // a = b
+                case GroovyTokenTypes.COMPARE_TO: // a <=> b
                 case GroovyTokenTypes.EQUAL: // a == b
                 case GroovyTokenTypes.NOT_EQUAL:
                     if (t.childAt(1) != null) {
@@ -155,6 +156,7 @@ public class SourceCodeTraversal extends TraversalHelper {
                     accept_FirstChild_v_RestOfTheChildren(t);
                     break;
 
+                case GroovyTokenTypes.CTOR_CALL:
                 case GroovyTokenTypes.METHOD_CALL:
                     if (t.getNumberOfChildren() == 2 && t.childAt(1) != null && t.childAt(1).getType() == GroovyTokenTypes.CLOSED_BLOCK ) {
                         // myMethod {...
