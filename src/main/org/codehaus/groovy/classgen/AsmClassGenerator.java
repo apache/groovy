@@ -48,6 +48,8 @@ package org.codehaus.groovy.classgen;
 import groovy.lang.GroovyRuntimeException;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -131,6 +133,7 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 
 
 /**
@@ -240,6 +243,10 @@ public class AsmClassGenerator extends ClassGenerator {
     // wrapper creation methods
     MethodCaller createPojoWrapperMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "createPojoWrapper");
     MethodCaller createGroovyObjectWrapperMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "createGroovyObjectWrapper");
+    
+    // constructor selection and argument transformation
+    MethodCaller selectConstructorAndTransformArguments = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "selectConstructorAndTransformArguments");
+   
     
     // exception blocks list
     private List exceptionBlocks = new ArrayList();
@@ -1647,25 +1654,6 @@ public class AsmClassGenerator extends ClassGenerator {
         return null; // should not come here
     }
 
-    /**
-     * Attempts to find the constructor in a super class
-     */
-    protected ConstructorNode findConstructor(ConstructorCallExpression call, ClassNode searchNode) {
-        TupleExpression argExpr = (TupleExpression) call.getArguments();
-        int argCount = argExpr.getExpressions().size();
-        if (searchNode != null) {
-            List constructors = searchNode.getDeclaredConstructors();
-            for (Iterator iter = constructors.iterator(); iter.hasNext(); ) {
-                ConstructorNode constructor = (ConstructorNode) iter.next();
-                if (constructor.getParameters().length == argCount) {
-                    return constructor;
-                }
-            }
-        }
-        throwException("No such constructor for class: " + classNode.getName());
-        return null; // should not come here
-    }
-
     protected boolean emptyArguments(Expression arguments) {
         if (arguments instanceof TupleExpression) {
             TupleExpression tupleExpression = (TupleExpression) arguments;
@@ -1701,20 +1689,123 @@ public class AsmClassGenerator extends ClassGenerator {
             invokeStaticMethodMethod.call(cv);
         }
     }
+    
+    private void visitSpecialConstructorCall(ConstructorCallExpression call) {
+        ClassNode callNode = classNode;
+        if (call.isSuperCall()) callNode = callNode.getSuperClass();
+        List constructors = sortConstructors(call, callNode);
+        call.getArguments().visit(this);
+        // keep Objet[] on stack
+        cv.visitInsn(DUP);
+        // to select the constructor we need also the number of
+        // available constructors and the class we want to make
+        // the call on
+        helper.pushConstant(constructors.size());
+        visitClassExpression(new ClassExpression(callNode));
+        // removes one Object[] leaves the int containing the 
+        // call flags and the construtcor number
+        selectConstructorAndTransformArguments.call(cv);
+        // Object[],int -> int,Object[],int
+        // we need to examine the flags and maybe change the 
+        // Object[] later, so this reordering will do the job
+        cv.visitInsn(DUP_X1);
+        // test if rewrap flag is set
+        cv.visitInsn(ICONST_1);
+        cv.visitInsn(IAND);
+        Label afterIf = new Label();
+        cv.visitJumpInsn(IFEQ, afterIf);
+        // true part, so rewrap using the first argument
+        cv.visitInsn(ICONST_0);
+        cv.visitInsn(AALOAD);
+        cv.visitTypeInsn(CHECKCAST, "[Ljava/lang/Object;");
+        cv.visitLabel(afterIf);
+        // here the stack is int,Object[], but we need the
+        // the int for our table, so swap it
+        cv.visitInsn(SWAP);
+        //load "this"
+        cv.visitVarInsn(ALOAD, 0);
+        cv.visitInsn(SWAP);
+        //prepare switch with >>8        
+        cv.visitIntInsn(BIPUSH,8);
+        cv.visitInsn(ISHR);
+        Label[] targets = new Label[constructors.size()];
+        int[] indices = new int[constructors.size()];
+        for (int i=0; i<targets.length; i++) {
+            targets[i] = new Label();
+            indices[i] = i;
+        }
+        // create switch targets
+        Label defaultLabel = new Label();
+        Label afterSwitch = new Label();
+        cv.visitLookupSwitchInsn(defaultLabel, indices, targets);
+        for (int i=0; i<targets.length; i++) {
+            cv.visitLabel(targets[i]);
+            // to keep the stack height, we need to leave
+            // one Object[] on the stack as last element. At the 
+            // same time, we need the Object[] on top of the stack
+            // to extract the parameters. So a SWAP will exchange 
+            // "this" and Object[], a DUP_X1 will then copy the Object[]
+            /// to the last place in the stack: 
+            //     Object[],this -SWAP-> this,Object[]
+            //     this,Object[] -DUP_X1-> Object[],this,Object[] 
+            cv.visitInsn(SWAP);
+            cv.visitInsn(DUP_X1);
+            
+            ConstructorNode cn = (ConstructorNode) constructors.get(i);
+            String descriptor = helper.getMethodDescriptor(ClassHelper.VOID_TYPE, cn.getParameters());
+            // unwrap the Object[] and make transformations if needed
+            // that means, to duplicate the Object[], make a cast with possible
+            // unboxing and then swap it with the Object[] for each parameter
+            Parameter[] parameters = cn.getParameters();
+            for (int p=0; p<parameters.length; p++) {
+                cv.visitInsn(DUP);
+                helper.pushConstant(p);
+                cv.visitInsn(AALOAD);
+                ClassNode type = parameters[p].getType();
+                if (ClassHelper.isPrimitiveType(type)) {
+                    helper.unbox(type);
+                } else {
+                    helper.doCast(type);
+                }
+                helper.swapWithObject(type);
+            }
+            // at the end we remove the Object[]
+            cv.visitInsn(POP);
+            // make the constructor call
+            cv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(callNode), "<init>", descriptor);
+            cv.visitJumpInsn(GOTO, afterSwitch);
+        }
+        cv.visitLabel(defaultLabel);
+        // this part should never be reached!
+        cv.visitTypeInsn(NEW, "java/lang/IllegalArgumentException");
+        cv.visitInsn(DUP);
+        cv.visitLdcInsn("illegal constructor number");
+        cv.visitMethodInsn(INVOKESPECIAL, "java/lang/IllegalArgumentException", "<init>", "(Ljava/lang/String;)V");
+        cv.visitInsn(ATHROW);
+        cv.visitLabel(afterSwitch);
+    }
+
+    private List sortConstructors(ConstructorCallExpression call, ClassNode callNode) {
+        List constructors = callNode.getDeclaredConstructors();
+        Comparator comp = new Comparator() {
+            public int compare(Object arg0, Object arg1) {
+                ConstructorNode c0 = (ConstructorNode) arg0;
+                ConstructorNode c1 = (ConstructorNode) arg1;
+                String descriptor0 = helper.getMethodDescriptor(ClassHelper.VOID_TYPE, c0.getParameters()); 
+                String descriptor1 = helper.getMethodDescriptor(ClassHelper.VOID_TYPE, c1.getParameters());
+                return descriptor0.compareTo(descriptor1);
+            }            
+        };
+        Collections.sort(constructors,comp);
+        return constructors;
+    }
 
     public void visitConstructorCallExpression(ConstructorCallExpression call) {
         onLineNumber(call, "visitConstructorCallExpression: \"" + call.getType().getName() + "\":");
         this.leftHandExpression = false;
 
         if (call.isSpecialCall()){
-            ClassNode callNode = classNode;
-            if (call.isSuperCall()) callNode = callNode.getSuperClass();
-            ConstructorNode constructorNode = findConstructor(call, callNode);
-            cv.visitVarInsn(ALOAD, 0);
-            loadArguments(constructorNode.getParameters(), call.getArguments());
-
-            String descriptor = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, constructorNode.getParameters());
-            cv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(callNode), "<init>", descriptor);
+            visitSpecialConstructorCall(call);
             return;
         }
         

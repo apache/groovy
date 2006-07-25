@@ -570,6 +570,15 @@ public class BytecodeHelper implements Opcodes {
             cv.visitInsn(SWAP);
         }
     }
+    
+    public void swapWithObject(ClassNode type) {
+        if (type==ClassHelper.long_TYPE || type==ClassHelper.double_TYPE) {
+            cv.visitInsn(DUP2_X2);
+            cv.visitInsn(POP);
+        } else {
+            cv.visitInsn(SWAP);
+        }
+    }
 
     public static ClassNode boxOnPrimitive(ClassNode type) {
         if (!type.isArray()) return ClassHelper.getWrapper(type);

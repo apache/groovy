@@ -630,4 +630,9 @@ public class ScriptBytecodeAdapter {
         return InvokerHelper.getMetaClass(object);
     }
 
+    public static int selectConstructorAndTransformArguments(Object[] arguments, int numberOfCosntructors, Class which) {
+        // TODO: just a prototype and real dirty hack
+        MetaClassImpl metaClass = (MetaClassImpl) InvokerHelper.getInstance().getMetaRegistry().getMetaClass(which);
+        return metaClass.selectConstructorAndTransformArguments(numberOfCosntructors, arguments);
+    }
 }

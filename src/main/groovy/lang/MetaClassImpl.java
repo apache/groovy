@@ -64,6 +64,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -71,7 +72,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ConstructorNode;
+import org.codehaus.groovy.classgen.BytecodeHelper;
 import org.codehaus.groovy.classgen.ReflectorGenerator;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
@@ -579,6 +583,48 @@ public class MetaClassImpl extends MetaClass {
                        + "("+InvokerHelper.toTypeString(arguments)+")");
    }
 
+   public int selectConstructorAndTransformArguments(int numberOfCosntructors, Object[] arguments) {
+       //TODO: that is just a quick prototype, not the real thing!
+       if (numberOfCosntructors != constructors.size()) {
+           throw new IncompatibleClassChangeError("the number of constructors during runtime and compile time for "+
+               this.theClass.getName()+" does not match. Expected "+numberOfCosntructors+" but have "+constructors.size());
+       }
+       
+       if (arguments==null) arguments = EMPTY_ARGUMENTS;
+       unwrap(arguments);
+       Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
+       Constructor constructor = (Constructor) chooseMethod("<init>", constructors, argClasses, false);
+       if (constructor == null) {
+           constructor = (Constructor) chooseMethod("<init>", constructors, argClasses, true);
+       }
+       if (constructor==null) {
+           throw new GroovyRuntimeException(
+                   "Could not find matching constructor for: "
+                       + theClass.getName()
+                       + "("+InvokerHelper.toTypeString(arguments)+")");
+       }
+       List l = new ArrayList(constructors);
+       Comparator comp = new Comparator() {
+           public int compare(Object arg0, Object arg1) {
+               Constructor c0 = (Constructor) arg0;
+               Constructor c1 = (Constructor) arg1;
+               String descriptor0 = BytecodeHelper.getMethodDescriptor(Void.TYPE, c0.getParameterTypes()); 
+               String descriptor1 = BytecodeHelper.getMethodDescriptor(Void.TYPE, c1.getParameterTypes());
+               return descriptor0.compareTo(descriptor1);
+           }            
+       };
+       Collections.sort(l,comp);
+       int found = -1;
+       for (int i=0; i<l.size(); i++) {
+           if (l.get(i)!=constructor) continue;
+           found = i;
+           break;
+       }
+       // NOTE: must be change to "1 |" if constructor was vargs
+       int ret = 0 | (found << 8);
+       return ret;
+   }
+   
    public Object invokeConstructorAt(Class at, Object[] arguments) {
        if (arguments==null) arguments = EMPTY_ARGUMENTS;
        unwrap(arguments);
