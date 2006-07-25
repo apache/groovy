@@ -117,6 +117,7 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
     private VariableScope currentScope;
 
     private boolean isTopLevelProperty = true;
+    private boolean inClosure = false;
 
     public ResolveVisitor(CompilationUnit cu) {
         compilationUnit = cu;
@@ -657,6 +658,10 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
                     if (scope.getReferencedClassVariables().remove(ve.getName())==null) break;
                 }
                 return new ClassExpression(t);
+            } else if (!inClosure && ve.isInStaticContext()) {
+                addError("the name "+v.getName()+" doesn't refer to a declared variable or class. The static"+
+                         " scope requires to declare variables before using them. If the variable should have"+
+                         " been a class check the spelling.",ve);
             }
         }
         resolveOrFail(ve.getType(),ve);
@@ -677,6 +682,8 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
     }
     
     protected Expression transformClosureExpression(ClosureExpression ce) {
+        boolean oldInClosure = inClosure;
+        inClosure = true;
         Parameter[] paras = ce.getParameters();
         if (paras!=null) {
 	        for (int i=0; i<paras.length; i++) {
@@ -689,6 +696,7 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
     	ClosureExpression newCe= new ClosureExpression(paras,code);
         newCe.setVariableScope(ce.getVariableScope());
         newCe.setSourcePosition(ce);
+        inClosure = oldInClosure;
         return newCe;
     }
     
