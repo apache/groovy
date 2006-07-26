@@ -54,4 +54,9 @@ class ClassExpressionTest extends GroovyTestCase {
         assert long == Long.TYPE
         assert short == Short.TYPE
     }
+    
+    void testArrayClassReference() {
+       def foo = int[]
+       assert foo.name == "[I"
+    }
 }
