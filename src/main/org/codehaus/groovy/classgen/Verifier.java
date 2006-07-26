@@ -126,6 +126,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
         
         addDefaultParameterMethods(node);
+        addDefaultParameterConstructors(node);
 
         if (!node.isDerivedFromGroovyObject()) {
             node.addInterface(ClassHelper.make(GroovyObject.class));
@@ -418,11 +419,45 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     // Implementation methods
     //-------------------------------------------------------------------------
     
+    private interface DefaultArgsAction {
+        public void call(ArgumentListExpression arguments, Parameter[] newParams, MethodNode method);
+    }
+    
     /**
      * Creates a new helper method for each combination of default parameter expressions 
      */
-    protected void addDefaultParameterMethods(ClassNode node) {
+    protected void addDefaultParameterMethods(final ClassNode node) {
         List methods = new ArrayList(node.getMethods());
+        addDefaultParameters(methods, new DefaultArgsAction(){
+            public void call(ArgumentListExpression arguments, Parameter[] newParams, MethodNode method) {
+                MethodCallExpression expression = new MethodCallExpression(VariableExpression.THIS_EXPRESSION, method.getName(), arguments);
+                Statement code = null;
+                if (method.isVoidMethod()) {
+                    code = new ExpressionStatement(expression);
+                } else {
+                    code = new ReturnStatement(expression);
+                }
+                node.addMethod(method.getName(), method.getModifiers(), method.getReturnType(), newParams, method.getExceptions(), code);
+            }
+        });
+    }
+    
+    protected void addDefaultParameterConstructors(final ClassNode node) {
+        List methods = new ArrayList(node.getDeclaredConstructors());
+        addDefaultParameters(methods, new DefaultArgsAction(){
+            public void call(ArgumentListExpression arguments, Parameter[] newParams, MethodNode method) {
+                ConstructorNode ctor = (ConstructorNode) method;
+                ConstructorCallExpression expression = new ConstructorCallExpression(ClassNode.THIS, arguments);
+                Statement code = new ExpressionStatement(expression);
+                node.addConstructor(ctor.getModifiers(), newParams, ctor.getExceptions(), code);
+            }
+        });
+    }
+
+    /**
+     * Creates a new helper method for each combination of default parameter expressions 
+     */
+    protected void addDefaultParameters(List methods, DefaultArgsAction action) {
         for (Iterator iter = methods.iterator(); iter.hasNext();) {
             MethodNode method = (MethodNode) iter.next();
             if (method.hasDefaultValue()) {
@@ -459,102 +494,10 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                             arguments.addExpression(new VariableExpression(parameters[i].getName()));
                         }
                     }
-
-                    MethodCallExpression expression = new MethodCallExpression(VariableExpression.THIS_EXPRESSION, method.getName(), arguments);
-                    Statement code = null;
-                    if (method.isVoidMethod()) {
-                        code = new ExpressionStatement(expression);
-                    }
-                    else {
-                        code = new ReturnStatement(expression);
-                    }
-                    node.addMethod(method.getName(), method.getModifiers(), method.getReturnType(), newParams, method.getExceptions(), code);
+                    action.call(arguments,newParams,method);
                 }
             }
         }
-    }
-
-    /**
-     * Adds a new method which defaults the values for all the parameters starting 
-     * from and including the given index
-     * 
-     * @param node the class to add the method
-     * @param method the given method to add a helper of
-     * @param parameters the parameters of the method to add a helper for
-     * @param index the index of the first default value expression parameter to use
-     */
-    protected void addDefaultParameterMethod(ClassNode node, MethodNode method, Parameter[] parameters, int depth, ArrayList values) {
-        // lets create a method using this expression
-        Parameter[] newParams = new Parameter[parameters.length - depth];
-        int index = 0;
-        ArgumentListExpression arguments = new ArgumentListExpression();
-        for (int i = 0; i < parameters.length; i++) {
-            if (parameters[i] != null && parameters[i].hasInitialExpression()) {
-                newParams[index++] = parameters[i];
-                arguments.addExpression(new VariableExpression(parameters[i].getName()));
-            }
-            else {
-                arguments.addExpression(parameters[i].getInitialExpression());
-            }
-        }
-
-        MethodCallExpression expression =
-            new MethodCallExpression(VariableExpression.THIS_EXPRESSION, method.getName(), arguments);
-        Statement code = null;
-        if (method.isVoidMethod()) {
-            code = new ExpressionStatement(expression);
-        }
-        else {
-            code = new ReturnStatement(expression);
-        }
-
-        node.addMethod(method.getName(), method.getModifiers(), method.getReturnType(), newParams, method.getExceptions(), code);
-    }
-
-    /**
-     * Adds a new method which defaults the values for all the parameters starting 
-     * from and including the given index
-     * 
-     * @param node the class to add the method
-     * @param method the given method to add a helper of
-     * @param parameters the parameters of the method to add a helper for
-     * @param index the index of the first default value expression parameter to use
-     */
-    protected void addDefaultParameterMethod(ClassNode node, MethodNode method, Parameter[] parameters, int index) {
-        // lets create a method using this expression
-        Parameter[] newParams = new Parameter[index];
-        System.arraycopy(parameters, 0, newParams, 0, index);
-
-        ArgumentListExpression arguments = new ArgumentListExpression();
-        int size = parameters.length;
-        for (int i = 0; i < size; i++) {
-            if (i < index) {
-                arguments.addExpression(new VariableExpression(parameters[i].getName()));
-            }
-            else {
-                Expression defaultValue = parameters[i].getInitialExpression();
-                if (defaultValue == null) {
-                    throw new RuntimeParserException(
-                        "The " + parameters[i].getName() + " parameter must have a default value",
-                        method);
-                }
-                else {
-                    arguments.addExpression(defaultValue);
-                }
-            }
-        }
-
-        MethodCallExpression expression =
-            new MethodCallExpression(VariableExpression.THIS_EXPRESSION, method.getName(), arguments);
-        Statement code = null;
-        if (method.isVoidMethod()) {
-            code = new ExpressionStatement(expression);
-            }
-        else {
-            code = new ReturnStatement(expression);
-        }
-
-        node.addMethod(method.getName(), method.getModifiers(), method.getReturnType(), newParams, method.getExceptions(), code);
     }
 
     protected void addClosureCode(InnerClassNode node) {

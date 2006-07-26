@@ -59,4 +59,17 @@ class DefaultParamTest extends GroovyTestCase {
 
         return a + "-" + b + "-" + c
     }
+    
+    void testConstructor() {
+        assert DefaultParamTestTestClass.declaredConstructors.size() == 2
+        def foo = new DefaultParamTestTestClass()
+        assert foo.j == 1
+        foo = new DefaultParamTestTestClass(2)
+        assert foo.j == 2
+    }
+}
+
+class DefaultParamTestTestClass {
+  def j
+  DefaultParamTestTestClass(int i = 1){j=i}
 }
