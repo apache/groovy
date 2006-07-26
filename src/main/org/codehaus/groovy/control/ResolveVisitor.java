@@ -63,7 +63,6 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.VariableScope;
-import org.codehaus.groovy.ast.expr.AttributeExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
@@ -72,6 +71,7 @@ import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ExpressionTransformer;
+import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
@@ -89,16 +89,16 @@ import org.codehaus.groovy.ast.stmt.SwitchStatement;
 import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
 import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
-import org.codehaus.groovy.ast.GroovyClassVisitor;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.messages.ExceptionMessage;
-import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
-import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Types;
 
 /**
  * Visitor to resolve Types and convert VariableExpression to
- * ClassExpressions if needed.
+ * ClassExpressions if needed. The ResolveVisitor will try to
+ * find the Class for a ClassExpression and prints an error if
+ * it fails to do so. Constructions like C[], foo as C, (C) foo 
+ * will force creation of a ClasssExpression for C   
  *
  * Note: the method to start the resolving is  startResolving(ClassNode, SourceUnit).
  *
@@ -674,6 +674,14 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
             ClassExpression  ce = (ClassExpression) left;
             addError("you tried to assign a value to "+ce.getType().getName(),be.getLeftExpression());
             return be;
+        }
+        if (left instanceof ClassExpression && be.getRightExpression() instanceof ListExpression) {
+            // we have C[] if the list is empty -> should be an array then!
+            ListExpression list = (ListExpression) be.getRightExpression();
+            ClassExpression ce = (ClassExpression) left;
+            if (list.getExpressions().isEmpty()) {
+                return new ClassExpression(left.getType().makeArray());
+            }
         }
         Expression right = transform(be.getRightExpression());
         Expression ret = new BinaryExpression(left,be.getOperation(),right);
