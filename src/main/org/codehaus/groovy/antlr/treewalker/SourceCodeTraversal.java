@@ -121,6 +121,7 @@ public class SourceCodeTraversal extends TraversalHelper {
                 case GroovyTokenTypes.BSR_ASSIGN: // a >>>= b
                 case GroovyTokenTypes.BXOR_ASSIGN: // a ^= b
                 case GroovyTokenTypes.COMPARE_TO: // a <=> b
+                case GroovyTokenTypes.DIV_ASSIGN: // a /= b
                 case GroovyTokenTypes.EQUAL: // a == b
                 case GroovyTokenTypes.NOT_EQUAL:
                     if (t.childAt(1) != null) {
@@ -141,10 +142,12 @@ public class SourceCodeTraversal extends TraversalHelper {
                 case GroovyTokenTypes.BXOR: // 1 ^ 2
                 case GroovyTokenTypes.CLASS_DEF: // class Foo...
                 case GroovyTokenTypes.CTOR_IDENT: // private Foo() {...
+                case GroovyTokenTypes.DIV: //  3/4
                 case GroovyTokenTypes.DOT: // foo.bar
                 case GroovyTokenTypes.GT: // a > b
                 case GroovyTokenTypes.LABELED_ARG: // myMethod(name:"Jez")
                 case GroovyTokenTypes.LAND: // true && false
+                case GroovyTokenTypes.LOR: // true && false
                 case GroovyTokenTypes.LT: // a < b
                 case GroovyTokenTypes.MEMBER_POINTER: // this.&foo()
                 case GroovyTokenTypes.MINUS:

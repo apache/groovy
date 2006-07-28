@@ -142,7 +142,19 @@ public class SourcePrinterTest extends GroovyTestCase {
     public void testCtorIdent() throws Exception {
         assertEquals("class Foo {private Foo() {}}", pretty("class Foo {private Foo() {}}"));
     }
+    
+    public void testDec() throws Exception {
+    	assertEquals("--b", pretty("--b"));
+    }
 
+    public void testDiv() throws Exception {
+    	assertEquals("1 / 2", pretty("1/2"));
+    }
+    
+    public void testDivAssign() throws Exception {
+    	assertEquals("x /= 2", pretty("x/=2"));
+    }
+    
     public void testDot() throws Exception {
         assertEquals("foo.bar.mooky()", pretty("foo.bar.mooky()"));
     }
@@ -207,8 +219,16 @@ public class SourcePrinterTest extends GroovyTestCase {
         assertEquals("try {} catch (Exception e) {}", pretty("try {} catch (Exception e) {}"));
     }
 
+    public void testLiteralDefault() throws Exception {
+        assertEquals("switch (foo) {default:x = 2}", pretty("switch(foo){default:x=2}"));
+    }
+
     public void testLiteralFalse() throws Exception {
         assertEquals("if (false) {}", pretty("if (false) {}"));
+    }
+
+    public void testLiteralFinally() throws Exception {
+        assertEquals("try {}finally {}", pretty("try {}finally {}"));
     }
 
     public void testLiteralFloat() throws Exception {
@@ -286,9 +306,15 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
 
     public void testLnot() throws Exception {
-            assertEquals("if (!isRaining) {}", pretty("if (!isRaining) {}"));
-        }
+        assertEquals("if (!isRaining) {}", pretty("if (!isRaining) {}"));
+    }
 
+    public void testLor() throws Exception {
+        assertEquals("true || false", pretty("true || false"));
+    }
+    public void testLparen_FAILS() throws Exception { if (notYetImplemented()) return;
+    	assertEquals("for (i in (history.size() - 1)..0) {}", pretty("for (i in (history.size() - 1)..0) {}"));
+    }
     public void testLt() throws Exception {
         assertEquals("if (3.4f < 12f) {}", pretty("if (3.4f < 12f) {}"));
     }
@@ -354,6 +380,9 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
     public void testPlus() throws Exception {
         assertEquals("a + b", pretty("a+b"));
+    }
+    public void testPostDec() throws Exception {
+    	assertEquals("a--", pretty("a--"));
     }
     public void testQuestion() throws Exception {
         assertEquals("foo == bar?10:20", pretty("foo==bar?10:20"));

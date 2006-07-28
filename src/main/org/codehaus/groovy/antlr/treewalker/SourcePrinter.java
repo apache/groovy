@@ -215,6 +215,22 @@ public class SourcePrinter extends VisitorAdapter {
         // use name of class for constructor from the class definition
         print(t,visit,className,null,null);
     }
+
+    public void visitDec(GroovySourceAST t, int visit) {
+    	print(t,visit,"--",null,null);
+    }
+    
+    // visitDigit ...
+    //    never created/visited
+    
+    public void visitDiv(GroovySourceAST t, int visit) {
+        print(t,visit," / ",null,null);
+    }
+
+	public void visitDivAssign(GroovySourceAST t,int visit) {
+        print(t,visit," /= ",null,null);
+    }
+	
     public void visitDot(GroovySourceAST t,int visit) {
         print(t,visit,".",null,null);
     }
@@ -302,10 +318,16 @@ public class SourcePrinter extends VisitorAdapter {
     public void visitLiteralCatch(GroovySourceAST t,int visit) {
         printUpdatingTabLevel(t,visit," catch (",null,") ");
     }
+    public void visitLiteralDefault(GroovySourceAST t,int visit) {
+        print(t,visit,"default",null,":");
+    }
     public void visitLiteralFalse(GroovySourceAST t,int visit) {
         print(t,visit,"false",null,null);
     }
 
+    public void visitLiteralFinally(GroovySourceAST t,int visit) {
+        print(t,visit,"finally ",null,null);
+    }
     public void visitLiteralFloat(GroovySourceAST t,int visit) {
         print(t,visit,"float",null,null);
     }
@@ -399,6 +421,11 @@ public class SourcePrinter extends VisitorAdapter {
         print(t,visit,"!",null,null);
     }
 
+	// Note: old closure syntax using LOR is deprecated, and also never creates/visits a LOR node
+    public void visitLor(GroovySourceAST t, int visit) {
+        print(t,visit," || ",null,null);
+    }
+
     public void visitLt(GroovySourceAST t, int visit) {
         print(t,visit," < ",null,null);
     }
@@ -472,6 +499,10 @@ public class SourcePrinter extends VisitorAdapter {
 
     public void visitPlus(GroovySourceAST t, int visit) {
         print(t,visit," + ",null,null);
+    }
+    
+    public void visitPostDec(GroovySourceAST t, int visit) {
+    	print(t,visit,null,null,"--");
     }
 
     public void visitQuestion(GroovySourceAST t, int visit) {
