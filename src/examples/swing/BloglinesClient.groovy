@@ -61,7 +61,7 @@ client = new HttpClient()
 credentials = new UsernamePasswordCredentials(email, password)
 client.state.setCredentials("Bloglines RPC", server, credentials)
 
-abstractCallBloglines = { | method, parameters|
+abstractCallBloglines = { method, parameters ->
   url = "http://${server}/${method}${parameters}"
   try {
     get = new GetMethod(url)
@@ -84,7 +84,7 @@ treeTop = new DefaultMutableTreeNode("My Feeds")
 parseOutline(opml.body.outline.outline, treeTop)
 
 def parseOutline(parsedXml, treeLevel) {
-  parsedXml.each{ | outline |
+  parsedXml.each{ outline ->
     if (outline['@xmlUrl'] != null) {  // this is an individual feed
       feed = new Feed(name:outline['@title'], id:outline['@BloglinesSubId'], 
                       unread:outline['@BloglinesUnread'])
@@ -107,7 +107,7 @@ model.selectionMode = TreeSelectionModel.SINGLE_TREE_SELECTION
 itemList.selectionMode = ListSelectionModel.SINGLE_SELECTION
 
 //Set up the action closures that will react to user selections
-listItems = { | feed |
+listItems = { feed ->
   rssStream = callBloglinesGetItems("?s=${feed.id}&n=0")  
   if (rssStream != null) {
     try {
@@ -122,7 +122,7 @@ listItems = { | feed |
   }
 }
 
-feedTree.valueChanged = { | event |
+feedTree.valueChanged = { event ->
   itemText.text = ""  // clear any old item text
   node = (DefaultMutableTreeNode) feedTree.getLastSelectedPathComponent()
   if (node != null) {
@@ -133,7 +133,7 @@ feedTree.valueChanged = { | event |
   }
 }
 
-itemList.valueChanged = { | event |
+itemList.valueChanged = { event ->
   item = event.source.selectedValue
   if (item instanceof Item && item?.description != null) {
     itemText.text = "<html><body>${item.description}</body></html>"
