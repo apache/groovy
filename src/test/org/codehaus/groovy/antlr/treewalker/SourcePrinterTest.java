@@ -124,7 +124,7 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
 
     public void testClosedBlock() throws Exception{
-        assertEquals("[1, 2, 3].each {println(it)}", pretty("[1,2,3].each{println it}"));
+        assertEquals("[1, 2, 3].each {println it}", pretty("[1,2,3].each{println it}"));
         assertEquals("def x = foo.bar(mooky){ x, y -> wibble(y, x)}", pretty("def x = foo.bar(mooky) {x,y-> wibble(y,x)}"));
         // todo: above is not quite the spacing I would expect, but good enough for now...
     }
@@ -156,16 +156,24 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
     
     public void testDot() throws Exception {
-    	assertEquals("package foo.bar", pretty("package foo.bar"));
-    	assertEquals("import java.util.Date", pretty("import java.util.Date"));
-    	assertEquals("@foo.Bar mooky", pretty("@foo.Bar mooky"));
-    	assertEquals("def foo() throws bar.MookyException{}", pretty("def foo() throws bar.MookyException{}"));
     	assertEquals("java.util.Date d = new java.util.Date()", pretty("java.util.Date d = new java.util.Date()"));
     	assertEquals("class Foo extends java.util.Date {}", pretty("class Foo extends java.util.Date {}"));
     	assertEquals("foo.bar.mooky()", pretty("foo.bar.mooky()"));
+    	assertEquals("package foo.bar", pretty("package foo.bar"));
+    	assertEquals("import java.util.Date", pretty("import java.util.Date"));
+    	assertEquals("import java.io.*", pretty("import java.io.*"));
+    	assertEquals("@foo.Bar mooky", pretty("@foo.Bar mooky"));
+    	assertEquals("def foo() throws bar.MookyException{}", pretty("def foo() throws bar.MookyException{}"));
+    	assertEquals("def x = \"${foo.bar}\"", pretty("def x = \"${foo.bar}\""));
     }
-
+    
+    public void testDynamicMember() throws Exception{
+    	assertEquals("foo.(bar)", pretty("foo.(bar)"));
+    	assertEquals("foo.\"${bar}\"", pretty("foo.\"${bar}\""));
+    }
+    
     public void testElist() throws Exception {
+    	assertEquals("println 2 + 2", pretty("println 2 + 2"));
         assertEquals("foo(bar, mooky)", pretty("foo( bar , mooky )"));
     }
 
@@ -296,7 +304,8 @@ public class SourcePrinterTest extends GroovyTestCase {
         assertEquals("def foo() {if (false) throw new RuntimeException()}", pretty("def foo() {if (false) throw new RuntimeException()}"));
     }
     public void testLiteralThrows() throws Exception {
-        assertEquals("def foo() throws bar.Mooky{}", pretty("def foo() throws bar.Mooky{}"));
+    	//todo AntlrParserPlugin: Unexpected node type: '.' found when expecting type: an identifier
+    	assertEquals("def foo() throws java.io.IOException{}", pretty("def foo() throws java.io.IOException{}"));
     }
     public void testLiteralTrue() throws Exception {
         assertEquals("foo = true", pretty("foo = true"));
@@ -337,7 +346,7 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
     public void testMethodCall() throws Exception {
         assertEquals("foo(bar)", pretty("foo(bar)"));
-        assertEquals("[1, 2, 3].each {println(it)}", pretty("[1,2,3].each{println it}"));
+        assertEquals("[1, 2, 3].each {println it}", pretty("[1,2,3].each{println it}"));
         assertEquals("foo(bar){mooky()}", pretty("foo(bar){mooky()}"));
     }
 

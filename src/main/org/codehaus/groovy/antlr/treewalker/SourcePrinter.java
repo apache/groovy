@@ -237,6 +237,13 @@ public class SourcePrinter extends VisitorAdapter {
     public void visitDot(GroovySourceAST t,int visit) {
         print(t,visit,".",null,null);
     }
+    
+    public void visitDynamicMember(GroovySourceAST t, int visit) {
+    	if (t.childOfType(GroovyTokenTypes.STRING_CONSTRUCTOR) == null) {
+    		printUpdatingTabLevel(t,visit,"(",null,")");
+    	}
+    }
+    
     public void visitElist(GroovySourceAST t,int visit) {
         print(t,visit,null,", ",null);
     }
@@ -450,7 +457,11 @@ public class SourcePrinter extends VisitorAdapter {
     }
 
     public void visitMethodCall(GroovySourceAST t,int visit) {
-        printUpdatingTabLevel(t,visit,"("," ",")");
+    	if ("<command>".equals(t.getText())) {
+    		printUpdatingTabLevel(t,visit," "," ",null);
+    	} else {
+    		printUpdatingTabLevel(t,visit,"("," ",")");
+    	}
     }
     public void visitMinus(GroovySourceAST t,int visit) {
         print(t,visit," - ",null,null);
