@@ -156,7 +156,13 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
     
     public void testDot() throws Exception {
-        assertEquals("foo.bar.mooky()", pretty("foo.bar.mooky()"));
+    	assertEquals("package foo.bar", pretty("package foo.bar"));
+    	assertEquals("import java.util.Date", pretty("import java.util.Date"));
+    	assertEquals("@foo.Bar mooky", pretty("@foo.Bar mooky"));
+    	assertEquals("def foo() throws bar.MookyException{}", pretty("def foo() throws bar.MookyException{}"));
+    	assertEquals("java.util.Date d = new java.util.Date()", pretty("java.util.Date d = new java.util.Date()"));
+    	assertEquals("class Foo extends java.util.Date {}", pretty("class Foo extends java.util.Date {}"));
+    	assertEquals("foo.bar.mooky()", pretty("foo.bar.mooky()"));
     }
 
     public void testElist() throws Exception {
@@ -289,6 +295,9 @@ public class SourcePrinterTest extends GroovyTestCase {
     public void testLiteralThrow() throws Exception {
         assertEquals("def foo() {if (false) throw new RuntimeException()}", pretty("def foo() {if (false) throw new RuntimeException()}"));
     }
+    public void testLiteralThrows() throws Exception {
+        assertEquals("def foo() throws bar.Mooky{}", pretty("def foo() throws bar.Mooky{}"));
+    }
     public void testLiteralTrue() throws Exception {
         assertEquals("foo = true", pretty("foo = true"));
     }
@@ -392,6 +401,10 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
     public void testRangeInclusive() throws Exception {
         assertEquals("foo[bar..12]", pretty("foo[bar .. 12]"));
+    }
+    public void testScopeEscape() throws Exception {
+    	// todo - 31 July 2006 - test fine, however this parses but causes error in AntlrParserPlugin
+    	assertEquals("println([$x, x, y])", pretty("println([$x, x, y])"));
     }
     public void testSlist() throws Exception {
         assertEquals("if (true) {foo}", pretty("if (true) {foo}"));

@@ -231,6 +231,9 @@ public class SourcePrinter extends VisitorAdapter {
         print(t,visit," /= ",null,null);
     }
 	
+    // visitDollar ...
+    //   token type DOLLAR never created/visited, see SCOPE_ESCAPE instead
+    
     public void visitDot(GroovySourceAST t,int visit) {
         print(t,visit,".",null,null);
     }
@@ -404,6 +407,10 @@ public class SourcePrinter extends VisitorAdapter {
         print(t,visit,"throw ",null,null);
     }
 
+    public void visitLiteralThrows(GroovySourceAST t, int visit) {
+        print(t,visit,"throws ",null,null);
+    }
+
     public void visitLiteralTrue(GroovySourceAST t,int visit) {
         print(t,visit,"true",null,null);
     }
@@ -518,6 +525,10 @@ public class SourcePrinter extends VisitorAdapter {
         print(t,visit,"..",null,null);
     }
 
+    public void visitScopeEscape(GroovySourceAST t, int visit) {
+    	print(t,visit,"$",null,null);
+    }
+    
     public void visitSlist(GroovySourceAST t,int visit) {
         if (visit == OPENING_VISIT) {
             tabLevel++;
