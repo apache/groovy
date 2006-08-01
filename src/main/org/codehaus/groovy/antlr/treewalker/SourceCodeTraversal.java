@@ -104,6 +104,7 @@ public class SourceCodeTraversal extends TraversalHelper {
                     accept_FirstChild_v_SecondChild_v(t);
                     break;
 
+                case GroovyTokenTypes.ENUM_CONSTANT_DEF: // enum Foo(THESE,ARE,THEY)
                 case GroovyTokenTypes.EXPR:
                 case GroovyTokenTypes.IMPORT:
                 case GroovyTokenTypes.VARIABLE_DEF:
@@ -144,6 +145,7 @@ public class SourceCodeTraversal extends TraversalHelper {
                 case GroovyTokenTypes.CTOR_IDENT: // private Foo() {...
                 case GroovyTokenTypes.DIV: //  3/4
                 case GroovyTokenTypes.DOT: // foo.bar
+                case GroovyTokenTypes.ENUM_DEF: // enum Foo...
                 case GroovyTokenTypes.GT: // a > b
                 case GroovyTokenTypes.LABELED_ARG: // myMethod(name:"Jez")
                 case GroovyTokenTypes.LAND: // true && false

@@ -248,6 +248,20 @@ public class SourcePrinter extends VisitorAdapter {
         print(t,visit,null,", ",null);
     }
 
+    // visitEmptyStat ...
+    //   token type EMPTY_STAT obsolete and should be removed, never visited/created
+    
+    public void visitEnumConstantDef(GroovySourceAST t,int visit) {
+    	GroovySourceAST sibling = (GroovySourceAST)t.getNextSibling();
+    	if (sibling != null && sibling.getType() == GroovyTokenTypes.ENUM_CONSTANT_DEF) {
+    		print(t,visit,null,null,", ");
+    	}
+    }
+
+    public void visitEnumDef(GroovySourceAST t,int visit) {
+        print(t,visit,"enum ",null,null);
+    }
+
     public void visitEqual(GroovySourceAST t,int visit) {
         print(t,visit," == ",null,null);
     }
@@ -263,10 +277,21 @@ public class SourcePrinter extends VisitorAdapter {
         }
     }
 
+    public void visitForCondition(GroovySourceAST t, int visit) {
+    	print(t,visit," ; ",null,null);
+    }
+
+    public void visitForInit(GroovySourceAST t, int visit) {
+    	print(t,visit,"(",null,null);
+    }
+    
     public void visitForInIterable(GroovySourceAST t, int visit) {
         printUpdatingTabLevel(t,visit,"("," in ",") ");
     }
 
+    public void visitForIterator(GroovySourceAST t, int visit) {
+    	print(t,visit," ; ",null,")");
+    }
     public void visitGt(GroovySourceAST t, int visit) {
         print(t,visit," > ",null,null);
     }
@@ -521,6 +546,10 @@ public class SourcePrinter extends VisitorAdapter {
     
     public void visitPostDec(GroovySourceAST t, int visit) {
     	print(t,visit,null,null,"--");
+    }
+
+    public void visitPostInc(GroovySourceAST t, int visit) {
+    	print(t,visit,null,null,"++");
     }
 
     public void visitQuestion(GroovySourceAST t, int visit) {

@@ -174,9 +174,19 @@ public class SourcePrinterTest extends GroovyTestCase {
     
     public void testElist() throws Exception {
     	assertEquals("println 2 + 2", pretty("println 2 + 2"));
-        assertEquals("foo(bar, mooky)", pretty("foo( bar , mooky )"));
+    	assertEquals("for (i = 0, j = 2 ; i < 10 ; i++, j--){print i}", pretty("for (i = 0,j = 2;i < 10; i++, j--) {print i}"));
+    	assertEquals("foo()", pretty("foo()")); // empty ELIST
+    	assertEquals("foo(bar, mooky)", pretty("foo( bar , mooky )"));
     }
 
+    public void testEnumConstantDef_FAILS() throws Exception { if (notYetImplemented()) return;
+    	assertEquals("enum Coin {PENNY(1), DIME(10), QUARTER(25)}", pretty("enum Coin {PENNY(1), DIME(10), QUARTER(25)}"));
+    }
+
+    public void testEnumDef() throws Exception {
+    	assertEquals("enum Season {WINTER, SPRING, SUMMER, AUTUMN}", pretty("enum Season{WINTER,SPRING,SUMMER,AUTUMN}"));
+    }
+    
     public void testEqual() throws Exception {
         assertEquals("a == b", pretty("a==b"));
     }
