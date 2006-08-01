@@ -411,19 +411,7 @@ public class Invoker {
         }
         else {
             try {
-                // lets try see if there's an iterator() method
-                final Method method = value.getClass().getMethod("iterator", EMPTY_TYPES);
-
-                if (method != null) {
-                    AccessController.doPrivileged(new PrivilegedAction() {
-                        public Object run() {
-                            method.setAccessible(true);
-                            return null;
-                        }
-                    });
-
-                    return (Iterator) method.invoke(value, EMPTY_ARGUMENTS);
-                }
+                return (Iterator)invokeMethod(value, "iterator", EMPTY_ARGUMENTS);
             }
             catch (Exception e) {
                 //  ignore
