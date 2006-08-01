@@ -62,7 +62,6 @@ import java.util.Map;
  * @version $Revision$
  */
 public class MarkupBuilder extends BuilderSupport {
-
     private IndentPrinter out;
     private boolean nospace;
     private int state;
@@ -105,6 +104,7 @@ public class MarkupBuilder extends BuilderSupport {
     */
 
     protected Object createNode(Object name) {
+        this.nodeIsEmpty = true;
         toState(1, name);
         return name;
     }
@@ -169,6 +169,8 @@ public class MarkupBuilder extends BuilderSupport {
      * 
      * @param value to be searched and replaced for XML special characters.
      * @return value with XML characters escaped
+     * @deprecated
+     * @see #escapeXmlValue(String, boolean)
      */
     protected String transformValue(String value) {
         // & has to be checked and replaced before others
@@ -232,24 +234,59 @@ public class MarkupBuilder extends BuilderSupport {
      * have been replaced with the corresponding XML entities.
      */
     private String escapeXmlValue(String value, boolean isAttrValue){
-        // & has to be checked and replaced before others
-        if (value.matches(".*&.*")) {
-            value = value.replaceAll("&", "&amp;");
-        }
-        if (value.matches(".*<.*")) {
-            value = value.replaceAll("<", "&lt;");
-        }
-        if (value.matches(".*>.*")) {
-            value = value.replaceAll(">", "&gt;");
-        }
-        if (isAttrValue){
-            // The apostrophe is only escaped if the value is for an
-            // attribute, as opposed to element content.
-            if (value.matches(".*\\'.*")) {
-                value = value.replaceAll("\\'", "&apos;");
+        StringBuffer buffer = new StringBuffer(value);
+        for (int i = 0, n = buffer.length(); i < n; i++){
+            switch (buffer.charAt(i)){
+            case '&':
+                buffer.replace(i, i + 1, "&amp;");
+
+                // We're replacing a single character by a string of
+                // length 5, so we need to update the index variable
+                // and the total length.
+                i += 4;
+                n += 4;
+                break;
+
+            case '<':
+                buffer.replace(i, i + 1, "&lt;");
+
+                // We're replacing a single character by a string of
+                // length 4, so we need to update the index variable
+                // and the total length.
+                i += 3;
+                n += 3;
+                break;
+
+            case '>':
+                buffer.replace(i, i + 1, "&gt;");
+
+                // We're replacing a single character by a string of
+                // length 4, so we need to update the index variable
+                // and the total length.
+                i += 3;
+                n += 3;
+                break;
+
+            case '\'':
+                // The apostrophe is only escaped if the value is for an
+                // attribute, as opposed to element content.
+                if (isAttrValue){
+                    buffer.replace(i, i + 1, "&apos;");
+
+                    // We're replacing a single character by a string of
+                    // length 6, so we need to update the index variable
+                    // and the total length.
+                    i += 5;
+                    n += 5;
+                }
+                break;
+
+            default:
+                break;
             }
         }
-        return value;
+
+        return buffer.toString();
     }
 
     private void toState(int next, Object name) {
