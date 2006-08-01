@@ -43,9 +43,9 @@
   <distributionSite>beaver.codehaus.org</distributionSite -->
 
   <repository>
-    <connection>scm:cvs:pserver:anonymous@cvs.groovy.codehaus.org:/cvs/groovy:groovy/groovy-core</connection>
-    <developerConnection>scm:cvs:ext:${maven.username}@cvs.groovy.codehaus.org:/cvs/groovy:groovy/groovy-core</developerConnection>
-    <url>http://cvs.groovy.codehaus.org/</url>
+    <connection>scm:svn:http://svn.codehaus.org/groovy/groovy-core</connection>
+    <developerConnection>scm:svn:https://${maven.username}@svn.codehaus.org/groovy/groovy-core</developerConnection>
+    <url>http://svn.groovy.codehaus.org/</url>
   </repository>
   
   <versions>
