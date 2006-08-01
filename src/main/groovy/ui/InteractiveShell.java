@@ -161,7 +161,7 @@ public class InteractiveShell {
     public void run(String[] args) throws Exception {
         final String version = InvokerHelper.getVersion();
 
-        out.println("Lets get Groovy!");
+        out.println("Let's get Groovy!");
         out.println("================");
         out.println("Version: " + version + " JVM: " + System.getProperty("java.vm.version"));
         out.println("Type 'exit' to terminate the shell");
