@@ -87,21 +87,7 @@ public class MarkupBuilder extends BuilderSupport {
         return this.out;
     }
 
-    protected void setParent(Object parent, Object child) {
-    }
-
-    /*
-    public Object getProperty(String property) {
-        if (property.equals("_")) {
-            nospace = true;
-            return null;
-        } else {
-            Object node = createNode(property);
-            nodeCompleted(getCurrent(), node);
-            return node;
-        }
-    }
-    */
+    protected void setParent(Object parent, Object child) { }
 
     protected Object createNode(Object name) {
         this.nodeIsEmpty = true;
@@ -121,7 +107,7 @@ public class MarkupBuilder extends BuilderSupport {
         for (Iterator iter = attributes.entrySet().iterator(); iter.hasNext();) {
             Map.Entry entry = (Map.Entry) iter.next();
             out.print(" ");
-            print(transformName(entry.getKey().toString()));
+            print(entry.getKey().toString());
             out.print("='");
             print(escapeAttributeValue(entry.getValue().toString()));
             out.print("'");
@@ -148,13 +134,8 @@ public class MarkupBuilder extends BuilderSupport {
     }
 
     protected Object getName(String methodName) {
-		return super.getName(transformName(methodName));
+		return super.getName(methodName);
 	}
-
-    protected String transformName(String name) {
-    	if (name.startsWith("_")) name = name.substring(1);
-    	return name.replace('_', '-');
-    }
 
     /**
      * Returns a String with special XML characters escaped as entities so that
