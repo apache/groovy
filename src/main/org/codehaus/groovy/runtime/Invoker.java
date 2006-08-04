@@ -47,6 +47,7 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
 import groovy.lang.GString;
+import groovy.lang.GroovyInterceptable;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClass;
@@ -55,21 +56,16 @@ import groovy.lang.MissingMethodException;
 import groovy.lang.Range;
 import groovy.lang.SpreadList;
 import groovy.lang.Tuple;
-import groovy.lang.GroovyInterceptable;
-import org.apache.xml.serialize.OutputFormat;
-import org.apache.xml.serialize.XMLSerializer;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
+import java.io.BufferedReader;
+import java.io.DataInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
 import java.io.StringWriter;
 import java.lang.reflect.Array;
-import java.lang.reflect.Method;
 import java.math.BigDecimal;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -81,6 +77,12 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.apache.xml.serialize.OutputFormat;
+import org.apache.xml.serialize.XMLSerializer;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 /**
  * A helper class to invoke methods or extract properties on arbitrary Java objects dynamically
@@ -409,6 +411,63 @@ public class Invoker {
                 }
             };
         }
+        else if (value instanceof Reader) {
+         	return iteratorForReader((Reader)value);
+        }
+        /*
+         * we could do a state machine instead but would it be better readable?
+         */
+        else if (value instanceof InputStream) {
+         	final DataInputStream dis = new DataInputStream((InputStream) value);
+            return new Iterator() {
+            	Byte nextVal = null;
+            	boolean nextMustRead = true;
+            	boolean hasNext = true;
+
+                public boolean hasNext() {
+                	if(nextMustRead && hasNext)
+                	{
+                    	try {
+    						byte bPrimitive = dis.readByte();
+    						nextVal = new Byte(bPrimitive);
+    						nextMustRead = false;
+                    	} catch (IOException e) {
+    						hasNext = false;
+    					}
+                	}
+					return hasNext;
+                }
+
+                public Object next() {
+                	Byte retval = null;
+                	if(nextMustRead)
+                	{
+                    	try {
+    						byte b = dis.readByte();
+    						retval = new Byte(b);
+    					} catch (IOException e) {
+    						hasNext = false;
+    					}
+                	}
+                	else
+                		retval = nextVal;
+					nextMustRead = true;
+                	return retval;
+                }
+
+                public void remove() {
+                    throw new UnsupportedOperationException("Cannot remove() from an InputStream Iterator");
+                }
+            };
+        }
+        else if (value instanceof File) {
+            try {
+                return iteratorForReader(DefaultGroovyMethods.newReader((File)value));
+            }
+            catch (IOException e) {
+                throw new GroovyRuntimeException("Error reading file: " + value, e);
+            }
+       	}
         else {
             try {
                 return (Iterator)invokeMethod(value, "iterator", EMPTY_ARGUMENTS);
@@ -419,6 +478,62 @@ public class Invoker {
         }
         return asCollection(value).iterator();
     }
+
+    /**
+     * @return an Iterator for a Reader
+     */
+	private Iterator iteratorForReader(Reader value) {
+		final BufferedReader bufferedReader;
+		if(value instanceof BufferedReader)
+			bufferedReader = (BufferedReader)value;
+		else
+			bufferedReader = new BufferedReader((Reader)value);
+		return new Iterator() {
+        	String nextVal = null;
+        	boolean nextMustRead = true;
+        	boolean hasNext = true;
+
+            public boolean hasNext() {
+            	if(nextMustRead && hasNext)
+            	{
+                	try {
+						nextVal = readNext();
+						nextMustRead = false;
+                	} catch (IOException e) {
+						hasNext = false;
+					}
+            	}
+				return hasNext;
+            }
+
+		    public Object next() {
+            	String retval = null;
+            	if(nextMustRead)
+            	{
+                	try {
+						retval = readNext();
+					} catch (IOException e) {
+						hasNext = false;
+					}
+            	}
+            	else
+            		retval = nextVal;
+				nextMustRead = true;
+            	return retval;
+            }
+
+		    private String readNext() throws IOException {
+				String nv = bufferedReader.readLine();
+				if(nv == null)
+					hasNext = false;
+				return nv;
+			}
+		    
+		    public void remove() {
+		        throw new UnsupportedOperationException("Cannot remove() from a Reader Iterator");
+		    }
+		};
+	}
 
     /**
      * @return true if the two objects are null or the objects are equal
