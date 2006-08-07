@@ -147,6 +147,7 @@ public class SourceCodeTraversal extends TraversalHelper {
                 case GroovyTokenTypes.DOT: // foo.bar
                 case GroovyTokenTypes.ENUM_DEF: // enum Foo...
                 case GroovyTokenTypes.GT: // a > b
+                case GroovyTokenTypes.INTERFACE_DEF: // interface Foo...
                 case GroovyTokenTypes.LABELED_ARG: // myMethod(name:"Jez")
                 case GroovyTokenTypes.LAND: // true && false
                 case GroovyTokenTypes.LOR: // true && false

@@ -179,7 +179,7 @@ public class SourcePrinterTest extends GroovyTestCase {
     	assertEquals("foo(bar, mooky)", pretty("foo( bar , mooky )"));
     }
 
-    public void testEnumConstantDef_FAILS() throws Exception { if (notYetImplemented()) return;
+    public void testEnumConstantDef() throws Exception {
     	assertEquals("enum Coin {PENNY(1), DIME(10), QUARTER(25)}", pretty("enum Coin {PENNY(1), DIME(10), QUARTER(25)}"));
     }
 
@@ -191,12 +191,25 @@ public class SourcePrinterTest extends GroovyTestCase {
         assertEquals("a == b", pretty("a==b"));
     }
 
+    public void testEsc_FAILS() throws Exception { if (notYetImplemented()) return;
+    	// dquote-tab-dquote
+    	assertEquals("println \"\\\"\t\\\"\"", pretty("println \"\\\"\t\\\"\""));
+    }
+    
+    public void testExponent() throws Exception {
+    	assertEquals("println 1.2e-10", pretty("println 1.2e-10"));
+    }
+    
     public void testExpr_FAILS() throws Exception { if (notYetImplemented()) return;
+    	assertEquals("System.out.println(x)", pretty("System.out.println(x)"));
+    	assertEquals("return f", pretty("return f"));
         assertEquals("foo(bar);mooky(bar)", pretty("foo(bar);mooky(bar)"));
     }
 
     public void testExtendsClause() throws Exception {
         assertEquals("class Foo extends Bar {}", pretty("class Foo extends Bar {}"));
+        assertEquals("interface Wibble extends Mooky{}", pretty("interface Wibble extends Mooky {}"));
+        //todo spacing is odd, c.f. last space in class vs interface above
     }
     public void testForInIterable() throws Exception {
         assertEquals("for (i in [1, 2]) {}", pretty("for (i in [1,2]) {}"));

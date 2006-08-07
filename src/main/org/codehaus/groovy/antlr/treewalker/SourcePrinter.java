@@ -245,7 +245,11 @@ public class SourcePrinter extends VisitorAdapter {
     }
     
     public void visitElist(GroovySourceAST t,int visit) {
-        print(t,visit,null,", ",null);
+    	if (getParentNode().getType() == GroovyTokenTypes.ENUM_CONSTANT_DEF) {
+    		print(t,visit,"(",", ",")");
+    	} else {
+    		print(t,visit,null,", ",null);
+    	}
     }
 
     // visitEmptyStat ...
@@ -262,10 +266,16 @@ public class SourcePrinter extends VisitorAdapter {
         print(t,visit,"enum ",null,null);
     }
 
+    // visitEof ...
+    //   token type EOF never visited/created
+
     public void visitEqual(GroovySourceAST t,int visit) {
         print(t,visit," == ",null,null);
     }
 
+    // visitExponent ...
+    //   token type EXPONENT only used by lexer, never visited/created
+    
     public void visitExpr(GroovySourceAST t,int visit) {
     }
 
@@ -322,6 +332,10 @@ public class SourcePrinter extends VisitorAdapter {
         printUpdatingTabLevel(t,visit,"[",null,"]");
     }
 
+    public void visitInterfaceDef(GroovySourceAST t,int visit) {
+        print(t,visit,"interface ",null,null);
+    }
+    
     public void visitLabeledArg(GroovySourceAST t, int visit) {
         print(t,visit,":",null,null);
     }
@@ -506,6 +520,9 @@ public class SourcePrinter extends VisitorAdapter {
         print(t,visit,t.getText(),null,null);
     }
     public void visitNumBigInt(GroovySourceAST t,int visit) {
+        print(t,visit,t.getText(),null,null);
+    }
+    public void visitNumDouble(GroovySourceAST t,int visit) {
         print(t,visit,t.getText(),null,null);
     }
     public void visitNumInt(GroovySourceAST t,int visit) {
