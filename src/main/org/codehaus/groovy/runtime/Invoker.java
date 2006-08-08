@@ -1011,6 +1011,9 @@ public class Invoker {
         if (object == null) {
             return null;
         }
+        
+        if (type == object.getClass()) return object;
+        
         // TODO we should move these methods to groovy method, like g$asType() so that
         // we can use operator overloading to customize on a per-type basis
         if (type.isArray()) {
