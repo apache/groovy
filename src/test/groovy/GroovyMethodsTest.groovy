@@ -198,7 +198,7 @@ class GroovyMethodsTest extends GroovyTestCase {
         process = cmd.execute()
 
         process.consumeProcessOutput()
-        process.waitForOrKill(1)
+        process.waitForOrKill(10) // This fails on RLW's workstation with parameter 1, >=8 is required.
         value = process.exitValue()
         println "Exit value of command line is ${value}"
         
