@@ -1304,13 +1304,17 @@ public class Invoker {
             Map map = (Map) object;
             return !map.isEmpty();
         }
-        else if (object instanceof String) {
-            String string = (String) object;
+        else if (object instanceof String || object instanceof GString) {
+            String string = object.toString();
             return string.length() > 0;
         }
         else if (object instanceof Number) {
             Number n = (Number) object;
             return n.doubleValue() != 0;
+        }
+        else if (object instanceof Character) {
+            Character c = (Character) object;
+            return c.charValue() != 0;
         }
         else {
             return object != null;

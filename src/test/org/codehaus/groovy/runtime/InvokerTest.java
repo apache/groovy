@@ -47,6 +47,7 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.GroovyRuntimeException;
+import groovy.lang.GString;
 import groovy.util.GroovyTestCase;
 
 import java.util.ArrayList;
@@ -108,12 +109,27 @@ public class InvokerTest extends GroovyTestCase {
         assertAsBoolean(true, "false");
         assertAsBoolean(false, Boolean.FALSE);
         assertAsBoolean(false, (String) null);
+        assertAsBoolean(false, "");
+        GString emptyGString = new GString(new Object[] { "" }) {
+            public String[] getStrings() {
+                return new String[] { "" };
+            }
+        };
+        assertAsBoolean(false, emptyGString);
+        GString nonEmptyGString = new GString(new Object[] { "x" }) {
+            public String[] getStrings() {
+                return new String[] { "x" };
+            }
+        };
+        assertAsBoolean(true, nonEmptyGString);
         assertAsBoolean(true, new Integer(1234));
         assertAsBoolean(false, new Integer(0));
         assertAsBoolean(true, new Float(0.3f));
         assertAsBoolean(true, new Double(3.0f));
         assertAsBoolean(false, new Float(0.0f));
-		assertAsBoolean(false, Collections.EMPTY_LIST);
+        assertAsBoolean(true, new Character((char) 1));
+        assertAsBoolean(false, new Character((char) 0));
+        assertAsBoolean(false, Collections.EMPTY_LIST);
 		assertAsBoolean(true, Arrays.asList(new Integer[] { new Integer(1) }));
        }
     
