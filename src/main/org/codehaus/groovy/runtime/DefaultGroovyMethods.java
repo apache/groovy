@@ -2556,6 +2556,16 @@ public class DefaultGroovyMethods {
             return new ArrayList(self);
         }
     }
+    
+    public static Object asType(Collection col, Class clazz) {
+        if (clazz == List.class) {
+            return asList(col);
+        } else if (clazz == Set.class) {
+            if (col instanceof Set) return col;
+            return new HashSet(col);
+        }
+        return asType((Object) col, clazz);
+    }
 
     /**
      * Reverses the list
@@ -4810,6 +4820,19 @@ public class DefaultGroovyMethods {
         return new BigDecimal(self.doubleValue());
     }
 
+    public static Object asType(Number self, Class c) {
+        if (c==BigDecimal.class) {
+            return toBigDecimal(self);
+        } else if (c==BigInteger.class) {
+            return toBigInteger(self);
+        } else if (c==Double.class) {
+            return toDouble(self);
+        } else if (c==Float.class) {
+            return toFloat(self);
+        }
+        return asType((Object) self,c);
+    }
+    
     /**
      * Transform a Number into a BigInteger
      *
@@ -6200,6 +6223,13 @@ public class DefaultGroovyMethods {
         return new WritableFile(file);
     }
 
+    public static Object asType(File f, Class c) {
+        if (c == Writable.class) {
+            return asWritable(f);
+        }
+        return asType((Object) f,c);
+    }
+    
     /**
      * @param file     a File
      * @param encoding the encoding to be used when reading the file's contents
@@ -6224,6 +6254,25 @@ public class DefaultGroovyMethods {
         return answer;
     }
 
+    public static Object asType(String self, Class c) {
+        if (c==List.class) {
+            return toList(self);
+        } else if (c==BigDecimal.class) {
+            return toBigDecimal(self);
+        } else if (c==BigInteger.class) {
+            return toBigInteger(self);
+        } else if (c==Character.class) {
+            return toCharacter(self);
+        } else if (c==Boolean.class) {
+            return toBoolean(self);
+        } else if (c==Double.class) {
+            return toDouble(self);
+        } else if (c==Float.class) {
+            return toFloat(self);
+        }
+        return asType((Object) self, c);
+    }
+    
     // Process methods
     //-------------------------------------------------------------------------
 
@@ -6433,6 +6482,18 @@ public class DefaultGroovyMethods {
         }
     }
 
+    /**
+     * Converts a given object to a type. This method is used through
+     * the "as" operator and is overloadable as any other operator. 
+     *  
+     * @param obj the object to convert
+     * @param type the goal type
+     * @return the resulting object
+     */
+    public static Object asType(Object obj, Class type) {
+        return InvokerHelper.asType(obj,type);
+    }
+        
     /**
      * A Runnable which waits for a process to complete together with a notification scheme
      * allowing another thread to wait a maximum number of seconds for the process to complete

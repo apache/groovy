@@ -199,14 +199,24 @@ public class ScriptBytecodeAdapter {
      * @throws Throwable 
      */
     public static Object asType(Object object, Class type) throws Throwable {
+        return invokeMethodSafe(object,"asType",type);
+    }
+    
+    /**
+     * Provides a hook for type casting of the given object to the required type
+     * 
+     * @param type   of object to convert the given object to
+     * @param object the object to be converted
+     * @return the original object or a new converted value
+     * @throws Throwable 
+     */
+    public static Object castToType(Object object, Class type) throws Throwable {
         try {
             return InvokerHelper.asType(object, type);
         } catch (GroovyRuntimeException gre) {
             return unwrap(gre);
         }
     }
-
-
 
     // Attributes
     //-------------------------------------------------------------------------

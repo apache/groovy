@@ -188,6 +188,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
     MethodCaller asIntMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "asInt");
     MethodCaller asTypeMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "asType");
+    MethodCaller castToTypeMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "castToType");
 
     MethodCaller getAttributeMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "getAttribute");
     MethodCaller getAttributeSafeMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "getAttributeSafe");
@@ -1060,7 +1061,7 @@ public class AsmClassGenerator extends ClassGenerator {
         } else {
             // return is based on class type
             // we may need to cast
-            doConvertAndCast(returnType, expression, false, true);
+            doConvertAndCast(returnType, expression, false, true, false);
             helper.unbox(returnType);
         }
         helper.doReturn(returnType);
@@ -1070,14 +1071,14 @@ public class AsmClassGenerator extends ClassGenerator {
     /**
      * Casts to the given type unless it can be determined that the cast is unnecessary
      */
-    protected void doConvertAndCast(ClassNode type, Expression expression, boolean ignoreAutoboxing, boolean forceCast) {
+    protected void doConvertAndCast(ClassNode type, Expression expression, boolean ignoreAutoboxing, boolean forceCast, boolean coerce) {
         ClassNode expType = getExpressionType(expression);
         // temp resolution: convert all primitive casting to corresponsing Object type
         if (!ignoreAutoboxing && ClassHelper.isPrimitiveType(type)) {
             type = ClassHelper.getWrapper(type);
         }
         if (forceCast || (type!=null && !type.equals(expType))) {
-            doConvertAndCast(type);
+            doConvertAndCast(type,coerce);
         }
     }    
 
@@ -1496,7 +1497,7 @@ public class AsmClassGenerator extends ClassGenerator {
     public void visitCastExpression(CastExpression expression) {
         ClassNode type = expression.getType();
         visitAndAutoboxBoolean(expression.getExpression());
-        doConvertAndCast(type, expression.getExpression(), expression.isIgnoringAutoboxing(),false);
+        doConvertAndCast(type, expression.getExpression(), expression.isIgnoringAutoboxing(),false,expression.isCoerce());
     }
 
     public void visitNotExpression(NotExpression expression) {
@@ -2767,11 +2768,19 @@ public class AsmClassGenerator extends ClassGenerator {
         return answer;
     }
 
-    protected void doConvertAndCast(ClassNode type) {
+    protected void doConvertAndCast(ClassNode type){
+        doConvertAndCast(type,false);
+    }
+    
+    protected void doConvertAndCast(ClassNode type, boolean coerce) {
         if (type==ClassHelper.OBJECT_TYPE) return;
         if (isValidTypeForCast(type)) {
             visitClassExpression(new ClassExpression(type));
-            asTypeMethod.call(cv);
+            if (coerce) {
+                asTypeMethod.call(cv);
+            } else {
+                castToTypeMethod.call(cv);
+            }
         } 
         helper.doCast(type);
     }
