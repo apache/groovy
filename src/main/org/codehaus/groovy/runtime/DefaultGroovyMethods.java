@@ -6263,8 +6263,6 @@ public class DefaultGroovyMethods {
             return toBigInteger(self);
         } else if (c==Character.class) {
             return toCharacter(self);
-        } else if (c==Boolean.class) {
-            return toBoolean(self);
         } else if (c==Double.class) {
             return toDouble(self);
         } else if (c==Float.class) {
