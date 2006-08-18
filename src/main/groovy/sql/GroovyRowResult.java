@@ -76,13 +76,20 @@ public class GroovyRowResult extends GroovyObjectSupport {
     public Object getProperty(String property) {
         try {
             Object value = result.get(property);
-            if (value == null) {
-                // with some databases/drivers, the columns names are stored uppercase.
-                value = result.get(property.toUpperCase());
-                if (value == null)
-                    throw new MissingPropertyException(property, GroovyRowResult.class);
-            }
-            return (value);
+            if (value != null)
+                return value;
+            // if property exists and value is null, return null
+            if (result.containsKey(property))
+                return null;
+            // with some databases/drivers, the columns names are stored uppercase.
+            String propertyUpper = property.toUpperCase();
+            value = result.get(propertyUpper);
+            if (value != null)
+                return value;
+            // if property exists and value is null, return null
+            if (result.containsKey(propertyUpper)) 
+                return null;
+            throw new MissingPropertyException(property, GroovyRowResult.class);
         }
         catch (Exception e) {
             throw new MissingPropertyException(property, GroovyRowResult.class, e);
