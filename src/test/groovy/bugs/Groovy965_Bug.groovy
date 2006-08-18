@@ -7,9 +7,16 @@ package groovy.bug
  *  @suthor Russel Winder
  *  @version $LastChangedRevision$ $LastChangedDate$
  */
-class Groøvy965_Bug extends GroovyTestCase {
-  void testUnicodeNamesAndStrings ( ) {
+class Groovy965_Bug extends GroovyTestCase {
+  void testUnicodeVariableNamesAndStrings ( ) {
     def âøñè = 'âøñè'
     assertEquals ( 'âøñè' , âøñè )
   }
+  void testUnicodeMëthødName ( ) { }
+  void testUnicodeClassName ( ) {
+    def object = new Bläh ( ) 
+    assert true
+  }
 }
+
+class Bläh { }
