@@ -48,8 +48,7 @@ package groovy.sql;
 import groovy.lang.GroovyObjectSupport;
 import groovy.lang.MissingPropertyException;
 
-import java.util.Iterator;
-import java.util.LinkedHashMap;
+import java.util.*;
 
 /**
  * Represents an extent of objects.
@@ -59,7 +58,7 @@ import java.util.LinkedHashMap;
  * @version $Revision$
  * @Author Jean-Louis Berliet
  */
-public class GroovyRowResult extends GroovyObjectSupport {
+public class GroovyRowResult extends GroovyObjectSupport implements Map {
 
     private LinkedHashMap result;
 
@@ -127,5 +126,69 @@ public class GroovyRowResult extends GroovyObjectSupport {
 
     public String toString() {
         return (result.toString());
+    }
+
+    /*
+     * The following methods are needed for implementing the Map interface.
+     * They are just delegating the request to the internal LinkedHashMap
+     */
+     
+    public void clear() {
+        result.clear();
+    }
+
+    public boolean containsKey(Object key) {
+        return result.containsKey(key);
+    }
+
+    public boolean containsValue(Object value) {
+        return result.containsValue(value);
+    }
+
+    public Set entrySet() {
+        return result.entrySet();
+    }
+
+    public boolean equals(Object o) {
+        return result.equals(o);
+    }
+
+    public Object get(Object property) {
+        if (property instanceof String)
+            return getProperty((String)property);
+        else
+            return null;
+    }
+
+    public int hashCode() {
+        return result.hashCode();
+    }
+
+    public boolean isEmpty() {
+        return result.isEmpty();
+    }
+
+    public Set keySet() {
+        return result.keySet();
+    }
+
+    public Object put(Object key, Object value) {
+        return result.put(key, value);
+    }
+
+    public void putAll(Map t) {
+        result.putAll(t);
+    }
+
+    public Object remove(Object key) {
+        return result.remove(key);
+    }
+
+    public int size() {
+        return result.size();
+    }
+
+    public Collection values() {
+        return result.values();
     }
 }
