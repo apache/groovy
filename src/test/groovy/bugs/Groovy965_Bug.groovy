@@ -17,6 +17,8 @@ package groovy.bug
  *  @version $LastChangedRevision$ $LastChangedDate$
  */
 class Groovy965_Bug extends GroovyTestCase {
+  /* void test to avoid assertion failure because of the lack of test method in the class */
+  void testVoid() {}
   /*
   void testUnicodeVariableNamesAndStrings ( ) {
     def âøñè = 'âøñè'
