@@ -32,7 +32,7 @@ import org.codehaus.groovy.ast.ClassNode;
 public class DelegatingMetaClass extends MetaClass {
     protected final MetaClass delegate;
     public DelegatingMetaClass(final MetaClass delegate) {
-        super(delegate.getClass());
+        super(delegate.theClass);
         
         this.delegate = delegate;
     }
