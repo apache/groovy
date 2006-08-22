@@ -197,8 +197,10 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
     }
 
     public void visitIfElse(IfStatement ifElse) {
+        visitStatement(ifElse);
         ifElse.setBooleanExpression((BooleanExpression) (transform(ifElse.getBooleanExpression())));
-        super.visitIfElse(ifElse);
+        ifElse.getIfBlock().visit(this);
+        ifElse.getElseBlock().visit(this);
     }
 
     private void resolveOrFail(ClassNode type, String msg, ASTNode node) {

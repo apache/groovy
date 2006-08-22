@@ -1401,7 +1401,11 @@ public class AsmClassGenerator extends ClassGenerator {
             Parameter param = localVariableParams[i];
             String name = param.getName();
 
-            if (compileStack.getScope().isReferencedClassVariable(name)) {
+            // compileStack.containsVariable(name) means to ask if the variable is already declared
+            // compileStack.getScope().isReferencedClassVariable(name) means to ask if the variable is a field
+            // If it is no field and is not yet declared, then it is either a closure shared variable or 
+            // an already declared variable. 
+            if (!compileStack.containsVariable(name) && compileStack.getScope().isReferencedClassVariable(name)) {
                 visitFieldExpression(new FieldExpression(classNode.getField(name)));
             } else { 
                 Variable v = compileStack.getVariable(name,classNode.getSuperClass()!=ClassHelper.CLOSURE_TYPE);
@@ -1422,7 +1426,7 @@ public class AsmClassGenerator extends ClassGenerator {
                     v = compileStack.defineVariable(param,true);
                     param.setClosureSharedVariable(true);
                     v.setHolder(true);
-                } 
+                }
                 cv.visitVarInsn(ALOAD, v.getIndex());
             }
         }

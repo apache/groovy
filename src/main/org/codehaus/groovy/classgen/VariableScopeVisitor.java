@@ -310,7 +310,9 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             scope = currentScope;
             while (scope != end) {
                 Map references = null;
-                if (end.isClassScope() || end.isRoot() || end.isReferencedClassVariable(name)) {
+                if (end.isClassScope() || end.isRoot() || 
+                        (end.isReferencedClassVariable(name) && end.getDeclaredVariable(name)==null)) 
+                {
                     references = scope.getReferencedClassVariables();
                 } else {
                     references = scope.getReferencedLocalVariables();
