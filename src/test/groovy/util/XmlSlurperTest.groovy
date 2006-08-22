@@ -37,6 +37,7 @@ class XmlSlurperTest extends GroovyTestCase {
         def gromit = node.character.find { it.@id == '2' }
         assert gromit != null , "Should have found Gromit!"
         assert gromit.@name == "Gromit"
+        assert gromit.@name.name() == "name"
         
         
         // lets find what Wallace likes in 1 query

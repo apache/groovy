@@ -43,6 +43,11 @@ class Attributes extends NodeChildren {
   public Attributes(final GPathResult parent, final String name, final Map namespaceTagHints) {
     this(parent, name, "*", namespaceTagHints);
   }
+
+  public String name() {
+      // this name contains @name we need to return name
+      return this.name.substring(1);
+  }
   
   /* (non-Javadoc)
    * @see org.codehaus.groovy.sandbox.util.slurpersupport.NodeChildren#childNodes()

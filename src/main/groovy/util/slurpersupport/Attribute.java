@@ -37,6 +37,11 @@ public class Attribute extends GPathResult {
       this.value = value;
     }
 
+    public String name() {
+        // this name contains @name we need to return name
+        return this.name.substring(1);
+    }
+
     public int size() {
         return 1;
     }
