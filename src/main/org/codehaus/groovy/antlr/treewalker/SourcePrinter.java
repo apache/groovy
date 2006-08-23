@@ -286,8 +286,14 @@ public class SourcePrinter extends VisitorAdapter {
             }
         }
     }
+    
+	public void visitFinal(GroovySourceAST t, int visit) {
+        print(t,visit,"final ",null,null);
+	}
 
-    public void visitForCondition(GroovySourceAST t, int visit) {
+	// visitFloatSuffix ... never visited/created see NUM_DOUBLE or NUM_FLOAT instead
+	
+	public void visitForCondition(GroovySourceAST t, int visit) {
     	print(t,visit," ; ",null,null);
     }
 

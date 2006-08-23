@@ -46,6 +46,7 @@ public class SourcePrinterTest extends GroovyTestCase {
 	
     public void testAnnotation() throws Exception{
         assertEquals("@Crimson foo", pretty("@Crimson foo"));
+        assertEquals("@Override int hashCode() {return 0}", pretty("@Override int hashCode() {return 0}"));
     }
     
     public void testAnnotations() throws Exception{
@@ -210,6 +211,13 @@ public class SourcePrinterTest extends GroovyTestCase {
         assertEquals("class Foo extends Bar {}", pretty("class Foo extends Bar {}"));
         assertEquals("interface Wibble extends Mooky{}", pretty("interface Wibble extends Mooky {}"));
         //todo spacing is odd, c.f. last space in class vs interface above
+    }
+    
+    public void testFinal() throws Exception {
+    	assertEquals("public final int getX() {return 0}", pretty("public final int getX() {return 0}"));
+    }
+    public void testForCondition() throws Exception {
+    	assertEquals("for (i = 0 ; i < 10 ; i++){println i}", pretty("for (i=0;i<10;i++) {println i}"));
     }
     public void testForInIterable() throws Exception {
         assertEquals("for (i in [1, 2]) {}", pretty("for (i in [1,2]) {}"));
@@ -396,12 +404,17 @@ public class SourcePrinterTest extends GroovyTestCase {
     	assertEquals("a = 12g", pretty("a=   12g"));
     }
     
+    public void testNumDouble() throws Exception {
+        assertEquals("b = 34.4d", pretty("b=34.4d"));
+        assertEquals("b = 34.4D", pretty("b=34.4D"));
+    }
     public void testNumInt() throws Exception {
         assertEquals("a = 12", pretty("a=12"));
     }
 
     public void testNumFloat() throws Exception {
         assertEquals("b = 34.4f", pretty("b=34.4f"));
+        assertEquals("b = 34.4F", pretty("b=34.4F"));
     }
 
     public void testObjblock() throws Exception {
@@ -474,6 +487,10 @@ public class SourcePrinterTest extends GroovyTestCase {
     public void testVariableDef() throws Exception {
         assertEquals("def x = 1", pretty("def x = 1"));
         assertEquals("int y = 2", pretty("int y = 2"));
+    }
+    
+    public void testWildcardType_FAILS() throws Exception { if (notYetImplemented()) return;
+    	assertEquals("public boolean process(Set<? extends TypeElement> annotations) {println annotations}", pretty("public boolean process(Set<? extends TypeElement> annotations) {println annotations}"));
     }
 
     public String pretty(String input) throws Exception{
