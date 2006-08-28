@@ -456,7 +456,7 @@ public class AsmClassGenerator extends ClassGenerator {
     public static String getMopMethodName(MethodNode method, boolean useThis) {
         ClassNode declaringNode = method.getDeclaringClass();
         int distance = 0;
-        for (;declaringNode!=ClassHelper.OBJECT_TYPE; declaringNode=declaringNode.getSuperClass()) {
+        for (;declaringNode!=null; declaringNode=declaringNode.getSuperClass()) {
             distance++;
         }
         return (useThis?"this":"super")+"$"+distance+"$"+method.getName();
@@ -2430,6 +2430,7 @@ public class AsmClassGenerator extends ClassGenerator {
             Expression argument = expression.getExpression(i);
             visitAndAutoboxBoolean(argument);
             if (useWrapper && argument instanceof CastExpression) loadWrapper(argument);
+            
             cv.visitInsn(AASTORE);
         }
     }
@@ -3032,10 +3033,10 @@ public class AsmClassGenerator extends ClassGenerator {
     protected void evaluatePostfixMethod(String method, Expression expression) {
         leftHandExpression = false;
         expression.visit(this);
-
+        
         int tempIdx = compileStack.defineTemporaryVariable("postfix_" + method, true);
         cv.visitVarInsn(ALOAD, tempIdx);
-
+        
         cv.visitLdcInsn(method);
         invokeNoArgumentsMethod.call(cv);
 
