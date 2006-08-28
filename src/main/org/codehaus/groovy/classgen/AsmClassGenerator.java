@@ -678,13 +678,13 @@ public class AsmClassGenerator extends ClassGenerator {
 
         Label l0 = new Label();
         cv.visitJumpInsn(IFEQ, l0);
-        expression.getTrueExpression().visit(this);
+        visitAndAutoboxBoolean(expression.getTrueExpression());
 
         Label l1 = new Label();
         cv.visitJumpInsn(GOTO, l1);
         cv.visitLabel(l0);
 
-        expression.getFalseExpression().visit(this);
+        visitAndAutoboxBoolean(expression.getFalseExpression());
         cv.visitLabel(l1);
     }
 

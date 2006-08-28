@@ -21,4 +21,12 @@ class TernaryOperatorTest extends GroovyTestCase {
         println "called with param ${param}"
         assert param == "foo"
     }
+    
+    void testwithBoolean(){
+        def a = 1
+        def x = a!=null ? a!=2 : a!=1
+        assert x == true
+        def y = a!=1 ? a!=2 : a!=1
+        assert y == false
+    }
 }
