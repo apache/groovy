@@ -45,10 +45,17 @@
  */
 package org.codehaus.groovy.classgen;
 
+import java.util.Iterator;
+import java.util.List;
+
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.ListExpression;
+import org.codehaus.groovy.ast.expr.MapEntryExpression;
+import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
@@ -129,5 +136,16 @@ public class VerifierCodeVisitor extends CodeVisitorSupport implements Opcodes {
                 throw new RuntimeParserException("Invalid " + message + ". Invalid character at position: " + (i + 1) + " of value:  " + ch + " in name: " + name, node);
             }
         }
+    }
+    
+    public void visitListExpression(ListExpression expression) {
+        List expressions = expression.getExpressions();
+        for (Iterator iter = expressions.iterator(); iter.hasNext();) {
+            Object element = iter.next();
+            if (element instanceof MapEntryExpression) {
+                throw new RuntimeParserException ("no map entry allowed at this place",(Expression) element);
+            }
+        }
+        super.visitListExpression(expression);
     }
 }

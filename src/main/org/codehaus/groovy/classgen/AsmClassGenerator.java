@@ -2381,7 +2381,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     public void visitMapEntryExpression(MapEntryExpression expression) {
-    System.out.println("here");
+        throw new GroovyBugError("MapEntryExpression should not be visited here");
     }
 
     public void visitMapExpression(MapExpression expression) {
