@@ -95,11 +95,17 @@ fi
 if [ -z "$GROOVY_CONF" ]; then
     GROOVY_CONF="$GROOVY_HOME/conf/groovy-starter.conf"
 fi
-STARTER_CLASSPATH="$GROOVY_HOME/lib/groovy-starter.jar:$CLASSPATH"
+STARTER_CLASSPATH="$GROOVY_HOME/lib/groovy-starter.jar"
 
 # Create the final classpath
+# Setting a classpath using the -cp or -classpath option means not to use
+# the global classpath. Groovy behaves then the same as the java 
+# interpreter
 if [ -n "$CP" ]; then
   CP=$CP:$STARTER_CLASSPATH:.
+  if [ -n "$CLASSPATH" ]; then
+    STARTER_CLASSPATH=$STARTER_CLASSPATH:$CLASSPATH
+  fi
 else
   CP=$STARTER_CLASSPATH:.
 fi

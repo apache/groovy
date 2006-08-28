@@ -86,14 +86,19 @@ set CMD_LINE_ARGS=%$
 
 :execute
 @rem Setup the command line
-set STARTER_CLASSPATH=%GROOVY_HOME%\lib\groovy-starter.jar;%CLASSPATH%
+set STARTER_CLASSPATH=%GROOVY_HOME%\lib\groovy-starter.jar
 
+@rem Setting a classpath using the -cp or -classpath option means not to use
+@rem the global classpath. Groovy behaves then the same as the java 
+@rem interpreter
 if "x" == "x%CP%" goto empty_cp
 :non_empty_cp
 set CP=%STARTER_CLASSPATH%;%CP%;.
 goto after_cp
 :empty_cp
 set CP=%STARTER_CLASSPATH%;.
+if "x" == "x%CLASSPATH%" goto after_cp
+set STARTER_CLASSPATH=%STARTER_CLASSPATH%;%CLASSPATH%
 :after_cp
 
 set STARTER_MAIN_CLASS=org.codehaus.groovy.tools.GroovyStarter
@@ -109,7 +114,7 @@ set JAVA_OPTS=%JAVA_OPTS% -Dtools.jar="%TOOLS_JAR%"
 set JAVA_OPTS=%JAVA_OPTS% -Dgroovy.starter.conf="%STARTER_CONF%"
 
 @rem Execute Groovy
-"%JAVA_EXE%" %JAVA_OPTS% -classpath "%STARTER_CLASSPATH%" %STARTER_MAIN_CLASS% --main %CLASS% --conf %STARTER_CONF% --classpath "%CP%" %CMD_LINE_ARGS%
+"%JAVA_EXE%" %JAVA_OPTS% -classpath "%STARTER_CLASSPATH%" %STARTER_MAIN_CLASS% --main %CLASS% --conf "%STARTER_CONF%" --classpath "%CP%" %CMD_LINE_ARGS%
 
 :end
 @rem End local scope for the variables with windows NT shell
