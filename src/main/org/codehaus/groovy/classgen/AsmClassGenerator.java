@@ -3047,7 +3047,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     protected void evaluateInstanceof(BinaryExpression expression) {
-        expression.getLeftExpression().visit(this);
+        visitAndAutoboxBoolean(expression.getLeftExpression());
         Expression rightExp = expression.getRightExpression();
         ClassNode classType = ClassHelper.DYNAMIC_TYPE;
         if (rightExp instanceof ClassExpression) {

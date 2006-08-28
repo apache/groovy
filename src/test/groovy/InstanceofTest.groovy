@@ -43,4 +43,12 @@ class InstanceofTest extends GroovyTestCase {
         assertTrue(l instanceof java.util.List)
         assertFalse(l instanceof Map)
     }
+    
+    void testBoolean(){
+       assert true instanceof Object
+       assert true==true instanceof Object
+       assert true==false instanceof Object
+       assert true==false instanceof Boolean
+       assert !new Object() instanceof Boolean
+    }
 }
