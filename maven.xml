@@ -332,6 +332,7 @@
 
         <exclude name="**/notworking/*.groovy"/>
         <exclude name="**/parser/*.groovy"/>
+        <exclude name="**/ant/*/GroovyTest*.groovy"/> <!-- should not get compiled here as test has to define by itself his classpath -->
         <exclude name="CVS/*"/>
       </fileset>
     </copy>

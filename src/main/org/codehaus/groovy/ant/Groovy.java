@@ -46,9 +46,10 @@
 
 package org.codehaus.groovy.ant;
 
+import groovy.lang.Binding;
+import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyShell;
 import groovy.lang.Script;
-import groovy.lang.Binding;
 import groovy.util.AntBuilder;
 
 import java.io.BufferedOutputStream;
@@ -58,11 +59,10 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringWriter;
-import java.io.PrintWriter;
 import java.lang.reflect.Field;
-import java.util.Hashtable;
 import java.util.Vector;
 
 import org.apache.tools.ant.BuildException;
@@ -83,26 +83,6 @@ import org.codehaus.groovy.tools.ErrorReporter;
  * <p>Statements can
  * either be read in from a text file using the <i>src</i> attribute or from
  * between the enclosing groovy tags.</p>
- *
- *
- * Based heavily on SQLExec.java which is part of apache-ant
- * http://cvs.apache.org/viewcvs.cgi/ant/src/main/org/apache/tools/ant/taskdefs/SQLExec.java?rev=MAIN
- *
- * Copyright  2000-2005 The Apache Software Foundation
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
- *
  */
 public class Groovy extends Task {
     /**
@@ -121,11 +101,6 @@ public class Groovy extends Task {
     private String command = "";
 
     /**
-     * Print results.
-     */
-    private boolean print = false;
-
-    /**
      * Results Output file.
      */
     private File output = null;
@@ -135,24 +110,7 @@ public class Groovy extends Task {
      */
     private boolean append = false;
 
-    /**
-     * Used for caching loaders / driver. This is to avoid
-     * getting an OutOfMemoryError when calling this task
-     * multiple times in a row.
-     */
-    private static Hashtable loaderMap = new Hashtable(3);
-
     private Path classpath;
-
-    /**
-     * User name.
-     */
-    private String userId = null;
-
-    /**
-     * Groovy Version needed for this collection of statements.
-     **/
-    private String version = null;
 
     /**
      * Compiler configuration.
@@ -173,10 +131,10 @@ public class Groovy extends Task {
 
 
     /**
-     * Set the name of the file to be run.
+     * Set the name of the file to be run. The folder of the file is automatically added to the classpath.
      * Required unless statements are enclosed in the build file
      */
-    public void setSrc(File srcFile) {
+    public void setSrc(final File srcFile) {
         this.srcFile = srcFile;
     }
 
@@ -194,14 +152,6 @@ public class Groovy extends Task {
      */
     public void addFileset(FileSet set) {
         filesets.addElement(set);
-    }
-
-    /**
-     * Print results from the statements;
-     * optional, default false
-     */
-    public void setPrint(boolean print) {
-        this.print = print;
     }
 
     /**
@@ -227,12 +177,13 @@ public class Groovy extends Task {
      * Sets the classpath for loading.
      * @param classpath The classpath to set
      */
-    public void setClasspath(Path classpath) {
+    public void setClasspath(final Path classpath) {
         this.classpath = classpath;
     }
 
     /**
-     * Add a path to the classpath for loading.
+     * Returns a new path element that can be configured.
+     * Gets called for instance by Ant when it encounters a nested <classpath> element. 
      */
     public Path createClasspath() {
         if (this.classpath == null) {
@@ -245,26 +196,9 @@ public class Groovy extends Task {
      * Set the classpath for loading
      * using the classpath reference.
      */
-    public void setClasspathRef(Reference r) {
+    public void setClasspathRef(final Reference r) {
         createClasspath().setRefid(r);
     }
-
-    /**
-     * Sets the version string, execute task only if
-     * groovy version match; optional.
-     * @param version The version to set
-     */
-    public void setVersion(String version) {
-        this.version = version;
-    }
-
-
-    protected static Hashtable getLoaderMap() {
-        return loaderMap;
-    }
-
-
-
 
     /**
      * Gets the classpath.
@@ -275,30 +209,6 @@ public class Groovy extends Task {
     }
 
     /**
-     * Gets the userId.
-     * @return Returns a String
-     */
-    public String getUserId() {
-        return userId;
-    }
-
-    /**
-     * Set the user name for the connection; required.
-     * @param userId The userId to set
-     */
-    public void setUserid(String userId) {
-        this.userId = userId;
-    }
-
-    /**
-     * Gets the version.
-     * @return Returns a String
-     */
-    public String getVersion() {
-        return version;
-    }
-
-    /**
      * Load the file and then execute it
      */
     public void execute() throws BuildException {
@@ -306,62 +216,61 @@ public class Groovy extends Task {
 
         command = command.trim();
 
+        if (srcFile == null && command.length() == 0
+            && filesets.isEmpty()) {
+            throw new BuildException("Source file does not exist!", getLocation());
+        }
+
+        if (srcFile != null && !srcFile.exists()) {
+            throw new BuildException("Source file does not exist!", getLocation());
+        }
+
+        // deal with the filesets
+        for (int i = 0; i < filesets.size(); i++) {
+            FileSet fs = (FileSet) filesets.elementAt(i);
+            DirectoryScanner ds = fs.getDirectoryScanner(getProject());
+            File srcDir = fs.getDir(getProject());
+
+            String[] srcFiles = ds.getIncludedFiles();
+        }
+
         try {
-            if (srcFile == null && command.length() == 0
-                && filesets.isEmpty()) {
-                throw new BuildException("Source file does not exist!", getLocation());
-            }
-
-            if (srcFile != null && !srcFile.exists()) {
-                throw new BuildException("Source file does not exist!", getLocation());
-            }
-
-            // deal with the filesets
-            for (int i = 0; i < filesets.size(); i++) {
-                FileSet fs = (FileSet) filesets.elementAt(i);
-                DirectoryScanner ds = fs.getDirectoryScanner(getProject());
-                File srcDir = fs.getDir(getProject());
-
-                String[] srcFiles = ds.getIncludedFiles();
-            }
-
+            PrintStream out = System.out;
             try {
-                PrintStream out = System.out;
-                try {
-                    if (output != null) {
-                        log("Opening PrintStream to output file " + output,
-                            Project.MSG_VERBOSE);
-                        out = new PrintStream(
-                                  new BufferedOutputStream(
-                                      new FileOutputStream(output
-                                                           .getAbsolutePath(),
-                                                           append)));
-                    }
-
-                    // if there are no groovy statements between the enclosing Groovy tags
-                    // then read groovy statements in from a text file using the src attribute
-                    if (command == null || command.trim().length() == 0) {
-                        command = getText(new BufferedReader(new FileReader(srcFile)));
-                    }
-
-
-                    if (command != null) {
-                        execGroovy(command,out);
-                    } else {
-                        throw new BuildException("Source file does not exist!", getLocation());
-                    }
-
-                } finally {
-                    if (out != null && out != System.out) {
-                        out.close();
-                    }
+                if (output != null) {
+                    log("Opening PrintStream to output file " + output,
+                        Project.MSG_VERBOSE);
+                    out = new PrintStream(
+                              new BufferedOutputStream(
+                                  new FileOutputStream(output
+                                                       .getAbsolutePath(),
+                                                       append)));
                 }
-            } catch (IOException e) {
-                throw new BuildException(e, getLocation());
-            }
 
-            log("statements executed successfully", Project.MSG_VERBOSE);
-        } finally{}
+                // if there are no groovy statements between the enclosing Groovy tags
+                // then read groovy statements in from a text file using the src attribute
+                if (command == null || command.trim().length() == 0) {
+                	createClasspath().add(new Path(getProject(), srcFile.getParentFile().getCanonicalPath()));
+                    command = getText(new BufferedReader(new FileReader(srcFile)));
+                }
+
+
+                if (command != null) {
+                    execGroovy(command,out);
+                } else {
+                    throw new BuildException("Source file does not exist!", getLocation());
+                }
+
+            } finally {
+                if (out != null && out != System.out) {
+                    out.close();
+                }
+            }
+        } catch (IOException e) {
+            throw new BuildException(e, getLocation());
+        }
+
+        log("statements executed successfully", Project.MSG_VERBOSE);
     }
 
 
@@ -408,7 +317,7 @@ public class Groovy extends Task {
     /**
      * Exec the statement.
      */
-    protected void execGroovy(String txt, PrintStream out) {
+    protected void execGroovy(final String txt, final PrintStream out) {
         log("execGroovy()", Project.MSG_VERBOSE);
 
         // Check and ignore empty statements
@@ -419,16 +328,16 @@ public class Groovy extends Task {
         log("Groovy: " + txt, Project.MSG_VERBOSE);
 
         //log(getClasspath().toString(),Project.MSG_VERBOSE);
-        GroovyShell groovy = null;
         Object mavenPom = null;
-        Project project = getProject();
+        final Project project = getProject();
+        final ClassLoader baseClassLoader;
         // treat the case Ant is run through Maven, and
         if ("org.apache.commons.grant.GrantProject".equals(project.getClass().getName())) {
             try {
-               Object propsHandler = project.getClass().getMethod("getPropsHandler", new Class[0]).invoke(project, new Object[0]);
-               Field contextField = propsHandler.getClass().getDeclaredField("context");
+               final Object propsHandler = project.getClass().getMethod("getPropsHandler", new Class[0]).invoke(project, new Object[0]);
+               final Field contextField = propsHandler.getClass().getDeclaredField("context");
                contextField.setAccessible(true);
-               Object context = contextField.get(propsHandler);
+               final Object context = contextField.get(propsHandler);
                mavenPom = InvokerHelper.invokeMethod(context, "getProject", new Object[0]);
             }
             catch (Exception e) {
@@ -438,18 +347,23 @@ public class Groovy extends Task {
             Thread.currentThread().setContextClassLoader(GroovyShell.class.getClassLoader());
             // load groovy into "root.maven" classloader instead of "root" so that
             // groovy script can access Maven classes
-            groovy = new GroovyShell(mavenPom.getClass().getClassLoader(), new Binding(), configuration);
+            baseClassLoader = mavenPom.getClass().getClassLoader();
         } else {
-            groovy = new GroovyShell(GroovyShell.class.getClassLoader(), new Binding(), configuration);
+            baseClassLoader = GroovyShell.class.getClassLoader();
         }
+
+        final GroovyClassLoader classLoader = new GroovyClassLoader(baseClassLoader);
+        addClassPathes(classLoader);
+        
+        final GroovyShell groovy = new GroovyShell(classLoader, new Binding(), configuration);
         try {
-            Script script = groovy.parse(txt);
+            final Script script = groovy.parse(txt);
             script.setProperty("ant", new AntBuilder(project));
             script.setProperty("project", project);
             script.setProperty("properties", new AntProjectPropertiesDelegate(project));
             script.setProperty("target", getOwningTarget());
             script.setProperty("task", this);
-            if(mavenPom != null) {
+            if (mavenPom != null) {
                 script.setProperty("pom", mavenPom);
             }
             script.run();
@@ -460,6 +374,22 @@ public class Groovy extends Task {
             throw new BuildException("Script Failed: "+ message, getLocation());
         }
     }
+
+
+	/**
+	 * Adds the class pathes (if any)
+	 * @param classLoader the classloader to configure
+	 */
+	protected void addClassPathes(final GroovyClassLoader classLoader)
+	{
+		if (classpath != null)
+		{
+			for (int i = 0; i < classpath.list().length; i++)
+			{
+	            classLoader.addClasspath(classpath.list()[i]);
+			}
+		}
+	}
 
     /**
      * print any results in the statement.
