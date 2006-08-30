@@ -44,7 +44,6 @@ public class Namespace {
      * 
      * @param localName
      *            the local name within this
-     * @return
      */
     public QName get(String localName) {
         if (uri != null && uri.length() > 0) {

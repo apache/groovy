@@ -72,9 +72,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 
-import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.classgen.BytecodeHelper;
 import org.codehaus.groovy.classgen.ReflectorGenerator;
 import org.codehaus.groovy.control.CompilationUnit;
@@ -476,7 +474,6 @@ public class MetaClassImpl extends MetaClass {
     * this method is used only by ClassGenerator for static binding
     * @param methodName
     * @param arguments
-    * @return
     */
    public MetaMethod pickMethod(String methodName, Class[] arguments) {
        MetaMethod method = null;
@@ -1463,7 +1460,6 @@ public class MetaClassImpl extends MetaClass {
     *            the possible methods to choose from
     * @param arguments
     *            the original argument to the method
-    * @return
     */
    private Object chooseMethod(String methodName, List methods, Class[] arguments, boolean coerce) {
        int methodCount = methods.size();

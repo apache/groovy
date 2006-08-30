@@ -103,7 +103,6 @@ public class TestCaseRenderEngine implements RenderEngine {
     /**
      * Splits the comment block extracting any scripts that need to be tested
      * @param text
-     * @return
      */
     protected String processShellScripts(String text) {
         StringBuffer buf = new StringBuffer();

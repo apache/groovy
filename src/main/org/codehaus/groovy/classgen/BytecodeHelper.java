@@ -78,7 +78,7 @@ public class BytecodeHelper implements Opcodes {
     
     /**
      * box the primitive value on the stack
-     * @param cls
+     * @param type
      */
     public void quickBoxIfNecessary(ClassNode type) {
         String descr = getTypeDescription(type);
@@ -521,7 +521,6 @@ public class BytecodeHelper implements Opcodes {
     /**
      * load the value of the variable on the operand stack. unbox it if it's a reference
      * @param variable
-     * @param holder
      */
     public void loadVar(Variable variable) {
 		int index = variable.getIndex();
@@ -613,7 +612,6 @@ public class BytecodeHelper implements Opcodes {
      * [I, [Ljava.lang.String; etc
      * Regular object type:  java.lang.String
      * @param name
-     * @return
      */
     public static String formatNameForClassLoading(String name) {
         if (name.equals("int")

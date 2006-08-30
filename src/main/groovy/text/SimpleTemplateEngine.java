@@ -132,7 +132,6 @@ public class SimpleTemplateEngine extends TemplateEngine {
          * into the script while escaping quotes.
          * 
          * @param reader
-         * @return
          * @throws IOException
          */
         protected String parse(Reader reader) throws IOException {

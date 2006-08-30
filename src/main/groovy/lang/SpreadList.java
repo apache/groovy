@@ -90,8 +90,6 @@ public class SpreadList extends AbstractList {
 
     /**
      * Returns the size of <code>this</code>.
-     *
-     * @param index the indicated position in <code>this</code>
      */
     public int size() {
         return contents.length;

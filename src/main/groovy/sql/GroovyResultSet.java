@@ -112,7 +112,6 @@ public class GroovyResultSet extends GroovyObjectSupport implements ResultSet {
      * starting at zero. Negative indices are supported, they will count from the last column backwards.
      *
      * @param index is the number of the column to look at starting at 1
-     * @return
      */
     public Object getAt(int index) throws SQLException {
         index = normalizeIndex(index);
@@ -124,7 +123,6 @@ public class GroovyResultSet extends GroovyObjectSupport implements ResultSet {
      * starting at zero. Negative indices are supported, they will count from the last column backwards.
      *
      * @param index is the number of the column to look at starting at 1
-     * @return
      */
     public void putAt(int index, Object newValue) throws SQLException {
         index = normalizeIndex(index);
@@ -1334,7 +1332,7 @@ public class GroovyResultSet extends GroovyObjectSupport implements ResultSet {
      * @return <code>true</code> if both (1) the row has been visibly updated
      *         by the owner or another and (2) updates are detected
      * @throws SQLException if a database access error occurs
-     * @see DatabaseMetaData#updatesAreDetected
+     * @see java.sql.DatabaseMetaData#updatesAreDetected
      * @since 1.2
      */
     public boolean rowUpdated() throws SQLException {
@@ -1349,7 +1347,7 @@ public class GroovyResultSet extends GroovyObjectSupport implements ResultSet {
      * @return <code>true</code> if a row has had an insertion
      *         and insertions are detected; <code>false</code> otherwise
      * @throws SQLException if a database access error occurs
-     * @see DatabaseMetaData#insertsAreDetected
+     * @see java.sql.DatabaseMetaData#insertsAreDetected
      * @since 1.2
      */
     public boolean rowInserted() throws SQLException {
@@ -1365,7 +1363,7 @@ public class GroovyResultSet extends GroovyObjectSupport implements ResultSet {
      * @return <code>true</code> if a row was deleted and deletions are detected;
      *         <code>false</code> otherwise
      * @throws SQLException if a database access error occurs
-     * @see DatabaseMetaData#deletesAreDetected
+     * @see java.sql.DatabaseMetaData#deletesAreDetected
      * @since 1.2
      */
     public boolean rowDeleted() throws SQLException {

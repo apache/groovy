@@ -35,7 +35,6 @@ public class NoChildren extends GPathResult {
   /**
    * @param parent
    * @param name
-   * @param namespacePrefix
    */
   public NoChildren(final GPathResult parent, final String name, final Map namespaceTagHints) {
     super(parent, name, "*", namespaceTagHints);

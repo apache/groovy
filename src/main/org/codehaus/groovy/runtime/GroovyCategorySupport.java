@@ -57,7 +57,6 @@ public class GroovyCategorySupport {
      * 
      * @param categorizedClass
      * @param name
-     * @return
      */
     public static List getCategoryMethods(Class categorizedClass, String name) {
         Map properties = getProperties();
@@ -89,7 +88,6 @@ public class GroovyCategorySupport {
         /**
          * Sort by most specific to least specific.
          * @param o
-         * @return
          */
         public int compareTo(Object o) {
             CategoryMethod thatMethod = (CategoryMethod) o;
@@ -197,9 +195,8 @@ public class GroovyCategorySupport {
     }
     
     /**
-     * @param method
+     * @param name
      * @param metaMethodsMap
-     * @return
      */
     private static List getMethodList(Map metaMethodsMap, String name) {
         List methodList = (List) metaMethodsMap.get(name);
@@ -213,7 +210,6 @@ public class GroovyCategorySupport {
     /**
      * @param properties
      * @param metaClass
-     * @return
      */
     private static Map getMetaMethods(Map properties, Class metaClass) {
         Map metaMethodsMap = (Map) properties.get(metaClass);

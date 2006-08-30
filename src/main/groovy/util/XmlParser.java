@@ -180,7 +180,6 @@ public class XmlParser implements ContentHandler {
      * A helper method to parse the given text as XML
      * 
      * @param text
-     * @return
      */
     public Node parseText(String text) throws IOException, SAXException {
         return parse(new StringReader(text));

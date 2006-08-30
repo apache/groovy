@@ -46,7 +46,6 @@ public interface ResourceConnector {
      * Retrieve a URLConnection to a script referenced by name.
      *
      * @param name
-     * @return
      * @throws ResourceException
      */
     public URLConnection getResourceConnection(String name) throws ResourceException;

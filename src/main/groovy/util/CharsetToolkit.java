@@ -141,7 +141,6 @@ public class CharsetToolkit {
 
     /**
      * Retrieves the default Charset
-     * @return
      */
     public Charset getDefaultCharset() {
         return defaultCharset;

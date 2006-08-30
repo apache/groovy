@@ -57,7 +57,7 @@ import java.util.Collections;
 /** 
  *  A syntax reduction, produced by the <code>Parser</code>.
  *
- *  @see Parser
+ *  @see antlr.Parser
  *  @see Token
  *  @see CSTNode
  *  @see Types

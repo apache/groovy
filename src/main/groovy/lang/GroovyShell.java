@@ -406,7 +406,6 @@ public class GroovyShell extends GroovyObjectSupport {
      * Evaluates some script against the current Binding and returns the result
      *
      * @param codeSource
-     * @return
      * @throws CompilationFailedException
      * @throws CompilationFailedException
      */

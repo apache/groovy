@@ -86,7 +86,7 @@ import javax.servlet.http.HttpServletRequest;
  * <p> 
  * In order to support class-loading-troubles-debugging with Tomcat 4 or
  * higher, you can log the class loader responsible for loading some classes.
- * See {@linkplain http://jira.codehaus.org/browse/GROOVY-861} for details.
+ * See <a href="http://jira.codehaus.org/browse/GROOVY-861">GROOVY-861</a> for details.
  * The servlet init parameter name is:
  * <pre>
  * log.GROOVY861 = false(default) | true
@@ -296,11 +296,7 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
 
     /**
      * Parses the http request for the real script or template source file.
-     * 
-     * @param request
-     *  the http request to analyze
-     * @param context
-     *  the context of this servlet used to get the real path string
+     * @param request the http request to analyze
      * @return a file object using an absolute file path name
      */
     protected File getScriptUriAsFile(HttpServletRequest request) {

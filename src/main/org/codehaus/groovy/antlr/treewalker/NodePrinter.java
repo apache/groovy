@@ -18,7 +18,6 @@
 package org.codehaus.groovy.antlr.treewalker;
 
 import java.io.PrintStream;
-import java.util.Stack;
 
 import org.codehaus.groovy.antlr.GroovySourceAST;
 

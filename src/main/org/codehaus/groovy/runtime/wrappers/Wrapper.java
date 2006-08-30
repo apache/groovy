@@ -37,7 +37,6 @@ public abstract class Wrapper implements GroovyObject {
   protected MetaClass delegatingMetaClass = new MetaClass(Object.class) {
     /**
      * @param obj
-     * @return
      * @see java.lang.Object#equals(java.lang.Object)
      */
     public boolean equals(Object obj) {
@@ -47,7 +46,6 @@ public abstract class Wrapper implements GroovyObject {
     /**
      * @param object
      * @param attribute
-     * @return
      * @see groovy.lang.MetaClass#getAttribute(java.lang.Object, java.lang.String)
      */
     public Object getAttribute(Object object, String attribute) {
@@ -55,7 +53,6 @@ public abstract class Wrapper implements GroovyObject {
     }
 
     /**
-     * @return
      * @see groovy.lang.MetaClass#getClassNode()
      */
     public ClassNode getClassNode() {
@@ -63,7 +60,6 @@ public abstract class Wrapper implements GroovyObject {
     }
 
     /**
-     * @return
      * @see groovy.lang.MetaClass#getMetaMethods()
      */
     public List getMetaMethods() {
@@ -71,7 +67,6 @@ public abstract class Wrapper implements GroovyObject {
     }
 
     /**
-     * @return
      * @see groovy.lang.MetaClass#getMethods()
      */
     public List getMethods() {
@@ -79,7 +74,6 @@ public abstract class Wrapper implements GroovyObject {
     }
 
     /**
-     * @return
      * @see groovy.lang.MetaClass#getProperties()
      */
     public List getProperties() {
@@ -89,7 +83,6 @@ public abstract class Wrapper implements GroovyObject {
     /**
      * @param object
      * @param property
-     * @return
      * @see groovy.lang.MetaClass#getProperty(java.lang.Object, java.lang.String)
      */
     public Object getProperty(Object object, String property) {
@@ -97,7 +90,6 @@ public abstract class Wrapper implements GroovyObject {
     }
 
     /**
-     * @return
      * @see java.lang.Object#hashCode()
      */
     public int hashCode() {
@@ -106,7 +98,6 @@ public abstract class Wrapper implements GroovyObject {
 
     /**
      * @param arguments
-     * @return
      * @see groovy.lang.MetaClass#invokeConstructor(java.lang.Object[])
      */
     public Object invokeConstructor(Object[] arguments) {
@@ -116,7 +107,6 @@ public abstract class Wrapper implements GroovyObject {
     /**
      * @param at
      * @param arguments
-     * @return
      * @see groovy.lang.MetaClass#invokeConstructorAt(java.lang.Class, java.lang.Object[])
      */
     public Object invokeConstructorAt(Class at, Object[] arguments) {
@@ -127,7 +117,6 @@ public abstract class Wrapper implements GroovyObject {
      * @param object
      * @param methodName
      * @param arguments
-     * @return
      * @see groovy.lang.MetaClass#invokeMethod(java.lang.Object, java.lang.String, java.lang.Object)
      */
     public Object invokeMethod(Object object, String methodName, Object arguments) {
@@ -138,7 +127,6 @@ public abstract class Wrapper implements GroovyObject {
      * @param object
      * @param methodName
      * @param arguments
-     * @return
      * @see groovy.lang.MetaClass#invokeMethod(java.lang.Object, java.lang.String, java.lang.Object[])
      */
     public Object invokeMethod(Object object, String methodName, Object[] arguments) {
@@ -149,7 +137,6 @@ public abstract class Wrapper implements GroovyObject {
      * @param object
      * @param methodName
      * @param arguments
-     * @return
      * @see groovy.lang.MetaClass#invokeStaticMethod(java.lang.Object, java.lang.String, java.lang.Object[])
      */
     public Object invokeStaticMethod(Object object, String methodName, Object[] arguments) {
@@ -158,7 +145,6 @@ public abstract class Wrapper implements GroovyObject {
 
     /**
      * @param arguments
-     * @return
      * @see groovy.lang.MetaClass#retrieveConstructor(java.lang.Class[])
      */
     public Constructor retrieveConstructor(Class[] arguments) {
@@ -169,7 +155,6 @@ public abstract class Wrapper implements GroovyObject {
      * @param owner
      * @param methodName
      * @param arguments
-     * @return
      * @see groovy.lang.MetaClass#retrieveMethod(java.lang.Object, java.lang.String, java.lang.Object[])
      */
     public MetaMethod retrieveMethod(Object owner, String methodName, Object[] arguments) {
@@ -179,7 +164,6 @@ public abstract class Wrapper implements GroovyObject {
     /**
      * @param methodName
      * @param arguments
-     * @return
      * @see groovy.lang.MetaClass#retrieveMethod(java.lang.String, java.lang.Class[])
      */
     public MetaMethod retrieveMethod(String methodName, Class[] arguments) {
@@ -189,7 +173,6 @@ public abstract class Wrapper implements GroovyObject {
     /**
      * @param methodName
      * @param arguments
-     * @return
      * @see groovy.lang.MetaClass#retrieveStaticMethod(java.lang.String, java.lang.Class[])
      */
     public MetaMethod retrieveStaticMethod(String methodName, Class[] arguments) {
@@ -226,7 +209,6 @@ public abstract class Wrapper implements GroovyObject {
     }
 
     /**
-     * @return
      * @see java.lang.Object#toString()
      */
     public String toString() {

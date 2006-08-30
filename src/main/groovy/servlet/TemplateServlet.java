@@ -226,7 +226,7 @@ public class TemplateServlet extends AbstractHttpServlet {
      * @return The template that will produce the response text.
      * @param file
      *            The HttpServletRequest.
-     * @throws IOException 
+     * @throws ServletException
      *            If the request specified an invalid template source file 
      */
     protected Template getTemplate(File file) throws ServletException {

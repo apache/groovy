@@ -94,7 +94,7 @@ public class MetaClassRegistry {
     }
 
     /**
-     * @param useAccessible defines whether or not the {@link java.lang.reflect.AccessibleObject.setAccessible();}
+     * @param useAccessible defines whether or not the {@link java.lang.reflect.AccessibleObject#setAccessible(boolean)}
      *                      method will be called to enable access to all methods when using reflection
      */
     public MetaClassRegistry(boolean useAccessible) {
@@ -267,7 +267,6 @@ public class MetaClassRegistry {
      * Singleton of MetaClassRegistry. Shall we use threadlocal to store the instance?
      *
      * @param includeExtension
-     * @return
      */
     public static MetaClassRegistry getIntance(int includeExtension) {
         if (includeExtension != DONT_LOAD_DEFAULT) {

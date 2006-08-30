@@ -1,7 +1,5 @@
 import junit.framework.Test;
 import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import groovy.util.AllTestSuite;
 
 /**
  * Collecting all Groovy Unit Tests, written in Java.

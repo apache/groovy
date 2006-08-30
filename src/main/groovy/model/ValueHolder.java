@@ -76,7 +76,7 @@ public class ValueHolder implements ValueModel {
     
     /** 
      * Add a PropertyChangeListener to the listener list.
-     * @param l The listener to add.
+     * @param listener The listener to add.
      */
     public void addPropertyChangeListener(PropertyChangeListener listener) {
         if ( propertyChangeSupport == null ) {
@@ -87,7 +87,7 @@ public class ValueHolder implements ValueModel {
     
     /** 
      * Removes a PropertyChangeListener from the listener list.
-     * @param l The listener to remove.
+     * @param listener The listener to remove.
      */
     public void removePropertyChangeListener(PropertyChangeListener listener) {
         if ( propertyChangeSupport != null ) {

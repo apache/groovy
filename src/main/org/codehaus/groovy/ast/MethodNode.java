@@ -97,8 +97,6 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
      * The type descriptor for a method node is a string containing the name of the method, its return type,
      * and its parameter types in a canonical form. For simplicity, I'm using the format of a Java declaration
      * without parameter names, and with $dynamic as the type for any dynamically typed values.
-     *
-     * @return
      */
     // TODO: add test case for type descriptor
     public String getTypeDescriptor() {

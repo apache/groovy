@@ -284,7 +284,6 @@ public class Sql {
     /**
      * Create an inout parameter using this in parameter.
      * @param in
-     * @return
      */
     public static InOutParameter inout(final InParameter in){
         return new InOutParameter(){
@@ -314,7 +313,6 @@ public class Sql {
      * Creates a variable to be expanded in the Sql string rather
      * than representing an sql parameter.
      * @param object
-     * @return
      */
     public static ExpandedVariable expand(final Object object){
         return new ExpandedVariable(){
@@ -1064,7 +1062,6 @@ public class Sql {
      * replace ?'"? references with NULLish
      * 
      * @param sql
-     * @return
      */
     protected String nullify(String sql) {
         /*
@@ -1094,7 +1091,6 @@ public class Sql {
      * Find the first 'where' keyword in the sql.
      * 
      * @param sql
-     * @return
      */
     protected int findWhereKeyword(String sql) {
         char[] chars = sql.toLowerCase().toCharArray();

@@ -60,7 +60,7 @@ public class GroovyBugError extends AssertionError {
 
     /**
      * constructs a bug error using the given text
-     * @param text the error message text
+     * @param message the error message text
      */
     public GroovyBugError( String message ) {
         this.message = message;

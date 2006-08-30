@@ -9,7 +9,6 @@ package groovy.sql;
 public interface OutParameter {
 	/**
 	 * Get the JDBC datatype for this parameter.
-	 * @return
 	 */
      public int getType();
 }

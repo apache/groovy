@@ -126,8 +126,6 @@ public abstract class Script extends GroovyObjectSupport {
     /**
      * The main instance method of a script which has variables in scope
      * as defined by the current {@link Binding} instance.
-     *
-     * @return
      */
     public abstract Object run();
 

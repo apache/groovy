@@ -8,9 +8,6 @@
 import junit.framework.*;
 import groovy.util.AllTestSuite;
 
-import java.io.File;
-import java.io.IOException;
-
 public class UberTestCase extends TestCase {
     public static Test suite() {
         TestSuite suite = (TestSuite) AllTestSuite.suite("src/test/groovy", "*Test.groovy");

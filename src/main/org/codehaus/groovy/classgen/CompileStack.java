@@ -255,7 +255,7 @@ public class CompileStack implements Opcodes {
      * creates a temporary variable. 
      * 
      * @param name defines the name
-     * @param type defines the type
+     * @param node defines the node
      * @param store defines if the toplevel argument of the stack should be stored 
      * @return the index used for this temporary variable
      */
@@ -337,7 +337,7 @@ public class CompileStack implements Opcodes {
         clear=false;
         pushVariableScope(el);
         this.mv = mv;
-        this.helper = helper = new BytecodeHelper(mv);
+        this.helper = new BytecodeHelper(mv);
         defineMethodVariables(parameters,el.isInStaticContext());
         this.className = className;
     }

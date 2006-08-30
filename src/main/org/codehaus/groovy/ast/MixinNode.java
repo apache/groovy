@@ -58,7 +58,7 @@ public class MixinNode extends ClassNode {
     /**
      * @param name is the full name of the class
      * @param modifiers the modifiers, @see org.objectweb.asm.Opcodes
-     * @param superClass the base class name - use "java.lang.Object" if no direct base class
+     * @param superType the base class name - use "java.lang.Object" if no direct base class
      */
     public MixinNode(String name, int modifiers, ClassNode superType) {
         this(name, modifiers, superType, ClassHelper.EMPTY_TYPE_ARRAY);
@@ -67,7 +67,7 @@ public class MixinNode extends ClassNode {
     /**
      * @param name is the full name of the class
      * @param modifiers the modifiers, @see org.objectweb.asm.Opcodes
-     * @param superClass the base class name - use "java.lang.Object" if no direct base class
+     * @param superType the base class name - use "java.lang.Object" if no direct base class
      */
     public MixinNode(String name, int modifiers, ClassNode superType, ClassNode[] interfaces) {
         super(name, modifiers, superType, interfaces, MixinNode.EMPTY_ARRAY);

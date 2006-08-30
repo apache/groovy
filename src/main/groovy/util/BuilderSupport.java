@@ -201,7 +201,6 @@ public abstract class BuilderSupport extends GroovyObjectSupport {
      * A hook to allow names to be converted into some other object
      * such as a QName in XML or ObjectName in JMX
      * @param methodName
-     * @return
      */
     protected Object getName(String methodName) {
         if (nameMappingClosure != null) {

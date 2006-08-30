@@ -113,7 +113,6 @@ public class Invoker {
      * @param object
      * @param methodName
      * @param arguments
-     * @return
      */
     public Object invokeMethod(Object object, String methodName, Object arguments) {
         /*
@@ -951,7 +950,6 @@ public class Invoker {
      *
      * @param left  string to compare
      * @param right regular expression to compare the string to
-     * @return
      */
     public Matcher objectFindRegex(Object left, Object right) {
         String stringToCompare;
@@ -981,7 +979,6 @@ public class Invoker {
      *
      * @param left  string to compare
      * @param right regular expression to compare the string to
-     * @return
      */
     public boolean objectMatchRegex(Object left, Object right) {
         Pattern pattern;
@@ -1001,7 +998,6 @@ public class Invoker {
      * Compile a regular expression from a string.
      *
      * @param regex
-     * @return
      */
     public Pattern regexPattern(Object regex) {
         return Pattern.compile(regex.toString());

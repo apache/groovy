@@ -25,7 +25,7 @@ import org.codehaus.groovy.syntax.RuntimeParserException;
 public class RuntimeIncompleteClassException extends RuntimeParserException {
 
     /**
-     * @param a_message
+     * @param a_classnames
      * @param a_node
      */
     public RuntimeIncompleteClassException(List a_classnames, ASTNode a_node) {

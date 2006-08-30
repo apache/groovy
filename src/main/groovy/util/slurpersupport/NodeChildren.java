@@ -103,7 +103,6 @@ class NodeChildren extends GPathResult {
                   }
                   
                   /**
-                   * @return
                    */
                   private Iterator nextChildIter() {
                     while (this.iter.hasNext()) {

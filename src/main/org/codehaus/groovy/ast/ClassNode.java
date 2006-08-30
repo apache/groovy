@@ -580,8 +580,6 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
     /**
      * Helper method to avoid casting to inner class
-     *
-     * @return
      */
     public ClassNode getOuterClass() {
         return null;
@@ -759,7 +757,6 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
     /**
      * @param types
-     * @return
      */
     protected Parameter[] createParameters(Class[] types) {
         Parameter[] parameters = Parameter.EMPTY_ARRAY;
@@ -876,8 +873,6 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
     /**
      * Is this class delcared in a static method (such as a closure / inner class declared in a static method)
-     *
-     * @return
      */
     public boolean isStaticClass() {
         return redirect().staticClass;

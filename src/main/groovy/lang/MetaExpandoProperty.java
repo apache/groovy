@@ -66,7 +66,6 @@ public class MetaExpandoProperty extends MetaProperty {
      * 
      * @param object on which to set the property
      * @param newValue the new value of the property
-     * @throws Exception if the property could not be set
      */
     public void setProperty(Object object, Object newValue) {
 		value = newValue;

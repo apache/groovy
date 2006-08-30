@@ -17,7 +17,6 @@
  **/
 package org.codehaus.groovy.syntax;
 
-import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.control.SourceUnit;

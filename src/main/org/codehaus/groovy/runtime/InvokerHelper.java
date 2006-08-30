@@ -703,7 +703,6 @@ public class InvokerHelper {
     /**
      * @param a    array of primitives
      * @param type component type of the array
-     * @return
      */
     public static Object[] convertPrimitiveArray(Object a, Class type) {
 //        System.out.println("a.getClass() = " + a.getClass());
@@ -1007,7 +1006,6 @@ public class InvokerHelper {
      * get the Integer object from an int. Cached version is used for small ints.
      *
      * @param v
-     * @return
      */
     public static Integer integerValue(int v) {
         int index = v + INT_CACHE_OFFSET;

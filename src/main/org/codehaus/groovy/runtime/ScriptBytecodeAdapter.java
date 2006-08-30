@@ -436,7 +436,6 @@ public class ScriptBytecodeAdapter {
     /**
      * @param a    array of primitives
      * @param type component type of the array
-     * @return
      * @throws Throwable 
      */
     public static Object[] convertPrimitiveArray(Object a, Class type) throws Throwable {
@@ -590,7 +589,6 @@ public class ScriptBytecodeAdapter {
      * get the Integer object from an int. Cached version is used for small ints.
      *
      * @param v
-     * @return
      */
     public static Integer integerValue(int v) {
         return InvokerHelper.integerValue(v);

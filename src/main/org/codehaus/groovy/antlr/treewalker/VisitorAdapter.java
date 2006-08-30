@@ -19,8 +19,6 @@ package org.codehaus.groovy.antlr.treewalker;
 
 import org.codehaus.groovy.antlr.GroovySourceAST;
 
-import java.util.Stack;
-
 /**
  * A default implementation of all visitor methods.
  * If you extend this class, any un-overriden visit methods will

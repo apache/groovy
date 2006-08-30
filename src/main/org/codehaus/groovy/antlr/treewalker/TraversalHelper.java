@@ -19,7 +19,6 @@ package org.codehaus.groovy.antlr.treewalker;
 
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Stack;
 
 import org.codehaus.groovy.antlr.GroovySourceAST;
 import org.codehaus.groovy.antlr.AntlrASTProcessor;

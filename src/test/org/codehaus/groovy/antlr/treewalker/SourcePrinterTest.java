@@ -28,7 +28,6 @@ import org.codehaus.groovy.antlr.SourceBuffer;
 import org.codehaus.groovy.antlr.UnicodeEscapingReader;
 import org.codehaus.groovy.antlr.parser.GroovyLexer;
 import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
-import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
 
 import antlr.collections.AST;
 

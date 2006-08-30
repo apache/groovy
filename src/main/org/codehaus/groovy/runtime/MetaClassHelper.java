@@ -163,7 +163,6 @@ public class MetaClassHelper {
     /**
      * @param list
      * @param parameterType
-     * @return
      */
     public static Object asPrimitiveArray(List list, Class parameterType) {
         Class arrayType = parameterType.getComponentType();
@@ -462,7 +461,6 @@ public class MetaClassHelper {
     /**
      * param instance array to the type array
      * @param args
-     * @return
      */
     public static Class[] convertToTypeArray(Object[] args) {
         if (args == null)

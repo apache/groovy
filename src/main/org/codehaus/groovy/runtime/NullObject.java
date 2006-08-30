@@ -90,7 +90,7 @@ public class NullObject extends GroovyObjectSupport {
   }
 
   /**
-   * @param - the name of the method to invoke
+   * @param name the name of the method to invoke
    * @param args - arguments to the method
    * @returns a NPE
    * 
