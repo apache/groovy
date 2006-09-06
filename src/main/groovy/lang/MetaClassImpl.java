@@ -786,7 +786,13 @@ public class MetaClassImpl extends MetaClass {
     */
    public List getProperties() {
        // simply return the values of the metaproperty map as a List
-       return new ArrayList(propertyMap.values());
+       List ret = new ArrayList(propertyMap.size());
+       for (Iterator iter = propertyMap.values().iterator(); iter.hasNext();) {
+           MetaProperty element = (MetaProperty) iter.next();
+           if (element instanceof MetaFieldProperty) continue;
+           ret.add(element);
+       }
+       return ret;
    }
 
    /**
