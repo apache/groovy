@@ -86,14 +86,15 @@ public class InspectorTest extends TestCase implements Serializable {
         String[] details = {"JAVA","public","InspectorTest","String","someField","\"only for testing\""};
         assertContains(fields, details);
     }
+    
     public void testProperties() {
         Inspector insp = new Inspector(this);
-        Object[] fields = insp.getPropertyInfo();
-        assertEquals(4, fields.length);
-        String[] names = { "SOME_CONST","someField","class","name"};
-        assertNameEquals(names, fields);
-        String[] details = {"GROOVY","public","n/a","String","name","\"testProperties\""};
-        assertContains(fields, details);
+        Object[] properties = insp.getPropertyInfo();
+        assertEquals(2, properties.length);
+        String[] names = {"class","name" };
+        assertNameEquals(names, properties);
+        String[] details = {"GROOVY", "public", "n/a", "Class", "class", "class groovy.inspect.InspectorTest"};
+        assertContains(properties, details);
     }
 
     private void assertNameEquals(String[] names, Object[] metaMethods) {
