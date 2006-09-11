@@ -121,7 +121,7 @@ public class MethodCallExpression extends Expression {
     }
 
     public String getText() {
-        return objectExpression.getText() + "." + method + arguments.getText();
+        return objectExpression.getText() + "." + method.getText() + arguments.getText();
     }
 
     /**

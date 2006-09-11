@@ -122,7 +122,7 @@ public class PropertyExpression extends Expression {
     }
 
     public String getText() {
-        return objectExpression.getText() + "." + property;
+        return objectExpression.getText() + "." + property.getText();
     }
 
     /**
