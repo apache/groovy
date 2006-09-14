@@ -88,7 +88,7 @@ public class MetaBeanProperty extends MetaProperty {
 
         try {
             // we'll convert a GString to String if needed
-            if (getType() == String.class && !(newValue instanceof String)) {
+            if (newValue != null && getType() == String.class && !(newValue instanceof String)) {
                 newValue = newValue.toString();
             }
             else {
