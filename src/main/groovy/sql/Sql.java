@@ -540,7 +540,9 @@ public class Sql {
      * Performs the given SQL query and return the first row of the result set
      */
     public Object firstRow(String sql) throws SQLException {
-        return( rows(sql).get(0));
+        List rows = rows(sql);
+        if (rows.isEmpty()) return null;
+        return(rows.get(0));
     }
 
     /**
@@ -583,7 +585,9 @@ public class Sql {
       * the first row of the result set
       */
     public Object firstRow(String sql, List params) throws SQLException {
-         return( rows(sql, params).get(0));
+         List rows = rows(sql, params);
+         if (rows.isEmpty()) return null;
+         return rows.get(0);
      }
 
     /**

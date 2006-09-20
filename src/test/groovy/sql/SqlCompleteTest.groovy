@@ -116,5 +116,18 @@ class SqlCompleteTest extends TestHelper {
         expected = 3
         result = sql.executeUpdate("update FOOD set type=? where name=?",[foo,bar]);
         assert result == expected
-    }    
+    }
+    
+    void testFirstRow() {
+      def sql = createSql();
+      def row = sql.firstRow("select * from FOOD where type=? and name=?", ["cheese", "edam"])
+      assert row.type == "cheese"
+    }
+    
+    /** When no results, firstRow should return null */
+    void testFirstRowNoResults() {
+      def sql = createSql();
+      def row = sql.firstRow("select * from FOOD where type=?", ["nothing"])
+      assert row == null
+    }
 }
