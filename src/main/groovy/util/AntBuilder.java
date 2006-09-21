@@ -66,6 +66,7 @@ import org.xml.sax.Attributes;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.AttributesImpl;
+import groovy.xml.QName;
 
 /**
  * Allows Ant tasks to be used with GroovyMarkup 
@@ -216,11 +217,18 @@ public class AntBuilder extends BuilderSupport {
 
     protected Object createNode(final Object name, final Map attributes) {
 
-    	final String tagName = name.toString();
+        String tagName = name.toString();
+        String ns = "";
+
+        if(name instanceof QName) {
+            QName q = (QName)name;
+            tagName = q.getLocalPart();
+            ns = q.getNamespaceURI();
+        }
 
         try
 		{
-			antElementHandler.onStartElement("", tagName, tagName, buildAttributes(attributes), antXmlContext);
+			antElementHandler.onStartElement(ns, tagName, tagName, buildAttributes(attributes), antXmlContext);
 		}
 		catch (final SAXParseException e)
 		{
