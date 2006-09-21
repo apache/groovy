@@ -185,7 +185,7 @@ public class AntBuilder extends BuilderSupport {
     }
 
     protected Object createNode(Object tagName) {
-        return createNode(tagName.toString(), Collections.EMPTY_MAP);
+        return createNode(tagName, Collections.EMPTY_MAP);
     }
 
     protected Object createNode(Object name, Object value) {

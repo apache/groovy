@@ -22,6 +22,10 @@ public class SpoofTaskContainer extends Task implements TaskContainer {
         return spoof;
     }
 
+    static void resetSpoof() {
+    	spoof = new StringBuffer();
+    }
+    
     static void spoof(String message){
         spoof.append(message);
         spoof.append("\n");

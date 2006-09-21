@@ -3,6 +3,8 @@ package groovy.util
 import java.io.File
 import org.apache.tools.ant.Project
 import org.apache.tools.ant.ProjectHelper
+import groovy.xml.NamespaceBuilder
+
 
 class AntTest extends GroovyTestCase {
     
@@ -116,6 +118,22 @@ end SpoofTaskContainer execute
         }
         ant.spoofcontainer(){
             ant.spoof(foo: 123)
+        }
+        assertEquals expectedSpoof, SpoofTaskContainer.getSpoof().toString()
+        
+        // now run it with AntBuilder using Namespaces (test for GROOVY-1070)
+        def antNS = new AntBuilder()
+        SpoofTaskContainer.resetSpoof()
+
+		// and now run it with the AntBuilder        
+        antNS.path(id:PATH) {antNS.pathelement(location:'classes')}
+        ['spoofcontainer': SpoofTaskContainer, 'spoof': SpoofTask].each{ pair ->
+            antNS.taskdef(name:pair.key, classname: pair.value.name, classpathref: PATH, 
+                          uri: 'testNS')
+        }
+		def testNS = NamespaceBuilder.newInstance(antNS,"testNS","testNSprefix");
+        testNS.spoofcontainer(){
+            testNS.spoof(foo: 123)
         }
         assertEquals expectedSpoof, SpoofTaskContainer.getSpoof().toString()
     }
