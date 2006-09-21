@@ -102,9 +102,11 @@ public class DefaultGroovyMethods {
      * @param closure  the closure to call on the object
      * @return         result of calling the closure
      */
-    public static Object identity(Object self, Closure closure) {
-        closure.setDelegate(self);
-        return closure.call(self);
+    public static Object identity(final Object self, final Closure closure) {
+    final Closure clonedClosure = (Closure)closure.clone();
+    
+        clonedClosure.setDelegate(self);
+        return clonedClosure.call(self);
     }
 
     /**
