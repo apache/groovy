@@ -987,6 +987,22 @@ public class DefaultGroovyMethods {
         return answer;
     }
 
+    public static Map groupBy(Collection self, Closure closure) {
+        Map answer = new HashMap();
+        for (Iterator iter = self.iterator(); iter.hasNext();) {
+            Object element = iter.next();
+            Object value = closure.call(element);
+            if (answer.containsKey(value)) {
+                ((List)answer.get(value)).add(element);
+            } else {
+                ArrayList grouppedElements = new ArrayList();
+                grouppedElements.add(element);
+                answer.put(value, grouppedElements);
+            }
+        }
+        return answer;
+    }
+
     // internal helper method
     protected static Object callClosureForMapEntry(Closure closure, Map.Entry entry) {
         if (closure.getMaximumNumberOfParameters() == 2) {

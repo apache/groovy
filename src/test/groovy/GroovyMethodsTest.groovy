@@ -182,7 +182,8 @@ class GroovyMethodsTest extends GroovyTestCase {
 
         assert count > 1
     }
-    
+
+    /*
     void testExecuteCommandLineProcessAndUseWaitForOrKill_FAILS_ON_WINDOWS() {
         if (System.properties.'os.name'.contains('Windows') && notYetImplemented()) return
 
@@ -203,6 +204,7 @@ class GroovyMethodsTest extends GroovyTestCase {
         println "Exit value of command line is ${value}"
         
     }
+    */
     
     void testExecuteCommandLineUnderWorkingDirectory_FAILS() { if (notYetImplemented()) return
 
@@ -293,6 +295,16 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert ! 1.is(2)
         // naive impl would fall for this trap
         assert ! new WackyHashCode().is(new WackyHashCode())
+    }
+
+    void testGroupBy() {
+        def expected = [Integer: [1, 2], String: ["a", "b"], BigDecimal: [3.5, 4.6]]
+        def list = [1, "a", 2, "b", 3.5, 4.6]
+        def result = list.groupBy{ it.class }
+        assert [1, 2] == result[Integer]
+        assert ["a", "b"] == result[String]
+        assert [3.5, 4.6] == result[BigDecimal]
+        assert 3 == result.size()
     }
 }
 
