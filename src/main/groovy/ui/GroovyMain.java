@@ -99,6 +99,12 @@ public class GroovyMain {
     // automatically output the result of each script
     private boolean autoOutput;
 
+    // automatically split each line using the splitpattern
+    private boolean autoSplit;
+
+    // The pattern used to split the current line
+    private String splitPattern = " ";
+
     // process sockets
     private boolean processSockets;
 
@@ -212,6 +218,12 @@ public class GroovyMain {
             .hasOptionalArg()
             .withDescription("listen on a port and process inbound lines")
             .create('l'));
+        options.addOption(
+                OptionBuilder.withArgName("splitPattern")
+                .hasOptionalArg()
+                .withDescription("automatically split current line (defaults to '\\s'")
+                .withLongOpt("autosplit")
+                .create('a'));
         return options;
     }
 
@@ -240,6 +252,10 @@ public class GroovyMain {
         if (main.editFiles) {
             main.backupExtension = line.getOptionValue('i');
         }
+        main.autoSplit = line.hasOption('a');
+        String sp = line.getOptionValue('a');
+        if (sp != null)
+            main.splitPattern = sp;
 
         if (main.isScriptFile) {
             if (args.isEmpty())
@@ -429,9 +445,12 @@ public class GroovyMain {
      */
     private void processReader(Script s, BufferedReader reader, PrintWriter pw) throws IOException {
         String line = null;
+        String autoSplitName = "split";
         s.setProperty("out", pw);
         while ((line = reader.readLine()) != null) {
             s.setProperty("line", line);
+            if(autoSplit)
+                s.setProperty(autoSplitName, line.split(splitPattern));
             Object o = s.run();
 
             if (autoOutput) {
@@ -439,7 +458,7 @@ public class GroovyMain {
             }
         }
     }
-    
+
     private static ClassLoader getLoader(ClassLoader cl) {
         if (cl!=null) return cl;
         cl = Thread.currentThread().getContextClassLoader();
@@ -448,7 +467,7 @@ public class GroovyMain {
         if (cl!=null) return cl;
         return null;
     }
-    
+
     /**
      * Process the standard, single script with args.
      */
