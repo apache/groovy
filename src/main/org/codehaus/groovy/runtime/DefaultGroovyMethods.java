@@ -3387,7 +3387,7 @@ public class DefaultGroovyMethods {
                 try {
                     writeTo(buffer);
                 } catch (IOException e) {
-                    throw new RuntimeException(e); // TODO: change this exception type
+                    throw new StringWriterIOException(e);
                 }
 
                 return buffer.toString();
@@ -4996,9 +4996,10 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Iterates through the given object stream object by object
+     * Iterates through the given object stream object by object. The 
+     * ObjectInputStream is closed afterwards.
      *
-     * @param ois    an ObjectInputStream
+     * @param ois    an ObjectInputStream, closed after the operation
      * @param closure a closure
      * @throws IOException
      * @throws ClassNotFoundException
@@ -5014,24 +5015,22 @@ public class DefaultGroovyMethods {
                     break;
                 }
             }
-            ois.close();
-        } catch (ClassNotFoundException e) {
-            try {
-                ois.close();
-            } catch (Exception e2) {
-                // ignore as we're already throwing
+            InputStream temp = ois;
+            ois = null;
+            temp.close();
+        } finally {
+            if(ois != null) {
+                try {
+                    ois.close();
+                }
+                catch (Exception e) {
+                    // ignore this exception since there
+                    // has to be another already
+                    log.warning("Caught exception closing ObjectInputStream: " + e);
+                }
             }
-            throw e;
-        } catch (IOException e) {
-            try {
-               ois.close();
-            } catch (Exception e2) {
-               // ignore as we're already throwing
-            }
-            throw e;
         }
     }
-
     /**
      * Iterates through the given file line by line
      *
@@ -5044,9 +5043,10 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Iterates through the given reader line by line
+     * Iterates through the given reader line by line. The 
+     * Reader is closed afterwards
      *
-     * @param self    a Reader
+     * @param self    a Reader, closed after the method returns
      * @param closure a closure
      * @throws IOException
      */
@@ -5067,15 +5067,29 @@ public class DefaultGroovyMethods {
                     closure.call(line);
                 }
             }
-            br.close();
-        } catch (IOException e) {
-            if (self != null) {
-                try {
-                    br.close();
-                } catch (Exception e2) {
-                    // ignore as we're already throwing
-                }
-                throw e;
+            Reader temp = self;
+            self = null;
+            temp.close();
+        } finally {
+            if(self != null) {
+        	try {
+        	    self.close();
+        	}
+        	catch (Exception e) {
+        	    // ignore this exception since there
+        	    // has to be another already
+                    log.warning("Caught exception closing Reader: " + e);
+        	}
+            }
+            if(br != null) {
+        	try {
+        	    br.close();
+        	}
+        	catch (Exception e) {
+        	    // ignore this exception since this
+        	    // is only our internal problem
+                    log.warning("Caught exception closing Reader: " + e);
+        	}
             }
         }
     }
@@ -5093,9 +5107,10 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Iterates through the given reader line by line, splitting on the seperator
+     * Iterates through the given reader line by line, splitting on the separator.
+     * The Reader is closed afterwards.
      *
-     * @param self    a Reader
+     * @param self    a Reader, closed after the method returns
      * @param sep     a String separator
      * @param closure a closure
      * @throws IOException
@@ -5109,35 +5124,47 @@ public class DefaultGroovyMethods {
             br = new BufferedReader(self);
 
         try {
-            while (true) {
-                String line = br.readLine();
-                if (line == null) {
-                    break;
-                } else {
-                    List vals = Arrays.asList(line.split(sep));
-                    closure.call(vals);
-                }
-            }
-            br.close();
-        } catch (IOException e) {
-            if (self != null) {
-                try {
-                    br.close();
-                } catch (Exception e2) {
-                    // ignore as we're already throwing
-                }
-                throw e;
-            }
-        }
+	    while (true) {
+		String line = br.readLine();
+		if (line == null) {
+		    break;
+		} else {
+		    List vals = Arrays.asList(line.split(sep));
+		    closure.call(vals);
+		}
+	    }
+	    Reader temp = self;
+	    self = null;
+	    temp.close();
+	} finally {
+	    if (self != null) {
+		try {
+		    self.close();
+		} catch (Exception e) {
+		    // ignore this exception since there
+		    // has to be another already
+                    log.warning("Caught exception closing Reader: " + e);
+		}
+	    }
+	    if (br != null) {
+		try {
+		    br.close();
+		} catch (Exception e) {
+		    // ignore this exception since this
+		    // is only our internal problem
+                    log.warning("Caught exception closing Reader: " + e);
+		}
+	    }
+	}
     }
 
     /**
-     * Read a single, whole line from the given Reader
-     *
-     * @param self a Reader
-     * @return a line
-     * @throws IOException
-     */
+         * Read a single, whole line from the given Reader
+         * 
+         * @param self a Reader
+         * @return a line
+         * @throws IOException
+         */
     public static String readLine(Reader self) throws IOException {
         BufferedReader br = null;
 
@@ -5260,7 +5287,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Reads the content of the BufferedReader and returns it as a String
+     * Reads the content of the BufferedReader and returns it as a String.
+     * The BufferedReader is closed afterwards.
      *
      * @param reader a BufferedReader whose content we want to read
      * @return a String containing the content of the buffered reader
@@ -5268,24 +5296,41 @@ public class DefaultGroovyMethods {
      */
     public static String getText(BufferedReader reader) throws IOException {
         StringBuffer answer = new StringBuffer();
-        // reading the content of the file within a char buffer allow to keep the correct line endings
+        // reading the content of the file within a char buffer 
+        // allow to keep the correct line endings
         char[] charBuffer = new char[4096];
         int nbCharRead = 0;
-        while ((nbCharRead = reader.read(charBuffer)) != -1) {
-            // appends buffer
-            answer.append(charBuffer, 0, nbCharRead);
-        }
-        reader.close();
+        try {
+	    while ((nbCharRead = reader.read(charBuffer)) != -1) {
+		// appends buffer
+		answer.append(charBuffer, 0, nbCharRead);
+	    }
+	    Reader temp = reader;
+	    reader = null;
+	    temp.close();
+	} finally {
+	    if(reader != null) {
+		try {
+		    reader.close();		    
+		} catch (Exception e) {
+		    // ignore since there has to be an exception already
+                    log.warning("Caught exception closing Reader: " + e);
+		}
+	    }
+	}
         return answer.toString();
     }
 
     /**
-     * Write the text and append a new line (depending on the platform line-ending)
-     *
-     * @param writer a BufferedWriter
-     * @param line   the line to write
-     * @throws IOException
-     */
+         * Write the text and append a new line (depending on the platform
+         * line-ending)
+         * 
+         * @param writer
+         *                a BufferedWriter
+         * @param line
+         *                the line to write
+         * @throws IOException
+         */
     public static void writeLine(BufferedWriter writer, String line) throws IOException {
         writer.write(line);
         writer.newLine();
@@ -5299,9 +5344,25 @@ public class DefaultGroovyMethods {
      * @throws IOException
      */
     public static void write(File file, String text) throws IOException {
-        BufferedWriter writer = newWriter(file);
-        writer.write(text);
-        writer.close();
+	BufferedWriter writer = null;
+	try {
+            writer = newWriter(file);
+            writer.write(text);
+            writer.flush();
+
+	    Writer temp = writer;
+	    writer = null;
+	    temp.close();
+	} finally {
+	    if(writer != null) {
+		try {
+		    writer.close();		    
+		} catch (Exception e) {
+		    // ignore since there has to be an exception already
+                    log.warning("Caught exception closing Writer: " + e);
+		}
+	    }
+	}
     }
 
     /**
@@ -5325,9 +5386,25 @@ public class DefaultGroovyMethods {
      * @throws IOException
      */
     public static void write(File file, String text, String charset) throws IOException {
-        BufferedWriter writer = newWriter(file, charset);
-        writer.write(text);
-        writer.close();
+        BufferedWriter writer = null;
+        try {
+            writer = newWriter(file, charset);
+            writer.write(text);
+            writer.flush();
+
+	    Writer temp = writer;
+	    writer = null;
+	    temp.close();
+	} finally {
+	    if(writer != null) {
+		try {
+		    writer.close();		    
+		} catch (Exception e) {
+		    // ignore since there has to be an exception already
+                    log.warning("Caught exception closing Writer: " + e);
+		}
+	    }
+	}
     }
 
     /**
@@ -5338,42 +5415,58 @@ public class DefaultGroovyMethods {
      * @throws IOException
      */
     public static void append(File file, Object text) throws IOException {
-		BufferedWriter writer = null; 
+	BufferedWriter writer = null;
+	try {
+	    writer = newWriter(file, true);
+	    InvokerHelper.write(writer, text);
+	    writer.flush();
+
+	    Writer temp = writer;
+	    writer = null;
+	    temp.close();
+	} finally {
+	    if(writer != null) {
 		try {
-			writer = newWriter(file, true);
-			InvokerHelper.write(writer, text);
-		} finally {
-    		if(writer != null)
-    			try {
-    				writer.close();
-    			}
-    			catch(Exception e){
-    				// ignore this exception
-    			}
+		    writer.close();		    
+		} catch (Exception e) {
+		    // ignore since there has to be an exception already
+                    log.warning("Caught exception closing Writer: " + e);
 		}
+	    }
+	}
     }
+
     /**
-     * Append the text at the end of the File with a specified encoding
-     *
-     * @param file    a File
-     * @param text    the text to append at the end of the File
-     * @param charset the charset used
-     * @throws IOException
-     */
+         * Append the text at the end of the File with a specified encoding
+         * 
+         * @param file
+         *                a File
+         * @param text
+         *                the text to append at the end of the File
+         * @param charset
+         *                the charset used
+         * @throws IOException
+         */
     public static void append(File file, Object text, String charset) throws IOException {
         BufferedWriter writer = null; 
         try {
             writer = newWriter(file, charset, true);
             InvokerHelper.write(writer, text);
-        } finally {
-            if(writer != null)
-                try {
-                    writer.close();
-                }
-                catch(Exception e){
-                    // ignore this exception
-                }
-        }
+            writer.flush();
+
+	    Writer temp = writer;
+	    writer = null;
+	    temp.close();
+	} finally {
+	    if(writer != null) {
+		try {
+		    writer.close();		    
+		} catch (Exception e) {
+		    // ignore since there has to be an exception already
+                    log.warning("Caught exception closing Writer: " + e);
+		}
+	    }
+	}
     }
 
     /**
@@ -5737,50 +5830,49 @@ public class DefaultGroovyMethods {
     public static void withWriter(Writer writer, Closure closure) throws IOException {
         try {
             closure.call(writer);
+            writer.flush();
 
-            // lets try close the writer & throw the exception if it fails
-            // but not try to reclose it in the finally block
-            Writer temp = writer;
-            writer = null;
-            temp.close();
-        } finally {
-            if (writer != null) {
-                try {
-                    writer.close();
-                } catch (IOException e) {
-                    log.warning("Caught exception closing writer: " + e);
-                }
-            }
-        }
+	    Writer temp = writer;
+	    writer = null;
+	    temp.close();
+	} finally {
+	    if(writer != null) {
+		try {
+		    writer.close();		    
+		} catch (Exception e) {
+		    // ignore since there has to be an exception already
+                    log.warning("Caught exception closing Writer: " + e);
+		}
+	    }
+	}
     }
 
     /**
-     * Allows a Reader to be used, calling the closure with the writer
-     * and then ensuring that the writer is closed down again irrespective
+     * Allows a Reader to be used, calling the closure with the reader
+     * and then ensuring that the reader is closed down again irrespective
      * of whether exceptions occur or the
      *
-     * @param writer  the writer which is used and then closed
+     * @param reader  the reader which is used and then closed
      * @param closure the closure that the writer is passed into
      * @throws IOException
      */
-    public static void withReader(Reader writer, Closure closure) throws IOException {
+    public static void withReader(Reader reader, Closure closure) throws IOException {
         try {
-            closure.call(writer);
+            closure.call(reader);
 
-            // lets try close the writer & throw the exception if it fails
-            // but not try to reclose it in the finally block
-            Reader temp = writer;
-            writer = null;
-            temp.close();
-        } finally {
-            if (writer != null) {
-                try {
-                    writer.close();
-                } catch (IOException e) {
-                    log.warning("Caught exception closing writer: " + e);
-                }
-            }
-        }
+	    Reader temp = reader;
+	    reader = null;
+	    temp.close();
+	} finally {
+	    if(reader != null) {
+		try {
+		    reader.close();		    
+		} catch (Exception e) {
+		    // ignore since there has to be an exception already
+                    log.warning("Caught exception closing Reader: " + e);
+		}
+	    }
+	}
     }
 
     /**
@@ -5796,20 +5888,19 @@ public class DefaultGroovyMethods {
         try {
             closure.call(stream);
 
-            // lets try close the stream & throw the exception if it fails
-            // but not try to reclose it in the finally block
-            InputStream temp = stream;
-            stream = null;
-            temp.close();
-        } finally {
-            if (stream != null) {
-                try {
-                    stream.close();
-                } catch (IOException e) {
-                    log.warning("Caught exception closing stream: " + e);
-                }
-            }
-        }
+	    InputStream temp = stream;
+	    stream = null;
+	    temp.close();
+	} finally {
+	    if(stream != null) {
+		try {
+		    stream.close();		    
+		} catch (Exception e) {
+		    // ignore since there has to be an exception already
+                    log.warning("Caught exception closing InputStream: " + e);
+		}
+	    }
+	}
     }
 
     /**
@@ -5899,25 +5990,24 @@ public class DefaultGroovyMethods {
      * and then ensuring that the stream is closed down again irrespective
      * of whether exceptions occur.
      *
-     * @param stream  the stream which is used and then closed
+     * @param os  the stream which is used and then closed
      * @param closure the closure that the stream is passed into
      * @throws IOException
      */
-    public static void withStream(OutputStream stream, Closure closure) throws IOException {
+    public static void withStream(OutputStream os, Closure closure) throws IOException {
         try {
-            closure.call(stream);
+            closure.call(os);
+            os.flush();
 
-            // lets try close the stream & throw the exception if it fails
-            // but not try to reclose it in the finally block
-            OutputStream temp = stream;
-            stream = null;
+            OutputStream temp = os;
+            os = null;
             temp.close();
         } finally {
-            if (stream != null) {
+            if (os != null) {
                 try {
-                    stream.close();
+                    os.close();
                 } catch (IOException e) {
-                    log.warning("Caught exception closing stream: " + e);
+                    log.warning("Caught exception closing OutputStream: " + e);
                 }
             }
         }
@@ -5946,9 +6036,10 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Traverse through each byte of the specified stream
+     * Traverse through each byte of the specified stream. The
+     * stream is closed afterwards.
      *
-     * @param is      stream to iterate over
+     * @param is      stream to iterate over, closed after the method call
      * @param closure closure to apply to each byte
      * @throws IOException
      */
@@ -5962,15 +6053,17 @@ public class DefaultGroovyMethods {
                     closure.call(new Byte((byte) b));
                 }
             }
-            is.close();
-        } catch (IOException e) {
+
+            InputStream temp = is;
+            is = null;
+            temp.close();
+        } finally {
             if (is != null) {
                 try {
                     is.close();
-                } catch (Exception e2) {
-                    // ignore as we're already throwing
+                } catch (IOException e) {
+                    log.warning("Caught exception closing InputStream: " + e);
                 }
-                throw e;
             }
         }
     }
@@ -5988,13 +6081,14 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Transforms the characters from a reader with a Closure and write them to a writer
+     * Transforms the characters from a reader with a Closure and 
+     * write them to a writer.
      *
      * @param reader
      * @param writer
      * @param closure
      */
-    public static void transformChar(Reader reader, Writer writer, Closure closure) {
+    public static void transformChar(Reader reader, Writer writer, Closure closure) throws IOException {
         int c;
         try {
             char[] chars = new char[1];
@@ -6002,15 +6096,39 @@ public class DefaultGroovyMethods {
                 chars[0] = (char) c;
                 writer.write((String) closure.call(new String(chars)));
             }
-        } catch (IOException e) {
+            writer.flush();
+            
+            Writer temp2 = writer;
+            writer = null;
+            temp2.close();
+            Reader temp1 = reader;
+            reader = null;
+            temp1.close();
+        } finally {
+            if(reader != null) {
+        	try {
+        	    reader.close();
+                } catch (IOException e) {
+                    log.warning("Caught exception closing Reader: " + e);
+                }        	
+            }
+            if(writer != null) {
+        	try {
+        	    writer.close();
+                } catch (IOException e) {
+                    log.warning("Caught exception closing Writer: " + e);
+                }        	
+            }
         }
     }
 
     /**
-     * Transforms the lines from a reader with a Closure and write them to a writer
+     * Transforms the lines from a reader with a Closure and 
+     * write them to a writer. Both Reader and Writer are
+     * closed after the operation
      *
-     * @param reader  Lines of text to be transformed.
-     * @param writer  Where transformed lines are written.
+     * @param reader  Lines of text to be transformed. Reader is closed afterwards.
+     * @param writer  Where transformed lines are written. Writer is closed afterwards.
      * @param closure Single parameter closure that is called to transform each line of
      *                text from the reader, before writing it to the writer.
      */
@@ -6018,22 +6136,61 @@ public class DefaultGroovyMethods {
         BufferedReader br = new BufferedReader(reader);
         BufferedWriter bw = new BufferedWriter(writer);
         String line;
-        while ((line = br.readLine()) != null) {
-            Object o = closure.call(line);
-            if (o != null) {
-                bw.write(o.toString());
-                bw.newLine();
+        try {
+            while ((line = br.readLine()) != null) {
+                Object o = closure.call(line);
+                if (o != null) {
+                    bw.write(o.toString());
+                    bw.newLine();
+                }
+            }
+            bw.flush();            
+
+            Writer temp2 = writer;
+            writer = null;
+            temp2.close();
+            Reader temp1 = reader;
+            reader = null;
+            temp1.close();
+        } finally {
+            if(br != null) {
+        	try {
+        	    br.close();
+                } catch (IOException e) {
+                    log.warning("Caught exception closing Reader: " + e);
+                }        	
+            }
+            if(reader != null) {
+        	try {
+        	    reader.close();
+                } catch (IOException e) {
+                    log.warning("Caught exception closing Reader: " + e);
+                }        	
+            }
+            if(bw != null) {
+        	try {
+        	    bw.close();
+                } catch (IOException e) {
+                    log.warning("Caught exception closing Writer: " + e);
+                }        	
+            }
+            if(writer != null) {
+        	try {
+        	    writer.close();
+                } catch (IOException e) {
+                    log.warning("Caught exception closing Writer: " + e);
+                }        	
             }
         }
-        bw.flush();
     }
 
     /**
-     * Filter the lines from a reader and write them on the writer, according to a closure
-     * which returns true or false.
+     * Filter the lines from a reader and write them on the writer, 
+     * according to a closure which returns true or false.
+     * Both Reader and Writer are closed after the operation.
      *
-     * @param reader  a reader
-     * @param writer  a writer
+     * @param reader  a reader, closed after the call
+     * @param writer  a writer, closed after the call
      * @param closure the closure which returns booleans
      * @throws IOException
      */
@@ -6041,23 +6198,67 @@ public class DefaultGroovyMethods {
         BufferedReader br = new BufferedReader(reader);
         BufferedWriter bw = new BufferedWriter(writer);
         String line;
-        while ((line = br.readLine()) != null) {
-            if (InvokerHelper.asBool(closure.call(line))) {
-                bw.write(line);
-                bw.newLine();
-            }
-        }
-        bw.flush();
+        try {
+	    while ((line = br.readLine()) != null) {
+		if (InvokerHelper.asBool(closure.call(line))) {
+		    bw.write(line);
+		    bw.newLine();
+		}
+	    }
+	    bw.flush();
+
+	    Writer temp2 = writer;
+	    writer = null;
+	    temp2.close();
+	    Reader temp1 = reader;
+	    reader = null;
+	    temp1.close();
+	} finally {
+	    if (br != null) {
+		try {
+		    br.close();
+		} catch (IOException e) {
+		    log.warning("Caught exception closing Reader: " + e);
+		}
+	    }
+	    if (reader != null) {
+		try {
+		    reader.close();
+		} catch (IOException e) {
+		    log.warning("Caught exception closing Reader: " + e);
+		}
+	    }
+	    if (bw != null) {
+		try {
+		    bw.close();
+		} catch (IOException e) {
+		    log.warning("Caught exception closing Writer: " + e);
+		}
+	    }
+	    if (writer != null) {
+		try {
+		    writer.close();
+		} catch (IOException e) {
+		    log.warning("Caught exception closing Writer: " + e);
+		}
+	    }
+	}
+
     }
 
     /**
-     * Filters the lines of a File and creates a Writeable in return to stream the filtered lines
-     *
-     * @param self    a File
-     * @param closure a closure which returns a boolean indicating to filter the line or not
-     * @return a Writable closure
-     * @throws IOException if <code>self</code> is not readable
-     */
+         * Filters the lines of a File and creates a Writeable in return to
+         * stream the filtered lines
+         * 
+         * @param self
+         *                a File
+         * @param closure
+         *                a closure which returns a boolean indicating to filter
+         *                the line or not
+         * @return a Writable closure
+         * @throws IOException
+         *                 if <code>self</code> is not readable
+         */
     public static Writable filterLine(final File self, final Closure closure) throws IOException {
         return filterLine(newReader(self), closure);
     }
@@ -6076,7 +6277,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Filter the lines of a Reader and create a Writable in return to stream the filtered lines
+     * Filter the lines of a Reader and create a Writable in return to stream 
+     * the filtered lines.
      *
      * @param reader  a reader
      * @param closure a closure returning a boolean indicating to filter or not a line
@@ -6103,7 +6305,7 @@ public class DefaultGroovyMethods {
                 try {
                     writeTo(buffer);
                 } catch (IOException e) {
-                    throw new RuntimeException(e); // TODO: change this exception type
+                    throw new StringWriterIOException(e); 
                 }
                 return buffer.toString();
             }
@@ -6144,11 +6346,23 @@ public class DefaultGroovyMethods {
         byte[] bytes = new byte[(int) file.length()];
         FileInputStream fileInputStream = new FileInputStream(file);
         DataInputStream dis = new DataInputStream(fileInputStream);
-        dis.readFully(bytes);
-        dis.close();
+        try {
+            dis.readFully(bytes);
+            
+            InputStream temp = dis;
+            dis = null;
+            temp.close();
+        } finally {
+            if (dis != null) {
+                try {
+                    dis.close();
+                } catch (IOException e) {
+                    log.warning("Caught exception closing DataInputStream: " + e);
+                }
+            }
+        }
         return bytes;
     }
-
 
 
     // ================================
@@ -6156,8 +6370,8 @@ public class DefaultGroovyMethods {
 
     /**
      * Allows an InputStream and an OutputStream from a Socket to be used,
-     * calling the closure with the streams and then ensuring that the streams are closed down again
-     * irrespective of whether exceptions occur.
+     * calling the closure with the streams and then ensuring that the streams 
+     * are closed down again irrespective of whether exceptions occur.
      *
      * @param socket  a Socket
      * @param closure a Closure
@@ -6168,28 +6382,41 @@ public class DefaultGroovyMethods {
         OutputStream output = socket.getOutputStream();
         try {
             closure.call(new Object[]{input, output});
+
+            InputStream temp1 = input;
+            input = null;
+            temp1.close();
+            OutputStream temp2 = output;
+            output = null;
+            temp2.close();
         } finally {
-            try {
-                input.close();
-            } catch (IOException e) {
-                // noop
-            }
-            try {
-                output.close();
-            } catch (IOException e) {
-                // noop
-            }
+	    if (input != null) {
+		try {
+		    input.close();
+		} catch (IOException e) {
+                    log.warning("Caught exception closing InputStream: " + e);
+		}
+	    }
+	    if (output != null) {
+		try {
+		    output.close();
+		} catch (IOException e) {
+                    log.warning("Caught exception closing OutputStream: " + e);
+		}
+	    }
         }
     }
 
     /**
-     * Overloads the left shift operator to provide an append mechanism
-     * to add things to the output stream of a socket
-     *
-     * @param self  a Socket
-     * @param value a value to append
-     * @return a Writer
-     */
+         * Overloads the left shift operator to provide an append mechanism to
+         * add things to the output stream of a socket
+         * 
+         * @param self
+         *                a Socket
+         * @param value
+         *                a value to append
+         * @return a Writer
+         */
     public static Writer leftShift(Socket self, Object value) throws IOException {
         return leftShift(self.getOutputStream(), value);
     }
@@ -6224,7 +6451,7 @@ public class DefaultGroovyMethods {
                     try {
                         socket.close();
                     } catch (IOException e) {
-                        // noop
+                        log.warning("Caught exception closing socket: " + e);
                     }
                 }
             }
