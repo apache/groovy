@@ -82,7 +82,7 @@ public class AntBuilder extends BuilderSupport {
     private Project project;
     private final AntXMLContext antXmlContext;
     private final ProjectHelper2.ElementHandler antElementHandler = new ProjectHelper2.ElementHandler();
-    private final Target collectorTarget = new Target();
+    private final Target collectorTarget;
     private Object lastCompletedNode;
 
 
@@ -92,7 +92,13 @@ public class AntBuilder extends BuilderSupport {
     }
 
     public AntBuilder(final Project project) {
+        this(project, new Target());
+    }
+
+    public AntBuilder(final Project project, final Target owningTarget) {
         this.project = project;
+
+        collectorTarget = owningTarget;
         
         antXmlContext = new AntXMLContext(project);
         collectorTarget.setProject(project);
