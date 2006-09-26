@@ -60,6 +60,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.Iterator;
 import java.util.List;
+import java.math.BigInteger;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -445,10 +446,14 @@ public class GroovyMain {
      */
     private void processReader(Script s, BufferedReader reader, PrintWriter pw) throws IOException {
         String line = null;
+        String lineCountName = "count";
+        s.setProperty(lineCountName, BigInteger.ZERO);
         String autoSplitName = "split";
         s.setProperty("out", pw);
         while ((line = reader.readLine()) != null) {
             s.setProperty("line", line);
+            s.setProperty(lineCountName,
+                    ((BigInteger)s.getProperty(lineCountName)).add(BigInteger.ONE));
             if(autoSplit)
                 s.setProperty(autoSplitName, line.split(splitPattern));
             Object o = s.run();
