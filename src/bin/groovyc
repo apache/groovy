@@ -9,6 +9,7 @@
 ## $Revision$ $Date$
 ##
 
-. `dirname "$0"`/startGroovy
+DIRNAME=`dirname "$0"`
+. "$DIRNAME/startGroovy"
 
 startGroovy org.codehaus.groovy.tools.FileSystemCompiler "$@"
