@@ -75,6 +75,10 @@ import org.objectweb.asm.Opcodes;
  *      the variable is a parameter of a method because the 
  *      parameter may be used in a closure, so don't ignore
  *      the stored variable index
+ * <li> the names of temporary variables can be ignored. The names
+ *      are only used for debugging and do not conflict with each 
+ *      other or normal variables. For accessing the index of the
+ *      variable must be used.
  * </ul>
  * 
  * 
@@ -114,6 +118,8 @@ public class CompileStack implements Opcodes {
     
     private Label thisStartLabel, thisEndLabel;
 
+    // current class index
+    private int currentClassIndex , currentMetaClassIndex;
     
     private MethodVisitor mv;
     private BytecodeHelper helper;
@@ -166,7 +172,7 @@ public class CompileStack implements Opcodes {
     
     private void popState() {
         if (stateStack.size()==0) {
-            throw new GroovyBugError("Tried to do a pop on the compile stack without push.");
+             throw new GroovyBugError("Tried to do a pop on the compile stack without push.");
         }
         StateStackElement element = (StateStackElement) stateStack.removeLast();
         scope = element._scope;
@@ -235,7 +241,7 @@ public class CompileStack implements Opcodes {
         if (variableName.equals("this")) return Variable.THIS_VARIABLE;
         if (variableName.equals("super")) return Variable.SUPER_VARIABLE;
         Variable v = (Variable) stackVariables.get(variableName);
-        if (v==null && mustExist) throw new GroovyBugError("tried to get a variable with the name "+variableName+" as stack variable, but a variable with this name was not created");
+        if (v==null && mustExist)  throw new GroovyBugError("tried to get a variable with the name "+variableName+" as stack variable, but a variable with this name was not created");
         return v;
     }
 
@@ -246,7 +252,6 @@ public class CompileStack implements Opcodes {
      * @param store defines if the toplevel argument of the stack should be stored
      * @return the index used for this temporary variable
      */
-
     public int defineTemporaryVariable(String name,boolean store) {
         return defineTemporaryVariable(name, ClassHelper.DYNAMIC_TYPE,store);
     }
@@ -332,14 +337,15 @@ public class CompileStack implements Opcodes {
      * can be get by getVariable
      * 
      */
-    protected void init(VariableScope el, Parameter[] parameters, MethodVisitor mv, String className) {
+    protected void init(VariableScope el, Parameter[] parameters, MethodVisitor mv, ClassNode cn) {
         if (!clear) throw new GroovyBugError("CompileStack#init called without calling clear before");
         clear=false;
         pushVariableScope(el);
         this.mv = mv;
         this.helper = new BytecodeHelper(mv);
         defineMethodVariables(parameters,el.isInStaticContext());
-        this.className = className;
+        this.className = BytecodeHelper.getTypeDescription(cn);
+        currentClassIndex = -1; currentMetaClassIndex = -1;
     }
 
     /**
@@ -572,5 +578,21 @@ public class CompileStack implements Opcodes {
             currentBlockNamedLabels.put(name,l);
         }
         return l;
+    }
+    
+    public int getCurrentClassIndex(){
+        return currentClassIndex;
+    }
+    
+    public void setCurrentClassIndex(int index){
+        currentClassIndex=index;
+    }
+    
+    public int getCurrentMetaClassIndex(){
+        return currentMetaClassIndex;
+    }
+    
+    public void setCurrentMetaClassIndex(int index){
+        currentMetaClassIndex=index;
     }
 }

@@ -51,6 +51,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 /**
  * Represents a sequence of objects which represents zero or many instances of
@@ -100,7 +101,7 @@ public class Sequence extends ArrayList implements GroovyObject {
     public boolean equals(Sequence that) {
         if (size() == that.size()) {
             for (int i = 0; i < size(); i++) {
-                if (!InvokerHelper.compareEqual(this.get(i), that.get(i))) {
+                if (!DefaultTypeTransformation.compareEqual(this.get(i), that.get(i))) {
                     return false;
                 }
             }

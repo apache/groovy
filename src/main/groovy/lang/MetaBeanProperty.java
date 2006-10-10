@@ -38,8 +38,8 @@ package groovy.lang;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.MetaClassHelper;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 /**
  * Represents a property on a bean which may have a getter and/or a setter
@@ -100,7 +100,7 @@ public class MetaBeanProperty extends MetaProperty {
         }
         catch (IllegalArgumentException e) {    // exception for executing as scripts
             try {
-                newValue = InvokerHelper.asType(newValue, getType());
+                newValue = DefaultTypeTransformation.castToType(newValue, getType());
                 setter.invoke(object, new Object[] { newValue });
             }
             catch (Exception ex) {
@@ -113,7 +113,7 @@ public class MetaBeanProperty extends MetaProperty {
         }
         catch (ClassCastException e) {    // exception for executing as compiled classes
             try {
-                newValue = InvokerHelper.asType(newValue, getType());
+                newValue = DefaultTypeTransformation.castToType(newValue, getType());
                 setter.invoke(object, new Object[]{newValue});
             }
             catch (Exception ex) {

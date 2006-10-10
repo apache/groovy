@@ -47,6 +47,8 @@ package groovy.lang;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.IteratorClosureAdapter;
+import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.util.AbstractList;
 import java.util.Iterator;
@@ -65,11 +67,12 @@ public class ObjectRange extends AbstractList implements Range {
 
     private Comparable from;
     private Comparable to;
-    private int size = -1;
+    private int size;
     private final boolean reverse;
 
     public ObjectRange(Comparable from, Comparable to) {
-        this.reverse = InvokerHelper.compareGreaterThan(from, to);
+        this.size=-1;
+        this.reverse = ScriptBytecodeAdapter.compareGreaterThan(from, to);
         if (this.reverse) {
             constructorHelper(to, from);
         } else {
@@ -78,6 +81,7 @@ public class ObjectRange extends AbstractList implements Range {
     }
 
     public ObjectRange(Comparable from, Comparable to, boolean reverse) {
+        this.size=-1;
         constructorHelper(from, to);
 
         this.reverse = reverse;
@@ -133,15 +137,15 @@ public class ObjectRange extends AbstractList implements Range {
 
     public boolean equals(ObjectRange that) {
         return this.reverse == that.reverse
-                && InvokerHelper.compareEqual(this.from, that.from)
-                && InvokerHelper.compareEqual(this.to, that.to);
+                && DefaultTypeTransformation.compareEqual(this.from, that.from)
+                && DefaultTypeTransformation.compareEqual(this.to, that.to);
     }
 
     public boolean equals(List that) {
         int size = size();
         if (that.size() == size) {
             for (int i = 0; i < size; i++) {
-                if (!InvokerHelper.compareEqual(get(i), that.get(i))) {
+                if (!DefaultTypeTransformation.compareEqual(get(i), that.get(i))) {
                     return false;
                 }
             }

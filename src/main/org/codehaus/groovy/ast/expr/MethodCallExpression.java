@@ -64,6 +64,8 @@ public class MethodCallExpression extends Expression {
     private boolean spreadSafe = false;
     private boolean safe = false;
     private boolean implicitThis;
+    
+    public static Expression NO_ARGUMENTS = new TupleExpression();
 
     public MetaMethod getMetaMethod() {
         return metaMethod;

@@ -35,8 +35,8 @@
  
 package groovy.lang;
 
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
-import org.codehaus.groovy.runtime.InvokerHelper;
 import java.lang.reflect.Field;
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
@@ -92,7 +92,7 @@ public class MetaFieldProperty extends MetaProperty {
                     }
                     catch (IllegalArgumentException e) {
                         try {
-                            Object newValue2 = InvokerHelper.asType(newValue1, field1.getType());
+                            Object newValue2 = DefaultTypeTransformation.castToType(newValue1, field1.getType());
                             field1.set(object1, newValue2);
                             return newValue2;
                         }

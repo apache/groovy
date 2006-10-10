@@ -47,6 +47,7 @@ package groovy.lang;
 
 import org.codehaus.groovy.runtime.CurriedClosure;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -158,7 +159,7 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
     }
 
     public boolean isCase(Object candidate){
-        return InvokerHelper.asBool(call(candidate));
+        return DefaultTypeTransformation.castToBoolean(call(candidate));
     }
 
     /**

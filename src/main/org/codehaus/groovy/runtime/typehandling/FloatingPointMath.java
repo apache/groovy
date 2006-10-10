@@ -1,4 +1,4 @@
-package org.codehaus.groovy.runtime;
+package org.codehaus.groovy.runtime.typehandling;
 
 /**
  * FloatingPoint (Double and Float) NumberMath operations

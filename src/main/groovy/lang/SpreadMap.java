@@ -49,7 +49,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Iterator;
 
-import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 /**
  * Represents a spreadable map which extends java.util.HashMap.
@@ -112,7 +112,7 @@ public class SpreadMap extends HashMap {
             Iterator iter = mapData.keySet().iterator();
             for (; iter.hasNext(); ) {
                 Object key = iter.next();
-                if (! InvokerHelper.compareEqual(get(key), other.get(key)) ) {
+                if (! DefaultTypeTransformation.compareEqual(get(key), other.get(key)) ) {
                     return false;
                 }
             }

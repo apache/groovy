@@ -54,142 +54,584 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.wrappers.GroovyObjectWrapper;
 import org.codehaus.groovy.runtime.wrappers.PojoWrapper;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 
 /**
- * A static helper class to make bytecode generation easier and act as a facade over the Invoker. 
+ * A static helper class to interface bytecode and runtime 
  *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * @author Jochen Theodorou
  * @version $Revision$
  */
 public class ScriptBytecodeAdapter {
-    public static final Object[] EMPTY_ARGS = {
-    };
-    
+    public static final Object[] EMPTY_ARGS = {};
+    private static final Integer ZERO = new Integer(0);
+    private static final Integer MINUS_ONE = new Integer(-1);
+    private static final Integer ONE = new Integer(1);
+
+    //  --------------------------------------------------------
+    //                   exception handling
+    //  --------------------------------------------------------
     private static Object unwrap(GroovyRuntimeException gre) throws Throwable{
         Throwable th = gre;
         if (th.getCause()!=null && th.getCause()!=gre) th=th.getCause();
         if (th!=gre && (th instanceof GroovyRuntimeException)) unwrap((GroovyRuntimeException) th);
         throw th;
     }
-
-    public static Object invokeMethod(Object object, String methodName, Object arguments)  throws Throwable{
+    
+    //  --------------------------------------------------------
+    //                       methods for this
+    //  --------------------------------------------------------
+    public static Object invokeMethodOnCurrentN(Class senderClass, GroovyObject receiver, String messageName, Object[] messageArguments) throws Throwable{
         try {
-            return InvokerHelper.invokeMethod(object, methodName, arguments);
+            return InvokerHelper.invokeMethod(receiver, messageName, messageArguments);
         } catch (GroovyRuntimeException gre) {
             return unwrap(gre);
         }
     }
     
-    public static Object invokeMethodSafe(Object object, String methodName, Object arguments) throws Throwable{
-        if (object != null) return invokeMethod(object, methodName, arguments);
-        return null;
-    }    
-
-    public static Object invokeMethodSpreadSafe(Object object, String methodName, Object arguments) throws Throwable{
-        if (object != null) {
-            if (object instanceof List) {
-                List list = (List) object;
-                List answer = new ArrayList();
-                Iterator it = list.iterator();
-                for (; it.hasNext();) {
-                    answer.add(invokeMethodSafe(it.next(), methodName, arguments));
-                }
-                return answer;
-            }
-            else
-                return invokeMethodSafe(object, methodName, arguments);
+    public static Object invokeMethodOnCurrentNSafe(Class senderClass, GroovyObject receiver, String messageName, Object[] messageArguments) throws Throwable{
+        return invokeMethodOnCurrentN(senderClass,receiver,messageName,messageArguments);
+    }
+    
+    public static Object invokeMethodOnCurrentNSpreadSafe(Class senderClass, GroovyObject receiver, String messageName, Object[] messageArguments) throws Throwable{
+        if (! (receiver instanceof List)) return invokeMethodOnCurrentN(senderClass,receiver,messageName, messageArguments);
+        
+        List list = (List) receiver;
+        List answer = new ArrayList();
+        for (Iterator it = list.iterator(); it.hasNext();) {
+            answer.add(invokeMethodNSafe(senderClass, it.next(), messageName, messageArguments));
         }
-        return null;
-    }    
-
-    public static Object invokeStaticMethod(String type, String methodName, Object arguments) throws Throwable{
+        return answer;
+    }
+    
+    public static Object invokeMethodOnCurrent0(Class senderClass, GroovyObject receiver, String messageName)  throws Throwable{
+        return invokeMethodOnCurrentN(senderClass,receiver,messageName,EMPTY_ARGS);
+    }
+    
+    public static Object invokeMethodOnCurrent0Safe(Class senderClass, GroovyObject receiver, String messageName, Object[] messageArguments) throws Throwable{
+        return invokeMethodOnCurrentNSafe(senderClass,receiver,messageName,EMPTY_ARGS);
+    }
+    
+    public static Object invokeMethodOnCurrent0SpreadSafe(Class senderClass, GroovyObject receiver, String messageName, Object[] messageArguments) throws Throwable{
+        return invokeMethodOnCurrentNSpreadSafe(senderClass,receiver,messageName,EMPTY_ARGS);
+    }
+    
+    //  --------------------------------------------------------
+    //                       methods for super
+    //  --------------------------------------------------------
+    public static Object invokeMethodOnSuperN(Class senderClass, Object receiver, String messageName, Object[] messageArguments) throws Throwable{
         try {
-            return InvokerHelper.invokeStaticMethod(type, methodName, arguments);
+            return InvokerHelper.invokeMethod(receiver, messageName, messageArguments);
         } catch (GroovyRuntimeException gre) {
             return unwrap(gre);
         }
     }
+    
+    public static Object invokeMethodOnSuperNSafe(Class senderClass, Object receiver, String messageName, Object[] messageArguments) throws Throwable{
+        return invokeMethodOnSuperN(senderClass,receiver,messageName,messageArguments);
+    }
+    
+    public static Object invokeMethodOnSuperNSpreadSafe(Class senderClass, Object receiver, String messageName, Object[] messageArguments) throws Throwable{
+        if (! (receiver instanceof List)) return invokeMethodOnSuperN(senderClass,receiver,messageName, messageArguments);
+        
+        List list = (List) receiver;
+        List answer = new ArrayList();
+        for (Iterator it = list.iterator(); it.hasNext();) {
+            answer.add(invokeMethodNSafe(senderClass,it.next(), messageName, messageArguments));
+        }
+        return answer;
+    }
+    
+    public static Object invokeMethodOnSuper0(Class senderClass, Object receiver, String messageName)  throws Throwable{
+        return invokeMethodOnSuperN(senderClass,receiver,messageName,EMPTY_ARGS);
+    }
+    
+    public static Object invokeMethodOnSuper0Safe(Class senderClass, Object receiver, String messageName, Object[] messageArguments) throws Throwable{
+        return invokeMethodOnSuperNSafe(senderClass,receiver,messageName,EMPTY_ARGS);
+    }
+    
+    public static Object invokeMethodOnSuper0SpreadSafe(Class senderClass, Object receiver, String messageName, Object[] messageArguments) throws Throwable{
+        return invokeMethodOnSuperNSpreadSafe(senderClass,receiver,messageName,EMPTY_ARGS);
+    }
 
-    public static Object invokeConstructorAt(Class at, Class type, Object arguments) throws Throwable{
+    //  --------------------------------------------------------
+    //              normal method invocation
+    //  --------------------------------------------------------       
+    public static Object invokeMethodN(Class senderClass, Object receiver, String messageName, Object[] messageArguments) throws Throwable{
         try {
-            return InvokerHelper.invokeConstructorAt(at, type, arguments);
+            return InvokerHelper.invokeMethod(receiver, messageName, messageArguments);
         } catch (GroovyRuntimeException gre) {
             return unwrap(gre);
         }
     }
-
-    public static Object invokeNoArgumentsConstructorAt(Class at, Class type) throws Throwable {
-        return invokeConstructorAt(at, type, EMPTY_ARGS);
+    
+    public static Object invokeMethodNSafe(Class senderClass, Object receiver, String messageName, Object[] messageArguments) throws Throwable{
+        if (receiver==null) return null;
+        return invokeMethodN(senderClass,receiver,messageName,messageArguments);
     }
     
+    public static Object invokeMethodNSpreadSafe(Class senderClass, Object receiver, String messageName, Object[] messageArguments) throws Throwable{
+        if (receiver==null) return null;
+        if (! (receiver instanceof List)) return invokeMethodN(senderClass,receiver,messageName, messageArguments);
+        
+        List list = (List) receiver;
+        List answer = new ArrayList();
+        for (Iterator it = list.iterator(); it.hasNext();) {
+            answer.add(invokeMethodNSafe(senderClass, it.next(), messageName, messageArguments));
+        }
+        return answer;
+    }
     
-    public static Object invokeConstructorOf(Class type, Object arguments) throws Throwable{
+    public static Object invokeMethod0(Class senderClass, Object receiver, String messageName)  throws Throwable{
+        return invokeMethodN(senderClass,receiver,messageName,EMPTY_ARGS);
+    }
+    
+    public static Object invokeMethod0Safe(Class senderClass, Object receiver, String messageName) throws Throwable{
+        if (receiver==null) return null;
+        return invokeMethodNSafe(senderClass,receiver,messageName,EMPTY_ARGS);
+    }
+    
+    public static Object invokeMethod0SpreadSafe(Class senderClass, Object receiver, String messageName) throws Throwable{
+        return invokeMethodNSpreadSafe(senderClass,receiver,messageName,EMPTY_ARGS);
+    }
+    
+    //  --------------------------------------------------------
+    //                static normal method invocation
+    //  --------------------------------------------------------       
+    public static Object invokeStaticMethodN(Class senderClass, Class receiver, String messageName, Object[] messageArguments) throws Throwable{
         try {
-            return InvokerHelper.invokeConstructorOf(type, arguments);
+            return InvokerHelper.invokeStaticMethod(receiver, messageName, messageArguments);
+        } catch (GroovyRuntimeException gre) {
+            return unwrap(gre);
+        }
+    }
+    
+    public static Object invokeStaticMethod0(Class senderClass, Class receiver, String messageName)  throws Throwable{
+        return invokeStaticMethodN(senderClass,receiver,messageName,EMPTY_ARGS);
+    }
+    
+    //  --------------------------------------------------------
+    //              normal constructor invocation (via new)
+    //  --------------------------------------------------------       
+    public static Object invokeNewN(Class senderClass, Class receiver, Object arguments) throws Throwable{
+        try {
+            return InvokerHelper.invokeConstructorAt(senderClass,receiver, arguments);
         } catch (GroovyRuntimeException gre) {
             return unwrap(gre);
         }  
     }
     
-    public static Object invokeNoArgumentsConstructorOf(Class type) throws Throwable {
-        return invokeConstructorOf(type, EMPTY_ARGS);
+    public static Object invokeNew0(Class senderClass, Class receiver) throws Throwable {
+        return invokeNewN(senderClass, receiver, EMPTY_ARGS);
     }
-    
-    public static Object invokeClosure(Object closure, Object arguments) throws Throwable {
-        return invokeMethod(closure, "doCall", arguments);
-    }    
-    
-    public static Object invokeSuperMethod(Object object, String methodName, Object arguments) throws Throwable{
+
+    //  --------------------------------------------------------
+    //       special constructor invocation (via this/super)
+    //  --------------------------------------------------------       
+
+    public static int selectConstructorAndTransformArguments(Object[] arguments, int numberOfCosntructors, Class which) {
+        MetaClassImpl metaClass = (MetaClassImpl) InvokerHelper.getInstance().getMetaRegistry().getMetaClass(which);
+        return metaClass.selectConstructorAndTransformArguments(numberOfCosntructors, arguments);
+    }
+
+
+    //  --------------------------------------------------------
+    //               field handling this: get
+    //  --------------------------------------------------------       
+
+    public static Object getFieldOnCurrent(Class senderClass, Object receiver, String messageName) throws Throwable{
         try {
-            return InvokerHelper.invokeSuperMethod(object, methodName, arguments);
+            return InvokerHelper.getAttribute(receiver, messageName);
         } catch (GroovyRuntimeException gre) {
             return unwrap(gre);
-        } 
-    }
-    
-    public static Object invokeNoArgumentsMethod(Object object, String methodName) throws Throwable {
-        return invokeMethod(object, methodName, EMPTY_ARGS);
-    }
-    
-    public static Object invokeNoArgumentsMethodSafe(Object object, String methodName) throws Throwable {
-        if (object != null) return invokeNoArgumentsMethod(object, methodName);
-        return null;
-    }
-    
-    public static Object invokeNoArgumentsMethodSpreadSafe(Object object, String methodName) throws Throwable {
-        if (object != null) {
-            if (object instanceof List) {
-                List list = (List) object;
-                List answer = new ArrayList();
-                Iterator it = list.iterator();
-                for (; it.hasNext();) {
-                    answer.add(invokeNoArgumentsMethod(it.next(), methodName));
-                }
-                return answer;
-            }
-            else
-                return invokeNoArgumentsMethod(object, methodName);
         }
-        return null;
     }
     
-    public static Object invokeStaticNoArgumentsMethod(String type, String methodName) throws Throwable {
-        return invokeStaticMethod(type, methodName, EMPTY_ARGS);
+    public static Object getFieldOnCurrentSafe(Class senderClass, Object receiver, String messageName) throws Throwable{
+        if (receiver==null) return null;
+        return getFieldOnCurrent(senderClass,receiver,messageName);
     }
     
-    public static int asInt(Object value) throws Throwable {
+    public static Object getFieldOnCurrentSpreadSafe(Class senderClass, Object receiver, String messageName) throws Throwable{
+        if (! (receiver instanceof List)) return getFieldOnCurrent(senderClass,receiver,messageName);
+        
+        List list = (List) receiver;
+        List answer = new ArrayList();
+        for (Iterator it = list.iterator(); it.hasNext();) {
+            answer.add(getFieldOnCurrent(senderClass, it.next(), messageName));
+        }
+        return answer;
+    }
+
+    //  --------------------------------------------------------
+    //              field handling super: get
+    //  --------------------------------------------------------       
+
+    public static Object getFieldOnSuper(Class senderClass, Object receiver, String messageName) throws Throwable{
         try {
-            return InvokerHelper.asInt(value);
+            return InvokerHelper.getAttribute(receiver, messageName);
         } catch (GroovyRuntimeException gre) {
-           unwrap(gre);
-           // return never reached
-           return -1;
+            return unwrap(gre);
         }
     }
     
+    public static Object getFieldOnSuperSafe(Class senderClass, Object receiver, String messageName) throws Throwable{
+        return getFieldOnSuper(senderClass,receiver,messageName);
+    }
+    
+    public static Object getFieldOnSuperSpreadSafe(Class senderClass, Object receiver, String messageName) throws Throwable{
+        if (! (receiver instanceof List)) return getFieldOnSuper(senderClass,receiver,messageName);
+        
+        List list = (List) receiver;
+        List answer = new ArrayList();
+        for (Iterator it = list.iterator(); it.hasNext();) {
+            answer.add(getFieldOnSuper(senderClass, it.next(), messageName));
+        }
+        return answer;
+    }
+
+    //  --------------------------------------------------------
+    //              field handling super: set
+    //  --------------------------------------------------------       
+
+    public static void setFieldOnSuper(Object messageArgument,Class senderClass, Object receiver, String messageName) throws Throwable{
+        try {
+            InvokerHelper.setAttribute(receiver, messageName,messageArgument);
+        } catch (GroovyRuntimeException gre) {
+            unwrap(gre);
+        }
+    }
+    
+    public static void setFieldOnSuperSafe(Object messageArgument,Class senderClass, Object receiver, String messageName) throws Throwable{
+        setFieldOnSuper(messageArgument,senderClass,receiver,messageName);
+    }
+    
+    public static void setFieldOnSuperSpreadSafe(Object messageArgument,Class senderClass, Object receiver, String messageName) throws Throwable{
+        if (! (receiver instanceof List)) {
+            setFieldOnSuper(messageArgument,senderClass,receiver,messageName);
+            return;
+        }
+        
+        List list = (List) receiver;
+        List answer = new ArrayList();
+        for (Iterator it = list.iterator(); it.hasNext();) {
+            setFieldOnSuper(messageArgument,senderClass, it.next(), messageName);
+        }
+    }
+
+    
+    //  --------------------------------------------------------
+    //              normal field handling : get
+    //  --------------------------------------------------------       
+
+    public static Object getField(Class senderClass, Object receiver, String messageName) throws Throwable{
+        try {
+            return InvokerHelper.getAttribute(receiver, messageName);
+        } catch (GroovyRuntimeException gre) {
+            return unwrap(gre);
+        }
+    }
+    
+    public static Object getFieldSafe(Class senderClass, Object receiver, String messageName) throws Throwable{
+        if (receiver==null) return null;
+        return getField(senderClass,receiver,messageName);
+    }
+    
+    public static Object getFieldSpreadSafe(Class senderClass, Object receiver, String messageName) throws Throwable{
+        if (receiver==null) return null;
+        if (! (receiver instanceof List)) return getField(senderClass,receiver,messageName);
+        
+        List list = (List) receiver;
+        List answer = new ArrayList();
+        for (Iterator it = list.iterator(); it.hasNext();) {
+            answer.add(getFieldSafe(senderClass, it.next(), messageName));
+        }
+        return answer;
+    }
+
+    //  --------------------------------------------------------
+    //              normal field handling : set
+    //  --------------------------------------------------------       
+
+    public static void setField(Object messageArgument, Class senderClass, Object receiver, String messageName) throws Throwable{
+        try {
+            InvokerHelper.setAttribute(receiver, messageName,messageArgument);
+        } catch (GroovyRuntimeException gre) {
+            unwrap(gre);
+        }
+    }
+    
+    public static void setFieldSafe(Object messageArgument, Class senderClass, Object receiver, String messageName) throws Throwable{
+        if (receiver==null) return;
+        setField(messageArgument,senderClass,receiver,messageName);
+    }
+    
+    public static void setFieldSpreadSafe(Object messageArgument, Class senderClass, Object receiver, String messageName) throws Throwable{
+        if (receiver==null) return;
+        if (! (receiver instanceof List)) {
+            setField(messageArgument,senderClass,receiver,messageName);
+            return;
+        }
+        
+        List list = (List) receiver;
+        List answer = new ArrayList();
+        for (Iterator it = list.iterator(); it.hasNext();) {
+            setFieldSafe(messageArgument,senderClass, it.next(), messageName);
+        }
+    }
+    
+    //  --------------------------------------------------------
+    //              normal GroovyObject field handling : get
+    //  --------------------------------------------------------       
+
+    public static Object getGroovyObjectField(Class senderClass, GroovyObject receiver, String messageName) throws Throwable{
+        return receiver.getMetaClass().getAttribute(receiver,messageName);
+    }
+    
+    public static Object getGroovyObjectFieldSafe(Class senderClass, GroovyObject receiver, String messageName) throws Throwable{
+        if (receiver==null) return null;
+        return receiver.getMetaClass().getAttribute(receiver,messageName);
+    }
+    
+    public static Object getGroovyObjectFieldSpreadSafe(Class senderClass, GroovyObject receiver, String messageName) throws Throwable{
+        if (receiver==null) return null;
+        if (! (receiver instanceof List)) return getGroovyObjectField(senderClass,receiver,messageName);
+        
+        List list = (List) receiver;
+        List answer = new ArrayList();
+        for (Iterator it = list.iterator(); it.hasNext();) {
+            answer.add(getFieldSafe(senderClass, it.next(), messageName));
+        }
+        return answer;
+    }
+
+    //  --------------------------------------------------------
+    //              normal field handling : set
+    //  --------------------------------------------------------       
+
+    public static void setGroovyObjectField(Object messageArgument, Class senderClass, GroovyObject receiver, String messageName) throws Throwable{
+        receiver.getMetaClass().setAttribute(receiver,messageName,messageArgument);
+    }
+    
+    public static void setGroovyObjectFieldSafe(Object messageArgument, Class senderClass, GroovyObject receiver, String messageName) throws Throwable{
+        if (receiver==null) return;
+        receiver.getMetaClass().setAttribute(receiver,messageName,messageArgument);
+    }
+    
+    public static void setGroovyObjectFieldSpreadSafe(Object messageArgument, Class senderClass, GroovyObject receiver, String messageName) throws Throwable{
+        if (receiver==null) return;
+        if (! (receiver instanceof List)) {
+            setGroovyObjectField(messageArgument,senderClass,receiver,messageName);
+            return;
+        }
+        
+        List list = (List) receiver;
+        List answer = new ArrayList();
+        for (Iterator it = list.iterator(); it.hasNext();) {
+            setFieldSafe(messageArgument,senderClass, it.next(), messageName);
+        }
+    }
+
+    //  --------------------------------------------------------
+    //              Property handling super: get
+    //  --------------------------------------------------------       
+
+    public static Object getPropertyOnSuper(Class senderClass, GroovyObject receiver, String messageName) throws Throwable{
+        try {
+            return InvokerHelper.getAttribute(receiver, messageName);
+        } catch (GroovyRuntimeException gre) {
+            return unwrap(gre);
+        }
+    }
+    
+    public static Object getPropertyOnSuperSafe(Class senderClass, GroovyObject receiver, String messageName) throws Throwable{
+        return getPropertyOnSuper(senderClass,receiver,messageName);
+    }
+    
+    public static Object getPropertyOnSuperSpreadSafe(Class senderClass, GroovyObject receiver, String messageName) throws Throwable{
+        if (! (receiver instanceof List)) return getPropertyOnSuper(senderClass,receiver,messageName);
+        
+        List list = (List) receiver;
+        List answer = new ArrayList();
+        for (Iterator it = list.iterator(); it.hasNext();) {
+            answer.add(getPropertySafe(senderClass, it.next(), messageName));
+        }
+        return answer;
+    }
+
+    //  --------------------------------------------------------
+    //              Property handling super: set
+    //  --------------------------------------------------------       
+
+    public static void setPropertyOnSuper(Object messageArgument, Class senderClass, GroovyObject receiver, String messageName) throws Throwable{
+        try {
+            InvokerHelper.setAttribute(receiver, messageName,messageArgument);
+        } catch (GroovyRuntimeException gre) {
+            unwrap(gre);
+        }
+    }
+    
+    public static void setPropertyOnSuperSafe(Object messageArgument, Class senderClass, GroovyObject receiver, String messageName) throws Throwable{
+        setPropertyOnSuper(messageArgument, senderClass,receiver,messageName);
+    }
+    
+    public static void setPropertyOnSuperSpreadSafe(Object messageArgument, Class senderClass, GroovyObject receiver, String messageName) throws Throwable{
+        if (! (receiver instanceof List)) {
+            setPropertyOnSuper(messageArgument, senderClass,receiver,messageName);
+            return;
+        }
+        
+        List list = (List) receiver;
+        List answer = new ArrayList();
+        for (Iterator it = list.iterator(); it.hasNext();) {
+            setPropertySafe(messageArgument, senderClass, it.next(), messageName);
+        }
+    }
+
+    
+    //  --------------------------------------------------------
+    //              normal Property handling : get
+    //  --------------------------------------------------------       
+
+    public static Object getProperty(Class senderClass, Object receiver, String messageName) throws Throwable{
+        try {
+            return InvokerHelper.getProperty(receiver, messageName);
+        } catch (GroovyRuntimeException gre) {
+            return unwrap(gre);
+        }
+    }
+    
+    public static Object getPropertySafe(Class senderClass, Object receiver, String messageName) throws Throwable{
+        if (receiver==null) return null;
+        return getProperty(senderClass,receiver,messageName);
+    }
+    
+    public static Object getPropertySpreadSafe(Class senderClass, Object receiver, String messageName) throws Throwable{
+        if (receiver==null) return null;
+        if (! (receiver instanceof List)) return getProperty(senderClass,receiver,messageName);
+        
+        List list = (List) receiver;
+        List answer = new ArrayList();
+        for (Iterator it = list.iterator(); it.hasNext();) {
+            answer.add(getPropertySafe(senderClass, it.next(), messageName));
+        }
+        return answer;
+    }
+
+    //  --------------------------------------------------------
+    //              normal Property handling : set
+    //  --------------------------------------------------------       
+
+    public static void setProperty(Object messageArgument, Class senderClass, Object receiver, String messageName) throws Throwable{
+        try {
+            InvokerHelper.setProperty(receiver, messageName,messageArgument);
+        } catch (GroovyRuntimeException gre) {
+            unwrap(gre);
+        }
+    }
+    
+    public static void setPropertySafe(Object messageArgument, Class senderClass, Object receiver, String messageName) throws Throwable{
+        if (receiver==null) return;
+        setProperty(messageArgument,senderClass,receiver,messageName);
+    }
+    
+    public static void setPropertySpreadSafe(Object messageArgument, Class senderClass, Object receiver, String messageName) throws Throwable{
+        if (receiver==null) return;
+        if (! (receiver instanceof List)) {
+            setProperty(messageArgument, senderClass, receiver, messageName);
+            return;
+        }
+        
+        List list = (List) receiver;
+        List answer = new ArrayList();
+        for (Iterator it = list.iterator(); it.hasNext();) {
+            setPropertySafe(messageArgument, senderClass, it.next(), messageName);
+        }
+    }
+    
+    
+    //  --------------------------------------------------------
+    //              normal GroovyObject Property handling : get
+    //  --------------------------------------------------------       
+
+    public static Object getGroovyObjectProperty(Class senderClass, GroovyObject receiver, String messageName) throws Throwable{
+        return receiver.getProperty(messageName);
+    }
+    
+    public static Object getGroovyObjectPropertySafe(Class senderClass, GroovyObject receiver, String messageName) throws Throwable{
+        if (receiver==null) return null;
+        return receiver.getProperty(messageName);
+    }
+    
+    public static Object getGroovyObjectPropertySpreadSafe(Class senderClass, GroovyObject receiver, String messageName) throws Throwable{
+        if (receiver==null) return null;
+        if (! (receiver instanceof List)) return getGroovyObjectProperty(senderClass,receiver,messageName);
+        
+        List list = (List) receiver;
+        List answer = new ArrayList();
+        for (Iterator it = list.iterator(); it.hasNext();) {
+            answer.add(getPropertySafe(senderClass, it.next(), messageName));
+        }
+        return answer;
+    }
+
+    //  --------------------------------------------------------
+    //              normal GroovyObject Property handling : set
+    //  --------------------------------------------------------       
+
+    public static void setGroovyObjectProperty(Object messageArgument, Class senderClass, GroovyObject receiver, String messageName) throws Throwable{
+        receiver.setProperty(messageName,messageArgument);
+    }
+    
+    public static void setGroovyObjectPropertySafe(Object messageArgument, Class senderClass, GroovyObject receiver, String messageName) throws Throwable{
+        if (receiver==null) return;
+        receiver.setProperty(messageName,messageArgument);
+    }
+    
+    public static void setGroovyObjectPropertySpreadSafe(Object messageArgument, Class senderClass, GroovyObject receiver, String messageName) throws Throwable{
+        if (receiver==null) return;
+        if (! (receiver instanceof List)) {
+            setProperty(messageArgument, senderClass, receiver, messageName);
+            return;
+        }
+        
+        List list = (List) receiver;
+        List answer = new ArrayList();
+        for (Iterator it = list.iterator(); it.hasNext();) {
+            setPropertySafe(messageArgument, senderClass, it.next(), messageName);
+        }
+    }
+    
+    //  **********************************************************************************
+    //  **********************************************************************************
+    //  **************          methods not covered by the new MOP          **************
+    //  **********************************************************************************
+    //  **********************************************************************************
+    
+    //  --------------------------------------------------------
+    //                     Closures
+    //  --------------------------------------------------------           
+    
+    /**
+     * Returns the method pointer for the given object name
+     */
+    public static Closure getMethodPointer(Object object, String methodName) {
+        return InvokerHelper.getMethodPointer(object, methodName);
+    }
+    
+    // TODO: set sender class
+    public static Object invokeClosure(Object closure, Object[] arguments) throws Throwable {
+        return invokeMethodN(closure.getClass(), closure, "doCall", arguments);
+    } 
+        
+
+    //  --------------------------------------------------------
+    //                     type conversion
+    //  --------------------------------------------------------           
+          
     /**
      * Provides a hook for type coercion of the given object to the required type
      *
@@ -199,7 +641,7 @@ public class ScriptBytecodeAdapter {
      * @throws Throwable 
      */
     public static Object asType(Object object, Class type) throws Throwable {
-        return invokeMethodSafe(object,"asType",type);
+        return invokeMethodN(object.getClass(),object,"asType",new Object[]{type});
     }
     
     /**
@@ -210,322 +652,19 @@ public class ScriptBytecodeAdapter {
      * @return the original object or a new converted value
      * @throws Throwable 
      */
-    public static Object castToType(Object object, Class type) throws Throwable {
+    public static Object castToType(Object object, Class type) throws Throwable{
         try {
-            return InvokerHelper.asType(object, type);
-        } catch (GroovyRuntimeException gre) {
-            return unwrap(gre);
-        }
-    }
-
-    // Attributes
-    //-------------------------------------------------------------------------
-    public static Object getAttribute(Object object, String attribute) throws Throwable {
-        try {
-            return InvokerHelper.getAttribute(object, attribute);
-        } catch (GroovyRuntimeException gre) {
-            return unwrap(gre);
-        }
-    }
-
-    public static Object getAttributeSafe(Object object, String attribute) throws Throwable {
-        if (object != null) return getAttribute(object, attribute);
-        return null;
-    }
-
-    public static Object getAttributeSpreadSafe(Object object, String attribute) throws Throwable {
-        if (object != null) {
-            if (object instanceof List) {
-                List list = (List) object;
-                List answer = new ArrayList();
-                Iterator it = list.iterator();
-                for (; it.hasNext(); ) {
-                    answer.add(getAttributeSafe(it.next(), attribute));
-                }
-                return answer;
-            }
-            else
-                return getAttributeSafe(object, attribute);
-        }
-        return null;
-    }
-
-    public static void setAttribute(Object object, String attribute, Object newValue) throws Throwable {
-        try {
-            InvokerHelper.setAttribute(object, attribute, newValue);
-        } catch (GroovyRuntimeException gre) {
-            unwrap(gre);
-        }
-    }
-    /**
-     * This is so we don't have to reorder the stack when we call this method.
-     * At some point a better name might be in order.
-     * @throws Throwable
-     */
-    public static void setAttribute2(Object newValue, Object object, String property) throws Throwable {
-        setAttribute(object, property, newValue);
-    }
-
-    /**
-     * This is so we don't have to reorder the stack when we call this method.
-     * At some point a better name might be in order.
-     * @throws Throwable
-     */
-    public static void setAttributeSafe2(Object newValue, Object object, String property) throws Throwable {
-        setAttribute2(newValue, object, property);
-    }
-
-
-
-    // Properties
-    //-------------------------------------------------------------------------
-    public static Object getProperty(Object object, String property) throws Throwable {
-        try {
-            return InvokerHelper.getProperty(object, property);
-        } catch (GroovyRuntimeException gre) {
-            return unwrap(gre);
-        }
-    }
-
-    public static Object getPropertySafe(Object object, String property) throws Throwable {
-        if (object != null) return getProperty(object, property);
-        return null;
-    }
-
-    public static Object getPropertySpreadSafe(Object object, String property) throws Throwable {
-        if (object != null) {
-            if (object instanceof List) {
-                List list = (List) object;
-                List answer = new ArrayList();
-                Iterator it = list.iterator();
-                for (; it.hasNext(); ) {
-                    answer.add(getPropertySafe(it.next(), property));
-                }
-                return answer;
-            }
-            else
-                return getPropertySafe(object, property);
-        }
-        return null;
-    }
-
-    public static void setProperty(Object object, String property, Object newValue) throws Throwable {
-        try {
-            InvokerHelper.setProperty(object, property, newValue);
-        } catch (GroovyRuntimeException gre) {
-            unwrap(gre);
-        }
-    }
-    
-    /**
-     * This is so we don't have to reorder the stack when we call this method.
-     * At some point a better name might be in order.
-     * @throws Throwable 
-     */
-    public static void setProperty2(Object newValue, Object object, String property) throws Throwable {
-        setProperty(object, property, newValue);
-    }
-
-    /**
-     * This is so we don't have to reorder the stack when we call this method.
-     * At some point a better name might be in order.
-     * @throws Throwable 
-     */
-    public static void setPropertySafe2(Object newValue, Object object, String property) throws Throwable {
-        setProperty2(newValue, object, property);
-    }
-
-
-    /**
-     * This is so we don't have to reorder the stack when we call this method.
-     * At some point a better name might be in order.
-     * @throws Throwable 
-     */
-    public static void setGroovyObjectProperty(Object newValue, GroovyObject object, String property) throws Throwable {
-        try {
-            object.setProperty(property, newValue);
-        } catch (GroovyRuntimeException gre) {
-            unwrap(gre);
-        }
-    }
-
-    public static Object getGroovyObjectProperty(GroovyObject object, String property) throws Throwable {
-        try {
-            return object.getProperty(property);
-        } catch (GroovyRuntimeException gre) {
-            return unwrap(gre);
-        }
-    }
-
-
-    /**
-     * Returns the method pointer for the given object name
-     */
-    public static Closure getMethodPointer(Object object, String methodName) {
-        return InvokerHelper.getMethodPointer(object, methodName);
-    }
-
-    // Coercions
-    //-------------------------------------------------------------------------
-    public static Iterator asIterator(Object collection) throws Throwable {
-        try {
-            return InvokerHelper.asIterator(collection);
-        } catch (GroovyRuntimeException gre) {
-            return (Iterator) unwrap(gre);
-        }
-    }    
-    
-    public static boolean asBool(Object object) throws Throwable {
-        try {
-            return InvokerHelper.asBool(object);
-        } catch (GroovyRuntimeException gre) {
-            unwrap(gre);
-            //return never reached
-            return false;
-        }
-    }
-    
-    public static boolean notBoolean(boolean bool) {
-        return !bool;
-    }    
-    
-    public static boolean notObject(Object object) throws Throwable {
-        return !asBool(object);
-    }
-    
-    public static Pattern regexPattern(Object regex) throws Throwable {
-        try {
-            return InvokerHelper.regexPattern(regex);
-        } catch (GroovyRuntimeException gre) {
-            return (Pattern) unwrap(gre);
-        }
-    }
-    
-    public static Object spreadList(Object value) throws Throwable {
-        try {
-            return InvokerHelper.spreadList(value);
-        } catch (GroovyRuntimeException gre) {
-            return unwrap(gre);
-        }
-    }
-
-    public static Object spreadMap(Object value) throws Throwable {
-        try {
-            return InvokerHelper.spreadMap(value);
-        } catch (GroovyRuntimeException gre) {
-            return unwrap(gre);
-        }
-    }
-
-    public static Object negate(Object value) throws Throwable {
-        try {
-            return InvokerHelper.negate(value);
-        } catch (GroovyRuntimeException gre) {
-            return unwrap(gre);
-        }
-    }
-    
-    public static Object bitNegate(Object value) throws Throwable {
-        try {
-            return InvokerHelper.bitNegate(value);
-        } catch (GroovyRuntimeException gre) {
-            return unwrap(gre);
-        }
-    }
-    
-    /**
-     * @param a    array of primitives
-     * @param type component type of the array
-     * @throws Throwable 
-     */
-    public static Object[] convertPrimitiveArray(Object a, Class type) throws Throwable {
-        try {
-            return InvokerHelper.convertPrimitiveArray(a,type);
-        } catch (GroovyRuntimeException gre) {
-            return (Object[])unwrap(gre);
-        }
-    }
-    
-    public static Object convertToPrimitiveArray(Object a, Class type) throws Throwable {
-        try {
-            return InvokerHelper.convertToPrimitiveArray(a,type);
-        } catch (GroovyRuntimeException gre) {
-            return unwrap(gre);
-        }
-    }
-
-    public static boolean compareIdentical(Object left, Object right) {
-        return left == right;
-    }
-    
-    public static boolean compareEqual(Object left, Object right) throws Throwable{
-        try {
-            return InvokerHelper.compareEqual(left, right);
-        } catch (GroovyRuntimeException gre) {
-            unwrap(gre);
-            // return never reached
-            return false;
-        }
-    }
-    
-    public static boolean compareNotEqual(Object left, Object right) throws Throwable{
-        return !compareEqual(left, right);
-    }
-    
-    public static Integer compareTo(Object left, Object right) throws Throwable{
-        try {
-            return InvokerHelper.compareTo(left, right);
-        } catch (GroovyRuntimeException gre) {
-            return (Integer) unwrap(gre);
-        }
-    }    
-
-    public static Matcher findRegex(Object left, Object right) throws Throwable{
-        try {
-            return InvokerHelper.findRegex(left, right);
+            return DefaultTypeTransformation.castToType(object,type);
         } catch (GroovyRuntimeException gre) {
             return (Matcher) unwrap(gre);
         }
-    }
-    
-    public static boolean matchRegex(Object left, Object right) throws Throwable{
-        try {
-            return InvokerHelper.matchRegex(left, right);
-        } catch (GroovyRuntimeException gre) {
-            unwrap(gre);
-            // return never reached
-            return false;
-        }
-    }
+    }    
 
-    public static boolean compareLessThan(Object left, Object right) throws Throwable{
-        return compareTo(left, right).intValue() < 0;
-    }
-    
-    public static boolean compareLessThanEqual(Object left, Object right) throws Throwable{
-        return compareTo(left, right).intValue() <= 0;
-    }
-    
-    public static boolean compareGreaterThan(Object left, Object right) throws Throwable{
-        return compareTo(left, right).intValue() > 0;
-    }
-
-    public static boolean compareGreaterThanEqual(Object left, Object right) throws Throwable{
-        return compareTo(left, right).intValue() >= 0;
-    }
-
-    public static boolean isCase(Object switchValue, Object caseExpression) throws Throwable{
-    	if (caseExpression == null) {
-    		return switchValue == null;
-    	}
-        return asBool(invokeMethod(caseExpression, "isCase", new Object[]{switchValue}));
-    }
-    
-    public static Tuple createTuple(Object[] array) throws Throwable{
+    public static Tuple createTuple(Object[] array) {
         return new Tuple(array);
     }
 
-    public static List createList(Object[] values) throws Throwable{
+    public static List createList(Object[] values) {
         return InvokerHelper.createList(values);
     }
     
@@ -537,110 +676,137 @@ public class ScriptBytecodeAdapter {
         return new GroovyObjectWrapper(val,clazz);
     }
     
-    public static Map createMap(Object[] values) throws Throwable{
+    public static Map createMap(Object[] values) {
         return InvokerHelper.createMap(values);
     }
     
-    public static List createRange(Object from, Object to, boolean inclusive) throws Throwable{
-        try {
-            return InvokerHelper.createRange(from,to,inclusive);
-        } catch (GroovyRuntimeException gre) {
-            return (List) unwrap(gre);
+
+    //TODO: refactor
+    public static List createRange(Object from, Object to, boolean inclusive) throws Throwable {
+        if (!inclusive) {
+            if (compareEqual(from,to)){
+                return new EmptyRange((Comparable)from);
+            }
+            if (compareGreaterThan(from, to)) {
+                to = invokeMethod0(ScriptBytecodeAdapter.class, to, "next");
+            }
+            else {
+                to = invokeMethod0(ScriptBytecodeAdapter.class, to, "previous");
+            }
+        }
+        if (from instanceof Integer && to instanceof Integer) {
+            return new IntRange(DefaultTypeTransformation.intUnbox(from), DefaultTypeTransformation.intUnbox(to));
+        }
+        else {
+            return new ObjectRange((Comparable) from, (Comparable) to);
         }
     }
     
+    //assert
     public static void assertFailed(Object expression, Object message) {
         InvokerHelper.assertFailed(expression,message);
     }
-    
-    public static Object box(boolean value) {
-        return value ? Boolean.TRUE : Boolean.FALSE;
-    }
 
-    public static Object box(byte value) {
-        return new Byte(value);
-    }
-
-    public static Object box(char value) {
-        return new Character(value);
-    }
-
-    public static Object box(short value) {
-        return new Short(value);
-    }
-
-    public static Object box(int value) {
-        return integerValue(value);
-    }
-
-    public static Object box(long value) {
-        return new Long(value);
-    }
-
-    public static Object box(float value) {
-        return new Float(value);
-    }
-
-    public static Object box(double value) {
-        return new Double(value);
+    //isCase
+    //TODO: set sender class
+    public static boolean isCase(Object switchValue, Object caseExpression) throws Throwable{
+        if (caseExpression == null) {
+            return switchValue == null;
+        }
+        return DefaultTypeTransformation.castToBoolean(invokeMethodN(caseExpression.getClass(), caseExpression, "isCase", new Object[]{switchValue}));
     }
     
-    /**
-     * get the Integer object from an int. Cached version is used for small ints.
-     *
-     * @param v
-     */
-    public static Integer integerValue(int v) {
-        return InvokerHelper.integerValue(v);
+    //compare
+    public static boolean compareIdentical(Object left, Object right) {
+        return left == right;
+    }
+    
+    public static boolean compareEqual(Object left, Object right) {
+        return DefaultTypeTransformation.compareEqual(left, right);
+    }
+    
+    public static boolean compareNotEqual(Object left, Object right) {
+        return !compareEqual(left, right);
+    }
+    
+    public static Integer compareTo(Object left, Object right) {
+        int answer = DefaultTypeTransformation.compareTo(left, right);
+        if (answer == 0) {
+            return ZERO;
+        }
+        else {
+            return answer > 0 ? ONE : MINUS_ONE;
+        }
     }    
 
-    public static byte byteUnbox(Object value) throws Throwable {
-        Number n = (Number) asType(value, Byte.class);
-        return n.byteValue();
+    public static boolean compareLessThan(Object left, Object right) {
+        return compareTo(left, right).intValue() < 0;
     }
-
-    public static char charUnbox(Object value) throws Throwable {
-        Character n = (Character) asType(value, Character.class);
-        return n.charValue();
-    }
-
-    public static short shortUnbox(Object value) throws Throwable {
-        Number n = (Number) asType(value, Short.class);
-        return n.shortValue();
-    }
-
-    public static int intUnbox(Object value) throws Throwable {
-        Number n = (Number) asType(value, Integer.class);
-        return n.intValue();
-    }
-
-    public static boolean booleanUnbox(Object value) throws Throwable {
-        Boolean n = (Boolean) asType(value, Boolean.class);
-        return n.booleanValue();
-    }
-
-    public static long longUnbox(Object value) throws Throwable {
-        Number n = (Number) asType(value, Long.class);
-        return n.longValue();
-    }
-
-    public static float floatUnbox(Object value) throws Throwable {
-        Number n = (Number) asType(value, Float.class);
-        return n.floatValue();
-    }
-
-    public static double doubleUnbox(Object value) throws Throwable {
-        Number n = (Number) asType(value, Double.class);
-        return n.doubleValue();
-    }    
     
-    public static MetaClass getMetaClass(Object object) {
+    public static boolean compareLessThanEqual(Object left, Object right){
+        return compareTo(left, right).intValue() <= 0;
+    }
+    
+    public static boolean compareGreaterThan(Object left, Object right){
+        return compareTo(left, right).intValue() > 0;
+    }
+
+    public static boolean compareGreaterThanEqual(Object left, Object right){
+        return compareTo(left, right).intValue() >= 0;
+    }
+
+    //regexpr
+    public static Pattern regexPattern(Object regex) {
+        return DefaultGroovyMethods.negate(regex.toString());
+    }
+    
+    public static Matcher findRegex(Object left, Object right) throws Throwable{
+        try {
+            return InvokerHelper.findRegex(left, right);
+        } catch (GroovyRuntimeException gre) {
+            return (Matcher) unwrap(gre);
+        }
+    }
+    
+    public static boolean matchRegex(Object left, Object right) {
+        return InvokerHelper.matchRegex(left, right);
+    }
+    
+    
+    //spread expressions
+    public static Object spreadList(Object value) {
+        return InvokerHelper.spreadList(value);
+    }
+
+    public static Object spreadMap(Object value) {
+        return InvokerHelper.spreadMap(value);
+    }
+    
+    //negation
+    public static Object negate(Object value) throws Throwable {
+        try {
+            return InvokerHelper.negate(value);
+        } catch (GroovyRuntimeException gre) {
+            return unwrap(gre);
+        }
+    }
+    
+    public static Object bitNegate(Object value) {
+        return InvokerHelper.bitNegate(value);
+    }
+
+    public static MetaClass initMetaClass(Object object) {
         return InvokerHelper.getMetaClass(object);
     }
-
-    public static int selectConstructorAndTransformArguments(Object[] arguments, int numberOfCosntructors, Class which) {
-        // TODO: just a prototype and real dirty hack
-        MetaClassImpl metaClass = (MetaClassImpl) InvokerHelper.getInstance().getMetaRegistry().getMetaClass(which);
-        return metaClass.selectConstructorAndTransformArguments(numberOfCosntructors, arguments);
+    
+    private static MetaClass getMetaClassObjectNotNull(Object object) {
+        if (!(object instanceof GroovyObject)) {
+            return initMetaClass(object);
+        } else {
+            return ((GroovyObject) object).getMetaClass();
+        }        
     }
+    
+    
+
 }

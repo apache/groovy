@@ -47,7 +47,7 @@ package groovy.util;
 
 import java.util.Map;
 
-import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 /**
  * Represents a list of Integer objects key a specified Object up to but not including
@@ -74,7 +74,7 @@ public class MapEntry implements Map.Entry {
     }
 
     public boolean equals(MapEntry that) {
-        return InvokerHelper.compareEqual(this.key, that.key) && InvokerHelper.compareEqual(this.value, that.value);
+        return DefaultTypeTransformation.compareEqual(this.key, that.key) && DefaultTypeTransformation.compareEqual(this.value, that.value);
     }
 
     public int hashCode() {

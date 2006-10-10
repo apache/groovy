@@ -26,7 +26,7 @@ import java.io.Writer;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 /**
  * @author John Wilson
@@ -139,7 +139,7 @@ public class NodeChild extends GPathResult {
    * @see org.codehaus.groovy.sandbox.util.slurpersupport.Node#find(groovy.lang.Closure)
    */
   public GPathResult find(final Closure closure) {
-    if (InvokerHelper.asBool(closure.call(new Object[]{this.node}))) {
+    if (DefaultTypeTransformation.castToBoolean(closure.call(new Object[]{this.node}))) {
       return this;
     } else {
       return new NoChildren(this, "", this.namespaceTagHints);

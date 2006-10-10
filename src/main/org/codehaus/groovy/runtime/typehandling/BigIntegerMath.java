@@ -1,4 +1,4 @@
-package org.codehaus.groovy.runtime;
+package org.codehaus.groovy.runtime.typehandling;
 
 /**
  * BigInteger NumberMath operations

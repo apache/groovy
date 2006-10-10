@@ -52,18 +52,27 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.StringWriter;
 import java.io.Writer;
-import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.apache.xml.serialize.OutputFormat;
+import org.apache.xml.serialize.XMLSerializer;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
+import org.codehaus.groovy.runtime.typehandling.IntegerCache;
+import org.w3c.dom.Element;
 
 /**
  * A static helper class to make bytecode generation easier and act as a facade over the Invoker
@@ -79,9 +88,7 @@ public class InvokerHelper {
 
     private static final Invoker singleton = new Invoker();
 
-    private static final Integer ZERO = new Integer(0);
-    private static final Integer MINUS_ONE = new Integer(-1);
-    private static final Integer ONE = new Integer(1);
+
 
     public static MetaClass getMetaClass(Object object) {
         return getInstance().getMetaClass(object);
@@ -115,11 +122,17 @@ public class InvokerHelper {
         return null;
     }
 
-    public static Object invokeStaticMethod(String type, String methodName, Object arguments) {
+    public static Object invokeStaticMethod(Class type, String methodName, Object arguments) {
         return getInstance().invokeStaticMethod(type, methodName, arguments);
     }
+    
+    public static Object invokeStaticMethod(String klass, String methodName, Object arguments) throws ClassNotFoundException {
+        Class type = InvokerHelper.class.forName(klass);
+        return getInstance().invokeStaticMethod(type, methodName, arguments);
+    }
+    
 
-    public static Object invokeStaticNoArgumentsMethod(String type, String methodName) {
+    public static Object invokeStaticNoArgumentsMethod(Class type, String methodName) {
         return getInstance().invokeStaticMethod(type, methodName, EMPTY_ARGS);
     }
 
@@ -127,19 +140,16 @@ public class InvokerHelper {
         return getInstance().invokeConstructorAt(at, type, arguments);
     }
 
-    public static Object invokeConstructorAt(Class at, String type, Object arguments) {
-        return getInstance().invokeConstructorAt(at, type, arguments);
-    }
-
     public static Object invokeNoArgumentsConstructorAt(Class at, Class type) {
         return getInstance().invokeConstructorAt(at, type, EMPTY_ARGS);
     }
 
-    public static Object invokeConstructorOf(String type, Object arguments) {
+    public static Object invokeConstructorOf(Class type, Object arguments) {
         return getInstance().invokeConstructorOf(type, arguments);
     }
-
-    public static Object invokeConstructorOf(Class type, Object arguments) {
+    
+    public static Object invokeConstructorOf(String klass, Object arguments) throws ClassNotFoundException {
+        Class type = InvokerHelper.class.forName(klass);
         return getInstance().invokeConstructorOf(type, arguments);
     }
 
@@ -151,47 +161,44 @@ public class InvokerHelper {
         return getInstance().invokeMethod(closure, "doCall", arguments);
     }
 
-    public static Iterator asIterator(Object collection) {
-        return getInstance().asIterator(collection);
-    }
-
-    public static Collection asCollection(Object collection) {
-        return getInstance().asCollection(collection);
-    }
-
-    public static List asList(Object args) {
-        return getInstance().asList(args);
+    public static List asList(Object value) {
+        if (value == null) {
+            return Collections.EMPTY_LIST;
+        }
+        else if (value instanceof List) {
+            return (List) value;
+        }
+        else if (value.getClass().isArray()) {
+            return Arrays.asList((Object[]) value);
+        }
+        else if (value instanceof Enumeration) {
+            List answer = new ArrayList();
+            for (Enumeration e = (Enumeration) value; e.hasMoreElements();) {
+                answer.add(e.nextElement());
+            }
+            return answer;
+        }
+        else {
+            // lets assume its a collection of 1
+            return Collections.singletonList(value);
+        }
     }
 
     public static String toString(Object arguments) {
         if (arguments instanceof Object[])
-            return getInstance().toArrayString((Object[])arguments);
+            return toArrayString((Object[])arguments);
         else if (arguments instanceof Collection)
-            return getInstance().toListString((Collection)arguments);
+            return toListString((Collection)arguments);
         else if (arguments instanceof Map)
-            return getInstance().toMapString((Map)arguments);
+            return toMapString((Map)arguments);
+        else if (arguments instanceof Collection)
+            return format(arguments, true);
         else
-            return getInstance().toString(arguments);
-    }
-
-    public static String toTypeString(Object[] arguments) {
-        return getInstance().toTypeString(arguments);
-    }
-
-    public static String toMapString(Map arg) {
-        return getInstance().toMapString(arg);
-    }
-
-    public static String toListString(Collection arg) {
-        return getInstance().toListString(arg);
-    }
-
-    public static String toArrayString(Object[] arguments) {
-        return getInstance().toArrayString(arguments);
+            return format(arguments, false);
     }
 
     public static String inspect(Object self) {
-        return getInstance().inspect(self);
+        return format(self, true);
     }
 
     public static Object getAttribute(Object object, String attribute) {
@@ -256,33 +263,10 @@ public class InvokerHelper {
         return getInstance().getMethodPointer(object, methodName);
     }
 
-    /**
-     * Provides a hook for type coercion of the given object to the required type
-     *
-     * @param type   of object to convert the given object to
-     * @param object the object to be converted
-     * @return the original object or a new converted value
-     */
-    public static Object asType(Object object, Class type) {
-        return getInstance().asType(object, type);
-    }
-
-    public static boolean asBool(Object object) {
-        return getInstance().asBool(object);
-    }
-
-    public static boolean notObject(Object object) {
-        return !asBool(object);
-    }
-
-    public static boolean notBoolean(boolean bool) {
-        return !bool;
-    }
-
     public static Object negate(Object value) {
         if (value instanceof Integer) {
             Integer number = (Integer) value;
-            return integerValue(-number.intValue());
+            return IntegerCache.integerValue(-number.intValue());
         }
         else if (value instanceof Long) {
             Long number = (Long) value;
@@ -316,92 +300,56 @@ public class InvokerHelper {
         }
     }
 
-    public static Object bitNegate(Object value) {
-        if (value instanceof Integer) {
-            Integer number = (Integer) value;
-            return integerValue(~number.intValue());
-        }
-        else if (value instanceof Long) {
-            Long number = (Long) value;
-            return new Long(~number.longValue());
-        }
-        else if (value instanceof BigInteger) {
-            return ((BigInteger) value).not();
-        }
-        else if (value instanceof String) {
-            // value is a regular expression.
-            return getInstance().regexPattern(value);
-        }
-        else if (value instanceof GString) {
-            // value is a regular expression.
-            return getInstance().regexPattern(value.toString());
-        }
-        else if (value instanceof ArrayList) {
-            // value is an list.
-            ArrayList newlist = new ArrayList();
-            Iterator it = ((ArrayList) value).iterator();
-            for (; it.hasNext();) {
-                newlist.add(bitNegate(it.next()));
-            }
-            return newlist;
-        }
-        else {
-            throw new BitwiseNegateEvaluatingException("Cannot bitwise negate type " + value.getClass().getName() + ", value " + value);
-        }
-    }
-
-    public static boolean isCase(Object switchValue, Object caseExpression) {
-        return asBool(invokeMethod(caseExpression, "isCase", new Object[]{switchValue}));
-    }
-
-    public static boolean compareIdentical(Object left, Object right) {
-        return left == right;
-    }
-
-    public static boolean compareEqual(Object left, Object right) {
-        return getInstance().objectsEqual(left, right);
-    }
-
+    /**
+     * Find the right hand regex within the left hand string and return a matcher.
+     *
+     * @param left  string to compare
+     * @param right regular expression to compare the string to
+     * @return
+     */
     public static Matcher findRegex(Object left, Object right) {
-        return getInstance().objectFindRegex(left, right);
-    }
-
-    public static boolean matchRegex(Object left, Object right) {
-        return getInstance().objectMatchRegex(left, right);
-    }
-
-    public static Pattern regexPattern(Object regex) {
-        return getInstance().regexPattern(regex);
-    }
-
-    public static boolean compareNotEqual(Object left, Object right) {
-        return !getInstance().objectsEqual(left, right);
-    }
-
-    public static boolean compareLessThan(Object left, Object right) {
-        return getInstance().compareTo(left, right) < 0;
-    }
-
-    public static boolean compareLessThanEqual(Object left, Object right) {
-        return getInstance().compareTo(left, right) <= 0;
-    }
-
-    public static boolean compareGreaterThan(Object left, Object right) {
-        return getInstance().compareTo(left, right) > 0;
-    }
-
-    public static boolean compareGreaterThanEqual(Object left, Object right) {
-        return getInstance().compareTo(left, right) >= 0;
-    }
-
-    public static Integer compareTo(Object left, Object right) {
-        int answer = getInstance().compareTo(left, right);
-        if (answer == 0) {
-            return ZERO;
+        String stringToCompare;
+        if (left instanceof String) {
+            stringToCompare = (String) left;
         }
         else {
-            return answer > 0 ? ONE : MINUS_ONE;
+            stringToCompare = toString(left);
         }
+        String regexToCompareTo;
+        if (right instanceof String) {
+            regexToCompareTo = (String) right;
+        }
+        else if (right instanceof Pattern) {
+            Pattern pattern = (Pattern) right;
+            return pattern.matcher(stringToCompare);
+        }
+        else {
+            regexToCompareTo = toString(right);
+        }
+        Matcher matcher = Pattern.compile(regexToCompareTo).matcher(stringToCompare);
+        return matcher;
+    }
+    
+    
+    /**
+     * Find the right hand regex within the left hand string and return a matcher.
+     *
+     * @param left  string to compare
+     * @param right regular expression to compare the string to
+     * @return
+     */
+    public static boolean matchRegex(Object left, Object right) {
+        Pattern pattern;
+        if (right instanceof Pattern) {
+            pattern = (Pattern) right;
+        }
+        else {
+            pattern = Pattern.compile(toString(right));
+        }
+        String stringToCompare = toString(left);
+        Matcher matcher = pattern.matcher(stringToCompare);
+        RegexSupport.setLastMatcher(matcher);
+        return matcher.matches();
     }
 
     public static Tuple createTuple(Object[] array) {
@@ -477,30 +425,6 @@ public class InvokerHelper {
         return answer;
     }
 
-    public static List createRange(Object from, Object to, boolean inclusive) {
-        if (!inclusive) {
-            if (compareEqual(from,to)){
-                return new EmptyRange((Comparable)from);
-            }
-            if (compareGreaterThan(from, to)) {
-                to = invokeMethod(to, "next", EMPTY_ARGS);
-            }
-            else {
-                to = invokeMethod(to, "previous", EMPTY_ARGS);
-            }
-        }
-        if (from instanceof Integer && to instanceof Integer) {
-            return new IntRange(asInt(from), asInt(to));
-        }
-        else {
-            return new ObjectRange((Comparable) from, (Comparable) to);
-        }
-    }
-
-    public static int asInt(Object value) {
-        return getInstance().asInt(value);
-    }
-
     public static void assertFailed(Object expression, Object message) {
         if (message == null || "".equals(message)) {
             throw new AssertionError("Expression: " + expression);
@@ -574,20 +498,6 @@ public class InvokerHelper {
     }
 
     /**
-     * Allows conversion of arrays into a mutable List
-     *
-     * @return the array as a List
-     */
-    protected static List primitiveArrayToList(Object array) {
-        int size = Array.getLength(array);
-        List list = new ArrayList(size);
-        for (int i = 0; i < size; i++) {
-            list.add(Array.get(array, i));
-        }
-        return list;
-    }
-
-    /**
      * Writes the given object to the given stream
      */
     public static void write(Writer out, Object object) throws IOException {
@@ -627,403 +537,241 @@ public class InvokerHelper {
             out.write(toString(object));
         }
     }
-
-    public static Object box(boolean value) {
-        return value ? Boolean.TRUE : Boolean.FALSE;
+    
+    public static Iterator asIterator(Object o) {
+        return (Iterator) invokeMethod(o,"iterator",EMPTY_ARGS);
     }
-
-    public static Object box(byte value) {
-        return new Byte(value);
+    
+    protected static String format(Object arguments, boolean verbose) {
+        if (arguments == null) {
+            return "null";
+        }
+        else if (arguments.getClass().isArray()) {
+            return format(DefaultTypeTransformation.asCollection(arguments), verbose);
+        }
+        else if (arguments instanceof Range) {
+            Range range = (Range) arguments;
+            if (verbose) {
+                return range.inspect();
+            }
+            else {
+                return range.toString();
+            }
+        }
+        else if (arguments instanceof List) {
+            List list = (List) arguments;
+            StringBuffer buffer = new StringBuffer("[");
+            boolean first = true;
+            for (Iterator iter = list.iterator(); iter.hasNext();) {
+                if (first) {
+                    first = false;
+                }
+                else {
+                    buffer.append(", ");
+                }
+                buffer.append(format(iter.next(), verbose));
+            }
+            buffer.append("]");
+            return buffer.toString();
+        }
+        else if (arguments instanceof Map) {
+            Map map = (Map) arguments;
+            if (map.isEmpty()) {
+                return "[:]";
+            }
+            StringBuffer buffer = new StringBuffer("[");
+            boolean first = true;
+            for (Iterator iter = map.entrySet().iterator(); iter.hasNext();) {
+                if (first) {
+                    first = false;
+                }
+                else {
+                    buffer.append(", ");
+                }
+                Map.Entry entry = (Map.Entry) iter.next();
+                buffer.append(format(entry.getKey(), verbose));
+                buffer.append(":");
+                buffer.append(format(entry.getValue(), verbose));
+            }
+            buffer.append("]");
+            return buffer.toString();
+        }
+        else if (arguments instanceof Element) {
+            Element node = (Element) arguments;
+            OutputFormat format = new OutputFormat(node.getOwnerDocument());
+            format.setOmitXMLDeclaration(true);
+            format.setIndenting(true);
+            format.setLineWidth(0);
+            format.setPreserveSpace(true);
+            StringWriter sw = new StringWriter();
+            XMLSerializer serializer = new XMLSerializer(sw, format);
+            try {
+                serializer.asDOMSerializer();
+                serializer.serialize(node);
+            }
+            catch (IOException e) {
+            }
+            return sw.toString();
+        }
+        else if (arguments instanceof String) {
+            if (verbose) {
+                String arg = ((String)arguments).replaceAll("\\n", "\\\\n");    // line feed
+                arg = arg.replaceAll("\\r", "\\\\r");      // carriage return
+                arg = arg.replaceAll("\\t", "\\\\t");      // tab
+                arg = arg.replaceAll("\\f", "\\\\f");      // form feed
+                arg = arg.replaceAll("\\\"", "\\\\\"");    // double quotation amrk
+                arg = arg.replaceAll("\\\\", "\\\\");      // back slash
+                return "\"" + arg + "\"";
+            }
+            else {
+                return (String) arguments;
+            }
+        }
+        else {
+            return arguments.toString();
+        }
     }
+    
 
-    public static Object box(char value) {
-        return new Character(value);
-    }
-
-    public static Object box(short value) {
-        return new Short(value);
-    }
-
-    public static Object box(int value) {
-        return integerValue(value);
-    }
-
-    public static Object box(long value) {
-        return new Long(value);
-    }
-
-    public static Object box(float value) {
-        return new Float(value);
-    }
-
-    public static Object box(double value) {
-        return new Double(value);
-    }
-
-    public static byte byteUnbox(Object value) {
-        Number n = (Number) asType(value, Byte.class);
-        return n.byteValue();
-    }
-
-    public static char charUnbox(Object value) {
-        Character n = (Character) asType(value, Character.class);
-        return n.charValue();
-    }
-
-    public static short shortUnbox(Object value) {
-        Number n = (Number) asType(value, Short.class);
-        return n.shortValue();
-    }
-
-    public static int intUnbox(Object value) {
-        Number n = (Number) asType(value, Integer.class);
-        return n.intValue();
-    }
-
-    public static boolean booleanUnbox(Object value) {
-        Boolean n = (Boolean) asType(value, Boolean.class);
-        return n.booleanValue();
-    }
-
-    public static long longUnbox(Object value) {
-        Number n = (Number) asType(value, Long.class);
-        return n.longValue();
-    }
-
-    public static float floatUnbox(Object value) {
-        Number n = (Number) asType(value, Float.class);
-        return n.floatValue();
-    }
-
-    public static double doubleUnbox(Object value) {
-        Number n = (Number) asType(value, Double.class);
-        return n.doubleValue();
+    /**
+     * A helper method to format the arguments types as a comma-separated list
+     */
+    public static String toTypeString(Object[] arguments) {
+        if (arguments == null) {
+            return "null";
+        }
+        StringBuffer argBuf = new StringBuffer();
+        for (int i = 0; i < arguments.length; i++) {
+            if (i > 0) {
+                argBuf.append(", ");
+            }
+            argBuf.append(arguments[i] != null ? arguments[i].getClass().getName() : "null");
+        }
+        return argBuf.toString();
     }
 
     /**
-     * @param a    array of primitives
-     * @param type component type of the array
+     * A helper method to return the string representation of a map with bracket boundaries "[" and "]".
      */
-    public static Object[] convertPrimitiveArray(Object a, Class type) {
-//        System.out.println("a.getClass() = " + a.getClass());
-        Object[] ans = null;
-        String elemType = type.getName();
-        if (elemType.equals("int")) {
-            // conservative coding
-            if (a.getClass().getName().equals("[Ljava.lang.Integer;")) {
-                ans = (Integer[]) a;
-            }
-            else {
-                int[] ia = (int[]) a;
-                ans = new Integer[ia.length];
-                for (int i = 0; i < ia.length; i++) {
-                    int e = ia[i];
-                    ans[i] = integerValue(e);
-                }
-            }
+    public static String toMapString(Map arg) {
+        if (arg == null) {
+            return "null";
         }
-        else if (elemType.equals("char")) {
-            if (a.getClass().getName().equals("[Ljava.lang.Character;")) {
-                ans = (Character[]) a;
-            }
-            else {
-                char[] ia = (char[]) a;
-                ans = new Character[ia.length];
-                for (int i = 0; i < ia.length; i++) {
-                    char e = ia[i];
-                    ans[i] = new Character(e);
-                }
-            }
+        if (arg.isEmpty()) {
+            return "[:]";
         }
-        else if (elemType.equals("boolean")) {
-            if (a.getClass().getName().equals("[Ljava.lang.Boolean;")) {
-                ans = (Boolean[]) a;
-            }
-            else {
-                boolean[] ia = (boolean[]) a;
-                ans = new Boolean[ia.length];
-                for (int i = 0; i < ia.length; i++) {
-                    boolean e = ia[i];
-                    ans[i] = new Boolean(e);
-                }
-            }
+        String sbdry = "[";
+        String ebdry = "]";
+        StringBuffer buffer = new StringBuffer(sbdry);
+        boolean first = true;
+        for (Iterator iter = arg.entrySet().iterator(); iter.hasNext();) {
+            if (first)
+                first = false;
+            else
+                buffer.append(", ");
+            Map.Entry entry = (Map.Entry) iter.next();
+            buffer.append(format(entry.getKey(), true));
+            buffer.append(":");
+            buffer.append(format(entry.getValue(), true));
         }
-        else if (elemType.equals("byte")) {
-            if (a.getClass().getName().equals("[Ljava.lang.Byte;")) {
-                ans = (Byte[]) a;
-            }
-            else {
-                byte[] ia = (byte[]) a;
-                ans = new Byte[ia.length];
-                for (int i = 0; i < ia.length; i++) {
-                    byte e = ia[i];
-                    ans[i] = new Byte(e);
-                }
-            }
-        }
-        else if (elemType.equals("short")) {
-            if (a.getClass().getName().equals("[Ljava.lang.Short;")) {
-                ans = (Short[]) a;
-            }
-            else {
-                short[] ia = (short[]) a;
-                ans = new Short[ia.length];
-                for (int i = 0; i < ia.length; i++) {
-                    short e = ia[i];
-                    ans[i] = new Short(e);
-                }
-            }
-        }
-        else if (elemType.equals("float")) {
-            if (a.getClass().getName().equals("[Ljava.lang.Float;")) {
-                ans = (Float[]) a;
-            }
-            else {
-                float[] ia = (float[]) a;
-                ans = new Float[ia.length];
-                for (int i = 0; i < ia.length; i++) {
-                    float e = ia[i];
-                    ans[i] = new Float(e);
-                }
-            }
-        }
-        else if (elemType.equals("long")) {
-            if (a.getClass().getName().equals("[Ljava.lang.Long;")) {
-                ans = (Long[]) a;
-            }
-            else {
-                long[] ia = (long[]) a;
-                ans = new Long[ia.length];
-                for (int i = 0; i < ia.length; i++) {
-                    long e = ia[i];
-                    ans[i] = new Long(e);
-                }
-            }
-        }
-        else if (elemType.equals("double")) {
-            if (a.getClass().getName().equals("[Ljava.lang.Double;")) {
-                ans = (Double[]) a;
-            }
-            else {
-                double[] ia = (double[]) a;
-                ans = new Double[ia.length];
-                for (int i = 0; i < ia.length; i++) {
-                    double e = ia[i];
-                    ans[i] = new Double(e);
-                }
-            }
-        }
-        return ans;
-    }
-
-    public static int[] convertToIntArray(Object a) {
-        int[] ans = null;
-
-        // conservative coding
-        if (a.getClass().getName().equals("[I")) {
-            ans = (int[]) a;
-        }
-        else {
-            Object[] ia = (Object[]) a;
-            ans = new int[ia.length];
-            for (int i = 0; i < ia.length; i++) {
-                if (ia[i] == null) {
-                    continue;
-                }
-                ans[i] = ((Number) ia[i]).intValue();
-            }
-        }
-        return ans;
-    }
-
-    public static boolean[] convertToBooleanArray(Object a) {
-        boolean[] ans = null;
-
-        // conservative coding
-        if (a.getClass().getName().equals("[Z")) {
-            ans = (boolean[]) a;
-        }
-        else {
-            Object[] ia = (Object[]) a;
-            ans = new boolean[ia.length];
-            for (int i = 0; i < ia.length; i++) {
-                if (ia[i] == null) {
-                    continue;
-                }
-                ans[i] = ((Boolean) ia[i]).booleanValue();
-            }
-        }
-        return ans;
-    }
-
-    public static byte[] convertToByteArray(Object a) {
-        byte[] ans = null;
-
-        // conservative coding
-        if (a.getClass().getName().equals("[B")) {
-            ans = (byte[]) a;
-        }
-        else {
-            Object[] ia = (Object[]) a;
-            ans = new byte[ia.length];
-            for (int i = 0; i < ia.length; i++) {
-                if (ia[i] != null) {
-                    ans[i] = ((Number) ia[i]).byteValue();
-                }
-            }
-        }
-        return ans;
-    }
-
-    public static short[] convertToShortArray(Object a) {
-        short[] ans = null;
-
-        // conservative coding
-        if (a.getClass().getName().equals("[S")) {
-            ans = (short[]) a;
-        }
-        else {
-            Object[] ia = (Object[]) a;
-            ans = new short[ia.length];
-            for (int i = 0; i < ia.length; i++) {
-                ans[i] = ((Number) ia[i]).shortValue();
-            }
-        }
-        return ans;
-    }
-
-    public static char[] convertToCharArray(Object a) {
-        char[] ans = null;
-
-        // conservative coding
-        if (a.getClass().getName().equals("[C")) {
-            ans = (char[]) a;
-        }
-        else {
-            Object[] ia = (Object[]) a;
-            ans = new char[ia.length];
-            for (int i = 0; i < ia.length; i++) {
-                if (ia[i] == null) {
-                    continue;
-                }
-                ans[i] = ((Character) ia[i]).charValue();
-            }
-        }
-        return ans;
-    }
-
-    public static long[] convertToLongArray(Object a) {
-        long[] ans = null;
-
-        // conservative coding
-        if (a.getClass().getName().equals("[J")) {
-            ans = (long[]) a;
-        }
-        else {
-            Object[] ia = (Object[]) a;
-            ans = new long[ia.length];
-            for (int i = 0; i < ia.length; i++) {
-                if (ia[i] == null) {
-                    continue;
-                }
-                ans[i] = ((Number) ia[i]).longValue();
-            }
-        }
-        return ans;
-    }
-
-    public static float[] convertToFloatArray(Object a) {
-        float[] ans = null;
-
-        // conservative coding
-        if (a.getClass().getName().equals("[F")) {
-            ans = (float[]) a;
-        }
-        else {
-            Object[] ia = (Object[]) a;
-            ans = new float[ia.length];
-            for (int i = 0; i < ia.length; i++) {
-                if (ia[i] == null) {
-                    continue;
-                }
-                ans[i] = ((Number) ia[i]).floatValue();
-            }
-        }
-        return ans;
-    }
-
-    public static double[] convertToDoubleArray(Object a) {
-        double[] ans = null;
-
-        // conservative coding
-        if (a.getClass().getName().equals("[D")) {
-            ans = (double[]) a;
-        }
-        else {
-            Object[] ia = (Object[]) a;
-            ans = new double[ia.length];
-            for (int i = 0; i < ia.length; i++) {
-                if (ia[i] == null) {
-                    continue;
-                }
-                ans[i] = ((Number) ia[i]).doubleValue();
-            }
-        }
-        return ans;
-    }
-
-    public static Object convertToPrimitiveArray(Object a, Class type) {
-        if (type == Byte.TYPE) {
-            return convertToByteArray(a);
-        }
-        if (type == Boolean.TYPE) {
-            return convertToBooleanArray(a);
-        }
-        if (type == Short.TYPE) {
-            return convertToShortArray(a);
-        }
-        if (type == Character.TYPE) {
-            return convertToCharArray(a);
-        }
-        if (type == Integer.TYPE) {
-            return convertToIntArray(a);
-        }
-        if (type == Long.TYPE) {
-            return convertToLongArray(a);
-        }
-        if (type == Float.TYPE) {
-            return convertToFloatArray(a);
-        }
-        if (type == Double.TYPE) {
-            return convertToDoubleArray(a);
-        }
-        else {
-            return a;
-        }
+        buffer.append(ebdry);
+        return buffer.toString();
     }
 
     /**
-     * get the Integer object from an int. Cached version is used for small ints.
-     *
-     * @param v
+     * A helper method to return the string representation of a list with bracket boundaries "[" and "]".
      */
-    public static Integer integerValue(int v) {
-        int index = v + INT_CACHE_OFFSET;
-        if (index >= 0 && index < INT_CACHE_LEN) {
-            return SMALL_INTEGERS[index];
+    public static String toListString(Collection arg) {
+        if (arg == null) {
+            return "null";
+        }
+        if (arg.isEmpty()) {
+            return "[]";
+        }
+        String sbdry = "[";
+        String ebdry = "]";
+        StringBuffer buffer = new StringBuffer(sbdry);
+        boolean first = true;
+        for (Iterator iter = arg.iterator(); iter.hasNext();) {
+            if (first)
+                first = false;
+            else
+                buffer.append(", ");
+            Object elem = iter.next();
+            buffer.append(format(elem, true));
+        }
+        buffer.append(ebdry);
+        return buffer.toString();
+    }
+
+    /**
+     * A helper method to return the string representation of an arrray of objects
+     * with brace boundaries "{" and "}".
+     */
+    public static String toArrayString(Object[] arguments) {
+        if (arguments == null) {
+            return "null";
+        }
+        String sbdry = "{";
+        String ebdry = "}";
+        StringBuffer argBuf = new StringBuffer(sbdry);
+        for (int i = 0; i < arguments.length; i++) {
+            if (i > 0) {
+                argBuf.append(", ");
+            }
+            argBuf.append(format(arguments[i], true));
+        }
+        argBuf.append(ebdry);
+        return argBuf.toString();
+    }
+    
+    public static List createRange(Object from, Object to, boolean inclusive) {
+        try {
+            return ScriptBytecodeAdapter.createRange(from,to,inclusive);
+        } catch (RuntimeException re) {
+            throw re;
+        } catch (Error e) {
+            throw e;
+        } catch (Throwable t) {
+            throw new RuntimeException(t);
+        }
+    }
+    
+    public static Object bitNegate(Object value) {
+        if (value instanceof Integer) {
+            Integer number = (Integer) value;
+            return new Integer(~number.intValue());
+        }
+        else if (value instanceof Long) {
+            Long number = (Long) value;
+            return new Long(~number.longValue());
+        }
+        else if (value instanceof BigInteger) {
+            return ((BigInteger) value).not();
+
+        }
+        else if (value instanceof String) {
+            // value is a regular expression.
+            return DefaultGroovyMethods.negate(value.toString());
+        }
+        else if (value instanceof GString) {
+            // value is a regular expression.
+            return DefaultGroovyMethods.negate(value.toString());
+        }
+        else if (value instanceof ArrayList) {
+            // value is an list.
+            ArrayList newlist = new ArrayList();
+            Iterator it = ((ArrayList) value).iterator();
+            for (; it.hasNext();) {
+                newlist.add(bitNegate(it.next()));
+            }
+            return newlist;
         }
         else {
-            return new Integer(v);
+            throw new BitwiseNegateEvaluatingException("Cannot bitwise negate type " + value.getClass().getName() + ", value " + value);
         }
+
+
     }
 
-    private static Integer[] SMALL_INTEGERS;
-    private static int INT_CACHE_OFFSET = 128, INT_CACHE_LEN = 256;
-
-    static {
-        SMALL_INTEGERS = new Integer[INT_CACHE_LEN];
-        for (int i = 0; i < SMALL_INTEGERS.length; i++) {
-            SMALL_INTEGERS[i] = new Integer(i - INT_CACHE_OFFSET);
-        }
-    }
 }

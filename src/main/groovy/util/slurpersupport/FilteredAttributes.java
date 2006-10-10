@@ -21,7 +21,7 @@ package groovy.util.slurpersupport;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import groovy.lang.Closure;
 
@@ -50,7 +50,7 @@ public class FilteredAttributes extends Attributes {
                   while (iter.hasNext()) {
                   final Object node = iter.next();
                   
-                    if (InvokerHelper.asBool(FilteredAttributes.this.closure.call(new Object[]{node}))) {
+                    if (DefaultTypeTransformation.castToBoolean(FilteredAttributes.this.closure.call(new Object[]{node}))) {
                       return node;
                     }
                   }

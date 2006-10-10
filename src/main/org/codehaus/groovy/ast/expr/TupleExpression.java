@@ -74,8 +74,9 @@ public class TupleExpression extends Expression {
         expressions.addAll(Arrays.asList(expressionArray));
     }
 
-    public void addExpression(Expression expression) {
+    public TupleExpression addExpression(Expression expression) {
         expressions.add(expression);
+        return this;
     }
     
     public List getExpressions() {

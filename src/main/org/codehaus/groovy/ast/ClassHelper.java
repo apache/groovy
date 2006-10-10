@@ -47,6 +47,7 @@ package org.codehaus.groovy.ast;
 
 import groovy.lang.Closure;
 import groovy.lang.GString;
+import groovy.lang.MetaClass;
 import groovy.lang.Range;
 import groovy.lang.Reference;
 import groovy.lang.Script;
@@ -85,7 +86,8 @@ public class ClassHelper {
         Integer.class.getName(),    Long.class.getName(),
         Double.class.getName(),     Float.class.getName(),
         BigDecimal.class.getName(), BigInteger.class.getName(),
-        Void.class.getName(),       Reference.class.getName()
+        Void.class.getName(),       Reference.class.getName(),
+        Class.class.getName(),      MetaClass.class.getName()
     };
     
     private static Class[] classes = new Class[] {
@@ -95,7 +97,7 @@ public class ClassHelper {
         Pattern.class, Script.class, String.class,  Boolean.class, 
         Character.class, Byte.class, Short.class, Integer.class, Long.class,
         Double.class, Float.class, BigDecimal.class, BigInteger.class, Void.class,
-        Reference.class
+        Reference.class, Class.class, MetaClass.class
     };
     
     public static final ClassNode 
@@ -116,7 +118,9 @@ public class ClassHelper {
         Double_TYPE = new ClassNode(Double.class),       Boolean_TYPE = new ClassNode(Boolean.class),
         BigInteger_TYPE =  new ClassNode(java.math.BigInteger.class),
         BigDecimal_TYPE = new ClassNode(java.math.BigDecimal.class),
-        void_WRAPPER_TYPE = new ClassNode(Void.class);
+        void_WRAPPER_TYPE = new ClassNode(Void.class),   
+        
+        CLASS_Type = new ClassNode(Class.class),        METACLASS_TYPE = new ClassNode(MetaClass.class);
         
     
     private static ClassNode[] types = new ClassNode[] {
@@ -128,7 +132,7 @@ public class ClassHelper {
         SCRIPT_TYPE, STRING_TYPE, Boolean_TYPE, Character_TYPE,
         Byte_TYPE, Short_TYPE, Integer_TYPE, Long_TYPE,
         Double_TYPE, Float_TYPE, BigDecimal_TYPE, BigInteger_TYPE, 
-        void_WRAPPER_TYPE, REFERENCE_TYPE
+        void_WRAPPER_TYPE, REFERENCE_TYPE, CLASS_Type, METACLASS_TYPE
     };
 
     

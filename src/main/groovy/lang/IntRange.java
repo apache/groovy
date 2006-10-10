@@ -49,8 +49,8 @@ import java.util.AbstractList;
 import java.util.Iterator;
 import java.util.List;
 
-import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.IteratorClosureAdapter;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 /**
  * Represents a list of Integer objects from a specified int up to and including
@@ -97,7 +97,7 @@ public class IntRange extends AbstractList implements Range {
         int size = size();
         if (that.size() == size) {
             for (int i = 0; i < size; i++) {
-                if (!InvokerHelper.compareEqual(get(i), that.get(i))) {
+                if (!DefaultTypeTransformation.compareEqual(get(i), that.get(i))) {
                     return false;
                 }
             }

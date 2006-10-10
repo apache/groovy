@@ -20,7 +20,7 @@ package groovy.util.slurpersupport;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import groovy.lang.Closure;
 
@@ -53,7 +53,7 @@ public class FilteredNodeChildren extends NodeChildren {
         final Object childNode = iter.next();
       
       
-          if (InvokerHelper.asBool(FilteredNodeChildren.this.closure.call(new Object[]{childNode}))) {
+          if (DefaultTypeTransformation.castToBoolean(FilteredNodeChildren.this.closure.call(new Object[]{childNode}))) {
             return childNode;
           }
         }
@@ -79,7 +79,7 @@ public class FilteredNodeChildren extends NodeChildren {
                 while (iter.hasNext()) {
                 final Object node = iter.next();
                 
-                  if (InvokerHelper.asBool(FilteredNodeChildren.this.closure.call(new Object[]{new NodeChild((Node)node, FilteredNodeChildren.this.parent, FilteredNodeChildren.this.namespaceTagHints)}))) {
+                  if (DefaultTypeTransformation.castToBoolean(FilteredNodeChildren.this.closure.call(new Object[]{new NodeChild((Node)node, FilteredNodeChildren.this.parent, FilteredNodeChildren.this.namespaceTagHints)}))) {
                     return node;
                   }
                 }

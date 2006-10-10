@@ -93,6 +93,7 @@ import groovy.lang.GroovyRuntimeException;
  * affect only the deltas).
  *
  * @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
+ * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
  * @version $Id$
  */
 
@@ -159,7 +160,7 @@ public class CompilationUnit extends ProcessingUnit {
      * security stuff and a class loader for loading classes.
      */
     public CompilationUnit(CompilerConfiguration configuration, CodeSource security, GroovyClassLoader loader) {
-        super(configuration, loader, null);        
+        super(configuration, loader, null);
         this.names = new ArrayList();
         this.queuedSources = new LinkedList();
         this.sources = new HashMap();

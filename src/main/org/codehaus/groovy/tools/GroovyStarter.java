@@ -62,7 +62,7 @@ public class GroovyStarter {
     
     
     public static void rootLoader(String args[]) {
-        String conf = System.getProperty("groovy.launcher.conf",null);
+        String conf = System.getProperty("groovy.starter.conf",null);
         LoaderConfiguration lc = new LoaderConfiguration();
         
         // evaluate parameters

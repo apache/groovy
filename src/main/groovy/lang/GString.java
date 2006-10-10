@@ -41,6 +41,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
@@ -221,6 +222,6 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
      * @return the regular expression pattern
      */
     public Pattern negate() {
-        return InvokerHelper.regexPattern(toString());
+        return DefaultGroovyMethods.negate(toString());
     }
 }

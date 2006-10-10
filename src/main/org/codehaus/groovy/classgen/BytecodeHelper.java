@@ -52,7 +52,7 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Label;
@@ -86,17 +86,6 @@ public class BytecodeHelper implements Opcodes {
             boxBoolean();
         }
         else if (ClassHelper.isPrimitiveType(type) && type != ClassHelper.VOID_TYPE) {
-            // use a special integer pool in the invokerhelper
-            if (type == ClassHelper.int_TYPE) {
-                cv.visitMethodInsn(
-                        INVOKESTATIC,
-                        getClassInternalName(ScriptBytecodeAdapter.class.getName()),
-                        "integerValue",
-                        "(I)Ljava/lang/Integer;"
-                );
-                return;
-            }
-
             ClassNode wrapper = ClassHelper.getWrapper(type);
             String internName = getClassInternalName(wrapper);
             cv.visitTypeInsn(NEW, internName);
@@ -109,12 +98,9 @@ public class BytecodeHelper implements Opcodes {
                 cv.visitInsn(POP2);
             }
             cv.visitMethodInsn(INVOKESPECIAL, internName, "<init>", "(" + descr + ")V");
-
-//            Operand opr = new Operand(ITEM_Object, wrapperName, "", "");
-//            _safePop();
-//            push(opr);
         }
     }
+    
     public void quickUnboxIfNecessary(ClassNode type){
         if (ClassHelper.isPrimitiveType(type) && type != ClassHelper.VOID_TYPE) { // todo care when BigDecimal or BigIneteger on stack
             ClassNode wrapper = ClassHelper.getWrapper(type);
@@ -135,7 +121,7 @@ public class BytecodeHelper implements Opcodes {
     public void box(Class type) {
         if (type.isPrimitive() && type != void.class) {
             String returnString = "(" + getTypeDescription(type) + ")Ljava/lang/Object;";
-            cv.visitMethodInsn(INVOKESTATIC, getClassInternalName(ScriptBytecodeAdapter.class.getName()), "box", returnString);
+            cv.visitMethodInsn(INVOKESTATIC, getClassInternalName(DefaultTypeTransformation.class.getName()), "box", returnString);
         }
     }
 
@@ -152,7 +138,7 @@ public class BytecodeHelper implements Opcodes {
             String returnString = "(Ljava/lang/Object;)" + getTypeDescription(type);
             cv.visitMethodInsn(
                 INVOKESTATIC,
-                getClassInternalName(ScriptBytecodeAdapter.class.getName()),
+                getClassInternalName(DefaultTypeTransformation.class.getName()),
                 type.getName() + "Unbox",
                 returnString);
         }
@@ -596,6 +582,21 @@ public class BytecodeHelper implements Opcodes {
         cv.visitLabel(l0);
         cv.visitFieldInsn(GETSTATIC, "java/lang/Boolean", "FALSE", "Ljava/lang/Boolean;");
         cv.visitLabel(l1);
+    }
+
+    /**
+     * negate a boolean on stack. true->false, false->true
+     */
+    public void negateBoolean(){
+        // code to negate the primitive boolean
+        Label endLabel = new Label();
+        Label falseLabel = new Label();
+        cv.visitJumpInsn(IFNE,falseLabel);
+        cv.visitInsn(ICONST_1);
+        cv.visitJumpInsn(GOTO,endLabel);
+        cv.visitLabel(falseLabel);
+        cv.visitInsn(ICONST_0);
+        cv.visitLabel(endLabel);
     }
 
     /**

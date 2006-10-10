@@ -37,6 +37,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 /**
  * @author John Wilson
@@ -399,28 +400,28 @@ public class MetaClassHelper {
          Class paramComponent = param.getComponentType();
          if (paramComponent.isPrimitive()) {
              if (paramComponent == boolean.class && argumentClass==Boolean[].class) {
-                 argument = InvokerHelper.convertToBooleanArray(argument);
+                 argument = DefaultTypeTransformation.convertToBooleanArray(argument);
              } else if (paramComponent == byte.class && argumentClass==Byte[].class) {
-                 argument = InvokerHelper.convertToByteArray(argument);
+                 argument = DefaultTypeTransformation.convertToByteArray(argument);
              } else if (paramComponent == char.class && argumentClass==Character[].class) {
-                 argument = InvokerHelper.convertToCharArray(argument);
+                 argument = DefaultTypeTransformation.convertToCharArray(argument);
              } else if (paramComponent == short.class && argumentClass==Short[].class) {
-                 argument = InvokerHelper.convertToShortArray(argument);
+                 argument = DefaultTypeTransformation.convertToShortArray(argument);
              } else if (paramComponent == int.class && argumentClass==Integer[].class) {
-                 argument = InvokerHelper.convertToIntArray(argument);
+                 argument = DefaultTypeTransformation.convertToIntArray(argument);
              } else if (paramComponent == long.class &&
                         (argumentClass == Long[].class || argumentClass  == Integer[].class))
              {
-                 argument = InvokerHelper.convertToLongArray(argument);
+                 argument = DefaultTypeTransformation.convertToLongArray(argument);
              } else if (paramComponent == float.class &&
                         (argumentClass == Float[].class || argumentClass == Integer[].class))
              {
-                 argument = InvokerHelper.convertToFloatArray(argument);
+                 argument = DefaultTypeTransformation.convertToFloatArray(argument);
              } else if (paramComponent == double.class &&
                         (argumentClass == Double[].class || argumentClass==Float[].class  
                          || BigDecimal.class.isAssignableFrom(argumentClass)))
              {
-                 argument = InvokerHelper.convertToDoubleArray(argument);
+                 argument = DefaultTypeTransformation.convertToDoubleArray(argument);
              }
          } else if (paramComponent==String.class && argument instanceof GString[]) {
              GString[] strings = (GString[]) argument;

@@ -59,11 +59,11 @@ public class ExceptionMessage extends Message
         {
             output.println( description + cause );
         }
-        output.println("");
+        output.println();
 
-        if (verbose) {
+        //if (verbose) {
             cause.printStackTrace(output);
-        }
+        //}
     }
     
 }

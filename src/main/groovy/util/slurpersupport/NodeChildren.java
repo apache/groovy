@@ -27,7 +27,7 @@ import java.io.Writer;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 /**
  * @author John Wilson
@@ -227,7 +227,7 @@ class NodeChildren extends GPathResult {
     while (iter.hasNext()) {
     final Object node = iter.next();
     
-      if (InvokerHelper.asBool(closure.call(new Object[]{node}))) {
+      if (DefaultTypeTransformation.castToBoolean(closure.call(new Object[]{node}))) {
         return (GPathResult)node;
       }
     }

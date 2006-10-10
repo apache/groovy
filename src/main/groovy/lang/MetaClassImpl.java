@@ -518,7 +518,7 @@ public class MetaClassImpl extends MetaClass {
        if (!methods.isEmpty()) {
            method = (MetaMethod) chooseMethod(methodName, methods, MetaClassHelper.convertToTypeArray(arguments), false);
        }
-
+       //todo: this looks wrong! theClass and object being a class?
        if (method == null && theClass != Class.class) {
            MetaClass classMetaClass = registry.getMetaClass(Class.class);
            method = classMetaClass.pickMethod(object, methodName, arguments);
@@ -584,7 +584,7 @@ public class MetaClassImpl extends MetaClass {
        //TODO: that is just a quick prototype, not the real thing!
        if (numberOfCosntructors != constructors.size()) {
            throw new IncompatibleClassChangeError("the number of constructors during runtime and compile time for "+
-               this.theClass.getName()+" does not match. Expected "+numberOfCosntructors+" but have "+constructors.size());
+               this.theClass.getName()+" do not match. Expected "+numberOfCosntructors+" but got "+constructors.size());
        }
        
        if (arguments==null) arguments = EMPTY_ARGUMENTS;

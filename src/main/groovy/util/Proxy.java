@@ -33,6 +33,8 @@
  */
 package groovy.util;
 
+import java.util.Iterator;
+
 import groovy.lang.GroovyObjectSupport;
 import groovy.lang.MissingMethodException;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -74,6 +76,10 @@ public class Proxy extends GroovyObjectSupport {
         catch (MissingMethodException e) {
             return InvokerHelper.getMetaClass(adaptee).invokeMethod(adaptee, name, args);
         }
+    }
+    
+    public Iterator iterator() {
+        return InvokerHelper.asIterator(adaptee);
     }
 
 }

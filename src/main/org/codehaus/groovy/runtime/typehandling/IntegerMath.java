@@ -2,7 +2,8 @@
  * Created on Mar 5, 2004
  *
  */
-package org.codehaus.groovy.runtime;
+package org.codehaus.groovy.runtime.typehandling;
+
 
 /**
  * Integer NumberMath operations

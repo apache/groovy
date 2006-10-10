@@ -329,45 +329,34 @@ public class ErrorCollector {
     // OUTPUT
 
 
+    private void write(PrintWriter writer, Janitor janitor, List messages, String txt) {
+        if (messages==null || messages.size()==0) return;
+        Iterator iterator = messages.iterator();
+        while (iterator.hasNext()) {
+            Message message = (Message) iterator.next();
+            message.write(writer, janitor);
+            
+            if (configuration.getDebug() && (message instanceof SyntaxErrorMessage)){
+                SyntaxErrorMessage sem = (SyntaxErrorMessage) message;
+                sem.getCause().printStackTrace(writer);
+            } 
+        }
+
+        writer.println();
+        writer.print(messages.size());
+        writer.print(" "+txt);
+        if (messages.size()>1) writer.print("s");
+        writer.println();
+    }
+    
     /**
      * Writes error messages to the specified PrintWriter.
      */
     public void write(PrintWriter writer, Janitor janitor) {
-        if (this.warnings != null) {
-            Iterator iterator = this.warnings.iterator();
-            while (iterator.hasNext()) {
-                WarningMessage warning = (WarningMessage) iterator.next();
-                warning.write(writer, janitor);
-            }
-
-            writer.println();
-            writer.print(warnings.size());
-            writer.print(" warning");
-            if (warnings.size()>1) writer.print("s");
-            writer.println();
-            
-            this.warnings = null;
-        }
-
-        if (this.errors != null) {
-            Iterator iterator = this.errors.iterator();
-            while (iterator.hasNext()) {
-                Message message = (Message) iterator.next();
-                message.write(writer, janitor);
-                
-                if (configuration.getDebug() && (message instanceof SyntaxErrorMessage)) {
-                    SyntaxErrorMessage sem = (SyntaxErrorMessage) message;
-                    SyntaxException se = sem.getCause();
-                    se.printStackTrace(writer);
-                }
-            }
-
-            writer.println();
-            writer.print(errors.size());
-            writer.print(" error");
-            if (errors.size()>1) writer.print("s");
-            writer.println();
-        }
+        write(writer,janitor,warnings,"warning");
+        warnings = null;
+        write(writer,janitor,errors,"error");
+        errors = null;
     }
 
 }

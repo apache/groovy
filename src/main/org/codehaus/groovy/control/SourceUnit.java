@@ -97,7 +97,9 @@ public class SourceUnit extends ProcessingUnit {
      */
     protected ReaderSource source;
     /**
-     * A descriptive name of the source unit
+     * A descriptive name of the source unit. This name shouldn't
+     * be used for controling the SourceUnit, it is only for error
+     * messages
      */
     protected String name;
     /**
@@ -151,7 +153,9 @@ public class SourceUnit extends ProcessingUnit {
 
 
     /**
-     * Returns the name for the SourceUnit.
+     * Returns the name for the SourceUnit. This name shouldn't
+     * be used for controling the SourceUnit, it is only for error
+     * messages
      */
     public String getName() {
         return name;

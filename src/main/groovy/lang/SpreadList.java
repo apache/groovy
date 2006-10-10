@@ -48,7 +48,7 @@ package groovy.lang;
 import java.util.AbstractList;
 import java.util.List;
 
-import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 /**
  * Spreads a list as individual objects to support the spread operator (*) for lists.
@@ -117,7 +117,7 @@ public class SpreadList extends AbstractList {
     public boolean equals(SpreadList that) {
         if (contents.length == that.contents.length) {
             for (int i = 0; i < contents.length; i++) {
-                if (! InvokerHelper.compareEqual(this.contents[i], that.contents[i])) {
+                if (! DefaultTypeTransformation.compareEqual(this.contents[i], that.contents[i])) {
                     return false;
                 }
             }

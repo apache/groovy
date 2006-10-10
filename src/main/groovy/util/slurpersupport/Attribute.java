@@ -27,7 +27,7 @@ import java.io.Writer;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 public class Attribute extends GPathResult {
     private final String value;
@@ -64,7 +64,7 @@ public class Attribute extends GPathResult {
     }
 
     public GPathResult find(final Closure closure) {
-        if (InvokerHelper.asBool(closure.call(new Object[]{this}))) {
+        if (DefaultTypeTransformation.castToBoolean(closure.call(new Object[]{this}))) {
             return this;
           } else {
             return new NoChildren(this, "", this.namespaceTagHints);

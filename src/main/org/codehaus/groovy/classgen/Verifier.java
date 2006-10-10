@@ -45,7 +45,6 @@
  */
 package org.codehaus.groovy.classgen;
 
-import groovy.lang.Closure;
 import groovy.lang.GroovyObject;
 import groovy.lang.MetaClass;
 
@@ -135,7 +134,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             StaticMethodCallExpression initMetaClassCall =
                 new StaticMethodCallExpression(
                     ClassHelper.make(ScriptBytecodeAdapter.class),
-                    "getMetaClass",
+                    "initMetaClass",
                     VariableExpression.THIS_EXPRESSION);
 
             PropertyNode metaClassProperty =
@@ -166,7 +165,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             // lets add the invokeMethod implementation
             ClassNode superClass = node.getSuperClass();
             boolean addDelegateObject =
-                (node instanceof InnerClassNode && superClass.equals(Closure.class.getName()))
+                (node instanceof InnerClassNode && superClass.equals(ClassHelper.CLOSURE_TYPE))
                     || superClass.equals(ClassHelper.GSTRING_TYPE);
 
             // don't do anything as the base class implements the invokeMethod

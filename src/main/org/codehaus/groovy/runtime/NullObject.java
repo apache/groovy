@@ -45,6 +45,9 @@
  */
 package org.codehaus.groovy.runtime;
 
+import java.util.Collections;
+import java.util.Iterator;
+
 import groovy.lang.GroovyObjectSupport;
 
 public class NullObject extends GroovyObjectSupport {
@@ -107,5 +110,13 @@ public class NullObject extends GroovyObjectSupport {
     return to == null;
   }
 
+  /**
+   * iterator() method to be able to iterate on null. 
+   * Note: this part is from Invoker
+   * @return an iterator for an empty list
+   */
+  public Iterator iterator() {
+      return Collections.EMPTY_LIST.iterator();
+  }
   
 }

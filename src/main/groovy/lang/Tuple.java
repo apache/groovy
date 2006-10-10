@@ -48,7 +48,7 @@ package groovy.lang;
 import java.util.AbstractList;
 import java.util.List;
 
-import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 /**
  * Represents a list of Integer objects from a specified int up to but not including
@@ -84,7 +84,7 @@ public class Tuple extends AbstractList {
     public boolean equals(Tuple that) {
         if (contents.length == that.contents.length) {
             for (int i = 0; i < contents.length; i++) {
-                if (! InvokerHelper.compareEqual(this.contents[i], that.contents[i])) {
+                if (! DefaultTypeTransformation.compareEqual(this.contents[i], that.contents[i])) {
                     return false;
                 }
             }

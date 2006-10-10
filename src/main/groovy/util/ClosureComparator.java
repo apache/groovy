@@ -47,7 +47,7 @@ package groovy.util;
 
 import groovy.lang.Closure;
 import java.util.Comparator;
-import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 /**
  * A Comparator which uses a closure to compare 2 values being equal
@@ -65,6 +65,6 @@ public class ClosureComparator implements Comparator {
 
     public int compare(Object object1, Object object2) {
         Object value = closure.call(new Object[] {object1, object2});
-        return InvokerHelper.asInt(value);
+        return DefaultTypeTransformation.intUnbox(value);
     }
 }

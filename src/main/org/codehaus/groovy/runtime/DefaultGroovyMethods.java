@@ -58,7 +58,11 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
+import org.codehaus.groovy.runtime.typehandling.NumberMath;
 import org.codehaus.groovy.tools.RootLoader;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 /**
  * This class defines all the new groovy methods which appear on normal JDK
@@ -525,40 +529,6 @@ public class DefaultGroovyMethods {
     // Collection based methods
     //-------------------------------------------------------------------------
 
-    /**
-     * Remove all duplicates from a given Collection.
-     * Works on the receiver object and returns it.
-     * For each duplicate, only the first member which is returned
-     * by the given Collection's iterator is retained, but all other ones are removed.
-     * The given Collection's original order is retained.
-     * If there exists numbers in the Collection, then they are compared
-     * as numbers, that is, 2, 2.0, 3L, (short)4 are comparable.
-     *
-     * <code><pre>
-     *     def x = [2, 2.0, 3L, 1.0, (short)4, 1]
-     *     def y = x.unique()
-     *     assert( y == x && x == [2, 3L, 1.0, (short)4] )
-     * </pre></code>
-     *
-     * @param self
-     * @return self without duplicates
-     */
-   /*
-    public static Collection unique(Collection self){
-        if (self instanceof Set) return self;
-        if (self.size() == new HashSet(self).size()) return self;
-        Collection seen = new HashSet(self.size());
-        for (Iterator iter = self.iterator(); iter.hasNext();) {
-            Object o =  iter.next();
-            if (seen.contains(o)){
-                iter.remove();
-            } else {
-                seen.add(o);
-            }
-        }
-        return self;
-    }
-   */
     public static Collection unique(Collection self) {
         if (self instanceof Set)
             return self;
@@ -714,7 +684,7 @@ public class DefaultGroovyMethods {
      */
     public static boolean every(Object self, Closure closure) {
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
-            if (!InvokerHelper.asBool(closure.call(iter.next()))) {
+            if (!DefaultTypeTransformation.castToBoolean(closure.call(iter.next()))) {
                 return false;
             }
         }
@@ -730,7 +700,7 @@ public class DefaultGroovyMethods {
      */
     public static boolean any(Object self, Closure closure) {
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
-            if (InvokerHelper.asBool(closure.call(iter.next()))) {
+            if (DefaultTypeTransformation.castToBoolean(closure.call(iter.next()))) {
                 return true;
             }
         }
@@ -751,7 +721,7 @@ public class DefaultGroovyMethods {
         MetaClass metaClass = InvokerHelper.getMetaClass(filter);
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
             Object object = iter.next();
-            if (InvokerHelper.asBool(metaClass.invokeMethod(filter, "isCase", object))) {
+            if (DefaultTypeTransformation.castToBoolean(metaClass.invokeMethod(filter, "isCase", object))) {
                 answer.add(object);
             }
         }
@@ -768,7 +738,7 @@ public class DefaultGroovyMethods {
     public static int count(Collection self, Object value) {
         int answer = 0;
         for (Iterator iter = self.iterator(); iter.hasNext();) {
-            if (InvokerHelper.compareEqual(iter.next(), value)) {
+            if (DefaultTypeTransformation.compareEqual(iter.next(), value)) {
                 ++answer;
             }
         }
@@ -889,7 +859,7 @@ public class DefaultGroovyMethods {
     public static Object find(Object self, Closure closure) {
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
             Object value = iter.next();
-            if (InvokerHelper.asBool(closure.call(value))) {
+            if (DefaultTypeTransformation.castToBoolean(closure.call(value))) {
                 return value;
             }
         }
@@ -906,7 +876,7 @@ public class DefaultGroovyMethods {
     public static Object find(Collection self, Closure closure) {
         for (Iterator iter = self.iterator(); iter.hasNext();) {
             Object value = iter.next();
-            if (InvokerHelper.asBool(closure.call(value))) {
+            if (DefaultTypeTransformation.castToBoolean(closure.call(value))) {
                 return value;
             }
         }
@@ -923,7 +893,7 @@ public class DefaultGroovyMethods {
     public static Object find(Map self, Closure closure) {
         for (Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
             Object value = iter.next();
-            if (InvokerHelper.asBool(closure.call(value))) {
+            if (DefaultTypeTransformation.castToBoolean(closure.call(value))) {
                 return value;
             }
         }
@@ -941,7 +911,7 @@ public class DefaultGroovyMethods {
         List answer = new ArrayList();
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
             Object value = iter.next();
-            if (InvokerHelper.asBool(closure.call(value))) {
+            if (DefaultTypeTransformation.castToBoolean(closure.call(value))) {
                 answer.add(value);
             }
         }
@@ -959,7 +929,7 @@ public class DefaultGroovyMethods {
         List answer = new ArrayList(self.size());
         for (Iterator iter = self.iterator(); iter.hasNext();) {
             Object value = iter.next();
-            if (InvokerHelper.asBool(closure.call(value))) {
+            if (DefaultTypeTransformation.castToBoolean(closure.call(value))) {
                 answer.add(value);
             }
         }
@@ -980,7 +950,7 @@ public class DefaultGroovyMethods {
         Map answer = new HashMap(self.size());
         for (Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
             Map.Entry entry = (Map.Entry) iter.next();
-            if (InvokerHelper.asBool(callClosureForMapEntry(closure, entry))) {
+            if (DefaultTypeTransformation.castToBoolean(callClosureForMapEntry(closure, entry))) {
                 answer.put(entry.getKey(),entry.getValue());
             }
         }
@@ -1181,7 +1151,7 @@ public class DefaultGroovyMethods {
         for (Iterator iter = self.iterator(); iter.hasNext();) {
             Object value = iter.next();
             if (value != null) {
-                if (answer == null || InvokerHelper.compareGreaterThan(value, answer)) {
+                if (answer == null || ScriptBytecodeAdapter.compareGreaterThan(value, answer)) {
                     answer = value;
                 }
             }
@@ -1218,7 +1188,7 @@ public class DefaultGroovyMethods {
         for (Iterator iter = self.iterator(); iter.hasNext();) {
             Object value = iter.next();
             if (value != null) {
-                if (answer == null || InvokerHelper.compareLessThan(value, answer)) {
+                if (answer == null || ScriptBytecodeAdapter.compareLessThan(value, answer)) {
                     answer = value;
                 }
             }
@@ -1259,7 +1229,7 @@ public class DefaultGroovyMethods {
             for (Iterator iter = self.iterator(); iter.hasNext();) {
                 Object item = iter.next();
                 Object value = closure.call(item);
-                if (answer == null || InvokerHelper.compareLessThan(value, answer_value)) {
+                if (answer == null || ScriptBytecodeAdapter.compareLessThan(value, answer_value)) {
                     answer = item;
                     answer_value = value;
                 }
@@ -1285,7 +1255,7 @@ public class DefaultGroovyMethods {
             for (Iterator iter = self.iterator(); iter.hasNext();) {
                 Object item = iter.next();
                 Object value = closure.call(item);
-                if (answer == null || InvokerHelper.compareLessThan(answer_value, value)) {
+                if (answer == null || ScriptBytecodeAdapter.compareLessThan(answer_value, value)) {
                     answer = item;
                     answer_value = value;
                 }
@@ -1372,8 +1342,8 @@ public class DefaultGroovyMethods {
      * @return the subsequence CharSequence
      */
     public static CharSequence getAt(CharSequence text, Range range) {
-        int from = normaliseIndex(InvokerHelper.asInt(range.getFrom()), text.length());
-        int to = normaliseIndex(InvokerHelper.asInt(range.getTo()), text.length());
+        int from = normaliseIndex(DefaultTypeTransformation.intUnbox(range.getFrom()), text.length());
+        int to = normaliseIndex(DefaultTypeTransformation.intUnbox(range.getTo()), text.length());
 
         // If this is a backwards range, reverse the arguments to substring.
         if (from > to) {
@@ -1415,8 +1385,8 @@ public class DefaultGroovyMethods {
      * @return a substring corresponding to the Range
      */
     public static String getAt(String text, Range range) {
-        int from = normaliseIndex(InvokerHelper.asInt(range.getFrom()), text.length());
-        int to = normaliseIndex(InvokerHelper.asInt(range.getTo()), text.length());
+        int from = normaliseIndex(DefaultTypeTransformation.intUnbox(range.getFrom()), text.length());
+        int to = normaliseIndex(DefaultTypeTransformation.intUnbox(range.getTo()), text.length());
 
         // If this is a backwards range, reverse the arguments to substring.
         boolean reverse = range.isReverse();
@@ -1479,7 +1449,7 @@ public class DefaultGroovyMethods {
      * @return the regular expression pattern
      */
     public static Pattern negate(String self) {
-        return InvokerHelper.regexPattern(self);
+        return Pattern.compile(self);
     }
 
     /**
@@ -1762,8 +1732,8 @@ public class DefaultGroovyMethods {
 
     // helper method for getAt and putAt
     protected static RangeInfo subListBorders(int size, IntRange range){
-        int from = normaliseIndex(InvokerHelper.asInt(range.getFrom()), size);
-        int to = normaliseIndex(InvokerHelper.asInt(range.getTo()), size);
+        int from = normaliseIndex(DefaultTypeTransformation.intUnbox(range.getFrom()), size);
+        int to = normaliseIndex(DefaultTypeTransformation.intUnbox(range.getTo()), size);
         boolean reverse = range.isReverse();
         if (from > to) {                        // support list[1..-1]
             int tmp = to;
@@ -1776,7 +1746,7 @@ public class DefaultGroovyMethods {
 
     // helper method for getAt and putAt
     protected static RangeInfo subListBorders(int size, EmptyRange range){
-        int from = normaliseIndex(InvokerHelper.asInt(range.getFrom()), size);
+        int from = normaliseIndex(DefaultTypeTransformation.intUnbox(range.getFrom()), size);
         return new RangeInfo(from, from, false);
     }
 
@@ -1796,7 +1766,7 @@ public class DefaultGroovyMethods {
             } else if (value instanceof List) {
                 answer.addAll(getAt(self, (List) value));
             } else {
-                int idx = InvokerHelper.asInt(value);
+                int idx = DefaultTypeTransformation.intUnbox(value);
                 answer.add(getAt(self, idx));
             }
         }
@@ -1819,7 +1789,7 @@ public class DefaultGroovyMethods {
             } else if (value instanceof Collection) {
                 answer.addAll(getAt(self, (Collection) value));
             } else {
-                int idx = InvokerHelper.asInt(value);
+                int idx = DefaultTypeTransformation.intUnbox(value);
                 answer.add(getAt(self, idx));
             }
         }
@@ -1842,7 +1812,7 @@ public class DefaultGroovyMethods {
             } else if (value instanceof Collection) {
                 answer.append(getAt(self, (Collection) value));
             } else {
-                int idx = InvokerHelper.asInt(value);
+                int idx = DefaultTypeTransformation.intUnbox(value);
                 answer.append(getAt(self, idx));
             }
         }
@@ -1876,7 +1846,7 @@ public class DefaultGroovyMethods {
             } else if (value instanceof Collection) {
                 answer.append(getAt(self, (Collection) value));
             } else {
-                int idx = InvokerHelper.asInt(value);
+                int idx = DefaultTypeTransformation.intUnbox(value);
                 answer.append(getAt(self, idx));
             }
         }
@@ -1967,7 +1937,7 @@ public class DefaultGroovyMethods {
             Class arrayComponentClass = array.getClass().getComponentType();
 
             if (!arrayComponentClass.equals(value.getClass())) {
-                Object newVal = InvokerHelper.asType(value, arrayComponentClass);
+                Object newVal = DefaultTypeTransformation.castToType(value, arrayComponentClass);
                 array[normaliseIndex(idx, array.length)] = newVal;
                 return;
             }
@@ -2126,8 +2096,8 @@ public class DefaultGroovyMethods {
         int right = 0;
         boolean emptyRange = false;
         if (splice.size() == 2) {
-            left = InvokerHelper.asInt(splice.get(0));
-            right = InvokerHelper.asInt(splice.get(1));
+            left = DefaultTypeTransformation.intUnbox(splice.get(0));
+            right = DefaultTypeTransformation.intUnbox(splice.get(1));
         } else if (splice instanceof IntRange) {
             IntRange range = (IntRange) splice;
             left = range.getFromInt();
@@ -3305,37 +3275,37 @@ public class DefaultGroovyMethods {
     }
 
     public static List toList(byte[] array) {
-        return InvokerHelper.primitiveArrayToList(array);
+        return DefaultTypeTransformation.primitiveArrayToList(array);
     }
 
     public static List toList(char[] array) {
-        return InvokerHelper.primitiveArrayToList(array);
+        return DefaultTypeTransformation.primitiveArrayToList(array);
     }
 
     public static List toList(short[] array) {
-        return InvokerHelper.primitiveArrayToList(array);
+        return DefaultTypeTransformation.primitiveArrayToList(array);
     }
 
     public static List toList(int[] array) {
-        return InvokerHelper.primitiveArrayToList(array);
+        return DefaultTypeTransformation.primitiveArrayToList(array);
     }
 
     public static List toList(long[] array) {
-        return InvokerHelper.primitiveArrayToList(array);
+        return DefaultTypeTransformation.primitiveArrayToList(array);
     }
 
     public static List toList(float[] array) {
-        return InvokerHelper.primitiveArrayToList(array);
+        return DefaultTypeTransformation.primitiveArrayToList(array);
     }
 
     public static List toList(double[] array) {
-        return InvokerHelper.primitiveArrayToList(array);
+        return DefaultTypeTransformation.primitiveArrayToList(array);
     }
-
+    
     private static final char[] tTable = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=".toCharArray();
 
     public static Writable encodeBase64(final Byte[] data) {
-        return encodeBase64(InvokerHelper.convertToByteArray(data));
+        return encodeBase64(DefaultTypeTransformation.convertToByteArray(data));
     }
 
     /**
@@ -3489,7 +3459,7 @@ public class DefaultGroovyMethods {
     protected static List primitiveArrayGet(Object array, Range range) {
         List answer = new ArrayList();
         for (Iterator iter = range.iterator(); iter.hasNext();) {
-            int idx = InvokerHelper.asInt(iter.next());
+            int idx = DefaultTypeTransformation.intUnbox(iter.next());
             answer.add(primitiveArrayGet(array, idx));
         }
         return answer;
@@ -3507,7 +3477,7 @@ public class DefaultGroovyMethods {
             } else if (value instanceof List) {
                 answer.addAll(primitiveArrayGet(self, (List) value));
             } else {
-                int idx = InvokerHelper.asInt(value);
+                int idx = DefaultTypeTransformation.intUnbox(value);
                 answer.add(primitiveArrayGet(self, idx));
             }
         }
@@ -5570,7 +5540,7 @@ public class DefaultGroovyMethods {
         File[] files = self.listFiles();
         MetaClass metaClass = InvokerHelper.getMetaClass(filter);
         for (int i = 0; i < files.length; i++) {
-            if (InvokerHelper.asBool(metaClass.invokeMethod(filter, "isCase", files[i].getName()))) {
+            if (DefaultTypeTransformation.castToBoolean(metaClass.invokeMethod(filter, "isCase", files[i].getName()))) {
                 closure.call(files[i]);
             }
         }
@@ -6200,10 +6170,10 @@ public class DefaultGroovyMethods {
         String line;
         try {
 	    while ((line = br.readLine()) != null) {
-		if (InvokerHelper.asBool(closure.call(line))) {
-		    bw.write(line);
-		    bw.newLine();
-		}
+	        if (DefaultTypeTransformation.castToBoolean(closure.call(line))) {
+	            bw.write(line);
+	            bw.newLine();
+	        }
 	    }
 	    bw.flush();
 
@@ -6291,7 +6261,7 @@ public class DefaultGroovyMethods {
                 BufferedWriter bw = new BufferedWriter(out);
                 String line;
                 while ((line = br.readLine()) != null) {
-                    if (InvokerHelper.asBool(closure.call(line))) {
+                    if (DefaultTypeTransformation.castToBoolean(closure.call(line))) {
                         bw.write(line);
                         bw.newLine();
                     }
@@ -6679,7 +6649,7 @@ public class DefaultGroovyMethods {
         int i = 0;
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext(); i++) {
             Object value = iter.next();
-            if (InvokerHelper.asBool(closure.call(value))) {
+            if (DefaultTypeTransformation.castToBoolean(closure.call(value))) {
                 break;
             }
         }
@@ -6734,7 +6704,7 @@ public class DefaultGroovyMethods {
      * @return the resulting object
      */
     public static Object asType(Object obj, Class type) {
-        return InvokerHelper.asType(obj,type);
+        return DefaultTypeTransformation.castToType(obj,type);
     }
         
     /**
@@ -6801,5 +6771,192 @@ public class DefaultGroovyMethods {
                 throw new GroovyRuntimeException("exception while reading process stream",e);
             }
         }
+    }
+    
+    public static Iterator iterator(Object o) {
+        return DefaultTypeTransformation.asCollection(o).iterator();
+    }
+    
+    public static Iterator iterator(final NodeList nodeList) {
+        return new Iterator() {
+            private int current = 0;
+            
+            public boolean hasNext() {
+                return current < nodeList.getLength();
+            }
+            
+            public Object next() {
+                Node node = nodeList.item(current++);
+                return node;
+            }
+            
+            public void remove() {
+                throw new UnsupportedOperationException("Cannot remove() from an Enumeration");
+            }
+        };
+    }
+    
+    public static Iterator iterator(final Enumeration enumeration) {
+        return new Iterator() {
+            private Object last;
+
+            public boolean hasNext() {
+                return enumeration.hasMoreElements();
+            }
+
+            public Object next() {
+                last = enumeration.nextElement();
+                return last;
+            }
+
+            public void remove() {
+                throw new UnsupportedOperationException("Cannot remove() from an Enumeration");
+            }
+        };
+    }
+    
+    public static Iterator iterator(final Matcher matcher) {
+        return new Iterator() {
+            private boolean found = false;
+            private boolean done = false;
+
+            public boolean hasNext() {
+                if (done) {
+                    return false;
+                }
+                if (!found) {
+                    found = matcher.find();
+                    if (!found) {
+                        done = true;
+                    }
+                }
+                return found;
+            }
+
+            public Object next() {
+                if (!found) {
+                    if (!hasNext()) {
+                        throw new NoSuchElementException();
+                    }
+                }
+                found = false;
+                return matcher.group();
+            }
+
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
+        };
+    }
+    
+    /**
+     * @return an Iterator for a Reader
+     */
+    public static Iterator iterator(Reader value) {
+        final BufferedReader bufferedReader;
+        if(value instanceof BufferedReader)
+            bufferedReader = (BufferedReader)value;
+        else
+            bufferedReader = new BufferedReader((Reader)value);
+        return new Iterator() {
+            String nextVal = null;
+            boolean nextMustRead = true;
+            boolean hasNext = true;
+
+            public boolean hasNext() {
+                if(nextMustRead && hasNext)
+                {
+                    try {
+                        nextVal = readNext();
+                        nextMustRead = false;
+                    } catch (IOException e) {
+                        hasNext = false;
+                    }
+                }
+                return hasNext;
+            }
+
+            public Object next() {
+                String retval = null;
+                if(nextMustRead)
+                {
+                    try {
+                        retval = readNext();
+                    } catch (IOException e) {
+                        hasNext = false;
+                    }
+                }
+                else
+                    retval = nextVal;
+                nextMustRead = true;
+                return retval;
+            }
+
+            private String readNext() throws IOException {
+                String nv = bufferedReader.readLine();
+                if(nv == null)
+                    hasNext = false;
+                return nv;
+            }
+            
+            public void remove() {
+                throw new UnsupportedOperationException("Cannot remove() from a Reader Iterator");
+            }
+        };
+    }
+
+    public static Iterator iterator(InputStream is) {
+        return iterator(new DataInputStream(is));
+    }
+    
+    public static Iterator iterator(final DataInputStream dis) {
+        return new Iterator() {
+            Byte nextVal = null;
+            boolean nextMustRead = true;
+            boolean hasNext = true;
+
+            public boolean hasNext() {
+                if(nextMustRead && hasNext)
+                {
+                    try {
+                        byte bPrimitive = dis.readByte();
+                        nextVal = new Byte(bPrimitive);
+                        nextMustRead = false;
+                    } catch (IOException e) {
+                        hasNext = false;
+                    }
+                }
+                return hasNext;
+            }
+
+            public Object next() {
+                Byte retval = null;
+                if(nextMustRead)
+                {
+                    try {
+                        byte b = dis.readByte();
+                        retval = new Byte(b);
+                    } catch (IOException e) {
+                        hasNext = false;
+                    }
+                }
+                else
+                    retval = nextVal;
+                nextMustRead = true;
+                return retval;
+            }
+
+            public void remove() {
+                throw new UnsupportedOperationException("Cannot remove() from an InputStream Iterator");
+            }
+        };
+    }
+    
+    public static Iterator iterator(File f) throws IOException {
+        return iterator(newReader(f));
+    }
+    
+    public static Iterator iterator(Iterator it) {
+        return it;
     }
 }
