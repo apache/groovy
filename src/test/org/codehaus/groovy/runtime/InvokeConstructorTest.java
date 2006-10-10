@@ -84,12 +84,12 @@ public class InvokeConstructorTest extends GroovyTestCase {
     }
 
     protected void assertConstructor(Object expected, Object arguments) throws Throwable {
-        Object value = invoke(expected.getClass().getName(), arguments);
+        Object value = invoke(expected.getClass(), arguments);
 
         assertEquals("Invoking overloaded method for arguments: " + InvokerHelper.toString(arguments), expected, value);
     }
 
-    protected Object invoke(String type, Object args) throws Throwable {
+    protected Object invoke(Class type, Object args) throws Throwable {
         try {
             return invoker.invokeConstructorOf(type, args);
         }

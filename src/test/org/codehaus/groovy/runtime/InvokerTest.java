@@ -59,6 +59,8 @@ import java.util.Map;
 import java.util.Collections;
 import java.util.Arrays;
 
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
+
 
 /**
  * Test the Invoker class
@@ -134,17 +136,17 @@ public class InvokerTest extends GroovyTestCase {
        }
     
     public void testLessThan() {
-        assertTrue(InvokerHelper.compareLessThan(new Integer(1), new Integer(2)));
-        assertTrue(InvokerHelper.compareLessThanEqual(new Integer(2), new Integer(2)));
+        assertTrue(ScriptBytecodeAdapter.compareLessThan(new Integer(1), new Integer(2)));
+        assertTrue(ScriptBytecodeAdapter.compareLessThanEqual(new Integer(2), new Integer(2)));
     }
     
     public void testGreaterThan() {
-        assertTrue(InvokerHelper.compareGreaterThan(new Integer(3), new Integer(2)));
-        assertTrue(InvokerHelper.compareGreaterThanEqual(new Integer(2), new Integer(2)));
+        assertTrue(ScriptBytecodeAdapter.compareGreaterThan(new Integer(3), new Integer(2)));
+        assertTrue(ScriptBytecodeAdapter.compareGreaterThanEqual(new Integer(2), new Integer(2)));
     }
     
     public void testCompareTo() {
-        assertTrue(InvokerHelper.compareEqual("x", new Integer('x')));
+        assertTrue(DefaultTypeTransformation.compareEqual("x", new Integer('x')));
     }
     
     // Implementation methods
@@ -154,7 +156,7 @@ public class InvokerTest extends GroovyTestCase {
      * Asserts the asBoolean method returns the given flag
      */
     protected void assertAsBoolean(boolean expected, Object value) {
-        boolean answer = InvokerHelper.asBool(value);
+        boolean answer = DefaultTypeTransformation.castToBoolean(value);
         assertEquals("value: " + value + " asBoolean()", expected, answer);
     }
 
@@ -163,14 +165,14 @@ public class InvokerTest extends GroovyTestCase {
      * of the given size
      */
     protected void assertAsCollection(Object collectionObject, int count) {
-        Collection collection = invoker.asCollection(collectionObject);
+        Collection collection = DefaultTypeTransformation.asCollection(collectionObject);
         assertTrue("Collection is not null", collection != null);
         assertEquals("Collection size", count, collection.size());
 
         assertIterator("collections iterator", collection.iterator(), count);
-        assertIterator("invoker.asIterator", invoker.asIterator(collectionObject), count);
-        assertIterator("invoker.asIterator(invoker.asCollection)", invoker.asIterator(collection), count);
-        assertIterator("invoker.asIterator(invoker.asIterator)", invoker.asIterator(invoker.asIterator(collectionObject)), count);
+        assertIterator("InvokerHelper.asIterator", InvokerHelper.asIterator(collectionObject), count);
+        assertIterator("InvokerHelper.asIterator(InvokerHelper.asCollection)", InvokerHelper.asIterator(collection), count);
+        assertIterator("InvokerHelper.asIterator(InvokerHelper.asIterator)", InvokerHelper.asIterator(InvokerHelper.asIterator(collectionObject)), count);
     }
 
     /**

@@ -89,7 +89,7 @@ public class DefaultGroovyMethodsTest extends GroovyTestCase {
         String answer = DefaultGroovyMethods.previous(original);
 
         System.out.println(answer);
-        assertTrue(InvokerHelper.compareLessThan(answer, original));
+        assertTrue(ScriptBytecodeAdapter.compareLessThan(answer, original));
     }
 
     public void testToMethods() throws Exception {

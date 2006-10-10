@@ -1,7 +1,7 @@
 import org.codehaus.groovy.syntax.TokenTest;
 import org.codehaus.groovy.runtime.*;
-import org.codehaus.groovy.wiki.RunWikiTest;
-import org.codehaus.groovy.wiki.TestCaseRenderEngineTest;
+//import org.codehaus.groovy.wiki.RunWikiTest;
+//import org.codehaus.groovy.wiki.TestCaseRenderEngineTest;
 import org.codehaus.groovy.tools.xml.DomToGroovyTest;
 import org.codehaus.groovy.tools.FileSystemCompilerTest;
 import org.codehaus.groovy.tools.CompilerTest;
@@ -48,8 +48,8 @@ public class AllCodehausJavaTestsSuite {
         suite.addTestSuite(TupleListTest.class);
         suite.addTestSuite(VerifierCodeVisitorTest.class);
         suite.addTestSuite(CompilationUnitTest.class);
-        suite.addTestSuite(TestCaseRenderEngineTest.class);
-        suite.addTestSuite(RunWikiTest.class);
+//        suite.addTestSuite(TestCaseRenderEngineTest.class);
+//        suite.addTestSuite(RunWikiTest.class);
         suite.addTestSuite(DomToGroovyTest.class);
         suite.addTestSuite(FileSystemCompilerTest.class);
         suite.addTestSuite(CompilerTest.class);

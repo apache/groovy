@@ -48,6 +48,8 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
+
 import junit.framework.AssertionFailedError;
 
 /**
@@ -189,11 +191,9 @@ public class InvokeMethodTest extends GroovyTestCase {
     }
 
     public void testBaseFailMethod() throws Throwable {
-        Object value;
         try {
-            value = invoke(this, "fail", "hello");
-        }
-        catch (AssertionFailedError e) {
+            invoke(this, "fail", "hello");
+        } catch (AssertionFailedError e) {
             // worked
         }
     }
@@ -237,7 +237,7 @@ public class InvokeMethodTest extends GroovyTestCase {
         list.add("foo");
         list.add("bar");
 
-        Object value = invoke(list, "remove", new Object[] { new Integer(0)});
+        invoke(list, "remove", new Object[] { new Integer(0)});
 
         assertEquals("Should have just 1 item left: " + list, 1, list.size());
     }
@@ -264,7 +264,7 @@ public class InvokeMethodTest extends GroovyTestCase {
 
     public void testBadBDToDoubleCoerce() throws Throwable {
         try {
-            Object value = invoke(Math.class, "floor", new BigDecimal("1.7E309"));
+            invoke(Math.class, "floor", new BigDecimal("1.7E309"));
         } catch (IllegalArgumentException e) {
             assertTrue("Math.floor(1.7E309) should fail because it is out of range for a Double. "
                     +e,e.getMessage().indexOf("out of range") > 0);
@@ -332,7 +332,7 @@ public class InvokeMethodTest extends GroovyTestCase {
     public void testInvokeMethodWithWrongNumberOfParameters() throws Throwable {
         try {
             Object[] args = { "a", "b" };
-            Object value = invoke(this, "unknownMethod", args);
+            invoke(this, "unknownMethod", args);
             fail("Should have thrown an exception");
         }
         catch (GroovyRuntimeException e) {
@@ -368,7 +368,7 @@ public class InvokeMethodTest extends GroovyTestCase {
     }
 
     public Integer mockCallWithOneCollectionParam(Object collection) {
-        Collection coll = InvokerHelper.asCollection(collection);
+        Collection coll = DefaultTypeTransformation.asCollection(collection);
         return new Integer(coll.size());
     }
 

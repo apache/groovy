@@ -100,7 +100,7 @@ public class GStringTest extends TestSupport {
                 new DeclarationExpression(
                     new VariableExpression("text"),
                     Token.newSymbol( "=", -1, -1),
-                    new MethodCallExpression(new VariableExpression("str"), "toString", ConstantExpression.NULL))));
+                    new MethodCallExpression(new VariableExpression("str"), "toString", MethodCallExpression.NO_ARGUMENTS))));
 
         block.addStatement(
             new AssertStatement(
