@@ -74,7 +74,6 @@ import java.util.logging.Level;
 
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.classgen.BytecodeHelper;
-import org.codehaus.groovy.classgen.ReflectorGenerator;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.Phases;
@@ -93,7 +92,6 @@ import org.codehaus.groovy.runtime.TemporaryMethodKey;
 import org.codehaus.groovy.runtime.TransformMetaMethod;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.ClassWriter;
 
 /**
 * Allows methods to be dynamically added to existing classes at runtime
@@ -1665,7 +1663,7 @@ public class MetaClassImpl extends MetaClass {
    }
 
    private void generateReflector() {
-       reflector = loadReflector(allMethods);
+       reflector = registry.loadReflector(theClass, allMethods);
        if (reflector == null) {
            throw new RuntimeException("Should have a reflector for "+theClass.getName());
        }
@@ -1673,57 +1671,6 @@ public class MetaClassImpl extends MetaClass {
        for (Iterator iter = allMethods.iterator(); iter.hasNext();) {
            MetaMethod metaMethod = (MetaMethod) iter.next();
            metaMethod.setReflector(reflector);
-       }
-   }
-
-   private String getReflectorName() {
-       String className = theClass.getName();
-       String packagePrefix = "gjdk.";
-       String name = packagePrefix + className + "_GroovyReflector";
-       if (theClass.isArray()) {
-       	   Class clazz = theClass;
-       	   name = packagePrefix;
-       	   int level = 0;
-       	   while (clazz.isArray()) {
-       	   	  clazz = clazz.getComponentType();
-       	   	  level++;
-       	   }
-           String componentName = clazz.getName();
-           name = packagePrefix + componentName + "_GroovyReflectorArray";
-           if (level>1) name += level;
-       }
-       return name;
-   }
-
-   private Reflector loadReflector(List methods) {
-       String name = getReflectorName();
-       /*
-        * Lets generate it && load it.
-        */                        
-       ReflectorGenerator generator = new ReflectorGenerator(methods);
-       try {
-           ClassWriter cw = new ClassWriter(true);
-           generator.generate(cw, name);
-           byte[] bytecode = cw.toByteArray();
-           
-           /*try {
-            FileOutputStream fis = new FileOutputStream(name);
-            fis.write(bytecode);
-            fis.close();
-            } catch (IOException ioe){}*/
-           ClassLoader loader = (ClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
-               public Object run() {
-                   ClassLoader loader = theClass.getClassLoader();
-                   if (loader == null) loader = this.getClass().getClassLoader();
-                   return loader;
-               }
-           });           
-           Class type = registry.createReflectorClass(loader, name, bytecode);
-           return (Reflector) type.newInstance();
-       }
-       catch (Exception e) {
-           e.printStackTrace();
-           throw new GroovyRuntimeException("Could not generate and load the reflector for class: " + name + ". Reason: " + e, e);
        }
    }
 

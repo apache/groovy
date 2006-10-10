@@ -34,6 +34,7 @@
 package org.codehaus.groovy.runtime;
 
 import java.security.ProtectionDomain;
+import java.util.HashMap;
 
 /**
  * Reflector creation helper. This class is used to define the Refloctor classes.
@@ -45,6 +46,8 @@ import java.security.ProtectionDomain;
  * @version $Revision$
  */
 public class ReflectorLoader extends ClassLoader {
+    private HashMap laodedClasses = new HashMap();
+    
     /**
      * returns the Reflector class.
      * 
@@ -66,6 +69,7 @@ public class ReflectorLoader extends ClassLoader {
      */
     public Class defineClass(String name, byte[] bytecode, ProtectionDomain domain) {
         Class c = defineClass(name, bytecode, 0, bytecode.length, domain);
+        synchronized(laodedClasses) { laodedClasses.put(name,c); }
         resolveClass(c);
         return c;
     }
@@ -77,6 +81,12 @@ public class ReflectorLoader extends ClassLoader {
     public ReflectorLoader(ClassLoader parent) {
         super(parent);
         delegatationLoader = getClass().getClassLoader();
+    }
+    
+    public Class getLoadedClass(String name) {
+        synchronized (laodedClasses) {
+            return (Class)laodedClasses.get(name);
+        }
     }
     
     private ClassLoader delegatationLoader; 

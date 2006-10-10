@@ -57,10 +57,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 
+import org.codehaus.groovy.classgen.ReflectorGenerator;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
 import org.codehaus.groovy.runtime.MethodHelper;
+import org.codehaus.groovy.runtime.Reflector;
 import org.codehaus.groovy.runtime.ReflectorLoader;
+import org.objectweb.asm.ClassWriter;
 
 /**
  * A registery of MetaClass instances which caches introspection &
@@ -161,17 +164,6 @@ public class MetaClassRegistry {
 
     public boolean useAccessible() {
         return useAccessible;
-    }
-
-    /**
-     * A helper class to load meta class bytecode into the class loader
-     */
-    public Class createReflectorClass(final ClassLoader parent, final String name, final byte[] bytecode) throws ClassNotFoundException {
-        return (Class) AccessController.doPrivileged(new PrivilegedAction() {
-            public Object run() {
-                return getReflectorLoader(parent).defineClass(name, bytecode, getClass().getProtectionDomain());
-            }
-        });
     }
 
     private ReflectorLoader getReflectorLoader(final ClassLoader loader) {
@@ -281,5 +273,56 @@ public class MetaClassRegistry {
             }
             return instanceExclude;
         }
+    }
+
+    public synchronized Reflector loadReflector(final Class theClass, List methods) {
+        final String name = getReflectorName(theClass);
+        ClassLoader loader = (ClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
+            public Object run() {
+                ClassLoader loader = theClass.getClassLoader();
+                if (loader == null) loader = this.getClass().getClassLoader();
+                return loader;
+            }
+        });
+        final ReflectorLoader rloader = getReflectorLoader(loader);
+        Class ref = rloader.getLoadedClass(name);
+        if (ref == null) {
+            /*
+             * Lets generate it && load it.
+             */                        
+            ReflectorGenerator generator = new ReflectorGenerator(methods);
+            ClassWriter cw = new ClassWriter(true);
+            generator.generate(cw, name);
+            final byte[] bytecode = cw.toByteArray();
+            ref = (Class) AccessController.doPrivileged(new PrivilegedAction() {
+                public Object run() {
+                    return rloader.defineClass(name, bytecode, getClass().getProtectionDomain());
+                }
+            }); 
+        }
+        try {
+            return (Reflector) ref.newInstance();
+        } catch (Exception e) {
+            throw new GroovyRuntimeException("Could not generate and load the reflector for class: " + name + ". Reason: " + e, e);
+        }
+    }
+    
+    private String getReflectorName(Class theClass) {
+        String className = theClass.getName();
+        String packagePrefix = "gjdk.";
+        String name = packagePrefix + className + "_GroovyReflector";
+        if (theClass.isArray()) {
+               Class clazz = theClass;
+               name = packagePrefix;
+               int level = 0;
+               while (clazz.isArray()) {
+                  clazz = clazz.getComponentType();
+                  level++;
+               }
+            String componentName = clazz.getName();
+            name = packagePrefix + componentName + "_GroovyReflectorArray";
+            if (level>1) name += level;
+        }
+        return name;
     }
 }
