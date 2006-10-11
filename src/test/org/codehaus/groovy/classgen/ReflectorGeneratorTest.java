@@ -89,7 +89,7 @@ public class ReflectorGeneratorTest extends GroovyTestCase {
         ClassWriter cw = new ClassWriter(true);
 
         
-        ASMifierClassVisitor dumper = new ASMifierClassVisitor(new PrintWriter(new OutputStreamWriter(System.out)));
+        //ASMifierClassVisitor dumper = new ASMifierClassVisitor(new PrintWriter(new OutputStreamWriter(System.out)));
         //generator.generate(dumper, name);
 
         generator.generate(new CheckClassAdapter(cw), name);
@@ -107,10 +107,8 @@ public class ReflectorGeneratorTest extends GroovyTestCase {
 
         // now lets try class load it
         MetaClassRegistry registry = new MetaClassRegistry();
-        Class type = registry.createReflectorClass(getClass().getClassLoader(),name, bytecode);
-        
-        Object reflector = type.newInstance();
-        
+        Object reflector = registry.loadReflector(getClass(),methods);
+         
         System.out.println("Created new reflector: " + reflector);
     }
 }
