@@ -38,6 +38,7 @@ import java.util.logging.Logger;
 
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
+import org.codehaus.groovy.runtime.wrappers.Wrapper;
 
 /**
  * @author John Wilson
@@ -470,11 +471,13 @@ public class MetaClassHelper {
         Class[] ans = new Class[s];
         for (int i = 0; i < s; i++) {
             Object o = args[i];
-            if (o != null) {
-                ans[i] = o.getClass();
-            } else {
+            if (o == null) {
                 ans[i] = null;
-            }
+            } else if (o instanceof Wrapper) {
+                ans[i] = ((Wrapper) o).getType();
+            } else {
+                ans[i] = o.getClass();
+            } 
         }
         return ans;
     }

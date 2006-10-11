@@ -21,6 +21,7 @@ import groovy.lang.GroovyObject;
 import groovy.lang.MetaClass;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.NullObject;
 
 /**
  * @author John Wilson
@@ -34,12 +35,15 @@ public class PojoWrapper extends Wrapper {
   public PojoWrapper(final Object wrapped, final Class constrainedType) {
     super(constrainedType);
     this.wrapped = wrapped;
-    this.delegate = InvokerHelper.getMetaClass(wrapped);
+//    if (wrapped==null) {
+//        this.delegate = NullObject.getNullObject().getMetaClass();
+//    } else {
+//        this.delegate = InvokerHelper.getMetaClass(wrapped);
+//    }
     
     /*
      * This check is temporary - remove before 1.0 release
      */
-    
     if (wrapped instanceof GroovyObject) {
       throw new RuntimeException("trying to wrap the groovyObject "
                                  + wrapped.getClass().getName()

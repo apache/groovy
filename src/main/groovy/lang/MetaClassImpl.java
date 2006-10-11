@@ -158,12 +158,6 @@ public class MetaClassImpl extends MetaClass {
        // and the getters and setters
        setupProperties(descriptors);
 
-       /* old code
-       for (int i = 0; i < descriptors.length; i++) {
-           PropertyDescriptor descriptor = descriptors[i];
-           propertyDescriptors.put(descriptor.getName(), descriptor);
-       }
-       */
 
        EventSetDescriptor[] eventDescriptors = info.getEventSetDescriptors();
        for (int i = 0; i < eventDescriptors.length; i++) {
@@ -299,9 +293,26 @@ public class MetaClassImpl extends MetaClass {
            MetaClassHelper.logMethodCall(object, methodName, arguments);
        }
        if (arguments==null) arguments = EMPTY_ARGUMENTS;
+       Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
        unwrap(arguments);       
 
-       MetaMethod method = retrieveMethod(object, methodName, arguments);
+       MetaMethod method = retrieveMethod(methodName, argClasses);
+       
+       if (method==null && arguments.length==1 && arguments[0] instanceof List) {
+           arguments = ((List) arguments[0]).toArray();
+           argClasses = MetaClassHelper.convertToTypeArray(arguments);
+           method = retrieveMethod(methodName, argClasses);
+           if (method!=null) {
+               method = new TransformMetaMethod(method) {
+                   public Object invoke(Object object, Object[] arguments) throws Exception {
+                       Object firstArgument = arguments[0];
+                       List list = (List) firstArgument;
+                       arguments = list.toArray();
+                       return super.invoke(object, arguments);
+                   }
+               };
+           }
+       }
 
        boolean isClosure = object instanceof Closure;
        if (isClosure) {
@@ -328,12 +339,12 @@ public class MetaClassImpl extends MetaClass {
 
            if (method==null && owner!=closure) {
                MetaClass ownerMetaClass = registry.getMetaClass(owner.getClass());
-               method = ownerMetaClass.retrieveMethod(owner,methodName,arguments);
+               method = ownerMetaClass.retrieveMethod(methodName,argClasses);
                if (method!=null) return ownerMetaClass.invokeMethod(owner,methodName,arguments);
            }
            if (method==null && delegate!=closure && delegate!=null) {
                MetaClass delegateMetaClass = registry.getMetaClass(delegate.getClass());
-               method = delegateMetaClass.retrieveMethod(delegate,methodName,arguments);
+               method = delegateMetaClass.retrieveMethod(methodName,argClasses);
                if (method!=null) return delegateMetaClass.invokeMethod(delegate,methodName,arguments);
            }
            if (method==null) {
@@ -378,19 +389,14 @@ public class MetaClassImpl extends MetaClass {
        }
    }
 
+   /**
+    * @see groovy.lang.MetaClass#retrieveMethod(java.lang.Object, java.lang.String, java.lang.Object[])
+    * @deprecated
+    */
    public MetaMethod retrieveMethod(Object owner, String methodName, Object[] arguments) {
-       // lets try use the cache to find the method
-       MethodKey methodKey = new TemporaryMethodKey(methodName, arguments);
-       MetaMethod method = (MetaMethod) methodCache.get(methodKey);
-       if (method == null) {
-           method = pickMethod(owner, methodName, arguments);
-           if (method != null && method.isCacheable()) {
-               methodCache.put(methodKey.createCopy(), method);
-           }
-       }
-       return method;
+       return retrieveMethod(methodName,MetaClassHelper.convertToTypeArray(arguments));
    }
-
+   
    public MetaMethod retrieveMethod(String methodName, Class[] arguments) {
        // lets try use the cache to find the method
        MethodKey methodKey = new TemporaryMethodKey(methodName, arguments);
@@ -431,42 +437,12 @@ public class MetaClassImpl extends MetaClass {
    }
    /**
     * Picks which method to invoke for the given object, method name and arguments
+    * @deprecated
     */
    public MetaMethod pickMethod(Object object, String methodName, Object[] arguments) {
-       MetaMethod method = null;
-       List methods = getMethods(methodName);
-       if (!methods.isEmpty()) {
-           Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
-           method = (MetaMethod) chooseMethod(methodName, methods, argClasses, true);
-           if (method == null) {
-               int size = (arguments != null) ? arguments.length : 0;
-               if (size == 1) {
-                   Object firstArgument = arguments[0];
-                   if (firstArgument instanceof List) {
-                       // lets coerce the list arguments into an array of
-                       // arguments
-                       // e.g. calling JFrame.setLocation( [100, 100] )
-
-                       List list = (List) firstArgument;
-                       arguments = list.toArray();
-                       argClasses = MetaClassHelper.convertToTypeArray(arguments);
-                       method = (MetaMethod) chooseMethod(methodName, methods, argClasses, true);
-                       if (method==null) return null;
-                           return new TransformMetaMethod(method) {
-                               public Object invoke(Object object, Object[] arguments) throws Exception {
-                                   Object firstArgument = arguments[0];
-                                   List list = (List) firstArgument;
-                                   arguments = list.toArray();
-                                   return super.invoke(object, arguments);
-                               }
-                           };
-                   }
-               }
-           }
-       }
-       return method;
+       return pickMethod(methodName,MetaClassHelper.convertToTypeArray(arguments));
    }
-
+   
    /**
     * pick a method in a strict manner, i.e., without reinterpreting the first List argument.
     * this method is used only by ClassGenerator for static binding
@@ -478,10 +454,6 @@ public class MetaClassImpl extends MetaClass {
        List methods = getMethods(methodName);
        if (!methods.isEmpty()) {
            method = (MetaMethod) chooseMethod(methodName, methods, arguments, false);
-//no coersion at classgen time.
-//           if (method == null) {
-//               method = (MetaMethod) chooseMethod(methodName, methods, arguments, true);
-//           }
        }
        return method;
    }
@@ -491,12 +463,14 @@ public class MetaClassImpl extends MetaClass {
            MetaClassHelper.logMethodCall(object, methodName, arguments);
        }
        if (arguments==null) arguments = EMPTY_ARGUMENTS;
+       Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
        unwrap(arguments);
+       
        // lets try use the cache to find the method
        MethodKey methodKey = new TemporaryMethodKey(methodName, arguments);
        MetaMethod method = (MetaMethod) staticMethodCache.get(methodKey);
        if (method == null) {
-           method = pickStaticMethod(object, methodName, arguments);
+           method = pickStaticMethod(methodName, argClasses);
            if (method != null) {
                staticMethodCache.put(methodKey.createCopy(), method);
            }
@@ -508,18 +482,17 @@ public class MetaClassImpl extends MetaClass {
 
        throw new MissingMethodException(methodName, theClass, arguments);
    }
-
-   private MetaMethod pickStaticMethod(Object object, String methodName, Object[] arguments) {
+   
+   private MetaMethod pickStaticMethod(String methodName, Class[] arguments) {
        MetaMethod method = null;
        List methods = getStaticMethods(methodName);
 
        if (!methods.isEmpty()) {
-           method = (MetaMethod) chooseMethod(methodName, methods, MetaClassHelper.convertToTypeArray(arguments), false);
+           method = (MetaMethod) chooseMethod(methodName, methods, arguments, false);
        }
-       //todo: this looks wrong! theClass and object being a class?
        if (method == null && theClass != Class.class) {
            MetaClass classMetaClass = registry.getMetaClass(Class.class);
-           method = classMetaClass.pickMethod(object, methodName, arguments);
+           method = classMetaClass.pickMethod(methodName, arguments);
        }
        if (method == null) {
            method = (MetaMethod) chooseMethod(methodName, methods, MetaClassHelper.convertToTypeArray(arguments), true);
@@ -527,55 +500,8 @@ public class MetaClassImpl extends MetaClass {
        return method;
    }
 
-   private MetaMethod pickStaticMethod(String methodName, Class[] arguments) {
-       MetaMethod method = null;
-       List methods = getStaticMethods(methodName);
-
-       if (!methods.isEmpty()) {
-           method = (MetaMethod) chooseMethod(methodName, methods, arguments, false);
-//disabled to keep consistant with the original version of pickStatciMethod
-//           if (method == null) {
-//               method = (MetaMethod) chooseMethod(methodName, methods, arguments, true);
-//           }
-       }
-
-       if (method == null && theClass != Class.class) {
-           MetaClass classMetaClass = registry.getMetaClass(Class.class);
-           method = classMetaClass.pickMethod(methodName, arguments);
-       }
-       return method;
-   }
-
    public Object invokeConstructor(Object[] arguments) {
-       if (arguments==null) arguments = EMPTY_ARGUMENTS;
-       unwrap(arguments);
-       Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
-       Constructor constructor = (Constructor) chooseMethod("<init>", constructors, argClasses, false);
-       if (constructor != null) {
-           return MetaClassHelper.doConstructorInvoke(constructor, arguments);
-       }
-       else {
-           constructor = (Constructor) chooseMethod("<init>", constructors, argClasses, true);
-           if (constructor != null) {
-               return MetaClassHelper.doConstructorInvoke(constructor, arguments);
-           }
-       }
-
-       if (arguments.length == 1) {
-           Object firstArgument = arguments[0];
-           if (firstArgument instanceof Map) {
-               constructor = (Constructor) chooseMethod("<init>", constructors, MetaClassHelper.EMPTY_TYPE_ARRAY, false);
-               if (constructor != null) {
-                   Object bean = MetaClassHelper.doConstructorInvoke(constructor, MetaClassHelper.EMPTY_ARRAY);
-                   setProperties(bean, ((Map) firstArgument));
-                   return bean;
-               }
-           }
-       }
-       throw new GroovyRuntimeException(
-                   "Could not find matching constructor for: "
-                       + theClass.getName()
-                       + "("+InvokerHelper.toTypeString(arguments)+")");
+       return invokeConstructor(theClass,arguments,false);
    }
 
    public int selectConstructorAndTransformArguments(int numberOfCosntructors, Object[] arguments) {
@@ -586,8 +512,8 @@ public class MetaClassImpl extends MetaClass {
        }
        
        if (arguments==null) arguments = EMPTY_ARGUMENTS;
-       unwrap(arguments);
        Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
+       unwrap(arguments);       
        Constructor constructor = (Constructor) chooseMethod("<init>", constructors, argClasses, false);
        if (constructor == null) {
            constructor = (Constructor) chooseMethod("<init>", constructors, argClasses, true);
@@ -615,23 +541,24 @@ public class MetaClassImpl extends MetaClass {
            found = i;
            break;
        }
-       // NOTE: must be change to "1 |" if constructor was vargs
+       // NOTE: must be changed to "1 |" if constructor was vargs
        int ret = 0 | (found << 8);
        return ret;
    }
    
-   public Object invokeConstructorAt(Class at, Object[] arguments) {
+   
+   private Object invokeConstructor(Class at, Object[] arguments, boolean setAccessible) {
        if (arguments==null) arguments = EMPTY_ARGUMENTS;
-       unwrap(arguments);
        Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
+       unwrap(arguments);       
        Constructor constructor = (Constructor) chooseMethod("<init>", constructors, argClasses, false);
        if (constructor != null) {
-           return doConstructorInvokeAt(at, constructor, arguments);
+           return doConstructorInvoke(at, constructor, arguments, true);
        }
        else {
            constructor = (Constructor) chooseMethod("<init>", constructors, argClasses, true);
            if (constructor != null) {
-               return doConstructorInvokeAt(at, constructor, arguments);
+               return doConstructorInvoke(at, constructor, arguments, true);
            }
        }
 
@@ -640,7 +567,7 @@ public class MetaClassImpl extends MetaClass {
            if (firstArgument instanceof Map) {
                constructor = (Constructor) chooseMethod("<init>", constructors, MetaClassHelper.EMPTY_TYPE_ARRAY, false);
                if (constructor != null) {
-                   Object bean = doConstructorInvokeAt(at, constructor, MetaClassHelper.EMPTY_ARRAY);
+                   Object bean = doConstructorInvoke(at, constructor, MetaClassHelper.EMPTY_ARRAY, true);
                    setProperties(bean, ((Map) firstArgument));
                    return bean;
                }
@@ -650,6 +577,10 @@ public class MetaClassImpl extends MetaClass {
                    "Could not find matching constructor for: "
                        + theClass.getName()
                        + "("+InvokerHelper.toTypeString(arguments)+")");
+   }
+   
+   public Object invokeConstructorAt(Class at, Object[] arguments) {
+       return invokeConstructor(at,arguments,true);
    }
 
    /**
@@ -1437,22 +1368,23 @@ public class MetaClassImpl extends MetaClass {
        }
    }
    
-   private static Object doConstructorInvokeAt(final Class at, Constructor constructor, Object[] argumentArray) {
+   private static Object doConstructorInvoke(final Class at, Constructor constructor, Object[] argumentArray, boolean setAccessible) {
        if (log.isLoggable(Level.FINER)) {
            MetaClassHelper.logMethodCall(constructor.getDeclaringClass(), constructor.getName(), argumentArray);
        }
 
-       // To fix JIRA 435
-       // Every constructor should be opened to the accessible classes.
-       final boolean accessible = MetaClassHelper.accessibleToConstructor(at, constructor);
-
-       final Constructor ctor = constructor;
-       AccessController.doPrivileged(new PrivilegedAction() {
-           public Object run() {
-               ctor.setAccessible(accessible);
-               return null;
-           }
-       });
+       if (setAccessible) {
+           // To fix JIRA 435
+           // Every constructor should be opened to the accessible classes.
+           final boolean accessible = MetaClassHelper.accessibleToConstructor(at, constructor);
+           final Constructor ctor = constructor;
+           AccessController.doPrivileged(new PrivilegedAction() {
+               public Object run() {
+                   ctor.setAccessible(accessible);
+                   return null;
+               }
+           });
+       }
        return MetaClassHelper.doConstructorInvoke(constructor,argumentArray);
    }
 
