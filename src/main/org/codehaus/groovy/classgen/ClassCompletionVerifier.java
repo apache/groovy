@@ -184,7 +184,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
             }
             isEqual &= node.getReturnType().equals(element.getReturnType());
             if (isEqual) {
-                addError("Repetitive method name/signature in class "+currentClass.getName(),node);
+                addError("Repetitive method name/signature for method "+node.getName()+" in class "+currentClass.getName(),node);
             }
         }        
     }
