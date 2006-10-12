@@ -1,6 +1,6 @@
 import java.util.Arrays
 
-public class test { 
+public class ListFilesManualTest { 
 
     static void main(args) {
         println("Called main with ${args}")
@@ -17,9 +17,9 @@ public class test {
         for(dir in dirs) {
             println("dir: ${dir}")
             
-	        f = new java.io.File(dir)
+	        def files = new java.io.File(dir).listFiles()
 
-    	    for (f in f.listFiles()) {
+    	    for (f in files) {
         	    println(getPath(f))
         	} 
         }
