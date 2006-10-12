@@ -65,7 +65,6 @@ import org.w3c.dom.Text;
  * A SAX handler for turning XML into Groovy scripts
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class DomToGroovy {
 
@@ -128,16 +127,10 @@ public class DomToGroovy {
             if (length == 1 && node instanceof Text) {
                 Text textNode = (Text) node;
                 String text = getTextNodeData(textNode);
-                if (hasAttributes) {
-                    print(" [\"");
-                    print(text);
-                    printEnd("\"]", endWithComma);
-                }
-                else {
-                    print("(\"");
-                    print(text);
-                    printEnd("\")", endWithComma);
-                }
+                if (hasAttributes) print(", \"");
+                else print("(\"");
+                print(text);
+                printEnd("\")", endWithComma);
             }
             else if (mixedContent(list)) {
                 println(" [");
@@ -275,14 +268,12 @@ public class DomToGroovy {
                 print("]");
                 hasAttribute = true;
             }
-            print(")");
         }
         return hasAttribute;
     }
 
     protected String getTextNodeData(Text node) {
-        String text = node.getData().trim();
-        return text;
+        return node.getData().trim();
     }
 
     protected boolean mixedContent(NodeList list) {
@@ -328,7 +319,8 @@ public class DomToGroovy {
     }
 
     protected void println(String text) {
-        out.println(text);    }
+        out.println(text);
+    }
 
     protected void print(String text) {
         out.print(text);

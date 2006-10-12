@@ -49,6 +49,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.ByteArrayInputStream;
+import java.io.StringWriter;
 import java.net.URL;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -74,6 +76,15 @@ public class DomToGroovyTest extends TestCase {
         convert("test1.xml", "test1.groovy");
         convert("po.xsd", "poSchema.groovy");
         convert("swing.xml", "swing.groovy");
+    }
+
+    public void testConversionFormat() throws Exception {
+        ByteArrayInputStream inputStream = new ByteArrayInputStream("<a href='http://groovy.codehaus.org'>Groovy</a>".getBytes());
+        Document document = builder.parse(inputStream);
+        StringWriter writer = new StringWriter();
+        converter = new DomToGroovy(new PrintWriter(writer));
+        converter.print(document);
+        assertEquals("a(href:'http://groovy.codehaus.org', \"Groovy\")", writer.toString().trim());
     }
 
     protected void convert(String name, String output) throws Exception {
