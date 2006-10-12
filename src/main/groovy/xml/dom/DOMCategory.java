@@ -34,16 +34,20 @@ package groovy.xml.dom;
 
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
+import org.w3c.dom.Node;
+
+import java.util.Iterator;
 
 /**
  * @author sam
+ * @author paulk
  */
 public class DOMCategory {
 
     public static Object get(Element element, String elementName) {
         return getAt(element, elementName);
     }
-    
+
     public static Object getAt(Element element, int i) {
         if (element.hasChildNodes()) {
             NodeList nodeList = element.getChildNodes();
@@ -51,7 +55,7 @@ public class DOMCategory {
         }
         return null;
     }
-    
+
     public static Object getAt(Element element, String elementName) {
         if (elementName.startsWith("@")) {
             String attrName = elementName.substring(1);
@@ -73,4 +77,48 @@ public class DOMCategory {
         return null;
     }
 
+    public static String name(Element element) {
+        return element.getNodeName();
+    }
+
+    public static Node parent(Node node) {
+        return node.getParentNode();
+    }
+
+    public static String text(Element element) {
+        if (!element.hasChildNodes()) {
+            return null;
+        }
+        if (element.getFirstChild().getNodeType() != Node.TEXT_NODE) {
+            return null;
+        }
+        return element.getFirstChild().getNodeValue();
+    }
+
+    public static Iterator iterator(NodeList nodeList) {
+        return new NodeListIterator(nodeList);
+    }
+
+    private static class NodeListIterator implements Iterator {
+        private NodeList nodeList;
+        private int currentItem;
+
+        public NodeListIterator(NodeList nodeList) {
+            this.nodeList = nodeList;
+            currentItem = 0;
+        }
+
+        public void remove() {
+            Node node = nodeList.item(currentItem);
+            node.getParentNode().removeChild(node);
+        }
+
+        public boolean hasNext() {
+            return currentItem < nodeList.getLength();
+        }
+
+        public Object next() {
+            return nodeList.item(currentItem++);
+        }
+    }
 }
