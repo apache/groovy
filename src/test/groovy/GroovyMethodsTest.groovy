@@ -306,6 +306,31 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert [3.5, 4.6] == result[BigDecimal]
         assert 3 == result.size()
     }
+    
+    def leftCol  = ["2"]
+    def rightCol = ["1","2","3"]
+
+    void testList() {
+      def lst  = [] as LinkedList
+      doIt(lst)
+    }
+
+    void testSet() {
+      def set  = [] as HashSet 
+      doIt(set)
+    }
+                    
+    void testVector() {
+      def vctr  = [] as Vector
+      doIt(vctr)
+    }
+
+    void doIt(col) {
+      col.clear();
+      col.addAll(leftCol);
+      // not really concerned about  correctness, rather that the method can be called, however..
+      assert col.intersect(rightCol) == ["2"]
+    }
 }
 
 class WackyHashCode {

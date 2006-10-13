@@ -33,6 +33,7 @@ import org.codehaus.groovy.runtime.RegexSupport;
 public class DefaultTypeTransformation {
     
     protected static final Object[] EMPTY_ARGUMENTS = {};
+    protected static final BigInteger ONE_NEG = new BigInteger("-1");
     
     //  --------------------------------------------------------
     //                  unboxing methods
@@ -249,7 +250,14 @@ public class DefaultTypeTransformation {
             } else if (type == BigDecimal.class) {
                 return new BigDecimal(n.toString());
             } else if (type == BigInteger.class) {
-                return new BigInteger(n.toString());
+                if (object instanceof Float || object instanceof Double) {
+                    BigDecimal bd = new BigDecimal(n.doubleValue());
+                    return bd.toBigInteger();
+                } else if (object instanceof BigDecimal) {
+                    return ((BigDecimal) object).toBigInteger();
+                } else {
+                    return new BigInteger(n.toString());
+                }
             }
         } else if (type.isPrimitive()) {
             if (type == byte.class) {

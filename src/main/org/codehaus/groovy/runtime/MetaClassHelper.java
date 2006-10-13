@@ -681,6 +681,7 @@ public class MetaClassHelper {
     }
     
     protected static String getClassName(Object object) {
+        if (object==null) return null;
         return (object instanceof Class) ? ((Class)object).getName() : object.getClass().getName();
     }
     
@@ -709,7 +710,7 @@ public class MetaClassHelper {
         throw new IllegalArgumentException("Must be a Method or Constructor");
     }
    
-    protected static boolean isAssignableFrom(Class classToTransformTo, Class classToTransformFrom) {
+    public static boolean isAssignableFrom(Class classToTransformTo, Class classToTransformFrom) {
         if (classToTransformFrom==null) return true;
         classToTransformTo = autoboxType(classToTransformTo);
         classToTransformFrom = autoboxType(classToTransformFrom);

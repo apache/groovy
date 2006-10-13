@@ -81,22 +81,26 @@ public class CharsetToolkit {
      */
     public CharsetToolkit(File file) throws IOException {
         this.file = file;
-        InputStream input = new FileInputStream(file);
-        byte[] bytes = new byte[4096];
-        int bytesRead = input.read(bytes);
-        if (bytesRead == -1) {
-            this.buffer = new byte[0];
-        }
-        else if (bytesRead < 4096) {
-            byte[] bytesToGuess = new byte[bytesRead];
-            System.arraycopy(bytes, 0, bytesToGuess, 0, bytesRead);
-            this.buffer = bytesToGuess;
-        }
-        else {
-            this.buffer = bytes;
-        }
         this.defaultCharset = getDefaultSystemCharset();
         this.charset = null;
+        InputStream input = new FileInputStream(file);
+        try {
+            byte[] bytes = new byte[4096];
+            int bytesRead = input.read(bytes);
+            if (bytesRead == -1) {
+                this.buffer = new byte[0];
+            }
+            else if (bytesRead < 4096) {
+                byte[] bytesToGuess = new byte[bytesRead];
+                System.arraycopy(bytes, 0, bytesToGuess, 0, bytesRead);
+                this.buffer = bytesToGuess;
+            }
+            else {
+                this.buffer = bytes;
+            }
+        } finally {
+            try {input.close();} catch (IOException e){}
+        }
     }
 
     /**

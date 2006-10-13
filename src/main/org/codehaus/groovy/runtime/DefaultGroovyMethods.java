@@ -43,6 +43,7 @@ import java.io.*;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
@@ -549,6 +550,26 @@ public class DefaultGroovyMethods {
         }
         self.clear();
         self.addAll(answer);
+        return self;
+    }
+    
+    /**
+     * A convenience method for making a collection unique using a closure as a comparator
+     * (by Michael Baehr)
+     * @param self    a Collection
+     * @param closure a Closure used as a comparator
+     * @return self   without any duplicates
+     */
+    public static Collection unique(Collection self, Closure closure) {
+        if (self instanceof Set)
+            return self;
+        // use a comparator of one item or two
+        int params = closure.getMaximumNumberOfParameters();
+        if (params == 1) {
+            unique(self, new OrderBy(closure));
+        } else {
+            unique(self, new ClosureComparator(closure));
+        }
         return self;
     }
 
@@ -2554,6 +2575,26 @@ public class DefaultGroovyMethods {
         }
         return asType((Object) col, clazz);
     }
+    
+    public static Object asType(Closure cl, Class clazz) {
+        if (clazz.isInterface() && !(clazz.isInstance(cl))) {
+            return Proxy.newProxyInstance(
+                    clazz.getClassLoader(),
+                    new Class[]{clazz},
+                    new ConvertedClosure(cl));
+        }
+        return asType((Object) cl, clazz);
+    }
+    
+    public static Object asType(Map map, Class clazz) {
+        if (clazz.isInterface() && !(clazz.isInstance(map))) {
+            return Proxy.newProxyInstance(
+                    clazz.getClassLoader(),
+                    new Class[]{clazz},
+                    new ConvertedMap(map));
+        }
+        return asType((Object) map, clazz);
+    }
 
     /**
      * Reverses the list
@@ -2618,12 +2659,11 @@ public class DefaultGroovyMethods {
     /**
      * Create a List composed of the intersection of both collections
      *
-     * @param left  a List
+     * @param left  a Collection
      * @param right a Collection
      * @return a List as an intersection of both collections
      */
-    public static List intersect(List left, Collection right) {
-
+    public static List intersect(Collection left, Collection right) {
         if (left.size() == 0)
             return new ArrayList();
 

@@ -86,4 +86,42 @@ class BigDecimalOperationTest extends GroovyTestCase {
     void testBigDecimalCoerce() {
         assert echoX(9.95, 1.0) == echoX(9.95, 1)
     }
+    
+    void testAssign() {
+        BigDecimal foo
+        foo = (byte) 20
+        assert foo.class == BigDecimal.class
+        assert foo == 20
+
+        foo = (short) 20
+        assert foo.class == BigDecimal.class
+        assert foo == 20
+
+        foo = (int) 20
+        assert foo.class == BigDecimal.class
+        assert foo == 20
+
+        foo = (long) 20
+        assert foo.class == BigDecimal.class
+        assert foo == 20
+
+        foo = (float) 0.5f
+        assert foo.class == BigDecimal.class
+        assert foo == 0.5
+
+        foo = (double) 0.5d
+        assert foo.class == BigDecimal.class
+        assert foo == 0.5
+        
+        foo = 10G
+        assert foo.class == BigDecimal.class
+        assert foo == 10
+        
+        double d = 1000
+        d *= d
+        d *= d
+        d *= d
+        assert (long)d != d
+		assert (BigDecimal) d == d
+    }
 }

@@ -1238,19 +1238,37 @@ public class MetaClassImpl extends MetaClass {
            list.add(method);
        }
        else {
-           if (forceOverwrite) {
-               removeMatchingMethod(list,method);
-               list.add(method);
-           } else if (!MetaClassHelper.containsMatchingMethod(list, method)) {
+           addMethodToList(list,method,forceOverwrite);
+       }
+   }
+   
+   private void addMethodToList(List list, MetaMethod method, boolean forceOverwrite) {
+       MetaMethod match = removeMatchingMethod(list,method);
+       if (forceOverwrite) {
+           list.add(method);
+       } else if (match==null) {
+           list.add(method);
+       } else {
+           Class methodC = method.getDeclaringClass();
+           Class matchC = match.getDeclaringClass();
+           if (methodC == matchC){
+               if (method instanceof NewInstanceMetaMethod) {
+                   list.add(method);
+               } else {
+                   list.add(match);
+               }               
+           } else if (MetaClassHelper.isAssignableFrom(methodC,matchC)){
+               list.add(match);
+           } else {
                list.add(method);
            }
        }
    }
-
+   
    /**
     * remove a method of the same matching prototype was found in the list
     */
-   private void removeMatchingMethod(List list, MetaMethod method) {
+   private MetaMethod removeMatchingMethod(List list, MetaMethod method) {
        for (Iterator iter = list.iterator(); iter.hasNext();) {
            MetaMethod aMethod = (MetaMethod) iter.next();
            Class[] params1 = aMethod.getParameterTypes();
@@ -1265,11 +1283,11 @@ public class MetaClassImpl extends MetaClass {
                }
                if (matches) {
                    iter.remove();
-                   return;
+                   return (MetaMethod) aMethod;
                }
            }
        }
-       return;
+       return null;
    }
 
 
