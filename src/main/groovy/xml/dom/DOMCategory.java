@@ -49,8 +49,7 @@ public class DOMCategory {
     public static Object get(Object o, String elementName) {
         if (o instanceof Element) {
             return get((Element) o, elementName);
-        }
-        if (o instanceof NodeList) {
+        } else if (o instanceof NodeList) {
             return get((NodeList) o, elementName);
         }
         return null;
@@ -67,8 +66,7 @@ public class DOMCategory {
     public static Node getAt(Object o, int i) {
         if (o instanceof Element) {
             return getAt((Element) o, i);
-        }
-        if (o instanceof NodeList) {
+        } else if (o instanceof NodeList) {
             return getAt((NodeList) o, i);
         }
         return null;
@@ -92,8 +90,7 @@ public class DOMCategory {
     public static Object getAt(Object o, String elementName) {
         if (o instanceof Element) {
             return getAt((Element) o, elementName);
-        }
-        if (o instanceof NodeList) {
+        } else if (o instanceof NodeList) {
             return getAt((NodeList) o, elementName);
         }
         return null;
@@ -134,7 +131,18 @@ public class DOMCategory {
         return node.getParentNode();
     }
 
-    public static String text(Element element) {
+    public static Object text(Object o) {
+        if (o instanceof Element) {
+            return text((Element) o);
+        } else if (o instanceof NodeList) {
+            return text((NodeList) o);
+        } else if (o instanceof List) {
+            return text((List) o);
+        }
+        return null;
+    }
+
+    private static String text(Element element) {
         if (!element.hasChildNodes()) {
             return null;
         }
@@ -142,6 +150,34 @@ public class DOMCategory {
             return null;
         }
         return element.getFirstChild().getNodeValue();
+    }
+
+    private static List text(NodeList nodeList) {
+        List result = new ArrayList();
+        for (int i = 0; i < nodeList.getLength(); i++) {
+            Node node = nodeList.item(i);
+            if (!(node instanceof Element)) continue;
+            Element element = (Element) node;
+            String text = text(element);
+            if (text != null) {
+                result.add(text);
+            }
+        }
+        return result;
+    }
+
+    private static List text(List list) {
+        List result = new ArrayList();
+        for (int i = 0; i < list.size(); i++) {
+            Object item = list.get(i);
+            if (!(item instanceof Element)) continue;
+            Element element = (Element) item;
+            String text = text(element);
+            if (text != null) {
+                result.add(text);
+            }
+        }
+        return result;
     }
 
     public static Iterator iterator(NodeList self) {

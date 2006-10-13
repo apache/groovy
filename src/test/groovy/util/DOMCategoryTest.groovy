@@ -31,11 +31,14 @@ class DOMCategoryTest extends GroovyTestCase {
             assert node        == node[1].parent()
             assert 'cheese'    == node.likes[0].firstChild.nodeValue
             assert 'cheese'    == node.likes[0].text()
+            if (node.class.name.contains('xerces')) {
+                assert 'cheese' == node.likes[0].textContent
+            }
             assert 'Wallace'   == node.'@name'
             assert ['Wallace', 'Gromit'] == root.'character'.'@name'
-            assert ['cheese', 'sleep']   == root.likes.iterator().collect{ it.text() }
-            assert ['sleep']   == root.likes.iterator().findAll{ it.text().startsWith('s') }.collect{ it.text() }
-            assert root.likes.iterator().every{ it.text().contains('ee') }
+            assert ['cheese', 'sleep']   == root.likes.text()
+            assert ['sleep']   == root.likes.findAll{ it.text().startsWith('s') }.text()
+            assert root.likes.every{ it.text().contains('ee') }
         }
 
     }
