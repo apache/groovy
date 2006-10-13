@@ -64,9 +64,60 @@ import org.xml.sax.SAXException;
 
 /**
  * @author James Strachan
+ * @author paulk
  * @version $Revision$
  */
 public class DomToGroovyTest extends TestCase {
+    private static final String LS = System.getProperty("line.separator");
+    private static final String TEST_XML_1 =
+            "<a href='http://groovy.codehaus.org'>Groovy</a>";
+    private static final String TEST_XML_2 =
+            "<project name='testProject'><target name='testTarget'><echo>message</echo><echo/></target></project>";
+    private static final String TEST_XML_3 =
+            "<?xml version=\"1.0\"?>\n" +
+                    "<!-- this example demonstrates using markup to specify a rich user interface -->\n" +
+                    "<frame text=\"My Window\" size=\"[300,300]\">\n" +
+                    "  <label text=\"Save changes\" bounds=\"[10,10,290,30]\"/>\n" +
+                    "  <panel bounds=\"[10,40,290,290]\">\n" +
+                    "    <button text=\"OK\" action=\"save()\"/>\n" +
+                    "    <button text=\"Cancel\" action=\"close()\"/>\n" +
+                    "  </panel>\n" +
+                    "</frame>";
+    private static final String TEST_XML_4 =
+            "<xsd:schema xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">" +
+                    " <xsd:simpleType name=\"SKU\">\n" +
+                    "  <xsd:restriction base=\"xsd:string\">\n" +
+                    "   <xsd:pattern value=\"\\d{3}-[A-Z]{2}\"/>\n" +
+                    "  </xsd:restriction>\n" +
+                    " </xsd:simpleType>\n" +
+                    "</xsd:schema>";
+    private static final String EXPECTED_BUILDER_SCRIPT_1 =
+            "a(href:'http://groovy.codehaus.org', 'Groovy')";
+    private static final String EXPECTED_BUILDER_SCRIPT_2 =
+            "project(name:'testProject') {" + LS +
+            "  target(name:'testTarget') {" + LS +
+            "    echo('message')" + LS +
+            "    echo()" + LS +
+            "  }" + LS +
+            "}";
+    private static final String EXPECTED_BUILDER_SCRIPT_3 =
+            "/* this example demonstrates using markup to specify a rich user interface */" + LS +
+            "frame(size:'[300,300]', text:'My Window') {" + LS +
+            "  label(bounds:'[10,10,290,30]', text:'Save changes')" + LS +
+            "  panel(bounds:'[10,40,290,290]') {" + LS +
+            "    button(action:'save()', text:'OK')" + LS +
+            "    button(action:'close()', text:'Cancel')" + LS +
+            "  }" + LS +
+            "}";
+    private static final String EXPECTED_BUILDER_SCRIPT_4 =
+            "xsd = xmlns.namespace('http://www.w3.org/2001/XMLSchema')" + LS +
+                    "xsd.schema(xmlns=[xmlns.xsd:'http://www.w3.org/2001/XMLSchema']) {" + LS +
+                    "  xsd.simpleType(name:'SKU') {" + LS +
+                    "    xsd.restriction(base:'xsd:string') {" + LS +
+                    "      xsd.pattern(value:'\\\\d{3}-[A-Z]{2}')" + LS +
+                    "    }" + LS +
+                    "  }" + LS +
+                    "}";
 
     protected DocumentBuilder builder;
     protected DomToGroovy converter;
@@ -79,15 +130,24 @@ public class DomToGroovyTest extends TestCase {
     }
 
     public void testConversionFormat() throws Exception {
-        ByteArrayInputStream inputStream = new ByteArrayInputStream("<a href='http://groovy.codehaus.org'>Groovy</a>".getBytes());
+        checkConversion(TEST_XML_1, EXPECTED_BUILDER_SCRIPT_1);
+        checkConversion(TEST_XML_2, EXPECTED_BUILDER_SCRIPT_2);
+        checkConversion(TEST_XML_3, EXPECTED_BUILDER_SCRIPT_3);
+        // TODO make work for namespaces and better escape special symbols in strings, e.g. '\'
+//        checkConversion(TEST_XML_4, EXPECTED_BUILDER_SCRIPT_4);
+    }
+
+    private void checkConversion(String testXml, String expectedScript) throws SAXException, IOException {
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(testXml.getBytes());
         Document document = builder.parse(inputStream);
         StringWriter writer = new StringWriter();
         converter = new DomToGroovy(new PrintWriter(writer));
         converter.print(document);
-        assertEquals("a(href:'http://groovy.codehaus.org', \"Groovy\")", writer.toString().trim());
+        assertEquals(expectedScript, writer.toString().trim());
+        System.out.println(writer.toString().trim());
     }
 
-    protected void convert(String name, String output) throws Exception {
+    private void convert(String name, String output) throws Exception {
         Document document = parse(name);
 
         PrintWriter writer = new PrintWriter(new FileWriter(new File(dir, output)));
@@ -101,7 +161,7 @@ public class DomToGroovyTest extends TestCase {
         writer.close();
     }
 
-    protected Document parse(String name) throws SAXException, IOException {
+    private Document parse(String name) throws SAXException, IOException {
         URL resource = getClass().getResource(name);
         assertTrue("Could not find resource: " + name, resource != null);
         return builder.parse(new InputSource(resource.toString()));
@@ -111,7 +171,6 @@ public class DomToGroovyTest extends TestCase {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         factory.setNamespaceAware(true);
         builder = factory.newDocumentBuilder();
-
         dir.mkdirs();
     }
 

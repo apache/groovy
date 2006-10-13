@@ -64,7 +64,8 @@ import org.w3c.dom.Text;
 /**
  * A SAX handler for turning XML into Groovy scripts
  * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * @author James Strachan
+ * @author paulk
  */
 public class DomToGroovy {
 
@@ -74,10 +75,10 @@ public class DomToGroovy {
         this(new IndentPrinter(out));
     }
 
+    // TODO allow string quoting delimiter to be specified, e.g. ' vs "
     public DomToGroovy(IndentPrinter out) {
         this.out = out;
     }
-
 
     public void print(Document document) {
         printChildren(document, new HashMap());
@@ -120,19 +121,17 @@ public class DomToGroovy {
         NodeList list = element.getChildNodes();
         int length = list.getLength();
         if (length == 0) {
-            printEnd("", endWithComma);
-        }
-        else {
+            printEnd(hasAttributes ? ")" : "()", endWithComma);
+        } else {
             Node node = list.item(0);
             if (length == 1 && node instanceof Text) {
                 Text textNode = (Text) node;
                 String text = getTextNodeData(textNode);
-                if (hasAttributes) print(", \"");
-                else print("(\"");
+                if (hasAttributes) print(", '");
+                else print("('");
                 print(text);
-                printEnd("\")", endWithComma);
-            }
-            else if (mixedContent(list)) {
+                printEnd("')", endWithComma);
+            } else if (mixedContent(list)) {
                 println(" [");
                 out.incrementIndent();
                 for (node = element.getFirstChild(); node != null; node = node.getNextSibling()) {
@@ -142,9 +141,8 @@ public class DomToGroovy {
                 out.decrementIndent();
                 printIndent();
                 printEnd("]", endWithComma);
-            }
-            else {
-                println(" {");
+            } else {
+                println(") {");
                 out.incrementIndent();
                 printChildren(element, namespaces);
                 out.decrementIndent();
@@ -180,9 +178,9 @@ public class DomToGroovy {
             //            print("xml.append('");
             //            print(text);
             //            println("');");
-            print("\"");
+            print("'");
             print(text);
-            printEnd("\"", endWithComma);
+            printEnd("'", endWithComma);
         }
     }
 
@@ -221,43 +219,16 @@ public class DomToGroovy {
 
     protected boolean printAttributes(Element element) {
         boolean hasAttribute = false;
-
         NamedNodeMap attributes = element.getAttributes();
         int length = attributes.getLength();
         if (length > 0) {
             StringBuffer buffer = new StringBuffer();
             for (int i = 0; i < length; i++) {
-                Attr attribute = (Attr) attributes.item(i);
-                String prefix = attribute.getPrefix();
-                if (prefix != null && prefix.length() > 0) {
-                    if (buffer.length() > 0) {
-                        buffer.append(", ");
-                    }
-                    buffer.append(prefix);
-                    buffer.append(".");
-                    buffer.append(getLocalName(attribute));
-                    buffer.append(":'");
-                    buffer.append(attribute.getValue());
-                    buffer.append("'");
-                }
+                printAttributeWithPrefix((Attr) attributes.item(i), buffer);
             }
-
             print("(");
             for (int i = 0; i < length; i++) {
-                Attr attribute = (Attr) attributes.item(i);
-                String prefix = attribute.getPrefix();
-                if (prefix == null || prefix.length() == 0) {
-                    if (!hasAttribute) {
-                        hasAttribute = true;
-                    }
-                    else {
-                        print(", ");
-                    }
-                    print(getLocalName(attribute));
-                    print(":'");
-                    print(attribute.getValue());
-                    print("'");
-                }
+                hasAttribute = printAttributeWithoutPrefix((Attr) attributes.item(i), hasAttribute);
             }
             if (buffer.length() > 0) {
                 if (hasAttribute) {
@@ -268,6 +239,37 @@ public class DomToGroovy {
                 print("]");
                 hasAttribute = true;
             }
+        }
+        return hasAttribute;
+    }
+
+    private void printAttributeWithPrefix(Attr attribute, StringBuffer buffer) {
+        String prefix = attribute.getPrefix();
+        if (prefix != null && prefix.length() > 0) {
+            if (buffer.length() > 0) {
+                buffer.append(", ");
+            }
+            buffer.append(prefix);
+            buffer.append(".");
+            buffer.append(getLocalName(attribute));
+            buffer.append(":'");
+            buffer.append(attribute.getValue());
+            buffer.append("'");
+        }
+    }
+
+    private boolean printAttributeWithoutPrefix(Attr attribute, boolean hasAttribute) {
+        String prefix = attribute.getPrefix();
+        if (prefix == null || prefix.length() == 0) {
+            if (!hasAttribute) {
+                hasAttribute = true;
+            } else {
+                print(", ");
+            }
+            print(getLocalName(attribute));
+            print(":'");
+            print(attribute.getValue());
+            print("'");
         }
         return hasAttribute;
     }
@@ -283,8 +285,7 @@ public class DomToGroovy {
             Node node = list.item(i);
             if (node instanceof Element) {
                 hasElement = true;
-            }
-            else if (node instanceof Text) {
+            } else if (node instanceof Text) {
                 String text = getTextNodeData((Text) node);
                 if (text.length() > 0) {
                     hasText = true;
@@ -312,8 +313,7 @@ public class DomToGroovy {
         if (endWithComma) {
             print(text);
             println(",");
-        }
-        else {
+        } else {
             println(text);
         }
     }
