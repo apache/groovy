@@ -37,6 +37,8 @@ import org.w3c.dom.NodeList;
 import org.w3c.dom.Node;
 
 import java.util.Iterator;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * @author sam
@@ -44,37 +46,84 @@ import java.util.Iterator;
  */
 public class DOMCategory {
 
-    public static Object get(Element element, String elementName) {
+    public static Object get(Object o, String elementName) {
+        if (o instanceof Element) {
+            return get((Element) o, elementName);
+        }
+        if (o instanceof NodeList) {
+            return get((NodeList) o, elementName);
+        }
+        return null;
+    }
+
+    private static Object get(Element element, String elementName) {
         return getAt(element, elementName);
     }
 
-    public static Object getAt(Element element, int i) {
-        if (element.hasChildNodes()) {
-            NodeList nodeList = element.getChildNodes();
-        		return nodeList.item(i);
+    private static Object get(NodeList nodeList, String elementName) {
+        return getAt(nodeList, elementName);
+    }
+
+    public static Node getAt(Object o, int i) {
+        if (o instanceof Element) {
+            return getAt((Element) o, i);
+        }
+        if (o instanceof NodeList) {
+            return getAt((NodeList) o, i);
         }
         return null;
     }
 
-    public static Object getAt(Element element, String elementName) {
-        if (elementName.startsWith("@")) {
-            String attrName = elementName.substring(1);
-            	return element.getAttribute(attrName);
-        }
+    private static Node getAt(Element element, int i) {
         if (element.hasChildNodes()) {
             NodeList nodeList = element.getChildNodes();
-            for (int i = 0; i < nodeList.getLength(); i++) {
-                Object node = nodeList.item(i);
-                if (node instanceof Element) {
-                    Element child = (Element) node;
-                    child.hasChildNodes();
-                    if(child.getTagName().equals(elementName)) {
-                        return child;
-                    }
-                }
-            }
+                return nodeList.item(i);
         }
         return null;
+    }
+
+    private static Node getAt(NodeList nodeList, int i) {
+        if (i >= 0 && i < nodeList.getLength()) {
+            return nodeList.item(i);
+        }
+        return null;
+    }
+
+    public static Object getAt(Object o, String elementName) {
+        if (o instanceof Element) {
+            return getAt((Element) o, elementName);
+        }
+        if (o instanceof NodeList) {
+            return getAt((NodeList) o, elementName);
+        }
+        return null;
+    }
+
+    private static Object getAt(Element element, String elementName) {
+        if (elementName.startsWith("@")) {
+            String attrName = elementName.substring(1);
+                return element.getAttribute(attrName);
+        }
+        if (element.hasChildNodes()) {
+            return element.getElementsByTagName(elementName);
+        }
+        return null;
+    }
+
+    private static List getAt(NodeList nodeList, String elementName) {
+        List result = new ArrayList();
+        for (int i = 0; i < nodeList.getLength(); i++) {
+            Node node = nodeList.item(i);
+            if (!(node instanceof Element)) continue;
+            Element element = (Element) node;
+            if (elementName.startsWith("@")) {
+                String attrName = elementName.substring(1);
+                   result.add(element.getAttribute(attrName));
+            } else if (element.hasChildNodes()) {
+                result.add(element.getElementsByTagName(elementName));
+            }
+        }
+        return result;
     }
 
     public static String name(Element element) {
@@ -95,8 +144,12 @@ public class DOMCategory {
         return element.getFirstChild().getNodeValue();
     }
 
-    public static Iterator iterator(NodeList nodeList) {
-        return new NodeListIterator(nodeList);
+    public static Iterator iterator(NodeList self) {
+        return new NodeListIterator(self);
+    }
+
+    public static int size(NodeList self) {
+        return self.getLength();
     }
 
     private static class NodeListIterator implements Iterator {
