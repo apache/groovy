@@ -285,13 +285,14 @@ public class MetaClassImpl extends MetaClass {
     * Invokes the given method on the object.
     *
     */
-   public Object invokeMethod(Object object, String methodName, Object[] arguments) {
+   public Object invokeMethod(Object object, String methodName, Object[] originalArguments) {
        if (object == null) {
            throw new NullPointerException("Cannot invoke method: " + methodName + " on null object");
        }              
        if (log.isLoggable(Level.FINER)){
-           MetaClassHelper.logMethodCall(object, methodName, arguments);
+           MetaClassHelper.logMethodCall(object, methodName, originalArguments);
        }
+       Object[] arguments = originalArguments;
        if (arguments==null) arguments = EMPTY_ARGUMENTS;
        Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
        unwrap(arguments);       
@@ -340,12 +341,12 @@ public class MetaClassImpl extends MetaClass {
            if (method==null && owner!=closure) {
                MetaClass ownerMetaClass = registry.getMetaClass(owner.getClass());
                method = ownerMetaClass.retrieveMethod(methodName,argClasses);
-               if (method!=null) return ownerMetaClass.invokeMethod(owner,methodName,arguments);
+               if (method!=null) return ownerMetaClass.invokeMethod(owner,methodName,originalArguments);
            }
            if (method==null && delegate!=closure && delegate!=null) {
                MetaClass delegateMetaClass = registry.getMetaClass(delegate.getClass());
                method = delegateMetaClass.retrieveMethod(methodName,argClasses);
-               if (method!=null) return delegateMetaClass.invokeMethod(delegate,methodName,arguments);
+               if (method!=null) return delegateMetaClass.invokeMethod(delegate,methodName,originalArguments);
            }
            if (method==null) {
                // still no methods found, test if delegate or owner are GroovyObjects
@@ -354,7 +355,7 @@ public class MetaClassImpl extends MetaClass {
                if (owner!=closure && (owner instanceof GroovyObject)) {
                    try {
                        GroovyObject go = (GroovyObject) owner;
-                       return go.invokeMethod(methodName,arguments);
+                       return go.invokeMethod(methodName,originalArguments);
                    } catch (MissingMethodException mme) {
                        if (last==null) last = mme;
                    }
@@ -362,7 +363,7 @@ public class MetaClassImpl extends MetaClass {
                if (delegate!=closure && (delegate instanceof GroovyObject)) {
                    try {
                        GroovyObject go = (GroovyObject) delegate;
-                       return go.invokeMethod(methodName,arguments);
+                       return go.invokeMethod(methodName,originalArguments);
                    } catch (MissingMethodException mme) {
                        last = mme;
                    }
@@ -373,7 +374,7 @@ public class MetaClassImpl extends MetaClass {
        }
 
        if (method != null) {
-           return MetaClassHelper.doMethodInvoke(object, method, arguments);
+           return MetaClassHelper.doMethodInvoke(object, method, originalArguments);
        } else {
            // if no method was found, try to find a closure defined as a field of the class and run it
            try {
@@ -381,11 +382,11 @@ public class MetaClassImpl extends MetaClass {
                if (value instanceof Closure) {  // This test ensures that value != this If you ever change this ensure that value != this
                    Closure closure = (Closure) value;
                    MetaClass delegateMetaClass = registry.getMetaClass(closure.getClass());
-                   return delegateMetaClass.invokeMethod(closure,"doCall",arguments);
+                   return delegateMetaClass.invokeMethod(closure,"doCall",originalArguments);
                }
            } catch (MissingPropertyException mpe) {}
 
-           throw new MissingMethodException(methodName, theClass, arguments);
+           throw new MissingMethodException(methodName, theClass, originalArguments);
        }
    }
 
