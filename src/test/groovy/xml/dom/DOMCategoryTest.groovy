@@ -1,7 +1,6 @@
-package groovy.util
+package groovy.xml.dom
 
 import groovy.xml.DOMBuilder
-import groovy.xml.dom.DOMCategory
 
 class DOMCategoryTest extends GroovyTestCase {
     
@@ -27,8 +26,8 @@ class DOMCategoryTest extends GroovyTestCase {
             assert 2 == root.likes.size()
             assert 'character' == node.nodeName
             assert 'character' == node.name()
-            assert 'likes'     == node[1].nodeName
-            assert node        == node[1].parent()
+            assert 'likes'     == node.item(1).nodeName
+            assert node        == node.item(1).parent()
             assert 'cheese'    == node.likes[0].firstChild.nodeValue
             assert 'cheese'    == node.likes[0].text()
             if (node.class.name.contains('xerces')) {
@@ -40,6 +39,5 @@ class DOMCategoryTest extends GroovyTestCase {
             assert ['sleep']   == root.likes.findAll{ it.text().startsWith('s') }.text()
             assert root.likes.every{ it.text().contains('ee') }
         }
-
     }
 }

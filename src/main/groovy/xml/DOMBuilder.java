@@ -179,6 +179,7 @@ public class DOMBuilder extends BuilderSupport {
                 }
             }
             else {
+                // TODO handle null values and treat as ''
                 element.setAttribute(attrName, value.toString());
             }
         }

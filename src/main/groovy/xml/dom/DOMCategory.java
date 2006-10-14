@@ -39,6 +39,7 @@ import org.w3c.dom.Node;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Collection;
 
 /**
  * @author sam
@@ -63,30 +64,6 @@ public class DOMCategory {
         return getAt(nodeList, elementName);
     }
 
-    public static Node getAt(Object o, int i) {
-        if (o instanceof Element) {
-            return getAt((Element) o, i);
-        } else if (o instanceof NodeList) {
-            return getAt((NodeList) o, i);
-        }
-        return null;
-    }
-
-    private static Node getAt(Element element, int i) {
-        if (element.hasChildNodes()) {
-            NodeList nodeList = element.getChildNodes();
-                return nodeList.item(i);
-        }
-        return null;
-    }
-
-    private static Node getAt(NodeList nodeList, int i) {
-        if (i >= 0 && i < nodeList.getLength()) {
-            return nodeList.item(i);
-        }
-        return null;
-    }
-
     public static Object getAt(Object o, String elementName) {
         if (o instanceof Element) {
             return getAt((Element) o, elementName);
@@ -107,20 +84,41 @@ public class DOMCategory {
         return null;
     }
 
-    private static List getAt(NodeList nodeList, String elementName) {
-        List result = new ArrayList();
+    private static Object getAt(NodeList nodeList, String elementName) {
+        List results = new ArrayList();
         for (int i = 0; i < nodeList.getLength(); i++) {
             Node node = nodeList.item(i);
-            if (!(node instanceof Element)) continue;
-            Element element = (Element) node;
-            if (elementName.startsWith("@")) {
-                String attrName = elementName.substring(1);
-                   result.add(element.getAttribute(attrName));
-            } else if (element.hasChildNodes()) {
-                result.add(element.getElementsByTagName(elementName));
+            addResult(results, getAt(node, elementName));
+        }
+        if (elementName.startsWith("@")) {
+            return results;
+        }
+        return new NodeListHolder(results);
+    }
+
+    public static Node getAt(Element element, int i) {
+        if (element.hasChildNodes()) {
+            NodeList nodeList = element.getChildNodes();
+                return nodeList.item(i);
+        }
+        return null;
+    }
+
+    public static Node getAt(NodeList nodeList, int i) {
+        if (i >= 0 && i < nodeList.getLength()) {
+            return nodeList.item(i);
+        }
+        return null;
+    }
+
+    private static void addResult(List results, Object result) {
+        if (result != null) {
+            if (result instanceof Collection) {
+                results.addAll((Collection) result);
+            } else {
+                results.add(result);
             }
         }
-        return result;
     }
 
     public static String name(Element element) {
@@ -153,39 +151,69 @@ public class DOMCategory {
     }
 
     private static List text(NodeList nodeList) {
-        List result = new ArrayList();
+        List results = new ArrayList();
         for (int i = 0; i < nodeList.getLength(); i++) {
-            Node node = nodeList.item(i);
-            if (!(node instanceof Element)) continue;
-            Element element = (Element) node;
-            String text = text(element);
-            if (text != null) {
-                result.add(text);
-            }
+            addResult(results, text(nodeList.item(i)));
         }
-        return result;
+        return results;
     }
 
     private static List text(List list) {
-        List result = new ArrayList();
+        List results = new ArrayList();
         for (int i = 0; i < list.size(); i++) {
             Object item = list.get(i);
-            if (!(item instanceof Element)) continue;
-            Element element = (Element) item;
-            String text = text(element);
-            if (text != null) {
-                result.add(text);
-            }
+            addResult(results, text(item));
         }
-        return result;
+        return results;
     }
 
     public static Iterator iterator(NodeList self) {
         return new NodeListIterator(self);
     }
 
+    public static String toString(NodeList self) {
+        StringBuffer sb = new StringBuffer();
+        sb.append("[");
+        Iterator it = iterator(self);
+        while (it.hasNext()) {
+            if (sb.length() > 1) sb.append(", ");
+            sb.append(it.next().toString());
+        }
+        sb.append("]");
+        return sb.toString();
+    }
+
     public static int size(NodeList self) {
         return self.getLength();
+    }
+
+    private static class NodeListHolder implements NodeList {
+        private List nodeLists;
+
+        public NodeListHolder(List nodeLists) {
+            this.nodeLists = nodeLists;
+        }
+
+        public int getLength() {
+            int length = 0;
+            for (int i = 0; i < nodeLists.size(); i++) {
+                NodeList nl = (NodeList) nodeLists.get(i);
+                length += nl.getLength();
+            }
+            return length;
+        }
+
+        public Node item(int index) {
+            int relativeIndex = index;
+            for (int i = 0; i < nodeLists.size(); i++) {
+                NodeList nl = (NodeList) nodeLists.get(i);
+                if (relativeIndex < nl.getLength()) {
+                    return nl.item(relativeIndex);
+                }
+                relativeIndex -= nl.getLength();
+            }
+            return null;
+        }
     }
 
     private static class NodeListIterator implements Iterator {

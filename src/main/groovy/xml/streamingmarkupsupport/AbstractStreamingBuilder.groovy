@@ -1,4 +1,5 @@
 package groovy.xml.streamingmarkupsupport
+
 /*
 
 Copyright 2004 (C) John Wilson. All Rights Reserved.
@@ -44,61 +45,53 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
 	
-    class AbstractStreamingBuilder {
-        def badTagClosure = {tag, doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, Object[] rest ->
-                                      def uri = pendingNamespaces[prefix]
-          
-                                      if (uri == null) {
-                                          uri = namespaces[prefix]
-                                      }
-          
-                                      throw new GroovyRuntimeException("Tag ${tag} is not allowed in namespace ${uri}")
-                                  }
-        def namespaceSetupClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, Object[] rest ->
-                                              attrs.each { key, value ->
-                                                  if ( key == "") {
-                                                      key = ":"    // marker for default namespace
-                                                  }
-          
-                                                  value = value.toString()     // in case it's not a string
-          
-                                                  if (namespaces[key] != value) {
-                                                      pendingNamespaces[key] = value
-                                                  }
-          
-                                                  if (!namespaceSpecificTags.containsKey(value)) {
-                                                      def baseEntry = namespaceSpecificTags[':']
-                                                      namespaceSpecificTags[value] = [baseEntry[0], baseEntry[1], [:]].toArray()
-                                                  }
-                                              }
-                                          }
-        def aliasSetupClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, Object[] rest ->
-                                        attrs.each { key, value ->
-                                            if (value instanceof Map) {
-                                                // key is a namespace prefix value is the mapping
-                                                def info = null
-        
-                                                if (namespaces.containsKey(key)) {
-                                                    info = namespaceSpecificTags[namespaces[key]]
-                                                } else if (pendingNamespaces.containsKey(key)) {
-                                                    info = namespaceSpecificTags[pendingNamespaces[key]]
-                                                } else {
-                                                    throw new GroovyRuntimeException("namespace prefix ${key} has not been declared")
-                                                }
-                                              value.each { to, from ->
-                                                  info[2][to] = info[1].curry(from)
-                                              }
-                                          } else {
-                                              def info = namespaceSpecificTags[':']
-                                              info[2][key] = info[1].curry(value)
-                                          }
-                                      }
-                                    }
-        def getNamespaceClosure = {doc, pendingNamespaces, namespaces, Object[] rest -> [namespaces, pendingNamespaces]}
-
-        def specialTags = ['declareNamespace':namespaceSetupClosure,
-                                 'declareAlias':aliasSetupClosure,
-                                 'getNamespaces':getNamespaceClosure]
-
-        def builder = null
+class AbstractStreamingBuilder {
+    def badTagClosure = {tag, doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, Object[] rest ->
+        def uri = pendingNamespaces[prefix]
+        if (uri == null) {
+            uri = namespaces[prefix]
+        }
+        throw new GroovyRuntimeException("Tag ${tag} is not allowed in namespace ${uri}")
     }
+    def namespaceSetupClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, Object[] rest ->
+        attrs.each { key, value ->
+            if ( key == "") {
+                key = ":"    // marker for default namespace
+            }
+            value = value.toString()     // in case it's not a string
+            if (namespaces[key] != value) {
+                pendingNamespaces[key] = value
+            }
+            if (!namespaceSpecificTags.containsKey(value)) {
+                def baseEntry = namespaceSpecificTags[':']
+                namespaceSpecificTags[value] = [baseEntry[0], baseEntry[1], [:]].toArray()
+            }
+        }
+    }
+    def aliasSetupClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, Object[] rest ->
+        attrs.each { key, value ->
+            if (value instanceof Map) {
+                // key is a namespace prefix value is the mapping
+                def info = null
+                if (namespaces.containsKey(key)) {
+                    info = namespaceSpecificTags[namespaces[key]]
+                } else if (pendingNamespaces.containsKey(key)) {
+                    info = namespaceSpecificTags[pendingNamespaces[key]]
+                } else {
+                    throw new GroovyRuntimeException("namespace prefix ${key} has not been declared")
+                }
+                value.each { to, from -> info[2][to] = info[1].curry(from) }
+            } else {
+                def info = namespaceSpecificTags[':']
+                info[2][key] = info[1].curry(value)
+            }
+        }
+    }
+    def getNamespaceClosure = {doc, pendingNamespaces, namespaces, Object[] rest -> [namespaces, pendingNamespaces]}
+
+    def specialTags = ['declareNamespace':namespaceSetupClosure,
+                           'declareAlias':aliasSetupClosure,
+                          'getNamespaces':getNamespaceClosure]
+
+    def builder = null
+}
