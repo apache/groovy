@@ -167,6 +167,7 @@ public class DOMCategory {
         return results;
     }
 
+    // TODO should we move this here instead of DGM?
     public static Iterator iterator(NodeList self) {
         return new NodeListIterator(self);
     }
@@ -225,6 +226,7 @@ public class DOMCategory {
             currentItem = 0;
         }
 
+        // TODO test this or throw UOE instead
         public void remove() {
             Node node = nodeList.item(currentItem);
             node.getParentNode().removeChild(node);

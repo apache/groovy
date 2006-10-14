@@ -62,7 +62,6 @@ import java.util.regex.Pattern;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.typehandling.NumberMath;
 import org.codehaus.groovy.tools.RootLoader;
-import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 /**
@@ -80,6 +79,7 @@ import org.w3c.dom.NodeList;
  * @author Dierk Koenig
  * @author Pilho Kim
  * @author Marc Guillemot
+ * @author Russel Winder
  * @version $Revision$
  */
 public class DefaultGroovyMethods {
@@ -295,9 +295,6 @@ public class DefaultGroovyMethods {
 
   /**
    *  Printf to a console.  Only works with JDK1.5 or later.
-   *
-   *  @author Russel Winder
-   *  @version 2005.02.01.15.53
    */
   public static void printf(final Object self, final String format, final Object[] values) {
     if ( System.getProperty("java.version").charAt(2) == '5' ) {
@@ -360,9 +357,6 @@ public class DefaultGroovyMethods {
    *         int[], short[], byte[], char[], boolean[], long[], float[], or double[].
    *
    * @since  JDK 1.5
-   *
-   * @author Pilho Kim
-   * @version 2005.07.25.02.31
    */
   public static void printf(final Object self, final String format, Object arg) {
       if (arg instanceof Object[]) {
@@ -520,12 +514,15 @@ public class DefaultGroovyMethods {
         }
     }
 
+    /*
+    // TODO remove?
     private static Object packArray(Object object) {
         if (object instanceof Object[])
             return new Object[] {object};
         else
             return object;
     }
+    */
 
     // Collection based methods
     //-------------------------------------------------------------------------
@@ -1102,8 +1099,7 @@ public class DefaultGroovyMethods {
 		Object[] closureParam = new Object[1];
 		Object[] plusParam = new Object[1];
 		for (Iterator iter = self.iterator(); iter.hasNext();) {
-			Object item = iter.next();
-			closureParam[0] = item;
+            closureParam[0] = iter.next();
 			plusParam[0] = closure.call(closureParam);
 			MetaClass metaClass = InvokerHelper.getMetaClass(result);
 			result = metaClass.invokeMethod(result, "plus", plusParam);
@@ -2113,8 +2109,8 @@ public class DefaultGroovyMethods {
     // helper method for putAt(Splice)
     // todo: remove after putAt(Splice) gets deleted
     protected static List getSubList(List self, List splice) {
-        int left = 0;
-        int right = 0;
+        int left /* = 0 */;
+        int right  = 0;
         boolean emptyRange = false;
         if (splice.size() == 2) {
             left = DefaultTypeTransformation.intUnbox(splice.get(0));
@@ -2133,7 +2129,7 @@ public class DefaultGroovyMethods {
         int size = self.size();
         left = normaliseIndex(left, size);
         right = normaliseIndex(right, size);
-        List sublist = null;
+        List sublist /* = null */;
         if (!emptyRange) {
             sublist = self.subList(left, right + 1);
         } else {
@@ -2795,7 +2791,7 @@ public class DefaultGroovyMethods {
 
         if (nlgnSort && (self.get(0) instanceof Comparable)) {
             //n*log(n) version
-            Set answer = null;
+            Set answer /* = null */;
             if (Number.class.isInstance(self.get(0))) {
                 BigDecimal zero = new BigDecimal("0.0");
                 answer = new TreeSet(numberComparator);
@@ -5061,7 +5057,7 @@ public class DefaultGroovyMethods {
      * @throws IOException
      */
     public static void eachLine(Reader self, Closure closure) throws IOException {
-        BufferedReader br = null;
+        BufferedReader br /* = null */;
 
         if (self instanceof BufferedReader)
             br = (BufferedReader) self;
@@ -5126,7 +5122,7 @@ public class DefaultGroovyMethods {
      * @throws IOException
      */
     public static void splitEachLine(Reader self, String sep, Closure closure) throws IOException {
-        BufferedReader br = null;
+        BufferedReader br /* = null */;
 
         if (self instanceof BufferedReader)
             br = (BufferedReader) self;
@@ -5176,7 +5172,7 @@ public class DefaultGroovyMethods {
          * @throws IOException
          */
     public static String readLine(Reader self) throws IOException {
-        BufferedReader br = null;
+        BufferedReader br /* = null */;
 
         if (self instanceof BufferedReader) {
             br = (BufferedReader) self;
@@ -5309,7 +5305,7 @@ public class DefaultGroovyMethods {
         // reading the content of the file within a char buffer 
         // allow to keep the correct line endings
         char[] charBuffer = new char[4096];
-        int nbCharRead = 0;
+        int nbCharRead /* = 0*/;
         try {
 	    while ((nbCharRead = reader.read(charBuffer)) != -1) {
 		// appends buffer
@@ -6816,22 +6812,22 @@ public class DefaultGroovyMethods {
     public static Iterator iterator(Object o) {
         return DefaultTypeTransformation.asCollection(o).iterator();
     }
-    
+
+    // TODO move into DOMCategory?
     public static Iterator iterator(final NodeList nodeList) {
         return new Iterator() {
-            private int current = 0;
+            private int current /* = 0 */;
             
             public boolean hasNext() {
                 return current < nodeList.getLength();
             }
             
             public Object next() {
-                Node node = nodeList.item(current++);
-                return node;
+                return nodeList.item(current++);
             }
             
             public void remove() {
-                throw new UnsupportedOperationException("Cannot remove() from an Enumeration");
+                throw new UnsupportedOperationException("Cannot remove() from a NodeList iterator");
             }
         };
     }
@@ -6857,8 +6853,8 @@ public class DefaultGroovyMethods {
     
     public static Iterator iterator(final Matcher matcher) {
         return new Iterator() {
-            private boolean found = false;
-            private boolean done = false;
+            private boolean found /* = false */;
+            private boolean done /* = false */;
 
             public boolean hasNext() {
                 if (done) {
@@ -6897,9 +6893,9 @@ public class DefaultGroovyMethods {
         if(value instanceof BufferedReader)
             bufferedReader = (BufferedReader)value;
         else
-            bufferedReader = new BufferedReader((Reader)value);
+            bufferedReader = new BufferedReader(value);
         return new Iterator() {
-            String nextVal = null;
+            String nextVal /* = null */;
             boolean nextMustRead = true;
             boolean hasNext = true;
 
@@ -6951,7 +6947,7 @@ public class DefaultGroovyMethods {
     
     public static Iterator iterator(final DataInputStream dis) {
         return new Iterator() {
-            Byte nextVal = null;
+            Byte nextVal;
             boolean nextMustRead = true;
             boolean hasNext = true;
 
