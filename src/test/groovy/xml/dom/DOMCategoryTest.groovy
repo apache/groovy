@@ -4,8 +4,7 @@ import groovy.xml.DOMBuilder
 
 class DOMCategoryTest extends GroovyTestCase {
     
-    void testDomCategory() {
-        def text = """
+    def testXml = """
 <characters>
     <character id="1" name="Wallace">
     	<likes>cheese</likes>
@@ -15,11 +14,12 @@ class DOMCategoryTest extends GroovyTestCase {
     </character>
 </characters>
 """
-        def reader = new StringReader(text)
+
+    void testDomCategory() {
+        def reader = new StringReader(testXml)
         def doc    = DOMBuilder.parse(reader)
         def root   = doc.documentElement
-
-        def node = root.getElementsByTagName('character').item(0)
+        def node   = root.getElementsByTagName('character').item(0)
 
         use(DOMCategory){
             assert 2 == root.character.size()
@@ -33,11 +33,16 @@ class DOMCategoryTest extends GroovyTestCase {
             if (node.class.name.contains('xerces')) {
                 assert 'cheese' == node.likes[0].textContent
             }
-            assert 'Wallace'   == node.'@name'
+            assert 'Wallace' == node.'@name'
             assert ['Wallace', 'Gromit'] == root.'character'.'@name'
             assert ['cheese', 'sleep']   == root.likes.text()
-            assert ['sleep']   == root.likes.findAll{ it.text().startsWith('s') }.text()
+            assert ['sleep'] == root.likes.findAll{ it.text().startsWith('s') }.text()
             assert root.likes.every{ it.text().contains('ee') }
+            def groupLikesByFirstLetter = root.likes.list().groupBy{ it.parent().'@name'[0] }
+            groupLikesByFirstLetter.keySet().each{
+                groupLikesByFirstLetter[it] = groupLikesByFirstLetter[it][0].text()
+            }
+            assert groupLikesByFirstLetter == [W:'cheese', G:'sleep']
         }
     }
 }

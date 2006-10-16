@@ -80,6 +80,8 @@ import org.w3c.dom.NodeList;
  * @author Pilho Kim
  * @author Marc Guillemot
  * @author Russel Winder
+ * @author bing ran
+ * @author Jochen Theodorou
  * @version $Revision$
  */
 public class DefaultGroovyMethods {
@@ -87,7 +89,6 @@ public class DefaultGroovyMethods {
     private static Logger log = Logger.getLogger(DefaultGroovyMethods.class.getName());
 
     private static final Integer ONE = new Integer(1);
-    private static final char ZERO_CHAR = '\u0000';
 
     /**
      * Identity check. Since == is overridden in Groovy with the meaning of equality
@@ -1076,10 +1077,9 @@ public class DefaultGroovyMethods {
 
         Object[] param = new Object[1];
         for (Iterator iter = self.iterator(); iter.hasNext();) {
-          Object operand = iter.next();
-          param[0] = operand;
-          MetaClass metaClass = InvokerHelper.getMetaClass(result);
-          result = metaClass.invokeMethod(result, "plus", param);
+            param[0] = iter.next();
+            MetaClass metaClass = InvokerHelper.getMetaClass(result);
+            result = metaClass.invokeMethod(result, "plus", param);
         }
         return result;
     }
@@ -2667,8 +2667,8 @@ public class DefaultGroovyMethods {
 
         ArrayList result = new ArrayList();
         //creates the collection to look for values.
-        Collection pickFrom = (Collection) new TreeSet(new NumberComparator());
-        ((TreeSet) pickFrom).addAll(left);
+        Collection pickFrom = new TreeSet(new NumberComparator());
+        pickFrom.addAll(left);
 
         for (Iterator iter = right.iterator(); iter.hasNext();) {
             final Object o = iter.next();
@@ -6628,9 +6628,6 @@ public class DefaultGroovyMethods {
      * @param self    the source string
      * @param regex   a Regex string
      * @param closure a closure with one parameter or as much parameters as groups
-     * @author bing ran
-     * @author Pilho Kim
-     * @author Jochen Theodorou
      */
     public static void eachMatch(String self, String regex, Closure closure) {
         Pattern p = Pattern.compile(regex);
@@ -6658,8 +6655,6 @@ public class DefaultGroovyMethods {
      *
      * @param self    the source matcher
      * @param closure a closure
-     * @author bing ran
-     * @author Pilho Kim
      */
     public static void each(Matcher self, Closure closure) {
         Matcher m = self;
@@ -6813,7 +6808,7 @@ public class DefaultGroovyMethods {
         return DefaultTypeTransformation.asCollection(o).iterator();
     }
 
-    // TODO move into DOMCategory?
+    // TODO move into DOMCategory once we can make use of optional categories transparent
     public static Iterator iterator(final NodeList nodeList) {
         return new Iterator() {
             private int current /* = 0 */;

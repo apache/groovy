@@ -35,6 +35,7 @@ package groovy.xml.dom;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Node;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 import java.util.Iterator;
 import java.util.List;
@@ -47,33 +48,15 @@ import java.util.Collection;
  */
 public class DOMCategory {
 
-    public static Object get(Object o, String elementName) {
-        if (o instanceof Element) {
-            return get((Element) o, elementName);
-        } else if (o instanceof NodeList) {
-            return get((NodeList) o, elementName);
-        }
-        return null;
-    }
-
-    private static Object get(Element element, String elementName) {
+    public static Object get(Element element, String elementName) {
         return getAt(element, elementName);
     }
 
-    private static Object get(NodeList nodeList, String elementName) {
+    public static Object get(NodeList nodeList, String elementName) {
         return getAt(nodeList, elementName);
     }
 
-    public static Object getAt(Object o, String elementName) {
-        if (o instanceof Element) {
-            return getAt((Element) o, elementName);
-        } else if (o instanceof NodeList) {
-            return getAt((NodeList) o, elementName);
-        }
-        return null;
-    }
-
-    private static Object getAt(Element element, String elementName) {
+    public static Object getAt(Element element, String elementName) {
         if (elementName.startsWith("@")) {
             String attrName = elementName.substring(1);
                 return element.getAttribute(attrName);
@@ -84,11 +67,13 @@ public class DOMCategory {
         return null;
     }
 
-    private static Object getAt(NodeList nodeList, String elementName) {
+    public static Object getAt(NodeList nodeList, String elementName) {
         List results = new ArrayList();
         for (int i = 0; i < nodeList.getLength(); i++) {
             Node node = nodeList.item(i);
-            addResult(results, getAt(node, elementName));
+            if (node instanceof Element) {
+                addResult(results, getAt((Element) node, elementName));
+            }
         }
         if (elementName.startsWith("@")) {
             return results;
@@ -109,16 +94,6 @@ public class DOMCategory {
             return nodeList.item(i);
         }
         return null;
-    }
-
-    private static void addResult(List results, Object result) {
-        if (result != null) {
-            if (result instanceof Collection) {
-                results.addAll((Collection) result);
-            } else {
-                results.add(result);
-            }
-        }
     }
 
     public static String name(Element element) {
@@ -167,15 +142,19 @@ public class DOMCategory {
         return results;
     }
 
-    // TODO should we move this here instead of DGM?
-    public static Iterator iterator(NodeList self) {
-        return new NodeListIterator(self);
+    public static List list(NodeList self) {
+        List answer = new ArrayList();
+        Iterator it = DefaultGroovyMethods.iterator(self);
+        while (it.hasNext()) {
+            answer.add(it.next());
+        }
+        return answer;
     }
 
     public static String toString(NodeList self) {
         StringBuffer sb = new StringBuffer();
         sb.append("[");
-        Iterator it = iterator(self);
+        Iterator it = DefaultGroovyMethods.iterator(self);
         while (it.hasNext()) {
             if (sb.length() > 1) sb.append(", ");
             sb.append(it.next().toString());
@@ -186,6 +165,16 @@ public class DOMCategory {
 
     public static int size(NodeList self) {
         return self.getLength();
+    }
+
+    private static void addResult(List results, Object result) {
+        if (result != null) {
+            if (result instanceof Collection) {
+                results.addAll((Collection) result);
+            } else {
+                results.add(result);
+            }
+        }
     }
 
     private static class NodeListHolder implements NodeList {
@@ -214,30 +203,6 @@ public class DOMCategory {
                 relativeIndex -= nl.getLength();
             }
             return null;
-        }
-    }
-
-    private static class NodeListIterator implements Iterator {
-        private NodeList nodeList;
-        private int currentItem;
-
-        public NodeListIterator(NodeList nodeList) {
-            this.nodeList = nodeList;
-            currentItem = 0;
-        }
-
-        // TODO test this or throw UOE instead
-        public void remove() {
-            Node node = nodeList.item(currentItem);
-            node.getParentNode().removeChild(node);
-        }
-
-        public boolean hasNext() {
-            return currentItem < nodeList.getLength();
-        }
-
-        public Object next() {
-            return nodeList.item(currentItem++);
         }
     }
 }
