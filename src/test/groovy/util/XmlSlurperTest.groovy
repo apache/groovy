@@ -80,4 +80,12 @@ class XmlSlurperTest extends GroovyTestCase {
         xml.message.findAll { true }.each { assert it.name() == "message"}
         println xml.message.part.findAll { true }
     }
+
+    void testDepthFirst() {
+        XmlTraversalTestUtil.checkDepthFirst(new XmlSlurper())
+    }
+
+    void testBreadthFirst() {
+        XmlTraversalTestUtil.checkBreadthFirst(new XmlSlurper())
+    }
 }

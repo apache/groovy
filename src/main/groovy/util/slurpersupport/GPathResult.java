@@ -36,6 +36,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
+import java.util.ArrayList;
 
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
@@ -197,6 +198,7 @@ public Object getProperty(final String property) {
   
   public Iterator depthFirst() {
       return new Iterator() {
+        private final List list = new LinkedList();
         private final Stack stack = new Stack();
         private Iterator iter = iterator();
         private GPathResult next = getNextByDepth();
@@ -219,23 +221,86 @@ public Object getProperty(final String property) {
           
           private GPathResult getNextByDepth() {
             while (this.iter.hasNext()) {
-            final GPathResult node = (GPathResult)this.iter.next();
-            
-              this.stack.push(node);
+              final GPathResult node = (GPathResult) this.iter.next();
+              this.list.add(node);
               this.stack.push(this.iter);
               this.iter = node.children().iterator();
             }
             
-            if (this.stack.empty()) {
+            if (this.list.isEmpty()) {
               return null;
             } else {
-              this.iter = (Iterator)this.stack.pop();
-              return (GPathResult)this.stack.pop();
+                GPathResult result = (GPathResult) this.list.get(0);
+                this.list.remove(0);
+                this.iter = (Iterator) this.stack.pop();
+                return result;
             }
           }
       };
   }
-  
+
+    /**
+     * An iterator useful for traversing XML documents/fragments in breadth-first order.
+     *
+     * @return Iterator the iterator of GPathResult objects
+     */
+    public Iterator breadthFirst() {
+        return new Iterator()
+        {
+            private final List list = new LinkedList();
+            private Iterator iter = iterator();
+            private GPathResult next = getNextByBreadth();
+
+            public boolean hasNext() {
+                return this.next != null;
+            }
+
+            public Object next() {
+                try {
+                    return this.next;
+                } finally {
+                    this.next = getNextByBreadth();
+                }
+            }
+
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
+
+            private GPathResult getNextByBreadth() {
+                List children = new ArrayList();
+                while (this.iter.hasNext() || !children.isEmpty()) {
+                    if (this.iter.hasNext()) {
+                        final GPathResult node = (GPathResult) this.iter.next();
+                        this.list.add(node);
+                        this.list.add(this.iter);
+                        children.add(node.children());
+                    } else {
+                        List nextLevel = new ArrayList();
+                        for (int i = 0; i < children.size(); i++) {
+                            GPathResult next = (GPathResult) children.get(i);
+                            Iterator iterator = next.iterator();
+                            while (iterator.hasNext()) {
+                                nextLevel.add(iterator.next());
+                            }
+                        }
+                        this.iter = nextLevel.iterator();
+                        children = new ArrayList();
+                    }
+                }
+                if (this.list.isEmpty()) {
+                    return null;
+                } else {
+                    GPathResult result = (GPathResult) this.list.get(0);
+                    this.list.remove(0);
+                    this.iter = (Iterator) this.list.get(0);
+                    this.list.remove(0);
+                    return result;
+                }
+            }
+        };
+    }
+
   public List list() {
   final Iterator iter = nodeIterator();
   final List result = new LinkedList();
