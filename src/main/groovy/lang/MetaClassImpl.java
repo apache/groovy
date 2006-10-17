@@ -134,7 +134,7 @@ public class MetaClassImpl extends MetaClass {
                }
            });
 
-       addMethods(theClass,true);
+       addMethods(theClass);
 
        // introspect
        BeanInfo info = null;
@@ -184,7 +184,7 @@ public class MetaClassImpl extends MetaClass {
        // lets add all the base class methods
        for (Iterator iter = superClasses.iterator(); iter.hasNext();) {
            Class c = (Class) iter.next();
-           addMethods(c,true);
+           addMethods(c);
            addNewStaticMethodsFrom(c);
        }
 
@@ -197,11 +197,11 @@ public class MetaClassImpl extends MetaClass {
        // lets add Object methods after interfaces, as all interfaces derive from Object.
        // this ensures List and Collection methods come before Object etc
        if (theClass != Object.class) {
-           addMethods(Object.class, false);
+           addMethods(Object.class);
            addNewStaticMethodsFrom(Object.class);
        }
 
-       if (theClass.isArray() && !theClass.equals(Object[].class)) {
+       if (theClass.isArray() && theClass!=Object[].class && !theClass.getComponentType().isPrimitive()) {
            addNewStaticMethodsFrom(Object[].class);
        }
    }
@@ -251,7 +251,7 @@ public class MetaClassImpl extends MetaClass {
            NewInstanceMetaMethod newMethod = new NewInstanceMetaMethod(createMetaMethod(method));
            if (! newGroovyMethodsList.contains(newMethod)){
                newGroovyMethodsList.add(newMethod);
-               addMethod(newMethod,false);
+               addMethod(newMethod);
            }
        }
    }
@@ -264,7 +264,7 @@ public class MetaClassImpl extends MetaClass {
            NewStaticMetaMethod newMethod = new NewStaticMetaMethod(createMetaMethod(method));
            if (! newGroovyMethodsList.contains(newMethod)){
                newGroovyMethodsList.add(newMethod);
-               addMethod(newMethod,false);
+               addMethod(newMethod);
            }
        }
    }
@@ -374,7 +374,7 @@ public class MetaClassImpl extends MetaClass {
        }
 
        if (method != null) {
-           return MetaClassHelper.doMethodInvoke(object, method, originalArguments);
+           return MetaClassHelper.doMethodInvoke(object, method, arguments);
        } else {
            // if no method was found, try to find a closure defined as a field of the class and run it
            try {
@@ -1189,7 +1189,7 @@ public class MetaClassImpl extends MetaClass {
     *
     * @param theClass
     */
-   private void addMethods(final Class theClass, boolean forceOverwrite) {
+   private void addMethods(final Class theClass) {
        // add methods directly declared in the class
        Method[] methodArray = (Method[]) AccessController.doPrivileged(new  PrivilegedAction() {
                public Object run() {
@@ -1203,11 +1203,11 @@ public class MetaClassImpl extends MetaClass {
                continue;
            }
            MetaMethod method = createMetaMethod(reflectionMethod);
-           addMethod(method,forceOverwrite);
+           addMethod(method);
        }
    }
 
-   private void addMethod(MetaMethod method, boolean forceOverwrite) {
+   private void addMethod(MetaMethod method) {
        String name = method.getName();
 
        //System.out.println(theClass.getName() + " == " + name + Arrays.asList(method.getParameterTypes()));
@@ -1239,21 +1239,20 @@ public class MetaClassImpl extends MetaClass {
            list.add(method);
        }
        else {
-           addMethodToList(list,method,forceOverwrite);
+           addMethodToList(list,method);
        }
    }
    
-   private void addMethodToList(List list, MetaMethod method, boolean forceOverwrite) {
+   private void addMethodToList(List list, MetaMethod method) {
        MetaMethod match = removeMatchingMethod(list,method);
-       if (forceOverwrite) {
-           list.add(method);
-       } else if (match==null) {
+       if (match==null) {
            list.add(method);
        } else {
            Class methodC = method.getDeclaringClass();
            Class matchC = match.getDeclaringClass();
            if (methodC == matchC){
                if (method instanceof NewInstanceMetaMethod) {
+                   // let DGM replace existing methods
                    list.add(method);
                } else {
                    list.add(match);
@@ -1261,7 +1260,7 @@ public class MetaClassImpl extends MetaClass {
            } else if (MetaClassHelper.isAssignableFrom(methodC,matchC)){
                list.add(match);
            } else {
-               list.add(method);
+              list.add(method);
            }
        }
    }
@@ -1305,7 +1304,7 @@ public class MetaClassImpl extends MetaClass {
            MetaMethod method = (MetaMethod) iter.next();
            if (! newGroovyMethodsList.contains(method)){
                newGroovyMethodsList.add(method);
-               addMethod(method,false);
+               addMethod(method);
            }
        }
    }
@@ -1573,13 +1572,13 @@ public class MetaClassImpl extends MetaClass {
        for (Iterator iter = interfaceMethods.iterator(); iter.hasNext();) {
            MetaMethod aMethod = (MetaMethod) iter.next();
            if (method.isSame(aMethod)) {
-               method.setInterfaceClass(aMethod.getDeclaringClass());
+               method.setInterfaceClass(aMethod.getCallClass());
                return true;
            }
        }
        // it's no interface method, so try to find the highest class
        // in hierarchy defining this method
-       Class declaringClass = method.getDeclaringClass();
+       Class declaringClass = method.getCallClass();
        for (Class clazz=declaringClass; clazz!=null; clazz=clazz.getSuperclass()) {
            try {
                final Class klazz = clazz;
@@ -1608,7 +1607,7 @@ public class MetaClassImpl extends MetaClass {
            }
        }
        if (!Modifier.isPublic(declaringClass.getModifiers())) return false;
-       method.setDeclaringClass(declaringClass);
+       method.setCallClass(declaringClass);
 
        return true;
    }

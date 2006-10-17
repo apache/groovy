@@ -98,4 +98,8 @@ public class NewInstanceMetaMethod extends MetaMethod {
         System.arraycopy(arguments, 0, newArguments, 1, size);
         return metaMethod.invoke(null, newArguments);
     }
+    
+    public Class getOwnerClass() {
+        return getBytecodeParameterTypes()[0];
+    }
 }

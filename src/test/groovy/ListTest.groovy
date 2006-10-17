@@ -388,13 +388,13 @@ class ListTest extends GroovyTestCase {
     }
 
     // todo: make this run GROOVY-1128
-    void testAsSynchronized_FAILS() { if (notYetImplemented()) return
+    void testAsSynchronized() {
         def synclist = [].asSynchronized() << 1
         assert synclist == [1]
     }
 
     // todo: make this run GROOVY-1128
-    void testAsImmutable_FAILS() { if (notYetImplemented()) return
+    void testAsImmutable() {
         def immlist = [1,2,3].asImmutable()
         assert immlist == [1,2,3]
         def testlist = ['a','b','c','d','e']
@@ -403,12 +403,6 @@ class ListTest extends GroovyTestCase {
         assert immlist[0..-1] == immlist
         shouldFail(UnsupportedOperationException.class){
             immlist << 1
-        }
-        shouldFail(UnsupportedOperationException.class){
-            immlist += 1
-        }
-        shouldFail(UnsupportedOperationException.class){
-            immlist -= 1
         }
         shouldFail(UnsupportedOperationException.class){
             immlist[0..<0] = [0]

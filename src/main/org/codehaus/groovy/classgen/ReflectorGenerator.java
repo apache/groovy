@@ -149,15 +149,15 @@ public class ReflectorGenerator implements Opcodes {
         cv.visitVarInsn(ALOAD, 2);
         cv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "toString", "()Ljava/lang/String;");
         */
-        Class ownerClass = method.getInterfaceClass();
+        Class callClass = method.getInterfaceClass();
         boolean useInterface = false;
-        if (ownerClass == null) {
-            ownerClass = method.getDeclaringClass();
+        if (callClass == null) {
+            callClass = method.getCallClass();
         }
         else {
             useInterface = true;
         }
-        String type = BytecodeHelper.getClassInternalName(ownerClass.getName());
+        String type = BytecodeHelper.getClassInternalName(callClass.getName());
         String descriptor = BytecodeHelper.getMethodDescriptor(method.getReturnType(), method.getParameterTypes());
 
         //        System.out.println("Method: " + method);
@@ -169,7 +169,7 @@ public class ReflectorGenerator implements Opcodes {
         }
         else {
             cv.visitVarInsn(ALOAD, 2);
-            helper.doCast(ownerClass);
+            helper.doCast(callClass);
             loadParameters(method, 3);
             cv.visitMethodInsn((useInterface) ? INVOKEINTERFACE : INVOKEVIRTUAL, type, method.getName(), descriptor);
         }

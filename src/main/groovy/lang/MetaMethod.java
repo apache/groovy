@@ -56,6 +56,7 @@ public class MetaMethod implements Cloneable {
     private static final Logger log = Logger.getLogger(MetaMethod.class.getName());
 
     private String name;
+    private Class callClass;
     private Class declaringClass;
     private Class interfaceClass;
     private Class[] parameterTypes;
@@ -67,6 +68,7 @@ public class MetaMethod implements Cloneable {
 
     public MetaMethod(String name, Class declaringClass, Class[] parameterTypes, Class returnType, int modifiers) {
         this.name = name;
+        this.callClass = declaringClass;
         this.declaringClass = declaringClass;
         this.parameterTypes = parameterTypes;
         this.returnType = returnType;
@@ -121,12 +123,12 @@ public class MetaMethod implements Cloneable {
         }
     }
 
-    public Class getDeclaringClass() {
-        return declaringClass;
+    public Class getCallClass() {
+        return callClass;
     }
     
-    public void setDeclaringClass(Class c) {
-        declaringClass=c;
+    public void setCallClass(Class c) {
+        callClass=c;
     }
 
     public int getMethodIndex() {
@@ -189,7 +191,7 @@ public class MetaMethod implements Cloneable {
             + " returns: "
             + returnType
             + " owner: "
-            + declaringClass
+            + callClass
             + "]";
     }
 
@@ -245,5 +247,8 @@ public class MetaMethod implements Cloneable {
     public boolean isCacheable() {
         return true;
     }
-
+    
+    public Class getDeclaringClass() {
+        return declaringClass;
+    }
 }

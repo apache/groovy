@@ -2471,17 +2471,6 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * A convenience method for sorting a List
-     *
-     * @param self a List to be sorted
-     * @return the sorted List
-     */
-    public static List sort(List self) {
-        Collections.sort(self);
-        return self;
-    }
-
-    /**
      * Removes the last item from the List. Using add() and pop()
      * is similar to push and pop on a Stack.
      *
@@ -2495,19 +2484,7 @@ public class DefaultGroovyMethods {
         }
         return self.remove(self.size() - 1);
     }
-
-    /**
-     * A convenience method for sorting a List with a specific comparator
-     *
-     * @param self       a List
-     * @param comparator a Comparator used for the comparison
-     * @return a sorted List
-     */
-    public static List sort(List self, Comparator comparator) {
-        Collections.sort(self, comparator);
-        return self;
-    }
-
+    
     /**
      * A convenience method for sorting a Collection with a specific comparator
      *
@@ -2516,25 +2493,9 @@ public class DefaultGroovyMethods {
      * @return a newly created sorted List
      */
     public static List sort(Collection self, Comparator comparator) {
-        return sort(asList(self), comparator);
-    }
-
-    /**
-     * A convenience method for sorting a List using a closure as a comparator
-     *
-     * @param self    a List
-     * @param closure a Closure used as a comparator
-     * @return a sorted List
-     */
-    public static List sort(List self, Closure closure) {
-        // use a comparator of one item or two
-        int params = closure.getMaximumNumberOfParameters();
-        if (params == 1) {
-            Collections.sort(self, new OrderBy(closure));
-        } else {
-            Collections.sort(self, new ClosureComparator(closure));
-        }
-        return self;
+        List list = asList(self);
+        Collections.sort(list, comparator);
+        return list;
     }
 
     /**
@@ -2545,7 +2506,15 @@ public class DefaultGroovyMethods {
      * @return a newly created sorted List
      */
     public static List sort(Collection self, Closure closure) {
-        return sort(asList(self), closure);
+        List list = asList(self);
+        // use a comparator of one item or two
+        int params = closure.getMaximumNumberOfParameters();
+        if (params == 1) {
+            Collections.sort(list, new OrderBy(closure));
+        } else {
+            Collections.sort(list, new ClosureComparator(closure));
+        }
+        return list;
     }
 
     /**
@@ -2793,7 +2762,6 @@ public class DefaultGroovyMethods {
             //n*log(n) version
             Set answer /* = null */;
             if (Number.class.isInstance(self.get(0))) {
-                BigDecimal zero = new BigDecimal("0.0");
                 answer = new TreeSet(numberComparator);
                 answer.addAll(self);
                 for (Iterator it = self.iterator(); it.hasNext(); ) {
@@ -2844,6 +2812,16 @@ public class DefaultGroovyMethods {
             //can't use treeset since the base classes are different
             return new ArrayList(tmpAnswer);
         }
+    }
+    
+    public static List minus(List self, Object operand) {
+        Comparator numberComparator = new NumberComparator();
+        List ansList = new ArrayList();
+        for (Iterator it = self.iterator(); it.hasNext(); ) {
+            Object o = it.next();
+            if (numberComparator.compare(o,operand)!=0) ansList.add(o);
+        }
+        return ansList;
     }
 
     /**
