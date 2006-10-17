@@ -62,6 +62,7 @@ public class XmlSlurper extends DefaultHandler {
   private final Stack stack = new Stack();
   private final StringBuffer charBuffer = new StringBuffer();
   private final Map namespaceTagHints = new Hashtable();
+  private boolean keepWhitespace = false;
 
   public XmlSlurper() throws ParserConfigurationException, SAXException {
     this(false, true);
@@ -98,6 +99,16 @@ public class XmlSlurper extends DefaultHandler {
   
   public XmlSlurper(final SAXParser parser) throws SAXException {
     this(parser.getXMLReader());
+  }
+  
+  /**
+   * @param keepWhitespace
+   * 
+   * If true then whitespace before elements is kept.
+   * The deafult is to discard the whitespace.
+   */
+  public void setKeepWhitespace(boolean keepWhitespace) {
+      this.keepWhitespace = keepWhitespace;
   }
   
   /**
@@ -307,7 +318,7 @@ public class XmlSlurper extends DefaultHandler {
    * @see org.xml.sax.ContentHandler#startElement(java.lang.String, java.lang.String, java.lang.String, org.xml.sax.Attributes)
    */
   public void startElement(final String namespaceURI, final String localName, final String qName, final Attributes atts) throws SAXException {
-    addNonWhitespaceCdata();
+    addCdata();
     
     final Map attributes = new HashMap();
     final Map attributeNamespaces = new HashMap();
@@ -349,7 +360,7 @@ public class XmlSlurper extends DefaultHandler {
    * @see org.xml.sax.ContentHandler#endElement(java.lang.String, java.lang.String, java.lang.String)
    */
   public void endElement(final String namespaceURI, final String localName, final String qName) throws SAXException {
-    addNonWhitespaceCdata();
+    addCdata();
     
     final Object oldCurrentNode = this.stack.pop();
     
@@ -370,17 +381,18 @@ public class XmlSlurper extends DefaultHandler {
   /**
    * 
    */
-  private void addNonWhitespaceCdata() {
+  private void addCdata() {
     if (this.charBuffer.length() != 0) {
       //
-      // This element is preceeded by CDATA if it's not whitespace add it to the body
+      // This element is preceeded by CDATA if keepWhitespace is false (the default setting) and 
+      // it's not whitespace add it to the body
       // Note that, according to the XML spec, we should preserve the CDATA if it's all whitespace
       // but for the sort of work I'm doing ignoring the whitespace is preferable
       //
       final String cdata = this.charBuffer.toString();
       
       this.charBuffer.setLength(0);
-      if (cdata.trim().length() != 0) {
+      if (this.keepWhitespace || cdata.trim().length() != 0) {
         this.currentNode.addChild(cdata);
       }
     }   
