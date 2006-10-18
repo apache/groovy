@@ -21,7 +21,8 @@ class DOMCategoryTest extends GroovyTestCase {
         def root   = doc.documentElement
         def node   = root.getElementsByTagName('character').item(0)
 
-        use(DOMCategory){
+        use(DOMCategory) {
+            assert           4 == root['*'].size()
             assert           4 == root.'*'.size()
             assert           2 == root.character.size()
             assert           2 == root.'character'.size()
@@ -49,7 +50,8 @@ class DOMCategoryTest extends GroovyTestCase {
             def attributes = node.attributes()
             assert         2 == attributes.size()
             assert 'Wallace' == attributes.name
-            assert       '1' == attributes.id
+            assert 'Wallace' == attributes['name']
+            assert       '1' == attributes.'id'
         }
     }
 }
