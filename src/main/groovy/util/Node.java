@@ -262,7 +262,7 @@ public class Node implements java.io.Serializable {
 
     /**
      * Provide a collection of all the nodes in the tree
-     * using a bredth first traversal
+     * using a breadth-first traversal
      */
     public List breadthFirst() {
         List answer = new NodeList();
@@ -271,7 +271,23 @@ public class Node implements java.io.Serializable {
         return answer;
     }
     
-    private  List breadthFirstRest() {
+    private List breadthFirstRest() {
+        List answer = new NodeList();
+        List nextLevelChildren = getDirectChildren();
+        while (!nextLevelChildren.isEmpty()) {
+            List working = new NodeList(nextLevelChildren);
+            nextLevelChildren = new NodeList();
+            for (Iterator iter = working.iterator(); iter.hasNext(); ) {
+                Node childNode = (Node) iter.next();
+                answer.add(childNode);
+                List children = childNode.getDirectChildren();
+                nextLevelChildren.addAll(children);
+            }
+        }
+        return answer;
+    }
+
+    private List getDirectChildren() {
         List answer = new NodeList();
         for (Iterator iter = InvokerHelper.asIterator(value); iter.hasNext(); ) {
             Object child = iter.next();
@@ -279,12 +295,6 @@ public class Node implements java.io.Serializable {
                 Node childNode = (Node) child;
                 answer.add(childNode);
             }
-        }
-        List copy = new NodeList(answer);
-        for (Iterator iter = copy.iterator(); iter.hasNext(); ) {
-            Node childNode = (Node) iter.next();
-            List children = childNode.breadthFirstRest();
-            answer.addAll(children);
         }
         return answer;
     }
