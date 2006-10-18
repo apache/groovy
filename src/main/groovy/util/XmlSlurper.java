@@ -20,6 +20,7 @@ package groovy.util;
 import groovy.util.slurpersupport.GPathResult;
 import groovy.util.slurpersupport.Node;
 import groovy.util.slurpersupport.NodeChild;
+import groovy.xml.FactorySupport;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -69,28 +70,10 @@ public class XmlSlurper extends DefaultHandler {
   }
   
   public XmlSlurper(final boolean validating, final boolean namespaceAware) throws ParserConfigurationException, SAXException {
-  SAXParserFactory factory = null;
-    
-    try {
-      factory = (SAXParserFactory) AccessController.doPrivileged(new PrivilegedExceptionAction() {
-        public Object run() throws ParserConfigurationException {
-          return SAXParserFactory.newInstance();
-        }
-      });
-    } catch (final PrivilegedActionException pae) {
-      final Exception e = pae.getException();
-      
-      if (e instanceof ParserConfigurationException) {
-        throw (ParserConfigurationException) e;
-      } else {
-        throw new RuntimeException(e);
-      }
-    }
+    SAXParserFactory factory = FactorySupport.createSaxParserFactory();
     factory.setNamespaceAware(namespaceAware);
     factory.setValidating(validating);
-    
-    final SAXParser parser = factory.newSAXParser();
-    this.reader = parser.getXMLReader();
+    this.reader = factory.newSAXParser().getXMLReader();
   }
   
   public XmlSlurper(final XMLReader reader) {

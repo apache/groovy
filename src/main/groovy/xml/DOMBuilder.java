@@ -49,15 +49,11 @@ import groovy.util.BuilderSupport;
 
 import java.io.IOException;
 import java.io.Reader;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.Iterator;
 import java.util.Map;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.FactoryConfigurationError;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.w3c.dom.Document;
@@ -68,7 +64,7 @@ import org.xml.sax.SAXException;
 
 /**
  * A helper class for creating a W3C DOM tree
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -77,44 +73,30 @@ public class DOMBuilder extends BuilderSupport {
     Document document;
     DocumentBuilder documentBuilder;
 
-    public static DOMBuilder newInstance() throws ParserConfigurationException, FactoryConfigurationError {
-    	DocumentBuilder documentBuilder = null;
-    	try {
-			documentBuilder = (DocumentBuilder) AccessController.doPrivileged(new PrivilegedExceptionAction() {
-				public Object run() throws ParserConfigurationException {
-					return DocumentBuilderFactory.newInstance().newDocumentBuilder();
-				}
-			});
-    	} catch (PrivilegedActionException pae) {
-    		Exception e = pae.getException();
-    		if (e instanceof ParserConfigurationException) {
-    			throw (ParserConfigurationException) e;
-    		} else {
-    			throw new RuntimeException(e);
-    		}
-    	}
-        return new DOMBuilder(documentBuilder);
+    public static DOMBuilder newInstance() throws ParserConfigurationException {
+        return newInstance(false, true);
+    }
+
+    public static DOMBuilder newInstance(boolean validating, boolean namespaceAware) throws ParserConfigurationException {
+        DocumentBuilderFactory factory = FactorySupport.createDocumentBuilderFactory();
+        factory.setNamespaceAware(namespaceAware);
+        factory.setValidating(validating);
+        return new DOMBuilder(factory.newDocumentBuilder());
     }
 
     public static Document parse(Reader reader) throws SAXException, IOException, ParserConfigurationException {
-	    	DocumentBuilder documentBuilder = null;
-	    	try {
-				documentBuilder = (DocumentBuilder) AccessController.doPrivileged(new PrivilegedExceptionAction() {
-					public Object run() throws ParserConfigurationException {
-						return DocumentBuilderFactory.newInstance().newDocumentBuilder();
-					}
-				});
-	    	} catch (PrivilegedActionException pae) {
-	    		Exception e = pae.getException();
-	    		if (e instanceof ParserConfigurationException) {
-	    			throw (ParserConfigurationException) e;
-	    		} else {
-	    			throw new RuntimeException(e);
-	    		}
-	    	}
-	    	return documentBuilder.parse(new InputSource(reader));
+        return parse(reader, false, true);
     }
-    
+
+    public static Document parse(Reader reader, boolean validating, boolean namespaceAware)
+            throws SAXException, IOException, ParserConfigurationException {
+        DocumentBuilderFactory factory = FactorySupport.createDocumentBuilderFactory();
+        factory.setNamespaceAware(namespaceAware);
+        factory.setValidating(validating);
+        DocumentBuilder documentBuilder = factory.newDocumentBuilder();
+        return documentBuilder.parse(new InputSource(reader));
+    }
+
     public DOMBuilder(Document document) {
         this.document = document;
     }
@@ -137,8 +119,7 @@ public class DOMBuilder extends BuilderSupport {
         if (name instanceof QName) {
             QName qname = (QName) name;
             return document.createElementNS(qname.getNamespaceURI(), qname.getQualifiedName());
-        }
-        else {
+        } else {
             return document.createElement(name.toString());
         }
     }
@@ -146,8 +127,7 @@ public class DOMBuilder extends BuilderSupport {
     protected Document createDocument() {
         if (documentBuilder == null) {
             throw new IllegalArgumentException("No Document or DOMImplementation available so cannot create Document");
-        }
-        else {
+        } else {
             return documentBuilder.newDocument();
         }
     }
@@ -163,7 +143,7 @@ public class DOMBuilder extends BuilderSupport {
         element.appendChild(document.createTextNode(value.toString()));
         return element;
     }
-    
+
     protected Object createNode(Object name, Map attributes) {
         Element element = (Element) createNode(name);
         for (Iterator iter = attributes.entrySet().iterator(); iter.hasNext();) {
@@ -173,12 +153,10 @@ public class DOMBuilder extends BuilderSupport {
             if ("xmlns".equals(attrName)) {
                 if (value instanceof Map) {
                     appendNamespaceAttributes(element, (Map) value);
-                }
-                else {
+                } else {
                     throw new IllegalArgumentException("The value of the xmlns attribute must be a Map of QNames to String URIs");
                 }
-            }
-            else {
+            } else {
                 // TODO handle null values and treat as ''
                 element.setAttribute(attrName, value.toString());
             }
@@ -196,17 +174,15 @@ public class DOMBuilder extends BuilderSupport {
             }
             if (key instanceof String) {
                 String prefix = (String) key;
-                
+
                 //System.out.println("Creating namespace for prefix: " + prefix + " with value: " + value);
-                
+
                 //element.setAttributeNS("http://www.w3.org/XML/1998/namespace", "xmlns:" + prefix, value.toString());
                 element.setAttributeNS("", prefix, value.toString());
-            }
-            else if (key instanceof QName) {
+            } else if (key instanceof QName) {
                 QName qname = (QName) key;
                 element.setAttributeNS(qname.getNamespaceURI(), qname.getQualifiedName(), value.toString());
-            }
-            else {
+            } else {
                 throw new IllegalArgumentException("The key: " + key + " should be an instanceof of " + QName.class);
             }
         }

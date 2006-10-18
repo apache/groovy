@@ -367,6 +367,15 @@
         <role>Developer</role>
       </roles>
     </developer>
+   <developer>
+      <name>Paul King</name>
+      <id>paulk</id>
+      <email>paulk@asert.com.au</email>
+      <organization>ASERT, Australia</organization>
+      <roles>
+        <role>Developer</role>
+      </roles>
+    </developer>
   </developers>
 
   <contributors>
