@@ -22,8 +22,10 @@ class DOMCategoryTest extends GroovyTestCase {
         def node   = root.getElementsByTagName('character').item(0)
 
         use(DOMCategory){
-            assert 2 == root.character.size()
-            assert 2 == root.likes.size()
+            assert           4 == root.'*'.size()
+            assert           2 == root.character.size()
+            assert           2 == root.'character'.size()
+            assert           2 == root['likes'].size()
             assert 'character' == node.nodeName
             assert 'character' == node.name()
             assert 'likes'     == node.item(1).nodeName
@@ -43,6 +45,10 @@ class DOMCategoryTest extends GroovyTestCase {
                 groupLikesByFirstLetter[it] = groupLikesByFirstLetter[it][0].text()
             }
             assert groupLikesByFirstLetter == [W:'cheese', G:'sleep']
+            def attributes = node.attributes()
+            assert         2 == attributes.size()
+            assert 'Wallace' == attributes.name
+            assert       '1' == attributes.id
         }
     }
 }

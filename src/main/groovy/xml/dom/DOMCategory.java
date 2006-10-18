@@ -32,9 +32,7 @@
  */
 package groovy.xml.dom;
 
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.Node;
+import org.w3c.dom.*;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 import java.util.Iterator;
@@ -48,18 +46,28 @@ import java.util.Collection;
  */
 public class DOMCategory {
 
-    public static Object get(Element element, String elementName) {
+    public static Object get(Object o, String elementName) {
+        if (o instanceof Element) {
+            return get((Element)o, elementName);
+        }
+        if (o instanceof NodeList) {
+            return get((NodeList)o, elementName);
+        }
+        org.apache.xerces.dom.DeferredElementImpl x;
+        return null;
+    }
+
+    private static Object get(Element element, String elementName) {
         return getAt(element, elementName);
     }
 
-    public static Object get(NodeList nodeList, String elementName) {
+    private static Object get(NodeList nodeList, String elementName) {
         return getAt(nodeList, elementName);
     }
 
-    public static Object getAt(Element element, String elementName) {
+    private static Object getAt(Element element, String elementName) {
         if (elementName.startsWith("@")) {
-            String attrName = elementName.substring(1);
-                return element.getAttribute(attrName);
+            return element.getAttribute(elementName.substring(1));
         }
         if (element.hasChildNodes()) {
             return element.getElementsByTagName(elementName);
@@ -67,7 +75,7 @@ public class DOMCategory {
         return null;
     }
 
-    public static Object getAt(NodeList nodeList, String elementName) {
+    private static Object getAt(NodeList nodeList, String elementName) {
         List results = new ArrayList();
         for (int i = 0; i < nodeList.getLength(); i++) {
             Node node = nodeList.item(i);
@@ -79,6 +87,18 @@ public class DOMCategory {
             return results;
         }
         return new NodeListHolder(results);
+    }
+
+    public static NamedNodeMap attributes(Element element) {
+        return element.getAttributes();
+    }
+
+    public static String get(NamedNodeMap namedNodeMap, String elementName) {
+        return namedNodeMap.getNamedItem(elementName).getNodeValue();
+    }
+
+    public static int size(NamedNodeMap namedNodeMap) {
+        return namedNodeMap.getLength();
     }
 
     public static Node getAt(Element element, int i) {
@@ -203,6 +223,10 @@ public class DOMCategory {
                 relativeIndex -= nl.getLength();
             }
             return null;
+        }
+        
+        public String toString() {
+            return DOMCategory.toString(this);
         }
     }
 }
