@@ -56,4 +56,12 @@ class XmlParserTest extends GroovyTestCase {
         assert children[1] instanceof Node
         assert children[2] instanceof String
     }
+
+    void testDepthFirst() {
+        XmlTraversalTestUtil.checkDepthFirst(new XmlParser())
+    }
+
+    void testBreadthFirst() {
+        XmlTraversalTestUtil.checkBreadthFirst(new XmlParser())
+    }
 }

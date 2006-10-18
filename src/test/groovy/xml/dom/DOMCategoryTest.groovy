@@ -36,6 +36,7 @@ class DOMCategoryTest extends GroovyTestCase {
                 assert 'cheese' == node.likes[0].textContent
             }
             assert 'Wallace' == node.'@name'
+            assert 'Wallace' == node['@name']
             assert ['Wallace', 'Gromit'] == root.'character'.'@name'
             assert ['cheese', 'sleep']   == root.likes.text()
             assert ['sleep'] == root.likes.findAll{ it.text().startsWith('s') }.text()
