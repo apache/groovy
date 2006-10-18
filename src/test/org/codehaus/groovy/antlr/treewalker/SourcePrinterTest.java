@@ -218,13 +218,30 @@ public class SourcePrinterTest extends GroovyTestCase {
     public void testForCondition() throws Exception {
     	assertEquals("for (i = 0 ; i < 10 ; i++){println i}", pretty("for (i=0;i<10;i++) {println i}"));
     }
+    
+    // testForInit() covered by testForCondition()
+    
     public void testForInIterable() throws Exception {
         assertEquals("for (i in [1, 2]) {}", pretty("for (i in [1,2]) {}"));
     }
+
+    // testForIterator() covered by testForCondition()
+    
+    public void testGe() throws Exception {
+    	assertEquals("if (60 >= 70) {}", pretty("if (60>=70) {}"));
+    }
+    
     public void testGt() throws Exception {
         assertEquals("if (2070 > 354) {}", pretty("if (2070 > 354) {}"));
     }
 
+    public void testHexDigit() throws Exception {
+        assertEquals("def bar = 0xCaFe", pretty("def bar = 0xCaFe"));    	
+    }
+    public void testHexDigitInUnicodeEscape_FAILS() throws Exception { if (notYetImplemented()) return;
+      assertEquals("def foo = '\\ubabe'", pretty("def foo = '\\ubabe'"));
+    }
+    
     public void testIdent() throws Exception {
         assertEquals("foo.bar", pretty("foo.bar"));
     }

@@ -3725,7 +3725,7 @@ options {
 // Note: Please don't use physical tabs.  Logical tabs for indent are width 4.
 // Here's a little hint for you, Emacs:
 // Local Variables:
-// mode: java
 // tab-width: 4
+// mode: antlr-mode
 // indent-tabs-mode: nil
 // End:

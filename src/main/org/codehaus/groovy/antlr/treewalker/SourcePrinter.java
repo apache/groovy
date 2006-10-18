@@ -296,6 +296,9 @@ public class SourcePrinter extends VisitorAdapter {
 	public void visitForCondition(GroovySourceAST t, int visit) {
     	print(t,visit," ; ",null,null);
     }
+	
+	// visitForEachClause ... 
+	//   FOR_EACH_CLAUSE obsolete and should be removed, never visited/created
 
     public void visitForInit(GroovySourceAST t, int visit) {
     	print(t,visit,"(",null,null);
@@ -308,6 +311,11 @@ public class SourcePrinter extends VisitorAdapter {
     public void visitForIterator(GroovySourceAST t, int visit) {
     	print(t,visit," ; ",null,")");
     }
+    
+    public void visitGe(GroovySourceAST t, int visit) {
+    	print(t,visit," >= ",null,null);
+    }
+    
     public void visitGt(GroovySourceAST t, int visit) {
         print(t,visit," > ",null,null);
     }
