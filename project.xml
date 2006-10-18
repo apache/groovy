@@ -489,17 +489,35 @@
     <!-- dependencies used by optional features -->
     <dependency>
       <groupId>xerces</groupId>
-      <artifactId>xerces</artifactId>    
+      <artifactId>xerces</artifactId>
       <version>2.4.0</version>
       <url>http://xml.apache.org/</url>
     </dependency>
-
     <dependency>
       <groupId>xml-apis</groupId>
-      <artifactId>xml-apis</artifactId>    
+      <artifactId>xml-apis</artifactId>
       <version>1.0.b2</version>
       <url>http://xml.apache.org/</url>
     </dependency>
+<!-- TODO upgrade to recent Xerces but maven 1 issues holding us back
+      <dependency>
+        <groupId>xerces</groupId>
+        <artifactId>xercesImpl</artifactId>
+        <version>2.6.2</version>
+        <url>http://xml.apache.org/</url>
+      </dependency>
+      <dependency>
+        <groupId>xerces</groupId>
+        <artifactId>xmlParserAPIs</artifactId>
+        <version>2.6.2</version>
+        <url>http://xml.apache.org/</url>
+      </dependency>
+      <dependency>
+        <groupId>xml-resolver</groupId>
+        <artifactId>xml-resolver</artifactId>
+        <version>1.1</version>
+        <url>http://xml.apache.org/</url>
+      </dependency>-->
 
     <!-- only used for command line tools -->
     <dependency>
@@ -529,7 +547,7 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>    
-      <version>3.8.1</version>
+      <version>3.8.2</version>
     </dependency>    
     <dependency>
       <groupId>jmock</groupId>
@@ -583,7 +601,7 @@
     <dependency>
       <groupId>bsf</groupId>
       <artifactId>bsf</artifactId>    
-      <version>2.3.0-rc1</version>
+      <version>2.4.0</version>
       <url>http://jakarta.apache.org/bsf/</url>
     </dependency>
 
