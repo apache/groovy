@@ -48,10 +48,10 @@ public class DOMCategory {
 
     public static Object get(Object o, String elementName) {
         if (o instanceof Element) {
-            return get((Element)o, elementName);
+            return get((Element) o, elementName);
         }
         if (o instanceof NodeList) {
-            return get((NodeList)o, elementName);
+            return get((NodeList) o, elementName);
         }
         org.apache.xerces.dom.DeferredElementImpl x;
         return null;
@@ -80,7 +80,7 @@ public class DOMCategory {
         for (int i = 0; i < nodeList.getLength(); i++) {
             Node node = nodeList.item(i);
             if (node instanceof Element) {
-                addResult(results, getAt((Element) node, elementName));
+                addResult(results, get(node, elementName));
             }
         }
         if (elementName.startsWith("@")) {
@@ -104,7 +104,7 @@ public class DOMCategory {
     public static Node getAt(Element element, int i) {
         if (element.hasChildNodes()) {
             NodeList nodeList = element.getChildNodes();
-                return nodeList.item(i);
+            return nodeList.item(i);
         }
         return null;
     }
@@ -224,7 +224,7 @@ public class DOMCategory {
             }
             return null;
         }
-        
+
         public String toString() {
             return DOMCategory.toString(this);
         }
