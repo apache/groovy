@@ -6,9 +6,9 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd"
 >
   <modelVersion>4.0.0</modelVersion>
+  <groupId>groovy</groupId>
   <artifactId>groovy</artifactId>
   <name>Groovy</name>
-  <groupId>groovy</groupId>
   <version>1.0-RC-01-SNAPSHOT</version>
   <packaging>jar</packaging>
   <organization>
@@ -18,14 +18,12 @@
   <inceptionYear>2003</inceptionYear>
   <url>http://groovy.codehaus.org/</url>
   <description>Groovy: A powerful dynamic scripting language for the JVM</description>
-
+  
   <scm>
     <connection>scm:svn:http://svn.codehaus.org/groovy/groovy-core</connection>
     <developerConnection>scm:svn:https://${maven.username}@svn.codehaus.org/groovy/groovy-core</developerConnection>
     <url>http://svn.codehaus.org/groovy/groovy-core</url>
   </scm>
-  
-  <!--issueTrackingUrl>http://jira.codehaus.org/browse/GROOVY</issueTrackingUrl-->
 
 <!--
   <packageGroups>
@@ -38,8 +36,8 @@
       <packages>org.codehaus.*</packages>
     </packageGroup>
   </packageGroups>
--->
-
+  -->
+  
 <!--
   <versions>
     <version>
@@ -466,7 +464,7 @@
       <groupId>antlr</groupId>
       <artifactId>antlr</artifactId>
       <version>2.7.5</version>
-    </dependency>    
+    </dependency>
     <dependency>
       <groupId>asm</groupId>
       <artifactId>asm</artifactId>
@@ -474,7 +472,6 @@
     </dependency>
 
     <!-- dependencies used by optional features -->
-
       <dependency>
         <groupId>xerces</groupId>
         <artifactId>xercesImpl</artifactId>
@@ -516,32 +513,33 @@
     </dependency>
 
     <!-- only used for testing helper classes -->
-      <dependency>
-          <groupId>junit</groupId>
-          <artifactId>junit</artifactId>
-          <version>3.8.2</version>
-      </dependency>
-      <dependency>
-          <groupId>jmock</groupId>
-          <artifactId>jmock</artifactId>
-          <version>1.0.1</version>
-      </dependency>
-      <dependency>
-          <groupId>jmock</groupId>
-          <artifactId>jmock-cglib</artifactId>
-          <version>1.0.1</version>
-          <exclusions>
-              <exclusion>
-                  <groupId>cglib</groupId>
-                  <artifactId>cglib-full</artifactId>
-              </exclusion>
-          </exclusions>
-      </dependency>
-      <dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>3.8.2</version>
+    </dependency>
+    <dependency>
+      <groupId>jmock</groupId>
+      <artifactId>jmock</artifactId>
+      <version>1.0.1</version>
+    </dependency>
+    <dependency>
+      <groupId>jmock</groupId>
+      <artifactId>jmock-cglib</artifactId>
+      <version>1.0.1</version>
+      <!-- This pulls in an incompatible version of ASM, so it must be excluded.  -->
+      <exclusions>
+        <exclusion>
           <groupId>cglib</groupId>
-          <artifactId>cglib-nodep</artifactId>
-          <version>2.1_3</version>
-      </dependency>
+          <artifactId>cglib-full</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>cglib</groupId>
+      <artifactId>cglib-nodep</artifactId>
+      <version>2.1_3</version>
+    </dependency>
 
     <!-- only used for testing/debugging-->
     <dependency>
@@ -567,8 +565,7 @@
 
     <!-- only used for BSF adapter-->
 
-<!-- 2.4.0 POM not in the repository, yields warning but OK -->
-
+    <!-- 2.4.0 POM not in the repository, yields warning but OK -->
     <dependency>
       <groupId>bsf</groupId>
       <artifactId>bsf</artifactId>    
@@ -657,6 +654,7 @@
     </dependency>
 
     <!-- only used in the samples (BlogLines client) -->
+    <!-- Also needed for Ivy when Gant pulls Ivy in? -->
     <dependency>
       <groupId>commons-httpclient</groupId>
       <artifactId>commons-httpclient</artifactId>
@@ -684,101 +682,75 @@
       <version>0.6</version>
     </dependency>
 
-    <!-- prepare for EMMA
-    <dependency>
-            <id>emma</id>
-            <version>2.0.latest</version>
-            <url>http://emma.sourceforge.net</url>
-        </dependency>
-        <dependency>
-            <id>emma_ant</id>
-            <groupId>emma</groupId>
-            <version>2.0.latest</version>
-            <url>http://emma.sourceforge.net</url>
-        </dependency>
-    -->
-
   </dependencies>
 
   <build>
-      <plugins>
-          <plugin>
-              <groupId>org.apache.maven.plugins</groupId>
-              <artifactId>maven-antlr-plugin</artifactId>
-              <configuration>
-                  <grammars>groovy.g</grammars>
-                  <sourceDirectory>src/main/org/codehaus/groovy/antlr</sourceDirectory>
-                  <outputDirectory>src/main</outputDirectory>
-              </configuration>
-              <executions>
-                  <execution>
-                      <goals>
-                          <goal>generate</goal>
-                      </goals>
-                  </execution>
-              </executions>
-          </plugin>
-      </plugins>
+    <defaultGoal>test</defaultGoal>
+
+    <!-- Maven 1 repository structure is different to Maven 2 structure, so we manually set the top of the
+    source hierarchy -->
     <sourceDirectory>src/main</sourceDirectory>
-<!--
-    <sourceModifications>
-        <sourceModification>
-            <className>CastTest</className>
-            <excludes>
-                <exclude>**/Uber*.java</exclude>
-            </excludes>
-        </sourceModification>
-    </sourceModifications>
-    <unitTestSourceDirectory>src/test</unitTestSourceDirectory>
-    <aspectSourceDirectory/>
--->
+
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <source>1.4</source>
+          <target>1.4</target>
+          <debug>on</debug>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antlr-plugin</artifactId>
+        <configuration>
+          <grammars>groovy.g</grammars>
+          <sourceDirectory>src/main/org/codehaus/groovy/antlr</sourceDirectory>
+          <outputDirectory>src/main</outputDirectory>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>2.2</version>
+        <configuration>
+          <includes>
+            <include>**/*Test.*</include>
+            <include>**/*Bug.*</include>
+            <include>**/Uber*.*</include>
+          </includes>          
+          <excludes>
+            <exclude>**/SignedJarTest.*</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+    </plugins>
+
 <!--
     <unitTest>
-      <resources>
+      <resources> 
+        <!- - security test files - ->
         <resource>
-          <!- directory>src/test</directory - ->
+          <directory>src/security</directory>
           <includes>
-            <include>**/*.properties</include>
-            <include>**/*.xml</include>
-            <include>**/*.xsd</include>
+            <include>**/*.*</include>
+            <include>**/groovy*</include>
           </includes>
         </resource>
-      	
-      	<!- - security test files - ->
-      <resource>
-        <directory>src/security</directory>
-        <includes>
-          <include>**/*.*</include>
-          <include>**/groovy*</include>
-	    </includes>
-      </resource>
-	 </resources>
-
-      <includes>
-        <include>**/*Test.*</include>
-        <include>**/*Bug.*</include>
-      </includes>
-        <includes>
-            <include>**/Uber*.*</include>
-        </includes>
-
-      <excludes>
-        <exclude>**/SignedJarTest.*</exclude>
-      </excludes>
-    	
-    </unitTest>
+    </resources>  
+  </unitTest>
 -->
 
-    <resources>
-      <resource>
-        <directory>src/main</directory>
-        <includes>
-          <include>**/*.properties</include>
-          <include>**/*.xml</include>
-        </includes>
-      </resource>
-    </resources>
-    
   </build>
 
   <reports>
@@ -810,5 +782,16 @@
     <report>maven-emma-plugin</report>
     -->
   </reports>
+
+<!--
+  <reporting>
+    <plugins>
+      <plugin> 
+       <groupId>org.apache.maven.plugins</groupId> 
+         <artifactId>maven-surefire-report-plugin</artifactId> 
+      </plugin>
+    </plugins>    
+  </reporting>
+-->
 
 </project>
