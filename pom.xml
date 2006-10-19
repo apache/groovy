@@ -17,7 +17,7 @@
   </organization>
   <inceptionYear>2003</inceptionYear>
   <url>http://groovy.codehaus.org/</url>
-  <description>Groovy: A powerful, dynamic/scripting language for the JVM</description>
+  <description>Groovy: A powerful dynamic scripting language for the JVM</description>
 
   <scm>
     <connection>scm:svn:http://svn.codehaus.org/groovy/groovy-core</connection>
@@ -466,48 +466,29 @@
       <groupId>antlr</groupId>
       <artifactId>antlr</artifactId>
       <version>2.7.5</version>
-      <!--properties>
-         <war.bundle>true</war.bundle>
-      </properties-->
     </dependency>    
     <dependency>
       <groupId>asm</groupId>
       <artifactId>asm</artifactId>
       <version>2.2</version>
-      <!--url>http://asm.objectweb.org/</url-->
-      <!--properties>
-         <war.bundle>true</war.bundle>
-      </properties-->      
     </dependency>
 
     <!-- dependencies used by optional features -->
 
-    <dependency>
-      <groupId>xml-apis</groupId>
-      <artifactId>xml-apis</artifactId>    
-      <version>1.0.b2</version>
-      <!--url>http://xml.apache.org/</url-->
-    </dependency>
-
       <dependency>
         <groupId>xerces</groupId>
         <artifactId>xercesImpl</artifactId>
-        <version>2.6.2</version>
-        <!--url>http://xml.apache.org/</url-->
+        <version>2.8.0</version>
       </dependency>
-
       <dependency>
-        <groupId>xerces</groupId>
-        <artifactId>xmlParserAPIs</artifactId>
-        <version>2.6.2</version>
-        <!--url>http://xml.apache.org/</url-->
+        <groupId>xml-apis</groupId>
+        <artifactId>xml-apis</artifactId>
+        <version>1.3.03</version>
       </dependency>
-
       <dependency>
         <groupId>xml-resolver</groupId>
         <artifactId>xml-resolver</artifactId>
         <version>1.1</version>
-        <!--url>http://xml.apache.org/</url-->
       </dependency>
 
     <!-- only used for command line tools -->
@@ -535,68 +516,63 @@
     </dependency>
 
     <!-- only used for testing helper classes -->
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>    
-      <version>3.8.2</version>
-    </dependency>    
-    <dependency>
-      <groupId>jmock</groupId>
-      <artifactId>jmock</artifactId>
-      <version>1.0.1</version>
-      <!--
-      <version>SNAPSHOT</version>
-      -->
-    </dependency>
-    <dependency>
-      <groupId>jmock</groupId>
-      <artifactId>jmock-cglib</artifactId>
-      <version>1.0.1</version>
-      <!--
-      <version>SNAPSHOT</version>
-      -->
-    </dependency>
-    <dependency>
-        <groupId>cglib</groupId>
-        <artifactId>cglib-nodep</artifactId>
-        <version>2.1_3</version>
-    </dependency>
+      <dependency>
+          <groupId>junit</groupId>
+          <artifactId>junit</artifactId>
+          <version>3.8.2</version>
+      </dependency>
+      <dependency>
+          <groupId>jmock</groupId>
+          <artifactId>jmock</artifactId>
+          <version>1.0.1</version>
+      </dependency>
+      <dependency>
+          <groupId>jmock</groupId>
+          <artifactId>jmock-cglib</artifactId>
+          <version>1.0.1</version>
+          <exclusions>
+              <exclusion>
+                  <groupId>cglib</groupId>
+                  <artifactId>cglib-full</artifactId>
+              </exclusion>
+          </exclusions>
+      </dependency>
+      <dependency>
+          <groupId>cglib</groupId>
+          <artifactId>cglib-nodep</artifactId>
+          <version>2.1_3</version>
+      </dependency>
 
     <!-- only used for testing/debugging-->
     <dependency>
       <groupId>asm</groupId>
       <artifactId>asm-util</artifactId>    
       <version>2.2</version>
-      <!--url>http://asm.objectweb.org/</url-->
     </dependency>
     <dependency>
       <groupId>asm</groupId>
       <artifactId>asm-attrs</artifactId>    
       <version>2.2</version>
-      <!--url>http://asm.objectweb.org/</url-->
     </dependency>
     <dependency>
       <groupId>asm</groupId>
       <artifactId>asm-analysis</artifactId>    
       <version>2.2</version>
-      <!--url>http://asm.objectweb.org/</url-->
     </dependency>
     <dependency>
       <groupId>asm</groupId>
       <artifactId>asm-tree</artifactId>    
       <version>2.2</version>
-      <!--url>http://asm.objectweb.org/</url-->
     </dependency>
 
     <!-- only used for BSF adapter-->
 
-<!-- 2.4.0 POM not in the repository, use 2.3.0 -->
+<!-- 2.4.0 POM not in the repository, yields warning but OK -->
 
     <dependency>
       <groupId>bsf</groupId>
       <artifactId>bsf</artifactId>    
-      <version>2.3.0</version>
-      <!--url>http://jakarta.apache.org/bsf/</url-->
+      <version>2.4.0</version>
     </dependency>
 
     <!-- only used for JMX utilities -->
@@ -604,9 +580,6 @@
       <groupId>mx4j</groupId>
       <artifactId>mx4j</artifactId>    
       <version>2.0-beta-1</version>
-      <!--properties>
-          <bootstrap>true</bootstrap>
-      </properties-->
     </dependency>
 
     <!-- only used for GroovyMock tools -->
@@ -633,13 +606,11 @@
       <groupId>commons-logging</groupId>
       <artifactId>commons-logging</artifactId>    
       <version>1.0.3</version>
-      <!--url>http://jakarta.apache.org/commons/logging.html</url-->
     </dependency>
     <dependency>
       <groupId>commons-collections</groupId>
       <artifactId>commons-collections</artifactId>    
       <version>3.0-dev2</version>
-      <!--url>http://jakarta.apache.org/commons/collections</url-->
     </dependency>
     <dependency>
       <groupId>regexp</groupId>
@@ -649,11 +620,16 @@
   
     <!-- only used for servlet / gsp -->
     <dependency>
-      <groupId>servletapi</groupId>
+      <groupId>javax.servlet</groupId>
       <artifactId>servlet-api</artifactId>    
       <version>2.4</version>
     </dependency>
-  
+    <dependency>
+      <groupId>javax.servlet</groupId>
+      <artifactId>jsp-api</artifactId>
+      <version>2.0</version>
+    </dependency>
+
     <!-- only used for the Wiki Ant tasks -->
     <dependency>
       <groupId>radeox</groupId>
@@ -725,7 +701,24 @@
   </dependencies>
 
   <build>
-    <!--nagEmailAddress>groovy-scm@groovy.codehaus.org</nagEmailAddress-->
+      <plugins>
+          <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-antlr-plugin</artifactId>
+              <configuration>
+                  <grammars>groovy.g</grammars>
+                  <sourceDirectory>src/main/org/codehaus/groovy/antlr</sourceDirectory>
+                  <outputDirectory>src/main</outputDirectory>
+              </configuration>
+              <executions>
+                  <execution>
+                      <goals>
+                          <goal>generate</goal>
+                      </goals>
+                  </execution>
+              </executions>
+          </plugin>
+      </plugins>
     <sourceDirectory>src/main</sourceDirectory>
 <!--
     <sourceModifications>
@@ -787,8 +780,7 @@
     </resources>
     
   </build>
-  
-   
+
   <reports>
     <report>maven-license-plugin</report>
     <!-- very large and offers no real value, it just slows us down!
