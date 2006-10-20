@@ -1,9 +1,13 @@
 package groovy.util
 
+import groovy.xml.TraversalTestSupport
+import groovy.xml.GpathSyntaxTestSupport
+
 class XmlSlurperTest extends GroovyTestCase {
-    
-    void testXmlParser() {
-        def text = """
+
+    def getRoot = { xml -> new XmlSlurper().parseText(xml) }
+
+    def sampleXml = '''
 <characters>
     <character id="1" name="Wallace">
     	<likes>cheese</likes>
@@ -16,9 +20,10 @@ class XmlSlurperTest extends GroovyTestCase {
     <uriValue>http://example.org/</uriValue>
     <urlValue>http://example.org/</urlValue>
 </characters>
-"""
-        
-        def node = new XmlSlurper().parseText(text);
+'''
+
+    void testXmlParser() {
+        def node = new XmlSlurper().parseText(sampleXml)
         
         assert node != null
         assert node.children().size() == 6 , "Children ${node.children()}"
@@ -49,19 +54,6 @@ class XmlSlurperTest extends GroovyTestCase {
         assert gromit.parent()==node
         assert node.parent()==node
         
-        assert node.numericValue.toInteger() == 1
-        assert node.numericValue.toLong() == 1
-        assert node.numericValue.toFloat() == 1
-        assert node.numericValue.toDouble() == 1
-        assert node.numericValue.toBigInteger() == 1
-        assert node.numericValue.toBigDecimal() == 1
-        
-        assert node.booleanValue.toBoolean() == true
-        
-        assert node.uriValue.toURI() == "http://example.org/".toURI()
-        
-        assert node.urlValue.toURL() == "http://example.org/".toURL()
-        
         def wsdl = '''                                                                                
             <definitions name="AgencyManagementService">                                              
                 <message name="SomeRequest">                                                          
@@ -81,11 +73,31 @@ class XmlSlurperTest extends GroovyTestCase {
         println xml.message.part.findAll { true }
     }
 
+    void testMixedMarkup() {
+        //GpathSyntaxTestSupport.checkMixedMarkup(getRoot)
+    }
+
+    void testTypes() {
+        GpathSyntaxTestSupport.checkTypes(getRoot)
+    }
+
+    void testElement() {
+        GpathSyntaxTestSupport.checkElement(getRoot)
+    }
+
+    void testAttribute() {
+        GpathSyntaxTestSupport.checkAttributeMerging(getRoot)
+    }
+
+    void testAttributes() {
+        GpathSyntaxTestSupport.checkAttributes(getRoot)
+    }
+
     void testDepthFirst() {
-        XmlTraversalTestUtil.checkDepthFirst(new XmlSlurper())
+        TraversalTestSupport.checkDepthFirst(getRoot)
     }
 
     void testBreadthFirst() {
-        XmlTraversalTestUtil.checkBreadthFirst(new XmlSlurper())
+        TraversalTestSupport.checkBreadthFirst(getRoot)
     }
 }

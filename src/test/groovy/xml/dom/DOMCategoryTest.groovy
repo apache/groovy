@@ -1,9 +1,16 @@
 package groovy.xml.dom
 
 import groovy.xml.DOMBuilder
+import groovy.xml.GpathSyntaxTestSupport
 
 class DOMCategoryTest extends GroovyTestCase {
-    
+
+    def getRoot = { xml ->
+        def reader = new StringReader(xml)
+        def doc    = DOMBuilder.parse(reader)
+        def root   = doc.documentElement
+    }
+
     def testXml = """
 <characters>
     <character id="1" name="Wallace">
@@ -47,11 +54,76 @@ class DOMCategoryTest extends GroovyTestCase {
                 groupLikesByFirstLetter[it] = groupLikesByFirstLetter[it][0].text()
             }
             assert groupLikesByFirstLetter == [W:'cheese', G:'sleep']
-            def attributes = node.attributes()
-            assert         2 == attributes.size()
-            assert 'Wallace' == attributes.name
-            assert 'Wallace' == attributes['name']
-            assert       '1' == attributes.'id'
         }
     }
+
+//    void testMixedMarkup() {
+//        use(DOMCategory) {
+//            GpathSyntaxTestSupport.checkMixedMarkup(getRoot)
+//        }
+//    }
+
+    void testElement() {
+        use(DOMCategory) {
+            GpathSyntaxTestSupport.checkElement(getRoot)
+        }
+    }
+
+    void testAttribute() {
+        use(DOMCategory) {
+            GpathSyntaxTestSupport.checkAttribute(getRoot)
+        }
+    }
+
+    void testAttributes() {
+        use(DOMCategory) {
+            GpathSyntaxTestSupport.checkAttributes(getRoot)
+        }
+    }
+
+//    void testDepthFirst() {
+//        TraversalTestSupport.checkDepthFirst(getRoot)
+//    }
+
+//    void testBreadthFirst() {
+//        TraversalTestSupport.checkBreadthFirst(getRoot)
+//    }
+
+/*
+    def testSchemaXml = '''<?xml version="1.0" encoding="UTF-8"?>
+<shiporder xmlns:color="http://www.acme.org/Color"
+     xmlns:Order="http://www.acme.org/Order" orderid="123">
+    <order:customer>customer</order:customer>
+    <order:item>
+        <order:name>My Red Item</order:name>
+        <order:quantity>3</order:quantity>
+        <color:name>Red</color:name>
+    </order:item>
+</shiporder>
+'''
+
+    void xxxtestNamespaces() {
+        def reader = new StringReader(testSchemaXml)
+        def doc    = DOMBuilder.parse(reader)
+        def root   = doc.documentElement
+
+        use(DOMCategory) {
+            def firstChild = root['*'][0]
+            println firstChild.class.name + " has name(): " + firstChild.name()
+            println "namespaceURI         = " + firstChild.namespaceURI
+            println "lookupNamespaceURI() = " + firstChild.lookupNamespaceURI()
+            println "baseUR         I     = " + firstChild.baseURI
+            println "tagName              = " + firstChild.tagName
+            println "prefix               = " + firstChild.prefix
+            println "lookupPrefix()       = " + firstChild.lookupPrefix()
+            println "nodeName             = " + firstChild.nodeName
+            println "isDefaultNamespace() = " + firstChild.isDefaultNamespace()
+            println root['*'].size()
+            println root['http://www.acme.org/Order#:*'].size()
+            println root['http://www.acme.org/Order:*'].size()
+            println root['order:*'].size()
+            println root['*:name'].size()
+        }
+    }
+*/
 }

@@ -34,6 +34,7 @@ package groovy.xml.dom;
 
 import org.w3c.dom.*;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.apache.xerces.dom.AttributeMap;
 
 import java.util.Iterator;
 import java.util.List;
@@ -53,7 +54,9 @@ public class DOMCategory {
         if (o instanceof NodeList) {
             return get((NodeList) o, elementName);
         }
-        org.apache.xerces.dom.DeferredElementImpl x;
+        if (o instanceof NamedNodeMap) {
+            return get((NamedNodeMap) o, elementName);
+        }
         return null;
     }
 
@@ -63,6 +66,10 @@ public class DOMCategory {
 
     private static Object get(NodeList nodeList, String elementName) {
         return getAt(nodeList, elementName);
+    }
+
+    private static Object get(NamedNodeMap nodeMap, String elementName) {
+        return getAt(nodeMap, elementName);
     }
 
     private static Object getAt(Element element, String elementName) {
@@ -93,8 +100,9 @@ public class DOMCategory {
         return element.getAttributes();
     }
 
-    public static String get(NamedNodeMap namedNodeMap, String elementName) {
-        return namedNodeMap.getNamedItem(elementName).getNodeValue();
+    private static String getAt(NamedNodeMap namedNodeMap, String elementName) {
+        Attr a = (Attr) namedNodeMap.getNamedItem(elementName);
+        return a.getValue();
     }
 
     public static int size(NamedNodeMap namedNodeMap) {

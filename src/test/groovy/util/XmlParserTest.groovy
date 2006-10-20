@@ -1,7 +1,12 @@
 package groovy.util
 
+import groovy.xml.TraversalTestSupport
+import groovy.xml.GpathSyntaxTestSupport
+
 class XmlParserTest extends GroovyTestCase {
-    
+
+    def getRoot = { xml -> new XmlParser().parseText(xml) }
+
     void testXmlParser() {
         def text = """
 <characters>
@@ -40,28 +45,35 @@ class XmlParserTest extends GroovyTestCase {
         assert answer == "cheese"
     }
     
-    void testMixedMarkup() {
+    void testNodePrinter() {
         def text = """
 <p>Please read the <a href="index.html">Home</a> page</p>
 """
-        
         def node = new XmlParser().parseText(text)
-        
         new NodePrinter().print(node)
-        
-        assert node != null
-        def children = node.children()
-        assert children.size() == 3 , "Children ${children}"
-        assert children[0] instanceof String
-        assert children[1] instanceof Node
-        assert children[2] instanceof String
+    }
+
+    void testMixedMarkup() {
+        GpathSyntaxTestSupport.checkMixedMarkup(getRoot)
+    }
+
+    void testElement() {
+        GpathSyntaxTestSupport.checkElement(getRoot)
+    }
+
+    void testAttribute() {
+        GpathSyntaxTestSupport.checkAttribute(getRoot)
+    }
+
+    void testAttributes() {
+        GpathSyntaxTestSupport.checkAttributes(getRoot)
     }
 
     void testDepthFirst() {
-        XmlTraversalTestUtil.checkDepthFirst(new XmlParser())
+        TraversalTestSupport.checkDepthFirst(getRoot)
     }
 
     void testBreadthFirst() {
-        XmlTraversalTestUtil.checkBreadthFirst(new XmlParser())
+        TraversalTestSupport.checkBreadthFirst(getRoot)
     }
 }
