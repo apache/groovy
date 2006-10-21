@@ -188,27 +188,33 @@ public class Node implements java.io.Serializable {
 
     /**
      * Provides lookup of elements by non-namespaced name
+     * @return
+     * @param key
      */
     public Object get(String key) {
-        if (key.charAt(0) == '@') {
+        if (key != null && key.charAt(0) == '@') {
             String attributeName = key.substring(1);
             return attributes().get(attributeName);
         }
-        else {
-            // iterate through list looking for node with name 'key'
-            List answer = new NodeList();
-            for (Iterator iter = children().iterator(); iter.hasNext();) {
-                Object child = iter.next();
-                if (child instanceof Node) {
-                    Node childNode = (Node) child;
-                    Object childNodeName = childNode.name();
-                    if (childNodeName != null && childNodeName.equals(key)) {
-                        answer.add(childNode);
-                    }
+        if ("..".equals(key)) {
+            return parent();
+        }
+        if ("*".equals(key)) {
+            return children();
+        }
+        // iterate through list looking for node with name 'key'
+        List answer = new NodeList();
+        for (Iterator iter = children().iterator(); iter.hasNext();) {
+            Object child = iter.next();
+            if (child instanceof Node) {
+                Node childNode = (Node) child;
+                Object childNodeName = childNode.name();
+                if (childNodeName != null && childNodeName.equals(key)) {
+                    answer.add(childNode);
                 }
             }
-            return answer;
         }
+        return answer;
     }
     
     /**

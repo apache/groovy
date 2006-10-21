@@ -34,7 +34,6 @@ package groovy.xml.dom;
 
 import org.w3c.dom.*;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
-import org.apache.xerces.dom.AttributeMap;
 
 import java.util.Iterator;
 import java.util.List;
@@ -73,6 +72,9 @@ public class DOMCategory {
     }
 
     private static Object getAt(Element element, String elementName) {
+        if (elementName.equals("..")) {
+            return parent(element);
+        }
         if (elementName.startsWith("@")) {
             return element.getAttribute(elementName.substring(1));
         }
@@ -177,6 +179,10 @@ public class DOMCategory {
             answer.add(it.next());
         }
         return answer;
+    }
+
+    public static NodeList children(Element self) {
+        return self.getChildNodes();
     }
 
     public static String toString(NodeList self) {
