@@ -202,6 +202,9 @@ public class Node implements java.io.Serializable {
         if ("*".equals(key)) {
             return children();
         }
+        if ("**".equals(key)) {
+            return depthFirst();
+        }
         // iterate through list looking for node with name 'key'
         List answer = new NodeList();
         for (Iterator iter = children().iterator(); iter.hasNext();) {

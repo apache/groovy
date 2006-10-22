@@ -2,6 +2,8 @@ package groovy.xml.dom
 
 import groovy.xml.DOMBuilder
 import groovy.xml.GpathSyntaxTestSupport
+import groovy.xml.TraversalTestSupport
+import groovy.xml.MixedMarkupTestSupport
 
 class DOMCategoryTest extends GroovyTestCase {
 
@@ -11,11 +13,11 @@ class DOMCategoryTest extends GroovyTestCase {
         def root   = doc.documentElement
     }
 
-//    void testMixedMarkup() {
-//        use(DOMCategory) {
-//            GpathSyntaxTestSupport.checkMixedMarkup(getRoot)
-//        }
-//    }
+    void testMixedMarkup() {
+        use(DOMCategory) {
+            MixedMarkupTestSupport.checkMixedMarkup(getRoot)
+        }
+    }
 
     void testElement() {
         use(DOMCategory) {
@@ -37,6 +39,13 @@ class DOMCategoryTest extends GroovyTestCase {
         use(DOMCategory) {
             GpathSyntaxTestSupport.checkChildren(getRoot)
             GpathSyntaxTestSupport.checkParent(getRoot)
+        }
+    }
+
+    void testTraversal() {
+        use(DOMCategory) {
+            TraversalTestSupport.checkDepthFirst(getRoot)
+            TraversalTestSupport.checkBreadthFirst(getRoot)
         }
     }
 

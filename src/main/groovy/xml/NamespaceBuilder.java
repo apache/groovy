@@ -47,7 +47,6 @@ package groovy.xml;
 
 import groovy.util.BuilderSupport;
 
-
 /**
  * A helper class for creating namespaces for GroovyMarkup
  * 

@@ -27,15 +27,15 @@ class GpathSyntaxTestSupport {
         assert wallace.name() == 'character'
         def likes = characters.likes
         assert 2 == likes.size()
-        def wallaceLike = likes[0]
-        assert wallaceLike.name() == 'likes'
-        assert wallaceLike.text() == 'cheese'
+        def wallaceLikes = likes[0]
+        assert wallaceLikes.name() == 'likes'
+        assert wallaceLikes.text() == 'cheese'
         if (isDom(root)) {
-            // additional DOM longhand syntax
+            // additional DOM long-hand syntax
             assert likes.item(0).nodeName == 'likes'
-            assert wallaceLike.firstChild.nodeValue == 'cheese'
-            if (wallaceLike.class.name.contains('xerces')) {
-                assert 'cheese' == wallaceLike.textContent
+            assert wallaceLikes.firstChild.nodeValue == 'cheese'
+            if (wallaceLikes.class.name.contains('xerces')) {
+                assert 'cheese' == wallaceLikes.textContent
             }
         }
     }
@@ -72,11 +72,15 @@ class GpathSyntaxTestSupport {
         def root = getRoot(sampleXml)
         def sLikes = root.character.likes.findAll{ it.text().startsWith('s') }
         assert sLikes.size() == 1
+        assert root.likes.size() == 0
         if (isDom(root)) {
-            // DOMCategory gets nested children
-            assert root.likes.size() == 2
-            // text() works on Lists while in DOMCategory
-            assert ['sleep'] == sLikes.text()
+            // addtitional DOMCategory long-hand notation gets nested
+            assert root.getElementsByTagName('likes').size() == 2
+        }
+        if (isSlurper(root)) {
+            assert 'sleep' == sLikes.text()
+        } else {
+            assert ['sleep'] == sLikes*.text()
         }
         assert root.character.likes.every{ it.text().contains('ee') }
         def groupLikesByFirstLetter
@@ -131,15 +135,14 @@ class GpathSyntaxTestSupport {
     static void checkChildren(Closure getRoot) {
         def root = getRoot(sampleXml)
         def children = root.children()
+        // count direct children
+        assert children.size() == 6, "Children ${children.size()}"
+        assert root.'*'.size() == 6
         if (isDom(root)) {
             // count whitespace and nested children
-            assert children.size() == 13, "Children ${children.size()}"
+            assert root.childNodes.size() == 13
             // count nested children
-            assert root.'*'.size() == 8
-        } else {
-            // count direct children
-            assert children.size() == 6, "Children ${children.size()}"
-            assert root.'*'.size() == 6
+            assert root.getElementsByTagName('*').size() == 8
         }
     }
 
@@ -161,19 +164,6 @@ class GpathSyntaxTestSupport {
         } else if (isDom(root)) {
             assert (root.parent() instanceof org.w3c.dom.Document)
         }
-    }
-
-    static void checkMixedMarkup(Closure getRoot) {
-        def mixedXml = '''
-<p>Please read the <a href="index.html">Home</a> page</p>
-'''
-        def root = getRoot(mixedXml)
-        assert root != null
-        def children = root.children()
-        assert children.size() == 3
-        assert children[0] instanceof String
-        assert children[1] instanceof Node
-        assert children[2] instanceof String
     }
 
     private static boolean isSlurper(node) {

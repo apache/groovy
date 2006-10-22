@@ -28,112 +28,104 @@ import java.util.Map;
 
 /**
  * @author John Wilson
- *
  */
 
 class Attributes extends NodeChildren {
-  final String attributeName;
-  
-  public Attributes(final GPathResult parent, final String name, final String namespacePrefix, final Map namespaceTagHints) {
-    super(parent, name, namespacePrefix, namespaceTagHints);
-    
-    this.attributeName = this.name.substring(1);
-  }
-  
-  public Attributes(final GPathResult parent, final String name, final Map namespaceTagHints) {
-    this(parent, name, "*", namespaceTagHints);
-  }
+    final String attributeName;
 
-  public String name() {
-      // this name contains @name we need to return name
-      return this.name.substring(1);
-  }
-  
-  /* (non-Javadoc)
-   * @see org.codehaus.groovy.sandbox.util.slurpersupport.NodeChildren#childNodes()
-   */
-  public Iterator childNodes() {
-    throw new GroovyRuntimeException("Can't get the child nodes on a a GPath expression selecting attributes: ...." + this.parent.name() + "." + name() + ".childNodes()");
-  }
-  
-  /* (non-Javadoc)
-   * @see org.codehaus.groovy.sandbox.util.slurpersupport.NodeChildren#iterator()
-   */
-  public Iterator iterator() {
-    return new NodeIterator(nodeIterator()) {
-                  /* (non-Javadoc)
-                   * @see org.codehaus.groovy.sandbox.util.slurpersupport.NodeIterator#getNextNode(java.util.Iterator)
-                   */
-                  protected Object getNextNode(final Iterator iter) {
-                    while (iter.hasNext()) {
-                    final Object next = iter.next();
-                      
-                      if (next instanceof Attribute) {
-                          return next;
-                      } else {
-                          final String value = (String)((Node)next).attributes().get(Attributes.this.attributeName);
-                          
-                          if (value != null) {
-                            return new Attribute(Attributes.this.attributeName,
-                                                 value,
-                                                 new NodeChild((Node)next, Attributes.this.parent.parent, "", Attributes.this.namespaceTagHints),
-                                                 "",
-                                                 Attributes.this.namespaceTagHints);
-                          }
-                      }
-                    }
-                    
-                    return null;
-                  }
-                };
-  }
-  
-  public Iterator nodeIterator() {
-    return this.parent.nodeIterator();
-}
-
-/* (non-Javadoc)
-   * @see org.codehaus.groovy.sandbox.util.slurpersupport.NodeChildren#parents()
-   */
-  public GPathResult parents() {
-    return super.parents();
-  }
-  
-  /* (non-Javadoc)
-   * @see org.codehaus.groovy.sandbox.util.slurpersupport.NodeChildren#text()
-   */
-  public String text() {
-  final StringBuffer buf = new StringBuffer();
-  final Iterator iter = iterator();
-
-    while (iter.hasNext()) {
-      buf.append(iter.next());
+    public Attributes(final GPathResult parent, final String name, final String namespacePrefix, final Map namespaceTagHints) {
+        super(parent, name, namespacePrefix, namespaceTagHints);
+        this.attributeName = this.name.substring(1);
     }
-    
-    return buf.toString();
-  }
 
-/* (non-Javadoc)
-   * @see org.codehaus.groovy.sandbox.util.slurpersupport.NodeChildren#findAll(groovy.lang.Closure)
-   */
-  public GPathResult findAll(final Closure closure) {
-    return new FilteredAttributes(this, closure, this.namespaceTagHints);
-  }
+    public Attributes(final GPathResult parent, final String name, final Map namespaceTagHints) {
+        this(parent, name, "*", namespaceTagHints);
+    }
 
-  /* (non-Javadoc)
-   * @see org.codehaus.groovy.sandbox.util.slurpersupport.NodeChildren#writeTo(java.io.Writer)
-   */
-  public Writer writeTo(final Writer out) throws IOException {
-    out.write(text());
-    
-    return out;
-  }
-  
-  /* (non-Javadoc)
-   * @see org.codehaus.groovy.sandbox.util.slurpersupport.NodeChildren#build(groovy.lang.GroovyObject)
-   */
-  public void build(final GroovyObject builder) {
-    builder.getProperty("mkp");
-    builder.invokeMethod("yield", new Object[]{text()});
-  }
+    public String name() {
+        // this name contains @name we need to return name
+        return this.name.substring(1);
+    }
+
+    /* (non-Javadoc)
+    * @see org.codehaus.groovy.sandbox.util.slurpersupport.NodeChildren#childNodes()
+    */
+    public Iterator childNodes() {
+        throw new GroovyRuntimeException("Can't get the child nodes on a a GPath expression selecting attributes: ...." + this.parent.name() + "." + name() + ".childNodes()");
+    }
+
+    /* (non-Javadoc)
+    * @see org.codehaus.groovy.sandbox.util.slurpersupport.NodeChildren#iterator()
+    */
+    public Iterator iterator() {
+        return new NodeIterator(nodeIterator()) {
+            /* (non-Javadoc)
+            * @see org.codehaus.groovy.sandbox.util.slurpersupport.NodeIterator#getNextNode(java.util.Iterator)
+            */
+            protected Object getNextNode(final Iterator iter) {
+                while (iter.hasNext()) {
+                    final Object next = iter.next();
+                    if (next instanceof Attribute) {
+                        return next;
+                    } else {
+                        final String value = (String) ((Node) next).attributes().get(Attributes.this.attributeName);
+                        if (value != null) {
+                            return new Attribute(Attributes.this.attributeName,
+                                    value,
+                                    new NodeChild((Node) next, Attributes.this.parent.parent, "", Attributes.this.namespaceTagHints),
+                                    "",
+                                    Attributes.this.namespaceTagHints);
+                        }
+                    }
+                }
+                return null;
+            }
+        };
+    }
+
+    public Iterator nodeIterator() {
+        return this.parent.nodeIterator();
+    }
+
+    /* (non-Javadoc)
+    * @see org.codehaus.groovy.sandbox.util.slurpersupport.NodeChildren#parents()
+    */
+    public GPathResult parents() {
+        return super.parents();
+    }
+
+    /* (non-Javadoc)
+    * @see org.codehaus.groovy.sandbox.util.slurpersupport.NodeChildren#text()
+    */
+    public String text() {
+        final StringBuffer buf = new StringBuffer();
+        final Iterator iter = iterator();
+        while (iter.hasNext()) {
+            buf.append(iter.next());
+        }
+        return buf.toString();
+    }
+
+    /* (non-Javadoc)
+    * @see org.codehaus.groovy.sandbox.util.slurpersupport.NodeChildren#findAll(groovy.lang.Closure)
+    */
+    public GPathResult findAll(final Closure closure) {
+        return new FilteredAttributes(this, closure, this.namespaceTagHints);
+    }
+
+    /* (non-Javadoc)
+    * @see org.codehaus.groovy.sandbox.util.slurpersupport.NodeChildren#writeTo(java.io.Writer)
+    */
+    public Writer writeTo(final Writer out) throws IOException {
+        out.write(text());
+        return out;
+    }
+
+    /* (non-Javadoc)
+    * @see org.codehaus.groovy.sandbox.util.slurpersupport.NodeChildren#build(groovy.lang.GroovyObject)
+    */
+    public void build(final GroovyObject builder) {
+        builder.getProperty("mkp");
+        builder.invokeMethod("yield", new Object[]{text()});
+    }
 }

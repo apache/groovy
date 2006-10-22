@@ -77,8 +77,7 @@ public class NamespaceBuilderSupport extends BuilderSupport {
     }
 
     protected Object getName(String methodName) {
-        QName qname = new QName(uri, methodName, prefix);
-        return qname;
+        return new QName(uri, methodName, prefix);
     }
 
     protected Object createNode(Object name) {

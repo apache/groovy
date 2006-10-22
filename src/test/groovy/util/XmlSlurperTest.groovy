@@ -2,6 +2,7 @@ package groovy.util
 
 import groovy.xml.TraversalTestSupport
 import groovy.xml.GpathSyntaxTestSupport
+import groovy.xml.MixedMarkupTestSupport
 
 class XmlSlurperTest extends GroovyTestCase {
 
@@ -49,6 +50,6 @@ class XmlSlurperTest extends GroovyTestCase {
     }
 
     void testMixedMarkup() {
-        //GpathSyntaxTestSupport.checkMixedMarkup(getRoot)
+        MixedMarkupTestSupport.checkMixedMarkup(getRoot)
     }
 }
