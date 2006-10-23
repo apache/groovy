@@ -521,12 +521,12 @@
     <dependency>
       <groupId>jmock</groupId>
       <artifactId>jmock</artifactId>
-      <version>1.0.1</version>
+      <version>1.1.0</version>
     </dependency>
     <dependency>
       <groupId>jmock</groupId>
       <artifactId>jmock-cglib</artifactId>
-      <version>1.0.1</version>
+      <version>1.1.0</version>
       <!-- This pulls in an incompatible version of ASM, so it must be excluded.  -->
       <exclusions>
         <exclusion>
@@ -576,7 +576,7 @@
     <dependency>
       <groupId>mx4j</groupId>
       <artifactId>mx4j</artifactId>    
-      <version>2.0-beta-1</version>
+      <version>3.0.1</version>
     </dependency>
 
     <!-- only used for GroovyMock tools -->
@@ -587,11 +587,35 @@
     </dependency>
 
     <!-- only used for EJB browser -->
-    <dependency>
-      <groupId>openejb</groupId>
-      <artifactId>openejb-loader</artifactId>
-      <version>0.9.2</version>
-    </dependency>
+      <dependency>
+          <groupId>castor</groupId>
+          <artifactId>castor</artifactId>
+          <version>1.0</version>
+      </dependency>
+      <dependency>
+          <groupId>openejb</groupId>
+          <artifactId>openejb-loader</artifactId>
+          <version>1.0</version>
+          <!-- This pulls in an incompatible version of castor, so it must be excluded.  -->
+          <exclusions>
+              <exclusion>
+                  <groupId>castor</groupId>
+                  <artifactId>castor</artifactId>
+              </exclusion>
+              <exclusion>
+                  <groupId>org.apache.geronimo.specs</groupId>
+                  <artifactId>geronimo-jta_1.0.1B_spec</artifactId>
+              </exclusion>
+              <exclusion>
+                  <groupId>org.apache.geronimo.specs</groupId>
+                  <artifactId>geronimo-ejb_2.1_spec</artifactId>
+              </exclusion>
+              <exclusion>
+                  <groupId>org.apache.geronimo.specs</groupId>
+                  <artifactId>geronimo-j2ee-connector_1.5_spec</artifactId>
+              </exclusion>
+          </exclusions>
+      </dependency>
 
     <!-- only used for SQL library -->
     <dependency>
@@ -602,17 +626,17 @@
     <dependency>
       <groupId>commons-logging</groupId>
       <artifactId>commons-logging</artifactId>    
-      <version>1.0.3</version>
+      <version>1.0.4</version>
     </dependency>
     <dependency>
       <groupId>commons-collections</groupId>
       <artifactId>commons-collections</artifactId>    
-      <version>3.0-dev2</version>
+      <version>3.2</version>
     </dependency>
     <dependency>
       <groupId>regexp</groupId>
       <artifactId>regexp</artifactId>    
-      <version>1.2</version>
+      <version>1.3</version>
     </dependency>
   
     <!-- only used for servlet / gsp -->
@@ -631,7 +655,7 @@
     <dependency>
       <groupId>radeox</groupId>
       <artifactId>radeox</artifactId>    
-      <version>0.9</version>
+      <version>0.9</version><!-- later version based on Java 5 -->
     </dependency>
     <dependency>
       <groupId>radeox</groupId>
@@ -643,14 +667,14 @@
     <dependency>
       <groupId>nekohtml</groupId>
       <artifactId>nekohtml</artifactId>    
-      <version>0.7.7</version>
+      <version>0.9.5</version>
     </dependency>
 
     <!-- only used for the JavaDoc generator script -->
     <dependency>
       <groupId>qdox</groupId>
       <artifactId>qdox</artifactId>    
-      <version>1.3</version>
+      <version>1.5</version>
     </dependency>
 
     <!-- only used in the samples (BlogLines client) -->
@@ -658,21 +682,14 @@
     <dependency>
       <groupId>commons-httpclient</groupId>
       <artifactId>commons-httpclient</artifactId>
-      <version>3.0-rc3</version>
+      <version>3.0.1</version>
     </dependency>
 
     <!-- used to dump out the AST -->
     <dependency>
       <groupId>xstream</groupId>
       <artifactId>xstream</artifactId>
-      <version>1.1.1</version>
-    </dependency>
-
-    <!-- used by xstream -->
-    <dependency>
-      <groupId>xpp3</groupId>
-      <artifactId>xpp3</artifactId>
-      <version>1.1.3.4-RC8</version>
+      <version>1.2</version>
     </dependency>
 
     <!-- used to build embeddable jar -->

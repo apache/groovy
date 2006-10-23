@@ -655,7 +655,7 @@
     <dependency>
       <groupId>radeox</groupId>
       <artifactId>radeox</artifactId>    
-      <version>0.9</version>
+      <version>0.9</version><!-- later version based on Java 5 -->
     </dependency>
     <dependency>
       <groupId>radeox</groupId>
