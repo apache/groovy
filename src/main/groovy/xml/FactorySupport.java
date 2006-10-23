@@ -11,7 +11,7 @@ import java.security.PrivilegedActionException;
  * Support class for creating XML Factories
  */
 public class FactorySupport {
-    private static Object createFactory(PrivilegedExceptionAction action) throws ParserConfigurationException {
+    static Object createFactory(PrivilegedExceptionAction action) throws ParserConfigurationException {
         Object factory;
         try {
             factory = AccessController.doPrivileged(action);

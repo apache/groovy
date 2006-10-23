@@ -13,6 +13,7 @@ class GpathSyntaxTestSupport {
     <booleanValue>y</booleanValue>
     <uriValue>http://example.org/</uriValue>
     <urlValue>http://example.org/</urlValue>
+    <empty/>
 </characters>
 '''
 
@@ -30,6 +31,7 @@ class GpathSyntaxTestSupport {
         def wallaceLikes = likes[0]
         assert wallaceLikes.name() == 'likes'
         assert wallaceLikes.text() == 'cheese'
+        checkEmptyMissingCases(root)
         if (isDom(root)) {
             // additional DOM long-hand syntax
             assert likes.item(0).nodeName == 'likes'
@@ -37,6 +39,22 @@ class GpathSyntaxTestSupport {
             if (wallaceLikes.class.name.contains('xerces')) {
                 assert 'cheese' == wallaceLikes.textContent
             }
+        }
+    }
+
+    private static void checkEmptyMissingCases(root) {
+        def unknownChild = root.xxx
+        assert unknownChild.size() == 0
+        def unknownAttr = root.'@xxx'
+        if (isParser(root)) {
+            assert unknownAttr == null
+        } else {
+            assert unknownAttr.toString() == ''
+        }
+        if (isDom(root)) {
+            assert root.empty.text().toString() == '[]'
+        } else {
+            assert root.empty.text() == ''
         }
     }
 
@@ -79,8 +97,20 @@ class GpathSyntaxTestSupport {
         }
         if (isSlurper(root)) {
             assert 'sleep' == sLikes.text()
+            assert 'sleep' == sLikes.toString()
+            assert 'cheesesleep' == root.character.likes.text()
+            assert 'cheesesleep' == root.character.likes.toString()
         } else {
             assert ['sleep'] == sLikes*.text()
+            if (isDom(root)) {
+                assert '[<likes>sleep</likes>]' == sLikes.toString()
+                assert '[cheese, sleep]' == root.character.likes.text().toString()
+                assert '[<likes>cheese</likes>, <likes>sleep</likes>]' == root.character.likes.toString()
+            }
+            if (isParser(root)) {
+                assert '[likes[attributes={}; value=[sleep]]]' == sLikes.toString()
+                assert '[likes[attributes={}; value=[cheese]], likes[attributes={}; value=[sleep]]]' == root.character.likes.toString()
+            }
         }
         assert root.character.likes.every{ it.text().contains('ee') }
         def groupLikesByFirstLetter
@@ -118,6 +148,7 @@ class GpathSyntaxTestSupport {
         } else {
             assert 'Wallace' == (root.character.'@name')[0]
             assert ['Wallace', 'Gromit'] == root.character.'@name'
+            assert '[Wallace, Gromit]' == root.character.'@name'.toString()
             assert 'Wallace' == root.character[0].'@name'
             assert 'Wallace' == root.character[0]['@name']
         }
@@ -136,13 +167,13 @@ class GpathSyntaxTestSupport {
         def root = getRoot(sampleXml)
         def children = root.children()
         // count direct children
-        assert children.size() == 6, "Children ${children.size()}"
-        assert root.'*'.size() == 6
+        assert children.size() == 7, "Children ${children.size()}"
+        assert root.'*'.size() == 7
         if (isDom(root)) {
             // count whitespace and nested children
-            assert root.childNodes.size() == 13
+            assert root.childNodes.size() == 15
             // count nested children
-            assert root.getElementsByTagName('*').size() == 8
+            assert root.getElementsByTagName('*').size() == 9
         }
     }
 

@@ -9,6 +9,7 @@ import groovy.tree.NodePrinterTest;
 import groovy.util.EvalTest;
 import groovy.util.MBeanTest;
 import groovy.xml.XmlTest;
+import groovy.xml.FactorySupportTest;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
@@ -40,6 +41,7 @@ public class AllGroovyJavaTestsSuite {
         suite.addTestSuite(EvalTest.class);
         suite.addTestSuite(MBeanTest.class);
         suite.addTestSuite(XmlTest.class);
+        suite.addTestSuite(FactorySupportTest.class);
 
         return suite;
     }
