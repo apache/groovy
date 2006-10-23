@@ -103,9 +103,17 @@ class GpathSyntaxTestSupport {
         } else {
             assert ['sleep'] == sLikes*.text()
             if (isDom(root)) {
-                assert '[<likes>sleep</likes>]' == sLikes.toString()
+                if (root.getClass().name.contains('xerces')) {
+                    assert '[[likes: null]]' == sLikes.toString()
+                } else {
+                    assert '[<likes>sleep</likes>]' == sLikes.toString()
+                }
                 assert '[cheese, sleep]' == root.character.likes.text().toString()
-                assert '[<likes>cheese</likes>, <likes>sleep</likes>]' == root.character.likes.toString()
+                if (root.class.name.contains('xerces')) {
+                    assert '[[likes: null], [likes: null]]' == root.character.likes.toString()
+                } else {
+                    assert '[<likes>cheese</likes>, <likes>sleep</likes>]' == root.character.likes.toString()
+                }
             }
             if (isParser(root)) {
                 assert '[likes[attributes={}; value=[sleep]]]' == sLikes.toString()
