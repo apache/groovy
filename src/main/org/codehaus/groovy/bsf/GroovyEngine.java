@@ -65,12 +65,9 @@ import java.util.Vector;
  * @author James Strachan
  */
 public class GroovyEngine extends BSFEngineImpl {
-    private static final String[] EMPTY_ARGS = {
-    };
-
     protected GroovyShell shell;
 
-    /**
+    /*
      * Convert a non java class name to a java classname
      * This is used to convert a script name to a name
      * that can be used as a classname with the script is
@@ -101,19 +98,11 @@ public class GroovyEngine extends BSFEngineImpl {
     /**
      * Allow an anonymous function to be declared and invoked
      */
-    public Object apply(java.lang.String source,
-                        int lineNo,
-                        int columnNo,
-                        Object funcBody,
-                        Vector paramNames,
-                        Vector arguments)
-            throws BSFException {
-
+    public Object apply(String source, int lineNo, int columnNo, Object funcBody, Vector paramNames,
+                        Vector arguments) throws BSFException {
         Object object = eval(source, lineNo, columnNo, funcBody);
         if (object instanceof Closure) {
             // lets call the function
-
-            /** @todo we could turn the 2 vectors into a Map */
             Closure closure = (Closure) object;
             return closure.call(arguments.toArray());
         }
@@ -128,21 +117,12 @@ public class GroovyEngine extends BSFEngineImpl {
     }
 
     /**
-     * Declare a bean
-     */
-    public void declareBean(BSFDeclaredBean bean) throws BSFException {
-        //System.out.println("Declaring bean: " + bean.name + " value: " + bean.bean);
-        shell.setVariable(bean.name, bean.bean);
-    }
-
-    /**
      * Evaluate an expression.
      */
     public Object eval(String source, int lineNo, int columnNo, Object script) throws BSFException {
         try {
             source = convertToValidJavaClassname(source);
-            Object result = getEvalShell().evaluate(script.toString(), source);
-            return result;
+            return getEvalShell().evaluate(script.toString(), source);
         } catch (Exception e) {
             throw new BSFException(BSFException.REASON_EXECUTION_ERROR, "exception from Groovy: " + e, e);
         }
@@ -156,7 +136,6 @@ public class GroovyEngine extends BSFEngineImpl {
             // use evaluate to pass in the BSF variables
             source = convertToValidJavaClassname(source);
             getEvalShell().evaluate(script.toString(), source);
-            //getEvalShell().run(script.toString(), source, EMPTY_ARGS);
         } catch (Exception e) {
             throw new BSFException(BSFException.REASON_EXECUTION_ERROR, "exception from Groovy: " + e, e);
         }
@@ -178,6 +157,13 @@ public class GroovyEngine extends BSFEngineImpl {
         for (int i = 0; i < size; i++) {
             declareBean((BSFDeclaredBean) declaredBeans.elementAt(i));
         }
+    }
+
+    /**
+     * Declare a bean
+     */
+    public void declareBean(BSFDeclaredBean bean) throws BSFException {
+        shell.setVariable(bean.name, bean.bean);
     }
 
     /**

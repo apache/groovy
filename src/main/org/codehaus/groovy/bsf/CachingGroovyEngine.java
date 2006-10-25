@@ -50,6 +50,8 @@ import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * A Caching implementation of the GroovyEngine
@@ -57,27 +59,25 @@ import java.util.Vector;
  * @author James Birchfield
  */
 public class CachingGroovyEngine extends GroovyEngine {
+    private static final Logger LOG = Logger.getLogger(CachingGroovyEngine.class.getName());
     private static final Object[] EMPTY_ARGS = new Object[]{new String[]{}};
 
     private Map evalScripts;
     private Map execScripts;
     private Binding context;
-    private ClassLoader parent;
     private GroovyClassLoader loader;
-
 
     /**
      * Evaluate an expression.
      */
     public Object eval(String source, int lineNo, int columnNo, Object script) throws BSFException {
         try {
-            //          Object result = shell.evaluate(script.toString(), source);
             Class scriptClass = (Class) evalScripts.get(script);
             if (scriptClass == null) {
                 scriptClass = loader.parseClass(new ByteArrayInputStream(script.toString().getBytes()), source);
                 evalScripts.put(script, scriptClass);
             } else {
-                System.out.println("eval() - Using cached script...");
+                LOG.fine("eval() - Using cached script...");
             }
             //can't cache the script because the context may be different.
             //but don't bother loading parsing the class again
@@ -100,12 +100,11 @@ public class CachingGroovyEngine extends GroovyEngine {
                 scriptClass = loader.parseClass(new ByteArrayInputStream(script.toString().getBytes()), source);
                 execScripts.put(script, scriptClass);
             } else {
-                System.out.println("exec() - Using cached version of class...");
+                LOG.fine("exec() - Using cached version of class...");
             }
             InvokerHelper.invokeMethod(scriptClass, "main", EMPTY_ARGS);
         } catch (Exception e) {
-            System.err.println("BSF trace");
-            e.printStackTrace(System.err);
+            LOG.log(Level.WARNING, "BSF trace", e);
             throw new BSFException(BSFException.REASON_EXECUTION_ERROR, "exception from Groovy: " + e, e);
         }
     }
@@ -115,7 +114,7 @@ public class CachingGroovyEngine extends GroovyEngine {
      */
     public void initialize(final BSFManager mgr, String lang, Vector declaredBeans) throws BSFException {
         super.initialize(mgr, lang, declaredBeans);
-        parent = mgr.getClassLoader();
+        ClassLoader parent = mgr.getClassLoader();
         if (parent == null)
             parent = GroovyShell.class.getClassLoader();
         final ClassLoader finalParent = parent;
@@ -131,10 +130,8 @@ public class CachingGroovyEngine extends GroovyEngine {
         evalScripts = new HashMap();
         context = shell.getContext();
         // create a shell
-
         // register the mgr with object name "bsf"
         context.setVariable("bsf", new BSFFunctions(mgr, this));
-
         int size = declaredBeans.size();
         for (int i = 0; i < size; i++) {
             declareBean((BSFDeclaredBean) declaredBeans.elementAt(i));

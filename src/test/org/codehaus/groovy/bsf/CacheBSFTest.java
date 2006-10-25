@@ -34,29 +34,36 @@
 package org.codehaus.groovy.bsf;
 
 import java.util.List;
+import java.util.Vector;
 
 import junit.framework.TestCase;
 
 import org.apache.bsf.BSFManager;
+import org.apache.bsf.BSFEngine;
+import org.apache.bsf.BSFException;
+import groovy.lang.GroovyShell;
 
 /**
  * Tests the Caching BSF integration
- * 
+ *
  * @author James Birchfield
  * @version $Revision$
  */
 public class CacheBSFTest extends TestCase {
 
     protected BSFManager manager;
+    private static final Class CACHING_ENGINE = CachingGroovyEngine.class;
 
     protected void setUp() throws Exception {
-        // lets manually register Groovy until its part of the BSF distro
-        BSFManager.registerScriptingEngine(
-            "groovy",
-            CachingGroovyEngine.class.getName(),
-            new String[] { "groovy", "gy" });
-
+        // override standard engine with caching one
+        BSFManager.registerScriptingEngine("groovy", CACHING_ENGINE.getName(), new String[] { "groovy", "gy" });
         manager = new BSFManager();
+    }
+
+    public void testVersion() throws Exception {
+        //System.out.println("BSFManager.getVersion() = " + BSFManager.getVersion());
+        BSFEngine bsfEngine = manager.loadScriptingEngine("groovy");
+        assertEquals(CACHING_ENGINE, bsfEngine.getClass());
     }
 
     public void testExec() throws Exception {
@@ -66,61 +73,66 @@ public class CacheBSFTest extends TestCase {
         manager.exec("groovy", "Test1.groovy", 0, 0, "println('testing Exec')");
     }
 
+    public void testCompileErrorWithExec() throws Exception {
+        try {
+            manager.exec("groovy", "dummy", 0, 0, "assert assert");
+            fail("Should have caught compile exception");
+        } catch (BSFException e) {
+            assertTrue("e.getMessage() should contain CompilationError: " + e.getMessage(),
+                    e.getMessage().indexOf("CompilationError") != -1);
+        }
+    }
+
     public void testEval() throws Exception {
-        Object answer = manager.eval("groovy", "Test1.groovy", 0, 0, "println('testing Eval')\n  return [1, 2, 3]");
+        Object dontcare = manager.eval("groovy", "Test1.groovy", 0, 0, "return [1, 2, 3]");
         // nothing to really test here...just looking for debug that says it
         // used cache version
-        answer = manager.eval("groovy", "Test.groovy", 0, 0, "println('testing Eval')\n  return [1, 2, 3]");
-
+        Object answer = manager.eval("groovy", "Test.groovy", 0, 0, "return [1, 2, 3]");
         assertTrue("Should return a list: " + answer, answer instanceof List);
         List list = (List) answer;
         assertEquals("List should be of right size", 3, list.size());
-
-        System.out.println("The eval returned the value: " + list);
     }
 
-    public void testBsfVariables() throws Exception {
-        Object answer =
-            manager.eval(
-                "groovy",
-                "Test1.groovy",
-                0,
-                0,
-                "println('testing variables')\n  assert this.bsf != null\n  return this.bsf");
+    public void testCompileErrorWithEval() throws Exception {
+        try {
+            manager.eval("groovy", "dummy", 0, 0, "assert assert");
+            fail("Should have caught compile exception");
+        } catch (BSFException e) {
+            assertTrue("e.getMessage() should contain CompilationError: " + e.getMessage(),
+                    e.getMessage().indexOf("CompilationError") != -1);
+        }
+    }
+
+    public void testBuiltInVariable() throws Exception {
+        Object answer = manager.eval("groovy", "Test1.groovy", 0, 0,
+                "assert this.bsf != null\n  return this.bsf");
         assertTrue("Should have an answer", answer != null);
     }
 
     public void testVariables() throws Exception {
         manager.registerBean("x", new Integer(4));
-
-        Object answer =
-            manager.eval(
-                "groovy",
-                "Test1.groovy",
-                0,
-                0,
+        Object dontcare = manager.eval("groovy", "Test1.groovy", 0, 0,
                 "valueOfX = this.bsf.lookupBean('x'); assert valueOfX == 4; valueOfX + 1");
         // nothing to really test here...just looking for debug that says it
         // used cache version
-        answer =
-            manager.eval(
-                "groovy",
-                "Test2.groovy",
-                0,
-                0,
+        Object answer = manager.eval("groovy", "Test2.groovy", 0, 0,
                 "valueOfX = this.bsf.lookupBean('x'); assert valueOfX == 4; valueOfX + 1");
         assertEquals("Incorrect return", new Integer(5), answer);
     }
 
+    public void testClassLoaderSet() throws BSFException {
+        CachingGroovyEngine cachingGroovyEngine = new CachingGroovyEngine();
+        manager.setClassLoader(null);
+        cachingGroovyEngine.initialize(manager, "dummy", new Vector());
+        // still working implies classloader set, coverage confirms this
+        assertEquals("hi", manager.eval("groovy", "dummy", 0, 0, "'hi'"));
+    }
+
     public void testDeclaredVariables() throws Exception {
         manager.declareBean("foo", new Integer(5), Integer.class);
-
         Object answer = manager.eval("groovy", "Test1.groovy", 0, 0, "valueOfFoo = foo; return valueOfFoo");
-
         assertEquals(new Integer(5), answer);
-
         manager.declareBean("foo", new Integer(6), Integer.class);
-
         answer = manager.eval("groovy", "Test2.groovy", 0, 0, "valueOfFoo = foo; return valueOfFoo");
         assertEquals(new Integer(6), answer);
     }

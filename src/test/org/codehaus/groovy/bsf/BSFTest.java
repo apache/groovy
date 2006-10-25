@@ -47,16 +47,21 @@ package org.codehaus.groovy.bsf;
 
 import java.io.File;
 import java.util.List;
+import java.util.Vector;
 
 import junit.framework.TestCase;
 
 import org.apache.bsf.BSFManager;
+import org.apache.bsf.BSFException;
+import org.apache.bsf.BSFEngine;
+import org.apache.bsf.BSFDeclaredBean;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 /**
  * Tests the BSF integration
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * @author Paul King
  * @version $Revision$
  */
 public class BSFTest extends TestCase {
@@ -64,87 +69,145 @@ public class BSFTest extends TestCase {
     protected BSFManager manager;
 
     protected void setUp() throws Exception {
-        // lets manually register Groovy until its part of the BSF distro
-        BSFManager.registerScriptingEngine("groovy", GroovyEngine.class.getName(), new String[] { "groovy", "gy" });
-
         manager = new BSFManager();
     }
 
+    public void testInvalidName() throws Exception {
+        manager.exec("groovy", null, 0, 0, "assert bsf != null");
+        manager.exec("groovy", "", 0, 0, "assert bsf != null");
+        manager.exec("groovy", "-", 0, 0, "assert bsf != null");
+    }
+
+    public void testCompileErrorWithExec() throws Exception {
+        try {
+            manager.exec("groovy", "dummy", 0, 0, "assert assert");
+            fail("Should have caught compile exception");
+        } catch (BSFException e) {
+            assertTrue("e.getMessage() should contain CompilationError: " + e.getMessage(),
+                    e.getMessage().indexOf("CompilationError") != -1);
+        }
+    }
+
+    public void testCompileErrorWithEval() throws Exception {
+        try {
+            manager.eval("groovy", "dummy", 0, 0, "assert assert");
+            fail("Should have caught compile exception");
+        } catch (BSFException e) {
+            assertTrue("e.getMessage() should contain CompilationError: " + e.getMessage(),
+                    e.getMessage().indexOf("CompilationError") != -1);
+        }
+    }
+
     public void testExec() throws Exception {
-        manager.exec(
-            "groovy",
-            "Test1.groovy",
-            0,
-            0,
-            "println('testing Exec'); assert bsf != null , 'should have a bsf variable'");
+        manager.exec("groovy", "Test1.groovy", 0, 0, "assert bsf != null , 'should have a bsf variable'");
+    }
+
+    public void testApplyWithClosure() throws Exception {
+        Vector ignoreParamNames = null;
+        Vector ignoreArgs = null;
+        Integer actual = (Integer) manager.apply("groovy", "applyTest", 0, 0,
+                "251", ignoreParamNames, ignoreArgs);
+        assertEquals(251, actual.intValue());
+    }
+
+    public void testApply() throws Exception {
+        Vector ignoreParamNames = null;
+        Vector args = new Vector();
+        args.add(new Integer(2));
+        args.add(new Integer(5));
+        args.add(new Integer(1));
+        Integer actual = (Integer) manager.apply("groovy", "applyTest", 0, 0,
+                "def summer = { a, b, c -> a * 100 + b * 10 + c }", ignoreParamNames, args);
+        assertEquals(251, actual.intValue());
     }
 
     public void testBracketName() throws Exception {
-        manager.exec(
-            "groovy",
-            "Test1<groovy>",
-            0,
-            0,
-            "println('testing Exec'); assert bsf != null , 'should have a bsf variable'");
+        manager.exec("groovy", "Test1<groovy>", 0, 0, "assert bsf != null , 'should have a bsf variable'");
     }
 
     public void testEval() throws Exception {
-        Object answer = manager.eval("groovy", "Test1.groovy", 0, 0, "println('testing Eval')\n  return [1, 2, 3]");
-
+        Object answer = manager.eval("groovy", "Test1.groovy", 0, 0, "return [1, 2, 3]");
         assertTrue("Should return a list: " + answer, answer instanceof List);
         List list = (List) answer;
         assertEquals("List should be of right size", 3, list.size());
-
-        System.out.println("The eval returned the value: " + list);
     }
 
     public void testTwoEvalsWithSameName() throws Exception {
-        Object answer = manager.eval("groovy", "Test1.groovy", 0, 0, "println('first line')\n  return 'cheese'");
+        Object answer = manager.eval("groovy", "Test1.groovy", 0, 0, "return 'cheese'");
         assertEquals("cheese", answer);
-
-        answer = manager.eval("groovy", "Test1.groovy", 0, 0, "println('second line')\n  return 'gromit'");
+        answer = manager.eval("groovy", "Test1.groovy", 0, 0, "return 'gromit'");
         assertEquals("gromit", answer);
     }
 
     public void testExecBug() throws Exception {
         for (int i = 0; i < 10; i++) {
-            manager.exec("groovy", "Test1.groovy", 0, 0, "println('testing Exec')");
-
-            manager.exec("groovy", "Test1.groovy", 0, 0, "println('testing Exec')");
+            manager.exec("groovy", "Test1.groovy", 0, 0, "assert true");
+            manager.exec("groovy", "Test1.groovy", 0, 0, "assert true");
         }
     }
 
     public void testBsfVariables() throws Exception {
-        Object answer =
-            manager.eval(
-                "groovy",
-                "Test1.groovy",
-                0,
-                0,
-                "println('testing variables')\n  assert this.bsf != null\n  return this.bsf");
+        Object answer = manager.eval("groovy", "Test1.groovy", 0, 0,
+                "assert this.bsf != null\n  return this.bsf");
         assertTrue("Should have an answer", answer != null);
     }
 
-    public void testVariables() throws Exception {
+    public void testNotFoundVariables() throws Exception {
         manager.registerBean("x", new Integer(4));
+        Object answer = manager.eval("groovy", "Test1.groovy", 0, 0,
+                "def valueOfX = this.bsf.lookupBean('y'); assert valueOfX == null");
+        assertNull("Undeclared beans should yield null", answer);
+    }
 
-        Object answer =
-            manager.eval(
-                "groovy",
-                "Test1.groovy",
-                0,
-                0,
-                "valueOfX = this.bsf.lookupBean('x'); assert valueOfX == 4; valueOfX + 1");
+    public void testRegisteredVariables() throws Exception {
+        manager.registerBean("x", new Integer(4));
+        Object answer = manager.eval("groovy", "Test1.groovy", 0, 0,
+                "def valueOfX = this.bsf.lookupBean('x'); assert valueOfX == 4; valueOfX + 1");
         assertEquals("Incorrect return", new Integer(5), answer);
     }
-    
+
+    public void testUnregisteredVariables() throws Exception {
+        manager.registerBean("x", new Integer(4));
+        Object answer = manager.eval("groovy", "Test1.groovy", 0, 0,
+                "def valueOfX = this.bsf.lookupBean('x'); assert valueOfX == 4; valueOfX + 1");
+        assertEquals("Incorrect return", new Integer(5), answer);
+        manager.unregisterBean("x");
+        // have to lookup registered beans
+        answer = manager.eval("groovy", "Test1.groovy", 0, 0,
+                "def valueOfX = this.bsf.lookupBean('x'); assert valueOfX == null");
+        assertNull("Unregistered beans should yield null", answer);
+    }
+
+    public void testDeclaredVariables() throws Exception {
+        manager.declareBean("xyz", new Integer(4), Integer.class);
+        Object answer = manager.eval("groovy", "Test1.groovy", 0, 0, "xyz + 1");
+        assertEquals("Incorrect return", new Integer(5), answer);
+    }
+
+    public void testUndeclaredVariables() throws Exception {
+        manager.declareBean("abc", new Integer(4), Integer.class);
+        // declared beans should just be available
+        Object answer = manager.eval("groovy", "Test1.groovy", 0, 0, "abc + 1");
+        assertEquals("Incorrect return", new Integer(5), answer);
+        manager.undeclareBean("abc");
+        answer = manager.eval("groovy", "Test1.groovy", 0, 0, "abc");
+        assertNull("Undeclared beans should yield null", answer);
+    }
+
+    public void testCall() throws Exception {
+        BSFEngine bsfEngine = manager.loadScriptingEngine("groovy");
+        manager.declareBean("myvar", "hello", String.class);
+        Object myvar = manager.lookupBean("myvar");
+        String result = (String) bsfEngine.call(myvar, "reverse", new Object[]{});
+        assertEquals("olleh", result);
+    }
+
     public void testExecFile() throws Exception {
         execScript("src/test/groovy/script/MapFromList.groovy");
         execScript("src/test/groovy/script/AtomTestScript.groovy");
     }
 
     protected void execScript(String fileName) throws Exception {
-        System.out.println("Executing script: " + fileName);
         manager.exec("groovy", fileName, 0, 0, DefaultGroovyMethods.getText(new File(fileName)));
     }
 }
