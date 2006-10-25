@@ -86,31 +86,30 @@ import org.w3c.dom.NodeList;
  */
 public class DefaultGroovyMethods {
 
-    private static Logger log = Logger.getLogger(DefaultGroovyMethods.class.getName());
-
+    private static final Logger LOG = Logger.getLogger(DefaultGroovyMethods.class.getName());
     private static final Integer ONE = new Integer(1);
 
     /**
      * Identity check. Since == is overridden in Groovy with the meaning of equality
      * we need some fallback to check for object identity.
+     *
      * @param self
      * @param other
      * @return true if self and other are identical, false otherwise
      */
-    public static boolean is(Object self, Object other){
+    public static boolean is(Object self, Object other) {
         return self == other;
     }
 
     /**
      * Allows the closure to be called for the object reference self
      *
-     * @param self     the object to have a closure act upon
-     * @param closure  the closure to call on the object
-     * @return         result of calling the closure
+     * @param self    the object to have a closure act upon
+     * @param closure the closure to call on the object
+     * @return result of calling the closure
      */
-    public static Object identity(final Object self, final Closure closure) {
-    final Closure clonedClosure = (Closure)closure.clone();
-    
+    public static Object identity(Object self, Closure closure) {
+        final Closure clonedClosure = (Closure) closure.clone();
         clonedClosure.setDelegate(self);
         return clonedClosure.call(self);
     }
@@ -118,10 +117,10 @@ public class DefaultGroovyMethods {
     /**
      * Allows the subscript operator to be used to lookup dynamic property values.
      * <code>bean[somePropertyNameExpression]</code>. The normal property notation
-     * of groovy is neater and more concise but only works with compile time known
+     * of groovy is neater and more concise but only works with compile-time known
      * property names.
      *
-     * @param self
+     * @param self the object to act upon
      */
     public static Object getAt(Object self, String property) {
         return InvokerHelper.getProperty(self, property);
@@ -130,10 +129,12 @@ public class DefaultGroovyMethods {
     /**
      * Allows the subscript operator to be used to set dynamically named property values.
      * <code>bean[somePropertyNameExpression] = foo</code>. The normal property notation
-     * of groovy is neater and more concise but only works with compile time known
-     * property names.
+     * of groovy is neater and more concise but only works with property names which
+     * are known at compile time.
      *
-     * @param self
+     * @param self     the object to act upon
+     * @param property the name of the property to set
+     * @param newValue the value to set
      */
     public static void putAt(Object self, String property, Object newValue) {
         InvokerHelper.setProperty(self, property, newValue);
@@ -220,6 +221,7 @@ public class DefaultGroovyMethods {
      * Retrieves the list of {@link MetaProperty} objects for 'self' and wraps it
      * in a list of {@link PropertyValue} objects that additionally provide
      * the value for each property of 'self'.
+     *
      * @param self the receiver object
      * @return list of {@link PropertyValue} objects
      * @see groovy.util.Expando#getMetaPropertyValues()
@@ -240,6 +242,7 @@ public class DefaultGroovyMethods {
      * Convenience method that calls {@link #getMetaPropertyValues(Object)}(self)
      * and provides the data in form of simple key/value pairs, i.e. without
      * type() information.
+     *
      * @param self the receiver object
      * @return meta properties as Map of key/value pairs
      */
@@ -252,7 +255,7 @@ public class DefaultGroovyMethods {
             try {
                 props.put(pv.getName(), pv.getValue());
             } catch (Exception e) {
-                log.throwing(self.getClass().getName(), "getProperty("+pv.getName()+")", e );
+                LOG.throwing(self.getClass().getName(), "getProperty(" + pv.getName() + ")", e);
             }
         }
         return props;
@@ -272,6 +275,31 @@ public class DefaultGroovyMethods {
         GroovyCategorySupport.use(categoryClassList, closure);
     }
 
+
+    /**
+     * use() a list of categories, specifying the list as varargs:<br>
+     * use(CategoryClass1, CategoryClass2) { ... }<br>
+     * This method prevents the error of forgetting to wrap the the category
+     * classes in a list.
+     *
+     * @param self
+     * @param array
+     */
+    public static void use(Object self, Object[] array) {
+        if (array.length < 2)
+            throw new IllegalArgumentException(
+                    "Expecting at least 2 arguments, a category class and a Closure");
+        Closure closure;
+        try {
+            closure = (Closure) array[array.length - 1];
+        } catch (ClassCastException e) {
+            throw new IllegalArgumentException("Expecting a Closure to be the last argument");
+        }
+        List list = new ArrayList(array.length - 1);
+        for (int i = 0; i < array.length - 1; ++i)
+            list.add(array[i]);
+        GroovyCategorySupport.use(list, closure);
+    }
 
     /**
      * Print to a console in interactive format
@@ -294,148 +322,136 @@ public class DefaultGroovyMethods {
         System.out.println(InvokerHelper.toString(value));
     }
 
-  /**
-   *  Printf to a console.  Only works with JDK1.5 or later.
-   */
-  public static void printf(final Object self, final String format, final Object[] values) {
-    if ( System.getProperty("java.version").charAt(2) == '5' ) {
-      //
-      //  Cannot just do:
-      //
-      //        System.out.printf(format, values) ;
-      //
-      //  because this fails to compile on JDK1.4.x and earlier.  So until the entire world is using
-      //  JDK1.5 or later then we have to do things by reflection so as to hide the use of printf
-      //  from the compiler.  In JDK1.5 you might try:
-      //
-      //        System.out.getClass().getMethod("printf", String.class, Object[].class).invoke(System.out, format, values) ;
-      //
-      //  but of course this doesn't work on JDK1.4 as it relies on varargs.  argh.  So we are
-      //  forced into:
-      //
-      try {
-        System.out.getClass().getMethod("printf", new Class[] {String.class, Object[].class}).invoke(System.out, new Object[] {format, values}) ;
-      } catch ( NoSuchMethodException nsme ) {
-        throw new RuntimeException ("getMethod threw a NoSuchMethodException.  This is impossible.") ;
-      } catch ( IllegalAccessException iae ) {
-        throw new RuntimeException ("invoke threw a IllegalAccessException.  This is impossible.") ;
-      } catch ( java.lang.reflect.InvocationTargetException ite ) {
-        throw new RuntimeException ("invoke threw a InvocationTargetException.  This is impossible.") ;
-      }
-    } else {
-      throw new RuntimeException ("printf requires JDK1.5 or later.") ;
+    /**
+     * Printf to a console.  Only works with JDK1.5 or later.
+     */
+    public static void printf(Object self, String format, Object[] values) {
+        if (System.getProperty("java.version").charAt(2) == '5') {
+            //
+            //  Cannot just do:
+            //
+            //        System.out.printf(format, values) ;
+            //
+            //  because this fails to compile on JDK1.4.x and earlier.  So until the entire world is using
+            //  JDK1.5 or later then we have to do things by reflection so as to hide the use of printf
+            //  from the compiler.  In JDK1.5 you might try:
+            //
+            //        System.out.getClass().getMethod("printf", String.class, Object[].class).invoke(System.out, format, values) ;
+            //
+            //  but of course this doesn't work on JDK1.4 as it relies on varargs.  argh.  So we are
+            //  forced into:
+            //
+            try {
+                System.out.getClass().getMethod("printf", new Class[]{String.class, Object[].class}).invoke(System.out, new Object[]{format, values});
+            } catch (NoSuchMethodException nsme) {
+                throw new RuntimeException("getMethod threw a NoSuchMethodException.  This is impossible.");
+            } catch (IllegalAccessException iae) {
+                throw new RuntimeException("invoke threw a IllegalAccessException.  This is impossible.");
+            } catch (java.lang.reflect.InvocationTargetException ite) {
+                throw new RuntimeException("invoke threw a InvocationTargetException.  This is impossible.");
+            }
+        } else {
+            throw new RuntimeException("printf requires JDK1.5 or later.");
+        }
     }
-  }
 
-  /**
-   * Returns a formatted string using the specified format string and
-   * arguments.
-   *
-   * <p>
-   * For examples, <pre>
-   *     printf ( "Hello, %s!\n" , [ "world" ] as String[] )
-   *     printf ( "Hello, %s!\n" , [ "Groovy" ])
-   *     printf ( "%d + %d = %d\n" , [ 1 , 2 , 1+2 ] as Integer[] )
-   *     printf ( "%d + %d = %d\n" , [ 3 , 3 , 3+3 ])
-   *
-   *     ( 1..5 ).each { printf ( "-- %d\n" , [ it ] as Integer[] ) }
-   *     ( 1..5 ).each { printf ( "-- %d\n" , [ it ] as int[] ) }
-   *     ( 0x41..0x45 ).each { printf ( "-- %c\n" , [ it ] as char[] ) }
-   *     ( 07..011 ).each { printf ( "-- %d\n" , [ it ] as byte[] ) }
-   *     ( 7..11 ).each { printf ( "-- %d\n" , [ it ] as short[] ) }
-   *     ( 7..11 ).each { printf ( "-- %d\n" , [ it ] as long[] ) }
-   *     ( 7..11 ).each { printf ( "-- %5.2f\n" , [ it ] as float[] ) }
-   *     ( 7..11 ).each { printf ( "-- %5.2g\n" , [ it ] as double[] ) }
-   * </pre>
-   * <p>
-   *
-   * @param  format
-   *         A format string
-   *
-   * @param  arg
-   *         Argument which is referenced by the format specifiers in the format
-   *         string.  The type of <code>arg</code> should be one of Object[], List,
-   *         int[], short[], byte[], char[], boolean[], long[], float[], or double[].
-   *
-   * @since  JDK 1.5
-   */
-  public static void printf(final Object self, final String format, Object arg) {
-      if (arg instanceof Object[]) {
-          printf(self, format, (Object[]) arg);
-          return;
-      } else if (arg instanceof List) {
-          printf(self, format, ((List) arg).toArray());
-          return;
-      } else if (!arg.getClass().isArray()) {
-          Object[] o = (Object[]) java.lang.reflect.Array.newInstance(arg.getClass(), 1);
-          o[0]=arg;
-          printf(self, format, o);
-          return;
-      }
+    /**
+     * Returns a formatted string using the specified format string and
+     * arguments.
+     * <p/>
+     * <p/>
+     * For examples, <pre>
+     *     printf ( "Hello, %s!\n" , [ "world" ] as String[] )
+     *     printf ( "Hello, %s!\n" , [ "Groovy" ])
+     *     printf ( "%d + %d = %d\n" , [ 1 , 2 , 1+2 ] as Integer[] )
+     *     printf ( "%d + %d = %d\n" , [ 3 , 3 , 3+3 ])
+     * <p/>
+     *     ( 1..5 ).each { printf ( "-- %d\n" , [ it ] as Integer[] ) }
+     *     ( 1..5 ).each { printf ( "-- %d\n" , [ it ] as int[] ) }
+     *     ( 0x41..0x45 ).each { printf ( "-- %c\n" , [ it ] as char[] ) }
+     *     ( 07..011 ).each { printf ( "-- %d\n" , [ it ] as byte[] ) }
+     *     ( 7..11 ).each { printf ( "-- %d\n" , [ it ] as short[] ) }
+     *     ( 7..11 ).each { printf ( "-- %d\n" , [ it ] as long[] ) }
+     *     ( 7..11 ).each { printf ( "-- %5.2f\n" , [ it ] as float[] ) }
+     *     ( 7..11 ).each { printf ( "-- %5.2g\n" , [ it ] as double[] ) }
+     * </pre>
+     * <p/>
+     *
+     * @param format A format string
+     * @param arg    Argument which is referenced by the format specifiers in the format
+     *               string.  The type of <code>arg</code> should be one of Object[], List,
+     *               int[], short[], byte[], char[], boolean[], long[], float[], or double[].
+     * @since JDK 1.5
+     */
+    public static void printf(Object self, String format, Object arg) {
+        if (arg instanceof Object[]) {
+            printf(self, format, (Object[]) arg);
+            return;
+        } else if (arg instanceof List) {
+            printf(self, format, ((List) arg).toArray());
+            return;
+        } else if (!arg.getClass().isArray()) {
+            Object[] o = (Object[]) java.lang.reflect.Array.newInstance(arg.getClass(), 1);
+            o[0] = arg;
+            printf(self, format, o);
+            return;
+        }
 
-      Object[] ans = null;
-      String elemType = arg.getClass().getName();
-      if (elemType.equals("[I")) {
-          int[] ia = (int[]) arg;
-          ans = new Integer[ia.length];
-          for (int i = 0; i < ia.length; i++) {
-              ans[i] = new Integer(ia[i]);
-          }
-      }
-      else if (elemType.equals("[C")) {
-          char[] ia = (char[]) arg;
-          ans = new Character[ia.length];
-          for (int i = 0; i < ia.length; i++) {
-              ans[i] = new Character(ia[i]);
-          }
-      }
-      else if (elemType.equals("[Z")) {
-          boolean[] ia = (boolean[]) arg;
-          ans = new Boolean[ia.length];
-          for (int i = 0; i < ia.length; i++) {
-              ans[i] = new Boolean(ia[i]);
-          }
-      }
-      else if (elemType.equals("[B")) {
-          byte[] ia = (byte[]) arg;
-          ans = new Byte[ia.length];
-          for (int i = 0; i < ia.length; i++) {
-              ans[i] = new Byte(ia[i]);
-          }
-      }
-      else if (elemType.equals("[S")) {
-          short[] ia = (short[]) arg;
-          ans = new Short[ia.length];
-          for (int i = 0; i < ia.length; i++) {
-              ans[i] = new Short(ia[i]);
-          }
-      }
-      else if (elemType.equals("[F")) {
-          float[] ia = (float[]) arg;
-          ans = new Float[ia.length];
-          for (int i = 0; i < ia.length; i++) {
-              ans[i] = new Float(ia[i]);
-          }
-      }
-      else if (elemType.equals("[J")) {
-          long[] ia = (long[]) arg;
-          ans = new Long[ia.length];
-          for (int i = 0; i < ia.length; i++) {
-              ans[i] = new Long(ia[i]);
-          }
-      }
-      else if (elemType.equals("[D")) {
-          double[] ia = (double[]) arg;
-          ans = new Double[ia.length];
-          for (int i = 0; i < ia.length; i++) {
-              ans[i] = new Double(ia[i]);
-          }
-      }
-      else {
-          throw new RuntimeException("printf(String," + arg + ")");
-      }
-      printf(self, format, (Object[]) ans);
-  }
+        Object[] ans = null;
+        String elemType = arg.getClass().getName();
+        if (elemType.equals("[I")) {
+            int[] ia = (int[]) arg;
+            ans = new Integer[ia.length];
+            for (int i = 0; i < ia.length; i++) {
+                ans[i] = new Integer(ia[i]);
+            }
+        } else if (elemType.equals("[C")) {
+            char[] ia = (char[]) arg;
+            ans = new Character[ia.length];
+            for (int i = 0; i < ia.length; i++) {
+                ans[i] = new Character(ia[i]);
+            }
+        } else if (elemType.equals("[Z")) {
+            boolean[] ia = (boolean[]) arg;
+            ans = new Boolean[ia.length];
+            for (int i = 0; i < ia.length; i++) {
+                ans[i] = new Boolean(ia[i]);
+            }
+        } else if (elemType.equals("[B")) {
+            byte[] ia = (byte[]) arg;
+            ans = new Byte[ia.length];
+            for (int i = 0; i < ia.length; i++) {
+                ans[i] = new Byte(ia[i]);
+            }
+        } else if (elemType.equals("[S")) {
+            short[] ia = (short[]) arg;
+            ans = new Short[ia.length];
+            for (int i = 0; i < ia.length; i++) {
+                ans[i] = new Short(ia[i]);
+            }
+        } else if (elemType.equals("[F")) {
+            float[] ia = (float[]) arg;
+            ans = new Float[ia.length];
+            for (int i = 0; i < ia.length; i++) {
+                ans[i] = new Float(ia[i]);
+            }
+        } else if (elemType.equals("[J")) {
+            long[] ia = (long[]) arg;
+            ans = new Long[ia.length];
+            for (int i = 0; i < ia.length; i++) {
+                ans[i] = new Long(ia[i]);
+            }
+        } else if (elemType.equals("[D")) {
+            double[] ia = (double[]) arg;
+            ans = new Double[ia.length];
+            for (int i = 0; i < ia.length; i++) {
+                ans[i] = new Double(ia[i]);
+            }
+        } else {
+            throw new RuntimeException("printf(String," + arg + ")");
+        }
+        printf(self, format, (Object[]) ans);
+    }
 
 
     /**
@@ -534,10 +550,10 @@ public class DefaultGroovyMethods {
         List answer = new ArrayList();
         NumberComparator comparator = new NumberComparator();
         for (Iterator it = self.iterator(); it.hasNext();) {
-            Object o =  it.next();
+            Object o = it.next();
             boolean duplicated = false;
             for (Iterator it2 = answer.iterator(); it2.hasNext();) {
-                Object o2 =  it2.next();
+                Object o2 = it2.next();
                 if (comparator.compare(o, o2) == 0) {
                     duplicated = true;
                     break;
@@ -550,10 +566,11 @@ public class DefaultGroovyMethods {
         self.addAll(answer);
         return self;
     }
-    
+
     /**
      * A convenience method for making a collection unique using a closure as a comparator
      * (by Michael Baehr)
+     *
      * @param self    a Collection
      * @param closure a Closure used as a comparator
      * @return self   without any duplicates
@@ -575,10 +592,10 @@ public class DefaultGroovyMethods {
      * Remove all duplicates from a given Collection.
      * Works on the receiver object and returns it.
      * The order of members in the Collection are compared by the given Comparator.
-     * For eachy duplicate, the first member which is returned
+     * For each duplicate, the first member which is returned
      * by the given Collection's iterator is retained, but all other ones are removed.
-     * The given Collection's original order is retained.
-     *
+     * The given Collection's original order is preserved.
+     * <p/>
      * <code><pre>
      *     class Person {
      *         @Property fname, lname
@@ -586,7 +603,7 @@ public class DefaultGroovyMethods {
      *             return fname + " " + lname
      *         }
      *     }
-     *
+     * <p/>
      *     class PersonComparator implements Comparator {
      *         public int compare(Object o1, Object o2) {
      *             Person p1 = (Person) o1
@@ -596,25 +613,25 @@ public class DefaultGroovyMethods {
      *             else
      *                 return p1.fname.compareTo(p2.fname)
      *         }
-     *
+     * <p/>
      *         public boolean equals(Object obj) {
      *             return this.equals(obj)
      *         }
      *     }
-     *
+     * <p/>
      *     Person a = new Person(fname:"John", lname:"Taylor")
      *     Person b = new Person(fname:"Clark", lname:"Taylor")
      *     Person c = new Person(fname:"Tom", lname:"Cruz")
      *     Person d = new Person(fname:"Clark", lname:"Taylor")
-     *
+     * <p/>
      *     def list = [a, b, c, d]
      *     List list2 = list.unique(new PersonComparator())
      *     assert( list2 == list && list == [a, b, c] )
-     *
+     * <p/>
      * </pre></code>
      *
-     * @param self        a Collection
-     * @param comparator  a Comparator.
+     * @param self       a Collection
+     * @param comparator a Comparator.
      * @return self       without duplicates
      */
     public static Collection unique(Collection self, Comparator comparator) {
@@ -622,10 +639,10 @@ public class DefaultGroovyMethods {
             return self;
         List answer = new ArrayList();
         for (Iterator it = self.iterator(); it.hasNext();) {
-            Object o =  it.next();
+            Object o = it.next();
             boolean duplicated = false;
             for (Iterator it2 = answer.iterator(); it2.hasNext();) {
-                Object o2 =  it2.next();
+                Object o2 = it2.next();
                 if (comparator.compare(o, o2) == 0) {
                     duplicated = true;
                     break;
@@ -839,8 +856,9 @@ public class DefaultGroovyMethods {
      * Iterates through this Map transforming each entry into a new value using the closure
      * as a transformer, returning a list of transformed values.
      *
-     * @param self    a Map
-     * @param closure the closure used for mapping, which can be with one(Map.Entry) or two(key, value) parameters
+     * @param self       a Map
+     * @param collection the Collection to which the mapped values are added
+     * @param closure    the closure used for mapping, which can be with one(Map.Entry) or two(key, value) parameters
      * @return a List of the mapped values
      */
     public static Collection collect(Map self, Collection collection, Closure closure) {
@@ -860,8 +878,8 @@ public class DefaultGroovyMethods {
      * Iterates through this Map transforming each entry into a new value using the closure
      * as a transformer, returning a list of transformed values.
      *
-     * @param self       a Map
-     * @param closure    the closure used to map each element of the collection
+     * @param self    a Map
+     * @param closure the closure used to map each element of the collection
      * @return the resultant collection
      */
     public static List collect(Map self, Closure closure) {
@@ -970,19 +988,27 @@ public class DefaultGroovyMethods {
         for (Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
             Map.Entry entry = (Map.Entry) iter.next();
             if (DefaultTypeTransformation.castToBoolean(callClosureForMapEntry(closure, entry))) {
-                answer.put(entry.getKey(),entry.getValue());
+                answer.put(entry.getKey(), entry.getValue());
             }
         }
         return answer;
     }
 
+    /**
+     * Groups all collection members into groups determined by the
+     * supplied mapping closure.
+     *
+     * @param self    a collection to group
+     * @param closure a closure mapping entries on to keys
+     * @return a new Map grouped by keys
+     */
     public static Map groupBy(Collection self, Closure closure) {
         Map answer = new HashMap();
         for (Iterator iter = self.iterator(); iter.hasNext();) {
             Object element = iter.next();
             Object value = closure.call(element);
             if (answer.containsKey(value)) {
-                ((List)answer.get(value)).add(element);
+                ((List) answer.get(value)).add(element);
             } else {
                 ArrayList grouppedElements = new ArrayList();
                 grouppedElements.add(element);
@@ -1058,21 +1084,21 @@ public class DefaultGroovyMethods {
 
         Class classref = null;
         try {
-          classref = Class.forName("java.lang.Number");
+            classref = Class.forName("java.lang.Number");
         } catch (Exception ex) {
         }
 
-        for (Iterator iter = self.iterator(); iter.hasNext(); ) {
-          if (!classref.isInstance(iter.next())) {
-            isNumber = false;
-            break;
-          }
+        for (Iterator iter = self.iterator(); iter.hasNext();) {
+            if (!classref.isInstance(iter.next())) {
+                isNumber = false;
+                break;
+            }
         }
 
         if (isNumber) {
-    	  result = new Integer(0);
+            result = new Integer(0);
         } else {
-          result = new String();
+            result = new String();
         }
 
         Object[] param = new Object[1];
@@ -1089,22 +1115,22 @@ public class DefaultGroovyMethods {
      * <code>coll.sum(closure)</code> is equivalent to:
      * <code>coll.collect(closure).sum()</code>.
      *
-     * @param self a Collection
+     * @param self    a Collection
      * @param closure a single parameter closure that returns a numeric value.
      * @return The sum of the values returned by applying the closure to each
      *         item of the list.
      */
     public static Object sum(Collection self, Closure closure) {
-    	Object result = new Integer(0);
-		Object[] closureParam = new Object[1];
-		Object[] plusParam = new Object[1];
-		for (Iterator iter = self.iterator(); iter.hasNext();) {
+        Object result = new Integer(0);
+        Object[] closureParam = new Object[1];
+        Object[] plusParam = new Object[1];
+        for (Iterator iter = self.iterator(); iter.hasNext();) {
             closureParam[0] = iter.next();
-			plusParam[0] = closure.call(closureParam);
-			MetaClass metaClass = InvokerHelper.getMetaClass(result);
-			result = metaClass.invokeMethod(result, "plus", plusParam);
-		}
-		return result;
+            plusParam[0] = closure.call(closureParam);
+            MetaClass metaClass = InvokerHelper.getMetaClass(result);
+            result = metaClass.invokeMethod(result, "plus", plusParam);
+        }
+        return result;
     }
 
     /**
@@ -1306,7 +1332,7 @@ public class DefaultGroovyMethods {
     /**
      * Provide the standard Groovy size method
      */
-    public static long size(File file){
+    public static long size(File file) {
         return file.length();
     }
 
@@ -1314,7 +1340,7 @@ public class DefaultGroovyMethods {
     /**
      * Provide the standard Groovy size method
      */
-    public static long size(Matcher matcher){
+    public static long size(Matcher matcher) {
         return getCount(matcher);
     }
 
@@ -1391,7 +1417,7 @@ public class DefaultGroovyMethods {
      * @return the resulting String
      */
     public static String getAt(String text, IntRange range) {
-        return getAt(text,(Range)range);
+        return getAt(text, (Range) range);
     }
 
     /**
@@ -1452,7 +1478,6 @@ public class DefaultGroovyMethods {
      *
      * @param self the String representing a URI
      * @return a URI
-     * @throws URISyntaxException 
      * @throws URISyntaxException is thrown if the URI is not well formed.
      */
     public static URI toURI(String self) throws URISyntaxException {
@@ -1471,27 +1496,27 @@ public class DefaultGroovyMethods {
 
     /**
      * Replaces all occurrencies of a captured group by the result of a closure on that text.
-     *
+     * <p/>
      * <p> For examples,
      * <pre>
      *     assert "FOOBAR-FOOBAR-" == "foobar-FooBar-".replaceAll("(([fF][oO]{2})[bB]ar)", { Object[] it -> it[0].toUpperCase() })
-     *
+     * <p/>
      *     Here,
      *          it[0] is the global string of the matched group
      *          it[1] is the first string in the matched group
      *          it[2] is the second string in the matched group
-     *
-     *
+     * <p/>
+     * <p/>
      *     assert "FOO-FOO-" == "foobar-FooBar-".replaceAll("(([fF][oO]{2})[bB]ar)", { x, y, z -> z.toUpperCase() })
-     *
+     * <p/>
      *     Here,
      *          x is the global string of the matched group
      *          y is the first string in the matched group
      *          z is the second string in the matched group
      * </pre>
      *
-     * @param self a String
-     * @param regex the capturing regex
+     * @param self    a String
+     * @param regex   the capturing regex
      * @param closure the closure to apply on each captured group
      * @return a String with replaced content
      */
@@ -1506,7 +1531,7 @@ public class DefaultGroovyMethods {
                 for (int i = 0; i <= count; i++) {
                     groups.add(matcher.group(i));
                 }
-                matcher.appendReplacement(sb, String.valueOf(closure.call((Object[]) groups.toArray() )));
+                matcher.appendReplacement(sb, String.valueOf(closure.call((Object[]) groups.toArray())));
             }
             matcher.appendTail(sb);
             return sb.toString();
@@ -1613,7 +1638,7 @@ public class DefaultGroovyMethods {
 
     /**
      * Support the subscript operator, e.g. matcher[index], for a regex Matcher.
-     *
+     * <p/>
      * For an example using no group match, <code><pre>
      *    def p = /ab[d|f]/
      *    def m = "abcabdabeabf" =~ p
@@ -1622,7 +1647,7 @@ public class DefaultGroovyMethods {
      *        println( "  " + i + ": " + m[i] )   // m[i] is a String
      *    }
      * </pre></code>
-     *
+     * <p/>
      * For an example using group matches, <code><pre>
      *    def p = /(?:ab([c|d|e|f]))/
      *    def m = "abcabdabeabf" =~ p
@@ -1631,7 +1656,7 @@ public class DefaultGroovyMethods {
      *        println( "  " + i + ": " + m[i] )   // m[i] is a List
      *    }
      * </pre></code>
-     *
+     * <p/>
      * For another example using group matches, <code><pre>
      *    def m = "abcabdabeabfabxyzabx" =~ /(?:ab([d|x-z]+))/
      *    m.count.times {
@@ -1679,7 +1704,7 @@ public class DefaultGroovyMethods {
      * Set the position of the given Matcher to the given index.
      *
      * @param matcher a Matcher
-     * @param idx the index number
+     * @param idx     the index number
      */
     public static void setIndex(Matcher matcher, int idx) {
         int count = getCount(matcher);
@@ -1688,14 +1713,12 @@ public class DefaultGroovyMethods {
         }
         if (idx == 0) {
             matcher.reset();
-        }
-        else if (idx > 0) {
+        } else if (idx > 0) {
             matcher.reset();
             for (int i = 0; i < idx; i++) {
                 matcher.find();
             }
-        }
-        else if (idx < 0) {
+        } else if (idx < 0) {
             matcher.reset();
             idx += getCount(matcher);
             for (int i = 0; i < idx; i++) {
@@ -1736,7 +1759,7 @@ public class DefaultGroovyMethods {
      * @param self  a List
      * @param range a Range
      * @return a sublist based on range borders or a new list if range is reversed
-     * @see java.util.List#subList(int, int)
+     * @see java.util.List#subList(int,int)
      */
     public static List getAt(List self, IntRange range) {
         RangeInfo info = subListBorders(self.size(), range);
@@ -1748,7 +1771,7 @@ public class DefaultGroovyMethods {
     }
 
     // helper method for getAt and putAt
-    protected static RangeInfo subListBorders(int size, IntRange range){
+    protected static RangeInfo subListBorders(int size, IntRange range) {
         int from = normaliseIndex(DefaultTypeTransformation.intUnbox(range.getFrom()), size);
         int to = normaliseIndex(DefaultTypeTransformation.intUnbox(range.getTo()), size);
         boolean reverse = range.isReverse();
@@ -1758,11 +1781,11 @@ public class DefaultGroovyMethods {
             from = tmp;
             reverse = !reverse;
         }
-        return new RangeInfo(from, to+1, reverse);
+        return new RangeInfo(from, to + 1, reverse);
     }
 
     // helper method for getAt and putAt
-    protected static RangeInfo subListBorders(int size, EmptyRange range){
+    protected static RangeInfo subListBorders(int size, EmptyRange range) {
         int from = normaliseIndex(DefaultTypeTransformation.intUnbox(range.getFrom()), size);
         return new RangeInfo(from, from, false);
     }
@@ -2015,7 +2038,7 @@ public class DefaultGroovyMethods {
     }
 
 
-     /**
+    /**
      * Support the range subscript operator for StringBuffer
      *
      * @param self  a StringBuffer
@@ -2024,8 +2047,9 @@ public class DefaultGroovyMethods {
      */
     public static void putAt(StringBuffer self, IntRange range, Object value) {
         RangeInfo info = subListBorders(self.length(), range);
-        self.replace(info.from, info.to,  value.toString());
+        self.replace(info.from, info.to, value.toString());
     }
+
     /**
      * Support the range subscript operator for StringBuffer
      *
@@ -2035,21 +2059,21 @@ public class DefaultGroovyMethods {
      */
     public static void putAt(StringBuffer self, EmptyRange range, Object value) {
         RangeInfo info = subListBorders(self.length(), range);
-        self.replace(info.from, info.to,  value.toString());
+        self.replace(info.from, info.to, value.toString());
     }
 
     /**
      * A helper method to allow lists to work with subscript operators
      *
      * @param self  a List
-     * @param range  the subset of the list to set
+     * @param range the subset of the list to set
      * @param value the values to put at the given sublist or a Collection of values
      */
     public static void putAt(List self, EmptyRange range, Object value) {
         RangeInfo info = subListBorders(self.size(), range);
-        List sublist = self.subList(info.from,  info.to);
+        List sublist = self.subList(info.from, info.to);
         sublist.clear();
-        if (value instanceof Collection){
+        if (value instanceof Collection) {
             Collection col = (Collection) value;
             if (col.size() == 0) return;
             sublist.addAll(col);
@@ -2062,14 +2086,14 @@ public class DefaultGroovyMethods {
      * A helper method to allow lists to work with subscript operators
      *
      * @param self  a List
-     * @param range  the subset of the list to set
+     * @param range the subset of the list to set
      * @param value the value to put at the given sublist or a Collection of values
      */
     public static void putAt(List self, IntRange range, Object value) {
         RangeInfo info = subListBorders(self.size(), range);
-        List sublist = self.subList(info.from,  info.to);
+        List sublist = self.subList(info.from, info.to);
         sublist.clear();
-        if (value instanceof Collection){
+        if (value instanceof Collection) {
             Collection col = (Collection) value;
             if (col.size() == 0) return;
             sublist.addAll(col);
@@ -2081,23 +2105,23 @@ public class DefaultGroovyMethods {
     /**
      * A helper method to allow lists to work with subscript operators
      *
-     * @param self  a List
-     * @param splice  the subset of the list to set
+     * @param self   a List
+     * @param splice the subset of the list to set
      * @param values the value to put at the given sublist
      * @deprecated replace with putAt(List self, Range range, List value)
      */
-     public static void putAt(List self, List splice, List values) {
-         List sublist = getSubList(self, splice);
-         sublist.clear();
-         sublist.addAll(values);
-     }
+    public static void putAt(List self, List splice, List values) {
+        List sublist = getSubList(self, splice);
+        sublist.clear();
+        sublist.addAll(values);
+    }
 
     /**
      * A helper method to allow lists to work with subscript operators
      *
-     * @param self  a List
-     * @param splice  the subset of the list to set
-     * @param value the value to put at the given sublist
+     * @param self   a List
+     * @param splice the subset of the list to set
+     * @param value  the value to put at the given sublist
      * @deprecated replace with putAt(List self, Range range, Object value)
      */
     public static void putAt(List self, List splice, Object value) {
@@ -2110,7 +2134,7 @@ public class DefaultGroovyMethods {
     // todo: remove after putAt(Splice) gets deleted
     protected static List getSubList(List self, List splice) {
         int left /* = 0 */;
-        int right  = 0;
+        int right = 0;
         boolean emptyRange = false;
         if (splice.size() == 2) {
             left = DefaultTypeTransformation.intUnbox(splice.get(0));
@@ -2320,9 +2344,9 @@ public class DefaultGroovyMethods {
 
     /**
      * Returns the converted <code>SpreadList</code> of the given <code>self</code>.
-     * <p>
+     * <p/>
      * This is the same method to <code>toSpreadList(List self)</code>.
-     * <p>
+     * <p/>
      * For examples, if there is defined a function like as
      * <blockquote><pre>
      *     def fn(a, b, c, d) { return a + b + c + d }
@@ -2332,7 +2356,7 @@ public class DefaultGroovyMethods {
      *     println fn(1, *[2, 3], 4)
      *     println fn(1, 2, 3, 4)
      * </pre></blockquote>
-     * <p>
+     * <p/>
      * </pre><br>
      *
      * @param self a list to be converted into a spreadlist
@@ -2344,9 +2368,9 @@ public class DefaultGroovyMethods {
 
     /**
      * Returns the converted <code>SpreadList</code> of the given <code>self</code>.
-     * <p>
+     * <p/>
      * This is the same method to <code>toSpreadList(Object[] self)</code>.
-     * <p>
+     * <p/>
      * For examples, if there is defined a function like as
      * <blockquote><pre>
      *     def fn(a, b, c, d) { return a + b + c + d }
@@ -2356,7 +2380,8 @@ public class DefaultGroovyMethods {
      *     println fn(*[1, 2, 3], 4)
      *     println fn(1, 2, 3, 4)
      * </pre></blockquote>
-     * <p>
+     * <p/>
+     *
      * @param self an array of objects to be converted into a spreadlist
      * @return a newly created SpreadList if this array is not null and its size is positive.
      */
@@ -2366,7 +2391,7 @@ public class DefaultGroovyMethods {
 
     /**
      * Returns the converted <code>SpreadList</code> of the given <code>self</code>.
-     * <p>
+     * <p/>
      * For examples, if there is defined a function like as
      * <blockquote><pre>
      *     def fn(a, b, c, d) { return a + b + c + d }
@@ -2376,7 +2401,8 @@ public class DefaultGroovyMethods {
      *     println fn(1, *[2, 3], 4)
      *     println fn(1, 2, 3, 4)
      * </pre></blockquote>
-     * <p>
+     * <p/>
+     *
      * @param self a list to be converted into a spreadlist
      * @return a newly created SpreadList if this list is not null and its size is positive.
      */
@@ -2389,7 +2415,7 @@ public class DefaultGroovyMethods {
 
     /**
      * Returns the converted <code>SpreadList</code> of the given <code>self</code>.
-     * <p>
+     * <p/>
      * For examples, if there is defined a function like as
      * <blockquote><pre>
      *     def fn(a, b, c, d) { return a + b + c + d }
@@ -2399,7 +2425,8 @@ public class DefaultGroovyMethods {
      *     println fn(*[1, 2, 3], 4)
      *     println fn(1, 2, 3, 4)
      * </pre></blockquote>
-     * <p>
+     * <p/>
+     *
      * @param self an array of objects to be converted into a spreadlist
      * @return a newly created SpreadList if this array is not null and its size is positive.
      */
@@ -2409,7 +2436,7 @@ public class DefaultGroovyMethods {
         else if (self.length == 0)
             throw new GroovyRuntimeException("Fail to convert Object[] to SpreadList, because its length is 0.");
         else
-           return new SpreadList(self);
+            return new SpreadList(self);
     }
 
     public static SpreadMap spread(Map self) {
@@ -2418,7 +2445,7 @@ public class DefaultGroovyMethods {
 
     /**
      * Returns the converted <code>SpreadList</code> of the given <code>self</code>.
-     * <p>
+     * <p/>
      * For examples, if there is defined a function like as
      * <blockquote><pre>
      *     def fn(a, b, c, d) { return a + b + c + d }
@@ -2428,7 +2455,8 @@ public class DefaultGroovyMethods {
      *     println fn(a:1, *:[b:2, c:3], d:4)
      *     println fn(a:1, b:2, c:3, d:4)
      * </pre></blockquote>
-     * <p>
+     * <p/>
+     *
      * @param self a list to be converted into a spreadlist
      * @return a newly created SpreadList if this list is not null and its size is positive.
      */
@@ -2484,7 +2512,7 @@ public class DefaultGroovyMethods {
         }
         return self.remove(self.size() - 1);
     }
-    
+
     /**
      * A convenience method for sorting a Collection with a specific comparator
      *
@@ -2530,7 +2558,7 @@ public class DefaultGroovyMethods {
             return new ArrayList(self);
         }
     }
-    
+
     public static Object asType(Collection col, Class clazz) {
         if (clazz == List.class) {
             return asList(col);
@@ -2540,7 +2568,7 @@ public class DefaultGroovyMethods {
         }
         return asType((Object) col, clazz);
     }
-    
+
     public static Object asType(Closure cl, Class clazz) {
         if (clazz.isInterface() && !(clazz.isInstance(cl))) {
             return Proxy.newProxyInstance(
@@ -2550,7 +2578,7 @@ public class DefaultGroovyMethods {
         }
         return asType((Object) cl, clazz);
     }
-    
+
     public static Object asType(Map map, Class clazz) {
         if (clazz.isInterface() && !(clazz.isInstance(map))) {
             return Proxy.newProxyInstance(
@@ -2650,8 +2678,8 @@ public class DefaultGroovyMethods {
     /**
      * Returns <code>true</code> if the intersection of two collenctions is empty.
      *
-     * @param left       a Collection
-     * @param right      a Collection
+     * @param left  a Collection
+     * @param right a Collection
      * @return boolean   <code>true</code> if the intersection of two collenctions is empty, <code>false</code> otherwise.
      */
     public static boolean disjoint(Collection left, Collection right) {
@@ -2675,23 +2703,21 @@ public class DefaultGroovyMethods {
     // Default comparator for numbers of different types.
     private static class NumberComparator implements Comparator {
         public int compare(Object o1, Object o2) {
-             if (o1 instanceof Number && o2 instanceof Number) {
-                 BigDecimal x1 = new BigDecimal("" + o1);
-                 BigDecimal x2 = new BigDecimal("" + o2);
-                 return x1.compareTo(x2);
-            }
-            else if (o1.getClass() == o2.getClass() && o1 instanceof Comparable) {
+            if (o1 instanceof Number && o2 instanceof Number) {
+                BigDecimal x1 = new BigDecimal("" + o1);
+                BigDecimal x2 = new BigDecimal("" + o2);
+                return x1.compareTo(x2);
+            } else if (o1.getClass() == o2.getClass() && o1 instanceof Comparable) {
                 return ((Comparable) o1).compareTo((Comparable) o2);
-            }
-            else {
-                 int x1 = o1.hashCode();
-                 int x2 = o2.hashCode();
-                 return (x1 - x2);
+            } else {
+                int x1 = o1.hashCode();
+                int x2 = o2.hashCode();
+                return (x1 - x2);
             }
         }
 
         public boolean equals(Object obj) {
-             return this.equals(obj);
+            return this.equals(obj);
         }
     }
 
@@ -2700,11 +2726,11 @@ public class DefaultGroovyMethods {
      * If numbers exits in the Lists, then they are compared as numbers,
      * for example 2 == 2L.
      *
-     * @param  left      a List
-     * @param  right     a List
+     * @param left  a List
+     * @param right a List
      * @return boolean   <code>true</code> if two Lists equals, <code>false</code> otherwise.
      */
-    public static boolean equals(final List left, final List right) {
+    public static boolean equals(List left, List right) {
         if (left == null) {
             return right == null;
         } else if (right == null) {
@@ -2712,12 +2738,12 @@ public class DefaultGroovyMethods {
         } else if (left.size() != right.size()) {
             return false;
         } else {
-        final NumberComparator numberComparator = new NumberComparator();
-        final Iterator it1 = left.iterator(), it2 = right.iterator();
+            final NumberComparator numberComparator = new NumberComparator();
+            final Iterator it1 = left.iterator(), it2 = right.iterator();
 
             while (it1.hasNext()) {
-            final Object o1 = it1.next();
-            final Object o2 = it2.next();
+                final Object o1 = it1.next();
+                final Object o2 = it2.next();
 
                 if (o1 == null) {
                     if (o2 != null) return false;
@@ -2729,7 +2755,8 @@ public class DefaultGroovyMethods {
                     } else {
                         // Use this way of calling equals in case the elament is a List
                         // or any other type which has an equals in DGM
-                        if (!((Boolean)InvokerHelper.invokeMethod(o1, "equals", new Object[]{o2})).booleanValue()) return false;
+                        if (!((Boolean) InvokerHelper.invokeMethod(o1, "equals", new Object[]{o2})).booleanValue())
+                            return false;
                     }
                 }
             }
@@ -2759,36 +2786,34 @@ public class DefaultGroovyMethods {
         Comparator numberComparator = new NumberComparator();
 
         if (nlgnSort && (self.get(0) instanceof Comparable)) {
-            //n*log(n) version
+            //n*LOG(n) version
             Set answer /* = null */;
             if (Number.class.isInstance(self.get(0))) {
                 answer = new TreeSet(numberComparator);
                 answer.addAll(self);
-                for (Iterator it = self.iterator(); it.hasNext(); ) {
+                for (Iterator it = self.iterator(); it.hasNext();) {
                     Object o = it.next();
                     if (Number.class.isInstance(o)) {
-                        for (Iterator it2 = removeMe.iterator(); it2.hasNext(); ) {
+                        for (Iterator it2 = removeMe.iterator(); it2.hasNext();) {
                             Object o2 = it2.next();
                             if (Number.class.isInstance(o2)) {
                                 if (numberComparator.compare(o, o2) == 0)
                                     answer.remove(o);
                             }
                         }
-                    }
-                    else {
+                    } else {
                         if (removeMe.contains(o))
                             answer.remove(o);
                     }
                 }
-            }
-            else {
+            } else {
                 answer = new TreeSet(numberComparator);
                 answer.addAll(self);
                 answer.removeAll(removeMe);
             }
 
             List ansList = new ArrayList();
-            for (Iterator it = self.iterator(); it.hasNext(); ) {
+            for (Iterator it = self.iterator(); it.hasNext();) {
                 Object o = it.next();
                 if (answer.contains(o))
                     ansList.add(o);
@@ -2813,13 +2838,13 @@ public class DefaultGroovyMethods {
             return new ArrayList(tmpAnswer);
         }
     }
-    
+
     public static List minus(List self, Object operand) {
         Comparator numberComparator = new NumberComparator();
         List ansList = new ArrayList();
-        for (Iterator it = self.iterator(); it.hasNext(); ) {
+        for (Iterator it = self.iterator(); it.hasNext();) {
             Object o = it.next();
-            if (numberComparator.compare(o,operand)!=0) ansList.add(o);
+            if (numberComparator.compare(o, operand) != 0) ansList.add(o);
         }
         return ansList;
     }
@@ -2974,14 +2999,14 @@ public class DefaultGroovyMethods {
      * Pipe an inputstream into an outputstream for efficient stream copying.
      *
      * @param self stream on which to write
-     * @param in stream to read from
+     * @param in   stream to read from
      * @return the outputstream itself
      * @throws IOException
      */
     public static OutputStream leftShift(OutputStream self, InputStream in) throws IOException {
         byte[] buf = new byte[1024];
         while (true) {
-            int count = in.read(buf,0,buf.length);
+            int count = in.read(buf, 0, buf.length);
             if (count == -1) break;
             if (count == 0) {
                 Thread.yield();
@@ -3213,7 +3238,7 @@ public class DefaultGroovyMethods {
     public static void putAt(char[] array, int idx, Object newValue) {
         if (newValue instanceof String) {
             String s = (String) newValue;
-            if (s.length()!=1) throw new IllegalArgumentException("String of length 1 expected but got a bigger one");
+            if (s.length() != 1) throw new IllegalArgumentException("String of length 1 expected but got a bigger one");
             char c = s.charAt(0);
             newValue = new Character(c);
         }
@@ -3315,10 +3340,10 @@ public class DefaultGroovyMethods {
     public static List toList(double[] array) {
         return DefaultTypeTransformation.primitiveArrayToList(array);
     }
-    
+
     private static final char[] tTable = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=".toCharArray();
 
-    public static Writable encodeBase64(final Byte[] data) {
+    public static Writable encodeBase64(Byte[] data) {
         return encodeBase64(DefaultTypeTransformation.convertToByteArray(data));
     }
 
@@ -3382,36 +3407,36 @@ public class DefaultGroovyMethods {
     private static final byte[] translateTable = (
             //
             "\u0042\u0042\u0042\u0042\u0042\u0042\u0042\u0042"
-            //                    \t    \n                \r
-            + "\u0042\u0042\u0041\u0041\u0042\u0042\u0041\u0042"
-            //
-            + "\u0042\u0042\u0042\u0042\u0042\u0042\u0042\u0042"
-            //
-            + "\u0042\u0042\u0042\u0042\u0042\u0042\u0042\u0042"
-            //        sp    !     "     #     $     %     &     '
-            + "\u0041\u0042\u0042\u0042\u0042\u0042\u0042\u0042"
-            //         (    )     *     +     ,     -     .     /
-            + "\u0042\u0042\u0042\u003E\u0042\u0042\u0042\u003F"
-            //         0    1     2     3     4     5     6     7
-            + "\u0034\u0035\u0036\u0037\u0038\u0039\u003A\u003B"
-            //         8    9     :     ;     <     =     >     ?
-            + "\u003C\u003D\u0042\u0042\u0042\u0040\u0042\u0042"
-            //         @    A     B     C     D     E     F     G
-            + "\u0042\u0000\u0001\u0002\u0003\u0004\u0005\u0006"
-            //         H    I   J K   L     M   N   O
-            + "\u0007\u0008\t\n\u000B\u000C\r\u000E"
-            //         P    Q     R     S     T     U     V    W
-            + "\u000F\u0010\u0011\u0012\u0013\u0014\u0015\u0016"
-            //         X    Y     Z     [     \     ]     ^    _
-            + "\u0017\u0018\u0019\u0042\u0042\u0042\u0042\u0042"
-            //         '    a     b     c     d     e     f     g
-            + "\u0042\u001A\u001B\u001C\u001D\u001E\u001F\u0020"
-            //        h   i   j     k     l     m     n     o    p
-            + "\u0021\"\u0023\u0024\u0025\u0026\u0027\u0028"
-            //        p     q     r     s     t     u     v     w
-            + "\u0029\u002A\u002B\u002C\u002D\u002E\u002F\u0030"
-            //        x     y     z
-            + "\u0031\u0032\u0033").getBytes();
+                    //                    \t    \n                \r
+                    + "\u0042\u0042\u0041\u0041\u0042\u0042\u0041\u0042"
+                    //
+                    + "\u0042\u0042\u0042\u0042\u0042\u0042\u0042\u0042"
+                    //
+                    + "\u0042\u0042\u0042\u0042\u0042\u0042\u0042\u0042"
+                    //        sp    !     "     #     $     %     &     '
+                    + "\u0041\u0042\u0042\u0042\u0042\u0042\u0042\u0042"
+                    //         (    )     *     +     ,     -     .     /
+                    + "\u0042\u0042\u0042\u003E\u0042\u0042\u0042\u003F"
+                    //         0    1     2     3     4     5     6     7
+                    + "\u0034\u0035\u0036\u0037\u0038\u0039\u003A\u003B"
+                    //         8    9     :     ;     <     =     >     ?
+                    + "\u003C\u003D\u0042\u0042\u0042\u0040\u0042\u0042"
+                    //         @    A     B     C     D     E     F     G
+                    + "\u0042\u0000\u0001\u0002\u0003\u0004\u0005\u0006"
+                    //         H    I   J K   L     M   N   O
+                    + "\u0007\u0008\t\n\u000B\u000C\r\u000E"
+                    //         P    Q     R     S     T     U     V    W
+                    + "\u000F\u0010\u0011\u0012\u0013\u0014\u0015\u0016"
+                    //         X    Y     Z     [     \     ]     ^    _
+                    + "\u0017\u0018\u0019\u0042\u0042\u0042\u0042\u0042"
+                    //         '    a     b     c     d     e     f     g
+                    + "\u0042\u001A\u001B\u001C\u001D\u001E\u001F\u0020"
+                    //        h   i   j     k     l     m     n     o    p
+                    + "\u0021\"\u0023\u0024\u0025\u0026\u0027\u0028"
+                    //        p     q     r     s     t     u     v     w
+                    + "\u0029\u002A\u002B\u002C\u002D\u002E\u002F\u0030"
+                    //        x     y     z
+                    + "\u0031\u0032\u0033").getBytes();
 
     /**
      * Decode the Sting from base64 into a byte array
@@ -3419,7 +3444,7 @@ public class DefaultGroovyMethods {
      * @param value the string to be decoded
      * @return the decoded bytes as an array
      */
-    public static byte[] decodeBase64(final String value) {
+    public static byte[] decodeBase64(String value) {
         int byteShift = 4;
         int tmp = 0;
         boolean done = false;
@@ -3430,7 +3455,8 @@ public class DefaultGroovyMethods {
             final int sixBit = (c < 123) ? translateTable[c] : 66;
 
             if (sixBit < 64) {
-                if (done) throw new RuntimeException("= character not at end of base64 value"); // TODO: change this exception type
+                if (done)
+                    throw new RuntimeException("= character not at end of base64 value"); // TODO: change this exception type
 
                 tmp = (tmp << 6) | sixBit;
 
@@ -3529,8 +3555,8 @@ public class DefaultGroovyMethods {
      * @return The Boolean value
      */
     public static Boolean toBoolean(String self) {
-    final String trimmed = self.trim();
-    
+        final String trimmed = self.trim();
+
         if ("true".equalsIgnoreCase(trimmed) || "y".equalsIgnoreCase(trimmed) || "1".equals(trimmed)) {
             return Boolean.TRUE;
         } else {
@@ -3651,16 +3677,16 @@ public class DefaultGroovyMethods {
      */
     public static String next(String self) {
         StringBuffer buffer = new StringBuffer(self);
-        if (buffer.length()==0) {
+        if (buffer.length() == 0) {
             buffer.append(Character.MIN_VALUE);
         } else {
-            char last = buffer.charAt(buffer.length()-1);
-            if (last==Character.MAX_VALUE) {
+            char last = buffer.charAt(buffer.length() - 1);
+            if (last == Character.MAX_VALUE) {
                 buffer.append(Character.MIN_VALUE);
             } else {
                 char next = last;
                 next++;
-                buffer.setCharAt(buffer.length()-1,next);
+                buffer.setCharAt(buffer.length() - 1, next);
             }
         }
         return buffer.toString();
@@ -3676,17 +3702,17 @@ public class DefaultGroovyMethods {
      * @return a String with a decremented digit at the end
      */
     public static String previous(String self) {
-       StringBuffer buffer = new StringBuffer(self);
-       if (buffer.length()==0) throw new IllegalArgumentException("the string is empty");
-       char last = buffer.charAt(buffer.length()-1);
-       if (last==Character.MIN_VALUE) {
-           buffer.deleteCharAt(buffer.length()-1);
-       } else {
+        StringBuffer buffer = new StringBuffer(self);
+        if (buffer.length() == 0) throw new IllegalArgumentException("the string is empty");
+        char last = buffer.charAt(buffer.length() - 1);
+        if (last == Character.MIN_VALUE) {
+            buffer.deleteCharAt(buffer.length() - 1);
+        } else {
             char next = last;
             next--;
-            buffer.setCharAt(buffer.length()-1,next);
-       }
-       return buffer.toString();
+            buffer.setCharAt(buffer.length() - 1, next);
+        }
+        return buffer.toString();
     }
 
     /**
@@ -3707,11 +3733,11 @@ public class DefaultGroovyMethods {
      * <code>java.lang.ProcessBuilder</code>.
      *
      * @param commandArray an array of <code>String<code> containing the command name and
-     * parameters as separate items in the array.
+     *                     parameters as separate items in the array.
      * @return the Process which has just started for this command line string.
      */
-    public static Process execute(final String[] commandArray) throws IOException {
-        return Runtime.getRuntime().exec(commandArray) ;
+    public static Process execute(String[] commandArray) throws IOException {
+        return Runtime.getRuntime().exec(commandArray);
     }
 
     /**
@@ -3719,20 +3745,19 @@ public class DefaultGroovyMethods {
      * under the working directory <code>dir</code>.
      * For more control over the process mechanism in JDK 1.5 you can use <code>java.lang.ProcessBuilder</code>.
      *
-     * @param   self      a command line String to be executed.
-     * @param   envp      an array of Strings, each element of which
-     *                    has environment variable settings in the format
-     *                    <i>name</i>=<i>value</i>, or
-     *                    <tt>null</tt> if the subprocess should inherit
-     *                    the environment of the current process.
-     * @param   dir       the working directory of the subprocess, or
-     *                    <tt>null</tt> if the subprocess should inherit
-     *                    the working directory of the current process.
-     * @return   the Process which has just started for this command line string.
-     *
+     * @param self a command line String to be executed.
+     * @param envp an array of Strings, each element of which
+     *             has environment variable settings in the format
+     *             <i>name</i>=<i>value</i>, or
+     *             <tt>null</tt> if the subprocess should inherit
+     *             the environment of the current process.
+     * @param dir  the working directory of the subprocess, or
+     *             <tt>null</tt> if the subprocess should inherit
+     *             the working directory of the current process.
+     * @return the Process which has just started for this command line string.
      */
-    public static Process execute(String self,  final String[] envp, File dir) throws IOException {
-        return Runtime.getRuntime().exec(self, envp, dir) ;
+    public static Process execute(String self, final String[] envp, File dir) throws IOException {
+        return Runtime.getRuntime().exec(self, envp, dir);
     }
 
     /**
@@ -3742,16 +3767,16 @@ public class DefaultGroovyMethods {
      * can use <code>java.lang.ProcessBuilder</code>.
      *
      * @param commandList a list of <code>String<code> containing the command name and
-     * parameters as separate items in the list.
+     *                    parameters as separate items in the list.
      * @return the Process which has just started for this command line string.
      */
-    public static Process execute(final List commandList) throws IOException {
-      final String[] commandArray = new String[commandList.size()] ;
-      Iterator it = commandList.iterator();
-      for (int i = 0; it.hasNext(); ++i) {
-          commandArray[i] = it.next().toString();
-      }
-      return execute(commandArray) ;
+    public static Process execute(List commandList) throws IOException {
+        final String[] commandArray = new String[commandList.size()];
+        Iterator it = commandList.iterator();
+        for (int i = 0; it.hasNext(); ++i) {
+            commandArray[i] = it.next().toString();
+        }
+        return execute(commandArray);
     }
 
     /**
@@ -3759,25 +3784,24 @@ public class DefaultGroovyMethods {
      * under the working directory <code>dir</code>.
      * For more control over the process mechanism in JDK 1.5 you can use <code>java.lang.ProcessBuilder</code>.
      *
-     * @param   self      a command line String to be executed.
-     * @param   envp      a List of Strings, each member of which
-     *                    has environment variable settings in the format
-     *                    <i>name</i>=<i>value</i>, or
-     *                    <tt>null</tt> if the subprocess should inherit
-     *                    the environment of the current process.
-     * @param   dir       the working directory of the subprocess, or
-     *                    <tt>null</tt> if the subprocess should inherit
-     *                    the working directory of the current process.
-     * @return   the Process which has just started for this command line string.
-     *
+     * @param self a command line String to be executed.
+     * @param envp a List of Strings, each member of which
+     *             has environment variable settings in the format
+     *             <i>name</i>=<i>value</i>, or
+     *             <tt>null</tt> if the subprocess should inherit
+     *             the environment of the current process.
+     * @param dir  the working directory of the subprocess, or
+     *             <tt>null</tt> if the subprocess should inherit
+     *             the working directory of the current process.
+     * @return the Process which has just started for this command line string.
      */
     public static Process execute(String self, final List envp, File dir) throws IOException {
-      final String[] commandArray = new String[envp.size()] ;
-      Iterator it = envp.iterator();
-      for (int i = 0; it.hasNext(); ++i) {
-          commandArray[i] = it.next().toString();
-      }
-      return execute(self, commandArray, dir);
+        final String[] commandArray = new String[envp.size()];
+        Iterator it = envp.iterator();
+        for (int i = 0; it.hasNext(); ++i) {
+            commandArray[i] = it.next().toString();
+        }
+        return execute(self, commandArray, dir);
     }
 
     /**
@@ -3865,11 +3889,11 @@ public class DefaultGroovyMethods {
 
     protected static String toString(Object value) {
         if (value instanceof Map)
-            return toMapString((Map)value);
+            return toMapString((Map) value);
         else if (value instanceof Collection)
-            return toListString((Collection)value);
+            return toListString((Collection) value);
         else if (value instanceof Object[])
-            return toArrayString((Object[])value);
+            return toArrayString((Object[]) value);
         return (value == null) ? "null" : value.toString();
     }
 
@@ -4103,20 +4127,18 @@ public class DefaultGroovyMethods {
      * @return a Number to the power of a certain exponent
      */
     public static Number power(Number self, Number exponent) {
-	double base, exp, answer;
-	base = self.doubleValue();
-	exp = exponent.doubleValue();
+        double base, exp, answer;
+        base = self.doubleValue();
+        exp = exponent.doubleValue();
 
         answer = Math.pow(base, exp);
-	if ((double)((int)answer) == answer) {
-            return new Integer((int)answer);
-	}
-        else if ((double)((long)answer) == answer) {
-            return new Long((long)answer);
-	}
-	else {
+        if ((double) ((int) answer) == answer) {
+            return new Integer((int) answer);
+        } else if ((double) ((long) answer) == answer) {
+            return new Long((long) answer);
+        } else {
             return new Double(answer);
-	}
+        }
     }
 
     /**
@@ -4231,7 +4253,7 @@ public class DefaultGroovyMethods {
         return NumberMath.and(left, right);
     }
 
-     /**
+    /**
      * Bitwise XOR together two Numbers
      *
      * @param left  a Number
@@ -4293,9 +4315,8 @@ public class DefaultGroovyMethods {
             for (int i = self1; i <= to1; i++) {
                 closure.call(new Integer(i));
             }
-        }
-        else
-            throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to +")");
+        } else
+            throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to + ")");
     }
 
     public static void upto(long self, Number to, Closure closure) {
@@ -4304,9 +4325,8 @@ public class DefaultGroovyMethods {
             for (long i = self; i <= to1; i++) {
                 closure.call(new Long(i));
             }
-        }
-        else
-            throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to +")");
+        } else
+            throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to + ")");
     }
 
     public static void upto(Long self, Number to, Closure closure) {
@@ -4316,9 +4336,8 @@ public class DefaultGroovyMethods {
             for (long i = self1; i <= to1; i++) {
                 closure.call(new Long(i));
             }
-        }
-        else
-            throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to +")");
+        } else
+            throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to + ")");
     }
 
     public static void upto(float self, Number to, Closure closure) {
@@ -4327,9 +4346,8 @@ public class DefaultGroovyMethods {
             for (float i = self; i <= to1; i++) {
                 closure.call(new Float(i));
             }
-        }
-        else
-            throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to +")");
+        } else
+            throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to + ")");
     }
 
     public static void upto(Float self, Number to, Closure closure) {
@@ -4339,9 +4357,8 @@ public class DefaultGroovyMethods {
             for (float i = self1; i <= to1; i++) {
                 closure.call(new Float(i));
             }
-        }
-        else
-            throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to +")");
+        } else
+            throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to + ")");
     }
 
     public static void upto(Double self, Number to, Closure closure) {
@@ -4351,9 +4368,8 @@ public class DefaultGroovyMethods {
             for (double i = self1; i <= to1; i++) {
                 closure.call(new Double(i));
             }
-        }
-        else
-            throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to +")");
+        } else
+            throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to + ")");
     }
 
     public static void upto(BigInteger self, Number to, Closure closure) {
@@ -4365,31 +4381,26 @@ public class DefaultGroovyMethods {
                 for (BigDecimal i = self1; i.compareTo(to1) <= 0; i = i.add(one)) {
                     closure.call(i);
                 }
-            }
-            else
-                throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to +")");
-        }
-        else if (to instanceof BigInteger) {
+            } else
+                throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to + ")");
+        } else if (to instanceof BigInteger) {
             final BigInteger one = new BigInteger("1");
             BigInteger to1 = (BigInteger) to;
             if (self.compareTo(to1) <= 0) {
                 for (BigInteger i = self; i.compareTo(to1) <= 0; i = i.add(one)) {
                     closure.call(i);
                 }
-            }
-            else
-                throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to +")");
-        }
-        else {
+            } else
+                throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to + ")");
+        } else {
             final BigInteger one = new BigInteger("1");
             BigInteger to1 = new BigInteger("" + to);
             if (self.compareTo(to1) <= 0) {
                 for (BigInteger i = self; i.compareTo(to1) <= 0; i = i.add(one)) {
                     closure.call(i);
                 }
-            }
-            else
-                throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to +")");
+            } else
+                throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to + ")");
         }
     }
 
@@ -4401,29 +4412,24 @@ public class DefaultGroovyMethods {
                 for (BigDecimal i = self; i.compareTo(to1) <= 0; i = i.add(one)) {
                     closure.call(i);
                 }
-            }
-            else
-                throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to +")");
-        }
-        else if (to instanceof BigInteger) {
+            } else
+                throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to + ")");
+        } else if (to instanceof BigInteger) {
             BigDecimal to1 = new BigDecimal((BigInteger) to);
             if (self.compareTo(to1) <= 0) {
                 for (BigDecimal i = self; i.compareTo(to1) <= 0; i = i.add(one)) {
                     closure.call(i);
                 }
-            }
-            else
-                throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to +")");
-        }
-        else {
-            BigDecimal to1 = new BigDecimal(""+to);
+            } else
+                throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to + ")");
+        } else {
+            BigDecimal to1 = new BigDecimal("" + to);
             if (self.compareTo(to1) <= 0) {
                 for (BigDecimal i = self; i.compareTo(to1) <= 0; i = i.add(one)) {
                     closure.call(i);
                 }
-            }
-            else
-                throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to +")");
+            } else
+                throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to + ")");
         }
     }
 
@@ -4441,9 +4447,8 @@ public class DefaultGroovyMethods {
             for (int i = self1; i >= to1; i--) {
                 closure.call(new Integer(i));
             }
-        }
-        else
-            throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to +")");
+        } else
+            throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
     }
 
     public static void downto(long self, Number to, Closure closure) {
@@ -4452,9 +4457,8 @@ public class DefaultGroovyMethods {
             for (long i = self; i >= to1; i--) {
                 closure.call(new Long(i));
             }
-        }
-        else
-            throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to +")");
+        } else
+            throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
     }
 
     public static void downto(Long self, Number to, Closure closure) {
@@ -4464,20 +4468,18 @@ public class DefaultGroovyMethods {
             for (long i = self1; i >= to1; i--) {
                 closure.call(new Long(i));
             }
-        }
-        else
-            throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to +")");
+        } else
+            throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
     }
 
     public static void downto(float self, Number to, Closure closure) {
         float to1 = to.floatValue();
         if (self >= to1) {
             for (float i = self; i >= to1; i--) {
-               closure.call(new Float(i));
+                closure.call(new Float(i));
             }
-        }
-        else
-            throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to +")");
+        } else
+            throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
     }
 
     public static void downto(Float self, Number to, Closure closure) {
@@ -4485,11 +4487,10 @@ public class DefaultGroovyMethods {
         float to1 = to.floatValue();
         if (self1 >= to1) {
             for (float i = self1; i >= to1; i--) {
-               closure.call(new Float(i));
+                closure.call(new Float(i));
             }
-        }
-        else
-            throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to +")");
+        } else
+            throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
     }
 
     public static void downto(double self, Number to, Closure closure) {
@@ -4498,9 +4499,8 @@ public class DefaultGroovyMethods {
             for (double i = self; i >= to1; i--) {
                 closure.call(new Double(i));
             }
-        }
-        else
-            throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to +")");
+        } else
+            throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
     }
 
     public static void downto(Double self, Number to, Closure closure) {
@@ -4510,12 +4510,11 @@ public class DefaultGroovyMethods {
             for (double i = self1; i >= to1; i--) {
                 closure.call(new Double(i));
             }
-        }
-        else
-            throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to +")");
+        } else
+            throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
     }
 
-    public static void downto(final BigInteger self, final Number to, final Closure closure) {
+    public static void downto(BigInteger self, Number to, Closure closure) {
         if (to instanceof BigDecimal) {
             final BigDecimal one = new BigDecimal("1.0");
             final BigDecimal to1 = (BigDecimal) to;
@@ -4524,31 +4523,26 @@ public class DefaultGroovyMethods {
                 for (BigDecimal i = selfD; i.compareTo(to1) >= 0; i = i.subtract(one)) {
                     closure.call(i.toBigInteger());
                 }
-            }
-            else
-                throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to +")");
-        }
-        else if (to instanceof BigInteger) {
+            } else
+                throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
+        } else if (to instanceof BigInteger) {
             final BigInteger one = new BigInteger("1");
             final BigInteger to1 = (BigInteger) to;
             if (self.compareTo(to1) >= 0) {
                 for (BigInteger i = self; i.compareTo(to1) >= 0; i = i.subtract(one)) {
                     closure.call(i);
                 }
-            }
-            else
-                throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to +")");
-        }
-        else {
+            } else
+                throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
+        } else {
             final BigInteger one = new BigInteger("1");
             final BigInteger to1 = new BigInteger("" + to);
             if (self.compareTo(to1) >= 0) {
                 for (BigInteger i = self; i.compareTo(to1) >= 0; i = i.subtract(one)) {
                     closure.call(i);
                 }
-            }
-            else
-                throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to +")");
+            } else
+                throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
         }
     }
 
@@ -4560,29 +4554,24 @@ public class DefaultGroovyMethods {
                 for (BigDecimal i = self; i.compareTo(to1) >= 0; i = i.subtract(one)) {
                     closure.call(i);
                 }
-            }
-            else
-                throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to +")");
-        }
-        else if (to instanceof BigInteger) {
+            } else
+                throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
+        } else if (to instanceof BigInteger) {
             BigDecimal to1 = new BigDecimal((BigInteger) to);
             if (self.compareTo(to1) >= 0) {
                 for (BigDecimal i = self; i.compareTo(to1) >= 0; i = i.subtract(one)) {
                     closure.call(i);
                 }
-            }
-            else
-                throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to +")");
-        }
-        else {
-            BigDecimal to1 = new BigDecimal(""+to);
+            } else
+                throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
+        } else {
+            BigDecimal to1 = new BigDecimal("" + to);
             if (self.compareTo(to1) >= 0) {
                 for (BigDecimal i = self; i.compareTo(to1) >= 0; i = i.subtract(one)) {
                     closure.call(i);
                 }
-            }
-            else
-                throw new GroovyRuntimeException("Infinite loop in " + self +".downto(" + to +")");
+            } else
+                throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
         }
     }
 
@@ -4604,16 +4593,13 @@ public class DefaultGroovyMethods {
                 for (BigDecimal i = self1; i.compareTo(to1) < 0; i = i.add(stepNumber1)) {
                     closure.call(i);
                 }
-            }
-            else if (stepNumber1.compareTo(zero) < 0 && to1.compareTo(self1) < 0) {
+            } else if (stepNumber1.compareTo(zero) < 0 && to1.compareTo(self1) < 0) {
                 for (BigDecimal i = self1; i.compareTo(to1) > 0; i = i.add(stepNumber1)) {
                     closure.call(i);
                 }
-            }
-            else
+            } else
                 throw new GroovyRuntimeException("Infinite loop in " + self1 + ".step(" + to1 + ", " + stepNumber1 + ")");
-        }
-        else if (self instanceof BigInteger || to instanceof BigInteger || stepNumber instanceof BigInteger) {
+        } else if (self instanceof BigInteger || to instanceof BigInteger || stepNumber instanceof BigInteger) {
             final BigInteger zero = new BigInteger("0");
             BigInteger self1 = (self instanceof BigInteger) ? (BigInteger) self : new BigInteger("" + self);
             BigInteger to1 = (to instanceof BigInteger) ? (BigInteger) to : new BigInteger("" + to);
@@ -4622,16 +4608,13 @@ public class DefaultGroovyMethods {
                 for (BigInteger i = self1; i.compareTo(to1) < 0; i = i.add(stepNumber1)) {
                     closure.call(i);
                 }
-            }
-            else if (stepNumber1.compareTo(zero) < 0 && to1.compareTo(self1) < 0) {
+            } else if (stepNumber1.compareTo(zero) < 0 && to1.compareTo(self1) < 0) {
                 for (BigInteger i = self1; i.compareTo(to1) > 0; i = i.add(stepNumber1)) {
                     closure.call(i);
                 }
-            }
-            else
+            } else
                 throw new GroovyRuntimeException("Infinite loop in " + self1 + ".step(" + to1 + ", " + stepNumber1 + ")");
-        }
-        else {
+        } else {
             int self1 = self.intValue();
             int to1 = to.intValue();
             int stepNumber1 = stepNumber.intValue();
@@ -4639,13 +4622,11 @@ public class DefaultGroovyMethods {
                 for (int i = self1; i < to1; i += stepNumber1) {
                     closure.call(new Integer(i));
                 }
-            }
-            else if (stepNumber1 < 0 && to1 < self1) {
+            } else if (stepNumber1 < 0 && to1 < self1) {
                 for (int i = self1; i > to1; i += stepNumber1) {
                     closure.call(new Integer(i));
                 }
-            }
-            else
+            } else
                 throw new GroovyRuntimeException("Infinite loop in " + self1 + ".step(" + to1 + ", " + stepNumber1 + ")");
         }
     }
@@ -4823,18 +4804,18 @@ public class DefaultGroovyMethods {
     }
 
     public static Object asType(Number self, Class c) {
-        if (c==BigDecimal.class) {
+        if (c == BigDecimal.class) {
             return toBigDecimal(self);
-        } else if (c==BigInteger.class) {
+        } else if (c == BigInteger.class) {
             return toBigInteger(self);
-        } else if (c==Double.class) {
+        } else if (c == Double.class) {
             return toDouble(self);
-        } else if (c==Float.class) {
+        } else if (c == Float.class) {
             return toFloat(self);
         }
-        return asType((Object) self,c);
+        return asType((Object) self, c);
     }
-    
+
     /**
      * Transform a Number into a BigInteger
      *
@@ -4865,7 +4846,7 @@ public class DefaultGroovyMethods {
      * @return the next days date
      */
     public static java.sql.Date next(java.sql.Date self) {
-    	return new java.sql.Date(next((Date)self).getTime());
+        return new java.sql.Date(next((Date) self).getTime());
     }
 
     /**
@@ -4877,7 +4858,7 @@ public class DefaultGroovyMethods {
     public static Date previous(Date self) {
         return minus(self, 1);
     }
-    
+
     /**
      * Decrement a java.sql.Date by a day
      *
@@ -4885,7 +4866,7 @@ public class DefaultGroovyMethods {
      * @return the previous days date
      */
     public static java.sql.Date previous(java.sql.Date self) {
-    	return new java.sql.Date(previous((Date)self).getTime());
+        return new java.sql.Date(previous((Date) self).getTime());
     }
 
     /**
@@ -4910,9 +4891,9 @@ public class DefaultGroovyMethods {
      * @return the new date
      */
     public static java.sql.Date plus(java.sql.Date self, int days) {
-    	return new java.sql.Date(plus((Date)self, days).getTime());
+        return new java.sql.Date(plus((Date) self, days).getTime());
     }
-    
+
     /**
      * Subtracts a number of days from this date and returns the new date
      *
@@ -4930,9 +4911,9 @@ public class DefaultGroovyMethods {
      * @return the new date
      */
     public static java.sql.Date minus(java.sql.Date self, int days) {
-    	return new java.sql.Date(minus((Date)self, days).getTime());
+        return new java.sql.Date(minus((Date) self, days).getTime());
     }
-    
+
     // Boolean based methods
     //-------------------------------------------------------------------------
 
@@ -4980,10 +4961,10 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Iterates through the given object stream object by object. The 
+     * Iterates through the given object stream object by object. The
      * ObjectInputStream is closed afterwards.
      *
-     * @param ois    an ObjectInputStream, closed after the operation
+     * @param ois     an ObjectInputStream, closed after the operation
      * @param closure a closure
      * @throws IOException
      * @throws ClassNotFoundException
@@ -5003,18 +4984,19 @@ public class DefaultGroovyMethods {
             ois = null;
             temp.close();
         } finally {
-            if(ois != null) {
+            if (ois != null) {
                 try {
                     ois.close();
                 }
                 catch (Exception e) {
                     // ignore this exception since there
                     // has to be another already
-                    log.warning("Caught exception closing ObjectInputStream: " + e);
+                    LOG.warning("Caught exception closing ObjectInputStream: " + e);
                 }
             }
         }
     }
+
     /**
      * Iterates through the given file line by line
      *
@@ -5027,7 +5009,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Iterates through the given reader line by line. The 
+     * Iterates through the given reader line by line. The
      * Reader is closed afterwards
      *
      * @param self    a Reader, closed after the method returns
@@ -5055,25 +5037,25 @@ public class DefaultGroovyMethods {
             self = null;
             temp.close();
         } finally {
-            if(self != null) {
-        	try {
-        	    self.close();
-        	}
-        	catch (Exception e) {
-        	    // ignore this exception since there
-        	    // has to be another already
-                    log.warning("Caught exception closing Reader: " + e);
-        	}
+            if (self != null) {
+                try {
+                    self.close();
+                }
+                catch (Exception e) {
+                    // ignore this exception since there
+                    // has to be another already
+                    LOG.warning("Caught exception closing Reader: " + e);
+                }
             }
-            if(br != null) {
-        	try {
-        	    br.close();
-        	}
-        	catch (Exception e) {
-        	    // ignore this exception since this
-        	    // is only our internal problem
-                    log.warning("Caught exception closing Reader: " + e);
-        	}
+            if (br != null) {
+                try {
+                    br.close();
+                }
+                catch (Exception e) {
+                    // ignore this exception since this
+                    // is only our internal problem
+                    LOG.warning("Caught exception closing Reader: " + e);
+                }
             }
         }
     }
@@ -5108,47 +5090,47 @@ public class DefaultGroovyMethods {
             br = new BufferedReader(self);
 
         try {
-	    while (true) {
-		String line = br.readLine();
-		if (line == null) {
-		    break;
-		} else {
-		    List vals = Arrays.asList(line.split(sep));
-		    closure.call(vals);
-		}
-	    }
-	    Reader temp = self;
-	    self = null;
-	    temp.close();
-	} finally {
-	    if (self != null) {
-		try {
-		    self.close();
-		} catch (Exception e) {
-		    // ignore this exception since there
-		    // has to be another already
-                    log.warning("Caught exception closing Reader: " + e);
-		}
-	    }
-	    if (br != null) {
-		try {
-		    br.close();
-		} catch (Exception e) {
-		    // ignore this exception since this
-		    // is only our internal problem
-                    log.warning("Caught exception closing Reader: " + e);
-		}
-	    }
-	}
+            while (true) {
+                String line = br.readLine();
+                if (line == null) {
+                    break;
+                } else {
+                    List vals = Arrays.asList(line.split(sep));
+                    closure.call(vals);
+                }
+            }
+            Reader temp = self;
+            self = null;
+            temp.close();
+        } finally {
+            if (self != null) {
+                try {
+                    self.close();
+                } catch (Exception e) {
+                    // ignore this exception since there
+                    // has to be another already
+                    LOG.warning("Caught exception closing Reader: " + e);
+                }
+            }
+            if (br != null) {
+                try {
+                    br.close();
+                } catch (Exception e) {
+                    // ignore this exception since this
+                    // is only our internal problem
+                    LOG.warning("Caught exception closing Reader: " + e);
+                }
+            }
+        }
     }
 
     /**
-         * Read a single, whole line from the given Reader
-         * 
-         * @param self a Reader
-         * @return a line
-         * @throws IOException
-         */
+     * Read a single, whole line from the given Reader
+     *
+     * @param self a Reader
+     * @return a line
+     * @throws IOException
+     */
     public static String readLine(Reader self) throws IOException {
         BufferedReader br /* = null */;
 
@@ -5285,36 +5267,34 @@ public class DefaultGroovyMethods {
         char[] charBuffer = new char[4096];
         int nbCharRead /* = 0*/;
         try {
-	    while ((nbCharRead = reader.read(charBuffer)) != -1) {
-		// appends buffer
-		answer.append(charBuffer, 0, nbCharRead);
-	    }
-	    Reader temp = reader;
-	    reader = null;
-	    temp.close();
-	} finally {
-	    if(reader != null) {
-		try {
-		    reader.close();		    
-		} catch (Exception e) {
-		    // ignore since there has to be an exception already
-                    log.warning("Caught exception closing Reader: " + e);
-		}
-	    }
-	}
+            while ((nbCharRead = reader.read(charBuffer)) != -1) {
+                // appends buffer
+                answer.append(charBuffer, 0, nbCharRead);
+            }
+            Reader temp = reader;
+            reader = null;
+            temp.close();
+        } finally {
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (Exception e) {
+                    // ignore since there has to be an exception already
+                    LOG.warning("Caught exception closing Reader: " + e);
+                }
+            }
+        }
         return answer.toString();
     }
 
     /**
-         * Write the text and append a new line (depending on the platform
-         * line-ending)
-         * 
-         * @param writer
-         *                a BufferedWriter
-         * @param line
-         *                the line to write
-         * @throws IOException
-         */
+     * Write the text and append a new line (depending on the platform
+     * line-ending)
+     *
+     * @param writer a BufferedWriter
+     * @param line   the line to write
+     * @throws IOException
+     */
     public static void writeLine(BufferedWriter writer, String line) throws IOException {
         writer.write(line);
         writer.newLine();
@@ -5328,25 +5308,25 @@ public class DefaultGroovyMethods {
      * @throws IOException
      */
     public static void write(File file, String text) throws IOException {
-	BufferedWriter writer = null;
-	try {
+        BufferedWriter writer = null;
+        try {
             writer = newWriter(file);
             writer.write(text);
             writer.flush();
 
-	    Writer temp = writer;
-	    writer = null;
-	    temp.close();
-	} finally {
-	    if(writer != null) {
-		try {
-		    writer.close();		    
-		} catch (Exception e) {
-		    // ignore since there has to be an exception already
-                    log.warning("Caught exception closing Writer: " + e);
-		}
-	    }
-	}
+            Writer temp = writer;
+            writer = null;
+            temp.close();
+        } finally {
+            if (writer != null) {
+                try {
+                    writer.close();
+                } catch (Exception e) {
+                    // ignore since there has to be an exception already
+                    LOG.warning("Caught exception closing Writer: " + e);
+                }
+            }
+        }
     }
 
     /**
@@ -5357,8 +5337,8 @@ public class DefaultGroovyMethods {
      * @throws IOException
      */
     public static File leftShift(File file, Object text) throws IOException {
-		append(file, text);
-		return file;
+        append(file, text);
+        return file;
     }
 
     /**
@@ -5376,19 +5356,19 @@ public class DefaultGroovyMethods {
             writer.write(text);
             writer.flush();
 
-	    Writer temp = writer;
-	    writer = null;
-	    temp.close();
-	} finally {
-	    if(writer != null) {
-		try {
-		    writer.close();		    
-		} catch (Exception e) {
-		    // ignore since there has to be an exception already
-                    log.warning("Caught exception closing Writer: " + e);
-		}
-	    }
-	}
+            Writer temp = writer;
+            writer = null;
+            temp.close();
+        } finally {
+            if (writer != null) {
+                try {
+                    writer.close();
+                } catch (Exception e) {
+                    // ignore since there has to be an exception already
+                    LOG.warning("Caught exception closing Writer: " + e);
+                }
+            }
+        }
     }
 
     /**
@@ -5399,58 +5379,55 @@ public class DefaultGroovyMethods {
      * @throws IOException
      */
     public static void append(File file, Object text) throws IOException {
-	BufferedWriter writer = null;
-	try {
-	    writer = newWriter(file, true);
-	    InvokerHelper.write(writer, text);
-	    writer.flush();
+        BufferedWriter writer = null;
+        try {
+            writer = newWriter(file, true);
+            InvokerHelper.write(writer, text);
+            writer.flush();
 
-	    Writer temp = writer;
-	    writer = null;
-	    temp.close();
-	} finally {
-	    if(writer != null) {
-		try {
-		    writer.close();		    
-		} catch (Exception e) {
-		    // ignore since there has to be an exception already
-                    log.warning("Caught exception closing Writer: " + e);
-		}
-	    }
-	}
+            Writer temp = writer;
+            writer = null;
+            temp.close();
+        } finally {
+            if (writer != null) {
+                try {
+                    writer.close();
+                } catch (Exception e) {
+                    // ignore since there has to be an exception already
+                    LOG.warning("Caught exception closing Writer: " + e);
+                }
+            }
+        }
     }
 
     /**
-         * Append the text at the end of the File with a specified encoding
-         * 
-         * @param file
-         *                a File
-         * @param text
-         *                the text to append at the end of the File
-         * @param charset
-         *                the charset used
-         * @throws IOException
-         */
+     * Append the text at the end of the File with a specified encoding
+     *
+     * @param file    a File
+     * @param text    the text to append at the end of the File
+     * @param charset the charset used
+     * @throws IOException
+     */
     public static void append(File file, Object text, String charset) throws IOException {
-        BufferedWriter writer = null; 
+        BufferedWriter writer = null;
         try {
             writer = newWriter(file, charset, true);
             InvokerHelper.write(writer, text);
             writer.flush();
 
-	    Writer temp = writer;
-	    writer = null;
-	    temp.close();
-	} finally {
-	    if(writer != null) {
-		try {
-		    writer.close();		    
-		} catch (Exception e) {
-		    // ignore since there has to be an exception already
-                    log.warning("Caught exception closing Writer: " + e);
-		}
-	    }
-	}
+            Writer temp = writer;
+            writer = null;
+            temp.close();
+        } finally {
+            if (writer != null) {
+                try {
+                    writer.close();
+                } catch (Exception e) {
+                    // ignore since there has to be an exception already
+                    LOG.warning("Caught exception closing Writer: " + e);
+                }
+            }
+        }
     }
 
     /**
@@ -5471,14 +5448,14 @@ public class DefaultGroovyMethods {
      * are used incorrectly.
      *
      * @param dir The directory to check
-     * @throws FileNotFoundException Thrown if the given directory does not exist
+     * @throws FileNotFoundException    Thrown if the given directory does not exist
      * @throws IllegalArgumentException Thrown if the provided File object does not represent a directory
      */
     private static void checkDir(File dir) throws FileNotFoundException, IllegalArgumentException {
         if (!dir.exists())
-          throw new FileNotFoundException(dir.getAbsolutePath());
+            throw new FileNotFoundException(dir.getAbsolutePath());
         if (!dir.isDirectory())
-          throw new IllegalArgumentException("The provided File object is not a directory: " + dir.getAbsolutePath());
+            throw new IllegalArgumentException("The provided File object is not a directory: " + dir.getAbsolutePath());
     }
 
     /**
@@ -5486,7 +5463,7 @@ public class DefaultGroovyMethods {
      *
      * @param self    a File
      * @param closure a closure
-     * @throws FileNotFoundException Thrown if the given directory does not exist
+     * @throws FileNotFoundException    Thrown if the given directory does not exist
      * @throws IllegalArgumentException Thrown if the provided File object does not represent a directory
      */
     public static void eachFile(File self, Closure closure) throws FileNotFoundException, IllegalArgumentException {
@@ -5503,7 +5480,7 @@ public class DefaultGroovyMethods {
      *
      * @param self    a File
      * @param closure a closure
-     * @throws FileNotFoundException Thrown if the given directory does not exist
+     * @throws FileNotFoundException    Thrown if the given directory does not exist
      * @throws IllegalArgumentException Thrown if the provided File object does not represent a directory
      */
     public static void eachFileRecurse(File self, Closure closure) throws FileNotFoundException, IllegalArgumentException {
@@ -5525,7 +5502,7 @@ public class DefaultGroovyMethods {
      *
      * @param self    a directory
      * @param closure a closure
-     * @throws FileNotFoundException Thrown if the given directory does not exist
+     * @throws FileNotFoundException    Thrown if the given directory does not exist
      * @throws IllegalArgumentException Thrown if the provided File object does not represent a directory
      */
     public static void eachDir(File self, Closure closure) throws FileNotFoundException, IllegalArgumentException {
@@ -5543,10 +5520,10 @@ public class DefaultGroovyMethods {
      * - calling the isCase() method used by switch statements.  This method can be used
      * with different kinds of filters like regular expresions, classes, ranges etc.
      *
-     * @param self   a file
-     * @param filter the filter to perform on the directory (using the isCase(object) method)
+     * @param self    a file
+     * @param filter  the filter to perform on the directory (using the isCase(object) method)
      * @param closure
-     * @throws FileNotFoundException Thrown if the given directory does not exist
+     * @throws FileNotFoundException    Thrown if the given directory does not exist
      * @throws IllegalArgumentException Thrown if the provided File object does not represent a directory
      */
     public static void eachFileMatch(File self, Object filter, Closure closure) throws FileNotFoundException, IllegalArgumentException {
@@ -5563,8 +5540,8 @@ public class DefaultGroovyMethods {
     /**
      * Allow simple syntax for using timers.
      *
-     * @param timer a timer object
-     * @param delay the delay in milliseconds before running the closure code
+     * @param timer   a timer object
+     * @param delay   the delay in milliseconds before running the closure code
      * @param closure
      */
     public static void runAfter(Timer timer, int delay, final Closure closure) {
@@ -5608,7 +5585,7 @@ public class DefaultGroovyMethods {
      * @param self an input stream
      * @return a reader
      */
-    public static BufferedReader newReader(final InputStream self) {
+    public static BufferedReader newReader(InputStream self) {
         return new BufferedReader(new InputStreamReader(self));
     }
 
@@ -5816,19 +5793,19 @@ public class DefaultGroovyMethods {
             closure.call(writer);
             writer.flush();
 
-	    Writer temp = writer;
-	    writer = null;
-	    temp.close();
-	} finally {
-	    if(writer != null) {
-		try {
-		    writer.close();		    
-		} catch (Exception e) {
-		    // ignore since there has to be an exception already
-                    log.warning("Caught exception closing Writer: " + e);
-		}
-	    }
-	}
+            Writer temp = writer;
+            writer = null;
+            temp.close();
+        } finally {
+            if (writer != null) {
+                try {
+                    writer.close();
+                } catch (Exception e) {
+                    // ignore since there has to be an exception already
+                    LOG.warning("Caught exception closing Writer: " + e);
+                }
+            }
+        }
     }
 
     /**
@@ -5844,19 +5821,19 @@ public class DefaultGroovyMethods {
         try {
             closure.call(reader);
 
-	    Reader temp = reader;
-	    reader = null;
-	    temp.close();
-	} finally {
-	    if(reader != null) {
-		try {
-		    reader.close();		    
-		} catch (Exception e) {
-		    // ignore since there has to be an exception already
-                    log.warning("Caught exception closing Reader: " + e);
-		}
-	    }
-	}
+            Reader temp = reader;
+            reader = null;
+            temp.close();
+        } finally {
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (Exception e) {
+                    // ignore since there has to be an exception already
+                    LOG.warning("Caught exception closing Reader: " + e);
+                }
+            }
+        }
     }
 
     /**
@@ -5872,19 +5849,19 @@ public class DefaultGroovyMethods {
         try {
             closure.call(stream);
 
-	    InputStream temp = stream;
-	    stream = null;
-	    temp.close();
-	} finally {
-	    if(stream != null) {
-		try {
-		    stream.close();		    
-		} catch (Exception e) {
-		    // ignore since there has to be an exception already
-                    log.warning("Caught exception closing InputStream: " + e);
-		}
-	    }
-	}
+            InputStream temp = stream;
+            stream = null;
+            temp.close();
+        } finally {
+            if (stream != null) {
+                try {
+                    stream.close();
+                } catch (Exception e) {
+                    // ignore since there has to be an exception already
+                    LOG.warning("Caught exception closing InputStream: " + e);
+                }
+            }
+        }
     }
 
     /**
@@ -5974,7 +5951,7 @@ public class DefaultGroovyMethods {
      * and then ensuring that the stream is closed down again irrespective
      * of whether exceptions occur.
      *
-     * @param os  the stream which is used and then closed
+     * @param os      the stream which is used and then closed
      * @param closure the closure that the stream is passed into
      * @throws IOException
      */
@@ -5991,7 +5968,7 @@ public class DefaultGroovyMethods {
                 try {
                     os.close();
                 } catch (IOException e) {
-                    log.warning("Caught exception closing OutputStream: " + e);
+                    LOG.warning("Caught exception closing OutputStream: " + e);
                 }
             }
         }
@@ -6046,7 +6023,7 @@ public class DefaultGroovyMethods {
                 try {
                     is.close();
                 } catch (IOException e) {
-                    log.warning("Caught exception closing InputStream: " + e);
+                    LOG.warning("Caught exception closing InputStream: " + e);
                 }
             }
         }
@@ -6065,7 +6042,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Transforms the characters from a reader with a Closure and 
+     * Transforms the characters from a reader with a Closure and
      * write them to a writer.
      *
      * @param reader
@@ -6081,7 +6058,7 @@ public class DefaultGroovyMethods {
                 writer.write((String) closure.call(new String(chars)));
             }
             writer.flush();
-            
+
             Writer temp2 = writer;
             writer = null;
             temp2.close();
@@ -6089,25 +6066,25 @@ public class DefaultGroovyMethods {
             reader = null;
             temp1.close();
         } finally {
-            if(reader != null) {
-        	try {
-        	    reader.close();
+            if (reader != null) {
+                try {
+                    reader.close();
                 } catch (IOException e) {
-                    log.warning("Caught exception closing Reader: " + e);
-                }        	
+                    LOG.warning("Caught exception closing Reader: " + e);
+                }
             }
-            if(writer != null) {
-        	try {
-        	    writer.close();
+            if (writer != null) {
+                try {
+                    writer.close();
                 } catch (IOException e) {
-                    log.warning("Caught exception closing Writer: " + e);
-                }        	
+                    LOG.warning("Caught exception closing Writer: " + e);
+                }
             }
         }
     }
 
     /**
-     * Transforms the lines from a reader with a Closure and 
+     * Transforms the lines from a reader with a Closure and
      * write them to a writer. Both Reader and Writer are
      * closed after the operation
      *
@@ -6128,7 +6105,7 @@ public class DefaultGroovyMethods {
                     bw.newLine();
                 }
             }
-            bw.flush();            
+            bw.flush();
 
             Writer temp2 = writer;
             writer = null;
@@ -6137,39 +6114,39 @@ public class DefaultGroovyMethods {
             reader = null;
             temp1.close();
         } finally {
-            if(br != null) {
-        	try {
-        	    br.close();
+            if (br != null) {
+                try {
+                    br.close();
                 } catch (IOException e) {
-                    log.warning("Caught exception closing Reader: " + e);
-                }        	
+                    LOG.warning("Caught exception closing Reader: " + e);
+                }
             }
-            if(reader != null) {
-        	try {
-        	    reader.close();
+            if (reader != null) {
+                try {
+                    reader.close();
                 } catch (IOException e) {
-                    log.warning("Caught exception closing Reader: " + e);
-                }        	
+                    LOG.warning("Caught exception closing Reader: " + e);
+                }
             }
-            if(bw != null) {
-        	try {
-        	    bw.close();
+            if (bw != null) {
+                try {
+                    bw.close();
                 } catch (IOException e) {
-                    log.warning("Caught exception closing Writer: " + e);
-                }        	
+                    LOG.warning("Caught exception closing Writer: " + e);
+                }
             }
-            if(writer != null) {
-        	try {
-        	    writer.close();
+            if (writer != null) {
+                try {
+                    writer.close();
                 } catch (IOException e) {
-                    log.warning("Caught exception closing Writer: " + e);
-                }        	
+                    LOG.warning("Caught exception closing Writer: " + e);
+                }
             }
         }
     }
 
     /**
-     * Filter the lines from a reader and write them on the writer, 
+     * Filter the lines from a reader and write them on the writer,
      * according to a closure which returns true or false.
      * Both Reader and Writer are closed after the operation.
      *
@@ -6183,67 +6160,64 @@ public class DefaultGroovyMethods {
         BufferedWriter bw = new BufferedWriter(writer);
         String line;
         try {
-	    while ((line = br.readLine()) != null) {
-	        if (DefaultTypeTransformation.castToBoolean(closure.call(line))) {
-	            bw.write(line);
-	            bw.newLine();
-	        }
-	    }
-	    bw.flush();
+            while ((line = br.readLine()) != null) {
+                if (DefaultTypeTransformation.castToBoolean(closure.call(line))) {
+                    bw.write(line);
+                    bw.newLine();
+                }
+            }
+            bw.flush();
 
-	    Writer temp2 = writer;
-	    writer = null;
-	    temp2.close();
-	    Reader temp1 = reader;
-	    reader = null;
-	    temp1.close();
-	} finally {
-	    if (br != null) {
-		try {
-		    br.close();
-		} catch (IOException e) {
-		    log.warning("Caught exception closing Reader: " + e);
-		}
-	    }
-	    if (reader != null) {
-		try {
-		    reader.close();
-		} catch (IOException e) {
-		    log.warning("Caught exception closing Reader: " + e);
-		}
-	    }
-	    if (bw != null) {
-		try {
-		    bw.close();
-		} catch (IOException e) {
-		    log.warning("Caught exception closing Writer: " + e);
-		}
-	    }
-	    if (writer != null) {
-		try {
-		    writer.close();
-		} catch (IOException e) {
-		    log.warning("Caught exception closing Writer: " + e);
-		}
-	    }
-	}
+            Writer temp2 = writer;
+            writer = null;
+            temp2.close();
+            Reader temp1 = reader;
+            reader = null;
+            temp1.close();
+        } finally {
+            if (br != null) {
+                try {
+                    br.close();
+                } catch (IOException e) {
+                    LOG.warning("Caught exception closing Reader: " + e);
+                }
+            }
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (IOException e) {
+                    LOG.warning("Caught exception closing Reader: " + e);
+                }
+            }
+            if (bw != null) {
+                try {
+                    bw.close();
+                } catch (IOException e) {
+                    LOG.warning("Caught exception closing Writer: " + e);
+                }
+            }
+            if (writer != null) {
+                try {
+                    writer.close();
+                } catch (IOException e) {
+                    LOG.warning("Caught exception closing Writer: " + e);
+                }
+            }
+        }
 
     }
 
     /**
-         * Filters the lines of a File and creates a Writeable in return to
-         * stream the filtered lines
-         * 
-         * @param self
-         *                a File
-         * @param closure
-         *                a closure which returns a boolean indicating to filter
-         *                the line or not
-         * @return a Writable closure
-         * @throws IOException
-         *                 if <code>self</code> is not readable
-         */
-    public static Writable filterLine(final File self, final Closure closure) throws IOException {
+     * Filters the lines of a File and creates a Writeable in return to
+     * stream the filtered lines
+     *
+     * @param self    a File
+     * @param closure a closure which returns a boolean indicating to filter
+     *                the line or not
+     * @return a Writable closure
+     * @throws IOException if <code>self</code> is not readable
+     */
+    public static Writable filterLine(File self, Closure closure) throws IOException {
         return filterLine(newReader(self), closure);
     }
 
@@ -6256,12 +6230,12 @@ public class DefaultGroovyMethods {
      * @param closure a closure which returns a boolean value and takes a line as input
      * @throws IOException if <code>self</code> is not readable
      */
-    public static void filterLine(final File self, final Writer writer, final Closure closure) throws IOException {
+    public static void filterLine(File self, Writer writer, Closure closure) throws IOException {
         filterLine(newReader(self), writer, closure);
     }
 
     /**
-     * Filter the lines of a Reader and create a Writable in return to stream 
+     * Filter the lines of a Reader and create a Writable in return to stream
      * the filtered lines.
      *
      * @param reader  a reader
@@ -6289,7 +6263,7 @@ public class DefaultGroovyMethods {
                 try {
                     writeTo(buffer);
                 } catch (IOException e) {
-                    throw new StringWriterIOException(e); 
+                    throw new StringWriterIOException(e);
                 }
                 return buffer.toString();
             }
@@ -6303,7 +6277,7 @@ public class DefaultGroovyMethods {
      * @param predicate a closure which returns boolean and takes a line
      * @return a filtered writer
      */
-    public static Writable filterLine(final InputStream self, final Closure predicate) {
+    public static Writable filterLine(InputStream self, Closure predicate) {
         return filterLine(newReader(self), predicate);
     }
 
@@ -6315,7 +6289,7 @@ public class DefaultGroovyMethods {
      * @param writer    a writer to write output to
      * @param predicate a closure which returns a boolean and takes a line as input
      */
-    public static void filterLine(final InputStream self, final Writer writer, final Closure predicate)
+    public static void filterLine(InputStream self, Writer writer, Closure predicate)
             throws IOException {
         filterLine(newReader(self), writer, predicate);
     }
@@ -6332,7 +6306,7 @@ public class DefaultGroovyMethods {
         DataInputStream dis = new DataInputStream(fileInputStream);
         try {
             dis.readFully(bytes);
-            
+
             InputStream temp = dis;
             dis = null;
             temp.close();
@@ -6341,20 +6315,19 @@ public class DefaultGroovyMethods {
                 try {
                     dis.close();
                 } catch (IOException e) {
-                    log.warning("Caught exception closing DataInputStream: " + e);
+                    LOG.warning("Caught exception closing DataInputStream: " + e);
                 }
             }
         }
         return bytes;
     }
 
-
     // ================================
     // Socket and ServerSocket methods
 
     /**
      * Allows an InputStream and an OutputStream from a Socket to be used,
-     * calling the closure with the streams and then ensuring that the streams 
+     * calling the closure with the streams and then ensuring that the streams
      * are closed down again irrespective of whether exceptions occur.
      *
      * @param socket  a Socket
@@ -6374,33 +6347,31 @@ public class DefaultGroovyMethods {
             output = null;
             temp2.close();
         } finally {
-	    if (input != null) {
-		try {
-		    input.close();
-		} catch (IOException e) {
-                    log.warning("Caught exception closing InputStream: " + e);
-		}
-	    }
-	    if (output != null) {
-		try {
-		    output.close();
-		} catch (IOException e) {
-                    log.warning("Caught exception closing OutputStream: " + e);
-		}
-	    }
+            if (input != null) {
+                try {
+                    input.close();
+                } catch (IOException e) {
+                    LOG.warning("Caught exception closing InputStream: " + e);
+                }
+            }
+            if (output != null) {
+                try {
+                    output.close();
+                } catch (IOException e) {
+                    LOG.warning("Caught exception closing OutputStream: " + e);
+                }
+            }
         }
     }
 
     /**
-         * Overloads the left shift operator to provide an append mechanism to
-         * add things to the output stream of a socket
-         * 
-         * @param self
-         *                a Socket
-         * @param value
-         *                a value to append
-         * @return a Writer
-         */
+     * Overloads the left shift operator to provide an append mechanism to
+     * add things to the output stream of a socket
+     *
+     * @param self  a Socket
+     * @param value a value to append
+     * @return a Writer
+     */
     public static Writer leftShift(Socket self, Object value) throws IOException {
         return leftShift(self.getOutputStream(), value);
     }
@@ -6435,7 +6406,7 @@ public class DefaultGroovyMethods {
                     try {
                         socket.close();
                     } catch (IOException e) {
-                        log.warning("Caught exception closing socket: " + e);
+                        LOG.warning("Caught exception closing socket: " + e);
                     }
                 }
             }
@@ -6456,9 +6427,9 @@ public class DefaultGroovyMethods {
         if (c == Writable.class) {
             return asWritable(f);
         }
-        return asType((Object) f,c);
+        return asType((Object) f, c);
     }
-    
+
     /**
      * @param file     a File
      * @param encoding the encoding to be used when reading the file's contents
@@ -6484,22 +6455,22 @@ public class DefaultGroovyMethods {
     }
 
     public static Object asType(String self, Class c) {
-        if (c==List.class) {
+        if (c == List.class) {
             return toList(self);
-        } else if (c==BigDecimal.class) {
+        } else if (c == BigDecimal.class) {
             return toBigDecimal(self);
-        } else if (c==BigInteger.class) {
+        } else if (c == BigInteger.class) {
             return toBigInteger(self);
-        } else if (c==Character.class) {
+        } else if (c == Character.class) {
             return toCharacter(self);
-        } else if (c==Double.class) {
+        } else if (c == Double.class) {
             return toDouble(self);
-        } else if (c==Float.class) {
+        } else if (c == Float.class) {
             return toFloat(self);
         }
         return asType((Object) self, c);
     }
-    
+
     // Process methods
     //-------------------------------------------------------------------------
 
@@ -6580,13 +6551,13 @@ public class DefaultGroovyMethods {
         thread.start();
         runnable.waitForOrKill(numberOfMillis);
     }
-    
+
     /**
      * gets the input and error streams from a process and reads them
      * to avoid the process to block due to a full ouput buffer. For this
      * two Threads are started, so this method will return immediately
      *
-     * @param self           a Process
+     * @param self a Process
      */
     public static void consumeProcessOutput(Process self) {
         Dumper d = new Dumper(self.getErrorStream());
@@ -6595,7 +6566,7 @@ public class DefaultGroovyMethods {
         d = new Dumper(self.getInputStream());
         t = new Thread(d);
         t.start();
-    }    
+    }
 
     /**
      * Process each regex group matched substring of the given string. If the closure
@@ -6616,13 +6587,13 @@ public class DefaultGroovyMethods {
             for (int i = 0; i <= count; i++) {
                 groups.add(m.group(i));
             }
-            if (groups.size()==1 || closure.getMaximumNumberOfParameters()<groups.size()) {
+            if (groups.size() == 1 || closure.getMaximumNumberOfParameters() < groups.size()) {
                 // not enough parameters there to give each group part
                 // it's own parameter, so try a closure with one parameter
                 // and give it all groups as a array
-                closure.call((Object)groups.toArray());
+                closure.call((Object) groups.toArray());
             } else {
-                closure.call((Object[])groups.toArray());
+                closure.call((Object[]) groups.toArray());
             }
         }
     }
@@ -6642,7 +6613,7 @@ public class DefaultGroovyMethods {
             for (int i = 0; i <= count; i++) {
                 groups.add(m.group(i));
             }
-            closure.call((Object[])groups.toArray());
+            closure.call((Object[]) groups.toArray());
         }
     }
 
@@ -6664,41 +6635,18 @@ public class DefaultGroovyMethods {
         }
         return i;
     }
-    
-    /**
-     * use() a list of categories, specifying the list as varargs:<br>
-     * use(CategoryClass1, CategoryClass2) { ... }<br>
-     * This method prevents the error of forgetting to wrap the the category 
-     * classes in a list.
-     * @param self
-     * @param array
-     */
-	public static void use(Object self, Object[] array) {
-		if (array.length < 2)
-			throw new IllegalArgumentException(
-				"Expecting at least 2 arguments, a category class and a Closure");
-		Closure closure;
-		try {
-			closure = (Closure)array[array.length - 1];
-		} catch (ClassCastException e) {
-			throw new IllegalArgumentException("Expecting a Closure to be the last argument");
-		}
-		List list = new ArrayList(array.length - 1);
-		for (int i = 0; i < array.length - 1; ++i)
-			list.add(array[i]);
-		GroovyCategorySupport.use(list, closure);
-	}    
 
     /**
      * Iterates through the class loader parents until it finds a loader with a class
      * named equal to org.codehaus.groovy.tools.RootLoader. If there is no such class
      * null will be returned. The name has to be used because a direct compare with
      * == may fail as the class may be loaded through different classloaders.
+     *
      * @see org.codehaus.groovy.tools.RootLoader
      */
     public static ClassLoader getRootLoader(ClassLoader cl) {
         while (true) {
-            if (cl==null) return null;
+            if (cl == null) return null;
             if (cl.getClass().getName().equals(RootLoader.class.getName())) return cl;
             cl = cl.getParent();
         }
@@ -6706,16 +6654,16 @@ public class DefaultGroovyMethods {
 
     /**
      * Converts a given object to a type. This method is used through
-     * the "as" operator and is overloadable as any other operator. 
-     *  
-     * @param obj the object to convert
+     * the "as" operator and is overloadable as any other operator.
+     *
+     * @param obj  the object to convert
      * @param type the goal type
      * @return the resulting object
      */
     public static Object asType(Object obj, Class type) {
-        return DefaultTypeTransformation.castToType(obj,type);
+        return DefaultTypeTransformation.castToType(obj, type);
     }
-        
+
     /**
      * A Runnable which waits for a process to complete together with a notification scheme
      * allowing another thread to wait a maximum number of seconds for the process to complete
@@ -6752,7 +6700,7 @@ public class DefaultGroovyMethods {
             }
         }
     }
-    
+
     protected static class RangeInfo {
         protected int from, to;
         protected boolean reverse;
@@ -6763,10 +6711,10 @@ public class DefaultGroovyMethods {
             this.reverse = reverse;
         }
     }
-    
-    private static class Dumper implements Runnable{
+
+    private static class Dumper implements Runnable {
         InputStream in;
-        
+
         public Dumper(InputStream in) {
             this.in = in;
         }
@@ -6775,36 +6723,21 @@ public class DefaultGroovyMethods {
             InputStreamReader isr = new InputStreamReader(in);
             BufferedReader br = new BufferedReader(isr);
             try {
-                while (br.readLine()!=null) {}
+                while (br.readLine() != null) {
+                }
             } catch (IOException e) {
-                throw new GroovyRuntimeException("exception while reading process stream",e);
+                throw new GroovyRuntimeException("exception while reading process stream", e);
             }
         }
     }
-    
+
     public static Iterator iterator(Object o) {
         return DefaultTypeTransformation.asCollection(o).iterator();
     }
 
-    // TODO move into DOMCategory once we can make use of optional categories transparent
-    public static Iterator iterator(final NodeList nodeList) {
-        return new Iterator() {
-            private int current /* = 0 */;
-            
-            public boolean hasNext() {
-                return current < nodeList.getLength();
-            }
-            
-            public Object next() {
-                return nodeList.item(current++);
-            }
-            
-            public void remove() {
-                throw new UnsupportedOperationException("Cannot remove() from a NodeList iterator");
-            }
-        };
-    }
-    
+    /**
+     * @return an Iterator for an Enumeration
+     */
     public static Iterator iterator(final Enumeration enumeration) {
         return new Iterator() {
             private Object last;
@@ -6823,7 +6756,33 @@ public class DefaultGroovyMethods {
             }
         };
     }
-    
+
+    // TODO move into DOMCategory once we can make use of optional categories transparent
+
+    /**
+     * @return an Iterator for a NodeList
+     */
+    public static Iterator iterator(final NodeList nodeList) {
+        return new Iterator() {
+            private int current /* = 0 */;
+
+            public boolean hasNext() {
+                return current < nodeList.getLength();
+            }
+
+            public Object next() {
+                return nodeList.item(current++);
+            }
+
+            public void remove() {
+                throw new UnsupportedOperationException("Cannot remove() from a NodeList iterator");
+            }
+        };
+    }
+
+    /**
+     * @return an Iterator for a Matcher
+     */
     public static Iterator iterator(final Matcher matcher) {
         return new Iterator() {
             private boolean found /* = false */;
@@ -6857,14 +6816,14 @@ public class DefaultGroovyMethods {
             }
         };
     }
-    
+
     /**
      * @return an Iterator for a Reader
      */
     public static Iterator iterator(Reader value) {
         final BufferedReader bufferedReader;
-        if(value instanceof BufferedReader)
-            bufferedReader = (BufferedReader)value;
+        if (value instanceof BufferedReader)
+            bufferedReader = (BufferedReader) value;
         else
             bufferedReader = new BufferedReader(value);
         return new Iterator() {
@@ -6873,8 +6832,7 @@ public class DefaultGroovyMethods {
             boolean hasNext = true;
 
             public boolean hasNext() {
-                if(nextMustRead && hasNext)
-                {
+                if (nextMustRead && hasNext) {
                     try {
                         nextVal = readNext();
                         nextMustRead = false;
@@ -6887,15 +6845,13 @@ public class DefaultGroovyMethods {
 
             public Object next() {
                 String retval = null;
-                if(nextMustRead)
-                {
+                if (nextMustRead) {
                     try {
                         retval = readNext();
                     } catch (IOException e) {
                         hasNext = false;
                     }
-                }
-                else
+                } else
                     retval = nextVal;
                 nextMustRead = true;
                 return retval;
@@ -6903,21 +6859,33 @@ public class DefaultGroovyMethods {
 
             private String readNext() throws IOException {
                 String nv = bufferedReader.readLine();
-                if(nv == null)
+                if (nv == null)
                     hasNext = false;
                 return nv;
             }
-            
+
             public void remove() {
                 throw new UnsupportedOperationException("Cannot remove() from a Reader Iterator");
             }
         };
     }
 
+    /**
+     * Standard iterator for a input stream which iterates through the stream content in a byte-based fashion.
+     *
+     * @param is
+     * @return
+     */
     public static Iterator iterator(InputStream is) {
         return iterator(new DataInputStream(is));
     }
-    
+
+    /**
+     * Standard iterator for a data input stream which iterates through the stream content in a byte-based fashion.
+     *
+     * @param dis
+     * @return
+     */
     public static Iterator iterator(final DataInputStream dis) {
         return new Iterator() {
             Byte nextVal;
@@ -6925,8 +6893,7 @@ public class DefaultGroovyMethods {
             boolean hasNext = true;
 
             public boolean hasNext() {
-                if(nextMustRead && hasNext)
-                {
+                if (nextMustRead && hasNext) {
                     try {
                         byte bPrimitive = dis.readByte();
                         nextVal = new Byte(bPrimitive);
@@ -6940,16 +6907,14 @@ public class DefaultGroovyMethods {
 
             public Object next() {
                 Byte retval = null;
-                if(nextMustRead)
-                {
+                if (nextMustRead) {
                     try {
                         byte b = dis.readByte();
                         retval = new Byte(b);
                     } catch (IOException e) {
                         hasNext = false;
                     }
-                }
-                else
+                } else
                     retval = nextVal;
                 nextMustRead = true;
                 return retval;
@@ -6960,11 +6925,18 @@ public class DefaultGroovyMethods {
             }
         };
     }
-    
+
+    /**
+     * Standard iterator for a file which iterates through the file content in a line-based fashion.
+     *
+     * @param f
+     * @return
+     * @throws IOException
+     */
     public static Iterator iterator(File f) throws IOException {
         return iterator(newReader(f));
     }
-    
+
     public static Iterator iterator(Iterator it) {
         return it;
     }
