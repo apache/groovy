@@ -18,6 +18,8 @@ shift
 set CLASS=%~1
 shift
 
+if exist "%USERPROFILE%/.groovy/preinit.bat" call "%USERPROFILE%/.groovy/preinit.bat"
+
 @rem Determine the command interpreter to execute the "CD" later
 set COMMAND_COM="cmd.exe"
 if exist "%SystemRoot%\system32\cmd.exe" set COMMAND_COM="%SystemRoot%\system32\cmd.exe"
@@ -88,6 +90,8 @@ set CMD_LINE_ARGS=%$
 @rem Setup the command line
 set STARTER_CLASSPATH=%GROOVY_HOME%\lib\groovy-starter.jar
 
+if exist "%USERPROFILE%/.groovy/init.bat" call "%USERPROFILE%/.groovy/init.bat"
+
 @rem Setting a classpath using the -cp or -classpath option means not to use
 @rem the global classpath. Groovy behaves then the same as the java 
 @rem interpreter
@@ -112,6 +116,8 @@ set JAVA_OPTS=%JAVA_OPTS% -Dprogram.name="%PROGNAME%"
 set JAVA_OPTS=%JAVA_OPTS% -Dgroovy.home=%GROOVY_HOME%
 set JAVA_OPTS=%JAVA_OPTS% -Dtools.jar="%TOOLS_JAR%"
 set JAVA_OPTS=%JAVA_OPTS% -Dgroovy.starter.conf="%STARTER_CONF%"
+
+if exist "%USERPROFILE%/.groovy/postinit.bat" call "%USERPROFILE%/.groovy/postinit.bat"
 
 @rem Execute Groovy
 "%JAVA_EXE%" %JAVA_OPTS% -classpath "%STARTER_CLASSPATH%" %STARTER_MAIN_CLASS% --main %CLASS% --conf "%STARTER_CONF%" --classpath "%CP%" %CMD_LINE_ARGS%
