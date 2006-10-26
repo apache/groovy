@@ -40,6 +40,8 @@ public class ProxyMetaClass extends MetaClassImpl {
      * @param closure piece of code to be executed with registered ProxyMetaClass
      */
     public void use(Closure closure){
+    final Class theClass = getTheClass();
+        
         registry.setMetaClass(theClass, this);
         
         try {
@@ -112,7 +114,7 @@ public class ProxyMetaClass extends MetaClassImpl {
      * See Interceptor for details.
      */
     public Object invokeConstructor(final Object[] arguments) {
-        return doCall(theClass, "ctor", arguments, new Callable(){
+        return doCall(getTheClass(), "ctor", arguments, new Callable(){
             public Object call() {
                 return adaptee.invokeConstructor(arguments);
             }
@@ -120,7 +122,7 @@ public class ProxyMetaClass extends MetaClassImpl {
     }
 
     public Object invokeConstructorAt(final Class at, final Object[] arguments) {
-        return doCall(theClass, "ctor", arguments, new Callable() {
+        return doCall(getTheClass(), "ctor", arguments, new Callable() {
             public Object call() {
                 return adaptee.invokeConstructorAt(at, arguments);
             }

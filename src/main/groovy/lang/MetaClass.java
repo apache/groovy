@@ -17,6 +17,7 @@
 
 package groovy.lang;
 
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.LinkedList;
@@ -51,10 +52,10 @@ public abstract class MetaClass {
         MetaClass.useReflection = useReflection;
     }
 
-    protected final Class theClass;
+    private final WeakReference classReference;
     
     protected MetaClass(final Class theClass) {
-        this.theClass = theClass;
+        this.classReference = new WeakReference(theClass);
     }
     
     public Object invokeMethod(Object object, String methodName, Object arguments) {
@@ -71,6 +72,10 @@ public abstract class MetaClass {
         else {
             return invokeMethod(object, methodName, new Object[]{arguments});
         }
+    }
+    
+    public Class getTheClass() {
+        return (Class)this.classReference.get();
     }
     
     public abstract Object invokeConstructor(Object[] arguments);
