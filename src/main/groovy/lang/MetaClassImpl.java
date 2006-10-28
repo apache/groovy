@@ -177,9 +177,7 @@ public class MetaClassImpl extends MetaClass {
    }
 
    private void addInheritedMethods() {
-       final LinkedList superClasses = new LinkedList();
-       final Class theClass = getTheClass();
-       
+       LinkedList superClasses = new LinkedList();
        for (Class c = theClass.getSuperclass(); c!=Object.class && c!= null; c = c.getSuperclass()) {
            superClasses.addFirst(c);
        }
@@ -214,7 +212,7 @@ public class MetaClassImpl extends MetaClass {
     */
    private List getMethods(String name) {
        List answer = (List) methodIndex.get(name);
-       List used = GroovyCategorySupport.getCategoryMethods(getTheClass(), name);
+       List used = GroovyCategorySupport.getCategoryMethods(theClass, name);
        if (used != null) {
            if (answer != null) {
                used.addAll(answer);
@@ -388,7 +386,7 @@ public class MetaClassImpl extends MetaClass {
                }
            } catch (MissingPropertyException mpe) {}
 
-           throw new MissingMethodException(methodName, getTheClass(), originalArguments);
+           throw new MissingMethodException(methodName, theClass, originalArguments);
        }
    }
 
@@ -483,7 +481,7 @@ public class MetaClassImpl extends MetaClass {
            return MetaClassHelper.doMethodInvoke(object, method, arguments);
        }
 
-       throw new MissingMethodException(methodName, getTheClass(), arguments);
+       throw new MissingMethodException(methodName, theClass, arguments);
    }
    
    private MetaMethod pickStaticMethod(String methodName, Class[] arguments) {
@@ -493,7 +491,7 @@ public class MetaClassImpl extends MetaClass {
        if (!methods.isEmpty()) {
            method = (MetaMethod) chooseMethod(methodName, methods, arguments, false);
        }
-       if (method == null && getTheClass() != Class.class) {
+       if (method == null && theClass != Class.class) {
            MetaClass classMetaClass = registry.getMetaClass(Class.class);
            method = classMetaClass.pickMethod(methodName, arguments);
        }
@@ -504,14 +502,14 @@ public class MetaClassImpl extends MetaClass {
    }
 
    public Object invokeConstructor(Object[] arguments) {
-       return invokeConstructor(getTheClass(),arguments,false);
+       return invokeConstructor(theClass,arguments,false);
    }
 
    public int selectConstructorAndTransformArguments(int numberOfCosntructors, Object[] arguments) {
        //TODO: that is just a quick prototype, not the real thing!
        if (numberOfCosntructors != constructors.size()) {
            throw new IncompatibleClassChangeError("the number of constructors during runtime and compile time for "+
-               this.getTheClass().getName()+" do not match. Expected "+numberOfCosntructors+" but got "+constructors.size());
+               this.theClass.getName()+" do not match. Expected "+numberOfCosntructors+" but got "+constructors.size());
        }
        
        if (arguments==null) arguments = EMPTY_ARGUMENTS;
@@ -524,7 +522,7 @@ public class MetaClassImpl extends MetaClass {
        if (constructor==null) {
            throw new GroovyRuntimeException(
                    "Could not find matching constructor for: "
-                       + getTheClass().getName()
+                       + theClass.getName()
                        + "("+InvokerHelper.toTypeString(arguments)+")");
        }
        List l = new ArrayList(constructors);
@@ -578,7 +576,7 @@ public class MetaClassImpl extends MetaClass {
        }
        throw new GroovyRuntimeException(
                    "Could not find matching constructor for: "
-                       + getTheClass().getName()
+                       + theClass.getName()
                        + "("+InvokerHelper.toTypeString(arguments)+")");
    }
    
@@ -706,9 +704,9 @@ public class MetaClassImpl extends MetaClass {
            }
 
            if (lastException == null)
-               throw new MissingPropertyException(property, getTheClass());
+               throw new MissingPropertyException(property, theClass);
            else
-               throw new MissingPropertyException(property, getTheClass(), lastException);
+               throw new MissingPropertyException(property, theClass, lastException);
        }
    }
 
@@ -739,7 +737,7 @@ public class MetaClassImpl extends MetaClass {
        Class klass;
 
        // first get the public fields and create MetaFieldProperty objects
-       klass = getTheClass();
+       klass = theClass;
        while(klass != null) {
            final Class clazz = klass;
            Field[] fields = (Field[]) AccessController.doPrivileged(new  PrivilegedAction() {
@@ -768,7 +766,7 @@ public class MetaClassImpl extends MetaClass {
        }
 
   // if this an Array, then add the special read-only "length" property
-       if (getTheClass().isArray()) {
+       if (theClass.isArray()) {
            propertyMap.put("length", arrayLengthProperty);
        }
 
@@ -809,7 +807,7 @@ public class MetaClassImpl extends MetaClass {
        }
 
        // now look for any stray getters that may be used to define a property
-       klass = getTheClass();
+       klass = theClass;
        while(klass != null) {
            final Class clazz = klass;
            Method[] methods = (Method[]) AccessController.doPrivileged(new  PrivilegedAction() {
@@ -962,7 +960,7 @@ public class MetaClassImpl extends MetaClass {
                    return;
                }
 
-               throw new MissingPropertyException(property, getTheClass(), e);
+               throw new MissingPropertyException(property, theClass, e);
            }
        }
 
@@ -1022,7 +1020,7 @@ public class MetaClassImpl extends MetaClass {
        if (addListenerMethod==AMBIGOUS_LISTENER_METHOD){
            throw new GroovyRuntimeException("There are multiple listeners for the property "+property+". Please do not use the bean short form to access this listener.");
        } else if (runtimeException!=null) {
-           throw new MissingPropertyException(property, getTheClass(), runtimeException);
+           throw new MissingPropertyException(property, theClass, runtimeException);
        }
        
 
@@ -1039,7 +1037,7 @@ public class MetaClassImpl extends MetaClass {
        if (object instanceof Class) {
            clazz=(Class) object;
        } else {
-           clazz=getTheClass();
+           clazz=theClass;
        }
 
        try {
@@ -1070,7 +1068,7 @@ public class MetaClassImpl extends MetaClass {
 
 
        if (firstException.getException() instanceof NoSuchFieldException) {
-           throw new MissingFieldException(attribute, getTheClass());
+           throw new MissingFieldException(attribute, theClass);
        } else {
            throw new RuntimeException(firstException.getException());
        }
@@ -1086,7 +1084,7 @@ public class MetaClassImpl extends MetaClass {
        if (object instanceof Class) {
            clazz=(Class) object;
        } else {
-           clazz=getTheClass();
+           clazz=theClass;
        }
 
        try {
@@ -1120,16 +1118,16 @@ public class MetaClassImpl extends MetaClass {
        }
 
        if (firstException.getException() instanceof NoSuchFieldException) {
-           throw new MissingFieldException(attribute, getTheClass());
+           throw new MissingFieldException(attribute, theClass);
        } else {
            throw new RuntimeException(firstException.getException());
        }
    }
 
    public ClassNode getClassNode() {
-       if (classNode == null && GroovyObject.class.isAssignableFrom(getTheClass())) {
+       if (classNode == null && GroovyObject.class.isAssignableFrom(theClass)) {
            // lets try load it from the classpath
-           String className = getTheClass().getName();
+           String className = theClass.getName();
            String groovyFile = className;
            int idx = groovyFile.indexOf('$');
            if (idx > 0) {
@@ -1138,7 +1136,7 @@ public class MetaClassImpl extends MetaClass {
            groovyFile = groovyFile.replace('.', '/') + ".groovy";
 
            //System.out.println("Attempting to load: " + groovyFile);
-           URL url = getTheClass().getClassLoader().getResource(groovyFile);
+           URL url = theClass.getClassLoader().getResource(groovyFile);
            if (url == null) {
                url = Thread.currentThread().getContextClassLoader().getResource(groovyFile);
            }
@@ -1152,13 +1150,13 @@ public class MetaClassImpl extends MetaClass {
                     */
                    CompilationUnit.ClassgenCallback search = new CompilationUnit.ClassgenCallback() {
                        public void call( ClassVisitor writer, ClassNode node ) {
-                           if( node.getName().equals(getTheClass().getName()) ) {
+                           if( node.getName().equals(theClass.getName()) ) {
                                MetaClassImpl.this.classNode = node;
                            }
                        }
                    };
 
-                   final ClassLoader parent = getTheClass().getClassLoader();
+                   final ClassLoader parent = theClass.getClassLoader();
                    GroovyClassLoader gcl = (GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
                        public Object run() {
                            return new GroovyClassLoader(parent);
@@ -1179,7 +1177,7 @@ public class MetaClassImpl extends MetaClass {
    }
 
    public String toString() {
-       return super.toString() + "[" + getTheClass() + "]";
+       return super.toString() + "[" + theClass + "]";
    }
 
    // Implementation methods
@@ -1498,7 +1496,7 @@ public class MetaClassImpl extends MetaClass {
 
        //more than one matching method found --> ambigous!
        String msg = "Ambiguous method overloading for method ";
-       msg+= getTheClass().getName()+"#"+name;
+       msg+= theClass.getName()+"#"+name;
        msg+= ".\nCannot resolve which method to invoke for ";
        msg+= InvokerHelper.toString(arguments);
        msg+= " due to overlapping prototypes between:";
@@ -1615,9 +1613,9 @@ public class MetaClassImpl extends MetaClass {
    }
 
    private void generateReflector() {
-       reflector = registry.loadReflector(getTheClass(), allMethods);
+       reflector = registry.loadReflector(theClass, allMethods);
        if (reflector == null) {
-           throw new RuntimeException("Should have a reflector for "+getTheClass().getName());
+           throw new RuntimeException("Should have a reflector for "+theClass.getName());
        }
        // lets set the reflector on all the methods
        for (Iterator iter = allMethods.iterator(); iter.hasNext();) {
@@ -1637,7 +1635,7 @@ public class MetaClassImpl extends MetaClass {
    private synchronized List getInterfaceMethods() {
        if (interfaceMethods == null) {
            interfaceMethods = new ArrayList();
-           Class type = getTheClass();
+           Class type = theClass;
            while (type != null) {
                Class[] interfaces = type.getInterfaces();
                for (int i = 0; i < interfaces.length; i++) {
