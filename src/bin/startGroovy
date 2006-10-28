@@ -221,7 +221,6 @@ lateInit
 startGroovy() {
   CLASS=$1
   shift
-  echo $CLASS
   
   # Start the Profiler or the JVM
   if $useprofiler; then
