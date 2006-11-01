@@ -681,7 +681,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * @return true if this node is derived from the given class node
      */
     public boolean isDerivedFrom(ClassNode type) {
-        ClassNode node = getSuperClass();
+        ClassNode node = this;
         while (node != null) {
             if (type.equals(node)) {
                 return true;
@@ -737,7 +737,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         if (!lazyInitDone && !isResolved()) {
             throw new GroovyBugError("Classnode#getSuperClass for "+getName()+" called before class resolving");
         }
-        return getUnresolvedSuperClass();
+        return redirect().getUnresolvedSuperClass();
     }
     
     public ClassNode getUnresolvedSuperClass() {

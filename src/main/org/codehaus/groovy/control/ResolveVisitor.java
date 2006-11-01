@@ -798,6 +798,11 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
 
     public void visitCatchStatement(CatchStatement cs) {
         resolveOrFail(cs.getExceptionType(),cs);
+        if (cs.getExceptionType()==ClassHelper.DYNAMIC_TYPE) {
+            cs.getVariable().setType(ClassHelper.make(Exception.class));
+        } else if (!(cs.getExceptionType().isDerivedFrom(ClassHelper.make(Throwable.class)))) {
+            addError("catch statment parameter is not compatible with Throwable",cs);
+        }
         super.visitCatchStatement(cs);
     }
 
