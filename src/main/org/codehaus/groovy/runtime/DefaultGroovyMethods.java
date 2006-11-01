@@ -998,26 +998,54 @@ public class DefaultGroovyMethods {
      * Groups all collection members into groups determined by the
      * supplied mapping closure.
      *
-     * @param self    a collection to group
-     * @param closure a closure mapping entries on to keys
+     * @param self    a collection to group (no map)
+     * @param closure a closure mapping entries on keys
      * @return a new Map grouped by keys
      */
     public static Map groupBy(Collection self, Closure closure) {
         Map answer = new HashMap();
         for (Iterator iter = self.iterator(); iter.hasNext();) {
-            Object element = iter.next();
-            Object value = closure.call(element);
-            if (answer.containsKey(value)) {
-                ((List) answer.get(value)).add(element);
-            } else {
-                ArrayList grouppedElements = new ArrayList();
-                grouppedElements.add(element);
-                answer.put(value, grouppedElements);
-            }
+            groupCurrentElement(closure, answer, iter);
         }
         return answer;
     }
 
+    /**
+     * Groups all map members into groups determined by the
+     * supplied mapping closure.
+     * 
+     * @param self     a map to group
+     * @param closure  a closure mapping entries on keys
+     * @return         a new Map grouped by keys
+     */
+    public static Map groupBy(Map self, Closure closure) {
+        final Map answer = new HashMap();
+        for (final Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
+            groupCurrentElement(closure, answer, iter);
+        }
+        return answer;
+    }
+    
+    /**
+     * Groups the current element of the iterator as determined
+     * by the mapping closure.
+     * 
+     * @param closure  a closure mapping the current entry on a key
+     * @param answer   the map containing the results
+     * @param iter     the iterator from which the current element stems
+     */   
+    private static void groupCurrentElement(Closure closure, Map answer, Iterator iter) {
+	Object element = iter.next();
+	Object value = closure.call(element);
+	if (answer.containsKey(value)) {
+	    ((List) answer.get(value)).add(element);
+	} else {
+	    ArrayList groupedElements = new ArrayList();
+	    groupedElements.add(element);
+	    answer.put(value, groupedElements);
+	}
+    }
+    
     // internal helper method
     protected static Object callClosureForMapEntry(Closure closure, Map.Entry entry) {
         if (closure.getMaximumNumberOfParameters() == 2) {
