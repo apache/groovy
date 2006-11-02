@@ -50,18 +50,14 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.WeakHashMap;
 
 import org.codehaus.groovy.classgen.ReflectorGenerator;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
 import org.codehaus.groovy.runtime.MethodHelper;
+import org.codehaus.groovy.runtime.ReferenceMap;
 import org.codehaus.groovy.runtime.Reflector;
 import org.codehaus.groovy.runtime.ReflectorLoader;
 import org.objectweb.asm.ClassWriter;
@@ -77,8 +73,8 @@ import org.objectweb.asm.ClassWriter;
  * @version $Revision$
  */
 public class MetaClassRegistry {
-    private Map metaClasses = Collections.synchronizedMap(new WeakHashMap());
-    private Map loaderMap = Collections.synchronizedMap(new WeakHashMap());
+    private ReferenceMap metaClasses = new ReferenceMap();
+    private ReferenceMap loaderMap = new ReferenceMap();
     private boolean useAccessible;
     
     private LinkedList instanceMethods = new LinkedList();
@@ -111,11 +107,8 @@ public class MetaClassRegistry {
         
         if (loadDefault == LOAD_DEFAULT) {
             // lets register the default methods
-            //lookup(DefaultGroovyMethods.class);
             registerMethods(DefaultGroovyMethods.class, true);
-            //lookup(DefaultGroovyStaticMethods.class);
             registerMethods(DefaultGroovyStaticMethods.class, false);
-            checkInitialised();
         }
     }
     
@@ -149,7 +142,9 @@ public class MetaClassRegistry {
     }
 
     public void removeMetaClass(Class theClass) {
-        metaClasses.remove(theClass);
+        synchronized (theClass) {
+            metaClasses.remove(theClass);
+        }
     }
 
 
@@ -160,7 +155,9 @@ public class MetaClassRegistry {
      * @param theMetaClass
      */
     public void setMetaClass(Class theClass, MetaClass theMetaClass) {
-        metaClasses.put(theClass, theMetaClass);
+        synchronized(theClass) {
+            metaClasses.putStrong(theClass, theMetaClass);
+        }
     }
 
     public boolean useAccessible() {
@@ -183,28 +180,17 @@ public class MetaClassRegistry {
     }
 
     /**
-     * Ensures that all the registered MetaClass instances are initalized
-     */
-        // lets copy all the classes in the repository right now 
-    void checkInitialised() {
-        // to avoid concurrent modification exception
-        List list = new ArrayList(metaClasses.values());
-        for (Iterator iter = list.iterator(); iter.hasNext();) {
-            MetaClass metaClass = (MetaClass) iter.next();
-            metaClass.checkInitialised();
-        }
-    }
-
-    /**
      * Used by MetaClass when registering new methods which avoids initializing the MetaClass instances on lookup
      */
     MetaClass lookup(Class theClass) {
-        MetaClass answer = (MetaClass) metaClasses.get(theClass);
-        if (answer == null) {
-            answer = getMetaClassFor(theClass);
-            metaClasses.put(theClass, answer);
+        synchronized (theClass) {
+            MetaClass answer = (MetaClass) metaClasses.get(theClass);
+            if (answer == null) {
+                answer = getMetaClassFor(theClass);
+                metaClasses.put(theClass, answer);
+            }
+            return answer;
         }
-        return answer;
     }
 
     /**
