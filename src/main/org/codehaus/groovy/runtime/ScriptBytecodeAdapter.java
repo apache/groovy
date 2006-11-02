@@ -85,11 +85,29 @@ public class ScriptBytecodeAdapter {
     //                       methods for this
     //  --------------------------------------------------------
     public static Object invokeMethodOnCurrentN(Class senderClass, GroovyObject receiver, String messageName, Object[] messageArguments) throws Throwable{
+        Object result=null;
         try {
-            return InvokerHelper.invokeMethod(receiver, messageName, messageArguments);
-        } catch (GroovyRuntimeException gre) {
-            return unwrap(gre);
+            try {
+                // if it's a pure interceptable object (even intercepting toString(), clone(), ...)
+                if (receiver instanceof GroovyInterceptable) {
+                    result = receiver.invokeMethod(messageName, messageArguments);
+                }
+                //else if there's a statically typed method or a GDK method
+                else {
+                    result = receiver.getMetaClass().invokeMethod(senderClass, receiver, messageName, messageArguments);
+                }
+            } catch (MissingMethodException e) {
+                if (receiver.getClass() == e.getType() && e.getMethod().equals(messageName)) {
+                    // in case there's nothing else, invoke the object's own invokeMethod()
+                    result = receiver.invokeMethod(messageName, messageArguments);
+                } else {
+                    throw e;
+                }
+            }
+        } catch (GroovyRuntimeException t) {
+            unwrap(t);
         }
+        return result;
     }
     
     public static Object invokeMethodOnCurrentNSafe(Class senderClass, GroovyObject receiver, String messageName, Object[] messageArguments) throws Throwable{
@@ -774,10 +792,25 @@ public class ScriptBytecodeAdapter {
     
     
     //spread expressions
-    public static Object spreadList(Object value) {
-        return InvokerHelper.spreadList(value);
+    public static Object[] despreadList(Object[] args, Object[] spreads, int[] positions) {
+        ArrayList ret = new ArrayList();
+        int argsPos = 0;
+        int spreadPos = 0;
+        for (int pos = 0; pos<positions.length; pos++) {
+            for (;argsPos<positions[pos];argsPos++) {
+                ret.add(args[argsPos]);
+            }
+            Object value = spreads[spreadPos];
+            if (!(value instanceof List)) throw new IllegalArgumentException("connot spread the type "+ value.getClass().getName()+" with value "+value);
+            ret.addAll((List) value);
+            spreadPos++;
+        }
+        for (;argsPos<args.length;argsPos++) {
+            ret.add(args[argsPos]);
+        }
+        return ret.toArray();
     }
-
+    
     public static Object spreadMap(Object value) {
         return InvokerHelper.spreadMap(value);
     }

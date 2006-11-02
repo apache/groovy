@@ -66,10 +66,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 
 import org.codehaus.groovy.ast.ClassNode;
@@ -105,7 +107,7 @@ public class MetaClassImpl extends MetaClass {
 
    protected MetaClassRegistry registry;
    private ClassNode classNode;
-   private Map methodIndex = new HashMap();
+   private Map classMethodIndex = new HashMap();
    private Map staticMethodIndex = new HashMap();
    //private Map propertyDescriptors = Collections.synchronizedMap(new HashMap());
    private Map propertyMap = Collections.synchronizedMap(new HashMap());
@@ -123,6 +125,7 @@ public class MetaClassImpl extends MetaClass {
    private MetaProperty arrayLengthProperty = new MetaArrayLengthProperty();
    private final static MetaMethod AMBIGOUS_LISTENER_METHOD = new MetaMethod(null,null,new Class[]{},null,0);
    private static final Object[] EMPTY_ARGUMENTS = {};
+   private BeanInfo info;
    
    public MetaClassImpl(MetaClassRegistry registry, final Class theClass) throws IntrospectionException {
        super(theClass);
@@ -133,11 +136,8 @@ public class MetaClassImpl extends MetaClass {
                    return Arrays.asList (theClass.getDeclaredConstructors());
                }
            });
-
-       addMethods(theClass);
-
-       // introspect
-       BeanInfo info = null;
+       
+       //     introspect
        try {
            info =(BeanInfo) AccessController.doPrivileged(new PrivilegedExceptionAction() {
                public Object run() throws IntrospectionException {
@@ -151,66 +151,150 @@ public class MetaClassImpl extends MetaClass {
                throw new RuntimeException(pae.getException());
            }
        }
-
-       PropertyDescriptor[] descriptors = info.getPropertyDescriptors();
-
-       // build up the metaproperties based on the public fields, property descriptors,
-       // and the getters and setters
-       setupProperties(descriptors);
-
-
-       EventSetDescriptor[] eventDescriptors = info.getEventSetDescriptors();
-       for (int i = 0; i < eventDescriptors.length; i++) {
-           EventSetDescriptor descriptor = eventDescriptors[i];
-           Method[] listenerMethods = descriptor.getListenerMethods();
-           for (int j = 0; j < listenerMethods.length; j++) {
-               Method listenerMethod = listenerMethods[j];
-               MetaMethod metaMethod = createMetaMethod(descriptor.getAddListenerMethod());
-               String name = listenerMethod.getName();
-               if (listeners.containsKey(name)) {
-                   listeners.put(name, AMBIGOUS_LISTENER_METHOD);
-               } else{
-                   listeners.put(name, metaMethod);
-               }
-           }
-       }
    }
 
    private void addInheritedMethods() {
        LinkedList superClasses = new LinkedList();
-       for (Class c = theClass.getSuperclass(); c!=Object.class && c!= null; c = c.getSuperclass()) {
+       for (Class c = theClass; c!= null; c = c.getSuperclass()) {
            superClasses.addFirst(c);
        }
+       if (theClass.isArray() && theClass!=Object[].class && !theClass.getComponentType().isPrimitive()) {
+           superClasses.addFirst(Object[].class);
+       }
+       
        // lets add all the base class methods
        for (Iterator iter = superClasses.iterator(); iter.hasNext();) {
            Class c = (Class) iter.next();
            addMethods(c);
-           addNewStaticMethodsFrom(c);
        }
-
-       // now lets see if there are any methods on one of my interfaces
-       Class[] interfaces = theClass.getInterfaces();
+       
+       inheritMethods(superClasses);
+       Set interfaces = new HashSet();
+       makeInterfaceSet(theClass,interfaces); 
+       
+       inheritInterfaceMethods(interfaces);
+       connectMultimethods(superClasses);
+       populateInterfaces(interfaces);
+   }
+   
+   private void inheritInterfaceMethods(Set interfaces) {
+       // add methods declared by DGM for interfaces
+       List methods = registry.getInstanceMethods();
+       for (Iterator iter = methods.iterator(); iter.hasNext();) {
+           Method element = (Method) iter.next();
+           Class dgmClass = element.getParameterTypes()[0]; 
+           if (!interfaces.contains(dgmClass)) continue;
+           NewInstanceMetaMethod method = new NewInstanceMetaMethod(createMetaMethod(element));
+           if (! newGroovyMethodsList.contains(method)){
+               newGroovyMethodsList.add(method);
+           }
+           Map methodIndex = (Map) classMethodIndex.get(theClass);
+           List list = (List) methodIndex.get(method.getName());
+           if (list == null) {
+               list = new ArrayList();
+               methodIndex.put(method.getName(), list);
+               list.add(method);
+           } else {
+               addMethodToList(list,method);
+           }
+       }
+       methods = registry.getStaticMethods();
+       for (Iterator iter = methods.iterator(); iter.hasNext();) {
+           Method element = (Method) iter.next();
+           Class dgmClass = element.getParameterTypes()[0]; 
+           if (!interfaces.contains(dgmClass)) continue;
+           addNewStaticMethod(element);
+       }
+   }
+   
+   private void populateInterfaces(Set interfaces){
+       Map currentIndex = (Map) classMethodIndex.get(theClass);
+       Map index = new HashMap();
+       copyNonPrivateMethods(currentIndex,index);
+       for (Iterator iter = interfaces.iterator(); iter.hasNext();) {
+           Class iClass = (Class) iter.next();
+           Map methodIndex = (Map) classMethodIndex.get(iClass);
+           if (methodIndex==null || methodIndex.size()==0) {
+               classMethodIndex.put(iClass,index);
+               continue;
+           }
+           copyNonPrivateMethods(currentIndex,methodIndex);
+       }
+   }
+   
+   private static void makeInterfaceSet(Class c, Set s) {
+       if (c==null) return;
+       Class[] interfaces = c.getInterfaces();
        for (int i = 0; i < interfaces.length; i++) {
-           addNewStaticMethodsFrom(interfaces[i]);
+           if (!s.contains(interfaces[i])) {
+               s.add(interfaces[i]);
+               makeInterfaceSet(interfaces[i],s);
+           }
        }
-
-       // lets add Object methods after interfaces, as all interfaces derive from Object.
-       // this ensures List and Collection methods come before Object etc
-       if (theClass != Object.class) {
-           addMethods(Object.class);
-           addNewStaticMethodsFrom(Object.class);
+       makeInterfaceSet(c.getSuperclass(),s);
+   }
+   
+   private void copyNonPrivateMethods(Map from, Map to) {
+       for (Iterator iterator = from.entrySet().iterator(); iterator.hasNext();) {
+           Map.Entry element = (Map.Entry) iterator.next();
+           List oldList = (List) element.getValue();
+           List newList = (List) to.get(element.getKey());
+           if (newList==null) {
+               to.put(element.getKey(),new ArrayList(oldList));
+           } else {
+               addNonPrivateMethods(newList,oldList);
+           }
        }
-
-       if (theClass.isArray() && theClass!=Object[].class && !theClass.getComponentType().isPrimitive()) {
-           addNewStaticMethodsFrom(Object[].class);
+   }
+   
+   private void connectMultimethods(List superClasses){
+       superClasses = DefaultGroovyMethods.reverse(superClasses);
+       Map last = null;
+       for (Iterator iter = superClasses.iterator(); iter.hasNext();) {
+           Class c = (Class) iter.next();
+           Map methodIndex = (Map) classMethodIndex.get(c);
+           if (methodIndex==last) continue;
+           if (last!=null) copyNonPrivateMethods(last,methodIndex);
+           last = methodIndex;
+       }
+   }
+   
+   private void inheritMethods(Collection superClasses){
+       Map last = null;
+       for (Iterator iter = superClasses.iterator(); iter.hasNext();) {
+           Class c = (Class) iter.next();
+           Map methodIndex = (Map) classMethodIndex.get(c);
+           if (last!=null) {
+               if (methodIndex.size()==0) {
+                   classMethodIndex.put(c,last);
+                   continue;
+               }
+               copyNonPrivateMethods(last,methodIndex);
+           }
+           last = methodIndex;
        }
    }
 
-   /**
+   private void addNonPrivateMethods(List newList, List oldList) {
+       for (Iterator iter = oldList.iterator(); iter.hasNext();) {
+           MetaMethod element = (MetaMethod) iter.next();
+           if (element.isPrivate()) {
+               MetaMethod match = removeMatchingMethod(newList,element);
+               if (match!=null) {
+                   newList.add(match);
+               }
+               continue;
+           }
+           addMethodToList(newList,element);
+       }
+   }
+
+/**
     * @return all the normal instance methods avaiable on this class for the
     *         given name
     */
-   private List getMethods(String name) {
+   private List getMethods(Class sender, String name) {
+       Map methodIndex = (Map) classMethodIndex.get(sender);
        List answer = (List) methodIndex.get(name);
        List used = GroovyCategorySupport.getCategoryMethods(theClass, name);
        if (used != null) {
@@ -281,11 +365,21 @@ public class MetaClassImpl extends MetaClass {
        }       
    }
    
+   
    /**
     * Invokes the given method on the object.
     *
     */
    public Object invokeMethod(Object object, String methodName, Object[] originalArguments) {
+       return invokeMethod(theClass,object,methodName,originalArguments);
+   }
+   
+   
+   /**
+    * Invokes the given method on the object.
+    *
+    */
+   public Object invokeMethod(Class sender, Object object, String methodName, Object[] originalArguments) {
        if (object == null) {
            throw new NullPointerException("Cannot invoke method: " + methodName + " on null object");
        }              
@@ -297,7 +391,11 @@ public class MetaClassImpl extends MetaClass {
        Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
        unwrap(arguments);       
 
-       MetaMethod method = retrieveMethod(methodName, argClasses);
+       boolean ignoreHiddenMethods = sender==null || sender==theClass;
+       
+       
+       
+       MetaMethod method = retrieveMethod(sender, methodName, argClasses);
        
        if (method==null && arguments.length==1 && arguments[0] instanceof List) {
            arguments = ((List) arguments[0]).toArray();
@@ -326,7 +424,7 @@ public class MetaClassImpl extends MetaClass {
                    MethodClosure mc = (MethodClosure) object;
                    methodName = mc.getMethod();
                    MetaClass ownerMetaClass = registry.getMetaClass(owner.getClass());
-                   return ownerMetaClass.invokeMethod(owner,methodName,arguments);
+                   return ownerMetaClass.invokeMethod(owner.getClass(),owner,methodName,arguments);
                } else if (object.getClass()==CurriedClosure.class) {
                    CurriedClosure cc = (CurriedClosure) object;
                    // change the arguments for an uncurried call
@@ -381,8 +479,8 @@ public class MetaClassImpl extends MetaClass {
                Object value = this.getProperty(object, methodName);
                if (value instanceof Closure) {  // This test ensures that value != this If you ever change this ensure that value != this
                    Closure closure = (Closure) value;
-                   MetaClass delegateMetaClass = registry.getMetaClass(closure.getClass());
-                   return delegateMetaClass.invokeMethod(closure,"doCall",originalArguments);
+                   MetaClass delegateMetaClass = closure.getMetaClass();
+                   return delegateMetaClass.invokeMethod(closure.getClass(),closure,"doCall",originalArguments);
                }
            } catch (MissingPropertyException mpe) {}
 
@@ -398,12 +496,20 @@ public class MetaClassImpl extends MetaClass {
        return retrieveMethod(methodName,MetaClassHelper.convertToTypeArray(arguments));
    }
    
+   /**
+    * @see groovy.lang.MetaClass#retrieveMethod(java.lang.Object, java.lang.String, java.lang.Object[])
+    * @deprecated
+    */
    public MetaMethod retrieveMethod(String methodName, Class[] arguments) {
+       return retrieveMethod(theClass,methodName,arguments);
+   }
+   
+   public MetaMethod retrieveMethod(Class sender, String methodName, Class[] arguments) {
        // lets try use the cache to find the method
-       MethodKey methodKey = new TemporaryMethodKey(methodName, arguments);
+       MethodKey methodKey = new TemporaryMethodKey(sender, methodName, arguments);
        MetaMethod method = (MetaMethod) methodCache.get(methodKey);
        if (method == null) {
-           method = pickMethod(methodName, arguments); // todo shall call pickStaticMethod also?
+           method = pickMethod(sender, methodName, arguments); // todo shall call pickStaticMethod also?
            if (method != null && method.isCacheable()) {
                methodCache.put(methodKey.createCopy(), method);
            }
@@ -426,7 +532,8 @@ public class MetaClassImpl extends MetaClass {
    }
 
    public MetaMethod retrieveStaticMethod(String methodName, Class[] arguments) {
-       MethodKey methodKey = new TemporaryMethodKey(methodName, arguments);
+       //TODO: implement!
+       MethodKey methodKey = new TemporaryMethodKey(theClass, methodName, arguments);
        MetaMethod method = (MetaMethod) staticMethodCache.get(methodKey);
        if (method == null) {
            method = pickStaticMethod(methodName, arguments);
@@ -444,19 +551,24 @@ public class MetaClassImpl extends MetaClass {
        return pickMethod(methodName,MetaClassHelper.convertToTypeArray(arguments));
    }
    
+   public MetaMethod pickMethod(Class sender, String methodName, Class[] arguments) {
+       MetaMethod method = null;
+       List methods = getMethods(sender,methodName);
+       if (!methods.isEmpty()) {
+           method = (MetaMethod) chooseMethod(methodName, methods, arguments, false);
+       }
+       return method;
+   }
+   
    /**
     * pick a method in a strict manner, i.e., without reinterpreting the first List argument.
     * this method is used only by ClassGenerator for static binding
     * @param methodName
     * @param arguments
+    * @deprecated
     */
    public MetaMethod pickMethod(String methodName, Class[] arguments) {
-       MetaMethod method = null;
-       List methods = getMethods(methodName);
-       if (!methods.isEmpty()) {
-           method = (MetaMethod) chooseMethod(methodName, methods, arguments, false);
-       }
-       return method;
+       return pickMethod(theClass,methodName,arguments);
    }
 
    public Object invokeStaticMethod(Object object, String methodName, Object[] arguments) {
@@ -468,7 +580,8 @@ public class MetaClassImpl extends MetaClass {
        unwrap(arguments);
        
        // lets try use the cache to find the method
-       MethodKey methodKey = new TemporaryMethodKey(methodName, arguments);
+       //TODO: implement!
+       MethodKey methodKey = new TemporaryMethodKey(theClass, methodName, arguments);
        MetaMethod method = (MetaMethod) staticMethodCache.get(methodKey);
        if (method == null) {
            method = pickStaticMethod(methodName, argClasses);
@@ -627,7 +740,8 @@ public class MetaClassImpl extends MetaClass {
 
        if (genericGetMethod == null) {
            // Make sure there isn't a generic method in the "use" cases
-           List possibleGenericMethods = getMethods("get");
+           //TODO: implement!
+           List possibleGenericMethods = getMethods(theClass,"get");
            if (possibleGenericMethods != null) {
                for (Iterator i = possibleGenericMethods.iterator(); i.hasNext(); ) {
                    MetaMethod mmethod = (MetaMethod) i.next();
@@ -652,7 +766,8 @@ public class MetaClassImpl extends MetaClass {
        if (!CompilerConfiguration.isJsrGroovy()) {
            // is the property the name of a method - in which case return a
            // closure
-           List methods = getMethods(property);
+           //TODO: implement!
+           List methods = getMethods(theClass,property);
            if (!methods.isEmpty()) {
                return new MethodClosure(object, property);
            }
@@ -978,7 +1093,8 @@ public class MetaClassImpl extends MetaClass {
 
            if (genericSetMethod == null) {
                // Make sure there isn't a generic method in the "use" cases
-               List possibleGenericMethods = getMethods("set");
+               //TODO: implement!
+               List possibleGenericMethods = getMethods(theClass,"set");
                if (possibleGenericMethods != null) {
                    for (Iterator i = possibleGenericMethods.iterator(); i.hasNext(); ) {
                        MetaMethod mmethod = (MetaMethod) i.next();
@@ -1182,7 +1298,7 @@ public class MetaClassImpl extends MetaClass {
 
    // Implementation methods
    //-------------------------------------------------------------------------
-
+   
    /**
     * Adds all the methods declared in the given class to the metaclass
     * ignoring any matching methods already defined by a derived class
@@ -1190,6 +1306,11 @@ public class MetaClassImpl extends MetaClass {
     * @param theClass
     */
    private void addMethods(final Class theClass) {
+       Map methodIndex = (Map) classMethodIndex.get(theClass);
+       if (methodIndex==null) {
+           methodIndex = new HashMap();
+           classMethodIndex.put(theClass,methodIndex);
+       }
        // add methods directly declared in the class
        Method[] methodArray = (Method[]) AccessController.doPrivileged(new  PrivilegedAction() {
                public Object run() {
@@ -1201,10 +1322,27 @@ public class MetaClassImpl extends MetaClass {
            if ( reflectionMethod.getName().indexOf('+') >= 0 ) {
                // Skip Synthetic methods inserted by JDK 1.5 compilers and later
                continue;
+           } else if (Modifier.isAbstract(reflectionMethod.getModifiers())) {
+               continue;
            }
            MetaMethod method = createMetaMethod(reflectionMethod);
            addMethod(method);
        }
+       // add methods declared by DGM
+       List methods = registry.getInstanceMethods();
+       for (Iterator iter = methods.iterator(); iter.hasNext();) {
+           Method element = (Method) iter.next();
+           if (element.getParameterTypes()[0]!=theClass) continue;
+           addNewInstanceMethod(element);
+       }
+       // add static methods declared by DGM
+       methods = registry.getStaticMethods();
+       for (Iterator iter = methods.iterator(); iter.hasNext();) {
+           Method element = (Method) iter.next();
+           if (element.getParameterTypes()[0]!=theClass) continue;
+           addNewStaticMethod(element);
+       }
+
    }
 
    private void addMethod(MetaMethod method) {
@@ -1231,7 +1369,11 @@ public class MetaClassImpl extends MetaClass {
                }
            }
        }
-
+       Map methodIndex = (Map) classMethodIndex.get(method.getDeclaringClass());
+       if (methodIndex==null) {
+           methodIndex = new HashMap();
+           classMethodIndex.put(method.getDeclaringClass(),methodIndex);
+       }
        List list = (List) methodIndex.get(name);
        if (list == null) {
            list = new ArrayList();
@@ -1297,7 +1439,7 @@ public class MetaClassImpl extends MetaClass {
     *
     * @param theClass
     */
-   private void addNewStaticMethodsFrom(Class theClass) {
+   /*private void addNewStaticMethodsFrom(Class theClass) {
        MetaClass interfaceMetaClass = registry.getMetaClass(theClass);
        Iterator iter = interfaceMetaClass.newGroovyMethodsList.iterator();
        while (iter.hasNext()) {
@@ -1307,7 +1449,7 @@ public class MetaClassImpl extends MetaClass {
                addMethod(method);
            }
        }
-   }
+   }*/
 
    /**
     * @return the value of the static property of the given class
@@ -1334,7 +1476,8 @@ public class MetaClassImpl extends MetaClass {
     * @return the matching method which should be found
     */
    private MetaMethod findMethod(Method aMethod) {
-       List methods = getMethods(aMethod.getName());
+       //TODO: implement!
+       List methods = getMethods(theClass,aMethod.getName());
        for (Iterator iter = methods.iterator(); iter.hasNext();) {
            MetaMethod method = (MetaMethod) iter.next();
            if (method.isMethod(aMethod)) {
@@ -1349,7 +1492,8 @@ public class MetaClassImpl extends MetaClass {
     * @return the getter method for the given object
     */
    private MetaMethod findGetter(Object object, String name) {
-       List methods = getMethods(name);
+       //TODO: implment!
+       List methods = getMethods(theClass,name);
        for (Iterator iter = methods.iterator(); iter.hasNext();) {
            MetaMethod method = (MetaMethod) iter.next();
            if (method.getParameterTypes().length == 0) {
@@ -1526,15 +1670,42 @@ public class MetaClassImpl extends MetaClass {
 
    public synchronized void checkInitialised() {
        if (!initialised) {
-           initialised = true;
            addInheritedMethods();
+           addProperties();
+           initialised = true;
        }
        if (reflector == null) {
            generateReflector();
        }
    }
 
-   private MetaMethod createMetaMethod(final Method method) {
+   private void addProperties()  {
+       
+       PropertyDescriptor[] descriptors = info.getPropertyDescriptors();
+
+       // build up the metaproperties based on the public fields, property descriptors,
+       // and the getters and setters
+       setupProperties(descriptors);
+
+
+       EventSetDescriptor[] eventDescriptors = info.getEventSetDescriptors();
+       for (int i = 0; i < eventDescriptors.length; i++) {
+           EventSetDescriptor descriptor = eventDescriptors[i];
+           Method[] listenerMethods = descriptor.getListenerMethods();
+           for (int j = 0; j < listenerMethods.length; j++) {
+               Method listenerMethod = listenerMethods[j];
+               MetaMethod metaMethod = createMetaMethod(descriptor.getAddListenerMethod());
+               String name = listenerMethod.getName();
+               if (listeners.containsKey(name)) {
+                   listeners.put(name, AMBIGOUS_LISTENER_METHOD);
+               } else{
+                   listeners.put(name, metaMethod);
+               }
+           }
+       }    
+   }
+
+private MetaMethod createMetaMethod(final Method method) {
        if (registry.useAccessible()) {
            AccessController.doPrivileged(new PrivilegedAction() {
                public Object run() {

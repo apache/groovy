@@ -2370,109 +2370,12 @@ public class DefaultGroovyMethods {
         return Collections.synchronizedSortedSet(self);
     }
 
-    /**
-     * Returns the converted <code>SpreadList</code> of the given <code>self</code>.
-     * <p/>
-     * This is the same method to <code>toSpreadList(List self)</code>.
-     * <p/>
-     * For examples, if there is defined a function like as
-     * <blockquote><pre>
-     *     def fn(a, b, c, d) { return a + b + c + d }
-     * </pre></blockquote>, then all of the following three have the same meaning.
-     * <blockquote><pre>
-     *     println fn(1, [2, 3].spread(), 4)
-     *     println fn(1, *[2, 3], 4)
-     *     println fn(1, 2, 3, 4)
-     * </pre></blockquote>
-     * <p/>
-     * </pre><br>
-     *
-     * @param self a list to be converted into a spreadlist
-     * @return a newly created SpreadList if this list is not null and its size is positive.
-     */
-    public static SpreadList spread(List self) {
-        return toSpreadList(self);
-    }
-
-    /**
-     * Returns the converted <code>SpreadList</code> of the given <code>self</code>.
-     * <p/>
-     * This is the same method to <code>toSpreadList(Object[] self)</code>.
-     * <p/>
-     * For examples, if there is defined a function like as
-     * <blockquote><pre>
-     *     def fn(a, b, c, d) { return a + b + c + d }
-     * </pre></blockquote>, then all of the following three have the same meaning.
-     * <blockquote><pre>
-     *     println fn(([1, 2, 3] as Object[]).spread(), 4)
-     *     println fn(*[1, 2, 3], 4)
-     *     println fn(1, 2, 3, 4)
-     * </pre></blockquote>
-     * <p/>
-     *
-     * @param self an array of objects to be converted into a spreadlist
-     * @return a newly created SpreadList if this array is not null and its size is positive.
-     */
-    public static SpreadList spread(Object[] self) {
-        return toSpreadList(self);
-    }
-
-    /**
-     * Returns the converted <code>SpreadList</code> of the given <code>self</code>.
-     * <p/>
-     * For examples, if there is defined a function like as
-     * <blockquote><pre>
-     *     def fn(a, b, c, d) { return a + b + c + d }
-     * </pre></blockquote>, then all of the following three have the same meaning.
-     * <blockquote><pre>
-     *     println fn(1, [2, 3].toSpreadList(), 4)
-     *     println fn(1, *[2, 3], 4)
-     *     println fn(1, 2, 3, 4)
-     * </pre></blockquote>
-     * <p/>
-     *
-     * @param self a list to be converted into a spreadlist
-     * @return a newly created SpreadList if this list is not null and its size is positive.
-     */
-    public static SpreadList toSpreadList(List self) {
-        if (self == null)
-            throw new GroovyRuntimeException("Fail to convert Object[] to SpreadList, because it is null.");
-        else
-            return toSpreadList(self.toArray());
-    }
-
-    /**
-     * Returns the converted <code>SpreadList</code> of the given <code>self</code>.
-     * <p/>
-     * For examples, if there is defined a function like as
-     * <blockquote><pre>
-     *     def fn(a, b, c, d) { return a + b + c + d }
-     * </pre></blockquote>, then all of the following three have the same meaning.
-     * <blockquote><pre>
-     *     println fn(([1, 2, 3] as Object[]).toSpreadList(), 4)
-     *     println fn(*[1, 2, 3], 4)
-     *     println fn(1, 2, 3, 4)
-     * </pre></blockquote>
-     * <p/>
-     *
-     * @param self an array of objects to be converted into a spreadlist
-     * @return a newly created SpreadList if this array is not null and its size is positive.
-     */
-    public static SpreadList toSpreadList(Object[] self) {
-        if (self == null)
-            throw new GroovyRuntimeException("Fail to convert Object[] to SpreadList, because it is null.");
-        else if (self.length == 0)
-            throw new GroovyRuntimeException("Fail to convert Object[] to SpreadList, because its length is 0.");
-        else
-            return new SpreadList(self);
-    }
-
-    public static SpreadMap spread(Map self) {
+     public static SpreadMap spread(Map self) {
         return toSpreadMap(self);
     }
 
     /**
-     * Returns the converted <code>SpreadList</code> of the given <code>self</code>.
+     * Returns the converted <code>SpreadLMap</code> of the given <code>self</code>.
      * <p/>
      * For examples, if there is defined a function like as
      * <blockquote><pre>
@@ -2485,8 +2388,8 @@ public class DefaultGroovyMethods {
      * </pre></blockquote>
      * <p/>
      *
-     * @param self a list to be converted into a spreadlist
-     * @return a newly created SpreadList if this list is not null and its size is positive.
+     * @param self a list to be converted into a spreadmap
+     * @return a newly created Spreadmap if this list is not null and its size is positive.
      */
     public static SpreadMap toSpreadMap(Map self) {
         if (self == null)

@@ -53,6 +53,7 @@ import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -71,16 +72,17 @@ import org.objectweb.asm.ClassWriter;
  * existing classes at runtime
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
- */
-/**
  * @author John Wilson
- *
+ * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
+ * @version $Revision$
  */
 public class MetaClassRegistry {
     private Map metaClasses = Collections.synchronizedMap(new WeakHashMap());
-    private boolean useAccessible;
     private Map loaderMap = Collections.synchronizedMap(new WeakHashMap());
+    private boolean useAccessible;
+    
+    private LinkedList instanceMethods = new LinkedList();
+    private LinkedList staticMethods = new LinkedList();
 
     public static final int LOAD_DEFAULT = 0;
     public static final int DONT_LOAD_DEFAULT = 1;
@@ -109,26 +111,25 @@ public class MetaClassRegistry {
         
         if (loadDefault == LOAD_DEFAULT) {
             // lets register the default methods
-            lookup(DefaultGroovyMethods.class);
+            //lookup(DefaultGroovyMethods.class);
             registerMethods(DefaultGroovyMethods.class, true);
-            lookup(DefaultGroovyStaticMethods.class);
+            //lookup(DefaultGroovyStaticMethods.class);
             registerMethods(DefaultGroovyStaticMethods.class, false);
             checkInitialised();
         }
     }
     
-    private void registerMethods(final Class theClass, final boolean instanceMethods) {
+    private void registerMethods(final Class theClass, final boolean useInstanceMethods) {
         Method[] methods = theClass.getMethods();
         for (int i = 0; i < methods.length; i++) {
             Method method = methods[i];
             if (MethodHelper.isStatic(method)) {
                 Class[] paramTypes = method.getParameterTypes();
                 if (paramTypes.length > 0) {
-                    Class owner = paramTypes[0];
-                    if (instanceMethods) {
-                        lookup(owner).addNewInstanceMethod(method);
+                    if (useInstanceMethods) {
+                        instanceMethods.add(method);
                     } else {
-                        lookup(owner).addNewStaticMethod(method);
+                        staticMethods.add(method);
                     }
                 }
             }
@@ -184,8 +185,8 @@ public class MetaClassRegistry {
     /**
      * Ensures that all the registered MetaClass instances are initalized
      */
-    void checkInitialised() {
         // lets copy all the classes in the repository right now 
+    void checkInitialised() {
         // to avoid concurrent modification exception
         List list = new ArrayList(metaClasses.values());
         for (Iterator iter = list.iterator(); iter.hasNext();) {
@@ -215,8 +216,8 @@ public class MetaClassRegistry {
      */
     private MetaClass getMetaClassFor(final Class theClass) {
         try {
-        final Class customMetaClass = Class.forName("groovy.runtime.metaclass." + theClass.getName() + "MetaClass");
-        final Constructor customMetaClassConstructor = customMetaClass.getConstructor(new Class[]{MetaClassRegistry.class, Class.class});
+            final Class customMetaClass = Class.forName("groovy.runtime.metaclass." + theClass.getName() + "MetaClass");
+            final Constructor customMetaClassConstructor = customMetaClass.getConstructor(new Class[]{MetaClassRegistry.class, Class.class});
             
             return (MetaClass)customMetaClassConstructor.newInstance(new Object[]{this, theClass});
         } catch (final ClassNotFoundException e) {
@@ -324,5 +325,13 @@ public class MetaClassRegistry {
             if (level>1) name += level;
         }
         return name;
+    }
+
+    List getInstanceMethods() {
+        return instanceMethods;
+    }
+
+    List getStaticMethods() {
+        return staticMethods;
     }
 }

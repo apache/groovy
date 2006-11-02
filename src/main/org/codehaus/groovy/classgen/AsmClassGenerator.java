@@ -220,8 +220,8 @@ public class AsmClassGenerator extends ClassGenerator {
     MethodCaller matchRegexMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "matchRegex");
     MethodCaller regexPattern = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "regexPattern");
     // spread expressions
-    MethodCaller spreadList = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "spreadList");
     MethodCaller spreadMap = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "spreadMap");
+    MethodCaller despreadList = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "despreadList");
     // Closure
     MethodCaller getMethodPointer = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "getMethodPointer");
     MethodCaller invokeClosureMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeClosure");
@@ -1430,9 +1430,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     public void visitSpreadExpression(SpreadExpression expression) {
-        Expression subExpression = expression.getExpression();
-        subExpression.visit(this);
-        spreadList.call(cv);
+        throw new GroovyBugError("SpreadExpression should not be visited here");
     }
 
     public void visitSpreadMapExpression(SpreadMapExpression expression) {
@@ -1541,8 +1539,9 @@ public class AsmClassGenerator extends ClassGenerator {
         if (message!=null) message.visit(this);
 
         // arguments
-        int numberOfArguments = argumentSize(arguments);
-        if (numberOfArguments > adapter.maxArgs) {
+        boolean containsSpreadExpression = containsSpreadExpression(arguments);
+        int numberOfArguments = containsSpreadExpression?-1:argumentSize(arguments);
+        if (numberOfArguments > adapter.maxArgs || containsSpreadExpression) {
             ArgumentListExpression ae;
             if (arguments instanceof ArgumentListExpression) {
                 ae = (ArgumentListExpression) arguments;
@@ -1553,7 +1552,11 @@ public class AsmClassGenerator extends ClassGenerator {
                 ae = new ArgumentListExpression();
                 ae.addExpression(arguments);
             }
-            ae.visit(this);
+            if (containsSpreadExpression){
+                despreadList(ae.getExpressions(),true);
+            } else {
+                ae.visit(this);
+            }
         } else if (numberOfArguments > 0) {
             TupleExpression te = (TupleExpression) arguments;
             for (int i = 0; i < numberOfArguments; i++) {
@@ -1566,6 +1569,30 @@ public class AsmClassGenerator extends ClassGenerator {
         adapter.call(cv,numberOfArguments,safe,spreadSafe);
         
         leftHandExpression = lhs;
+    }
+
+    private void despreadList(List expressions, boolean wrap) {
+        
+        ArrayList spreadIndexes = new ArrayList();
+        ArrayList spreadExpressions = new ArrayList();
+        ArrayList normalArguments = new ArrayList();
+        for (int i=0; i<expressions.size(); i++) {
+            Object expr = expressions.get(i);
+            if ( !(expr instanceof SpreadExpression) ) {
+                normalArguments.add(expr);
+            } else {
+                spreadIndexes.add(new ConstantExpression(new Integer(i-spreadExpressions.size())));
+                spreadExpressions.add(((SpreadExpression)expr).getExpression());                
+            }
+        }
+
+        //load normal arguments as array
+        visitTupleExpression(new ArgumentListExpression(normalArguments),wrap);
+        //load spread expressions as array
+        (new TupleExpression(spreadExpressions)).visit(this);
+        //load insertion index
+        (new ArrayExpression(ClassHelper.int_TYPE,spreadIndexes,null)).visit(this);
+        despreadList.call(cv);
     }
 
     public void visitMethodCallExpression(MethodCallExpression call) {
@@ -1654,6 +1681,23 @@ public class AsmClassGenerator extends ClassGenerator {
 
     protected boolean emptyArguments(Expression arguments) {
         return argumentSize(arguments) == 0;
+    }
+    
+    protected static boolean containsSpreadExpression(Expression arguments) {
+        List args = null;
+        if (arguments instanceof TupleExpression) {
+            TupleExpression tupleExpression = (TupleExpression) arguments;
+            args = tupleExpression.getExpressions();
+        } else if (arguments instanceof ListExpression) {
+            ListExpression le = (ListExpression) arguments;
+            args = le.getExpressions();
+        } else {
+            return arguments instanceof SpreadExpression;
+        }
+        for (Iterator iter = args.iterator(); iter.hasNext();) {
+            if (iter.next() instanceof SpreadExpression) return true;
+        }
+        return false;
     }
     
     protected static int argumentSize(Expression arguments) {
@@ -2343,7 +2387,11 @@ public class AsmClassGenerator extends ClassGenerator {
     }
     
     public void visitArgumentlistExpression(ArgumentListExpression ale) {
-        visitTupleExpression(ale,true);
+        if (containsSpreadExpression(ale)) {
+            despreadList(ale.getExpressions(),true);
+        } else {
+            visitTupleExpression(ale,true);
+        }
     }
     
     public void visitTupleExpression(TupleExpression expression) {
@@ -2459,15 +2507,20 @@ public class AsmClassGenerator extends ClassGenerator {
 
     public void visitListExpression(ListExpression expression) {
         int size = expression.getExpressions().size();
-        helper.pushConstant(size);
-
-        cv.visitTypeInsn(ANEWARRAY, "java/lang/Object");
-
-        for (int i = 0; i < size; i++) {
-            cv.visitInsn(DUP);
-            helper.pushConstant(i);
-            visitAndAutoboxBoolean(expression.getExpression(i));
-            cv.visitInsn(AASTORE);
+        boolean containsSpreadExpression = containsSpreadExpression(expression);
+        if (!containsSpreadExpression) {
+            helper.pushConstant(size);
+    
+            cv.visitTypeInsn(ANEWARRAY, "java/lang/Object");
+    
+            for (int i = 0; i < size; i++) {
+                cv.visitInsn(DUP);
+                helper.pushConstant(i);
+                visitAndAutoboxBoolean(expression.getExpression(i));
+                cv.visitInsn(AASTORE);
+            }
+        } else {
+            despreadList(expression.getExpressions(),false);
         }
         createListMethod.call(cv);
     }

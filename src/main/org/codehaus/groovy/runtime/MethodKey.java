@@ -49,8 +49,10 @@ public abstract class MethodKey {
 
     private int hash;
     private String name;
-
-    public MethodKey(String name) {
+    private Class sender;
+    
+    public MethodKey(Class sender, String name) {
+        this.sender = sender;
         this.name = name;
     }
 
@@ -63,7 +65,7 @@ public abstract class MethodKey {
         for (int i = 0; i < size; i++) {
             paramTypes[i] = getParameterType(i);
         }
-        return new DefaultMethodKey(name, paramTypes);
+        return new DefaultMethodKey(sender, name, paramTypes);
     }
 
     public boolean equals(Object that) {
@@ -78,6 +80,7 @@ public abstract class MethodKey {
 
     public boolean equals(MethodKey that) {
         int size = getParameterCount();
+        if (sender!=that.sender) return false;
         if (name.equals(that.name) && size == that.getParameterCount()) {
             for (int i = 0; i < size; i++) {
                 if (!getParameterType(i).equals(that.getParameterType(i))) {
@@ -132,8 +135,10 @@ public abstract class MethodKey {
         // but its something like this IIRC
         for (int i = 0; i < size; i++) {
             answer *= 37;
-            answer = 1 + getParameterType(i).hashCode();
+            answer += 1 + getParameterType(i).hashCode();
         }
+        answer *= 37;
+        answer += 1 + sender.hashCode();
         return answer;
     }
 }

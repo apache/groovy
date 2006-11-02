@@ -52,10 +52,7 @@ import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaClassRegistry;
 import groovy.lang.MissingMethodException;
-import groovy.lang.SpreadList;
-import groovy.lang.Tuple;
 
-import java.util.ArrayList;
 import java.util.Map;
 
 /**
@@ -178,52 +175,9 @@ public class Invoker {
     public Object[] asArray(Object arguments) {
         if (arguments == null) {
             return EMPTY_ARGUMENTS;
-        }
-        else if ((arguments instanceof Object[]) && ((Object[]) arguments).length == 0) {
+        } else if (arguments instanceof Object[]) {
             return (Object[]) arguments;
-        }
-        else if (arguments instanceof Tuple) {
-            Tuple tuple = (Tuple) arguments;
-            Object[] objects = tuple.toArray();
-            ArrayList array = new ArrayList();
-            for (int i = 0; i < objects.length; i++) {
-                if (objects[i] instanceof SpreadList) {
-                    SpreadList slist = (SpreadList) objects[i];
-                    for (int j = 0; j < slist.size(); j++) {
-                        array.add(slist.get(j));
-                    }
-                }
-                else {
-                    array.add(objects[i]);
-                }
-            }
-            return array.toArray();
-        }
-        else if (arguments instanceof Object[]) {
-            Object[] objects = (Object[]) arguments;
-            ArrayList array = new ArrayList();
-            for (int i = 0; i < objects.length; i++) {
-                if (objects[i] instanceof SpreadList) {
-                    SpreadList slist = (SpreadList) objects[i];
-                    for (int j = 0; j < slist.size(); j++) {
-                        array.add(slist.get(j));
-                    }
-                }
-                else {
-                    array.add(objects[i]);
-                }
-            }
-            return array.toArray();
-        }
-        else if (arguments instanceof SpreadList) {
-            ArrayList array = new ArrayList();
-            SpreadList slist = (SpreadList) arguments;
-            for (int j = 0; j < slist.size(); j++) {
-                array.add(slist.get(j));
-            }
-            return array.toArray();
-        }
-        else {
+        } else {
             return new Object[]{arguments};
         }
     }

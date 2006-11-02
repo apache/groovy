@@ -331,7 +331,7 @@ public class GroovyShell extends GroovyObjectSupport {
         try {
             Object testSuite = InvokerHelper.invokeConstructorOf("junit.framework.TestSuite",new Object[]{scriptClass});
             return InvokerHelper.invokeStaticMethod("junit.textui.TestRunner", "run", new Object[]{testSuite});
-        } catch (Exception e) {
+        } catch (ClassNotFoundException e) {
             throw new GroovyRuntimeException("Failed to run the unit test. JUnit is not on the Classpath.");
         }
     }

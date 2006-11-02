@@ -57,7 +57,7 @@ public class MethodCallerMultiAdapter {
         int offset = 0;
         if (safe && !skipSpreadSafeAndSafe) offset = 1;
         if (spreadSafe && !skipSpreadSafeAndSafe) offset = 2;
-        if (numberOfArguments>maxArgs){
+        if (numberOfArguments>maxArgs || numberOfArguments<0){
             offset += (maxArgs+1)*numberOfBaseMethods();
         } else {
             offset += numberOfArguments*numberOfBaseMethods();

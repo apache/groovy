@@ -73,6 +73,10 @@ public abstract class MetaClass {
         }
     }
     
+    public Object invokeMethod(Class sender, Object receiver, String methodName, Object[] arguments){
+        return invokeMethod(receiver,methodName,arguments);
+    }
+    
     public abstract Object invokeConstructor(Object[] arguments);
     public abstract Object invokeMethod(Object object, String methodName, Object[] arguments);
     public abstract Object invokeStaticMethod(Object object, String methodName, Object[] arguments);
