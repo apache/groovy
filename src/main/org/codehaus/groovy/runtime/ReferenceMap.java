@@ -6,7 +6,8 @@
  */
 package org.codehaus.groovy.runtime;
 
-import java.lang.ref.WeakReference;
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -15,8 +16,8 @@ import java.util.WeakHashMap;
 
 public class ReferenceMap extends WeakHashMap {
     
-    private static class HardReference extends WeakReference {
-        Object value;
+    private static class HardReference extends SoftReference {
+        private Object value;
         public HardReference(Object arg) {
             super(null);
             value = arg;
@@ -25,6 +26,8 @@ public class ReferenceMap extends WeakHashMap {
             return value;
         }        
     }
+    
+    private ReferenceQueue queue = new ReferenceQueue();
     
     public ReferenceMap() {
         super();
@@ -41,7 +44,7 @@ public class ReferenceMap extends WeakHashMap {
     public Object get(Object key) {
         Object ret = super.get(key);
         if (ret!=null) {
-            WeakReference weak = (WeakReference) ret;
+            SoftReference weak = (SoftReference) ret;
             ret = weak.get();
             if (ret==null) remove(key);
         }        
@@ -49,13 +52,15 @@ public class ReferenceMap extends WeakHashMap {
     }
     
     public Object put(Object key, Object value) {
+        removeDereferencedEntries();
         if (value!=null) {
-            value = new WeakReference(value);
+            value = new SoftReference(value,queue);
         }        
         return super.put(key, value);
     }
     
     public Object putStrong(Object key, Object value) {
+        removeDereferencedEntries();
         if (value!=null) {
             value = new HardReference(value);
         }        
@@ -63,10 +68,11 @@ public class ReferenceMap extends WeakHashMap {
     }
     
     public Collection values() {
+        removeDereferencedEntries();
         Collection origColl = super.values();
         ArrayList newColl = new ArrayList(origColl.size());
         for (Iterator iter = origColl.iterator(); iter.hasNext();) {
-            WeakReference element = (WeakReference) iter.next();
+            SoftReference element = (SoftReference) iter.next();
             if (element!=null) {
                 Object strong = element.get();
                 if (strong==null) continue;
@@ -76,5 +82,14 @@ public class ReferenceMap extends WeakHashMap {
             }            
         }        
         return newColl;
+    }
+    
+    private void removeDereferencedEntries(){
+        SoftReference e;
+        while ( (e = (SoftReference) queue.poll()) != null) {
+            Object strong = e.get();
+            if (strong==null) continue;
+            remove(strong);
+        }
     }
 }
