@@ -1018,6 +1018,7 @@ public class DefaultGroovyMethods {
      * @param closure  a closure mapping entries on keys
      * @return         a new Map grouped by keys
      */
+    /* Removed for 1.0, to be discussed for 1.1
     public static Map groupBy(Map self, Closure closure) {
         final Map answer = new HashMap();
         for (final Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
@@ -1025,6 +1026,7 @@ public class DefaultGroovyMethods {
         }
         return answer;
     }
+    */
     
     /**
      * Groups the current element of the iterator as determined

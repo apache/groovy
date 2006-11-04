@@ -307,6 +307,7 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert 3 == result.size()
     }
 
+/* Removed for 1.0, to be discussed for 1.1
     void testGroupByMap() {
 		def expectedKeys = [Integer: [1, 3], String: [2, 4], BigDecimal: [5, 6]]
 		def expectedVals = [Integer: [1, 2], String: ["a", "b"], BigDecimal: [3.5, 4.6]]
@@ -320,6 +321,7 @@ class GroovyMethodsTest extends GroovyTestCase {
 		assert expectedVals.BigDecimal == result[BigDecimal].collect{it.value}
 		assert 3 == result.size()
     }
+*/
     
     def leftCol  = ["2"]
     def rightCol = ["1","2","3"]
