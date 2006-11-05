@@ -34,6 +34,7 @@ class GpathSyntaxTestSupport {
         checkEmptyMissingCases(root)
         if (isDom(root)) {
             // additional DOM long-hand syntax
+            // for illustrative purposes only
             assert likes.item(0).nodeName == 'likes'
             assert wallaceLikes.firstChild.nodeValue == 'cheese'
             if (wallaceLikes.class.name.contains('xerces')) {
@@ -44,24 +45,17 @@ class GpathSyntaxTestSupport {
 
     private static void checkEmptyMissingCases(root) {
         def unknownChild = root.xxx
-        assert unknownChild.size() == 0
+        assert unknownChild.isEmpty()
         def unknownAttr = root.'@xxx'
-        if (isParser(root)) {
-            assert unknownAttr == null
-        } else {
-            assert unknownAttr.toString() == ''
-        }
-        if (isDom(root)) {
-            assert root.empty.text().toString() == '[]'
-        } else {
-            assert root.empty.text() == ''
-        }
+        assert isSlurper(root) || !unknownAttr
+        assert !isSlurper(root) || unknownAttr.isEmpty()
+        assert root.'empty'.text() == ''
     }
 
     static void checkFindElement(Closure getRoot) {
         def root = getRoot(sampleXml)
         // lets find Gromit
-        def gromit = root.character.find { it['@id'] == '2' }
+        def gromit = root.character.find { it.'@id' == '2' }
         assert gromit != null, "Should have found Gromit!"
         assert gromit['@name'] == "Gromit"
         // lets find what Wallace likes in 1 query
@@ -71,19 +65,31 @@ class GpathSyntaxTestSupport {
 
     static void checkElementTypes(Closure getRoot) {
         def root = getRoot(sampleXml)
-        assert root.numericValue[0].text().toInteger() == 1
+        def numericValue = root.numericValue[0]
+        def booleanValue = root.booleanValue[0]
+        def uriValue     = root.uriValue[0]
+        def urlValue     = root.urlValue[0]
+        assert numericValue.text().toInteger() == 1
+        assert numericValue.text().toLong() == 1
+        assert numericValue.text().toFloat() == 1
+        assert numericValue.text().toDouble() == 1
+        assert numericValue.text().toBigInteger() == 1
+        assert numericValue.text().toBigDecimal() == 1
+        assert booleanValue.text().toBoolean() == true
+        assert uriValue.text().toURI() == "http://example.org/".toURI()
+        assert urlValue.text().toURL() == "http://example.org/".toURL()
         if (isSlurper(root)) {
-            // additional slurper shorthand
-            assert root.numericValue.toInteger() == 1
+            // slurper shorthand - are these really pulling their weight?
+            assert numericValue.toInteger() == 1
+            assert numericValue.toLong() == 1
+            assert numericValue.toFloat() == 1
+            assert numericValue.toDouble() == 1
+            assert numericValue.toBigInteger() == 1
+            assert numericValue.toBigDecimal() == 1
+            assert booleanValue.toBoolean() == true
+            assert uriValue.toURI() == "http://example.org/".toURI()
+            assert urlValue.toURL() == "http://example.org/".toURL()
         }
-        assert root.numericValue[0].text().toLong() == 1
-        assert root.numericValue[0].text().toFloat() == 1
-        assert root.numericValue[0].text().toDouble() == 1
-        assert root.numericValue[0].text().toBigInteger() == 1
-        assert root.numericValue[0].text().toBigDecimal() == 1
-        assert root.booleanValue[0].text().toBoolean() == true
-        assert root.uriValue[0].text().toURI() == "http://example.org/".toURI()
-        assert root.urlValue[0].text().toURL() == "http://example.org/".toURL()
     }
 
     static void checkElementClosureInteraction(Closure getRoot) {
@@ -92,44 +98,14 @@ class GpathSyntaxTestSupport {
         assert sLikes.size() == 1
         assert root.likes.size() == 0
         if (isDom(root)) {
-            // addtitional DOMCategory long-hand notation gets nested
+            // addtitional DOMCategory long-hand notation gets nested nodes from root
             assert root.getElementsByTagName('likes').size() == 2
         }
-        if (isSlurper(root)) {
-            assert 'sleep' == sLikes.text()
-            assert 'sleep' == sLikes.toString()
-            assert 'cheesesleep' == root.character.likes.text()
-            assert 'cheesesleep' == root.character.likes.toString()
-        } else {
-            assert ['sleep'] == sLikes*.text()
-            if (isDom(root)) {
-                if (root.getClass().name.contains('xerces')) {
-                    assert '[[likes: null]]' == sLikes.toString()
-                } else {
-                    assert '[<likes>sleep</likes>]' == sLikes.toString()
-                }
-                assert '[cheese, sleep]' == root.character.likes.text().toString()
-                if (root.class.name.contains('xerces')) {
-                    assert '[[likes: null], [likes: null]]' == root.character.likes.toString()
-                } else {
-                    assert '[<likes>cheese</likes>, <likes>sleep</likes>]' == root.character.likes.toString()
-                }
-            }
-            if (isParser(root)) {
-                assert '[likes[attributes={}; value=[sleep]]]' == sLikes.toString()
-                assert '[likes[attributes={}; value=[cheese]], likes[attributes={}; value=[sleep]]]' == root.character.likes.toString()
-            }
-        }
+        assert 'sleep' == sLikes[0].text()
+        assert 'cheesesleep' == root.character.likes.collect{ it.text() }.join()
         assert root.character.likes.every{ it.text().contains('ee') }
         def groupLikesByFirstLetter
-        def likes
-        if (isSlurper(root)) {
-            likes = root.character.likes.collect{ it }
-        } else if (isDom(root)) {
-            likes = root.character.likes.list()
-        } else {
-            likes = root.character.likes
-        }
+        def likes = root.character.likes.collect{ it }
         if (isSlurper(root)) {
             groupLikesByFirstLetter = likes.groupBy{ like ->
                 root.character.find{ it.likes[0].text() == like.text() }.@name.toString()[0]
@@ -147,18 +123,24 @@ class GpathSyntaxTestSupport {
 
     static void checkAttribute(Closure getRoot) {
         def root = getRoot(sampleXml)
-        assert 'Wallace' == root.character[0].'@name'.toString()
-        assert 'Wallace' == (root.character.'@name')[0].toString()
         if (isSlurper(root)) {
-            assert 'WallaceGromit' == root.character.'@name'.toString()
-            def gromit = root.character.find { it['@id'] == '2' }
-            assert gromit.@name.name() == "name"
+            assert 'Wallace' == root.character[0].'@name'.text()
+            assert 'Wallace' == root.character[0]['@name'].text()
+            assert 'Wallace' == (root.character.'@name')[0].text()
+            assert ['Wallace', 'Gromit'] == root.character.'@name'.list()*.text()
+            assert 'WallaceGromit' == root.character.'@name'.text()
         } else {
-            assert 'Wallace' == (root.character.'@name')[0]
-            assert ['Wallace', 'Gromit'] == root.character.'@name'
-            assert '[Wallace, Gromit]' == root.character.'@name'.toString()
             assert 'Wallace' == root.character[0].'@name'
             assert 'Wallace' == root.character[0]['@name']
+            assert 'Wallace' == (root.character.'@name')[0]
+            assert ['Wallace', 'Gromit'] == root.character.collect{ it.'@name' }
+            assert 'WallaceGromit' == root.character.'@name'.join()
+        }
+        if (isSlurper(root)) {
+            // additional slurper shorthand
+            assert 'Wallace' == root.character[0].@name.text()
+            def gromit = root.character.find{ it.@id == '2' }
+            assert gromit.@name.name() == "name"
         }
     }
 
@@ -177,6 +159,7 @@ class GpathSyntaxTestSupport {
         // count direct children
         assert children.size() == 7, "Children ${children.size()}"
         assert root.'*'.size() == 7
+        // illustrative purposes only
         if (isDom(root)) {
             // count whitespace and nested children
             assert root.childNodes.size() == 15

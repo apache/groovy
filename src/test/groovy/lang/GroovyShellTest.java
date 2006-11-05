@@ -71,7 +71,7 @@ public class GroovyShellTest extends GroovyTestCase {
             assertEquals(new Integer(1), result);
         }
         catch (Exception e) {
-            assertTrue(false);
+            fail(e.toString());
         }
     }
 

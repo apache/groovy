@@ -40,6 +40,7 @@ class NodeChildren extends GPathResult {
      * @param parent
      * @param name
      * @param namespacePrefix
+     * @param namespaceTagHints
      */
     public NodeChildren(final GPathResult parent, final String name, final String namespacePrefix, final Map namespaceTagHints) {
         super(parent, name, namespacePrefix, namespaceTagHints);
@@ -48,6 +49,7 @@ class NodeChildren extends GPathResult {
     /**
      * @param parent
      * @param name
+     * @param namespaceTagHints
      */
     public NodeChildren(final GPathResult parent, final String name, final Map namespaceTagHints) {
         this(parent, name, "*", namespaceTagHints);
@@ -55,14 +57,12 @@ class NodeChildren extends GPathResult {
 
     /**
      * @param parent
+     * @param namespaceTagHints
      */
     public NodeChildren(final GPathResult parent, final Map namespaceTagHints) {
         this(parent, "*", namespaceTagHints);
     }
 
-    /* (non-Javadoc)
-    * @see org.codehaus.groovy.sandbox.util.GPathResult#childNodes()
-    */
     public Iterator childNodes() {
         return new Iterator() {
             private final Iterator iter = NodeChildren.this.parent.childNodes();
@@ -101,8 +101,6 @@ class NodeChildren extends GPathResult {
                 throw new UnsupportedOperationException();
             }
 
-            /**
-             */
             private Iterator nextChildIter() {
                 while (this.iter.hasNext()) {
                     final Node node = (Node) this.iter.next();
@@ -125,9 +123,6 @@ class NodeChildren extends GPathResult {
         };
     }
 
-    /* (non-Javadoc)
-    * @see org.codehaus.groovy.sandbox.util.slurpersupport.GPathResult#iterator()
-    */
     public Iterator iterator() {
         return new Iterator() {
             final Iterator iter = nodeIterator();
@@ -146,9 +141,6 @@ class NodeChildren extends GPathResult {
         };
     }
 
-    /* (non-Javadoc)
-    * @see org.codehaus.groovy.sandbox.util.GPathResult#iterator()
-    */
     public Iterator nodeIterator() {
         if ("*".equals(this.name)) {
             return this.parent.childNodes();
@@ -176,20 +168,14 @@ class NodeChildren extends GPathResult {
         }
     }
 
-    /* (non-Javadoc)
-    * @see org.codehaus.groovy.sandbox.util.GPathResult#parents()
-    */
     public GPathResult parents() {
         // TODO Auto-generated method stub
         throw new GroovyRuntimeException("parents() not implemented yet");
     }
 
-    /* (non-Javadoc)
-    * @see org.codehaus.groovy.sandbox.util.GPathResult#size()
-    */
     public synchronized int size() {
         if (this.size == -1) {
-            final Iterator iter = nodeIterator();
+            final Iterator iter = iterator();
 
             this.size = 0;
             while (iter.hasNext()) {
@@ -201,9 +187,6 @@ class NodeChildren extends GPathResult {
         return this.size;
     }
 
-    /* (non-Javadoc)
-    * @see org.codehaus.groovy.sandbox.util.GPathResult#text()
-    */
     public String text() {
         final StringBuffer buf = new StringBuffer();
         final Iterator iter = nodeIterator();
@@ -215,9 +198,6 @@ class NodeChildren extends GPathResult {
         return buf.toString();
     }
 
-    /* (non-Javadoc)
-    * @see org.codehaus.groovy.sandbox.util.slurpersupport.GPathResult#find(groovy.lang.Closure)
-    */
     public GPathResult find(final Closure closure) {
         final Iterator iter = iterator();
 
@@ -232,16 +212,10 @@ class NodeChildren extends GPathResult {
         return new NoChildren(this, this.name, this.namespaceTagHints);
     }
 
-    /* (non-Javadoc)
-    * @see org.codehaus.groovy.sandbox.util.slurpersupport.GPathResult#findAll(groovy.lang.Closure)
-    */
     public GPathResult findAll(final Closure closure) {
         return new FilteredNodeChildren(this, closure, this.namespaceTagHints);
     }
 
-    /* (non-Javadoc)
-    * @see org.codehaus.groovy.sandbox.markup.Buildable#build(groovy.lang.GroovyObject)
-    */
     public void build(final GroovyObject builder) {
         final Iterator iter = nodeIterator();
 

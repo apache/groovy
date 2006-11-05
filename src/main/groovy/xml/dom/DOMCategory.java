@@ -136,7 +136,7 @@ public class DOMCategory {
         return node.getParentNode();
     }
 
-    public static Object text(Object o) {
+    public static String text(Object o) {
         if (o instanceof Element) {
             return text((Element) o);
         }
@@ -154,20 +154,20 @@ public class DOMCategory {
 
     private static String text(Element element) {
         if (!element.hasChildNodes()) {
-            return null;
+            return "";
         }
         if (element.getFirstChild().getNodeType() != Node.TEXT_NODE) {
-            return null;
+            return "";
         }
         return element.getFirstChild().getNodeValue();
     }
 
-    private static List text(NodeList nodeList) {
-        List results = new ArrayList();
+    private static String text(NodeList nodeList) {
+        StringBuffer sb = new StringBuffer();
         for (int i = 0; i < nodeList.getLength(); i++) {
-            addResult(results, text(nodeList.item(i)));
+            sb.append(text(nodeList.item(i)));
         }
-        return results;
+        return sb.toString();
     }
 
     public static List list(NodeList self) {
@@ -247,12 +247,12 @@ public class DOMCategory {
 
     public static String toString(Object o) {
         if (o instanceof Node) {
-            if (((Node)o).getNodeType() == Node.TEXT_NODE) {
-                return ((Node)o).getNodeValue();
+            if (((Node) o).getNodeType() == Node.TEXT_NODE) {
+                return ((Node) o).getNodeValue();
             }
         }
         if (o instanceof NodeList) {
-            return toString((NodeList)o);
+            return toString((NodeList) o);
         }
         return o.toString();
     }
@@ -271,6 +271,10 @@ public class DOMCategory {
 
     public static int size(NodeList self) {
         return self.getLength();
+    }
+
+    public static boolean isEmpty(NodeList self) {
+        return size(self) == 0;
     }
 
     private static void addResult(List results, Object result) {

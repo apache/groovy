@@ -57,11 +57,11 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Represents an arbitrary tree node which can be used for structured  metadata which can be any arbitrary XML-like tree.
+ * Represents an arbitrary tree node which can be used for structured metadata or any arbitrary XML-like tree.
  * A node can have a name, a value and an optional Map of attributes.
- * Typically the name is a String and a value is either a String or a List of other Nodes.
- * Though the types are extensible to provide a flexible structure. 
- * e.g. you could use a QName as the name which includes a namespace URI and a local name. Or a JMX ObjectName etc.
+ * Typically the name is a String and a value is either a String or a List of other Nodes,
+ * though the types are extensible to provide a flexible structure, e.g. you could use a
+ * QName as the name which includes a namespace URI and a local name. Or a JMX ObjectName etc.
  * So this class can represent metadata like {foo a=1 b="abc"} or nested metadata like {foo a=1 b="123" { bar x=12 text="hello" }}
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
@@ -95,11 +95,10 @@ public class Node implements java.io.Serializable {
         
         if (parent != null) {
             Object parentValue = parent.value();
-            List parentList = null;
+            List parentList;
             if (parentValue instanceof List) {
                 parentList = (List) parentValue;
-            }
-            else {
+            } else {
                 parentList = new NodeList();
                 parentList.add(parentValue);
                 parent.setValue(parentList);
@@ -188,8 +187,8 @@ public class Node implements java.io.Serializable {
 
     /**
      * Provides lookup of elements by non-namespaced name
-     * @return
-     * @param key
+     * @param key the name (or shortcut key) of the node(s) of interest
+     * @return the nodes which match key
      */
     public Object get(String key) {
         if (key != null && key.charAt(0) == '@') {
@@ -221,7 +220,10 @@ public class Node implements java.io.Serializable {
     }
     
     /**
-     * Provides lookup of elements by QName
+     * Provides lookup of elements by QName.
+     *
+     * @param name the QName of interest
+     * @return the nodes matching name
      */
     public NodeList getAt(QName name) {
         NodeList answer = new NodeList();
@@ -238,15 +240,11 @@ public class Node implements java.io.Serializable {
         return answer;
     }
 
-//    public Object get(int idx) {
-//        return children().get(idx);
-//    }
-
-
-
     /**
      * Provide a collection of all the nodes in the tree
-     * using a depth first traversal
+     * using a depth first traversal.
+     *
+     * @return the list of (depth-first) ordered nodes
      */
     public List depthFirst() {
         List answer = new NodeList();
@@ -255,7 +253,7 @@ public class Node implements java.io.Serializable {
         return answer;
     }
     
-    private  List depthFirstRest() {
+    private List depthFirstRest() {
         List answer = new NodeList();
         for (Iterator iter = InvokerHelper.asIterator(value); iter.hasNext(); ) {
             Object child = iter.next();
@@ -271,7 +269,9 @@ public class Node implements java.io.Serializable {
 
     /**
      * Provide a collection of all the nodes in the tree
-     * using a breadth-first traversal
+     * using a breadth-first traversal.
+     *
+     * @return the list of (breadth-first) ordered nodes
      */
     public List breadthFirst() {
         List answer = new NodeList();

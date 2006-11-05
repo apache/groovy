@@ -55,6 +55,8 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
     /**
      * @param parent
      * @param name
+     * @param namespacePrefix
+     * @param namespaceTagHints
      */
     public GPathResult(final GPathResult parent, final String name, final String namespacePrefix, final Map namespaceTagHints) {
         if (parent == null) {
@@ -299,6 +301,10 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
             result.add(new NodeChild((Node) iter.next(), this.parent, this.namespacePrefix, this.namespaceTagHints));
         }
         return result;
+    }
+
+    public boolean isEmpty() {
+        return size() == 0;
     }
 
     public abstract int size();

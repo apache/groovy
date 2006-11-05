@@ -44,9 +44,9 @@ class DOMTest extends GroovyTestCase {
 
     private def assertCorrect(html) {
         use (DOMCategory) {
-          assert html.head.title.text() == ['Test']
-          assert html.head.title[0].textContent == 'Test'
-          assert html.body.p.text() == ['This is a test.']
+          assert html.head.title.collect{ it.text() } == ['Test']
+          assert html.head.title[0].text() == 'Test'
+          assert html.body.p[0].text() == 'This is a test.'
           assert html.find { it.tagName == 'body' }.tagName == 'body'
           assert html.getElementsByTagName('*').findAll{ it.'@class' != '' }.size() == 2
         }

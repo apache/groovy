@@ -24,9 +24,8 @@ import java.util.Collection;
 import java.util.Iterator;
 
 /**
- * A List implementation which is returned by queries on a {@link Node} which provides some XPath like helper methods for GPath
- * 
- * @version $Revision$
+ * A List implementation which is returned by queries on a {@link Node}
+ * which provides some XPath like helper methods for GPath.
  */
 public class NodeList extends ArrayList {
 
@@ -42,7 +41,10 @@ public class NodeList extends ArrayList {
     }
     
     /**
-     * Provides lookup of elements by non-namespaced name
+     * Provides lookup of elements by non-namespaced name.
+     *
+     * @return the nodes of interest which match name
+     * @param name the name or shortcut key for nodes of interest
      */
     public NodeList getAt(String name) {
         NodeList answer = new NodeList();
@@ -63,7 +65,10 @@ public class NodeList extends ArrayList {
     }
 
     /**
-     * Provides lookup of elements by QName
+     * Provides lookup of elements by QName.
+     *
+     * @return the nodes of interest which match name
+     * @param name the name or shortcut key for nodes of interest
      */
     public NodeList getAt(QName name) {
         NodeList answer = new NodeList();
@@ -79,7 +84,7 @@ public class NodeList extends ArrayList {
     }
 
     /**
-     * Returns the text value of all of the elements in the collection
+     * Returns the text value of all of the elements in the collection.
      * 
      * @return the text value of all the elements in the collection or null
      */
@@ -111,10 +116,8 @@ public class NodeList extends ArrayList {
         if (buffer != null) {
             return buffer.toString();
         }
-        else {
-            if (previousText != null) {
-                return previousText;
-            }
+        if (previousText != null) {
+            return previousText;
         }
         return "";
     }

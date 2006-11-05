@@ -328,7 +328,7 @@ public class GroovyTestCase extends TestCase {
             fail(testMethod.getName() + " is marked as not yet implemented but passes unexpectedly");
         }
         catch (final Exception e) {
-            log.info(testMethod.getName() + " fails what is normal as it is not yet implemented");
+            log.info(testMethod.getName() + " fails which is expected as it is not yet implemented");
             // method execution failed, it is really "not yet implemented"
         }
         finally {

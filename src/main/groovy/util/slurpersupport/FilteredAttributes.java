@@ -15,7 +15,6 @@
  * limitations under the License.
  *
  */
-
 package groovy.util.slurpersupport;
 
 import java.util.Iterator;
@@ -26,38 +25,32 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import groovy.lang.Closure;
 
 /**
- * @author John Wilson
+ * Lazy evaluated representation of nodes filtered by attributes.
  *
+ * @author John Wilson
  */
+public class FilteredAttributes extends Attributes
+{
+    private final Closure closure;
 
-public class FilteredAttributes extends Attributes {
-  private final Closure closure;
-  
-  public FilteredAttributes(final GPathResult parent, final Closure closure, final Map namespaceTagHints) {
-    super(parent, parent.name, namespaceTagHints);
-    this.closure = closure;
-  }
+    public FilteredAttributes(final GPathResult parent, final Closure closure, final Map namespaceTagHints) {
+        super(parent, parent.name, namespaceTagHints);
+        this.closure = closure;
+    }
 
-/* (non-Javadoc)
-   * @see org.codehaus.groovy.sandbox.util.slurpersupport.NodeChildren#iterator()
-   */
-  public Iterator nodeIterator() {
-    return new NodeIterator(this.parent.iterator()) {
-              /* (non-Javadoc)
-               * @see org.codehaus.groovy.sandbox.util.slurpersupport.NodeIterator#getNextNode(java.util.Iterator)
-               */
-              protected Object getNextNode(final Iterator iter) {
-                  while (iter.hasNext()) {
-                  final Object node = iter.next();
-                  
+    public Iterator nodeIterator() {
+        return new NodeIterator(this.parent.iterator())
+        {
+            protected Object getNextNode(final Iterator iter) {
+                while (iter.hasNext()) {
+                    final Object node = iter.next();
                     if (DefaultTypeTransformation.castToBoolean(FilteredAttributes.this.closure.call(new Object[]{node}))) {
-                      return node;
+                        return node;
                     }
-                  }
-                  
-                  return null;
-                }   
-            };
-  }
-  
+                }
+                return null;
+            }
+        };
+    }
+
 }

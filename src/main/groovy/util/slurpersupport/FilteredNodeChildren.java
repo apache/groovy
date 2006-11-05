@@ -14,7 +14,6 @@
  * limitations under the License.
  *
  */
-
 package groovy.util.slurpersupport;
 
 import java.util.Iterator;
@@ -26,67 +25,59 @@ import groovy.lang.Closure;
 
 /**
  * @author John Wilson
- *
  */
 
-public class FilteredNodeChildren extends NodeChildren {
-  private final Closure closure;
-  
-  public FilteredNodeChildren(final GPathResult parent, final Closure closure, final Map namespaceTagHints) {
-    super(parent, parent.name, namespaceTagHints);
-    this.closure = closure;
-  }
+public class FilteredNodeChildren extends NodeChildren
+{
+    private final Closure closure;
 
-  /* (non-Javadoc)
-   * @see org.codehaus.groovy.sandbox.util.slurpersupport.GPathResult#iterator()
-   */
-  public Iterator iterator() {
-    return new Iterator() {
-      final Iterator iter = FilteredNodeChildren.this.parent.iterator();
-      
-      public boolean hasNext() {
-        return this.iter.hasNext();
-      }
-      
-      public Object next() {
-        while (iter.hasNext()) {
-        final Object childNode = iter.next();
-      
-      
-          if (DefaultTypeTransformation.castToBoolean(FilteredNodeChildren.this.closure.call(new Object[]{childNode}))) {
-            return childNode;
-          }
-        }
-        
-        return null;
-      }
-      
-      public void remove() {
-        throw new UnsupportedOperationException();
-      }
-    };
-  }
+    public FilteredNodeChildren(final GPathResult parent, final Closure closure, final Map namespaceTagHints) {
+        super(parent, parent.name, namespaceTagHints);
+        this.closure = closure;
+    }
 
-  /* (non-Javadoc)
-   * @see org.codehaus.groovy.sandbox.util.slurpersupport.NodeChildren#iterator()
-   */
-  public Iterator nodeIterator() {
-    return new NodeIterator(this.parent.nodeIterator()) {
-              /* (non-Javadoc)
-               * @see org.codehaus.groovy.sandbox.util.slurpersupport.NodeIterator#getNextNode(java.util.Iterator)
-               */
-              protected Object getNextNode(final Iterator iter) {
+    public Iterator iterator() {
+        return new Iterator()
+        {
+            final Iterator iter = FilteredNodeChildren.this.parent.iterator();
+
+            public boolean hasNext() {
+                return this.iter.hasNext();
+            }
+
+            public Object next() {
                 while (iter.hasNext()) {
-                final Object node = iter.next();
-                
-                  if (DefaultTypeTransformation.castToBoolean(FilteredNodeChildren.this.closure.call(new Object[]{new NodeChild((Node)node, FilteredNodeChildren.this.parent, FilteredNodeChildren.this.namespaceTagHints)}))) {
-                    return node;
-                  }
+                    final Object childNode = iter.next();
+                    if (closureYieldsTrueForNode(childNode)) {
+                        return childNode;
+                    }
                 }
-                
                 return null;
-              }   
-            };
-  }
-  
+            }
+
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
+        };
+    }
+
+    public Iterator nodeIterator() {
+        return new NodeIterator(this.parent.nodeIterator())
+        {
+            protected Object getNextNode(final Iterator iter) {
+                while (iter.hasNext()) {
+                    final Object node = iter.next();
+                    if (closureYieldsTrueForNode(new NodeChild((Node) node, FilteredNodeChildren.this.parent, FilteredNodeChildren.this.namespaceTagHints))) {
+                        return node;
+                    }
+                }
+                return null;
+            }
+        };
+    }
+
+    private boolean closureYieldsTrueForNode(Object childNode) {
+        return DefaultTypeTransformation.castToBoolean(FilteredNodeChildren.this.closure.call(new Object[]{childNode}));
+    }
+
 }
