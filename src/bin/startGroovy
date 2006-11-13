@@ -32,8 +32,8 @@ lateInit() {
 }
 
 GROOVY_STARTUP=~/.groovy/startup
-if [ -r $GROOVY_STARTUP ]; then
-	. $GROOVY_STARTUP
+if [ -r "$GROOVY_STARTUP" ]; then
+	. "$GROOVY_STARTUP"
 fi
 
 earlyInit
