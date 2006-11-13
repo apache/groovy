@@ -176,7 +176,7 @@ import org.xml.sax.ext.LexicalHandler
                                             it.build(doc)
                                           } else {
                                               def chars = it.toCharArray()
-                                              contentHandler.characters(chars, 0, chars.length())
+                                              contentHandler.characters(chars, 0, chars.size())
                                             }
                                           }
                                       }
