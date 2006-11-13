@@ -73,7 +73,7 @@ public abstract class MetaClass {
         }
     }
     
-    public Object invokeMethod(Class sender, Object receiver, String methodName, Object[] arguments){
+    public Object invokeMethod(Class sender, Object receiver, String methodName, Object[] arguments, boolean isCallToSuper){
         return invokeMethod(receiver,methodName,arguments);
     }
     

@@ -94,7 +94,7 @@ public class ScriptBytecodeAdapter {
                 }
                 //else if there's a statically typed method or a GDK method
                 else {
-                    result = receiver.getMetaClass().invokeMethod(senderClass, receiver, messageName, messageArguments);
+                    result = receiver.getMetaClass().invokeMethod(senderClass, receiver, messageName, messageArguments, false);
                 }
             } catch (MissingMethodException e) {
                 if (receiver.getClass() == e.getType() && e.getMethod().equals(messageName)) {
@@ -141,11 +141,22 @@ public class ScriptBytecodeAdapter {
     //                       methods for super
     //  --------------------------------------------------------
     public static Object invokeMethodOnSuperN(Class senderClass, Object receiver, String messageName, Object[] messageArguments) throws Throwable{
-        try {
-            return InvokerHelper.invokeMethod(receiver, messageName, messageArguments);
-        } catch (GroovyRuntimeException gre) {
-            return unwrap(gre);
+        MetaClass metaClass=null;
+        if (!(receiver instanceof GroovyObject)) {
+            Class theClass = receiver.getClass();
+            metaClass = InvokerHelper.getInstance().getMetaRegistry().getMetaClass(theClass);
+        } else {
+            metaClass = ((GroovyObject) receiver).getMetaClass();
         }
+        // ignore interception and missing method fallback
+        Object result=null;
+        try {
+            result = metaClass.invokeMethod(senderClass, receiver, messageName, messageArguments, true);
+        } catch (GroovyRuntimeException t) {
+            unwrap(t);
+        }
+        return result;
+        
     }
     
     public static Object invokeMethodOnSuperNSafe(Class senderClass, Object receiver, String messageName, Object[] messageArguments) throws Throwable{

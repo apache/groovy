@@ -360,7 +360,7 @@ public class AsmClassGenerator extends ClassGenerator {
    
     private void createMopMethods() {
         visitMopMethodList(classNode.getMethods(), true);
-        visitMopMethodList(classNode.getSuperClass().getMethods(), false);
+        visitMopMethodList(classNode.getSuperClass().getAllDeclaredMethods(), false);
     }
 
     private String[] buildExceptions(ClassNode[] exceptions) {
@@ -389,13 +389,34 @@ public class AsmClassGenerator extends ClassGenerator {
         for (Iterator iter = methods.iterator(); iter.hasNext();) {
             MethodNode mn = (MethodNode) iter.next();
             if ((mn.getModifiers() & ACC_ABSTRACT) !=0 ) continue;
-            if (!isThis && (mn.getModifiers() & ACC_PUBLIC) == 0) continue; 
+            // no this$ methods for protected/public isThis=true
+            // super$ method for protected/public isThis=false
+            // --> results in XOR
+            if (isThis ^ (mn.getModifiers() & (ACC_PUBLIC|ACC_PROTECTED)) == 0) continue; 
             String methodName = mn.getName();
             if (isMopMethod(methodName) || methodName.startsWith("<")) continue;
+            String name = getMopMethodName(mn,isThis);
+            if (containsMethod(methods,name,mn.getParameters())) continue;
             mopCalls.add(mn);
         }
         generateMopCalls(mopCalls, isThis);
         mopCalls.clear();
+    }
+    
+    private boolean containsMethod(List methods, String name, Parameter[] paras) {
+        for (Iterator iter = methods.iterator(); iter.hasNext();) {
+            MethodNode element = (MethodNode) iter.next();
+            if (element.getName().equals(name) && equalParameterTypes(paras,element.getParameters())) return true;
+        }
+        return false;
+    }
+    
+    private boolean equalParameterTypes(Parameter[] p1, Parameter[] p2) {
+        if (p1.length!=p2.length) return false;
+        for (int i=0; i<p1.length; i++) {
+            if (!p1[i].getType().equals(p2[i].getType())) return false;
+        }
+        return true;
     }
     
     /**
@@ -425,6 +446,7 @@ public class AsmClassGenerator extends ClassGenerator {
             helper.doReturn(method.getReturnType());
             cv.visitMaxs(0, 0);
             cv.visitEnd();
+            classNode.addMethod(name,Opcodes.ACC_PUBLIC & Opcodes.ACC_SYNTHETIC,method.getReturnType(),parameters,null,null);
         }
     }
 
@@ -1497,7 +1519,7 @@ public class AsmClassGenerator extends ClassGenerator {
         compileStack.pop();
     }
     
-    private void makeInvokeMethodCall(MethodCallExpression call, MethodCallerMultiAdapter adapter) {
+    private void makeInvokeMethodCall(MethodCallExpression call, boolean useSuper, MethodCallerMultiAdapter adapter) {
         // receiver
         // we operate on GroovyObject if possible
         Expression objectExpression = call.getObjectExpression();
@@ -1506,10 +1528,18 @@ public class AsmClassGenerator extends ClassGenerator {
         }
         // message name
         Expression messageName = new CastExpression(ClassHelper.STRING_TYPE,call.getMethod());
-        makeCall(objectExpression, messageName,
-                call.getArguments(), adapter,
-                call.isSafe(), call.isSpreadSafe()
-        );
+        if (useSuper) {
+            makeCall(new ClassExpression(classNode.getSuperClass()),
+                    objectExpression, messageName,
+                    call.getArguments(), adapter,
+                    call.isSafe(), call.isSpreadSafe()
+            );
+        } else {
+            makeCall(objectExpression, messageName,
+                    call.getArguments(), adapter,
+                    call.isSafe(), call.isSpreadSafe()
+            );
+        }
     }
     
     private void makeCall( 
@@ -1614,69 +1644,8 @@ public class AsmClassGenerator extends ClassGenerator {
             if (isThisExpression) adapter = invokeMethodOnCurrent;
             if (isSuperMethodCall) adapter = invokeMethodOnSuper;
             if (isStaticMethod() && isThisExpression) adapter = invokeStaticMethod;
-            
-            
-            //TODO: remove when new MOP is able to call super methods
-            if (isSuperMethodCall) {
-//              TODO: remove findSuperMethod when super works
-                MethodNode superMethodNode = findSuperMethod(call);
-                
-                cv.visitVarInsn(ALOAD, 0);
-                //TODO: remove loadArguments when super works
-                loadArguments(superMethodNode.getParameters(), arguments);
-                
-                String descriptor = BytecodeHelper.getMethodDescriptor(superMethodNode.getReturnType(), superMethodNode.getParameters());
-                cv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(superMethodNode.getDeclaringClass()), methodName, descriptor);
-                // as long as we want to work with objects where possible, we may have to
-                // box the value here. This can be removed when we know the return type 
-                // and save it in the MethodCallExpression. By default it returns Object
-                // so boxing is always save.
-                helper.box(superMethodNode.getReturnType());
-            } else {
-                makeInvokeMethodCall(call,adapter);
-            }
+            makeInvokeMethodCall(call,isSuperMethodCall,adapter);
         }
-    }
-
-    /**
-     * Loads and coerces the argument values for the given method call
-     */
-    protected void loadArguments(Parameter[] parameters, Expression expression) {
-        TupleExpression argListExp = (TupleExpression) expression;
-        List arguments = argListExp.getExpressions();
-        for (int i = 0, size = arguments.size(); i < size; i++) {
-            Expression argExp = argListExp.getExpression(i);
-            Parameter param = parameters[i];
-            visitAndAutoboxBoolean(argExp);
-
-            ClassNode type = param.getType();
-            ClassNode expType = getExpressionType(argExp);
-            if (!type.equals(expType)) {
-                doConvertAndCast(type);
-            }
-        }
-    }
-
-    /**
-     * Attempts to find the method of the given name in a super class
-     */
-    protected MethodNode findSuperMethod(MethodCallExpression call) {
-        String methodName = call.getMethodAsString();
-        if (methodName==null) throw new GroovyBugError("FIXME: new MOP required to make a super call with a dynamic method name");
-        TupleExpression argExpr = (TupleExpression) call.getArguments();
-        int argCount = argExpr.getExpressions().size();
-        ClassNode superClassNode = classNode.getSuperClass();
-        if (superClassNode != null) {
-            List methods = superClassNode.getMethods(methodName);
-            for (Iterator iter = methods.iterator(); iter.hasNext(); ) {
-                MethodNode method = (MethodNode) iter.next();
-                if (method.getParameters().length == argCount) {
-                    return method;
-                }
-            }
-        }
-        throwException("No such method: " + methodName + " for class: " + classNode.getName());
-        return null; // should not come here
     }
 
     protected boolean emptyArguments(Expression arguments) {
@@ -2122,7 +2091,11 @@ public class AsmClassGenerator extends ClassGenerator {
         // "super" also requires special handling
 
         if (variableName.equals("super")) {
-            visitClassExpression(new ClassExpression(classNode.getSuperClass()));
+            if (isStaticMethod()) {
+                visitClassExpression(new ClassExpression(classNode.getSuperClass()));
+            } else {
+                cv.visitVarInsn(ALOAD, 0);
+            }
             return;                                               // <<< FLOW CONTROL <<<<<<<<<
         }
 
