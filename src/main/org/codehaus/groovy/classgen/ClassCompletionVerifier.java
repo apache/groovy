@@ -17,6 +17,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
@@ -24,6 +25,8 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.MapEntryExpression;
+import org.codehaus.groovy.ast.stmt.CatchStatement;
+import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.control.SourceUnit;
 import org.objectweb.asm.Opcodes;
 import org.codehaus.groovy.syntax.Types;
@@ -212,6 +215,13 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
                      expression.getRightExpression());
         }
         super.visitBinaryExpression(expression);
+    }
+    
+    public void visitCatchStatement(CatchStatement cs) {
+        if (!(cs.getExceptionType().isDerivedFrom(ClassHelper.make(Throwable.class)))) {
+            addError("catch statement parameter type is no subclass of Throwable",cs);
+        }
+        super.visitCatchStatement(cs);
     }
 
 }

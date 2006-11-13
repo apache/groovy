@@ -188,9 +188,9 @@ public class ClassHelper {
     /**
      * Creates a ClassNode using a given class.
      * Unlike make(String) this method will not use the cache
-     * to create the ClassNode. This means to ClassNode created
+     * to create the ClassNode. This means the ClassNode created
      * from this method using the same name will have a different
-     * reference
+     * references
      * 
      * @see #make(String)
      * @param name of the class the ClassNode is representing

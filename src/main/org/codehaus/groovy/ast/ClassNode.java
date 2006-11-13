@@ -390,12 +390,12 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
             MethodNode method = (MethodNode) iter.next();
             String sig = method.getTypeDescriptor();
             if (result.containsKey(sig)) {
-                MethodNode inheritedMethod = (MethodNode) result.get(sig);
+                /*MethodNode inheritedMethod = (MethodNode) result.get(sig);
                 if (inheritedMethod.isAbstract()) {
                     result.put(sig, method);
-                }
-            }
-            else {
+                }*/
+                result.put(sig, method);
+            } else {
                 result.put(sig, method);
             }
         }
