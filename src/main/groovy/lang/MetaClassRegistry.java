@@ -134,7 +134,7 @@ public class MetaClassRegistry {
             MetaClass answer = (MetaClass) metaClasses.get(theClass);
             if (answer == null) {
                 answer = getMetaClassFor(theClass);
-                answer.checkInitialised();
+                answer.initialise();
                 metaClasses.put(theClass, answer);
             }
             return answer;

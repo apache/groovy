@@ -382,21 +382,23 @@ public class MetaClassImpl extends MetaClass {
     *         given name
     */
    private List getMethods(Class sender, String name, boolean isCallToSuper) {
+       Map methodIndex;
        if (isCallToSuper) {
-           Map methodIndex = (Map) classMethodIndexForSuper.get(sender);
-           return (List) methodIndex.get(name);
-       }
-       Map methodIndex = (Map) classMethodIndex.get(sender);
+           methodIndex = (Map) classMethodIndexForSuper.get(sender);
+       } else {
+           methodIndex = (Map) classMethodIndex.get(sender);
+       }   
+       
+       if (methodIndex==null) throw new IllegalArgumentException("invalid index class "+sender+" for "+theClass);
        List answer = (List) methodIndex.get(name);
-       List used = GroovyCategorySupport.getCategoryMethods(theClass, name);
-       if (used != null) {
-           if (answer != null) {
+       if (answer == null) answer = Collections.EMPTY_LIST;
+       
+       if (!isCallToSuper) {
+           List used = GroovyCategorySupport.getCategoryMethods(sender, name);
+           if (used != null) {
                used.addAll(answer);
+               answer = used;
            }
-           answer = used;
-       }
-       if (answer == null) {
-           answer = Collections.EMPTY_LIST;
        }
        return answer;
    }
@@ -413,12 +415,6 @@ public class MetaClassImpl extends MetaClass {
        return answer;
    }
 
-   /**
-    * Allows static method definitions to be added to a meta class as if it
-    * was an instance method
-    *
-    * @param method
-    */
    public void addNewInstanceMethod(Method method) {
        if (initialised) {
            throw new RuntimeException("Already initialized, cannot add new method: " + method);
@@ -472,6 +468,7 @@ public class MetaClassImpl extends MetaClass {
     *
     */
    public Object invokeMethod(Class sender, Object object, String methodName, Object[] originalArguments, boolean isCallToSuper) {
+       checkInitalised();
        if (object == null) {
            throw new NullPointerException("Cannot invoke method: " + methodName + " on null object");
        }              
@@ -661,6 +658,7 @@ public class MetaClassImpl extends MetaClass {
    }
 
    public Object invokeStaticMethod(Object object, String methodName, Object[] arguments) {
+       checkInitalised();
        if (log.isLoggable(Level.FINER)){
            MetaClassHelper.logMethodCall(object, methodName, arguments);
        }
@@ -749,8 +747,20 @@ public class MetaClassImpl extends MetaClass {
        return ret;
    }
    
+   private void checkInitalised() {
+       if (!initialised) 
+           throw new IllegalStateException(
+                   "initialise must be called for meta " +
+                   "class of "+ theClass + 
+                   "("+this.getClass() + ") " +
+                   "to complete initialisation process " +
+                   "before any invocation of field/property " +
+                   "access can be done");
+   }
+   
    
    private Object invokeConstructor(Class at, Object[] arguments, boolean setAccessible) {
+       checkInitalised();
        if (arguments==null) arguments = EMPTY_ARGUMENTS;
        Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
        unwrap(arguments);       
@@ -792,6 +802,7 @@ public class MetaClassImpl extends MetaClass {
     * properties to set
     */
    public void setProperties(Object bean, Map map) {
+       checkInitalised();
        for (Iterator iter = map.entrySet().iterator(); iter.hasNext();) {
            Map.Entry entry = (Map.Entry) iter.next();
            String key = entry.getKey().toString();
@@ -813,6 +824,7 @@ public class MetaClassImpl extends MetaClass {
     * @return the given property's value on the object
     */
    public Object getProperty(final Object object, final String property) {
+       checkInitalised();
        // look for the property in our map
        MetaProperty mp = (MetaProperty) propertyMap.get(property);
        if (mp != null) {
@@ -919,6 +931,7 @@ public class MetaClassImpl extends MetaClass {
     * @return a list of MetaProperty objects
     */
    public List getProperties() {
+       checkInitalised();
        // simply return the values of the metaproperty map as a List
        List ret = new ArrayList(propertyMap.size());
        for (Iterator iter = propertyMap.values().iterator(); iter.hasNext();) {
@@ -1093,6 +1106,8 @@ public class MetaClassImpl extends MetaClass {
     * Sets the property value on an object
     */
    public void setProperty(Object object, String property, Object newValue) { 
+       checkInitalised();
+       
        //
        // Unwrap wrapped values fo now - the new MOP will handle them properly
        //
@@ -1236,6 +1251,8 @@ public class MetaClassImpl extends MetaClass {
     * Looks up the given attribute (field) on the given object
     */
    public Object getAttribute(final Object object, final String attribute) {
+       checkInitalised();
+       
        PrivilegedActionException firstException = null;
 
        final Class clazz;
@@ -1744,7 +1761,7 @@ public class MetaClassImpl extends MetaClass {
        reflector = null;
    }
 
-   public synchronized void checkInitialised() {
+   public synchronized void initialise() {
        if (!initialised) {
            fillMethodIndex();
            addProperties();

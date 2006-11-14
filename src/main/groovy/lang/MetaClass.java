@@ -28,6 +28,17 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 
 /**
+ * Base class for meta class implementations. 
+ * The meta class is used to invoke methods or to get 
+ * fields/properties. For proper initialization of this class 
+ * it is not enough to only call the constructor, the
+ * initialise() must be called too. The invoke methods should
+ * check that initialise() was called. Adding methods is 
+ * valid unless initilise method was called. Therefore 
+ * addNewStaticMethod and addNewInstanceMethod should check that
+ * that initilise awas not called before.
+ * 
+ * 
  * @author John Wilson
  *
  */
@@ -93,9 +104,31 @@ public abstract class MetaClass {
     public abstract MetaMethod retrieveMethod(String methodName, Class[] arguments);
     public abstract MetaMethod retrieveStaticMethod(String methodName, Class[] arguments);
     public abstract Constructor retrieveConstructor(Class[] arguments);
+    /**
+     * adds a new instance method to this meta class. Instance
+     * methods are able to overwrite the original methods of the
+     * class. Calling this method should not be done after 
+     * initlise was called.
+     * @param method the method to be added
+     */
     public abstract void addNewInstanceMethod(Method method);
+    /**
+     * adds a new static method to this meta class. This is only
+     * possible as long as initilise was not called.
+     * @param method the method to be added
+     */
     public abstract void addNewStaticMethod(Method method);
-    public abstract void checkInitialised();
+    /**
+     * complete the initlialisation process. After this method
+     * is called no methods whould be added to the meta class.
+     * Invocation of methods or access to fields/proeprties is
+     * forbidden unless this method is called. This method 
+     * should contain any initialisation code, taking a longer
+     * time to complete. An example is the creation of the 
+     * Reflector. It is suggested to synchronize this 
+     * method.
+     */
+    public abstract void initialise();
     public abstract List getProperties();
     public abstract void setProperties(Object bean, Map map);
     public abstract ClassNode getClassNode();
