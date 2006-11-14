@@ -812,8 +812,15 @@ public class ScriptBytecodeAdapter {
                 ret.add(args[argsPos]);
             }
             Object value = spreads[spreadPos];
-            if (!(value instanceof List)) throw new IllegalArgumentException("connot spread the type "+ value.getClass().getName()+" with value "+value);
-            ret.addAll((List) value);
+            if (value==null) {
+                ret.add(null);
+            } else if (value instanceof List) {
+                ret.addAll((List) value);
+            } else if (value.getClass().isArray()) {
+                ret.addAll(DefaultTypeTransformation.primitiveArrayToList(value));
+            } else {
+                throw new IllegalArgumentException("connot spread the type "+ value.getClass().getName()+" with value "+value);
+            }
             spreadPos++;
         }
         for (;argsPos<args.length;argsPos++) {
