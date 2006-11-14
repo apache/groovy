@@ -81,6 +81,7 @@ import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.Phases;
 import org.codehaus.groovy.runtime.CurriedClosure;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.DefaultMethodKey;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.MetaClassHelper;
@@ -102,6 +103,7 @@ import org.objectweb.asm.ClassVisitor;
 * @author Guillaume Laforge
 * @author Jochen Theodorou
 * @version $Revision$
+* @see groovy.lang.MetaClass
 */
 public class MetaClassImpl extends MetaClass {
 
@@ -483,10 +485,11 @@ public class MetaClassImpl extends MetaClass {
        MetaMethod method = retrieveMethod(sender, methodName, argClasses, isCallToSuper);
        
        if (method==null && arguments.length==1 && arguments[0] instanceof List) {
-           arguments = ((List) arguments[0]).toArray();
-           argClasses = MetaClassHelper.convertToTypeArray(arguments);
-           method = retrieveMethod(methodName, argClasses);
+           Object[] newArguments = ((List) arguments[0]).toArray();
+           Class[] newArgClasses = MetaClassHelper.convertToTypeArray(newArguments);
+           method = retrieveMethod(sender, methodName, newArgClasses, isCallToSuper);
            if (method!=null) {
+               MethodKey methodKey = new DefaultMethodKey(sender, methodName, argClasses);
                method = new TransformMetaMethod(method) {
                    public Object invoke(Object object, Object[] arguments) throws Exception {
                        Object firstArgument = arguments[0];
@@ -495,6 +498,8 @@ public class MetaClassImpl extends MetaClass {
                        return super.invoke(object, arguments);
                    }
                };
+               methodCache.put(methodKey, method);
+               return invokeMethod(sender,object,methodName, originalArguments, isCallToSuper);
            }
        }
 
@@ -592,12 +597,12 @@ public class MetaClassImpl extends MetaClass {
    public MetaMethod retrieveMethod(Class sender, String methodName, Class[] arguments, boolean isCallToSuper) {
        // lets try use the cache to find the method
        //TODO: add isSuperCall to key
-       MethodKey methodKey = new TemporaryMethodKey(sender, methodName, arguments);
+       MethodKey methodKey = new DefaultMethodKey(sender, methodName, arguments);
        MetaMethod method = (MetaMethod) methodCache.get(methodKey);
        if (method == null) {
            method = pickMethod(sender, methodName, arguments, isCallToSuper);
            if (method != null && method.isCacheable()) {
-               methodCache.put(methodKey.createCopy(), method);
+               methodCache.put(methodKey, method);
            }
        }
        return method;
@@ -754,10 +759,9 @@ public class MetaClassImpl extends MetaClass {
                    "class of "+ theClass + 
                    "("+this.getClass() + ") " +
                    "to complete initialisation process " +
-                   "before any invocation of field/property " +
+                   "before any invocation or field/property " +
                    "access can be done");
    }
-   
    
    private Object invokeConstructor(Class at, Object[] arguments, boolean setAccessible) {
        checkInitalised();

@@ -54,6 +54,8 @@ public class DefaultMethodKey extends MethodKey{
     }
 
     public Class getParameterType(int index) {
-        return parameterTypes[index];
+        Class c = parameterTypes[index];
+        if (c==null) return Object.class;
+        return c;
     }
 }
