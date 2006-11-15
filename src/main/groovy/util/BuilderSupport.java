@@ -81,6 +81,15 @@ public abstract class BuilderSupport extends GroovyObjectSupport {
         this.proxyBuilder = proxyBuilder;
     }
 
+    /**
+     * Convenience method when no arguments are required
+     * @return the result of the call
+     * @param methodName the name of the method to invoke
+     */
+    public Object invokeMethod(String methodName) {
+        return invokeMethod(methodName, null);
+    }
+
     public Object invokeMethod(String methodName, Object args) {
         Object name = getName(methodName);
         return doInvokeMethod(methodName, name, args);
