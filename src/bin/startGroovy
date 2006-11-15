@@ -10,7 +10,6 @@
 
 PROGNAME=`basename "$0"`
 DIRNAME=`dirname "$0"`
-ARGUMENTS=$@
 
 # Use the maximum available, or set MAX_FD != -1 to use that
 MAX_FD="maximum"
@@ -176,9 +175,9 @@ fi
 
 # For Darwin, use classes.jar for TOOLS_JAR
 TOOLS_JAR="$JAVA_HOME/lib/tools.jar"
-if $darwin; then
-    TOOLS_JAR="/System/Library/Frameworks/JavaVM.framework/Versions/CurrentJDK/Classes/classes.jar"
-fi
+#if $darwin; then
+#    TOOLS_JAR="/System/Library/Frameworks/JavaVM.framework/Versions/CurrentJDK/Classes/classes.jar"
+#fi
 
 # For Cygwin, switch paths to Windows format before running java
 if $cygwin; then
@@ -226,18 +225,7 @@ startGroovy() {
   if $useprofiler; then
       runProfiler
   else
-  	if [ $# -eq 0 ] ; then         # no argument given
-         exec "$JAVACMD" $JAVA_OPTS \
-          -classpath "$STARTER_CLASSPATH" \
-          -Dprogram.name="$PROGNAME" \
-          -Dgroovy.starter.conf="$GROOVY_CONF" \
-          -Dgroovy.home="$GROOVY_HOME" \
-          -Dtools.jar="$TOOLS_JAR" \
-          $STARTER_MAIN_CLASS \
-          --main $CLASS \
-          --conf "$GROOVY_CONF" \
-          --classpath "$CP" 
-  	else
+  	if $cygwin; then
          exec "$JAVACMD" $JAVA_OPTS \
           -classpath "$STARTER_CLASSPATH" \
           -Dprogram.name="$PROGNAME" \
@@ -249,6 +237,18 @@ startGroovy() {
           --conf "$GROOVY_CONF" \
           --classpath "$CP" \
           "${ARGUMENTS[@]}"
+  	else
+         exec "$JAVACMD" $JAVA_OPTS \
+          -classpath "$STARTER_CLASSPATH" \
+          -Dprogram.name="$PROGNAME" \
+          -Dgroovy.starter.conf="$GROOVY_CONF" \
+          -Dgroovy.home="$GROOVY_HOME" \
+          -Dtools.jar="$TOOLS_JAR" \
+          $STARTER_MAIN_CLASS \
+          --main $CLASS \
+          --conf "$GROOVY_CONF" \
+          --classpath "$CP" \
+          "$@"
   	fi
   fi
 }
