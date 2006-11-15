@@ -471,7 +471,7 @@
     <dependency>
       <groupId>antlr</groupId>
       <artifactId>antlr</artifactId>
-      <version>2.7.6</version>
+      <version>2.7.5</version>
       <properties>
          <war.bundle>true</war.bundle>
       </properties>
