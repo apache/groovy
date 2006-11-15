@@ -62,6 +62,7 @@ import org.objectweb.asm.Label;
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author <a href="mailto:b55r@sina.com">Bing Ran</a>
+ * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
  * @version $Revision$
  */
 public class BytecodeHelper implements Opcodes {
@@ -558,8 +559,8 @@ public class BytecodeHelper implements Opcodes {
     
     public void swapWithObject(ClassNode type) {
         if (type==ClassHelper.long_TYPE || type==ClassHelper.double_TYPE) {
-            cv.visitInsn(DUP2_X2);
-            cv.visitInsn(POP);
+            cv.visitInsn(DUP2_X1);
+            cv.visitInsn(POP2);
         } else {
             cv.visitInsn(SWAP);
         }

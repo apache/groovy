@@ -1785,7 +1785,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     private List sortConstructors(ConstructorCallExpression call, ClassNode callNode) {
-        List constructors = callNode.getDeclaredConstructors();
+        List constructors = new ArrayList(callNode.getDeclaredConstructors());
         Comparator comp = new Comparator() {
             public int compare(Object arg0, Object arg1) {
                 ConstructorNode c0 = (ConstructorNode) arg0;

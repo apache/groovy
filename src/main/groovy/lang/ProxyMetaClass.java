@@ -85,7 +85,7 @@ public class ProxyMetaClass extends MetaClassImpl {
      * See Interceptor for details.
      */
     public Object invokeMethod(final Object object, final String methodName, final Object[] arguments) {
-        return doCall(object, methodName, arguments, new Callable(){
+        return doCall(object, methodName, arguments, interceptor, new Callable(){
             public Object call() {
                 return adaptee.invokeMethod(object, methodName, arguments);
             }
@@ -98,7 +98,7 @@ public class ProxyMetaClass extends MetaClassImpl {
      * See Interceptor for details.
      */
     public Object invokeStaticMethod(final Object object, final String methodName, final Object[] arguments) {
-        return doCall(object, methodName, arguments, new Callable(){
+        return doCall(object, methodName, arguments, interceptor, new Callable(){
             public Object call() {
                 return adaptee.invokeStaticMethod(object, methodName, arguments);
             }
@@ -112,7 +112,7 @@ public class ProxyMetaClass extends MetaClassImpl {
      * See Interceptor for details.
      */
     public Object invokeConstructor(final Object[] arguments) {
-        return doCall(theClass, "ctor", arguments, new Callable(){
+        return doCall(theClass, "ctor", arguments, interceptor, new Callable(){
             public Object call() {
                 return adaptee.invokeConstructor(arguments);
             }
@@ -120,7 +120,7 @@ public class ProxyMetaClass extends MetaClassImpl {
     }
 
     public Object invokeConstructorAt(final Class at, final Object[] arguments) {
-        return doCall(theClass, "ctor", arguments, new Callable() {
+        return doCall(theClass, "ctor", arguments, interceptor,new Callable() {
             public Object call() {
                 return adaptee.invokeConstructorAt(at, arguments);
             }
@@ -131,7 +131,7 @@ public class ProxyMetaClass extends MetaClassImpl {
     private interface Callable{
         Object call();
     }
-    private Object doCall(Object object, String methodName, Object[] arguments, Callable howToInvoke) {
+    private Object doCall(Object object, String methodName, Object[] arguments, Interceptor interceptor, Callable howToInvoke) {
         if (null == interceptor) {
             return howToInvoke.call();
         }
