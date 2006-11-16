@@ -119,4 +119,8 @@ public class NullObject extends GroovyObjectSupport {
       return Collections.EMPTY_LIST.iterator();
   }
   
+  public Object plus(String s){
+      return "null"+s;
+  }
+  
 }
