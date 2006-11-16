@@ -77,7 +77,6 @@ import java.util.logging.Level;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.classgen.BytecodeHelper;
 import org.codehaus.groovy.control.CompilationUnit;
-import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.Phases;
 import org.codehaus.groovy.runtime.CurriedClosure;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
@@ -91,7 +90,6 @@ import org.codehaus.groovy.runtime.NewInstanceMetaMethod;
 import org.codehaus.groovy.runtime.NewStaticMetaMethod;
 import org.codehaus.groovy.runtime.ReflectionMetaMethod;
 import org.codehaus.groovy.runtime.Reflector;
-import org.codehaus.groovy.runtime.TemporaryMethodKey;
 import org.codehaus.groovy.runtime.TransformMetaMethod;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 import org.objectweb.asm.ClassVisitor;
@@ -111,7 +109,7 @@ public class MetaClassImpl extends MetaClass {
    private ClassNode classNode;
    private Map classMethodIndex = new HashMap();
    private Map classMethodIndexForSuper;
-   private Map staticMethodIndex = new HashMap();
+   private Map classStaticMethodIndex = new HashMap();
    //private Map propertyDescriptors = Collections.synchronizedMap(new HashMap());
    private Map propertyMap = Collections.synchronizedMap(new HashMap());
    private Map listeners = new HashMap();
@@ -390,10 +388,13 @@ public class MetaClassImpl extends MetaClass {
        } else {
            methodIndex = (Map) classMethodIndex.get(sender);
        }   
-       
-       if (methodIndex==null) throw new IllegalArgumentException("invalid index class "+sender+" for "+theClass);
-       List answer = (List) methodIndex.get(name);
-       if (answer == null) answer = Collections.EMPTY_LIST;
+       List answer;
+       if (methodIndex!=null) {
+           answer = (List) methodIndex.get(name);
+           if (answer == null) answer = Collections.EMPTY_LIST;
+       } else {
+           answer = Collections.EMPTY_LIST;
+       }
        
        if (!isCallToSuper) {
            List used = GroovyCategorySupport.getCategoryMethods(sender, name);
@@ -409,11 +410,11 @@ public class MetaClassImpl extends MetaClass {
     * @return all the normal static methods avaiable on this class for the
     *         given name
     */
-   private List getStaticMethods(String name) {
-       List answer = (List) staticMethodIndex.get(name);
-       if (answer == null) {
-           return Collections.EMPTY_LIST;
-       }
+   private List getStaticMethods(Class sender, String name) {
+       Map methodIndex = (Map) classStaticMethodIndex.get(sender);
+       if (methodIndex == null) return Collections.EMPTY_LIST;
+       List answer = (List) methodIndex.get(name);
+       if (answer == null) return Collections.EMPTY_LIST;
        return answer;
    }
 
@@ -624,12 +625,12 @@ public class MetaClassImpl extends MetaClass {
 
    public MetaMethod retrieveStaticMethod(String methodName, Class[] arguments) {
        //TODO: implement!
-       MethodKey methodKey = new TemporaryMethodKey(theClass, methodName, arguments);
+       MethodKey methodKey = new DefaultMethodKey(theClass, methodName, arguments);
        MetaMethod method = (MetaMethod) staticMethodCache.get(methodKey);
        if (method == null) {
-           method = pickStaticMethod(methodName, arguments);
+           method = pickStaticMethod(theClass,methodName, arguments);
            if (method != null) {
-               staticMethodCache.put(methodKey.createCopy(), method);
+               staticMethodCache.put(methodKey, method);
            }
        }
        return method;
@@ -667,16 +668,23 @@ public class MetaClassImpl extends MetaClass {
        if (log.isLoggable(Level.FINER)){
            MetaClassHelper.logMethodCall(object, methodName, arguments);
        }
+       
+       Class sender = object.getClass();
+       if (object instanceof Class) sender = (Class) object;
+       if (sender!=theClass) {
+           MetaClass mc = registry.getMetaClass(sender);
+           return mc.invokeStaticMethod(sender,methodName,arguments);
+       }
+       
        if (arguments==null) arguments = EMPTY_ARGUMENTS;
        Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
        unwrap(arguments);
        
        // lets try use the cache to find the method
-       //TODO: implement!
-       MethodKey methodKey = new TemporaryMethodKey(theClass, methodName, arguments);
+       MethodKey methodKey = new DefaultMethodKey(sender, methodName, argClasses);
        MetaMethod method = (MetaMethod) staticMethodCache.get(methodKey);
        if (method == null) {
-           method = pickStaticMethod(methodName, argClasses);
+           method = pickStaticMethod(sender, methodName, argClasses);
            if (method != null) {
                staticMethodCache.put(methodKey.createCopy(), method);
            }
@@ -686,12 +694,12 @@ public class MetaClassImpl extends MetaClass {
            return MetaClassHelper.doMethodInvoke(object, method, arguments);
        }
 
-       throw new MissingMethodException(methodName, theClass, arguments);
+       throw new MissingMethodException(methodName, sender, arguments);
    }
    
-   private MetaMethod pickStaticMethod(String methodName, Class[] arguments) {
+   private MetaMethod pickStaticMethod(Class sender, String methodName, Class[] arguments) {
        MetaMethod method = null;
-       List methods = getStaticMethods(methodName);
+       List methods = getStaticMethods(sender,methodName);
 
        if (!methods.isEmpty()) {
            method = (MetaMethod) chooseMethod(methodName, methods, arguments, false);
@@ -865,16 +873,6 @@ public class MetaClassImpl extends MetaClass {
            // jes bug? a property retrieved via a generic get() can't have a null value?
            if (answer != null) {
                return answer;
-           }
-       }
-
-       if (!CompilerConfiguration.isJsrGroovy()) {
-           // is the property the name of a method - in which case return a
-           // closure
-           //TODO: implement!
-           List methods = getMethods(theClass,property,false);
-           if (!methods.isEmpty()) {
-               return new MethodClosure(object, property);
            }
        }
 
@@ -1452,38 +1450,15 @@ public class MetaClassImpl extends MetaClass {
            if (element.getParameterTypes()[0]!=theClass) continue;
            addNewStaticMethod(element);
        }
-
    }
-
-   private void addMethod(MetaMethod method) {
-       String name = method.getName();
-
-       //System.out.println(theClass.getName() + " == " + name + Arrays.asList(method.getParameterTypes()));
-
-       if (isGenericGetMethod(method) && genericGetMethod == null) {
-           genericGetMethod = method;
-       }
-       else if (MetaClassHelper.isGenericSetMethod(method) && genericSetMethod == null) {
-           genericSetMethod = method;
-       }
-       if (method.isStatic()) {
-           List list = (List) staticMethodIndex.get(name);
-           if (list == null) {
-               list = new ArrayList();
-               staticMethodIndex.put(name, list);
-               list.add(method);
-           }
-           else {
-               if (!MetaClassHelper.containsMatchingMethod(list, method)) {
-                   list.add(method);
-               }
-           }
-       }
+   
+   private void addtoClassMethodIndex(MetaMethod method, Map classMethodIndex) {
        Map methodIndex = (Map) classMethodIndex.get(method.getDeclaringClass());
        if (methodIndex==null) {
            methodIndex = new HashMap();
            classMethodIndex.put(method.getDeclaringClass(),methodIndex);
        }
+       String name = method.getName();
        List list = (List) methodIndex.get(name);
        if (list == null) {
            list = new ArrayList();
@@ -1492,6 +1467,19 @@ public class MetaClassImpl extends MetaClass {
        } else {
            addMethodToList(list,method);
        }
+   }
+
+   private void addMethod(MetaMethod method) {
+       if (isGenericGetMethod(method) && genericGetMethod == null) {
+           genericGetMethod = method;
+       }
+       else if (MetaClassHelper.isGenericSetMethod(method) && genericSetMethod == null) {
+           genericSetMethod = method;
+       }
+       if (method.isStatic()) {
+           addtoClassMethodIndex(method,classStaticMethodIndex);
+       }
+       addtoClassMethodIndex(method,classMethodIndex);
    }
    
    private void addMethodToList(List list, MetaMethod method) {
@@ -1604,7 +1592,7 @@ public class MetaClassImpl extends MetaClass {
     * @return the Method of the given name with no parameters or null
     */
    private MetaMethod findStaticGetter(Class type, String name) {
-       List methods = getStaticMethods(name);
+       List methods = getStaticMethods(type, name);
        for (Iterator iter = methods.iterator(); iter.hasNext();) {
            MetaMethod method = (MetaMethod) iter.next();
            if (method.getParameterTypes().length == 0) {
