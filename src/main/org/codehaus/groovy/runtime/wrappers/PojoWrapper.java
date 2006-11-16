@@ -17,7 +17,6 @@
 
 package org.codehaus.groovy.runtime.wrappers;
 
-import groovy.lang.GroovyObject;
 import groovy.lang.MetaClass;
 
 
