@@ -1,4 +1,5 @@
 #!/bin/sh
+
 ##############################################################################
 ##                                                                          ##
 ##  Groovy JVM Bootstrap for UN*X                                           ##
@@ -8,11 +9,11 @@
 ##############################################################################
 
 ##
-## $Revision$ $Date$
+## $Revision$
+## $Date$
 ##
 
 DIRNAME=`dirname "$0"`
 . "$DIRNAME/startGroovy"
 
 startGroovy groovy.ui.GroovyMain "$@"
-
