@@ -429,7 +429,6 @@ public class DefaultTypeTransformation {
      * Compares the two objects handling nulls gracefully and performing numeric type coercion if required
      */
     public static int compareTo(Object left, Object right) {
-        //System.out.println("Comparing: " + left + " to: " + right);
         if (left == right) {
             return 0;
         }
@@ -443,8 +442,9 @@ public class DefaultTypeTransformation {
             if (left instanceof Number) {
                 if (isValidCharacterString(right)) {
                     return castToChar(left) - castToChar(right);
+                } else if (right instanceof Character || right instanceof Number) {
+                    return DefaultGroovyMethods.compareTo((Number) left, castToNumber(right));
                 }
-                return DefaultGroovyMethods.compareTo((Number) left, castToNumber(right));
             }
             else if (left instanceof Character) {
                 if (isValidCharacterString(right)) {
@@ -457,8 +457,7 @@ public class DefaultTypeTransformation {
             else if (right instanceof Number) {
                 if (isValidCharacterString(left)) {
                     return castToChar(left) - castToChar(right);
-                }
-                return DefaultGroovyMethods.compareTo(castToNumber(left), (Number) right);
+                } 
             }
             else if (left instanceof String && right instanceof Character) {
                 return ((String) left).compareTo(right.toString());
@@ -477,7 +476,6 @@ public class DefaultTypeTransformation {
             }
             return ((Comparable) leftList).compareTo(right);
         }
-        /** todo we might wanna do some type conversion here */
         throw new GroovyRuntimeException("Cannot compare values: " + left + " and " + right);
     }
     
