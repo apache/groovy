@@ -675,6 +675,9 @@ public class MetaClassImpl extends MetaClass {
            MetaClass mc = registry.getMetaClass(sender);
            return mc.invokeStaticMethod(sender,methodName,arguments);
        }
+       if (sender==Class.class) {
+           return invokeMethod(object,methodName,arguments);
+       }
        
        if (arguments==null) arguments = EMPTY_ARGUMENTS;
        Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
