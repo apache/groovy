@@ -137,7 +137,7 @@ public abstract class BuilderSupport extends GroovyObjectSupport {
 				} else if (object2 instanceof Map) {
 				    node = proxyBuilder.createNode(name, (Map) object2, object1);
         	    	        } else {
-				    throw new MissingMethodException(name.toString(), getClass(), list.toArray());
+				    throw new MissingMethodException(name.toString(), getClass(), list.toArray(), false);
 				}
         	    	    }
         	    	}
@@ -154,13 +154,13 @@ public abstract class BuilderSupport extends GroovyObjectSupport {
         	    	        closure = (Closure) arg2;
         	    	        node = proxyBuilder.createNode(name, (Map) arg1, arg0);
 			    } else {
-				throw new MissingMethodException(name.toString(), getClass(), list.toArray());
+				throw new MissingMethodException(name.toString(), getClass(), list.toArray(), false);
 			   }
         	    	}
         	    	break;
         	    	default:
         	    	{
-			    throw new MissingMethodException(name.toString(), getClass(), list.toArray());
+			    throw new MissingMethodException(name.toString(), getClass(), list.toArray(), false);
 			}
 
         }

@@ -51,6 +51,6 @@ public class Reflector {
     }
 
     protected Object noSuchMethod(MetaMethod method, Object object, Object[] arguments) {
-        throw new MissingMethodException(method.getName(), method.getCallClass(), arguments);
+        throw new MissingMethodException(method.getName(), method.getCallClass(), arguments, false);
     }
 }

@@ -339,7 +339,7 @@ public class SwingBuilder extends BuilderSupport {
             return widget;
         }
         else {
-        	throw new MissingMethodException((String) name, getClass(), new Object[] {value});
+        	throw new MissingMethodException((String) name, getClass(), new Object[] {value}, false);
         }
     }
 

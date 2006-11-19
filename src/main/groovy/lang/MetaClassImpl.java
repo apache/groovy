@@ -575,7 +575,7 @@ public class MetaClassImpl extends MetaClass {
                }
            } catch (MissingPropertyException mpe) {}
 
-           throw new MissingMethodException(methodName, theClass, originalArguments);
+           throw new MissingMethodException(methodName, theClass, originalArguments, false);
        }
    }
 
@@ -697,7 +697,7 @@ public class MetaClassImpl extends MetaClass {
            return MetaClassHelper.doMethodInvoke(object, method, arguments);
        }
 
-       throw new MissingMethodException(methodName, sender, arguments);
+       throw new MissingMethodException(methodName, sender, arguments, true);
    }
    
    private MetaMethod pickStaticMethod(Class sender, String methodName, Class[] arguments) {
