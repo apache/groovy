@@ -10,7 +10,13 @@ class XmlSlurperTest extends GroovyTestCase {
 
     void testWsdl() {
         def wsdl = '''
-            <definitions name="AgencyManagementService">                                              
+            <definitions name="AgencyManagementService"
+                         xmlns:ns1="http://www.example.org/NS1"
+                         xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                         xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+                         xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/"
+                         xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                         xmlns="http://schemas.xmlsoap.org/wsdl/">                                              
                 <message name="SomeRequest">                                                          
                     <part name="parameters" element="ns1:SomeReq" />                                  
                 </message>                                                                            
@@ -24,6 +30,9 @@ class XmlSlurperTest extends GroovyTestCase {
         assert xml.message.part.findAll { true }.size() == 2
         assert xml.message.part.find { it.name() == 'part' }.name() == 'part'
         assert xml.message.findAll { true }.size() == 2
+        assert xml.message.part.lookupNamespace("ns1") == "http://www.example.org/NS1"
+        assert xml.message.part.lookupNamespace("") == "http://schemas.xmlsoap.org/wsdl/"
+        assert xml.message.part.lookupNamespace("undefinedPrefix") == null
         xml.message.findAll { true }.each { assert it.name() == "message"}
     }
 

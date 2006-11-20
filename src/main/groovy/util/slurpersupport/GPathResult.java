@@ -124,6 +124,10 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
     public GPathResult children() {
         return new NodeChildren(this, this.namespaceTagHints);
     }
+    
+    public String lookupNamespace(final String prefix) {
+        return (String)this.namespaceTagHints.get(prefix);
+    }
 
     public String toString() {
         return text();
