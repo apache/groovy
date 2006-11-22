@@ -31,32 +31,27 @@
  * DAMAGE.
  *  
  */
- package org.codehaus.groovy.runtime;
+package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
 import groovy.lang.MetaMethod;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.WeakHashMap;
-
+import java.util.*;
 
 /**
  * @author sam
+ * @author Paul King
  */
 public class GroovyCategorySupport {
 
     /**
      * This method is used to pull all the new methods out of the local thread context with a particular name.
      * 
-     * @param categorizedClass
-     * @param name
+     * @param categorizedClass a class subject to the category methods in the thread context
+     * @param name the method name of interest
+     * @return the list of methods
      */
     public static List getCategoryMethods(Class categorizedClass, String name) {
         Map properties = getProperties();
@@ -68,6 +63,32 @@ public class GroovyCategorySupport {
                 List newMethodList = (List) metaMethodsMap.get(name);
                 if (newMethodList != null) {
                     methodList.addAll(newMethodList);
+                }
+            }
+        }
+        if (methodList.size() == 0) return null;
+        return methodList;
+    }
+
+    /**
+     * This method is used to pull all the new methods out of the local thread context.
+     *
+     * @param categorizedClass a class subject to the category methods in the thread context
+     * @return the list of methods
+     */
+    public static List getCategoryMethods(Class categorizedClass) {
+        Map properties = getProperties();
+        List methodList = new ArrayList();
+        for (Iterator i = properties.keySet().iterator(); i.hasNext(); ) {
+            Class current = (Class) i.next();
+            if (current.isAssignableFrom(categorizedClass)) {
+                Map metaMethodsMap = (Map) properties.get(current);
+                Collection collection = metaMethodsMap.values();
+                for (Iterator iterator = collection.iterator(); iterator.hasNext();) {
+                    List newMethodList = (List) iterator.next();
+                    if (newMethodList != null) {
+                        methodList.addAll(newMethodList);
+                    }                    
                 }
             }
         }
@@ -87,7 +108,8 @@ public class GroovyCategorySupport {
 
         /**
          * Sort by most specific to least specific.
-         * @param o
+         *
+         * @param o the object to compare against
          */
         public int compareTo(Object o) {
             CategoryMethod thatMethod = (CategoryMethod) o;
@@ -113,11 +135,47 @@ public class GroovyCategorySupport {
     }
 
     /**
-     * This method is delegated to from the global use(CategoryClass) method.  It scans the Category class for static methods
-     * that take 1 or more parameters.  The first parameter is the class you are adding the category method to, additional parameters
-     * are those paramteres needed by that method.  A use statement cannot be undone and is valid only for the current thread.
-     * 
-     * @param categoryClass
+     * Create a scope based on given categoryClass and invoke closure within that scope.
+     *
+     * @param categoryClass the class containing category methods
+	 * @param closure the closure during which to make the category class methods available
+	 */
+	public static void use(Class categoryClass, Closure closure) {
+		newScope();
+		try {
+			use(categoryClass);
+			closure.call();
+		} finally {
+			endScope();
+		}
+	}
+
+    /**
+     * Create a scope based on given categoryClasses and invoke closure within that scope.
+     *
+     * @param categoryClasses the list of classes containing category methods
+     * @param closure the closure during which to make the category class methods available
+     */
+    public static void use(List categoryClasses, Closure closure) {
+        newScope();
+        try {
+            for (Iterator i = categoryClasses.iterator(); i.hasNext(); ) {
+                Class clazz = (Class) i.next();
+                use(clazz);
+            }
+            closure.call();
+        } finally {
+            endScope();
+        }
+    }
+
+    /**
+     * Delegated to from the global use(CategoryClass) method.  It scans the Category class for static methods
+     * that take 1 or more parameters.  The first parameter is the class you are adding the category method to,
+     * additional parameters are those paramteres needed by that method.  A use statement cannot be undone and
+     * is valid only for the current thread.
+     *
+     * @param categoryClass the class containing category methods
      */
     private static void use(Class categoryClass) {
         Map properties = getProperties();
@@ -137,37 +195,6 @@ public class GroovyCategorySupport {
             }
         }
     }
-    
-	/**
-	 * @param clazz
-	 * @param closure
-	 */
-	public static void use(Class clazz, Closure closure) {
-		newScope();
-		try {
-			use(clazz);
-			closure.call();
-		} finally {
-			endScope();
-		}
-	}
-
-	/**
-	 * @param classes
-	 * @param closure
-	 */
-	public static void use(List classes, Closure closure) {
-		newScope();
-		try {
-			for (Iterator i = classes.iterator(); i.hasNext(); ) {
-				Class clazz = (Class) i.next();
-				use(clazz);
-			}
-			closure.call();
-		} finally {
-			endScope();
-		}		
-	}
 
     private static ThreadLocal local = new ThreadLocal() {
         protected Object initialValue() {
@@ -190,14 +217,9 @@ public class GroovyCategorySupport {
     
     private static Map getProperties() {
         List stack = (List) local.get();
-        Map properties = (Map) stack.get(stack.size() - 1);
-        return properties;
+        return (Map) stack.get(stack.size() - 1);
     }
     
-    /**
-     * @param name
-     * @param metaMethodsMap
-     */
     private static List getMethodList(Map metaMethodsMap, String name) {
         List methodList = (List) metaMethodsMap.get(name);
         if (methodList == null) {
@@ -207,10 +229,6 @@ public class GroovyCategorySupport {
         return methodList;
     }
 
-    /**
-     * @param properties
-     * @param metaClass
-     */
     private static Map getMetaMethods(Map properties, Class metaClass) {
         Map metaMethodsMap = (Map) properties.get(metaClass);
         if (metaMethodsMap == null) {
