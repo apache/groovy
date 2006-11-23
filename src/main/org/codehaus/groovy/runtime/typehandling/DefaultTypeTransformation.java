@@ -123,10 +123,10 @@ public class DefaultTypeTransformation {
                 return new Integer(c.charAt(0));
             }
             else {
-                throw new ClassCastException("Cannot cast: '" + c + "' to an Integer");
+                throw new GroovyCastException(c,Integer.class);
             }
         }
-        throw new ClassCastException("Cannot cast: '" + object + "' to an Number");
+        throw new GroovyCastException(object,Number.class);
     }
     
     public static boolean castToBoolean(Object object) {
@@ -176,7 +176,7 @@ public class DefaultTypeTransformation {
                 return text.charAt(0);
             }
             else {
-                throw new ClassCastException("Cannot cast: " + text + " to a Character");
+                throw new GroovyCastException(text,char.class);
             }
         }
     }
@@ -206,7 +206,7 @@ public class DefaultTypeTransformation {
                     answer = (Collection) type.newInstance();
                 }
                 catch (Exception e) {
-                    throw new ClassCastException("Could not instantiate instance of: " + type.getName() + ". Reason: " + e);
+                    throw new GroovyCastException("Could not instantiate instance of: " + type.getName() + ". Reason: " + e);
                 }
 
                 // we cannot just wrap in a List as we support primitive type arrays
@@ -260,7 +260,9 @@ public class DefaultTypeTransformation {
                 }
             }
         } else if (type.isPrimitive()) {
-            if (type == byte.class) {
+            if (type == boolean.class) {
+               return box(booleanUnbox(object)); 
+            } else if (type == byte.class) {
                 return box(byteUnbox(object));
             } else if (type == char.class) {
                 return box(charUnbox(object));
@@ -303,7 +305,7 @@ public class DefaultTypeTransformation {
                 // meaningful exception
             }
         }
-        throw new ClassCastException("unable to cast "+object.getClass()+" to "+type);
+        throw new GroovyCastException(object,type);
     }
     
     public static Object asArray(Object object, Class type) {

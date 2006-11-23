@@ -140,14 +140,8 @@ public class ScriptBytecodeAdapter {
     //  --------------------------------------------------------
     //                       methods for super
     //  --------------------------------------------------------
-    public static Object invokeMethodOnSuperN(Class senderClass, Object receiver, String messageName, Object[] messageArguments) throws Throwable{
-        MetaClass metaClass=null;
-        if (!(receiver instanceof GroovyObject)) {
-            Class theClass = receiver.getClass();
-            metaClass = InvokerHelper.getInstance().getMetaRegistry().getMetaClass(theClass);
-        } else {
-            metaClass = ((GroovyObject) receiver).getMetaClass();
-        }
+    public static Object invokeMethodOnSuperN(Class senderClass, GroovyObject receiver, String messageName, Object[] messageArguments) throws Throwable{
+        MetaClass metaClass = receiver.getMetaClass();
         // ignore interception and missing method fallback
         Object result=null;
         try {
@@ -155,15 +149,14 @@ public class ScriptBytecodeAdapter {
         } catch (GroovyRuntimeException t) {
             unwrap(t);
         }
-        return result;
-        
+        return result;        
     }
     
-    public static Object invokeMethodOnSuperNSafe(Class senderClass, Object receiver, String messageName, Object[] messageArguments) throws Throwable{
+    public static Object invokeMethodOnSuperNSafe(Class senderClass, GroovyObject receiver, String messageName, Object[] messageArguments) throws Throwable{
         return invokeMethodOnSuperN(senderClass,receiver,messageName,messageArguments);
     }
     
-    public static Object invokeMethodOnSuperNSpreadSafe(Class senderClass, Object receiver, String messageName, Object[] messageArguments) throws Throwable{
+    public static Object invokeMethodOnSuperNSpreadSafe(Class senderClass, GroovyObject receiver, String messageName, Object[] messageArguments) throws Throwable{
         if (! (receiver instanceof List)) return invokeMethodOnSuperN(senderClass,receiver,messageName, messageArguments);
         
         List list = (List) receiver;
@@ -174,15 +167,15 @@ public class ScriptBytecodeAdapter {
         return answer;
     }
     
-    public static Object invokeMethodOnSuper0(Class senderClass, Object receiver, String messageName)  throws Throwable{
+    public static Object invokeMethodOnSuper0(Class senderClass, GroovyObject receiver, String messageName)  throws Throwable{
         return invokeMethodOnSuperN(senderClass,receiver,messageName,EMPTY_ARGS);
     }
     
-    public static Object invokeMethodOnSuper0Safe(Class senderClass, Object receiver, String messageName, Object[] messageArguments) throws Throwable{
+    public static Object invokeMethodOnSuper0Safe(Class senderClass, GroovyObject receiver, String messageName, Object[] messageArguments) throws Throwable{
         return invokeMethodOnSuperNSafe(senderClass,receiver,messageName,EMPTY_ARGS);
     }
     
-    public static Object invokeMethodOnSuper0SpreadSafe(Class senderClass, Object receiver, String messageName, Object[] messageArguments) throws Throwable{
+    public static Object invokeMethodOnSuper0SpreadSafe(Class senderClass, GroovyObject receiver, String messageName, Object[] messageArguments) throws Throwable{
         return invokeMethodOnSuperNSpreadSafe(senderClass,receiver,messageName,EMPTY_ARGS);
     }
 

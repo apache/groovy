@@ -19,9 +19,7 @@ package groovy.lang;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Logger;
 
 import org.codehaus.groovy.ast.ClassNode;
@@ -47,6 +45,8 @@ public abstract class MetaClass {
     protected static final Logger log = Logger.getLogger(MetaClass.class.getName());
     protected static boolean useReflection = false;
     public static final Object NO_METHOD_FOUND = new Object();
+    protected final Class theClass;
+    private boolean isGroovyObject;
     
     public static boolean isUseReflection() {
         return MetaClass.useReflection;
@@ -61,11 +61,19 @@ public abstract class MetaClass {
     public static void setUseReflection(boolean useReflection) {
         MetaClass.useReflection = useReflection;
     }
-
-    protected final Class theClass;
     
     protected MetaClass(final Class theClass) {
         this.theClass = theClass;
+        isGroovyObject = GroovyObject.class.isAssignableFrom(theClass);
+    }
+    
+    public boolean isGroovyObject(){
+        return isGroovyObject;
+    }
+    
+    public Object invokeMissingMethod(Object instance, String methodName, Object[] arguments) {
+        GroovyObject pogo = (GroovyObject) instance;
+        return pogo.invokeMethod(methodName,arguments);
     }
     
     public Object invokeMethod(Object object, String methodName, Object arguments) {
@@ -95,15 +103,6 @@ public abstract class MetaClass {
     public abstract void setProperty(Object object, String property, Object newValue);
     public abstract Object getAttribute(Object object, String attribute);
     public abstract void setAttribute(Object object, String attribute, Object newValue);
-    
-    // Possibly Temp methods
-    public abstract List getMethods();
-    public abstract MetaMethod pickMethod(String methodName, Class[] arguments);
-    public abstract MetaMethod pickMethod(Object object, String methodName, Object[] arguments);
-    public abstract MetaMethod retrieveMethod(Object owner, String methodName, Object[] arguments);
-    public abstract MetaMethod retrieveMethod(String methodName, Class[] arguments);
-    public abstract MetaMethod retrieveStaticMethod(String methodName, Class[] arguments);
-    public abstract Constructor retrieveConstructor(Class[] arguments);
     /**
      * adds a new instance method to this meta class. Instance
      * methods are able to overwrite the original methods of the
@@ -129,13 +128,18 @@ public abstract class MetaClass {
      * method.
      */
     public abstract void initialise();
+    
+    // Possibly Temp methods
+    public abstract List getMethods();
+    public abstract MetaMethod pickMethod(String methodName, Class[] arguments);
+    public abstract MetaMethod pickMethod(Object object, String methodName, Object[] arguments);
+    public abstract MetaMethod retrieveMethod(Object owner, String methodName, Object[] arguments);
+    public abstract MetaMethod retrieveMethod(String methodName, Class[] arguments);
+    public abstract MetaMethod retrieveStaticMethod(String methodName, Class[] arguments);
+    public abstract Constructor retrieveConstructor(Class[] arguments);
     public abstract List getProperties();
-    public abstract void setProperties(Object bean, Map map);
     public abstract ClassNode getClassNode();
     public abstract List getMetaMethods();
     public abstract Object invokeConstructorAt(Class at, Object[] arguments);
-
-    // Possibly Temp fields
-    protected List newGroovyMethodsList = new LinkedList();
 
 }

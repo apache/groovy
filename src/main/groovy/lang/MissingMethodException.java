@@ -60,12 +60,16 @@ public class MissingMethodException extends GroovyRuntimeException {
 
     private String method;
     private Class type;
-    private boolean bStatic;
+    private boolean isStatic;
 
-    public MissingMethodException(String method, Class type, Object[] arguments, boolean bStatic) {
+    public MissingMethodException(String method, Class type, Object[] arguments) {
+        this(method,type,arguments,false);
+    }
+    
+    public MissingMethodException(String method, Class type, Object[] arguments, boolean isStatic) {
 	    super(
 	        "No signature of method: "
-	    		+ (bStatic ? "static " : "")
+	    		+ (isStatic ? "static " : "")
 	    		+ type.getName()
 				+ "."
 	            + method
@@ -75,7 +79,7 @@ public class MissingMethodException extends GroovyRuntimeException {
 				+ InvokerHelper.toString(arguments));
 	    this.method = method;
 	    this.type = type;
-	    this.bStatic = bStatic;
+        this.isStatic = isStatic;
 	}
     
     /**
@@ -86,18 +90,17 @@ public class MissingMethodException extends GroovyRuntimeException {
     }
 
     /**
-     * 
      * @return The type on which the method was attempted to be called
      */
     public Class getType() {
         return type;
     }
-
+    
     /**
-     * 
-     * @return Whether the method was called in a static way, i.e. on a class rather than an object.
+     * @return Whether the method was called in a static way, 
+     * i.e. on a class rather than an object.
      */
     public boolean isStatic() {
-        return bStatic;
+        return isStatic;
     }
 }

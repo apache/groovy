@@ -83,6 +83,7 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.DefaultMethodKey;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.MethodClosure;
 import org.codehaus.groovy.runtime.MethodKey;
@@ -91,6 +92,7 @@ import org.codehaus.groovy.runtime.NewStaticMetaMethod;
 import org.codehaus.groovy.runtime.ReflectionMetaMethod;
 import org.codehaus.groovy.runtime.Reflector;
 import org.codehaus.groovy.runtime.TransformMetaMethod;
+import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 import org.objectweb.asm.ClassVisitor;
 
@@ -127,6 +129,7 @@ public class MetaClassImpl extends MetaClass {
    private final static MetaMethod AMBIGOUS_LISTENER_METHOD = new MetaMethod(null,null,new Class[]{},null,0);
    private static final Object[] EMPTY_ARGUMENTS = {};
    private BeanInfo info;
+   private List newGroovyMethodsList = new LinkedList();
    
    public MetaClassImpl(MetaClassRegistry registry, final Class theClass) throws IntrospectionException {
        super(theClass);
@@ -492,7 +495,7 @@ public class MetaClassImpl extends MetaClass {
            if (method!=null) {
                MethodKey methodKey = new DefaultMethodKey(sender, methodName, argClasses);
                method = new TransformMetaMethod(method) {
-                   public Object invoke(Object object, Object[] arguments) throws Exception {
+                   public Object invoke(Object object, Object[] arguments) {
                        Object firstArgument = arguments[0];
                        List list = (List) firstArgument;
                        arguments = list.toArray();
@@ -823,15 +826,7 @@ public class MetaClassImpl extends MetaClass {
            String key = entry.getKey().toString();
 
            Object value = entry.getValue();
-           try {
-               setProperty(bean, key, value);
-           }
-           catch (GroovyRuntimeException e) {
-               // lets ignore missing properties
-               /** todo should replace this code with a getMetaProperty(key) != null check
-                i.e. don't try and set a non-existent property
-                */
-           }
+           setProperty(bean, key, value);
        }
    }
 
@@ -844,12 +839,11 @@ public class MetaClassImpl extends MetaClass {
        MetaProperty mp = (MetaProperty) propertyMap.get(property);
        if (mp != null) {
            try {
-               //System.out.println("we found a metaproperty for " + theClass.getName() +
-               //  "." + property);
                // delegate the get operation to the metaproperty
                return mp.getProperty(object);
-           }
-           catch(Exception e) {
+           } catch (InvokerInvocationException e) {
+               throw e;  
+           } catch(Exception e) {
                throw new GroovyRuntimeException("Cannot read property: " + property);
            }
        }
@@ -1123,16 +1117,10 @@ public class MetaClassImpl extends MetaClass {
            try {
                mp.setProperty(object, newValue);
                return;
-           }
-           catch(ReadOnlyPropertyException e) {
+           } catch(ReadOnlyPropertyException e) {
                // just rethrow it; there's nothing left to do here
                throw e;
-           }
-           catch (TypeMismatchException e) {
-               // tried to access to mismatched object.
-               throw e;
-           }
-           catch (Exception e) {
+           } catch (GroovyCastException e) {
                // if the value is a List see if we can construct the value
                // from a constructor
                if (newValue == null)
@@ -1455,7 +1443,7 @@ public class MetaClassImpl extends MetaClass {
        }
    }
    
-   private void addtoClassMethodIndex(MetaMethod method, Map classMethodIndex) {
+   private void addToClassMethodIndex(MetaMethod method, Map classMethodIndex) {
        Map methodIndex = (Map) classMethodIndex.get(method.getDeclaringClass());
        if (methodIndex==null) {
            methodIndex = new HashMap();
@@ -1480,9 +1468,9 @@ public class MetaClassImpl extends MetaClass {
            genericSetMethod = method;
        }
        if (method.isStatic()) {
-           addtoClassMethodIndex(method,classStaticMethodIndex);
+           addToClassMethodIndex(method,classStaticMethodIndex);
        }
-       addtoClassMethodIndex(method,classMethodIndex);
+       addToClassMethodIndex(method,classMethodIndex);
    }
    
    private void addMethodToList(List list, MetaMethod method) {

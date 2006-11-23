@@ -39,6 +39,7 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.lang.reflect.Field;
 import java.security.AccessController;
+import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 
 /**
@@ -91,29 +92,14 @@ public class MetaFieldProperty extends MetaProperty {
                         return newValue1;
                     }
                     catch (IllegalArgumentException e) {
-                        try {
-                            Object newValue2 = DefaultTypeTransformation.castToType(newValue1, field1.getType());
-                            field1.set(object1, newValue2);
-                            return newValue2;
-                        }
-                        catch (Exception ex) {
-                            throw new TypeMismatchException( "'" + toName(object1.getClass()) + "." + field1.getName()
-                                                                 + "' can not refer to the value '"
-                                                                 + newValue1 + "' (type " + toName(newValue1.getClass())
-                                                                 + "), because it is of the type " + toName(field1.getType()) );
-                        }
-                    }
-                    catch (Exception ex) {
-                        throw new GroovyRuntimeException("Cannot set the property '" + name + "'.", ex);
+                        Object newValue2 = DefaultTypeTransformation.castToType(newValue1, field1.getType());
+                        field1.set(object1, newValue2);
+                        return newValue2;
                     }
                 }
             });
-        }
-        catch (TypeMismatchException ex) {
-            throw ex;
-        }
-        catch (Exception ex) {
-            throw new GroovyRuntimeException("Cannot set the property '" + name + "'.", ex);
+        } catch (PrivilegedActionException ex) {
+            throw new GroovyRuntimeException("Cannot set the property '" + name + "'.", ex.getException());
         }
     }
 

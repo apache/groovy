@@ -41,6 +41,7 @@ import java.security.PrivilegedAction;
 import java.util.logging.Logger;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.Reflector;
 
@@ -108,18 +109,21 @@ public class MetaMethod implements Cloneable {
         }
     }
     
-    public Object invoke(Object object, Object[] arguments) throws Exception {
-        if (reflector != null) {
-            return reflector.invoke(this, object, arguments);
-        }
-        else {
-            AccessController.doPrivileged(new PrivilegedAction() {
-	    			public Object run() {
-	    			    method.setAccessible(true);
-	    			    return null;
-	    			}
-	    		});
-            return method.invoke(object, arguments);
+    public Object invoke(Object object, Object[] arguments) {
+        try {
+            if (reflector != null) {
+                return reflector.invoke(this, object, arguments);
+            } else {
+                AccessController.doPrivileged(new PrivilegedAction() {
+                    public Object run() {
+                        method.setAccessible(true);
+                        return null;
+                    }
+                });
+                return method.invoke(object, arguments);
+            }
+        } catch (Exception e) {
+            throw new InvokerInvocationException(e);
         }
     }
 

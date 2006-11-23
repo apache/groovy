@@ -448,10 +448,11 @@ public class GroovyClassLoader extends URLClassLoader {
             this.loadedClasses = new ArrayList();
             this.su = su;
         }
-
-        protected Class onClassNode(ClassWriter classWriter, ClassNode classNode) {
-            byte[] code = classWriter.toByteArray();
-
+        protected GroovyClassLoader getDefiningClassLoader(){
+            return cl;
+        }
+        protected Class createClass(byte[] code, ClassNode classNode) {
+            GroovyClassLoader cl = getDefiningClassLoader();
             Class theClass = cl.defineClass(classNode.getName(), code, 0, code.length, unit.getAST().getCodeSource());
             cl.resolveClass(theClass);
             this.loadedClasses.add(theClass);
@@ -466,6 +467,11 @@ public class GroovyClassLoader extends URLClassLoader {
             }
 
             return theClass;
+        }
+        
+        protected Class onClassNode(ClassWriter classWriter, ClassNode classNode) {
+            byte[] code = classWriter.toByteArray();
+            return createClass(code,classNode);
         }
 
         public void call(ClassVisitor classWriter, ClassNode classNode) {

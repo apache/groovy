@@ -22,7 +22,7 @@ class Groovy779_Bug extends GroovyTestCase {
             println p.age
             println p.nameID
         }
-        catch (TypeMismatchException e) {
+        catch (ClassCastException e) {
             onException(e)
         }
         finally {
@@ -43,7 +43,7 @@ class Groovy779_Bug extends GroovyTestCase {
             println p2.age
             println p2.nameID
         }
-        catch (TypeMismatchException e) {
+        catch (ClassCastException e) {
             onException(e)
         }
         finally {

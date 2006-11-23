@@ -20,7 +20,6 @@ package groovy.lang;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.List;
-import java.util.Map;
 
 import org.codehaus.groovy.ast.ClassNode;
 
@@ -161,12 +160,6 @@ public class DelegatingMetaClass extends MetaClass {
      */
     public void setAttribute(Object object, String attribute, Object newValue) {
         delegate.setAttribute(object, attribute, newValue);
-    }
-    /* (non-Javadoc)
-     * @see groovy.lang.MetaClass#setProperties(java.lang.Object, java.util.Map)
-     */
-    public void setProperties(Object bean, Map map) {
-        delegate.setProperties(bean, map);
     }
     /* (non-Javadoc)
      * @see groovy.lang.MetaClass#setProperty(java.lang.Object, java.lang.String, java.lang.Object)

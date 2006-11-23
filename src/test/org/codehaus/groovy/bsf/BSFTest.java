@@ -54,7 +54,6 @@ import junit.framework.TestCase;
 import org.apache.bsf.BSFManager;
 import org.apache.bsf.BSFException;
 import org.apache.bsf.BSFEngine;
-import org.apache.bsf.BSFDeclaredBean;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 /**

@@ -36,6 +36,7 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.MetaMethod;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -49,7 +50,7 @@ public class ReflectionMetaMethod extends MetaMethod {
         this.method = method;
     }
 
-    public Object invoke(Object object, Object[] arguments) throws Exception {
+    public Object invoke(Object object, Object[] arguments) {
     	if ( !alreadySetAccessible ) {
 	    	AccessController.doPrivileged(new PrivilegedAction() {
 	    		public Object run() {
@@ -64,6 +65,14 @@ public class ReflectionMetaMethod extends MetaMethod {
         //        System.out.println("Object: " + object);
         //        System.out.println("Using arguments: " + InvokerHelper.toString(arguments));
 
-        return method.invoke(object, arguments);
+        try {
+            return method.invoke(object, arguments);
+        } catch (IllegalArgumentException e) {
+            throw new InvokerInvocationException(e);
+        } catch (IllegalAccessException e) {
+            throw new InvokerInvocationException(e);
+        } catch (InvocationTargetException e) {
+            throw new InvokerInvocationException(e);
+        }
     }
 }

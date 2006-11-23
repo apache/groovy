@@ -52,7 +52,7 @@ public class TransformMetaMethod extends MetaMethod {
         this.metaMethod = metaMethod;
     }
 
-    public Object invoke(Object object, Object[] arguments) throws Exception {
+    public Object invoke(Object object, Object[] arguments) {
         return metaMethod.invoke(object, arguments);
     }
 }

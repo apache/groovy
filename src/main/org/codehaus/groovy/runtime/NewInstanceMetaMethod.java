@@ -90,7 +90,7 @@ public class NewInstanceMetaMethod extends MetaMethod {
         return super.getParameterTypes();
     }
 
-    public Object invoke(Object object, Object[] arguments) throws Exception {
+    public Object invoke(Object object, Object[] arguments)  {
         // we need to cheat using the type
         int size = arguments.length;
         Object[] newArguments = new Object[size + 1];

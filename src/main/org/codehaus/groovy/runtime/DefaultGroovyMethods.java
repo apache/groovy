@@ -6873,4 +6873,5 @@ public class DefaultGroovyMethods {
     public static Iterator iterator(Iterator it) {
         return it;
     }
+
 }

@@ -87,7 +87,7 @@ public class NewStaticMetaMethod extends MetaMethod {
         return super.getParameterTypes();
     }
 
-    public Object invoke(Object object, Object[] arguments) throws Exception {
+    public Object invoke(Object object, Object[] arguments) {
         int size = arguments.length;
         Object[] newArguments = new Object[size + 1];
         System.arraycopy(arguments, 0, newArguments, 1, size);

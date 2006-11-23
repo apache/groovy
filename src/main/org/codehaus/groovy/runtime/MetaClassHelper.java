@@ -657,10 +657,6 @@ public class MetaClassHelper {
         argumentArray = coerceArgumentsToClasses(argumentArray,paramTypes);
         try {
             return method.invoke(object, argumentArray);
-        } catch (InvocationTargetException e) {
-            throw new InvokerInvocationException(e);
-        } catch (IllegalAccessException e) {
-            throw createExceptionText("could not access method: ", method, object, argumentArray, e, true);
         } catch (IllegalArgumentException e) {
             //TODO: test if this is ok with new MOP, should be changed!
             // we don't want the exception being unwrapped if it is a IllegalArgumentException

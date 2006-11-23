@@ -458,7 +458,16 @@ public class InvokerHelper {
      * @param map
      */
     public static void setProperties(Object object, Map map) {
-        getMetaClass(object).setProperties(object, map);
+        MetaClass mc = getInstance().getMetaClass(object);
+        for (Iterator iter = map.entrySet().iterator(); iter.hasNext();) {
+            Map.Entry entry = (Map.Entry) iter.next();
+            String key = entry.getKey().toString();
+
+            Object value = entry.getValue();
+            try {
+                mc.setProperty(object, key, value);
+            } catch (MissingPropertyException mpe) {}
+        }
     }
 
     public static String getVersion() {
