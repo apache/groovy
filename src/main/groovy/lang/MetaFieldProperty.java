@@ -86,7 +86,7 @@ public class MetaFieldProperty extends MetaProperty {
         final Object newValue1 = newValue;
         try {
             AccessController.doPrivileged(new PrivilegedExceptionAction() {
-                public Object run() throws IllegalAccessException, TypeMismatchException, GroovyRuntimeException {   
+                public Object run() throws IllegalAccessException, GroovyRuntimeException {   
                     try {
                         field1.set(object1, newValue1);
                         return newValue1;
