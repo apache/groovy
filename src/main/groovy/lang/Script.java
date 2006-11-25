@@ -47,6 +47,7 @@ package groovy.lang;
 
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.control.CompilationFailedException;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 import java.io.File;
@@ -160,7 +161,7 @@ public abstract class Script extends GroovyObjectSupport {
         try {
             object = getProperty("out");
         } catch (MissingPropertyException e) {
-            System.out.print(value);
+            DefaultGroovyMethods.print(System.out,value);
             return;
         }
 
@@ -178,7 +179,7 @@ public abstract class Script extends GroovyObjectSupport {
         try {
             object = getProperty("out");
         } catch (MissingPropertyException e) {
-            System.out.println(value);
+            DefaultGroovyMethods.println(System.out,value);
             return;
         }
 
