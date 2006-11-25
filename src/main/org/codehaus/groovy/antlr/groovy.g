@@ -2011,7 +2011,7 @@ controlExpressionList  {Token first = LT(1);}
  */
 pathExpression[int lc_stmt]
         { AST prefix = null; }
-    :
+    :	
         pre:primaryExpression!
         { prefix = #pre; }
 
@@ -2355,15 +2355,23 @@ additiveExpression[int lc_stmt]
 
 // multiplication/division/modulo (level 4)
 multiplicativeExpression[int lc_stmt]
-    :    ( INC^ nls!  powerExpression[0] ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression[0])* )
-    |    ( DEC^ nls!  powerExpression[0] ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression[0])* )
-    |    ( MINUS^ {#MINUS.setType(UNARY_MINUS);} nls!   powerExpression[0] ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression[0])* )
-    |    ( PLUS^ {#PLUS.setType(UNARY_PLUS);} nls!   powerExpression[0] ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression[0])* )
-    |    (  powerExpression[lc_stmt] ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression[0])* )
+    :    ( INC^ nls!  powerExpressionNotPlusMinus[0] ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression[0])* )
+    |    ( DEC^ nls!  powerExpressionNotPlusMinus[0] ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression[0])* )
+    |    ( MINUS^ {#MINUS.setType(UNARY_MINUS);} nls!   powerExpressionNotPlusMinus[0] ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression[0])* )
+    |    ( PLUS^ {#PLUS.setType(UNARY_PLUS);} nls!   powerExpressionNotPlusMinus[0] ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression[0])* )
+    |    (  powerExpressionNotPlusMinus[lc_stmt] ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression[0])* )
     ;
-
+    
 // math power operator (**) (level 3)
 powerExpression[int lc_stmt]
+    :   unaryExpression[lc_stmt] (STAR_STAR^ nls! unaryExpression[0])*
+    ;
+    
+// math power operator (**) (level 3) 
+// (without ++(prefix)/--(prefix)/+(unary)/-(unary))
+// The different rules are needed to avoid ambigous selection
+// of alternatives. 
+powerExpressionNotPlusMinus[int lc_stmt]
     :   unaryExpressionNotPlusMinus[lc_stmt] (STAR_STAR^ nls! unaryExpression[0])*
     ;
 
@@ -2371,8 +2379,8 @@ powerExpression[int lc_stmt]
 unaryExpression[int lc_stmt]
     :   INC^ nls! unaryExpression[0]
     |   DEC^ nls! unaryExpression[0]
-    |   MINUS^   {#MINUS.setType(UNARY_MINUS);}   nls! unaryExpression[0]
-    |   PLUS^    {#PLUS.setType(UNARY_PLUS);}     nls! unaryExpression[0]
+    |   MINUS^   {#MINUS.setType(UNARY_MINUS);}   nls! unaryExpression[0] 
+    |   PLUS^    {#PLUS.setType(UNARY_PLUS);}     nls! unaryExpression[0] 
     |   unaryExpressionNotPlusMinus[lc_stmt]
     ;
 
