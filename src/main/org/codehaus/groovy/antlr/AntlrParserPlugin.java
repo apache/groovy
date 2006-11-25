@@ -1428,13 +1428,16 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             case DYNAMIC_MEMBER:
                 return dynamicMemberExpression(node);
                 
+            case LITERAL_in:
+                return binaryExpression(Types.KEYWORD_IN,node);
+                
             default:
                 unknownAST(node);
         }
         return null;
     }
 
-    private Expression dynamicMemberExpression(AST dynamicMemberNode) {
+    protected Expression dynamicMemberExpression(AST dynamicMemberNode) {
         AST node = dynamicMemberNode.getFirstChild();
         return expression(node);
     }

@@ -1312,6 +1312,10 @@ public class AsmClassGenerator extends ClassGenerator {
                     evaluateBinaryExpression("getAt", expression);
                 }
                 break;
+             
+            case Types.KEYWORD_IN :
+                evaluateBinaryExpression(isCaseMethod, expression);
+                break;
 
             default :
                 throwException("Operation: " + expression.getOperation() + " not supported");
@@ -2793,7 +2797,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
         cv.visitLabel(l1);
     }
-
+    
     protected void evaluateBinaryExpression(String method, BinaryExpression expression) {
         makeCall(
                 expression.getLeftExpression(),
@@ -2867,7 +2871,6 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     protected void evaluateEqual(BinaryExpression expression) {
-
         Expression leftExpression = expression.getLeftExpression();
         if (leftExpression instanceof BinaryExpression) {
             BinaryExpression leftBinExpr = (BinaryExpression) leftExpression;
@@ -3110,6 +3113,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 case Types.COMPARE_IDENTICAL :
                 case Types.COMPARE_NOT_EQUAL :
                 case Types.KEYWORD_INSTANCEOF :
+                case Types.KEYWORD_IN :
                     return true;
             }
         }
