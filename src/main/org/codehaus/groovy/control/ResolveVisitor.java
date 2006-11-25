@@ -659,7 +659,9 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
                     if (scope.isRoot()) break;
                     if (scope.getReferencedClassVariables().remove(ve.getName())==null) break;
                 }
-                return new ClassExpression(t);
+                ClassExpression ce = new ClassExpression(t);
+                ce.setSourcePosition(ve);
+                return ce;
             } else if (!inClosure && ve.isInStaticContext()) {
                 addError("the name "+v.getName()+" doesn't refer to a declared variable or class. The static"+
                          " scope requires to declare variables before using them. If the variable should have"+

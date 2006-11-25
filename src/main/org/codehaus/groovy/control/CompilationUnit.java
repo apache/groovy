@@ -188,6 +188,22 @@ public class CompilationUnit extends ProcessingUnit {
         addPhaseOperation(convert,   Phases.CONVERSION);
         addPhaseOperation(resolve,   Phases.SEMANTIC_ANALYSIS);
         addPhaseOperation(classgen,  Phases.CLASS_GENERATION);
+        addPhaseOperation(new SourceUnitOperation() {
+            public void call(SourceUnit source) throws CompilationFailedException {
+                List classes = source.ast.getClasses();
+                for (Iterator it = classes.iterator(); it.hasNext();) {
+                    ClassNode node = (ClassNode) it.next();
+                    CompileUnit cu = node.getCompileUnit();
+                    for (Iterator iter = cu.iterateClassNodeToCompile(); iter.hasNext();) {
+                        String name = (String) iter.next();
+                        String location = ast.getScriptSourceLocation(name);
+                        getErrorCollector().addErrorAndContinue(
+                                new SimpleMessage("Compilation incomplete: expected to find the class "+name+" in "+location,CompilationUnit.this)
+                        );
+                    } 
+                }
+            }
+        }, Phases.CLASS_GENERATION);
         addPhaseOperation(output);
         
         this.classgenCallback = null;
@@ -483,11 +499,7 @@ public class CompilationUnit extends ProcessingUnit {
             }
             
             if (dequeued()) continue;
-            
-            if (  phase==Phases.CLASS_GENERATION && 
-                  ast.hasClassNodeToCompile()) {
-                break;
-            }            
+           
             if (progressCallback != null) progressCallback.call(this, phase);
             completePhase();
             applyToSourceUnits(mark);
@@ -499,13 +511,6 @@ public class CompilationUnit extends ProcessingUnit {
             }
         }
             
-        for (Iterator iter = ast.iterateClassNodeToCompile(); iter.hasNext();) {
-            String name = (String) iter.next();
-            String location = ast.getScriptSourceLocation(name);
-            getErrorCollector().addErrorAndContinue(
-                    new SimpleMessage("Compilation incomplete: expected to find the class "+name+" in "+location,this)
-            );
-        }
         errorCollector.failIfErrors();
     }
     

@@ -3522,14 +3522,13 @@ public class DefaultGroovyMethods {
      * Appends a String
      *
      * @param left  a String
-     * @param value a String
+     * @param value any Object
      * @return a String
      */
     public static String plus(String left, Object value) {
-        //return left + value;
         return left + toString(value);
     }
-
+    
     /**
      * Appends a String
      *

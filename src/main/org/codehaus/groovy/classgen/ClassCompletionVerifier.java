@@ -19,10 +19,12 @@ import java.util.List;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
@@ -223,4 +225,14 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         super.visitCatchStatement(cs);
     }
 
+    public void visitClassExpression(ClassExpression expression) {
+        ClassNode type = expression.getType();
+        CompileUnit cu = currentClass.getCompileUnit();
+        if (!type.isResolved() && cu.hasClassNodeToCompile()) {
+            String location = cu.getScriptSourceLocation(type.getName());
+            if (location==null) return;
+            addError("expected to find the class "+ type.getName() +
+                     " in "+location + ", but failed to find it.", expression);
+        }
+    }
 }

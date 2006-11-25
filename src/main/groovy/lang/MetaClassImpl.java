@@ -181,75 +181,73 @@ public class MetaClassImpl extends MetaClass {
        inheritInterfaceMethods(interfaces);
        connectMultimethods(superClasses);
        populateInterfaces(interfaces);
+       removeMultimethodsOverloadedWithPrivateMethods();
        
        replaceWithMOPCalls();
    }
+   
+   private void removeMultimethodsOverloadedWithPrivateMethods() {
+       Map privates = new HashMap();
+       MethodIndexAction mia = new MethodIndexAction() {
+           public List methodNameAction(Class clazz, String methodName, List methods) {
+              boolean hasPrivate=false;
+              for (Iterator iter = methods.iterator(); iter.hasNext();) {
+                  MetaMethod method = (MetaMethod) iter.next();
+                  if (method.isPrivate()) {
+                      hasPrivate = true;
+                      break;
+                  }
+              }
+              if (!hasPrivate) return null;
+              for (Iterator iter = methods.iterator(); iter.hasNext();) {
+                  MetaMethod method = (MetaMethod) iter.next();
+                  if (method.getDeclaringClass() != clazz || method instanceof NewInstanceMetaMethod) {
+                      iter.remove();
+                  }
+              }             
+              return null;
+           }
+           public boolean replaceMethodList() {return false;}
+       };
+       mia.iterate(classMethodIndex);
+   }
+   
    
    private void replaceWithMOPCalls() {
        // no MOP methods if not a child of GroovyObject
        if (!GroovyObject.class.isAssignableFrom(theClass)) return;
        
-       Map mainClassMethodIndex = (Map) classMethodIndex.get(theClass);
+       final Map mainClassMethodIndex = (Map) classMethodIndex.get(theClass);
+       class MOPIter extends MethodIndexAction {
+           boolean useThis;
+           public boolean skipClass(Class clazz) {
+               return !useThis && clazz==theClass;
+           }
+           public void methodListAction(Class clazz, String methodName, MetaMethod method, List oldList, List newList) {
+               String mopName = getMOPMethodName(method.getDeclaringClass(), methodName,useThis);
+               List matches = (List) mainClassMethodIndex.get(mopName);
+               if (matches==null) {
+                   newList.add(method);
+                   return;
+               }
+               matches = new ArrayList(matches);
+               MetaMethod matchingMethod = removeMatchingMethod(matches,method);
+               if (matchingMethod==null) {
+                   newList.add(method);
+                   return;
+               } else {
+                   newList.add(matchingMethod);
+               }
+           }
+       }
+       MOPIter iter = new MOPIter();
        
        // replace all calls for super with the correct MOP method
-       for (Iterator iter = classMethodIndexForSuper.entrySet().iterator(); iter.hasNext();) {
-           Map.Entry classEntry = (Map.Entry) iter.next();
-           if (classEntry.getKey() == theClass) continue;
-           Map methodIndex = (Map) classEntry.getValue();
-           for (Iterator iterator = methodIndex.entrySet().iterator(); iterator.hasNext();) {
-               Map.Entry nameEntry = (Map.Entry) iterator.next();
-               List oldList = (List) nameEntry.getValue();
-               List newList = new ArrayList(oldList.size());
-               for (Iterator methodIter = oldList.iterator(); methodIter.hasNext();) {
-                   MetaMethod method = (MetaMethod) methodIter.next();
-                   String mopName = getMOPMethodName(method.getDeclaringClass(), method.getName(),false);
-                   List matches = (List) mainClassMethodIndex.get(mopName);
-                   if (matches==null) {
-                       newList.add(method);
-                       continue;
-                   }
-                   matches = new ArrayList(matches);
-                   MetaMethod matchingMethod = removeMatchingMethod(matches,method);
-                   if (matchingMethod==null) {
-                       newList.add(method);
-                       continue;
-                   } else {
-                       newList.add(matchingMethod);
-                   }
-               }
-               nameEntry.setValue(newList);
-           }               
-       }
+       iter.useThis = false;
+       iter.iterate(classMethodIndexForSuper);
        // replace all calls for this with the correct MOP method
-       for (Iterator iter = classMethodIndex.entrySet().iterator(); iter.hasNext();) {
-           Map.Entry classEntry = (Map.Entry) iter.next();
-           Class clazz = (Class) classEntry.getKey();
-           Map methodIndex = (Map) classEntry.getValue();
-           for (Iterator iterator = methodIndex.entrySet().iterator(); iterator.hasNext();) {
-               Map.Entry nameEntry = (Map.Entry) iterator.next();
-               List oldList = (List) nameEntry.getValue();
-               List newList = new ArrayList(oldList.size());
-               for (Iterator methodIter = oldList.iterator(); methodIter.hasNext();) {
-                   MetaMethod method = (MetaMethod) methodIter.next();
-                   String mopName = getMOPMethodName(clazz, method.getName(),true);
-                   List matches = (List) mainClassMethodIndex.get(mopName);
-                   if (matches==null) {
-                       newList.add(method);
-                       continue;
-                   }
-                   matches = new ArrayList(matches);
-                   MetaMethod matchingMethod = removeMatchingMethod(matches,method);
-                   if (matchingMethod==null) {
-                       newList.add(method);
-                       continue;
-                   } else {
-                       newList.add(matchingMethod);
-                   }
-               }
-               nameEntry.setValue(newList);
-           }               
-       }
-
+       iter.useThis = true;
+       iter.iterate(classMethodIndex);
    }
    
    private String getMOPMethodName(Class declaringClass, String name, boolean useThis) {
@@ -1781,7 +1779,7 @@ public class MetaClassImpl extends MetaClass {
        }    
    }
 
-private MetaMethod createMetaMethod(final Method method) {
+   private MetaMethod createMetaMethod(final Method method) {
        if (registry.useAccessible()) {
            AccessController.doPrivileged(new PrivilegedAction() {
                public Object run() {
@@ -1900,5 +1898,34 @@ private MetaMethod createMetaMethod(final Method method) {
        for (int i = 0; i < methods.length; i++) {
            list.add(createMetaMethod(methods[i]));
        }
+   }
+   
+   private static class MethodIndexAction {
+       public void iterate(Map classMethodIndex){
+           for (Iterator iter = classMethodIndex.entrySet().iterator(); iter.hasNext();) {
+               Map.Entry classEntry = (Map.Entry) iter.next();
+               Map methodIndex = (Map) classEntry.getValue();
+               Class clazz = (Class) classEntry.getKey();
+               if (skipClass(clazz)) continue;               
+               for (Iterator iterator = methodIndex.entrySet().iterator(); iterator.hasNext();) {
+                   Map.Entry nameEntry = (Map.Entry) iterator.next();
+                   String name = (String) nameEntry.getKey();
+                   List oldList = (List) nameEntry.getValue();
+                   List newList = methodNameAction(clazz, name, oldList);
+                   if (replaceMethodList()) nameEntry.setValue(newList); 
+               }
+           }
+       }
+       public List methodNameAction(Class clazz, String methodName, List methods) {
+           List newList = new ArrayList(methods.size());
+           for (Iterator methodIter = methods.iterator(); methodIter.hasNext();) {
+               MetaMethod method = (MetaMethod) methodIter.next();
+               methodListAction(clazz,methodName,method,methods,newList);
+           }
+           return newList;
+       }
+       public boolean skipClass(Class clazz) {return false;}
+       public void methodListAction(Class clazz, String methodName, MetaMethod method, List oldList, List newList) {}
+       public boolean replaceMethodList(){return true;}
    }
 }

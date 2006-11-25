@@ -160,10 +160,6 @@ public class CompileUnit {
             nodeSource.getErrorCollector().addErrorAndContinue(
                     new SyntaxErrorMessage(new SyntaxException(txt, node.getLineNumber(), node.getColumnNumber()), nodeSource)
             );
-
-            
-           /* throw new RuntimeException(
-                "Error: duplicate class declaration for name: " + name + " and class: " + node);*/
         }
         classes.put(name, node);
         

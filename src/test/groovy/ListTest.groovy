@@ -96,7 +96,7 @@ class ListTest extends GroovyTestCase {
         l = [1, 2, 7]
         assert l.max() == 7
 
-        // todo: GROOVY-1006        
+        // GROOVY-1006        
         l = [1, 3.2, 4L, (short)7]
         assert l.max() == (short)7
     }
@@ -111,7 +111,7 @@ class ListTest extends GroovyTestCase {
         l = [1, 2, 7]
         assert l.min() == 1
 
-        // todo: GROOVY-1006        
+        // GROOVY-1006        
         l = [(long)1, 3.2, 4L, (short)7]
         assert l.min() == (long)1
     }
@@ -151,14 +151,14 @@ class ListTest extends GroovyTestCase {
         assert l * 3 == [4, 7, 8, 4, 7, 8, 4, 7, 8]
     }
 
-    // todo: GROOVY-1006
+    // GROOVY-1006
     void testMinus() {
         def l1 = [1, 1, 2, 2, 3, 3, 3, 4, 5, 3, 5]
         def l2 = [1, 2.0, 4L]
         assert l1 - l2 == [3, 3, 3, 5, 3, 5] 
     }
 
-    // todo: GROOVY-1006
+    // GROOVY-1006
     void testMinusDifferentTypes() {
         def l1 = [1, 1, "wrer", 2, 3, 3, "wrewer", 4, 5, "w", "w"]
         def l2 = [1, 2, "w"]
@@ -166,11 +166,11 @@ class ListTest extends GroovyTestCase {
     }
 
     void testMinusEmptyCollection(){
-        // todo: GROOVY-790
+        // GROOVY-790
         def list = [1,1]
         assert list - [] == list
 
-        // todo: GROOVY-1006    
+        // GROOVY-1006    
         list = [1,2,2,3,1]
         assert list - [] == list
     }
@@ -180,23 +180,23 @@ class ListTest extends GroovyTestCase {
         def l2 = [1, 2, "f", "w"]
         assert l1.intersect(l2) == [1, 2, "w"] 
 
-        // todo: GROOVY-1006    
+        // GROOVY-1006    
         l1 = [1, 1.0, "wrer", 2, 3, 3L, "wrewer", 4, 5, "w", "w"]
         l2 = [(double)1, 2L, "f", "w"]
         assert l1.intersect(l2) == [1, 2, "w"] 
     }
       
-    // todo: GROOVY-1006
+    // GROOVY-1006
     void testListEqual() {
         assert [1, 2.0, 3L, (short)4] == [1, 2, 3, 4]
     }
       
-    // todo: GROOVY-1006
+    // GROOVY-1006
     void testSortNumbersMixedType() {
         assert [1, (short)3, 4L, 2.9, (float)5.2].sort() == [1, 2.9, (short)3, 4L, (float)5.2] 
     }
       
-    // todo: GROOVY-1006
+    // GROOVY-1006
     void testUnique() {
         def a = [1, 4L, 1.0]
         def b = a.unique()
@@ -387,13 +387,13 @@ class ListTest extends GroovyTestCase {
         assert list == []                   , 'delete by pos-negativ Range'
     }
 
-    // todo: make this run GROOVY-1128
+    // GROOVY-1128
     void testAsSynchronized() {
         def synclist = [].asSynchronized() << 1
         assert synclist == [1]
     }
 
-    // todo: make this run GROOVY-1128
+    // GROOVY-1128
     void testAsImmutable() {
         def immlist = [1,2,3].asImmutable()
         assert immlist == [1,2,3]
