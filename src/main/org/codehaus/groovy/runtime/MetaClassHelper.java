@@ -234,60 +234,114 @@ public class MetaClassHelper {
         return type;
     }
     
-    public static int calculateParameterDistance(Class[] arguments, Class[] parameters) {
-        int dist=0;
+    private static Class[] primitives = {
+        byte.class, Byte.class, short.class, Short.class, 
+        int.class, Integer.class, long.class, Long.class, 
+        BigInteger.class, float.class, Float.class, 
+        double.class, Double.class, BigDecimal.class,
+        Number.class, Object.class
+    };
+    private static int[][] primitiveDistanceTable = {
+        //              byte    Byte    short   Short   int     Integer     long    Long    BigInteger  float   Float   double  Double  BigDecimal, Number, Object 
+        /* byte*/{      0,      1,      2,      3,      4,      5,          6,      7,      8,          9,      10,     11,     12,     13,         14,     15,         },
+        /*Byte*/{       1,      0,      2,      3,      4,      5,          6,      7,      8,          9,      10,     11,     12,     13,         14,     15,         },
+        /*short*/{      14,     15,     0,      1,      2,      3,          4,      5,      6,          7,      8,      9,      10,     11,         12,     13,         },
+        /*Short*/{      14,     15,     1,      0,      2,      3,          4,      5,      6,          7,      8,      9,      10,     11,         12,     13,         },
+        /*int*/{        14,     15,     12,     13,     0,      1,          2,      3,      4,          5,      6,      7,      8,      9,          10,     11,         },
+        /*Integer*/{    14,     15,     12,     13,     1,      0,          2,      3,      4,          5,      6,      7,      8,      9,          10,     11,         },
+        /*long*/{       14,     15,     12,     13,     10,     11,         0,      1,      2,          3,      4,      5,      6,      7,          8,      9,          },
+        /*Long*/{       14,     15,     12,     13,     10,     11,         1,      0,      2,          3,      4,      5,      6,      7,          8,      9,          },
+        /*BigInteger*/{ 14,     15,     12,     13,     10,     11,         8,      9,      0,          1,      2,      3,      4,      5,          6,      7,          },
+        /*float*/{      14,     15,     12,     13,     10,     11,         8,      9,      7,          0,      1,      2,      3,      4,          5,      6,          },
+        /*Float*/{      14,     15,     12,     13,     10,     11,         8,      9,      7,          1,      0,      2,      3,      4,          5,      6,          },
+        /*double*/{     14,     15,     12,     13,     10,     11,         8,      9,      7,          5,      6,      0,      1,      2,          3,      4,          },
+        /*Double*/{     14,     15,     12,     13,     10,     11,         8,      9,      7,          5,      6,      1,      0,      2,          3,      4,          },
+        /*BigDecimal*/{ 14,     15,     12,     13,     10,     11,         8,      9,      7,          5,      6,      3,      4,      0,          1,      2,          },
+        /*Numer*/{      14,     15,     12,     13,     10,     11,         8,      9,      7,          5,      6,      3,      4,      2,          0,      1,          },
+        /*Object*/{     14,     15,     12,     13,     10,     11,         8,      9,      7,          5,      6,      3,      4,      2,          1,      0,          },
+    };
+    
+    private static int getPrimitiveIndex(Class c) {
+        for (byte i=0; i< primitives.length; i++) {
+            if (primitives[i] == c) return i;
+        }
+        return -1;
+    }
+    
+    private static int getPrimitiveDistance(Class from, Class to) {
+        // we know here that from!=to, so a distance of 0 is never valid
+        // get primitive type indexes
+        int fromIndex = getPrimitiveIndex(from);
+        int toIndex = getPrimitiveIndex(to);
+        if (fromIndex==-1 || toIndex==-1) return -1;
+        return primitiveDistanceTable[toIndex][fromIndex];
+    }
+    
+    private static int getMaximumInterfaceDistance(Class c, Class interfaceClass) {
+        if (c==interfaceClass) return 0;
+        Class[] interfaces = c.getInterfaces();
+        int max = 0;
+        for (int i=0; i<interfaces.length; i++) {
+            int sub = 0;
+            if (interfaces[i].isAssignableFrom(c)) {
+                sub = 1+ getMaximumInterfaceDistance(interfaces[i],interfaceClass);
+            }
+            max = Math.max(max,sub);
+        }
+        return max;
+    }
+    
+    public static long calculateParameterDistance(Class[] arguments, Class[] parameters) {
+        int objectDistance=0, interfaceDistance=0;
         for (int i=0; i<arguments.length; i++) {
             if (parameters[i]==arguments[i]) continue;
             
             if (parameters[i].isInterface()) {
-                dist+=3;
+                objectDistance+=primitives.length;
+                interfaceDistance += getMaximumInterfaceDistance(arguments[i],parameters[i]);
                 continue;
             }
             
             if (arguments[i]!=null) {
-                if (autoboxType(parameters[i]) == autoboxType(arguments[i])){
-                    // type is not equal, but boxed types are. Increase distance 
-                    // by 1 to reflect the change in type
-                    dist +=1;
-                    continue;
-                }
-                if (arguments[i].isPrimitive() || parameters[i].isPrimitive()) {
-                    // type is not equal, increase distance by 2 to reflect
-                    // the change in type
-                    dist+=2;
+                int pd = getPrimitiveDistance(parameters[i],arguments[i]);
+                if (pd!=-1) {
+                    objectDistance += pd;
                     continue;
                 }
                 
                 // add one to dist to be sure interfaces are prefered
-                dist++;
-                Class clazz = arguments[i];
+                objectDistance += primitives.length+1;
+                Class clazz = autoboxType(arguments[i]);
                 while (clazz!=null) {
                     if (clazz==parameters[i]) break;
                     if (clazz==GString.class && parameters[i]==String.class) {
-                        dist+=2;
+                        objectDistance+=2;
                         break;
                     }
                     clazz = clazz.getSuperclass();
-                    dist+=3;
+                    objectDistance+=3;
                 }
             } else {
                 // choose the distance to Object if a parameter is null
                 // this will mean that Object is prefered over a more
                 // specific type
                 // remove one to dist to be sure Object is prefered
-                dist--;
+                objectDistance--;
                 Class clazz = parameters[i];
                 if (clazz.isPrimitive()) {
-                    dist+=2;
+                    objectDistance+=2;
                 } else {
                     while (clazz!=Object.class) {
                         clazz = clazz.getSuperclass();
-                        dist+=2;
+                        objectDistance+=2;
                     }
                 }
             }
         }
-        return dist;
+        long ret = objectDistance;
+        ret <<= 32;
+        ret |= interfaceDistance;
+        return ret;
     }
     
     public static String capitalize(String property) {

@@ -171,14 +171,14 @@ public class MetaClassImpl extends MetaClass {
            Class c = (Class) iter.next();
            addMethods(c);
        }
-       
-       inheritMethods(superClasses,classMethodIndex);
-       copyClassMethodIndexForSuper();
-       
+
        Set interfaces = new HashSet();
        makeInterfaceSet(theClass,interfaces); 
-       
+
+       inheritMethods(superClasses,classMethodIndex);
        inheritInterfaceMethods(interfaces);
+       copyClassMethodIndexForSuper();
+       
        connectMultimethods(superClasses);
        populateInterfaces(interfaces);
        removeMultimethodsOverloadedWithPrivateMethods();
@@ -193,19 +193,21 @@ public class MetaClassImpl extends MetaClass {
               boolean hasPrivate=false;
               for (Iterator iter = methods.iterator(); iter.hasNext();) {
                   MetaMethod method = (MetaMethod) iter.next();
-                  if (method.isPrivate()) {
+                  if (method.isPrivate() && clazz == method.getDeclaringClass()) {
                       hasPrivate = true;
                       break;
                   }
               }
               if (!hasPrivate) return null;
-              for (Iterator iter = methods.iterator(); iter.hasNext();) {
-                  MetaMethod method = (MetaMethod) iter.next();
-                  if (method.getDeclaringClass() != clazz || method instanceof NewInstanceMetaMethod) {
-                      iter.remove();
-                  }
-              }             
-              return null;
+              // We have private methods for that name, so remove the
+              // multimethods. That is the same as in our index for 
+              // super, so just copy the list from there. It is not
+              // possible to use a pointer here, because the methods
+              // in the index for super are replaced later by MOP 
+              // methods like super$5$foo              
+              methods.clear();
+              methods.addAll((Collection) ((Map) classMethodIndexForSuper.get(clazz)).get(methodName));
+              return methods;
            }
            public boolean replaceMethodList() {return false;}
        };
@@ -1684,15 +1686,14 @@ public class MetaClassImpl extends MetaClass {
 
    private Object chooseMostSpecificParams(String name, List matchingMethods, Class[] arguments) {
 
-       Class[] wrappedArguments = MetaClassHelper.wrap(arguments);
-
-       int matchesDistance = -1;
+       long matchesDistance = -1;
        LinkedList matches = new LinkedList();
        for (Iterator iter = matchingMethods.iterator(); iter.hasNext();) {
            Object method = iter.next();
            Class[] paramTypes = MetaClassHelper.getParameterTypes(method);
            if (!MetaClassHelper.parametersAreCompatible(arguments, paramTypes)) continue;
-           int dist = MetaClassHelper.calculateParameterDistance(arguments, paramTypes);
+           long dist = MetaClassHelper.calculateParameterDistance(arguments, paramTypes);
+           if (dist==0) return method;
            if (matches.size()==0) {
                matches.add(method);
                matchesDistance = dist;

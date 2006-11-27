@@ -4052,6 +4052,41 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * Multiply a BigDecimal and a Double.
+     * Note: This method was added to enforce the Groovy rule of
+     * BigDecimal*Double == Double. Without this method, the
+     * multiply(BigDecimal) method in BigDecimal would respond
+     * and return a BigDecimal instead. Since BigDecimal is prefered
+     * over Number, the Number*Number method is not choosen as in older
+     * versions of Groovy. 
+     *
+     * @param left  a BigDecimal
+     * @param right a Double
+     * @return the multiplication of both
+     */
+    public static Number multiply(BigDecimal left, Double right) {
+        return NumberMath.multiply(left, right);
+    }
+    
+    /**
+     * Multiply a BigDecimal and a BigInteger.
+     * Note: This method was added to enforce the Groovy rule of
+     * BigDecimal*long == long. Without this method, the
+     * multiply(BigDecimal) method in BigDecimal would respond
+     * and return a BigDecimal instead. Since BigDecimal is prefered
+     * over Number, the Number*Number method is not choosen as in older
+     * versions of Groovy. Biginteger is the fallback for all integer
+     * types in Groovy
+     *
+     * @param left  a BigDecimal
+     * @param right a BigInteger
+     * @return the multiplication of both
+     */
+    public static Number multiply(BigDecimal left, BigInteger right) {
+        return NumberMath.multiply(left, right);
+    }
+    
+    /**
      * Power of a Number to a certain exponent
      *
      * @param self     a Number
