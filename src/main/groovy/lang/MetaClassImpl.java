@@ -402,8 +402,12 @@ public class MetaClassImpl extends MetaClass {
        if (!isCallToSuper) {
            List used = GroovyCategorySupport.getCategoryMethods(sender, name);
            if (used != null) {
-               used.addAll(answer);
-               answer = used;
+               answer = new ArrayList(answer);
+               for (Iterator iter = used.iterator(); iter.hasNext();) {
+                   MetaMethod element = (MetaMethod) iter.next();
+                   removeMatchingMethod(answer,element);
+               }
+               answer.addAll(used);
            }
        }
        return answer;
@@ -600,16 +604,20 @@ public class MetaClassImpl extends MetaClass {
    
    public MetaMethod retrieveMethod(Class sender, String methodName, Class[] arguments, boolean isCallToSuper) {
        // lets try use the cache to find the method
-       //TODO: add isSuperCall to key
-       MethodKey methodKey = new DefaultMethodKey(sender, methodName, arguments);
-       MetaMethod method = (MetaMethod) methodCache.get(methodKey);
-       if (method == null) {
-           method = pickMethod(sender, methodName, arguments, isCallToSuper);
-           if (method != null && method.isCacheable()) {
-               methodCache.put(methodKey, method);
+       if (GroovyCategorySupport.hasCategoryInAnyThread() && !isCallToSuper) {
+           return pickMethod(sender, methodName, arguments, isCallToSuper);
+       } else {
+           //TODO: add isSuperCall to key
+           MethodKey methodKey = new DefaultMethodKey(sender, methodName, arguments);
+           MetaMethod method = (MetaMethod) methodCache.get(methodKey);
+           if (method == null) {
+               method = pickMethod(sender, methodName, arguments, isCallToSuper);
+               if (method != null && method.isCacheable()) {
+                   methodCache.put(methodKey, method);
+               }
            }
+           return method;
        }
-       return method;
    }
 
    public Constructor retrieveConstructor(Class[] arguments) {

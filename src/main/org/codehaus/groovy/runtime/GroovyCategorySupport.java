@@ -45,6 +45,8 @@ import java.util.*;
  * @author Paul King
  */
 public class GroovyCategorySupport {
+    
+    private static long categoriesInUse = 0; 
 
     /**
      * This method is used to pull all the new methods out of the local thread context with a particular name.
@@ -205,6 +207,7 @@ public class GroovyCategorySupport {
     };
     
     private static void newScope() {
+        categoriesInUse++;
         List stack = (List) local.get();
     	Map properties = new WeakHashMap(getProperties());
     	stack.add(properties);
@@ -213,11 +216,16 @@ public class GroovyCategorySupport {
     private static void endScope() {
         List stack = (List) local.get();
     	stack.remove(stack.size() - 1);
+        categoriesInUse--;
     }
     
     private static Map getProperties() {
         List stack = (List) local.get();
         return (Map) stack.get(stack.size() - 1);
+    }
+    
+    public static boolean hasCategoryInAnyThread() {
+        return categoriesInUse!=0;
     }
     
     private static List getMethodList(Map metaMethodsMap, String name) {
