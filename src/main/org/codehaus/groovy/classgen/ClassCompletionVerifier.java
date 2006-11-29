@@ -7,8 +7,8 @@
  * 
  * Contributors:
  * IBM - Initial API and implementation
+ * Groovy community - subsequent modifications
  ******************************************************************************/
-
 
 package org.codehaus.groovy.classgen;
 
@@ -56,6 +56,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         
         checkImplementsAndExtends(node);
         if (source!=null && !source.getErrorCollector().hasErrors()) {
+            checkClassForAbstractAndFinal(node);
             checkClassForOverwritingFinal(node);
             checkMethodsForOverwritingFinal(node);
             checkNoAbstractMethodsNonabstractClass(node);
@@ -73,26 +74,32 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         for (Iterator iter = abstractMethods.iterator(); iter.hasNext();) {
             MethodNode method = (MethodNode) iter.next();
             String methodName = method.getTypeDescriptor();
-            addError("Can't have an abstract method in a non abstract class."+
+            addError("Can't have an abstract method in a non-abstract class."+
                      " The class '"+node.getName()+"' must be declared abstract or"+
                      " the method '"+methodName+"' must be implemented.",node);
         }
     }
 
+    private void checkClassForAbstractAndFinal(ClassNode node) {
+        if (!Modifier.isAbstract(node.getModifiers())) return;
+        if (!Modifier.isFinal(node.getModifiers())) return;
+        addError("The class '" + node.getName() + "' must not be both final and abstract.", node);
+    }
+    
     private void checkAbstractDeclaration(MethodNode methodNode) {
         if (!Modifier.isAbstract(methodNode.getModifiers())) return;
         if (Modifier.isAbstract(currentClass.getModifiers())) return;
-        addError("Can't have an abstract method in a non abstract class." +
+        addError("Can't have an abstract method in a non-abstract class." +
                  " The class '" + currentClass.getName() +  "' must be declared abstract or the method '" +
                  methodNode.getTypeDescriptor() + "' must not be abstract.",methodNode);
     }
-    
+
     private void checkClassForOverwritingFinal(ClassNode cn) {
         ClassNode superCN = cn.getSuperClass();
         if (superCN==null) return;
         if (!Modifier.isFinal(superCN.getModifiers())) return;
         StringBuffer msg = new StringBuffer();
-        msg.append("you are not allowed to overwrite the final class ");
+        msg.append("You are not allowed to overwrite the final class ");
         msg.append(superCN.getName());
         msg.append(".");
         addError(msg.toString(),cn);        
@@ -100,11 +107,11 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     
     private void checkImplementsAndExtends(ClassNode node) {
         ClassNode cn = node.getSuperClass();
-        if (cn.isInterface() && !node.isInterface()) addError("you are not allowed to extend the Interface "+cn.getName()+", use implements instead", node);
+        if (cn.isInterface() && !node.isInterface()) addError("You are not allowed to extend the Interface "+cn.getName()+", use implements instead", node);
         ClassNode[] interfaces = node.getInterfaces();
         for (int i = 0; i < interfaces.length; i++) {
             cn = interfaces[i];
-            if (!cn.isInterface()) addError ("you are not allowed to implement the Class "+cn.getName()+", use extends instead", node); 
+            if (!cn.isInterface()) addError ("You are not allowed to implement the Class "+cn.getName()+", use extends instead", node);
         }
     }
 
@@ -122,7 +129,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
                     if (!Modifier.isFinal(m.getModifiers())) return;
                     
                     StringBuffer msg = new StringBuffer();
-                    msg.append("you are not allowed to overwrite the final method ").append(method.getName());
+                    msg.append("You are not allowed to overwrite the final method ").append(method.getName());
                     msg.append("(");
                     boolean semi = false;
                     for (int i=0; i<parameters.length;i++) {
@@ -161,7 +168,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     public void visitConstructorCallExpression(ConstructorCallExpression call) {
         ClassNode type = call.getType();
         if (Modifier.isAbstract(type.getModifiers())) {
-            addError("cannot create an instance from the abstract class "+type.getName(),call);
+            addError("You cannot create an instance from the abstract class "+type.getName(),call);
         }
         super.visitConstructorCallExpression(call);
     }
@@ -220,7 +227,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     
     public void visitCatchStatement(CatchStatement cs) {
         if (!(cs.getExceptionType().isDerivedFrom(ClassHelper.make(Throwable.class)))) {
-            addError("catch statement parameter type is no subclass of Throwable",cs);
+            addError("Catch statement parameter type is not a subclass of Throwable",cs);
         }
         super.visitCatchStatement(cs);
     }
@@ -231,7 +238,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         if (!type.isResolved() && cu.hasClassNodeToCompile()) {
             String location = cu.getScriptSourceLocation(type.getName());
             if (location==null) return;
-            addError("expected to find the class "+ type.getName() +
+            addError("Expected to find the class "+ type.getName() +
                      " in "+location + ", but failed to find it.", expression);
         }
     }
