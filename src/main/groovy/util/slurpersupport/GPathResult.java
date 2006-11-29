@@ -135,21 +135,32 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
         } else {
         final GPathResult result = new NodeChildren(this, property, this.namespaceTagHints);
         
-          if (newValue instanceof Closure) {
-              result.replaceNode(new ReplacementNode() {
-                  public void build(final GroovyObject builder, final Map namespaceMap, final Map namespaceTagHints) {
-                      builder.getProperty("mkp");
-                      builder.invokeMethod("yield", new Object[]{newValue});
-                  }
-                  
-                  public Writer writeTo(final Writer out) throws IOException {
-                      out.write((String)newValue);
-                      return out;
-                  }
-              });
-          } else {
-              result.replaceBody(newValue);
-          }
+            if (newValue instanceof Map) {
+            final Iterator iter = ((Map)newValue).entrySet().iterator();
+            
+                while (iter.hasNext()) {
+                final Map.Entry entry = (Map.Entry)iter.next();
+                
+                    result.setProperty("@" + entry.getKey(), entry.getValue());
+                }
+            } else {
+            
+              if (newValue instanceof Closure) {
+                  result.replaceNode(new ReplacementNode() {
+                      public void build(final GroovyObject builder, final Map namespaceMap, final Map namespaceTagHints) {
+                          builder.getProperty("mkp");
+                          builder.invokeMethod("yield", new Object[]{newValue});
+                      }
+                      
+                      public Writer writeTo(final Writer out) throws IOException {
+                          out.write((String)newValue);
+                          return out;
+                      }
+                  });
+              } else {
+                  result.replaceBody(newValue);
+              }
+            }
         }
     }
     
