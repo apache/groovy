@@ -71,17 +71,35 @@ public class Node implements Writable {
     this.children.add(child);
   }
   
-  public void setReplacementClosure(final Closure replacementClosure, final GPathResult result) {
-      this.replacementNode = new ReplacementNode() {
-          public void build(final GroovyObject builder, final Map namespaceMap, final Map namespaceTagHints) {
-          final Closure c = (Closure)replacementClosure.clone();
-          
-              Node.this.replacementNode = null; // disable the replacement whilst the closure is being executed 
-              c.setDelegate(builder);
-              c.call(new Object[]{result});
-              Node.this.replacementNode = this;
-          }
-      };
+  public void replaceNode(final Closure replacementClosure, final GPathResult result) {
+      this.replacementNode = makeReplacementNode(replacementClosure, result);
+  }
+  
+
+  protected void replaceBody(final Object newValue) {
+      this.children.clear();
+      this.children.add(newValue);
+  }
+
+  protected void appendNode(final Object newValue, final GPathResult result) {
+      if (newValue instanceof Closure) {
+          this.children.add(makeReplacementNode((Closure)newValue, result));
+      } else {
+          this.children.add(newValue);
+      }
+  }
+
+  private ReplacementNode makeReplacementNode(final Closure replacementClosure, final GPathResult result) {
+      return new ReplacementNode() {
+                  public void build(final GroovyObject builder, final Map namespaceMap, final Map namespaceTagHints) {
+                      final Closure c = (Closure)replacementClosure.clone();
+                      
+                          Node.this.replacementNode = null; // disable the replacement whilst the closure is being executed 
+                          c.setDelegate(builder);
+                          c.call(new Object[]{result});
+                          Node.this.replacementNode = this;
+                      }
+                  };
   }
 
   /* (non-Javadoc)

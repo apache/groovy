@@ -112,4 +112,7 @@ public class Attribute extends GPathResult {
 
     protected void replaceBody(final Object newValue) {
     }
+
+    protected void appendNode(final Object newValue) {
+    }
 }

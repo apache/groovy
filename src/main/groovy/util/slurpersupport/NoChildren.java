@@ -129,4 +129,8 @@ public class NoChildren extends GPathResult {
   protected void replaceBody(final Object newValue) {
     // No elements match GPath expression - do nothing   
   }
+
+  protected void appendNode(final Object newValue) {
+    // TODO consider creating an element for this
+  }
 }

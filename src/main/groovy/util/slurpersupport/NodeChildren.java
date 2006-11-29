@@ -260,4 +260,13 @@ class NodeChildren extends GPathResult {
             result.replaceBody(newValue);
         }
     }
+
+    protected void appendNode(final Object newValue) {
+    final Iterator iter = iterator();
+
+        while (iter.hasNext()) {
+        final NodeChild result = (NodeChild)iter.next();
+            result.appendNode(newValue);
+        }
+    }
 }

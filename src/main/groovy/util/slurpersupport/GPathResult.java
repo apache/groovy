@@ -150,9 +150,16 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
         }
     }
     
+    public Object leftShift(final Object newValue) {
+        appendNode(newValue);
+        return this;
+    }
+    
     protected abstract void replaceNode(Closure newValue);
     
     protected abstract void replaceBody(Object newValue);
+    
+    protected abstract void appendNode(Object newValue);
 
     public String name() {
         return this.name;

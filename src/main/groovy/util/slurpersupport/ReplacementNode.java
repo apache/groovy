@@ -18,14 +18,20 @@
  */
 package groovy.util.slurpersupport;
 
+import groovy.lang.Buildable;
 import groovy.lang.GroovyObject;
+import groovy.lang.Writable;
 
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Map;
 
-public abstract class ReplacementNode {
+public abstract class ReplacementNode implements Buildable, Writable {
     public abstract void build(GroovyObject builder, Map namespaceMap, Map namespaceTagHints);
+    
+    public void build(final GroovyObject builder) {
+        build(builder, null, null);
+    }
     
     public Writer writeTo(final Writer out) throws IOException {
         return out;
