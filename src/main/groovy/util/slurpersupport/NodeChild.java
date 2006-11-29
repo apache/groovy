@@ -136,4 +136,13 @@ public class NodeChild extends GPathResult {
     public Writer writeTo(final Writer out) throws IOException {
         return this.node.writeTo(out);
     }
+
+    protected void replaceNode(ReplacementNode newValue) {
+        this.node.setReplacementNode(newValue);
+    }
+
+    protected void replaceBody(Object newValue) {
+        this.node.children().clear();
+        this.node.children().add(newValue);
+    }
 }

@@ -41,7 +41,8 @@ public class Node implements Writable {
   private final Map attributes;
   private final Map attributeNamespaces;
   private final String namespaceURI;
-  private List children = new LinkedList();
+  private final List children = new LinkedList();
+  private ReplacementNode replacementNode = null;
   
   public Node(final Node parent, final String name, final Map attributes, final Map attributeNamespaces, final String namespaceURI) {
     this.name = name;
@@ -68,6 +69,10 @@ public class Node implements Writable {
 
   public void addChild(final Object child) {
     this.children.add(child);
+  }
+  
+  public void setReplacementNode(final ReplacementNode replacementNode) {
+      this.replacementNode = replacementNode;
   }
 
   /* (non-Javadoc)
@@ -133,71 +138,79 @@ public class Node implements Writable {
    * @see org.codehaus.groovy.sandbox.util.slurpersupport.Node#writeTo(java.io.Writer)
    */
   public Writer writeTo(final Writer out) throws IOException {
-  final Iterator iter = this.children.iterator();
-  
-    while (iter.hasNext()) {
-    final Object child = iter.next();
-    
-      if (child instanceof Writable) {
-        ((Writable)child).writeTo(out);
-      } else {
-        out.write(child.toString());
-      }
-    }
-    
-    return out;
-  }
-  
-  public void build(final GroovyObject builder, final Map namespaceMap, final Map namespaceTagHints) {
-  final Closure rest = new Closure(null) {
-                          public Object doCall(final Object o) {
-                            buildChildren(builder, namespaceMap, namespaceTagHints);
-                            
-                            return null;
-                          }
-                        };
-    
-    if (this.namespaceURI.length() == 0 && this.attributeNamespaces.isEmpty()) {
-      builder.invokeMethod(this.name, new Object[]{this.attributes, rest});
-    } else {
-      final List newTags = new LinkedList();
-      builder.getProperty("mkp");
-      final List namespaces = (List)builder.invokeMethod("getNamespaces", new Object[]{});
+      if (this.replacementNode == null) {
+      final Iterator iter = this.children.iterator();
       
-      final Map current = (Map)namespaces.get(0);
-      final Map pending = (Map)namespaces.get(1);
-      
-      if (this.attributeNamespaces.isEmpty()) {     
-        builder.getProperty(getTagFor(this.namespaceURI, current, pending, namespaceMap, namespaceTagHints, newTags, builder));
-        builder.invokeMethod(this.name, new Object[]{this.attributes, rest});
-      } else {
-      final Map attributesWithNamespaces = new HashMap(this.attributes);
-      final Iterator attrs = this.attributes.keySet().iterator();
+        while (iter.hasNext()) {
+        final Object child = iter.next();
         
-        while (attrs.hasNext()) {
-        final Object key = attrs.next();
-        final Object attributeNamespaceURI = this.attributeNamespaces.get(key);
-          
-          if (attributeNamespaceURI != null) {
-            attributesWithNamespaces.put(getTagFor(attributeNamespaceURI, current, pending, namespaceMap, namespaceTagHints, newTags, builder) +
-                                         "$" + key, attributesWithNamespaces.remove(key));
+          if (child instanceof Writable) {
+            ((Writable)child).writeTo(out);
+          } else {
+            out.write(child.toString());
           }
         }
         
-        builder.getProperty(getTagFor(this.namespaceURI, current, pending, namespaceMap,namespaceTagHints,  newTags, builder));
-        builder.invokeMethod(this.name, new Object[]{attributesWithNamespaces, rest});
+        return out;
+        
+      } else {
+         return this.replacementNode.writeTo(out); 
       }
-      
-      // remove the new tags we had to define for this element
-      if (!newTags.isEmpty()) {
-      final Iterator iter = newTags.iterator();
-      
-        do {
-          pending.remove(iter.next());
-        } while (iter.hasNext());
+  }
+  
+  public void build(final GroovyObject builder, final Map namespaceMap, final Map namespaceTagHints) {
+      if (this.replacementNode == null) {
+      final Closure rest = new Closure(null) {
+                              public Object doCall(final Object o) {
+                                buildChildren(builder, namespaceMap, namespaceTagHints);
+                                
+                                return null;
+                              }
+                            };
+        
+        if (this.namespaceURI.length() == 0 && this.attributeNamespaces.isEmpty()) {
+          builder.invokeMethod(this.name, new Object[]{this.attributes, rest});
+        } else {
+          final List newTags = new LinkedList();
+          builder.getProperty("mkp");
+          final List namespaces = (List)builder.invokeMethod("getNamespaces", new Object[]{});
+          
+          final Map current = (Map)namespaces.get(0);
+          final Map pending = (Map)namespaces.get(1);
+          
+          if (this.attributeNamespaces.isEmpty()) {     
+            builder.getProperty(getTagFor(this.namespaceURI, current, pending, namespaceMap, namespaceTagHints, newTags, builder));
+            builder.invokeMethod(this.name, new Object[]{this.attributes, rest});
+          } else {
+          final Map attributesWithNamespaces = new HashMap(this.attributes);
+          final Iterator attrs = this.attributes.keySet().iterator();
+            
+            while (attrs.hasNext()) {
+            final Object key = attrs.next();
+            final Object attributeNamespaceURI = this.attributeNamespaces.get(key);
+              
+              if (attributeNamespaceURI != null) {
+                attributesWithNamespaces.put(getTagFor(attributeNamespaceURI, current, pending, namespaceMap, namespaceTagHints, newTags, builder) +
+                                             "$" + key, attributesWithNamespaces.remove(key));
+              }
+            }
+            
+            builder.getProperty(getTagFor(this.namespaceURI, current, pending, namespaceMap,namespaceTagHints,  newTags, builder));
+            builder.invokeMethod(this.name, new Object[]{attributesWithNamespaces, rest});
+          }
+          
+          // remove the new tags we had to define for this element
+          if (!newTags.isEmpty()) {
+          final Iterator iter = newTags.iterator();
+          
+            do {
+              pending.remove(iter.next());
+            } while (iter.hasNext());
+          }  
+        }   
+      } else {
+          this.replacementNode.build(builder, namespaceMap, namespaceTagHints);
       }
-      
-    }   
   }
   
   private static String getTagFor(final Object namespaceURI, final Map current,

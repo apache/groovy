@@ -242,4 +242,12 @@ class NodeChildren extends GPathResult {
 
         return out;
     }
+
+    protected void replaceNode(ReplacementNode newValue) {
+        // TODO Auto-generated method stub  
+    }
+
+    protected void replaceBody(Object newValue) {
+        // TODO Auto-generated method stub
+    }
 }

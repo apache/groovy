@@ -20,10 +20,14 @@ package groovy.util.slurpersupport;
 import groovy.lang.Buildable;
 import groovy.lang.Closure;
 import groovy.lang.DelegatingMetaClass;
+import groovy.lang.GString;
+import groovy.lang.GroovyObject;
 import groovy.lang.GroovyObjectSupport;
 import groovy.lang.MetaClass;
 import groovy.lang.Writable;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
@@ -82,8 +86,12 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
             /* (non-Javadoc)
             * @see groovy.lang.DelegatingMetaClass#getAttribute(java.lang.Object, java.lang.String)
             */
-            public Object getAttribute(Object object, String attribute) {
+            public Object getAttribute(final Object object, final String attribute) {
                 return GPathResult.this.getProperty("@" + attribute);
+            }
+            
+            public void setAttribute(final Object object, final String attribute, final Object newValue) {
+                GPathResult.this.setProperty("@" + attribute, newValue);
             }
         };
         super.setMetaClass(newMetaClass);
@@ -112,6 +120,42 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
             }
         }
     }
+
+    public void setProperty(final String property, final Object newValue) {
+        if (property.startsWith("@")) {
+            if (newValue instanceof String || newValue instanceof GString) {
+            final Iterator iter = iterator();
+            
+                while (iter.hasNext()) {
+                final NodeChild child = (NodeChild)iter.next();
+                
+                    child.attributes().put(property.substring(1), newValue);
+                }
+            }
+        } else {
+        final GPathResult result = new NodeChildren(this, property, this.namespaceTagHints);
+        
+          if (newValue instanceof Closure) {
+              result.replaceNode(new ReplacementNode() {
+                  public void build(final GroovyObject builder, final Map namespaceMap, final Map namespaceTagHints) {
+                      builder.getProperty("mkp");
+                      builder.invokeMethod("yield", new Object[]{newValue});
+                  }
+                  
+                  public Writer writeTo(final Writer out) throws IOException {
+                      out.write((String)newValue);
+                      return out;
+                  }
+              });
+          } else {
+              result.replaceBody(newValue);
+          }
+        }
+    }
+    
+    protected abstract void replaceNode(ReplacementNode newValue);
+    
+    protected abstract void replaceBody(Object newValue);
 
     public String name() {
         return this.name;

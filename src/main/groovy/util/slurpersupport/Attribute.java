@@ -107,4 +107,9 @@ public class Attribute extends GPathResult {
         builder.invokeMethod("yield", new Object[]{this.value});
     }
 
+    protected void replaceNode(final ReplacementNode newValue) {
+    }
+
+    protected void replaceBody(final Object newValue) {
+    }
 }
