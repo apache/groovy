@@ -24,10 +24,8 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.Map;
 
-public class ReplacementNode {
-    public void build(final GroovyObject builder, final Map namespaceMap, final Map namespaceTagHints) {
-        
-    }
+public abstract class ReplacementNode {
+    public abstract void build(GroovyObject builder, Map namespaceMap, Map namespaceTagHints);
     
     public Writer writeTo(final Writer out) throws IOException {
         return out;

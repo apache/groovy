@@ -21,26 +21,23 @@ import groovy.lang.Buildable;
 import groovy.lang.Closure;
 import groovy.lang.DelegatingMetaClass;
 import groovy.lang.GString;
-import groovy.lang.GroovyObject;
 import groovy.lang.GroovyObjectSupport;
 import groovy.lang.MetaClass;
 import groovy.lang.Writable;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
-import java.util.ArrayList;
 
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
@@ -143,20 +140,9 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
                 
                     result.setProperty("@" + entry.getKey(), entry.getValue());
                 }
-            } else {
-            
+            } else {           
               if (newValue instanceof Closure) {
-                  result.replaceNode(new ReplacementNode() {
-                      public void build(final GroovyObject builder, final Map namespaceMap, final Map namespaceTagHints) {
-                          builder.getProperty("mkp");
-                          builder.invokeMethod("yield", new Object[]{newValue});
-                      }
-                      
-                      public Writer writeTo(final Writer out) throws IOException {
-                          out.write((String)newValue);
-                          return out;
-                      }
-                  });
+                  result.replaceNode((Closure)newValue);
               } else {
                   result.replaceBody(newValue);
               }
@@ -164,7 +150,7 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
         }
     }
     
-    protected abstract void replaceNode(ReplacementNode newValue);
+    protected abstract void replaceNode(Closure newValue);
     
     protected abstract void replaceBody(Object newValue);
 
@@ -237,8 +223,9 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
     }
 
     public Object getAt(final int index) {
-        final Iterator iter = iterator();
-        int count = 0;
+    final Iterator iter = iterator();
+    int count = 0;
+    
         while (iter.hasNext()) {
             if (count++ == index) {
                 return iter.next();
@@ -249,6 +236,16 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
         throw new ArrayIndexOutOfBoundsException(index);
     }
 
+    public void putAt(final int index, final Object newValue) {
+    final GPathResult result = (GPathResult)getAt(index);
+    
+        if (newValue instanceof Closure) {
+            result.replaceNode((Closure)newValue);
+        } else {
+            result.replaceBody(newValue);
+        }
+    }
+    
     public Iterator depthFirst() {
         return new Iterator() {
             private final List list = new LinkedList();

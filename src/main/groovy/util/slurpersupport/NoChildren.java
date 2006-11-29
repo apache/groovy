@@ -122,11 +122,11 @@ public class NoChildren extends GPathResult {
   public void build(final GroovyObject builder) {
   }
 
-  protected void replaceNode(ReplacementNode newValue) {
-    // TODO Auto-generated method stub
+  protected void replaceNode(final Closure newValue) {
+    // No elements match GPath expression - do nothing
   }
 
-  protected void replaceBody(Object newValue) {
-    // TODO Auto-generated method stub    
+  protected void replaceBody(final Object newValue) {
+    // No elements match GPath expression - do nothing   
   }
 }

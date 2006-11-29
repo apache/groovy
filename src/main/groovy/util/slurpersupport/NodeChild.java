@@ -137,11 +137,11 @@ public class NodeChild extends GPathResult {
         return this.node.writeTo(out);
     }
 
-    protected void replaceNode(ReplacementNode newValue) {
-        this.node.setReplacementNode(newValue);
+    protected void replaceNode(final Closure newValue) {
+        this.node.setReplacementClosure(newValue, this);
     }
 
-    protected void replaceBody(Object newValue) {
+    protected void replaceBody(final Object newValue) {
         this.node.children().clear();
         this.node.children().add(newValue);
     }

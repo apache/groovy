@@ -125,7 +125,7 @@ class NodeChildren extends GPathResult {
 
     public Iterator iterator() {
         return new Iterator() {
-            final Iterator iter = nodeIterator();
+        final Iterator iter = nodeIterator();
 
             public boolean hasNext() {
                 return this.iter.hasNext();
@@ -188,8 +188,8 @@ class NodeChildren extends GPathResult {
     }
 
     public String text() {
-        final StringBuffer buf = new StringBuffer();
-        final Iterator iter = nodeIterator();
+    final StringBuffer buf = new StringBuffer();
+    final Iterator iter = nodeIterator();
 
         while (iter.hasNext()) {
             buf.append(((Node) iter.next()).text());
@@ -199,7 +199,7 @@ class NodeChildren extends GPathResult {
     }
 
     public GPathResult find(final Closure closure) {
-        final Iterator iter = iterator();
+    final Iterator iter = iterator();
 
         while (iter.hasNext()) {
             final Object node = iter.next();
@@ -234,7 +234,7 @@ class NodeChildren extends GPathResult {
     * @see groovy.lang.Writable#writeTo(java.io.Writer)
     */
     public Writer writeTo(final Writer out) throws IOException {
-        final Iterator iter = nodeIterator();
+    final Iterator iter = nodeIterator();
 
         while (iter.hasNext()) {
             ((Node) iter.next()).writeTo(out);
@@ -243,11 +243,21 @@ class NodeChildren extends GPathResult {
         return out;
     }
 
-    protected void replaceNode(ReplacementNode newValue) {
-        // TODO Auto-generated method stub  
+    protected void replaceNode(final Closure newValue) {
+    final Iterator iter = iterator();
+
+        while (iter.hasNext()) {
+        final NodeChild result = (NodeChild)iter.next();
+            result.replaceNode(newValue);
+        }
     }
 
-    protected void replaceBody(Object newValue) {
-        // TODO Auto-generated method stub
+    protected void replaceBody(final Object newValue) {
+    final Iterator iter = iterator();
+
+        while (iter.hasNext()) {
+        final NodeChild result = (NodeChild)iter.next();
+            result.replaceBody(newValue);
+        }
     }
 }

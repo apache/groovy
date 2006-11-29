@@ -71,8 +71,17 @@ public class Node implements Writable {
     this.children.add(child);
   }
   
-  public void setReplacementNode(final ReplacementNode replacementNode) {
-      this.replacementNode = replacementNode;
+  public void setReplacementClosure(final Closure replacementClosure, final GPathResult result) {
+      this.replacementNode = new ReplacementNode() {
+          public void build(final GroovyObject builder, final Map namespaceMap, final Map namespaceTagHints) {
+          final Closure c = (Closure)replacementClosure.clone();
+          
+              Node.this.replacementNode = null; // disable the replacement whilst the closure is being executed 
+              c.setDelegate(builder);
+              c.call(new Object[]{result});
+              Node.this.replacementNode = this;
+          }
+      };
   }
 
   /* (non-Javadoc)
