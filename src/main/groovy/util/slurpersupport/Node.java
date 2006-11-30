@@ -29,6 +29,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Stack;
 
 
 /**
@@ -42,7 +43,7 @@ public class Node implements Writable {
   private final Map attributeNamespaces;
   private final String namespaceURI;
   private final List children = new LinkedList();
-  private ReplacementNode replacementNode = null;
+  private final Stack replacementNodeStack = new Stack();
   
   public Node(final Node parent, final String name, final Map attributes, final Map attributeNamespaces, final String namespaceURI) {
     this.name = name;
@@ -72,7 +73,7 @@ public class Node implements Writable {
   }
   
   public void replaceNode(final Closure replacementClosure, final GPathResult result) {
-      this.replacementNode = makeReplacementNode(replacementClosure, result);
+      this.replacementNodeStack.push(makeReplacementNode(replacementClosure, result));
   }
   
 
@@ -94,10 +95,10 @@ public class Node implements Writable {
                   public void build(final GroovyObject builder, final Map namespaceMap, final Map namespaceTagHints) {
                       final Closure c = (Closure)replacementClosure.clone();
                       
-                          Node.this.replacementNode = null; // disable the replacement whilst the closure is being executed 
+                          Node.this.replacementNodeStack.pop(); // disable the replacement whilst the closure is being executed 
                           c.setDelegate(builder);
                           c.call(new Object[]{result});
-                          Node.this.replacementNode = this;
+                          Node.this.replacementNodeStack.push(this);
                       }
                   };
   }
@@ -165,7 +166,7 @@ public class Node implements Writable {
    * @see org.codehaus.groovy.sandbox.util.slurpersupport.Node#writeTo(java.io.Writer)
    */
   public Writer writeTo(final Writer out) throws IOException {
-      if (this.replacementNode == null) {
+      if (this.replacementNodeStack.empty()) {
       final Iterator iter = this.children.iterator();
       
         while (iter.hasNext()) {
@@ -181,12 +182,12 @@ public class Node implements Writable {
         return out;
         
       } else {
-         return this.replacementNode.writeTo(out); 
+         return ((Writable)this.replacementNodeStack.peek()).writeTo(out); 
       }
   }
   
   public void build(final GroovyObject builder, final Map namespaceMap, final Map namespaceTagHints) {
-      if (this.replacementNode == null) {
+      if (this.replacementNodeStack.empty()) {
       final Closure rest = new Closure(null) {
                               public Object doCall(final Object o) {
                                 buildChildren(builder, namespaceMap, namespaceTagHints);
@@ -236,7 +237,7 @@ public class Node implements Writable {
           }  
         }   
       } else {
-          this.replacementNode.build(builder, namespaceMap, namespaceTagHints);
+          ((ReplacementNode)this.replacementNodeStack.peek()).build(builder, namespaceMap, namespaceTagHints);
       }
   }
   
