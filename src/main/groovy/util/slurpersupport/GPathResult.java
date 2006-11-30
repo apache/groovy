@@ -21,6 +21,7 @@ import groovy.lang.Buildable;
 import groovy.lang.Closure;
 import groovy.lang.DelegatingMetaClass;
 import groovy.lang.GString;
+import groovy.lang.GroovyObject;
 import groovy.lang.GroovyObjectSupport;
 import groovy.lang.MetaClass;
 import groovy.lang.Writable;
@@ -152,6 +153,22 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
     
     public Object leftShift(final Object newValue) {
         appendNode(newValue);
+        return this;
+    }
+    
+    public Object plus(final Object newValue) {
+        this.replaceNode(new Closure(this) {
+            public void doCall(Object[] args) {
+            final GroovyObject delegate = (GroovyObject)getDelegate();
+             
+                delegate.getProperty("mkp");
+                delegate.invokeMethod("yield", args);
+                
+                delegate.getProperty("mkp");
+                delegate.invokeMethod("yield", new Object[]{newValue});
+            }
+        });
+        
         return this;
     }
     
