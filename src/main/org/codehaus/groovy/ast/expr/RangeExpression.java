@@ -90,8 +90,8 @@ public class RangeExpression extends Expression {
     }
 
     public String getText() {
-        return "[" + from.getText() + 
+        return "(" + from.getText() +
                (!isInclusive()? "..<" : ".." ) +
-               to.getText() + "]";
+               to.getText() + ")";
     }
 }
