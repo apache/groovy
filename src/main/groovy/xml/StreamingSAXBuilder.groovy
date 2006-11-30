@@ -56,7 +56,7 @@ import org.xml.sax.ext.LexicalHandler
         def pendingStack = []
         def commentClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, contentHandler ->
                                       if (contentHandler instanceof LexicalHandler) {
-                                          contentHandler.comment(body.toCharArray(), 0, body.length())
+                                          contentHandler.comment(body.toCharArray(), 0, body.size())
                                       }
                                    }
         def piClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, contentHandler ->
@@ -96,7 +96,7 @@ import org.xml.sax.ext.LexicalHandler
                                         it.build(doc)
                                       } else {
                                           def chars = it.toCharArray()
-                                          contentHandler.characters(chars, 0, chars.length())
+                                          contentHandler.characters(chars, 0, chars.size())
                                         }
                                       }
                                   }
@@ -109,11 +109,8 @@ import org.xml.sax.ext.LexicalHandler
                                               def parts = key.tokenize('$')
           
                                               if (namespaces.containsKey(parts[0])) {
-                                                  def namespaceUri = namespaces[parts[0]]
-          
-//                                                attributes.addAttribute(namespaceUri, parts[1], "${parts[0]}:${parts[1]}", "CDATA", value)
-// workround for bug GROOVY-309
-                                                  attributes.addAttribute(namespaceUri, parts[1], "${parts[0]}:${parts[1]}".toString(), "CDATA", value)
+                                                  def namespaceUri = namespaces[parts[0]]          
+                                                  attributes.addAttribute(namespaceUri, parts[1], "${parts[0]}:${parts[1]}", "CDATA", value)
                                               } else {
                                                   throw new GroovyRuntimeException("bad attribute namespace tag in ${key}")
                                               }
@@ -127,10 +124,8 @@ import org.xml.sax.ext.LexicalHandler
                                   pendingNamespaces.each {key, value ->
                                       hiddenNamespaces[key] = namespaces[key]
                                       namespaces[key] = value
-//                                    attributes.addAttribute("http://www.w3.org/2000/xmlns/", key, "xmlns:${key}", "CDATA", value)
-// workround for bug GROOVY-309
-                                      attributes.addAttribute("http://www.w3.org/2000/xmlns/", key, "xmlns:${key}".toString(), "CDATA", value)
-                                          contentHandler.startPrefixMapping(key, value)
+                                      attributes.addAttribute("http://www.w3.org/2000/xmlns/", key, "xmlns:${key}", "CDATA", value)
+                                      contentHandler.startPrefixMapping(key, value)
                                   }
           
                                   // setup the tag info
