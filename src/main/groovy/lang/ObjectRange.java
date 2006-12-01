@@ -71,7 +71,7 @@ public class ObjectRange extends AbstractList implements Range {
     private final boolean reverse;
 
     public ObjectRange(Comparable from, Comparable to) {
-        this.size=-1;
+        this.size = -1;
         this.reverse = ScriptBytecodeAdapter.compareGreaterThan(from, to);
         if (this.reverse) {
             constructorHelper(to, from);
@@ -81,7 +81,7 @@ public class ObjectRange extends AbstractList implements Range {
     }
 
     public ObjectRange(Comparable from, Comparable to, boolean reverse) {
-        this.size=-1;
+        this.size = -1;
         constructorHelper(from, to);
 
         this.reverse = reverse;
@@ -106,18 +106,18 @@ public class ObjectRange extends AbstractList implements Range {
             // 009.next is 00:, not 010 
             String start = from.toString();
             String end = to.toString();
-            if (start.length()>end.length()){
+            if (start.length() > end.length()) {
                 throw new IllegalArgumentException("Incompatible Strings for Range: starting String is longer than ending string");
             }
-            int length = Math.min(start.length(),end.length());
+            int length = Math.min(start.length(), end.length());
             int i = 0;
-            for (i=0; i<length; i++) {
+            for (i = 0; i < length; i++) {
                 if (start.charAt(i) != end.charAt(i)) break;
             }
-            if (i<length-1) {
+            if (i < length - 1) {
                 throw new IllegalArgumentException("Incompatible Strings for Range: String#next() will not reach the expected value");
             }
-            
+
         }
     }
 
@@ -227,16 +227,14 @@ public class ObjectRange extends AbstractList implements Range {
                 int fromNum = ((Integer) from).intValue();
                 int toNum = ((Integer) to).intValue();
                 size = toNum - fromNum + 1;
-            }
-            else if (from instanceof BigDecimal || to instanceof BigDecimal) {
+            } else if (from instanceof BigDecimal || to instanceof BigDecimal) {
                 // lets fast calculate the size
                 size = 0;
                 BigDecimal fromNum = new BigDecimal("" + from);
                 BigDecimal toNum = new BigDecimal("" + to);
                 BigInteger sizeNum = toNum.subtract(fromNum).add(new BigDecimal(1.0)).toBigInteger();
                 size = sizeNum.intValue();
-            }
-            else {
+            } else {
                 // lets lazily calculate the size
                 size = 0;
                 Object value = from;
@@ -277,20 +275,17 @@ public class ObjectRange extends AbstractList implements Range {
         return (reverse) ? "" + toText + ".." + fromText : "" + fromText + ".." + toText;
     }
 
-    public boolean contains(Comparable value) {
-        if (from instanceof BigDecimal || to instanceof BigDecimal) {
-            int result = (new BigDecimal("" + from)).compareTo(new BigDecimal("" + value));
-            if (result == 0) {
-                return true;
-            }
-            return result < 0 && (new BigDecimal("" + to)).compareTo(new BigDecimal("" + value)) >= 0;
+    public boolean contains(Object value) {
+        if (value instanceof Comparable) {
+            return contains((Comparable) value);
         } else {
-            int result = from.compareTo(value);
-            if (result == 0) {
-                return true;
-            }
-            return result < 0 && to.compareTo(value) >= 0;
+            return super.contains(value);
         }
+    }
+
+    public boolean contains(Comparable value) {
+        int result = from.compareTo(value);
+        return result == 0 || result < 0 && to.compareTo(value) >= 0;
     }
 
     public void step(int step, Closure closure) {
