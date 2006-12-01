@@ -23,6 +23,10 @@ public class ClassCompletionVerifierTest extends TestSupport {
             "Method 'xxx' from Interface 'zzz' must not be final. It is by definition abstract.";
     private static final String EXPECTED_INTERFACE_STATIC_METHOD_ERROR_MESSAGE =
             "Method 'yyy' from Interface 'zzz' must not be static. Only fields may be static in an interface.";
+    private static final String EXPECTED_TRANSIENT_CLASS_ERROR_MESSAGE =
+            "The class 'DodgyClass' has an incorrect modifier transient.";
+    private static final String EXPECTED_VOLATILE_CLASS_ERROR_MESSAGE =
+            "The class 'DodgyClass' has an incorrect modifier volatile.";
 
     protected void setUp() throws Exception {
         super.setUp();
@@ -35,6 +39,12 @@ public class ClassCompletionVerifierTest extends TestSupport {
         checkVisitErrors("AbstractClass", ACC_ABSTRACT, false);
         checkVisitErrors(ABSTRACT_FINAL_CLASS, ACC_ABSTRACT | ACC_FINAL, true);
         checkErrorMessage(EXPECTED_CLASS_MODIFIER_ERROR_MESSAGE);
+    }
+
+    public void testDetectsIncorrectOtherModifier() throws Exception {
+        checkVisitErrors("DodgyClass", ACC_TRANSIENT | ACC_VOLATILE, true);
+        checkErrorMessage(EXPECTED_TRANSIENT_CLASS_ERROR_MESSAGE);
+        checkErrorMessage(EXPECTED_VOLATILE_CLASS_ERROR_MESSAGE);
     }
 
     public void testDetectsFinalAbstractInterface() throws Exception {
@@ -67,6 +77,9 @@ public class ClassCompletionVerifierTest extends TestSupport {
             source.getErrorCollector().getError(i).write(writer);
         }
         writer.close();
-        assertTrue(stringWriter.toString().indexOf(expectedErrorMessage) != -1);
+        assertTrue("Expected an error message but none found.", source.getErrorCollector().hasErrors());
+        assertTrue("Expected message to contain <" + expectedErrorMessage +
+                "> but was <" + stringWriter.toString() + ">.",
+                stringWriter.toString().indexOf(expectedErrorMessage) != -1);
     }
 }

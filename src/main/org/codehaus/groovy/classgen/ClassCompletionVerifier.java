@@ -52,7 +52,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         currentClass = node;
         checkImplementsAndExtends(node);
         if (source != null && !source.getErrorCollector().hasErrors()) {
-            checkClassForAbstractAndFinal(node);
+            checkClassForIncorrectModifiers(node);
             checkClassForOverwritingFinal(node);
             checkMethodsForIncorrectModifiers(node);
             checkMethodsForOverwritingFinal(node);
@@ -75,6 +75,11 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         }
     }
 
+    private void checkClassForIncorrectModifiers(ClassNode node) {
+        checkClassForAbstractAndFinal(node);
+        checkClassForOtherModifiers(node);
+    }
+
     private void checkClassForAbstractAndFinal(ClassNode node) {
         if (!Modifier.isAbstract(node.getModifiers())) return;
         if (!Modifier.isFinal(node.getModifiers())) return;
@@ -83,6 +88,17 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         } else {
             addError("The class '" + node.getName() + "' must not be both final and abstract.", node);
         }
+    }
+
+    private void checkClassForOtherModifiers(ClassNode node) {
+        checkClassForModifier(node, Modifier.isTransient(node.getModifiers()), "transient");
+        checkClassForModifier(node, Modifier.isVolatile(node.getModifiers()), "volatile");
+    }
+
+    private void checkClassForModifier(ClassNode node, boolean condition, String modifierName) {
+        if (!condition) return;
+        addError("The " + (node.isInterface() ? "interface" : "class") + " '" + node.getName() +
+                "' has an incorrect modifier " + modifierName + ".", node);
     }
 
     private void checkAbstractDeclaration(MethodNode methodNode) {
