@@ -241,10 +241,6 @@ tokens {
     List warningList;
     public List getWarningList() { return warningList; }
     
-    boolean compatibilityMode = true;  // for now
-    public boolean isCompatibilityMode() { return compatibilityMode; }
-    public void setCompatibilityMode(boolean z) { compatibilityMode = z; }
-
     GroovyLexer lexer;
     public GroovyLexer getLexer() { return lexer; }
     public void setFilename(String f) { super.setFilename(f); lexer.setFilename(f); }
@@ -1462,8 +1458,6 @@ parameterModifiersOpt
 closureParametersOpt[boolean addImplicit]
     :   (parameterDeclarationList nls CLOSURE_OP)=>
         parameterDeclarationList nls! CLOSURE_OP! nls!
-    |   {compatibilityMode}? (oldClosureParametersStart)=>
-        oldClosureParameters
     |   {addImplicit}?
         implicitParameters
     |
@@ -1473,33 +1467,7 @@ closureParametersOpt[boolean addImplicit]
 /** Lookahead to check whether a block begins with explicit closure arguments. */
 closureParametersStart!
     :
-        {compatibilityMode}? (oldClosureParametersStart)=>
-        oldClosureParametersStart
-    |
         parameterDeclarationList nls CLOSURE_OP
-    ;
-
-/** Provisional definition of old-style closure params based on BOR '|'.
- *  Going away soon, perhaps... */
-oldClosureParameters  {Token first = LT(1);}
-    :   LOR! nls!  // '||' operator is a null param list
-        {#oldClosureParameters = #(create(PARAMETERS,"PARAMETERS",first,LT(1)));}
-    |   (BOR nls BOR)=>
-        BOR! nls! BOR! nls!
-        {#oldClosureParameters = #(create(PARAMETERS,"PARAMETERS",first,LT(1)));}
-    |   ((BOR nls)? LPAREN parameterDeclarationList RPAREN nls BOR)=>
-        (BOR! nls!)? LPAREN! parameterDeclarationList RPAREN! nls! BOR! nls!
-    |   ((BOR nls)? simpleParameterDeclarationList nls BOR)=>
-        (BOR! nls!)? simpleParameterDeclarationList nls! BOR! nls!
-    ;
-
-/** Lookahead for oldClosureParameters. */
-oldClosureParametersStart!
-    :   BOR
-    |   LOR // for empty parameter declaration
-    |   LPAREN balancedTokens RPAREN nls BOR
-    //| (IDENT nls (BOR | COMMA))=>
-    |   simpleParameterDeclarationList BOR
     ;
 
 /** Simple names, as in {x|...}, are completely equivalent to {(def x)|...}.  Build the right AST. */
