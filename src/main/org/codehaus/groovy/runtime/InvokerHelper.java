@@ -576,7 +576,11 @@ public class InvokerHelper {
                 Map.Entry entry = (Map.Entry) iter.next();
                 buffer.append(format(entry.getKey(), verbose));
                 buffer.append(":");
-                buffer.append(format(entry.getValue(), verbose));
+                if (entry.getValue()==map) {
+                    buffer.append("this Map_");
+                } else {
+                    buffer.append(format(entry.getValue(), verbose));
+                }
             }
             buffer.append("]");
             return buffer.toString();
@@ -639,7 +643,8 @@ public class InvokerHelper {
      * A helper method to return the string representation of a map with bracket boundaries "[" and "]".
      */
     public static String toMapString(Map arg) {
-        if (arg == null) {
+        return format(arg, true);
+        /*if (arg == null) {
             return "null";
         }
         if (arg.isEmpty()) {
@@ -660,7 +665,7 @@ public class InvokerHelper {
             buffer.append(format(entry.getValue(), true));
         }
         buffer.append(ebdry);
-        return buffer.toString();
+        return buffer.toString();*/
     }
 
     /**

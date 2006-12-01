@@ -96,6 +96,22 @@ public abstract class MetaClass {
         return invokeMethod(receiver,methodName,arguments);
     }
     
+    public Object getProperty(Class sender, Object receiver, String messageName, boolean useSuper) {
+        return getProperty(receiver,messageName);
+    }
+    
+    public void setProperty(Class sender, Object receiver, String messageName, Object messageValue, boolean useSuper) {
+        setProperty(receiver,messageName,messageValue);
+    }
+    
+    public Object getAttribute(Class sender, Object receiver, String messageName, boolean useSuper) {
+        return getAttribute(receiver,messageName);
+    }
+    
+    public void setAttribute(Class sender, Object receiver, String messageName, Object messageValue, boolean useSuper) {
+        setAttribute(receiver,messageName,messageValue);
+    }
+    
     public abstract Object invokeConstructor(Object[] arguments);
     public abstract Object invokeMethod(Object object, String methodName, Object[] arguments);
     public abstract Object invokeStaticMethod(Object object, String methodName, Object[] arguments);

@@ -73,14 +73,16 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
     private final Object owner;
     private Class[] parameterTypes;
     protected int maximumNumberOfParameters;
+    private final Object thisObject;
 
 
     private int directive = 0;
     public final static int DONE = 1, SKIP = 2;
 
-    public Closure(Object owner) {
+    public Closure(Object owner, Object thisObject) {
         this.owner = owner;
         this.delegate = owner;
+        this.thisObject = thisObject;
 
         Class closureClass = this.getClass();
         maximumNumberOfParameters = 0;
@@ -98,6 +100,14 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
                 maximumNumberOfParameters = parameterTypes.length;
             }
         }
+    }
+    
+    public Closure(Object owner) {
+        this(owner,null);
+    }
+    
+    protected Object getThisObject(){
+        return thisObject;
     }
 
     public Object getProperty(String property) {
@@ -117,7 +127,7 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
             try {
                 // lets try getting the property on the owner
                 return InvokerHelper.getProperty(this.owner, property);
-            } catch (GroovyRuntimeException e1) {
+            } catch (MissingPropertyException e1) {
                 if (this.delegate != null && this.delegate != this && this.delegate != this.owner) {
                     try {
                         // lets try getting the property on the delegate

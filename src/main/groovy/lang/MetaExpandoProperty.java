@@ -57,7 +57,7 @@ public class MetaExpandoProperty extends MetaProperty {
      * @return the property of the given object
      * @throws Exception if the property could not be evaluated
      */
-    public Object getProperty(Object object) throws Exception {
+    public Object getProperty(Object object) {
 		return value;
 	}
 

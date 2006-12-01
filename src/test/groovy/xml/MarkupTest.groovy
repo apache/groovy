@@ -44,10 +44,10 @@ class MarkupTest extends TestXmlSupport {
         def mkp = new groovy.xml.MarkupBuilder()
 
         mkp."ns1:customer-description"{
-            this."last-name"("Laforge")
-            this."first-name"{
+            "last-name"("Laforge")
+            "first-name"{
                 first("Guillaume")
-                this."initial-letters"("A.J.")
+                "initial-letters"("A.J.")
             }
         }
     }

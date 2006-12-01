@@ -276,21 +276,21 @@ public class ObjectRange extends AbstractList implements Range {
         String fromText = InvokerHelper.inspect(from);
         return (reverse) ? "" + toText + ".." + fromText : "" + fromText + ".." + toText;
     }
-    
-    public boolean contains(Object value) {
-        if (value instanceof Comparable) {
-            return contains((Comparable) value);
-        } else {
-            return super.contains(value);
-        }
-    }
 
     public boolean contains(Comparable value) {
-        int result = from.compareTo(value);
-        if (result == 0) {
-            return true;
+        if (from instanceof BigDecimal || to instanceof BigDecimal) {
+            int result = (new BigDecimal("" + from)).compareTo(new BigDecimal("" + value));
+            if (result == 0) {
+                return true;
+            }
+            return result < 0 && (new BigDecimal("" + to)).compareTo(new BigDecimal("" + value)) >= 0;
+        } else {
+            int result = from.compareTo(value);
+            if (result == 0) {
+                return true;
+            }
+            return result < 0 && to.compareTo(value) >= 0;
         }
-        return result < 0 && to.compareTo(value) >= 0;
     }
 
     public void step(int step, Closure closure) {

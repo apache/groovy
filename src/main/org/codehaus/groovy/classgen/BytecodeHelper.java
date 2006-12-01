@@ -543,10 +543,6 @@ public class BytecodeHelper implements Opcodes {
     public void putField(FieldNode fld, String ownerName) {
     	cv.visitFieldInsn(PUTFIELD, ownerName, fld.getName(), getTypeDescription(fld.getType()));
     }
-
-    public void loadThis() {
-        cv.visitVarInsn(ALOAD, 0);
-    }
     
     public void swapObjectWith(ClassNode type) {
         if (type==ClassHelper.long_TYPE || type==ClassHelper.double_TYPE) {

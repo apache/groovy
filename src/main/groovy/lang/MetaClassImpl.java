@@ -50,7 +50,6 @@ import java.beans.EventSetDescriptor;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
-import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -74,6 +73,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 
+import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.classgen.BytecodeHelper;
 import org.codehaus.groovy.control.CompilationUnit;
@@ -92,7 +92,6 @@ import org.codehaus.groovy.runtime.NewStaticMetaMethod;
 import org.codehaus.groovy.runtime.ReflectionMetaMethod;
 import org.codehaus.groovy.runtime.Reflector;
 import org.codehaus.groovy.runtime.TransformMetaMethod;
-import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 import org.objectweb.asm.ClassVisitor;
 
@@ -112,8 +111,9 @@ public class MetaClassImpl extends MetaClass {
    private Map classMethodIndex = new HashMap();
    private Map classMethodIndexForSuper;
    private Map classStaticMethodIndex = new HashMap();
-   //private Map propertyDescriptors = Collections.synchronizedMap(new HashMap());
-   private Map propertyMap = Collections.synchronizedMap(new HashMap());
+   private Map classPropertyIndex = new HashMap();
+   private Map classPropertyIndexForSuper = new HashMap();
+   private Map staticPropertyIndex = new HashMap();
    private Map listeners = new HashMap();
    private Map methodCache = Collections.synchronizedMap(new HashMap());
    private Map staticMethodCache = Collections.synchronizedMap(new HashMap());
@@ -128,10 +128,9 @@ public class MetaClassImpl extends MetaClass {
    private MetaProperty arrayLengthProperty = new MetaArrayLengthProperty();
    private final static MetaMethod AMBIGOUS_LISTENER_METHOD = new MetaMethod(null,null,new Class[]{},null,0);
    private static final Object[] EMPTY_ARGUMENTS = {};
-   private BeanInfo info;
    private List newGroovyMethodsList = new LinkedList();
    
-   public MetaClassImpl(MetaClassRegistry registry, final Class theClass) throws IntrospectionException {
+   public MetaClassImpl(MetaClassRegistry registry, final Class theClass) {
        super(theClass);
        this.registry = registry;
 
@@ -140,32 +139,10 @@ public class MetaClassImpl extends MetaClass {
                    return Arrays.asList (theClass.getDeclaredConstructors());
                }
            });
-       
-       //     introspect
-       try {
-           info =(BeanInfo) AccessController.doPrivileged(new PrivilegedExceptionAction() {
-               public Object run() throws IntrospectionException {
-                   return Introspector.getBeanInfo(theClass);
-               }
-           });
-       } catch (PrivilegedActionException pae) {
-           if (pae.getException() instanceof IntrospectionException) {
-               throw (IntrospectionException) pae.getException();
-           } else {
-               throw new RuntimeException(pae.getException());
-           }
-       }
    }
 
    private void fillMethodIndex() {
-       LinkedList superClasses = new LinkedList();
-       for (Class c = theClass; c!= null; c = c.getSuperclass()) {
-           superClasses.addFirst(c);
-       }
-       if (theClass.isArray() && theClass!=Object[].class && !theClass.getComponentType().isPrimitive()) {
-           superClasses.addFirst(Object[].class);
-       }
-       
+       LinkedList superClasses = getSuperClasses();
        // let's add all the base class methods
        for (Iterator iter = superClasses.iterator(); iter.hasNext();) {
            Class c = (Class) iter.next();
@@ -186,6 +163,17 @@ public class MetaClassImpl extends MetaClass {
        replaceWithMOPCalls();
    }
    
+   private LinkedList getSuperClasses() {
+       LinkedList superClasses = new LinkedList();
+       for (Class c = theClass; c!= null; c = c.getSuperclass()) {
+           superClasses.addFirst(c);
+       }
+       if (theClass.isArray() && theClass!=Object[].class && !theClass.getComponentType().isPrimitive()) {
+           superClasses.addFirst(Object[].class);
+       }
+       return superClasses;
+   }
+
    private void removeMultimethodsOverloadedWithPrivateMethods() {
        Map privates = new HashMap();
        MethodIndexAction mia = new MethodIndexAction() {
@@ -399,7 +387,7 @@ public class MetaClassImpl extends MetaClass {
            answer = Collections.EMPTY_LIST;
        }
        
-       if (!isCallToSuper) {
+       if (!isCallToSuper && GroovyCategorySupport.hasCategoryInAnyThread()) {
            List used = GroovyCategorySupport.getCategoryMethods(sender, name);
            if (used != null) {
                answer = new ArrayList(answer);
@@ -466,7 +454,7 @@ public class MetaClassImpl extends MetaClass {
    
    /**
     * Invokes the given method on the object.
-    *
+    * @deprecated
     */
    public Object invokeMethod(Object object, String methodName, Object[] originalArguments) {
        return invokeMethod(theClass,object,methodName,originalArguments,false);
@@ -837,100 +825,12 @@ public class MetaClassImpl extends MetaClass {
            setProperty(bean, key, value);
        }
    }
-
+   
    /**
     * @return the given property's value on the object
     */
-   public Object getProperty(final Object object, final String property) {
-       checkInitalised();
-       // look for the property in our map
-       MetaProperty mp = (MetaProperty) propertyMap.get(property);
-       if (mp != null) {
-           try {
-               // delegate the get operation to the metaproperty
-               return mp.getProperty(object);
-           } catch (InvokerInvocationException e) {
-               throw e;  
-           } catch(Exception e) {
-               throw new GroovyRuntimeException("Cannot read property: " + property);
-           }
-       }
-
-       if (genericGetMethod == null) {
-           // Make sure there isn't a generic method in the "use" cases
-           //TODO: implement!
-           List possibleGenericMethods = getMethods(theClass,"get",false);
-           if (possibleGenericMethods != null) {
-               for (Iterator i = possibleGenericMethods.iterator(); i.hasNext(); ) {
-                   MetaMethod mmethod = (MetaMethod) i.next();
-                   Class[] paramTypes = mmethod.getParameterTypes();
-                   if (paramTypes.length == 1 && paramTypes[0] == String.class) {
-                       Object[] arguments = {property};
-                       Object answer = MetaClassHelper.doMethodInvoke(object, mmethod, arguments);
-                       return answer;
-                   }
-               }
-           }
-       }
-       else {
-           Object[] arguments = { property };
-           Object answer = MetaClassHelper.doMethodInvoke(object, genericGetMethod, arguments);
-           // jes bug? a property retrieved via a generic get() can't have a null value?
-           if (answer != null) {
-               return answer;
-           }
-       }
-
-       // lets try invoke a static getter method
-       // this case is for protected fields. I wish there was a better way...
-       Exception lastException = null;
-       try {
-           if ( !(object instanceof Class) ) {
-               MetaMethod method = findGetter(object, "get" + MetaClassHelper.capitalize(property));
-               if (method != null) {
-                  return MetaClassHelper.doMethodInvoke(object, method, MetaClassHelper.EMPTY_ARRAY);
-              }
-          }
-       }
-       catch (GroovyRuntimeException e) {
-           lastException = e;
-       }
-
-       /** todo or are we an extensible groovy class? */
-       if (genericGetMethod != null) {
-           return null;
-       }
-       else {
-           /** todo these special cases should be special MetaClasses maybe */
-           if (object instanceof Class) {
-               // lets try a static field
-               return getStaticProperty((Class) object, property);
-           }
-           if (object instanceof Collection) {
-               return DefaultGroovyMethods.getAt((Collection) object, property);
-           }
-           if (object instanceof Object[]) {
-               return DefaultGroovyMethods.getAt(Arrays.asList((Object[]) object), property);
-           }
-           if (object instanceof Object) {
-               try {
-                   return getAttribute(object,property);
-               } catch (MissingFieldException mfe) {
-                   // do nothing
-               }
-           }
-
-           MetaMethod addListenerMethod = (MetaMethod) listeners.get(property);
-           if (addListenerMethod != null) {
-               /* @todo one day we could try return the previously registered Closure listener for easy removal */
-               return null;
-           }
-
-           if (lastException == null)
-               throw new MissingPropertyException(property, theClass);
-           else
-               throw new MissingPropertyException(property, theClass, lastException);
-       }
+   public Object getProperty(Class sender, Object object, String property, boolean useSuper) {
+       return getPropertyOrField(sender,object,property,useSuper,false);
    }
 
    /**
@@ -939,412 +839,566 @@ public class MetaClassImpl extends MetaClass {
     */
    public List getProperties() {
        checkInitalised();
+       Map propertyMap = (Map) classPropertyIndex.get(theClass);
        // simply return the values of the metaproperty map as a List
        List ret = new ArrayList(propertyMap.size());
        for (Iterator iter = propertyMap.values().iterator(); iter.hasNext();) {
            MetaProperty element = (MetaProperty) iter.next();
            if (element instanceof MetaFieldProperty) continue;
+           // filter out DGM beans
+           if (element instanceof MetaBeanProperty) {
+               MetaBeanProperty mp = (MetaBeanProperty) element;
+               boolean setter = true;
+               boolean getter = true;
+               if (mp.getGetter()==null || mp.getGetter() instanceof NewInstanceMetaMethod) {
+                   getter=false;
+               }
+               if (mp.getSetter()==null || mp.getSetter() instanceof NewInstanceMetaMethod) {
+                   setter=false;
+               }
+               if (!setter && !getter) continue;
+               if (!setter && mp.getSetter()!=null) {
+                   element = new MetaBeanProperty(mp.getName(),mp.getType(),mp.getGetter(),null);
+               }
+               if (!getter && mp.getGetter()!=null) {
+                   element = new MetaBeanProperty(mp.getName(),mp.getType(), null, mp.getSetter());
+               }
+           }
            ret.add(element);
        }
        return ret;
    }
-
+   
+   private MetaMethod findPropertyMethod(List methods, boolean isGetter) {
+       LinkedList ret = new LinkedList();
+       for (Iterator iter = methods.iterator(); iter.hasNext();) {
+           MetaMethod element = (MetaMethod) iter.next();
+           if ( !isGetter && 
+                (element.getReturnType() == Void.class || element.getReturnType() == Void.TYPE) && 
+                element.getParameterTypes().length == 1)
+           {
+               ret.add(element);
+           } 
+           if ( isGetter &&
+                !(element.getReturnType() == Void.class || element.getReturnType() == Void.TYPE) && 
+                element.getParameterTypes().length == 0)
+           {
+               ret.add(element);
+           }
+       }
+       if (ret.size() == 0) return null;
+       if (ret.size() == 1) return (MetaMethod) ret.getFirst();
+       
+       // we found multiple matching methods
+       // this is a problem, because we can use only one
+       // if it is a getter, then use the most general return 
+       // type to decide which method to use. If it is a setter 
+       // we use the type of the first parameter 
+       MetaMethod method = null;
+       int distance = -1;
+       for (Iterator iter = ret.iterator(); iter.hasNext();) {
+           MetaMethod element = (MetaMethod) iter.next();
+           Class c;
+           if (isGetter) {
+               c = element.getReturnType();
+           } else {
+               c = element.getParameterTypes()[0];
+           }
+           int localDistance = distanceToObject(c);
+           //TODO: maybe implement the case localDistance==distance
+           if (distance==-1 || distance>localDistance) {
+               distance = localDistance;
+               method = element;
+           } 
+       }
+       return method;
+   }
+   
+   private static int distanceToObject(Class c) {
+       int count;
+       for (count=0; c!=null; count++) {
+           c=c.getSuperclass();           
+       }
+       return count;
+   }
+   
+   
    /**
     * This will build up the property map (Map of MetaProperty objects, keyed on
     * property name).
     */
    private void setupProperties(PropertyDescriptor[] propertyDescriptors) {
-       MetaProperty mp;
-       Method method;
-       MetaMethod getter = null;
-       MetaMethod setter = null;
-       Class klass;
-
-       // first get the public fields and create MetaFieldProperty objects
-       klass = theClass;
-       while(klass != null) {
-           final Class clazz = klass;
-           Field[] fields = (Field[]) AccessController.doPrivileged(new  PrivilegedAction() {
-               public Object run() {
-                   return clazz.getDeclaredFields();
-               }
-           });
-           for(int i = 0; i < fields.length; i++) {
-               // todo: GROOVY-996
-               // we're only interested in publics and protected
-               if ((fields[i].getModifiers() & (java.lang.reflect.Modifier.PUBLIC | java.lang.reflect.Modifier.PROTECTED)) == 0)
-                    continue;
-
-               // see if we already got this
-               if(propertyMap.get(fields[i].getName()) != null)
-                   continue;
-
-               //System.out.println("adding field " + fields[i].getName() +
-               //  " for class " + klass.getName());
-               // stick it in there!
-               propertyMap.put(fields[i].getName(), new MetaFieldProperty(fields[i]));
-           }
-
-           // now get the super class
-           klass = klass.getSuperclass();
-       }
-
-  // if this an Array, then add the special read-only "length" property
+       LinkedList superClasses = getSuperClasses();
+       Set interfaces = new HashSet();
+       makeInterfaceSet(theClass,interfaces);
+       
+       // if this an Array, then add the special read-only "length" property
        if (theClass.isArray()) {
-           propertyMap.put("length", arrayLengthProperty);
+           Map map = new HashMap();
+           map.put("length", arrayLengthProperty);
+           classPropertyIndex.put(theClass,map);
        }
+              
+       inheritStaticInterfaceFields(superClasses, interfaces);       
+       inheritFields(superClasses);
+       applyPropertyDescriptors(propertyDescriptors);
+       
+       applyStrayPropertyMethods(superClasses,classMethodIndex,classPropertyIndex);
+       applyStrayPropertyMethods(superClasses,classMethodIndexForSuper,classPropertyIndexForSuper);
+       
+       copyClassPropertyIndexForSuper();
+       makeStaticPropertyIndex();
+   }
+   
+   private void makeStaticPropertyIndex() {
+       Map propertyMap = (Map) classPropertyIndex.get(theClass);
+       for (Iterator iter = propertyMap.entrySet().iterator(); iter.hasNext();) {
+           Map.Entry entry = (Map.Entry) iter.next();
+           MetaProperty mp = (MetaProperty) entry.getValue();
+           if (mp instanceof MetaFieldProperty) {
+               MetaFieldProperty mfp = (MetaFieldProperty) mp;
+               if (!mfp.isStatic()) continue;
+           } else if (mp instanceof MetaBeanProperty) {
+               MetaBeanProperty mbp = (MetaBeanProperty) mp;
+               boolean getter = mbp.getGetter()==null || mbp.getGetter().isStatic();
+               boolean setter = mbp.getSetter()==null || mbp.getSetter().isStatic();
+               boolean field = mbp.getField()==null || mbp.getField().isStatic();
+               
+               if (!getter && !setter && !field) {
+                   continue;
+               } else if (setter && getter) {
+                   if (field) {
+                       mp = mbp; // nothing to do
+                   } else {
+                       mp = new MetaBeanProperty(mbp.getName(),mbp.getType(),mbp.getGetter(),mbp.getSetter());
+                   }
+               } else if (getter && !setter) {
+                   if (mbp.getGetter()==null) {
+                       mp = mbp.getField();
+                   } else {
+                       MetaBeanProperty newmp = new MetaBeanProperty(mbp.getName(),mbp.getType(),mbp.getGetter(),null);
+                       if (field) newmp.setField(mbp.getField());
+                       mp = newmp;
+                   }
+               } else if (setter && !getter) {
+                   if (mbp.getSetter()==null) {
+                       mp = mbp.getField();
+                   } else {
+                       MetaBeanProperty newmp = new MetaBeanProperty(mbp.getName(),mbp.getType(),null,mbp.getSetter());
+                       if (field) newmp.setField(mbp.getField());
+                       mp = newmp;
+                   }
+               } else if (field) {
+                   mp = mbp.getField();
+               }
+           } else {
+               continue; // ignore all other types
+           }
+           if (mp==null) continue;
+           staticPropertyIndex.put(entry.getKey(),mp);
+       }
+       
+   }
+   
+   private void copyClassPropertyIndexForSuper() {
+       for (Iterator iter = classPropertyIndex.entrySet().iterator(); iter.hasNext();) {
+           Map.Entry entry = (Map.Entry) iter.next();
+           HashMap newVal = new HashMap((Map)entry.getValue());
+           classPropertyIndexForSuper.put(entry.getKey(),newVal);
+       }
+   }
+   
+   private Map getMap2MapNotNull(Map m, Object key) {
+       Map ret = (Map) m.get(key);
+       if (ret==null) {
+           ret = new HashMap();
+           m.put(key,ret);
+       }
+       return ret;
+   }
+   
+   private void inheritStaticInterfaceFields(LinkedList superClasses, Set interfaces) {
+       for (Iterator interfaceIter = interfaces.iterator(); interfaceIter.hasNext();) {
+           Class iclass = (Class) interfaceIter.next();
+           Map iPropertyIndex = getMap2MapNotNull(classPropertyIndex,iclass);
+           addFields(iclass,iPropertyIndex);
+           for (Iterator classIter = superClasses.iterator(); classIter.hasNext();) {
+               Class sclass = (Class) classIter.next();
+               if (! iclass.isAssignableFrom(sclass)) continue;
+               Map sPropertyIndex = getMap2MapNotNull(classPropertyIndex,sclass);
+               copyNonPrivateFields(iPropertyIndex,sPropertyIndex);
+           }
+       }
+   }
+   
+   private void inheritFields(LinkedList superClasses) {
+       Map last = null;
+       for (Iterator iter = superClasses.iterator(); iter.hasNext();) {
+           Class klass = (Class) iter.next();
+           Map propertyIndex = getMap2MapNotNull(classPropertyIndex,klass);
+           if (last != null) {
+               copyNonPrivateFields(last,propertyIndex);
+           }
+           last = propertyIndex;
+           addFields(klass,propertyIndex);
+       }   
+   }
+   
+   private void addFields(final Class klass, Map propertyIndex) {
+       Field[] fields = (Field[]) AccessController.doPrivileged(new  PrivilegedAction() {
+           public Object run() {
+               return klass.getDeclaredFields();
+           }
+       });
+       for(int i = 0; i < fields.length; i++) {
+           MetaFieldProperty mfp = new MetaFieldProperty(fields[i]);
+           propertyIndex.put(fields[i].getName(), mfp);
+       }
+   }
 
+   private void copyNonPrivateFields(Map from, Map to) {
+       for (Iterator iter = from.entrySet().iterator(); iter.hasNext();) {
+           Map.Entry entry = (Map.Entry) iter.next();
+           MetaFieldProperty mfp = (MetaFieldProperty) entry.getValue();
+           if (!Modifier.isPublic(mfp.getModifiers()) && !Modifier.isProtected(mfp.getModifiers())) continue;
+           to.put(entry.getKey(),mfp);
+       }
+   }
+   
+   private void applyStrayPropertyMethods(LinkedList superClasses, Map classMethodIndex, Map classPropertyIndex) {
+       // now look for any stray getters that may be used to define a property
+       for (Iterator iter = superClasses.iterator(); iter.hasNext();) {
+           Class klass = (Class) iter.next();
+           Map methodIndex = (Map) classMethodIndex.get(klass);
+           Map propertyIndex = getMap2MapNotNull(classPropertyIndex,klass);
+           for (Iterator nameMethodIterator = methodIndex.entrySet().iterator(); nameMethodIterator.hasNext();) {
+               Map.Entry entry = (Map.Entry) nameMethodIterator.next();
+               String methodName = (String) entry.getKey();
+               // name too sort?
+               if (methodName.length() < 4) continue;
+               //possible getter/setter
+               boolean isGetter = methodName.startsWith("get");
+               boolean isSetter = methodName.startsWith("set");
+               if (!isGetter && !isSetter) continue;
+               
+               // get the name of the property
+               String propName = methodName.substring(3,4).toLowerCase() + methodName.substring(4);
+               MetaMethod propertyMethod = findPropertyMethod((List) entry.getValue(), isGetter);
+               if (propertyMethod==null) continue;
+               
+               createMetaBeanProperty(propertyIndex, propName, isGetter, propertyMethod);
+           }
+       }
+   }
+   
+   private void createMetaBeanProperty(Map propertyIndex, String propName, boolean isGetter, MetaMethod propertyMethod){
+       // is this property already accounted for?
+       MetaProperty mp = (MetaProperty) propertyIndex.get(propName);
+       if (mp == null) {
+           if (isGetter) {
+               mp = new MetaBeanProperty(propName,
+                       propertyMethod.getReturnType(),
+                       propertyMethod, null);
+           } else {
+               //isSetter
+               mp = new MetaBeanProperty(propName,
+                       propertyMethod.getParameterTypes()[0],
+                       null, propertyMethod);
+           }
+       } else {
+           MetaBeanProperty mbp;
+           MetaFieldProperty mfp;
+           if (mp instanceof MetaBeanProperty) {
+               mbp = (MetaBeanProperty) mp;
+               mfp = mbp.getField();
+           } else if (mp instanceof MetaFieldProperty){
+               mfp = (MetaFieldProperty) mp;
+               mbp = new MetaBeanProperty(propName,
+                       mfp.getType(),
+                       null, null);
+           } else {
+               throw new GroovyBugError("unknown MetaProperty class used. Class is "+mp.getClass());
+           }
+           // we may have already found one for this name
+           if (isGetter && mbp.getGetter()==null) {
+               mbp.setGetter(propertyMethod);
+           } else if (!isGetter && mbp.getSetter()==null) {
+               mbp.setSetter(propertyMethod);
+           }
+           mbp.setField(mfp);
+           mp = mbp;
+       }
+       propertyIndex.put(propName, mp);
+   }
+
+   private void applyPropertyDescriptors(PropertyDescriptor[] propertyDescriptors) {
+       Map propertyMap = (Map) classPropertyIndex.get(theClass);
        // now iterate over the map of property descriptors and generate
        // MetaBeanProperty objects
        for(int i=0; i<propertyDescriptors.length; i++) {
            PropertyDescriptor pd = propertyDescriptors[i];
-
+           
            // skip if the property type is unknown (this seems to be the case if the
            // property descriptor is based on a setX() method that has two parameters,
            // which is not a valid property)
            if(pd.getPropertyType() == null)
                continue;
-
+           
            // get the getter method
-           method = pd.getReadMethod();
+           Method method = pd.getReadMethod();
+           MetaMethod getter;
            if(method != null)
                getter = findMethod(method);
            else
                getter = null;
-
+           
            // get the setter method
+           MetaMethod setter;
            method = pd.getWriteMethod();
            if(method != null)
                setter = findMethod(method);
            else
                setter = null;
-
+           
            // now create the MetaProperty object
-           //System.out.println("creating a bean property for class " +
-           //  theClass.getName() + ": " + pd.getName());
-
-           mp = new MetaBeanProperty(pd.getName(), pd.getPropertyType(), getter, setter);
-
+           MetaBeanProperty mp = new MetaBeanProperty(pd.getName(), pd.getPropertyType(), getter, setter);
+           
+           //keep field
+           MetaFieldProperty field = null;
+           MetaProperty old = (MetaProperty) propertyMap.get(pd.getName());
+           if (old!=null) {
+               if (old instanceof MetaBeanProperty) {
+                   field = ((MetaBeanProperty) old).getField();
+               } else {
+                   field = (MetaFieldProperty) old;
+               }
+               mp.setField(field);
+           }
+           
            // put it in the list
            // this will overwrite a possible field property
            propertyMap.put(pd.getName(), mp);
+       }       
+   }
+   
+   private Object getPropertyOrField(Class sender, Object object, String name, boolean useSuper, boolean forceFields) {
+       checkInitalised();
+       
+       boolean isStatic = theClass != Class.class && object instanceof Class;
+       if (isStatic && object != theClass) {
+           MetaClass mc = registry.getMetaClass((Class) object);
+           return mc.getProperty(sender,object,name,useSuper);
        }
-
-       // now look for any stray getters that may be used to define a property
-       klass = theClass;
-       while(klass != null) {
-           final Class clazz = klass;
-           Method[] methods = (Method[]) AccessController.doPrivileged(new  PrivilegedAction() {
-               public Object run() {
-                   return clazz.getDeclaredMethods();
+       
+       MetaProperty mp = getMetaProperty(sender,name,useSuper, isStatic);
+       
+       if (mp != null) {
+           if (mp instanceof MetaBeanProperty) {
+               MetaBeanProperty mbp = (MetaBeanProperty) mp;
+               if (forceFields || mbp.getGetter()==null) {
+                   mp = mbp.getField();
                }
-           });
-           for (int i = 0; i < methods.length; i++) {
-               // filter out the privates
-               if(Modifier.isPublic(methods[i].getModifiers()) == false)
-                   continue;
+           }
+           try {
+               // delegate the get operation to the metaproperty
+               if (mp != null) return mp.getProperty(object);
+           } catch (InvokerInvocationException e) {
+               throw e;  
+           } catch(Exception e) {
+               throw new GroovyRuntimeException("Cannot read property: " + name,e);
+           }
+       }
+       
+       if (forceFields) throw new MissingFieldException(name, theClass);
 
-               method = methods[i];
-
-               String methodName = method.getName();
-
-               // is this a getter?
-               if(methodName.startsWith("get") &&
-                   methodName.length() > 3 &&
-                   method.getParameterTypes().length == 0) {
-
-                   // get the name of the property
-                   String propName = methodName.substring(3,4).toLowerCase() + methodName.substring(4);
-
-                   // is this property already accounted for?
-                   mp = (MetaProperty) propertyMap.get(propName);
-                   if(mp != null) {
-                       // we may have already found the setter for this
-                       if(mp instanceof MetaBeanProperty && ((MetaBeanProperty) mp).getGetter() == null) {
-                           // update the getter method to this one
-                           ((MetaBeanProperty) mp).setGetter(findMethod(method));
-                       }
-                   }
-                   else {
-                       // we need to create a new property object
-                       // type of the property is what the get method returns
-                       MetaBeanProperty mbp = new MetaBeanProperty(propName,
-                           method.getReturnType(),
-                           findMethod(method), null);
-
-                       // add it to the map
-                       propertyMap.put(propName, mbp);
-                   }
-               }
-               else if(methodName.startsWith("set") &&
-                   methodName.length() > 3 &&
-                   method.getParameterTypes().length == 1) {
-
-                   // get the name of the property
-                   String propName = methodName.substring(3,4).toLowerCase() + methodName.substring(4);
-
-                   // did we already find the getter of this?
-                   mp = (MetaProperty) propertyMap.get(propName);
-                   if(mp != null) {
-                       if(mp instanceof MetaBeanProperty && ((MetaBeanProperty) mp).getSetter() == null) {
-                           // update the setter method to this one
-                           ((MetaBeanProperty) mp).setSetter(findMethod(method));
-                       }
-                   }
-                   else {
-                       // this is a new property to add
-                       MetaBeanProperty mbp = new MetaBeanProperty(propName,
-                                                                   method.getParameterTypes()[0],
-                                                                   null,
-                                                                   findMethod(method));
-
-                       // add it to the map
-                       propertyMap.put(propName, mbp);
+       
+       MetaMethod method = null;
+       Object[] arguments = null;
+       
+       
+       // Make sure there isn't a generic method in the "use" cases
+       if (!useSuper && !isStatic && GroovyCategorySupport.hasCategoryInAnyThread()) {
+           List possibleGenericMethods = GroovyCategorySupport.getCategoryMethods(sender, "get");
+           if (possibleGenericMethods != null) {
+               for (Iterator iter = possibleGenericMethods.iterator(); iter.hasNext();) {
+                   MetaMethod mmethod = (MetaMethod) iter.next();
+                   Class[] paramTypes = mmethod.getParameterTypes();
+                   if (paramTypes.length == 1 && paramTypes[0] == String.class) {
+                       arguments = new Object[]{name};
+                       method = mmethod;
+                       break;
                    }
                }
            }
-
-           // now get the super class
-           klass = klass.getSuperclass();
        }
-   }
 
-   /**
-    * Sets the property value on an object
-    */
-   public void setProperty(Object object, String property, Object newValue) { 
+       // the generic method is valid, if available (!=null), if static or
+       // if it is not static and we do no static access
+       if (method==null && genericGetMethod != null && !(!genericGetMethod.isStatic() && isStatic)) {
+           arguments = new Object[]{ name };
+           method = genericGetMethod;
+       } 
+       
+       if (method==null) {
+           /** todo these special cases should be special MetaClasses maybe */
+           if (theClass != Class.class && object instanceof Class) {
+               MetaClass mc = registry.getMetaClass(Class.class);
+               return mc.getProperty(Class.class,object,name,useSuper);
+           } else if (object instanceof Collection) {
+               return DefaultGroovyMethods.getAt((Collection) object, name);
+           } else if (object instanceof Object[]) {
+               return DefaultGroovyMethods.getAt(Arrays.asList((Object[]) object), name);
+           } else {
+               MetaMethod addListenerMethod = (MetaMethod) listeners.get(name);
+               if (addListenerMethod != null) {
+                   //TODO: one day we could try return the previously registered Closure listener for easy removal
+                   return null;
+               }
+           }
+       } else {
+           return MetaClassHelper.doMethodInvoke(object,method,arguments);
+       }
+       
+       throw new MissingPropertyException(name, theClass);
+   }
+   
+   private void setPropertyOrField(Class sender, Object object, String name, Object newValue, boolean useSuper, boolean forceFields) {
        checkInitalised();
+       
+       boolean isStatic = theClass != Class.class && object instanceof Class;
+       if (isStatic && object != theClass) {
+           MetaClass mc = registry.getMetaClass((Class) object);
+           mc.setProperty(sender,object,name,newValue,useSuper);
+           return;
+       }
+       
+       MetaProperty mp = getMetaProperty(sender,name,useSuper,isStatic);
        
        //
        // Unwrap wrapped values fo now - the new MOP will handle them properly
        //
        if (newValue instanceof Wrapper) newValue = ((Wrapper)newValue).unwrap();
        
-       MetaProperty mp = (MetaProperty) propertyMap.get(property);
-       if(mp != null) {
-           try {
+       if (mp != null) {
+           if (mp instanceof MetaBeanProperty) {
+               MetaBeanProperty mbp = (MetaBeanProperty) mp;
+               if (forceFields || mbp.getSetter()==null) {
+                   mp = mbp.getField();
+               }
+           }
+           if (mp != null) {
                mp.setProperty(object, newValue);
                return;
-           } catch(ReadOnlyPropertyException e) {
-               // just rethrow it; there's nothing left to do here
-               throw e;
-           } catch (GroovyCastException e) {
-               // if the value is a List see if we can construct the value
-               // from a constructor
-               if (newValue == null)
-                   return;
-               if (newValue instanceof List) {
-                   List list = (List) newValue;
-                   int params = list.size();
-                   Constructor[] constructors = mp.getType().getConstructors();
-                   for (int i = 0; i < constructors.length; i++) {
-                       Constructor constructor = constructors[i];
-                       if (constructor.getParameterTypes().length == params) {
-                           Object value = MetaClassHelper.doConstructorInvoke(constructor, list.toArray());
-                           mp.setProperty(object, value);
-                           return;
-                       }
-                   }
-
-                   // if value is an array
-                   Class parameterType = mp.getType();
-                   if (parameterType.isArray()) {
-                       Object objArray = MetaClassHelper.asPrimitiveArray(list, parameterType);
-                       mp.setProperty(object, objArray);
-                       return;
-                   }
-               }
-
-               // if value is an multidimensional array
-               // jes currently this logic only supports metabeansproperties and
-               // not metafieldproperties. It shouldn't be too hard to support
-               // the latter...
-               if (newValue.getClass().isArray() && mp instanceof MetaBeanProperty) {
-                   MetaBeanProperty mbp = (MetaBeanProperty) mp;
-                   List list = Arrays.asList((Object[])newValue);
-                   MetaMethod setter = mbp.getSetter();
-
-                   Class parameterType = setter.getParameterTypes()[0];
-                   Class arrayType = parameterType.getComponentType();
-                   Object objArray = Array.newInstance(arrayType, list.size());
-
-                   for (int i = 0; i < list.size(); i++) {
-                       List list2 =Arrays.asList((Object[]) list.get(i));
-                       Object objArray2 = MetaClassHelper.asPrimitiveArray(list2, arrayType);
-                       Array.set(objArray, i, objArray2);
-                   }
-
-                   MetaClassHelper.doMethodInvoke(object, setter, new Object[]{
-                       objArray
-                   });
-                   return;
-               }
-
-               throw new MissingPropertyException(property, theClass, e);
            }
        }
+       if (forceFields) throw new MissingFieldException(name, sender);
 
-       RuntimeException runtimeException = null;
-       MetaMethod addListenerMethod = (MetaMethod) listeners.get(property);
+       MetaMethod addListenerMethod = (MetaMethod) listeners.get(name);
        
-       try {           
-           if (addListenerMethod != null && newValue instanceof Closure) {
-               // lets create a dynamic proxy
-               Object proxy =
-                   MetaClassHelper.createListenerProxy(addListenerMethod.getParameterTypes()[0], property, (Closure) newValue);
-               MetaClassHelper.doMethodInvoke(object, addListenerMethod, new Object[] { proxy });
-               return;
-           }
+       MetaMethod method=null;
+       Object[] arguments=null;
+       if ( addListenerMethod != null && 
+            addListenerMethod != AMBIGOUS_LISTENER_METHOD &&
+            newValue instanceof Closure) 
+       {
+           // lets create a dynamic proxy
+           Object proxy =
+               MetaClassHelper.createListenerProxy(addListenerMethod.getParameterTypes()[0], name, (Closure) newValue);
+           //MetaClassHelper.doMethodInvoke(object, addListenerMethod, new Object[] { proxy });
+           method = addListenerMethod;
+           arguments = new Object[] { proxy };
+       } 
 
-           if (genericSetMethod == null) {
-               // Make sure there isn't a generic method in the "use" cases
-               //TODO: implement!
-               List possibleGenericMethods = getMethods(theClass,"set",false);
-               if (possibleGenericMethods != null) {
-                   for (Iterator i = possibleGenericMethods.iterator(); i.hasNext(); ) {
-                       MetaMethod mmethod = (MetaMethod) i.next();
-                       Class[] paramTypes = mmethod.getParameterTypes();
-                       if (paramTypes.length == 2 && paramTypes[0] == String.class) {
-                           Object[] arguments = {property, newValue};
-                           Object answer = MetaClassHelper.doMethodInvoke(object, mmethod, arguments);
-                           return;
-                       }
+       // Make sure there isn't a generic method in the "use" cases
+       if (method==null && !useSuper && !isStatic && GroovyCategorySupport.hasCategoryInAnyThread()) {
+           List possibleGenericMethods = GroovyCategorySupport.getCategoryMethods(sender, "set");
+           if (possibleGenericMethods != null) {
+               for (Iterator iter = possibleGenericMethods.iterator(); iter.hasNext();) {
+                   MetaMethod mmethod = (MetaMethod) iter.next();
+                   Class[] paramTypes = mmethod.getParameterTypes();
+                   if (paramTypes.length == 2 && paramTypes[0] == String.class) {
+                       arguments = new Object[]{name, newValue};
+                       method = mmethod;
+                       break;
                    }
                }
            }
-           else {
-               Object[] arguments = { property, newValue };
-               MetaClassHelper.doMethodInvoke(object, genericSetMethod, arguments);
-               return;
-           }
-
-           /** todo or are we an extensible class? */
-
-           // lets try invoke the set method
-           // this is kind of ugly: if it is a protected field, we fall
-           // all the way down to this klunky code. Need a better
-           // way to handle this situation...
-
-           String method = "set" + MetaClassHelper.capitalize(property);
-           try {
-               invokeMethod(object, method, new Object[] { newValue });
-           }
-           catch (MissingMethodException e1) {
-               setAttribute(object,property,newValue);
-           }
-
        }
-       catch (GroovyRuntimeException e) {
-           runtimeException = e;
+       
+       // the generic method is valid, if available (!=null), if static or
+       // if it is not static and we do no static access
+       if (method==null && genericSetMethod != null && !(!genericSetMethod.isStatic() && isStatic)) {
+           arguments = new Object[]{ name, newValue };
+           method = genericSetMethod;
+       }
+       
+       if (method==null) {
+           // as last resort try to find a set method added by a category
+           String methodName = "set" + MetaClassHelper.capitalize(name);
+           try {
+               invokeMethod(sender, object, methodName, new Object[] { newValue }, useSuper);
+               return;
+           } catch (MissingMethodException mme) {}
+       } else {
+           // we have a method, so invoke it
+           try {
+               MetaClassHelper.doMethodInvoke(object,method,arguments);
+               return;
+           } catch (ReadOnlyPropertyException rope) {
+               throw rope;
+           } catch (GroovyRuntimeException gre) {
+               throw new MissingPropertyException(
+                       "unable to invoke method to set property " + 
+                       name + " in " + sender + ": " +
+                       gre.getMessage(), name, sender);
+           }
        }
        
        if (addListenerMethod==AMBIGOUS_LISTENER_METHOD){
-           throw new GroovyRuntimeException("There are multiple listeners for the property "+property+". Please do not use the bean short form to access this listener.");
-       } else if (runtimeException!=null) {
-           throw new MissingPropertyException(property, theClass, runtimeException);
+           throw new GroovyRuntimeException("There are multiple listeners for the property "+name+". Please do not use the bean short form to access this listener.");
+       } 
+       throw new MissingPropertyException(name, theClass);
+   }
+   
+   /**
+    * Sets the property value on an object
+    */
+   public void setProperty(Class sender,Object object, String property, Object newValue, boolean useSuper) {
+       setPropertyOrField(sender,object,property,newValue,useSuper,false);
+   }
+   
+   private MetaProperty getMetaProperty(Class clazz, String name, boolean useSuper, boolean useStatic) {
+       Map propertyMap;
+       if (useStatic) {
+           propertyMap = staticPropertyIndex;
+       } else if (useSuper){
+           propertyMap = (Map) classPropertyIndexForSuper.get(clazz);
+       } else {
+           propertyMap = (Map) classPropertyIndex.get(clazz);
        }
-       
-
+       if (propertyMap==null) {
+           if (clazz!=theClass) {
+               return getMetaProperty(theClass,name,useSuper, useStatic);
+           } else {
+               return null;
+           }           
+       }
+       return (MetaProperty) propertyMap.get(name);
    }
 
 
    /**
     * Looks up the given attribute (field) on the given object
     */
-   public Object getAttribute(final Object object, final String attribute) {
-       checkInitalised();
-       
-       PrivilegedActionException firstException = null;
-
-       final Class clazz;
-       if (object instanceof Class) {
-           clazz=(Class) object;
-       } else {
-           clazz=theClass;
-       }
-
-       try {
-           return AccessController.doPrivileged(new PrivilegedExceptionAction() {
-               public Object run() throws NoSuchFieldException, IllegalAccessException {
-                   final Field field = clazz.getDeclaredField(attribute);
-
-                   field.setAccessible(true);
-                   return field.get(object);
-               }
-           });
-       } catch (final PrivilegedActionException pae) {
-           firstException = pae;
-       }
-
-       try {
-           return AccessController.doPrivileged(new PrivilegedExceptionAction() {
-               public Object run() throws NoSuchFieldException, IllegalAccessException {
-                   final Field field = clazz.getField(attribute);
-
-                   field.setAccessible(true);
-                   return field.get(object);
-               }
-           });
-       } catch (final PrivilegedActionException pae) {
-           // prefere the first exception.
-       }
-
-
-       if (firstException.getException() instanceof NoSuchFieldException) {
-           throw new MissingFieldException(attribute, theClass);
-       } else {
-           throw new RuntimeException(firstException.getException());
-       }
+   public Object getAttribute(Class sender, Object object, String attribute, boolean useSuper) {
+       return getPropertyOrField(sender,object,attribute,useSuper,true);
    }
 
    /**
     * Sets the given attribute (field) on the given object
     */
-   public void setAttribute(final Object object, final String attribute, final Object newValue) {
-       PrivilegedActionException firstException = null;
-
-       final Class clazz;
-       if (object instanceof Class) {
-           clazz=(Class) object;
-       } else {
-           clazz=theClass;
-       }
-
-       try {
-           AccessController.doPrivileged(new PrivilegedExceptionAction() {
-               public Object run() throws NoSuchFieldException, IllegalAccessException {
-                   final Field field = clazz.getDeclaredField(attribute);
-
-                   field.setAccessible(true);
-                   field.set(object,newValue);
-                   return null;
-               }
-           });
-           return;
-       } catch (final PrivilegedActionException pae) {
-           firstException = pae;
-       }
-
-       try {
-           AccessController.doPrivileged(new PrivilegedExceptionAction() {
-               public Object run() throws NoSuchFieldException, IllegalAccessException {
-                   final Field field = clazz.getField(attribute);
-
-                   field.setAccessible(true);
-                   field.set(object, newValue);
-                   return null;
-               }
-           });
-           return;
-       } catch (final PrivilegedActionException pae) {
-           // prefere the first exception.
-       }
-
-       if (firstException.getException() instanceof NoSuchFieldException) {
-           throw new MissingFieldException(attribute, theClass);
-       } else {
-           throw new RuntimeException(firstException.getException());
-       }
+   public void setAttribute(Class sender, Object object, String attribute, Object newValue, boolean useSuper) {
+       setPropertyOrField(sender,object,attribute,newValue,useSuper,true);
    }
 
    public ClassNode getClassNode() {
@@ -1533,27 +1587,6 @@ public class MetaClassImpl extends MetaClass {
            }
        }
        return null;
-   }
-
-   /**
-    * @return the value of the static property of the given class
-    */
-   private Object getStaticProperty(Class aClass, String property) {
-       //System.out.println("Invoking property: " + property + " on class: "
-       // + aClass);
-
-       // lets try invoke a static getter method
-       MetaMethod method = findStaticGetter(aClass, "get" + MetaClassHelper.capitalize(property));
-       if (method != null) {
-           return MetaClassHelper.doMethodInvoke(aClass, method, MetaClassHelper.EMPTY_ARRAY);
-       }
-
-       //no static getter found, try attribute  
-       try {
-           return getAttribute(aClass,property);
-       } catch (MissingFieldException mfe) {
-           throw new MissingPropertyException(property, aClass, mfe);
-       }
    }
 
    /**
@@ -1763,14 +1796,23 @@ public class MetaClassImpl extends MetaClass {
    }
 
    private void addProperties()  {
-       
+       BeanInfo info;
+       //     introspect
+       try {
+           info =(BeanInfo) AccessController.doPrivileged(new PrivilegedExceptionAction() {
+               public Object run() throws IntrospectionException {
+                   return Introspector.getBeanInfo(theClass);
+               }
+           });
+       } catch (PrivilegedActionException pae) {
+           throw new GroovyRuntimeException("exception while bean introspection",pae.getException());
+       }
        PropertyDescriptor[] descriptors = info.getPropertyDescriptors();
 
        // build up the metaproperties based on the public fields, property descriptors,
        // and the getters and setters
        setupProperties(descriptors);
-
-
+       
        EventSetDescriptor[] eventDescriptors = info.getEventSetDescriptors();
        for (int i = 0; i < eventDescriptors.length; i++) {
            EventSetDescriptor descriptor = eventDescriptors[i];
@@ -1936,5 +1978,33 @@ public class MetaClassImpl extends MetaClass {
        public boolean skipClass(Class clazz) {return false;}
        public void methodListAction(Class clazz, String methodName, MetaMethod method, List oldList, List newList) {}
        public boolean replaceMethodList(){return true;}
+   }
+
+   /**
+    * @deprecated
+    */
+   public Object getProperty(Object object, String property) {
+       return getProperty(theClass,object,property,false);
+   }
+   
+   /**
+    * @deprecated
+    */
+   public void setProperty(Object object, String property, Object newValue) {
+       setProperty(theClass,object,property,newValue,false);
+   }
+   
+   /**
+    * @deprecated
+    */
+   public Object getAttribute(Object object, String attribute) {
+       return getAttribute(theClass,object,attribute,false);
+   }
+   
+   /**
+    * @deprecated
+    */
+   public void setAttribute(Object object, String attribute, Object newValue) {
+       setAttribute(theClass,object,attribute,newValue,false);
    }
 }

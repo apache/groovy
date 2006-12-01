@@ -322,7 +322,9 @@ public class ErrorCollector {
      * CompilationFailedException.
      */
     protected void failIfErrors() throws CompilationFailedException {
-        if (hasErrors()) throw new MultipleCompilationErrorsException(this);
+        if (hasErrors()) {
+            throw new MultipleCompilationErrorsException(this);
+        }
     }
     
     //---------------------------------------------------------------------------

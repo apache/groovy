@@ -65,8 +65,8 @@ class IdentityClosureTest extends GroovyTestCase {
         a.foobar = "foobar"
         a.barfoo = 555
         a.identity{
-            assert this.foobar == "foobar"
-            assert this.barfoo == 555
+            assert foobar == "foobar"
+            assert barfoo == 555
         }
     }
 }

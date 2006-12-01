@@ -197,6 +197,10 @@ public class Invoker {
             Map map = (Map) object;
             return map.get(property);
         }
+        else if (object instanceof Class) {
+            Class c = (Class) object;
+            return metaRegistry.getMetaClass(c).getProperty(object, property);
+        }
         else {
             return metaRegistry.getMetaClass(object.getClass()).getProperty(object, property);
         }

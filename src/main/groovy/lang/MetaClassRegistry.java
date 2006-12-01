@@ -45,7 +45,6 @@
  */
 package groovy.lang;
 
-import java.beans.IntrospectionException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.security.AccessController;
@@ -207,11 +206,7 @@ public class MetaClassRegistry {
             
             return (MetaClass)customMetaClassConstructor.newInstance(new Object[]{this, theClass});
         } catch (final ClassNotFoundException e) {
-            try {
-                return new MetaClassImpl(this, theClass);
-            } catch (final IntrospectionException e1) {
-                throw new GroovyRuntimeException("Could not introspect class: " + theClass.getName() + ". Reason: " + e1, e1);
-            }
+            return new MetaClassImpl(this, theClass);
         } catch (final Exception e) {
             throw new GroovyRuntimeException("Could not instantiate custom Metaclass for class: " + theClass.getName() + ". Reason: " + e, e);
         }

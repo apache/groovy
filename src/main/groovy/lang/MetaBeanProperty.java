@@ -34,6 +34,8 @@
  */
 package groovy.lang;
 
+import java.lang.reflect.Modifier;
+
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
@@ -48,7 +50,8 @@ public class MetaBeanProperty extends MetaProperty {
 
     private MetaMethod getter;
     private MetaMethod setter;
-
+    private MetaFieldProperty field;
+    
     public MetaBeanProperty(String name, Class type, MetaMethod getter, MetaMethod setter) {
         super(name, type);
         this.getter = getter;
@@ -62,7 +65,7 @@ public class MetaBeanProperty extends MetaProperty {
      * @return the property of the given object
      * @throws Exception if the property could not be evaluated
      */
-    public Object getProperty(Object object) throws Exception {
+    public Object getProperty(Object object) {
         if (getter == null) {
             //TODO: we probably need a WriteOnlyException class
             throw new GroovyRuntimeException("Cannot read write-only property: " + name);
@@ -122,5 +125,27 @@ public class MetaBeanProperty extends MetaProperty {
      */
     void setSetter(MetaMethod setter) {
         this.setter = setter;
+    }
+    
+    public int getModifiers() {
+        if (setter!=null && getter==null) return setter.getModifiers();
+        if (getter!=null && setter==null) return getter.getModifiers();
+        int modifiers = getter.getModifiers() | setter.getModifiers();
+        int visibility = 0;
+        if (Modifier.isPublic(modifiers)) visibility = Modifier.PUBLIC;
+        if (Modifier.isProtected(modifiers)) visibility = Modifier.PROTECTED;
+        if (Modifier.isPrivate(modifiers)) visibility = Modifier.PRIVATE;
+        int states = getter.getModifiers() & setter.getModifiers();
+        states &= ~(Modifier.PUBLIC|Modifier.PROTECTED|Modifier.PRIVATE);
+        states |= visibility;
+        return states;       
+    }
+    
+    public void setField(MetaFieldProperty f) {
+        this.field = f;
+    }
+    
+    public MetaFieldProperty getField() {
+        return field;
     }
 }

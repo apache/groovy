@@ -86,6 +86,7 @@ public class MethodCallExpression extends Expression {
         // then the method will return null if the method itself is not void too!
         // (in bytecode after call: aconst_null, areturn)
         this.setType(ClassHelper.DYNAMIC_TYPE);
+        this.setImplicitThis(true);
     }
 
     public void visit(GroovyCodeVisitor visitor) {
@@ -168,16 +169,6 @@ public class MethodCallExpression extends Expression {
             + " arguments: "
             + arguments
             + "]";
-    }
-
-    public static boolean isSuperMethodCall(MethodCallExpression call) {
-        Expression expression = call.getObjectExpression();
-        if (expression instanceof VariableExpression) {
-            VariableExpression varExp = (VariableExpression) expression;
-            String variable = varExp.getName();
-            return variable.equals("super");
-        }
-        return false;
     }
 
     public void setMethod(MetaMethod mmeth) {

@@ -66,11 +66,11 @@ public class PropertyValue {
 		return mp.getType();
 	}
 	
-	public Object getValue() throws java.lang.Exception {
+	public Object getValue() {
 		return mp.getProperty(bean);
 	}
 	
-	public void setValue(Object value) throws java.lang.Exception {
+	public void setValue(Object value)  {
 		mp.setProperty(bean, value);
 	}
 }

@@ -34,6 +34,8 @@
  */
 package groovy.lang;
 
+import java.lang.reflect.Modifier;
+
 /**
  * Represents a property on a bean which may have a getter and/or a setter
  * 
@@ -54,7 +56,7 @@ public abstract class MetaProperty {
      * @return the property of the given object
      * @throws Exception if the property could not be evaluated
      */
-    public abstract Object getProperty(Object object) throws Exception;
+    public abstract Object getProperty(Object object);
 
     /**
      * Sets the property on the given object to the new value
@@ -74,6 +76,10 @@ public abstract class MetaProperty {
      */
     public Class getType() {
         return type;
+    }
+    
+    public int getModifiers() {
+        return Modifier.PUBLIC;
     }
 
 }

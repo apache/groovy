@@ -71,6 +71,7 @@ public class PropertyExpression extends Expression {
 
     private Field field = null;
     private int access = -1;
+    private boolean implicitThis = false;
 
     public boolean isStatic() {
         return isStatic;
@@ -173,5 +174,13 @@ public class PropertyExpression extends Expression {
 
     public int getAccess() {
         return access;
+    }
+    
+    public boolean isImplicitThis(){
+        return implicitThis;
+    }
+    
+    public void setImplicitThis(boolean it) {
+        implicitThis  = it;
     }
 }

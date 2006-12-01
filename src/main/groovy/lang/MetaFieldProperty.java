@@ -38,6 +38,7 @@ package groovy.lang;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
@@ -61,16 +62,18 @@ public class MetaFieldProperty extends MetaProperty {
      * @return the property of the given object
      * @throws Exception if the property could not be evaluated
      */
-    public Object getProperty(Object object) throws Exception {
-        final Field field1 = field;
-        final Object object1 = object;
-        Object value = (Object) AccessController.doPrivileged(new PrivilegedExceptionAction() {
-             public Object run() throws IllegalAccessException {   
-                 field1.setAccessible(true);
-                 return field1.get(object1);
-             }
-        });
-        return value;
+    public Object getProperty(final Object object) {
+        try {
+            Object value = (Object) AccessController.doPrivileged(new PrivilegedExceptionAction() {
+                public Object run() throws IllegalAccessException {   
+                    field.setAccessible(true);
+                    return field.get(object);
+                }
+            });
+            return value;
+        } catch (PrivilegedActionException pe) {
+            throw new GroovyRuntimeException("Cannot get the property '" + name + "'.", pe.getException());
+        }
     }
 
     /**
@@ -80,22 +83,14 @@ public class MetaFieldProperty extends MetaProperty {
      * @param newValue the new value of the property
      * @throws RuntimeException if the property could not be set
      */
-    public void setProperty(Object object, Object newValue) {
-        final Field field1 = field;
-        final Object object1 = object;
-        final Object newValue1 = newValue;
+    public void setProperty(final Object object, Object newValue) {
+        final Object goalValue = DefaultTypeTransformation.castToType(newValue, field.getType());
         try {
             AccessController.doPrivileged(new PrivilegedExceptionAction() {
-                public Object run() throws IllegalAccessException, GroovyRuntimeException {   
-                    try {
-                        field1.set(object1, newValue1);
-                        return newValue1;
-                    }
-                    catch (IllegalArgumentException e) {
-                        Object newValue2 = DefaultTypeTransformation.castToType(newValue1, field1.getType());
-                        field1.set(object1, newValue2);
-                        return newValue2;
-                    }
+                public Object run() throws IllegalAccessException, GroovyRuntimeException {
+                    field.setAccessible(true);
+                    field.set(object, goalValue);
+                    return null;
                 }
             });
         } catch (PrivilegedActionException ex) {
@@ -109,5 +104,13 @@ public class MetaFieldProperty extends MetaProperty {
             return s.substring(6);
         else
             return s;
+    }
+    
+    public int getModifiers() {
+        return field.getModifiers();
+    }
+    
+    public boolean isStatic() {
+        return Modifier.isStatic(field.getModifiers());
     }
 }

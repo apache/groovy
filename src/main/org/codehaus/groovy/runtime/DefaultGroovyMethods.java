@@ -531,16 +531,6 @@ public class DefaultGroovyMethods {
         }
     }
 
-    /*
-    // TODO remove?
-    private static Object packArray(Object object) {
-        if (object instanceof Object[])
-            return new Object[] {object};
-        else
-            return object;
-    }
-    */
-
     // Collection based methods
     //-------------------------------------------------------------------------
 

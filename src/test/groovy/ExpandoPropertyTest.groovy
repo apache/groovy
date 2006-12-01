@@ -17,7 +17,7 @@ class ExpandoPropertyTest extends GroovyTestCase {
 
         foo.cheese = "Cheddar"
         foo.fullName = "Gromit"
-        foo.nameLength = { return this.fullName.length() }
+        foo.nameLength = { return fullName.length() }
         foo.multiParam = { a, b, c -> println("Called with ${a}, ${b}, ${c}"); return a + b + c }
 
         assert foo.cheese == "Cheddar"
@@ -38,7 +38,7 @@ class ExpandoPropertyTest extends GroovyTestCase {
     }
 
     void testExpandoMethodOverrides() {
-        def equals = { Object obj -> return obj.value == this.value }
+        def equals = { Object obj -> return obj.value == value }
         def foo = new Expando(type:"myfoo", value:42, equals:equals)
         def bar = new Expando(type:"mybar", value:43, equals:equals)
         def zap = new Expando(type:"myzap", value:42, equals:equals)
@@ -60,13 +60,13 @@ class ExpandoPropertyTest extends GroovyTestCase {
 	
         println "hashCode: " + foo.hashCode()
 	
-        foo.hashCode = { return this.value }
+        foo.hashCode = { return value }
         println("hashCode: " + foo.hashCode())
 	
         assert foo.hashCode() == foo.value
         println("toString: " + foo.toString())
 	
-        foo.toString = { return "Type: ${this.type}, Value: ${this.value}" }
+        foo.toString = { return "Type: ${type}, Value: ${value}" }
         println("toString: " + foo.toString())
         assert foo.toString() == "Type: myfoo, Value: 42"
     }

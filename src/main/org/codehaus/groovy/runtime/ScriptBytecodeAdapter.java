@@ -259,42 +259,18 @@ public class ScriptBytecodeAdapter {
         return metaClass.selectConstructorAndTransformArguments(numberOfCosntructors, arguments);
     }
 
-
-    //  --------------------------------------------------------
-    //               field handling this: get
-    //  --------------------------------------------------------       
-
-    public static Object getFieldOnCurrent(Class senderClass, Object receiver, String messageName) throws Throwable{
-        try {
-            return InvokerHelper.getAttribute(receiver, messageName);
-        } catch (GroovyRuntimeException gre) {
-            return unwrap(gre);
-        }
-    }
-    
-    public static Object getFieldOnCurrentSafe(Class senderClass, Object receiver, String messageName) throws Throwable{
-        if (receiver==null) return null;
-        return getFieldOnCurrent(senderClass,receiver,messageName);
-    }
-    
-    public static Object getFieldOnCurrentSpreadSafe(Class senderClass, Object receiver, String messageName) throws Throwable{
-        if (! (receiver instanceof List)) return getFieldOnCurrent(senderClass,receiver,messageName);
-        
-        List list = (List) receiver;
-        List answer = new ArrayList();
-        for (Iterator it = list.iterator(); it.hasNext();) {
-            answer.add(getFieldOnCurrent(senderClass, it.next(), messageName));
-        }
-        return answer;
-    }
-
     //  --------------------------------------------------------
     //              field handling super: get
     //  --------------------------------------------------------       
 
     public static Object getFieldOnSuper(Class senderClass, Object receiver, String messageName) throws Throwable{
         try {
-            return InvokerHelper.getAttribute(receiver, messageName);
+            if (receiver instanceof Class) {
+                return InvokerHelper.getAttribute(receiver,messageName); 
+            } else {            
+                MetaClass mc = ((GroovyObject) receiver).getMetaClass();
+                return mc.getAttribute(senderClass, receiver, messageName, true);
+            }
         } catch (GroovyRuntimeException gre) {
             return unwrap(gre);
         }
@@ -321,7 +297,12 @@ public class ScriptBytecodeAdapter {
 
     public static void setFieldOnSuper(Object messageArgument,Class senderClass, Object receiver, String messageName) throws Throwable{
         try {
-            InvokerHelper.setAttribute(receiver, messageName,messageArgument);
+            if (receiver instanceof Class) {
+                InvokerHelper.setAttribute(receiver,messageName,messageArgument); 
+            } else {          
+                MetaClass mc = ((GroovyObject) receiver).getMetaClass();
+                mc.setAttribute(senderClass, receiver, messageName, messageArgument, true);
+            }
         } catch (GroovyRuntimeException gre) {
             unwrap(gre);
         }
@@ -462,11 +443,7 @@ public class ScriptBytecodeAdapter {
     //  --------------------------------------------------------       
 
     public static Object getPropertyOnSuper(Class senderClass, GroovyObject receiver, String messageName) throws Throwable{
-        try {
-            return InvokerHelper.getAttribute(receiver, messageName);
-        } catch (GroovyRuntimeException gre) {
-            return unwrap(gre);
-        }
+        return invokeMethodOnSuperN(senderClass, receiver, "getProperty", new Object[]{messageName});
     }
     
     public static Object getPropertyOnSuperSafe(Class senderClass, GroovyObject receiver, String messageName) throws Throwable{
@@ -542,7 +519,7 @@ public class ScriptBytecodeAdapter {
         }
         return answer;
     }
-
+    
     //  --------------------------------------------------------
     //              normal Property handling : set
     //  --------------------------------------------------------       
