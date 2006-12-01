@@ -53,7 +53,6 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     public void visitClass(ClassNode node) {
         ClassNode oldClass = currentClass;
         currentClass = node;
-        
         checkImplementsAndExtends(node);
         if (source!=null && !source.getErrorCollector().hasErrors()) {
             checkClassForAbstractAndFinal(node);
@@ -83,7 +82,12 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     private void checkClassForAbstractAndFinal(ClassNode node) {
         if (!Modifier.isAbstract(node.getModifiers())) return;
         if (!Modifier.isFinal(node.getModifiers())) return;
-        addError("The class '" + node.getName() + "' must not be both final and abstract.", node);
+        if (node.isInterface()) {
+            addError("The interface '" + node.getName() + "' must not be final. It is by definition abstract.", node);
+        } else {
+            addError("The class '" + node.getName() + "' must not be both final and abstract.", node);
+
+        }
     }
     
     private void checkAbstractDeclaration(MethodNode methodNode) {
