@@ -1870,14 +1870,10 @@ public class AsmClassGenerator extends ClassGenerator {
     private void visitAttributeOrProperty(PropertyExpression expression, MethodCallerMultiAdapter adapter) {
         Expression objectExpression = expression.getObjectExpression();
         if (isThisExpression(objectExpression)) {
-            ClassNode thisClassNode = classNode;
-            if (!expression.isImplicitThis() && isInClosure()){
-                thisClassNode = getOutermostClass();
-            }
             // lets use the field expression if its available
             String name = expression.getPropertyAsString();
             if (name!=null) {
-                FieldNode field = thisClassNode.getField(name);
+                FieldNode field = classNode.getField(name);
                 if (field != null) {
                     visitFieldExpression(new FieldExpression(field));
                     return;
