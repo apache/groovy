@@ -17,7 +17,6 @@
 
 package groovy.lang;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.List;
 
@@ -53,18 +52,7 @@ public class DelegatingMetaClass extends MetaClass {
     public void initialise() {
         delegate.initialise();
     }
-    /* (non-Javadoc)
-     * @see groovy.lang.MetaClass#pickMethod(java.lang.Object, java.lang.String, java.lang.Object[])
-     */
-    public MetaMethod pickMethod(Object object, String methodName, Object[] arguments) {
-        return delegate.pickMethod(object, methodName, arguments);
-    }
-    /* (non-Javadoc)
-     * @see groovy.lang.MetaClass#pickMethod(java.lang.String, java.lang.Class[])
-     */
-    public MetaMethod pickMethod(String methodName, Class[] arguments) {
-        return delegate.pickMethod(methodName, arguments);
-    }
+
     /* (non-Javadoc)
      * @see groovy.lang.MetaClass#getAttribute(java.lang.Object, java.lang.String)
      */
@@ -107,12 +95,7 @@ public class DelegatingMetaClass extends MetaClass {
     public Object invokeConstructor(Object[] arguments) {
         return delegate.invokeConstructor(arguments);
     }
-    /* (non-Javadoc)
-     * @see groovy.lang.MetaClass#invokeConstructorAt(java.lang.Class, java.lang.Object[])
-     */
-    public Object invokeConstructorAt(Class at, Object[] arguments) {
-        return delegate.invokeConstructorAt(at, arguments);
-    }
+
     /* (non-Javadoc)
      * @see groovy.lang.MetaClass#invokeMethod(java.lang.Object, java.lang.String, java.lang.Object)
      */
@@ -131,30 +114,7 @@ public class DelegatingMetaClass extends MetaClass {
     public Object invokeStaticMethod(Object object, String methodName, Object[] arguments) {
         return delegate.invokeStaticMethod(object, methodName, arguments);
     }
-    /* (non-Javadoc)
-     * @see groovy.lang.MetaClass#retrieveConstructor(java.lang.Class[])
-     */
-    public Constructor retrieveConstructor(Class[] arguments) {
-        return delegate.retrieveConstructor(arguments);
-    }
-    /* (non-Javadoc)
-     * @see groovy.lang.MetaClass#retrieveMethod(java.lang.Object, java.lang.String, java.lang.Object[])
-     */
-    public MetaMethod retrieveMethod(Object owner, String methodName, Object[] arguments) {
-        return delegate.retrieveMethod(owner, methodName, arguments);
-    }
-    /* (non-Javadoc)
-     * @see groovy.lang.MetaClass#retrieveMethod(java.lang.String, java.lang.Class[])
-     */
-    public MetaMethod retrieveMethod(String methodName, Class[] arguments) {
-        return delegate.retrieveMethod(methodName, arguments);
-    }
-    /* (non-Javadoc)
-     * @see groovy.lang.MetaClass#retrieveStaticMethod(java.lang.String, java.lang.Class[])
-     */
-    public MetaMethod retrieveStaticMethod(String methodName, Class[] arguments) {
-        return delegate.retrieveStaticMethod(methodName, arguments);
-    }
+
     /* (non-Javadoc)
      * @see groovy.lang.MetaClass#setAttribute(java.lang.Object, java.lang.String, java.lang.Object)
      */
@@ -184,5 +144,17 @@ public class DelegatingMetaClass extends MetaClass {
      */
     public String toString() {
         return delegate.toString();
+    }
+    /**
+     * @deprecated
+     */
+    public MetaMethod pickMethod(String methodName, Class[] arguments) {
+        return delegate.pickMethod(methodName,arguments);
+    }
+    /**
+     * @deprecated
+     */
+    protected MetaMethod retrieveMethod(String methodName, Class[] arguments) {
+        return delegate.retrieveMethod(methodName,arguments);
     }
 }

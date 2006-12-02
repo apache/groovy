@@ -214,7 +214,7 @@ class FileAppendTest extends GroovyTestCase {
 }
 
 class TestClass {
-	@Property testString = "TestThis"
+	def testString = "TestThis"
 	public String toString() {
 		super.toString() + ": " + testString
 	}

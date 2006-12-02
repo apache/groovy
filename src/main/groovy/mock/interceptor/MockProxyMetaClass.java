@@ -54,11 +54,4 @@ public class MockProxyMetaClass extends ProxyMetaClass {
         return adaptee.invokeConstructor(arguments);
     }
     
-    /**
-     * Unlike general impl in superclass, ctors are not intercepted but relayed
-     */
-    public Object invokeConstructorAt(final Class at, final Object[] arguments) {
-        return adaptee.invokeConstructorAt(at, arguments);
-    }
-
 }

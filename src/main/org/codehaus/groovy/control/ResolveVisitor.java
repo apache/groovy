@@ -129,6 +129,7 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
     }
 
     public void visitConstructor(ConstructorNode node) {
+        visitAnnotations(node);
         VariableScope oldScope = currentScope;
         currentScope = node.getVariableScope();
         Parameter[] paras = node.getParameters();
@@ -158,6 +159,7 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
     }
 
     public void visitMethod(MethodNode node) {
+        visitAnnotations(node);
         VariableScope oldScope = currentScope;
         currentScope = node.getVariableScope();
         Parameter[] paras = node.getParameters();
@@ -181,6 +183,7 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
     }
 
     public void visitField(FieldNode node) {
+        visitAnnotations(node);
         ClassNode t = node.getType();
         resolveOrFail(t,node);
         Expression init = node.getInitialExpression();
@@ -188,6 +191,7 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
     }
 
     public void visitProperty(PropertyNode node) {
+        visitAnnotations(node);
         ClassNode t = node.getType();
         resolveOrFail(t,node);
         Statement code = node.getGetterBlock();

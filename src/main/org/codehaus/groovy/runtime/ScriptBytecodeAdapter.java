@@ -94,7 +94,7 @@ public class ScriptBytecodeAdapter {
                 }
                 //else if there's a statically typed method or a GDK method
                 else {
-                    result = receiver.getMetaClass().invokeMethod(senderClass, receiver, messageName, messageArguments, false);
+                    result = receiver.getMetaClass().invokeMethod(senderClass, receiver, messageName, messageArguments, false, true);
                 }
             } catch (MissingMethodException e) {
                 if (receiver.getClass() == e.getType() && e.getMethod().equals(messageName)) {
@@ -145,7 +145,7 @@ public class ScriptBytecodeAdapter {
         // ignore interception and missing method fallback
         Object result=null;
         try {
-            result = metaClass.invokeMethod(senderClass, receiver, messageName, messageArguments, true);
+            result = metaClass.invokeMethod(senderClass, receiver, messageName, messageArguments, true, true);
         } catch (GroovyRuntimeException t) {
             unwrap(t);
         }
@@ -240,7 +240,7 @@ public class ScriptBytecodeAdapter {
     //  --------------------------------------------------------       
     public static Object invokeNewN(Class senderClass, Class receiver, Object arguments) throws Throwable{
         try {
-            return InvokerHelper.invokeConstructorAt(senderClass,receiver, arguments);
+            return InvokerHelper.invokeConstructorOf(receiver, arguments);
         } catch (GroovyRuntimeException gre) {
             return unwrap(gre);
         }  
@@ -301,7 +301,7 @@ public class ScriptBytecodeAdapter {
                 InvokerHelper.setAttribute(receiver,messageName,messageArgument); 
             } else {          
                 MetaClass mc = ((GroovyObject) receiver).getMetaClass();
-                mc.setAttribute(senderClass, receiver, messageName, messageArgument, true);
+                mc.setAttribute(senderClass, receiver, messageName, messageArgument, true, true);
             }
         } catch (GroovyRuntimeException gre) {
             unwrap(gre);

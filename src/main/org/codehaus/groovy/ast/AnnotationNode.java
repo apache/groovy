@@ -103,7 +103,7 @@ public class AnnotationNode extends ASTNode {
     }
     
     public boolean isBuiltIn(){
-        return classNode.getName().equals("Property");
+        return false;
     }
     
 }

@@ -9,10 +9,10 @@ class SingletonBugTest extends GroovyTestCase {
         println "Get another private instance: $y"
         assert x == y
 
-        // println(SingletonBugPrivateSecond.getInstanceSecond())
-        // println(SingletonBugPrivateSecond.doTestSecond())
-        shouldFail { println(SingletonBugPrivateSecond.getInstanceSecond()) }
-        shouldFail { println(SingletonBugPrivateSecond.doTestSecond()) }
+         println(SingletonBugPrivateSecond.getInstanceSecond())
+         println(SingletonBugPrivateSecond.doTestSecond())
+        // shouldFail { println(SingletonBugPrivateSecond.getInstanceSecond()) }
+        // shouldFail { println(SingletonBugPrivateSecond.doTestSecond()) }
     }
 
     public void testProtected() {

@@ -3718,6 +3718,9 @@ public class DefaultGroovyMethods {
      * @return the Process which has just started for this command line string.
      */
     public static Process execute(String self, final List envp, File dir) throws IOException {
+        if (envp==null) {
+            return execute(self, (String[]) null, dir);
+        }
         final String[] commandArray = new String[envp.size()];
         Iterator it = envp.iterator();
         for (int i = 0; it.hasNext(); ++i) {

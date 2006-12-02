@@ -63,6 +63,7 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
     }
 
     public void visitField(FieldNode node) {
+        visitAnnotations(node);
         Expression init = node.getInitialExpression();
         if (init != null) init.visit(this);
     }

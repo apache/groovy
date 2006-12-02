@@ -457,7 +457,7 @@ public class MetaClassImpl extends MetaClass {
     * @deprecated
     */
    public Object invokeMethod(Object object, String methodName, Object[] originalArguments) {
-       return invokeMethod(theClass,object,methodName,originalArguments,false);
+       return invokeMethod(theClass,object,methodName,originalArguments,false,false);
    }
    
    
@@ -465,7 +465,7 @@ public class MetaClassImpl extends MetaClass {
     * Invokes the given method on the object.
     *
     */
-   public Object invokeMethod(Class sender, Object object, String methodName, Object[] originalArguments, boolean isCallToSuper) {
+   public Object invokeMethod(Class sender, Object object, String methodName, Object[] originalArguments, boolean isCallToSuper, boolean fromInsideClass) {
        checkInitalised();
        if (object == null) {
            throw new NullPointerException("Cannot invoke method: " + methodName + " on null object");
@@ -495,7 +495,7 @@ public class MetaClassImpl extends MetaClass {
                    }
                };
                methodCache.put(methodKey, method);
-               return invokeMethod(sender,object,methodName, originalArguments, isCallToSuper);
+               return invokeMethod(sender,object,methodName, originalArguments, isCallToSuper, fromInsideClass);
            }
        }
 
@@ -510,7 +510,7 @@ public class MetaClassImpl extends MetaClass {
                    MethodClosure mc = (MethodClosure) object;
                    methodName = mc.getMethod();
                    MetaClass ownerMetaClass = registry.getMetaClass(owner.getClass());
-                   return ownerMetaClass.invokeMethod(owner.getClass(),owner,methodName,arguments,false);
+                   return ownerMetaClass.invokeMethod(owner.getClass(),owner,methodName,arguments,false,false);
                } else if (object.getClass()==CurriedClosure.class) {
                    CurriedClosure cc = (CurriedClosure) object;
                    // change the arguments for an uncurried call
@@ -566,28 +566,12 @@ public class MetaClassImpl extends MetaClass {
                if (value instanceof Closure) {  // This test ensures that value != this If you ever change this ensure that value != this
                    Closure closure = (Closure) value;
                    MetaClass delegateMetaClass = closure.getMetaClass();
-                   return delegateMetaClass.invokeMethod(closure.getClass(),closure,"doCall",originalArguments,false);
+                   return delegateMetaClass.invokeMethod(closure.getClass(),closure,"doCall",originalArguments,false,fromInsideClass);
                }
            } catch (MissingPropertyException mpe) {}
 
            throw new MissingMethodException(methodName, theClass, originalArguments, false);
        }
-   }
-
-   /**
-    * @see groovy.lang.MetaClass#retrieveMethod(java.lang.Object, java.lang.String, java.lang.Object[])
-    * @deprecated
-    */
-   public MetaMethod retrieveMethod(Object owner, String methodName, Object[] arguments) {
-       return retrieveMethod(methodName,MetaClassHelper.convertToTypeArray(arguments));
-   }
-   
-   /**
-    * @see groovy.lang.MetaClass#retrieveMethod(java.lang.Object, java.lang.String, java.lang.Object[])
-    * @deprecated
-    */
-   public MetaMethod retrieveMethod(String methodName, Class[] arguments) {
-       return retrieveMethod(theClass,methodName,arguments,false);
    }
    
    public MetaMethod retrieveMethod(Class sender, String methodName, Class[] arguments, boolean isCallToSuper) {
@@ -623,7 +607,6 @@ public class MetaClassImpl extends MetaClass {
    }
 
    public MetaMethod retrieveStaticMethod(String methodName, Class[] arguments) {
-       //TODO: implement!
        MethodKey methodKey = new DefaultMethodKey(theClass, methodName, arguments);
        MetaMethod method = (MetaMethod) staticMethodCache.get(methodKey);
        if (method == null) {
@@ -634,14 +617,15 @@ public class MetaClassImpl extends MetaClass {
        }
        return method;
    }
-   /**
-    * Picks which method to invoke for the given object, method name and arguments
-    * @deprecated
-    */
-   public MetaMethod pickMethod(Object object, String methodName, Object[] arguments) {
-       return pickMethod(methodName,MetaClassHelper.convertToTypeArray(arguments));
-   }
+
    
+   
+   /**
+    * pick a method in a strict manner, i.e., without reinterpreting the first List argument.
+    * this method is used only by ClassGenerator for static binding
+    * @param methodName
+    * @param arguments
+    */
    public MetaMethod pickMethod(Class sender, String methodName, Class[] arguments, boolean isCallToSuper) {
        MetaMethod method = null;
        List methods = getMethods(sender,methodName,isCallToSuper);
@@ -649,17 +633,6 @@ public class MetaClassImpl extends MetaClass {
            method = (MetaMethod) chooseMethod(methodName, methods, arguments, false);
        }
        return method;
-   }
-   
-   /**
-    * pick a method in a strict manner, i.e., without reinterpreting the first List argument.
-    * this method is used only by ClassGenerator for static binding
-    * @param methodName
-    * @param arguments
-    * @deprecated
-    */
-   public MetaMethod pickMethod(String methodName, Class[] arguments) {
-       return pickMethod(theClass,methodName,arguments,false);
    }
 
    public Object invokeStaticMethod(Object object, String methodName, Object[] arguments) {
@@ -805,10 +778,6 @@ public class MetaClassImpl extends MetaClass {
                        + theClass.getName()
                        + "("+InvokerHelper.toTypeString(arguments)+")");
    }
-   
-   public Object invokeConstructorAt(Class at, Object[] arguments) {
-       return invokeConstructor(at,arguments,true);
-   }
 
    /**
     * Sets a number of bean properties from the given Map where the keys are
@@ -829,7 +798,7 @@ public class MetaClassImpl extends MetaClass {
    /**
     * @return the given property's value on the object
     */
-   public Object getProperty(Class sender, Object object, String property, boolean useSuper) {
+   public Object getProperty(Class sender, Object object, String property, boolean useSuper, boolean fromInsideClass) {
        return getPropertyOrField(sender,object,property,useSuper,false);
    }
 
@@ -1187,7 +1156,7 @@ public class MetaClassImpl extends MetaClass {
        boolean isStatic = theClass != Class.class && object instanceof Class;
        if (isStatic && object != theClass) {
            MetaClass mc = registry.getMetaClass((Class) object);
-           return mc.getProperty(sender,object,name,useSuper);
+           return mc.getProperty(sender,object,name,useSuper,false);
        }
        
        MetaProperty mp = getMetaProperty(sender,name,useSuper, isStatic);
@@ -1243,7 +1212,7 @@ public class MetaClassImpl extends MetaClass {
            /** todo these special cases should be special MetaClasses maybe */
            if (theClass != Class.class && object instanceof Class) {
                MetaClass mc = registry.getMetaClass(Class.class);
-               return mc.getProperty(Class.class,object,name,useSuper);
+               return mc.getProperty(Class.class,object,name,useSuper,false);
            } else if (object instanceof Collection) {
                return DefaultGroovyMethods.getAt((Collection) object, name);
            } else if (object instanceof Object[]) {
@@ -1268,7 +1237,7 @@ public class MetaClassImpl extends MetaClass {
        boolean isStatic = theClass != Class.class && object instanceof Class;
        if (isStatic && object != theClass) {
            MetaClass mc = registry.getMetaClass((Class) object);
-           mc.setProperty(sender,object,name,newValue,useSuper);
+           mc.setProperty(sender,object,name,newValue,useSuper,false);
            return;
        }
        
@@ -1336,7 +1305,7 @@ public class MetaClassImpl extends MetaClass {
            // as last resort try to find a set method added by a category
            String methodName = "set" + MetaClassHelper.capitalize(name);
            try {
-               invokeMethod(sender, object, methodName, new Object[] { newValue }, useSuper);
+               invokeMethod(sender, object, methodName, new Object[] { newValue }, useSuper,false);
                return;
            } catch (MissingMethodException mme) {}
        } else {
@@ -1363,7 +1332,7 @@ public class MetaClassImpl extends MetaClass {
    /**
     * Sets the property value on an object
     */
-   public void setProperty(Class sender,Object object, String property, Object newValue, boolean useSuper) {
+   public void setProperty(Class sender,Object object, String property, Object newValue, boolean useSuper, boolean fromInsideClass) {
        setPropertyOrField(sender,object,property,newValue,useSuper,false);
    }
    
@@ -1390,14 +1359,14 @@ public class MetaClassImpl extends MetaClass {
    /**
     * Looks up the given attribute (field) on the given object
     */
-   public Object getAttribute(Class sender, Object object, String attribute, boolean useSuper) {
+   public Object getAttribute(Class sender, Object object, String attribute, boolean useSuper, boolean fromInsideClass) {
        return getPropertyOrField(sender,object,attribute,useSuper,true);
    }
 
    /**
     * Sets the given attribute (field) on the given object
     */
-   public void setAttribute(Class sender, Object object, String attribute, Object newValue, boolean useSuper) {
+   public void setAttribute(Class sender, Object object, String attribute, Object newValue, boolean useSuper, boolean fromInsideClass) {
        setPropertyOrField(sender,object,attribute,newValue,useSuper,true);
    }
 
@@ -1593,7 +1562,6 @@ public class MetaClassImpl extends MetaClass {
     * @return the matching method which should be found
     */
    private MetaMethod findMethod(Method aMethod) {
-       //TODO: implement!
        List methods = getMethods(theClass,aMethod.getName(),false);
        for (Iterator iter = methods.iterator(); iter.hasNext();) {
            MetaMethod method = (MetaMethod) iter.next();
@@ -1609,7 +1577,6 @@ public class MetaClassImpl extends MetaClass {
     * @return the getter method for the given object
     */
    private MetaMethod findGetter(Object object, String name) {
-       //TODO: implment!
        List methods = getMethods(theClass,name,false);
        for (Iterator iter = methods.iterator(); iter.hasNext();) {
            MetaMethod method = (MetaMethod) iter.next();
@@ -1984,27 +1951,35 @@ public class MetaClassImpl extends MetaClass {
     * @deprecated
     */
    public Object getProperty(Object object, String property) {
-       return getProperty(theClass,object,property,false);
+       return getProperty(theClass,object,property,false,false);
    }
    
    /**
     * @deprecated
     */
    public void setProperty(Object object, String property, Object newValue) {
-       setProperty(theClass,object,property,newValue,false);
+       setProperty(theClass,object,property,newValue,false,false);
    }
    
    /**
     * @deprecated
     */
    public Object getAttribute(Object object, String attribute) {
-       return getAttribute(theClass,object,attribute,false);
+       return getAttribute(theClass,object,attribute,false,false);
    }
    
    /**
     * @deprecated
     */
    public void setAttribute(Object object, String attribute, Object newValue) {
-       setAttribute(theClass,object,attribute,newValue,false);
+       setAttribute(theClass,object,attribute,newValue,false,false);
+   }
+
+   public MetaMethod pickMethod(String methodName, Class[] arguments) {
+       return pickMethod(theClass,methodName,arguments,false);
+   }
+   
+   protected MetaMethod retrieveMethod(String methodName, Class[] arguments) {
+       return retrieveMethod(theClass,methodName,arguments,false);
    }
 }

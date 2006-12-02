@@ -212,31 +212,6 @@ public class MetaClassRegistry {
         }
     }
 
-    public MetaMethod getDefinedMethod(Class theClass, String methodName, Class[] args, boolean isStatic) {
-        MetaClass metaclass = this.getMetaClass(theClass);
-        if (metaclass == null) {
-            return null;
-        }
-        else {
-            if (isStatic) {
-                return metaclass.retrieveStaticMethod(methodName, args);
-            }
-            else {
-                return metaclass.retrieveMethod(methodName, args);
-            }
-        }
-    }
-
-    public Constructor getDefinedConstructor(Class theClass, Class[] args) {
-        MetaClass metaclass = this.getMetaClass(theClass);
-        if (metaclass == null) {
-            return null;
-        }
-        else {
-            return metaclass.retrieveConstructor(args);
-        }
-    }
-
     /**
      * Singleton of MetaClassRegistry. Shall we use threadlocal to store the instance?
      *

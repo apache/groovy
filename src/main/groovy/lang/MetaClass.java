@@ -17,7 +17,6 @@
 
 package groovy.lang;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.logging.Logger;
@@ -92,15 +91,15 @@ public abstract class MetaClass {
         }
     }
     
-    public Object invokeMethod(Class sender, Object receiver, String methodName, Object[] arguments, boolean isCallToSuper){
+    public Object invokeMethod(Class sender, Object receiver, String methodName, Object[] arguments, boolean isCallToSuper, boolean fromInsideClass){
         return invokeMethod(receiver,methodName,arguments);
     }
     
-    public Object getProperty(Class sender, Object receiver, String messageName, boolean useSuper) {
+    public Object getProperty(Class sender, Object receiver, String messageName, boolean useSuper, boolean fromInsideClass) {
         return getProperty(receiver,messageName);
     }
     
-    public void setProperty(Class sender, Object receiver, String messageName, Object messageValue, boolean useSuper) {
+    public void setProperty(Class sender, Object receiver, String messageName, Object messageValue, boolean useSuper, boolean fromInsideClass) {
         setProperty(receiver,messageName,messageValue);
     }
     
@@ -108,7 +107,7 @@ public abstract class MetaClass {
         return getAttribute(receiver,messageName);
     }
     
-    public void setAttribute(Class sender, Object receiver, String messageName, Object messageValue, boolean useSuper) {
+    public void setAttribute(Class sender, Object receiver, String messageName, Object messageValue, boolean useSuper, boolean fromInsideClass) {
         setAttribute(receiver,messageName,messageValue);
     }
     
@@ -145,17 +144,36 @@ public abstract class MetaClass {
      */
     public abstract void initialise();
     
-    // Possibly Temp methods
-    public abstract List getMethods();
-    public abstract MetaMethod pickMethod(String methodName, Class[] arguments);
-    public abstract MetaMethod pickMethod(Object object, String methodName, Object[] arguments);
-    public abstract MetaMethod retrieveMethod(Object owner, String methodName, Object[] arguments);
-    public abstract MetaMethod retrieveMethod(String methodName, Class[] arguments);
-    public abstract MetaMethod retrieveStaticMethod(String methodName, Class[] arguments);
-    public abstract Constructor retrieveConstructor(Class[] arguments);
     public abstract List getProperties();
     public abstract ClassNode getClassNode();
     public abstract List getMetaMethods();
-    public abstract Object invokeConstructorAt(Class at, Object[] arguments);
+    
+    public abstract List getMethods();
+    
+    /*
+     protected abstract MetaMethod pickMethod(Object object, String methodName, Object[] arguments);
+    public abstract MetaMethod retrieveMethod(Object owner, String methodName, Object[] arguments);
+    public abstract MetaMethod retrieveStaticMethod(String methodName, Class[] arguments);
+    public abstract Constructor retrieveConstructor(Class[] arguments);*/
+    
+    /**
+     * Warning, this method will be removed until 1.0
+     * @deprecated
+     */
+    public Object invokeConstructorAt(Class at, Object[] arguments) {
+        return invokeConstructor(arguments);
+    }
+
+    /**
+     * Warning, this method will be removed until 1.0
+     * @deprecated
+     */
+    public abstract MetaMethod pickMethod(String methodName, Class[] arguments);
+    
+    /**
+     * Warning, this method will be removed until 1.0
+     * @deprecated
+     */
+    protected abstract MetaMethod retrieveMethod(String methodName, Class[] arguments);
 
 }
