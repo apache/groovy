@@ -175,13 +175,13 @@ public class CompileUnit {
      * a marker that this type has to be compiled by the CompilationUnit
      * at the end of a parse step no node should be be left.
      */
-    public void addClassNodeToCompile(ClassNode node, String location) {
+    public void addClassNodeToCompile(ClassNode node, SourceUnit location) {
         classesToCompile.put(node.getName(),node);
         classNameToSource.put(node.getName(),location);
     }
     
-    public String getScriptSourceLocation(String className) {
-        return (String) classNameToSource.get(className);
+    public SourceUnit getScriptSourceLocation(String className) {
+        return (SourceUnit) classNameToSource.get(className);
     }
 
     public boolean hasClassNodeToCompile(){

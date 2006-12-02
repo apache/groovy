@@ -328,8 +328,8 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
                 cachedClasses.remove(type.getName());
                 type.setRedirect(null);
             }
-            compilationUnit.addSource(url);
-            currentClass.getCompileUnit().addClassNodeToCompile(type,url.toString());
+            SourceUnit su = compilationUnit.addSource(url);
+            currentClass.getCompileUnit().addClassNodeToCompile(type,su);
             return true;
         }
         // type may be resolved through the classloader before

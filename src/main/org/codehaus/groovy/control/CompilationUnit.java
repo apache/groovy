@@ -187,23 +187,8 @@ public class CompilationUnit extends ProcessingUnit {
         addPhaseOperation(summarize, Phases.PARSING);
         addPhaseOperation(convert,   Phases.CONVERSION);
         addPhaseOperation(resolve,   Phases.SEMANTIC_ANALYSIS);
+        addPhaseOperation(compileCompleteCheck, Phases.CLASS_GENERATION);
         addPhaseOperation(classgen,  Phases.CLASS_GENERATION);
-        addPhaseOperation(new SourceUnitOperation() {
-            public void call(SourceUnit source) throws CompilationFailedException {
-                List classes = source.ast.getClasses();
-                for (Iterator it = classes.iterator(); it.hasNext();) {
-                    ClassNode node = (ClassNode) it.next();
-                    CompileUnit cu = node.getCompileUnit();
-                    for (Iterator iter = cu.iterateClassNodeToCompile(); iter.hasNext();) {
-                        String name = (String) iter.next();
-                        String location = ast.getScriptSourceLocation(name);
-                        getErrorCollector().addErrorAndContinue(
-                                new SimpleMessage("Compilation incomplete: expected to find the class "+name+" in "+location,CompilationUnit.this)
-                        );
-                    } 
-                }
-            }
-        }, Phases.CLASS_GENERATION);
         addPhaseOperation(output);
         
         this.classgenCallback = null;
@@ -662,6 +647,49 @@ public class CompilationUnit extends ProcessingUnit {
                     }
                 }
             }            
+        }
+    };
+    
+    /* checks if all needed classes are compiled before generating the bytecode */
+    private SourceUnitOperation compileCompleteCheck = new SourceUnitOperation() {
+        public void call(SourceUnit source) throws CompilationFailedException {
+            List classes = source.ast.getClasses();
+            for (Iterator it = classes.iterator(); it.hasNext();) {
+                ClassNode node = (ClassNode) it.next();
+                CompileUnit cu = node.getCompileUnit();
+                for (Iterator iter = cu.iterateClassNodeToCompile(); iter.hasNext();) {
+                    String name = (String) iter.next();
+                    SourceUnit su = ast.getScriptSourceLocation(name);
+                    List classesInSourceUnit = su.ast.getClasses();
+                    StringBuffer message = new StringBuffer();
+                    message
+                    .append ("Compilation incomplete: expected to find the class ")
+                    .append (name)
+                    .append (" in ")
+                    .append (su.getName());
+                    if (classesInSourceUnit.size()==0) {
+                        message.append(", but the file seems not to contain any classes");
+                    } else {
+                        message.append(", but the file contains the classes: ");
+                        boolean first = true;
+                        for (Iterator suClassesIter = classesInSourceUnit
+                                .iterator(); suClassesIter.hasNext();) {
+                            ClassNode cn = (ClassNode) suClassesIter.next();
+                            if (!first) {
+                                message.append(", ");
+                            } else {
+                                first=false;
+                            }
+                            message.append(cn.getName());                                
+                        }
+                    }
+                    
+                    getErrorCollector().addErrorAndContinue(
+                            new SimpleMessage(message.toString(),CompilationUnit.this)
+                    );
+                    iter.remove();
+                } 
+            }
         }
     };
     
