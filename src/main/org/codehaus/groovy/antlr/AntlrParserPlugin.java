@@ -883,6 +883,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
     protected Statement forStatement(AST forNode) {
+        assertNotLegacyFor(forNode);
         AST inNode = forNode.getFirstChild();
         AST variableNode = inNode.getFirstChild();
         AST collectionNode = variableNode.getNextSibling();
@@ -904,6 +905,22 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         ForStatement forStatement = new ForStatement(forParameter, collectionExpression, block);
         configureAST(forStatement, forNode);
         return forStatement;
+    }
+
+    private void assertNotLegacyFor(AST forNode) {
+        AST childNode = forNode.getFirstChild();
+        boolean legacy = false;
+        while (childNode != null) {
+            int type = childNode.getType();
+            if (type == FOR_INIT || type == FOR_CONDITION || type == FOR_ITERATOR) {
+                legacy = true;
+                break;
+            }
+            childNode = childNode.getNextSibling();
+        }
+        if (legacy) {
+            throw new ASTRuntimeException(forNode, "For statement contains unexpected tokens. Possible attempt to use unsupported Java-style for loop.");
+        }
     }
 
     protected Statement ifStatement(AST ifNode) {
