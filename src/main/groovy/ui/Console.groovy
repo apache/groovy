@@ -480,8 +480,7 @@ class Console implements CaretListener {
     // actually run the
     void runScript(EventObject evt = null) {
     	def record = new HistoryRecord( allText: inputArea.getText(),
-    		selectionStart: textSelectionStart, selectionEnd: textSelectionEnd,
-    		scriptFile: scriptFile)
+    		selectionStart: textSelectionStart, selectionEnd: textSelectionEnd)
     	addToHistory(record)
 
 		// Print the input text    	
