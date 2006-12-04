@@ -118,10 +118,9 @@ STARTER_CLASSPATH="$GROOVY_HOME/lib/groovy-starter.jar"
 # Create the final classpath. Setting a classpath using the -cp or -classpath option means not to use the
 # global classpath. Groovy behaves then the same as the java interpreter
 if [ -n "$CP" ] ; then
-    CP="$CP":"$STARTER_CLASSPATH":.
-    if [ -n "$CLASSPATH" ] ; then
-        STARTER_CLASSPATH="$STARTER_CLASSPATH":"$CLASSPATH"
-    fi
+    CP="$STARTER_CLASSPATH":"$CP":.
+elif [ -n "$CLASSPATH" ] ; then
+    CP="$STARTER_CLASSPATH":"$CLASSPATH":.
 else
     CP="$STARTER_CLASSPATH":.
 fi
