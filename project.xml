@@ -5,7 +5,7 @@
   <name>groovy</name>
   <groupId>groovy</groupId>
   <id>groovy</id>
-  <currentVersion>1.0-RC-01-SNAPSHOT</currentVersion>
+  <currentVersion>1.0-RC-02-SNAPSHOT</currentVersion>
   <organization>
     <name>The Codehaus</name>
     <url>http://codehaus.org</url>
@@ -129,31 +129,36 @@
         <name>1.0-JSR-06</name>
         <tag>GROOVY_1_0_JSR_06</tag>
       </version>
+      <version>
+        <id>rc1</id>
+        <name>1.0-RC-1</name>
+        <tag>GROOVY_1_0_RC_1</tag>
+    </version>
   </versions>
 
   <mailingLists>
     <mailingList>
       <name>Groovy JSR Discussion List</name>
       <subscribe>jsr-subscribe@groovy.codehaus.org</subscribe>
-      <unsubscribe>jsr-unsubscribe@groovy.codehaus.org</unsubscribe>
+      <unsubscribe>http://xircles.codehaus.org/manage_email</unsubscribe>
       <archive>http://dir.gmane.org/gmane.comp.lang.groovy.jsr</archive>
     </mailingList>
     <mailingList>
       <name>Groovy Developer List</name>
       <subscribe>dev-subscribe@groovy.codehaus.org</subscribe>
-      <unsubscribe>dev-unsubscribe@groovy.codehaus.org</unsubscribe>
+      <unsubscribe>http://xircles.codehaus.org/manage_email</unsubscribe>
       <archive>http://dir.gmane.org/gmane.comp.lang.groovy.devel</archive>
     </mailingList>
     <mailingList>
       <name>Groovy User List</name>
       <subscribe>user-subscribe@groovy.codehaus.org</subscribe>
-      <unsubscribe>user-unsubscribe@groovy.codehaus.org</unsubscribe>
+      <unsubscribe>http://xircles.codehaus.org/manage_email</unsubscribe>
       <archive>http://dir.gmane.org/gmane.comp.lang.groovy.user</archive>
     </mailingList>
     <mailingList>
       <name>Groovy SCM List</name>
       <subscribe>scm-subscribe@groovy.codehaus.org</subscribe>
-      <unsubscribe>scm-unsubscribe@groovy.codehaus.org</unsubscribe>
+      <unsubscribe>http://xircles.codehaus.org/manage_email</unsubscribe>
       <archive>http://archive.groovy.codehaus.org/scm/</archive>
     </mailingList>
   </mailingLists>
