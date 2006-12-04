@@ -3717,14 +3717,18 @@ public class DefaultGroovyMethods {
      *             the working directory of the current process.
      * @return the Process which has just started for this command line string.
      */
-    public static Process execute(String self, final List envp, File dir) throws IOException {
+    public static Process execute(String self, List envp, File dir) throws IOException {
         if (envp==null) {
             return execute(self, (String[]) null, dir);
         }
-        final String[] commandArray = new String[envp.size()];
-        Iterator it = envp.iterator();
-        for (int i = 0; it.hasNext(); ++i) {
-            commandArray[i] = it.next().toString();
+        String[] commandArray = new String[envp.size()];
+        if (envp != null {
+        	Iterator it = envp.iterator();
+        	for (int i = 0; it.hasNext(); ++i) {
+            	commandArray[i] = it.next().toString();
+        	}
+        } else {
+        	commandArray = null;	
         }
         return execute(self, commandArray, dir);
     }
