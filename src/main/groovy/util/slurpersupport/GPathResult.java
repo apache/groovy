@@ -23,6 +23,8 @@ import groovy.lang.DelegatingMetaClass;
 import groovy.lang.GString;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyObjectSupport;
+import groovy.lang.GroovyRuntimeException;
+import groovy.lang.IntRange;
 import groovy.lang.MetaClass;
 import groovy.lang.Writable;
 
@@ -247,8 +249,10 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
     }
 
     public Object getAt(final int index) {
-    final Iterator iter = iterator();
-    int count = 0;
+        if (index < 0) throw new ArrayIndexOutOfBoundsException(index);
+        
+        final Iterator iter = iterator();
+        int count = 0;
     
         while (iter.hasNext()) {
             if (count++ == index) {
@@ -257,8 +261,50 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
                 iter.next();
             }
         }
-        throw new ArrayIndexOutOfBoundsException(index);
+        
+        return new NoChildren(this, this.name, this.namespaceTagHints);
     }
+
+    public Object getAt(final IntRange range) {
+    final int from = range.getFromInt();
+    final int to = range.getToInt();
+    
+        if (range.isReverse()) {
+            throw new GroovyRuntimeException("Reverse ranges not supported, range supplied is ["+ to + ".." + from + "]");
+        } else if (from < 0 || to < 0) {
+            throw new GroovyRuntimeException("Negative range indexes not supported, range supplied is ["+ from + ".." + to + "]");
+        } else {
+            return new Iterator() {
+            final Iterator iter = iterator();
+            Object next;
+            int count = 0;
+            
+               public boolean hasNext() {
+                   if (count <= to) {
+                       while (iter.hasNext()) {
+                           if (count++ >= from) {
+                               this.next = iter.next();
+                               return true;
+                           } else {
+                               iter.next();
+                           }
+                       }
+                   }
+
+                   return false;
+                }
+
+                public Object next() {
+                    return next;
+                }
+
+                public void remove() {
+                    throw new UnsupportedOperationException();
+                }
+                
+            };
+        }
+     }
 
     public void putAt(final int index, final Object newValue) {
     final GPathResult result = (GPathResult)getAt(index);
