@@ -107,7 +107,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
                                           throw new GroovyRuntimeException("Namespace prefix: ${prefix} is not bound to a URI")
                                       }
           
-                                      tag = prefix + ":" + tag
+                                      if (prefix != ":") tag = prefix + ":" + tag
                                   }
           
                                   out = out.unescaped() << "<${tag}"
