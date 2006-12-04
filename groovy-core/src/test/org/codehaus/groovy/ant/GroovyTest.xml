@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+
+<project name="test-groovy-task" default="groovyCodeWithinTask" basedir=".">
+
+	<target name="groovyCodeWithinTask" depends="defineTask">
+		<groovy>
+			org.codehaus.groovy.ant.GroovyTest.FLAG = "from groovy inlined in ant"
+		</groovy>
+	</target>
+
+	<target name="groovyCodeInExternalFile" depends="defineTask">
+		<groovy src="GroovyTest1.groovy"/>
+	</target>
+
+	<target name="groovyCodeInExternalFileWithOtherClass" depends="defineTask">
+		<groovy src="GroovyTest2.groovy"/>
+	</target>
+
+	<target name="groovyClasspath_missing" depends="defineTask" description="should fail!">
+		<groovy>
+def foo = new GroovyTest3Class()
+foo.doSomething()
+		</groovy>
+	</target>
+
+	<target name="groovyClasspath_classpathAttribute" depends="defineTask">
+		<groovy classpath="groovytest3">
+def foo = new GroovyTest3Class()
+foo.doSomething()
+		</groovy>
+	</target>
+
+	<target name="groovyClasspath_classpathrefAttribute" depends="defineTask">
+		<path id="myClasspathRef">
+			<pathelement location="groovytest3"/>
+		</path>
+
+		<groovy classpathref="myClasspathRef">
+def foo = new GroovyTest3Class()
+foo.doSomething()
+		</groovy>
+	</target>
+
+	<target name="groovyClasspath_nestedClasspath" depends="defineTask">
+		<groovy classpathref="myClasspathRef">
+			<classpath>
+				<pathelement location="groovytest3"/>
+			</classpath>
+def foo = new GroovyTest3Class()
+foo.doSomething()
+		</groovy>
+	</target>
+
+	<target name="defineTask">
+		<taskdef name="groovy" classname="org.codehaus.groovy.ant.Groovy"/>
+	</target>
+</project>

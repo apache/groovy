@@ -1,0 +1,670 @@
+<project default="default" xmlns:j="jelly:core" xmlns:u="jelly:util" xmlns:maven="jelly:maven">
+
+  <goal name="default" prereqs="clean, groovy:make-install"/>
+
+  <goal name="dc" prereqs="clean">
+    <attainGoal name="jar:deploy-snapshot"/>
+
+    <j:set var="maven.test.skip" value="true"/>
+
+    <attainGoal name="site:deploy"/>
+  </goal>
+
+  <goal name="modules" description="Builds related modules">
+    <maven:reactor
+       basedir="${basedir}/../modules"
+       includes="xmlrpc/project.xml" 
+       banner="Executing build:"
+       ignoreFailures="false"
+       postProcessing="true"
+       goals="jar"
+       />
+  </goal>
+
+  <preGoal name="java:compile">
+    <attainGoal name="generate"/>
+  </preGoal>
+
+  <postGoal name="dist:prepare-src-filesystem">
+    <!-- lets zap the build.xml -->
+    <delete file="${maven.dist.src.assembly.dir}/build.xml"/>
+
+  </postGoal>
+  
+  <goal name="generate" description="Regenerates the groovy grammar from antlr sources">
+    <j:set var="maven.antlr.grammars" value="groovy.g"/>
+    <j:set var="maven.antlr.src.dir" value="${basedir}/src/main/org/codehaus/groovy/antlr"/>
+    <j:set var="maven.antlr.target.dir" value="${basedir}/src/main"/>
+
+    <delete file="${basedir}/src/main/org/codehaus/groovy/antlr/parser/GroovyRecognizer.java"/>
+    <delete file="${basedir}/src/main/org/codehaus/groovy/antlr/parser/GroovyLexer.java"/>
+    <delete file="${basedir}/src/main/org/codehaus/groovy/antlr/parser/GroovyTokenTypes.java"/>
+    <delete file="${basedir}/src/main/org/codehaus/groovy/antlr/parser/GroovyTokenTypes.txt"/>
+
+<!--    <attainGoal name="antlr:generate"/> -->
+
+    <mkdir dir="${maven.antlr.target.dir}/org/codehaus/groovy/antlr/parser"/>
+
+    <antlr target="${maven.antlr.src.dir}/${maven.antlr.grammars}"
+           outputdirectory="${maven.antlr.target.dir}/org/codehaus/groovy/antlr/parser">
+      <classpath refid="maven.dependency.classpath"/>
+    </antlr>
+
+
+  </goal>
+
+  <goal name="rebuild" prereqs="clean" description="Rebuilds the groovy install without running the unit tests">
+   <j:set var="maven.test.skip" value="true"/>
+   <echo>Rebuilding the binary distro of Groovy without running the unit test cases</echo>
+   <attainGoal name="groovy:make-install"/>
+  </goal>
+  
+  <goal name="groovy:release" prereqs="clean, jar:install, release, groovy:disable-unittests, site, dist:deploy-bin, dist:deploy-src, jar:deploy"
+    description="Performs a release of the source, binary and jar distros">
+  </goal>
+
+  <goal name="groovy:disable-unittests" description="Disables the running of the unit test cases">
+   <!-- we've run the tests by now once already, lets avoid it again -->
+   <j:set var="maven.test.skip" value="true"/>
+  </goal>
+
+  <preGoal name="groovy:release">
+   <!-- we've run the tests by now once already, lets avoid it again -->
+   <j:set var="maven.test.skip" value="true"/>
+  </preGoal>
+
+  <goal name="groovy:test-wiki" description="Generates the test cases for the wiki and runs the tests">
+   <attainGoal name="clean"/>
+   <attainGoal name="groovy:compile"/>
+   <j:set var="testcase" value="org.codehaus.groovy.wiki.RunWikiTest"/>
+   <attainGoal name="test:single"/>
+  </goal>
+  
+  <goal name="groovy:test-single" prereqs="groovy:compile" description="Runs a named groovy test case using the 'test' property">
+    <java classname="groovy.util.GroovyTestSuite" fork="yes">
+      <classpath refid="test.classpath"/>
+      <sysproperty key="test" value="${test}"/>
+    </java>
+  </goal>
+  
+
+  <goal name="groovy:test-quick" prereqs="clean" description="Tries running all the unit test cases in the same JVM">
+   <attainGoal name="clean"/>
+   <attainGoal name="groovy:compile"/>
+   <j:set var="testcase" value="org.codehaus.groovy.tools.FindAllTestsSuite"/>
+   <j:set var="maven.junit.usefile" value="false"/>
+   <attainGoal name="test:single"/>
+  </goal>
+  
+  <postGoal name="dist:prepare-bin-filesystem">
+    <attainGoal name="groovy:make-full-install"/>
+    <echo>Copying groovy install to ${maven.dist.bin.assembly.dir}</echo>
+    <copy toDir="${maven.dist.bin.assembly.dir}">
+      <fileset dir="${groovy.install.staging.dest}">
+        <include name="**/*"/>
+        <exclude name="**/*.groovy"/>
+      </fileset>
+    </copy>
+    <chmod perm="ugo+x">
+      <fileset dir="${maven.dist.bin.assembly.dir}/bin">
+        <include name="*"/>
+        <include name="*.*"/>
+      </fileset>
+    </chmod>
+  </postGoal>
+
+  <goal
+    name="dist:build-bin"
+    prereqs="dist:build-setup,dist:prepare-bin-filesystem"
+    description="Build the binary distribution.">
+
+    <!-- Create a tar.gz file -->
+    <tar longfile="gnu" tarfile="${maven.dist.dir}/${maven.final.name}.tar">
+      <tarfileset dir="${maven.dist.bin.archive.dir}" >
+        <exclude name="groovy-${pom.currentVersion}/bin/**" />
+      </tarfileset>
+      <tarfileset dir="${maven.dist.bin.archive.dir}" mode ="0755">
+        <include name="groovy-${pom.currentVersion}/bin/**"  />
+      </tarfileset>
+    </tar>
+
+
+    <gzip
+      zipfile="${maven.dist.dir}/${maven.final.name}.tar.gz"
+      src="${maven.dist.dir}/${maven.final.name}.tar"
+    />
+
+    <delete file="${maven.dist.dir}/${maven.final.name}.tar"/>
+
+    <!-- Create a zip file -->
+    <zip zipfile="${maven.dist.dir}/${maven.final.name}.zip">
+      <zipfileset dir="${maven.dist.bin.archive.dir}"/>
+    </zip>
+  </goal>
+
+
+  <goal name="run" prereqs="test:compile"
+    description="Runs the given compiled Groovy class">
+    <j:if test="${empty(name)}">
+      <j:set var="name" value="HelloWorld"/>
+    </j:if>
+    <echo>Running class $$name = ${name}</echo>
+    <java classname="${name}" fork="yes">
+      <classpath refid="test.classpath"/>
+      <arg value="${args}"/>
+    </java>
+  </goal>
+
+  <goal name="script" prereqs="test:compile"
+    description="Runs the given Groovy script file">
+
+    <j:if test="${empty(name)}">
+      <j:set var="name" value="src/test/groovy/script/HelloWorld.groovy"/>
+    </j:if>
+
+    <echo>Running class $$name = ${name}</echo>
+    <java classname="groovy.lang.GroovyShell" fork="yes">
+      <classpath refid="test.classpath"/>
+      <arg value="${name}"/>
+      <arg value="${args}"/>
+    </java>
+  </goal>
+
+
+  <goal name="console" prereqs="test:compile"
+    description="Runs the Groovy command console">
+    <java classname="groovy.ui.Console" fork="yes">
+      <classpath refid="test.classpath"/>
+    </java>
+<!--
+    <java classname="groovy.lang.GroovyShell" fork="yes">
+      <arg value="src/main/groovy/ui/Console.groovy"/>
+      <classpath refid="test.classpath"/>
+    </java>
+-->    
+  </goal>
+
+  <goal name="swing:demo" prereqs="test:compile"
+    description="Runs the GroovySwing demo">
+    <java classname="groovy.swing.Demo" fork="yes">
+      <classpath refid="test.classpath"/>
+    </java>
+  </goal>
+
+
+
+  <preGoal name="xdoc:jelly-transform">
+    <attainGoal name="groovy:xdoc-stuff"/>
+  </preGoal>
+
+  <goal name="groovy:xdoc-stuff" prereqs="java:compile, setclasspath, groovy:make-new-javadoc">
+    <mkdir dir="${maven.html2xdoc.dir}"/>
+    <!--
+    <copy toDir="${maven.html2xdoc.dir}">
+      <fileset dir="${basedir}/xdocs">
+        <include name="**/*.html"/>
+      </fileset>
+    </copy>
+    -->
+
+    <!-- now lets run the wiki plugin -->
+    <!--
+    <attainGoal name="java:compile"/>
+    <attainGoal name="setclasspath"/>
+    -->
+
+    <wiki2html srcdir="${basedir}/xdocs" destdir="${maven.html2xdoc.dir}"/>
+
+    <!-- lets generate the HTML docs -->
+    <attainGoal name="groovy:make-new-javadoc"/>
+
+    <attainGoal name="html2xdoc"/>
+    <attainGoal name="faq"/>
+  </goal>
+
+  <goal name="groovy:make-new-javadoc" prereqs="java:compile"
+    description="Generates the HTML of the new JavaDoc added to the JDK">
+    <mkdir dir="${maven.html2xdoc.dir}"/>
+    <java classname="org.codehaus.groovy.tools.DocGenerator" fork="yes">
+      <classpath refid="test.classpath"/>
+    </java>
+  </goal>
+
+  <postGoal name="test:compile">
+    <attainGoal name="setclasspath"/>
+    <j:if test="${unitTestSourcesPresent == 'true' and context.getVariable('maven.test.skip') != 'true'}">
+      <attainGoal name="groovy:compile-tests"/>
+    </j:if>
+    ${context.setVariable('java.awt.headless', true)}
+  </postGoal>
+    
+  <goal name="setclasspath">
+    <path id="test.classpath">
+      <pathelement path="${maven.build.dest}"/>
+      <pathelement path="target/classes"/>
+      <pathelement path="target/test-classes"/>
+      <path refid="maven.dependency.classpath"/>
+    </path>
+    
+    <taskdef name="rootLoaderRef" classname="org.codehaus.groovy.ant.RootLoaderRef" classpathref="test.classpath"/>
+    <rootLoaderRef ref="tmp.groovy.groovyc">     
+      <classpath refid="test.classpath"/>
+    </rootLoaderRef>
+        
+    <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpathref="test.classpath" loaderRef="tmp.groovy.groovyc"/> 
+    <taskdef name="wiki2html" classname="org.codehaus.groovy.wiki.Wiki2Markup" classpathref="test.classpath"/> 
+    <taskdef name="wiki2testcase" classname="org.codehaus.groovy.wiki.Wiki2TestCase" classpathref="test.classpath"/> 
+  </goal>
+  
+  
+  <goal name="asm:verify" prereqs="test:compile"
+    description="verifies the bytecode of every class">
+    <taskdef name="verifyclasses" classname="org.codehaus.groovy.ant.VerifyClass" classpathref="test.classpath"/> 
+    
+    <verifyclasses dir="${basedir}/target/classes"/>
+    <verifyclasses dir="${basedir}/target/test-classes"/>
+  </goal>
+
+  <goal name="asm:dump" prereqs="test:compile"
+    description="Dumps the ASM instructions to generate the given class using the name property">
+
+    <j:if test="${empty(name)}">
+      <j:set var="name" value="org.codehaus.groovy.classgen.DumpClass"/>
+    </j:if>
+
+    <echo>Dumping class $$name = ${name}</echo>
+    <java classname="org.objectweb.asm.util.DumpClassVisitor" fork="yes">
+      <classpath refid="test.classpath"/>
+      <arg value="${name}"/>
+    </java>
+  </goal>
+
+  <goal name="groovy:compile" prereqs="java:compile, setclasspath"
+    description="Compiles the Groovy code">
+
+    <!-- lets create the test cases from the wiki documentation -->
+    <mkdir dir="${basedir}/target/test-classes/wiki"/>
+    <wiki2testcase srcdir="${basedir}/xdocs" destdir="${basedir}/target/test-classes/wiki"/>
+    
+    <copy todir="${basedir}/target/classes">
+      <fileset dir="${basedir}/src/main">
+        <include name="**/*.groovy"/>
+        <exclude name="CVS/*"/>
+      </fileset>
+    </copy>
+
+    <groovyc destdir="${basedir}/target/classes" srcdir="${basedir}/target/classes" listfiles="true">
+      <classpath refid="test.classpath"/>
+    </groovyc>
+
+  </goal>
+
+  <goal name="groovy:tck-test-generation" prereqs="setclasspath"
+        description="Generates the Groovy TCK tests">
+    <ant dir="src/tck" inheritRefs="true">
+      <reference refid="test.classpath" torefid="passed.classpath"/>
+    </ant>
+    <mkdir dir="${basedir}/target/test-classes"/>
+    <copy todir="${basedir}/target/test-classes">
+      <!-- TCK classes and sources -->
+      <fileset dir="${basedir}/src/tck/build/test/classes">
+        <include name="**/*.class"/>
+      </fileset>
+      <fileset dir="${basedir}/src/tck/gentest">
+        <include name="**/*.java"/>
+      </fileset>
+
+      <!-- helper classes for TCK tests -->
+      <fileset dir="${basedir}/src/tck/build/classes">
+        <include name="**/*Helper.class"/>
+      </fileset>
+    </copy>
+  </goal>
+
+  <goal name="groovy:compile-tests" prereqs="groovy:compile, setclasspath, groovy:tck-test-generation"
+    description="Compiles the Groovy unit test cases">
+    <!-- lets copy and touch all the groovy files to ensure they all recompile -->
+    <mkdir dir="${basedir}/target/test-classes"/>
+    <copy todir="${basedir}/target/test-classes">
+      <fileset dir="${basedir}/src/test">
+        <include name="**/*.groovy"/>
+
+        <exclude name="**/notworking/*.groovy"/>
+        <exclude name="**/parser/*.groovy"/>
+        <exclude name="**/ant/*/GroovyTest*.groovy"/> <!-- should not get compiled here as test has to define by itself his classpath -->
+        <exclude name="CVS/*"/>
+      </fileset>
+    </copy>
+    <!--
+    <touch>
+    <fileset dir="${basedir}/target/test-classes" includes="**/*.groovy"/>
+    </touch>
+    -->
+
+    <groovyc destdir="${basedir}/target/test-classes" srcdir="${basedir}/target/test-classes" listfiles="true">
+      <classpath refid="test.classpath"/>
+    </groovyc>
+
+      <!-- Re compile java, so that UberTests are now built -->
+      <javac srcdir="${basedir}/src/test"
+             destdir="${basedir}/target/test-classes"
+             classpathref="test.classpath">
+        <include name="**/Uber*.java" />   
+      </javac>
+
+  </goal>
+
+<!--
+  <goal name="test" 
+        description="Test the application"
+        prereqs="">
+    <attainGoal name="groovy:test"/>
+  </goal>
+
+  <goal name="test:test" 
+        description="Test the application"
+        prereqs="">
+    <attainGoal name="groovy:test"/>
+  </goal>
+-->
+
+
+  <goal name="groovy:fails"
+        description="Test the application with any former failing tests"
+        prereqs="test:compile"
+  >
+    <path id="test.classpath">
+      <pathelement path="${maven.build.dest}"/>
+	  <pathelement path="target/classes"/>
+	  <pathelement path="target/test-fails"/>
+	  <path refid="maven.dependency.classpath"/>
+    </path> 
+
+      <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" /> 
+	
+      <delete dir="${basedir}/target/test-fails-reports" />
+      <delete dir="${basedir}/target/test-fails" />
+
+      <mkdir dir="${basedir}/target/test-fails"/>
+      <mkdir dir="${basedir}/target/test-fails-reports"/>
+
+      <copy todir="${basedir}/target/test-fails" >
+        <fileset dir="${basedir}/src/test-fails">
+          <include name="**/*.groovy"/>  
+        </fileset> 
+      </copy>
+
+
+      <javac srcdir="${basedir}/src/test-fails"
+             destdir="${basedir}/target/test-fails"
+             classpathref="test.classpath" >
+        <include name="**/*.java" />   
+      </javac>
+      
+      <java classname="org.codehaus.groovy.ant.Groovyc" fork="yes" failsonerror="true">
+        <classpath refid="test.classpath"/>
+        <arg value="${basedir}/target/test-fails"/>
+        <arg value="${basedir}/target/test-fails"/>
+      </java>
+      
+    <junit printsummary="yes">
+      <classpath>
+          <path refid="maven.dependency.classpath"/>
+          <pathelement location="${basedir}/target/classes"/>
+          <pathelement location="${basedir}/target/test-fails"/>
+          <pathelement path="${plugin.getDependencyPath('junit')}"/>
+      </classpath>
+      <formatter type="xml"/>
+      <batchtest todir="${basedir}/target/test-fails-reports">
+        <fileset dir="${basedir}/target/test-fails">
+          <exclude name="**/*AbstractTestCase.*"/>
+        </fileset>
+      </batchtest>
+    </junit>
+  </goal>
+
+
+  <goal name="groovy:test"
+        description="Test the application with any Java or Groovy unit tests"
+        prereqs="test:compile">
+
+    <j:if test="${unitTestSourcesPresent == 'true' and context.getVariable('maven.test.skip') != 'true'}">
+      
+      <taskdef
+        name="junit"
+        classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask"
+      />
+
+      <j:set var="testPlugin" value="${pom.getPluginContext('maven-test-plugin')}"/>
+      <j:set var="reportsDirectory">${testPlugin.findVariable('maven.test.reportsDirectory')}</j:set>
+
+      <mkdir dir="${reportsDirectory}"/>
+
+      <junit printSummary="yes" 
+             failureProperty="maven.test.failure"
+             fork="${maven.junit.fork}"
+             dir="${maven.junit.dir}">
+        <sysproperty key="basedir" value="${basedir}"/>
+        
+        <!-- use headless for AWT stuff -->
+        <u:replace var="headless" oldChar="_" newChar=".">java_awt_headless</u:replace>
+        <echo>Setting property ${headless} to true</echo>
+        <sysproperty key="${headless}" value="true"/>
+        
+        <u:tokenize var="listOfProperties" delim=" ">${maven.junit.sysproperties}</u:tokenize>
+        <j:forEach var="someProperty" items="${listOfProperties}">
+          <sysproperty key="${someProperty}" value="${context.getVariable(someProperty)}"/>
+        </j:forEach>
+        <u:tokenize var="listOfJvmArgs" delim=" ">${maven.junit.jvmargs}</u:tokenize>
+        <j:forEach var="somejvmarg" items="${listOfJvmArgs}">
+          <jvmarg value="${somejvmarg}"/>
+        </j:forEach>
+        <formatter type="xml"/>
+        <formatter type="plain" usefile="${maven.junit.usefile}"/>
+        <classpath>
+          <path refid="maven.dependency.classpath"/>
+          <pathelement location="${basedir}/target/classes"/>
+          <pathelement location="${basedir}/target/test-classes"/>
+          <pathelement path="${plugin.getDependencyPath('junit')}"/>
+        </classpath>
+        <batchtest todir="${reportsDirectory}">
+          <fileset dir="${basedir}/target/test-classes">
+            <j:forEach var="pat" items="${pom.build.unitTest.includes}">
+              <include name="${pat}"/>
+            </j:forEach>
+            <j:forEach var="pat" items="${pom.build.unitTest.excludes}">
+              <exclude name="${pat}"/>
+            </j:forEach>
+              <exclude name="**/*AbstractTestCase.*"/>
+          </fileset>
+        </batchtest>
+      </junit>
+
+      <j:if test="${maven.test.failure}">
+        <j:set var="ignore__" value="${maven.test.failure.ignore}X"/>
+        <j:if test="${ignore__ == 'X'}">
+          <fail message="There were test failures."/>
+        </j:if>
+      </j:if>
+
+    </j:if>
+    
+    <j:if test="${!unitTestSourcesPresent}">
+      <echo>No tests to run.</echo>
+    </j:if>
+
+  </goal>
+
+  <goal name="groovy-eclipse:copyjars">
+    <j:if test="${empty(groovy.eclipse.dir)}">
+      <j:set var="groovy.eclipse.dir" value="../groovy-eclipse"/>
+    </j:if>
+    
+    <copy file="${maven.build.dir}/${maven.final.name}.jar" tofile="${groovy.eclipse.dir}/lib/groovy.jar"/>
+
+    <j:forEach var="lib" items="${pom.artifacts}">
+      <echo>Processing ${lib.name}</echo>
+      <j:choose>
+        <j:when test="${lib.name.startsWith('commons-log')}">
+          <copy file="${lib.path}" tofile="${groovy.eclipse.dir}/lib/commons-logging.jar"/>
+        </j:when>
+        <j:when test="${lib.name.startsWith('asm-util')}">
+        </j:when>
+        <j:when test="${lib.name.startsWith('asm')}">
+          <copy file="${lib.groovypath}" tofile="${groovy.eclipse.dir}/lib/asm.jar"/>
+        </j:when>
+      </j:choose>
+    </j:forEach>
+    
+  </goal>
+
+  <preGoal name="jar:jar">
+     <attainGoal name="groovy:compile"/>
+  </preGoal>
+	
+  <goal name="war:notests">
+   <j:set var="maven.test.skip" value="true"/>
+   <echo>Rebuilding groovlet-examples.war without running the unit test cases</echo>
+   <attainGoal name="war"/>
+  </goal>	
+	
+  <postGoal name="war:webapp">
+  	<echo>Replacing class folder with Groovy.jar...</echo>
+  	<copy file="${maven.build.dir}/${maven.final.name}.jar" toDir="${maven.war.build.dir}/WEB-INF/lib"/>
+  </postGoal>
+    
+  <goal name="groovy:make-install" prereqs="jar:jar">
+    <echo>${groovy.install.staging.dest}</echo>
+    <mkdir dir="${groovy.install.staging.dest}"/>
+    <mkdir dir="${groovy.install.staging.dest}/lib"/>
+    <mkdir dir="${groovy.install.staging.dest}/bin"/>
+    <mkdir dir="${groovy.install.staging.dest}/conf"/>
+    <j:forEach var="lib" items="${pom.artifacts}">
+      <copy file="${lib.path}" toDir="${groovy.install.staging.dest}/lib"/>
+    </j:forEach>
+    <copy file="${maven.build.dir}/${maven.final.name}.jar" toDir="${groovy.install.staging.dest}/lib"/>
+    <copy toDir="${groovy.install.staging.dest}/conf">
+      <fileset dir="${maven.src.dir}/conf">
+        <include name="*"/>
+      </fileset>
+    </copy>
+    <copy toDir="${groovy.install.staging.dest}/bin">
+      <fileset dir="${maven.src.dir}/bin">
+        <include name="*"/>
+      </fileset>
+    </copy>
+    
+    <!-- fix crlf-->
+    <fixcrlf srcdir="${groovy.install.staging.dest}/bin"
+       eol="lf" excludes="*.bat" 
+    />
+    <fixcrlf srcdir="${groovy.install.staging.dest}/bin"
+       eol="crlf" includes="*.bat"
+    />
+    
+    <chmod perm="ugo+x">
+      <fileset dir="${groovy.install.staging.dest}/bin">
+        <include name="*"/>
+        <include name="*.*"/>
+      </fileset>
+    </chmod>
+    <attainGoal name="groovy:embeddable-jar"/>
+    <attainGoal name="groovy:groovy-starter-jar"/>
+  </goal>
+
+  <goal name="groovy:make-full-install" prereqs="groovy:make-install">
+    <!-- lets copy xmlrpc into the release -->
+    <!-- attainGoal name="modules"/ -->
+    <!--
+    <echo>Copying the xmlrpc jar into the install directory ${groovy.install.staging.dest}/lib</echo>
+    -->
+
+    <copy toDir="${groovy.install.staging.dest}/lib">
+      <fileset dir="../modules/xmlrpc/target">
+        <include name="groovy*.jar"/>
+      </fileset>
+    </copy>
+  </goal>
+
+  <goal name="groovy:groovy-starter-jar">
+     <jar destfile="${groovy.install.staging.dest}/lib/groovy-starter.jar" >
+       <fileset dir="${maven.build.dir}/classes" casesensitive="yes">
+         <include name="org/codehaus/groovy/tools/RootLoader*.class" />
+         <include name="org/codehaus/groovy/tools/GroovyStarter*.class" />
+         <include name="org/codehaus/groovy/tools/LoaderConfiguration*.class" />
+       </fileset>
+     </jar>
+  </goal>
+
+  <goal name="groovy:embeddable-jar">
+  	<mkdir dir="${groovy.embeddable.working.dir}"/>
+	<unzip dest="${groovy.embeddable.working.dir}">
+		<fileset dir="${groovy.install.staging.dest}/lib">
+			<include name="antlr*.jar"/>
+			<include name="asm*.jar"/>
+			<exclude name="asm-attr*.jar"/>
+			<exclude name="asm-util*.jar"/>
+			<exclude name="asm-analysis*.jar"/>
+			<include name="groovy*.jar"/>
+		</fileset>
+	</unzip>
+	<copy toDir="${groovy.embeddable.working.dir}/META-INF">
+		<fileset dir="${basedir}">
+			<include name="ASM-LICENSE.txt"/>
+		</fileset>
+	</copy>
+	<mkdir dir="${groovy.install.staging.dest}/embeddable"/>
+	<taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${groovy.install.staging.dest}/lib/jarjar-0.6.jar"/>
+	<jarjar jarfile="${groovy.install.staging.dest}/embeddable/groovy-all-${pom.currentVersion}.jar" 
+                                                        manifest="${groovy.embeddable.working.dir}/META-INF/MANIFEST.MF">
+		<fileset dir="${groovy.embeddable.working.dir}"/>
+		<rule pattern="antlr.**"         result="groovyjarjarantlr.@1"/>
+		<rule pattern="org.objectweb.**" result="groovyjarjarasm.@1"/>
+	</jarjar>
+<!--	<delete dir="${groovy.embeddable.working.dir}"/>-->
+  </goal>
+
+  <goal name="groovy:exe">
+    <echo>Building a Groovy executable</echo>
+    <property name="groovy.build.native" value="${maven.build.dir}/native"/>
+    <property name="groovy.src.native" value="${maven.src.dir}/native"/>
+    <mkdir dir="${groovy.build.native}"/>
+    <exec executable="gcc">
+      <arg value='-DJAVA_CLASS_NAME="groovy.lang.GroovyShell"'/>
+      <arg value="-g"/>
+      <arg value="-o"/>
+      <arg value="${groovy.build.native}/groovybase"/>
+      <arg value="${groovy.src.native}/base.c"/>
+    </exec>
+    <exec executable="gcc">
+      <arg value='-DJAVA_CLASS_NAME="org.codehaus.groovy.tools.FileSystemCompiler"'/>
+      <arg value="-g"/>
+      <arg value="-o"/>
+      <arg value="${groovy.build.native}/groovycbase"/>
+      <arg value="${groovy.src.native}/base.c"/>
+    </exec>
+    <jar destfile="${groovy.build.native}/groovy.jar" manifest="${groovy.embeddable.working.dir}/META-INF/MANIFEST.MF">
+      <zipfileset src="${maven.build.dir}/${maven.final.name}.jar"/>
+      <zipfileset src="${groovy.install.staging.dest}/lib/antlr-2.7.5.jar"/>
+      <zipfileset src="${groovy.install.staging.dest}/lib/asm-2.2.jar"/>
+      <zipfileset src="${groovy.install.staging.dest}/lib/asm-util-2.2.jar"/>
+      <zipfileset src="${groovy.install.staging.dest}/lib/asm-attrs-2.2.jar"/>
+      <zipfileset src="${groovy.install.staging.dest}/lib/asm-analysis-2.2.jar"/>
+      <zipfileset src="${groovy.install.staging.dest}/lib/commons-cli-1.0.jar"/>
+      <zipfileset src="${groovy.install.staging.dest}/lib/xerces-2.4.0.jar"/>
+      <zipfileset src="${groovy.install.staging.dest}/lib/xml-apis-1.0.b2.jar"/>
+        <!--<zipfileset src="${groovy.install.staging.dest}/lib/xercesImpl-2.6.2.jar"/>-->
+        <!--<zipfileset src="${groovy.install.staging.dest}/lib/xmlParserAPIs-2.6.2.jar"/>-->
+        <!--<zipfileset src="${groovy.install.staging.dest}/lib/xml-resolver-1.1.jar"/>-->
+    </jar>
+    <concat destfile="${groovy.build.native}/groovy">
+      <filelist dir="${groovy.build.native}" files="groovybase,groovy.jar"/>
+    </concat>
+    <concat destfile="${groovy.build.native}/groovyc">
+      <filelist dir="${groovy.build.native}" files="groovycbase,groovy.jar"/>
+    </concat>
+    <chmod file="${groovy.build.native}/groovy" perm="ugo+rx"/>
+    <chmod file="${groovy.build.native}/groovyc" perm="ugo+rx"/>
+  </goal>
+ 
+</project>
