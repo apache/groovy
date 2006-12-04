@@ -75,6 +75,11 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
                                       out.unescaped() << "?>"
                                     }
                                  }
+        def declarationClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
+                                     out.unescaped() << '<?xml version="1.0" encoding="'
+                                     out.bodyText() << "${out.encoding}"
+                                     out.unescaped() << '"?>\n'
+                                 }
         def noopClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
                                       if (body instanceof Closure) {
                                         def body1 = body.clone()
@@ -188,6 +193,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
         StreamingMarkupBuilder() {
             specialTags.putAll(['yield':noopClosure,
                                 'yieldUnescaped':unescapedClosure,
+                                'xmlDeclaration':declarationClosure,
                                 'comment':commentClosure,
                                 'pi':piClosure])
 
@@ -202,7 +208,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 
         public bind(closure) {
             def boundClosure = this.builder.bind(closure);
-            def enc = encoding; // take a snapshot of the encoding when the cosure is bound to the builder
+            def enc = encoding; // take a snapshot of the encoding when the closure is bound to the builder
 
             {out ->
                 out = new StreamingMarkupWriter(out, enc)

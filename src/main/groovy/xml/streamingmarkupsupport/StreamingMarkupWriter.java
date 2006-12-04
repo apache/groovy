@@ -52,8 +52,8 @@ import java.nio.charset.CharsetEncoder;
 
 public class StreamingMarkupWriter extends Writer {
 	protected final Writer writer;
-  protected final String encoding;
-  protected final CharsetEncoder encoder;
+    protected final String encoding;
+    protected final CharsetEncoder encoder;
 	private final Writer bodyWriter =  new Writer() {
 											/* (non-Javadoc)
 											 * @see java.io.Writer#close()
@@ -208,4 +208,8 @@ public class StreamingMarkupWriter extends Writer {
 		public Writer unescaped() {
 			return this;
 		}
+        
+        public String getEncoding() {
+            return this.encoding;
+        }
 	}
