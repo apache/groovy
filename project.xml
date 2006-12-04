@@ -2,10 +2,10 @@
 
 <project>
   <pomVersion>3</pomVersion>
+  <id>groovy</id>
   <name>groovy</name>
   <groupId>groovy</groupId>
-  <id>groovy</id>
-  <currentVersion>1.0-RC-02-SNAPSHOT</currentVersion>
+  <currentVersion>1.0-RC-2</currentVersion>
   <organization>
     <name>The Codehaus</name>
     <url>http://codehaus.org</url>
@@ -791,25 +791,17 @@
     <report>maven-pmd-plugin</report>
     <!-- <report>maven-simian-plugin</report> -->
     <report>maven-jdepend-plugin</report>
-    <report>maven-changelog-plugin</report>
-  	<!--
-    <report>maven-statcvs-plugin</report>
-    -->
-    <report>maven-file-activity-plugin</report>
-    <report>maven-developer-activity-plugin</report>
+    <!-- <report>maven-changelog-plugin</report> -->
+  	<!-- <report>maven-statcvs-plugin</report>   -->
+    <!-- <report>maven-file-activity-plugin</report> -->
+    <!--<report>maven-developer-activity-plugin</report> -->
     <report>maven-jxr-plugin</report>
-    <!--
-    <report>maven-javadoc-plugin</report>
-    -->
+    <!-- <report>maven-javadoc-plugin</report> -->
     <report>maven-junit-report-plugin</report>
     <report>maven-faq-plugin</report>
-    <!--
-    <report>maven-clover-plugin</report>
-    -->
+    <!-- <report>maven-clover-plugin</report> -->
     <report>maven-changes-plugin</report>
-
-    <report>maven-cobertura-plugin</report>
-
+    <!-- <report>maven-cobertura-plugin</report> -->
     <!-- prepare for EMMA
     <report>maven-emma-plugin</report>
     -->
