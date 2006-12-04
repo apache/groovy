@@ -27,8 +27,7 @@ import groovy.lang.Closure;
  * @author John Wilson
  */
 
-public class FilteredNodeChildren extends NodeChildren
-{
+public class FilteredNodeChildren extends NodeChildren {
     private final Closure closure;
 
     public FilteredNodeChildren(final GPathResult parent, final Closure closure, final Map namespaceTagHints) {
@@ -37,22 +36,25 @@ public class FilteredNodeChildren extends NodeChildren
     }
 
     public Iterator iterator() {
-        return new Iterator()
-        {
-            final Iterator iter = FilteredNodeChildren.this.parent.iterator();
+        return new Iterator() {
+        final Iterator iter = FilteredNodeChildren.this.parent.iterator();
+        Object next = null;
 
             public boolean hasNext() {
-                return this.iter.hasNext();
+                while (this.iter.hasNext()) {
+                final Object childNode = this.iter.next();
+                
+                    if (closureYieldsTrueForNode(childNode)) {
+                        this.next = childNode;
+                        return true;
+                    }
+                }
+                
+                return false;
             }
 
             public Object next() {
-                while (iter.hasNext()) {
-                    final Object childNode = iter.next();
-                    if (closureYieldsTrueForNode(childNode)) {
-                        return childNode;
-                    }
-                }
-                return null;
+                return this.next;
             }
 
             public void remove() {
@@ -62,11 +64,11 @@ public class FilteredNodeChildren extends NodeChildren
     }
 
     public Iterator nodeIterator() {
-        return new NodeIterator(this.parent.nodeIterator())
-        {
+        return new NodeIterator(this.parent.nodeIterator()) {
             protected Object getNextNode(final Iterator iter) {
                 while (iter.hasNext()) {
-                    final Object node = iter.next();
+                final Object node = iter.next();
+                
                     if (closureYieldsTrueForNode(new NodeChild((Node) node, FilteredNodeChildren.this.parent, FilteredNodeChildren.this.namespaceTagHints))) {
                         return node;
                     }
