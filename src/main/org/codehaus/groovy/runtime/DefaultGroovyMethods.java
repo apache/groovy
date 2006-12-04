@@ -3722,7 +3722,7 @@ public class DefaultGroovyMethods {
             return execute(self, (String[]) null, dir);
         }
         String[] commandArray = new String[envp.size()];
-        if (envp != null {
+        if (envp != null) {
         	Iterator it = envp.iterator();
         	for (int i = 0; it.hasNext(); ++i) {
             	commandArray[i] = it.next().toString();
