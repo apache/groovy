@@ -9,7 +9,7 @@
   <groupId>groovy</groupId>
   <artifactId>groovy</artifactId>
   <name>Groovy</name>
-  <version>1.0-RC-01-SNAPSHOT</version>
+  <version>1.0-RC-02-SNAPSHOT</version>
   <packaging>jar</packaging>
   <organization>
     <name>The Codehaus</name>
