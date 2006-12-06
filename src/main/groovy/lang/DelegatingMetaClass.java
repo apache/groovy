@@ -21,6 +21,7 @@ import java.lang.reflect.Method;
 import java.util.List;
 
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
  * @author John Wilson
@@ -29,11 +30,17 @@ import org.codehaus.groovy.ast.ClassNode;
 
 public class DelegatingMetaClass extends MetaClass {
     protected final MetaClass delegate;
+    
     public DelegatingMetaClass(final MetaClass delegate) {
         super(delegate.theClass);
         
         this.delegate = delegate;
     }
+   
+    public DelegatingMetaClass(final Class theClass) {
+        this(new MetaClassImpl(InvokerHelper.getInstance().getMetaRegistry(), theClass));
+    }
+    
     /* (non-Javadoc)
      * @see groovy.lang.MetaClass#addNewInstanceMethod(java.lang.reflect.Method)
      */
