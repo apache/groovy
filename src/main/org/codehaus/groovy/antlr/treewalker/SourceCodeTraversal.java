@@ -150,7 +150,10 @@ public class SourceCodeTraversal extends TraversalHelper {
                 case GroovyTokenTypes.GT: // a > b
                 case GroovyTokenTypes.INTERFACE_DEF: // interface Foo...
                 case GroovyTokenTypes.LABELED_ARG: // myMethod(name:"Jez")
+                case GroovyTokenTypes.LABELED_STAT: // foo:x=1                    	
                 case GroovyTokenTypes.LAND: // true && false
+                case GroovyTokenTypes.LE: // a <= b
+                case GroovyTokenTypes.LITERAL_as: // foo as Bar
                 case GroovyTokenTypes.LOR: // true && false
                 case GroovyTokenTypes.LT: // a < b
                 case GroovyTokenTypes.MEMBER_POINTER: // this.&foo()
@@ -205,6 +208,7 @@ public class SourceCodeTraversal extends TraversalHelper {
                     break;
  
                 case GroovyTokenTypes.ANNOTATIONS: // just like modifiers but for package/enum declarations
+                case GroovyTokenTypes.LITERAL_assert:
                 case GroovyTokenTypes.LITERAL_catch:
                 case GroovyTokenTypes.LITERAL_try:
                 case GroovyTokenTypes.MODIFIERS:

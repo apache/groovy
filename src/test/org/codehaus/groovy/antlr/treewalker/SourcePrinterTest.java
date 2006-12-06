@@ -185,6 +185,8 @@ public class SourcePrinterTest extends GroovyTestCase {
 
     public void testEnumDef() throws Exception {
     	assertEquals("enum Season {WINTER, SPRING, SUMMER, AUTUMN}", pretty("enum Season{WINTER,SPRING,SUMMER,AUTUMN}"));
+    	//todo: more strange spacing in following line
+    	assertEquals("enum Operation {ADDITION{double eval( x,  y) {return x + y}}}",pretty("enum Operation {ADDITION {double eval(x,y) {return x + y}}}"));    	
     }
     
     public void testEqual() throws Exception {
@@ -243,6 +245,8 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
     
     public void testIdent() throws Exception {
+    	// used _everywhere_ , lets assume that the other specific 
+    	// testcases include enough ident usage for now.
         assertEquals("foo.bar", pretty("foo.bar"));
     }
 
@@ -250,40 +254,145 @@ public class SourcePrinterTest extends GroovyTestCase {
         assertEquals("class Foo implements Bar {}", pretty("class Foo implements Bar {}"));
     }
 
+    public void testImplicitParameters() throws Exception {
+    	assertEquals("[1, 2, 3].each {println it}", pretty("[1,2,3].each{println it}"));
+    }
+    
     public void testImport() throws Exception {
         assertEquals("import foo.bar.Wibble", pretty("import foo.bar.Wibble"));
+    }
+    
+    public void testInc() throws Exception {
+    	assertEquals("++x",pretty("++x"));
     }
 
     public void testIndexOp() throws Exception {
         assertEquals("foo.bar()[fred.wilma()]", pretty("foo.bar()[fred.wilma()]"));
     }
+    
+    public void testInterfaceDef() throws Exception {
+    	//todo, the spacing here is... unusual
+    	assertEquals("interface Foo{void blah() }", pretty("interface Foo{void blah()}"));
+    }
+
+    public void testInstanceInit() throws Exception {
+    	assertEquals("class Foo {{x = 1}}", pretty("class Foo {{x=1}}"));
+    }
 
     public void testLabeledArg() throws Exception {
         assertEquals("myMethod(argOne:123, argTwo:123)", pretty("myMethod(argOne:123,argTwo:123)"));
+        assertEquals("myMap = [keyOne:123, keyTwo:234]", pretty("myMap = [keyOne:123,keyTwo:234]"));
     }
+
+    public void testLabeledStat() throws Exception {
+     	assertEquals("foo:x = 1", pretty("foo:x = 1"));
+    }
+    
     public void testLand() throws Exception {
         assertEquals("true && false", pretty("true && false"));
     }
+    
+    public void testLe() throws Exception {
+    	assertEquals("if (60 <= 70) {}", pretty("if (60<=70) {}"));
+    }    
+
     public void testListConstructor() throws Exception {
         assertEquals("[a, b]", pretty("[a,b]"));
     }
 
+    public void testLiteralAny() throws Exception {
+        assertEquals("any x = 2", pretty("any x = 2"));
+    }
+
+    public void testLiteralAs() throws Exception {
+        assertEquals("import java.util.Date as MyDate", pretty("import java.util.Date as MyDate"));
+        // todo suspicious spacing in the following assertion
+        assertEquals("x = 12 as Long ", pretty("x = 12 as Long"));
+    }
+
     public void testLiteralAssert() throws Exception {
         assertEquals("assert a == true", pretty("assert a== true"));
+        assertEquals("assert b == true : 99", pretty("assert b==true:99"));
+        // todo is ',' deprecated now?
+        //assertEquals("assert b == true , 99", pretty("assert b==true,99"));
     }
 
     public void testLiteralBoolean() throws Exception {
         assertEquals("boolean b = true", pretty("boolean b =true"));
     }
+    
+    public void testLiteralBreak() throws Exception {
+    	assertEquals("for (i in 1..100) {break }", pretty("for (i in 1..100) {break}"));
+        assertEquals("switch (foo) {default:break }", pretty("switch(foo){default:break}"));
+        assertEquals("def myMethod() {break }", pretty("def myMethod(){break}"));
+    	assertEquals("for (i in 1..100) {break 2}", pretty("for (i in 1..100) {break 2}"));
+    	//todo should the colon be postfixed to the label?
+    	assertEquals("for (i in 1..100) {break label1:}", pretty("for (i in 1..100) {break label1:}"));
+    }
 
+    public void testLiteralByte() throws Exception {
+        assertEquals("byte b = 1", pretty("byte b=1"));
+    }
+
+    public void testLiteralCase() throws Exception {
+        assertEquals("switch (foo) {case 1:x = 3}", pretty("switch(foo){case 1:x=3}"));
+    }
+    
     public void testLiteralCatch() throws Exception {
         assertEquals("try {} catch (Exception e) {}", pretty("try {} catch (Exception e) {}"));
+        assertEquals("try {} catch (Exception e1) {} catch (Exception2 e2) {}", pretty("try {} catch (Exception e1) {} catch (Exception2 e2) {}"));
     }
 
+    public void testLiteralChar() throws Exception {
+        assertEquals("char c = \"a\"", pretty("char c = \"a\""));
+    }
+
+    public void testLiteralClass() throws Exception {
+    	assertEquals("public class Foo {int bar}", pretty("public class Foo{int bar}"));
+    }
+    
+    public void testLiteralContinue() throws Exception {
+    	assertEquals("for (i in 1..100) {continue }", pretty("for (i in 1..100) {continue}"));
+    	assertEquals("for (i in 1..100) {continue 2}", pretty("for (i in 1..100) {continue 2}"));
+    	//todo should the colon be postfixed to the label?
+    	assertEquals("for (i in 1..100) {continue label1:}", pretty("for (i in 1..100) {continue label1:}"));
+    	assertEquals("[1, 2, 3].each {continue }", pretty("[1,2,3].each{continue}"));
+    }
+
+    public void testLiteralDef() throws Exception {
+    	assertEquals("def x = 123", pretty("def x=123"));
+    	assertEquals("def myMethod() {return 0}", pretty("def myMethod(){return 0}"));
+    	// note: def not needed in parameter declarations, but it is valid
+    	//todo: is it ok to strip out 'def' from parameter declarations?
+    	assertEquals("def foo( bar) {}", pretty("def foo(def bar){}"));
+    }
+    
     public void testLiteralDefault() throws Exception {
         assertEquals("switch (foo) {default:x = 2}", pretty("switch(foo){default:x=2}"));
+    	assertEquals("public @interface Foo{int bar() default 123}", pretty("public @interface Foo{int bar() default 123}"));
+    }
+    
+    public void testLiteralDouble() throws Exception {
+    	assertEquals("double d = 1.0", pretty("double d = 1.0"));
+    }
+    
+    public void testLiteralElse() throws Exception {
+    	assertEquals("if (false) {a = 1} else {a = 2}", pretty("if (false) {a=1} else {a=2}"));
     }
 
+    public void testLiteralEnum() throws Exception {
+    	assertEquals("enum Season {WINTER, SPRING, SUMMER, AUTUMN}", pretty("enum Season{WINTER,SPRING,SUMMER,AUTUMN}"));
+    }
+    
+    public void testLiteralExtends() throws Exception {
+    	assertEquals("class Foo extends java.util.Date {}", pretty("class Foo extends java.util.Date {}"));
+        assertEquals("class Foo extends Bar {}", pretty("class Foo extends Bar {}"));
+        assertEquals("interface Wibble extends Mooky{}", pretty("interface Wibble extends Mooky {}"));
+        //todo spacing is odd, c.f. last space in class vs interface above
+    	//todo assertEquals("class Foo<T extends C & I> {T t}",pretty("class Foo<T extends C & I> {T t}"));
+    	//todo assertEquals("public boolean process(Set<? extends TypeElement> annotations) {println annotations}", pretty("public boolean process(Set<? extends TypeElement> annotations) {println annotations}"));
+    }
+    
     public void testLiteralFalse() throws Exception {
         assertEquals("if (false) {}", pretty("if (false) {}"));
     }
@@ -298,6 +407,8 @@ public class SourcePrinterTest extends GroovyTestCase {
 
     public void testLiteralFor() throws Exception {
         assertEquals("for (i in [1, 2, 3]) {}", pretty("for (i in [1,2,3]) {}"));
+        // check non-braced single statement
+        assertEquals("for (i in 1..100) rotateAntiClockwise()", pretty("for (i in 1..100) rotateAntiClockwise()"));
     }
 
     public void testLiteralIf() throws Exception {
@@ -305,6 +416,11 @@ public class SourcePrinterTest extends GroovyTestCase {
         assertEquals("if (a == b) {}", pretty("if (a==b) {}"));
     }
 
+    public void testLiteralImplements() throws Exception {
+        assertEquals("class Foo implements Bar {}", pretty("class Foo implements Bar {}"));
+    	assertEquals("enum EarthSeason implements Season {SPRING}", pretty("enum EarthSeason implements Season{SPRING}"));
+    }
+    
     public void testLiteralInstanceOf() throws Exception {
         assertEquals("if (a instanceof String) {}", pretty("if (a instanceof String) {}"));
     }

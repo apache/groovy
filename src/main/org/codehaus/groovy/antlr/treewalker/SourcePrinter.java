@@ -277,6 +277,7 @@ public class SourcePrinter extends VisitorAdapter {
     //   token type EXPONENT only used by lexer, never visited/created
     
     public void visitExpr(GroovySourceAST t,int visit) {
+    	// do nothing
     }
 
     public void visitExtendsClause(GroovySourceAST t,int visit) {
@@ -336,10 +337,15 @@ public class SourcePrinter extends VisitorAdapter {
     }
 
     public void visitImplicitParameters(GroovySourceAST t, int visit) {
+    	// do nothing
     }
 
     public void visitImport(GroovySourceAST t,int visit) {
         print(t,visit,"import ",null,null);
+    }
+
+    public void visitInc(GroovySourceAST t, int visit) {
+    	print(t,visit,"++",null,null);
     }
 
     public void visitIndexOp(GroovySourceAST t, int visit) {
@@ -349,8 +355,16 @@ public class SourcePrinter extends VisitorAdapter {
     public void visitInterfaceDef(GroovySourceAST t,int visit) {
         print(t,visit,"interface ",null,null);
     }
-    
-    public void visitLabeledArg(GroovySourceAST t, int visit) {
+
+    public void visitInstanceInit(GroovySourceAST t, int visit) {
+    	// do nothing
+	}
+
+	public void visitLabeledArg(GroovySourceAST t, int visit) {
+        print(t,visit,":",null,null);
+    }
+
+	public void visitLabeledStat(GroovySourceAST t, int visit) {
         print(t,visit,":",null,null);
     }
 
@@ -358,12 +372,37 @@ public class SourcePrinter extends VisitorAdapter {
         print(t,visit," && ",null,null);
     }
 
+    // visit lbrack()
+    //   token type LBRACK only used inside parser, never visited/created
+
+    // visit lcurly()
+    //   token type LCURLY only used inside parser, never visited/created
+    
+    public void visitLe(GroovySourceAST t, int visit) {
+    	print(t,visit," <= ",null,null);
+    }
+
+    // visitLetter ...
+    //   token type LETTER only used by lexer, never visited/created
+
     public void visitListConstructor(GroovySourceAST t, int visit) {
         printUpdatingTabLevel(t,visit,"[",null,"]");
     }
 
+    public void visitLiteralAny(GroovySourceAST t,int visit) {
+        print(t,visit,"any",null,null);
+    }
+
+    public void visitLiteralAs(GroovySourceAST t,int visit) {
+        print(t,visit," as ",null,null);
+    }
+
     public void visitLiteralAssert(GroovySourceAST t,int visit) {
-        print(t,visit,"assert ",null,null);
+    	if (t.getNumberOfChildren() > 1) {
+    		print(t,visit,"assert ",null," : ");
+    	} else {
+    		print(t,visit,"assert ",null,null);
+    	}
     }
 
     public void visitLiteralBoolean(GroovySourceAST t, int visit) {
@@ -371,7 +410,11 @@ public class SourcePrinter extends VisitorAdapter {
     }
 
     public void visitLiteralBreak(GroovySourceAST t, int visit) {
-        print(t,visit,"break",null,null);
+        print(t,visit,"break ",null,null);
+    }
+
+    public void visitLiteralByte(GroovySourceAST t, int visit) {
+        print(t,visit,"byte",null,null);
     }
 
     public void visitLiteralCase(GroovySourceAST t, int visit) {
@@ -381,9 +424,35 @@ public class SourcePrinter extends VisitorAdapter {
     public void visitLiteralCatch(GroovySourceAST t,int visit) {
         printUpdatingTabLevel(t,visit," catch (",null,") ");
     }
+
+    public void visitLiteralChar(GroovySourceAST t, int visit) {
+        print(t,visit,"char",null,null);
+    }
+
+    // visitLiteralClass ...
+    //   token type "class" only used by parser, never visited/created directly
+
+    public void visitLiteralContinue(GroovySourceAST t, int visit) {
+        print(t,visit,"continue ",null,null);
+    }
+
+    // visitLiteralDef ...
+    //   token type "def" only used by parser, never visited/created directly
+
     public void visitLiteralDefault(GroovySourceAST t,int visit) {
         print(t,visit,"default",null,":");
     }
+
+    public void visitLiteralDouble(GroovySourceAST t, int visit) {
+        print(t,visit,"double",null,null);
+    }
+
+    // visitLiteralElse ...
+    //   token type "else" only used by parser, never visited/created directly
+
+    // visitLiteralEnum ...
+    //   token type "enum" only used by parser, never visited/created directly
+
     public void visitLiteralFalse(GroovySourceAST t,int visit) {
         print(t,visit,"false",null,null);
     }
