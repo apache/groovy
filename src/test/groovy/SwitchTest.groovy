@@ -1,9 +1,9 @@
 class SwitchTest extends GroovyTestCase {
 
-
     void testSwitch() {
         callSwitch("foo", "foo")
         callSwitch("bar", "barfoo")
+        callSwitch("barbar", "barfoo")
         callSwitch("dummy", "d*")
         callSwitch("xyz", "xyzDefault")
         callSwitch("zzz", "Default")
@@ -30,6 +30,7 @@ class SwitchTest extends GroovyTestCase {
         		result = "d*"
                 break
 
+            case "barbar":
             case "bar":
                 result = result + "bar"
 

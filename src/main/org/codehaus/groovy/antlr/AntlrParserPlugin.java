@@ -1024,8 +1024,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             AST child = node.getFirstChild();
             if (isType(LITERAL_case, child)) {
                 list.add(caseStatement(child));
-            }
-            else {
+            } else {
                 defaultStatement = statement(child.getNextSibling());
             }
         }
@@ -1038,13 +1037,27 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
     protected CaseStatement caseStatement(AST node) {
-        Expression expression = expression(node.getFirstChild());
-        AST nextSibling = node.getNextSibling();
+        List expressions = new ArrayList();
         Statement statement = EmptyStatement.INSTANCE;
-        if (!isType(LITERAL_default, nextSibling)) {
+        AST nextSibling = node;
+        do {
+            Expression expression = expression(nextSibling.getFirstChild());
+            expressions.add(expression);
+            nextSibling = nextSibling.getNextSibling();
+        } while (isType(LITERAL_case, nextSibling));
+        if (!isType(LITERAL_default, nextSibling) && nextSibling != null) {
              statement = statement(nextSibling);
         }
-        CaseStatement answer = new CaseStatement(expression, statement);
+        CaseStatement answer;
+        if (expressions.size() == 1) {
+            // single case uses original code for effiiency
+            answer = new CaseStatement((Expression) expressions.get(0), statement);
+        } else {
+            // multiple cases in casegroup are grouped as an expression
+            // doesn't seem to mix well with certain case expressions, e.g. regex
+            ListExpression listExpression = new ListExpression(expressions);
+            answer = new CaseStatement(listExpression, statement);
+        }
         configureAST(answer, node);
         return answer;
     }
