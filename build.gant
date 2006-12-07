@@ -1,0 +1,53 @@
+sourceDirectory = 'src'
+mainSourceDirectory = sourceDirectory + '/main'
+testsSourceDirectory = sourceDirectory + '/test'
+targetDirectory = 'target'
+mainClassesDirectory = targetDirectory + '/classes'
+testsClassesDirectory = targetDirectory + '/tests'
+
+includeTargets << gant.targets.Clean
+cleanDirectory << targetDirectory
+cleanPattern << mainSourceDirectory + '/org/codehaus/groovy/antlr/parser/Groovy*.*'
+
+classpathRef = 'classpathRef'
+Ant.path ( id : classpathRef ) {
+  fileset ( dir : System.properties.'groovy.home' + '/lib' , includes : '*.jar' , excludes : 'gant*.jar' )
+}
+
+Ant.taskdef ( name : 'groovyc' , classname : 'org.codehaus.groovy.ant.Groovyc' , classpathref : classpathRef )
+
+task ( ensureAntlr : 'Ensure all the files generated from the Antlr grammar are up to date.' ) {
+  def antlrDirectory = mainSourceDirectory +  '/org/codehaus/groovy/antlr'
+  def parserDirectory = antlrDirectory + '/parser'
+  def antAntlrJar = '/usr/share/java/ant-antlr.jar'
+  Ant.mkdir ( dir : parserDirectory )
+  Ant.taskdef ( name : 'antlr' , classname : 'org.apache.tools.ant.taskdefs.optional.ANTLR' , classpath : antAntlrJar )
+  Ant.antlr ( target : antlrDirectory + '/groovy.g' , outputdirectory : parserDirectory ) {
+    classpath ( refid : classpathRef )
+  }    
+}
+
+task ( compileMain : 'Compile the Java and Groovy code in the main source.' ) {
+  depends ( ensureAntlr )
+  Ant.mkdir ( dir : mainClassesDirectory )
+  Ant.javac ( srcdir : mainSourceDirectory , destdir : mainClassesDirectory , debug : 'yes' , classpathref : classpathRef )
+  Ant.groovyc ( srcdir : mainSourceDirectory , destdir : mainClassesDirectory )
+}
+
+task ( compileTest : 'Compile the Java and Groovy code in the test source.' ) {
+  depends ( compileMain )
+  Ant.mkdir ( dir : testsClassesDirectory )
+  Ant.javac ( srcdir : testsSourceDirectory , destdir : testsClassesDirectory , debug : 'yes' , classpathref : classpathRef , excludes : "UberTestCase*.java" )
+  Ant.groovyc ( srcdir : testsSourceDirectory , destdir : testsClassesDirectory ) {
+    classpath { pathelement ( location : testsClassesDirectory ) }
+  }
+  Ant.javac ( srcdir : testsSourceDirectory , destdir : testsClassesDirectory , debug : 'yes' , classpathref : classpathRef , includes : "UberTestCase*.java" ) {
+    classpath { pathelement ( location : testsClassesDirectory ) }
+  }
+}
+
+task ( test : 'Test a build.' ) {
+  depends ( compileTest )
+}
+
+task ( 'default' : 'Default action is currently test.' ) { test ( ) }
