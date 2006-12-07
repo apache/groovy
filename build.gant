@@ -50,13 +50,13 @@ task ( compileTest : 'Compile the Java and Groovy code in the test source.' ) {
   }
   Ant.groovyc ( srcdir : testsSourceDirectory , destdir : testsClassesDirectory ) {
     classpath {
+      pathelement ( location : mainClassesDirectory )
       pathelement ( location : testsClassesDirectory )
       path ( refid : dependencies )
     }
   }
   Ant.javac ( srcdir : testsSourceDirectory , destdir : testsClassesDirectory , debug : 'yes' , includes : "UberTestCase*.java" ) {
     classpath {
-      pathelement ( location : mainClassesDirectory )
       pathelement ( location : testsClassesDirectory )
       path ( refid : dependencies )
     }
