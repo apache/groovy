@@ -158,73 +158,73 @@ public class StreamingMarkupWriter extends Writer {
 												}
 											};
 
-		public StreamingMarkupWriter(final Writer writer, final String encoding) {
-			this.writer = writer;
-      
-      if (encoding != null) {
-        this.encoding = encoding;
-      } else if (writer instanceof OutputStreamWriter) {
-        this.encoding = ((OutputStreamWriter)writer).getEncoding();
-      } else {
-        this.encoding = "US-ASCII";
-      }
-      
-      this.encoder = Charset.forName(this.encoding).newEncoder();
-	}
-
-    public StreamingMarkupWriter(final Writer writer) {
-      this(writer, null);
+    public StreamingMarkupWriter(final Writer writer, final String encoding) {
+        this.writer = writer;
+        
+        if (encoding != null) {
+            this.encoding = encoding;
+        } else if (writer instanceof OutputStreamWriter) {
+            this.encoding = ((OutputStreamWriter)writer).getEncoding();
+        } else {
+            this.encoding = "US-ASCII";
+        }
+        
+        this.encoder = Charset.forName(this.encoding).newEncoder();
     }
     
-		/* (non-Javadoc)
-		 * @see java.io.Writer#close()
-		 */
-		public void close() throws IOException {
-			this.writer.close();
-		}
-
-		/* (non-Javadoc)
-		 * @see java.io.Writer#flush()
-		 */
-		public void flush() throws IOException {
-			this.writer.flush();
-		}
-
-		/* (non-Javadoc)
-		 * @see java.io.Writer#write(int)
-		 */
-		public void write(final int c) throws IOException {
-            if (!this.encoder.canEncode((char)c)) {
-                this.writer.write("&#x");
-                this.writer.write(Integer.toHexString(c));
-                this.writer.write(';');
-            } else {
-                this.writer.write(c);
-            }
-		}
-        
-        /* (non-Javadoc)
-         * @see java.io.Writer#write(char[], int, int)
-         */
-        public void write(final char[] cbuf, int off, int len) throws IOException {
-            while (len-- > 0){
-                write(cbuf[off++]);
-            }
+    public StreamingMarkupWriter(final Writer writer) {
+        this(writer, null);
+    }
+    
+    /* (non-Javadoc)
+     * @see java.io.Writer#close()
+     */
+    public void close() throws IOException {
+        this.writer.close();
+    }
+    
+    /* (non-Javadoc)
+     * @see java.io.Writer#flush()
+     */
+    public void flush() throws IOException {
+        this.writer.flush();
+    }
+    
+    /* (non-Javadoc)
+     * @see java.io.Writer#write(int)
+     */
+    public void write(final int c) throws IOException {
+        if (!this.encoder.canEncode((char)c)) {
+            this.writer.write("&#x");
+            this.writer.write(Integer.toHexString(c));
+            this.writer.write(';');
+        } else {
+            this.writer.write(c);
         }
-		
-		public Writer attributeValue() {
-			return this.attributeWriter;
-		}
-		
-		public Writer bodyText() {
-			return this.bodyWriter;
-		}
-		
-		public Writer unescaped() {
-			return this;
-		}
-        
-        public String getEncoding() {
-            return this.encoding;
+    }
+    
+    /* (non-Javadoc)
+     * @see java.io.Writer#write(char[], int, int)
+     */
+    public void write(final char[] cbuf, int off, int len) throws IOException {
+        while (len-- > 0){
+            write(cbuf[off++]);
         }
-	}
+    }
+    
+    public Writer attributeValue() {
+        return this.attributeWriter;
+    }
+    
+    public Writer bodyText() {
+        return this.bodyWriter;
+    }
+    
+    public Writer unescaped() {
+        return this;
+    }
+    
+    public String getEncoding() {
+        return this.encoding;
+    }
+}
