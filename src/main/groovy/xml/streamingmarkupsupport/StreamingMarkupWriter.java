@@ -170,7 +170,7 @@ public class StreamingMarkupWriter extends Writer {
       }
       
       this.encoder = Charset.forName(this.encoding).newEncoder();
-		}
+	}
 
     public StreamingMarkupWriter(final Writer writer) {
       this(writer, null);
@@ -189,13 +189,28 @@ public class StreamingMarkupWriter extends Writer {
 		public void flush() throws IOException {
 			this.writer.flush();
 		}
-		
+
 		/* (non-Javadoc)
-		 * @see java.io.Writer#write(char[], int, int)
+		 * @see java.io.Writer#write(int)
 		 */
-		public void write(final char[] cbuf, int off, int len) throws IOException {
-			this.writer.write(cbuf, off, len);
+		public void write(final int c) throws IOException {
+            if (!this.encoder.canEncode((char)c)) {
+                this.writer.write("&#x");
+                this.writer.write(Integer.toHexString(c));
+                this.writer.write(';');
+            } else {
+                this.writer.write(c);
+            }
 		}
+        
+        /* (non-Javadoc)
+         * @see java.io.Writer#write(char[], int, int)
+         */
+        public void write(final char[] cbuf, int off, int len) throws IOException {
+            while (len-- > 0){
+                write(cbuf[off++]);
+            }
+        }
 		
 		public Writer attributeValue() {
 			return this.attributeWriter;
