@@ -46,6 +46,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import groovy.lang.Closure;
 import groovy.lang.GroovyInterceptable;
+import groovy.lang.GroovyObjectSupport;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -64,13 +65,47 @@ public class BaseMarkupBuilder extends Builder {
 		private Object out;
 		private final Map pendingNamespaces = new HashMap();
 		private final Map namespaces = new HashMap();
+         private final Map specialProperties = new HashMap();
 		private String prefix = "";
+        
+        {
+            
+            namespaces.put("xml", "http://www.w3.org/XML/1998/namespace");             // built in namespace
+            namespaces.put("mkp", "http://www.codehaus.org/Groovy/markup/keywords");   // pseudo namespace for markup keywords
+            
+            specialProperties.put("out", new OutputSink("out") {
+                public Object leftShift(final Object value) {
+                    Document.this.getProperty("mkp");
+                    Document.this.invokeMethod("yield", new Object[]{value});
+                    return this;
+                }
+            });
+            specialProperties.put("unescaped", new OutputSink("unescaped") {
+                public Object leftShift(final Object value) {
+                    Document.this.getProperty("mkp");
+                    Document.this.invokeMethod("yieldUnescaped", new Object[]{value});
+                    return this;
+                }
+            });
+        }
+        
+        private abstract class OutputSink extends GroovyObjectSupport {
+            private final String name;
+            
+            public OutputSink(final String name) {
+                this.name = name;
+            }
+            
+            public Object invokeMethod(final String name, final Object args) {
+                Document.this.prefix = this.name;
+                return Document.this.invokeMethod(name, args);
+            }
+            
+            public abstract Object leftShift(Object item);
+        }
 		
 		public Document(final Closure root, final Map namespaceMethodMap) {
 			super(root, namespaceMethodMap);
-			
-			this.namespaces.put("xml", "http://www.w3.org/XML/1998/namespace");				// built in namespace
-			this.namespaces.put("mkp", "http://www.codehaus.org/Groovy/markup/keywords");	// pseudo namespace for markup keywords
 		}
 		
 		/* (non-Javadoc)
@@ -131,8 +166,14 @@ public class BaseMarkupBuilder extends Builder {
 		 * @see groovy.lang.GroovyObject#getProperty(java.lang.String)
 		 */
 		public Object getProperty(final String property) {
-			this.prefix = property;
-			return this;
+        final Object special = this.specialProperties.get(property);
+        
+            if (special == null) {
+        			this.prefix = property;
+        			return this;
+            } else {
+                return special;
+            }
 		}
 		
 		/* (non-Javadoc)
