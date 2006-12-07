@@ -3,18 +3,18 @@ mainSourceDirectory = sourceDirectory + '/main'
 testsSourceDirectory = sourceDirectory + '/test'
 targetDirectory = 'target'
 mainClassesDirectory = targetDirectory + '/classes'
-testsClassesDirectory = targetDirectory + '/tests'
+testsClassesDirectory = targetDirectory + '/test-classes'
 
 includeTargets << gant.targets.Clean
 cleanDirectory << targetDirectory
 cleanPattern << mainSourceDirectory + '/org/codehaus/groovy/antlr/parser/Groovy*.*'
 
-classpathRef = 'classpathRef'
-Ant.path ( id : classpathRef ) {
-  fileset ( dir : System.properties.'groovy.home' + '/lib' , includes : '*.jar' , excludes : 'gant*.jar' )
+dependencies = 'dependencies'
+Ant.path ( id : dependencies ) {
+  fileset ( dir : System.properties.'groovy.home' + '/lib' , includes : '*.jar' , excludes : 'gant*.jar,*groovy*.jar' )
 }
 
-Ant.taskdef ( name : 'groovyc' , classname : 'org.codehaus.groovy.ant.Groovyc' , classpathref : classpathRef )
+Ant.taskdef ( name : 'groovyc' , classname : 'org.codehaus.groovy.ant.Groovyc' , classpath : mainClassesDirectory )
 
 task ( ensureAntlr : 'Ensure all the files generated from the Antlr grammar are up to date.' ) {
   def antlrDirectory = mainSourceDirectory +  '/org/codehaus/groovy/antlr'
@@ -23,26 +23,43 @@ task ( ensureAntlr : 'Ensure all the files generated from the Antlr grammar are 
   Ant.mkdir ( dir : parserDirectory )
   Ant.taskdef ( name : 'antlr' , classname : 'org.apache.tools.ant.taskdefs.optional.ANTLR' , classpath : antAntlrJar )
   Ant.antlr ( target : antlrDirectory + '/groovy.g' , outputdirectory : parserDirectory ) {
-    classpath ( refid : classpathRef )
+    classpath ( refid : dependencies )
   }    
 }
 
 task ( compileMain : 'Compile the Java and Groovy code in the main source.' ) {
   depends ( ensureAntlr )
   Ant.mkdir ( dir : mainClassesDirectory )
-  Ant.javac ( srcdir : mainSourceDirectory , destdir : mainClassesDirectory , debug : 'yes' , classpathref : classpathRef )
-  Ant.groovyc ( srcdir : mainSourceDirectory , destdir : mainClassesDirectory )
+  Ant.javac ( srcdir : mainSourceDirectory , destdir : mainClassesDirectory , debug : 'yes' , classpathref : dependencies )
+  Ant.groovyc ( srcdir : mainSourceDirectory , destdir : mainClassesDirectory ) {
+    classpath {
+      pathelement ( location : mainClassesDirectory )
+      path ( refid : dependencies )
+    }
+  } 
 }
 
 task ( compileTest : 'Compile the Java and Groovy code in the test source.' ) {
   depends ( compileMain )
   Ant.mkdir ( dir : testsClassesDirectory )
-  Ant.javac ( srcdir : testsSourceDirectory , destdir : testsClassesDirectory , debug : 'yes' , classpathref : classpathRef , excludes : "UberTestCase*.java" )
-  Ant.groovyc ( srcdir : testsSourceDirectory , destdir : testsClassesDirectory ) {
-    classpath { pathelement ( location : testsClassesDirectory ) }
+  Ant.javac ( srcdir : testsSourceDirectory , destdir : testsClassesDirectory , debug : 'yes' , excludes : "UberTestCase*.java" ) {
+    classpath {
+      pathelement ( location : mainClassesDirectory )
+      path ( refid : dependencies )
+    }
   }
-  Ant.javac ( srcdir : testsSourceDirectory , destdir : testsClassesDirectory , debug : 'yes' , classpathref : classpathRef , includes : "UberTestCase*.java" ) {
-    classpath { pathelement ( location : testsClassesDirectory ) }
+  Ant.groovyc ( srcdir : testsSourceDirectory , destdir : testsClassesDirectory ) {
+    classpath {
+      pathelement ( location : testsClassesDirectory )
+      path ( refid : dependencies )
+    }
+  }
+  Ant.javac ( srcdir : testsSourceDirectory , destdir : testsClassesDirectory , debug : 'yes' , includes : "UberTestCase*.java" ) {
+    classpath {
+      pathelement ( location : mainClassesDirectory )
+      pathelement ( location : testsClassesDirectory )
+      path ( refid : dependencies )
+    }
   }
 }
 
