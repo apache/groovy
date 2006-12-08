@@ -75,16 +75,27 @@ public class BaseMarkupBuilder extends Builder {
             
             specialProperties.put("out", new OutputSink("out") {
                 public Object leftShift(final Object value) {
-                    Document.this.getProperty("mkp");
-                    Document.this.invokeMethod("yield", new Object[]{value});
-                    return this;
+                    return leftShift("yield", value);
                 }
             });
             specialProperties.put("unescaped", new OutputSink("unescaped") {
                 public Object leftShift(final Object value) {
-                    Document.this.getProperty("mkp");
-                    Document.this.invokeMethod("yieldUnescaped", new Object[]{value});
-                    return this;
+                    return leftShift("yieldUnescaped", value);
+                }
+            });
+            specialProperties.put("namespaces", new OutputSink("namespaces") {
+                public Object leftShift(final Object value) {
+                    return leftShift("declareNamespace", value);
+                }
+            });
+            specialProperties.put("pi", new OutputSink("pi") {
+                public Object leftShift(final Object value) {
+                    return leftShift("pi", value);
+                }
+            });
+            specialProperties.put("comment", new OutputSink("comment") {
+                public Object leftShift(final Object value) {
+                    return leftShift("comment", value);
                 }
             });
         }
@@ -102,6 +113,12 @@ public class BaseMarkupBuilder extends Builder {
             }
             
             public abstract Object leftShift(Object item);
+            
+            protected Object leftShift(final String command, final Object value) {
+                Document.this.getProperty("mkp");
+                Document.this.invokeMethod(command, new Object[]{value});
+                return this;
+            }
         }
 		
 		public Document(final Closure root, final Map namespaceMethodMap) {
