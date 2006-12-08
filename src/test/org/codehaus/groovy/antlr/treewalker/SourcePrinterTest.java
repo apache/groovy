@@ -418,24 +418,49 @@ public class SourcePrinterTest extends GroovyTestCase {
 
     public void testLiteralImplements() throws Exception {
         assertEquals("class Foo implements Bar {}", pretty("class Foo implements Bar {}"));
-    	assertEquals("enum EarthSeason implements Season {SPRING}", pretty("enum EarthSeason implements Season{SPRING}"));
+        //todo the following is legal Java, but pretty strange...?
+        assertEquals("enum EarthSeason implements Season {SPRING}", pretty("enum EarthSeason implements Season{SPRING}"));
     }
     
+    public void testLiteralImport() throws Exception {
+    	assertEquals("import foo.Bar", pretty("import foo.Bar"));
+    	assertEquals("import mooky.*", pretty("import mooky.*"));
+    }
+    
+    public void testLiteralIn() throws Exception {
+    	assertEquals("for (i in 1..10) {}", pretty("for (i in 1..10) {}"));
+    	assertEquals("if (i in myList) {}", pretty("if (i in myList) {}"));
+    }
+
     public void testLiteralInstanceOf() throws Exception {
         assertEquals("if (a instanceof String) {}", pretty("if (a instanceof String) {}"));
     }
     public void testLiteralInt() throws Exception {
         assertEquals("int a", pretty("int a"));
     }
-
+    
+    public void testLiteralInterface() throws Exception {
+    	assertEquals("interface Foo{}", pretty("interface Foo{}"));
+    }
+    public void testLiteralLong() throws Exception {
+        assertEquals("long a = 1", pretty("long a = 1"));
+    }
+    public void testLiteralNative() throws Exception {
+        assertEquals("public class R {public native void seek(long pos) }", pretty("public class R{public native void seek(long pos)}"));
+        assertEquals("native foo() ", pretty("native foo()"));
+    }
     public void testLiteralNew() throws Exception {
         assertEquals("new Foo()", pretty("new Foo()"));
+        assertEquals("def x = new int[5]", pretty("def x = new int[5]"));
     }
 
     public void testLiteralNull() throws Exception {
         assertEquals("def foo = null", pretty("def foo=null"));
     }
 
+    public void testLiteralPackage() throws Exception {
+    	assertEquals("package foo.bar", pretty("package foo.bar"));
+    }
     public void testLiteralPrivate() throws Exception{
         assertEquals("private bar", pretty("private bar"));
     }
@@ -450,17 +475,44 @@ public class SourcePrinterTest extends GroovyTestCase {
 
     public void testLiteralReturn() throws Exception {
         assertEquals("def foo() {return false}", pretty("def  foo() { return false }"));
+        assertEquals("void bar() {return }", pretty("void bar() {return}"));
+    }
+
+    public void testLiteralShort() throws Exception {
+        assertEquals("short a = 1", pretty("short a = 1"));
     }
 
     public void testLiteralStatic() throws Exception {
         assertEquals("static void foo() {}", pretty("static void foo() {}"));
+        //classes, interfaces, class/instance vars and methods
+        assertEquals("static int bar = 1", pretty("static int bar = 1"));
+        //todo: this should parse... assertEquals("private static <T> void foo(List<T> list){}", pretty("private static <T> void foo(List<T> list){}"));
+        assertEquals("class Foo {static {bar = 1}}", pretty("class Foo{static {bar=1}}"));
+    }
+
+    public void testLiteralSuper() throws Exception {
+    	assertEquals("class Foo {public Foo() {super()}}", pretty("class Foo{public Foo(){super()}}"));
+    	// todo will 'super' be allowed in non-parentheses method call styles?
+    	assertEquals("class Bar {public Bar() {super 99}}", pretty("class Bar{public Bar(){super 99}}"));
+    	assertEquals("class Bar {public Bar() {super(1, 2, 3)}}", pretty("class Bar{public Bar(){super(1,2,3)}}"));
+    	assertEquals("println(super.toString())", pretty("println(super.toString())"));
+    	//todo: doesn't parse correctly...   assertEquals("class Foo<T super C> {T t}",pretty("class Foo<T super C> {T t}"));
+    }
+    public void testLiteralSynchronized() throws Exception {
+    	assertEquals("synchronized foo() {}", pretty("synchronized foo(){}"));
+    	//todo.... assertEquals("synchronized (foo) {doStuff()}", pretty("synchronized (foo) {doStuff()}"));
+    	//todo jrr... got to here...
     }
 
     public void testLiteralSwitch() throws Exception {
         assertEquals("switch (foo) {case bar:x = 2}", pretty("switch(foo){case bar:x=2}"));
     }
-    
+        
     public void testLiteralThis() throws Exception {
+    	assertEquals("this",pretty("this"));
+    	assertEquals("this 2",pretty("this 2"));
+    	assertEquals("this()",pretty("this()"));
+    	assertEquals("this(1, 2, 3)",pretty("this(1,2,3)"));
         assertEquals("this.x = this.y", pretty("this.x=this.y"));
     }
     public void testLiteralThrow() throws Exception {
@@ -590,6 +642,11 @@ public class SourcePrinterTest extends GroovyTestCase {
     public void testStar() throws Exception {
         assertEquals("import foo.*", pretty("import foo.*"));
         assertEquals("a*b", pretty("a*b"));
+    }
+    
+    public void testStaticImport() throws Exception {
+    	assertEquals("import static foo.Bar.mooky", pretty("import static foo.Bar.mooky"));
+    	assertEquals("import static foo.Bar.*", pretty("import static foo.Bar.*"));
     }
 
     public void testStringConstructor() throws Exception{

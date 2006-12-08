@@ -154,6 +154,7 @@ public class SourceCodeTraversal extends TraversalHelper {
                 case GroovyTokenTypes.LAND: // true && false
                 case GroovyTokenTypes.LE: // a <= b
                 case GroovyTokenTypes.LITERAL_as: // foo as Bar
+                case GroovyTokenTypes.LITERAL_in: // if (i in myList) ...
                 case GroovyTokenTypes.LOR: // true && false
                 case GroovyTokenTypes.LT: // a < b
                 case GroovyTokenTypes.MEMBER_POINTER: // this.&foo()

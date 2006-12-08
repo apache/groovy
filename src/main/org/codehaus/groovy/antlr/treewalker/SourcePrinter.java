@@ -453,6 +453,9 @@ public class SourcePrinter extends VisitorAdapter {
     // visitLiteralEnum ...
     //   token type "enum" only used by parser, never visited/created directly
 
+    // visitLiteralExtends
+    //   token type "extends" only used by parser, never visited/created directly
+    
     public void visitLiteralFalse(GroovySourceAST t,int visit) {
         print(t,visit,"false",null,null);
     }
@@ -473,6 +476,16 @@ public class SourcePrinter extends VisitorAdapter {
         printUpdatingTabLevel(t,visit,"if ("," else ",") ");
     }
 
+    // visitLiteralImplements
+    //   token type "implements" only used by parser, never visited/created directly
+
+    // visitLiteralImport
+    //   token type "import" only used by parser, never visited/created directly
+
+    public void visitLiteralIn(GroovySourceAST t, int visit) {
+        print(t,visit," in ",null,null);
+    }
+
     public void visitLiteralInstanceof(GroovySourceAST t, int visit) {
         print(t,visit," instanceof ",null,null);
     }
@@ -481,6 +494,16 @@ public class SourcePrinter extends VisitorAdapter {
         print(t,visit,"int",null,null);
     }
 
+    // visitLiteralInterface
+    //   token type "interface" only used by parser, never visited/created directly
+
+    public void visitLiteralLong(GroovySourceAST t,int visit) {
+        print(t,visit,"long",null,null);
+    }
+
+    public void visitLiteralNative(GroovySourceAST t,int visit) {
+        print(t,visit,"native ",null,null);
+    }
     public void visitLiteralNew(GroovySourceAST t,int visit) {
     	if (t.childOfType(GroovyTokenTypes.ARRAY_DECLARATOR) == null) {
     		// only print parenthesis if is not of form def x = new int[5]
@@ -493,6 +516,9 @@ public class SourcePrinter extends VisitorAdapter {
     public void visitLiteralNull(GroovySourceAST t, int visit) {
         print(t,visit,"null",null,null);
     }
+
+    // visitLiteralPackage
+    //   token type "package" only used by parser, never visited/created directly
 
     public void visitLiteralPrivate(GroovySourceAST t,int visit) {
         print(t,visit,"private ",null,null);
@@ -510,8 +536,17 @@ public class SourcePrinter extends VisitorAdapter {
         print(t,visit,"return ",null,null);
     }
 
+    public void visitLiteralShort(GroovySourceAST t,int visit) {
+        print(t,visit,"short",null,null);
+    }
+
     public void visitLiteralStatic(GroovySourceAST t, int visit) {
         print(t,visit,"static ",null,null);
+    }
+
+    public void visitLiteralSuper(GroovySourceAST t, int visit) {
+    	// only visited when calling super() without parentheses, i.e. "super 99" is equivalent to "super(99)"
+    	print(t,visit,"super",null,null);
     }
 
     public void visitLiteralSwitch(GroovySourceAST t, int visit) {
@@ -526,6 +561,10 @@ public class SourcePrinter extends VisitorAdapter {
             tabLevel--;
             print(t,visit,"}");
         }
+    }
+
+    public void visitLiteralSynchronized(GroovySourceAST t,int visit) {
+        print(t,visit,"synchronized ",null,null);
     }
 
     public void visitLiteralThis(GroovySourceAST t, int visit) {
@@ -682,6 +721,14 @@ public class SourcePrinter extends VisitorAdapter {
     public void visitStar(GroovySourceAST t,int visit) {
         print(t,visit,"*",null,null);
     }
+    
+    public void visitStaticInit(GroovySourceAST t, int visit) {
+    	print(t,visit,"static ",null,null);
+    }
+    public void visitStaticImport(GroovySourceAST t,int visit) {
+        print(t,visit,"import static ",null,null);
+    }
+
     public void visitStringConstructor(GroovySourceAST t,int visit) {
         if (visit == OPENING_VISIT) {
             stringConstructorCounter = 0;
@@ -716,6 +763,10 @@ public class SourcePrinter extends VisitorAdapter {
         return literal;
     }
 
+    public void visitSuperCtorCall(GroovySourceAST t,int visit) {
+		printUpdatingTabLevel(t,visit,"super("," ",")");
+    }
+    
     public void visitType(GroovySourceAST t,int visit) {
         GroovySourceAST parent = getParentNode();
         GroovySourceAST modifiers = parent.childOfType(GroovyTokenTypes.MODIFIERS);
