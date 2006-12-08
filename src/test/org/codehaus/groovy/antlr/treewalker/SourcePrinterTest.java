@@ -389,8 +389,7 @@ public class SourcePrinterTest extends GroovyTestCase {
         assertEquals("class Foo extends Bar {}", pretty("class Foo extends Bar {}"));
         assertEquals("interface Wibble extends Mooky{}", pretty("interface Wibble extends Mooky {}"));
         //todo spacing is odd, c.f. last space in class vs interface above
-    	//todo assertEquals("class Foo<T extends C & I> {T t}",pretty("class Foo<T extends C & I> {T t}"));
-    	//todo assertEquals("public boolean process(Set<? extends TypeElement> annotations) {println annotations}", pretty("public boolean process(Set<? extends TypeElement> annotations) {println annotations}"));
+    	assertEquals("public boolean process(Set<? extends TypeElement> annotations) {println annotations}", pretty("public boolean process(Set<? extends TypeElement> annotations) {println annotations}"));
     }
     
     public void testLiteralFalse() throws Exception {
@@ -498,16 +497,15 @@ public class SourcePrinterTest extends GroovyTestCase {
     	assertEquals("println(super.toString())", pretty("println(super.toString())"));
     	//todo: doesn't parse correctly...   assertEquals("class Foo<T super C> {T t}",pretty("class Foo<T super C> {T t}"));
     }
-    public void testLiteralSynchronized() throws Exception {
-    	assertEquals("synchronized foo() {}", pretty("synchronized foo(){}"));
-    	//todo.... assertEquals("synchronized (foo) {doStuff()}", pretty("synchronized (foo) {doStuff()}"));
-    	//todo jrr... got to here...
-    }
-
     public void testLiteralSwitch() throws Exception {
         assertEquals("switch (foo) {case bar:x = 2}", pretty("switch(foo){case bar:x=2}"));
     }
         
+    public void testLiteralSynchronized() throws Exception {
+    	assertEquals("synchronized foo() {}", pretty("synchronized foo(){}"));
+    	assertEquals("synchronized (t) {doStuff(t)}", pretty("synchronized (t) {doStuff(t)}"));
+    }
+
     public void testLiteralThis() throws Exception {
     	assertEquals("this",pretty("this"));
     	assertEquals("this 2",pretty("this 2"));
@@ -515,6 +513,11 @@ public class SourcePrinterTest extends GroovyTestCase {
     	assertEquals("this(1, 2, 3)",pretty("this(1,2,3)"));
         assertEquals("this.x = this.y", pretty("this.x=this.y"));
     }
+    
+    public void testLiteralThreadsafe() throws Exception {
+    	assertEquals("threadsafe foo() {}", pretty("threadsafe foo() {}"));
+    }
+    
     public void testLiteralThrow() throws Exception {
         assertEquals("def foo() {if (false) throw new RuntimeException()}", pretty("def foo() {if (false) throw new RuntimeException()}"));
     }
@@ -522,6 +525,10 @@ public class SourcePrinterTest extends GroovyTestCase {
     	//todo AntlrParserPlugin: Unexpected node type: '.' found when expecting type: an identifier
     	assertEquals("def foo() throws java.io.IOException{}", pretty("def foo() throws java.io.IOException{}"));
     }
+    public void testLiteralTransient() throws Exception {
+    	assertEquals("transient bar", pretty("transient bar"));
+    }
+    
     public void testLiteralTrue() throws Exception {
         assertEquals("foo = true", pretty("foo = true"));
     }
@@ -533,11 +540,17 @@ public class SourcePrinterTest extends GroovyTestCase {
     public void testLiteralVoid() throws Exception {
         assertEquals("void foo() {}", pretty("void foo(){}"));
     }
+    public void testLiteralVolatile() throws Exception {
+    	assertEquals("volatile mooky", pretty("volatile mooky"));
+    }
 
     public void testLiteralWhile() throws Exception {
         assertEquals("while (true) {}", pretty("while(true){}"));
     }
 
+    public void testLiteralWith() throws Exception {
+        assertEquals("with (myObject) {x = 1}", pretty("with(myObject) {x = 1}"));
+    }
     public void testLnot() throws Exception {
         assertEquals("if (!isRaining) {}", pretty("if (!isRaining) {}"));
     }
@@ -565,18 +578,30 @@ public class SourcePrinterTest extends GroovyTestCase {
         assertEquals("foo(bar){mooky()}", pretty("foo(bar){mooky()}"));
     }
 
-    public void testMethodDef_FAILS() throws Exception{ if (notYetImplemented()) return;
+    public void testMethodDef() throws Exception{
         assertEquals("def foo(int bar, boolean boo) {}", pretty("def foo(int bar,boolean boo) {}"));
-        assertEquals("void foo(){} void bar(){}", pretty("void foo(){} void bar(){}"));
     }
 
     public void testMinus() throws Exception {
         assertEquals("def bar = 4 - foo", pretty("def bar=4-foo"));
     }
 
-    public void testModifiers() throws Exception {
-        assertEquals("", pretty(""));
+    public void testMinusAssign() throws Exception {
+        assertEquals("x -= 23", pretty("x -= 23"));
     }
+
+    public void testMod() throws Exception {
+        assertEquals("x = 4 % 3", pretty("x = 4 % 3"));
+    }
+
+    public void testModifiers() throws Exception {
+    	assertEquals("public static transient final native threadsafe synchronized volatile strictfp foo() {}", pretty("public static transient final native threadsafe synchronized volatile strictfp foo() {}"));
+    }
+    
+    public void testModAssign() throws Exception {
+        assertEquals("x %= 23", pretty("x %= 23"));
+    }
+
     public void testNotEqual() throws Exception {
         assertEquals("a != b", pretty("a!=b"));
     }
@@ -592,17 +617,22 @@ public class SourcePrinterTest extends GroovyTestCase {
         assertEquals("b = 34.4d", pretty("b=34.4d"));
         assertEquals("b = 34.4D", pretty("b=34.4D"));
     }
-    public void testNumInt() throws Exception {
-        assertEquals("a = 12", pretty("a=12"));
-    }
-
     public void testNumFloat() throws Exception {
         assertEquals("b = 34.4f", pretty("b=34.4f"));
         assertEquals("b = 34.4F", pretty("b=34.4F"));
     }
+    public void testNumInt() throws Exception {
+        assertEquals("a = 12", pretty("a=12"));
+    }
 
+    public void testNumLong() throws Exception {
+    	assertEquals("a = 12l", pretty("a=12l"));    	
+    }
     public void testObjblock() throws Exception {
         assertEquals("class Foo {def bar}", pretty("class Foo {def bar}"));
+    }
+    public void testOptionalDot() throws Exception {
+        assertEquals("foo = england.london.kings?.head", pretty("foo = england.london.kings?.head"));
     }
 
     public void testPackageDef() throws Exception {
@@ -610,20 +640,30 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
 
     public void testParameterDef() throws Exception {
-        assertEquals("", pretty(""));
+        assertEquals("def foo(String bar, String mooky) {}", pretty("def foo(String bar, String mooky){}"));
     }
 
     public void testParameters() throws Exception {
-        assertEquals("", pretty(""));
+        assertEquals("def foo(String bar, String mooky) {}", pretty("def foo(String bar, String mooky){}"));
     }
     public void testPlus() throws Exception {
         assertEquals("a + b", pretty("a+b"));
     }
+    
+    public void testPlusAssign() throws Exception {
+        assertEquals("x += 23", pretty("x += 23"));
+    }
+
     public void testPostDec() throws Exception {
     	assertEquals("a--", pretty("a--"));
     }
+    public void testPostInc() throws Exception {
+    	assertEquals("a++", pretty("a++"));
+    }
     public void testQuestion() throws Exception {
         assertEquals("foo == bar?10:20", pretty("foo==bar?10:20"));
+    	assertEquals("public boolean process(Set<? extends B> a) {println a}", pretty("public boolean process(Set<? extends B> a) {println a}"));
+    	assertEquals("public boolean process(Set<? extends B, ? super C> a) {println a}", pretty("public boolean process(Set<? extends B, ? super C> a) {println a}"));
     }
     public void testRangeExclusive() throws Exception {
         assertEquals("foo[45..<89]", pretty("foo[45 ..< 89]"));
@@ -673,12 +713,19 @@ public class SourcePrinterTest extends GroovyTestCase {
         assertEquals("foo = (String)bar", pretty("foo = (String)bar"));
     }
 
+    public void testTypeParameters_FAILS() throws Exception { if (notYetImplemented()) return;
+    	assertEquals("class Foo<T extends C & I> {T t}",pretty("class Foo<T extends C & I> {T t}"));
+    }
+    public void testUnaryMinus() throws Exception {
+        assertEquals("def x = -3", pretty("def x= -3"));
+    }
+
     public void testVariableDef() throws Exception {
         assertEquals("def x = 1", pretty("def x = 1"));
         assertEquals("int y = 2", pretty("int y = 2"));
     }
     
-    public void testWildcardType_FAILS() throws Exception { if (notYetImplemented()) return;
+    public void testWildcardType() throws Exception {// if (notYetImplemented()) return;
     	assertEquals("public boolean process(Set<? extends TypeElement> annotations) {println annotations}", pretty("public boolean process(Set<? extends TypeElement> annotations) {println annotations}"));
     }
 

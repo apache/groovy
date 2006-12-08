@@ -96,6 +96,7 @@ public class SourceCodeTraversal extends TraversalHelper {
 
                 case GroovyTokenTypes.ELIST: // a,b,c
                 case GroovyTokenTypes.PARAMETERS: // a,b,c
+                case GroovyTokenTypes.TYPE_ARGUMENTS: // <String, Object>
                 case GroovyTokenTypes.STRING_CONSTRUCTOR: // "foo${bar}wibble"
                     accept_v_FirstChild_v_SecondChild_v___LastChild_v(t);
                     break;
@@ -124,7 +125,10 @@ public class SourceCodeTraversal extends TraversalHelper {
                 case GroovyTokenTypes.COMPARE_TO: // a <=> b
                 case GroovyTokenTypes.DIV_ASSIGN: // a /= b
                 case GroovyTokenTypes.EQUAL: // a == b
+                case GroovyTokenTypes.MINUS_ASSIGN: // a -= b
+                case GroovyTokenTypes.MOD_ASSIGN: // a %= b
                 case GroovyTokenTypes.NOT_EQUAL:
+                case GroovyTokenTypes.PLUS_ASSIGN: // a += b
                     if (t.childAt(1) != null) {
                         accept_FirstChild_v_RestOfTheChildren(t);
                     } else {
@@ -158,7 +162,9 @@ public class SourceCodeTraversal extends TraversalHelper {
                 case GroovyTokenTypes.LOR: // true && false
                 case GroovyTokenTypes.LT: // a < b
                 case GroovyTokenTypes.MEMBER_POINTER: // this.&foo()
+                case GroovyTokenTypes.MOD: //  4 % 3
                 case GroovyTokenTypes.MINUS:
+                case GroovyTokenTypes.OPTIONAL_DOT: // foo?.bar
                 case GroovyTokenTypes.PACKAGE_DEF:
                 case GroovyTokenTypes.PLUS:
                 case GroovyTokenTypes.RANGE_EXCLUSIVE:
@@ -185,6 +191,7 @@ public class SourceCodeTraversal extends TraversalHelper {
                     break;
 
                 case GroovyTokenTypes.LITERAL_while:
+                case GroovyTokenTypes.LITERAL_with:
                 case GroovyTokenTypes.TYPECAST: // (String)itr.next()
                     accept_v_FirstChildsFirstChild_v_RestOfTheChildren(t);
                     break;
@@ -211,6 +218,7 @@ public class SourceCodeTraversal extends TraversalHelper {
                 case GroovyTokenTypes.ANNOTATIONS: // just like modifiers but for package/enum declarations
                 case GroovyTokenTypes.LITERAL_assert:
                 case GroovyTokenTypes.LITERAL_catch:
+                case GroovyTokenTypes.LITERAL_synchronized:
                 case GroovyTokenTypes.LITERAL_try:
                 case GroovyTokenTypes.MODIFIERS:
                     accept_v_FirstChild_v_RestOfTheChildren(t);

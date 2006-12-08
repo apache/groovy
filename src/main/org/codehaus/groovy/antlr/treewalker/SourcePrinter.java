@@ -564,11 +564,19 @@ public class SourcePrinter extends VisitorAdapter {
     }
 
     public void visitLiteralSynchronized(GroovySourceAST t,int visit) {
-        print(t,visit,"synchronized ",null,null);
-    }
+    	if (t.getNumberOfChildren() > 0) {
+    		print(t,visit,"synchronized (",null,") ");
+    	} else {
+    		print(t,visit,"synchronized ",null,null);    		
+    	}
+	}
 
     public void visitLiteralThis(GroovySourceAST t, int visit) {
         print(t,visit,"this",null,null);
+    }
+
+    public void visitLiteralThreadsafe(GroovySourceAST t,int visit) {
+        print(t,visit,"threadsafe ",null,null);
     }
 
     public void visitLiteralThrow(GroovySourceAST t, int visit) {
@@ -577,6 +585,10 @@ public class SourcePrinter extends VisitorAdapter {
 
     public void visitLiteralThrows(GroovySourceAST t, int visit) {
         print(t,visit,"throws ",null,null);
+    }
+
+    public void visitLiteralTransient(GroovySourceAST t,int visit) {
+        print(t,visit,"transient ",null,null);
     }
 
     public void visitLiteralTrue(GroovySourceAST t,int visit) {
@@ -588,10 +600,17 @@ public class SourcePrinter extends VisitorAdapter {
     public void visitLiteralVoid(GroovySourceAST t,int visit) {
         print(t,visit,"void",null,null);
     }
+    public void visitLiteralVolatile(GroovySourceAST t,int visit) {
+        print(t,visit,"volatile ",null,null);
+    }
     public void visitLiteralWhile(GroovySourceAST t,int visit) {
         printUpdatingTabLevel(t,visit,"while (",null,") ");
     }
 
+    public void visitLiteralWith(GroovySourceAST t,int visit) {
+        printUpdatingTabLevel(t,visit,"with (",null,") ");
+    }
+    
     public void visitLnot(GroovySourceAST t, int visit) {
         print(t,visit,"!",null,null);
     }
@@ -624,16 +643,38 @@ public class SourcePrinter extends VisitorAdapter {
     		printUpdatingTabLevel(t,visit,"("," ",")");
     	}
     }
-    public void visitMinus(GroovySourceAST t,int visit) {
-        print(t,visit," - ",null,null);
-    }
     public void visitMethodDef(GroovySourceAST t,int visit) {
         //do nothing
     }
+    public void visitMinus(GroovySourceAST t,int visit) {
+        print(t,visit," - ",null,null);
+    }
+    public void visitMinusAssign(GroovySourceAST t, int visit) {
+        print(t,visit," -= ",null,null);
+    }
+
+    // visitMlComment
+    //   multi-line comments are not created on the AST currently.
+
+    public void visitMod(GroovySourceAST t, int visit) {
+        print(t,visit," % ",null,null);
+    }
+
     public void visitModifiers(GroovySourceAST t,int visit) {
         //do nothing
     }
+    public void visitModAssign(GroovySourceAST t, int visit) {
+        print(t,visit," %= ",null,null);
+    }
 
+    // visitNls
+    //   new lines are used by parser, but are not created on the AST,
+    //   they can be implied by the source code line/column information
+
+    // visitNullTreeLookahead
+    //   not used explicitly by parser.
+    
+    
     public void visitNotEqual(GroovySourceAST t, int visit) {
         print(t,visit," != ",null,null);
     }
@@ -653,6 +694,9 @@ public class SourcePrinter extends VisitorAdapter {
     public void visitNumFloat(GroovySourceAST t,int visit) {
         print(t,visit,t.getText(),null,null);
     }
+    public void visitNumLong(GroovySourceAST t,int visit) {
+        print(t,visit,t.getText(),null,null);
+    }
     public void visitObjblock(GroovySourceAST t,int visit) {
         if (visit == OPENING_VISIT) {
             tabLevel++;
@@ -663,6 +707,14 @@ public class SourcePrinter extends VisitorAdapter {
         }
     }
 
+    // visitOneNl
+    //   new lines are used by parser, but are not created on the AST,
+    //   they can be implied by the source code line/column information
+
+    public void visitOptionalDot(GroovySourceAST t,int visit) {
+        print(t,visit,"?.",null,null);
+    }
+    
     public void visitPackageDef(GroovySourceAST t, int visit) {
         print(t,visit,"package ",null,null);
     }
@@ -683,6 +735,9 @@ public class SourcePrinter extends VisitorAdapter {
         print(t,visit," + ",null,null);
     }
     
+    public void visitPlusAssign(GroovySourceAST t, int visit) {
+        print(t,visit," += ",null,null);
+    }
     public void visitPostDec(GroovySourceAST t, int visit) {
     	print(t,visit,null,null,"--");
     }
@@ -728,6 +783,13 @@ public class SourcePrinter extends VisitorAdapter {
     public void visitStaticImport(GroovySourceAST t,int visit) {
         print(t,visit,"import static ",null,null);
     }
+    public void visitStrictfp(GroovySourceAST t,int visit) {
+    	print(t,visit,"strictfp ",null,null);
+    }
+
+    // visitStringch
+    //   String characters only used by lexer, never visited/created directly
+
 
     public void visitStringConstructor(GroovySourceAST t,int visit) {
         if (visit == OPENING_VISIT) {
@@ -791,13 +853,33 @@ public class SourcePrinter extends VisitorAdapter {
         	}
         }
     }
+    public void visitTypeArgument(GroovySourceAST t, int visit) {
+    	// print nothing
+    }
+
+    public void visitTypeArguments(GroovySourceAST t, int visit) {
+    	print(t,visit,"<",", ",">");
+    }
 
     public void visitTypecast(GroovySourceAST t,int visit) {
         print(t,visit,"(",null,")");
     }
+    public void visitTypeLowerBounds(GroovySourceAST t,int visit) {
+        print(t,visit," super ",null,null);
+    }
+    public void visitTypeUpperBounds(GroovySourceAST t,int visit) {
+        print(t,visit," extends ",null,null);
+    }
+    public void visitUnaryMinus(GroovySourceAST t, int visit) {
+    	print(t,visit,"-",null,null);
+    }
 
     public void visitVariableDef(GroovySourceAST t,int visit) {
         // do nothing
+    }
+    
+    public void visitWildcardType(GroovySourceAST t, int visit) {
+    	print(t,visit,"?",null,null);
     }
 
     public void visitDefault(GroovySourceAST t,int visit) {
