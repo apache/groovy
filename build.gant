@@ -1,3 +1,21 @@
+//  A Gant script for building the Groovy system.
+//
+//  Copyright © 2006 Russel Winder <russel@russel.org.uk>
+//
+//  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
+//  compliance with the License. You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software distributed under the License is
+//  distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+//  implied. See the License for the specific language governing permissions and limitations under the
+//  License.
+//
+//  Author : Russel Winder
+//  $Revision$
+//  $Date$
+
 sourceDirectory = 'src'
 mainSourceDirectory = sourceDirectory + '/main'
 testsSourceDirectory = sourceDirectory + '/test'
@@ -6,11 +24,14 @@ mainClassesDirectory = targetDirectory + '/classes'
 testsClassesDirectory = targetDirectory + '/test-classes'
 reportsDirectory = targetDirectory + '/test-reports'
 
+antlrDirectory = mainSourceDirectory +  '/org/codehaus/groovy/antlr'
+parserDirectory = antlrDirectory + '/parser'
+
 javaVersion = '1.4'
 
 includeTargets << gant.targets.Clean
 cleanDirectory << targetDirectory
-cleanPattern << mainSourceDirectory + '/org/codehaus/groovy/antlr/parser/Groovy*.*'
+cleanPattern << [ '**.*~' , parserDirectory + '/Groovy*.*' ]
 
 dependencies = 'dependencies'
 Ant.path ( id : dependencies ) {
@@ -20,10 +41,9 @@ Ant.path ( id : dependencies ) {
 Ant.taskdef ( name : 'groovyc' , classname : 'org.codehaus.groovy.ant.Groovyc' , classpath : mainClassesDirectory )
 
 task ( ensureAntlr : 'Ensure all the files generated from the Antlr grammar are up to date.' ) {
-  def antlrDirectory = mainSourceDirectory +  '/org/codehaus/groovy/antlr'
-  def parserDirectory = antlrDirectory + '/parser'
-  def antAntlrJar = '/usr/share/java/ant-antlr.jar'
   Ant.mkdir ( dir : parserDirectory )
+  //  Need a way of getting this path in a platform independent way.  This is fine fo Ubuntu (and Debian?) but likely fails for all other OSs.
+  def antAntlrJar = '/usr/share/java/ant-antlr.jar'
   Ant.taskdef ( name : 'antlr' , classname : 'org.apache.tools.ant.taskdefs.optional.ANTLR' , classpath : antAntlrJar )
   Ant.antlr ( target : antlrDirectory + '/groovy.g' , outputdirectory : parserDirectory ) {
     classpath ( refid : dependencies )
@@ -51,7 +71,22 @@ task ( compileTest : 'Compile the Java and Groovy code in the test source.' ) {
       path ( refid : dependencies )
     }
   }
-  Ant.groovyc ( srcdir : testsSourceDirectory , destdir : testsClassesDirectory ) { // , fork : 'true' ) {
+  /*
+   *  Compiling the tests appears to require 128M of heap space.  Since the Groovy compiler Ant task doesn't
+   *  yet understand the fork and maxmemory attributes, we have to do things a bit more explicitly so as to
+   *  avoid having to use JAVA_OPTS=-Xmx128M gant on the command line.
+   * 
+  Ant.groovyc ( srcdir : testsSourceDirectory , destdir : testsClassesDirectory ) { // , fork : 'true', maxmemory : '128M'  ) {
+    classpath {
+      pathelement ( location : mainClassesDirectory )
+      pathelement ( location : testsClassesDirectory )
+      path ( refid : dependencies )
+    }
+  }
+  */
+  Ant.java ( classname : 'org.codehaus.groovy.ant.Groovyc' , fork : 'yes' , maxmemory : '128M' ) {
+    arg ( value : testsClassesDirectory )
+    arg ( value : testsSourceDirectory )
     classpath {
       pathelement ( location : mainClassesDirectory )
       pathelement ( location : testsClassesDirectory )
@@ -70,7 +105,7 @@ task ( compileTest : 'Compile the Java and Groovy code in the test source.' ) {
 task ( test : 'Test a build.' ) {
   depends ( compileTest )
   Ant.mkdir ( dir : reportsDirectory )
-  Ant.junit ( printsummary : 'true' , fork : 'true' , forkmode : 'once' , dir : testsClassesDirectory ) {
+  Ant.junit ( printsummary : 'true' , fork : 'true' , forkmode : 'once' ) {
     formatter ( type : 'plain' )
     batchtest ( todir : reportsDirectory ) {
       fileset ( dir : testsClassesDirectory , includes : 'UberTest*.class' )
