@@ -123,7 +123,7 @@ public class MetaClassImpl extends MetaClass {
    private List allMethods = new ArrayList();
    private List interfaceMethods;
    private Reflector reflector;
-   private boolean initialised;
+   private boolean initialized;
    // we only need one of these that can be reused over and over.
    private MetaProperty arrayLengthProperty = new MetaArrayLengthProperty();
    private final static MetaMethod AMBIGOUS_LISTENER_METHOD = new MetaMethod(null,null,new Class[]{},null,0);
@@ -414,7 +414,7 @@ public class MetaClassImpl extends MetaClass {
    }
 
    public void addNewInstanceMethod(Method method) {
-       if (initialised) {
+       if (initialized) {
            throw new RuntimeException("Already initialized, cannot add new method: " + method);
        }
        else {
@@ -427,7 +427,7 @@ public class MetaClassImpl extends MetaClass {
    }
 
    public void addNewStaticMethod(Method method) {
-       if (initialised) {
+       if (initialized) {
            throw new RuntimeException("Already initialized, cannot add new method: " + method);
        }
        else {
@@ -736,9 +736,9 @@ public class MetaClassImpl extends MetaClass {
    }
    
    private void checkInitalised() {
-       if (!initialised) 
+       if (!initialized)
            throw new IllegalStateException(
-                   "initialise must be called for meta " +
+                   "initialize must be called for meta " +
                    "class of "+ theClass + 
                    "("+this.getClass() + ") " +
                    "to complete initialisation process " +
@@ -1753,11 +1753,11 @@ public class MetaClassImpl extends MetaClass {
        reflector = null;
    }
 
-   public synchronized void initialise() {
-       if (!initialised) {
+   public synchronized void initialize() {
+       if (!initialized) {
            fillMethodIndex();
            addProperties();
-           initialised = true;
+           initialized = true;
        }
        if (reflector == null) {
            generateReflector();

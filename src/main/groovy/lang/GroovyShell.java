@@ -122,7 +122,7 @@ public class GroovyShell extends GroovyObjectSupport {
         this.config = config;
     }
     
-    public void initialiseBinding() {
+    public void initializeBinding() {
         Map map = context.getVariables();
         if (map.get("shell")==null) map.put("shell",this);
     }

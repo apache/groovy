@@ -29,8 +29,8 @@ import org.codehaus.groovy.runtime.MetaClassHelper;
  * The meta class is used to invoke methods or to get 
  * fields/properties. For proper initialization of this class 
  * it is not enough to only call the constructor, the
- * initialise() must be called too. The invoke methods should
- * check that initialise() was called. Adding methods is 
+ * initialize() must be called too. The invoke methods should
+ * check that initialize() was called. Adding methods is
  * valid unless initilise method was called. Therefore 
  * addNewStaticMethod and addNewInstanceMethod should check that
  * that initilise awas not called before.
@@ -142,7 +142,7 @@ public abstract class MetaClass {
      * Reflector. It is suggested to synchronize this 
      * method.
      */
-    public abstract void initialise();
+    public abstract void initialize();
     
     public abstract List getProperties();
     public abstract ClassNode getClassNode();

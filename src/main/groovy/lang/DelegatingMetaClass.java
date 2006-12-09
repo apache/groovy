@@ -54,10 +54,10 @@ public class DelegatingMetaClass extends MetaClass {
         delegate.addNewStaticMethod(method);
     }
     /* (non-Javadoc)
-     * @see groovy.lang.MetaClass#initialise()
+     * @see groovy.lang.MetaClass#initialize()
      */
-    public void initialise() {
-        delegate.initialise();
+    public void initialize() {
+        delegate.initialize();
     }
 
     /* (non-Javadoc)
