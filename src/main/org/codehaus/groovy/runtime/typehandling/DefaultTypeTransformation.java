@@ -291,6 +291,10 @@ public class DefaultTypeTransformation {
             args = list.toArray();
         } else if (object instanceof Object[]) {
             args = (Object[]) object;
+        } else if (object instanceof Map) {
+            // emulate named params constructor
+            args = new Object[1];
+            args[0] = object;
         }
         if (args != null) {
             // lets try invoke the constructor with the list as arguments

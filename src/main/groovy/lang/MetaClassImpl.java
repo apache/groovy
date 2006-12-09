@@ -761,7 +761,7 @@ public class MetaClassImpl extends MetaClass {
        }
        // cater for Object[] as List
        if (List.class.isAssignableFrom(at)) {
-           return DefaultGroovyMethods.toList(arguments);
+           return InvokerHelper.asList(arguments);
        }
 
        if (arguments.length == 1) {

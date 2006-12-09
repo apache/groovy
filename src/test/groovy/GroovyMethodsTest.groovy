@@ -1,4 +1,5 @@
 import java.io.InputStreamReader
+import java.awt.Dimension
 
 /** 
  * Tests the various new Groovy methods
@@ -6,6 +7,7 @@ import java.io.InputStreamReader
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Guillaume Laforge
  * @author Dierk Koenig
+ * @author Paul King
  * @version $Revision$
  */
 class GroovyMethodsTest extends GroovyTestCase {
@@ -22,6 +24,13 @@ class GroovyMethodsTest extends GroovyTestCase {
 
         assert [1:'a', 2:'b', 3:'c'].collect{it.getKey() + "*" + it.getValue()} == ['1*a','2*b','3*c']
 
+    }
+
+    void testAsCoercion() {
+        def d0 = new Dimension(100, 200)
+        assert d0 == new Dimension(width:100, height:200)
+        assert d0 == [100,200] as Dimension
+        assert d0 == [width:100, height:200] as Dimension
     }
 
     void testSum() {
@@ -87,9 +96,15 @@ class GroovyMethodsTest extends GroovyTestCase {
     void testCollectionToList() {
         def c = [1, 2, 3, 4, 5] // but it's a list
         def l = c.toList()
-
         assert l.containsAll(c)
         assert c.size() == l.size()
+    }
+
+    void testCollectionAsList() {
+        Integer[] nums = [1, 2, 3, 4, 5]
+        def l = nums as List
+        nums.each{ assert l.contains(it) }
+        assert nums.size() == l.size()
     }
 
     void testFileSize() {
