@@ -755,11 +755,13 @@ public class MetaClassImpl extends MetaClass {
        if (constructor != null) {
            return doConstructorInvoke(at, constructor, arguments, true);
        }
-       else {
-           constructor = (Constructor) chooseMethod("<init>", constructors, argClasses, true);
-           if (constructor != null) {
-               return doConstructorInvoke(at, constructor, arguments, true);
-           }
+       constructor = (Constructor) chooseMethod("<init>", constructors, argClasses, true);
+       if (constructor != null) {
+           return doConstructorInvoke(at, constructor, arguments, true);
+       }
+       // cater for Object[] as List
+       if (List.class.isAssignableFrom(at)) {
+           return DefaultGroovyMethods.toList(arguments);
        }
 
        if (arguments.length == 1) {
