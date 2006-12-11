@@ -66,6 +66,7 @@ public class MarkupBuilder extends BuilderSupport {
     private boolean nospace;
     private int state;
     private boolean nodeIsEmpty = true;
+    private boolean useDoubleQuotes = false;
 
     public MarkupBuilder() {
         this(new IndentPrinter());
@@ -83,6 +84,25 @@ public class MarkupBuilder extends BuilderSupport {
         this.out = out;
     }
 
+    /**
+     * Returns <code>true</code> if attribute values are output with
+     * double quotes; <code>false</code> if single quotes are used.
+     * By default, single quotes are used.
+     */
+    public boolean getDoubleQuotes() {
+        return this.useDoubleQuotes;
+    }
+
+    /**
+     * Sets whether the builder outputs attribute values in double
+     * quotes or single quotes.
+     * @param useDoubleQuotes If this parameter is <code>true</code>,
+     * double quotes are used; otherwise, single quotes are.
+     */
+    public void setDoubleQuotes(boolean useDoubleQuotes) {
+        this.useDoubleQuotes = useDoubleQuotes;
+    }
+
     protected IndentPrinter getPrinter() {
         return this.out;
     }
@@ -97,6 +117,7 @@ public class MarkupBuilder extends BuilderSupport {
 
     protected Object createNode(Object name, Object value) {
         toState(2, name);
+        this.nodeIsEmpty = false;
         out.print(">");
         out.print(escapeElementContent(value.toString()));
         return name;
@@ -107,16 +128,25 @@ public class MarkupBuilder extends BuilderSupport {
         for (Iterator iter = attributes.entrySet().iterator(); iter.hasNext();) {
             Map.Entry entry = (Map.Entry) iter.next();
             out.print(" ");
+
+            // Output the attribute name,
             print(entry.getKey().toString());
-            out.print("='");
+
+            // Output the attribute value within quotes. Use whichever
+            // type of quotes are currently configured.
+            out.print(this.useDoubleQuotes ? "=\"" : "='");
             print(escapeAttributeValue(entry.getValue().toString()));
-            out.print("'");
+            out.print(this.useDoubleQuotes ? "\"" : "'");
         }
-        if (value != null)
-        {
+
+        if (value != null) {
             nodeIsEmpty = false;
             out.print(">" + escapeElementContent(value.toString()) + "</" + name + ">");
         }
+        else {
+            nodeIsEmpty = true;
+        }
+
         return name;
     }
 
@@ -134,8 +164,8 @@ public class MarkupBuilder extends BuilderSupport {
     }
 
     protected Object getName(String methodName) {
-		return super.getName(methodName);
-	}
+        return super.getName(methodName);
+    }
 
     /**
      * Returns a String with special XML characters escaped as entities so that
@@ -214,10 +244,10 @@ public class MarkupBuilder extends BuilderSupport {
      * @return A new string in which all characters that require escaping
      * have been replaced with the corresponding XML entities.
      */
-    private String escapeXmlValue(String value, boolean isAttrValue){
+    private String escapeXmlValue(String value, boolean isAttrValue) {
         StringBuffer buffer = new StringBuffer(value);
-        for (int i = 0, n = buffer.length(); i < n; i++){
-            switch (buffer.charAt(i)){
+        for (int i = 0, n = buffer.length(); i < n; i++) {
+            switch (buffer.charAt(i)) {
             case '&':
                 buffer.replace(i, i + 1, "&amp;");
 
@@ -248,10 +278,27 @@ public class MarkupBuilder extends BuilderSupport {
                 n += 3;
                 break;
 
+            case '"':
+                // The double quote is only escaped if the value is for
+                // an attribute and the builder is configured to output
+                // attribute values inside double quotes.
+                if (isAttrValue && this.useDoubleQuotes) {
+                    buffer.replace(i, i + 1, "&quot;");
+
+                    // We're replacing a single character by a string of
+                    // length 6, so we need to update the index variable
+                    // and the total length.
+                    i += 5;
+                    n += 5;
+                }
+                break;
+
             case '\'':
                 // The apostrophe is only escaped if the value is for an
-                // attribute, as opposed to element content.
-                if (isAttrValue){
+                // attribute, as opposed to element content, and if the
+                // builder is configured to surround attribute values with
+                // single quotes.
+                if (isAttrValue && !this.useDoubleQuotes){
                     buffer.replace(i, i + 1, "&apos;");
 
                     // We're replacing a single character by a string of
@@ -347,5 +394,4 @@ public class MarkupBuilder extends BuilderSupport {
         }
         state = next;
     }
-
 }
