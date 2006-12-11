@@ -73,7 +73,16 @@ public class Node implements Writable {
   }
   
   public void replaceNode(final Closure replacementClosure, final GPathResult result) {
-      this.replacementNodeStack.push(makeReplacementNode(replacementClosure, result));
+      this.replacementNodeStack.push(new ReplacementNode() {
+                                          public void build(final GroovyObject builder, final Map namespaceMap, final Map namespaceTagHints) {
+                                              final Closure c = (Closure)replacementClosure.clone();
+                                              
+                                                  Node.this.replacementNodeStack.pop(); // disable the replacement whilst the closure is being executed 
+                                                  c.setDelegate(builder);
+                                                  c.call(new Object[]{result});
+                                                  Node.this.replacementNodeStack.push(this);
+                                              }
+                                          });
   }
   
 
@@ -84,23 +93,17 @@ public class Node implements Writable {
 
   protected void appendNode(final Object newValue, final GPathResult result) {
       if (newValue instanceof Closure) {
-          this.children.add(makeReplacementNode((Closure)newValue, result));
+          this.children.add(new ReplacementNode() {
+                              public void build(final GroovyObject builder, final Map namespaceMap, final Map namespaceTagHints) {
+                                  final Closure c = (Closure)((Closure)newValue).clone();
+                                  
+                                      c.setDelegate(builder);
+                                      c.call(new Object[]{result});
+                                  }
+                              });
       } else {
           this.children.add(newValue);
       }
-  }
-
-  private ReplacementNode makeReplacementNode(final Closure replacementClosure, final GPathResult result) {
-      return new ReplacementNode() {
-                  public void build(final GroovyObject builder, final Map namespaceMap, final Map namespaceTagHints) {
-                      final Closure c = (Closure)replacementClosure.clone();
-                      
-                          Node.this.replacementNodeStack.pop(); // disable the replacement whilst the closure is being executed 
-                          c.setDelegate(builder);
-                          c.call(new Object[]{result});
-                          Node.this.replacementNodeStack.push(this);
-                      }
-                  };
   }
 
   /* (non-Javadoc)
