@@ -215,9 +215,30 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     public void visitMethod(MethodNode node) {
         checkAbstractDeclaration(node);
         checkRepetitiveMethod(node);
+        checkOverloadingPrivateAndPublic(node);
         super.visitMethod(node);
     }
 
+    private void checkOverloadingPrivateAndPublic(MethodNode node) {
+        if (isConstructor(node)) return;
+        List methods = currentClass.getMethods(node.getName());
+        boolean hasPrivate=false;
+        boolean hasPublic=false;
+        for (Iterator iter = methods.iterator(); iter.hasNext();) {
+            MethodNode element = (MethodNode) iter.next();
+            if (element == node) continue;
+            int modifiers = element.getModifiers();
+            if (Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers)){
+                hasPublic=true;
+            } else {
+                hasPrivate=true;
+            }
+        }
+        if (hasPrivate && hasPublic) {
+            addError("Mixing private and public/protected methods of the same name causes multimethods to be disabled and is forbidden to avoid surprising behaviour. Renaming the private methods will solve the problem.",node);
+        }
+    }
+    
     private void checkRepetitiveMethod(MethodNode node) {
         if (isConstructor(node)) return;
         List methods = currentClass.getMethods(node.getName());

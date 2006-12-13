@@ -46,9 +46,13 @@
 
 package org.codehaus.groovy.classgen;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.ListIterator;
 
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -99,8 +103,6 @@ public class CompileStack implements Opcodes {
     private Label continueLabel;
     // current label for break
     private Label breakLabel;
-    // current label for finally 
-    private Label finallyLabel;
     // available variables on stack
     private HashMap stackVariables = new HashMap();
     // index of the last variable on stack
@@ -115,6 +117,12 @@ public class CompileStack implements Opcodes {
     private HashMap superBlockNamedLabels = new HashMap();
     // map containing named labels of current block
     private HashMap currentBlockNamedLabels = new HashMap();
+    // list containing runnables representing a finally block
+    // such a block is created by synchronized or finally and
+    // must be called for break/continue/return
+    private LinkedList finallyBlocks = new LinkedList();
+    // a list of blocks already visiting. 
+    private List visitedBlocks = new LinkedList();
     
     private Label thisStartLabel, thisEndLabel;
 
@@ -150,6 +158,7 @@ public class CompileStack implements Opcodes {
         LinkedList _usedVariables = new LinkedList();
         HashMap _superBlockNamedLabels;
         HashMap _currentBlockNamedLabels;
+        LinkedList _finallyBlocks;
         
         StateStackElement() {
             _scope = CompileStack.this.scope;
@@ -159,15 +168,16 @@ public class CompileStack implements Opcodes {
             _stackVariables = CompileStack.this.stackVariables;
             _temporaryVariables = CompileStack.this.temporaryVariables;
             _nextVariableIndex = nextVariableIndex;
-            _finallyLabel = finallyLabel;
             _superBlockNamedLabels = superBlockNamedLabels;
             _currentBlockNamedLabels = currentBlockNamedLabels;
+            _finallyBlocks = finallyBlocks;
         }
     }
     
     private void pushState() {
         stateStack.add(new StateStackElement());
         stackVariables = new HashMap(stackVariables);
+        finallyBlocks = new LinkedList(finallyBlocks);
     }
     
     private void popState() {
@@ -178,10 +188,10 @@ public class CompileStack implements Opcodes {
         scope = element._scope;
         continueLabel = element._continueLabel;
         breakLabel = element._breakLabel;
-        finallyLabel = element._finallyLabel;
         currentVariableIndex = element._lastVariableIndex;
         stackVariables = element._stackVariables;
         nextVariableIndex = element._nextVariableIndex;
+        finallyBlocks = element._finallyBlocks;
     }
     
     public Label getContinueLabel() {
@@ -324,7 +334,6 @@ public class CompileStack implements Opcodes {
         namedLoopContinueLabel.clear();
         continueLabel=null;
         breakLabel=null;
-        finallyLabel=null;
         helper = null;
         thisStartLabel=null;
         thisEndLabel=null;
@@ -399,7 +408,8 @@ public class CompileStack implements Opcodes {
      */
     protected Label getNamedBreakLabel(String name) {
     	Label label = getBreakLabel();
-    	Label endLabel = (Label) namedLoopBreakLabel.get(name);
+    	Label endLabel = null;
+        if (name!=null) endLabel = (Label) namedLoopBreakLabel.get(name);
     	if (endLabel!=null) label = endLabel;
         return label;
     }
@@ -412,20 +422,11 @@ public class CompileStack implements Opcodes {
      */
     protected Label getNamedContinueLabel(String name) {
     	Label label = getLabel(name);
-    	Label endLabel = (Label) namedLoopContinueLabel.get(name);
+    	Label endLabel = null;
+        if (name!=null) endLabel = (Label) namedLoopContinueLabel.get(name);
     	if (endLabel!=null) label = endLabel;
         return label;
-    }
-    
-    /**
-     * Creates a new Finally label and a element for the state stack
-     * so pop has to be called later
-     */
-    protected Label pushFinally() {
-        pushState();
-        finallyLabel = new Label();
-        return finallyLabel;
-    }
+    }    
     
     /**
      * Creates a new break label and a element for the state stack
@@ -443,13 +444,6 @@ public class CompileStack implements Opcodes {
      */
     protected void pushBooleanExpression(){
         pushState();
-    }
-    
-    /**
-     * returns the current finally label
-     */
-    public Label getFinallyLabel() {
-        return finallyLabel;
     }
     
     private Variable defineVar(String name, ClassNode type, boolean methodParameterUsedInClosure) {
@@ -594,5 +588,65 @@ public class CompileStack implements Opcodes {
     
     public void setCurrentMetaClassIndex(int index){
         currentMetaClassIndex=index;
+    }
+
+    public void applyFinallyBlocks(Label label, boolean isBreakLabel) {
+        // first find the state defining the label. That is the state
+        // directly after the state not knowing this label. If no state
+        // in the list knows that label, then the defining state is the
+        // current state.
+        StateStackElement result = null;
+        for (ListIterator iter = stateStack.listIterator(stateStack.size()); iter.hasPrevious();) {
+            StateStackElement element = (StateStackElement) iter.previous();
+            if (!element._currentBlockNamedLabels.values().contains(label)) {
+                if (isBreakLabel && element._breakLabel != label) {
+                    result = element;
+                    break;
+                }
+                if (!isBreakLabel && element._continueLabel != label) {
+                    result = element;
+                    break;
+                }
+            }
+        }
+        
+        List blocksToRemove;
+        if (result==null) {
+            // all Blocks do know the label, so use all finally blocks
+            blocksToRemove = Collections.EMPTY_LIST;
+        } else {
+            blocksToRemove = result._finallyBlocks;
+        }
+        
+        ArrayList blocks = new ArrayList(finallyBlocks);
+        blocks.removeAll(blocksToRemove);
+        applyFinallyBlocks(blocks);
+    }
+
+    private void applyFinallyBlocks(List blocks) {
+        for (Iterator iter = blocks.iterator(); iter.hasNext();) {
+            Runnable block = (Runnable) iter.next();
+            if (visitedBlocks.contains(block)) continue;
+            visitedBlocks.add(block);
+            block.run();
+        }     
+    }
+    
+    public void applyFinallyBlocks() {
+        applyFinallyBlocks(finallyBlocks); 
+    }
+
+    public boolean hasFinallyBlocks() {
+        return !finallyBlocks.isEmpty();
+    }
+
+    public void pushFinallyBlock(Runnable block) {
+        finallyBlocks.addFirst(block);
+        pushState();
+    }
+
+    public void popFinallyBlock() {
+        popState();
+        finallyBlocks.removeFirst();
     }
 }

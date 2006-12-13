@@ -247,8 +247,8 @@ public class AsmClassGenerator extends ClassGenerator {
     MethodCaller selectConstructorAndTransformArguments = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "selectConstructorAndTransformArguments");
  
     // exception blocks list
-    private List exceptionBlocks = new ArrayList();
-
+    private List exceptionBlocks = new ArrayList();    
+    
     private Set syntheticStaticFields = new HashSet();
     private boolean passingClosureParams;
 
@@ -353,7 +353,7 @@ public class AsmClassGenerator extends ClassGenerator {
                     innerClassName,
                     innerClass.getModifiers());
             }
-            // br TODO an inner class should have an entry of itself
+            //TODO: an inner class should have an entry of itself
             cw.visitEnd();
         }
         catch (GroovyRuntimeException e) {
@@ -795,128 +795,84 @@ public class AsmClassGenerator extends ClassGenerator {
         
         CatchStatement catchStatement = statement.getCatchStatement(0);
         Statement tryStatement = statement.getTryStatement();
+        final Statement finallyStatement = statement.getFinallyStatement();
 
-        if (tryStatement.isEmpty() || catchStatement == null) {
-            final Label l0 = new Label();
-            cv.visitLabel(l0);
-
-            tryStatement.visit(this);
-
-
-            int index1 = compileStack.defineTemporaryVariable("exception",false);
-            int index2 = compileStack.defineTemporaryVariable("exception",false);
-
-            final Label l1 = new Label();
-            cv.visitJumpInsn(JSR, l1);
-            final Label l2 = new Label();
-            cv.visitLabel(l2);
-            final Label l3 = new Label();
-            cv.visitJumpInsn(GOTO, l3);
-            final Label l4 = new Label();
-            cv.visitLabel(l4);
-            cv.visitVarInsn(ASTORE, index1);
-            cv.visitJumpInsn(JSR, l1);
-            final Label l5 = new Label();
-            cv.visitLabel(l5);
-            cv.visitVarInsn(ALOAD, index1);
-            cv.visitInsn(ATHROW);
-            cv.visitLabel(l1);
-            cv.visitVarInsn(ASTORE, index2);
-
-            statement.getFinallyStatement().visit(this);
-
-            cv.visitVarInsn(RET, index2);
-            cv.visitLabel(l3);
-
-            exceptionBlocks.add(new Runnable() {
-                public void run() {
-                    cv.visitTryCatchBlock(l0, l2, l4, null);
-                    cv.visitTryCatchBlock(l4, l5, l4, null);
+        int anyExceptionIndex = compileStack.defineTemporaryVariable("exception",false);
+        if (!finallyStatement.isEmpty()) {
+            compileStack.pushFinallyBlock(
+                new Runnable(){
+                    public void run(){finallyStatement.visit(AsmClassGenerator.this);}
                 }
-            });
-
+            );
         }
-        else {
-            int finallySubAddress = compileStack.defineTemporaryVariable("exception",false);
-            int anyExceptionIndex = compileStack.defineTemporaryVariable("exception",false);
-
-            // start try block, label needed for exception table
-            final Label tryStart = new Label();
-            cv.visitLabel(tryStart);
-            tryStatement.visit(this);
-            // goto finally part
-            final Label finallyStart = new Label();
+        
+        // start try block, label needed for exception table
+        final Label tryStart = new Label();
+        cv.visitLabel(tryStart);
+        tryStatement.visit(this);
+        // goto finally part
+        final Label finallyStart = new Label();
+        cv.visitJumpInsn(GOTO, finallyStart);
+        // marker needed for Exception table
+        final Label tryEnd = new Label();
+        cv.visitLabel(tryEnd);
+        
+        for (Iterator it=statement.getCatchStatements().iterator(); it.hasNext();) {
+            catchStatement = (CatchStatement) it.next();
+            ClassNode exceptionType = catchStatement.getExceptionType();
+            // start catch block, label needed for exception table
+            final Label catchStart = new Label();
+            cv.visitLabel(catchStart);
+            // create exception variable and store the exception 
+            compileStack.defineVariable(catchStatement.getVariable(),true);
+            // handle catch body
+            catchStatement.visit(this);
+            // goto finally start
             cv.visitJumpInsn(GOTO, finallyStart);
-            // marker needed for Exception table
-            final Label tryEnd = new Label();
-            cv.visitLabel(tryEnd);
-            
-            for (Iterator it=statement.getCatchStatements().iterator(); it.hasNext();) {
-                catchStatement = (CatchStatement) it.next();
-                ClassNode exceptionType = catchStatement.getExceptionType();
-                // start catch block, label needed for exception table
-                final Label catchStart = new Label();
-                cv.visitLabel(catchStart);
-                // create exception variable and store the exception 
-                compileStack.defineVariable(catchStatement.getVariable(),true);
-                // handle catch body
-                catchStatement.visit(this);
-                // goto finally start
-                cv.visitJumpInsn(GOTO, finallyStart);
-                // add exception to table
-                final String exceptionTypeInternalName = BytecodeHelper.getClassInternalName(exceptionType);
-                exceptionBlocks.add(new Runnable() {
-                    public void run() {
-                        cv.visitTryCatchBlock(tryStart, tryEnd, catchStart, exceptionTypeInternalName);
-                    }
-                });
-            }
-            
-            // marker needed for the exception table
-            final Label endOfAllCatches = new Label();
-            cv.visitLabel(endOfAllCatches);
-            
-            // start finally
-            cv.visitLabel(finallyStart);
-            Label finallySub = new Label();
-            // run finally sub
-            cv.visitJumpInsn(JSR, finallySub);
-            // goto end of finally
-            Label afterFinally = new Label();
-            cv.visitJumpInsn(GOTO, afterFinally);
-            
-            // start a block catching any Exception
-            final Label catchAny = new Label();
-            cv.visitLabel(catchAny);
-            //store exception
-            cv.visitVarInsn(ASTORE, anyExceptionIndex);
-            // run finally subroutine
-            cv.visitJumpInsn(JSR, finallySub);
-            // load the exception and rethrow it
-            cv.visitVarInsn(ALOAD, anyExceptionIndex);
-            cv.visitInsn(ATHROW);
-            
-            // start the finally subroutine
-            cv.visitLabel(finallySub);
-            // store jump address
-            cv.visitVarInsn(ASTORE, finallySubAddress);
-            if (!statement.getFinallyStatement().isEmpty())
-                statement.getFinallyStatement().visit(this);
-            // return from subroutine
-            cv.visitVarInsn(RET, finallySubAddress);
-            
-            // end of all catches and finally parts
-            cv.visitLabel(afterFinally);
-            
-            // add catch any block to exception table
+            // add exception to table
+            final String exceptionTypeInternalName = BytecodeHelper.getClassInternalName(exceptionType);
             exceptionBlocks.add(new Runnable() {
                 public void run() {
-                    cv.visitTryCatchBlock(tryStart, endOfAllCatches, catchAny, null);
+                    cv.visitTryCatchBlock(tryStart, tryEnd, catchStart, exceptionTypeInternalName);
                 }
             });
         }
+        
+        // marker needed for the exception table
+        final Label endOfAllCatches = new Label();
+        cv.visitLabel(endOfAllCatches);
+        
+        // remove the finally, don't let it visit itself
+        if (!finallyStatement.isEmpty()) compileStack.popFinallyBlock();
+        
+        // start finally
+        cv.visitLabel(finallyStart);
+        finallyStatement.visit(this);
+        // goto end of finally
+        Label afterFinally = new Label();
+        cv.visitJumpInsn(GOTO, afterFinally);
+        
+        // start a block catching any Exception
+        final Label catchAny = new Label();
+        cv.visitLabel(catchAny);
+        //store exception
+        cv.visitVarInsn(ASTORE, anyExceptionIndex);
+        finallyStatement.visit(this);
+        // load the exception and rethrow it
+        cv.visitVarInsn(ALOAD, anyExceptionIndex);
+        cv.visitInsn(ATHROW);
+        
+        // end of all catches and finally parts
+        cv.visitLabel(afterFinally);
+        
+        // add catch any block to exception table
+        exceptionBlocks.add(new Runnable() {
+            public void run() {
+                cv.visitTryCatchBlock(tryStart, endOfAllCatches, catchAny, null);
+            }
+        });
     }
-    
+
     public void visitSwitch(SwitchStatement statement) {
         onLineNumber(statement, "visitSwitch");
         visitStatement(statement);
@@ -985,12 +941,9 @@ public class AsmClassGenerator extends ClassGenerator {
         visitStatement(statement);
         
         String name = statement.getLabel();
-        Label breakLabel;
-        if (name!=null) {
-        	breakLabel = compileStack.getNamedBreakLabel(name);
-        } else {
-        	breakLabel= compileStack.getBreakLabel();
-        }
+        Label breakLabel = compileStack.getNamedBreakLabel(name);
+        compileStack.applyFinallyBlocks(breakLabel, true);
+        
         cv.visitJumpInsn(GOTO, breakLabel);
     }
 
@@ -1001,6 +954,7 @@ public class AsmClassGenerator extends ClassGenerator {
         String name = statement.getLabel();
         Label continueLabel = compileStack.getContinueLabel();
         if (name!=null) continueLabel = compileStack.getNamedContinueLabel(name);
+        compileStack.applyFinallyBlocks(continueLabel, false);
         cv.visitJumpInsn(GOTO, continueLabel);
     }
 
@@ -1009,30 +963,36 @@ public class AsmClassGenerator extends ClassGenerator {
         visitStatement(statement);
         
         statement.getExpression().visit(this);
+        final int index = compileStack.defineTemporaryVariable("synchronized", ClassHelper.Integer_TYPE,true);
 
-        int index = compileStack.defineTemporaryVariable("synchronized", ClassHelper.Integer_TYPE,true);
-
+        final Label synchronizedStart = new Label();
+        final Label synchronizedEnd = new Label();
+        final Label catchAll = new Label();
+        
         cv.visitVarInsn(ALOAD, index);
         cv.visitInsn(MONITORENTER);
-        final Label l0 = new Label();
-        cv.visitLabel(l0);
+        cv.visitLabel(synchronizedStart);
 
+        Runnable finallyPart = new Runnable(){
+            public void run(){
+                cv.visitVarInsn(ALOAD, index);
+                cv.visitInsn(MONITOREXIT);
+            }
+        };
+        compileStack.pushFinallyBlock(finallyPart);
         statement.getCode().visit(this);
 
-        cv.visitVarInsn(ALOAD, index);
-        cv.visitInsn(MONITOREXIT);
-        final Label l1 = new Label();
-        cv.visitJumpInsn(GOTO, l1);
-        final Label l2 = new Label();
-        cv.visitLabel(l2);
-        cv.visitVarInsn(ALOAD, index);
-        cv.visitInsn(MONITOREXIT);
+        finallyPart.run();
+        cv.visitJumpInsn(GOTO, synchronizedEnd);
+        cv.visitLabel(catchAll);
+        finallyPart.run();
         cv.visitInsn(ATHROW);
-        cv.visitLabel(l1);
+        cv.visitLabel(synchronizedEnd);
 
+        compileStack.popFinallyBlock();
         exceptionBlocks.add(new Runnable() {
             public void run() {
-                cv.visitTryCatchBlock(l0, l2, l2, null);
+                cv.visitTryCatchBlock(synchronizedStart, catchAll, catchAll, null);
             }
         });
     }
@@ -1058,6 +1018,7 @@ public class AsmClassGenerator extends ClassGenerator {
         	if (!(statement == ReturnStatement.RETURN_NULL_OR_VOID)) {
                 throwException("Cannot use return statement with an expression on a method that returns void");
         	}
+            compileStack.applyFinallyBlocks();
             cv.visitInsn(RETURN);
             outputReturn = true;
             return;
@@ -1073,6 +1034,11 @@ public class AsmClassGenerator extends ClassGenerator {
             doConvertAndCast(returnType, expression, false, true, false);
             helper.unbox(returnType);
         }
+        if (compileStack.hasFinallyBlocks()) {
+            int returnValueIdx = compileStack.defineTemporaryVariable("returnValue",returnType,true);
+            compileStack.applyFinallyBlocks();
+            helper.load(returnType,returnValueIdx);
+        }        
         helper.doReturn(returnType);
         outputReturn = true;
     }
