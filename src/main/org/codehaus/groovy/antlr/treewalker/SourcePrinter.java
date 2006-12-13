@@ -759,6 +759,15 @@ public class SourcePrinter extends VisitorAdapter {
         print(t,visit,"..",null,null);
     }
 
+    // visit rbrack()
+    //   token type RBRACK only used inside parser, never visited/created
+
+    // visit rcurly()
+    //   token type RCURLY only used inside parser, never visited/created
+
+    public void visitRegexFind(GroovySourceAST t, int visit) {
+    	print(t,visit," =~ ",null,null);
+    }
     public void visitScopeEscape(GroovySourceAST t, int visit) {
     	print(t,visit,"$",null,null);
     }

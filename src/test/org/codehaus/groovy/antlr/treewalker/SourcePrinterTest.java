@@ -640,7 +640,12 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
 
     public void testParameterDef() throws Exception {
+    	//todo spacing slightly suspect with "foo( bar)"
+    	assertEquals("def foo( bar) {}", pretty("def foo(bar){}"));
         assertEquals("def foo(String bar, String mooky) {}", pretty("def foo(String bar, String mooky){}"));
+        assertEquals("def c = { x -> println x}", pretty("def c = {x->println x}"));
+        assertEquals("def c = { x, y -> println(x + y)}", pretty("def c={x,y->println(x+y)}"));
+        assertEquals("def c = {int x,int y -> println(x + y)}", pretty("def c={int x, int y->println(x+y)}"));
     }
 
     public void testParameters() throws Exception {
@@ -666,11 +671,26 @@ public class SourcePrinterTest extends GroovyTestCase {
     	assertEquals("public boolean process(Set<? extends B, ? super C> a) {println a}", pretty("public boolean process(Set<? extends B, ? super C> a) {println a}"));
     }
     public void testRangeExclusive() throws Exception {
+        assertEquals("foo[45..<89]", pretty("foo[45...89]")); // todo remove this '...' usage from groovy.g
         assertEquals("foo[45..<89]", pretty("foo[45 ..< 89]"));
     }
     public void testRangeInclusive() throws Exception {
         assertEquals("foo[bar..12]", pretty("foo[bar .. 12]"));
     }
+    public void testRegexpLiteral() throws Exception {
+    	assertEquals("println", pretty("println //")); // empty regexp_literal should be treated as single line comment
+    }
+
+    public void testRegexpLiteral_FAILS() throws Exception { if (notYetImplemented()) return;
+		//todo: these fail because regexp_literals are converted into string_literals on the antlr AST
+		assertEquals("def x = /./", pretty("def x = /./"));
+		assertEquals("def z = /blah\\s/", pretty("def z = /blah\\s/")); // actually: def z = /blah\s/
+    }
+    
+    public void testRegexFind() throws Exception {
+    	assertEquals("if (foo =~ \"bar\") {}", pretty("if (foo=~\"bar\"){}"));
+    }
+    
     public void testScopeEscape() throws Exception {
     	// todo - 31 July 2006 - test fine, however this parses but causes error in AntlrParserPlugin
     	assertEquals("println([$x, x, y])", pretty("println([$x, x, y])"));

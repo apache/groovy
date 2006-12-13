@@ -129,6 +129,7 @@ public class SourceCodeTraversal extends TraversalHelper {
                 case GroovyTokenTypes.MOD_ASSIGN: // a %= b
                 case GroovyTokenTypes.NOT_EQUAL:
                 case GroovyTokenTypes.PLUS_ASSIGN: // a += b
+                case GroovyTokenTypes.REGEX_FIND: // a =~ b
                     if (t.childAt(1) != null) {
                         accept_FirstChild_v_RestOfTheChildren(t);
                     } else {

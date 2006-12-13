@@ -1420,6 +1420,7 @@ variableLengthParameterDeclaration!  {Token first = LT(1);}
  *  It is not confused by a lookahead of BOR.
  *  DECIDE:  Is thie necessary, or do we change the closure-bar syntax?
  */
+    // todo obsolete?, certainly not referred to elsewhere
 simpleParameterDeclaration!  {Token first = LT(1);}
     :   ( options {greedy=true;} : t:typeSpec[false])?
         id:IDENT
@@ -1428,6 +1429,7 @@ simpleParameterDeclaration!  {Token first = LT(1);}
     ;
 
 /** Simplified formal parameter list for closures.  Never empty. */
+    // todo obsolete?, certainly not referred to elsewhere
 simpleParameterDeclarationList  {Token first = LT(1);}
     :
         simpleParameterDeclaration
