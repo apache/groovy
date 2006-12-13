@@ -187,7 +187,7 @@ public class CompilationUnit extends ProcessingUnit {
         addPhaseOperation(summarize, Phases.PARSING);
         addPhaseOperation(convert,   Phases.CONVERSION);
         addPhaseOperation(resolve,   Phases.SEMANTIC_ANALYSIS);
-        addPhaseOperation(compileCompleteCheck, Phases.CLASS_GENERATION);
+        addPhaseOperation(compileCompleteCheck, Phases.CANONICALIZATION);
         addPhaseOperation(classgen,  Phases.CLASS_GENERATION);
         addPhaseOperation(output);
         
