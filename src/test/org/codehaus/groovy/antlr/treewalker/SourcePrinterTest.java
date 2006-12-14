@@ -688,16 +688,34 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
     
     public void testRegexFind() throws Exception {
+    	assertEquals("def m = foo =~ \"bar\"", pretty("def m = foo =~ \"bar\""));
     	assertEquals("if (foo =~ \"bar\") {}", pretty("if (foo=~\"bar\"){}"));
     }
     
+    public void testRegexMatch() throws Exception {
+    	assertEquals("if (foo ==~ \"bar\") {}", pretty("if (foo==~\"bar\"){}"));
+    }
+    
     public void testScopeEscape() throws Exception {
-    	// todo - 31 July 2006 - test fine, however this parses but causes error in AntlrParserPlugin
+    	// todo - 31 July + 14 Dec 2006 - test fine, however this parses but causes error in AntlrParserPlugin
     	assertEquals("println([$x, x, y])", pretty("println([$x, x, y])"));
     }
-    public void testSlist() throws Exception {
-        assertEquals("if (true) {foo}", pretty("if (true) {foo}"));
+    
+    public void testSelectSlot() throws Exception {
+    	assertEquals("def x = foo.@bar", pretty("def x = foo . @ bar"));
     }
+    
+    public void testSl() throws Exception {
+    	assertEquals("foo << 123", pretty("foo << 123"));
+    }
+    
+    public void testSlist() throws Exception {
+    	assertEquals("class Foo {private Foo() {println bar}}",pretty("class Foo {private Foo() {println bar}}"));
+    	assertEquals("if (true) {foo}", pretty("if (true) {foo}"));
+    	assertEquals("def x = foo.{bar}", pretty("def x = foo.{bar}")); // todo - inline open block is great, but it doesn't work as one would expect (yet). (c.f. with)
+    	assertEquals("def foo() {l:{x = 2}}", pretty("def foo(){l:{x=2}}")); // slist inside a method body (needed label to distinguish from a closure)
+    	assertEquals("switch (f) {case 1:break }", pretty("switch(f){case 1:break}")); // slist inside each case body...
+    } 
 
     public void testStar() throws Exception {
         assertEquals("import foo.*", pretty("import foo.*"));

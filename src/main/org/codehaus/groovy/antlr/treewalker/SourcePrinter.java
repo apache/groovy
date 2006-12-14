@@ -765,13 +765,36 @@ public class SourcePrinter extends VisitorAdapter {
     // visit rcurly()
     //   token type RCURLY only used inside parser, never visited/created
 
+    // visit RegexpCtorEnd
+    // visit RegexpLiteral
+    // visit RegexpSymbol
+    //    token types REGEXP_CTOR_END, REGEXP_LITERAL, REGEXP_SYMBOL only used inside lexer
+    
     public void visitRegexFind(GroovySourceAST t, int visit) {
     	print(t,visit," =~ ",null,null);
     }
+    public void visitRegexMatch(GroovySourceAST t, int visit) {
+    	print(t,visit," ==~ ",null,null);
+    }
+    // visit rparen()
+    //   token type RPAREN only used inside parser, never visited/created
+
     public void visitScopeEscape(GroovySourceAST t, int visit) {
     	print(t,visit,"$",null,null);
     }
+    public void visitSelectSlot(GroovySourceAST t, int visit) {
+    	print(t,visit,"@",null,null);
+    }
     
+    // visit semi()
+    //  SEMI only used inside parser, never visited/created (see visitForCondition(), visitForIterator())
+    
+    // visit ShComment()
+    //  never visited/created by parser
+    
+    public void visitSl(GroovySourceAST t, int visit) {
+    	print(t,visit," << ",null,null);
+    }
     public void visitSlist(GroovySourceAST t,int visit) {
         if (visit == OPENING_VISIT) {
             tabLevel++;
