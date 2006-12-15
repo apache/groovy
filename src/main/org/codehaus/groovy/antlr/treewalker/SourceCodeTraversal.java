@@ -131,6 +131,10 @@ public class SourceCodeTraversal extends TraversalHelper {
                 case GroovyTokenTypes.PLUS_ASSIGN: // a += b
                 case GroovyTokenTypes.REGEX_FIND: // a =~ b
                 case GroovyTokenTypes.REGEX_MATCH: // a ==~ b
+                case GroovyTokenTypes.SL_ASSIGN: // a <<= b
+                case GroovyTokenTypes.SR_ASSIGN: // a >>= b
+                case GroovyTokenTypes.STAR_ASSIGN: // a *= b
+                case GroovyTokenTypes.STAR_STAR_ASSIGN: // x **= 3
                     if (t.childAt(1) != null) {
                         accept_FirstChild_v_RestOfTheChildren(t);
                     } else {
@@ -172,7 +176,9 @@ public class SourceCodeTraversal extends TraversalHelper {
                 case GroovyTokenTypes.RANGE_EXCLUSIVE: // [1..<10]
                 case GroovyTokenTypes.RANGE_INCLUSIVE: // [1..10]
                 case GroovyTokenTypes.SL: // a << b
+                case GroovyTokenTypes.SR: // a >> b
                 case GroovyTokenTypes.STAR: // a * b   or    import foo.*
+                case GroovyTokenTypes.STAR_STAR: // x ** 3
                     accept_FirstChild_v_RestOfTheChildren(t);
                     break;
 

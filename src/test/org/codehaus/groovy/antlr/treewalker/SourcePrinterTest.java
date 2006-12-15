@@ -709,6 +709,10 @@ public class SourcePrinterTest extends GroovyTestCase {
     	assertEquals("foo << 123", pretty("foo << 123"));
     }
     
+    public void testSlAssign() throws Exception {
+    	assertEquals("foo <<= 123", pretty("foo <<= 123")); // does this operator make any sense?
+    }
+
     public void testSlist() throws Exception {
     	assertEquals("class Foo {private Foo() {println bar}}",pretty("class Foo {private Foo() {println bar}}"));
     	assertEquals("if (true) {foo}", pretty("if (true) {foo}"));
@@ -716,26 +720,77 @@ public class SourcePrinterTest extends GroovyTestCase {
     	assertEquals("def foo() {l:{x = 2}}", pretty("def foo(){l:{x=2}}")); // slist inside a method body (needed label to distinguish from a closure)
     	assertEquals("switch (f) {case 1:break }", pretty("switch(f){case 1:break}")); // slist inside each case body...
     } 
+    
+    public void testSpreadArg() throws Exception {
+    	assertEquals("myList {*name}", pretty("myList{*name}"));
+        assertEquals("\"foo$*bar\"", pretty("\"foo$*bar\"")); // this doesn't work beyond parser (AntlrParserPlugin)
+        assertEquals("\"foo${*bar}\"", pretty("\"foo${*bar}\"")); // this doesn't work beyond parser (AntlrParserPlugin)
+        assertEquals("f(*[a, b, c])", pretty("f(*[a,b,c])"));
+        assertEquals("f(*null)", pretty("f(*null)")); // equiv to f()
+    }
+    public void testSpreadMapArg() throws Exception {
+    	assertEquals("f(*:myMap)", pretty("f(*:myMap)"));
+    }
+    public void testSr() throws Exception {
+    	assertEquals("foo >> 123", pretty("foo >> 123"));
+    }
+    
+    public void testSrAssign() throws Exception {
+    	assertEquals("foo >>= 123", pretty("foo >>= 123")); // does this operator make any sense?
+    }
 
     public void testStar() throws Exception {
         assertEquals("import foo.*", pretty("import foo.*"));
         assertEquals("a*b", pretty("a*b"));
     }
     
+    public void testStarAssign() throws Exception {
+    	assertEquals("foo *= 123", pretty("foo *= 123"));
+    }
+
+    public void testStarStar() throws Exception {
+        assertEquals("def square = +5**2", pretty("def square=+5**2"));
+        assertEquals("def cube = 5**3", pretty("def cube = 5**3"));
+    } 
+    
+    public void testStarStarAssign() throws Exception {
+    	assertEquals("cubeMe **= 3", pretty("cubeMe **= 3"));
+    }
+
     public void testStaticImport() throws Exception {
     	assertEquals("import static foo.Bar.mooky", pretty("import static foo.Bar.mooky"));
     	assertEquals("import static foo.Bar.*", pretty("import static foo.Bar.*"));
     }
 
+    public void testStaticInit() throws Exception {
+    	assertEquals("class Foo {static {println(1 + 1)}}", pretty("class Foo{static{println(1+1)}}"));
+    }
+    
+    public void testStrictFp() throws Exception {
+    	assertEquals("private strictfp flibble = 1.2", pretty("private strictfp flibble = 1.2"));
+    }
+    
     public void testStringConstructor() throws Exception{
-        assertEquals("\"foo$bar\"", pretty("\"foo$bar\""));
+        assertEquals("def x = \"foo$bar\"", pretty("def x=\"foo$bar\""));
+        assertEquals("def y = \"foo${mooky}\"", pretty("def y = \"foo${mooky}\""));
     }
 
     public void testStringLiteral_FAILS() throws Exception{ if (notYetImplemented()) return;
         assertEquals("\"mooky\"", pretty("\"mooky\""));
         assertEquals("'mooky'", pretty("'mooky'"));
+    	assertEquals("def x = '''can go over newline'''", pretty("def x = '''can go over newline'''"));
+    	assertEquals("def x = \"\"\"can go over newline\"\"\"", pretty("def x = \"\"\"can go over newline\"\"\""));
+    	//todo test newlines inside strings somehow...
     }
 
+    public void testSuperCtorCall() throws Exception{
+    	assertEquals("class Foo {Foo(int x) {super(12, 3)}}",pretty("class Foo{Foo(int x) {super(12, 3)}}"));
+    	assertEquals("class Foo {Foo( x) {super()}}",pretty("class Foo{Foo(x) {super()}}"));
+        // todo: above is not quite the spacing I would expect, but good enough for now...
+    }
+
+    // JRR: got to here...
+    
     public void testType() throws Exception {
     	assertEquals("def bar", pretty("def bar"));
         assertEquals("public bar", pretty("public bar"));
@@ -756,6 +811,9 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
     public void testUnaryMinus() throws Exception {
         assertEquals("def x = -3", pretty("def x= -3"));
+    }
+    public void testUnaryPlus() throws Exception {
+        assertEquals("def x = +2", pretty("def x= +2"));
     }
 
     public void testVariableDef() throws Exception {

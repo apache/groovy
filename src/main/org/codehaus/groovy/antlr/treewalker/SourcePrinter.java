@@ -795,6 +795,9 @@ public class SourcePrinter extends VisitorAdapter {
     public void visitSl(GroovySourceAST t, int visit) {
     	print(t,visit," << ",null,null);
     }
+    public void visitSlAssign(GroovySourceAST t, int visit) {
+    	print(t,visit," <<= ",null,null);
+    }
     public void visitSlist(GroovySourceAST t,int visit) {
         if (visit == OPENING_VISIT) {
             tabLevel++;
@@ -805,8 +808,35 @@ public class SourcePrinter extends VisitorAdapter {
         }
     }
 
+    // visit SlComment()
+    //   never visited/created by parser
+    
+    public void visitSpreadArg(GroovySourceAST t,int visit) {
+    	print(t,visit,"*",null,null);
+    }
+    
+    public void visitSpreadMapArg(GroovySourceAST t,int visit) {
+    	print(t,visit,"*:",null,null);
+    }
+    
+    public void visitSr(GroovySourceAST t, int visit) {
+    	print(t,visit," >> ",null,null);
+    }
+    public void visitSrAssign(GroovySourceAST t, int visit) {
+    	print(t,visit," >>= ",null,null);
+    }
+
     public void visitStar(GroovySourceAST t,int visit) {
         print(t,visit,"*",null,null);
+    }
+    public void visitStarAssign(GroovySourceAST t, int visit) {
+    	print(t,visit," *= ",null,null);
+    }
+    public void visitStarStar(GroovySourceAST t,int visit) {
+        print(t,visit,"**",null,null);
+    }
+    public void visitStarStarAssign(GroovySourceAST t, int visit) {
+    	print(t,visit," **= ",null,null);
     }
     
     public void visitStaticInit(GroovySourceAST t, int visit) {
@@ -904,6 +934,9 @@ public class SourcePrinter extends VisitorAdapter {
     }
     public void visitUnaryMinus(GroovySourceAST t, int visit) {
     	print(t,visit,"-",null,null);
+    }
+    public void visitUnaryPlus(GroovySourceAST t, int visit) {
+    	print(t,visit,"+",null,null);
     }
 
     public void visitVariableDef(GroovySourceAST t,int visit) {
