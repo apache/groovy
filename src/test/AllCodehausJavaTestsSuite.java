@@ -2,7 +2,6 @@ import org.codehaus.groovy.syntax.TokenTest;
 import org.codehaus.groovy.runtime.*;
 //import org.codehaus.groovy.wiki.RunWikiTest;
 //import org.codehaus.groovy.wiki.TestCaseRenderEngineTest;
-import org.codehaus.groovy.tools.xml.DomToGroovyTest;
 import org.codehaus.groovy.tools.FileSystemCompilerTest;
 import org.codehaus.groovy.tools.CompilerTest;
 import org.codehaus.groovy.control.CompilationUnitTest;
@@ -33,7 +32,6 @@ public class AllCodehausJavaTestsSuite {
         suite.addTestSuite(CompilerTest.class);
         suite.addTestSuite(ConstructorTest.class);
         suite.addTestSuite(DefaultGroovyMethodsTest.class);
-        suite.addTestSuite(DomToGroovyTest.class);
         suite.addTestSuite(FileSystemCompilerTest.class);
         suite.addTestSuite(ForTest.class);
         suite.addTestSuite(GetPropertyTest.class);
