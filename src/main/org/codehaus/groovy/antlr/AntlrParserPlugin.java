@@ -264,7 +264,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             importPackageWithStar(packageName);
             if (alias!=null) throw new GroovyBugError(
                     "imports like 'import foo.* as Bar' are not "+
-                    "supported and should be catched by the grammar");
+                    "supported and should be caught by the grammar");
         } else {
             // import is like "import foo.Bar"
             String name = identifier(nameNode);

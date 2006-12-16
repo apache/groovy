@@ -20,13 +20,17 @@ public class ClassCompletionVerifierTest extends TestSupport {
     private static final String EXPECTED_INTERFACE_MODIFIER_ERROR_MESSAGE =
             "The interface '" + FINAL_INTERFACE + "' must not be final. It is by definition abstract.";
     private static final String EXPECTED_INTERFACE_FINAL_METHOD_ERROR_MESSAGE =
-            "Method 'xxx' from Interface 'zzz' must not be final. It is by definition abstract.";
+            "The method 'xxx' from interface 'zzz' must not be final. It is by definition abstract.";
     private static final String EXPECTED_INTERFACE_STATIC_METHOD_ERROR_MESSAGE =
-            "Method 'yyy' from Interface 'zzz' must not be static. Only fields may be static in an interface.";
+            "The method 'yyy' from interface 'zzz' must not be static. Only fields may be static in an interface.";
     private static final String EXPECTED_TRANSIENT_CLASS_ERROR_MESSAGE =
             "The class 'DodgyClass' has an incorrect modifier transient.";
     private static final String EXPECTED_VOLATILE_CLASS_ERROR_MESSAGE =
             "The class 'DodgyClass' has an incorrect modifier volatile.";
+    private static final String EXPECTED_DUPLICATE_METHOD_ERROR_CLASS_MESSAGE =
+            "Repetitive method name/signature for method 'xxx' in class 'zzz'.";
+    private static final String EXPECTED_DUPLICATE_METHOD_ERROR_INTERFACE_MESSAGE =
+            "Repetitive method name/signature for method 'xxx' in interface 'zzz'.";
 
     protected void setUp() throws Exception {
         super.setUp();
@@ -39,6 +43,23 @@ public class ClassCompletionVerifierTest extends TestSupport {
         checkVisitErrors("AbstractClass", ACC_ABSTRACT, false);
         checkVisitErrors(ABSTRACT_FINAL_CLASS, ACC_ABSTRACT | ACC_FINAL, true);
         checkErrorMessage(EXPECTED_CLASS_MODIFIER_ERROR_MESSAGE);
+    }
+
+    public void testDetectsDuplicateMethodsForClass() throws Exception {
+        checkDetectsDuplicateMethods(0, EXPECTED_DUPLICATE_METHOD_ERROR_CLASS_MESSAGE);
+    }
+
+    public void testDetectsDuplicateMethodsForInterface() throws Exception {
+        checkDetectsDuplicateMethods(ACC_INTERFACE, EXPECTED_DUPLICATE_METHOD_ERROR_INTERFACE_MESSAGE);
+    }
+
+    private void checkDetectsDuplicateMethods(int modifiers, String expectedErrorMessage) {
+        ClassNode node = new ClassNode("zzz", modifiers, ClassHelper.OBJECT_TYPE);
+        node.addMethod(new MethodNode("xxx", ACC_PUBLIC, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
+        node.addMethod(new MethodNode("xxx", ACC_PUBLIC, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
+        verifier.visitClass(node);
+        checkErrorCount(2);
+        checkErrorMessage(expectedErrorMessage);
     }
 
     public void testDetectsIncorrectOtherModifier() throws Exception {
@@ -59,9 +80,22 @@ public class ClassCompletionVerifierTest extends TestSupport {
         // constructors should not be treated as errors (they have no real meaning for interfaces anyway)
         node.addMethod(new MethodNode("<clinit>", ACC_PUBLIC | ACC_STATIC, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
         verifier.visitClass(node);
-        assertEquals(2, source.getErrorCollector().getErrorCount());
+        checkErrorCount(2);
         checkErrorMessage(EXPECTED_INTERFACE_FINAL_METHOD_ERROR_MESSAGE);
         checkErrorMessage(EXPECTED_INTERFACE_STATIC_METHOD_ERROR_MESSAGE);
+    }
+
+    private void checkErrorCount(int count) {
+        assertEquals(buildErrorMessage(count), count, source.getErrorCollector().getErrorCount());
+    }
+
+    private String buildErrorMessage(int count) {
+        StringBuffer sb = new StringBuffer();
+        sb.append("Expected ").append(count);
+        sb.append(" error messages but found ");
+        sb.append(source.getErrorCollector().getErrorCount()).append(":\n");
+        sb.append(flattenErrorMessage());
+        return sb.toString();
     }
 
     private void checkVisitErrors(String name, int modifiers, boolean expectedToFail) {
@@ -71,15 +105,19 @@ public class ClassCompletionVerifierTest extends TestSupport {
     }
 
     private void checkErrorMessage(String expectedErrorMessage) {
+        assertTrue("Expected an error message but none found.", source.getErrorCollector().hasErrors());
+        assertTrue("Expected message to contain <" + expectedErrorMessage +
+                "> but was <" + flattenErrorMessage() + ">.",
+                flattenErrorMessage().indexOf(expectedErrorMessage) != -1);
+    }
+
+    private String flattenErrorMessage() {
         StringWriter stringWriter = new StringWriter();
         PrintWriter writer = new PrintWriter(stringWriter, true);
         for (int i = source.getErrorCollector().getErrorCount() - 1; i >= 0; i--) {
             source.getErrorCollector().getError(i).write(writer);
         }
         writer.close();
-        assertTrue("Expected an error message but none found.", source.getErrorCollector().hasErrors());
-        assertTrue("Expected message to contain <" + expectedErrorMessage +
-                "> but was <" + stringWriter.toString() + ">.",
-                stringWriter.toString().indexOf(expectedErrorMessage) != -1);
+        return stringWriter.toString();
     }
 }

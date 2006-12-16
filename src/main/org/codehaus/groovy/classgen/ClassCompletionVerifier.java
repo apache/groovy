@@ -68,8 +68,8 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
             MethodNode method = (MethodNode) iter.next();
             String methodName = method.getTypeDescriptor();
             addError("Can't have an abstract method in a non-abstract class." +
-                    " The class '" + node.getName() + "' must be declared abstract or" +
-                    " the method '" + methodName + "' must be implemented.", node);
+                    " The " + getDescription(node) + " must be declared abstract or" +
+                    " the " + getDescription(method) + " must be implemented.", node);
         }
     }
 
@@ -82,28 +82,40 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         if (!Modifier.isAbstract(node.getModifiers())) return;
         if (!Modifier.isFinal(node.getModifiers())) return;
         if (node.isInterface()) {
-            addError("The interface '" + node.getName() +"' must not be final. It is by definition abstract.", node);
+            addError("The " + getDescription(node) +" must not be final. It is by definition abstract.", node);
         } else {
-            addError("The class '" + node.getName() + "' must not be both final and abstract.", node);
+            addError("The " + getDescription(node) + " must not be both final and abstract.", node);
         }
     }
 
     private void checkClassForOtherModifiers(ClassNode node) {
+        // TODO: work out why "synchronised" can't be used here
         checkClassForModifier(node, Modifier.isTransient(node.getModifiers()), "transient");
         checkClassForModifier(node, Modifier.isVolatile(node.getModifiers()), "volatile");
     }
 
     private void checkClassForModifier(ClassNode node, boolean condition, String modifierName) {
         if (!condition) return;
-        addError("The " + (node.isInterface() ? "interface" : "class") + " '" + node.getName() +
-                "' has an incorrect modifier " + modifierName + ".", node);
+        addError("The " + getDescription(node) + " has an incorrect modifier " + modifierName + ".", node);
+    }
+
+    private String getDescription(ClassNode node) {
+        return (node.isInterface() ? "interface" : "class") + " '" + node.getName() + "'";
+    }
+
+    private String getDescription(MethodNode node) {
+        return "method '" + node.getName() + "'";
+    }
+
+    private String getDescription(FieldNode node) {
+        return "field '" + node.getName() + "'";
     }
 
     private void checkAbstractDeclaration(MethodNode methodNode) {
         if (!Modifier.isAbstract(methodNode.getModifiers())) return;
         if (Modifier.isAbstract(currentClass.getModifiers())) return;
         addError("Can't have an abstract method in a non-abstract class." +
-                " The class '" + currentClass.getName() + "' must be declared abstract or the method '" +
+                " The " + getDescription(currentClass) + " must be declared abstract or the method '" +
                 methodNode.getTypeDescriptor() + "' must not be abstract.", methodNode);
     }
 
@@ -112,8 +124,8 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         if (superCN == null) return;
         if (!Modifier.isFinal(superCN.getModifiers())) return;
         StringBuffer msg = new StringBuffer();
-        msg.append("You are not allowed to overwrite the final class ");
-        msg.append(superCN.getName());
+        msg.append("You are not allowed to overwrite the final ");
+        msg.append(getDescription(superCN));
         msg.append(".");
         addError(msg.toString(), cn);
     }
@@ -121,13 +133,13 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     private void checkImplementsAndExtends(ClassNode node) {
         ClassNode cn = node.getSuperClass();
         if (cn.isInterface() && !node.isInterface()) {
-            addError("You are not allowed to extend the Interface " + cn.getName() + ", use implements instead.", node);
+            addError("You are not allowed to extend the " + getDescription(cn) + ", use implements instead.", node);
         }
         ClassNode[] interfaces = node.getInterfaces();
         for (int i = 0; i < interfaces.length; i++) {
             cn = interfaces[i];
             if (!cn.isInterface()) {
-                addError("You are not allowed to implement the Class " + cn.getName() + ", use extends instead.", node);
+                addError("You are not allowed to implement the " + getDescription(cn) + ", use extends instead.", node);
             }
         }
     }
@@ -138,12 +150,12 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         for (Iterator cnIter = methods.iterator(); cnIter.hasNext();) {
             MethodNode method = (MethodNode) cnIter.next();
             if (Modifier.isFinal(method.getModifiers())) {
-                addError("Method '" + method.getName() + "' from Interface '" +
-                        cn.getName() + "' must not be final. It is by definition abstract.", method);
+                addError("The " + getDescription(method) + " from " + getDescription(cn) +
+                        " must not be final. It is by definition abstract.", method);
             }
             if (Modifier.isStatic(method.getModifiers()) && !isConstructor(method)) {
-                addError("Method '" + method.getName() + "' from Interface '" +
-                        cn.getName() + "' must not be static. Only fields may be static in an interface.", method);
+                addError("The " + getDescription(method) + " from " + getDescription(cn) +
+                        " must not be static. Only fields may be static in an interface.", method);
             }
         }
     }
@@ -184,7 +196,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
             }
             msg.append(parameters[i].getType());
         }
-        msg.append(") from class ").append(superCN.getName());
+        msg.append(") from ").append(getDescription(superCN));
         msg.append(".");
         addError(msg.toString(), method);
     }
@@ -207,7 +219,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     public void visitConstructorCallExpression(ConstructorCallExpression call) {
         ClassNode type = call.getType();
         if (Modifier.isAbstract(type.getModifiers())) {
-            addError("You cannot create an instance from the abstract class " + type.getName() + ".", call);
+            addError("You cannot create an instance from the abstract " + getDescription(type) + ".", call);
         }
         super.visitConstructorCallExpression(call);
     }
@@ -261,14 +273,14 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         }
         isEqual &= node.getReturnType().equals(element.getReturnType());
         if (isEqual) {
-            addError("Repetitive method name/signature for method " + node.getName() +
-                    " in class " + currentClass.getName() + ".", node);
+            addError("Repetitive method name/signature for " + getDescription(node) +
+                    " in " + getDescription(currentClass) + ".", node);
         }
     }
 
     public void visitField(FieldNode node) {
         if (currentClass.getField(node.getName()) != node) {
-            addError("The field " + node.getName() + " is declared multiple times.", node);
+            addError("The " + getDescription(node) + " is declared multiple times.", node);
         }
         checkInterfaceFieldModifiers(node);
         super.visitField(node);
@@ -277,8 +289,8 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     private void checkInterfaceFieldModifiers(FieldNode node) {
         if (!currentClass.isInterface()) return;
         if ((node.getModifiers() & (Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL)) == 0) {
-            addError("The field " + node.getName() + " is not 'public final static' but part of the interface " +
-                    currentClass.getName() + ".", node);
+            addError("The " + getDescription(node) + " is not 'public final static' but is defined in the " +
+                    getDescription(currentClass) + ".", node);
         }
     }
 
