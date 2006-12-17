@@ -1884,7 +1884,7 @@ public class AsmClassGenerator extends ClassGenerator {
         if (leftHandExpression) {
             adapter = setField;
             if (isGroovyObject(objectExpression)) adapter = setGroovyObjectField;
-            if (usesSuper(expression)) adapter = setPropertyOnSuper;
+            if (usesSuper(expression)) adapter = getFieldOnSuper;
         } else {
             adapter = getField;
             if (isGroovyObject(objectExpression)) adapter = getGroovyObjectField;

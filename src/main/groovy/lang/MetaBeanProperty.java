@@ -88,17 +88,6 @@ public class MetaBeanProperty extends MetaProperty {
         setter.invoke(object, new Object[] { newValue });
     }
 
-    private String toName(Class c) {
-        String s = c.toString();
-        if (s.startsWith("class ") && s.length() > 6) {
-            return s.substring(6);
-        }
-        else {
-            return s;
-        }
-    }
-
-
     /**
      * Get the getter method.
      */

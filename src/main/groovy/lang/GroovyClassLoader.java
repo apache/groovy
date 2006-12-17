@@ -313,7 +313,8 @@ public class GroovyClassLoader extends URLClassLoader {
                 if (shouldCacheSource) sourceCache.put(codeSource.getName(), answer);
             } finally {
                 try {
-                    codeSource.getInputStream().close();
+                    InputStream is = codeSource.getInputStream();
+                    if (is!=null) is.close();
                 } catch (IOException e) {
                     throw new GroovyRuntimeException("unable to close stream",e);
                 }

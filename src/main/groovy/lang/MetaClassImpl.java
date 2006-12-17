@@ -83,7 +83,6 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.DefaultMethodKey;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.MethodClosure;
 import org.codehaus.groovy.runtime.MethodKey;
@@ -92,6 +91,7 @@ import org.codehaus.groovy.runtime.NewStaticMetaMethod;
 import org.codehaus.groovy.runtime.ReflectionMetaMethod;
 import org.codehaus.groovy.runtime.Reflector;
 import org.codehaus.groovy.runtime.TransformMetaMethod;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 import org.objectweb.asm.ClassVisitor;
 
@@ -800,8 +800,131 @@ public class MetaClassImpl extends MetaClass {
    /**
     * @return the given property's value on the object
     */
-   public Object getProperty(Class sender, Object object, String property, boolean useSuper, boolean fromInsideClass) {
-       return getPropertyOrField(sender,object,property,useSuper,false);
+   public Object getProperty(Class sender, Object object, String name, boolean useSuper, boolean fromInsideClass) {
+       checkInitalised();
+       
+       //----------------------------------------------------------------------
+       // handling of static
+       //----------------------------------------------------------------------
+       boolean isStatic = theClass != Class.class && object instanceof Class;
+       if (isStatic && object != theClass) {
+           MetaClass mc = registry.getMetaClass((Class) object);
+           return mc.getProperty(sender,object,name,useSuper,false);
+       }
+    
+       MetaMethod method = null;
+       Object[] arguments = EMPTY_ARGUMENTS;
+
+       //----------------------------------------------------------------------
+       // getter
+       //----------------------------------------------------------------------
+       MetaProperty mp = getMetaProperty(sender,name,useSuper, isStatic);
+       if (mp != null) {
+           if (mp instanceof MetaBeanProperty) {
+               MetaBeanProperty mbp = (MetaBeanProperty) mp;
+               method = mbp.getGetter();
+               mp = mbp.getField();
+           } 
+       }
+       
+       // check for a category method named like a getter 
+       if (method==null && !useSuper && !isStatic && GroovyCategorySupport.hasCategoryInAnyThread()) {
+       String getterName = "get"+MetaClassHelper.capitalize(name);
+       if(name.length()>1) getterName += name.substring(1);
+           method = getCategoryMethodGetter(sender,getterName,false);
+       }
+
+       //----------------------------------------------------------------------
+       // field
+       //----------------------------------------------------------------------
+       if (method==null && mp!=null) {
+           return mp.getProperty(object);
+       }
+       
+
+       //----------------------------------------------------------------------
+       // generic get method
+       //----------------------------------------------------------------------       
+       // check for a generic get method provided through a category
+       if (method==null && !useSuper && !isStatic && GroovyCategorySupport.hasCategoryInAnyThread()) {
+           method = getCategoryMethodGetter(sender,"get",true);
+           if (method!=null) arguments = new Object[]{name};
+       }
+
+       // the generic method is valid, if available (!=null), if static or
+       // if it is not static and we do no static access
+       if (method==null && genericGetMethod != null && !(!genericGetMethod.isStatic() && isStatic)) {
+           arguments = new Object[]{ name };
+           method = genericGetMethod;
+       } 
+       
+       //----------------------------------------------------------------------
+       // special cases
+       //----------------------------------------------------------------------
+       if (method==null) {
+           /** todo these special cases should be special MetaClasses maybe */
+           if (theClass != Class.class && object instanceof Class) {
+               MetaClass mc = registry.getMetaClass(Class.class);
+               return mc.getProperty(Class.class,object,name,useSuper,false);
+           } else if (object instanceof Collection) {
+               return DefaultGroovyMethods.getAt((Collection) object, name);
+           } else if (object instanceof Object[]) {
+               return DefaultGroovyMethods.getAt(Arrays.asList((Object[]) object), name);
+           } else {
+               MetaMethod addListenerMethod = (MetaMethod) listeners.get(name);
+               if (addListenerMethod != null) {
+                   //TODO: one day we could try return the previously registered Closure listener for easy removal
+                   return null;
+               }
+           }
+       } else {
+           
+           //----------------------------------------------------------------------
+           // executing the getter method 
+           //----------------------------------------------------------------------
+           return MetaClassHelper.doMethodInvoke(object,method,arguments);
+       }
+       
+       //----------------------------------------------------------------------
+       // error due to missing method/field
+       //----------------------------------------------------------------------
+       throw new MissingPropertyException(name, theClass);   
+   }
+
+   private MetaMethod getCategoryMethodGetter(Class sender, String name, boolean useLongVersion) {
+       List possibleGenericMethods = GroovyCategorySupport.getCategoryMethods(sender, name);
+       if (possibleGenericMethods != null) {
+           for (Iterator iter = possibleGenericMethods.iterator(); iter.hasNext();) {
+               MetaMethod mmethod = (MetaMethod) iter.next();
+               Class[] paramTypes = mmethod.getParameterTypes();
+               if (useLongVersion) {
+                   if (paramTypes.length==1 && paramTypes[0] == String.class) {
+                       return mmethod;
+                   }
+               } else {
+                   if (paramTypes.length==0) return mmethod;
+               }
+           }
+       }
+       return null;
+   }
+   
+   private MetaMethod getCategoryMethodSetter(Class sender, String name, boolean useLongVersion) {
+       List possibleGenericMethods = GroovyCategorySupport.getCategoryMethods(sender, name);
+       if (possibleGenericMethods != null) {
+           for (Iterator iter = possibleGenericMethods.iterator(); iter.hasNext();) {
+               MetaMethod mmethod = (MetaMethod) iter.next();
+               Class[] paramTypes = mmethod.getParameterTypes();
+               if (useLongVersion) {
+                   if (paramTypes.length==2 && paramTypes[0] == String.class) {
+                       return mmethod;
+                   }
+               } else {
+                   if (paramTypes.length==1) return mmethod;
+               }
+           }
+       }
+       return null;
    }
 
    /**
@@ -845,7 +968,7 @@ public class MetaClassImpl extends MetaClass {
        for (Iterator iter = methods.iterator(); iter.hasNext();) {
            MetaMethod element = (MetaMethod) iter.next();
            if ( !isGetter && 
-                (element.getReturnType() == Void.class || element.getReturnType() == Void.TYPE) && 
+                //(element.getReturnType() == Void.class || element.getReturnType() == Void.TYPE) && 
                 element.getParameterTypes().length == 1)
            {
                ret.add(element);
@@ -1152,190 +1275,129 @@ public class MetaClassImpl extends MetaClass {
        }       
    }
    
-   private Object getPropertyOrField(Class sender, Object object, String name, boolean useSuper, boolean forceFields) {
+   /**
+    * Sets the property value on an object
+    */
+   public void setProperty(Class sender,Object object, String name, Object newValue, boolean useSuper, boolean fromInsideClass) {
        checkInitalised();
        
+       //----------------------------------------------------------------------
+       // handling of static
+       //----------------------------------------------------------------------
        boolean isStatic = theClass != Class.class && object instanceof Class;
        if (isStatic && object != theClass) {
            MetaClass mc = registry.getMetaClass((Class) object);
-           return mc.getProperty(sender,object,name,useSuper,false);
-       }
-       
-       MetaProperty mp = getMetaProperty(sender,name,useSuper, isStatic);
-       
-       if (mp != null) {
-           if (mp instanceof MetaBeanProperty) {
-               MetaBeanProperty mbp = (MetaBeanProperty) mp;
-               if (forceFields || mbp.getGetter()==null) {
-                   mp = mbp.getField();
-               }
-           }
-           try {
-               // delegate the get operation to the metaproperty
-               if (mp != null) return mp.getProperty(object);
-           } catch (InvokerInvocationException e) {
-               throw e;  
-           } catch(Exception e) {
-               throw new GroovyRuntimeException("Cannot read property: " + name,e);
-           }
-       }
-       
-       if (forceFields) throw new MissingFieldException(name, theClass);
-
-       
-       MetaMethod method = null;
-       Object[] arguments = null;
-       
-       
-       // Make sure there isn't a generic method in the "use" cases
-       if (!useSuper && !isStatic && GroovyCategorySupport.hasCategoryInAnyThread()) {
-           List possibleGenericMethods = GroovyCategorySupport.getCategoryMethods(sender, "get");
-           if (possibleGenericMethods != null) {
-               for (Iterator iter = possibleGenericMethods.iterator(); iter.hasNext();) {
-                   MetaMethod mmethod = (MetaMethod) iter.next();
-                   Class[] paramTypes = mmethod.getParameterTypes();
-                   if (paramTypes.length == 1 && paramTypes[0] == String.class) {
-                       arguments = new Object[]{name};
-                       method = mmethod;
-                       break;
-                   }
-               }
-           }
-       }
-
-       // the generic method is valid, if available (!=null), if static or
-       // if it is not static and we do no static access
-       if (method==null && genericGetMethod != null && !(!genericGetMethod.isStatic() && isStatic)) {
-           arguments = new Object[]{ name };
-           method = genericGetMethod;
-       } 
-       
-       if (method==null) {
-           /** todo these special cases should be special MetaClasses maybe */
-           if (theClass != Class.class && object instanceof Class) {
-               MetaClass mc = registry.getMetaClass(Class.class);
-               return mc.getProperty(Class.class,object,name,useSuper,false);
-           } else if (object instanceof Collection) {
-               return DefaultGroovyMethods.getAt((Collection) object, name);
-           } else if (object instanceof Object[]) {
-               return DefaultGroovyMethods.getAt(Arrays.asList((Object[]) object), name);
-           } else {
-               MetaMethod addListenerMethod = (MetaMethod) listeners.get(name);
-               if (addListenerMethod != null) {
-                   //TODO: one day we could try return the previously registered Closure listener for easy removal
-                   return null;
-               }
-           }
-       } else {
-           return MetaClassHelper.doMethodInvoke(object,method,arguments);
-       }
-       
-       throw new MissingPropertyException(name, theClass);
-   }
-   
-   private void setPropertyOrField(Class sender, Object object, String name, Object newValue, boolean useSuper, boolean forceFields) {
-       checkInitalised();
-       
-       boolean isStatic = theClass != Class.class && object instanceof Class;
-       if (isStatic && object != theClass) {
-           MetaClass mc = registry.getMetaClass((Class) object);
-           mc.setProperty(sender,object,name,newValue,useSuper,false);
+           mc.getProperty(sender,object,name,useSuper,fromInsideClass);
            return;
        }
        
-       MetaProperty mp = getMetaProperty(sender,name,useSuper,isStatic);
-       
-       //
+       //----------------------------------------------------------------------
        // Unwrap wrapped values fo now - the new MOP will handle them properly
-       //
+       //----------------------------------------------------------------------
        if (newValue instanceof Wrapper) newValue = ((Wrapper)newValue).unwrap();
        
+       
+    
+       MetaMethod method = null;
+       Object[] arguments = null;
+
+       //----------------------------------------------------------------------
+       // setter
+       //----------------------------------------------------------------------
+       MetaProperty mp = getMetaProperty(sender,name,useSuper, isStatic);
+       MetaProperty field = null;
        if (mp != null) {
            if (mp instanceof MetaBeanProperty) {
                MetaBeanProperty mbp = (MetaBeanProperty) mp;
-               if (forceFields || mbp.getSetter()==null) {
-                   mp = mbp.getField();
-               }
-           }
-           if (mp != null) {
-               mp.setProperty(object, newValue);
-               return;
+               method = mbp.getSetter();
+               if (method!=null) arguments = new Object[] { newValue };
+               field = mbp.getField();
+           } else {
+               field = mp;
            }
        }
-       if (forceFields) throw new MissingFieldException(name, sender);
-
-       MetaMethod addListenerMethod = (MetaMethod) listeners.get(name);
        
-       MetaMethod method=null;
-       Object[] arguments=null;
-       if ( addListenerMethod != null && 
-            addListenerMethod != AMBIGOUS_LISTENER_METHOD &&
-            newValue instanceof Closure) 
-       {
-           // lets create a dynamic proxy
-           Object proxy =
-               MetaClassHelper.createListenerProxy(addListenerMethod.getParameterTypes()[0], name, (Closure) newValue);
-           //MetaClassHelper.doMethodInvoke(object, addListenerMethod, new Object[] { proxy });
-           method = addListenerMethod;
-           arguments = new Object[] { proxy };
-       } 
+       // check for a category method named like a setter 
+       if (!useSuper && !isStatic && GroovyCategorySupport.hasCategoryInAnyThread()) {
+           String getterName = "set"+MetaClassHelper.capitalize(name);
+           if(name.length()>1) getterName += name.substring(1);
+           method = getCategoryMethodSetter(sender,getterName,false);
+           if (method!=null) arguments = new Object[] { newValue };
+       }
 
-       // Make sure there isn't a generic method in the "use" cases
+       //----------------------------------------------------------------------
+       // listener method
+       //----------------------------------------------------------------------
+       boolean ambigousListener = false;
+       boolean usesProxy = false;
+       if (method==null) {
+           method = (MetaMethod) listeners.get(name);
+           ambigousListener = method == AMBIGOUS_LISTENER_METHOD;
+           if ( method != null && 
+                !ambigousListener &&
+                newValue instanceof Closure) 
+           {
+               // lets create a dynamic proxy
+               Object proxy =
+                   MetaClassHelper.createListenerProxy(method.getParameterTypes()[0], name, (Closure) newValue);
+               arguments = new Object[] { proxy };
+               newValue = proxy;
+               usesProxy = true;
+           } else {
+               method = null;
+           }
+       }
+       
+       //----------------------------------------------------------------------
+       // field
+       //----------------------------------------------------------------------
+       if (method==null && field!=null) {
+           field.setProperty(object,newValue);
+           return;
+       }       
+
+       //----------------------------------------------------------------------
+       // generic set method
+       //----------------------------------------------------------------------       
+       // check for a generic get method provided through a category
        if (method==null && !useSuper && !isStatic && GroovyCategorySupport.hasCategoryInAnyThread()) {
-           List possibleGenericMethods = GroovyCategorySupport.getCategoryMethods(sender, "set");
-           if (possibleGenericMethods != null) {
-               for (Iterator iter = possibleGenericMethods.iterator(); iter.hasNext();) {
-                   MetaMethod mmethod = (MetaMethod) iter.next();
-                   Class[] paramTypes = mmethod.getParameterTypes();
-                   if (paramTypes.length == 2 && paramTypes[0] == String.class) {
-                       arguments = new Object[]{name, newValue};
-                       method = mmethod;
-                       break;
-                   }
-               }
-           }
+           method = getCategoryMethodSetter(sender,"set",true);
+           if (method!=null) arguments = new Object[]{name,newValue};
        }
-       
+
        // the generic method is valid, if available (!=null), if static or
        // if it is not static and we do no static access
        if (method==null && genericSetMethod != null && !(!genericSetMethod.isStatic() && isStatic)) {
            arguments = new Object[]{ name, newValue };
            method = genericSetMethod;
-       }
+       } 
        
-       if (method==null) {
-           // as last resort try to find a set method added by a category
-           String methodName = "set" + MetaClassHelper.capitalize(name);
-           try {
-               invokeMethod(sender, object, methodName, new Object[] { newValue }, useSuper,false);
-               return;
-           } catch (MissingMethodException mme) {}
-       } else {
-           // we have a method, so invoke it
-           try {
-               MetaClassHelper.doMethodInvoke(object,method,arguments);
-               return;
-           } catch (ReadOnlyPropertyException rope) {
-               throw rope;
-           } catch (GroovyRuntimeException gre) {
-               throw new MissingPropertyException(
-                       "unable to invoke method to set property " + 
-                       name + " in " + sender + ": " +
-                       gre.getMessage(), name, sender);
+       //----------------------------------------------------------------------
+       // executing the getter method 
+       //----------------------------------------------------------------------
+       if (method!=null) {
+           if (arguments.length==1) {
+               newValue = DefaultTypeTransformation.castToType(
+                       newValue,
+                       method.getParameterTypes()[0]);
+               arguments[0] = newValue;
+           } else {
+               newValue = DefaultTypeTransformation.castToType(
+                       newValue,
+                       method.getParameterTypes()[1]);
+               arguments[1] = newValue;
            }
+           MetaClassHelper.doMethodInvoke(object,method,arguments);
+           return;
        }
-       
-       if (addListenerMethod==AMBIGOUS_LISTENER_METHOD){
+           
+       //----------------------------------------------------------------------
+       // error due to missing method/field
+       //----------------------------------------------------------------------
+       if (ambigousListener){
            throw new GroovyRuntimeException("There are multiple listeners for the property "+name+". Please do not use the bean short form to access this listener.");
        } 
-       throw new MissingPropertyException(name, theClass);
-   }
-   
-   /**
-    * Sets the property value on an object
-    */
-   public void setProperty(Class sender,Object object, String property, Object newValue, boolean useSuper, boolean fromInsideClass) {
-       setPropertyOrField(sender,object,property,newValue,useSuper,false);
+       throw new MissingPropertyException(name, theClass);   
    }
    
    private MetaProperty getMetaProperty(Class clazz, String name, boolean useSuper, boolean useStatic) {
@@ -1362,14 +1424,59 @@ public class MetaClassImpl extends MetaClass {
     * Looks up the given attribute (field) on the given object
     */
    public Object getAttribute(Class sender, Object object, String attribute, boolean useSuper, boolean fromInsideClass) {
-       return getPropertyOrField(sender,object,attribute,useSuper,true);
+       checkInitalised();
+       
+       boolean isStatic = theClass != Class.class && object instanceof Class;
+       if (isStatic && object != theClass) {
+           MetaClass mc = registry.getMetaClass((Class) object);
+           return mc.getAttribute(sender,object,attribute,useSuper);
+       }
+    
+       MetaProperty mp = getMetaProperty(sender,attribute,useSuper, isStatic);
+       
+       if (mp != null) {
+           if (mp instanceof MetaBeanProperty) {
+               MetaBeanProperty mbp = (MetaBeanProperty) mp;
+               mp = mbp.getField();
+           }
+           try {
+               // delegate the get operation to the metaproperty
+               if (mp != null) return mp.getProperty(object);
+           } catch(Exception e) {
+               throw new GroovyRuntimeException("Cannot read field: " + attribute,e);
+           }
+       }
+       
+       throw new MissingFieldException(attribute, theClass);
    }
 
    /**
     * Sets the given attribute (field) on the given object
     */
    public void setAttribute(Class sender, Object object, String attribute, Object newValue, boolean useSuper, boolean fromInsideClass) {
-       setPropertyOrField(sender,object,attribute,newValue,useSuper,true);
+       checkInitalised();
+       
+       boolean isStatic = theClass != Class.class && object instanceof Class;
+       if (isStatic && object != theClass) {
+           MetaClass mc = registry.getMetaClass((Class) object);
+           mc.setAttribute(sender,object,attribute,newValue,useSuper,fromInsideClass);
+           return;
+       }
+    
+       MetaProperty mp = getMetaProperty(sender,attribute,useSuper, isStatic);
+       
+       if (mp != null) {
+           if (mp instanceof MetaBeanProperty) {
+               MetaBeanProperty mbp = (MetaBeanProperty) mp;
+               mp = mbp.getField();
+           }
+           if (mp != null) {
+               mp.setProperty(object,newValue);
+               return;
+           }
+       }
+       
+       throw new MissingFieldException(attribute, theClass);
    }
 
    public ClassNode getClassNode() {

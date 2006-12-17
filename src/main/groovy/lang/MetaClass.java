@@ -150,12 +150,6 @@ public abstract class MetaClass {
     
     public abstract List getMethods();
     
-    /*
-     protected abstract MetaMethod pickMethod(Object object, String methodName, Object[] arguments);
-    public abstract MetaMethod retrieveMethod(Object owner, String methodName, Object[] arguments);
-    public abstract MetaMethod retrieveStaticMethod(String methodName, Class[] arguments);
-    public abstract Constructor retrieveConstructor(Class[] arguments);*/
-    
     /**
      * Warning, this method will be removed until 1.0
      * @deprecated
