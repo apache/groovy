@@ -2711,7 +2711,7 @@ returns [boolean hasLabel = false]
 
         |   // Spread operator:  f(*[a,b,c])  ===  f(a,b,c);  f(1,*null,2)  ===  f(1,2).
             sp:STAR^                        {#sp.setType(SPREAD_ARG);}
-            // spread maps are marked, as f(*:m) for f(a:x, b:y) if¤ m==[a:x, b:y]
+            // spread maps are marked, as f(*:m) for f(a:x, b:y) if m==[a:x, b:y]
             (
                 COLON!                      {#sp.setType(SPREAD_MAP_ARG);}
                 { hasLabel = true; }  // signal to caller the presence of a label
