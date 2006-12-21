@@ -11,10 +11,21 @@ class CategoryTest extends GroovyTestCase {
     }
     shouldFail(MissingMethodException, { "Sam".lower() });
   }
+  
+  void testCategoryDefinedProperties() {
+  
+    use(CategoryTestPropertyCategory) { 
+      assert getSomething() == "hello"
+      assert something == "hello"
+      something = "nihao"
+      assert something = "nihao"
+    }
+    
+    // test the new value again in a new block
+    use(CategoryTestPropertyCategory) { 
+      assert something = "nihao"
+    }
 
-  static void main(args) {
-    def t = new CategoryTest();
-    t.testCategories();
   }
 }
 
@@ -29,3 +40,11 @@ class IntegerCategory {
     return i + 1;
   }
 }
+
+
+class CategoryTestPropertyCategory {
+     private static aVal = "hello"
+     static getSomething(Object self) { return aVal }
+     static void setSomething(Object self, newValue) { aVal = newValue }
+}
+

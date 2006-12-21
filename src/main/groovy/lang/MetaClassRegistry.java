@@ -217,7 +217,7 @@ public class MetaClassRegistry {
      *
      * @param includeExtension
      */
-    public static MetaClassRegistry getIntance(int includeExtension) {
+    public static MetaClassRegistry getInstance(int includeExtension) {
         if (includeExtension != DONT_LOAD_DEFAULT) {
             if (instanceInclude == null) {
                 instanceInclude = new MetaClassRegistry();
