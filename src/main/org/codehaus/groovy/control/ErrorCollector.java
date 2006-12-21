@@ -356,9 +356,7 @@ public class ErrorCollector {
      */
     public void write(PrintWriter writer, Janitor janitor) {
         write(writer,janitor,warnings,"warning");
-        warnings = null;
         write(writer,janitor,errors,"error");
-        errors = null;
     }
 
 }
