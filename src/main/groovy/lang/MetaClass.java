@@ -134,7 +134,7 @@ public abstract class MetaClass {
     public abstract void addNewStaticMethod(Method method);
     /**
      * complete the initlialisation process. After this method
-     * is called no methods whould be added to the meta class.
+     * is called no methods should be added to the meta class.
      * Invocation of methods or access to fields/proeprties is
      * forbidden unless this method is called. This method 
      * should contain any initialisation code, taking a longer

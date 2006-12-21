@@ -414,24 +414,18 @@ public class MetaClassImpl extends MetaClass {
    }
 
    public void addNewInstanceMethod(Method method) {
-       if (initialized) {
-           throw new RuntimeException("Already initialized, cannot add new method: " + method);
-       }
        NewInstanceMetaMethod newMethod = new NewInstanceMetaMethod(createMetaMethod(method));
        if (! newGroovyMethodsList.contains(newMethod)){
            newGroovyMethodsList.add(newMethod);
-           addMethod(newMethod);
+           addMetaMethod(newMethod);
        }
    }
 
    public void addNewStaticMethod(Method method) {
-       if (initialized) {
-           throw new RuntimeException("Already initialized, cannot add new method: " + method);
-       }
        NewStaticMetaMethod newMethod = new NewStaticMetaMethod(createMetaMethod(method));
        if (! newGroovyMethodsList.contains(newMethod)){
            newGroovyMethodsList.add(newMethod);
-           addMethod(newMethod);
+           addMetaMethod(newMethod);
        }
    }
 
@@ -490,7 +484,7 @@ public class MetaClassImpl extends MetaClass {
                        return super.invoke(object, arguments);
                    }
                };
-               methodCache.put(methodKey, method);
+               cacheInstanceMethod(methodKey, method);
                return invokeMethod(sender,object,methodName, originalArguments, isCallToSuper, fromInsideClass);
            }
        }
@@ -580,14 +574,25 @@ public class MetaClassImpl extends MetaClass {
            MetaMethod method = (MetaMethod) methodCache.get(methodKey);
            if (method == null) {
                method = pickMethod(sender, methodName, arguments, isCallToSuper);
-               if (method != null && method.isCacheable()) {
-                   methodCache.put(methodKey, method);
-               }
+               cacheInstanceMethod(methodKey, method);
            }
            return method;
        }
    }
+   
+   protected void cacheInstanceMethod(MethodKey key, MetaMethod method) {
+       if (method != null && method.isCacheable()) {
+           methodCache.put(key, method);
+       }
+   }
 
+   protected void cacheStaticMethod(MethodKey key, MetaMethod method) {
+       if (method != null && method.isCacheable()) {
+           staticMethodCache.put(key, method);
+       }
+   }
+
+   
    public Constructor retrieveConstructor(Class[] arguments) {
        Constructor constructor = (Constructor) chooseMethod("<init>", constructors, arguments, false);
        if (constructor != null) {
@@ -605,9 +610,7 @@ public class MetaClassImpl extends MetaClass {
        MetaMethod method = (MetaMethod) staticMethodCache.get(methodKey);
        if (method == null) {
            method = pickStaticMethod(theClass,methodName, arguments);
-           if (method != null) {
-               staticMethodCache.put(methodKey, method);
-           }
+           cacheStaticMethod(methodKey, method);
        }
        return method;
    }
@@ -654,9 +657,7 @@ public class MetaClassImpl extends MetaClass {
        MetaMethod method = (MetaMethod) staticMethodCache.get(methodKey);
        if (method == null) {
            method = pickStaticMethod(sender, methodName, argClasses);
-           if (method != null) {
-               staticMethodCache.put(methodKey.createCopy(), method);
-           }
+           cacheStaticMethod(methodKey.createCopy(), method);
        }
 
        if (method != null) {
@@ -729,8 +730,15 @@ public class MetaClassImpl extends MetaClass {
        return ret;
    }
    
-   private void checkInitalised() {
-       if (!initialized)
+   /**
+    * checks if the initialisation of the class id complete.
+    * This method should be called as a form of assert, it is no
+    * way to test if there is still initialisation work to be done. 
+    * Such logic must be implemented in a different way.
+    * @throws IllegalStateException if the initialisation is incomplete yet
+    */
+   protected void checkInitalised() {
+       if (!isInitialized())
            throw new IllegalStateException(
                    "initialize must be called for meta " +
                    "class of "+ theClass + 
@@ -1555,7 +1563,7 @@ public class MetaClassImpl extends MetaClass {
                continue;
            }
            MetaMethod method = createMetaMethod(reflectionMethod);
-           addMethod(method);
+           addMetaMethod(method);
        }
        // add methods declared by DGM
        List methods = registry.getInstanceMethods();
@@ -1590,7 +1598,20 @@ public class MetaClassImpl extends MetaClass {
        }
    }
 
-   private void addMethod(MetaMethod method) {
+   /**
+    * adds a MetaMethod to this class. WARNING: this method will not
+    * do the neccessary steps for multimethod logic and using this
+    * method doesn't mean, that a method added here is replacing another
+    * method from a parent class completely. These steps are usually done
+    * by initalize, which means if you need these steps, you have to add
+    * the method before running initialize the first time.
+    * @see #initialize() 
+    * @param method the MetaMethod
+    */
+   protected void addMetaMethod(MetaMethod method) {
+       if (isInitialized()) {
+           throw new RuntimeException("Already initialized, cannot add new method: " + method);
+       }
        if (isGenericGetMethod(method) && genericGetMethod == null) {
            genericGetMethod = method;
        }
@@ -1601,6 +1622,10 @@ public class MetaClassImpl extends MetaClass {
            addToClassMethodIndex(method,classStaticMethodIndex);
        }
        addToClassMethodIndex(method,classMethodIndex);
+   }
+   
+   protected boolean isInitialized(){
+       return initialized;
    }
    
    private void addMethodToList(List list, MetaMethod method) {
@@ -1850,8 +1875,9 @@ public class MetaClassImpl extends MetaClass {
        reflector = null;
    }
 
+   
    public synchronized void initialize() {
-       if (!initialized) {
+       if (!isInitialized()) {
            fillMethodIndex();
            addProperties();
            initialized = true;
@@ -2080,5 +2106,14 @@ public class MetaClassImpl extends MetaClass {
    
    protected MetaMethod retrieveMethod(String methodName, Class[] arguments) {
        return retrieveMethod(theClass,methodName,arguments,false);
+   }
+   
+   /**
+    * remove all method call cache entries. This should be done if a 
+    * method is added during runtime, but not by using a category.
+    */
+   protected void clearInvocationCaches() {
+       staticMethodCache.clear();
+       methodCache.clear();
    }
 }

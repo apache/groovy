@@ -46,7 +46,7 @@ import java.util.HashMap;
  * @version $Revision$
  */
 public class ReflectorLoader extends ClassLoader {
-    private HashMap laodedClasses = new HashMap();
+    private HashMap loadedClasses = new HashMap();
     
     /**
      * returns the Reflector class.
@@ -69,7 +69,7 @@ public class ReflectorLoader extends ClassLoader {
      */
     public Class defineClass(String name, byte[] bytecode, ProtectionDomain domain) {
         Class c = defineClass(name, bytecode, 0, bytecode.length, domain);
-        synchronized(laodedClasses) { laodedClasses.put(name,c); }
+        synchronized(loadedClasses) { loadedClasses.put(name,c); }
         resolveClass(c);
         return c;
     }
@@ -84,8 +84,8 @@ public class ReflectorLoader extends ClassLoader {
     }
     
     public Class getLoadedClass(String name) {
-        synchronized (laodedClasses) {
-            return (Class)laodedClasses.get(name);
+        synchronized (loadedClasses) {
+            return (Class)loadedClasses.get(name);
         }
     }
     
