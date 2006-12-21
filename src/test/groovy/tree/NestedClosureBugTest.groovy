@@ -1,11 +1,9 @@
-
-
 /**
  * Test case for a bug with nested closures
  */
 class NestedClosureBugTest extends GroovyTestCase {
-    
     def b
+    def EXPECTED = 'root[attributes={a=xyz}; value=[child[attributes={}; value=[grandChild[attributes={}; value=[]]]]]]'
 
     void testNestedClosureBug() {
         b = NodeBuilder.newInstance()
@@ -16,6 +14,6 @@ class NestedClosureBugTest extends GroovyTestCase {
             })
         })
 
-        println(root)
+        assert EXPECTED == root.toString()
     }
 }

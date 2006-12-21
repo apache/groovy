@@ -1,5 +1,3 @@
-
-
 /**
  * Mixes variables, closures and method calls in markup
  *
@@ -9,7 +7,6 @@ class MarkupAndMethodBug extends GroovyTestCase {
     
     void testBug() {
         def tree = createTree()
-
         def name = tree.person[0]['@name']
         assert name == 'James'
     }

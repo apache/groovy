@@ -1,5 +1,3 @@
-
-
 /**
  * This test uses the concise GroovyMarkup syntax to test the building of trees
  */

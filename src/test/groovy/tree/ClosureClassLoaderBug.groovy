@@ -1,8 +1,6 @@
-
-
 class ClosureClassLoaderBug extends GroovyTestCase {
-    
     def b
+    def EXPECTED = 'root1[attributes={}; value=[elem1[attributes={}; value=hello1]]]'
 
     void testTree() {
         b = NodeBuilder.newInstance()
@@ -11,6 +9,6 @@ class ClosureClassLoaderBug extends GroovyTestCase {
             b.elem1('hello1')
         })
         
-        print(root)
+        assert EXPECTED == root.toString()
     }
 }

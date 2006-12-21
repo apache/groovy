@@ -1,6 +1,6 @@
 class SmallTreeTest extends GroovyTestCase {
-    
     def b
+    def EXPECTED = 'root1[attributes={}; value=[elem1[attributes={}; value=hello1]]]'
 
     void testTree() {
         b = NodeBuilder.newInstance()
@@ -11,6 +11,6 @@ class SmallTreeTest extends GroovyTestCase {
         
         assert root != null
         
-        println(root)
+        assert EXPECTED == root.toString()
     }
 }

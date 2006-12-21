@@ -253,9 +253,13 @@ public class DomToGroovy {
             buffer.append(".");
             buffer.append(getLocalName(attribute));
             buffer.append(":'");
-            buffer.append(attribute.getValue());
+            buffer.append(getAttributeValue(attribute));
             buffer.append("'");
         }
+    }
+
+    private String getAttributeValue(Attr attribute) {
+        return attribute.getValue();
     }
 
     private boolean printAttributeWithoutPrefix(Attr attribute, boolean hasAttribute) {
@@ -268,7 +272,7 @@ public class DomToGroovy {
             }
             print(getLocalName(attribute));
             print(":'");
-            print(attribute.getValue());
+            print(getAttributeValue(attribute));
             print("'");
         }
         return hasAttribute;

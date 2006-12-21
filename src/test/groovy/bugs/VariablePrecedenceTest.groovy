@@ -11,17 +11,14 @@ class VariablePrecedenceTest extends GroovyTestCase {
     static void main(args) {
         def vfoo = new VariablePrecedenceTest()
         vfoo.c.call(1)
-
         def z = 874;
         1.times { assert vfoo.x == 100; assert z == 874; z = 39; }
         assert z == 39;
-
         vfoo.local();
     }
 
     void local() {
         c.call(1);
-
         def z = 874;
         1.times { assert x == 100; assert z == 874; z = 39; }
         assert z == 39;

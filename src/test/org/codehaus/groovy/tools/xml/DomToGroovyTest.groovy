@@ -58,7 +58,7 @@ public class DomToGroovyTest extends GroovyTestCase {
         xsd.schema(xmlns=[xmlns.xsd:'http://www.w3.org/2001/XMLSchema']) {
           xsd.simpleType(name:'SKU') {
             xsd.restriction(base:'xsd:string') {
-              xsd.pattern(value:'\\\\d{3}-[A-Z]{2}')
+              xsd.pattern(value:'\\d{3}-[A-Z]{2}')
             }
           }
         }'''
@@ -77,8 +77,7 @@ public class DomToGroovyTest extends GroovyTestCase {
         checkConversion(TEST_XML_1, EXPECTED_BUILDER_SCRIPT_1)
         checkConversion(TEST_XML_2, EXPECTED_BUILDER_SCRIPT_2)
         checkConversion(TEST_XML_3, EXPECTED_BUILDER_SCRIPT_3)
-        // TODO make work for namespaces and better escape special symbols in strings, e.g. '\'
-//        checkConversion(TEST_XML_4, EXPECTED_BUILDER_SCRIPT_4)
+        checkConversion(TEST_XML_4, EXPECTED_BUILDER_SCRIPT_4)
     }
 
     private void checkConversion(String testXml, String expectedScript) throws SAXException, IOException {
@@ -87,11 +86,7 @@ public class DomToGroovyTest extends GroovyTestCase {
         StringWriter writer = new StringWriter()
         converter = new DomToGroovy(new PrintWriter(writer))
         converter.print(document)
-        def expectedLines = expectedScript.trim().split('\n')
-        def actualLines = writer.toString().trim().split('\n')
-        for (i in 0..<expectedLines.size()) {
-            assertEquals(expectedLines[i].trim(), actualLines[i].trim())
-        }
+        StringUtil.assertMultilineStringsEqual(expectedScript, writer.toString())
     }
 
     private void convert(String name, String output) throws Exception {
@@ -118,5 +113,4 @@ public class DomToGroovyTest extends GroovyTestCase {
         builder = factory.newDocumentBuilder()
         dir.mkdirs()
     }
-
 }
