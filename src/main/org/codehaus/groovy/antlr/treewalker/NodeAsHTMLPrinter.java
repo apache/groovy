@@ -91,8 +91,8 @@ public class NodeAsHTMLPrinter extends VisitorAdapter {
             case GroovyTokenTypes.BXOR                          :
             case GroovyTokenTypes.BXOR_ASSIGN                   :
             case GroovyTokenTypes.CASE_GROUP                    :
-            case GroovyTokenTypes.CLOSED_BLOCK                  :
-            case GroovyTokenTypes.CLOSURE_OP                    :
+            case GroovyTokenTypes.CLOSABLE_BLOCK                :
+            case GroovyTokenTypes.CLOSABLE_BLOCK_OP             :
             case GroovyTokenTypes.COLON                         :
             case GroovyTokenTypes.COMMA                         :
             case GroovyTokenTypes.COMPARE_TO                    :

@@ -138,7 +138,7 @@ public class SourcePrinter extends VisitorAdapter {
 	//   token type BIG_SUFFIX never created/visited, NUM_BIG_INT, NUM_BIG_DECIMAL instead...    
     
 	// visitBlock() ...
-	//   token type BLOCK never created/visited, see CLOSED_BLOCK etc...
+	//   token type BLOCK never created/visited, see CLOSABLE_BLOCK etc...
 	
 	public void visitBnot(GroovySourceAST t, int visit) {
 		print(t,visit,"~",null,null);
@@ -192,7 +192,7 @@ public class SourcePrinter extends VisitorAdapter {
     }
     
     // visitClosureOp ...
-	//   token type CLOSURE_OP never created/visited, see CLOSED_BLOCK...
+	//   token type CLOSABLE_BLOCK_OP never created/visited, see CLOSABLE_BLOCK...
 	
 
     // visitColon ...
@@ -724,7 +724,7 @@ public class SourcePrinter extends VisitorAdapter {
     }
 
     public void visitParameters(GroovySourceAST t,int visit) {
-    	if (getParentNode().getType() == GroovyTokenTypes.CLOSED_BLOCK) {
+    	if (getParentNode().getType() == GroovyTokenTypes.CLOSABLE_BLOCK) {
     		printUpdatingTabLevel(t,visit,null,","," ");
     	} else {
     		printUpdatingTabLevel(t,visit,"(",", ",") ");

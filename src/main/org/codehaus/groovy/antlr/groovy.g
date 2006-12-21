@@ -208,7 +208,7 @@ tokens {
     UNUSED_GOTO="goto"; UNUSED_CONST="const"; UNUSED_DO="do";
     STRICTFP="strictfp"; SUPER_CTOR_CALL; CTOR_CALL; CTOR_IDENT; VARIABLE_PARAMETER_DEF;
     STRING_CONSTRUCTOR; STRING_CTOR_MIDDLE;
-    CLOSED_BLOCK; IMPLICIT_PARAMETERS;
+    CLOSABLE_BLOCK; IMPLICIT_PARAMETERS;
     SELECT_SLOT; DYNAMIC_MEMBER;
     LABELED_ARG; SPREAD_ARG; SPREAD_MAP_ARG; SCOPE_ESCAPE;
     LIST_CONSTRUCTOR; MAP_CONSTRUCTOR;
@@ -1416,30 +1416,6 @@ variableLengthParameterDeclaration!  {Token first = LT(1);}
     ;
 *OBS*/
 
-/** A simplified formal parameter for closures, can occur outside parens.
- *  It is not confused by a lookahead of BOR.
- *  DECIDE:  Is thie necessary, or do we change the closure-bar syntax?
- */
-    // todo obsolete?, certainly not referred to elsewhere
-simpleParameterDeclaration!  {Token first = LT(1);}
-    :   ( options {greedy=true;} : t:typeSpec[false])?
-        id:IDENT
-        {#simpleParameterDeclaration = #(create(PARAMETER_DEF,"PARAMETER_DEF",first,LT(1)),
-              #(create(MODIFIERS,"MODIFIERS",first,LT(1))), #(create(TYPE,"TYPE",first,LT(1)),t), id);}
-    ;
-
-/** Simplified formal parameter list for closures.  Never empty. */
-    // todo obsolete?, certainly not referred to elsewhere
-simpleParameterDeclarationList  {Token first = LT(1);}
-    :
-        simpleParameterDeclaration
-        (   COMMA! nls!
-            simpleParameterDeclaration
-        )*
-        {#simpleParameterDeclarationList = #(create(PARAMETERS,"PARAMETERS",first,LT(1)),
-                                             #simpleParameterDeclarationList);}
-    ;
-
 parameterModifiersOpt
         { Token first = LT(1);int seenDef = 0; }
         //final and/or def can appear amongst annotations in any order
@@ -1454,12 +1430,12 @@ parameterModifiersOpt
 /** Closure parameters are exactly like method parameters,
  *  except that they are not enclosed in parentheses, but rather
  *  are prepended to the front of a block, just after the brace.
- *  They are separated from the closure body by a CLOSURE_OP token '->'.
+ *  They are separated from the closure body by a CLOSABLE_BLOCK_OP token '->'.
  */
 // With '|' there would be restrictions on bitwise-or expressions.
-closureParametersOpt[boolean addImplicit]
-    :   (parameterDeclarationList nls CLOSURE_OP)=>
-        parameterDeclarationList nls! CLOSURE_OP! nls!
+closableBlockParamsOpt[boolean addImplicit]
+    :   (parameterDeclarationList nls CLOSABLE_BLOCK_OP)=>
+        parameterDeclarationList nls! CLOSABLE_BLOCK_OP! nls!
     |   {addImplicit}?
         implicitParameters
     |
@@ -1467,15 +1443,15 @@ closureParametersOpt[boolean addImplicit]
     ;
 
 /** Lookahead to check whether a block begins with explicit closure arguments. */
-closureParametersStart!
+closableBlockParamsStart!
     :
-        parameterDeclarationList nls CLOSURE_OP
+        parameterDeclarationList nls CLOSABLE_BLOCK_OP
     ;
 
 /** Simple names, as in {x|...}, are completely equivalent to {(def x)|...}.  Build the right AST. */
-closureParameter!  {Token first = LT(1);}
+closableBlockParam!  {Token first = LT(1);}
     :   id:IDENT!
-        {#closureParameter = #(create(PARAMETER_DEF,"PARAMETER_DEF",first,LT(1)),
+        {#closableBlockParam = #(create(PARAMETER_DEF,"PARAMETER_DEF",first,LT(1)),
                                #(create(MODIFIERS,"MODIFIERS",first,LT(1))), #(create(TYPE,"TYPE",first,LT(1))),
                                id);}
     ;
@@ -1512,9 +1488,9 @@ blockBody[int prevToken]
  *  A block inside an expression or after a method call is always assumed to be a closure.
  *  Only labeled, unparameterized blocks which occur directly as substatements are kept open.
  */
-closedBlock
-    :   lc:LCURLY^ nls!     {#lc.setType(CLOSED_BLOCK);}
-        closureParametersOpt[true]
+closableBlock
+    :   lc:LCURLY^ nls!     {#lc.setType(CLOSABLE_BLOCK);}
+        closableBlockParamsOpt[true]
         blockBody[EOF]
         RCURLY!
     ;
@@ -1527,16 +1503,16 @@ implicitParameters  {Token first = LT(1);}
     :   {   #implicitParameters = #(create(IMPLICIT_PARAMETERS,"IMPLICIT_PARAMETERS",first,LT(1)));  }
     ;
 
-/** A sub-block of a block can be either open or closed.
- *  It is closed if and only if there are explicit closure arguments.
+/** A sub-block of a block can be either open or closable.
+ *  It is closable if and only if there are explicit closure arguments.
  *  Compare this to a block which is appended to a method call,
  *  which is given closure arguments, even if they are not explicit in the code.
  */
-openOrClosedBlock
+openOrClosableBlock
     :   lc:LCURLY^ nls!
-        cp:closureParametersOpt[false]
+        cp:closableBlockParamsOpt[false]
         {   if (#cp == null)    #lc.setType(SLIST);
-            else                #lc.setType(CLOSED_BLOCK);
+            else                #lc.setType(CLOSABLE_BLOCK);
         }
         blockBody[EOF]
         RCURLY!
@@ -1562,7 +1538,7 @@ statement[int prevToken]
         (IDENT COLON)=>
         pfx:statementLabelPrefix!
         {#statement = #pfx;}  // nest it all under the label prefix
-        (   (LCURLY) => openOrClosedBlock
+        (   (LCURLY) => openOrClosableBlock
         |   statement[COLON]
         )
 
@@ -1788,7 +1764,7 @@ expressionStatement[int prevToken]
  */
 checkSuspiciousExpressionStatement[int prevToken]
     :
-        (~LCURLY | LCURLY closureParametersStart)=>  //FIXME too much lookahead
+        (~LCURLY | LCURLY closableBlockParamsStart)=>  //FIXME too much lookahead
         // Either not a block, or a block with an explicit closure parameter list.
         (   {prevToken == NLS}?
             {   addWarning(
@@ -1941,7 +1917,7 @@ commandArguments[AST head]  {Token first = LT(1);}
 //                      ( 2)  **(power)
 //                      ( 1)  ~  ! $ (type)
 //                            . ?. *. (dot -- identifier qualification)
-//                            []   () (method call)  {} (closure)  [] (list/map)
+//                            []   () (method call)  {} (closableBlock)  [] (list/map)
 //                            new  () (explicit parenthesis)
 //                            $x (scope escape)
 //
@@ -2156,7 +2132,7 @@ dynamicMemberName  {Token first = LT(1);}
  *  A plain unlabeled argument is allowed to match a trailing Map or Closure argument:
  *  f(x, a:p) {s}  ===  f(*[ x, [a:p], {s} ])
  */
-// AST is [METHOD_CALL, callee, ELIST? CLOSED_BLOCK?].
+// AST is [METHOD_CALL, callee, ELIST? CLOSABLE_BLOCK?].
 // Note that callee is often of the form x.y but not always.
 // If the callee is not of the form x.y, then an implicit .call is needed.
 methodCallArgs[AST callee]
@@ -2187,7 +2163,7 @@ appendedBlock[AST callee]
         (   (IDENT COLON nls LCURLY)=>
             IDENT c:COLON^ {#c.setType(LABELED_ARG);} nls!
         )? */
-        closedBlock
+        closableBlock
     ;
 
 /** An expression may be followed by [...].
@@ -2412,7 +2388,7 @@ primaryExpression
     |   "this"
     |   "super"
     |   parenthesizedExpression             // (general stuff...)
-    |   closureConstructorExpression
+    |   closableBlockConstructorExpression
     |   listOrMapConstructorExpression
     |   stringConstructorExpression         // "foo $bar baz"; presented as multiple tokens
     |   scopeEscapeExpression               // $x
@@ -2465,8 +2441,8 @@ assignmentLessExpression  {Token first = LT(1);}
     ;
 
 
-closureConstructorExpression
-    :   closedBlock
+closableBlockConstructorExpression
+    :   closableBlock
     ;
 
 // Groovy syntax for "$x $y" or /$x $y/.
@@ -2495,7 +2471,7 @@ stringConstructorValuePart
         sp:STAR^                        {#sp.setType(SPREAD_ARG);}
     )?
     (   identifier
-    |   openOrClosedBlock
+    |   openOrClosableBlock
     )
     ;
 
@@ -3180,7 +3156,7 @@ REGEX_FIND        options {paraphrase="'=~'";}          :   "=~"            ;
 REGEX_MATCH       options {paraphrase="'==~'";}         :   "==~"           ;
 STAR_STAR         options {paraphrase="'**'";}          :   "**"            ;
 STAR_STAR_ASSIGN  options {paraphrase="'**='";}         :   "**="           ;
-CLOSURE_OP        options {paraphrase="'->'";}          :   "->"            ;
+CLOSABLE_BLOCK_OP options {paraphrase="'->'";}          :   "->"            ;
 
 // Whitespace -- ignored
 WS

@@ -184,12 +184,12 @@ public class SourceCodeTraversal extends TraversalHelper {
 
                 case GroovyTokenTypes.CTOR_CALL:
                 case GroovyTokenTypes.METHOD_CALL:
-                    if (t.getNumberOfChildren() == 2 && t.childAt(1) != null && t.childAt(1).getType() == GroovyTokenTypes.CLOSED_BLOCK ) {
+                    if (t.getNumberOfChildren() == 2 && t.childAt(1) != null && t.childAt(1).getType() == GroovyTokenTypes.CLOSABLE_BLOCK) {
                         // myMethod {...
                         accept_FirstChild_v_SecondChild(t);
                     } else {
                         GroovySourceAST lastChild = t.childAt(t.getNumberOfChildren() -1);
-                        if (lastChild != null && lastChild.getType() == GroovyTokenTypes.CLOSED_BLOCK) {
+                        if (lastChild != null && lastChild.getType() == GroovyTokenTypes.CLOSABLE_BLOCK) {
                             // myMethod(a,b) {...
                             accept_FirstChild_v_RestOfTheChildren_v_LastChild(t);
                         } else {
@@ -209,7 +209,7 @@ public class SourceCodeTraversal extends TraversalHelper {
                     accept_v_FirstChildsFirstChild_v_Child2_Child3_v_Child4_v___v_LastChild(t);
                     break;
 
-                case GroovyTokenTypes.CLOSED_BLOCK: // [1,2,3].each {foo(it)}  <-- Closure
+                case GroovyTokenTypes.CLOSABLE_BLOCK: // [1,2,3].each {foo(it)}  <-- Closure
                     if (t.childAt(0) != null && t.childAt(0).getType() == GroovyTokenTypes.IMPLICIT_PARAMETERS) {
                         accept_v_AllChildren_v(t);
                     } else {

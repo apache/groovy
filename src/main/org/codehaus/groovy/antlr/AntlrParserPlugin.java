@@ -1180,7 +1180,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             case SLIST:
                 return blockExpression(node);
 
-            case CLOSED_BLOCK:
+            case CLOSABLE_BLOCK:
                 return closureExpression(node);
 
             case SUPER_CTOR_CALL:
