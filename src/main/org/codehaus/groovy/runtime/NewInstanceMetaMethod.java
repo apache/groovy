@@ -55,20 +55,30 @@ public class NewInstanceMetaMethod extends MetaMethod {
     private MetaMethod metaMethod;
     private Class[] logicalParameterTypes;
 
+    
     public NewInstanceMetaMethod(MetaMethod metaMethod) {
         super(metaMethod);
         this.metaMethod = metaMethod;
+        init();
+    }
+    
+    public NewInstanceMetaMethod(String name, Class declaringClass, Class[] parameterTypes, Class returnType, int modifiers) {
+        super(name, declaringClass, parameterTypes, returnType, modifiers);
+        this.metaMethod = new MetaMethod(name, declaringClass, parameterTypes,returnType, modifiers);
+        init();
+    }
+    
+    private void init() {
         Class[] realParameterTypes = metaMethod.getParameterTypes();
-        int size = realParameterTypes.length;
+        int size = realParameterTypes!=null ? realParameterTypes.length : 0;
         if (size <= 1) {
             logicalParameterTypes = EMPTY_TYPE_ARRAY;
-        }
-        else {
+        } else {
             logicalParameterTypes = new Class[--size];
             System.arraycopy(realParameterTypes, 1, logicalParameterTypes, 0, size);
         }
     }
-
+    
     public Class getDeclaringClass() {
         return getBytecodeParameterTypes()[0];
     }
