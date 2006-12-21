@@ -1,5 +1,6 @@
 import java.io.InputStreamReader
 import java.awt.Dimension
+import org.codehaus.groovy.runtime.typehandling.GroovyCastException
 
 /** 
  * Tests the various new Groovy methods
@@ -102,9 +103,24 @@ class GroovyMethodsTest extends GroovyTestCase {
 
     void testCollectionAsList() {
         Integer[] nums = [1, 2, 3, 4, 5]
-        def l = nums as List
-        nums.each{ assert l.contains(it) }
-        assert nums.size() == l.size()
+        def numList = nums as List
+        nums.each{ assert numList.contains(it) }
+        assert nums.size() == numList.size()
+    }
+
+    void testCollectionAsLinkedList() {
+        Integer[] nums = [1, 2, 3, 4, 5]
+        def numList = nums as LinkedList
+        nums.each{ assert numList.contains(it) }
+        assert nums.size() == numList.size()
+        assert numList.class == LinkedList.class
+    }
+
+    void testArrayListAsLinkedList() {
+        ArrayList nums = [1, 2, 3, 4, 5]
+        shouldFail(GroovyCastException.class) {
+            def numList = nums as LinkedList
+        }
     }
 
     void testFileSize() {

@@ -12,6 +12,7 @@ import groovy.lang.GroovyRuntimeException;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Array;
+import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -197,16 +198,21 @@ public class DefaultTypeTransformation {
         if (type.isInstance(object)) {
             return object;
         }
-        if (type.isAssignableFrom(Collection.class)) {
+        if (Collection.class.isAssignableFrom(type)) {
             if (object.getClass().isArray()) {
-                // lets call the collections constructor
-                // passing in the list wrapper
-                Collection answer = null;
-                try {
-                    answer = (Collection) type.newInstance();
-                }
-                catch (Exception e) {
-                    throw new GroovyCastException("Could not instantiate instance of: " + type.getName() + ". Reason: " + e);
+                Collection answer;
+                int modifiers = type.getModifiers();
+                if (type.isAssignableFrom(ArrayList.class) && (Modifier.isAbstract(modifiers) || Modifier.isInterface(modifiers))) {
+                    answer = new ArrayList();
+                } else {
+                    // lets call the collections constructor
+                    // passing in the list wrapper
+                    try {
+                        answer = (Collection) type.newInstance();
+                    }
+                    catch (Exception e) {
+                        throw new GroovyCastException("Could not instantiate instance of: " + type.getName() + ". Reason: " + e);
+                    }
                 }
 
                 // we cannot just wrap in a List as we support primitive type arrays

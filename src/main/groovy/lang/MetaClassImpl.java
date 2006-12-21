@@ -417,12 +417,10 @@ public class MetaClassImpl extends MetaClass {
        if (initialized) {
            throw new RuntimeException("Already initialized, cannot add new method: " + method);
        }
-       else {
-           NewInstanceMetaMethod newMethod = new NewInstanceMetaMethod(createMetaMethod(method));
-           if (! newGroovyMethodsList.contains(newMethod)){
-               newGroovyMethodsList.add(newMethod);
-               addMethod(newMethod);
-           }
+       NewInstanceMetaMethod newMethod = new NewInstanceMetaMethod(createMetaMethod(method));
+       if (! newGroovyMethodsList.contains(newMethod)){
+           newGroovyMethodsList.add(newMethod);
+           addMethod(newMethod);
        }
    }
 
@@ -430,12 +428,10 @@ public class MetaClassImpl extends MetaClass {
        if (initialized) {
            throw new RuntimeException("Already initialized, cannot add new method: " + method);
        }
-       else {
-           NewStaticMetaMethod newMethod = new NewStaticMetaMethod(createMetaMethod(method));
-           if (! newGroovyMethodsList.contains(newMethod)){
-               newGroovyMethodsList.add(newMethod);
-               addMethod(newMethod);
-           }
+       NewStaticMetaMethod newMethod = new NewStaticMetaMethod(createMetaMethod(method));
+       if (! newGroovyMethodsList.contains(newMethod)){
+           newGroovyMethodsList.add(newMethod);
+           addMethod(newMethod);
        }
    }
 
@@ -597,11 +593,9 @@ public class MetaClassImpl extends MetaClass {
        if (constructor != null) {
            return constructor;
        }
-       else {
-           constructor = (Constructor) chooseMethod("<init>", constructors, arguments, true);
-           if (constructor != null) {
-               return constructor;
-           }
+       constructor = (Constructor) chooseMethod("<init>", constructors, arguments, true);
+       if (constructor != null) {
+           return constructor;
        }
        return null;
    }
@@ -758,10 +752,6 @@ public class MetaClassImpl extends MetaClass {
        constructor = (Constructor) chooseMethod("<init>", constructors, argClasses, true);
        if (constructor != null) {
            return doConstructorInvoke(at, constructor, arguments, true);
-       }
-       // cater for Object[] as List
-       if (List.class.isAssignableFrom(at)) {
-           return InvokerHelper.asList(arguments);
        }
 
        if (arguments.length == 1) {
