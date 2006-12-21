@@ -108,7 +108,8 @@ public class SourcePrinter extends VisitorAdapter {
 
 	public void visitArrayDeclarator(GroovySourceAST t, int visit) {
 		//<ARRAY_DECLARATOR>int</ARRAY_DECLARATOR> primes = new int(<ARRAY_DECLARATOR>5</ARRAY_DECLARATOR>)
-		if (getParentNode().getType() == GroovyTokenTypes.TYPE) {
+		if (getParentNode().getType() == GroovyTokenTypes.TYPE ||
+				getParentNode().getType() == GroovyTokenTypes.TYPECAST) { // ugly hack
 			// type defintion, i.e.   int[] x;
 			print(t,visit,null,null,"[]");
 		} else {
@@ -891,6 +892,8 @@ public class SourcePrinter extends VisitorAdapter {
 		printUpdatingTabLevel(t,visit,"super("," ",")");
     }
     
+    // visit TripleDot, not used in the AST
+    
     public void visitType(GroovySourceAST t,int visit) {
         GroovySourceAST parent = getParentNode();
         GroovySourceAST modifiers = parent.childOfType(GroovyTokenTypes.MODIFIERS);
@@ -927,10 +930,18 @@ public class SourcePrinter extends VisitorAdapter {
         print(t,visit,"(",null,")");
     }
     public void visitTypeLowerBounds(GroovySourceAST t,int visit) {
-        print(t,visit," super ",null,null);
+        print(t,visit," super "," & ",null);
     }
+    public void visitTypeParameter(GroovySourceAST t, int visit) {
+    	// print nothing
+    }
+
+    public void visitTypeParameters(GroovySourceAST t, int visit) {
+    	print(t,visit,"<",", ",">");
+    }
+
     public void visitTypeUpperBounds(GroovySourceAST t,int visit) {
-        print(t,visit," extends ",null,null);
+        print(t,visit," extends "," & ",null);
     }
     public void visitUnaryMinus(GroovySourceAST t, int visit) {
     	print(t,visit,"-",null,null);
@@ -939,14 +950,27 @@ public class SourcePrinter extends VisitorAdapter {
     	print(t,visit,"+",null,null);
     }
 
+    // visit Unused "const", "do", "goto" - unsurprisingly these are unused by the AST.
+    
     public void visitVariableDef(GroovySourceAST t,int visit) {
         // do nothing
     }
+
+    // a.k.a. "variable arity parameter" in the JLS
+    public void visitVariableParameterDef(GroovySourceAST t,int visit) {
+        print(t,visit,null,"... ",null);
+    }
+    
+    // visit Vocab - only used by Lexer
     
     public void visitWildcardType(GroovySourceAST t, int visit) {
     	print(t,visit,"?",null,null);
     }
 
+    // visit WS - only used by lexer
+    
+    
+    
     public void visitDefault(GroovySourceAST t,int visit) {
         if (visit == OPENING_VISIT) {
             print(t,visit,"<" + tokenNames[t.getType()] + ">");

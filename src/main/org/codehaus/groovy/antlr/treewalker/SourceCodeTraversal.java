@@ -98,7 +98,15 @@ public class SourceCodeTraversal extends TraversalHelper {
                 case GroovyTokenTypes.PARAMETERS: // a,b,c
                 case GroovyTokenTypes.TYPE_ARGUMENTS: // <String, Object>
                 case GroovyTokenTypes.STRING_CONSTRUCTOR: // "foo${bar}wibble"
+                case GroovyTokenTypes.TYPE_PARAMETER: // class Foo<T extends F>
+                case GroovyTokenTypes.TYPE_PARAMETERS: // class Foo<T>
+                case GroovyTokenTypes.TYPE_UPPER_BOUNDS: // class Foo<T extends F>
                     accept_v_FirstChild_v_SecondChild_v___LastChild_v(t);
+                    // todo : confirm that TYPE_LOWER_BOUNDS does not have multiple children
+                    break;
+
+                case GroovyTokenTypes.VARIABLE_PARAMETER_DEF: // void f(String ... others) {}
+                    accept_v_FirstChild_SecondChild_v_ThirdChild_v(t);
                     break;
 
                 case GroovyTokenTypes.INDEX_OP:
@@ -111,7 +119,7 @@ public class SourceCodeTraversal extends TraversalHelper {
                 case GroovyTokenTypes.VARIABLE_DEF:
                 case GroovyTokenTypes.METHOD_DEF:
                 case GroovyTokenTypes.OBJBLOCK: //class Foo {def bar()}  <-- this block
-                case GroovyTokenTypes.PARAMETER_DEF:
+                case GroovyTokenTypes.PARAMETER_DEF: // void f(String me) {}
                 case GroovyTokenTypes.SLIST: // list of expressions, variable defs etc
                     accept_v_AllChildren_v(t);
                     break;

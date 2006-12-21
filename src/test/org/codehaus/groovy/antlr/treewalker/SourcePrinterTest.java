@@ -787,9 +787,8 @@ public class SourcePrinterTest extends GroovyTestCase {
     	assertEquals("class Foo {Foo(int x) {super(12, 3)}}",pretty("class Foo{Foo(int x) {super(12, 3)}}"));
     	assertEquals("class Foo {Foo( x) {super()}}",pretty("class Foo{Foo(x) {super()}}"));
         // todo: above is not quite the spacing I would expect, but good enough for now...
+    	// todo not yet implemented in parser: assertEquals("(new Outer()).super()", pretty("(new Outer()).super()"));
     }
-
-    // JRR: got to here...
     
     public void testType() throws Exception {
     	assertEquals("def bar", pretty("def bar"));
@@ -797,16 +796,25 @@ public class SourcePrinterTest extends GroovyTestCase {
         assertEquals("public String bar", pretty("public String bar"));
         assertEquals("String bar", pretty("String bar"));
     }
-    
-    public void testTypeUpperBounds_FAILS() throws Exception {  if (notYetImplemented()) return;
-    	assertEquals("class Foo<T extends C & I> {T t}",pretty("class Foo<T extends C & I> {T t}"));
-    }
 
     public void testTypecast() throws Exception {
+        assertEquals("foo = (int)bar", pretty("foo = (int)bar"));
+        assertEquals("foo = (int[])bar", pretty("foo = (int[])bar"));
         assertEquals("foo = (String)bar", pretty("foo = (String)bar"));
+        assertEquals("foo = (String[])bar", pretty("foo = (String[])bar"));
     }
 
-    public void testTypeParameters_FAILS() throws Exception { if (notYetImplemented()) return;
+    public void testTypeArguments() throws Exception {
+    	assertEquals("void printCollection(Collection<?> c) {}", pretty("void printCollection(Collection<?> c) {}"));
+    }
+    public void testTypeLowerBounds() throws Exception {
+    	assertEquals("void printCollection(Collection<? super X> c) {}", pretty("void printCollection(Collection<? super X> c) {}"));
+    }
+    public void testTypeUpperBounds() throws Exception {
+    	assertEquals("void printCollection(Collection<? extends X> c) {}", pretty("void printCollection(Collection<? extends X> c) {}"));
+    }
+
+    public void testTypeParameters() throws Exception {
     	assertEquals("class Foo<T extends C & I> {T t}",pretty("class Foo<T extends C & I> {T t}"));
     }
     public void testUnaryMinus() throws Exception {
@@ -819,9 +827,20 @@ public class SourcePrinterTest extends GroovyTestCase {
     public void testVariableDef() throws Exception {
         assertEquals("def x = 1", pretty("def x = 1"));
         assertEquals("int y = 2", pretty("int y = 2"));
+        assertEquals("String y", pretty("String y"));
+        assertEquals("def foo() {int b = 9}", pretty("def foo(){int b = 9}"));
+    }
+    public void testVariableDef_FAILS() throws Exception { if (notYetImplemented()) return;
+    	assertEquals("boolean x, y, z = false", pretty("boolean x,y,z = false"));       
     }
     
-    public void testWildcardType() throws Exception {// if (notYetImplemented()) return;
+    public void testVaribleParameterDef() throws Exception {
+    	assertEquals("void myMethod(String param1, String ... others) {}", pretty("void myMethod(String param1, String ... others) {}"));
+    	assertEquals("void myMethod(final int ... others) {}", pretty("void myMethod(final int ... others) {}"));
+    	assertEquals("void myMethod(def ... others) {}", pretty("void myMethod(def ... others) {}"));
+    }
+    
+    public void testWildcardType() throws Exception {
     	assertEquals("public boolean process(Set<? extends TypeElement> annotations) {println annotations}", pretty("public boolean process(Set<? extends TypeElement> annotations) {println annotations}"));
     }
 
