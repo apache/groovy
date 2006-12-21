@@ -85,8 +85,6 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
         this.thisObject = thisObject;
 
         Class closureClass = this.getClass();
-        maximumNumberOfParameters = 0;
-
         final Class clazz = closureClass;
         final Method[] methods = (Method[]) AccessController.doPrivileged(new  PrivilegedAction() {
             public Object run() {
@@ -94,12 +92,16 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
             }
         });
 
+        // set it to -1 for starters so parameterTypes will always get a type
+        maximumNumberOfParameters = -1;
         for (int j = 0; j < methods.length; j++) {
             if ("doCall".equals(methods[j].getName()) && methods[j].getParameterTypes().length > maximumNumberOfParameters) {
                 parameterTypes = methods[j].getParameterTypes();
                 maximumNumberOfParameters = parameterTypes.length;
             }
         }
+        // this line should be useless, but well, just in case
+        maximumNumberOfParameters = Math.max(maximumNumberOfParameters,0);
     }
     
     public Closure(Object owner) {
