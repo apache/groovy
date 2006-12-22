@@ -45,18 +45,19 @@ public class ClassCompletionVerifierTest extends TestSupport {
         checkErrorMessage(EXPECTED_CLASS_MODIFIER_ERROR_MESSAGE);
     }
 
-    public void testDetectsDuplicateMethodsForClass() throws Exception {
-        checkDetectsDuplicateMethods(0, EXPECTED_DUPLICATE_METHOD_ERROR_CLASS_MESSAGE);
+    public void testDetectsDuplicateMethodsForClassNoParams() throws Exception {
+        checkDetectsDuplicateMethods(0, EXPECTED_DUPLICATE_METHOD_ERROR_CLASS_MESSAGE, Parameter.EMPTY_ARRAY);
     }
 
-    public void testDetectsDuplicateMethodsForInterface() throws Exception {
-        checkDetectsDuplicateMethods(ACC_INTERFACE, EXPECTED_DUPLICATE_METHOD_ERROR_INTERFACE_MESSAGE);
+    public void testDetectsDuplicateMethodsForInterfaceOneParam() throws Exception {
+        Parameter[] stringParam = { new Parameter(ClassHelper.STRING_TYPE, "x") };
+        checkDetectsDuplicateMethods(ACC_INTERFACE, EXPECTED_DUPLICATE_METHOD_ERROR_INTERFACE_MESSAGE, stringParam);
     }
 
-    private void checkDetectsDuplicateMethods(int modifiers, String expectedErrorMessage) {
+    private void checkDetectsDuplicateMethods(int modifiers, String expectedErrorMessage, Parameter[] params) {
         ClassNode node = new ClassNode("zzz", modifiers, ClassHelper.OBJECT_TYPE);
-        node.addMethod(new MethodNode("xxx", ACC_PUBLIC, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
-        node.addMethod(new MethodNode("xxx", ACC_PUBLIC, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
+        node.addMethod(new MethodNode("xxx", ACC_PUBLIC, ClassHelper.OBJECT_TYPE, params, ClassNode.EMPTY_ARRAY, null));
+        node.addMethod(new MethodNode("xxx", ACC_PUBLIC, ClassHelper.OBJECT_TYPE, params, ClassNode.EMPTY_ARRAY, null));
         verifier.visitClass(node);
         checkErrorCount(2);
         checkErrorMessage(expectedErrorMessage);

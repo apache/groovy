@@ -269,7 +269,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
                                                     MethodNode node, MethodNode element) {
         boolean isEqual = true;
         for (int i = 0; i < p2.length; i++) {
-            isEqual &= p1[i].equals(p2[i]);
+            isEqual &= p1[i].getType().equals(p2[i].getType());
         }
         isEqual &= node.getReturnType().equals(element.getReturnType());
         if (isEqual) {

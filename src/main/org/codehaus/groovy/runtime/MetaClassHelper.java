@@ -828,12 +828,12 @@ public class MetaClassHelper {
         }
         else if (classToTransformTo==String.class) {
             if (	classToTransformFrom == String.class ||
-            		GString.class.isAssignableFrom(classToTransformFrom))
-            return true;
+            		GString.class.isAssignableFrom(classToTransformFrom)) {
+                return true;
+            }
         }
-        
-        boolean answer = classToTransformTo.isAssignableFrom(classToTransformFrom);
-        return answer;
+
+        return classToTransformTo.isAssignableFrom(classToTransformFrom);
     }
     
     public static boolean isGenericSetMethod(MetaMethod method) {
