@@ -430,6 +430,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         addDefaultParameters(methods, new DefaultArgsAction(){
             public void call(ArgumentListExpression arguments, Parameter[] newParams, MethodNode method) {
                 MethodCallExpression expression = new MethodCallExpression(VariableExpression.THIS_EXPRESSION, method.getName(), arguments);
+                expression.setImplicitThis(true);
                 Statement code = null;
                 if (method.isVoidMethod()) {
                     code = new ExpressionStatement(expression);

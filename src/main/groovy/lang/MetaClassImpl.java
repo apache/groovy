@@ -494,7 +494,8 @@ public class MetaClassImpl extends MetaClass {
            Closure closure = (Closure) object;
            Object delegate = closure.getDelegate();
            Object owner = closure.getOwner();
-
+           
+           
            if ("call".equals(methodName) || "doCall".equals(methodName)) {
                if (object.getClass()==MethodClosure.class) {
                    MethodClosure mc = (MethodClosure) object;
@@ -513,12 +514,16 @@ public class MetaClassImpl extends MetaClass {
            }
 
            if (method==null && owner!=closure) {
-               MetaClass ownerMetaClass = registry.getMetaClass(owner.getClass());
+               Class ownerClass = owner.getClass();
+               if (owner instanceof Class) ownerClass = (Class) owner;
+               MetaClass ownerMetaClass = registry.getMetaClass(ownerClass);
                method = ownerMetaClass.retrieveMethod(methodName,argClasses);
                if (method!=null) return ownerMetaClass.invokeMethod(owner,methodName,originalArguments);
            }
            if (method==null && delegate!=closure && delegate!=null) {
-               MetaClass delegateMetaClass = registry.getMetaClass(delegate.getClass());
+               Class delegateClass = delegate.getClass();
+               if (delegate instanceof Class) delegateClass = (Class) delegate;
+               MetaClass delegateMetaClass = registry.getMetaClass(delegateClass);
                method = delegateMetaClass.retrieveMethod(methodName,argClasses);
                if (method!=null) return delegateMetaClass.invokeMethod(delegate,methodName,originalArguments);
            }

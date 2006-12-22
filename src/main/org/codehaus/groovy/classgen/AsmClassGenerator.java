@@ -1499,7 +1499,8 @@ public class AsmClassGenerator extends ClassGenerator {
         // receiver
         // we operate on GroovyObject if possible
         Expression objectExpression = call.getObjectExpression();
-        if (!isStaticMethod() && isThisExpression(call.getObjectExpression())) {
+        if (!isStaticMethod() && !isStaticContext() && isThisExpression(call.getObjectExpression())) 
+        {
             objectExpression = new CastExpression(ClassHelper.make(GroovyObject.class),objectExpression);
         }
         // message name
@@ -1525,7 +1526,11 @@ public class AsmClassGenerator extends ClassGenerator {
             MethodCallerMultiAdapter adapter, 
             boolean safe, boolean spreadSafe, boolean implicitThis
     ) {
-        makeCall(new ClassExpression(classNode), receiver, message, arguments,
+        ClassNode cn = classNode;
+        if (isInClosure() && !implicitThis) {
+            cn = getOutermostClass();
+        }
+        makeCall(new ClassExpression(cn), receiver, message, arguments,
                 adapter, safe, spreadSafe, implicitThis);
     }
     
@@ -1624,9 +1629,15 @@ public class AsmClassGenerator extends ClassGenerator {
             MethodCallerMultiAdapter adapter = invokeMethod;
             if (isThisExpression) adapter = invokeMethodOnCurrent;
             if (isSuperMethodCall) adapter = invokeMethodOnSuper;
-            if (isStaticMethod() && isThisExpression) adapter = invokeStaticMethod;
+            if (isStaticInvocation(call)) adapter = invokeStaticMethod;
             makeInvokeMethodCall(call,isSuperMethodCall,adapter);
         }
+    }
+
+    private boolean isStaticInvocation(MethodCallExpression call) {
+        if (!isThisExpression(call.getObjectExpression())) return false;
+        if (isStaticMethod()) return true;
+        return isStaticContext() && !call.isImplicitThis();
     }
 
     protected boolean emptyArguments(Expression arguments) {
@@ -2073,7 +2084,7 @@ public class AsmClassGenerator extends ClassGenerator {
         if (isInClosure()) classNode = getOutermostClass();
         
         if (variableName.equals("this")) {
-            if (isStaticMethod()) {
+            if (isStaticMethod() || (!implicitThis && isStaticContext())) {
                 visitClassExpression(new ClassExpression(classNode));
             } else {
                 loadThis();

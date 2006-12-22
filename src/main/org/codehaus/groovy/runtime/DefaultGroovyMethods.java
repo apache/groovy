@@ -6627,6 +6627,15 @@ public class DefaultGroovyMethods {
     public static Object asType(Object obj, Class type) {
         return DefaultTypeTransformation.castToType(obj, type);
     }
+    
+    public static Object newInstance(Class c) {
+        return InvokerHelper.getInstance().invokeConstructorOf(c,null);        
+    }
+    
+    public static Object newInstance(Class c, Object[] args) {
+        if (args==null) args=new Object[]{null};
+        return InvokerHelper.getInstance().invokeConstructorOf(c,args);
+    }
 
     /**
      * A Runnable which waits for a process to complete together with a notification scheme
