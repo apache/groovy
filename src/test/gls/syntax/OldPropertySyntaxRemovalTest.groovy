@@ -1,6 +1,6 @@
 package gls.syntax
 
-public class OldPropertySynatxRemovalTest extends gls.CompilableTestSupport {
+public class OldPropertySyntaxRemovalTest extends gls.CompilableTestSupport {
   
   void testMultipleParameters() {
     shouldNotCompile """

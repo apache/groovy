@@ -1,6 +1,6 @@
 package gls.syntax
 
-public class OldClosureSynatxRemovalTest extends gls.CompilableTestSupport {
+public class OldClosureSyntaxRemovalTest extends gls.CompilableTestSupport {
   def a = 2
   def b = 3
   

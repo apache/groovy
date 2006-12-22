@@ -86,7 +86,7 @@ public class DomToGroovyTest extends GroovyTestCase {
         StringWriter writer = new StringWriter()
         converter = new DomToGroovy(new PrintWriter(writer))
         converter.print(document)
-        StringUtil.assertMultilineStringsEqual(expectedScript, writer.toString())
+        StringTestUtil.assertMultilineStringsEqual(expectedScript, writer.toString())
     }
 
     private void convert(String name, String output) throws Exception {

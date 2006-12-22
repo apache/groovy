@@ -57,7 +57,7 @@ class TedsClosureBug extends GroovyTestCase {
 		    }
 		  }
 		}
-		StringUtil.assertMultilineStringsEqual(EXPECTED, sw.toString())
+		StringTestUtil.assertMultilineStringsEqual(EXPECTED, sw.toString())
 	}
 }
 
