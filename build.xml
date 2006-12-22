@@ -5,6 +5,10 @@
   <!-- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- -->
   <property name="test.reports.dir" value="target/test-reports"/>
   
+    <target name="cruise" description="to be started by the CruiseControl build server">
+        <echo message="hook for your build"/>
+     </target>
+
   <target name="pretty-test" 
           description="HTML output of test cases">
 
@@ -15,5 +19,6 @@
       <report format="frames" todir="${test.reports.dir}"/>
     </junitreport>
   </target>
+
 
 </project>

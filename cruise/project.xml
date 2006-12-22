@@ -1,0 +1,52 @@
+<!-- 
+This file is referenced from cruisecontrol's config.xml and contains the project definition.
+
+Available entities are:
+basedir
+hostname
+defaultmailhost
+-->
+
+
+<project name="groovy" buildafterfailed="false">
+		<modificationset quietperiod="120">
+			<svn localworkingcopy="&basedir;/groovy/cruisecontrol/checkout"/>
+		</modificationset>
+		<schedule>
+			<!-- buildfile is relative to checkout dir -->
+			<ant
+				buildfile="&basedir;/groovy/cruisecontrol/checkout/cruise/build.xml"
+				antWorkingDir="&basedir;/groovy/cruisecontrol/checkout"
+				usedebug="false"
+				uselogger="true"
+				>
+                            <property name="reporting-app-dir" value="&basedir;/groovy/&hostname;/groovy/"/>
+                        </ant>
+		</schedule>
+		<listeners>
+                    <currentbuildstatuslistener file="&basedir;/groovy/cruisecontrol/logs/status.txt"/>
+                </listeners>
+                <log dir="&basedir;/groovy/cruisecontrol/logs">
+			<!--merge dir="&basedir;/groovy/cruisecontrol/checkout/target/test-reports/"/-->
+		</log>
+		<publishers>
+			<!-- htmlemail is used only for explicit subscribers -->
+			<htmlemail
+				buildresultsurl="http://&hostname;/groovy/"
+				mailhost="&defaultmailhost;"
+				returnaddress="build-support@canoo.com"
+				spamwhilebroken="false"
+				skipusers="true"
+				logdir="&basedir;/groovy/cruisecontrol/logs"
+				xslfile="&basedir;/groovy/cruisecontrol/checkout/cruise/htmlmail.xsl"
+				>
+				<!--propertiesmapper file="&basedir;/groovy/cruisecontrol/checkout/cruise/emailmap.properties"/-->
+				<always address="dierk.koenig@canoo.com"/>
+			</htmlemail>
+			<XSLTLogPublisher
+				directory="&basedir;/groovy/&hostname;/groovy/"
+				outfilename="buildstatus.rss"
+				xsltfile="&basedir;/groovy/cruisecontrol/checkout/cruise/buildstatus.xsl"
+				/>
+		</publishers>
+</project>
