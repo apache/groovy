@@ -1,4 +1,4 @@
-
+package gls.syntax
 
 public class OldClosureSynatxRemovalTest extends gls.CompilableTestSupport {
   def a = 2

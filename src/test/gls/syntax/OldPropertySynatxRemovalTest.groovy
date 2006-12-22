@@ -1,4 +1,4 @@
-
+package gls.syntax
 
 public class OldPropertySynatxRemovalTest extends gls.CompilableTestSupport {
   
