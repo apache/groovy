@@ -287,7 +287,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             ClassNode classScope = scope.getClassScope();
             if (classScope!=null) {
                 Variable member = findClassMember(classScope,var.getName());
-                if (member!=null) var = member;
+                if (member!=null && (currentScope.isInStaticContext() ^ member instanceof DynamicVariable)) var = member;
                 break;
             }            
             scope = scope.getParent();
