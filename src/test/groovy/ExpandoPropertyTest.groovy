@@ -83,7 +83,7 @@ class ExpandoPropertyTest extends GroovyTestCase {
         def e = new Expando()
         e.class = "hello world"
         
-        assert e.class = "hello world"
+        assert e.class == "hello world"
     }
 }
 

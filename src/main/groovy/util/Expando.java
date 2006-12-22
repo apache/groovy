@@ -49,6 +49,7 @@ import groovy.lang.Closure;
 import groovy.lang.GroovyObjectSupport;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaExpandoProperty;
+import groovy.lang.MissingPropertyException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -100,21 +101,19 @@ public class Expando extends GroovyObjectSupport {
     }
 
     public Object getProperty(String property) {
+        // always use the expando properties first
+        Object result = getProperties().get(property);
+        if (result!=null) return result;
         try {
             return super.getProperty(property);
         }
-        catch (GroovyRuntimeException e) {
-            return getProperties().get(property);
-        }
+        catch (MissingPropertyException e) {}
+        return null;
     }
 
     public void setProperty(String property, Object newValue) {
-        try {
-            super.setProperty(property, newValue);
-        }
-        catch (GroovyRuntimeException e) {
-            getProperties().put(property, newValue);
-        }
+        // always use the expando properties
+        getProperties().put(property, newValue);
     }
 
     public Object invokeMethod(String name, Object args) {

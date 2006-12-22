@@ -18,12 +18,12 @@ class CategoryTest extends GroovyTestCase {
       assert getSomething() == "hello"
       assert something == "hello"
       something = "nihao"
-      assert something = "nihao"
+      assert something == "nihao"
     }
     
     // test the new value again in a new block
     use(CategoryTestPropertyCategory) { 
-      assert something = "nihao"
+      assert something == "nihao"
     }
 
   }

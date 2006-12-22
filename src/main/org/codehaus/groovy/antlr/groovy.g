@@ -1704,7 +1704,7 @@ branchStatement
     //      |   "assert"^ expression[0] ( COLON! expression[0] )?
 
     // groovy assertion...
-    |   "assert"^ expression[0]
+    |   "assert"^ assignmentLessExpression
         (   options {greedy=true;} :
             (   COMMA!  // TODO:  gratuitous change caused failures
             |   COLON!  // standard Java syntax, but looks funny in Groovy
