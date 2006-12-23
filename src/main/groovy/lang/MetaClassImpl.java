@@ -500,13 +500,17 @@ public class MetaClassImpl extends MetaClass {
                if (object.getClass()==MethodClosure.class) {
                    MethodClosure mc = (MethodClosure) object;
                    methodName = mc.getMethod();
-                   MetaClass ownerMetaClass = registry.getMetaClass(owner.getClass());
-                   return ownerMetaClass.invokeMethod(owner.getClass(),owner,methodName,arguments,false,false);
+                   Class ownerClass = owner.getClass();
+                   if (owner instanceof Class) ownerClass = (Class) owner;
+                   MetaClass ownerMetaClass = registry.getMetaClass(ownerClass);
+                   return ownerMetaClass.invokeMethod(ownerClass,owner,methodName,arguments,false,false);
                } else if (object.getClass()==CurriedClosure.class) {
                    CurriedClosure cc = (CurriedClosure) object;
                    // change the arguments for an uncurried call
                    arguments = cc.getUncurriedArguments(arguments);
-                   MetaClass ownerMetaClass = registry.getMetaClass(owner.getClass());
+                   Class ownerClass = owner.getClass();
+                   if (owner instanceof Class) ownerClass = (Class) owner;
+                   MetaClass ownerMetaClass = registry.getMetaClass(ownerClass);
                    return ownerMetaClass.invokeMethod(owner,methodName,arguments);
                }
            } else if ("curry".equals(methodName)) {

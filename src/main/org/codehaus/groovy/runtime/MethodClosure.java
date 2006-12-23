@@ -22,7 +22,8 @@ public class MethodClosure extends Closure {
         super(owner);
         this.method = method;
 
-        final Class clazz = owner.getClass();
+        final Class clazz = owner.getClass()==Class.class?(Class) owner:owner.getClass();
+        
         maximumNumberOfParameters = 0;
 
         Method[] methods = (Method[]) AccessController.doPrivileged(new  PrivilegedAction() {
