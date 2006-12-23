@@ -12,4 +12,13 @@ class NameResolvingTest extends GroovyTestCase {
 	assert NameResolvingTest == ""
 	assert NameResolvingTest.class == java.lang.String.class
   }  
+  
+  public void testClassNoVariableInStaticMethod(){
+    assertScript """
+      static def foo() {
+   	     Class.forName('java.lang.Integer')
+      }
+      assert foo() == Integer
+    """
+  }
 }
