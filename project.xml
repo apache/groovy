@@ -5,7 +5,7 @@
   <id>groovy</id>
   <name>groovy</name>
   <groupId>groovy</groupId>
-  <currentVersion>1.0-RC-03-SNAPSHOT</currentVersion>
+  <currentVersion>1.0.1-SNAPSHOT</currentVersion>
   <organization>
     <name>The Codehaus</name>
     <url>http://codehaus.org</url>
@@ -133,7 +133,17 @@
         <id>rc1</id>
         <name>1.0-RC-1</name>
         <tag>GROOVY_1_0_RC_1</tag>
-    </version>
+      </version>
+      <version>
+        <id>rc2</id>
+        <name>1.0-RC-2</name>
+        <tag>GROOVY_1_0_RC_2</tag>
+      </version>
+      <version>
+        <id>1.0</id>
+        <name>1.0</name>
+        <tag>GROOVY_1_0</tag>
+      </version>
   </versions>
 
   <mailingLists>
