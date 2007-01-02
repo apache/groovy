@@ -113,7 +113,30 @@ public class DOMCategory {
         return namedNodeMap.getLength();
     }
 
-    public static Node getAt(Element element, int i) {
+    public static Node getAt(Node o, int i) {
+        return nodeGetAt(o, i);
+    }
+
+    public static Node getAt(NodeListsHolder o, int i) {
+        return nodeGetAt(o, i);
+    }
+
+    public static Node getAt(NodesHolder o, int i) {
+        return nodeGetAt(o, i);
+    }
+
+    private static Node nodeGetAt(Object o, int i) {
+        if (o instanceof Element) {
+            Node n = getAt((Element)o, i);
+            if (n != null) return n;
+        }
+        if (o instanceof NodeList) {
+            return getAt((NodeList)o, i);
+        }
+        return null;
+    }
+
+    private static Node getAt(Element element, int i) {
         if (hasChildElements(element, "*")) {
             NodeList nodeList = getChildElements(element, "*");
             return nodeList.item(i);
@@ -121,7 +144,7 @@ public class DOMCategory {
         return null;
     }
 
-    public static Node getAt(NodeList nodeList, int i) {
+    private static Node getAt(NodeList nodeList, int i) {
         if (i >= 0 && i < nodeList.getLength()) {
             return nodeList.item(i);
         }
