@@ -87,13 +87,50 @@ class DocGenerator
 							
 			def sortedClasses = new TreeSet(jdkEnhancedClasses.keySet())
 							
+			def ind = 0
+			def cellsInRow = 4
+			// Split sortedClasses into list of 4-element lists
+			def rowList = sortedClasses.inject([]) { list, item ->
+				if (ind++ % cellsInRow == 0)
+					list << [item]
+				else
+					list[-1] << item
+				return list
+			}
+
+			def classLinks = { mkp.yield {
+					def classCounter = 0
+					table(width:'100%') {
+						tr {
+							th(colspan:"${cellsInRow}", "Groovy JDK classes")
+						}
+						for (row in rowList) {
+							if (row.size() < cellsInRow) {
+								(cellsInRow - row.size()).times { row << "" }
+							}
+							tr {
+								for (className in row) {
+									td(width:'25%') {
+										a(href:"#cls${classCounter}", "${className}")
+									}
+									classCounter++;            	    				
+								}
+							}
+						}
+					}
+				}
+			}
+
 			def summary = { mkp.yield {
 					            def counter = 0
+								def classCounter = 0
 					
 								// lets iterate in sorted class name order
 								for (String className in sortedClasses) {
 					
+									p { a(name:"cls${classCounter}") }
 									b className
+									classCounter++
 					
 									def listOfMethods = jdkEnhancedClasses[className]
 									listOfMethods.sort{ it.name }
@@ -199,6 +236,7 @@ class DocGenerator
 			def bodyElement = { body {
 								h1 'Groovy JDK methods'
 								p 'New methods added to the JDK to make it more groovy.'
+								mkp.yield classLinks
 								mkp.yield summary
 								mkp.yield details
 							 }
