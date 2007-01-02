@@ -38,6 +38,7 @@ import antlr.collections.impl.ASTArray;
  * Run 'java Main <directory full of java files>'
  *
  * Contributing authors:
+ *      Jeremy Rayner       groovy@ross-rayner.com
  *		John Mitchell		johnm@non.net
  *		Terence Parr		parrt@magelang.com
  *		John Lilley		jlilley@empathy.com
@@ -193,6 +194,11 @@ import antlr.collections.impl.ASTArray;
  *    o Added typeArguments to postfixExpression productions for anonymous inner class super
  *      constructor invocation, e.g. new Outer().<String>super()
  *    o Fixed bug in array declarations identified by Geoff Roy
+ *
+ * Version 1.22.4.j.1
+ *	  Changes by Jeremy Rayner to support java2groovy tool
+ *    o I have taken java.g for Java1.5 from Michael Studman (1.22.4)
+ *      and have made some changes to enable use by java2groovy tool (Jan 2007)
  *
  * This grammar is in the PUBLIC DOMAIN
  */
@@ -713,6 +719,7 @@ public JavaRecognizer(ParserSharedInputState state) {
 		AST sc_AST = null;
 		AST ic_AST = null;
 		AST cb_AST = null;
+		Token first = LT(1);
 		
 		match(LITERAL_class);
 		AST tmp15_AST = null;
@@ -746,7 +753,7 @@ public JavaRecognizer(ParserSharedInputState state) {
 		cb_AST = (AST)returnAST;
 		if ( inputState.guessing==0 ) {
 			classDefinition_AST = (AST)currentAST.root;
-			classDefinition_AST = (AST)astFactory.make( (new ASTArray(7)).add(astFactory.create(CLASS_DEF,"CLASS_DEF")).add(modifiers).add(tmp15_AST).add(tp_AST).add(sc_AST).add(ic_AST).add(cb_AST));
+			classDefinition_AST = (AST)astFactory.make( (new ASTArray(7)).add(create(CLASS_DEF,"CLASS_DEF",first,LT(1))).add(modifiers).add(tmp15_AST).add(tp_AST).add(sc_AST).add(ic_AST).add(cb_AST));
 			currentAST.root = classDefinition_AST;
 			currentAST.child = classDefinition_AST!=null &&classDefinition_AST.getFirstChild()!=null ?
 				classDefinition_AST.getFirstChild() : classDefinition_AST;
@@ -765,6 +772,7 @@ public JavaRecognizer(ParserSharedInputState state) {
 		AST tp_AST = null;
 		AST ie_AST = null;
 		AST ib_AST = null;
+		Token first = LT(1);
 		
 		match(LITERAL_interface);
 		AST tmp17_AST = null;
@@ -795,7 +803,7 @@ public JavaRecognizer(ParserSharedInputState state) {
 		ib_AST = (AST)returnAST;
 		if ( inputState.guessing==0 ) {
 			interfaceDefinition_AST = (AST)currentAST.root;
-			interfaceDefinition_AST = (AST)astFactory.make( (new ASTArray(6)).add(astFactory.create(INTERFACE_DEF,"INTERFACE_DEF")).add(modifiers).add(tmp17_AST).add(tp_AST).add(ie_AST).add(ib_AST));
+			interfaceDefinition_AST = (AST)astFactory.make( (new ASTArray(6)).add(create(INTERFACE_DEF,"INTERFACE_DEF",first,LT(1))).add(modifiers).add(tmp17_AST).add(tp_AST).add(ie_AST).add(ib_AST));
 			currentAST.root = interfaceDefinition_AST;
 			currentAST.child = interfaceDefinition_AST!=null &&interfaceDefinition_AST.getFirstChild()!=null ?
 				interfaceDefinition_AST.getFirstChild() : interfaceDefinition_AST;
@@ -813,6 +821,7 @@ public JavaRecognizer(ParserSharedInputState state) {
 		AST enumDefinition_AST = null;
 		AST ic_AST = null;
 		AST eb_AST = null;
+		Token first = LT(1);
 		
 		match(LITERAL_enum);
 		AST tmp19_AST = null;
@@ -824,7 +833,7 @@ public JavaRecognizer(ParserSharedInputState state) {
 		eb_AST = (AST)returnAST;
 		if ( inputState.guessing==0 ) {
 			enumDefinition_AST = (AST)currentAST.root;
-			enumDefinition_AST = (AST)astFactory.make( (new ASTArray(5)).add(astFactory.create(ENUM_DEF,"ENUM_DEF")).add(modifiers).add(tmp19_AST).add(ic_AST).add(eb_AST));
+			enumDefinition_AST = (AST)astFactory.make( (new ASTArray(5)).add(create(ENUM_DEF,"ENUM_DEF",first,LT(1))).add(modifiers).add(tmp19_AST).add(ic_AST).add(eb_AST));
 			currentAST.root = enumDefinition_AST;
 			currentAST.child = enumDefinition_AST!=null &&enumDefinition_AST.getFirstChild()!=null ?
 				enumDefinition_AST.getFirstChild() : enumDefinition_AST;
@@ -841,6 +850,7 @@ public JavaRecognizer(ParserSharedInputState state) {
 		ASTPair currentAST = new ASTPair();
 		AST annotationDefinition_AST = null;
 		AST ab_AST = null;
+		Token first = LT(1);
 		
 		AST tmp20_AST = null;
 		tmp20_AST = astFactory.create(LT(1));
@@ -853,7 +863,7 @@ public JavaRecognizer(ParserSharedInputState state) {
 		ab_AST = (AST)returnAST;
 		if ( inputState.guessing==0 ) {
 			annotationDefinition_AST = (AST)currentAST.root;
-			annotationDefinition_AST = (AST)astFactory.make( (new ASTArray(4)).add(astFactory.create(ANNOTATION_DEF,"ANNOTATION_DEF")).add(modifiers).add(tmp22_AST).add(ab_AST));
+			annotationDefinition_AST = (AST)astFactory.make( (new ASTArray(4)).add(create(ANNOTATION_DEF,"ANNOTATION_DEF",first,LT(1))).add(modifiers).add(tmp22_AST).add(ab_AST));
 			currentAST.root = annotationDefinition_AST;
 			currentAST.child = annotationDefinition_AST!=null &&annotationDefinition_AST.getFirstChild()!=null ?
 				annotationDefinition_AST.getFirstChild() : annotationDefinition_AST;
@@ -1277,7 +1287,7 @@ public JavaRecognizer(ParserSharedInputState state) {
 		  throw new SemanticException("(currentLtLevel != 0) || ltCounter == currentLtLevel");
 		if ( inputState.guessing==0 ) {
 			typeArguments_AST = (AST)currentAST.root;
-			typeArguments_AST = (AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(TYPE_ARGUMENTS,"TYPE_ARGUMENTS")).add(typeArguments_AST));
+			typeArguments_AST = (AST)astFactory.make( (new ASTArray(2)).add(create(TYPE_ARGUMENTS,"TYPE_ARGUMENTS",first,LT(1))).add(typeArguments_AST));
 			currentAST.root = typeArguments_AST;
 			currentAST.child = typeArguments_AST!=null &&typeArguments_AST.getFirstChild()!=null ?
 				typeArguments_AST.getFirstChild() : typeArguments_AST;
@@ -1362,7 +1372,7 @@ public JavaRecognizer(ParserSharedInputState state) {
 			builtInTypeArraySpec_AST = (AST)currentAST.root;
 			
 						if ( addImagNode ) {
-							builtInTypeArraySpec_AST = (AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(TYPE,"TYPE")).add(builtInTypeArraySpec_AST));
+							builtInTypeArraySpec_AST = (AST)astFactory.make( (new ASTArray(2)).add(create(TYPE,"TYPE",first,LT(1))).add(builtInTypeArraySpec_AST));
 						}
 					
 			currentAST.root = builtInTypeArraySpec_AST;
@@ -1412,7 +1422,7 @@ public JavaRecognizer(ParserSharedInputState state) {
 		}
 		if ( inputState.guessing==0 ) {
 			typeArgument_AST = (AST)currentAST.root;
-			typeArgument_AST = (AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(TYPE_ARGUMENT,"TYPE_ARGUMENT")).add(typeArgument_AST));
+			typeArgument_AST = (AST)astFactory.make( (new ASTArray(2)).add(create(TYPE_ARGUMENT,"TYPE_ARGUMENT",first,LT(1))).add(typeArgument_AST));
 			currentAST.root = typeArgument_AST;
 			currentAST.child = typeArgument_AST!=null &&typeArgument_AST.getFirstChild()!=null ?
 				typeArgument_AST.getFirstChild() : typeArgument_AST;
@@ -1519,11 +1529,11 @@ public JavaRecognizer(ParserSharedInputState state) {
 			
 						if (isUpperBounds)
 						{
-							typeArgumentBounds_AST = (AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(TYPE_UPPER_BOUNDS,"TYPE_UPPER_BOUNDS")).add(typeArgumentBounds_AST));
+							typeArgumentBounds_AST = (AST)astFactory.make( (new ASTArray(2)).add(create(TYPE_UPPER_BOUNDS,"TYPE_UPPER_BOUNDS",first,LT(1))).add(typeArgumentBounds_AST));
 						}
 						else
 						{
-							typeArgumentBounds_AST = (AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(TYPE_LOWER_BOUNDS,"TYPE_LOWER_BOUNDS")).add(typeArgumentBounds_AST));
+							typeArgumentBounds_AST = (AST)astFactory.make( (new ASTArray(2)).add(create(TYPE_LOWER_BOUNDS,"TYPE_LOWER_BOUNDS",first,LT(1))).add(typeArgumentBounds_AST));
 						}
 					
 			currentAST.root = typeArgumentBounds_AST;
@@ -1944,7 +1954,7 @@ public JavaRecognizer(ParserSharedInputState state) {
 		}
 		if ( inputState.guessing==0 ) {
 			annotation_AST = (AST)currentAST.root;
-			annotation_AST = (AST)astFactory.make( (new ASTArray(3)).add(astFactory.create(ANNOTATION,"ANNOTATION")).add(i_AST).add(args_AST));
+			annotation_AST = (AST)astFactory.make( (new ASTArray(3)).add(create(ANNOTATION,"ANNOTATION",first,LT(1))).add(i_AST).add(args_AST));
 			currentAST.root = annotation_AST;
 			currentAST.child = annotation_AST!=null &&annotation_AST.getFirstChild()!=null ?
 				annotation_AST.getFirstChild() : annotation_AST;
@@ -2084,7 +2094,7 @@ public JavaRecognizer(ParserSharedInputState state) {
 		v_AST = (AST)returnAST;
 		if ( inputState.guessing==0 ) {
 			annotationMemberValuePair_AST = (AST)currentAST.root;
-			annotationMemberValuePair_AST = (AST)astFactory.make( (new ASTArray(3)).add(astFactory.create(ANNOTATION_MEMBER_VALUE_PAIR,"ANNOTATION_MEMBER_VALUE_PAIR")).add(i_AST).add(v_AST));
+			annotationMemberValuePair_AST = (AST)astFactory.make( (new ASTArray(3)).add(create(ANNOTATION_MEMBER_VALUE_PAIR,"ANNOTATION_MEMBER_VALUE_PAIR",first,LT(1))).add(i_AST).add(v_AST));
 			currentAST.root = annotationMemberValuePair_AST;
 			currentAST.child = annotationMemberValuePair_AST!=null &&annotationMemberValuePair_AST.getFirstChild()!=null ?
 				annotationMemberValuePair_AST.getFirstChild() : annotationMemberValuePair_AST;
@@ -2308,6 +2318,7 @@ public JavaRecognizer(ParserSharedInputState state) {
 		ASTPair currentAST = new ASTPair();
 		AST superClassClause_AST = null;
 		AST c_AST = null;
+		Token first = LT(1);
 		
 		{
 		switch ( LA(1)) {
@@ -2331,7 +2342,7 @@ public JavaRecognizer(ParserSharedInputState state) {
 		}
 		if ( inputState.guessing==0 ) {
 			superClassClause_AST = (AST)currentAST.root;
-			superClassClause_AST = (AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(EXTENDS_CLAUSE,"EXTENDS_CLAUSE")).add(c_AST));
+			superClassClause_AST = (AST)astFactory.make( (new ASTArray(2)).add(create(EXTENDS_CLAUSE,"EXTENDS_CLAUSE",first,LT(1))).add(c_AST));
 			currentAST.root = superClassClause_AST;
 			currentAST.child = superClassClause_AST!=null &&superClassClause_AST.getFirstChild()!=null ?
 				superClassClause_AST.getFirstChild() : superClassClause_AST;
@@ -2345,7 +2356,7 @@ public JavaRecognizer(ParserSharedInputState state) {
 		returnAST = null;
 		ASTPair currentAST = new ASTPair();
 		AST typeParameters_AST = null;
-		int currentLtLevel = 0;
+		int currentLtLevel = 0; Token first = LT(1);
 		
 		if ( inputState.guessing==0 ) {
 			currentLtLevel = ltCounter;
@@ -2406,7 +2417,7 @@ public JavaRecognizer(ParserSharedInputState state) {
 		  throw new SemanticException("(currentLtLevel != 0) || ltCounter == currentLtLevel");
 		if ( inputState.guessing==0 ) {
 			typeParameters_AST = (AST)currentAST.root;
-			typeParameters_AST = (AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(TYPE_PARAMETERS,"TYPE_PARAMETERS")).add(typeParameters_AST));
+			typeParameters_AST = (AST)astFactory.make( (new ASTArray(2)).add(create(TYPE_PARAMETERS,"TYPE_PARAMETERS",first,LT(1))).add(typeParameters_AST));
 			currentAST.root = typeParameters_AST;
 			currentAST.child = typeParameters_AST!=null &&typeParameters_AST.getFirstChild()!=null ?
 				typeParameters_AST.getFirstChild() : typeParameters_AST;
@@ -2423,6 +2434,7 @@ public JavaRecognizer(ParserSharedInputState state) {
 		AST implementsClause_AST = null;
 		Token  i = null;
 		AST i_AST = null;
+		Token first = LT(1);
 		
 		{
 		switch ( LA(1)) {
@@ -2461,7 +2473,7 @@ public JavaRecognizer(ParserSharedInputState state) {
 		}
 		if ( inputState.guessing==0 ) {
 			implementsClause_AST = (AST)currentAST.root;
-			implementsClause_AST = (AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(IMPLEMENTS_CLAUSE,"IMPLEMENTS_CLAUSE")).add(implementsClause_AST));
+			implementsClause_AST = (AST)astFactory.make( (new ASTArray(2)).add(create(IMPLEMENTS_CLAUSE,"IMPLEMENTS_CLAUSE",first,LT(1))).add(implementsClause_AST));
 			currentAST.root = implementsClause_AST;
 			currentAST.child = implementsClause_AST!=null &&implementsClause_AST.getFirstChild()!=null ?
 				implementsClause_AST.getFirstChild() : implementsClause_AST;
@@ -2547,6 +2559,7 @@ public JavaRecognizer(ParserSharedInputState state) {
 		AST interfaceExtends_AST = null;
 		Token  e = null;
 		AST e_AST = null;
+		Token first = LT(1);
 		
 		{
 		switch ( LA(1)) {
@@ -2585,7 +2598,7 @@ public JavaRecognizer(ParserSharedInputState state) {
 		}
 		if ( inputState.guessing==0 ) {
 			interfaceExtends_AST = (AST)currentAST.root;
-			interfaceExtends_AST = (AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(EXTENDS_CLAUSE,"EXTENDS_CLAUSE")).add(interfaceExtends_AST));
+			interfaceExtends_AST = (AST)astFactory.make( (new ASTArray(2)).add(create(EXTENDS_CLAUSE,"EXTENDS_CLAUSE",first,LT(1))).add(interfaceExtends_AST));
 			currentAST.root = interfaceExtends_AST;
 			currentAST.child = interfaceExtends_AST!=null &&interfaceExtends_AST.getFirstChild()!=null ?
 				interfaceExtends_AST.getFirstChild() : interfaceExtends_AST;
@@ -2875,6 +2888,7 @@ public JavaRecognizer(ParserSharedInputState state) {
 		AST typeParameter_AST = null;
 		Token  id = null;
 		AST id_AST = null;
+		Token first = LT(1);
 		
 		{
 		id = LT(1);
@@ -2896,7 +2910,7 @@ public JavaRecognizer(ParserSharedInputState state) {
 		}
 		if ( inputState.guessing==0 ) {
 			typeParameter_AST = (AST)currentAST.root;
-			typeParameter_AST = (AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(TYPE_PARAMETER,"TYPE_PARAMETER")).add(typeParameter_AST));
+			typeParameter_AST = (AST)astFactory.make( (new ASTArray(2)).add(create(TYPE_PARAMETER,"TYPE_PARAMETER",first,LT(1))).add(typeParameter_AST));
 			currentAST.root = typeParameter_AST;
 			currentAST.child = typeParameter_AST!=null &&typeParameter_AST.getFirstChild()!=null ?
 				typeParameter_AST.getFirstChild() : typeParameter_AST;
@@ -2911,6 +2925,7 @@ public JavaRecognizer(ParserSharedInputState state) {
 		returnAST = null;
 		ASTPair currentAST = new ASTPair();
 		AST typeParameterBounds_AST = null;
+		Token first = LT(1);
 		
 		match(LITERAL_extends);
 		classOrInterfaceType(false);
@@ -2931,7 +2946,7 @@ public JavaRecognizer(ParserSharedInputState state) {
 		}
 		if ( inputState.guessing==0 ) {
 			typeParameterBounds_AST = (AST)currentAST.root;
-			typeParameterBounds_AST = (AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(TYPE_UPPER_BOUNDS,"TYPE_UPPER_BOUNDS")).add(typeParameterBounds_AST));
+			typeParameterBounds_AST = (AST)astFactory.make( (new ASTArray(2)).add(create(TYPE_UPPER_BOUNDS,"TYPE_UPPER_BOUNDS",first,LT(1))).add(typeParameterBounds_AST));
 			currentAST.root = typeParameterBounds_AST;
 			currentAST.child = typeParameterBounds_AST!=null &&typeParameterBounds_AST.getFirstChild()!=null ?
 				typeParameterBounds_AST.getFirstChild() : typeParameterBounds_AST;
@@ -3141,7 +3156,7 @@ public JavaRecognizer(ParserSharedInputState state) {
 			s3_AST = (AST)returnAST;
 			if ( inputState.guessing==0 ) {
 				classField_AST = (AST)currentAST.root;
-				classField_AST = (AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(STATIC_INIT,"STATIC_INIT")).add(s3_AST));
+				classField_AST = (AST)astFactory.make( (new ASTArray(2)).add(create(STATIC_INIT,"STATIC_INIT",first,LT(1))).add(s3_AST));
 				currentAST.root = classField_AST;
 				currentAST.child = classField_AST!=null &&classField_AST.getFirstChild()!=null ?
 					classField_AST.getFirstChild() : classField_AST;
@@ -3153,7 +3168,7 @@ public JavaRecognizer(ParserSharedInputState state) {
 			s4_AST = (AST)returnAST;
 			if ( inputState.guessing==0 ) {
 				classField_AST = (AST)currentAST.root;
-				classField_AST = (AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(INSTANCE_INIT,"INSTANCE_INIT")).add(s4_AST));
+				classField_AST = (AST)astFactory.make( (new ASTArray(2)).add(create(INSTANCE_INIT,"INSTANCE_INIT",first,LT(1))).add(s4_AST));
 				currentAST.root = classField_AST;
 				currentAST.child = classField_AST!=null &&classField_AST.getFirstChild()!=null ?
 					classField_AST.getFirstChild() : classField_AST;
@@ -3399,7 +3414,7 @@ public JavaRecognizer(ParserSharedInputState state) {
 				if ( inputState.guessing==0 ) {
 					annotationField_AST = (AST)currentAST.root;
 					annotationField_AST =
-										(AST)astFactory.make( (new ASTArray(5)).add(astFactory.create(ANNOTATION_FIELD_DEF,"ANNOTATION_FIELD_DEF")).add(mods_AST).add((AST)astFactory.make( (new ASTArray(2)).add(create(TYPE,"TYPE",first,LT(1))).add(rt_AST))).add(i_AST).add(amvi_AST));
+										(AST)astFactory.make( (new ASTArray(5)).add(create(ANNOTATION_FIELD_DEF,"ANNOTATION_FIELD_DEF",first,LT(1))).add(mods_AST).add((AST)astFactory.make( (new ASTArray(2)).add(create(TYPE,"TYPE",first,LT(1))).add(rt_AST))).add(i_AST).add(amvi_AST));
 					currentAST.root = annotationField_AST;
 					currentAST.child = annotationField_AST!=null &&annotationField_AST.getFirstChild()!=null ?
 						annotationField_AST.getFirstChild() : annotationField_AST;
@@ -3886,7 +3901,7 @@ public JavaRecognizer(ParserSharedInputState state) {
 			s4_AST = (AST)returnAST;
 			if ( inputState.guessing==0 ) {
 				enumConstantField_AST = (AST)currentAST.root;
-				enumConstantField_AST = (AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(INSTANCE_INIT,"INSTANCE_INIT")).add(s4_AST));
+				enumConstantField_AST = (AST)astFactory.make( (new ASTArray(2)).add(create(INSTANCE_INIT,"INSTANCE_INIT",first,LT(1))).add(s4_AST));
 				currentAST.root = enumConstantField_AST;
 				currentAST.child = enumConstantField_AST!=null &&enumConstantField_AST.getFirstChild()!=null ?
 					enumConstantField_AST.getFirstChild() : enumConstantField_AST;
@@ -4653,12 +4668,13 @@ public JavaRecognizer(ParserSharedInputState state) {
 		returnAST = null;
 		ASTPair currentAST = new ASTPair();
 		AST expression_AST = null;
+		Token first = LT(1);
 		
 		assignmentExpression();
 		astFactory.addASTChild(currentAST, returnAST);
 		if ( inputState.guessing==0 ) {
 			expression_AST = (AST)currentAST.root;
-			expression_AST = (AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(EXPR,"EXPR")).add(expression_AST));
+			expression_AST = (AST)astFactory.make( (new ASTArray(2)).add(create(EXPR,"EXPR",first,LT(1))).add(expression_AST));
 			currentAST.root = expression_AST;
 			currentAST.child = expression_AST!=null &&expression_AST.getFirstChild()!=null ?
 				expression_AST.getFirstChild() : expression_AST;
@@ -4691,7 +4707,7 @@ public JavaRecognizer(ParserSharedInputState state) {
 		pd_AST = (AST)returnAST;
 		if ( inputState.guessing==0 ) {
 			parameterDeclaration_AST = (AST)currentAST.root;
-			parameterDeclaration_AST = (AST)astFactory.make( (new ASTArray(4)).add(create(PARAMETER_DEF,"PARAMETER_DEF",first,LT(1))).add(pm_AST).add((AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(TYPE,"TYPE")).add(pd_AST))).add(id_AST));
+			parameterDeclaration_AST = (AST)astFactory.make( (new ASTArray(4)).add(create(PARAMETER_DEF,"PARAMETER_DEF",first,LT(1))).add(pm_AST).add((AST)astFactory.make( (new ASTArray(2)).add(create(TYPE,"TYPE",first,LT(1))).add(pd_AST))).add(id_AST));
 			currentAST.root = parameterDeclaration_AST;
 			currentAST.child = parameterDeclaration_AST!=null &&parameterDeclaration_AST.getFirstChild()!=null ?
 				parameterDeclaration_AST.getFirstChild() : parameterDeclaration_AST;
@@ -4710,6 +4726,7 @@ public JavaRecognizer(ParserSharedInputState state) {
 		Token  id = null;
 		AST id_AST = null;
 		AST pd_AST = null;
+		Token first = LT(1);
 		
 		parameterModifier();
 		pm_AST = (AST)returnAST;
@@ -4723,7 +4740,7 @@ public JavaRecognizer(ParserSharedInputState state) {
 		pd_AST = (AST)returnAST;
 		if ( inputState.guessing==0 ) {
 			variableLengthParameterDeclaration_AST = (AST)currentAST.root;
-			variableLengthParameterDeclaration_AST = (AST)astFactory.make( (new ASTArray(4)).add(astFactory.create(VARIABLE_PARAMETER_DEF,"VARIABLE_PARAMETER_DEF")).add(pm_AST).add((AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(TYPE,"TYPE")).add(pd_AST))).add(id_AST));
+			variableLengthParameterDeclaration_AST = (AST)astFactory.make( (new ASTArray(4)).add(create(VARIABLE_PARAMETER_DEF,"VARIABLE_PARAMETER_DEF",first,LT(1))).add(pm_AST).add((AST)astFactory.make( (new ASTArray(2)).add(create(TYPE,"TYPE",first,LT(1))).add(pd_AST))).add(id_AST));
 			currentAST.root = variableLengthParameterDeclaration_AST;
 			currentAST.child = variableLengthParameterDeclaration_AST!=null &&variableLengthParameterDeclaration_AST.getFirstChild()!=null ?
 				variableLengthParameterDeclaration_AST.getFirstChild() : variableLengthParameterDeclaration_AST;
@@ -4739,6 +4756,7 @@ public JavaRecognizer(ParserSharedInputState state) {
 		AST parameterModifier_AST = null;
 		Token  f = null;
 		AST f_AST = null;
+		Token first = LT(1);
 		
 		{
 		_loop181:
@@ -4798,7 +4816,7 @@ public JavaRecognizer(ParserSharedInputState state) {
 		}
 		if ( inputState.guessing==0 ) {
 			parameterModifier_AST = (AST)currentAST.root;
-			parameterModifier_AST = (AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(MODIFIERS,"MODIFIERS")).add(parameterModifier_AST));
+			parameterModifier_AST = (AST)astFactory.make( (new ASTArray(2)).add(create(MODIFIERS,"MODIFIERS",first,LT(1))).add(parameterModifier_AST));
 			currentAST.root = parameterModifier_AST;
 			currentAST.child = parameterModifier_AST!=null &&parameterModifier_AST.getFirstChild()!=null ?
 				parameterModifier_AST.getFirstChild() : parameterModifier_AST;
@@ -5004,6 +5022,7 @@ public JavaRecognizer(ParserSharedInputState state) {
 		returnAST = null;
 		ASTPair currentAST = new ASTPair();
 		AST forInit_AST = null;
+		Token first = LT(1);
 		
 		{
 		boolean synPredMatched215 = false;
@@ -5039,7 +5058,7 @@ public JavaRecognizer(ParserSharedInputState state) {
 		}
 		if ( inputState.guessing==0 ) {
 			forInit_AST = (AST)currentAST.root;
-			forInit_AST = (AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(FOR_INIT,"FOR_INIT")).add(forInit_AST));
+			forInit_AST = (AST)astFactory.make( (new ASTArray(2)).add(create(FOR_INIT,"FOR_INIT",first,LT(1))).add(forInit_AST));
 			currentAST.root = forInit_AST;
 			currentAST.child = forInit_AST!=null &&forInit_AST.getFirstChild()!=null ?
 				forInit_AST.getFirstChild() : forInit_AST;
@@ -5073,6 +5092,7 @@ public JavaRecognizer(ParserSharedInputState state) {
 		ASTPair currentAST = new ASTPair();
 		AST forEachClause_AST = null;
 		AST p_AST = null;
+		Token first = LT(1);
 		
 		parameterDeclaration();
 		p_AST = (AST)returnAST;
@@ -5082,7 +5102,7 @@ public JavaRecognizer(ParserSharedInputState state) {
 		astFactory.addASTChild(currentAST, returnAST);
 		if ( inputState.guessing==0 ) {
 			forEachClause_AST = (AST)currentAST.root;
-			forEachClause_AST = (AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(FOR_EACH_CLAUSE,"FOR_EACH_CLAUSE")).add(forEachClause_AST));
+			forEachClause_AST = (AST)astFactory.make( (new ASTArray(2)).add(create(FOR_EACH_CLAUSE,"FOR_EACH_CLAUSE",first,LT(1))).add(forEachClause_AST));
 			currentAST.root = forEachClause_AST;
 			currentAST.child = forEachClause_AST!=null &&forEachClause_AST.getFirstChild()!=null ?
 				forEachClause_AST.getFirstChild() : forEachClause_AST;
@@ -5097,6 +5117,7 @@ public JavaRecognizer(ParserSharedInputState state) {
 		returnAST = null;
 		ASTPair currentAST = new ASTPair();
 		AST forCond_AST = null;
+		Token first = LT(1);
 		
 		{
 		switch ( LA(1)) {
@@ -5146,7 +5167,7 @@ public JavaRecognizer(ParserSharedInputState state) {
 		}
 		if ( inputState.guessing==0 ) {
 			forCond_AST = (AST)currentAST.root;
-			forCond_AST = (AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(FOR_CONDITION,"FOR_CONDITION")).add(forCond_AST));
+			forCond_AST = (AST)astFactory.make( (new ASTArray(2)).add(create(FOR_CONDITION,"FOR_CONDITION",first,LT(1))).add(forCond_AST));
 			currentAST.root = forCond_AST;
 			currentAST.child = forCond_AST!=null &&forCond_AST.getFirstChild()!=null ?
 				forCond_AST.getFirstChild() : forCond_AST;
@@ -5161,6 +5182,7 @@ public JavaRecognizer(ParserSharedInputState state) {
 		returnAST = null;
 		ASTPair currentAST = new ASTPair();
 		AST forIter_AST = null;
+		Token first = LT(1);
 		
 		{
 		switch ( LA(1)) {
@@ -5210,7 +5232,7 @@ public JavaRecognizer(ParserSharedInputState state) {
 		}
 		if ( inputState.guessing==0 ) {
 			forIter_AST = (AST)currentAST.root;
-			forIter_AST = (AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(FOR_ITERATOR,"FOR_ITERATOR")).add(forIter_AST));
+			forIter_AST = (AST)astFactory.make( (new ASTArray(2)).add(create(FOR_ITERATOR,"FOR_ITERATOR",first,LT(1))).add(forIter_AST));
 			currentAST.root = forIter_AST;
 			currentAST.child = forIter_AST!=null &&forIter_AST.getFirstChild()!=null ?
 				forIter_AST.getFirstChild() : forIter_AST;
@@ -5262,6 +5284,7 @@ public JavaRecognizer(ParserSharedInputState state) {
 		returnAST = null;
 		ASTPair currentAST = new ASTPair();
 		AST caseSList_AST = null;
+		Token first = LT(1);
 		
 		{
 		_loop211:
@@ -5278,7 +5301,7 @@ public JavaRecognizer(ParserSharedInputState state) {
 		}
 		if ( inputState.guessing==0 ) {
 			caseSList_AST = (AST)currentAST.root;
-			caseSList_AST = (AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(SLIST,"SLIST")).add(caseSList_AST));
+			caseSList_AST = (AST)astFactory.make( (new ASTArray(2)).add(create(SLIST,"SLIST",first,LT(1))).add(caseSList_AST));
 			currentAST.root = caseSList_AST;
 			currentAST.child = caseSList_AST!=null &&caseSList_AST.getFirstChild()!=null ?
 				caseSList_AST.getFirstChild() : caseSList_AST;

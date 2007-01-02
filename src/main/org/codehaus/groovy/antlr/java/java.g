@@ -20,6 +20,7 @@ import antlr.LexerSharedInputState;
  * Run 'java Main <directory full of java files>'
  *
  * Contributing authors:
+ *      Jeremy Rayner       groovy@ross-rayner.com
  *		John Mitchell		johnm@non.net
  *		Terence Parr		parrt@magelang.com
  *		John Lilley		jlilley@empathy.com
@@ -175,6 +176,11 @@ import antlr.LexerSharedInputState;
  *    o Added typeArguments to postfixExpression productions for anonymous inner class super
  *      constructor invocation, e.g. new Outer().<String>super()
  *    o Fixed bug in array declarations identified by Geoff Roy
+ *
+ * Version 1.22.4.j.1
+ *	  Changes by Jeremy Rayner to support java2groovy tool
+ *    o I have taken java.g for Java1.5 from Michael Studman (1.22.4)
+ *      and have made some changes to enable use by java2groovy tool (Jan 2007)
  *
  * This grammar is in the PUBLIC DOMAIN
  */
@@ -369,7 +375,7 @@ typeArgument  {Token first = LT(1);}
 	:	(	typeArgumentSpec
 		|	wildcardType
 		)
-		{#typeArgument = #(#[TYPE_ARGUMENT,"TYPE_ARGUMENT"], #typeArgument);}
+		{#typeArgument = #(create(TYPE_ARGUMENT,"TYPE_ARGUMENT",first,LT(1)), #typeArgument);}
 	;
 
 // Wildcard type indicating all types (with possible constraint)
@@ -400,7 +406,7 @@ typeArguments
 		// if we are at the "top level" of nested typeArgument productions
 		{(currentLtLevel != 0) || ltCounter == currentLtLevel}?
 
-		{#typeArguments = #(#[TYPE_ARGUMENTS, "TYPE_ARGUMENTS"], #typeArguments);}
+		{#typeArguments = #(create(TYPE_ARGUMENTS,"TYPE_ARGUMENTS",first,LT(1)), #typeArguments);}
 	;
 
 // this gobbles up *some* amount of '>' characters, and counts how many
@@ -419,11 +425,11 @@ typeArgumentBounds
 		{
 			if (isUpperBounds)
 			{
-				#typeArgumentBounds = #(#[TYPE_UPPER_BOUNDS,"TYPE_UPPER_BOUNDS"], #typeArgumentBounds);
+				#typeArgumentBounds = #(create(TYPE_UPPER_BOUNDS,"TYPE_UPPER_BOUNDS",first,LT(1)), #typeArgumentBounds);
 			}
 			else
 			{
-				#typeArgumentBounds = #(#[TYPE_LOWER_BOUNDS,"TYPE_LOWER_BOUNDS"], #typeArgumentBounds);
+				#typeArgumentBounds = #(create(TYPE_LOWER_BOUNDS,"TYPE_LOWER_BOUNDS",first,LT(1)), #typeArgumentBounds);
 			}
 		}
 	;
@@ -437,7 +443,7 @@ builtInTypeArraySpec[boolean addImagNode]  {Token first = LT(1);}
 
 		{
 			if ( addImagNode ) {
-				#builtInTypeArraySpec = #(#[TYPE,"TYPE"], #builtInTypeArraySpec);
+				#builtInTypeArraySpec = #(create(TYPE,"TYPE",first,LT(1)), #builtInTypeArraySpec);
 			}
 		}
 	;
@@ -526,7 +532,7 @@ modifier
 
 annotation!  {Token first = LT(1);}
 	:	AT! i:identifier ( LPAREN! ( args:annotationArguments )? RPAREN! )?
-		{#annotation = #(#[ANNOTATION,"ANNOTATION"], i, args);}
+		{#annotation = #(create(ANNOTATION,"ANNOTATION",first,LT(1)), i, args);}
 	;
 
 annotations  {Token first = LT(1);}
@@ -544,7 +550,7 @@ anntotationMemberValuePairs
 
 annotationMemberValuePair!  {Token first = LT(1);}
 	:	i:IDENT ASSIGN! v:annotationMemberValueInitializer
-		{#annotationMemberValuePair = #(#[ANNOTATION_MEMBER_VALUE_PAIR,"ANNOTATION_MEMBER_VALUE_PAIR"], i, v);}
+		{#annotationMemberValuePair = #(create(ANNOTATION_MEMBER_VALUE_PAIR,"ANNOTATION_MEMBER_VALUE_PAIR",first,LT(1)), i, v);}
 	;
 
 annotationMemberValueInitializer
@@ -579,13 +585,13 @@ annotationMemberArrayValueInitializer
 	|	annotation
 	;
 
-superClassClause!
+superClassClause!  {Token first = LT(1);}
 	:	( "extends" c:classOrInterfaceType[false] )?
-		{#superClassClause = #(#[EXTENDS_CLAUSE,"EXTENDS_CLAUSE"],c);}
+		{#superClassClause = #(create(EXTENDS_CLAUSE,"EXTENDS_CLAUSE",first,LT(1)),c);}
 	;
 
 // Definition of a Java class
-classDefinition![AST modifiers]
+classDefinition![AST modifiers] {Token first = LT(1);}
 	:	"class" IDENT
 		// it _might_ have type paramaters
 		(tp:typeParameters)?
@@ -595,12 +601,12 @@ classDefinition![AST modifiers]
 		ic:implementsClause
 		// now parse the body of the class
 		cb:classBlock
-		{#classDefinition = #(#[CLASS_DEF,"CLASS_DEF"],
+		{#classDefinition = #(create(CLASS_DEF,"CLASS_DEF",first,LT(1)),
 								modifiers,IDENT,tp,sc,ic,cb);}
 	;
 
 // Definition of a Java Interface
-interfaceDefinition![AST modifiers]
+interfaceDefinition![AST modifiers]  {Token first = LT(1);}
 	:	"interface" IDENT
 		// it _might_ have type paramaters
 		(tp:typeParameters)?
@@ -608,30 +614,30 @@ interfaceDefinition![AST modifiers]
 		ie:interfaceExtends
 		// now parse the body of the interface (looks like a class...)
 		ib:interfaceBlock
-		{#interfaceDefinition = #(#[INTERFACE_DEF,"INTERFACE_DEF"],
+		{#interfaceDefinition = #(create(INTERFACE_DEF,"INTERFACE_DEF",first,LT(1)),
 									modifiers,IDENT,tp,ie,ib);}
 	;
 
-enumDefinition![AST modifiers]
+enumDefinition![AST modifiers]  {Token first = LT(1);}
 	:	"enum" IDENT
 		// it might implement some interfaces...
 		ic:implementsClause
 		// now parse the body of the enum
 		eb:enumBlock
-		{#enumDefinition = #(#[ENUM_DEF,"ENUM_DEF"],
+		{#enumDefinition = #(create(ENUM_DEF,"ENUM_DEF",first,LT(1)),
 								modifiers,IDENT,ic,eb);}
 	;
 
-annotationDefinition![AST modifiers]
+annotationDefinition![AST modifiers]  {Token first = LT(1);}
 	:	AT "interface" IDENT
 		// now parse the body of the annotation
 		ab:annotationBlock
-		{#annotationDefinition = #(#[ANNOTATION_DEF,"ANNOTATION_DEF"],
+		{#annotationDefinition = #(create(ANNOTATION_DEF,"ANNOTATION_DEF",first,LT(1)),
 									modifiers,IDENT,ab);}
 	;
 
 typeParameters
-{int currentLtLevel = 0;}
+{int currentLtLevel = 0; Token first = LT(1);}
 	:
 		{currentLtLevel = ltCounter;}
 		LT! {ltCounter++;}
@@ -642,21 +648,21 @@ typeParameters
 		// if we are at the "top level" of nested typeArgument productions
 		{(currentLtLevel != 0) || ltCounter == currentLtLevel}?
 
-		{#typeParameters = #(#[TYPE_PARAMETERS, "TYPE_PARAMETERS"], #typeParameters);}
+		{#typeParameters = #(create(TYPE_PARAMETERS,"TYPE_PARAMETERS",first,LT(1)), #typeParameters);}
 	;
 
-typeParameter
+typeParameter   {Token first = LT(1);}
 	:
 		// I'm pretty sure Antlr generates the right thing here:
 		(id:IDENT) ( options{generateAmbigWarnings=false;}: typeParameterBounds )?
-		{#typeParameter = #(#[TYPE_PARAMETER,"TYPE_PARAMETER"], #typeParameter);}
+		{#typeParameter = #(create(TYPE_PARAMETER,"TYPE_PARAMETER",first,LT(1)), #typeParameter);}
 	;
 
-typeParameterBounds
+typeParameterBounds  {Token first = LT(1);}
 	:
 		"extends"! classOrInterfaceType[false]
 		(BAND! classOrInterfaceType[false])*
-		{#typeParameterBounds = #(#[TYPE_UPPER_BOUNDS,"TYPE_UPPER_BOUNDS"], #typeParameterBounds);}
+		{#typeParameterBounds = #(create(TYPE_UPPER_BOUNDS,"TYPE_UPPER_BOUNDS",first,LT(1)), #typeParameterBounds);}
 	;
 
 // This is the body of a class. You can have classFields and extra semicolons.
@@ -711,7 +717,7 @@ annotationField!  {Token first = LT(1);}
 				SEMI
 
 				{#annotationField =
-					#(#[ANNOTATION_FIELD_DEF,"ANNOTATION_FIELD_DEF"],
+					#(create(ANNOTATION_FIELD_DEF,"ANNOTATION_FIELD_DEF",first,LT(1)),
 						 mods,
 						 #(create(TYPE,"TYPE",first,LT(1)),rt),
 						 i,amvi
@@ -781,25 +787,25 @@ enumConstantField! {Token first = LT(1);}
 
 	// "{ ... }" instance initializer
 	|	s4:compoundStatement
-		{#enumConstantField = #(#[INSTANCE_INIT,"INSTANCE_INIT"], s4);}
+		{#enumConstantField = #(create(INSTANCE_INIT,"INSTANCE_INIT",first,LT(1)), s4);}
 	;
 
 // An interface can extend several other interfaces...
-interfaceExtends
+interfaceExtends  {Token first = LT(1);}
 	:	(
 		e:"extends"!
 		classOrInterfaceType[false] ( COMMA! classOrInterfaceType[false] )*
 		)?
-		{#interfaceExtends = #(#[EXTENDS_CLAUSE,"EXTENDS_CLAUSE"],
+		{#interfaceExtends = #(create(EXTENDS_CLAUSE,"EXTENDS_CLAUSE",first,LT(1)),
 								#interfaceExtends);}
 	;
 
 // A class can implement several interfaces...
-implementsClause
+implementsClause  {Token first = LT(1);}
 	:	(
 			i:"implements"! classOrInterfaceType[false] ( COMMA! classOrInterfaceType[false] )*
 		)?
-		{#implementsClause = #(#[IMPLEMENTS_CLAUSE,"IMPLEMENTS_CLAUSE"],
+		{#implementsClause = #(create(IMPLEMENTS_CLAUSE,"IMPLEMENTS_CLAUSE",first,LT(1)),
 								 #implementsClause);}
 	;
 
@@ -848,11 +854,11 @@ classField!   {Token first = LT(1);}
 
 	// "static { ... }" class initializer
 	|	"static" s3:compoundStatement
-		{#classField = #(#[STATIC_INIT,"STATIC_INIT"], s3);}
+		{#classField = #(create(STATIC_INIT,"STATIC_INIT",first,LT(1)), s3);}
 
 	// "{ ... }" instance initializer
 	|	s4:compoundStatement
-		{#classField = #(#[INSTANCE_INIT,"INSTANCE_INIT"], s4);}
+		{#classField = #(create(INSTANCE_INIT,"INSTANCE_INIT",first,LT(1)), s4);}
 	;
 
 // Now the various things that can be defined inside a interface
@@ -1005,21 +1011,21 @@ parameterDeclaration! {Token first = LT(1);}
 	:	pm:parameterModifier t:typeSpec[false] id:IDENT
 		pd:declaratorBrackets[#t]
 		{#parameterDeclaration = #(create(PARAMETER_DEF,"PARAMETER_DEF",first,LT(1)),
-									pm, #([TYPE,"TYPE"],pd), id);}
+									pm, #(create(TYPE,"TYPE",first,LT(1)),pd), id);}
 	;
 
-variableLengthParameterDeclaration!
+variableLengthParameterDeclaration!  {Token first = LT(1);}
 	:	pm:parameterModifier t:typeSpec[false] TRIPLE_DOT! id:IDENT
 		pd:declaratorBrackets[#t]
-		{#variableLengthParameterDeclaration = #(#[VARIABLE_PARAMETER_DEF,"VARIABLE_PARAMETER_DEF"],
-												pm, #([TYPE,"TYPE"],pd), id);}
+		{#variableLengthParameterDeclaration = #(create(VARIABLE_PARAMETER_DEF,"VARIABLE_PARAMETER_DEF",first,LT(1)),
+												pm, #(create(TYPE,"TYPE",first,LT(1)),pd), id);}
 	;
 
-parameterModifier
+parameterModifier  {Token first = LT(1);}
 	//final can appear amongst annotations in any order - greedily consume any preceding
 	//annotations to shut nond-eterminism warnings off
 	:	(options{greedy=true;} : annotation)* (f:"final")? (annotation)*
-		{#parameterModifier = #(#[MODIFIERS,"MODIFIERS"], #parameterModifier);}
+		{#parameterModifier = #(create(MODIFIERS,"MODIFIERS",first,LT(1)), #parameterModifier);}
 	;
 
 // Compound statement. This is used in many contexts:
@@ -1131,10 +1137,10 @@ traditionalForClause
 		forIter			// updater
 	;
 
-forEachClause
+forEachClause  {Token first = LT(1);}
 	:
 		p:parameterDeclaration COLON! expression
-		{#forEachClause = #(#[FOR_EACH_CLAUSE,"FOR_EACH_CLAUSE"], #forEachClause);}
+		{#forEachClause = #(create(FOR_EACH_CLAUSE,"FOR_EACH_CLAUSE",first,LT(1)), #forEachClause);}
 	;
 
 casesGroup
@@ -1156,29 +1162,29 @@ aCase
 	:	("case"^ expression | "default") COLON!
 	;
 
-caseSList
+caseSList  {Token first = LT(1);}
 	:	(statement)*
-		{#caseSList = #(#[SLIST,"SLIST"],#caseSList);}
+		{#caseSList = #(create(SLIST,"SLIST",first,LT(1)),#caseSList);}
 	;
 
 // The initializer for a for loop
-forInit
+forInit  {Token first = LT(1);}
 		// if it looks like a declaration, it is
 	:	((declaration)=> declaration
 		// otherwise it could be an expression list...
 		|	expressionList
 		)?
-		{#forInit = #(#[FOR_INIT,"FOR_INIT"],#forInit);}
+		{#forInit = #(create(FOR_INIT,"FOR_INIT",first,LT(1)),#forInit);}
 	;
 
-forCond
+forCond  {Token first = LT(1);}
 	:	(expression)?
-		{#forCond = #(#[FOR_CONDITION,"FOR_CONDITION"],#forCond);}
+		{#forCond = #(create(FOR_CONDITION,"FOR_CONDITION",first,LT(1)),#forCond);}
 	;
 
-forIter
+forIter  {Token first = LT(1);}
 	:	(expressionList)?
-		{#forIter = #(#[FOR_ITERATOR,"FOR_ITERATOR"],#forIter);}
+		{#forIter = #(create(FOR_ITERATOR,"FOR_ITERATOR",first,LT(1)),#forIter);}
 	;
 
 // an exception handler try/catch block
@@ -1233,9 +1239,9 @@ handler
 
 
 // the mother of all expressions
-expression
+expression  {Token first = LT(1);}
 	:	assignmentExpression
-		{#expression = #(#[EXPR,"EXPR"],#expression);}
+		{#expression = #(create(EXPR,"EXPR",first,LT(1)),#expression);}
 	;
 
 
