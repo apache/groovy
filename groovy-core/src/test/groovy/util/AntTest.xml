@@ -1,0 +1,18 @@
+<!-- 
+does exactly the same as the AntBuilder in AntTest... just to be sure that ant behaves the same
+as what we expect from the AntBuilder
+ -->
+<project name="test" default="full">
+
+  <target name="full">
+    <path id="task.path">
+      <pathelement location="classes"/>
+    </path>
+  	<taskdef name="spoofcontainer" classname="groovy.util.SpoofTaskContainer" classpathref="task.path"/>
+  	<taskdef name="spoof" classname="groovy.util.SpoofTask" classpathref="task.path"/>
+
+    <spoofcontainer>
+      <spoof foo="123"/>
+    </spoofcontainer>
+  </target>
+</project>

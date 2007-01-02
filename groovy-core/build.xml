@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<project name="tck" default="pretty-test">
+  <!-- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- -->
+  <!--                   directories                     -->
+  <!-- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- -->
+  <property name="test.reports.dir" value="target/test-reports"/>
+  
+    <target name="cruise" description="to be started by the CruiseControl build server">
+        <echo message="hook for your build"/>
+     </target>
+
+  <target name="pretty-test" 
+          description="HTML output of test cases">
+
+    <junitreport todir="${test.reports.dir}">
+      <fileset dir="${test.reports.dir}">
+        <include name="TEST-*.xml"/>
+      </fileset>
+      <report format="frames" todir="${test.reports.dir}"/>
+    </junitreport>
+  </target>
+
+
+</project>

@@ -1,0 +1,52 @@
+<project name="groovy-cruisecontrol-starter" default="cruise"> 
+
+
+	<property name="svn.tag" value="https://svn.codehaus.org/groovy/tags/cc"/>
+	<property name="dir.checkout" value=".."/>
+	<property name="svn.user" value="dierk"/>
+
+	<target name="cruise" depends="update, copy-reporting-app, delegate, tagLastBuild"/>
+	
+	<!--
+    	label is given by CruiseControl, provides a default value here for the case where
+    	the admin starts this script manually.
+	-->
+	<property name="label" value="manualBuild"/>
+	
+	<target name="update">
+		<echo message="Getting the detected modifications...."/>
+		<exec executable="svn">
+            <arg line="--username ${svn.user} --non-interactive"/>
+		    <arg line="update ${dir.checkout}"/>
+		</exec>
+	</target>
+	<target name="delegate">
+		<echo message="*** Starting the groovy specific build parts ***"/>
+		<ant dir=".." antfile="build.xml" target="cruise">
+			<property name="buildnumber" value="${label}"/>
+		</ant>
+		<echo message="*** groovy build successfully ended          ***"/>
+	</target>
+
+	<target name="tagLastBuild">
+        <exec executable="svn" failonerror="true">
+            <arg line="--username ${svn.user} --non-interactive"/>
+            <arg line="copy -m '' ${dir.checkout} ${svn.tag}/${label}"/>
+        </exec>
+        <exec executable="svn" failonerror="true">
+            <arg line="--username ${svn.user} --non-interactive"/>
+            <arg line="rm -m '' ${svn.tag}/LAST_BUILD"/>
+        </exec>
+        <exec executable="svn" failonerror="true">
+            <arg line="--username ${svn.user} --non-interactive"/>
+            <arg line="copy -m '' ${svn.tag}/${label} ${svn.tag}/LAST_BUILD"/>
+        </exec>
+	</target>
+	
+	<target name="copy-reporting-app">
+	    <fail unless="reporting-app-dir" message="The property reporting-app-dir must be set from outside!" />
+		<copy todir="${reporting-app-dir}" >  <!-- overwrite="true" can be needed occasionally -->
+		    <fileset dir="reporting-app" />   <!-- only changes to web.xml need context reload -->
+		</copy>
+	</target>
+</project>
