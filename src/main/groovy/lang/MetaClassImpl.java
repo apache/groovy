@@ -468,12 +468,12 @@ public class MetaClassImpl extends MetaClass {
        Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
        unwrap(arguments);
        
-       MetaMethod method = retrieveMethod(sender, methodName, argClasses, isCallToSuper);
+       MetaMethod method = getMethodWithCaching(sender, methodName, argClasses, isCallToSuper);
        
        if (method==null && arguments.length==1 && arguments[0] instanceof List) {
            Object[] newArguments = ((List) arguments[0]).toArray();
            Class[] newArgClasses = MetaClassHelper.convertToTypeArray(newArguments);
-           method = retrieveMethod(sender, methodName, newArgClasses, isCallToSuper);
+           method = getMethodWithCaching(sender, methodName, newArgClasses, isCallToSuper);
            if (method!=null) {
                MethodKey methodKey = new DefaultMethodKey(sender, methodName, argClasses, isCallToSuper);
                method = new TransformMetaMethod(method) {
@@ -521,14 +521,14 @@ public class MetaClassImpl extends MetaClass {
                Class ownerClass = owner.getClass();
                if (owner instanceof Class) ownerClass = (Class) owner;
                MetaClass ownerMetaClass = registry.getMetaClass(ownerClass);
-               method = ownerMetaClass.retrieveMethod(methodName,argClasses);
+               method = ownerMetaClass.pickMethod(methodName,argClasses);
                if (method!=null) return ownerMetaClass.invokeMethod(owner,methodName,originalArguments);
            }
            if (method==null && delegate!=closure && delegate!=null) {
                Class delegateClass = delegate.getClass();
                if (delegate instanceof Class) delegateClass = (Class) delegate;
                MetaClass delegateMetaClass = registry.getMetaClass(delegateClass);
-               method = delegateMetaClass.retrieveMethod(methodName,argClasses);
+               method = delegateMetaClass.pickMethod(methodName,argClasses);
                if (method!=null) return delegateMetaClass.invokeMethod(delegate,methodName,originalArguments);
            }
            if (method==null) {
@@ -573,15 +573,15 @@ public class MetaClassImpl extends MetaClass {
        }
    }
    
-   public MetaMethod retrieveMethod(Class sender, String methodName, Class[] arguments, boolean isCallToSuper) {
+   public MetaMethod getMethodWithCaching(Class sender, String methodName, Class[] arguments, boolean isCallToSuper) {
        // lets try use the cache to find the method
        if (GroovyCategorySupport.hasCategoryInAnyThread() && !isCallToSuper) {
-           return pickMethod(sender, methodName, arguments, isCallToSuper);
+           return getMethodWithoutCaching(sender, methodName, arguments, isCallToSuper);
        } else {
            MethodKey methodKey = new DefaultMethodKey(sender, methodName, arguments, isCallToSuper);
            MetaMethod method = (MetaMethod) methodCache.get(methodKey);
            if (method == null) {
-               method = pickMethod(sender, methodName, arguments, isCallToSuper);
+               method = getMethodWithoutCaching(sender, methodName, arguments, isCallToSuper);
                cacheInstanceMethod(methodKey, method);
            }
            return method;
@@ -623,15 +623,7 @@ public class MetaClassImpl extends MetaClass {
        return method;
    }
 
-   
-   
-   /**
-    * pick a method in a strict manner, i.e., without reinterpreting the first List argument.
-    * this method is used only by ClassGenerator for static binding
-    * @param methodName
-    * @param arguments
-    */
-   public MetaMethod pickMethod(Class sender, String methodName, Class[] arguments, boolean isCallToSuper) {
+   public MetaMethod getMethodWithoutCaching(Class sender, String methodName, Class[] arguments, boolean isCallToSuper) {
        MetaMethod method = null;
        List methods = getMethods(sender,methodName,isCallToSuper);
        if (methods!=null && !methods.isEmpty()) {
@@ -2107,11 +2099,14 @@ public class MetaClassImpl extends MetaClass {
    }
 
    public MetaMethod pickMethod(String methodName, Class[] arguments) {
-       return pickMethod(theClass,methodName,arguments,false);
+       return getMethodWithoutCaching(theClass,methodName,arguments,false);
    }
    
+   /**
+    * @deprecated use pickMethod instead
+    */
    protected MetaMethod retrieveMethod(String methodName, Class[] arguments) {
-       return retrieveMethod(theClass,methodName,arguments,false);
+       return pickMethod(methodName,arguments);
    }
    
    /**

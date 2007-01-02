@@ -151,23 +151,32 @@ public abstract class MetaClass {
     public abstract List getMethods();
     
     /**
-     * Warning, this method will be removed until 1.0
-     * @deprecated
+     * Warning, this method will be removed
+     * @deprecated use invokeConstructor instead
      */
     public Object invokeConstructorAt(Class at, Object[] arguments) {
         return invokeConstructor(arguments);
     }
 
     /**
-     * Warning, this method will be removed until 1.0
-     * @deprecated
+     * Selects a method by name and argument classes. This method
+     * does not search for an exact match, it searches for a compatible
+     * method. For this the method selection mechanism is used as provided
+     * bye the implementation of this MetaClass. pickMethod may or may
+     * not used during the method selection process when invoking a method
+     * thereis no warranty for that.
+     * 
+     * @returns a matching MetaMethod or null
+     * @throws GroovyRuntimeException if there is more than one matching method
      */
     public abstract MetaMethod pickMethod(String methodName, Class[] arguments);
     
     /**
-     * Warning, this method will be removed until 1.0
-     * @deprecated
+     * Warning, this method will be removed
+     * @deprecated usw pickMethod instead
      */
-    protected abstract MetaMethod retrieveMethod(String methodName, Class[] arguments);
+    protected MetaMethod retrieveMethod(String methodName, Class[] arguments) {
+        return pickMethod(methodName,arguments);
+    }
 
 }
