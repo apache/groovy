@@ -164,7 +164,7 @@ class TestGenerator{
         def methodName = ""
         for (t in tokens) {
             if (t.size() > 1) {
-                methodName += ( t[0].toUpperCase() + t[1...t.size()].toLowerCase() )
+                methodName += ( t[0].toUpperCase() + t[1..<t.size()].toLowerCase() )
             } else if (t.size() == 1) {
                 methodName += t[0].toUpperCase()
             }

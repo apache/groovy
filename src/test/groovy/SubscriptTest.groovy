@@ -6,7 +6,7 @@ class SubscriptTest extends GroovyTestCase {
         def sub = list[2..4]
         assert sub == ['c', 'd', 'e']
         
-        sub = list[2...5]
+        sub = list[2..<5]
         assert sub == ['c', 'd', 'e']
         
         def value = list[-1]

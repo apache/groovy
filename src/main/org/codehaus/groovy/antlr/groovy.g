@@ -2279,7 +2279,6 @@ shiftExpression[int lc_stmt]
             ((SL^ | SR^ | BSR^)
             |   RANGE_INCLUSIVE^
             |   RANGE_EXCLUSIVE^
-            |   td:TRIPLE_DOT^ {#td.setType(RANGE_EXCLUSIVE);} /* backward compat: FIXME REMOVE */
             )
             nls!
             additiveExpression[0]

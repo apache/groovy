@@ -671,7 +671,6 @@ public class SourcePrinterTest extends GroovyTestCase {
     	assertEquals("public boolean process(Set<? extends B, ? super C> a) {println a}", pretty("public boolean process(Set<? extends B, ? super C> a) {println a}"));
     }
     public void testRangeExclusive() throws Exception {
-        assertEquals("foo[45..<89]", pretty("foo[45...89]")); // todo remove this '...' usage from groovy.g
         assertEquals("foo[45..<89]", pretty("foo[45 ..< 89]"));
     }
     public void testRangeInclusive() throws Exception {
