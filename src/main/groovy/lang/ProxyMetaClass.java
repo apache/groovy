@@ -32,6 +32,11 @@ public class ProxyMetaClass extends MetaClassImpl {
         super(registry, theClass);
         this.adaptee = adaptee;
         if (null == adaptee) throw new IllegalArgumentException("adaptee must not be null");
+        initialize();
+    }
+    
+    public synchronized void initialize() {
+        this.adaptee.initialize();
     }
 
     /**

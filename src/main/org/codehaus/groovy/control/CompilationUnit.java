@@ -883,25 +883,40 @@ public class CompilationUnit extends ProcessingUnit {
         
         if(sort==false) return unsorted;
         
-        int[] index = new int[unsorted.size()];
+        int[] indexClass = new int[unsorted.size()];
+        int[] indexInterface = new int[unsorted.size()];
         {            
             int i = 0;
             for (Iterator iter = unsorted.iterator(); iter.hasNext(); i++) {
-                ClassNode element = (ClassNode) iter.next();
+                ClassNode node = (ClassNode) iter.next();
                 int count = 0;
+                ClassNode element = node;
                 while (element!=null){
                     count++;
                     element = element.getSuperClass();
                 }
-                index[i] = count;
+                if (node.isInterface()) {
+                    indexInterface[i] = count;
+                    indexClass[i] = -1;
+                } else {
+                    indexClass[i] = count;
+                    indexInterface[i] = -1;
+                }
             }
         }
         
+        List sorted = getSorted(indexInterface,unsorted);
+        sorted.addAll(getSorted(indexClass,unsorted));
+        
+        return sorted;
+    }
+    
+    private List getSorted(int[] index, List unsorted) {
         ArrayList sorted = new ArrayList(unsorted.size());
         int start = 0;
-        for (int i=0; i<index.length; i++) {           
+        for (int i=0; i<unsorted.size(); i++) {           
             int min = -1;
-            for (int j=0; j<index.length; j++) {
+            for (int j=0; j<unsorted.size(); j++) {
                 if (index[j]==-1) continue;
                 if (min==-1) {
                     min = j;
@@ -909,10 +924,10 @@ public class CompilationUnit extends ProcessingUnit {
                     min = j;
                 }
             }
+            if (min==-1) break;
             sorted.add(unsorted.get(min));
             index[min] = -1;
         }
-        
         return sorted;
     }
 

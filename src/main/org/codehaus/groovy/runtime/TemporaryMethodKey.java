@@ -46,8 +46,8 @@ public class TemporaryMethodKey extends MethodKey {
 
     private Object[] parameterValues;
 
-    public TemporaryMethodKey(Class sender, String name, Object[] parameterValues) {
-        super(sender, name);
+    public TemporaryMethodKey(Class sender, String name, Object[] parameterValues, boolean isCallToSuper) {
+        super(sender, name, isCallToSuper);
         if (parameterValues == null) {
             parameterValues = MetaClassHelper.EMPTY_ARRAY;
         }

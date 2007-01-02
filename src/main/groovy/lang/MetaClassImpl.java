@@ -475,7 +475,7 @@ public class MetaClassImpl extends MetaClass {
            Class[] newArgClasses = MetaClassHelper.convertToTypeArray(newArguments);
            method = retrieveMethod(sender, methodName, newArgClasses, isCallToSuper);
            if (method!=null) {
-               MethodKey methodKey = new DefaultMethodKey(sender, methodName, argClasses);
+               MethodKey methodKey = new DefaultMethodKey(sender, methodName, argClasses, isCallToSuper);
                method = new TransformMetaMethod(method) {
                    public Object invoke(Object object, Object[] arguments) {
                        Object firstArgument = arguments[0];
@@ -578,8 +578,7 @@ public class MetaClassImpl extends MetaClass {
        if (GroovyCategorySupport.hasCategoryInAnyThread() && !isCallToSuper) {
            return pickMethod(sender, methodName, arguments, isCallToSuper);
        } else {
-           //TODO: add isSuperCall to key
-           MethodKey methodKey = new DefaultMethodKey(sender, methodName, arguments);
+           MethodKey methodKey = new DefaultMethodKey(sender, methodName, arguments, isCallToSuper);
            MetaMethod method = (MetaMethod) methodCache.get(methodKey);
            if (method == null) {
                method = pickMethod(sender, methodName, arguments, isCallToSuper);
@@ -615,7 +614,7 @@ public class MetaClassImpl extends MetaClass {
    }
 
    public MetaMethod retrieveStaticMethod(String methodName, Class[] arguments) {
-       MethodKey methodKey = new DefaultMethodKey(theClass, methodName, arguments);
+       MethodKey methodKey = new DefaultMethodKey(theClass, methodName, arguments, false);
        MetaMethod method = (MetaMethod) staticMethodCache.get(methodKey);
        if (method == null) {
            method = pickStaticMethod(theClass,methodName, arguments);
@@ -662,7 +661,7 @@ public class MetaClassImpl extends MetaClass {
        unwrap(arguments);
        
        // lets try use the cache to find the method
-       MethodKey methodKey = new DefaultMethodKey(sender, methodName, argClasses);
+       MethodKey methodKey = new DefaultMethodKey(sender, methodName, argClasses, false);
        MetaMethod method = (MetaMethod) staticMethodCache.get(methodKey);
        if (method == null) {
            method = pickStaticMethod(sender, methodName, argClasses);

@@ -26,4 +26,20 @@ class ClosureInStaticMethodTest extends GroovyTestCase {
         assert block != null
         block.call("hello!")
     }
+    
+    void testClosureInStaticMethodCallingStaticMethod() {
+       assert doThing(1) == 10
+       assert this.doThing(1) == 10
+       assert ClosureInStaticMethodTest.doThing(1) == 10
+    }
+    
+    
+    static doThing(count) {
+      def ret = count
+      if (count > 2) return ret
+      count.times {
+        ret += doThing(count+it+1)
+      }
+      return ret
+    }
 }

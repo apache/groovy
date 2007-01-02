@@ -44,8 +44,8 @@ public class DefaultMethodKey extends MethodKey{
 
     private Class[] parameterTypes;
 
-    public DefaultMethodKey(Class sender, String name, Class[] parameterTypes) {
-        super(sender, name);
+    public DefaultMethodKey(Class sender, String name, Class[] parameterTypes, boolean isCallToSuper) {
+        super(sender, name,isCallToSuper);
         this.parameterTypes = parameterTypes;
     }
 

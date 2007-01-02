@@ -50,10 +50,12 @@ public abstract class MethodKey {
     private int hash;
     private String name;
     private Class sender;
+    private boolean isCallToSuper;
     
-    public MethodKey(Class sender, String name) {
+    public MethodKey(Class sender, String name, boolean isCallToSuper) {
         this.sender = sender;
         this.name = name;
+        this.isCallToSuper = isCallToSuper;
     }
 
     /**
@@ -65,7 +67,7 @@ public abstract class MethodKey {
         for (int i = 0; i < size; i++) {
             paramTypes[i] = getParameterType(i);
         }
-        return new DefaultMethodKey(sender, name, paramTypes);
+        return new DefaultMethodKey(sender, name, paramTypes, isCallToSuper);
     }
 
     public boolean equals(Object that) {
@@ -81,6 +83,7 @@ public abstract class MethodKey {
     public boolean equals(MethodKey that) {
         int size = getParameterCount();
         if (sender!=that.sender) return false;
+        if (isCallToSuper!=that.isCallToSuper) return false;
         if (name.equals(that.name) && size == that.getParameterCount()) {
             for (int i = 0; i < size; i++) {
                 if (!getParameterType(i).equals(that.getParameterType(i))) {
@@ -137,6 +140,8 @@ public abstract class MethodKey {
             answer *= 37;
             answer += 1 + getParameterType(i).hashCode();
         }
+        answer *= 37;
+        answer += isCallToSuper?1:0;
         answer *= 37;
         answer += 1 + sender.hashCode();
         return answer;

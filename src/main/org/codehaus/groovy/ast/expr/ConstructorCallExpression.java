@@ -86,7 +86,15 @@ public class ConstructorCallExpression extends Expression {
     }
 
     public String getText() {
-        return "new " + getType() + "(" + arguments.getText() + ")";
+        String text = null;
+        if (isSuperCall()) {
+            text = "super ";
+        } else if (isThisCall()) {
+            text = "this ";
+        } else {
+            text = "new "+ getType().getName();
+        }
+        return text + arguments.getText();
     }
 
     public String toString() {

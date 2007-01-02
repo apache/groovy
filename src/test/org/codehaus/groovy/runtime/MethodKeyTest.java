@@ -54,10 +54,10 @@ import junit.framework.TestCase;
 public class MethodKeyTest extends TestCase {
 
     public void testDefaultImplementation() throws Exception {
-        MethodKey a = new DefaultMethodKey(Object.class, "foo", new Class[] { Object.class, Integer.class });
-        MethodKey a2 = new DefaultMethodKey(Object.class, "foo", new Class[] { Object.class, Integer.class });
-        MethodKey b = new DefaultMethodKey(Object.class, "foo", new Class[] { Object.class });
-        MethodKey c = new DefaultMethodKey(Object.class, "bar", new Class[] { Object.class, Integer.class });
+        MethodKey a = new DefaultMethodKey(Object.class, "foo", new Class[] { Object.class, Integer.class },false);
+        MethodKey a2 = new DefaultMethodKey(Object.class, "foo", new Class[] { Object.class, Integer.class },false);
+        MethodKey b = new DefaultMethodKey(Object.class, "foo", new Class[] { Object.class },false);
+        MethodKey c = new DefaultMethodKey(Object.class, "bar", new Class[] { Object.class, Integer.class },false);
 
         assertCompare(a, a, true);
         assertCompare(a, a2, true);
@@ -69,10 +69,10 @@ public class MethodKeyTest extends TestCase {
     }
 
     public void testTemporaryImplementation() throws Exception {
-        MethodKey a = new DefaultMethodKey(Object.class, "foo", new Class[] { Object.class, Integer.class });
-        MethodKey a2 = new TemporaryMethodKey(Object.class, "foo", new Object[] { new Object(), new Integer(1) });
-        MethodKey b = new TemporaryMethodKey(Object.class, "foo", new Object[] { new Object() });
-        MethodKey c = new TemporaryMethodKey(Object.class, "bar", new Object[] { new Object(), new Integer(1) });
+        MethodKey a = new DefaultMethodKey(Object.class, "foo", new Class[] { Object.class, Integer.class },false);
+        MethodKey a2 = new TemporaryMethodKey(Object.class, "foo", new Object[] { new Object(), new Integer(1) },false);
+        MethodKey b = new TemporaryMethodKey(Object.class, "foo", new Object[] { new Object() },false);
+        MethodKey c = new TemporaryMethodKey(Object.class, "bar", new Object[] { new Object(), new Integer(1) },false);
 
         assertCompare(a, a, true);
         assertCompare(a, a2, true);
