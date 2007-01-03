@@ -82,10 +82,10 @@ public class StreamingMarkupWriter extends Writer {
 													StreamingMarkupWriter.this.writer.write("&lt;");
 												} else if (c == '>') {
 													StreamingMarkupWriter.this.writer.write("&gt;");
-                                                } else if (c == '&') {
-                                                    StreamingMarkupWriter.this.writer.write("&amp;");
-                                                } else if (c == '\'' && StreamingMarkupWriter.this.writingAttribute) {
-                                                    StreamingMarkupWriter.this.writer.write("&apos;");
+                                                   } else if (c == '&') {
+                                                       StreamingMarkupWriter.this.writer.write("&amp;");
+                                                   } else if (c == '\'' && StreamingMarkupWriter.this.writingAttribute) {
+                                                       StreamingMarkupWriter.this.writer.write("&apos;");
 												} else {
 													StreamingMarkupWriter.this.writer.write(c);
 												}
