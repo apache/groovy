@@ -34,13 +34,13 @@ defaultmailhost
 			<htmlemail
 				buildresultsurl="http://&hostname;/groovy/"
 				mailhost="&defaultmailhost;"
+				defaultsuffix="@codehaus.org"
 				returnaddress="build-support@canoo.com"
 				spamwhilebroken="false"
 				skipusers="true"
 				logdir="&basedir;/groovy/cruisecontrol/logs"
 				xslfile="&basedir;/groovy/cruisecontrol/checkout/cruise/htmlmail.xsl"
 				>
-				<propertiesmapper file="&basedir;/groovy/cruisecontrol/checkout/cruise/emailmap.properties"/>
 				<always address="scm@groovy.codehaus.org"/>
 				<always address="dierk.koenig@canoo.com"/>
 			</htmlemail>
