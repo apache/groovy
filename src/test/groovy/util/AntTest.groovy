@@ -9,6 +9,8 @@ import groovy.xml.NamespaceBuilder
 class AntTest extends GroovyTestCase {
     
     void testAnt() {
+    	fail("Just a test to see if CC has been setup correctly")
+
     	def ant = new AntBuilder()
 
         // lets just call one task
