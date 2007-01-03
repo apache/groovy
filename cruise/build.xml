@@ -22,9 +22,8 @@
 	</target>
 	<target name="delegate">
 		<echo message="*** Starting the groovy specific build parts ***"/>
-		<ant dir=".." antfile="build.xml" target="cruise">
-			<property name="buildnumber" value="${label}"/>
-		</ant>
+		<exec dir=".." executable="maven">
+		</exec>
 		<echo message="*** groovy build successfully ended          ***"/>
 	</target>
 
