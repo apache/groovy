@@ -54,7 +54,8 @@ public class StreamingMarkupWriter extends Writer {
 	protected final Writer writer;
     protected final String encoding;
     protected final CharsetEncoder encoder;
-	private final Writer bodyWriter =  new Writer() {
+    protected boolean writingAttribute = false;
+	private final Writer escapedWriter =  new Writer() {
 											/* (non-Javadoc)
 											 * @see java.io.Writer#close()
 											 */
@@ -81,8 +82,10 @@ public class StreamingMarkupWriter extends Writer {
 													StreamingMarkupWriter.this.writer.write("&lt;");
 												} else if (c == '>') {
 													StreamingMarkupWriter.this.writer.write("&gt;");
-												} else if (c == '&') {
-													StreamingMarkupWriter.this.writer.write("&amp;");
+                                                } else if (c == '&') {
+                                                    StreamingMarkupWriter.this.writer.write("&amp;");
+                                                } else if (c == '\'' && StreamingMarkupWriter.this.writingAttribute) {
+                                                    StreamingMarkupWriter.this.writer.write("&apos;");
 												} else {
 													StreamingMarkupWriter.this.writer.write(c);
 												}
@@ -96,67 +99,19 @@ public class StreamingMarkupWriter extends Writer {
 													write(cbuf[off++]);
 												}
 											}
+                                            
+                                               public void setWritingAttribute(final boolean writingAttribute) {
+                                                   StreamingMarkupWriter.this.writingAttribute = writingAttribute;
+                                               }
 											
-											public Writer attributeValue() {
-												return StreamingMarkupWriter.this.attributeWriter;
-											}
-											
-											public Writer bodyText() {
-												return bodyWriter;
+											public Writer excaped() {
+												return escapedWriter;
 											}
 											
 											public Writer unescaped() {
 												return StreamingMarkupWriter.this;
 											}
 										};
-	
-	private final Writer attributeWriter =  new Writer() {
-												/* (non-Javadoc)
-												 * @see java.io.Writer#close()
-												 */
-												public void close() throws IOException {
-													StreamingMarkupWriter.this.close();
-												}
-										
-												/* (non-Javadoc)
-												 * @see java.io.Writer#flush()
-												 */
-												public void flush() throws IOException {
-													StreamingMarkupWriter.this.flush();
-												}
-		
-												/* (non-Javadoc)
-												 * @see java.io.Writer#write(int)
-												 */
-												public void write(final int c) throws IOException {
-													if (c == '\'') {
-														StreamingMarkupWriter.this.writer.write("&apos;");
-													} else {
-														StreamingMarkupWriter.this.bodyWriter.write(c);
-													}
-												}
-												
-												/* (non-Javadoc)
-												 * @see java.io.Writer#write(char[], int, int)
-												 */
-												public void write(final char[] cbuf, int off, int len) throws IOException {
-													while (len-- > 0){
-														write(cbuf[off++]);
-													}
-												}
-												
-												public Writer attributeValue() {
-													return attributeWriter;
-												}
-												
-												public Writer bodyText() {
-													return StreamingMarkupWriter.this.bodyWriter;
-												}
-												
-												public Writer unescaped() {
-													return StreamingMarkupWriter.this;
-												}
-											};
 
     public StreamingMarkupWriter(final Writer writer, final String encoding) {
         this.writer = writer;
@@ -198,6 +153,8 @@ public class StreamingMarkupWriter extends Writer {
             this.writer.write("&#x");
             this.writer.write(Integer.toHexString(c));
             this.writer.write(';');
+        } else if (c == '\'' && this.writingAttribute) {
+            this.writer.write("&apos;");
         } else {
             this.writer.write(c);
         }
@@ -212,12 +169,12 @@ public class StreamingMarkupWriter extends Writer {
         }
     }
     
-    public Writer attributeValue() {
-        return this.attributeWriter;
+    public void setWritingAttribute(final boolean writingAttribute) {
+        this.writingAttribute = writingAttribute;
     }
     
-    public Writer bodyText() {
-        return this.bodyWriter;
+    public Writer escaped() {
+        return this.escapedWriter;
     }
     
     public Writer unescaped() {

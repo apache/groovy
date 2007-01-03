@@ -54,7 +54,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
         def pendingStack = []
         def commentClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
                                         out.unescaped() << "<!--"
-                                        out.bodyText() << body
+                                        out.escaped() << body
                                         out.unescaped() << "-->"
                                      }
          def piClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
@@ -77,30 +77,21 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
                                  }
         def declarationClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
                                      out.unescaped() << '<?xml version="1.0" encoding="'
-                                     out.bodyText() << "${out.encoding}"
+                                     out.escaped() << "${out.encoding}"
                                      out.unescaped() << '"?>\n'
                                  }
         def noopClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
-                                      if (body instanceof Closure) {
-                                        def body1 = body.clone()
-                                        
-                                        body1.delegate = doc
-                                        body1(doc)
-                                      } else if (body instanceof Buildable) {
-                                          body.build(doc)
-                                      } else if (body != null) {
-                                          body.each {
-                                            if (it instanceof Closure) {
-                                              def body1 = it.clone()
-                                              
-                                              body1.delegate = doc
-                                              body1(doc)
-                                            } else if (it instanceof Buildable) {
-                                              it.build(doc)
-                                            } else {
-                                              out.bodyText() << it
-                                            }
-                                          }
+                                      body.each {
+                                        if (it instanceof Closure) {
+                                          def body1 = it.clone()
+                                          
+                                          body1.delegate = doc
+                                          body1(doc)
+                                        } else if (it instanceof Buildable) {
+                                          it.build(doc)
+                                        } else {
+                                          out.escaped() << it
+                                        }
                                       }
                                 }
         def unescapedClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
@@ -116,7 +107,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
                                   }
           
                                   out = out.unescaped() << "<${tag}"
-          
+                                   
                                   attrs.each {key, value ->
                                                   if (key.contains('$')) {
                                                       def parts = key.tokenize('$')
@@ -128,9 +119,11 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
                                                       }
                                                   }
           
-                                                  out << " ${key}='"
-                                                  out.attributeValue() << "${value}"
-                                                  out << "'"
+                                                  out << " ${key}='"                                                 
+                                                  out.writingAttribute = true
+                                                  "${value}".build(doc)                                                 
+                                                  out.writingAttribute = false
+                                                 out << "'"
                                                 }
           
                                   def hiddenNamespaces = [:]
@@ -139,7 +132,9 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
                                       hiddenNamespaces[key] = namespaces[key]
                                       namespaces[key] = value
                                       out << ((key == ":") ? " xmlns='" : " xmlns:${key}='")
-                                      out.attributeValue() << "${value}"
+                                      out.writingAttribute = true
+                                      "${value}".build(doc)                
+                                      out.writingAttribute = false
                                       out << "'"
                                   }
           
@@ -151,26 +146,17 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
                                       pendingStack.add pendingNamespaces.clone()
                                       pendingNamespaces.clear()
           
-                                      if (body instanceof Closure) {
-                                        def body1 = body.clone()
-                                        
-                                        body1.delegate = doc
-                                        body1(doc)
-                                      } else if (body instanceof Buildable) {
-                                          body.build(doc)
-                                      } else {
-                                          body.each {
-                                            if (it instanceof Closure) {
-                                              def body1 = it.clone()
-                                              
-                                              body1.delegate = doc
-                                              body1(doc)
-                                            } else if (it instanceof Buildable) {
-                                              it.build(doc)
-                                            } else {
-                                              out.bodyText() << it
-                                            }
-                                          }
+                                      body.each {
+                                        if (it instanceof Closure) {
+                                          def body1 = it.clone()
+                                          
+                                          body1.delegate = doc
+                                          body1(doc)
+                                        } else if (it instanceof Buildable) {
+                                          it.build(doc)
+                                        } else {
+                                          out.escaped() << it
+                                        }
                                       }
           
                                       pendingNamespaces.clear()
