@@ -15,7 +15,7 @@
 	
 	<target name="update">
 		<echo message="Getting the detected modifications...."/>
-		<exec executable="svn">
+		<exec executable="svn" failonerror="true">
             <arg line="--username ${svn.user} --non-interactive"/>
 		    <arg line="update ${dir.checkout}"/>
 		</exec>
@@ -23,7 +23,7 @@
 
 	<target name="delegate">
 		<echo message="*** Starting the groovy specific build parts ***"/>
-		<exec dir=".." executable="maven">
+		<exec dir=".." executable="maven" failonerror="true">
 		</exec>
 		<echo message="*** groovy build successfully ended          ***"/>
 	</target>
