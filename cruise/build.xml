@@ -20,6 +20,7 @@
 		    <arg line="update ${dir.checkout}"/>
 		</exec>
 	</target>
+
 	<target name="delegate">
 		<echo message="*** Starting the groovy specific build parts ***"/>
 		<exec dir=".." executable="maven">
