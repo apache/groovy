@@ -27,8 +27,7 @@ defaultmailhost
                     <currentbuildstatuslistener file="&basedir;/groovy/cruisecontrol/logs/status.txt"/>
                 </listeners>
 		<log dir="&basedir;/groovy/cruisecontrol/logs">
-			<!--merge dir="&basedir;/groovy/cruisecontrol/checkout/target/test-reports/"/-->
-            <merge dir="&basedir;/groovy/target/test-reports"/>
+			<merge dir="&basedir;/groovy/cruisecontrol/checkout/target/test-reports/"/>
 		</log>
 		<publishers>
 			<!-- htmlemail is used only for explicit subscribers -->
