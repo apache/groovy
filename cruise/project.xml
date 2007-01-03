@@ -29,6 +29,7 @@ defaultmailhost
 		<log dir="&basedir;/groovy/cruisecontrol/logs">
 			<merge dir="&basedir;/groovy/cruisecontrol/checkout/target/test-reports/"/>
 		</log>
+
 		<publishers>
 			<!-- htmlemail is used only for explicit subscribers -->
 			<htmlemail
