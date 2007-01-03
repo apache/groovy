@@ -40,9 +40,8 @@ defaultmailhost
 				logdir="&basedir;/groovy/cruisecontrol/logs"
 				xslfile="&basedir;/groovy/cruisecontrol/checkout/cruise/htmlmail.xsl"
 				>
-				<!--propertiesmapper file="&basedir;/groovy/cruisecontrol/checkout/cruise/emailmap.properties"/-->
+				<propertiesmapper file="&basedir;/groovy/cruisecontrol/checkout/cruise/emailmap.properties"/>
 				<always address="dierk.koenig@canoo.com"/>
-				<always address="mguillemot@yahoo.fr"/>
 			</htmlemail>
 			<XSLTLogPublisher
 				directory="&basedir;/groovy/&hostname;/groovy/"
