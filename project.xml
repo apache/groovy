@@ -119,31 +119,31 @@
       <name>1.0-JSR-04</name>
       <tag>GROOVY_1_0_JSR_04</tag>
     </version>
-      <version>
+    <version>
         <id>jsr05</id>
         <name>1.0-JSR-05</name>
         <tag>GROOVY_1_0_JSR_05</tag>
-      </version>
-      <version>
+    </version>
+    <version>
         <id>jsr06</id>
         <name>1.0-JSR-06</name>
         <tag>GROOVY_1_0_JSR_06</tag>
-      </version>
-      <version>
+    </version>
+    <version>
         <id>rc1</id>
         <name>1.0-RC-1</name>
         <tag>GROOVY_1_0_RC_1</tag>
-      </version>
-      <version>
-        <id>rc2</id>
+    </version>
+    <version>
+        <id>rc1</id>
         <name>1.0-RC-2</name>
         <tag>GROOVY_1_0_RC_2</tag>
-      </version>
-      <version>
-        <id>1.0</id>
+    </version>
+    <version>
+        <id>rc1</id>
         <name>1.0</name>
         <tag>GROOVY_1_0</tag>
-      </version>
+    </version>
   </versions>
 
   <mailingLists>
