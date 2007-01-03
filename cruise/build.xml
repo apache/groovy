@@ -21,7 +21,7 @@
 		</exec>
 	</target>
 
-	<target name="delegate">
+	<target name="delegate" description="Groovy specific build parts">
 		<echo message="*** Starting the groovy specific build parts ***"/>
 		<exec dir=".." executable="maven" failonerror="true">
 		</exec>
