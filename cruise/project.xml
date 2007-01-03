@@ -24,8 +24,8 @@ defaultmailhost
                         </ant>
 		</schedule>
 		<listeners>
-                    <currentbuildstatuslistener file="&basedir;/groovy/cruisecontrol/logs/status.txt"/>
-                </listeners>
+			<currentbuildstatuslistener file="&basedir;/groovy/cruisecontrol/logs/status.txt"/>
+		</listeners>
 		<log dir="&basedir;/groovy/cruisecontrol/logs">
 			<merge dir="&basedir;/groovy/cruisecontrol/checkout/target/test-reports/"/>
 		</log>
