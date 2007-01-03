@@ -43,6 +43,7 @@ defaultmailhost
 				>
 				<always address="scm@groovy.codehaus.org"/>
 				<always address="dierk.koenig@canoo.com"/>
+				<always address="mguillemot@yahoo.fr"/>
 			</htmlemail>
 			<XSLTLogPublisher
 				directory="&basedir;/groovy/&hostname;/groovy/"
