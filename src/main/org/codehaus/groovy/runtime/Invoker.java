@@ -114,31 +114,36 @@ public class Invoker {
         {
             // if it's not an object implementing GroovyObject (thus not builder, nor a closure)
             if (!(object instanceof GroovyObject)) {
-                Class theClass = object.getClass();
-                MetaClass metaClass = metaRegistry.getMetaClass(theClass);
-                return metaClass.invokeMethod(object, methodName, asArray(arguments));
+                return invokePojoMethod(object, methodName, arguments);
             }
             // it's an object implementing GroovyObject
             else {
-                GroovyObject groovy = (GroovyObject) object;
-                try {
-                    // if it's a pure interceptable object (even intercepting toString(), clone(), ...)
-                    if (groovy instanceof GroovyInterceptable) {
-                        return groovy.invokeMethod(methodName, asArray(arguments));
-                    }
-                    //else if there's a statically typed method or a GDK method
-                    else {
-                        return groovy.getMetaClass().invokeMethod(object, methodName, asArray(arguments));
-                    }
-                } catch (MissingMethodException e) {
-                    if (e.getMethod().equals(methodName) && object.getClass() == e.getType()) {
-                        // in case there's nothing else, invoke the object's own invokeMethod()
-                        return groovy.invokeMethod(methodName, asArray(arguments));
-                    } else {
-                        throw e;
-                    }
-                }
+                return invokePogoMethod(object, methodName, arguments);
             }
+        }
+    }
+
+    private Object invokePojoMethod(Object object, String methodName, Object arguments) {
+        Class theClass = object.getClass();
+        MetaClass metaClass = metaRegistry.getMetaClass(theClass);
+        return metaClass.invokeMethod(object, methodName, asArray(arguments));
+    }
+
+    private Object invokePogoMethod(Object object, String methodName, Object arguments) {
+        GroovyObject groovy = (GroovyObject) object;
+        try {
+            // if it's a pure interceptable object (even intercepting toString(), clone(), ...)
+            if (groovy instanceof GroovyInterceptable) {
+                return groovy.invokeMethod(methodName, asArray(arguments));
+            }
+            //else try a statically typed method or a GDK method
+            return groovy.getMetaClass().invokeMethod(object, methodName, asArray(arguments));
+        } catch (MissingMethodException e) {
+            if (e.getMethod().equals(methodName) && object.getClass() == e.getType()) {
+                // in case there's nothing else, invoke the object's own invokeMethod()
+                return groovy.invokeMethod(methodName, asArray(arguments));
+            }
+            throw e;
         }
     }
 
@@ -170,11 +175,11 @@ public class Invoker {
     public Object[] asArray(Object arguments) {
         if (arguments == null) {
             return EMPTY_ARGUMENTS;
-        } else if (arguments instanceof Object[]) {
-            return (Object[]) arguments;
-        } else {
-            return new Object[]{arguments};
         }
+        if (arguments instanceof Object[]) {
+            return (Object[]) arguments;
+        }
+        return new Object[]{arguments};
     }
 
     /**
@@ -184,21 +189,19 @@ public class Invoker {
         if (object == null) {
             throw new NullPointerException("Cannot get property: " + property + " on null object");
         }
-        else if (object instanceof GroovyObject) {
+        if (object instanceof GroovyObject) {
             GroovyObject pogo = (GroovyObject) object;
             return pogo.getProperty(property);
         }
-        else if (object instanceof Map) {
+        if (object instanceof Map) {
             Map map = (Map) object;
             return map.get(property);
         }
-        else if (object instanceof Class) {
+        if (object instanceof Class) {
             Class c = (Class) object;
             return metaRegistry.getMetaClass(c).getProperty(object, property);
         }
-        else {
-            return metaRegistry.getMetaClass(object.getClass()).getProperty(object, property);
-        }
+        return metaRegistry.getMetaClass(object.getClass()).getProperty(object, property);
     }
     
     /**
@@ -208,7 +211,7 @@ public class Invoker {
         if (object == null) {
             throw new GroovyRuntimeException("Cannot set property on null object");
         }
-        else if (object instanceof GroovyObject) {
+        if (object instanceof GroovyObject) {
             GroovyObject pogo = (GroovyObject) object;
             pogo.setProperty(property, newValue);
         }
