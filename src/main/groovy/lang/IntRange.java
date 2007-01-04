@@ -48,6 +48,7 @@ package groovy.lang;
 import java.util.AbstractList;
 import java.util.Iterator;
 import java.util.List;
+import java.math.BigInteger;
 
 import org.codehaus.groovy.runtime.IteratorClosureAdapter;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
@@ -208,10 +209,16 @@ public class IntRange extends AbstractList implements Range {
             Integer integer = (Integer) value;
             int i = integer.intValue();
             return i >= from && i <= to;
-        } else if (value instanceof IntRange) {
+        }
+        if (value instanceof IntRange) {
             IntRange range = (IntRange) value;
             return from<=range.from && range.to<=to;
-        } 
+        }
+        if (value instanceof BigInteger) {
+            BigInteger bigint = (BigInteger) value;
+            return bigint.compareTo(BigInteger.valueOf(from)) >= 0 &&
+                    bigint.compareTo(BigInteger.valueOf(to)) <= 0;
+        }
         return false;
     }
 
