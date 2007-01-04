@@ -46,6 +46,7 @@
 package groovy.lang;
 
 import java.util.List;
+import java.math.BigInteger;
 
 import junit.framework.TestCase;
 
@@ -100,15 +101,27 @@ public class IntRangeTest extends TestCase {
 
     public void testContains() {
         IntRange r = createRange(10, 20);
+        checkContains(r, 11, true);
+        checkContains(r, 10, true);
+        checkContains(r, 19, true);
+        checkContains(r, 20, true);
+        checkContains(r, 9, false);
+        checkContains(r, 21, false);
+        checkContains(r, 100, false);
+        checkContains(r, -1, false);
+    }
 
-        assertTrue("contains 11", r.contains(new Integer(11)));
-        assertTrue("contains 10", r.contains(new Integer(10)));
-        assertTrue("contains 19", r.contains(new Integer(19)));
-        assertTrue("contains 20", r.contains(new Integer(20)));
-        assertFalse("contains 9", r.contains(new Integer(9)));
-        assertFalse("contains 21", r.contains(new Integer(21)));
-        assertFalse("contains 100", r.contains(new Integer(100)));
-        assertFalse("contains -1", r.contains(new Integer(-1)));
+    private void checkContains(IntRange r, int i, boolean expected) {
+        checkIntegerContains(r, i, expected);
+        checkBigIntegerContains(r, i, expected);
+    }
+
+    private void checkIntegerContains(IntRange r, int i, boolean expected) {
+        assertEquals("contains Integer " + i, expected, r.contains(new Integer(i)));
+    }
+
+    private void checkBigIntegerContains(IntRange r, int i, boolean expected) {
+        assertEquals("contains BigInteger " + i, expected, r.contains(BigInteger.valueOf(i)));
     }
 
     public void testSubList() {
