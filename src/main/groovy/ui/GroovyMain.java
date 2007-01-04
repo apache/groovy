@@ -458,7 +458,7 @@ public class GroovyMain {
                 s.setProperty(autoSplitName, line.split(splitPattern));
             Object o = s.run();
 
-            if (autoOutput) {
+            if (autoOutput && o != null) {
                 pw.println(o);
             }
         }
