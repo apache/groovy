@@ -25,7 +25,18 @@ class CategoryTest extends GroovyTestCase {
     use(CategoryTestPropertyCategory) { 
       assert something == "nihao"
     }
-
+  }
+  
+  void testCategoryReplacedPropertyAccessMethod() {
+     def cth = new CategoryTestHelper()
+     cth.aProperty = "aValue"
+     assert cth.aProperty == "aValue"
+     use (CategoryTestHelperPropertyReplacer) {
+       assert cth.aProperty == "anotherValue"
+       cth.aProperty = "this is boring"
+       assert cth.aProperty == "this is boring"
+     }
+     assert cth.aProperty == "aValue"
   }
 }
 
@@ -48,3 +59,12 @@ class CategoryTestPropertyCategory {
      static void setSomething(Object self, newValue) { aVal = newValue }
 }
 
+class CategoryTestHelper {
+  def aProperty = "aValue"
+}
+
+class CategoryTestHelperPropertyReplacer {
+     private static aVal = "anotherValue"
+     static getAProperty(CategoryTestHelper self) { return aVal }
+     static void setAProperty(CategoryTestHelper self, newValue) { aVal = newValue }
+}

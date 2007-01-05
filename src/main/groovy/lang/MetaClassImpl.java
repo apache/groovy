@@ -826,9 +826,10 @@ public class MetaClassImpl extends MetaClass {
        }
 
        // check for a category method named like a getter 
-       if (method==null && !useSuper && !isStatic && GroovyCategorySupport.hasCategoryInAnyThread()) {
+       if (!useSuper && !isStatic && GroovyCategorySupport.hasCategoryInAnyThread()) {
            String getterName = "get"+MetaClassHelper.capitalize(name);
-           method = getCategoryMethodGetter(sender,getterName,false);
+           MetaMethod categoryMethod = getCategoryMethodGetter(sender,getterName,false);
+           if (categoryMethod!=null) method = categoryMethod;
        }
 
        //----------------------------------------------------------------------
@@ -1317,8 +1318,11 @@ public class MetaClassImpl extends MetaClass {
        // check for a category method named like a setter 
        if (!useSuper && !isStatic && GroovyCategorySupport.hasCategoryInAnyThread()) {
            String getterName = "set"+MetaClassHelper.capitalize(name);
-           method = getCategoryMethodSetter(sender,getterName,false);
-           if (method!=null) arguments = new Object[] { newValue };
+           MetaMethod categoryMethod = getCategoryMethodSetter(sender,getterName,false);
+           if (categoryMethod!=null) {
+               method = categoryMethod;
+               arguments = new Object[] { newValue };
+           }
        }
 
        //----------------------------------------------------------------------
