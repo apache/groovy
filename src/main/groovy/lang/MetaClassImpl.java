@@ -133,7 +133,6 @@ public class MetaClassImpl extends MetaClass {
    public MetaClassImpl(MetaClassRegistry registry, final Class theClass) {
        super(theClass);
        this.registry = registry;
-
        constructors = (List) AccessController.doPrivileged(new  PrivilegedAction() {
                public Object run() {
                    return Arrays.asList (theClass.getDeclaredConstructors());
@@ -1254,23 +1253,32 @@ public class MetaClassImpl extends MetaClass {
            
            // now create the MetaProperty object
            MetaBeanProperty mp = new MetaBeanProperty(pd.getName(), pd.getPropertyType(), getter, setter);
-           
-           //keep field
-           MetaFieldProperty field = null;
-           MetaProperty old = (MetaProperty) propertyMap.get(pd.getName());
-           if (old!=null) {
-               if (old instanceof MetaBeanProperty) {
-                   field = ((MetaBeanProperty) old).getField();
-               } else {
-                   field = (MetaFieldProperty) old;
-               }
-               mp.setField(field);
-           }
-           
-           // put it in the list
-           // this will overwrite a possible field property
-           propertyMap.put(pd.getName(), mp);
+           addMetaBeanProperty(mp);
        }       
+   }
+   
+   /**
+    * Adds a new MetaBeanProperty to this MetaClass
+    *  
+    * @param mp The MetaBeanProperty
+    */
+   protected void addMetaBeanProperty(MetaBeanProperty mp) {
+       Map propertyMap = getMap2MapNotNull(classPropertyIndex,theClass);
+       //keep field
+       MetaFieldProperty field = null;
+       MetaProperty old = (MetaProperty) propertyMap.get(mp.getName());
+       if (old!=null) {
+           if (old instanceof MetaBeanProperty) {
+               field = ((MetaBeanProperty) old).getField();
+           } else {
+               field = (MetaFieldProperty) old;
+           }
+           mp.setField(field);
+       }
+       
+       // put it in the list
+       // this will overwrite a possible field property
+       propertyMap.put(mp.getName(), mp);
    }
    
    /**
