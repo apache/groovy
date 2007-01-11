@@ -200,16 +200,7 @@ public class MetaClassRegistry {
      * @return An instace of the MetaClass which will handle this class
      */
     private MetaClass getMetaClassFor(final Class theClass) {
-        try {
-            final Class customMetaClass = Class.forName("groovy.runtime.metaclass." + theClass.getName() + "MetaClass");
-            final Constructor customMetaClassConstructor = customMetaClass.getConstructor(new Class[]{MetaClassRegistry.class, Class.class});
-            
-            return (MetaClass)customMetaClassConstructor.newInstance(new Object[]{this, theClass});
-        } catch (final ClassNotFoundException e) {
-            return new MetaClassImpl(this, theClass);
-        } catch (final Exception e) {
-            throw new GroovyRuntimeException("Could not instantiate custom Metaclass for class: " + theClass.getName() + ". Reason: " + e, e);
-        }
+        return metaClassCreationHandle.create(theClass,this);
     }
 
     /**
