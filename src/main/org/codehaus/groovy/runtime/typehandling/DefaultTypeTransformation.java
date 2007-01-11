@@ -131,7 +131,10 @@ public class DefaultTypeTransformation {
     }
     
     public static boolean castToBoolean(Object object) {
-        if (object instanceof Boolean) {
+    	if (object == null) {
+    		return false;
+    	}
+    	else if (object instanceof Boolean) {
             Boolean booleanValue = (Boolean) object;
             return booleanValue.booleanValue();
         }
@@ -148,9 +151,13 @@ public class DefaultTypeTransformation {
             Map map = (Map) object;
             return !map.isEmpty();
         }
-        else if (object instanceof String || object instanceof GString) {
-            String string =  object.toString();
+        else if (object instanceof CharSequence) {
+        	CharSequence string =  (CharSequence) object;
             return string.length() > 0;
+        } 
+        else if (object instanceof Object[]) {
+        	Object[] array =  (Object[]) object;
+            return array.length > 0;
         } 
         else if (object instanceof Character) {
             Character c = (Character) object;
@@ -161,7 +168,7 @@ public class DefaultTypeTransformation {
             return n.doubleValue() != 0;
         }
         else {
-            return object != null;
+            return true;
         }
     }
     
