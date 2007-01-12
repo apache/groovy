@@ -63,6 +63,21 @@ import java.util.Calendar;
 import java.util.Iterator;
 import java.util.Map;
 
+/****
+ ****  Sun added methods to the ResultSet interface in Java SE 6 to support JDBC 4.0.  So as to make Groovy
+ ****  compilable, these methods have been added but as unsupported. The following are types used in the
+ ****  newly added methods.  additions.
+ ****
+ ****  Russek Winder 2007-01-11
+ ****/
+
+import java.io.Reader ;
+import java.io.InputStream ;
+
+import java.sql.RowId ;
+import java.sql.NClob ;
+import java.sql.SQLXML ;
+
 /**
  * Represents an extent of objects
  *
@@ -2611,4 +2626,78 @@ public class GroovyResultSet extends GroovyObjectSupport implements ResultSet {
     public void updateArray(String columnName, java.sql.Array x) throws SQLException {
         getResultSet().updateArray(columnName, x);
     }
+
+
+  /****
+   ****  The new methods required to conform to java.sql.ResultSet in Java SE 6.
+   ****
+   ****  Russel Winder 2007-01-11
+   ****/
+
+  /****  For java.sql.ResultSet ****/
+
+  public int getHoldability ( ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+  public boolean isClosed ( ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+
+  public RowId getRowId ( int columnIndex ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+  public RowId getRowId ( String columnLabel ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+  public void updateRowId ( int columnIndex , RowId rowId ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+  public void updateRowId ( String columnLabel , RowId rowId ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+
+  public String getNString ( int columnIndex ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+  public String getNString ( String columnLabel ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+  public void updateNString ( int columnIndex , String nString ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+  public void updateNString ( String columnLabel , String nString ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+
+  public NClob getNClob ( int columnIndex ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+  public NClob getNClob ( String columnLabel ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+  public void updateNClob ( int columnIndex , NClob nClob ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+  public void updateNClob ( String columnLabel , NClob nClob ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+  public void updateNClob ( int columnIndex ,  Reader reader , long length ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+  public void updateNClob ( String columnLabel ,  Reader reader , long length ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+  public void updateNClob ( int columnIndex ,  Reader reader ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+  public void updateNClob ( String columnLabel ,  Reader reader ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+
+  public SQLXML getSQLXML ( int columnIndex ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+  public SQLXML getSQLXML ( String columnLabel ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+  public void updateSQLXML ( int columnIndex , SQLXML xmlObject ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+  public void updateSQLXML ( String columnLabel , SQLXML xmlObject ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+
+  public Reader getNCharacterStream ( int columnIndex ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+  public Reader getNCharacterStream ( String columnLabel ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+  public void updateNCharacterStream ( int columnIndex , Reader x , long length ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+  public void updateNCharacterStream ( String columnLabel , Reader x , long length ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+  public void updateNCharacterStream ( int columnIndex , Reader x ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+  public void updateNCharacterStream ( String columnLabel , Reader reader ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+
+
+  public void updateAsciiStream ( int columnIndex , InputStream x , long length ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+  public void updateAsciiStream ( String columnLabel , InputStream x , long length ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+  public void updateAsciiStream ( int columnIndex , InputStream x ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+  public void updateAsciiStream ( String columnLabel , InputStream x ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+
+  public void updateBinaryStream ( int columnIndex , InputStream x , long length ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+  public void updateBinaryStream ( String columnLabel , InputStream x , long length ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+  public void updateBinaryStream ( int columnIndex , InputStream x ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+  public void updateBinaryStream ( String columnLabel , InputStream x ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+
+  public void updateCharacterStream ( int columnIndex , Reader x , long length ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+  public void updateCharacterStream ( String columnLabel , Reader reader , long length ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+  public void updateCharacterStream ( int columnIndex , Reader x ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+  public void updateCharacterStream ( String columnLabel , Reader reader ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+
+  public void updateBlob ( int columnIndex , InputStream inputStream , long length ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+  public void updateBlob ( String columnLabel , InputStream inputStream , long length ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+  public void updateBlob ( int columnIndex , InputStream inputStream ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+  public void updateBlob ( String columnLabel , InputStream inputStream ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+
+  public void updateClob ( int columnIndex ,  Reader reader , long length ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+  public void updateClob ( String columnLabel ,  Reader reader , long length ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+  public void updateClob ( int columnIndex ,  Reader reader ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+  public void updateClob ( String columnLabel ,  Reader reader ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+
+  /**** For java.sql.Wrapper ****/
+
+  public Object unwrap ( Class iface ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
+  public boolean isWrapperFor ( Class iface ) throws SQLException { throw new  UnsupportedOperationException ( ) ; }
 }
