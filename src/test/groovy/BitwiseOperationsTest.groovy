@@ -263,6 +263,17 @@ class BitwiseOperationsTest extends GroovyTestCase {
         assert neg("foo").class == java.util.regex.Pattern
         assert neg("foo") instanceof java.util.regex.Pattern
     }
+    
+    void testCorrectAutoboxing() {
+      // test that the first parameter is boxed correctly, if not then this test
+      // will possibly produce a verify error
+      assert (!true | false) == false
+      assert (true | false) == true
+      assert (!true & false) == false
+      assert (true & false) == false
+      assert (true & !false) == true
+    
+    }
 
     Object neg(n) {
         if (n instanceof java.lang.Integer) {
