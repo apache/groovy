@@ -306,7 +306,7 @@ public class AsmClassGenerator extends ClassGenerator {
             this.internalBaseClassName = BytecodeHelper.getClassInternalName(classNode.getSuperClass());
 
             cw.visit(
-                asmJDKVersion,
+                asmJDKVersion, //context.getCompileUnit().getConfig().getBytecodeVersion(),
                 classNode.getModifiers(),
                 internalClassName,
                 null,
@@ -1549,7 +1549,7 @@ public class AsmClassGenerator extends ClassGenerator {
         // receiver
         boolean oldVal = this.implicitThis;
         this.implicitThis = implicitThis;
-        receiver.visit(this);
+        visitAndAutoboxBoolean(receiver);
         this.implicitThis = oldVal;
         // message
         if (message!=null) message.visit(this);
@@ -2546,6 +2546,7 @@ public class AsmClassGenerator extends ClassGenerator {
     public void visitAnnotations(AnnotatedNode node) {
         Map annotionMap = node.getAnnotations();
         if (annotionMap.isEmpty()) return;
+        
         Iterator it = annotionMap.values().iterator(); 
         while (it.hasNext()) {
             AnnotationNode an = (AnnotationNode) it.next();
