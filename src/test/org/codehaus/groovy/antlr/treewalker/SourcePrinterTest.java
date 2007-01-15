@@ -58,11 +58,11 @@ public class SourcePrinterTest extends GroovyTestCase {
     
     public void testAnnotationDef() throws Exception{
     	// todo - 17 July 2006 - test fine, however this parses but causes error in AntlrParserPlugin
-        assertEquals("public @interface Foo{}", pretty("public @interface Foo{}"));
+        assertEquals("public @interface Foo{}", pretty("public @interface Foo{}")); // fails after parser
     }
     
     public void testAnnotationFieldDef() throws Exception{
-    	assertEquals("public @interface Foo{int bar() default 123}", pretty("public @interface Foo{int bar() default 123}"));
+    	assertEquals("public @interface Foo{int bar() default 123}", pretty("public @interface Foo{int bar() default 123}")); // fails after parser
     }
     
     public void testAnnotationMemberValuePair() throws Exception{
@@ -123,14 +123,14 @@ public class SourcePrinterTest extends GroovyTestCase {
         assertEquals("class Foo {def bar}", pretty("class Foo{def bar}"));
     }
 
-    public void testClosedBlock() throws Exception{
-        assertEquals("[1, 2, 3].each {println it}", pretty("[1,2,3].each{println it}"));
-        assertEquals("def x = foo.bar(mooky){ x, y -> wibble(y, x)}", pretty("def x = foo.bar(mooky) {x,y-> wibble(y,x)}"));
+    public void testClosedBlock() throws Exception{ // not in java
+        assertEquals("[1, 2, 3].each {println it}", pretty("[1,2,3].each{println it}")); // not in java
+        assertEquals("def x = foo.bar(mooky){ x, y -> wibble(y, x)}", pretty("def x = foo.bar(mooky) {x,y-> wibble(y,x)}")); // not in java
         // todo: above is not quite the spacing I would expect, but good enough for now...
     }
     
-    public void testCompareTo() throws Exception{
-    	assertEquals("1 <=> 2", pretty("1<=>2"));
+    public void testCompareTo() throws Exception{ // not in java
+    	assertEquals("1 <=> 2", pretty("1<=>2")); // not in java
     }
     
     public void testCtorCall() throws Exception{
@@ -163,30 +163,31 @@ public class SourcePrinterTest extends GroovyTestCase {
     	assertEquals("import java.util.Date", pretty("import java.util.Date"));
     	assertEquals("import java.io.*", pretty("import java.io.*"));
     	assertEquals("@foo.Bar mooky", pretty("@foo.Bar mooky"));
-    	assertEquals("def foo() throws bar.MookyException{}", pretty("def foo() throws bar.MookyException{}"));
+    	assertEquals("def foo() throws bar.MookyException{}", pretty("def foo() throws bar.MookyException{}")); // fails after parser
     	assertEquals("def x = \"${foo.bar}\"", pretty("def x = \"${foo.bar}\""));
     }
     
-    public void testDynamicMember() throws Exception{
-    	assertEquals("foo.(bar)", pretty("foo.(bar)"));
-    	assertEquals("foo.\"${bar}\"", pretty("foo.\"${bar}\""));
+    public void testDynamicMember() throws Exception{ // not in java
+    	assertEquals("foo.(bar)", pretty("foo.(bar)")); // not in java
+    	assertEquals("foo.\"${bar}\"", pretty("foo.\"${bar}\"")); // not in java
     }
     
     public void testElist() throws Exception {
     	assertEquals("println 2 + 2", pretty("println 2 + 2"));
-    	assertEquals("for (i = 0, j = 2 ; i < 10 ; i++, j--){print i}", pretty("for (i = 0,j = 2;i < 10; i++, j--) {print i}"));
+    	assertEquals("for (i = 0, j = 2 ; i < 10 ; i++, j--){print i}", pretty("for (i = 0,j = 2;i < 10; i++, j--) {print i}")); // fails after parser
     	assertEquals("foo()", pretty("foo()")); // empty ELIST
     	assertEquals("foo(bar, mooky)", pretty("foo( bar , mooky )"));
     }
 
     public void testEnumConstantDef() throws Exception {
-    	assertEquals("enum Coin {PENNY(1), DIME(10), QUARTER(25)}", pretty("enum Coin {PENNY(1), DIME(10), QUARTER(25)}"));
+    	assertEquals("enum Coin {PENNY(1), DIME(10), QUARTER(25)}", pretty("enum Coin {PENNY(1), DIME(10), QUARTER(25)}")); // fails after parser
     }
 
     public void testEnumDef() throws Exception {
-    	assertEquals("enum Season {WINTER, SPRING, SUMMER, AUTUMN}", pretty("enum Season{WINTER,SPRING,SUMMER,AUTUMN}"));
+    	assertEquals("enum Season {WINTER, SPRING, SUMMER, AUTUMN}", pretty("enum Season{WINTER,SPRING,SUMMER,AUTUMN}")); // fails after parser
+
     	//todo: more strange spacing in following line
-    	assertEquals("enum Operation {ADDITION{double eval( x,  y) {return x + y}}}",pretty("enum Operation {ADDITION {double eval(x,y) {return x + y}}}"));    	
+    	assertEquals("enum Operation {ADDITION{double eval( x,  y) {return x + y}}}",pretty("enum Operation {ADDITION {double eval(x,y) {return x + y}}}")); // fails after parser
     }
     
     public void testEqual() throws Exception {
@@ -209,7 +210,7 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
 
     public void testExtendsClause() throws Exception {
-        assertEquals("class Foo extends Bar {}", pretty("class Foo extends Bar {}"));
+    	assertEquals("class Foo extends Bar {}", pretty("class Foo extends Bar {}"));
         assertEquals("interface Wibble extends Mooky{}", pretty("interface Wibble extends Mooky {}"));
         //todo spacing is odd, c.f. last space in class vs interface above
     }
@@ -218,13 +219,13 @@ public class SourcePrinterTest extends GroovyTestCase {
     	assertEquals("public final int getX() {return 0}", pretty("public final int getX() {return 0}"));
     }
     public void testForCondition() throws Exception {
-    	assertEquals("for (i = 0 ; i < 10 ; i++){println i}", pretty("for (i=0;i<10;i++) {println i}"));
+    	assertEquals("for (i = 0 ; i < 10 ; i++){println i}", pretty("for (i=0;i<10;i++) {println i}")); // fails after parser
     }
     
     // testForInit() covered by testForCondition()
     
-    public void testForInIterable() throws Exception {
-        assertEquals("for (i in [1, 2]) {}", pretty("for (i in [1,2]) {}"));
+    public void testForInIterable() throws Exception { // not in java
+        assertEquals("for (i in [1, 2]) {}", pretty("for (i in [1,2]) {}")); // not in java
     }
 
     // testForIterator() covered by testForCondition()
@@ -254,8 +255,8 @@ public class SourcePrinterTest extends GroovyTestCase {
         assertEquals("class Foo implements Bar {}", pretty("class Foo implements Bar {}"));
     }
 
-    public void testImplicitParameters() throws Exception {
-    	assertEquals("[1, 2, 3].each {println it}", pretty("[1,2,3].each{println it}"));
+    public void testImplicitParameters() throws Exception { // not in java
+    	assertEquals("[1, 2, 3].each {println it}", pretty("[1,2,3].each{println it}")); // not in java
     }
     
     public void testImport() throws Exception {
@@ -279,9 +280,9 @@ public class SourcePrinterTest extends GroovyTestCase {
     	assertEquals("class Foo {{x = 1}}", pretty("class Foo {{x=1}}"));
     }
 
-    public void testLabeledArg() throws Exception {
-        assertEquals("myMethod(argOne:123, argTwo:123)", pretty("myMethod(argOne:123,argTwo:123)"));
-        assertEquals("myMap = [keyOne:123, keyTwo:234]", pretty("myMap = [keyOne:123,keyTwo:234]"));
+    public void testLabeledArg() throws Exception { // not in java
+        assertEquals("myMethod(argOne:123, argTwo:123)", pretty("myMethod(argOne:123,argTwo:123)")); // not in java
+        assertEquals("myMap = [keyOne:123, keyTwo:234]", pretty("myMap = [keyOne:123,keyTwo:234]")); // not in java
     }
 
     public void testLabeledStat() throws Exception {
@@ -296,18 +297,18 @@ public class SourcePrinterTest extends GroovyTestCase {
     	assertEquals("if (60 <= 70) {}", pretty("if (60<=70) {}"));
     }    
 
-    public void testListConstructor() throws Exception {
-        assertEquals("[a, b]", pretty("[a,b]"));
+    public void testListConstructor() throws Exception { // not in java
+        assertEquals("[a, b]", pretty("[a,b]")); // not in java
     }
 
-    public void testLiteralAny() throws Exception {
-        assertEquals("any x = 2", pretty("any x = 2"));
+    public void testLiteralAny() throws Exception { // not in java
+        assertEquals("any x = 2", pretty("any x = 2")); // fails after parser  // not in java
     }
 
-    public void testLiteralAs() throws Exception {
-        assertEquals("import java.util.Date as MyDate", pretty("import java.util.Date as MyDate"));
+    public void testLiteralAs() throws Exception { // not in java
+        assertEquals("import java.util.Date as MyDate", pretty("import java.util.Date as MyDate")); // not in java
         // todo suspicious spacing in the following assertion
-        assertEquals("x = 12 as Long ", pretty("x = 12 as Long"));
+        assertEquals("x = 12 as Long ", pretty("x = 12 as Long")); // not in java
     }
 
     public void testLiteralAssert() throws Exception {
@@ -324,10 +325,11 @@ public class SourcePrinterTest extends GroovyTestCase {
     public void testLiteralBreak() throws Exception {
     	assertEquals("for (i in 1..100) {break }", pretty("for (i in 1..100) {break}"));
         assertEquals("switch (foo) {default:break }", pretty("switch(foo){default:break}"));
-        assertEquals("def myMethod() {break }", pretty("def myMethod(){break}"));
-    	assertEquals("for (i in 1..100) {break 2}", pretty("for (i in 1..100) {break 2}"));
-    	//todo should the colon be postfixed to the label?
-    	assertEquals("for (i in 1..100) {break label1:}", pretty("for (i in 1..100) {break label1:}"));
+        assertEquals("def myMethod() {break }", pretty("def myMethod(){break}")); // fails after parser
+        assertEquals("for (i in 1..100) {break 2}", pretty("for (i in 1..100) {break 2}")); // fails after parser
+
+        //todo should the colon be postfixed to the label?
+    	assertEquals("for (i in 1..100) {break label1:}", pretty("for (i in 1..100) {break label1:}")); // fails after parser
     }
 
     public void testLiteralByte() throws Exception {
@@ -353,23 +355,24 @@ public class SourcePrinterTest extends GroovyTestCase {
     
     public void testLiteralContinue() throws Exception {
     	assertEquals("for (i in 1..100) {continue }", pretty("for (i in 1..100) {continue}"));
-    	assertEquals("for (i in 1..100) {continue 2}", pretty("for (i in 1..100) {continue 2}"));
+    	assertEquals("for (i in 1..100) {continue 2}", pretty("for (i in 1..100) {continue 2}")); // fails after parser
+
     	//todo should the colon be postfixed to the label?
-    	assertEquals("for (i in 1..100) {continue label1:}", pretty("for (i in 1..100) {continue label1:}"));
-    	assertEquals("[1, 2, 3].each {continue }", pretty("[1,2,3].each{continue}"));
+    	assertEquals("for (i in 1..100) {continue label1:}", pretty("for (i in 1..100) {continue label1:}")); // fails after parser
+    	assertEquals("[1, 2, 3].each {continue }", pretty("[1,2,3].each{continue}")); // fails after parser
     }
 
-    public void testLiteralDef() throws Exception {
-    	assertEquals("def x = 123", pretty("def x=123"));
-    	assertEquals("def myMethod() {return 0}", pretty("def myMethod(){return 0}"));
+    public void testLiteralDef() throws Exception { // not in java
+    	assertEquals("def x = 123", pretty("def x=123")); // not in java
+    	assertEquals("def myMethod() {return 0}", pretty("def myMethod(){return 0}")); // not in java
     	// note: def not needed in parameter declarations, but it is valid
     	//todo: is it ok to strip out 'def' from parameter declarations?
-    	assertEquals("def foo( bar) {}", pretty("def foo(def bar){}"));
+    	assertEquals("def foo( bar) {}", pretty("def foo(def bar){}")); // not in java
     }
     
     public void testLiteralDefault() throws Exception {
         assertEquals("switch (foo) {default:x = 2}", pretty("switch(foo){default:x=2}"));
-    	assertEquals("public @interface Foo{int bar() default 123}", pretty("public @interface Foo{int bar() default 123}"));
+        assertEquals("public @interface Foo{int bar() default 123}", pretty("public @interface Foo{int bar() default 123}")); // fails after parser
     }
     
     public void testLiteralDouble() throws Exception {
@@ -381,7 +384,7 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
 
     public void testLiteralEnum() throws Exception {
-    	assertEquals("enum Season {WINTER, SPRING, SUMMER, AUTUMN}", pretty("enum Season{WINTER,SPRING,SUMMER,AUTUMN}"));
+    	assertEquals("enum Season {WINTER, SPRING, SUMMER, AUTUMN}", pretty("enum Season{WINTER,SPRING,SUMMER,AUTUMN}")); // fails after parser
     }
     
     public void testLiteralExtends() throws Exception {
@@ -417,8 +420,9 @@ public class SourcePrinterTest extends GroovyTestCase {
 
     public void testLiteralImplements() throws Exception {
         assertEquals("class Foo implements Bar {}", pretty("class Foo implements Bar {}"));
-        //todo the following is legal Java, but pretty strange...?
-        assertEquals("enum EarthSeason implements Season {SPRING}", pretty("enum EarthSeason implements Season{SPRING}"));
+
+    	//todo the following is legal Java, but pretty strange...?
+        assertEquals("enum EarthSeason implements Season {SPRING}", pretty("enum EarthSeason implements Season{SPRING}")); // fails after parser
     }
     
     public void testLiteralImport() throws Exception {
@@ -426,9 +430,9 @@ public class SourcePrinterTest extends GroovyTestCase {
     	assertEquals("import mooky.*", pretty("import mooky.*"));
     }
     
-    public void testLiteralIn() throws Exception {
-    	assertEquals("for (i in 1..10) {}", pretty("for (i in 1..10) {}"));
-    	assertEquals("if (i in myList) {}", pretty("if (i in myList) {}"));
+    public void testLiteralIn() throws Exception { // not in java
+    	assertEquals("for (i in 1..10) {}", pretty("for (i in 1..10) {}")); // not in java
+    	assertEquals("if (i in myList) {}", pretty("if (i in myList) {}")); // not in java
     }
 
     public void testLiteralInstanceOf() throws Exception {
@@ -439,14 +443,14 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
     
     public void testLiteralInterface() throws Exception {
-    	assertEquals("interface Foo{}", pretty("interface Foo{}"));
+    	assertEquals("interface Foo{}", pretty("interface Foo{}")); // fails after parser
     }
     public void testLiteralLong() throws Exception {
         assertEquals("long a = 1", pretty("long a = 1"));
     }
     public void testLiteralNative() throws Exception {
-        assertEquals("public class R {public native void seek(long pos) }", pretty("public class R{public native void seek(long pos)}"));
-        assertEquals("native foo() ", pretty("native foo()"));
+        assertEquals("public class R {public native void seek(long pos) }", pretty("public class R{public native void seek(long pos)}")); // fails after parser
+        assertEquals("native foo() ", pretty("native foo()")); // fails after parser
     }
     public void testLiteralNew() throws Exception {
         assertEquals("new Foo()", pretty("new Foo()"));
@@ -486,11 +490,13 @@ public class SourcePrinterTest extends GroovyTestCase {
         //classes, interfaces, class/instance vars and methods
         assertEquals("static int bar = 1", pretty("static int bar = 1"));
         //todo: this should parse... assertEquals("private static <T> void foo(List<T> list){}", pretty("private static <T> void foo(List<T> list){}"));
+
         assertEquals("class Foo {static {bar = 1}}", pretty("class Foo{static {bar=1}}"));
     }
 
     public void testLiteralSuper() throws Exception {
     	assertEquals("class Foo {public Foo() {super()}}", pretty("class Foo{public Foo(){super()}}"));
+
     	// todo will 'super' be allowed in non-parentheses method call styles?
     	assertEquals("class Bar {public Bar() {super 99}}", pretty("class Bar{public Bar(){super 99}}"));
     	assertEquals("class Bar {public Bar() {super(1, 2, 3)}}", pretty("class Bar{public Bar(){super(1,2,3)}}"));
@@ -515,7 +521,7 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
     
     public void testLiteralThreadsafe() throws Exception {
-    	assertEquals("threadsafe foo() {}", pretty("threadsafe foo() {}"));
+    	assertEquals("threadsafe foo() {}", pretty("threadsafe foo() {}")); // fails after parser
     }
     
     public void testLiteralThrow() throws Exception {
@@ -523,7 +529,7 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
     public void testLiteralThrows() throws Exception {
     	//todo AntlrParserPlugin: Unexpected node type: '.' found when expecting type: an identifier
-    	assertEquals("def foo() throws java.io.IOException{}", pretty("def foo() throws java.io.IOException{}"));
+    	assertEquals("def foo() throws java.io.IOException{}", pretty("def foo() throws java.io.IOException{}")); // fails after parser
     }
     public void testLiteralTransient() throws Exception {
     	assertEquals("transient bar", pretty("transient bar"));
@@ -548,8 +554,8 @@ public class SourcePrinterTest extends GroovyTestCase {
         assertEquals("while (true) {}", pretty("while(true){}"));
     }
 
-    public void testLiteralWith() throws Exception {
-        assertEquals("with (myObject) {x = 1}", pretty("with(myObject) {x = 1}"));
+    public void testLiteralWith() throws Exception { // not in java
+        assertEquals("with (myObject) {x = 1}", pretty("with(myObject) {x = 1}")); // fails after parser // not in java
     }
     public void testLnot() throws Exception {
         assertEquals("if (!isRaining) {}", pretty("if (!isRaining) {}"));
@@ -564,13 +570,13 @@ public class SourcePrinterTest extends GroovyTestCase {
     public void testLt() throws Exception {
         assertEquals("if (3.4f < 12f) {}", pretty("if (3.4f < 12f) {}"));
     }
-    public void testMapConstructor() throws Exception{
-        assertEquals("Map foo = [:]", pretty("Map foo = [:]"));
-        assertEquals("[a:1, b:2]", pretty("[a:1,b:2]"));
+    public void testMapConstructor() throws Exception{ // not in java
+        assertEquals("Map foo = [:]", pretty("Map foo = [:]")); // not in java
+        assertEquals("[a:1, b:2]", pretty("[a:1,b:2]")); // not in java
     }
 
-    public void testMemberPointer() throws Exception {
-        assertEquals("def x = foo.&bar()", pretty("def x=foo.&bar()"));
+    public void testMemberPointer() throws Exception { // not in java
+        assertEquals("def x = foo.&bar()", pretty("def x=foo.&bar()")); // not in java
     }
     public void testMethodCall() throws Exception {
         assertEquals("foo(bar)", pretty("foo(bar)"));
@@ -595,7 +601,7 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
 
     public void testModifiers() throws Exception {
-    	assertEquals("public static transient final native threadsafe synchronized volatile strictfp foo() {}", pretty("public static transient final native threadsafe synchronized volatile strictfp foo() {}"));
+    	assertEquals("public static transient final native threadsafe synchronized volatile strictfp foo() {}", pretty("public static transient final native threadsafe synchronized volatile strictfp foo() {}")); // fails after parser
     }
     
     public void testModAssign() throws Exception {
@@ -606,11 +612,11 @@ public class SourcePrinterTest extends GroovyTestCase {
         assertEquals("a != b", pretty("a!=b"));
     }
 
-    public void testNumBigDecimal() throws Exception {
-    	assertEquals("a = 9.8g", pretty("a  =9.8g"));
+    public void testNumBigDecimal() throws Exception { // not in java
+    	assertEquals("a = 9.8g", pretty("a  =9.8g")); // not in java
     }
-    public void testNumBigInt() throws Exception {
-    	assertEquals("a = 12g", pretty("a=   12g"));
+    public void testNumBigInt() throws Exception { // not in java
+    	assertEquals("a = 12g", pretty("a=   12g")); // not in java
     }
     
     public void testNumDouble() throws Exception {
@@ -631,8 +637,8 @@ public class SourcePrinterTest extends GroovyTestCase {
     public void testObjblock() throws Exception {
         assertEquals("class Foo {def bar}", pretty("class Foo {def bar}"));
     }
-    public void testOptionalDot() throws Exception {
-        assertEquals("foo = england.london.kings?.head", pretty("foo = england.london.kings?.head"));
+    public void testOptionalDot() throws Exception { // not in java
+        assertEquals("foo = england.london.kings?.head", pretty("foo = england.london.kings?.head")); // not in java
     }
 
     public void testPackageDef() throws Exception {
@@ -670,20 +676,20 @@ public class SourcePrinterTest extends GroovyTestCase {
     	assertEquals("public boolean process(Set<? extends B> a) {println a}", pretty("public boolean process(Set<? extends B> a) {println a}"));
     	assertEquals("public boolean process(Set<? extends B, ? super C> a) {println a}", pretty("public boolean process(Set<? extends B, ? super C> a) {println a}"));
     }
-    public void testRangeExclusive() throws Exception {
-        assertEquals("foo[45..<89]", pretty("foo[45 ..< 89]"));
+    public void testRangeExclusive() throws Exception { // not in java
+        assertEquals("foo[45..<89]", pretty("foo[45 ..< 89]")); // not in java
     }
-    public void testRangeInclusive() throws Exception {
-        assertEquals("foo[bar..12]", pretty("foo[bar .. 12]"));
+    public void testRangeInclusive() throws Exception { // not in java
+        assertEquals("foo[bar..12]", pretty("foo[bar .. 12]")); // not in java
     }
-    public void testRegexpLiteral() throws Exception {
-    	assertEquals("println", pretty("println //")); // empty regexp_literal should be treated as single line comment
+    public void testRegexpLiteral() throws Exception { // not in java
+    	assertEquals("println", pretty("println //")); // empty regexp_literal should be treated as single line comment // not in java
     }
 
-    public void testRegexpLiteral_FAILS() throws Exception { if (notYetImplemented()) return;
+    public void testRegexpLiteral_FAILS() throws Exception { if (notYetImplemented()) return; // not in java
 		//todo: these fail because regexp_literals are converted into string_literals on the antlr AST
-		assertEquals("def x = /./", pretty("def x = /./"));
-		assertEquals("def z = /blah\\s/", pretty("def z = /blah\\s/")); // actually: def z = /blah\s/
+		assertEquals("def x = /./", pretty("def x = /./")); // not in java
+		assertEquals("def z = /blah\\s/", pretty("def z = /blah\\s/")); // actually: def z = /blah\s/ // not in java
     }
     
     public void testRegexFind() throws Exception {
@@ -695,13 +701,13 @@ public class SourcePrinterTest extends GroovyTestCase {
     	assertEquals("if (foo ==~ \"bar\") {}", pretty("if (foo==~\"bar\"){}"));
     }
     
-    public void testScopeEscape() throws Exception {
+    public void testScopeEscape() throws Exception { // not in java
     	// todo - 31 July + 14 Dec 2006 - test fine, however this parses but causes error in AntlrParserPlugin
-    	assertEquals("println([$x, x, y])", pretty("println([$x, x, y])"));
+    	assertEquals("println([$x, x, y])", pretty("println([$x, x, y])")); // fails after parser // not in java
     }
     
-    public void testSelectSlot() throws Exception {
-    	assertEquals("def x = foo.@bar", pretty("def x = foo . @ bar"));
+    public void testSelectSlot() throws Exception { // not in java
+    	assertEquals("def x = foo.@bar", pretty("def x = foo . @ bar")); // not in java
     }
     
     public void testSl() throws Exception {
@@ -714,21 +720,26 @@ public class SourcePrinterTest extends GroovyTestCase {
 
     public void testSlist() throws Exception {
     	assertEquals("class Foo {private Foo() {println bar}}",pretty("class Foo {private Foo() {println bar}}"));
+
     	assertEquals("if (true) {foo}", pretty("if (true) {foo}"));
     	assertEquals("def x = foo.{bar}", pretty("def x = foo.{bar}")); // todo - inline open block is great, but it doesn't work as one would expect (yet). (c.f. with)
     	assertEquals("def foo() {l:{x = 2}}", pretty("def foo(){l:{x=2}}")); // slist inside a method body (needed label to distinguish from a closure)
     	assertEquals("switch (f) {case 1:break }", pretty("switch(f){case 1:break}")); // slist inside each case body...
     } 
     
-    public void testSpreadArg() throws Exception {
-    	assertEquals("myList {*name}", pretty("myList{*name}"));
-        assertEquals("\"foo$*bar\"", pretty("\"foo$*bar\"")); // this doesn't work beyond parser (AntlrParserPlugin)
-        assertEquals("\"foo${*bar}\"", pretty("\"foo${*bar}\"")); // this doesn't work beyond parser (AntlrParserPlugin)
-        assertEquals("f(*[a, b, c])", pretty("f(*[a,b,c])"));
-        assertEquals("f(*null)", pretty("f(*null)")); // equiv to f()
+    public void testSpreadArg() throws Exception { // not in java
+    	assertEquals("myList {*name}", pretty("myList{*name}")); // fails after parser // not in java
+    	assertEquals("\"foo$*bar\"", pretty("\"foo$*bar\"")); // fails after parser // not in java
+        assertEquals("\"foo${*bar}\"", pretty("\"foo${*bar}\"")); // fails after parser // not in java
+        assertEquals("f(*[a, b, c])", pretty("f(*[a,b,c])")); // not in java
+        assertEquals("f(*null)", pretty("f(*null)")); // equiv to f() // not in java
     }
-    public void testSpreadMapArg() throws Exception {
-    	assertEquals("f(*:myMap)", pretty("f(*:myMap)"));
+    
+    public void testSpreadDot() throws Exception { // not in java
+    	assertEquals("println([[a:1, b:2], [a:3, b:4]]*.a)", pretty("println([[a:1,b:2],[a:3,b:4]]*.a)"));  // not in java
+    }
+    public void testSpreadMapArg() throws Exception { // not in java
+    	assertEquals("f(*:myMap)", pretty("f(*:myMap)")); // not in java
     }
     public void testSr() throws Exception {
     	assertEquals("foo >> 123", pretty("foo >> 123"));
@@ -747,18 +758,18 @@ public class SourcePrinterTest extends GroovyTestCase {
     	assertEquals("foo *= 123", pretty("foo *= 123"));
     }
 
-    public void testStarStar() throws Exception {
-        assertEquals("def square = +5**2", pretty("def square=+5**2"));
-        assertEquals("def cube = 5**3", pretty("def cube = 5**3"));
+    public void testStarStar() throws Exception { // not in java
+        assertEquals("def square = +5**2", pretty("def square=+5**2")); // not in java
+        assertEquals("def cube = 5**3", pretty("def cube = 5**3")); // not in java
     } 
     
-    public void testStarStarAssign() throws Exception {
-    	assertEquals("cubeMe **= 3", pretty("cubeMe **= 3"));
+    public void testStarStarAssign() throws Exception { // not in java
+    	assertEquals("cubeMe **= 3", pretty("cubeMe **= 3")); // not in java
     }
 
     public void testStaticImport() throws Exception {
-    	assertEquals("import static foo.Bar.mooky", pretty("import static foo.Bar.mooky"));
-    	assertEquals("import static foo.Bar.*", pretty("import static foo.Bar.*"));
+    	assertEquals("import static foo.Bar.mooky", pretty("import static foo.Bar.mooky")); // fails after parser
+    	assertEquals("import static foo.Bar.*", pretty("import static foo.Bar.*")); // fails after parser
     }
 
     public void testStaticInit() throws Exception {
@@ -769,9 +780,9 @@ public class SourcePrinterTest extends GroovyTestCase {
     	assertEquals("private strictfp flibble = 1.2", pretty("private strictfp flibble = 1.2"));
     }
     
-    public void testStringConstructor() throws Exception{
-        assertEquals("def x = \"foo$bar\"", pretty("def x=\"foo$bar\""));
-        assertEquals("def y = \"foo${mooky}\"", pretty("def y = \"foo${mooky}\""));
+    public void testStringConstructor() throws Exception{ // not in java
+        assertEquals("def x = \"foo$bar\"", pretty("def x=\"foo$bar\"")); // not in java
+        assertEquals("def y = \"foo${mooky}\"", pretty("def y = \"foo${mooky}\"")); // not in java
     }
 
     public void testStringLiteral_FAILS() throws Exception{ if (notYetImplemented()) return;
@@ -814,7 +825,7 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
 
     public void testTypeParameters() throws Exception {
-    	assertEquals("class Foo<T extends C & I> {T t}",pretty("class Foo<T extends C & I> {T t}"));
+    	assertEquals("class Foo<T extends C & I> {T t}",pretty("class Foo<T extends C & I> {T t}")); // fails after parser
     }
     public void testUnaryMinus() throws Exception {
         assertEquals("def x = -3", pretty("def x= -3"));
@@ -862,6 +873,10 @@ public class SourcePrinterTest extends GroovyTestCase {
         AntlrASTProcessor traverser = new SourceCodeTraversal(visitor);
 
         traverser.process(ast);
+
+        // uncomment for full compile check
+        //GroovyShell groovyShell = new GroovyShell();
+        //groovyShell.parse(input);
 
         return new String(baos.toByteArray());
     }

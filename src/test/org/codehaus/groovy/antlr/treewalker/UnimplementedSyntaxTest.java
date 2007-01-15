@@ -1,0 +1,254 @@
+/**
+ *
+ * Copyright 2007 Jeremy Rayner
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ **/
+package org.codehaus.groovy.antlr.treewalker;
+
+import groovy.lang.GroovyShell;
+import groovy.lang.Script;
+import groovy.util.GroovyTestCase;
+
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.io.StringReader;
+
+import org.codehaus.groovy.antlr.AntlrASTProcessor;
+import org.codehaus.groovy.antlr.SourceBuffer;
+import org.codehaus.groovy.antlr.UnicodeEscapingReader;
+import org.codehaus.groovy.antlr.parser.GroovyLexer;
+import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
+
+import antlr.collections.AST;
+
+/**
+ * This tests code that is valid in parser, but has issues further down the line.
+ *
+ * @author <a href="mailto:groovy@ross-rayner.com">Jeremy Rayner</a>
+ * @version $Revision: 4653 $
+ */
+public class UnimplementedSyntaxTest extends GroovyTestCase {
+	// ------------------------------
+	// feature: Annotation Definition
+	// ------------------------------
+	
+	public void test_AnnotationDef1_FAILS() throws Exception { if (notYetImplemented()) return;
+	// Unknown type: ANNOTATION_DEF
+		assertNotNull(compile("public @interface Foo{}")); 
+	}
+	public void test_AnnotationDef2_FAILS() throws Exception { if (notYetImplemented()) return;
+	// Unknown type: ANNOTATION_DEF
+    	assertNotNull(compile("public @interface Foo{int bar() default 123}")); 
+	}
+
+	// ------------------------------
+	// bug: Qualified Exception Types
+	// ------------------------------
+		
+	public void test_QualifiedExceptionTypes_FAILS() throws Exception { if (notYetImplemented()) return;
+	// Unexpected node type: '.' found when expecting type: an identifier
+		assertNotNull(compile("def foo() throws bar.MookyException{}")); // fails after parser
+	}
+
+	// ------------------------------
+	// feature: classic Java for loop
+	// ------------------------------
+
+	public void test_ClassicJavaForLoop1_FAILS() throws Exception { if (notYetImplemented()) return;
+	// For statement contains unexpected tokens. Possible attempt to use unsupported Java-style for loop.
+		assertNotNull(compile("for (i = 0,j = 2;i < 10; i++, j--) {print i}")); // fails after parser
+	}
+
+	public void test_ClassicJavaForLoop2_FAILS() throws Exception { if (notYetImplemented()) return;
+	// For statement contains unexpected tokens. Possible attempt to use unsupported Java-style for loop.
+		assertNotNull(compile("for (i=0;i<10;i++) {println i}")); // fails after parser
+	}
+
+	// ------------------------------
+	// feature: Enum Definitions
+	// ------------------------------
+	public void test_EnumDef1_FAILS() throws Exception { if (notYetImplemented()) return;
+	// Unknown type: ENUM_DEF
+		assertNotNull(compile("enum Coin {PENNY(1), DIME(10), QUARTER(25)}")); // fails after parser
+	}
+	public void test_EnumDef2_FAILS() throws Exception { if (notYetImplemented()) return;
+	// Unknown type: ENUM_DEF
+		assertNotNull(compile("enum Season{WINTER,SPRING,SUMMER,AUTUMN}")); // fails after parser
+	}
+	public void test_EnumDef3_FAILS() throws Exception { if (notYetImplemented()) return;
+	// Unknown type: ENUM_DEF
+		assertNotNull(compile("enum Operation {ADDITION {double eval(x,y) {return x + y}}}")); // fails after parser
+	}
+	public void test_EnumDef4_FAILS() throws Exception { if (notYetImplemented()) return;
+	// Unknown type: ENUM_DEF
+		assertNotNull(compile("enum EarthSeason implements Season{SPRING}")); // fails after parser
+	}
+
+	// ---------------------------
+	// deprecate in parser?: 'any'
+	// ---------------------------
+
+	public void test_LiteralAny_FAILS() throws Exception { if (notYetImplemented()) return;
+	// unable to resolve class any
+		assertNotNull(compile("any x = 2")); // fails after parser
+	}
+
+	// ------------------------------------------------
+	// deprecate in parser?: 'break' allowed in methods
+	// ------------------------------------------------
+	public void test_BreakAllowedInMethods_FAILS() throws Exception { if (notYetImplemented()) return;
+	// the break statement is only allowed inside loops or switches		
+		assertNotNull(compile("def myMethod(){break}")); // fails after parser
+	}
+	
+	// ----------------------------------------------------
+	// deprecate in parser?: 'continue' allowed in closures
+	// ----------------------------------------------------
+	public void test_ContinueAllowedInClosures_FAILS() throws Exception { if (notYetImplemented()) return;
+	// the continue statement is only allowed inside loops
+		assertNotNull(compile("[1,2,3].each{continue}")); // fails after parser
+	}
+		
+	// ----------------------------------------------------
+	// feature?: allow break/continue with value from loops?
+	// ----------------------------------------------------
+	public void test_BreakWithValueAllowedInLoops_FAILS() throws Exception { if (notYetImplemented()) return;
+	// Unexpected node type: a numeric literal found when expecting type: an identifier
+		assertNotNull(compile("for (i in 1..100) {break 2}")); // fails after parser
+	}
+	
+	public void test_ContinueWithValueAllowedInLoops_FAILS() throws Exception { if (notYetImplemented()) return;
+	// Unexpected node type: a numeric literal found when expecting type: an identifier
+		assertNotNull(compile("for (i in 1..100) {continue 2}")); // fails after parser
+	}
+
+	// ---------------------------------------------------------------
+	// feature?: allow break/continue to labeled statement from loops? (is this even right syntax, or parser bug???)
+	// ---------------------------------------------------------------
+	public void test_BreakToLabeledStatementAllowedInLoops_FAILS() throws Exception { if (notYetImplemented()) return;
+	// Unexpected node type: LABELED_STAT found when expecting type: an identifier
+		assertNotNull(compile("for (i in 1..100) {break label1:}")); // fails after parser
+	}		
+	public void test_ContinueToLabeledStatementAllowedInLoops_FAILS() throws Exception { if (notYetImplemented()) return;
+	// Unexpected node type: LABELED_STAT found when expecting type: an identifier
+		assertNotNull(compile("for (i in 1..100) {continue label1:}")); // fails after parser
+	}
+
+	// -----------------------
+	// feature: Native Methods
+	// -----------------------
+	public void test_NativeMethods1_FAILS() throws Exception { if (notYetImplemented()) return;
+	// You defined a method without body. Try adding a body, or declare it abstract
+		assertNotNull(compile("public class R{public native void seek(long pos)}")); // fails after parser
+	}
+	public void test_NativeMethods2_FAILS() throws Exception { if (notYetImplemented()) return;
+	// You defined a method without body. Try adding a body, or declare it abstract
+		assertNotNull(compile("native foo()")); // fails after parser
+	}
+
+	// ---------------------
+	// feature: 'threadsafe'
+	// ---------------------
+	public void test_Threadsafe1_FAILS() throws Exception { if (notYetImplemented()) return;
+	// Unknown type: "threadsafe"
+		assertNotNull(compile("threadsafe foo() {}")); // fails after parser
+	}
+	
+	public void test_Threadsafe2_FAILS() throws Exception { if (notYetImplemented()) return;
+	// Unknown type: "threadsafe"
+		assertNotNull(compile("public static transient final native threadsafe synchronized volatile strictfp foo() {}")); // fails after parser
+	}
+
+	// -------------
+	// feature: with
+	// -------------
+	public void test_With_FAILS() throws Exception { if (notYetImplemented()) return;
+	// AST node not implemented yet for type: "with"
+		assertNotNull(compile("with(myObject) {x = 1}")); // fails after parser
+	}
+
+	// -------------------------------
+	// feature?: scope escape operator
+	// -------------------------------
+	public void test_ScopeEscape_FAILS() throws Exception { if (notYetImplemented()) return;
+	// Unknown type: SCOPE_ESCAPE
+		assertNotNull(compile("println([$x, x, y])")); // fails after parser
+	}
+
+	// --------------------------------------------------
+	// bugs?: spread expressions in closures and GStrings
+	// --------------------------------------------------
+	public void test_SpreadExpressionInClosure_FAILS() throws Exception { if (notYetImplemented()) return;
+	// BUG! exception in phase 'class generation' in source unit 'Script1.groovy' 
+	// SpreadExpression should not be visited here
+		assertNotNull(compile("myList{*name}")); // fails after parser
+	}
+	
+	public void test_SpreadExpressionInGString1_FAILS() throws Exception { if (notYetImplemented()) return;
+	// BUG! exception in phase 'conversion' in source unit 'Script1.groovy' null
+		assertNotNull(compile("\"foo$*bar\"")); // fails after parser
+	}
+	
+	public void test_SpreadExpressionInGString2_FAILS() throws Exception { if (notYetImplemented()) return;
+	// BUG! exception in phase 'class generation' in source unit 'Script1.groovy' 
+	// SpreadExpression should not be visited here
+		assertNotNull(compile("\"foo${*bar}\"")); // fails after parser
+	}
+		
+	// -----------------------
+	// feature: static imports
+	// -----------------------
+	public void test_StaticImport1_FAILS() throws Exception { if (notYetImplemented()) return;
+	// Unknown type: STATIC_IMPORT
+		assertNotNull(compile("import static foo.Bar.mooky")); // fails after parser
+	}
+	public void test_StaticImport2_FAILS() throws Exception { if (notYetImplemented()) return;
+	// Unknown type: STATIC_IMPORT
+		assertNotNull(compile("import static foo.Bar.*")); // fails after parser
+	}
+
+	// ------------------------
+	// feature: type parameters
+	// ------------------------
+	public void test_TypeParameters_FAILS() throws Exception { if (notYetImplemented()) return;	
+	// Unexpected node type: TYPE_PARAMETERS found when expecting type: OBJBLOCK
+		assertNotNull(compile("class Foo<T extends C & I> {T t}")); // fails after parser
+	}
+
+	private Script compile(String input) throws Exception{
+        GroovyRecognizer parser = null;
+        SourceBuffer sourceBuffer = new SourceBuffer();
+        UnicodeEscapingReader unicodeReader = new UnicodeEscapingReader(new StringReader(input),sourceBuffer);
+        GroovyLexer lexer = new GroovyLexer(unicodeReader);
+        unicodeReader.setLexer(lexer);
+        parser = GroovyRecognizer.make(lexer);
+        parser.setSourceBuffer(sourceBuffer);
+
+        String[] tokenNames;
+        tokenNames = parser.getTokenNames();
+        parser.compilationUnit();
+        AST ast = parser.getAST();
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Visitor visitor = new SourcePrinter(new PrintStream(baos),tokenNames,false);
+        AntlrASTProcessor traverser = new SourceCodeTraversal(visitor);
+
+        traverser.process(ast);
+
+        GroovyShell groovyShell = new GroovyShell();
+        return groovyShell.parse(input);
+    }
+
+}

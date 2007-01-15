@@ -815,7 +815,11 @@ public class SourcePrinter extends VisitorAdapter {
     public void visitSpreadArg(GroovySourceAST t,int visit) {
     	print(t,visit,"*",null,null);
     }
-    
+
+    public void visitSpreadDot(GroovySourceAST t,int visit) {
+	print(t,visit,"*.",null,null);
+    }
+
     public void visitSpreadMapArg(GroovySourceAST t,int visit) {
     	print(t,visit,"*:",null,null);
     }

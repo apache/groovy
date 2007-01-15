@@ -59,6 +59,7 @@ public class AllCodehausJavaTestsSuite {
 //        suite.addTestSuite(RunWikiTest.class);
         suite.addTestSuite(SourceBufferTest.class);
         suite.addTestSuite(SourcePrinterTest.class);
+        suite.addTestSuite(UnimplementedSyntaxTest.class);
         suite.addTestSuite(SyntaxErrorMessageTest.class);
 //        suite.addTestSuite(TestCaseRenderEngineTest.class);
         suite.addTestSuite(TokenTest.class);

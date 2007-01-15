@@ -184,6 +184,7 @@ public class SourceCodeTraversal extends TraversalHelper {
                 case GroovyTokenTypes.RANGE_EXCLUSIVE: // [1..<10]
                 case GroovyTokenTypes.RANGE_INCLUSIVE: // [1..10]
                 case GroovyTokenTypes.SL: // a << b
+                case GroovyTokenTypes.SPREAD_DOT: // foo*.bar
                 case GroovyTokenTypes.SR: // a >> b
                 case GroovyTokenTypes.STAR: // a * b   or    import foo.*
                 case GroovyTokenTypes.STAR_STAR: // x ** 3
