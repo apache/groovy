@@ -522,13 +522,15 @@ singleDeclaration
  *  just put a TODO comment in.
  */
 declarationStart!
-    :   "def"
-    |   modifier
-    |   AT IDENT  // IDENT != "interface"
-    |   (   upperCaseIdent
-        |   builtInType
-        |   qualifiedTypeName
-        ) (LBRACK balancedTokens RBRACK)* IDENT
+    :   (	  "def" nls 
+    		| modifier nls 
+    		| annotation nls
+         	| (   upperCaseIdent
+           		|   builtInType
+           		|   qualifiedTypeName
+              ) (LBRACK balancedTokens RBRACK)*
+        )+
+        IDENT 
     ;
 
 /** Not yet used - but we could use something like this to look for fully qualified type names 
