@@ -533,8 +533,6 @@ declarationStart!
         IDENT 
     ;
 
-/** Not yet used - but we could use something like this to look for fully qualified type names 
- */
 qualifiedTypeName!
 				 :
 				 			 IDENT (DOT IDENT)* DOT upperCaseIdent
