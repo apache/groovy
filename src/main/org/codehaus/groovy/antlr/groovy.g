@@ -226,7 +226,7 @@ tokens {
         // TODO: set up a common error-handling control block, to avoid excessive tangle between these guys
         parser.lexer = lexer;
         lexer.parser = parser;
-        parser.setASTNodeClass("org.codehaus.groovy.antlr.GroovySourceAST");
+        parser.getASTFactory().setASTNodeClass(GroovySourceAST.class);
         parser.warningList = new ArrayList();
         return parser;
     }
