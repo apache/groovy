@@ -123,4 +123,8 @@ public class NullObject extends GroovyObjectSupport {
       return "null"+s;
   }
   
+  public boolean is(Object other) {
+      return other==null;
+  }
+  
 }
