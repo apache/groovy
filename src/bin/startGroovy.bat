@@ -68,6 +68,8 @@ shift
 shift
  
 :init
+@rem get name of script to launch with full path
+set GROOVY_SCRIPT_NAME=%~f1
 @rem Get command-line arguments, handling Windowz variants
 if not "%OS%" == "Windows_NT" goto win9xME_args
 if "%eval[2+2]" == "4" goto 4NT_args
@@ -116,6 +118,7 @@ set JAVA_OPTS=%JAVA_OPTS% -Dprogram.name="%PROGNAME%"
 set JAVA_OPTS=%JAVA_OPTS% -Dgroovy.home=%GROOVY_HOME%
 set JAVA_OPTS=%JAVA_OPTS% -Dtools.jar="%TOOLS_JAR%"
 set JAVA_OPTS=%JAVA_OPTS% -Dgroovy.starter.conf="%STARTER_CONF%"
+set JAVA_OPTS=%JAVA_OPTS% -Dscript.name="%GROOVY_SCRIPT_NAME%"
 
 if exist "%USERPROFILE%/.groovy/postinit.bat" call "%USERPROFILE%/.groovy/postinit.bat"
 
