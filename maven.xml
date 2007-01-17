@@ -661,7 +661,7 @@
     </exec>
     <jar destfile="${groovy.build.native}/groovy.jar" manifest="${groovy.embeddable.working.dir}/META-INF/MANIFEST.MF">
       <zipfileset src="${maven.build.dir}/${maven.final.name}.jar"/>
-      <zipfileset src="${groovy.install.staging.dest}/lib/antlr-2.7.5.jar"/>
+      <zipfileset src="${groovy.install.staging.dest}/lib/antlr-2.7.6.jar"/>
       <zipfileset src="${groovy.install.staging.dest}/lib/asm-2.2.jar"/>
       <zipfileset src="${groovy.install.staging.dest}/lib/asm-util-2.2.jar"/>
       <zipfileset src="${groovy.install.staging.dest}/lib/asm-attrs-2.2.jar"/>
