@@ -56,9 +56,9 @@ import org.codehaus.groovy.classgen.ReflectorGenerator;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
 import org.codehaus.groovy.runtime.MethodHelper;
-import org.codehaus.groovy.runtime.ReferenceMap;
 import org.codehaus.groovy.runtime.Reflector;
 import org.codehaus.groovy.runtime.ReflectorLoader;
+import org.codehaus.groovy.runtime.MemoryAwareConcurrentReadMap;
 import org.objectweb.asm.ClassWriter;
 
 /**
@@ -72,8 +72,8 @@ import org.objectweb.asm.ClassWriter;
  * @version $Revision$
  */
 public class MetaClassRegistry {
-    private ReferenceMap metaClasses = new ReferenceMap();
-    private ReferenceMap loaderMap = new ReferenceMap();
+    private MemoryAwareConcurrentReadMap metaClasses = new MemoryAwareConcurrentReadMap();
+    private MemoryAwareConcurrentReadMap loaderMap = new MemoryAwareConcurrentReadMap();
     private boolean useAccessible;
     
     private LinkedList instanceMethods = new LinkedList();

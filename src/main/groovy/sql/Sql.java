@@ -437,7 +437,7 @@ public class Sql {
             log.fine(sql);
             results = statement.executeQuery(sql);
 
-            GroovyResultSet groovyRS = new GroovyResultSet(results);
+            GroovyResultSet groovyRS = new GroovyResultSetProxy(results).getImpl();
             while (groovyRS.next()) {
                 closure.call(groovyRS);
             }
@@ -473,7 +473,7 @@ public class Sql {
             configure(statement);
             results = statement.executeQuery();
 
-            GroovyResultSet groovyRS = new GroovyResultSet(results);
+            GroovyResultSet groovyRS = new GroovyResultSetProxy(results).getImpl();
             while (groovyRS.next()) {
                 closure.call(groovyRS);
             }
@@ -891,11 +891,11 @@ public class Sql {
                 Object value = iter.next();
                 if(value instanceof OutParameter){
                     if(value instanceof ResultSetOutParameter){
-                        results.add(new CallResultSet(statement,indx));
+                        results.add(CallResultSet.getImpl(statement,indx));
                     }else{
                         Object o = statement.getObject(indx+1);
                         if(o instanceof ResultSet){
-                            results.add(new GroovyResultSet((ResultSet)o));
+                            results.add(new GroovyResultSetProxy((ResultSet)o).getImpl());
                         }else{
                             results.add(o);
                         }

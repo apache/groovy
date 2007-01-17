@@ -11,13 +11,14 @@ import java.sql.SQLException;
  *
  * Represents a ResultSet retrieved as a callable statement out parameter.
  */
-class CallResultSet extends GroovyResultSet {
+class CallResultSet extends GroovyResultSetExtension {
 	int indx;
 	CallableStatement call;
 	ResultSet resultSet;
 	boolean firstCall = true;
 	
 	CallResultSet(CallableStatement call, int indx){
+        super(null);
 		this.call = call;
 		this.indx = indx;
 	}
@@ -29,4 +30,9 @@ class CallResultSet extends GroovyResultSet {
 		}
 		return resultSet;
 	}
+    
+    protected static GroovyResultSet getImpl(CallableStatement call, int idx) {
+        GroovyResultSetProxy proxy = new GroovyResultSetProxy(new CallResultSet(call,idx));
+        return proxy.getImpl();
+    }
 }

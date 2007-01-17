@@ -141,34 +141,62 @@ public class MetaClassImpl extends MetaClass {
    }
 
    private void fillMethodIndex() {
-       LinkedList superClasses = getSuperClasses();
-       // let's add all the base class methods
-       for (Iterator iter = superClasses.iterator(); iter.hasNext();) {
-           Class c = (Class) iter.next();
-           addMethods(c);
+       if (theClass.isInterface()) {
+           // simplified version for interfaces (less inheritance)
+           LinkedList superClasses = new LinkedList();
+           superClasses.add(Object.class);
+           addMethods(Object.class);
+           
+           Set interfaces = new HashSet();
+           interfaces.add(theClass);
+           makeInterfaceSet(theClass,interfaces);
+           
+           inheritInterfaceMethods(interfaces);
+           Map theClassIndex = getMap2MapNotNull(classMethodIndex,theClass);
+           Map objectIndex = getMap2MapNotNull(classMethodIndex,Object.class);
+           copyNonPrivateMethods(objectIndex,theClassIndex);
+           classMethodIndexForSuper = classMethodIndex;
+           superClasses.addAll(interfaces);
+           for (Iterator iter = superClasses.iterator(); iter.hasNext();) {
+               Class c = (Class) iter.next();
+               classMethodIndex.put(c,theClassIndex);
+               if (c!=Object.class) addMethods(c);
+           }           
+       } else {
+           LinkedList superClasses = getSuperClasses();
+           // let's add all the base class methods
+           for (Iterator iter = superClasses.iterator(); iter.hasNext();) {
+               Class c = (Class) iter.next();
+               addMethods(c);
+           }
+           
+           Set interfaces = new HashSet();
+           makeInterfaceSet(theClass,interfaces); 
+           
+           inheritMethods(superClasses,classMethodIndex);
+           inheritInterfaceMethods(interfaces);
+           copyClassMethodIndexForSuper();
+           
+           connectMultimethods(superClasses);
+           populateInterfaces(interfaces);
+           removeMultimethodsOverloadedWithPrivateMethods();
        }
-
-       Set interfaces = new HashSet();
-       makeInterfaceSet(theClass,interfaces); 
-
-       inheritMethods(superClasses,classMethodIndex);
-       inheritInterfaceMethods(interfaces);
-       copyClassMethodIndexForSuper();
-       
-       connectMultimethods(superClasses);
-       populateInterfaces(interfaces);
-       removeMultimethodsOverloadedWithPrivateMethods();
        
        replaceWithMOPCalls();
    }
    
    private LinkedList getSuperClasses() {
        LinkedList superClasses = new LinkedList();
-       for (Class c = theClass; c!= null; c = c.getSuperclass()) {
-           superClasses.addFirst(c);
-       }
-       if (theClass.isArray() && theClass!=Object[].class && !theClass.getComponentType().isPrimitive()) {
-           superClasses.addFirst(Object[].class);
+       
+       if (theClass.isInterface()) {
+           superClasses.addFirst(Object.class);
+       } else {           
+           for (Class c = theClass; c!= null; c = c.getSuperclass()) {
+               superClasses.addFirst(c);
+           }
+           if (theClass.isArray() && theClass!=Object[].class && !theClass.getComponentType().isPrimitive()) {
+               superClasses.addFirst(Object[].class);
+           }
        }
        return superClasses;
    }
@@ -292,7 +320,7 @@ public class MetaClassImpl extends MetaClass {
    }
    
    private void populateInterfaces(Set interfaces){
-       Map currentIndex = (Map) classMethodIndex.get(theClass);
+       Map currentIndex = getMap2MapNotNull(classMethodIndex,theClass);
        Map index = new HashMap();
        copyNonPrivateMethods(currentIndex,index);
        for (Iterator iter = interfaces.iterator(); iter.hasNext();) {
@@ -1019,26 +1047,48 @@ public class MetaClassImpl extends MetaClass {
     * property name).
     */
    private void setupProperties(PropertyDescriptor[] propertyDescriptors) {
-       LinkedList superClasses = getSuperClasses();
-       Set interfaces = new HashSet();
-       makeInterfaceSet(theClass,interfaces);
-       
-       // if this an Array, then add the special read-only "length" property
-       if (theClass.isArray()) {
-           Map map = new HashMap();
-           map.put("length", arrayLengthProperty);
-           classPropertyIndex.put(theClass,map);
+       if (theClass.isInterface()) {
+           LinkedList superClasses = new LinkedList();
+           superClasses.add(Object.class);
+           Set interfaces = new HashSet();
+           makeInterfaceSet(theClass,interfaces);
+           interfaces.add(theClass);
+           
+           classPropertyIndexForSuper = classPropertyIndex;
+           for (Iterator interfaceIter = interfaces.iterator(); interfaceIter.hasNext();) {
+               Class iclass = (Class) interfaceIter.next();
+               Map iPropertyIndex = getMap2MapNotNull(classPropertyIndex,theClass);
+               addFields(iclass,iPropertyIndex);
+               classPropertyIndex.put(iclass,iPropertyIndex);
+           }
+           classPropertyIndex.put(Object.class,getMap2MapNotNull(classPropertyIndex,theClass));
+           
+           applyPropertyDescriptors(propertyDescriptors);
+           applyStrayPropertyMethods(superClasses,classMethodIndex,classPropertyIndex);
+           
+           makeStaticPropertyIndex();
+       } else {
+           LinkedList superClasses = getSuperClasses();
+           Set interfaces = new HashSet();
+           makeInterfaceSet(theClass,interfaces);
+           
+           // if this an Array, then add the special read-only "length" property
+           if (theClass.isArray()) {
+               Map map = new HashMap();
+               map.put("length", arrayLengthProperty);
+               classPropertyIndex.put(theClass,map);
+           }
+           
+           inheritStaticInterfaceFields(superClasses, interfaces);       
+           inheritFields(superClasses);
+           applyPropertyDescriptors(propertyDescriptors);
+           
+           applyStrayPropertyMethods(superClasses,classMethodIndex,classPropertyIndex);
+           applyStrayPropertyMethods(superClasses,classMethodIndexForSuper,classPropertyIndexForSuper);
+           
+           copyClassPropertyIndexForSuper();
+           makeStaticPropertyIndex();
        }
-              
-       inheritStaticInterfaceFields(superClasses, interfaces);       
-       inheritFields(superClasses);
-       applyPropertyDescriptors(propertyDescriptors);
-       
-       applyStrayPropertyMethods(superClasses,classMethodIndex,classPropertyIndex);
-       applyStrayPropertyMethods(superClasses,classMethodIndexForSuper,classPropertyIndexForSuper);
-       
-       copyClassPropertyIndexForSuper();
-       makeStaticPropertyIndex();
    }
    
    private void makeStaticPropertyIndex() {
@@ -1569,9 +1619,9 @@ public class MetaClassImpl extends MetaClass {
            if ( reflectionMethod.getName().indexOf('+') >= 0 ) {
                // Skip Synthetic methods inserted by JDK 1.5 compilers and later
                continue;
-           } else if (Modifier.isAbstract(reflectionMethod.getModifiers())) {
+           } /*else if (Modifier.isAbstract(reflectionMethod.getModifiers())) {
                continue;
-           }
+           }*/
            MetaMethod method = createMetaMethod(reflectionMethod);
            addMetaMethod(method);
        }
@@ -2033,15 +2083,13 @@ public class MetaClassImpl extends MetaClass {
    private synchronized List getInterfaceMethods() {
        if (interfaceMethods == null) {
            interfaceMethods = new ArrayList();
-           Class type = theClass;
-           while (type != null) {
-               Class[] interfaces = type.getInterfaces();
-               for (int i = 0; i < interfaces.length; i++) {
-                   Class iface = interfaces[i];
-                   Method[] methods = iface.getMethods();
-                   addInterfaceMethods(interfaceMethods, methods);
-               }
-               type = type.getSuperclass();
+           Set interfaces = new HashSet();
+           makeInterfaceSet(theClass,interfaces);
+           if (theClass.isInterface()) interfaces.add(theClass);
+           for (Iterator iter = interfaces.iterator(); iter.hasNext();) {
+               Class iface = (Class) iter.next();
+               Method[] methods = iface.getMethods();
+               addInterfaceMethods(interfaceMethods, methods);
            }
        }
        return interfaceMethods;
