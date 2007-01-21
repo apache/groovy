@@ -132,4 +132,14 @@ class TryCatchTest extends GroovyTestCase {
         return 2.0
       } finally {}
     }
+    
+    void testTryCatchWithUntyped(){
+      try {
+        throw new Exception();
+      } catch(e) {
+        assert true
+        return
+      }
+      assert false
+    }
 }
