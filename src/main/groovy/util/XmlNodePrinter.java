@@ -110,11 +110,7 @@ public class XmlNodePrinter {
         if (!node.children().isEmpty()) {
             return false;
         }
-        String text = node.text();
-        if (text.length() > 0) {
-            return false;
-        }
-        return true;
+        return node.text().length() == 0;
     }
 
     public void print(Node node) {
@@ -223,25 +219,19 @@ public class XmlNodePrinter {
         if (attributes == null || attributes.isEmpty()) {
             return;
         }
-        out.print(" ");
-        boolean first = true;
         for (Iterator iter = attributes.entrySet().iterator(); iter.hasNext();) {
             Map.Entry entry = (Map.Entry) iter.next();
-            if (first) {
-                first = false;
-            } else {
-                out.print(" ");
-            }
+            out.print(" ");
             out.print(entry.getKey().toString());
             out.print("=");
             Object value = entry.getValue();
+            out.print(quote);
             if (value instanceof String) {
-                out.print(quote);
                 out.print((String) value);
-                out.print(quote);
-                continue;
+            } else {
+                out.print(InvokerHelper.toString(value));
             }
-            out.print(InvokerHelper.toString(value));
+            out.print(quote);
         }
     }
 
