@@ -1032,13 +1032,15 @@ public class AsmClassGenerator extends ClassGenerator {
             // return is based on class type
             // we may need to cast
             doConvertAndCast(returnType, expression, false, true, false);
-            helper.unbox(returnType);
         }
         if (compileStack.hasFinallyBlocks()) {
-            int returnValueIdx = compileStack.defineTemporaryVariable("returnValue",returnType,true);
+            // value is always saved in boxed form, so no need to have a special load routine here
+            int returnValueIdx = compileStack.defineTemporaryVariable("returnValue",ClassHelper.OBJECT_TYPE,true);
             compileStack.applyFinallyBlocks();
-            helper.load(returnType,returnValueIdx);
-        }        
+            helper.load(ClassHelper.OBJECT_TYPE,returnValueIdx);
+        }
+        // value is always saved in boxed form, so we need to unbox it here        
+        helper.unbox(returnType);
         helper.doReturn(returnType);
         outputReturn = true;
     }
