@@ -52,6 +52,8 @@ import java.util.Map;
 
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.AnnotatedNode;
+import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
@@ -464,4 +466,5 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     	}
         super.visitMethodCallExpression(call);
     }
+
 }

@@ -759,6 +759,12 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
             if (an.isBuiltIn()) continue;
             ClassNode type = an.getClassNode();
             resolveOrFail(type,"unable to find class for annotation",an);
+            for (Iterator iter = an.getMembers().entrySet().iterator(); iter.hasNext();) {
+                Map.Entry member = (Map.Entry) iter.next();
+                String memberName = (String) member.getKey();
+                Expression memberValue = (Expression) member.getValue();
+                member.setValue(transform(memberValue));
+            }  
         }
     }
 
