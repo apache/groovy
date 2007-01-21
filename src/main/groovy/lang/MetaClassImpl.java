@@ -300,7 +300,7 @@ public class MetaClassImpl extends MetaClass {
            if (! newGroovyMethodsList.contains(method)){
                newGroovyMethodsList.add(method);
            }
-           Map methodIndex = (Map) classMethodIndex.get(theClass);
+           Map methodIndex = getMap2MapNotNull(classMethodIndex, theClass);
            List list = (List) methodIndex.get(method.getName());
            if (list == null) {
                list = new ArrayList();
