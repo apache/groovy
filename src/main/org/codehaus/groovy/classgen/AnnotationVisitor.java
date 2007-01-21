@@ -45,7 +45,6 @@
  */
 package org.codehaus.groovy.classgen;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -232,7 +231,7 @@ public class AnnotationVisitor {
         }
         
         for(int i = 0; i < annotations.length; i++) {
-            Class annotationType = (Class) invoke(Annotation.class, "annotationType", new Class[0], annotations[i], new Object[0]);
+            Class annotationType = (Class) invoke(this.annotationRootClass, "annotationType", new Class[0], annotations[i], new Object[0]);
             if (annotationType == null) continue;
             
             if ("java.lang.annotation.Retention".equals(annotationType.getName())) {
