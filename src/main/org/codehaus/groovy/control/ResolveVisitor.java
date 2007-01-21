@@ -53,7 +53,6 @@ import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
-import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.DynamicVariable;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.ImportNode;
@@ -128,38 +127,7 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
         visitClass(node);
     }
 
-    public void visitConstructor(ConstructorNode node) {
-        visitAnnotations(node);
-        VariableScope oldScope = currentScope;
-        currentScope = node.getVariableScope();
-        Parameter[] paras = node.getParameters();
-        for (int i=0; i<paras.length; i++) {
-            ClassNode t = paras[i].getType();
-            resolveOrFail(t,node);
-        }
-        ClassNode[] exceptions = node.getExceptions();
-        for (int i=0; i<exceptions.length; i++) {
-            ClassNode t = exceptions[i];
-            resolveOrFail(t,node);
-        }
-        Statement code = node.getCode();
-        if (code!=null) code.visit(this);
-        currentScope = oldScope;
-    }
-
-    public void visitSwitch(SwitchStatement statement) {
-        Expression exp = statement.getExpression();
-        statement.setExpression(transform(exp));
-        List list = statement.getCaseStatements();
-        for (Iterator iter = list.iterator(); iter.hasNext(); ) {
-            CaseStatement caseStatement = (CaseStatement) iter.next();
-            caseStatement.visit(this);
-        }
-        statement.getDefaultStatement().visit(this);
-    }
-
-    public void visitMethod(MethodNode node) {
-        visitAnnotations(node);
+    protected void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {
         VariableScope oldScope = currentScope;
         currentScope = node.getVariableScope();
         Parameter[] paras = node.getParameters();
@@ -175,11 +143,21 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
         for (int i=0; i<exceptions.length; i++) {
             ClassNode t = exceptions[i];
             resolveOrFail(t,node);
-        }       
+        }
         resolveOrFail(node.getReturnType(),node);
-        Statement code = node.getCode();
-        if (code!=null) code.visit(this);
+        super.visitConstructorOrMethod(node,isConstructor);
         currentScope = oldScope;
+    }
+
+    public void visitSwitch(SwitchStatement statement) {
+        Expression exp = statement.getExpression();
+        statement.setExpression(transform(exp));
+        List list = statement.getCaseStatements();
+        for (Iterator iter = list.iterator(); iter.hasNext(); ) {
+            CaseStatement caseStatement = (CaseStatement) iter.next();
+            caseStatement.visit(this);
+        }
+        statement.getDefaultStatement().visit(this);
     }
 
     public void visitField(FieldNode node) {
