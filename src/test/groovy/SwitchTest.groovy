@@ -14,6 +14,7 @@ class SwitchTest extends GroovyTestCase {
         callSwitch(1, "Integer")
         callSwitch(1.2, "Number")
         callSwitch(null, "null")
+        callSwitch([1,2,3], "ListInterface")
     }
 
     def callSwitch(x, expected) {
@@ -48,6 +49,10 @@ class SwitchTest extends GroovyTestCase {
 
             case Number:
                 result = "Number"
+                break
+                
+            case List:
+                result = "ListInterface"
                 break
 
             case "xyz":
