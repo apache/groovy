@@ -71,6 +71,12 @@ public class CompilerConfiguration {
     /** Whether to use the JSR parser or not if no property is explicitly stated */
     protected static final boolean DEFAULT_JSR_FLAG = true;
 
+    private static final String JDK5_CLASSNAME_CHECK = "java.lang.annotation.Annotation";
+
+    public static final String POST_JDK5 = "1.5";
+    
+    public static final String PRE_JDK5 = "1.4";
+
     private static boolean jsrGroovy;
 
     /**
@@ -132,6 +138,11 @@ public class CompilerConfiguration {
     private int minimumRecompilationInterval;
 
     /**
+     * sets the bytecode version target
+     */
+    private String targetBytecode;
+    
+    /**
      * Sets the Flags to defaults.
      */
     public CompilerConfiguration() {
@@ -149,7 +160,7 @@ public class CompilerConfiguration {
         setScriptBaseClass(null);
         setRecompileGroovySource(false);
         setMinimumRecompilationInterval(100);
-
+        setTargetBytecode(getVMVersion());
 
         //
         // Try for better defaults, ignore errors.
@@ -239,7 +250,13 @@ public class CompilerConfiguration {
             setTargetDirectory(text);
         }
 
-
+        //
+        // Target bytecode
+        text = configuration.getProperty("groovy.target.bytecode");
+        if (text != null) {
+            setTargetBytecode(text);
+        }
+        
         //
         // Classpath
 
@@ -570,4 +587,36 @@ public class CompilerConfiguration {
         return minimumRecompilationInterval;
     }
 
+    /**
+     * Allow setting the bytecode compatibility. The parameter can take
+     * one of the values <tt>1.5</tt> or <tt>1.4</tt>. If wrong parameter
+     * then the value will default to VM determined version.
+     * 
+     * @param version the bytecode compatibility mode
+     */
+    public void setTargetBytecode(String version) {
+        if(PRE_JDK5.equals(version) || POST_JDK5.equals(version)) {
+            this.targetBytecode = version;
+        }
+    }
+
+    /**
+     * Retrieves the compiler bytecode compatibility mode.
+     * 
+     * @return bytecode compatibity mode. Can be either <tt>1.5</tt> or <tt>1.4</tt>.
+     */
+    public String getTargetBytecode() {
+        return this.targetBytecode;
+    }
+    
+    private static final String getVMVersion() {
+        try {
+            Class.forName(JDK5_CLASSNAME_CHECK);
+            return POST_JDK5;
+        }
+        catch(Exception _ex) {
+        }
+        
+        return PRE_JDK5;
+    }
 }

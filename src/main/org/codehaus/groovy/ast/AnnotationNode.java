@@ -45,23 +45,36 @@
  */
 package org.codehaus.groovy.ast;
 
-import org.codehaus.groovy.ast.expr.Expression;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.codehaus.groovy.ast.expr.Expression;
 
 
 /**
  * Represents an annotation which can be attached to interfaces, classes, methods and fields.
  * 
  * @author <a href="mailto:jstrachan@protique.com">James Strachan</a>
+ * @author <a href='mailto:the[dot]mindstorm[at]gmail[dot]com'>Alex Popescu</a>
  * @version $Revision$
  */
 public class AnnotationNode extends ASTNode {
+    public static final int TYPE_TARGET = 1;
+    public static final int CONSTRUCTOR_TARGET = 1 << 1;
+    public static final int METHOD_TARGET = 1 << 2;
+    public static final int FIELD_TARGET = 1 << 3;
+    public static final int PARAMETER_TARGET =  1 << 4;
+    public static final int LOCAL_VARIABLE_TARGET = 1 << 5;
+    public static final int ANNOTATION_TARGET = 1 << 6;
+    
     private ClassNode classNode;
     private Map members = new HashMap();
+    private boolean runtimeRetention= false;
+    private boolean sourceRetention= false;
+    private int allowedTarges = 0;
+    private boolean valid;
 
     public AnnotationNode(ClassNode classNode) {
         this.classNode = classNode;
@@ -105,5 +118,87 @@ public class AnnotationNode extends ASTNode {
     public boolean isBuiltIn(){
         return false;
     }
+
+    /**
+     * Flag corresponding to <code>RetentionPolicy</code>.
+     * @return <tt>true</tt> if the annotation should be visible at runtime, 
+     *      <tt>false</tt> otherwise
+     */
+    public boolean hasRuntimeRetention() {
+        return this.runtimeRetention;
+    }
+
+    /**
+     * Sets the internal flag of this annotation runtime retention policy.
+     * If the current annotation has 
+     * <code>RetentionPolicy.RUNTIME</code> or if <tt>false</tt>
+     * if the <code>RetentionPolicy.CLASS</code>.
+     * @param flag if <tt>true</tt> then current annotation is marked as having
+     *     <code>RetentionPolicy.RUNTIME</code>. If <tt>false</tt> then
+     *     the annotation has <code>RetentionPolicy.CLASS</code>.
+     */
+    public void setRuntimeRetention(boolean flag) {
+        this.runtimeRetention = flag;
+    }
     
+    /**
+     * Flag corresponding to <code>RetentionPolicy.SOURCE</code>.
+     * @return <tt>true</tt> if the annotation is only allowed in sources 
+     *      <tt>false</tt> otherwise
+     */
+    public boolean hasSourceRetention() {
+        return this.sourceRetention;
+    }
+
+    /** Sets the internal flag if the current annotation has 
+     * <code>RetentionPolicy.SOURCE</code>.
+     */ 
+    public void setSourceRetention(boolean flag) {
+        this.sourceRetention = flag;
+    }
+
+    public void setAllowedTargets(int bitmap) {
+        this.allowedTarges = bitmap;
+    }
+    
+    public boolean isTargetAllowed(int target) {
+        return (this.allowedTarges & target) == target;
+    }
+    
+    /**
+     * Set if the current annotation is verified and passed all
+     * validations
+     * @param flag
+     */
+    public void setValid(boolean flag) {
+        this.valid = flag;
+    }
+    
+    /**
+     * Returns the state of this annotation (verified and all verification passed).
+     */
+    public boolean isValid() {
+        return this.valid;
+    }
+    
+    public static final String targetToName(int target) {
+        switch(target) {
+            case TYPE_TARGET:
+                return "TYPE";
+            case CONSTRUCTOR_TARGET:
+                return "CONSTRUCTOR";
+            case METHOD_TARGET:
+                return "METHOD";
+            case FIELD_TARGET:
+                return "FIELD";
+            case PARAMETER_TARGET:
+                return "PARAMETER";
+            case LOCAL_VARIABLE_TARGET:
+                return "LOCAL_VARIABLE";
+            case ANNOTATION_TARGET:
+                return "ANNOTATION";
+            default:
+                return "unknown target";
+        }
+    }
 }

@@ -113,6 +113,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     // if not null this instance is handled as proxy 
     // for the redirect
     private ClassNode redirect=null; 
+    // flag if the classes or its members are annotated
+    private boolean annotated;
     
     /**
      * Returns the ClassNode this ClassNode is redirecting to.
@@ -952,5 +954,17 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     
     public boolean hasPackageName(){
         return redirect().name.indexOf('.')>0;
+    }
+
+    /**
+     * Marks if the current class uses annotations or not
+     * @param b
+     */
+    public void setAnnotated(boolean flag) {
+        this.annotated = flag;
+    }
+    
+    public boolean isAnnotated() {
+        return this.annotated;
     }
 }

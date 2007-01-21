@@ -51,6 +51,7 @@ import groovy.lang.GroovyRuntimeException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -124,6 +125,7 @@ import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
 import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
+import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.syntax.RuntimeParserException;
@@ -131,9 +133,11 @@ import org.codehaus.groovy.syntax.Types;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 
 
 /**
@@ -142,7 +146,8 @@ import org.objectweb.asm.Opcodes;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author <a href="mailto:b55r@sina.com">Bing Ran</a>
  * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
- *
+ * @author <a href='mailto:the[dot]mindstorm[at]gmail[dot]com'>Alex Popescu</a>
+ * 
  * @version $Revision$
  */
 public class AsmClassGenerator extends ClassGenerator {
@@ -306,7 +311,7 @@ public class AsmClassGenerator extends ClassGenerator {
             this.internalBaseClassName = BytecodeHelper.getClassInternalName(classNode.getSuperClass());
 
             cw.visit(
-                asmJDKVersion, //context.getCompileUnit().getConfig().getBytecodeVersion(),
+                getBytecodeVersion(),
                 classNode.getModifiers(),
                 internalClassName,
                 null,
@@ -314,6 +319,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 BytecodeHelper.getClassInternalNames(classNode.getInterfaces())
             );            
             cw.visitSource(sourceFile,null);
+            visitAnnotations(classNode, cw);
             
             if (classNode.isInterface()) {
                 ClassNode owner = classNode;
@@ -485,6 +491,7 @@ public class AsmClassGenerator extends ClassGenerator {
         String methodType = BytecodeHelper.getMethodDescriptor(node.getReturnType(), node.getParameters());
 
         cv = cw.visitMethod(node.getModifiers(), node.getName(), methodType, null, buildExceptions(node.getExceptions()));
+        visitAnnotations(node, cv);
         helper = new BytecodeHelper(cv);
         if (!node.isAbstract()) { 
             Statement code = node.getCode();
@@ -518,6 +525,7 @@ public class AsmClassGenerator extends ClassGenerator {
     
             cv.visitMaxs(0, 0);
         }
+        cv.visitEnd();
     }
 
     private boolean firstStatementIsSpecialConstructorCall(MethodNode node) {
@@ -548,13 +556,14 @@ public class AsmClassGenerator extends ClassGenerator {
     public void visitField(FieldNode fieldNode) {
         onLineNumber(fieldNode, "visitField: " + fieldNode.getName());
         ClassNode t = fieldNode.getType();
-        cw.visitField(
+        FieldVisitor fv = cw.visitField(
             fieldNode.getModifiers(),
             fieldNode.getName(),
             BytecodeHelper.getTypeDescription(t),
             null, //fieldValue,  //br  all the sudden that one cannot init the field here. init is done in static initilizer and instace intializer.
             null);
-        visitAnnotations(fieldNode);
+        visitAnnotations(fieldNode, fv);
+        fv.visitEnd();
     }
 
     public void visitProperty(PropertyNode statement) {
@@ -2545,8 +2554,14 @@ public class AsmClassGenerator extends ClassGenerator {
         compileStack.removeVar(paramIdx);
     }
     
+    /**
+     * Note: ignore it. Annotation generation needs the current visitor.
+     */
     public void visitAnnotations(AnnotatedNode node) {
-        Map annotionMap = node.getAnnotations();
+    }
+    
+    private void visitAnnotations(AnnotatedNode targetNode, Object visitor) {
+        Map annotionMap = targetNode.getAnnotations();
         if (annotionMap.isEmpty()) return;
         
         Iterator it = annotionMap.values().iterator(); 
@@ -2554,21 +2569,66 @@ public class AsmClassGenerator extends ClassGenerator {
             AnnotationNode an = (AnnotationNode) it.next();
             //skip builtin properties
             if (an.isBuiltIn()) continue;
-            ClassNode type = an.getClassNode();
+            if (an.hasSourceRetention()) continue;
 
-            String clazz = type.getName();
-            AnnotationVisitor av = cw.visitAnnotation(BytecodeHelper.formatNameForClassLoading(clazz),false);
-
-            Iterator mIt = an.getMembers().keySet().iterator();
-            while (mIt.hasNext()) {
-                String name = (String) mIt.next();
-                ConstantExpression exp = (ConstantExpression) an.getMember(name);
-                av.visit(name,exp.getValue());
-            }
+            AnnotationVisitor av = getAnnotationVisitor(targetNode, an, visitor);
+            visitAnnotationAttributes(an, av);
             av.visitEnd();
-        }
+        }        
     }
     
+    private AnnotationVisitor getAnnotationVisitor(AnnotatedNode targetNode, AnnotationNode an, Object visitor) {
+        final String annotationDescriptor = BytecodeHelper.getTypeDescription(an.getClassNode());
+        if(targetNode instanceof MethodNode) {
+            return ((MethodVisitor) visitor).visitAnnotation(annotationDescriptor, an.hasRuntimeRetention());
+        }
+        else if(targetNode instanceof FieldNode) {
+            return ((FieldVisitor) visitor).visitAnnotation(annotationDescriptor, an.hasRuntimeRetention());
+        }
+        else if(targetNode instanceof ClassNode) {
+            return ((ClassVisitor) visitor).visitAnnotation(annotationDescriptor, an.hasRuntimeRetention());
+        }
+        
+        throwException("Cannot create an AnnotationVisitor. Please report Groovy bug");
+        
+        return null;
+    }
+    
+    /**
+     * Generate the annotation attributes.
+     */
+    private void visitAnnotationAttributes(AnnotationNode an, AnnotationVisitor av) {
+        Map constantAttrs = new HashMap();
+        Map enumAttrs = new HashMap();
+
+        Iterator mIt = an.getMembers().keySet().iterator();
+        while (mIt.hasNext()) {
+            String name = (String) mIt.next();
+            Expression expr = an.getMember(name);
+            if(expr instanceof ConstantExpression) {
+                constantAttrs.put(name, ((ConstantExpression) expr).getValue());
+            }
+            else if(expr instanceof ClassExpression) {
+                constantAttrs.put(name, Type.getType(expr.getType().getTypeClass()));
+            }
+            else if(expr instanceof PropertyExpression) {
+                enumAttrs.put(name, expr);
+            }
+            // TODO: array attributes are not yet supported
+        }
+        
+        for(Iterator it = constantAttrs.entrySet().iterator(); it.hasNext(); ) {
+            Map.Entry entry = (Map.Entry) it.next();
+            av.visit((String) entry.getKey(), entry.getValue());
+        }
+        for(Iterator it = enumAttrs.entrySet().iterator(); it.hasNext(); ) {
+            Map.Entry entry = (Map.Entry) it.next();
+            PropertyExpression propExp = (PropertyExpression) entry.getValue();
+            av.visitEnum((String) entry.getKey(),
+                    BytecodeHelper.getTypeDescription(propExp.getObjectExpression().getType()),
+                    String.valueOf(((ConstantExpression) propExp.getProperty()).getValue()));
+        }
+    }
     
     // Implementation methods
     //-------------------------------------------------------------------------
@@ -3280,4 +3340,13 @@ public class AsmClassGenerator extends ClassGenerator {
         }
         return false;
     }    
+    
+    protected int getBytecodeVersion() {
+        if(!this.classNode.isAnnotated()) return Opcodes.V1_3;
+        
+        final String target = getCompileUnit().getConfig().getTargetBytecode();
+        
+        return CompilerConfiguration.POST_JDK5.equals(target) ? Opcodes.V1_5 : Opcodes.V1_3;
+    }
+
 }
