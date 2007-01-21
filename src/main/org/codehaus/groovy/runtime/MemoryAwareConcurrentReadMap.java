@@ -333,31 +333,16 @@ public class MemoryAwareConcurrentReadMap {
         int hash = key.hashCode();
         lockWrite();        
         try {
-            // find existing entry to replace
             int index = index(hash,table.length);
 
-            Entry current=table[index];
-            Entry prev = null;
-            while (current!=null) {
-                if (hash==current.hash) {
-                    Object oldKey = current.getKey();
-                    Object oldValue = current.getValue();
-                    if (!current.isValid()) {
-                        if (prev!=null) {
-                            prev.next = current.next;
-                        } else {
-                            table[index] = current.next;
-                        }
-                        size--;
-                        current = current.invalidate();
-                        continue;
-                    }
-                    if (key==oldKey | key.equals(oldKey)) {
-                        return oldValue;
-                    }
+            for (Entry current = table[index]; current!=null; current=current.next) {
+                if (hash!=current.hash) continue;
+                Object oldKey = current.getKey();
+                Object oldValue = current.getValue();
+                if (!current.isValid()) continue;
+                if (key==oldKey || key.equals(oldKey)) {
+                    return oldValue;
                 }
-                prev = current;
-                current = current.next;
             }
         } finally {
             unlockWrite();
