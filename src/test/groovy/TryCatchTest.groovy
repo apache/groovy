@@ -80,4 +80,56 @@ class TryCatchTest extends GroovyTestCase {
         exceptionCalled = false
         finallyCalled = false
     }
+    
+    void testTryWithReturnWithPrimitiveTypes() {
+      assert intTry() == 1
+      assert longTry() == 2
+      assert byteTry() == 3
+      assert shortTry() == 4
+      assert charTry() == "c"
+      assert floatTry() == 1.0
+      assert doubleTry() == 2.0
+    }
+    
+    int intTry(){
+      try {
+        return 1
+      } finally {}
+    }
+    
+    long longTry(){
+      try {
+        return 2
+      } finally {}
+    }
+    
+    byte byteTry(){
+      try {
+        return 3
+      } finally {}
+    }
+    
+    short shortTry(){
+      try {
+        return 4
+      } finally {}
+    }
+    
+    char charTry(){
+      try {
+        return 'c'
+      } finally {}
+    }
+    
+    float floatTry(){
+      try {
+        return 1.0
+      } finally {}
+    }
+    
+    double doubleTry(){
+      try {
+        return 2.0
+      } finally {}
+    }
 }
