@@ -6,6 +6,7 @@ package org.codehaus.groovy.ast;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.stmt.AssertStatement;
@@ -42,9 +43,22 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
     }
     
     public void visitAnnotations(AnnotatedNode node) {
-        
+        Map annotionMap = node.getAnnotations();
+        if (annotionMap.isEmpty()) return;
+        Iterator it = annotionMap.values().iterator(); 
+        while (it.hasNext()) {
+            AnnotationNode an = (AnnotationNode) it.next();
+            //skip builtin properties
+            if (an.isBuiltIn()) continue;
+            for (Iterator iter = an.getMembers().entrySet().iterator(); iter.hasNext();) {
+                Map.Entry member = (Map.Entry) iter.next();
+                String memberName = (String) member.getKey();
+                Expression memberValue = (Expression) member.getValue();
+                memberValue.visit(this);
+            }  
+        }
     }
-    
+        
     protected void visitClassCodeContainer(Statement code) {
         if (code != null) code.visit(this);
     }
