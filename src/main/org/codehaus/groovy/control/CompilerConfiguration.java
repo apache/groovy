@@ -252,6 +252,8 @@ public class CompilerConfiguration {
 
         //
         // Target bytecode
+        setTargetBytecode(getVMVersion());
+        
         text = configuration.getProperty("groovy.target.bytecode");
         if (text != null) {
             setTargetBytecode(text);
