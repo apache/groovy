@@ -2206,7 +2206,7 @@ public class AsmClassGenerator extends ClassGenerator {
             if (expression.getType()==ClassHelper.VOID_TYPE) { // nothing on the stack
                 return false;
             } else {
-                return !usesSuper((MethodCallExpression) expression);
+                return true;
             }
         }
         if (expression instanceof DeclarationExpression) {
