@@ -2600,6 +2600,7 @@ public class AsmClassGenerator extends ClassGenerator {
     private void visitAnnotationAttributes(AnnotationNode an, AnnotationVisitor av) {
         Map constantAttrs = new HashMap();
         Map enumAttrs = new HashMap();
+        Map arrayAttrs = new HashMap();
 
         Iterator mIt = an.getMembers().keySet().iterator();
         while (mIt.hasNext()) {
@@ -2614,7 +2615,9 @@ public class AsmClassGenerator extends ClassGenerator {
             else if(expr instanceof PropertyExpression) {
                 enumAttrs.put(name, expr);
             }
-            // TODO: array attributes are not yet supported
+            else if(expr instanceof ListExpression) {
+                arrayAttrs.put(name, expr);
+            }
         }
         
         for(Iterator it = constantAttrs.entrySet().iterator(); it.hasNext(); ) {
@@ -2627,6 +2630,51 @@ public class AsmClassGenerator extends ClassGenerator {
             av.visitEnum((String) entry.getKey(),
                     BytecodeHelper.getTypeDescription(propExp.getObjectExpression().getType()),
                     String.valueOf(((ConstantExpression) propExp.getProperty()).getValue()));
+        }
+        
+        visitArrayAttributes(an, arrayAttrs, av);
+    }
+    
+    private void visitArrayAttributes(AnnotationNode an, Map arrayAttr, AnnotationVisitor av) {
+        if(arrayAttr.isEmpty()) return;
+        
+        for(Iterator it = arrayAttr.entrySet().iterator(); it.hasNext(); ) {
+            Map.Entry entry = (Map.Entry) it.next();
+            String attrName = (String) entry.getKey();
+            ListExpression listExpr = (ListExpression) entry.getValue();
+            AnnotationVisitor av2 = av.visitArray(attrName);
+            List values = listExpr.getExpressions();
+            if(values.size() > 0) {
+                Expression expr = (Expression) values.get(0);
+                int arrayElementType = -1;
+                if(expr instanceof ConstantExpression) {
+                    arrayElementType = 1;
+                }
+                else if(expr instanceof ClassExpression) {
+                    arrayElementType = 2;
+                }
+                else if(expr instanceof PropertyExpression) {
+                    arrayElementType = 3;
+                }
+                for(Iterator exprIt = listExpr.getExpressions().iterator(); exprIt.hasNext(); ) {
+                    switch(arrayElementType) {
+                        case 1:
+                            av2.visit(null, ((ConstantExpression) exprIt.next()).getValue());
+                            break;
+                        case 2:
+                            av2.visit(null, Type.getType(((Expression) exprIt.next()).getType().getTypeClass()));
+                            break;
+                        case 3:
+                            PropertyExpression propExpr = (PropertyExpression) exprIt.next();
+                            av2.visitEnum(null, 
+                                    BytecodeHelper.getTypeDescription(propExpr.getObjectExpression().getType()),
+                                    String.valueOf(((ConstantExpression) propExpr.getProperty()).getValue()));
+                            break;
+                    }
+                }
+
+            }
+            av2.visitEnd();
         }
     }
     

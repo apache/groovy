@@ -45,15 +45,19 @@
  */
 package org.codehaus.groovy.classgen;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.SourceUnit;
@@ -68,7 +72,6 @@ import org.codehaus.groovy.syntax.SyntaxException;
  * - enhancing an <code>AnnotationNode</code> AST to reflect real annotation meta
  * 
  * Current limitations:
- * - array attributes are not supported
  * - annotation attributes are not supported
  * 
  * @author <a href='mailto:the[dot]mindstorm[at]gmail[dot]com'>Alex Popescu</a>
@@ -112,7 +115,7 @@ public class AnnotationVisitor {
             Expression attrExpr = (Expression) entry.getValue();
             Class attrType = getAttributeType(attrName);
             if(attrType == null) {
-                addError("Unknown attribute '" + attrName, attrExpr);
+                addError("Unknown attribute '" + attrName + "'", attrExpr);
                 break;
             }
             visitExpression(attrName, attrExpr, attrType);
@@ -143,8 +146,7 @@ public class AnnotationVisitor {
 
     protected void visitExpression(String attrName, Expression attrAst, Class attrType) {
         if(attrType.isArray()) {
-            addError("Attribute '" + attrName + "' is of Array type which is not yet supported", attrAst);
-            return;
+            visitListExpression(attrName, (ListExpression) attrAst, attrType.getComponentType());
         }
         if(attrType.isPrimitive()) {
             visitConstantExpression(attrName, (ConstantExpression) attrAst, attrType);
@@ -157,6 +159,13 @@ public class AnnotationVisitor {
         }
         else if(isEnum(attrType)) {
             visitEnumExpression(attrName, (PropertyExpression) attrAst, attrType);
+        }
+    }
+    
+    protected void visitListExpression(String attrName, ListExpression listExpr, Class elementType) {
+        List expressions = listExpr.getExpressions();
+        for (int i = 0; i < expressions.size(); i++) {
+            visitExpression(attrName, (Expression) expressions.get(i), elementType);
         }
     }
     
@@ -322,7 +331,7 @@ public class AnnotationVisitor {
     protected void addError(String msg, ASTNode expr) {
         this.errorCollector.addErrorAndContinue(
           new SyntaxErrorMessage(new SyntaxException(msg 
-                  + "in @" + this.annotationClass.getName() + '\n', 
+                  + " in @" + this.annotationClass.getName() + '\n', 
                   expr.getLineNumber(), 
                   expr.getColumnNumber()), this.source)
         );
