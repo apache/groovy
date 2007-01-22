@@ -656,7 +656,10 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
     
     protected Expression transformBinaryExpression(BinaryExpression be) {
         Expression left = transform(be.getLeftExpression());
-        if (be.getOperation().getType()==Types.ASSIGNMENT_OPERATOR && left instanceof ClassExpression){
+        int type = be.getOperation().getType();
+        if ((type==Types.ASSIGNMENT_OPERATOR || type==Types.EQUAL) && 
+            left instanceof ClassExpression)
+        {
             ClassExpression  ce = (ClassExpression) left;
             addError("you tried to assign a value to "+ce.getType().getName(),be.getLeftExpression());
             return be;
