@@ -2488,6 +2488,9 @@ public class DefaultGroovyMethods {
         } else if (clazz == Set.class) {
             if (col instanceof Set) return col;
             return new HashSet(col);
+        } else if (clazz == SortedSet.class) {
+            if (col instanceof TreeSet) return col;
+            return new TreeSet(col);
         }
         return asType((Object) col, clazz);
     }
