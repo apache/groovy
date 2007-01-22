@@ -1,6 +1,8 @@
 package gls.scope
 
-class NameResolvingTest extends GroovyTestCase {
+import gls.CompilableTestSupport
+
+class NameResolvingTest extends CompilableTestSupport {
   public void testVariableNameEqualsToAClassName() {
 	Object String = ""
 	assert String == ""
@@ -19,6 +21,12 @@ class NameResolvingTest extends GroovyTestCase {
    	     Class.forName('java.lang.Integer')
       }
       assert foo() == Integer
+    """
+  }
+  
+  public void testAssignmentToNonLocalVariableWithSameNameAsClass() {
+    shouldNotCompile """
+      String = 1    
     """
   }
 }
