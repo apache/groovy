@@ -162,7 +162,22 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
         for (int i = 0, size = s.length; i < size; i++) {
             out.write(s[i]);
             if (i < numberOfValues) {
-                InvokerHelper.write(out, values[i]);
+            final Object value = values[i];
+            
+                if (value instanceof Closure) {
+                final Closure c = (Closure)value;
+                
+                    if (c.getMaximumNumberOfParameters() == 0) {
+                        InvokerHelper.write(out, c.call(null));
+                    } else if (c.getMaximumNumberOfParameters() == 1) {
+                        c.call(new Object[]{out});
+                    } else {
+                        throw new GroovyRuntimeException("Trying to evaluate a GString containing a Closure taking "
+                                                         + c.getMaximumNumberOfParameters() + " parameters");
+                    }
+                } else {
+                    InvokerHelper.write(out, value);
+                }
             }
         }
         return out;

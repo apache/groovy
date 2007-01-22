@@ -183,4 +183,44 @@ class GStringTest extends GroovyTestCase {
         result = Integer.parseInt("1${value}3")
         assert result == 123
     }
+    
+    void testEmbeddedClosures() {
+        def c1 = {-> "hello"} 
+        def c2 = {out-> out << "world"}
+        def c3 = {a, b -> b << a}
+        def c4 = c3.curry(5)
+
+        def g1 = "${-> "hello"} ${out-> out << "world"}"
+        def g2 = "$c1 $c2"
+        def g3 = "${->c1} ${->c2}"
+        def g4 = "$c4"
+        def g5 = "$c3"
+
+        def w = new StringWriter()
+        w << g1
+        assertEquals(w.buffer.toString(), "hello world")
+        assertEquals(g1.toString(), "hello world")
+        w = new StringWriter()
+        w << g2
+        assertEquals(w.buffer.toString(), "hello world")
+        assertEquals(g2.toString(), "hello world")
+        w = new StringWriter()
+        w << g3
+        assert w.buffer.toString().contains("closure")
+        assert g3.toString().contains("closure")
+        w = new StringWriter()
+        w << g4
+        assertEquals(w.buffer.toString(), "5") 
+        assertEquals(g4.toString(), "5") 
+        try {
+            println g5
+            fail("should throw a GroovyRuntimeException")
+        } catch (GroovyRuntimeException e) {
+        }
+        try {
+            println g5.toString()
+            fail("should throw a GroovyRuntimeException")
+        } catch (GroovyRuntimeException e) {
+        }
+    }
  }
