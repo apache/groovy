@@ -100,5 +100,12 @@ class CastTest extends GroovyTestCase {
         assert dd.class.name == 'java.lang.Double'
 
     }
+    
+    void testAsSet() {
+    	def mySet = [2, 3, 4, 3] as SortedSet
+    	assert mySet instanceof SortedSet
+    	mySet = [2, 3, 4, 3] as Set
+    	assert mySet instanceof HashSet
+    }
 
 }
