@@ -612,6 +612,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
     protected Parameter parameter(AST paramNode) {
         List annotations = new ArrayList();
+        boolean variableParameterDef = isType(VARIABLE_PARAMETER_DEF,paramNode);
         AST node = paramNode.getFirstChild();
 
         int modifiers = 0;
@@ -623,6 +624,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         ClassNode type = ClassHelper.DYNAMIC_TYPE;
         if (isType(TYPE, node)) {
             type = makeType(node);
+            if (variableParameterDef) type = type.makeArray();
             node = node.getNextSibling();
         }
 
