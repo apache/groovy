@@ -98,14 +98,14 @@ public class ErrorCollector {
             if (errors==null) {
                 errors = er.errors;
             } else {
-                errors.addAll(errors);
+                errors.addAll(er.errors);
             }
         }
         if (er.warnings!=null) {
             if (warnings==null) {
                 warnings = er.warnings;
             } else {
-                warnings.addAll(warnings);
+                warnings.addAll(er.warnings);
             }            
         }
     }
