@@ -640,6 +640,7 @@ public class ScriptBytecodeAdapter {
      * @throws Throwable 
      */
     public static Object asType(Object object, Class type) throws Throwable {
+        if (object==null) object = NullObject.getNullObject();
         return invokeMethodN(object.getClass(),object,"asType",new Object[]{type});
     }
     

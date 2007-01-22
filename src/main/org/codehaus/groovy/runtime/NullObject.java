@@ -127,4 +127,8 @@ public class NullObject extends GroovyObjectSupport {
       return other==null;
   }
   
+  public Object asType(Class c) {
+      return null;
+  }
+  
 }

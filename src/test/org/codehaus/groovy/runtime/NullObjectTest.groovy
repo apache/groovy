@@ -15,4 +15,13 @@ class NullObjectTest extends GroovyTestCase {
         assert a[3] == a[4]
         assert a[2].equals(a[4])
     }
+    
+    void testAsExpression() {
+      assert null as String == null
+    }
+    
+    void testIs(){
+      assert null.is(null)
+    }
+    
 }
