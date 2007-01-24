@@ -71,8 +71,6 @@ class MapTest extends GroovyTestCase {
 
         assert m['def'] == 134
 
-        println(m['xyz'])
-        
         m['def'] = 'cafebabe'
 
         assert m['def'] == 'cafebabe'
@@ -83,6 +81,10 @@ class MapTest extends GroovyTestCase {
 
         assert m['def'] == null
         assert m.size() == 2
+        
+        def foo = m['def'] = 5
+        assert m['def'] == 5
+        assert foo == null
     }
 
     void testFindAll(){

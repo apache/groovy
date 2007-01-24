@@ -2201,7 +2201,8 @@ public class DefaultGroovyMethods {
      * @return the value corresponding to the given key
      */
     public static Object putAt(Map self, Object key, Object value) {
-        return self.put(key, value);
+        self.put(key, value);
+        return value;
     }
 
     /**
