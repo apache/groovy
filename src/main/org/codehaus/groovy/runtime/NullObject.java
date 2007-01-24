@@ -77,22 +77,26 @@ public class NullObject extends GroovyObjectSupport {
   }
 
   /**
+   * Tries to get a property on null, which will always fail
    * @param property - the property to get
    * @returns a NPE
    **/
   public Object getProperty(String property) {
     throw new NullPointerException("Cannot get property " + property + "() on null object");
   }
-
+  
   /**
-   * @param property - the property to set
+   * Tries to set a property on null, which will always fail
+   * @param property - the proprty to set
+   * @param newValue - the new value of the property
    * @returns a NPE
-   **/
-  public Object setProperty(String property) {
-    throw new NullPointerException("Cannot set property " + property + "() on null object");
+   */
+  public void setProperty(String property, Object newValue) {
+      throw new NullPointerException("Cannot set property " + property + "() on null object");
   }
 
   /**
+   * Tries to invoke a method on null, which will always fail
    * @param name the name of the method to invoke
    * @param args - arguments to the method
    * @returns a NPE
@@ -103,6 +107,7 @@ public class NullObject extends GroovyObjectSupport {
   }
 
   /**
+   * null is only equal to null
    * @param to - the reference object with which to compare
    * @returns - true if this object is the same as the to argument
    **/
@@ -119,16 +124,43 @@ public class NullObject extends GroovyObjectSupport {
       return Collections.EMPTY_LIST.iterator();
   }
   
+  /**
+   * Allows to add a String to null. 
+   * The result is concatenated String of "null" and the
+   * String in the parameter. 
+   * @param s - the String to concatenate
+   * @return the concatenated string
+   */
   public Object plus(String s){
       return "null"+s;
   }
   
+  /**
+   * The method "is" is used to test for equal references.
+   * This method will return true only if the given parameter
+   * is null
+   * @param other - the object to test
+   * @return true if other is null
+   */
   public boolean is(Object other) {
       return other==null;
   }
   
+  /**
+   * Type conversion method for null.
+   * @param c - the class to convert to
+   * @return always null
+   */
   public Object asType(Class c) {
       return null;
+  }
+
+  public String toString(){
+      throw new NullPointerException("toString() not allowed on null");
+  }
+  
+  public int hashCode() {
+      throw new NullPointerException("hashCode() not allowed on null");
   }
   
 }
