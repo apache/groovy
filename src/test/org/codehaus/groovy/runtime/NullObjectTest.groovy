@@ -9,6 +9,15 @@ class NullObjectTest extends GroovyTestCase {
           // is successfull
         }
     }
+    
+    void testtoStringMethod() {
+        def foo = null
+        try {
+          println foo.toString()
+        } catch (NullPointerException ex) {
+          // is successfull
+        }
+    }
 
     void testEquals() {
         def a = [1]
