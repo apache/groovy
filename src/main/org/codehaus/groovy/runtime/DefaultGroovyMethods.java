@@ -718,6 +718,23 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * Iterates over every element of a collection, and check whether all elements are true according to the Groovy Truth.
+     * Equivalent to self.every({element -> element})
+     *
+     * @param self    the object over which we iterate
+     * @return true if every item in the collection matches the closure
+     *         predicate
+     */
+    public static boolean every(Object self) {
+        for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
+            if (!DefaultTypeTransformation.castToBoolean(iter.next())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
      * Iterates over every element of a collection, and check whether a predicate is valid for at least one element
      *
      * @param self    the object over which we iterate
@@ -727,6 +744,22 @@ public class DefaultGroovyMethods {
     public static boolean any(Object self, Closure closure) {
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
             if (DefaultTypeTransformation.castToBoolean(closure.call(iter.next()))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Iterates over every element of a collection, and check whether at least one element is true according to the Groovy Truth.
+     * Equivalent to self.any({element -> element})
+     *
+     * @param self    the object over which we iterate
+     * @return true if any item in the collection matches the closure predicate
+     */
+    public static boolean any(Object self) {
+        for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
+            if (DefaultTypeTransformation.castToBoolean(iter.next())) {
                 return true;
             }
         }
@@ -1003,7 +1036,7 @@ public class DefaultGroovyMethods {
     /**
      * Groups all map members into groups determined by the
      * supplied mapping closure.
-     * 
+     *
      * @param self     a map to group
      * @param closure  a closure mapping entries on keys
      * @return         a new Map grouped by keys
@@ -1017,15 +1050,15 @@ public class DefaultGroovyMethods {
         return answer;
     }
     */
-    
+
     /**
      * Groups the current element of the iterator as determined
      * by the mapping closure.
-     * 
+     *
      * @param closure  a closure mapping the current entry on a key
      * @param answer   the map containing the results
      * @param iter     the iterator from which the current element stems
-     */   
+     */
     private static void groupCurrentElement(Closure closure, Map answer, Iterator iter) {
 	Object element = iter.next();
 	Object value = closure.call(element);
@@ -1037,7 +1070,7 @@ public class DefaultGroovyMethods {
 	    answer.put(value, groupedElements);
 	}
     }
-    
+
     // internal helper method
     protected static Object callClosureForMapEntry(Closure closure, Map.Entry entry) {
         if (closure.getMaximumNumberOfParameters() == 2) {
@@ -3522,7 +3555,7 @@ public class DefaultGroovyMethods {
     public static String plus(String left, Object value) {
         return left + toString(value);
     }
-    
+
     /**
      * Appends a String
      *
@@ -3732,7 +3765,7 @@ public class DefaultGroovyMethods {
             	commandArray[i] = it.next().toString();
         	}
         } else {
-        	commandArray = null;	
+        	commandArray = null;
         }
         return execute(self, commandArray, dir);
     }
@@ -4059,7 +4092,7 @@ public class DefaultGroovyMethods {
      * multiply(BigDecimal) method in BigDecimal would respond
      * and return a BigDecimal instead. Since BigDecimal is prefered
      * over Number, the Number*Number method is not choosen as in older
-     * versions of Groovy. 
+     * versions of Groovy.
      *
      * @param left  a BigDecimal
      * @param right a Double
@@ -4068,7 +4101,7 @@ public class DefaultGroovyMethods {
     public static Number multiply(BigDecimal left, Double right) {
         return NumberMath.multiply(left, right);
     }
-    
+
     /**
      * Multiply a BigDecimal and a BigInteger.
      * Note: This method was added to enforce the Groovy rule of
@@ -4086,7 +4119,7 @@ public class DefaultGroovyMethods {
     public static Number multiply(BigDecimal left, BigInteger right) {
         return NumberMath.multiply(left, right);
     }
-    
+
     /**
      * Power of a Number to a certain exponent
      *
@@ -4917,6 +4950,18 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * Helper method to create an object output stream from the given file.
+     *
+     * @param file a file
+     * @return an object output stream
+     * @throws FileNotFoundException
+     * @throws IOException
+     */
+    public static ObjectOutputStream newObjectOutputStream(File file) throws IOException {
+        return new ObjectOutputStream(new FileOutputStream(file));
+    }
+
+    /**
      * Iterates through the given file object by object
      *
      * @param self    a File
@@ -4963,6 +5008,30 @@ public class DefaultGroovyMethods {
                 }
             }
         }
+    }
+
+    /**
+     * Helper method to create a new ObjectInputStream for a file and then
+     * passes it into the closure and ensures its closed again afterwords
+     *
+     * @param file a File
+     * @param closure a closure
+     * @throws FileNotFoundException
+     */
+    public static void withObjectInputStream(File file, Closure closure) throws IOException {
+        withStream(newObjectInputStream(file), closure);
+    }
+
+    /**
+     * Helper method to create a new ObjectOutputStream for a file and then
+     * passes it into the closure and ensures its closed again afterwords
+     *
+     * @param file a File
+     * @param closure a closure
+     * @throws FileNotFoundException
+     */
+    public static void withObjectOutputStream(File file, Closure closure) throws IOException {
+        withStream(newObjectOutputStream(file), closure);
     }
 
     /**
@@ -5230,7 +5299,7 @@ public class DefaultGroovyMethods {
      */
     public static String getText(BufferedReader reader) throws IOException {
         StringBuffer answer = new StringBuffer();
-        // reading the content of the file within a char buffer 
+        // reading the content of the file within a char buffer
         // allow to keep the correct line endings
         char[] charBuffer = new char[4096];
         int nbCharRead /* = 0*/;
@@ -5562,6 +5631,7 @@ public class DefaultGroovyMethods {
      * passes it into the closure and ensures its closed again afterwords
      *
      * @param file
+     * @param closure a closure
      * @throws FileNotFoundException
      */
     public static void withReader(File file, Closure closure) throws IOException {
@@ -5579,10 +5649,21 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * Helper method to create a data output stream for a file
+     *
+     * @param file
+     * @throws FileNotFoundException
+     */
+    public static DataOutputStream newDataOutputStream(File file) throws IOException {
+        return new DataOutputStream(new FileOutputStream(file));
+    }
+
+    /**
      * Helper method to create a new OutputStream for a file and then
      * passes it into the closure and ensures its closed again afterwords
      *
      * @param file a File
+     * @param closure a closure
      * @throws FileNotFoundException
      */
     public static void withOutputStream(File file, Closure closure) throws IOException {
@@ -5594,10 +5675,35 @@ public class DefaultGroovyMethods {
      * passes it into the closure and ensures its closed again afterwords
      *
      * @param file a File
+     * @param closure a closure
      * @throws FileNotFoundException
      */
     public static void withInputStream(File file, Closure closure) throws IOException {
         withStream(newInputStream(file), closure);
+    }
+
+    /**
+     * Helper method to create a new DataOutputStream for a file and then
+     * passes it into the closure and ensures its closed again afterwords
+     *
+     * @param file a File
+     * @param closure a closure
+     * @throws FileNotFoundException
+     */
+    public static void withDataOutputStream(File file, Closure closure) throws IOException {
+        withStream(newDataOutputStream(file), closure);
+    }
+
+    /**
+     * Helper method to create a new DataInputStream for a file and then
+     * passes it into the closure and ensures its closed again afterwords
+     *
+     * @param file a File
+     * @param closure a closure
+     * @throws FileNotFoundException
+     */
+    public static void withDataInputStream(File file, Closure closure) throws IOException {
+        withStream(newDataInputStream(file), closure);
     }
 
     /**
@@ -5951,6 +6057,17 @@ public class DefaultGroovyMethods {
      */
     public static BufferedInputStream newInputStream(File file) throws FileNotFoundException {
         return new BufferedInputStream(new FileInputStream(file));
+    }
+
+    /**
+     * Helper method to create a data input stream for a file
+     *
+     * @param file a File
+     * @return a DataInputStream of the file
+     * @throws FileNotFoundException
+     */
+    public static DataInputStream newDataInputStream(File file) throws FileNotFoundException {
+        return new DataInputStream(new FileInputStream(file));
     }
 
     /**
@@ -6631,11 +6748,11 @@ public class DefaultGroovyMethods {
     public static Object asType(Object obj, Class type) {
         return DefaultTypeTransformation.castToType(obj, type);
     }
-    
+
     public static Object newInstance(Class c) {
-        return InvokerHelper.getInstance().invokeConstructorOf(c,null);        
+        return InvokerHelper.getInstance().invokeConstructorOf(c,null);
     }
-    
+
     public static Object newInstance(Class c, Object[] args) {
         if (args==null) args=new Object[]{null};
         return InvokerHelper.getInstance().invokeConstructorOf(c,args);
@@ -6917,5 +7034,4 @@ public class DefaultGroovyMethods {
     public static Iterator iterator(Iterator it) {
         return it;
     }
-
 }
