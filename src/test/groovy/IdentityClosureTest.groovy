@@ -1,3 +1,5 @@
+package groovy
+
 /**
  * Check that Object.identity(Closure) method works as expected
  *

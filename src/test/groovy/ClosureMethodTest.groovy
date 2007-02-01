@@ -1,4 +1,4 @@
-import java.io.File
+package groovy
 
 /** 
  * Tests the various Closure methods in Groovy

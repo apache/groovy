@@ -1,3 +1,5 @@
+package groovy
+
 class IntegerOperationTest extends GroovyTestCase {
 
     def x

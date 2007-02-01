@@ -1,3 +1,5 @@
+package groovy
+
 class OptionalReturnTest extends GroovyTestCase {
 
 	def y

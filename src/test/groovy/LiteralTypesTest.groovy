@@ -1,5 +1,4 @@
-import java.math.BigDecimal;
-import java.math.BigInteger;
+package groovy
 
 /**
  * Test numeric literal types (with and without suffixes)

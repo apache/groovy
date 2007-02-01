@@ -1,3 +1,5 @@
+package groovy
+
 class DollarEscapingTest extends GroovyTestCase {
 
     void testEscaping() {

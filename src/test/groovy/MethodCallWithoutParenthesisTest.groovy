@@ -1,3 +1,5 @@
+package groovy
+
 class MethodCallWithoutParenthesisTest extends GroovyTestCase {
 
     def flag

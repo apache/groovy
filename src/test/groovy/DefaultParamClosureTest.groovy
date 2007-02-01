@@ -1,3 +1,5 @@
+package groovy
+
 class DefaultParamClosureTest extends GroovyTestCase {
 
     void testDefaultParameters() {

@@ -1,3 +1,5 @@
+package groovy
+
 class MinusEqualsTest extends GroovyTestCase {
 
     void testIntegerMinusEquals() {

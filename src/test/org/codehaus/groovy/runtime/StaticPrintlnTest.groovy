@@ -1,3 +1,5 @@
+package org.codehaus.groovy.runtime;
+
 import groovy.bugs.TestSupport
 
 class StaticPrintlnTest extends TestSupport {

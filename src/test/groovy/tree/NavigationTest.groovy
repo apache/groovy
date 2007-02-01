@@ -1,4 +1,4 @@
-
+package groovy.tree
 
 /**
  * Simple test of tree walking

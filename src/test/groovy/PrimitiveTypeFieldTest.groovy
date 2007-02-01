@@ -1,3 +1,5 @@
+package groovy
+
 class PrimitiveTypeFieldTest extends GroovyTestCase {
     private long longField
     private static short shortField

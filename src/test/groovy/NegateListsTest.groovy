@@ -1,3 +1,5 @@
+package groovy
+
 /** 
  * Test to negate lists in Classic Groovy.
  * Test to check whether a given function is even/odd on a given domain.

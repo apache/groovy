@@ -1,4 +1,4 @@
-import java.util.ArrayList
+package groovy
 
 /** 
  * Tests iterating using Groovy

@@ -1,3 +1,5 @@
+package groovy
+
 /**
  * @TODO: GROOVY-1037
  *

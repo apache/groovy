@@ -1,3 +1,5 @@
+package groovy
+
 class IfPropertyTest extends GroovyTestCase {
 	
     def dummy

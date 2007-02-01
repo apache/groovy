@@ -1,6 +1,6 @@
 #! /usr/bin/env groovy 
 
-import java.io.IOException
+package groovy
 
 /**
  *  Test to ensure that the execute mechanism works fine on Linux and Solaris.  For these OSs we

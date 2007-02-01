@@ -1,3 +1,5 @@
+package groovy
+
 class CurlyBracketLayoutTest extends GroovyTestCase
 {
     void testBracketPlacement()

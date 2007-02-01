@@ -1,5 +1,4 @@
-
-import java.util.Date
+package groovy
 
 /** 
  * A test case for switch statement with different types

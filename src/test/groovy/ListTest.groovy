@@ -1,3 +1,5 @@
+package groovy
+
 class ListTest extends GroovyTestCase {
 
     void testList() {

@@ -1,3 +1,5 @@
+package groovy
+
 class ThisAndSuperTest extends GroovyTestCase{
 	void testOverwrittenSuperMethod(){
 		def helper = new TestForSuperHelper2()

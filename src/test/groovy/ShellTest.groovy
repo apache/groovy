@@ -1,3 +1,5 @@
+package groovy
+
 class ShellTest extends GroovyTestCase {
 
     void testReadAndWriteVariable() {

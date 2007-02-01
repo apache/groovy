@@ -1,3 +1,5 @@
+package groovy
+
 class PlusEqualsTest extends GroovyTestCase {
 
     void testIntegerPlusEquals() {

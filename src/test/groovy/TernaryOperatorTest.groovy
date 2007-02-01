@@ -1,3 +1,5 @@
+package groovy
+
 class TernaryOperatorTest extends GroovyTestCase {
 
     void testSimpleUse() {

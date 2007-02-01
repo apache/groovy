@@ -46,8 +46,6 @@
 
 package groovy.bugs;
 
-import org.codehaus.groovy.classgen.TestSupport;
-
 
 /**
  * @author <a href="mailto:jstrachan@protique.com">James Strachan</a>

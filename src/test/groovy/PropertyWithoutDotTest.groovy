@@ -1,3 +1,5 @@
+package groovy
+
 class PropertyWithoutDotTest extends GroovyTestCase {
     def getFoo() {
         return "cheese"

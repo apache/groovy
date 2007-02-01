@@ -1,3 +1,5 @@
+package groovy
+
 class TryCatchTest extends GroovyTestCase {
 
     def exceptionCalled

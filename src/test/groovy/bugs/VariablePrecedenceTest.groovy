@@ -1,3 +1,5 @@
+package groovy.bugs
+
 class VariablePrecedenceTest extends GroovyTestCase {
     def x = 100
     def y = 93

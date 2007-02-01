@@ -1,4 +1,4 @@
-import groovy.DummyInterface
+package groovy
 
 class ArrayParamMethodTest extends GroovyTestCase implements DummyInterface {
 

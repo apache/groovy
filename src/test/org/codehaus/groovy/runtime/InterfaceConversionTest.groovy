@@ -1,3 +1,5 @@
+package org.codehaus.groovy.runtime;
+
 class InterfaceConversionTest extends GroovyTestCase {
  
   void testClosureConversion(){

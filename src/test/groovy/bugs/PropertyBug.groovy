@@ -1,3 +1,5 @@
+package groovy.bugs
+
 import javax.swing.JButton
 import javax.swing.JPanel
 

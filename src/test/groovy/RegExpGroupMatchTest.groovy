@@ -1,3 +1,5 @@
+package groovy
+
 /**
  * Test for fixing the Jira issue GROOVY-1000
  *

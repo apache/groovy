@@ -1,3 +1,5 @@
+package groovy
+
 class ArrayTest extends GroovyTestCase {
 
     void testFixedSize() {

@@ -1,3 +1,5 @@
+package groovy
+
 class HeredocsTest extends GroovyTestCase {
 
     void testHeredocs() {

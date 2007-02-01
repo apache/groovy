@@ -1,3 +1,5 @@
+package groovy
+
 class WhileLoopTest extends GroovyTestCase {
 
     void testVerySimpleWhile() {

@@ -1,3 +1,5 @@
+package groovy
+
 class LogicTest extends GroovyTestCase {
 
     void testAndWithTrue() {

@@ -1,3 +1,5 @@
+package groovy
+
 class CompilerErrorTest extends GroovyTestCase {
 
     void testBadMethodName() {

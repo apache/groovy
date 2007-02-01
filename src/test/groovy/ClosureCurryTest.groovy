@@ -1,5 +1,7 @@
+package groovy
+
 /** 
- * @author Hallvard Tr¾tteberg
+ * @author Hallvard Trï¿½tteberg
  * @version $Revision$
  */
 class ClosureCurryTest extends GroovyTestCase {

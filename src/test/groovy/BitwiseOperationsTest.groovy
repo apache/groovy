@@ -1,3 +1,5 @@
+package groovy
+
 /** 
  * Test Bitwise Operations in Classic/New Groovy
  * 

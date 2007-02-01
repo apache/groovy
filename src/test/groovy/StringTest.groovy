@@ -1,3 +1,5 @@
+package groovy
+
 class StringTest extends GroovyTestCase {
 
     void testString() {

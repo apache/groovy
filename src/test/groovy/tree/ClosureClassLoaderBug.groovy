@@ -1,3 +1,5 @@
+package groovy.tree
+
 class ClosureClassLoaderBug extends GroovyTestCase {
     def b
     def EXPECTED = 'root1[attributes={}; value=[elem1[attributes={}; value=hello1]]]'

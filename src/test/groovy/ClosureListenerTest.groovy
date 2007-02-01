@@ -1,5 +1,6 @@
+package groovy
+
 import javax.swing.JButton
-import java.util.Arrays
 
 /**
  * @version $Revision$

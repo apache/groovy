@@ -1,3 +1,5 @@
+package groovy.util
+
 import groovy.util.XmlParser
 
 if (args.size() < 1) {

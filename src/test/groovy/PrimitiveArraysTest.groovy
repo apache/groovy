@@ -1,3 +1,5 @@
+package groovy
+
 class PrimitiveArraysTest extends GroovyTestCase {
 
     def c1Field = [] as char[]

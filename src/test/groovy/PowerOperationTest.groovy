@@ -1,3 +1,5 @@
+package groovy
+
 /** 
  * Test Math Power Operation in Classic/New Groovy
  * 

@@ -1,3 +1,5 @@
+package groovy.bugs
+
 /**
  * @author Zohar Melamed
  * @version $Revision$

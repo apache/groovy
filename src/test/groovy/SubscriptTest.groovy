@@ -1,3 +1,5 @@
+package groovy
+
 class SubscriptTest extends GroovyTestCase {
 
     void testListRange() {

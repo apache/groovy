@@ -1,3 +1,5 @@
+package groovy
+
 /**
  * Tests iterating with local variables
  */

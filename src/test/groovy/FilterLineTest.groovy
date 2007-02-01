@@ -1,3 +1,5 @@
+package groovy
+
 /**
  * check that the new filterLine() method on InputStream is ok
  * (and indirectly test newReader() method on InputStream)
@@ -6,8 +8,6 @@
  * @author <a href="mailto:jeremy.rayner@bigfoot.com">Jeremy Rayner</a>
  * @version $Revision$
  */
-
-import java.io.*
 
 class FilterLineTest extends GroovyTestCase {
 	def myFile

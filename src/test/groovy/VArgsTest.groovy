@@ -1,3 +1,5 @@
+package groovy
+
 class VArgsTest extends GroovyTestCase {
 
   def primitiveMethod(){0}

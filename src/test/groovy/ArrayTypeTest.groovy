@@ -1,3 +1,5 @@
+package groovy
+
 class ArrayTypeTest extends GroovyTestCase {
 
     void testClosureWithTypedParam() {

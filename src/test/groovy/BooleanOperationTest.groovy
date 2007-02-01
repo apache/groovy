@@ -1,3 +1,5 @@
+package groovy
+
 class BooleanOperationTest extends GroovyTestCase {
 
     void testComparisons() {

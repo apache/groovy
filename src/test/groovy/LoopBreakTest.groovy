@@ -1,3 +1,5 @@
+package groovy
+
 class LoopBreakTest extends GroovyTestCase {
 
     void testWhileWithBreak() {

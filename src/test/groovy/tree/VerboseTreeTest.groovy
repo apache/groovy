@@ -1,3 +1,5 @@
+package groovy.tree
+
 /**
  * This test uses the verbose syntax to test the building of trees
  * using GroovyMarkup

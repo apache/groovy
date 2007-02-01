@@ -1,3 +1,5 @@
+package groovy
+
 class ArrayCoerceTest extends GroovyTestCase {
 
     Object[] field

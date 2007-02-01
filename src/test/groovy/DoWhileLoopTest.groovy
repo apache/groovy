@@ -1,3 +1,5 @@
+package groovy
+
 class DoWhileLoopTest extends GroovyTestCase {
 
     void testDoWhileWhile() {

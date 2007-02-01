@@ -1,3 +1,5 @@
+package groovy
+
 class ClassLoaderBug extends GroovyTestCase {
     
     static void main(args) {

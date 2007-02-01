@@ -1,4 +1,4 @@
-import java.io.File
+package groovy.script
 
 class ScriptTest extends GroovyTestCase {
     void testScripts() {

@@ -1,3 +1,5 @@
+package groovy
+
 /**
  * check that the new asImmutable() method works
  * as specified in GROOVY-623

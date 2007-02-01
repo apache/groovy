@@ -1,3 +1,5 @@
+package groovy
+
 class IfElseCompactTest extends GroovyTestCase {
 
     void testIf_NoElse() {

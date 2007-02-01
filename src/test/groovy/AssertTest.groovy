@@ -1,3 +1,5 @@
+package groovy
+
 class AssertTest extends GroovyTestCase {
 
     void testAssert() {

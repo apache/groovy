@@ -1,3 +1,5 @@
+package groovy.tree
+
 /**
  * Test case for a bug with nested closures
  */

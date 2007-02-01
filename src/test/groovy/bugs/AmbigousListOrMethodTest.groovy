@@ -1,3 +1,5 @@
+package groovy.bugs
+
 class AmbigousListOrMethodTest extends GroovyTestCase {
 
     void testLocalVariableVersion() {

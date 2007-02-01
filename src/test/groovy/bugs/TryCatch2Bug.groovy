@@ -1,3 +1,5 @@
+package groovy.bugs
+
 /**
  * @author Morgan Hankins 
  * @version $Revision$

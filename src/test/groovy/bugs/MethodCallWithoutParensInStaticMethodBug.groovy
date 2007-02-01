@@ -1,3 +1,5 @@
+package groovy.bugs
+
 class MethodCallWithoutParensInStaticMethodBug extends GroovyTestCase {
 
     void testBug() {

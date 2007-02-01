@@ -1,3 +1,4 @@
+package groovy
 
 class GeneratorTest extends GroovyTestCase {
 

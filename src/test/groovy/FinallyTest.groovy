@@ -1,3 +1,5 @@
+package groovy
+
 class FinallyTest extends GroovyTestCase{
  
   void testBreakInTry() {

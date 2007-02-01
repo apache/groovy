@@ -1,3 +1,5 @@
+package groovy.bugs
+
 /**
  * Mixes variables, closures and method calls in markup
  *

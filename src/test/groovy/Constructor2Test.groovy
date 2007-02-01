@@ -1,3 +1,5 @@
+package groovy
+
 class Constructor2Test extends GroovyTestCase {
 
     Constructor2Test() {

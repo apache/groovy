@@ -1,3 +1,5 @@
+package groovy.bugs
+
 import junit.framework.TestCase
 
 /**

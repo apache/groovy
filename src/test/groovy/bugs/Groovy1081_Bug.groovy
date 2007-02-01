@@ -1,3 +1,5 @@
+package groovy.bugs
+
 /**
  *  Verifies that DefaultGroovyMethods.transformLine(Reader, Writer, Closure)
  *  actually writes its output.

@@ -1,3 +1,5 @@
+package groovy
+
 class StaticMessageTest extends GroovyTestCase {
 
    void testStaticMissingMethodException() {

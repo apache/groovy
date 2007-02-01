@@ -1,3 +1,5 @@
+package groovy
+
 class ChainedAssignmentTest extends GroovyTestCase {
 
     def dummy(v) {

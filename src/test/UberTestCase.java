@@ -7,6 +7,7 @@
  */
 import junit.framework.*;
 import groovy.util.AllTestSuite;
+import groovy.ExecuteTest_LinuxSolaris;
 
 public class UberTestCase extends TestCase {
     public static Test suite() {

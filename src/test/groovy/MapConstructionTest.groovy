@@ -1,5 +1,4 @@
-import java.util.HashMap
-import java.util.Map
+package groovy
 
 /** 
  * Tests creating Maps in Groovy

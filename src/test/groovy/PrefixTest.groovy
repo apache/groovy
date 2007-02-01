@@ -1,3 +1,5 @@
+package groovy
+
 class PrefixTest extends GroovyTestCase {
 
     void testIntegerPrefix() {

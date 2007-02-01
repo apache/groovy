@@ -1,3 +1,5 @@
+package groovy
+
 class LeftShiftTest extends GroovyTestCase {
 
     def foo = [1, 2, 3]

@@ -1,4 +1,4 @@
-import groovy.OuterUser
+package groovy
 
 /**
  * Checks that it's possible to call inner classes constructor from groovy

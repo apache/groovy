@@ -1,3 +1,5 @@
+package groovy.util
+
 class OrderByTest extends GroovyTestCase {
 
     void testSortByOneField() {

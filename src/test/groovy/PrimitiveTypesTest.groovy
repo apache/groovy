@@ -1,3 +1,5 @@
+package groovy
+
 class PrimitiveTypesTest extends GroovyTestCase {
 
 	int getInt() {

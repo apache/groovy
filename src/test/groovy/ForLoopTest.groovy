@@ -1,6 +1,6 @@
-import groovy.bugs.TestSupport
+package groovy
 
-import java.util.Vector
+import groovy.bugs.TestSupport
 
 class ForLoopTest extends GroovyTestCase {
 

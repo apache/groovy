@@ -1,4 +1,4 @@
-import java.util.ArrayList
+package groovy.benchmarks
 
 class Loop {
   def array = new ArrayList()

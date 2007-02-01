@@ -1,3 +1,5 @@
+package groovy.bugs
+
 /**
  *  Verifies that closures work inside case blocks.
  *

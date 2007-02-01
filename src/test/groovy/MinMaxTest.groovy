@@ -1,3 +1,5 @@
+package groovy
+
 /** 
  * Tests the min() and max() functions
  * 

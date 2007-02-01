@@ -1,3 +1,5 @@
+package groovy
+
 /**
  * Tests the regular expression syntax.
  *

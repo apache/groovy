@@ -1,7 +1,5 @@
 package groovy.bugs
 
-import org.codehaus.groovy.classgen.TestSupport
-
 /**
  * @version $Revision: 1.5 $
  */

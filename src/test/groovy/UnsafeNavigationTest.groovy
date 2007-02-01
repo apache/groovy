@@ -1,3 +1,5 @@
+package groovy
+
 class UnsafeNavigationTest extends GroovyTestCase {
 
     void testUnsafePropertyNavigations() {

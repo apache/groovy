@@ -1,3 +1,5 @@
+package groovy
+
 class PrintTest extends GroovyTestCase {
 
     void testToString_FAILS() { if (notYetImplemented()) return

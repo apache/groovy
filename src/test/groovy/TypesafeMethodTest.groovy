@@ -1,3 +1,5 @@
+package groovy
+
 class TypesafeMethodTest extends GroovyTestCase {
 
     void testTypesafeMethod() {

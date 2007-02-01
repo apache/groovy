@@ -1,3 +1,5 @@
+package groovy
+
 /**
  * @version $Revision: 1.4 $
  */

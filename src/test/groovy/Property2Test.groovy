@@ -1,3 +1,5 @@
+package groovy
+
 /** 
  * was: Tests the use of new def methods in Groovy: eachProperty(), eachPropertyName(), and
  * allProperties().

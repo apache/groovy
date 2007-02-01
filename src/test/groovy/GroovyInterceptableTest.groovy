@@ -1,3 +1,5 @@
+package groovy
+
 import org.codehaus.groovy.runtime.ReflectionMethodInvoker
 
 class GroovyInterceptableTest extends GroovyTestCase {

@@ -1,3 +1,6 @@
+package groovy
+
+
 class Base64Test extends GroovyTestCase {
 
     void testCodec() {

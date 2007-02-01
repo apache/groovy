@@ -1,3 +1,5 @@
+package groovy
+
 class DefaultParamTest extends GroovyTestCase {
 
     void testDefaultParameters() {

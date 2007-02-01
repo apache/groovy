@@ -1,4 +1,4 @@
-import org.codehaus.groovy.classgen.TestSupport
+package groovy.bugs
 
 /**
  * @version $Revision$

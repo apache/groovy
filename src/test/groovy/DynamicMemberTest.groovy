@@ -1,3 +1,4 @@
+package groovy
 
 class DynamicMemberTest extends GroovyTestCase {
   def aTestMethod(o){o}

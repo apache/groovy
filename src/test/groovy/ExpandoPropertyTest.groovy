@@ -1,3 +1,5 @@
+package groovy
+
 class ExpandoPropertyTest extends GroovyTestCase {
 
     void testExpandoProperty() {

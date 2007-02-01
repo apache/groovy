@@ -1,3 +1,5 @@
+package groovy
+
 class NamedParameterTest extends GroovyTestCase {
 
     void testPassingNamedParametersToMethod() {

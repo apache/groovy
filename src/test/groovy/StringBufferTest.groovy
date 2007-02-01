@@ -1,3 +1,5 @@
+package groovy
+
 class StringBufferTest extends GroovyTestCase {
     void testSize() {
         def x = new StringBuffer()

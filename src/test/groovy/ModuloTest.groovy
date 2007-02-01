@@ -1,3 +1,5 @@
+package groovy
+
 class ModuloTest extends GroovyTestCase {
   int modulo = 100
 

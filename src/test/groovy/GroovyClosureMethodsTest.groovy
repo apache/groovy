@@ -1,3 +1,4 @@
+package groovy
 
 /**
  * Test case for the eachObject method on a file containing

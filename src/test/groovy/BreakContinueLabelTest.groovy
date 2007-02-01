@@ -1,3 +1,5 @@
+package groovy
+
 /**
  * todo: add BreakContinueLabelWithClosureTest (when break is used to return from a Closure)
 

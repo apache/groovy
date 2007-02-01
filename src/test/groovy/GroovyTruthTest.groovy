@@ -1,3 +1,4 @@
+package groovy
 
 class GroovyTruthTest extends GroovyTestCase {
 

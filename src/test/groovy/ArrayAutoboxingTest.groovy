@@ -1,3 +1,5 @@
+package groovy
+
 class ArrayAutoboxingTest extends GroovyTestCase {
     
     void testUnwantedAutoboxingWhenInvokingMethods() {

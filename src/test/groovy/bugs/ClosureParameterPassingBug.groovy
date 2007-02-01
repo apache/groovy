@@ -1,3 +1,5 @@
+package groovy.bugs
+
 import org.codehaus.groovy.classgen.TestSupport
 
 /**

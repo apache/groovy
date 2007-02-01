@@ -1,3 +1,4 @@
+package groovy
 /**
  * check that text def is available on...
  *
@@ -11,8 +12,6 @@
  * @author <a href="mailto:jeremy.rayner@bigfoot.com">Jeremy Rayner</a>
  * @version $Revision$
  */
-
-import java.io.*
 
 class TextPropertyTest extends GroovyTestCase {
     def myReader

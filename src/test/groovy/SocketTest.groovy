@@ -1,12 +1,10 @@
+package groovy
 /**
  * check that groovy Socket methods do their job.
  *
  * @author <a href="mailto:jeremy.rayner@bigfoot.com">Jeremy Rayner</a>
  * @version $Revision$
  */
-
-import java.io.*
-import java.net.*
 
 class SocketTest extends GroovyTestCase {
     def mySocket

@@ -1,3 +1,5 @@
+package groovy
+
 class RangeTest extends GroovyTestCase {
 	
 	void testRange() {

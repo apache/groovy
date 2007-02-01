@@ -1,3 +1,5 @@
+package groovy
+
 class GlobalPrintlnTest extends GroovyTestCase {
 
     void testGlobalPrintln() {

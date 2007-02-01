@@ -1,7 +1,6 @@
+package org.codehaus.groovy.wiki;
+
 import groovy.util.XmlParser
-
-import java.io.File
-
 import org.cyberneko.html.parsers.SAXParser
 
 class Html2Wiki {

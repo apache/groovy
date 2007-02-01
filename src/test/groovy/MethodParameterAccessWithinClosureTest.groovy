@@ -1,3 +1,5 @@
+package groovy
+
 /**
  * To test access to method scoped variable within closure
  * 

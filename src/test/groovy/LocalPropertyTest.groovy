@@ -1,3 +1,5 @@
+package groovy
+
 class LocalPropertyTest extends GroovyTestCase {
 
     def x

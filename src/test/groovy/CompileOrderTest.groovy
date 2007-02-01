@@ -1,3 +1,5 @@
+package groovy
+
 class CompileOrderTest extends GroovyTestCase {
    public void testCompileOrder() {
       def interfaceFile = File.createTempFile("TestOrderInterface", ".groovy", new File("target"))

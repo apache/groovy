@@ -1,3 +1,5 @@
+package groovy
+
 class CompareToTest extends GroovyTestCase {
 
     void testCompareTo() {

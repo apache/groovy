@@ -1,3 +1,5 @@
+package groovy
+
 class BigIntegerOperationTest extends GroovyTestCase {
     void testAssign() {
         BigInteger foo

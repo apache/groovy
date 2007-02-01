@@ -1,3 +1,5 @@
+package groovy.bugs
+
 /**
  * A base class for testing constructors
  * 

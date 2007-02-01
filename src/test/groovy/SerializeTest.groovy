@@ -1,7 +1,4 @@
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
-import java.io.ObjectInputStream
-import java.io.ObjectOutputStream
+package groovy
 
 class SerializeTest extends GroovyTestCase {
 
@@ -23,7 +20,7 @@ class SerializeTest extends GroovyTestCase {
         
         assert object.name == "Gromit"
         
-        assert object.class.name == "Foo" 
+        assert object.class.name == "groovy.Foo" 
         assert object instanceof Foo
         assert object.location == "Moon"
     }

@@ -1,3 +1,5 @@
+package groovy
+
 class SafeNavigationTest extends GroovyTestCase {
 
     void testNullNavigation() {

@@ -1,4 +1,4 @@
-import java.util.Map
+package groovy.bugs
 
 class ClassInNamedParamsBug extends GroovyTestCase {
     

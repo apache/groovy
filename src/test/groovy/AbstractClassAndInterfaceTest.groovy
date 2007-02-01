@@ -1,3 +1,5 @@
+package groovy
+
 import org.codehaus.groovy.control.CompilationFailedException
 
 class AbstractClassAndInterfaceTest extends GroovyTestCase {

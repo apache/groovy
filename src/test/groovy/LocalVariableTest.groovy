@@ -1,3 +1,5 @@
+package groovy
+
 class LocalVariableTest extends GroovyTestCase {
 
     void testAssert() {

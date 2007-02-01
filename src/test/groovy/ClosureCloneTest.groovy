@@ -1,3 +1,5 @@
+package groovy
+
 /** 
  * @author <a href="mailto:jstrachan@protique.com">James Strachan</a>
  * @version $Revision$

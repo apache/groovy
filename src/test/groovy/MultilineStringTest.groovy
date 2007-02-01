@@ -1,3 +1,5 @@
+package groovy
+
 class MultilineStringTest extends GroovyTestCase {
 
     void testMultilineString() {

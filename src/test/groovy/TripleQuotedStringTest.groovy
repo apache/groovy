@@ -1,3 +1,5 @@
+package groovy
+
 class TripleQuotedStringTest extends GroovyTestCase {
 
     void testTripleQuotedString() {

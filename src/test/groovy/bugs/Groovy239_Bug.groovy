@@ -1,3 +1,5 @@
+package groovy.bugs
+
 /**
  * @author John Wilson
  * @version $Revision$

@@ -1,3 +1,5 @@
+package groovy
+
 class PostfixTest extends GroovyTestCase {
 
     void testIntegerPostfix() {

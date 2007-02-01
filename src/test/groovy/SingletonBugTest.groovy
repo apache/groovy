@@ -1,3 +1,4 @@
+package groovy
 // TODO: GROOVY-435
 
 class SingletonBugTest extends GroovyTestCase {

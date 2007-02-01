@@ -1,3 +1,4 @@
+package groovy
 
 /**
  * Invoke normal methods first: if no statically typed method exist, use invokeMethod().

@@ -1,3 +1,5 @@
+package groovy.bugs
+
 class RussellsOptionalParenTest extends GroovyTestCase {
 
     void testMethodCallWithOneParam() {

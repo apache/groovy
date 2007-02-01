@@ -1,4 +1,4 @@
-package cheese;
+package groovy
 
 import java.util.HashMap as Goober;
 

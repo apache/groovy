@@ -1,3 +1,5 @@
+package groovy
+
 class StaticThisTest extends GroovyTestCase {
 
     void testThisFail() {

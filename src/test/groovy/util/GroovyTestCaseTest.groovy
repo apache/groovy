@@ -1,3 +1,5 @@
+package groovy.util
+
 /**
     Testing the notYetImplemented feature of GroovyTestCase.
     Todo: testing all other features.

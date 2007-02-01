@@ -1,3 +1,5 @@
+package groovy
+
 /**
  * test to ensure that overriding getter doesn't throw a NPE on access
  * 

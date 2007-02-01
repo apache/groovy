@@ -1,3 +1,5 @@
+package groovy
+
 class GStringTest extends GroovyTestCase {
 
     void check(template, teststr) {

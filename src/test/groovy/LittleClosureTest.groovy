@@ -1,3 +1,5 @@
+package groovy
+
 class LittleClosureTest extends GroovyTestCase {
 
     void testClosure() {

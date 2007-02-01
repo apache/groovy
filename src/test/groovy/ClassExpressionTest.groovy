@@ -1,3 +1,5 @@
+package groovy
+
 /** 
  * Tests the use of classes as variable expressions
  * 

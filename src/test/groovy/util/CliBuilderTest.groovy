@@ -1,3 +1,5 @@
+package groovy.util
+
 class CliBuilderTest extends GroovyTestCase {
 
     void testSample() {

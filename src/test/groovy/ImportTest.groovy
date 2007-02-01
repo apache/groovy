@@ -1,6 +1,4 @@
-import java.io.*
-import java.util.Map
-import java.util.List
+package groovy
 
 class ImportTest extends GroovyTestCase {
 

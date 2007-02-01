@@ -1,3 +1,5 @@
+package groovy
+
 class SwitchTest extends GroovyTestCase {
 
     void testSwitch() {

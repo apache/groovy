@@ -1,3 +1,5 @@
+package groovy
+
 /**
 * This test case is added to ensure an exception thrown from inside
 * groovy does always contain a valid line number and file name for

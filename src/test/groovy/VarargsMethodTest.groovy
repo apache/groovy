@@ -1,3 +1,5 @@
+package groovy
+
 /** 
  * VarargsMethodTest.groovy
  *

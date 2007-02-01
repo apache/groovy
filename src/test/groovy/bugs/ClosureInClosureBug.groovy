@@ -1,3 +1,5 @@
+package groovy.bugs
+
 /**
  * Bug illustrating the nested closures variable scope visibility issue.
  * l.each is ClosureInClosureBug$1 and it.each is ClosureInClosureBug$2

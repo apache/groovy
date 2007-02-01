@@ -1,3 +1,5 @@
+package groovy
+
 class MultiplyDivideEqualsTest extends GroovyTestCase {
 
     void testIntegerMultiplyEquals() {

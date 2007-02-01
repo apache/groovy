@@ -1,3 +1,5 @@
+package groovy.script
+
 class MapFromList {
     void talk(a) {
         println("hello "+a)

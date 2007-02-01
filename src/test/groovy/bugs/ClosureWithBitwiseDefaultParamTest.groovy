@@ -1,3 +1,5 @@
+package groovy.bugs
+
 class ClosureWithBitwiseDefaultParamTest extends GroovyTestCase {
     void testAmbiguousStuff() {
         def c = { x, y = 1 | 2, z = 0->

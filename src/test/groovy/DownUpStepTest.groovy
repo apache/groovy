@@ -1,3 +1,5 @@
+package groovy
+
 public class DownUpStepTest extends GroovyTestCase {
 
     void testDownto() {

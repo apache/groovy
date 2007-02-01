@@ -1,3 +1,5 @@
+package groovy
+
 class MethodCallTest extends GroovyTestCase {
 
     void testMethodCall() {

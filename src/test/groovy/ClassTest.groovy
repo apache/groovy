@@ -1,3 +1,5 @@
+package groovy
+
 class ClassTest extends GroovyTestCase {
 
     void testClassExpression() {

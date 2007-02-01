@@ -1,3 +1,5 @@
+package groovy
+
 /** 
  * Tests exception handling inside of a closure
  * 

@@ -1,3 +1,5 @@
+package groovy
+
 class LocalFieldTest extends GroovyTestCase {
 
     private def x

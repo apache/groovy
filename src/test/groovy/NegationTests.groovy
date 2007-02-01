@@ -1,3 +1,5 @@
+package groovy
+
 class NegationTests extends GroovyTestCase {
 
     void testNegateInteger() {

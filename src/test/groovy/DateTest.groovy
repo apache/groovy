@@ -1,4 +1,4 @@
-import java.util.Date
+package groovy
 
 class DateTest extends GroovyTestCase {
   

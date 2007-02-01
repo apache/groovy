@@ -1,3 +1,5 @@
+package groovy
+
 class CategoryTest extends GroovyTestCase {
 
   void testCategories() {

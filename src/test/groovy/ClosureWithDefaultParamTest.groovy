@@ -1,4 +1,4 @@
-import java.io.File
+package groovy
 
 /** 
  * Demonstrates the use of the default named parameter in a closure

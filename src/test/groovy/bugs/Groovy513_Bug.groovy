@@ -1,3 +1,5 @@
+package groovy.bugs
+
 /**
  *  Verifies that comparisons to Integer.MIN_VALUE work
  */

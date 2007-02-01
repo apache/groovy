@@ -1,3 +1,5 @@
+package groovy
+
 /**
  * Test the spread map operator "*:".
  *

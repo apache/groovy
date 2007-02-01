@@ -1,3 +1,5 @@
+package groovy
+
 class SliceTest extends GroovyTestCase {
 
     void testListSlice() {

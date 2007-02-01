@@ -1,3 +1,4 @@
+
 class NoPackageTest extends GroovyTestCase {
 
     void testClassDef() {

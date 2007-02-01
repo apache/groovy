@@ -1,3 +1,5 @@
+package groovy.bugs
+
 /**
   * <p>
   * Test that ensures that:

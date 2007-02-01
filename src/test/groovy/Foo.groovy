@@ -1,4 +1,4 @@
-import java.io.Serializable
+package groovy
 
 /** 
  * A dummy bean for testing the use of properties in Groovy

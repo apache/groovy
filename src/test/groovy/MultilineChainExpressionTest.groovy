@@ -1,3 +1,5 @@
+package groovy
+
 class MultilineChainExpressionTest extends GroovyTestCase {
    void testMultiLineChain() {
        // the code below should be compileable

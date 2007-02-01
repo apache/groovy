@@ -1,3 +1,5 @@
+package groovy
+
 /**
  * test to ensure that private instance variables are visible to 
  * other instance variables of the same class

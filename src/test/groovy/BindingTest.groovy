@@ -1,3 +1,5 @@
+package groovy
+
 class BindingTest extends GroovyTestCase {
 
     void testProperties() {

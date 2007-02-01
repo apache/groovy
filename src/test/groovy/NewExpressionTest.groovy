@@ -1,3 +1,5 @@
+package groovy
+
 import org.codehaus.groovy.runtime.DummyBean
 
 class NewExpressionTest extends GroovyTestCase {

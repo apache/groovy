@@ -1,4 +1,5 @@
-import java.io.File
+// Do not remove this line: is used in test below
+package groovy
 
 /**
  * Test to ensure that readLine() method works on Reader/InputStream
@@ -15,12 +16,12 @@ class ReadLineTest extends GroovyTestCase {
     void testReadOneLineFromReader() {
         def line
         file.withReader() {line = it.readLine()}
-        assert line == "import java.io.File"
+        assert line == "// Do not remove this line: is used in test below"
     }
     
     void testReadOneLineFromInputStream() {
         def line
         file.withInputStream() {line = it.readLine()}
-        assert line == "import java.io.File"
+        assert line == "// Do not remove this line: is used in test below"
     }
 }

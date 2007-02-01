@@ -1,4 +1,4 @@
-package groovy.bug
+package groovy.bugs
 
 /**
  *  A test case to ensure that Groovy can compile class names and variable names with non-ASCII

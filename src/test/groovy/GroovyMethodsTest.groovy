@@ -1,4 +1,5 @@
-import java.io.InputStreamReader
+package groovy
+
 import java.awt.Dimension
 import org.codehaus.groovy.runtime.typehandling.GroovyCastException
 

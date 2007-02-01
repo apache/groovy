@@ -1,3 +1,5 @@
+package groovy
+
 class ClosureSugarTest extends GroovyTestCase {
 
     def count;

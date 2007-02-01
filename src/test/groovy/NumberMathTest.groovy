@@ -1,5 +1,4 @@
-import java.math.BigDecimal;
-import java.math.BigInteger;
+package groovy
 
 /** 
  * Basic NumberMath test.

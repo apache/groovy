@@ -1,3 +1,5 @@
+package groovy
+
 class UnaryMinusTest extends GroovyTestCase {
 
     void testUnaryMinus() {

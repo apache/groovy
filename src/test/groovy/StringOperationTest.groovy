@@ -1,3 +1,5 @@
+package groovy
+
 class StringOperationTest extends GroovyTestCase {
 
     def x

@@ -1,3 +1,5 @@
+package groovy
+
 class ClosureReturnWithoutReturnStatementTest extends GroovyTestCase {
 
     void testReturnValues() {

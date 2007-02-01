@@ -1,7 +1,4 @@
-
-import java.util.Iterator
-
-import groovy.util.GroovyTestCase
+package org.codehaus.groovy.runtime;
 
 /*
  * Test whether the Invoker includes categories when 

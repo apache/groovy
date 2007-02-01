@@ -1,3 +1,5 @@
+package groovy.gpath
+
 /**
  * Some GPath tests using maps and lists
  */

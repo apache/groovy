@@ -1,4 +1,4 @@
-import java.util.Arrays
+package groovy
 
 class ThrowTest extends GroovyTestCase {
     

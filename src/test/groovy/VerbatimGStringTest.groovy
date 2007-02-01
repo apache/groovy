@@ -1,3 +1,5 @@
+package groovy
+
 class VerbatimGStringTest extends GroovyTestCase {
 
     void testWithOneVariable() {

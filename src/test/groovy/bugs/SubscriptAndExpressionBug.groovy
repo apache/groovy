@@ -1,3 +1,5 @@
+package groovy.bugs
+
 class SubscriptAndExpressionBug extends GroovyTestCase {
     
     void testBug() {

@@ -1,3 +1,5 @@
+package groovy.bugs
+
 /**
  * A little performance test
  * @version $Revision$

@@ -1,3 +1,5 @@
+package groovy
+
 class CastTest extends GroovyTestCase {
 
     Short b = 1

@@ -1,5 +1,6 @@
+package groovy.bugs
+
 import org.codehaus.groovy.runtime.InvokerHelper
-import java.io.File
 
 /**
  * @author Jason Thomas

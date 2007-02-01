@@ -1,3 +1,5 @@
+package groovy
+
 class DoubleOperationTest extends GroovyTestCase {
 
     def x

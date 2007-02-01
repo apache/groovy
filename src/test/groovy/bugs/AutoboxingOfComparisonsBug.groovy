@@ -1,3 +1,5 @@
+package groovy.bugs
+
 class AutoboxingOfComparisonsBug extends GroovyTestCase {
     void testBug() {
         def y = true
