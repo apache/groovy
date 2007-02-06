@@ -139,6 +139,19 @@ public class MetaClassImpl extends MetaClass {
                }
            });
    }
+   
+   public MetaClass createMetaClass(final Class theClass, final MetaClassRegistry registry) {
+       try {
+           final Class customMetaClass = Class.forName("groovy.runtime.metaclass." + theClass.getName() + "MetaClass");
+           final Constructor customMetaClassConstructor = customMetaClass.getConstructor(new Class[]{MetaClassRegistry.class, Class.class});
+           
+           return (MetaClass)customMetaClassConstructor.newInstance(new Object[]{this, theClass});
+       } catch (final ClassNotFoundException e) {
+           return new MetaClassImpl(registry, theClass);
+       } catch (final Exception e) {
+           throw new GroovyRuntimeException("Could not instantiate custom Metaclass for class: " + theClass.getName() + ". Reason: " + e, e);
+       }
+   }
 
    private void fillMethodIndex() {
        if (theClass.isInterface()) {

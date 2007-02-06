@@ -66,6 +66,12 @@ public abstract class MetaClass {
         isGroovyObject = GroovyObject.class.isAssignableFrom(theClass);
     }
     
+    /*
+     * Called on the MetaClass of the superclass of the class to allow that MetaClass to control
+     * the behavuior of its subclass if it wants to
+     */
+    public abstract MetaClass createMetaClass(Class theClass, MetaClassRegistry registry);
+    
     public boolean isGroovyObject(){
         return isGroovyObject;
     }

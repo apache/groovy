@@ -41,6 +41,10 @@ public class DelegatingMetaClass extends MetaClass {
         this(new MetaClassImpl(InvokerHelper.getInstance().getMetaRegistry(), theClass));
     }
     
+    public MetaClass createMetaClass(Class theClass, MetaClassRegistry registry) {
+        return this.delegate.createMetaClass(theClass, registry);
+    }
+
     /* (non-Javadoc)
      * @see groovy.lang.MetaClass#addNewInstanceMethod(java.lang.reflect.Method)
      */

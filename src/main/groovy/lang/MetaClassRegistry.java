@@ -84,7 +84,6 @@ public class MetaClassRegistry {
     private static MetaClassRegistry instanceInclude;
     private static MetaClassRegistry instanceExclude;
 
-
     public MetaClassRegistry() {
         this(LOAD_DEFAULT, true);
     }
@@ -109,7 +108,27 @@ public class MetaClassRegistry {
             registerMethods(DefaultGroovyMethods.class, true);
             registerMethods(DefaultGroovyStaticMethods.class, false);
         }
-    }
+        
+        // Initialise the registry with the MetaClass for java.lang.Object
+        // This is needed this MetaClass is used to create The Metaclasses for all the classes which subclass Object
+        // Note that the user can replace the standard MetaClass with a custom MetaClass by including 
+        // groovy.runtime.metaclass.java.lang.ObjectMetaClass in the classpath
+        
+        MetaClass objectMetaClass;
+        try {
+        final Class customMetaClass = Class.forName("groovy.runtime.metaclass.java.lang.ObjectMetaClass");
+        final Constructor customMetaClassConstructor = customMetaClass.getConstructor(new Class[]{MetaClassRegistry.class, Class.class});
+            
+            objectMetaClass = (MetaClass)customMetaClassConstructor.newInstance(new Object[]{this, Object.class});
+        } catch (final ClassNotFoundException e) {
+            objectMetaClass = new MetaClassImpl(this, Object.class);
+        } catch (final Exception e) {
+            throw new GroovyRuntimeException("Could not instantiate custom Metaclass for class: java.lang.Object. Reason: " + e, e);
+        }
+        
+        objectMetaClass.initialize();
+        metaClasses.putStrong(Object.class, objectMetaClass);
+   }
     
     private void registerMethods(final Class theClass, final boolean useInstanceMethods) {
         Method[] methods = theClass.getMethods();
@@ -132,7 +151,25 @@ public class MetaClassRegistry {
         synchronized (theClass) {
             MetaClass answer = (MetaClass) metaClasses.get(theClass);
             if (answer == null) {
-                answer = getMetaClassFor(theClass);
+                if (theClass == Object.class) {
+                    //
+                    // This should NEVER happen - if we get here it means that metaClasses has lost the
+                    // MetaClass for Object which was inserted in the constructor
+                    // At the moment we have to have this kludge because metaClasses does lose entries
+                    //
+                    try {
+                        final Class customMetaClass = Class.forName("groovy.runtime.metaclass.java.lang.ObjectMetaClass");
+                        final Constructor customMetaClassConstructor = customMetaClass.getConstructor(new Class[]{MetaClassRegistry.class, Class.class});
+                            
+                            answer = (MetaClass)customMetaClassConstructor.newInstance(new Object[]{this, Object.class});
+                        } catch (final ClassNotFoundException e) {
+                            answer = new MetaClassImpl(this, Object.class);
+                        } catch (final Exception e) {
+                            throw new GroovyRuntimeException("Could not instantiate custom Metaclass for class: java.lang.Object. Reason: " + e, e);
+                        }
+                } else {
+                    answer = getMetaClassFor(theClass);
+                }
                 answer.initialize();
                 metaClasses.put(theClass, answer);
             }
@@ -194,13 +231,20 @@ public class MetaClassRegistry {
 
     /**
      * Find a MetaClass for the class
-     * If there is a custom MetaClass then return an instance of that. Otherwise return an instance of the standard MetaClass
+     * Use the MetaClass of the superclass of the class to create the MetaClass
      * 
      * @param theClass
-     * @return An instace of the MetaClass which will handle this class
+     * @return An instance of the MetaClass which will handle this class
      */
     private MetaClass getMetaClassFor(final Class theClass) {
-        return metaClassCreationHandle.create(theClass,this);
+    final Class theSuperClass = theClass.getSuperclass();
+    
+        if (theSuperClass == null) {
+            // The class is an interface - use Object's Metaclass
+            return getMetaClass(Object.class).createMetaClass(theClass, this);
+        } else {
+            return getMetaClass(theClass.getSuperclass()).createMetaClass(theClass, this);
+        }
     }
 
     /**
@@ -280,53 +324,5 @@ public class MetaClassRegistry {
 
     List getStaticMethods() {
         return staticMethods;
-    }
-    
-    // the following is experimental code, not intended for stable use yet
-    private MetaClassCreationHandle metaClassCreationHandle = new MetaClassCreationHandle();
-    /**
-     * Gets a handle internally used to create MetaClass implementations
-     * WARNING: experimental code, likely to change soon
-     * @return the handle 
-     */
-    public MetaClassCreationHandle getMetaClassCreationHandler() {
-        return metaClassCreationHandle;
-    }
-    /**
-     * Sets a handle internally used to create MetaClass implementations.
-     * When replacing the handle with a custom version, you should
-     * resuse the old handle to keep custom logic and to use the
-     * default logic as fallback.
-     * WARNING: experimental code, likely to change soon
-     * @param handle the handle 
-     */
-    public void setMetaClassCreationHandle(MetaClassCreationHandle handle) {
-        metaClassCreationHandle = handle;
-    }
-    /**
-     * Class used as base for the creation of MetaClass implementations.
-     * The Class defaults to MetaClassImpl, if the class loading fails to
-     * find a special meta class. The name for such a meta class would be
-     * the class name it is created for with the prefix 
-     * "groovy.runtime.metaclass." By replacing the handle in the registry
-     * you can have any control over the creation of what MetaClass is used
-     * for a class that you want to have. For example giving all classes
-     * extending a different MetaClass then normal is possible this way.
-     * WARNING: experimental code, likely to change soon
-     * @author Jochen Theodorou
-     */
-    public static class MetaClassCreationHandle {
-        public MetaClass create(Class theClass, MetaClassRegistry registry) {
-            try {
-                final Class customMetaClass = Class.forName("groovy.runtime.metaclass." + theClass.getName() + "MetaClass");
-                final Constructor customMetaClassConstructor = customMetaClass.getConstructor(new Class[]{MetaClassRegistry.class, Class.class});
-                
-                return (MetaClass)customMetaClassConstructor.newInstance(new Object[]{this, theClass});
-            } catch (final ClassNotFoundException e) {
-                return new MetaClassImpl(registry, theClass);
-            } catch (final Exception e) {
-                throw new GroovyRuntimeException("Could not instantiate custom Metaclass for class: " + theClass.getName() + ". Reason: " + e, e);
-            }
-        }
     }
 }
