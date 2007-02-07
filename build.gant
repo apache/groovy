@@ -16,6 +16,8 @@
 //  $Revision$
 //  $Date$
 
+//  The structure of the build is defined by the Maven 1 build.
+
 sourceDirectory = 'src'
 mainSourceDirectory = sourceDirectory + '/main'
 testsSourceDirectory = sourceDirectory + '/test'
@@ -24,8 +26,14 @@ mainClassesDirectory = targetDirectory + '/classes'
 testsClassesDirectory = targetDirectory + '/test-classes'
 reportsDirectory = targetDirectory + '/test-reports'
 
+//  Antlr requires fiddling around in the source tree.
+
 antlrDirectory = mainSourceDirectory +  '/org/codehaus/groovy/antlr'
 parserDirectory = antlrDirectory + '/parser'
+
+//  Require access to the Ant Antlr jar to get at the Antlr task.
+
+antAntlrJar = '/usr/share/java/ant-antlr.jar'  
 
 javaVersion = '1.4'
 
@@ -38,23 +46,26 @@ Ant.path ( id : dependencies ) {
   fileset ( dir : System.properties.'groovy.home' + '/lib' , includes : '*.jar' , excludes : 'gant*.jar,*groovy*.jar' )
 }
 
+//  Ensure we use the GroovyC.class that we compile in this build and not the one in Groovy jar that we are
+//  using to run Gant.
+
 Ant.taskdef ( name : 'groovyc' , classname : 'org.codehaus.groovy.ant.Groovyc' , classpath : mainClassesDirectory )
 
 task ( ensureAntlr : 'Ensure all the files generated from the Antlr grammar are up to date.' ) {
   Ant.mkdir ( dir : parserDirectory )
-  //  Need a way of getting this path in a platform independent way.  This is fine fo Ubuntu (and Debian?) but likely fails for all other OSs.
-  def antAntlrJar = '/usr/share/java/ant-antlr.jar'
   Ant.taskdef ( name : 'antlr' , classname : 'org.apache.tools.ant.taskdefs.optional.ANTLR' , classpath : antAntlrJar )
-  Ant.antlr ( target : antlrDirectory + '/groovy.g' , outputdirectory : parserDirectory ) {
-    classpath ( refid : dependencies )
-  }    
+  Ant.antlr ( target : antlrDirectory + '/groovy.g' , outputdirectory : parserDirectory ) { classpath ( refid : dependencies ) }
 }
 
 task ( compileMain : 'Compile the Java and Groovy code in the main source.' ) {
   depends ( ensureAntlr )
   Ant.mkdir ( dir : mainClassesDirectory )
   Ant.javac ( srcdir : mainSourceDirectory , destdir : mainClassesDirectory , debug : 'yes' , source : javaVersion , target : javaVersion , classpathref : dependencies , fork : 'true' )
-  Ant.groovyc ( srcdir : mainSourceDirectory , destdir : mainClassesDirectory ) { // , fork : 'true' ) {
+  //
+  //  GroovyC task does not yet support the forking of the task.
+  //
+  //  Ant.groovyc ( srcdir : mainSourceDirectory , destdir : mainClassesDirectory , fork : 'true' ) {
+  Ant.groovyc ( srcdir : mainSourceDirectory , destdir : mainClassesDirectory ) {
     classpath {
       pathelement ( location : mainClassesDirectory )
       path ( refid : dependencies )
@@ -102,10 +113,12 @@ task ( compileTest : 'Compile the Java and Groovy code in the test source.' ) {
   }
 }
 
+task ( compile : 'Compile the main and test code.' ) { depends ( compileMain , compileTest ) }
+
 task ( test : 'Test a build.' ) {
   depends ( compileTest )
   Ant.mkdir ( dir : reportsDirectory )
-  Ant.junit ( printsummary : 'true' , fork : 'true' , forkmode : 'once' ) {
+  Ant.junit ( printsummary : 'true' , fork : 'true' ) {
     formatter ( type : 'plain' )
     batchtest ( todir : reportsDirectory ) {
       fileset ( dir : testsClassesDirectory , includes : 'UberTest*.class' )

@@ -1,24 +1,187 @@
-<?xml version="1.0"?>
-<project name="tck" default="pretty-test">
-  <!-- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- -->
-  <!--                   directories                     -->
-  <!-- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- -->
-  <property name="test.reports.dir" value="target/test-reports"/>
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+
+Ant build script for Groovy.
+
+Copyright © 2007 Russel Winder <russel@russel.org.uk>
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
+compliance with the License. You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed under the License is
+distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+implied. See the License for the specific language governing permissions and limitations under the
+License.
+
+Author : Russel Winder
+$Revision$
+$Date$
+
+-->
+
+<project name="Groovy" default="createJar" basedir=".">
+
+  <property name="sourceDirectory" value="src"/>
+  <property name="mainSourceDirectory" value="${sourceDirectory}/main"/>
+  <property name="testSourceDirectory" value="${sourceDirectory}/test"/>
+  <property name="targetDirectory" value="target"/>
+  <property name="mainClassesDirectory" value="${targetDirectory}/classes"/>
+  <property name="testClassesDirectory" value="${targetDirectory}/test-classes"/>
+  <property name="reportsDirectory" value="${targetDirectory}/test-reports"/>
+
+  <property name="antlrDirectory" value="${mainSourceDirectory}/org/codehaus/groovy/antlr"/>
+  <property name="parserDirectory" value="${antlrDirectory}/parser"/>
+
+  <property name="dependenciesDirectory" value="${user.home}/lib/Java/groovy/lib/"/>
   
-    <target name="cruise" description="to be started by the CruiseControl build server">
-        <echo message="hook for your build"/>
-     </target>
+  <property name="antlrJar" value="${dependenciesDirectory}/antlr-2.7.6.jar"/>
 
-  <target name="pretty-test" 
-          description="HTML output of test cases">
+  <path id="javaMainCompileDependencies">
+    <pathelement location="${antlrJar}"/>
+    <pathelement location="${dependenciesDirectory}/asm-2.2.jar"/>
+    <pathelement location="${dependenciesDirectory}/asm-analysis-2.2.jar"/>
+    <pathelement location="${dependenciesDirectory}/asm-tree-2.2.jar"/>
+    <pathelement location="${dependenciesDirectory}/asm-util-2.2.jar"/>
+    <pathelement location="${dependenciesDirectory}/bsf-2.4.0.jar"/>
+    <pathelement location="${dependenciesDirectory}/commons-cli-1.0.jar"/>
+    <pathelement location="${dependenciesDirectory}/jsp-api-2.0.jar"/>
+    <pathelement location="${dependenciesDirectory}/junit-3.8.2.jar"/>
+    <pathelement location="${dependenciesDirectory}/mockobjects-core-0.09.jar"/>
+    <pathelement location="${dependenciesDirectory}/radeox-0.9.jar"/>
+    <pathelement location="${dependenciesDirectory}/servlet-api-2.4.jar"/>
+    <pathelement location="${dependenciesDirectory}/xstream-1.2.jar"/>
+  </path>
 
-    <junitreport todir="${test.reports.dir}">
-      <fileset dir="${test.reports.dir}">
-        <include name="TEST-*.xml"/>
-      </fileset>
-      <report format="frames" todir="${test.reports.dir}"/>
-    </junitreport>
+  <path id="groovyMainCompileDependencies">
+    <pathelement location="${mainClassesDirectory}"/>
+    <pathelement location="${antlrJar}"/>
+    <pathelement location="${dependenciesDirectory}/ant-1.6.5.jar"/>
+    <pathelement location="${dependenciesDirectory}/asm-2.2.jar"/>
+    <pathelement location="${dependenciesDirectory}/commons-cli-1.0.jar"/>
+    <pathelement location="${dependenciesDirectory}/junit-3.8.2.jar"/>
+    <pathelement location="${dependenciesDirectory}/qdox-1.5.jar"/>
+  </path>
+
+  <path id="javaTestCompileDependencies">
+    <pathelement location="${mainClassesDirectory}"/>
+    <pathelement location="${antlrJar}"/>
+    <pathelement location="${dependenciesDirectory}/asm-2.2.jar"/>
+    <pathelement location="${dependenciesDirectory}/asm-util-2.2.jar"/>
+    <pathelement location="${dependenciesDirectory}/bsf-2.4.0.jar"/>
+    <pathelement location="${dependenciesDirectory}/commons-cli-1.0.jar"/>
+    <pathelement location="${dependenciesDirectory}/jmock-1.1.0.jar"/>
+    <pathelement location="${dependenciesDirectory}/jmock-cglib-1.1.0.jar"/>
+    <pathelement location="${dependenciesDirectory}/junit-3.8.2.jar"/>
+    <pathelement location="${dependenciesDirectory}/radeox-0.9.jar"/>
+    <pathelement location="${dependenciesDirectory}/servlet-api-2.4.jar"/>
+  </path>
+
+  <path id="groovyTestCompileDependencies">
+    <pathelement location="${mainClassesDirectory}"/>
+    <pathelement location="${testClassesDirectory}"/>
+    <pathelement location="${antlrJar}"/>
+    <pathelement location="${dependenciesDirectory}/ant-1.6.5.jar"/>
+    <pathelement location="${dependenciesDirectory}/asm-2.2.jar"/>
+    <pathelement location="${dependenciesDirectory}/axion-1.0-M3-dev.jar"/>
+    <pathelement location="${dependenciesDirectory}/junit-3.8.2.jar"/>
+    <pathelement location="${dependenciesDirectory}/mockobjects-core-0.09.jar"/>
+    <pathelement location="${dependenciesDirectory}/nekohtml-0.9.5.jar"/>
+    <pathelement location="${dependenciesDirectory}/xerces-2.4.0.jar"/>
+  </path>
+
+  <path id="groovyUberTestCompileDependencies">
+    <pathelement location="${mainClassesDirectory}"/>
+    <pathelement location="${testClassesDirectory}"/>
+  </path>
+
+  <path id="testRunDependencies">
+    <path refid="javaMainCompileDependencies"/>
+    <path refid="groovyMainCompileDependencies"/>
+    <path refid="javaTestCompileDependencies"/>
+    <path refid="groovyTestCompileDependencies"/>
+    <path refid="groovyUberTestCompileDependencies"/>
+  </path>
+
+  <target name="ensureAntlr" description="Ensure all the files generated from the Antlr grammar are up to date.">
+    <mkdir dir="${parserDirectory}"/>
+    <antlr target="${antlrDirectory}/groovy.g" outputdirectory="${parserDirectory}">
+      <classpath>
+        <pathelement location="${antlrJar}"/>
+      </classpath>
+    </antlr>
   </target>
 
+  <target name="compileMain" depends="ensureAntlr" description="Compile the Java and Groovy code in the main source.">
+    <mkdir dir="${mainClassesDirectory}"/>
+    <javac srcdir="${mainSourceDirectory}" destdir="${mainClassesDirectory}" debug="yes" source="1.4"
+    target="1.4" fork="true" classpathref="javaMainCompileDependencies" />
+
+    <!--
+
+    groovyc task does not support the fork attribute.  This means we cannot use a groovyc task directly
+    since we cannot set the classpath correctly. :-(
+
+    <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpath="${mainClassesDirectory}"/>
+    <groovyc srcdir="${mainSourceDirectory}" destdir="${mainClassesDirectory}" classpathref="groovyMainCompileDependencies"/>
+
+    -->
+
+    <echo message="Compiling Groovy Main."/>
+    <java classname="org.codehaus.groovy.ant.Groovyc" fork="true" classpathref="groovyMainCompileDependencies">
+      <arg value="${mainClassesDirectory}"/>
+      <arg value="${mainSourceDirectory}"/>
+    </java>
+  </target>
+
+  <target name="compileTest" depends="compileMain" description="Compile the Java and Groovy code in the test source.">
+    <mkdir dir="${testClassesDirectory}"/>
+    <javac srcdir="${testSourceDirectory}" destdir="${testClassesDirectory}" debug="yes" source="1.4"
+    target="1.4" fork="true" classpathref="javaTestCompileDependencies" excludes="UberTestCase*.java"/>
+
+    <!--
+
+    groovyc task does not support the fork attribute.  This means we cannot use a groovyc task directly
+    since we cannot set the classpath correctly. :-(
+
+    <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpath="${mainClassesDirectory}"/>
+    <groovyc srcdir="${testSourceDirectory}" destdir="${testClassesDirectory}" classpathref="groovyTestCompileDependencies"/>
+
+    Why does compiling the Groovy tests take so much space?
+
+    -->
+
+    <echo message="Compiling Groovy Tests."/>
+    <java classname="org.codehaus.groovy.ant.Groovyc" fork="true" classpathref="groovyTestCompileDependencies" maxmemory="128M">
+      <arg value="${testClassesDirectory}"/>
+      <arg value="${testSourceDirectory}"/>
+    </java>
+    <javac srcdir="${testSourceDirectory}" destdir="${testClassesDirectory}" debug="yes" source="1.4"
+      target="1.4" fork="true" classpathref="javaTestCompileDependencies" includes="UberTestCase*.java"/>
+  </target>
+
+  <target name="test" depends="compileTest" description="Compile and test all the classes.">
+    <mkdir dir="${reportsDirectory}"/>
+    <junit printsummary="true" fork="true" forkmode="once">
+      <formatter type="plain"/>
+      <batchtest todir="${reportsDirectory}">
+        <fileset dir="${testClassesDirectory}" includes="UberTest*.class"/>
+      </batchtest>
+      <classpath refid="testRunDependencies"/>
+    </junit>
+  </target>
+
+  <target name="createJar" depends="test" description="Build Groovy and create the jarfile.">
+  </target>
+
+  <target name="clean" description="Clean out the built materials.">
+    <delete dir="${targetDirectory}" quiet="true"/>
+    <delete quiet="true">
+      <fileset dir="." includes="**/*~"/>
+      <fileset dir="${parserDirectory}" includes="Groovy*.*"/>
+    </delete>
+  </target>
 
 </project>
