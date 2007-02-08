@@ -252,14 +252,22 @@ public class MemoryAwareConcurrentReadMap {
                 if (hash==current.hash) {
                     Object oldKey = current.getKey();
                     if (!current.isValid()) {
-                        if (prev!=null) prev.next = current.next;
                         current = current.invalidate();
+                        if (prev!=null) {
+                            prev.next = current;
+                        } else {
+                            table[index] = current;
+                        }
                         size--;
                         continue;
                     }
                     if (key==oldKey || key.equals(oldKey)) {
-                        if (prev!=null) prev.next = current.next;
-                        current.invalidate();
+                        current = current.invalidate();
+                        if (prev!=null) {
+                            prev.next = current;
+                        } else {
+                            table[index] = current;
+                        }
                         size--;
                         return;
                     }
@@ -352,6 +360,10 @@ public class MemoryAwareConcurrentReadMap {
     
     private int index(int hash, int max) {
         return hash & max-1;
+    }
+
+    public int getSize() {
+        return size;
     }
     
 }
