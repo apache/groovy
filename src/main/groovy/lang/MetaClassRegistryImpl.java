@@ -71,7 +71,7 @@ import org.objectweb.asm.ClassWriter;
  * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
  * @version $Revision$
  */
-public class MetaClassRegistry {
+public class MetaClassRegistryImpl implements MetaClassRegistry{
     private MemoryAwareConcurrentReadMap metaClasses = new MemoryAwareConcurrentReadMap();
     private MemoryAwareConcurrentReadMap loaderMap = new MemoryAwareConcurrentReadMap();
     private boolean useAccessible;
@@ -84,11 +84,11 @@ public class MetaClassRegistry {
     private static MetaClassRegistry instanceInclude;
     private static MetaClassRegistry instanceExclude;
 
-    public MetaClassRegistry() {
+    public MetaClassRegistryImpl() {
         this(LOAD_DEFAULT, true);
     }
 
-    public MetaClassRegistry(int loadDefault) {
+    public MetaClassRegistryImpl(int loadDefault) {
         this(loadDefault, true);
     }
 
@@ -96,11 +96,11 @@ public class MetaClassRegistry {
      * @param useAccessible defines whether or not the {@link java.lang.reflect.AccessibleObject#setAccessible(boolean)}
      *                      method will be called to enable access to all methods when using reflection
      */
-    public MetaClassRegistry(boolean useAccessible) {
+    public MetaClassRegistryImpl(boolean useAccessible) {
         this(LOAD_DEFAULT, useAccessible);
     }
     
-    public MetaClassRegistry(final int loadDefault, final boolean useAccessible) {
+    public MetaClassRegistryImpl(final int loadDefault, final boolean useAccessible) {
         this.useAccessible = useAccessible;
         
         if (loadDefault == LOAD_DEFAULT) {
@@ -255,13 +255,13 @@ public class MetaClassRegistry {
     public static MetaClassRegistry getInstance(int includeExtension) {
         if (includeExtension != DONT_LOAD_DEFAULT) {
             if (instanceInclude == null) {
-                instanceInclude = new MetaClassRegistry();
+                instanceInclude = new MetaClassRegistryImpl();
             }
             return instanceInclude;
         }
         else {
             if (instanceExclude == null) {
-                instanceExclude = new MetaClassRegistry(DONT_LOAD_DEFAULT);
+                instanceExclude = new MetaClassRegistryImpl(DONT_LOAD_DEFAULT);
             }
             return instanceExclude;
         }
@@ -318,11 +318,11 @@ public class MetaClassRegistry {
         return name;
     }
 
-    List getInstanceMethods() {
+    public List getInstanceMethods() {
         return instanceMethods;
     }
 
-    List getStaticMethods() {
+    public List getStaticMethods() {
         return staticMethods;
     }
 }

@@ -46,18 +46,18 @@
 
 package org.codehaus.groovy.classgen;
 
-import java.io.*;
+import groovy.lang.MetaClassRegistry;
+import groovy.lang.MetaMethod;
+import groovy.util.GroovyTestCase;
+
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.util.CheckClassAdapter;
 import org.objectweb.asm.util.ASMifierClassVisitor;
-
-import groovy.lang.MetaClassRegistry;
-import groovy.lang.MetaMethod;
-import groovy.util.GroovyTestCase;
+import org.objectweb.asm.util.CheckClassAdapter;
 
 /**
  * 
@@ -106,7 +106,7 @@ public class ReflectorGeneratorTest extends GroovyTestCase {
         ASMifierClassVisitor.main(new String[] { fileName });
 
         // now lets try class load it
-        MetaClassRegistry registry = new MetaClassRegistry();
+        MetaClassRegistry registry = MetaClassRegistry.registry;
         Object reflector = registry.loadReflector(getClass(),methods);
          
         System.out.println("Created new reflector: " + reflector);

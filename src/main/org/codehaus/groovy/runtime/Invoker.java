@@ -72,7 +72,7 @@ public class Invoker {
         return metaRegistry;
     }
 
-    private MetaClassRegistry metaRegistry = new MetaClassRegistry();
+    private MetaClassRegistry metaRegistry = MetaClassRegistry.registry;
 
     public MetaClass getMetaClass(Object object) {
         return metaRegistry.getMetaClass(object.getClass());
