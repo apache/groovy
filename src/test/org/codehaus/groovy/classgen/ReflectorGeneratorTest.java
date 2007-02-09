@@ -47,6 +47,7 @@
 package org.codehaus.groovy.classgen;
 
 import groovy.lang.MetaClassRegistry;
+import groovy.lang.MetaClassRegistryImpl;
 import groovy.lang.MetaMethod;
 import groovy.util.GroovyTestCase;
 
@@ -107,7 +108,7 @@ public class ReflectorGeneratorTest extends GroovyTestCase {
 
         // now lets try class load it
         MetaClassRegistry registry = MetaClassRegistry.registry;
-        Object reflector = registry.loadReflector(getClass(),methods);
+        Object reflector = ((MetaClassRegistryImpl)registry).loadReflector(getClass(),methods);
          
         System.out.println("Created new reflector: " + reflector);
     }

@@ -18,9 +18,6 @@
  */
 package groovy.lang;
 
-import java.util.List;
-
-import org.codehaus.groovy.runtime.Reflector;
 
 public interface MetaClassRegistry {
     /*
@@ -41,16 +38,4 @@ public interface MetaClassRegistry {
      */
     void setMetaClass(Class theClass, MetaClass theMetaClass);
     void removeMetaClass(Class theClass);
-    
-    /*
-     * What's this for?
-     */
-    Reflector loadReflector(Class theClass, List methods);
-    
-    /*
-     * These seem MetaClassImpl specific should they be on MetaClassRegistry?
-     */
-    boolean useAccessible();
-    List getInstanceMethods();
-    List getStaticMethods();
-}
+ }

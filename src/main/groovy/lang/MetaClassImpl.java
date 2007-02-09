@@ -304,7 +304,7 @@ public class MetaClassImpl extends MetaClass {
    
    private void inheritInterfaceMethods(Set interfaces) {
        // add methods declared by DGM for interfaces
-       List methods = registry.getInstanceMethods();
+       List methods = ((MetaClassRegistryImpl)registry).getInstanceMethods();
        for (Iterator iter = methods.iterator(); iter.hasNext();) {
            Method element = (Method) iter.next();
            Class dgmClass = element.getParameterTypes()[0]; 
@@ -323,7 +323,7 @@ public class MetaClassImpl extends MetaClass {
                addMethodToList(list,method);
            }
        }
-       methods = registry.getStaticMethods();
+       methods = ((MetaClassRegistryImpl)registry).getStaticMethods();
        for (Iterator iter = methods.iterator(); iter.hasNext();) {
            Method element = (Method) iter.next();
            Class dgmClass = element.getParameterTypes()[0]; 
@@ -1639,14 +1639,14 @@ public class MetaClassImpl extends MetaClass {
            addMetaMethod(method);
        }
        // add methods declared by DGM
-       List methods = registry.getInstanceMethods();
+       List methods = ((MetaClassRegistryImpl)registry).getInstanceMethods();
        for (Iterator iter = methods.iterator(); iter.hasNext();) {
            Method element = (Method) iter.next();
            if (element.getParameterTypes()[0]!=theClass) continue;
            addNewInstanceMethod(element);
        }
        // add static methods declared by DGM
-       methods = registry.getStaticMethods();
+       methods = ((MetaClassRegistryImpl)registry).getStaticMethods();
        for (Iterator iter = methods.iterator(); iter.hasNext();) {
            Method element = (Method) iter.next();
            if (element.getParameterTypes()[0]!=theClass) continue;
@@ -1996,7 +1996,7 @@ public class MetaClassImpl extends MetaClass {
    }
 
    private MetaMethod createMetaMethod(final Method method) {
-       if (registry.useAccessible()) {
+       if (((MetaClassRegistryImpl)registry).useAccessible()) {
            AccessController.doPrivileged(new PrivilegedAction() {
                public Object run() {
                    method.setAccessible(true);
@@ -2074,7 +2074,7 @@ public class MetaClassImpl extends MetaClass {
    }
 
    private void generateReflector() {
-       reflector = registry.loadReflector(theClass, allMethods);
+       reflector = ((MetaClassRegistryImpl)registry).loadReflector(theClass, allMethods);
        if (reflector == null) {
            throw new RuntimeException("Should have a reflector for "+theClass.getName());
        }
