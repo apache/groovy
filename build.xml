@@ -103,6 +103,17 @@ $Date$
     <path refid="javaTestCompileDependencies"/>
     <path refid="groovyTestCompileDependencies"/>
     <path refid="groovyUberTestCompileDependencies"/>
+    <!-- UberTestCase1 -->
+    <!-- UberTestCase2 -->
+    <pathelement location = "${dependenciesDirectory}/commons-primitives-1.0.jar"/>
+    <pathelement location = "${dependenciesDirectory}/commons-logging-1.0.4.jar"/>
+    <pathelement location = "${dependenciesDirectory}/regexp-1.3.jar"/>
+    <!-- UberTestCase3 -->
+    <pathelement location = "${dependenciesDirectory}/commons-collections-3.2.jar"/>
+    <!-- UberTestCase4 -->
+    <!-- UberTestCaseLongRunningTests -->
+    <pathelement location = "${dependenciesDirectory}/asm-attrs-2.2.jar"/>
+    <!-- UberTestCaseTCK -->
   </path>
 
   <target name="ensureAntlr" description="Ensure all the files generated from the Antlr grammar are up to date.">

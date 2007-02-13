@@ -742,13 +742,14 @@
         <version>2.2</version>
         <configuration>
           <includes>
-            <include>**/*Test.*</include>
-            <include>**/*Bug.*</include>
-            <include>**/Uber*.*</include>
-          </includes>          
-          <excludes>
-            <exclude>**/SignedJarTest.*</exclude>
-          </excludes>
+            <include>**/UberTestCase.*</include>
+            <include>**/UberTestCase2.*</include>
+            <include>**/UberTestCase3.*</include>
+            <include>**/UberTestCase4.*</include>
+            <include>**/UberTestCaseLongRunningTests.*</include>
+            <include>**/UberTestCaseTCK.*</include>
+          </includes>
+          <redirectTestOutputToFile>true</redirectTestOutputToFile>
         </configuration>
       </plugin>
     </plugins>
