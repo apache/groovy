@@ -22,7 +22,7 @@ $Date$
 
 -->
 
-<project name="Groovy" default="createJar" basedir=".">
+<project name="Groovy" default="createJars" basedir=".">
 
   <property name="sourceDirectory" value="src"/>
   <property name="mainSourceDirectory" value="${sourceDirectory}/main"/>
@@ -31,6 +31,7 @@ $Date$
   <property name="mainClassesDirectory" value="${targetDirectory}/classes"/>
   <property name="testClassesDirectory" value="${targetDirectory}/test-classes"/>
   <property name="reportsDirectory" value="${targetDirectory}/test-reports"/>
+  <property name="targetLibDirectory" value="${targetDirectory}/lib"/>
 
   <property name="antlrDirectory" value="${mainSourceDirectory}/org/codehaus/groovy/antlr"/>
   <property name="groovyParserDirectory" value="${antlrDirectory}/parser"/>
@@ -39,6 +40,8 @@ $Date$
   <property name="dependenciesDirectory" value="${user.home}/lib/Java/groovy/lib/"/>
   
   <property name="antlrJar" value="${dependenciesDirectory}/antlr-2.7.6.jar"/>
+
+  <property file="build.properties"/>
 
   <path id="javaMainCompileDependencies">
     <pathelement location="${antlrJar}"/>
@@ -182,7 +185,8 @@ $Date$
   <!-- Some of the SQL-related tests in UberTestCase3 require access to the source code of the test.  Copy
   the sources into the target tree so that the needed source files can be found. -->
 
-  <target name="copySelectedGroovyFiles" depends="compileTest">
+  <target name="copySelectedGroovyFiles">
+    <mkdir dir="${testClassesDirectory}"/>
     <copy todir="${testClassesDirectory}">
       <fileset dir="${testSourceDirectory}">
         <include name="groovy/sql/PersonTest.groovy"/>
@@ -194,7 +198,7 @@ $Date$
 
   <target name="test" depends="compileTest,copySelectedGroovyFiles" description="Compile and test all the classes.">
     <mkdir dir="${reportsDirectory}"/>
-    <junit printsummary="true" fork="true" forkmode="once">
+    <junit printsummary="true" fork="true" forkmode="once" failureproperty="testFailed">
       <formatter type="plain"/>
       <batchtest todir="${reportsDirectory}">
         <fileset dir="${testClassesDirectory}" includes="UberTest*.class"/>
@@ -203,8 +207,23 @@ $Date$
     </junit>
   </target>
 
-  <target name="createJar" depends="test" description="Build Groovy and create the jarfile.">
+  <target name="reportTestFailed" depends="test" if="testFailed">
+    <echo>Test failed, not processing further targets.</echo>
   </target>
+
+  <target name="actuallyCreateJars" depends="test" unless="testFailed">
+    <mkdir dir="${targetLibDirectory}"/>
+    <jar destfile="${targetLibDirectory}/groovy-${groovyVersion}.jar" basedir="${mainClassesDirectory}" excludes="*.groovy"/>
+    <jar destfile="${targetLibDirectory}/groovy-starter-${groovyVersion}.jar" >
+      <fileset dir="${mainClassesDirectory}">
+        <include name="org/codehaus/groovy/tools/RootLoader*.class" />
+        <include name="org/codehaus/groovy/tools/GroovyStarter*.class" />
+        <include name="org/codehaus/groovy/tools/LoaderConfiguration*.class" />
+      </fileset>
+    </jar>
+  </target>
+
+  <target name="createJars" depends="reportTestFailed,actuallyCreateJars" description="Build Groovy and create the jarfiles."/>
 
   <target name="clean" description="Clean out the built materials.">
     <delete dir="${targetDirectory}" quiet="true"/>
