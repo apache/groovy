@@ -33,7 +33,8 @@ $Date$
   <property name="reportsDirectory" value="${targetDirectory}/test-reports"/>
 
   <property name="antlrDirectory" value="${mainSourceDirectory}/org/codehaus/groovy/antlr"/>
-  <property name="parserDirectory" value="${antlrDirectory}/parser"/>
+  <property name="groovyParserDirectory" value="${antlrDirectory}/parser"/>
+  <property name="javaParserDirectory" value="${antlrDirectory}/java"/>
 
   <property name="dependenciesDirectory" value="${user.home}/lib/Java/groovy/lib/"/>
   
@@ -117,8 +118,13 @@ $Date$
   </path>
 
   <target name="ensureAntlr" description="Ensure all the files generated from the Antlr grammar are up to date.">
-    <mkdir dir="${parserDirectory}"/>
-    <antlr target="${antlrDirectory}/groovy.g" outputdirectory="${parserDirectory}">
+    <mkdir dir="${groovyParserDirectory}"/>
+    <antlr target="${antlrDirectory}/groovy.g" outputdirectory="${groovyParserDirectory}">
+      <classpath>
+        <pathelement location="${antlrJar}"/>
+      </classpath>
+    </antlr>
+    <antlr target="${javaParserDirectory}/java.g" outputdirectory="${javaParserDirectory}">
       <classpath>
         <pathelement location="${antlrJar}"/>
       </classpath>
@@ -173,7 +179,20 @@ $Date$
       target="1.4" fork="true" classpathref="javaTestCompileDependencies" includes="UberTestCase*.java"/>
   </target>
 
-  <target name="test" depends="compileTest" description="Compile and test all the classes.">
+  <!-- Some of the SQL-related tests in UberTestCase3 require access to the source code of the test.  Copy
+  the sources into the target tree so that the needed source files can be found. -->
+
+  <target name="copySelectedGroovyFiles" depends="compileTest">
+    <copy todir="${testClassesDirectory}">
+      <fileset dir="${testSourceDirectory}">
+        <include name="groovy/sql/PersonTest.groovy"/>
+        <include name="groovy/sql/SqlCompleteTest.groovy"/>
+        <include name="groovy/sql/SqlTest.groovy"/>
+      </fileset>
+    </copy>
+  </target>
+
+  <target name="test" depends="compileTest,copySelectedGroovyFiles" description="Compile and test all the classes.">
     <mkdir dir="${reportsDirectory}"/>
     <junit printsummary="true" fork="true" forkmode="once">
       <formatter type="plain"/>
@@ -191,7 +210,8 @@ $Date$
     <delete dir="${targetDirectory}" quiet="true"/>
     <delete quiet="true">
       <fileset dir="." includes="**/*~"/>
-      <fileset dir="${parserDirectory}" includes="Groovy*.*"/>
+      <fileset dir="${groovyParserDirectory}" includes="Groovy*.*"/>
+      <fileset dir="${javaParserDirectory}" includes="JavaLexer.java,JavaRecognizer.java,JavaTokenTypes.java,JavaTokenTypes.txt"/>
     </delete>
   </target>
 
