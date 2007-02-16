@@ -62,6 +62,7 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.VariableScope;
+import org.codehaus.groovy.ast.expr.AnnotationConstantExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
@@ -526,6 +527,8 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
         	return transformClosureExpression((ClosureExpression) exp);
         } else if (exp instanceof ConstructorCallExpression) {
         	return transformConstructorCallExpression((ConstructorCallExpression) exp);
+        } else if (exp instanceof AnnotationConstantExpression) {
+            return transformAnnotationConstantExpression((AnnotationConstantExpression) exp);
         } else {
             resolveOrFail(exp.getType(),exp);
             return exp.transformExpression(this);
@@ -728,6 +731,20 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
         Expression right = transform(de.getRightExpression());
         if (right==de.getRightExpression()) return de;
         return new DeclarationExpression((VariableExpression) left,de.getOperation(),right);
+    }
+    
+    protected Expression transformAnnotationConstantExpression(AnnotationConstantExpression ace) {
+        AnnotationNode an = (AnnotationNode) ace.getValue();
+        ClassNode type = an.getClassNode();
+        resolveOrFail(type, "unable to find class for annotation", an);
+        for (Iterator iter = an.getMembers().entrySet().iterator(); iter.hasNext();) {
+            Map.Entry member = (Map.Entry) iter.next();
+            String memberName = (String) member.getKey();
+            Expression memberValue = (Expression) member.getValue();
+            member.setValue(transform(memberValue));
+        }  
+
+        return ace;
     }
     
     public void visitAnnotations(AnnotatedNode node) {

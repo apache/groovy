@@ -74,6 +74,7 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.VariableScope;
+import org.codehaus.groovy.ast.expr.AnnotationConstantExpression;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.AttributeExpression;
@@ -2600,13 +2601,17 @@ public class AsmClassGenerator extends ClassGenerator {
     private void visitAnnotationAttributes(AnnotationNode an, AnnotationVisitor av) {
         Map constantAttrs = new HashMap();
         Map enumAttrs = new HashMap();
+        Map atAttrs = new HashMap();
         Map arrayAttrs = new HashMap();
 
         Iterator mIt = an.getMembers().keySet().iterator();
         while (mIt.hasNext()) {
             String name = (String) mIt.next();
             Expression expr = an.getMember(name);
-            if(expr instanceof ConstantExpression) {
+            if(expr instanceof AnnotationConstantExpression) {
+                atAttrs.put(name, ((AnnotationConstantExpression) expr).getValue());
+            }
+            else if(expr instanceof ConstantExpression) {
                 constantAttrs.put(name, ((ConstantExpression) expr).getValue());
             }
             else if(expr instanceof ClassExpression) {
@@ -2631,6 +2636,14 @@ public class AsmClassGenerator extends ClassGenerator {
                     BytecodeHelper.getTypeDescription(propExp.getObjectExpression().getType()),
                     String.valueOf(((ConstantExpression) propExp.getProperty()).getValue()));
         }
+        for(Iterator it = atAttrs.entrySet().iterator(); it.hasNext(); ) {
+            Map.Entry entry = (Map.Entry) it.next();
+            AnnotationNode atNode = (AnnotationNode) entry.getValue();
+            AnnotationVisitor av2 = av.visitAnnotation((String) entry.getKey(),
+                    BytecodeHelper.getTypeDescription(atNode.getClassNode()));
+            visitAnnotationAttributes(atNode, av2);
+            av2.visitEnd();
+        }
         
         visitArrayAttributes(an, arrayAttrs, av);
     }
@@ -2647,24 +2660,35 @@ public class AsmClassGenerator extends ClassGenerator {
             if(values.size() > 0) {
                 Expression expr = (Expression) values.get(0);
                 int arrayElementType = -1;
-                if(expr instanceof ConstantExpression) {
+                if(expr instanceof AnnotationConstantExpression) {
                     arrayElementType = 1;
                 }
-                else if(expr instanceof ClassExpression) {
+                else if(expr instanceof ConstantExpression) {
                     arrayElementType = 2;
                 }
-                else if(expr instanceof PropertyExpression) {
+                else if(expr instanceof ClassExpression) {
                     arrayElementType = 3;
+                }
+                else if(expr instanceof PropertyExpression) {
+                    arrayElementType = 4;
                 }
                 for(Iterator exprIt = listExpr.getExpressions().iterator(); exprIt.hasNext(); ) {
                     switch(arrayElementType) {
                         case 1:
-                            av2.visit(null, ((ConstantExpression) exprIt.next()).getValue());
+                            AnnotationNode atAttr = 
+                                (AnnotationNode) ((AnnotationConstantExpression) exprIt.next()).getValue();
+                            AnnotationVisitor av3 = av2.visitAnnotation(null,
+                                    BytecodeHelper.getTypeDescription(atAttr.getClassNode()));
+                            visitAnnotationAttributes(atAttr, av3);
+                            av3.visitEnd();
                             break;
                         case 2:
-                            av2.visit(null, Type.getType(((Expression) exprIt.next()).getType().getTypeClass()));
+                            av2.visit(null, ((ConstantExpression) exprIt.next()).getValue());
                             break;
                         case 3:
+                            av2.visit(null, Type.getType(((Expression) exprIt.next()).getType().getTypeClass()));
+                            break;
+                        case 4:
                             PropertyExpression propExpr = (PropertyExpression) exprIt.next();
                             av2.visitEnum(null, 
                                     BytecodeHelper.getTypeDescription(propExpr.getObjectExpression().getType()),

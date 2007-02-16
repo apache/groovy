@@ -45,9 +45,7 @@
  */
 package org.codehaus.groovy.classgen;
 
-import java.lang.reflect.Array;
 import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -55,6 +53,7 @@ import java.util.Map;
 
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.expr.AnnotationConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
@@ -77,6 +76,9 @@ import org.codehaus.groovy.syntax.SyntaxException;
  * @author <a href='mailto:the[dot]mindstorm[at]gmail[dot]com'>Alex Popescu</a>
  */
 public class AnnotationVisitor {
+    final private static Class[] EMPTY_ARG_TYPES = new Class[0];
+    final private static Object[] EMPTY_ARGS = new Object[0];
+    
     private Class annotationRootClass;
     private SourceUnit source;
     private ErrorCollector errorCollector;
@@ -160,8 +162,22 @@ public class AnnotationVisitor {
         else if(isEnum(attrType)) {
             visitEnumExpression(attrName, (PropertyExpression) attrAst, attrType);
         }
+        else if(isAnnotation(attrType)) {
+            visitAnnotationExpression(attrName, (AnnotationConstantExpression) attrAst, attrType);
+        }
     }
     
+    /**
+     * @param attrName
+     * @param expression
+     * @param attrType
+     */
+    protected void visitAnnotationExpression(String attrName, AnnotationConstantExpression expression, Class attrType) {
+        AnnotationNode annotationNode = (AnnotationNode) expression.getValue();
+        AnnotationVisitor visitor = new AnnotationVisitor(this.source, this.errorCollector);
+        visitor.visit(annotationNode);
+    }
+
     protected void visitListExpression(String attrName, ListExpression listExpr, Class elementType) {
         List expressions = listExpr.getExpressions();
         for (int i = 0; i < expressions.size(); i++) {
@@ -174,6 +190,14 @@ public class AnnotationVisitor {
             addError("Attribute '" + attrName + "' should have type '" + attrType.getName() + "'; "
                     + "but found type '" + constExpr.getType().getTypeClass().getName(),
                     constExpr);
+        }
+    }
+    
+    protected void visitEnumExpression(String attrName, PropertyExpression propExpr, Class attrType) {
+        if(!isEnum(propExpr.getObjectExpression().getType().getTypeClass())) {
+            addError("Attribute '" + attrName + "' should have type Enum, but found "
+                    + propExpr.getObjectExpression().getType().getTypeClass().getName(), 
+                    propExpr);
         }
     }
     
@@ -212,16 +236,13 @@ public class AnnotationVisitor {
         return clazz.equals(typeClass);
     }
     
-    protected void visitEnumExpression(String attrName, PropertyExpression propExpr, Class attrType) {
-        if(!isEnum(propExpr.getObjectExpression().getType().getTypeClass())) {
-            addError("Attribute '" + attrName + "' should have type Enum, but found "
-                    + propExpr.getObjectExpression().getType().getTypeClass().getName(), 
-                    propExpr);
-        }
+    private boolean isAnnotation(Class clazz) {
+        Boolean result = (Boolean) invoke(clazz.getClass(), "isAnnotation", EMPTY_ARG_TYPES, clazz, EMPTY_ARGS);
+        return result.booleanValue();
     }
     
     private boolean isEnum(Class clazz) {
-        Boolean result = (Boolean) invoke(clazz.getClass(), "isEnum", new Class[0], clazz, new Object[0]);
+        Boolean result = (Boolean) invoke(clazz.getClass(), "isEnum", EMPTY_ARG_TYPES, clazz, EMPTY_ARGS);
         return result.booleanValue();
     }
     
@@ -232,7 +253,7 @@ public class AnnotationVisitor {
     
     private void initializeAnnotationMeta() {
         Object[] annotations = (Object[]) invoke(this.annotationClass.getClass(), 
-                "getAnnotations", new Class[0], this.annotationClass, new Object[0]);
+                "getAnnotations", EMPTY_ARG_TYPES, this.annotationClass, EMPTY_ARGS);
         if (annotations == null) {
             addError("Cannot retrieve annotation meta information. " 
                     + ExtendedVerifier.JVM_ERROR_MESSAGE);
@@ -240,7 +261,8 @@ public class AnnotationVisitor {
         }
         
         for(int i = 0; i < annotations.length; i++) {
-            Class annotationType = (Class) invoke(this.annotationRootClass, "annotationType", new Class[0], annotations[i], new Object[0]);
+            Class annotationType = (Class) invoke(this.annotationRootClass, 
+                    "annotationType", EMPTY_ARG_TYPES, annotations[i], EMPTY_ARGS);
             if (annotationType == null) continue;
             
             if ("java.lang.annotation.Retention".equals(annotationType.getName())) {
@@ -255,7 +277,7 @@ public class AnnotationVisitor {
     private void initializeAttributeTypes() {
         Method[] methods = this.annotationClass.getDeclaredMethods();
         for(int i = 0; i < methods.length; i++) {
-            Object defaultValue = invoke(Method.class, "getDefaultValue", new Class[0], methods[i], new Object[0]);
+            Object defaultValue = invoke(Method.class, "getDefaultValue", EMPTY_ARG_TYPES, methods[i], EMPTY_ARGS);
             if (defaultValue != null) { 
                 // by now we know JDK1.5 API is available so a null means no default value
                 defaultAttrTypes.put(methods[i].getName(), methods[i].getReturnType());
@@ -268,7 +290,7 @@ public class AnnotationVisitor {
     
     private void initializeRetention(Class retentionClass, Object retentionAnnotation) {
         Object retentionPolicyEnum = 
-            invoke(retentionClass, "value", new Class[0], retentionAnnotation, new Object[0]);
+            invoke(retentionClass, "value", EMPTY_ARG_TYPES, retentionAnnotation, EMPTY_ARGS);
         if (retentionPolicyEnum == null) {
             addError("Cannot read @RetentionPolicy on the @" + this.annotationClass.getName() 
                     + ExtendedVerifier.JVM_ERROR_MESSAGE);
@@ -285,7 +307,7 @@ public class AnnotationVisitor {
     
     private void initializeTarget(Class targetClass, Object targetAnnotation) {
         Object[] elementTypeEnum =
-            (Object[]) invoke(targetClass, "value", new Class[0], targetAnnotation, new Object[0]);
+            (Object[]) invoke(targetClass, "value", EMPTY_ARG_TYPES, targetAnnotation, EMPTY_ARGS);
         if (elementTypeEnum == null) {
             addError("Cannot read @Target on the @" + this.annotationClass.getName() 
                     + ExtendedVerifier.JVM_ERROR_MESSAGE);
