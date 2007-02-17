@@ -226,7 +226,7 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
 
         return  resolveFromModule(type,testModuleImports) ||
                 resolveFromCompileUnit(type) ||
-                resovleFromDefaultImports(type,testDefaultImports) ||
+                resolveFromDefaultImports(type,testDefaultImports) ||
                 resolveFromStaticInnerClasses(type,testStaticInnerClasses) ||
                 resolveFromClassCache(type) ||
                 resolveToClass(type) ||
@@ -335,7 +335,7 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
         return false;
     }
 
-    private boolean resovleFromDefaultImports(ClassNode type, boolean testDefaultImports) {
+    private boolean resolveFromDefaultImports(ClassNode type, boolean testDefaultImports) {
         // test default imports
         testDefaultImports &= !type.hasPackageName();
         if (testDefaultImports) {
