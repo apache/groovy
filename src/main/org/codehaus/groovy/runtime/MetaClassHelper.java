@@ -278,12 +278,12 @@ public class MetaClassHelper {
     }
     
     private static int getMaximumInterfaceDistance(Class c, Class interfaceClass) {
-        if (c==interfaceClass) return 0;
+        if (c==null || c==interfaceClass) return 0;
         Class[] interfaces = c.getInterfaces();
         int max = 0;
         for (int i=0; i<interfaces.length; i++) {
             int sub = 0;
-            if (interfaces[i].isAssignableFrom(c)) {
+            if (interfaces[i].isAssignableFrom(interfaceClass)) {
                 sub = 1+ getMaximumInterfaceDistance(interfaces[i],interfaceClass);
             }
             max = Math.max(max,sub);
