@@ -127,7 +127,7 @@ public class GroovyMain {
      * @param args all command line args.
      */
     public static void main(String args[]) {
-        MetaClass.setUseReflection(true);
+//        MetaClass.setUseReflection(true);
 
         Options options = buildOptions();
 

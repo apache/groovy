@@ -19,111 +19,58 @@ package groovy.lang;
 
 import java.lang.reflect.Method;
 import java.util.List;
-import java.util.logging.Logger;
 
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.runtime.MetaClassHelper;
 
-/**
- * Base class for meta class implementations. 
- * The meta class is used to invoke methods or to get 
- * fields/properties. For proper initialization of this class 
- * it is not enough to only call the constructor, the
- * initialize() must be called too. The invoke methods should
- * check that initialize() was called. Adding methods is
- * valid unless initilise method was called. Therefore 
- * addNewStaticMethod and addNewInstanceMethod should check that
- * that initilise awas not called before.
- * 
- * 
- * @author John Wilson
- *
- */
 
-public abstract class MetaClass {
-    protected static final Logger log = Logger.getLogger(MetaClass.class.getName());
-    protected static boolean useReflection = false;
-    public static final Object NO_METHOD_FOUND = new Object();
-    protected final Class theClass;
-    private boolean isGroovyObject;
-    
-    public static boolean isUseReflection() {
-        return MetaClass.useReflection;
-    }
-
-    /**
-     * Allows reflection to be enabled in situations where bytecode generation
-     * of method invocations causes issues.
-     *
-     * @param useReflection
+public abstract interface MetaClass extends MOP {
+    /*
+     * This should be set from some kind of environment variable in the future
      */
-    public static void setUseReflection(boolean useReflection) {
-        MetaClass.useReflection = useReflection;
-    }
-    
-    protected MetaClass(final Class theClass) {
-        this.theClass = theClass;
-        isGroovyObject = GroovyObject.class.isAssignableFrom(theClass);
-    }
+    static boolean useReflection = false;
     
     /*
      * Called on the MetaClass of the superclass of the class to allow that MetaClass to control
-     * the behavuior of its subclass if it wants to
+     * the behaviour of its subclass if it wants to.
      */
-    public abstract MetaClass createMetaClass(Class theClass, MetaClassRegistry registry);
+     MetaClass createMetaClass(Class theClass, MetaClassRegistry registry);
     
-    public boolean isGroovyObject(){
-        return isGroovyObject;
-    }
+     /*
+      * 
+      * Do we need this?
+      * 
+      */
+     boolean isGroovyObject();
     
-    public Object invokeMissingMethod(Object instance, String methodName, Object[] arguments) {
-        GroovyObject pogo = (GroovyObject) instance;
-        return pogo.invokeMethod(methodName,arguments);
-    }
+    /*
+     * 
+     * Do we need this method? 
+     * 
+     */
+     Object invokeMissingMethod(Object instance, String methodName, Object[] arguments);
     
-    public Object invokeMethod(Object object, String methodName, Object arguments) {
-        if (arguments == null) {
-            return invokeMethod(object, methodName, MetaClassHelper.EMPTY_ARRAY);
-        }
-        if (arguments instanceof Tuple) {
-            Tuple tuple = (Tuple) arguments;
-            return invokeMethod(object, methodName, tuple.toArray());
-        }
-        if (arguments instanceof Object[]) {
-            return invokeMethod(object, methodName, (Object[])arguments);
-        }
-        else {
-            return invokeMethod(object, methodName, new Object[]{arguments});
-        }
-    }
+    /*
+     * 
+     * Do we really want this method?
+     * 
+     */
+     Object invokeMethod(Object object, String methodName, Object arguments);
     
-    public Object invokeMethod(Class sender, Object receiver, String methodName, Object[] arguments, boolean isCallToSuper, boolean fromInsideClass){
-        return invokeMethod(receiver,methodName,arguments);
-    }
+
+     Object invokeMethod(Class sender, Object receiver, String methodName, Object[] arguments, boolean isCallToSuper, boolean fromInsideClass);
     
-    public Object getProperty(Class sender, Object receiver, String messageName, boolean useSuper, boolean fromInsideClass) {
-        return getProperty(receiver,messageName);
-    }
+     Object getProperty(Class sender, Object receiver, String messageName, boolean useSuper, boolean fromInsideClass);
     
-    public void setProperty(Class sender, Object receiver, String messageName, Object messageValue, boolean useSuper, boolean fromInsideClass) {
-        setProperty(receiver,messageName,messageValue);
-    }
+     void setProperty(Class sender, Object receiver, String messageName, Object messageValue, boolean useSuper, boolean fromInsideClass);
     
-    public Object getAttribute(Class sender, Object receiver, String messageName, boolean useSuper) {
-        return getAttribute(receiver,messageName);
-    }
+    /*
+     *  Why does this take only one boolean parameter?
+     * 
+     */
+     Object getAttribute(Class sender, Object receiver, String messageName, boolean useSuper);
     
-    public void setAttribute(Class sender, Object receiver, String messageName, Object messageValue, boolean useSuper, boolean fromInsideClass) {
-        setAttribute(receiver,messageName,messageValue);
-    }
+     void setAttribute(Class sender, Object receiver, String messageName, Object messageValue, boolean useSuper, boolean fromInsideClass);
     
-    public abstract Object invokeConstructor(Object[] arguments);
-    public abstract Object invokeMethod(Object object, String methodName, Object[] arguments);
-    public abstract Object invokeStaticMethod(Object object, String methodName, Object[] arguments);
-    public abstract Object getProperty(Object object, String property);
-    public abstract void setProperty(Object object, String property, Object newValue);
-    public abstract Object getAttribute(Object object, String attribute);
-    public abstract void setAttribute(Object object, String attribute, Object newValue);
     /**
      * adds a new instance method to this meta class. Instance
      * methods are able to overwrite the original methods of the
@@ -131,13 +78,22 @@ public abstract class MetaClass {
      * initlise was called.
      * @param method the method to be added
      */
-    public abstract void addNewInstanceMethod(Method method);
+     void addNewInstanceMethod(Method method);
+     
     /**
      * adds a new static method to this meta class. This is only
      * possible as long as initilise was not called.
      * @param method the method to be added
      */
-    public abstract void addNewStaticMethod(Method method);
+     void addNewStaticMethod(Method method);
+     
+     /*
+      * 
+      * do we need this?
+      * 
+      * surely the MetaClass can do lazy initialisation on the first call of 
+      * one of its MetaClass methods?
+      */
     /**
      * complete the initlialisation process. After this method
      * is called no methods should be added to the meta class.
@@ -148,22 +104,42 @@ public abstract class MetaClass {
      * Reflector. It is suggested to synchronize this 
      * method.
      */
-    public abstract void initialize();
+     void initialize();
     
-    public abstract List getProperties();
-    public abstract ClassNode getClassNode();
-    public abstract List getMetaMethods();
-    
-    public abstract List getMethods();
+     List getProperties();
+     
+     List getMethods();
+     
+     /*
+      * 
+      * This is the problematic method used by SQL
+      * We really need to find a way to either do this properly or to remove it
+      */
+     ClassNode getClassNode();
+     
+     
+     /*
+      * 
+      * Why have this and getMethods() what's the difference?
+      */
+     List getMetaMethods();
     
     /**
      * Warning, this method will be removed
      * @deprecated use invokeConstructor instead
      */
-    public Object invokeConstructorAt(Class at, Object[] arguments) {
-        return invokeConstructor(arguments);
-    }
-
+     Object invokeConstructorAt(Class at, Object[] arguments);
+     
+     /*
+      * 
+      * What is this for?
+      * 
+      */
+     int selectConstructorAndTransformArguments(int numberOfCosntructors, Object[] arguments);
+     
+     /*
+      * Do we need this?
+      */
     /**
      * Selects a method by name and argument classes. This method
      * does not search for an exact match, it searches for a compatible
@@ -175,14 +151,5 @@ public abstract class MetaClass {
      * @returns a matching MetaMethod or null
      * @throws GroovyRuntimeException if there is more than one matching method
      */
-    public abstract MetaMethod pickMethod(String methodName, Class[] arguments);
-    
-    /**
-     * Warning, this method will be removed
-     * @deprecated usw pickMethod instead
-     */
-    protected MetaMethod retrieveMethod(String methodName, Class[] arguments) {
-        return pickMethod(methodName,arguments);
-    }
-
+     MetaMethod pickMethod(String methodName, Class[] arguments);
 }

@@ -21,24 +21,21 @@ import java.lang.reflect.Method;
 import java.util.List;
 
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
  * @author John Wilson
  *
  */
 
-public class DelegatingMetaClass extends MetaClass {
+public class DelegatingMetaClass implements MetaClass {
     protected final MetaClass delegate;
     
     public DelegatingMetaClass(final MetaClass delegate) {
-        super(delegate.theClass);
-        
         this.delegate = delegate;
     }
    
     public DelegatingMetaClass(final Class theClass) {
-        this(new MetaClassImpl(InvokerHelper.getInstance().getMetaRegistry(), theClass));
+        this(MetaClassRegistry.registry.getMetaClass(theClass.getSuperclass() == null ? Object.class : theClass.getSuperclass()).createMetaClass(theClass, MetaClassRegistry.registry));
     }
     
     public MetaClass createMetaClass(Class theClass, MetaClassRegistry registry) {
@@ -162,10 +159,44 @@ public class DelegatingMetaClass extends MetaClass {
     public MetaMethod pickMethod(String methodName, Class[] arguments) {
         return delegate.pickMethod(methodName,arguments);
     }
-    /**
-     * @deprecated
-     */
-    protected MetaMethod retrieveMethod(String methodName, Class[] arguments) {
-        return delegate.retrieveMethod(methodName,arguments);
+
+    public Object getAttribute(Class sender, Object receiver, String messageName, boolean useSuper) {
+        return this.delegate.getAttribute(sender, receiver, messageName, useSuper);
+    }
+
+    public Object getProperty(Class sender, Object receiver, String messageName, boolean useSuper, boolean fromInsideClass) {
+        return this.delegate.getProperty(sender, receiver, messageName, useSuper, fromInsideClass);
+    }
+
+    public Class getTheClass() {
+        return this.delegate.getTheClass();
+    }
+
+    public Object invokeConstructorAt(Class at, Object[] arguments) {
+        return this.delegate.invokeConstructorAt(at, arguments);
+    }
+
+    public Object invokeMethod(Class sender, Object receiver, String methodName, Object[] arguments, boolean isCallToSuper, boolean fromInsideClass) {
+        return this.delegate.invokeMethod(sender, receiver, methodName, arguments, isCallToSuper, fromInsideClass);
+    }
+
+    public Object invokeMissingMethod(Object instance, String methodName, Object[] arguments) {
+        return this.delegate.invokeMissingMethod(instance, methodName, arguments);
+    }
+
+    public boolean isGroovyObject() {
+        return this.delegate.isGroovyObject();
+    }
+
+    public void setAttribute(Class sender, Object receiver, String messageName, Object messageValue, boolean useSuper, boolean fromInsideClass) {
+        this.delegate.setAttribute(sender, receiver, messageName, messageValue, useSuper, fromInsideClass);
+    }
+
+    public void setProperty(Class sender, Object receiver, String messageName, Object messageValue, boolean useSuper, boolean fromInsideClass) {
+        this.delegate.setProperty(sender, receiver, messageName, messageValue, useSuper, fromInsideClass);
+    }
+
+    public int selectConstructorAndTransformArguments(int numberOfCosntructors, Object[] arguments) {
+        return this.delegate.selectConstructorAndTransformArguments(numberOfCosntructors, arguments);
     }
 }

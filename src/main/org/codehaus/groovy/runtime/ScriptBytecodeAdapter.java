@@ -255,7 +255,7 @@ public class ScriptBytecodeAdapter {
     //  --------------------------------------------------------       
 
     public static int selectConstructorAndTransformArguments(Object[] arguments, int numberOfCosntructors, Class which) {
-        MetaClassImpl metaClass = (MetaClassImpl) InvokerHelper.getInstance().getMetaRegistry().getMetaClass(which);
+        MetaClass metaClass = MetaClassRegistry.registry.getMetaClass(which);
         return metaClass.selectConstructorAndTransformArguments(numberOfCosntructors, arguments);
     }
 

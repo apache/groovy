@@ -361,7 +361,7 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
         value = config.getInitParameter("reflection");
         if (value != null) {
             this.reflection = Boolean.valueOf(value).booleanValue();
-            MetaClass.setUseReflection(reflection);
+//            MetaClass.setUseReflection(reflection);
         }
 
         value = config.getInitParameter("logGROOVY861");

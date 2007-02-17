@@ -72,6 +72,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassNode;
@@ -104,9 +105,12 @@ import org.objectweb.asm.ClassVisitor;
 * @version $Revision$
 * @see groovy.lang.MetaClass
 */
-public class MetaClassImpl extends MetaClass {
+public class MetaClassImpl implements MetaClass {
+   protected static final Logger log = Logger.getLogger(MetaClass.class.getName());
 
+   protected final Class theClass;
    protected MetaClassRegistry registry;
+   protected boolean isGroovyObject;
    private ClassNode classNode;
    private Map classMethodIndex = new HashMap();
    private Map classMethodIndexForSuper;
@@ -130,8 +134,13 @@ public class MetaClassImpl extends MetaClass {
    private static final Object[] EMPTY_ARGUMENTS = {};
    private List newGroovyMethodsList = new LinkedList();
    
+   protected MetaClassImpl(final Class theClass) {
+       this.theClass = theClass;
+       isGroovyObject = GroovyObject.class.isAssignableFrom(theClass);
+   }
+   
    public MetaClassImpl(MetaClassRegistry registry, final Class theClass) {
-       super(theClass);
+       this(theClass);
        this.registry = registry;
        constructors = (List) AccessController.doPrivileged(new  PrivilegedAction() {
                public Object run() {
@@ -145,7 +154,7 @@ public class MetaClassImpl extends MetaClass {
            final Class customMetaClass = Class.forName("groovy.runtime.metaclass." + theClass.getName() + "MetaClass");
            final Constructor customMetaClassConstructor = customMetaClass.getConstructor(new Class[]{MetaClassRegistry.class, Class.class});
            
-           return (MetaClass)customMetaClassConstructor.newInstance(new Object[]{this, theClass});
+           return (MetaClass)customMetaClassConstructor.newInstance(new Object[]{registry, theClass});
        } catch (final ClassNotFoundException e) {
            return new MetaClassImpl(registry, theClass);
        } catch (final Exception e) {
@@ -153,6 +162,14 @@ public class MetaClassImpl extends MetaClass {
        }
    }
 
+   public Class getTheClass() {
+       return this.theClass;
+   }
+   
+   public boolean isGroovyObject(){
+       return isGroovyObject;
+   }
+   
    private void fillMethodIndex() {
        if (theClass.isInterface()) {
            // simplified version for interfaces (less inheritance)
@@ -481,6 +498,26 @@ public class MetaClassImpl extends MetaClass {
        }       
    }
    
+   public Object invokeMethod(Object object, String methodName, Object arguments) {
+       if (arguments == null) {
+           return invokeMethod(object, methodName, MetaClassHelper.EMPTY_ARRAY);
+       }
+       if (arguments instanceof Tuple) {
+           Tuple tuple = (Tuple) arguments;
+           return invokeMethod(object, methodName, tuple.toArray());
+       }
+       if (arguments instanceof Object[]) {
+           return invokeMethod(object, methodName, (Object[])arguments);
+       }
+       else {
+           return invokeMethod(object, methodName, new Object[]{arguments});
+       }
+   }  
+   
+   public Object invokeMissingMethod(Object instance, String methodName, Object[] arguments) {
+       GroovyObject pogo = (GroovyObject) instance;
+       return pogo.invokeMethod(methodName,arguments);
+   }
    
    /**
     * Invokes the given method on the object.
@@ -722,6 +759,14 @@ public class MetaClassImpl extends MetaClass {
            method = (MetaMethod) chooseMethod(methodName, methods, MetaClassHelper.convertToTypeArray(arguments), true);
        }
        return method;
+   }
+   
+   /**
+    * Warning, this method will be removed
+    * @deprecated use invokeConstructor instead
+    */
+   public Object invokeConstructorAt(Class at, Object[] arguments) {
+       return invokeConstructor(arguments);
    }
 
    public Object invokeConstructor(Object[] arguments) {
@@ -1490,6 +1535,10 @@ public class MetaClassImpl extends MetaClass {
        return (MetaProperty) propertyMap.get(name);
    }
 
+   
+   public Object getAttribute(Class sender, Object receiver, String messageName, boolean useSuper) {
+       return getAttribute(receiver,messageName);
+   }
 
    /**
     * Looks up the given attribute (field) on the given object

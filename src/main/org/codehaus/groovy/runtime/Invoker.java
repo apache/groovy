@@ -72,7 +72,7 @@ public class Invoker {
         return metaRegistry;
     }
 
-    private MetaClassRegistry metaRegistry = MetaClassRegistry.registry;
+    private final MetaClassRegistry metaRegistry = MetaClassRegistry.registry;
 
     public MetaClass getMetaClass(Object object) {
         return metaRegistry.getMetaClass(object.getClass());
@@ -291,6 +291,6 @@ public class Invoker {
     }
 
     public void removeMetaClass(Class clazz) {
-        getMetaRegistry().removeMetaClass(clazz);
+        metaRegistry.removeMetaClass(clazz);
     }
 }

@@ -55,10 +55,10 @@ import java.util.List;
 import org.codehaus.groovy.classgen.ReflectorGenerator;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
+import org.codehaus.groovy.runtime.MemoryAwareConcurrentReadMap;
 import org.codehaus.groovy.runtime.MethodHelper;
 import org.codehaus.groovy.runtime.Reflector;
 import org.codehaus.groovy.runtime.ReflectorLoader;
-import org.codehaus.groovy.runtime.MemoryAwareConcurrentReadMap;
 import org.objectweb.asm.ClassWriter;
 
 /**
