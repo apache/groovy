@@ -136,54 +136,62 @@ $Date$
 
   <target name="compileMain" depends="ensureAntlr" description="Compile the Java and Groovy code in the main source.">
     <mkdir dir="${mainClassesDirectory}"/>
-    <javac srcdir="${mainSourceDirectory}" destdir="${mainClassesDirectory}" debug="yes" source="1.4"
-    target="1.4" fork="true" classpathref="javaMainCompileDependencies" />
+    <javac srcdir="${mainSourceDirectory}" destdir="${mainClassesDirectory}" debug="yes"
+      source="1.4" target="1.4" classpathref="javaMainCompileDependencies" />
 
     <!--
 
-    groovyc task does not support the fork attribute.  This means we cannot use a groovyc task directly
-    since we cannot set the classpath correctly. :-(
+    There seems to be a problem using the groovyc task directly.  If we use it directly as below then there is an
+    NoClassDefFoundError for class org/objectweb/asm/Opcodes.  If however we run a separate java task to run
+    the groovyc task then everything works as it should.
 
     <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpath="${mainClassesDirectory}"/>
     <groovyc srcdir="${mainSourceDirectory}" destdir="${mainClassesDirectory}" classpathref="groovyMainCompileDependencies"/>
 
     -->
 
-    <echo message="Compiling Groovy Main."/>
-    <java classname="org.codehaus.groovy.ant.Groovyc" fork="true" classpathref="groovyMainCompileDependencies">
+    <echo message="Groovyc of main code."/>
+    <java classname="org.codehaus.groovy.ant.Groovyc" classpathref="groovyMainCompileDependencies">
       <arg value="${mainClassesDirectory}"/>
       <arg value="${mainSourceDirectory}"/>
     </java>
+
   </target>
 
   <target name="compileTest" depends="compileMain" description="Compile the Java and Groovy code in the test source.">
     <mkdir dir="${testClassesDirectory}"/>
-    <javac srcdir="${testSourceDirectory}" destdir="${testClassesDirectory}" debug="yes" source="1.4"
-    target="1.4" fork="true" classpathref="javaTestCompileDependencies" excludes="UberTestCase*.java"/>
+    <javac srcdir="${testSourceDirectory}" destdir="${testClassesDirectory}" debug="yes"
+      source="1.4" target="1.4" classpathref="javaTestCompileDependencies" excludes="UberTestCase*.java"/>
 
     <!--
 
-    groovyc task does not support the fork attribute.  This means we cannot use a groovyc task directly
-    since we cannot set the classpath correctly. :-(
+    Compiling all the Groovy tests requires a large amount of memory, 128M it appears.  To avoid having to
+    require people to put command line arguments on the ant command line, we fork a new JVM with the
+    required parameters.  Unfortunately, the groovyc task does not support the fork attribute.
 
     <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpath="${mainClassesDirectory}"/>
     <groovyc srcdir="${testSourceDirectory}" destdir="${testClassesDirectory}" classpathref="groovyTestCompileDependencies"/>
 
-    Why does compiling the Groovy tests take so much space?
+    This raises the question:  Why does compiling the Groovy tests take so much memory?
 
     -->
 
-    <echo message="Compiling Groovy Tests."/>
+    <echo message="Groovyc of test code."/>
     <java classname="org.codehaus.groovy.ant.Groovyc" fork="true" classpathref="groovyTestCompileDependencies" maxmemory="128M">
       <arg value="${testClassesDirectory}"/>
       <arg value="${testSourceDirectory}"/>
     </java>
-    <javac srcdir="${testSourceDirectory}" destdir="${testClassesDirectory}" debug="yes" source="1.4"
-      target="1.4" fork="true" classpathref="javaTestCompileDependencies" includes="UberTestCase*.java"/>
+
+    <javac srcdir="${testSourceDirectory}" destdir="${testClassesDirectory}" debug="yes"
+      source="1.4" target="1.4" classpathref="javaTestCompileDependencies" includes="UberTestCase*.java"/>
   </target>
 
-  <!-- Some of the SQL-related tests in UberTestCase3 require access to the source code of the test.  Copy
-  the sources into the target tree so that the needed source files can be found. -->
+  <!--
+
+  Some of the SQL-related tests in UberTestCase3 require access to the source code of the test.  Copy
+  the sources into the target tree so that the needed source files can be found.
+
+  -->
 
   <target name="copySelectedGroovyFiles">
     <mkdir dir="${testClassesDirectory}"/>
