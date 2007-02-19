@@ -29,6 +29,7 @@ import antlr.LexerSharedInputState;
  *              John Pybus              john@pybus.org
  *              John Rose               rose00@mac.com
  *              Jeremy Rayner           groovy@ross-rayner.com
+ *              Alex Popescu            the.mindstorm@gmail.com
  *
  * Version 1.00 December 9, 1997 -- initial release
  * Version 1.01 December 10, 1997
@@ -901,14 +902,16 @@ interfaceDefinition![AST modifiers]  {Token first = LT(1);}
                                   modifiers,IDENT,tp,ie,ib);}
     ;
 
-enumDefinition![AST modifiers]  {Token first = LT(1);}
+enumDefinition![AST modifiers]  {Token first = LT(1); AST prevCurrentClass = currentClass;}
     :   "enum" IDENT
+    		{ currentClass = #IDENT; }
         // it might implement some interfaces...
         ic:implementsClause
         // now parse the body of the enum
         eb:enumBlock
         {#enumDefinition = #(create(ENUM_DEF,"ENUM_DEF",first,LT(1)),
                              modifiers,IDENT,ic,eb);}
+        { currentClass = prevCurrentClass; }
     ;
 
 annotationDefinition![AST modifiers]  {Token first = LT(1);}
@@ -977,7 +980,7 @@ annotationBlock  {Token first = LT(1);}
 // This is the body of an enum. You can have zero or more enum constants
 // followed by any number of fields like a regular class
 enumBlock  {Token first = LT(1);}
-    :   LCURLY!
+    :   LCURLY! nls!
         (
             // Need a syntactic predicate, since enumConstants
             // can start with foo() as well as classField.

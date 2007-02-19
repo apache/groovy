@@ -37,6 +37,7 @@ public class AllCodehausJavaTestsSuite {
         suite.addTestSuite(GetPropertyTest.class);
         suite.addTestSuite(GroovyClassLoaderTest.class);
         suite.addTestSuite(GroovySourceASTTest.class);
+        suite.addTestSuite(EnumSourceParsingTest.class);
         suite.addTestSuite(GStringTest.class);
         suite.addTestSuite(IfElseTest.class);
         suite.addTestSuite(InvokerTest.class);

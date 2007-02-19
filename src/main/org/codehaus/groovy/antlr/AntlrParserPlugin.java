@@ -1463,6 +1463,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             case LITERAL_in:
                 return binaryExpression(Types.KEYWORD_IN,node);
                 
+            case ANNOTATION:
+                return new AnnotationConstantExpression(annotation(node));
+                
             default:
                 unknownAST(node);
         }
