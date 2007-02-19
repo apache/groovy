@@ -43,7 +43,23 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
-package groovy.lang;
+package org.codehaus.groovy.runtime.metaclass;
+
+import groovy.lang.Closure;
+import groovy.lang.GroovyClassLoader;
+import groovy.lang.GroovyObject;
+import groovy.lang.GroovyRuntimeException;
+import groovy.lang.GroovySystem;
+import groovy.lang.MetaArrayLengthProperty;
+import groovy.lang.MetaClass;
+import groovy.lang.MetaClassRegistry;
+import groovy.lang.MetaFieldProperty;
+import groovy.lang.MetaMethod;
+import groovy.lang.MetaProperty;
+import groovy.lang.MissingFieldException;
+import groovy.lang.MissingMethodException;
+import groovy.lang.MissingPropertyException;
+import groovy.lang.Tuple;
 
 import java.beans.BeanInfo;
 import java.beans.EventSetDescriptor;

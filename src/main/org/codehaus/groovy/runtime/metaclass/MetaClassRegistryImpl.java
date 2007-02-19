@@ -43,7 +43,12 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package groovy.lang;
+package org.codehaus.groovy.runtime.metaclass;
+
+import groovy.lang.GroovyRuntimeException;
+import groovy.lang.GroovySystem;
+import groovy.lang.MetaClass;
+import groovy.lang.MetaClassRegistry;
 
 import java.lang.reflect.Method;
 import java.security.AccessController;

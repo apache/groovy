@@ -20,6 +20,9 @@ package groovy.lang;
 
 import java.lang.reflect.Constructor;
 
+import org.codehaus.groovy.runtime.metaclass.MetaClassImpl;
+import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
+
 public class GroovySystem {
     private GroovySystem() {
         // Do not allow this class to be instantiated

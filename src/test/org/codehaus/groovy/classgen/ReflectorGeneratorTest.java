@@ -48,7 +48,6 @@ package org.codehaus.groovy.classgen;
 
 import groovy.lang.GroovySystem;
 import groovy.lang.MetaClassRegistry;
-import groovy.lang.MetaClassRegistryImpl;
 import groovy.lang.MetaMethod;
 import groovy.util.GroovyTestCase;
 
@@ -57,6 +56,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.util.ASMifierClassVisitor;
 import org.objectweb.asm.util.CheckClassAdapter;

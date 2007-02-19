@@ -32,7 +32,12 @@
  * DAMAGE.
  *
  */
-package groovy.lang;
+package org.codehaus.groovy.runtime.metaclass;
+
+import groovy.lang.GroovyRuntimeException;
+import groovy.lang.MetaFieldProperty;
+import groovy.lang.MetaMethod;
+import groovy.lang.MetaProperty;
 
 import java.lang.reflect.Modifier;
 

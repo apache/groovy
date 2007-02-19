@@ -2,6 +2,8 @@ package groovy.lang;
 
 import java.beans.IntrospectionException;
 
+import org.codehaus.groovy.runtime.metaclass.MetaClassImpl;
+
 /**
  * As subclass of MetaClass, ProxyMetaClass manages calls from Groovy Objects to POJOs.
  * It enriches MetaClass with the feature of making method invokations interceptable by
