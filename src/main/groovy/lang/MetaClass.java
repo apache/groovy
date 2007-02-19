@@ -23,7 +23,7 @@ import java.util.List;
 import org.codehaus.groovy.ast.ClassNode;
 
 
-public abstract interface MetaClass extends MOP {
+public abstract interface MetaClass extends MetaObjectProtocol {
     /*
      * Called on the MetaClass of the superclass of the class to allow that MetaClass to control
      * the behaviour of its subclass if it wants to.

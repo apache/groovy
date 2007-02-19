@@ -18,7 +18,7 @@
  */
 package groovy.lang;
 
-public interface MOP {
+public interface MetaObjectProtocol {
     Class getTheClass();
     Object invokeConstructor(Object[] arguments);
     Object invokeMethod(Object object, String methodName, Object[] arguments);
