@@ -46,8 +46,8 @@
 package groovy.sql;
 
 import groovy.lang.GroovyObject;
+import groovy.lang.GroovySystem;
 import groovy.lang.MetaClass;
-import groovy.lang.MetaClassRegistry;
 import groovy.lang.MissingMethodException;
 
 import java.lang.reflect.InvocationHandler;
@@ -138,7 +138,7 @@ public final class GroovyResultSetProxy implements InvocationHandler {
 
     private MetaClass getMetaClass() {
         if (metaClass==null) {
-            metaClass = MetaClassRegistry.registry.getMetaClass(GroovyResultSet.class);
+            metaClass = GroovySystem.metaClassRegistry.getMetaClass(GroovyResultSet.class);
         } 
         return metaClass;
     }

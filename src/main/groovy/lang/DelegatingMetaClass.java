@@ -35,7 +35,7 @@ public class DelegatingMetaClass implements MetaClass {
     }
    
     public DelegatingMetaClass(final Class theClass) {
-        this(MetaClassRegistry.registry.getMetaClass(theClass.getSuperclass() == null ? Object.class : theClass.getSuperclass()).createMetaClass(theClass, MetaClassRegistry.registry));
+        this(GroovySystem.metaClassRegistry.getMetaClass(theClass.getSuperclass() == null ? Object.class : theClass.getSuperclass()).createMetaClass(theClass, GroovySystem.metaClassRegistry));
     }
     
     public MetaClass createMetaClass(Class theClass, MetaClassRegistry registry) {

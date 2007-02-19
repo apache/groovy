@@ -45,7 +45,6 @@
  */
 package groovy.lang;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -114,20 +113,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         // Note that the user can replace the standard MetaClass with a custom MetaClass by including 
         // groovy.runtime.metaclass.java.lang.ObjectMetaClass in the classpath
         
-        MetaClass objectMetaClass;
-        try {
-        final Class customMetaClass = Class.forName("groovy.runtime.metaclass.java.lang.ObjectMetaClass");
-        final Constructor customMetaClassConstructor = customMetaClass.getConstructor(new Class[]{MetaClassRegistry.class, Class.class});
-            
-            objectMetaClass = (MetaClass)customMetaClassConstructor.newInstance(new Object[]{this, Object.class});
-        } catch (final ClassNotFoundException e) {
-            objectMetaClass = new MetaClassImpl(this, Object.class);
-        } catch (final Exception e) {
-            throw new GroovyRuntimeException("Could not instantiate custom Metaclass for class: java.lang.Object. Reason: " + e, e);
-        }
-        
-        objectMetaClass.initialize();
-        metaClasses.putStrong(Object.class, objectMetaClass);
+        metaClasses.putStrong(Object.class, GroovySystem.objectMetaClass);
    }
     
     private void registerMethods(final Class theClass, final boolean useInstanceMethods) {
@@ -149,30 +135,14 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
 
     public MetaClass getMetaClass(Class theClass) {
         synchronized (theClass) {
-            MetaClass answer = (MetaClass) metaClasses.get(theClass);
+        MetaClass answer = (MetaClass) metaClasses.get(theClass);
+        
             if (answer == null) {
-                if (theClass == Object.class) {
-                    //
-                    // This should NEVER happen - if we get here it means that metaClasses has lost the
-                    // MetaClass for Object which was inserted in the constructor
-                    // At the moment we have to have this kludge because metaClasses does lose entries
-                    //
-                    try {
-                        final Class customMetaClass = Class.forName("groovy.runtime.metaclass.java.lang.ObjectMetaClass");
-                        final Constructor customMetaClassConstructor = customMetaClass.getConstructor(new Class[]{MetaClassRegistry.class, Class.class});
-                            
-                            answer = (MetaClass)customMetaClassConstructor.newInstance(new Object[]{this, Object.class});
-                        } catch (final ClassNotFoundException e) {
-                            answer = new MetaClassImpl(this, Object.class);
-                        } catch (final Exception e) {
-                            throw new GroovyRuntimeException("Could not instantiate custom Metaclass for class: java.lang.Object. Reason: " + e, e);
-                        }
-                } else {
-                    answer = getMetaClassFor(theClass);
-                }
+                answer = getMetaClassFor(theClass);
                 answer.initialize();
                 metaClasses.put(theClass, answer);
             }
+            
             return answer;
         }
     }
@@ -241,9 +211,9 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     
         if (theSuperClass == null) {
             // The class is an interface - use Object's Metaclass
-            return getMetaClass(Object.class).createMetaClass(theClass, this);
+            return GroovySystem.objectMetaClass.createMetaClass(theClass, this);
         } else {
-            return getMetaClass(theClass.getSuperclass()).createMetaClass(theClass, this);
+            return getMetaClass(theSuperClass).createMetaClass(theClass, this);
         }
     }
 

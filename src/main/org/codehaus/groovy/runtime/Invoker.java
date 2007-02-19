@@ -49,6 +49,7 @@ import groovy.lang.Closure;
 import groovy.lang.GroovyInterceptable;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
+import groovy.lang.GroovySystem;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaClassRegistry;
 import groovy.lang.MissingMethodException;
@@ -72,7 +73,7 @@ public class Invoker {
         return metaRegistry;
     }
 
-    private final MetaClassRegistry metaRegistry = MetaClassRegistry.registry;
+    private final MetaClassRegistry metaRegistry = GroovySystem.metaClassRegistry;
 
     public MetaClass getMetaClass(Object object) {
         return metaRegistry.getMetaClass(object.getClass());

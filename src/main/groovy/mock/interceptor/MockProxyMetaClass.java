@@ -1,12 +1,11 @@
 package groovy.mock.interceptor;
 
-import groovy.lang.ProxyMetaClass;
-import groovy.lang.MetaClassRegistry;
+import groovy.lang.GroovySystem;
 import groovy.lang.MetaClass;
+import groovy.lang.MetaClassRegistry;
+import groovy.lang.ProxyMetaClass;
 
 import java.beans.IntrospectionException;
-
-import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
  * The ProxyMetaClass for the MockInterceptor.
@@ -27,7 +26,7 @@ public class MockProxyMetaClass extends ProxyMetaClass {
      * convenience factory method for the most usual case.
      */
     public static MockProxyMetaClass make(Class theClass) throws IntrospectionException {
-        MetaClassRegistry metaRegistry = MetaClassRegistry.registry;
+        MetaClassRegistry metaRegistry = GroovySystem.metaClassRegistry;
         MetaClass meta = metaRegistry.getMetaClass(theClass);
         return new MockProxyMetaClass(metaRegistry, theClass, meta);
     }

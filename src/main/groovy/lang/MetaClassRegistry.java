@@ -21,12 +21,6 @@ package groovy.lang;
 
 public interface MetaClassRegistry {
     /*
-     * The intialisation part of this is temporary
-     * eventually we will support plug in implementations
-     */
-    MetaClassRegistry registry  = new MetaClassRegistryImpl();
-    
-    /*
      * The main function of the Registry
      * If a Metaclass exists then return it
      * otherwise create one, put it in the Registry and return it

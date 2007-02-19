@@ -25,11 +25,6 @@ import org.codehaus.groovy.ast.ClassNode;
 
 public abstract interface MetaClass extends MOP {
     /*
-     * This should be set from some kind of environment variable in the future
-     */
-    static boolean useReflection = false;
-    
-    /*
      * Called on the MetaClass of the superclass of the class to allow that MetaClass to control
      * the behaviour of its subclass if it wants to.
      */

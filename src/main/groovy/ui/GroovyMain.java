@@ -46,7 +46,6 @@
 package groovy.ui;
 
 import groovy.lang.GroovyShell;
-import groovy.lang.MetaClass;
 import groovy.lang.Script;
 
 import java.io.BufferedReader;
@@ -58,9 +57,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.math.BigInteger;
 import java.util.Iterator;
 import java.util.List;
-import java.math.BigInteger;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -127,8 +126,6 @@ public class GroovyMain {
      * @param args all command line args.
      */
     public static void main(String args[]) {
-//        MetaClass.setUseReflection(true);
-
         Options options = buildOptions();
 
         try {

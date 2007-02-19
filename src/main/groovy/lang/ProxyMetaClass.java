@@ -1,7 +1,5 @@
 package groovy.lang;
 
-import org.codehaus.groovy.runtime.InvokerHelper;
-
 import java.beans.IntrospectionException;
 
 /**
@@ -21,7 +19,7 @@ public class ProxyMetaClass extends MetaClassImpl {
      * convenience factory method for the most usual case.
      */
     public static ProxyMetaClass getInstance(Class theClass) throws IntrospectionException {
-        MetaClassRegistry metaRegistry = MetaClassRegistry.registry;
+        MetaClassRegistry metaRegistry = GroovySystem.metaClassRegistry;
         MetaClass meta = metaRegistry.getMetaClass(theClass);
         return new ProxyMetaClass(metaRegistry, theClass, meta);
     }

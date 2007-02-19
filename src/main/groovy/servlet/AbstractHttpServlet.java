@@ -38,7 +38,6 @@
  */
 package groovy.servlet;
 
-import groovy.lang.MetaClass;
 import groovy.util.ResourceConnector;
 import groovy.util.ResourceException;
 
@@ -356,12 +355,6 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
             if (all != null) {
                 this.resourceNameReplaceAll = Boolean.valueOf(all).booleanValue();
             }
-        }
-
-        value = config.getInitParameter("reflection");
-        if (value != null) {
-            this.reflection = Boolean.valueOf(value).booleanValue();
-//            MetaClass.setUseReflection(reflection);
         }
 
         value = config.getInitParameter("logGROOVY861");
