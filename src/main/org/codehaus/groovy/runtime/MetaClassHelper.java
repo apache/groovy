@@ -282,10 +282,7 @@ public class MetaClassHelper {
         Class[] interfaces = c.getInterfaces();
         int max = 0;
         for (int i=0; i<interfaces.length; i++) {
-            int sub = 0;
-            if (interfaces[i].isAssignableFrom(interfaceClass)) {
-                sub = 1+ getMaximumInterfaceDistance(interfaces[i],interfaceClass);
-            }
+            int sub = 1+ getMaximumInterfaceDistance(interfaces[i],interfaceClass);
             max = Math.max(max,sub);
         }
         return max;
