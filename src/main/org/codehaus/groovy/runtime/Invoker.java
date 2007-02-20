@@ -196,10 +196,6 @@ public class Invoker {
             GroovyObject pogo = (GroovyObject) object;
             return pogo.getProperty(property);
         }
-        if (object instanceof Map) {
-            Map map = (Map) object;
-            return map.get(property);
-        }
         if (object instanceof Class) {
             Class c = (Class) object;
             return metaRegistry.getMetaClass(c).getProperty(object, property);
@@ -217,10 +213,6 @@ public class Invoker {
         if (object instanceof GroovyObject) {
             GroovyObject pogo = (GroovyObject) object;
             pogo.setProperty(property, newValue);
-        }
-        else if (object instanceof Map) {
-            Map map = (Map) object;
-            map.put(property, newValue);
         }
         else {
             if (object instanceof Class)

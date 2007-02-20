@@ -122,6 +122,7 @@ public class MetaClassImpl implements MetaClass {
    protected final Class theClass;
    protected MetaClassRegistry registry;
    protected boolean isGroovyObject;
+   protected boolean isMap;
    private ClassNode classNode;
    private Map classMethodIndex = new HashMap();
    private Map classMethodIndexForSuper;
@@ -147,13 +148,14 @@ public class MetaClassImpl implements MetaClass {
    
    protected MetaClassImpl(final Class theClass) {
        this.theClass = theClass;
-       isGroovyObject = GroovyObject.class.isAssignableFrom(theClass);
+       this.isGroovyObject = GroovyObject.class.isAssignableFrom(theClass);
+       this.isMap = Map.class.isAssignableFrom(theClass);
    }
    
    public MetaClassImpl(MetaClassRegistry registry, final Class theClass) {
        this(theClass);
        this.registry = registry;
-       constructors = (List) AccessController.doPrivileged(new  PrivilegedAction() {
+       this.constructors = (List) AccessController.doPrivileged(new  PrivilegedAction() {
                public Object run() {
                    return Arrays.asList (theClass.getDeclaredConstructors());
                }
@@ -905,10 +907,17 @@ public class MetaClassImpl implements MetaClass {
            MetaClass mc = registry.getMetaClass((Class) object);
            return mc.getProperty(sender,object,name,useSuper,false);
        }
+
+       //----------------------------------------------------------------------
+       // turn getProperty on a Map to get on the Map itself
+       //----------------------------------------------------------------------
+       if(!isStatic && this.isMap) {
+           return ((Map)object).get(name);
+       }
     
        MetaMethod method = null;
        Object[] arguments = EMPTY_ARGUMENTS;
-
+       
        //----------------------------------------------------------------------
        // getter
        //----------------------------------------------------------------------
@@ -1420,6 +1429,14 @@ public class MetaClassImpl implements MetaClass {
        // Unwrap wrapped values fo now - the new MOP will handle them properly
        //----------------------------------------------------------------------
        if (newValue instanceof Wrapper) newValue = ((Wrapper)newValue).unwrap();
+
+       //----------------------------------------------------------------------
+       // turn setProperty on a Map to put on the Map itself
+       //----------------------------------------------------------------------
+       if(!isStatic && this.isMap) {
+           ((Map)object).put(name, newValue);
+           return;
+       }
        
        
     

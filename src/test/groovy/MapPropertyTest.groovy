@@ -33,4 +33,22 @@ class MapPropertyTest extends GroovyTestCase {
         assert m.location == 'Atlanta'
         assert m.id == 2
     }
+    
+    void testMapSubclassing() {
+        def c = new MyClass()
+
+        c.id = "hello"
+        c.class = 1
+        c.myMethod()
+        assert c.id == "hello"
+        assert c.class == 1
+        assert c.getClass() != 1
+    }
+}
+
+class MyClass extends HashMap {
+    def myMethod() {
+        assert id == "hello"
+        assert this.class == 1
+    }
 }
