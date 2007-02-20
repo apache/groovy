@@ -3860,7 +3860,8 @@ public class DefaultGroovyMethods {
             return toListString((Collection) value);
         else if (value instanceof Object[])
             return toArrayString((Object[]) value);
-        return (value == null) ? "null" : value.toString();
+        else
+            return InvokerHelper.toString(value);
     }
 
     // Number based methods

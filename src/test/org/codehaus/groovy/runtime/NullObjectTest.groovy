@@ -5,6 +5,7 @@ class NullObjectTest extends GroovyTestCase {
         def foo = null
         try {
           println foo.bar
+          assert false  // should throw exception
         } catch (NullPointerException ex) {
           // is successfull
         }
@@ -12,11 +13,7 @@ class NullObjectTest extends GroovyTestCase {
     
     void testtoStringMethod() {
         def foo = null
-        try {
-          println foo.toString()
-        } catch (NullPointerException ex) {
-          // is successfull
-        }
+        assert foo.toString() == "null"
     }
 
     void testEquals() {
@@ -37,15 +34,17 @@ class NullObjectTest extends GroovyTestCase {
         def n = null
 
         assert "a $n b" == "a null b"
-        assert n.toString() == "null"
-        assert n + " is a null value" == "null is a null value"
+            assert n.toString() == "null"
+            assert n + " is a null value" == "null is a null value"
+            assert "this is a null value " + null == "this is a null value null"
 
-        use (MyCategory) {
-            assert "a $n b" == "a  b"
-            assert n.toString() == ""
-            assert n + " is a null value" == " is a null value"
-        }
-    } 
+            use (MyCategory) {
+                assert "a $n b" == "a  b"
+                assert n.toString() == ""
+                assert n + " is a null value" == " is a null value"
+                assert "this is a null value " + null == "this is a null value "
+            }
+        } 
 }
 
 class MyCategory {
