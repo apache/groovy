@@ -521,7 +521,9 @@ public class InvokerHelper {
     
     protected static String format(Object arguments, boolean verbose) {
         if (arguments == null) {
-            return "null";
+        final NullObject nullObject = NullObject.getNullObject();
+        
+            return (String)nullObject.getMetaClass().invokeMethod(nullObject, "toString", EMPTY_ARGS);
         }
         else if (arguments.getClass().isArray()) {
             return format(DefaultTypeTransformation.asCollection(arguments), verbose);

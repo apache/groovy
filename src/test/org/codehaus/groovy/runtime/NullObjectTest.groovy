@@ -33,4 +33,24 @@ class NullObjectTest extends GroovyTestCase {
       assert null.is(null)
     }
     
+    void testCategory() {
+        def n = null
+
+        assert "a $n b" == "a null b"
+        assert n.toString() == "null"
+        assert n + " is a null value" == "null is a null value"
+
+        use (MyCategory) {
+            assert "a $n b" == "a  b"
+            assert n.toString() == ""
+            assert n + " is a null value" == " is a null value"
+        }
+    } 
 }
+
+class MyCategory {
+    public static String toString(NullObject obj) {
+        return ""
+    }
+}
+

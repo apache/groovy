@@ -126,13 +126,13 @@ public class NullObject extends GroovyObjectSupport {
   
   /**
    * Allows to add a String to null. 
-   * The result is concatenated String of "null" and the
-   * String in the parameter. 
+   * The result is concatenated String of the result of calling
+   * toString() on this object and the String in the parameter. 
    * @param s - the String to concatenate
    * @return the concatenated string
    */
   public Object plus(String s){
-      return "null"+s;
+      return (String)getMetaClass().invokeMethod(this, "toString", new Object[]{}) + s;
   }
   
   /**
@@ -156,11 +156,10 @@ public class NullObject extends GroovyObjectSupport {
   }
 
   public String toString(){
-      throw new NullPointerException("toString() not allowed on null");
+      return "null";
   }
   
   public int hashCode() {
       throw new NullPointerException("hashCode() not allowed on null");
   }
-  
 }
