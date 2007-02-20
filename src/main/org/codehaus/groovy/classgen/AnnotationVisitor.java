@@ -148,7 +148,13 @@ public class AnnotationVisitor {
 
     protected void visitExpression(String attrName, Expression attrAst, Class attrType) {
         if(attrType.isArray()) {
-            visitListExpression(attrName, (ListExpression) attrAst, attrType.getComponentType());
+            // check needed as @Test(attr = {"elem"}) passes through the parser
+            if(attrAst instanceof ListExpression) {
+                visitListExpression(attrName, (ListExpression) attrAst, attrType.getComponentType());
+            }
+            else {
+                addError("Annotation list attributes must use Groovy notation [el1, el2]", attrAst);
+            }
         }
         if(attrType.isPrimitive()) {
             visitConstantExpression(attrName, (ConstantExpression) attrAst, attrType);
