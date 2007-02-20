@@ -1,4 +1,4 @@
-package org.codehaus.groovy.runtime;
+package org.codehaus.groovy.runtime.metaclass;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;

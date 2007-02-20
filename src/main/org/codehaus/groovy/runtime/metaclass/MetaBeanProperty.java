@@ -41,7 +41,6 @@ import groovy.lang.MetaProperty;
 
 import java.lang.reflect.Modifier;
 
-import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 /**

@@ -43,7 +43,7 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package org.codehaus.groovy.runtime;
+package org.codehaus.groovy.runtime.metaclass;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;

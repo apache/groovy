@@ -32,47 +32,43 @@
  * DAMAGE.
  *
  */
-package org.codehaus.groovy.runtime;
+package org.codehaus.groovy.runtime.metaclass;
 
-import groovy.lang.MetaMethod;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
-public class ReflectionMetaMethod extends MetaMethod {
-    private Method method;
-    boolean alreadySetAccessible;
+/**
+ * A temporary implementation of MethodKey used to perform a fast lookup
+ * for a method using a set of arguments to a method
+ * 
+ * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * @version $Revision$
+ */
+public class TemporaryMethodKey extends MethodKey {
 
-    public ReflectionMetaMethod(Method method) {
-        super(method);
-        this.method = method;
+    private Object[] parameterValues;
+
+    public TemporaryMethodKey(Class sender, String name, Object[] parameterValues, boolean isCallToSuper) {
+        super(sender, name, isCallToSuper);
+        if (parameterValues == null) {
+            parameterValues = MetaClassHelper.EMPTY_ARRAY;
+        }
+        this.parameterValues = parameterValues;
     }
 
-    public Object invoke(Object object, Object[] arguments) {
-    	if ( !alreadySetAccessible ) {
-	    	AccessController.doPrivileged(new PrivilegedAction() {
-	    		public Object run() {
-	    			method.setAccessible(true);
-	                return null;
-	    		}
-	    	});
-	    	alreadySetAccessible = true;
-    	}
+    public int getParameterCount() {
+        return parameterValues.length;
+    }
 
-        //        System.out.println("About to invoke method: " + method);
-        //        System.out.println("Object: " + object);
-        //        System.out.println("Using arguments: " + InvokerHelper.toString(arguments));
+    public Class getParameterType(int index) {
+        Object value = parameterValues[index];
 
-        try {
-            return method.invoke(object, arguments);
-        } catch (IllegalArgumentException e) {
-            throw new InvokerInvocationException(e);
-        } catch (IllegalAccessException e) {
-            throw new InvokerInvocationException(e);
-        } catch (InvocationTargetException e) {
-            throw new InvokerInvocationException(e);
+        if (value != null ) {
+            Class type = (Class)((value.getClass() == java.lang.Class.class) ?
+                    value :
+                    value.getClass());
+            return type;
         }
+
+        return Object.class;
     }
 }

@@ -56,6 +56,8 @@ import groovy.lang.MissingMethodException;
 
 import java.util.Map;
 
+import org.codehaus.groovy.runtime.metaclass.MetaClassHelper;
+
 /**
  * A helper class to invoke methods or extract properties on arbitrary Java objects dynamically
  *

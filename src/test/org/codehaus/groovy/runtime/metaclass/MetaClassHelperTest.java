@@ -1,4 +1,6 @@
-package org.codehaus.groovy.runtime;
+package org.codehaus.groovy.runtime.metaclass;
+
+import org.codehaus.groovy.runtime.metaclass.MetaClassHelper;
 
 import junit.framework.TestCase;
 

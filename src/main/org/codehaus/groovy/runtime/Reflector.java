@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: Reflector.java 4247 2006-11-19 19:00:19Z mcspanky $
  * 
  * Copyright 2003 (C) James Strachan and Bob Mcwhirter. All Rights Reserved.
  * 
@@ -42,7 +42,7 @@ import groovy.lang.MissingMethodException;
  * Provides as alternative to reflection using bytecode generation.
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
+ * @version $Revision: 4247 $
  */
 public class Reflector {
 

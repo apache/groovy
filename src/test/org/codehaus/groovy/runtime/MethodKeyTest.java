@@ -45,6 +45,10 @@
  */
 package org.codehaus.groovy.runtime;
 
+import org.codehaus.groovy.runtime.metaclass.DefaultMethodKey;
+import org.codehaus.groovy.runtime.metaclass.MethodKey;
+import org.codehaus.groovy.runtime.metaclass.TemporaryMethodKey;
+
 import junit.framework.TestCase;
 
 /**

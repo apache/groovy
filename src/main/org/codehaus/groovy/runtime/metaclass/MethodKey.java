@@ -32,11 +32,12 @@
  * DAMAGE.
  *
  */
-package org.codehaus.groovy.runtime;
+package org.codehaus.groovy.runtime.metaclass;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
 
 /**
  * An abstract base class for a key used for comparators and Map keys to lookup a method by

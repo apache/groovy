@@ -32,30 +32,27 @@
  * DAMAGE.
  *
  */
-package org.codehaus.groovy.runtime;
+package org.codehaus.groovy.runtime.metaclass;
+
+import groovy.lang.MetaMethod;
 
 /**
- * A default implementation of MethodKey
+ * A MetaMethod implementation useful for implementing coercion based invocations
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class DefaultMethodKey extends MethodKey{
 
-    private Class[] parameterTypes;
+public class TransformMetaMethod extends MetaMethod {
+    
+    private MetaMethod metaMethod;
 
-    public DefaultMethodKey(Class sender, String name, Class[] parameterTypes, boolean isCallToSuper) {
-        super(sender, name,isCallToSuper);
-        this.parameterTypes = parameterTypes;
+    public TransformMetaMethod(MetaMethod metaMethod) {
+        super(metaMethod);
+        this.metaMethod = metaMethod;
     }
 
-    public int getParameterCount() {
-        return parameterTypes.length;
-    }
-
-    public Class getParameterType(int index) {
-        Class c = parameterTypes[index];
-        if (c==null) return Object.class;
-        return c;
+    public Object invoke(Object object, Object[] arguments) {
+        return metaMethod.invoke(object, arguments);
     }
 }

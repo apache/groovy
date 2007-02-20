@@ -31,10 +31,12 @@
  * DAMAGE.
  *  
  */
-package org.codehaus.groovy.runtime;
+package org.codehaus.groovy.runtime.metaclass;
 
 import java.security.ProtectionDomain;
 import java.util.HashMap;
+
+import org.codehaus.groovy.runtime.Reflector;
 
 /**
  * Reflector creation helper. This class is used to define the Refloctor classes.

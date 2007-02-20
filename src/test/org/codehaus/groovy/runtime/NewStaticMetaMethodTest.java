@@ -47,6 +47,8 @@ package org.codehaus.groovy.runtime;
 
 import java.lang.reflect.Method;
 
+import org.codehaus.groovy.runtime.metaclass.ReflectionMetaMethod;
+
 import junit.framework.TestCase;
 
 /**

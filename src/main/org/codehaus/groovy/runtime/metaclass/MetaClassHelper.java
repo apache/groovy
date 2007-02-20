@@ -15,7 +15,7 @@
  *
  */
 
-package org.codehaus.groovy.runtime;
+package org.codehaus.groovy.runtime.metaclass;
 
 import groovy.lang.Closure;
 import groovy.lang.GString;
@@ -37,6 +37,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.runtime.ClosureListener;
+import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.InvokerInvocationException;
+import org.codehaus.groovy.runtime.MethodClosure;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 
