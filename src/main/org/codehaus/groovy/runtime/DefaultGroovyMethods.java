@@ -326,7 +326,8 @@ public class DefaultGroovyMethods {
      * Printf to a console.  Only works with JDK1.5 or later.
      */
     public static void printf(Object self, String format, Object[] values) {
-        if (System.getProperty("java.version").charAt(2) == '5') {
+        char version = System.getProperty("java.version").charAt(2);
+        if ( version >= '5') {
             //
             //  Cannot just do:
             //
