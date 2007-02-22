@@ -64,7 +64,6 @@ public class ReflectorGenerator implements Opcodes {
 
     private List methods;
     private ClassVisitor cw;
-    private MethodVisitor cv;
     private BytecodeHelper helper = new BytecodeHelper(null);
     private String classInternalName;
 
@@ -78,7 +77,7 @@ public class ReflectorGenerator implements Opcodes {
         classInternalName = BytecodeHelper.getClassInternalName(className);
         cw.visit(ClassGenerator.asmJDKVersion, ACC_PUBLIC + ACC_SUPER, classInternalName, (String)null, "org/codehaus/groovy/runtime/Reflector", null);
 
-        cv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+        MethodVisitor cv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
         cv.visitVarInsn(ALOAD, 0);
         cv.visitMethodInsn(INVOKESPECIAL, "org/codehaus/groovy/runtime/Reflector", "<init>", "()V");
         cv.visitInsn(RETURN);
@@ -88,67 +87,89 @@ public class ReflectorGenerator implements Opcodes {
 
         cw.visitEnd();
     }
-
+    
     protected void generateInvokeMethod() {
         int methodCount = methods.size();
 
-        cv =
+        MethodVisitor cv =
             cw.visitMethod(
                 ACC_PUBLIC,
                 "invoke",
                 "(Lgroovy/lang/MetaMethod;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;",
                 null,
                 null);
-        helper = new BytecodeHelper(cv);
 
+        // load parameters for the helper method call
+        cv.visitVarInsn(ALOAD, 0);
+        cv.visitVarInsn(ALOAD, 1);
+        cv.visitVarInsn(ALOAD, 2);
+        cv.visitVarInsn(ALOAD, 3);
+        
+        // get method number for switch
         cv.visitVarInsn(ALOAD, 1);
         cv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/MetaMethod", "getMethodIndex", "()I");
+
+        // init meta methods with number
         Label defaultLabel = new Label();
         Label[] labels = new Label[methodCount];
         int[] indices = new int[methodCount];
         for (int i = 0; i < methodCount; i++) {
             labels[i] = new Label();
-
             MetaMethod method = (MetaMethod) methods.get(i);
             method.setMethodIndex(i + 1);
             indices[i] = method.getMethodIndex();
-
-            //System.out.println("Index: " + method.getMethodIndex() + " for: " + method);
         }
 
+        // do switch
         cv.visitLookupSwitchInsn(defaultLabel, indices, labels);
-        //cv.visitTableSwitchInsn(minMethodIndex, maxMethodIndex, defaultLabel, labels);
-
+        // create switch cases
         for (int i = 0; i < methodCount; i++) {
+        	// call helper for invocation
             cv.visitLabel(labels[i]);
-
-            MetaMethod method = (MetaMethod) methods.get(i);
-            invokeMethod(method);
-            if (method.getReturnType() == void.class) {
-                cv.visitInsn(ACONST_NULL);
-            }
+            cv.visitMethodInsn(
+            		INVOKESPECIAL, 
+            		classInternalName,
+            		"m"+i,
+            		"(Lgroovy/lang/MetaMethod;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
             cv.visitInsn(ARETURN);
-        }
-
+        }  
+         
+        // call helper for error
         cv.visitLabel(defaultLabel);
-        cv.visitVarInsn(ALOAD, 0);
-        cv.visitVarInsn(ALOAD, 1);
-        cv.visitVarInsn(ALOAD, 2);
-        cv.visitVarInsn(ALOAD, 3);
         cv.visitMethodInsn(
             INVOKEVIRTUAL,
             classInternalName,
             "noSuchMethod",
             "(Lgroovy/lang/MetaMethod;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
         cv.visitInsn(ARETURN);
+        // end method
         cv.visitMaxs(4, 4);
+        cv.visitEnd();
+        
+        // create helper methods m*
+        for (int i = 0; i < methodCount; i++) {
+            cv =
+                cw.visitMethod(
+                    ACC_PRIVATE,
+                    "m"+i,
+                    "(Lgroovy/lang/MetaMethod;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;",
+                    null,
+                    null);
+            helper = new BytecodeHelper(cv);
+
+        	MetaMethod method = (MetaMethod) methods.get(i);
+        	invokeMethod(method,cv);
+        	if (method.getReturnType() == void.class) {
+        		cv.visitInsn(ACONST_NULL);
+        	}
+        	cv.visitInsn(ARETURN);
+        	cv.visitMaxs(0, 0);
+        	cv.visitEnd();
+        }
     }
 
-    protected void invokeMethod(MetaMethod method) {
-        /** simple
-        cv.visitVarInsn(ALOAD, 2);
-        cv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "toString", "()Ljava/lang/String;");
-        */
+    protected void invokeMethod(MetaMethod method, MethodVisitor cv) {
+    	// compute class to make the call on
         Class callClass = method.getInterfaceClass();
         boolean useInterface = false;
         if (callClass == null) {
@@ -157,121 +178,36 @@ public class ReflectorGenerator implements Opcodes {
         else {
             useInterface = true;
         }
+        // get bytecode information
         String type = BytecodeHelper.getClassInternalName(callClass.getName());
         String descriptor = BytecodeHelper.getMethodDescriptor(method.getReturnType(), method.getParameterTypes());
 
-        //        System.out.println("Method: " + method);
-        //        System.out.println("Descriptor: " + descriptor);
-
+        // make call
         if (method.isStatic()) {
-            loadParameters(method, 3);
+            loadParameters(method, 3, cv);
             cv.visitMethodInsn(INVOKESTATIC, type, method.getName(), descriptor);
         }
         else {
             cv.visitVarInsn(ALOAD, 2);
             helper.doCast(callClass);
-            loadParameters(method, 3);
+            loadParameters(method, 3, cv);
             cv.visitMethodInsn((useInterface) ? INVOKEINTERFACE : INVOKEVIRTUAL, type, method.getName(), descriptor);
         }
 
         helper.box(method.getReturnType());
     }
-
-    /*
-    protected void generateInvokeSuperMethod() {
-        List superMethods = new ArrayList(methods);
-        for (Iterator iter = methods.iterator(); iter.hasNext();) {
-            MetaMethod method = (MetaMethod) iter.next();
-            if (!validSuperMethod(method)) {
-                superMethods.remove(method);
-            }
-        }
-        int methodCount = superMethods.size();
-        if (methodCount == 0) {
-            return;
-        }
-        cv =
-            cw.visitMethod(
-                ACC_PUBLIC,
-                "invokeSuper",
-                "(Lgroovy/lang/MetaMethod;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;",
-                null,
-                null);
-        helper = new BytecodeHelper(cv);
-
-        cv.visitVarInsn(ALOAD, 1);
-        cv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/MetaMethod", "getMethodIndex", "()I");
-        Label defaultLabel = new Label();
-        Label[] labels = new Label[methodCount];
-        int[] indices = new int[methodCount];
-        for (int i = 0; i < methodCount; i++) {
-            labels[i] = new Label();
-
-            MetaMethod method = (MetaMethod) superMethods.get(i);
-            method.setMethodIndex(i + 1);
-            indices[i] = method.getMethodIndex();
-
-            //System.out.println("Index: " + method.getMethodIndex() + " for: " + method);
-        }
-
-        cv.visitLookupSwitchInsn(defaultLabel, indices, labels);
-        //cv.visitTableSwitchInsn(minMethodIndex, maxMethodIndex, defaultLabel, labels);
-
-        for (int i = 0; i < methodCount; i++) {
-            MetaMethod method = (MetaMethod) superMethods.get(i);
-            cv.visitLabel(labels[i]);
-
-            invokeSuperMethod(method);
-            if (method.getReturnType() == void.class) {
-                cv.visitInsn(ACONST_NULL);
-            }
-            cv.visitInsn(ARETURN);
-        }
-
-        cv.visitLabel(defaultLabel);
-        cv.visitVarInsn(ALOAD, 0);
-        cv.visitVarInsn(ALOAD, 1);
-        cv.visitVarInsn(ALOAD, 2);
-        cv.visitVarInsn(ALOAD, 3);
-        cv.visitMethodInsn(
-            INVOKEVIRTUAL,
-            classInternalName,
-            "noSuchMethod",
-            "(Lgroovy/lang/MetaMethod;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
-        cv.visitInsn(ARETURN);
-        cv.visitMaxs(4, 4);
-    }
-
-    protected boolean validSuperMethod(MetaMethod method) {
-        return !method.isStatic() && (method.getModifiers() & (Modifier.FINAL | Modifier.ABSTRACT)) == 0 && theClass == method.getDeclaringClass();
-    }
-
-    protected void invokeSuperMethod(MetaMethod method) {
-        Class ownerClass = method.getDeclaringClass();
-        String type = helper.getClassInternalName(ownerClass.getName());
-        String descriptor = helper.getMethodDescriptor(method.getReturnType(), method.getParameterTypes());
-
-//        System.out.println("Method: " + method.getName());
-//        System.out.println("Descriptor: " + descriptor);
-
-        cv.visitVarInsn(ALOAD, 2);
-        //helper.doCast(ownerClass);
-        loadParameters(method, 3);
-        cv.visitMethodInsn(INVOKESPECIAL, type, method.getName(), descriptor);
-
-        helper.box(method.getReturnType());
-    }
-*/
     
-    protected void loadParameters(MetaMethod method, int argumentIndex) {
+    protected void loadParameters(MetaMethod method, int argumentIndex, MethodVisitor cv) {
         Class[] parameters = method.getParameterTypes();
         int size = parameters.length;
         for (int i = 0; i < size; i++) {
+        	// unpack argument from Object[]
             cv.visitVarInsn(ALOAD, argumentIndex);
             helper.pushConstant(i);
             cv.visitInsn(AALOAD);
 
-            // we should cast to something
+            // cast argument to parameter class, inclusive unboxing
+            // for methods with primitive types
             Class type = parameters[i];
             if (type.isPrimitive()) {
                 helper.unbox(type);
