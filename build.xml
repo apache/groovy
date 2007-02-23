@@ -13,18 +13,18 @@ implied. See the License for the specific language governing permissions and lim
 See the NOTICE.txt file distributed with this work for additional information regarding copyright ownership.
 -->
 
-<project name="Groovy" default="createJars" basedir=".">
+<project name="Groovy" default="all" basedir=".">
     <property name="rootDirectory" location="."/>
     <property name="bootstrapDirectory" location="bootstrap"/>
     <import file="config/ant/build-support.xml"/>
 
     <property name="sourceDirectory" value="src"/>
-    <property name="mainSourceDirectory" value="${sourceDirectory}/main"/>
+    <property name="mainSourceDirectory" location="${sourceDirectory}/main"/>
     <property name="testSourceDirectory" value="${sourceDirectory}/test"/>
     <property name="targetDirectory" value="target"/>
     <property name="mainClassesDirectory" value="${targetDirectory}/classes"/>
     <property name="testClassesDirectory" value="${targetDirectory}/test-classes"/>
-    <property name="reportsDirectory" value="${targetDirectory}/test-reports"/>
+    <property name="reportsDirectory" value="${targetDirectory}/reports"/>
     <property name="targetLibDirectory" value="${targetDirectory}/lib"/>
     <property name="antlrDirectory" value="${mainSourceDirectory}/org/codehaus/groovy/antlr"/>
     <property name="groovyParserDirectory" value="${antlrDirectory}/parser"/>
@@ -83,6 +83,10 @@ See the NOTICE.txt file distributed with this work for additional information re
 
     </target>
 
+    <target name="-initReports">
+        <mkdir dir="${reportsDirectory}"/>
+    </target>
+
     <target name="compileTest" depends="compileMain" description="Compile the Java and Groovy code in the test source.">
         <mkdir dir="${testClassesDirectory}"/>
         <javac srcdir="${testSourceDirectory}" destdir="${testClassesDirectory}" includeantruntime="false" debug="yes"
@@ -122,12 +126,13 @@ See the NOTICE.txt file distributed with this work for additional information re
         </javac>
     </target>
 
-    <target name="test" depends="compileTest" description="Compile and test all the classes.">
-        <mkdir dir="${reportsDirectory}"/>
+    <target name="test" depends="-initReports,compileTest" description="Compile and test all the classes.">
+        <property name="junitRawDirectory" value="${targetDirectory}/test-reports"/>
+        <property name="junitReportsDirectory" value="${reportsDirectory}/junit"/>
+        <mkdir dir="${junitRawDirectory}"/>
         <junit printsummary="true" fork="true" includeantruntime="false" failureproperty="testFailed">
-            <formatter type="plain"/>
-            <!--<formatter type="xml"/>-->
-            <batchtest todir="${reportsDirectory}">
+            <formatter type="xml"/>
+            <batchtest todir="${junitRawDirectory}">
                 <fileset dir="${testClassesDirectory}" includes="UberTest*.class"/>
             </batchtest>
             <classpath>
@@ -137,6 +142,11 @@ See the NOTICE.txt file distributed with this work for additional information re
                 <pathelement path="src/test"/>
             </classpath>
         </junit>
+        <mkdir dir="${junitReportsDirectory}"/>
+        <junitreport tofile="${junitRawDirectory}/Results.xml">
+            <fileset dir="${junitRawDirectory}" includes="TEST-*.xml"/>
+            <report format="frames" todir="${junitReportsDirectory}"/>
+        </junitreport>
     </target>
 
     <target name="reportTestFailed" depends="test" if="testFailed">
@@ -156,7 +166,7 @@ See the NOTICE.txt file distributed with this work for additional information re
         </jar>
     </target>
 
-    <target name="createJars" depends="reportTestFailed,actuallyCreateJars"
+    <target name="all" depends="reportTestFailed,actuallyCreateJars"
             description="Build Groovy and create the jarfiles."/>
 
     <target name="clean" description="Clean out the built materials.">
@@ -167,6 +177,28 @@ See the NOTICE.txt file distributed with this work for additional information re
             <fileset dir="${javaParserDirectory}"
                      includes="JavaLexer.java,JavaRecognizer.java,JavaTokenTypes.java,JavaTokenTypes.txt"/>
         </delete>
+    </target>
+
+    <target name="-initCheckstyle">
+        <taskdef resource="checkstyletask.properties" uri="antlib:com.puppycrawl.tools.checkstyle"
+                 classpathref="toolsPath"/>
+    </target>
+
+    <target name="checkstyle" xmlns:cs="antlib:com.puppycrawl.tools.checkstyle" depends="-initCheckstyle,-initReports">
+        <mkdir dir="${reportsDirectory}/checkstyle"/>
+        <property name="checkstyle.result" location="${reportsDirectory}/checkstyle/result"/>
+        <cs:checkstyle config="config/checkstyle/config.xml"
+                       failureProperty="checkstyle.failure"
+                       failOnViolation="false">
+            <classpath>
+                <pathelement path="${mainClassesDirectory}"/>
+                <path refid="mainTestPath"/>
+            </classpath>
+            <formatter type="xml" tofile="${checkstyle.result}.xml"/>
+            <fileset dir="${mainSourceDirectory}"/>
+        </cs:checkstyle>
+        <style in="${checkstyle.result}.xml" out="${checkstyle.result}.html"
+               style="config/checkstyle/checkstyle-frames.xsl"/>
     </target>
 
 </project>
