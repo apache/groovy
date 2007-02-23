@@ -4,27 +4,21 @@ class SerializeTest extends GroovyTestCase {
 
     void testFoo() {
         def foo = new Foo()
-        
-        println("Created ${foo}")
-        
         foo.name = "Gromit"
         foo.location = "Moon"
-        
+
         def buffer = write(foo)
         def object = read(buffer)
-        
-        println("Found ${object}")
-        println("Found ${object} with name ${object.name} and location ${object.location}")
+
         assert object != null
-        assert object.getMetaClass() != null , "Should have a metaclass!"
-        
+        assert object.metaClass != null , "Should have a metaclass!"
         assert object.name == "Gromit"
-        
-        assert object.class.name == "groovy.Foo" 
-        assert object instanceof Foo
         assert object.location == "Moon"
+        assert object.class.name == "groovy.Foo"
+        def fooClass = this.class.classLoader.systemClassLoader.loadClass('groovy.Foo')
+        assert foo.class == fooClass
+        assert object.class == fooClass
     }
-    
     
     def write(object) {
         def buffer = new ByteArrayOutputStream()
