@@ -44,6 +44,7 @@ $Date$
     <property name="antlrJar" value="${mainCompileDirectory}/antlr-2.7.6.jar"/>
     <property name="toolsDirectory" value="${targetLibDirectory}/tools"/>
 
+    <!-- TODO: is this needed anymore? -->
     <property file="build.properties"/>
 
     <target name="ensureGrammers" description="Ensure all the files generated from the Antlr grammar are up to date.">
