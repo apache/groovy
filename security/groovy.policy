@@ -168,6 +168,7 @@ grant codeBase "file:${user.dir}/src/test/groovy/bugs/BadScriptNameBug.groovy" {
 
 grant codeBase "file:${user.dir}/src/test/groovy/ClosureListenerTest.groovy" {
 	permission java.util.PropertyPermission "java.awt.headless", "read";
+	permission java.util.PropertyPermission "os.version", "read";
 };
 
 grant codeBase "file:${user.dir}/src/test/groovy/ClosureMethodTest.groovy" {
@@ -225,10 +226,8 @@ grant codeBase "file:${user.dir}/src/test/groovy/sql/SqlCompleteTest.groovy" {
 };
 
 grant codeBase "file:${user.dir}/src/test/groovy/sql/SqlCompleteWithoutDataSourceTest.groovy" {
-	permission java.util.PropertyPermission "axiondb.database.*", "read";
-	permission java.util.PropertyPermission "org.apache.commons.logging.*", "read";
-	permission java.util.PropertyPermission "org.axiondb.engine.*", "read";
-	permission java.io.FilePermission "${groovy.lib}${/}axion${/}jars${/}axion-1.0-M3-dev.jar", "read";	
+    //TODO: what should this be see other TODO about narrowing down main directories
+	//permission java.io.FilePermission "${groovy.lib}${/}axion${/}jars${/}axion-1.0-M3-dev.jar", "read";
 };
 
 grant codeBase "file:${user.dir}/src/test/groovy/sql/SqlTest.groovy" {
