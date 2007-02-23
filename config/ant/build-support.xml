@@ -144,7 +144,7 @@ See the NOTICE.txt file distributed with this work for additional information re
                  classpathref="toolsPath"/>
     </target>
 
-    <target name="-checkstyle" xmlns:cs="antlib:com.puppycrawl.tools.checkstyle" depends="-checkstyleTaskdef">
+    <target name="-checkstyle" xmlns:cs="antlib:com.puppycrawl.tools.checkstyle" depends="init,-checkstyleTaskdef">
         <mkdir dir="${checkstyleReportDirectory}"/>
         <property name="checkstyle.result" location="${checkstyleReportDirectory}/result"/>
         <cs:checkstyle config="config/checkstyle/config.xml"
@@ -154,7 +154,10 @@ See the NOTICE.txt file distributed with this work for additional information re
             <formatter type="xml" tofile="${checkstyle.result}.xml"/>
             <fileset dir="${checkstyleSourceDirectory}"/>
         </cs:checkstyle>
+        <property name="checkstyleReportDirAbsolute" location="${checkstyleReportDirectory}"/>
         <xslt in="${checkstyle.result}.xml" out="${checkstyle.result}.html"
-               style="config/checkstyle/checkstyle-frames.xsl"/>
+               style="config/checkstyle/checkstyle-frames.xsl">
+            <param name="output.dir" expression="${checkstyleReportDirAbsolute}"/>
+        </xslt>
     </target>
 </project>
