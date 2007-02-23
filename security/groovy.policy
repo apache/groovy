@@ -204,6 +204,8 @@ grant codeBase "file:${user.dir}/src/test/groovy/bugs/ForLoopBug.groovy" {
 
 grant codeBase "file:${user.dir}/src/test/groovy/bugs/Groovy303_Bug.groovy" {
 	permission java.awt.AWTPermission "showWindowWithoutWarningBanner";
+	// below seems like a new requirement in jdk 1.5
+	permission java.util.PropertyPermission "os.version", "read";
 };
 
 grant codeBase "file:${user.dir}/src/test/groovy/script/ScriptTest.groovy" {
