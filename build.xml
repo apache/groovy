@@ -16,7 +16,7 @@ Groovy community. See the NOTICE.txt file distributed with this work for additio
 
 Author : Russel Winder
 Author : Paul King
-$Revision$
+$Revision$ ($LastChangedBy$)
 $Date$
 -->
 <project name="Groovy" default="all" basedir=".">
