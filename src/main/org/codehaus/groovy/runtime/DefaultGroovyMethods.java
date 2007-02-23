@@ -281,7 +281,7 @@ public class DefaultGroovyMethods {
      * @param self the object the method is called on (ignored)
      * @param closure the shutdown hook action
      */
-    public static void addShutDownHook (Object self, Closure closure) {
+    public static void addShutdownHook (Object self, Closure closure) {
         Runtime.getRuntime().addShutdownHook(new Thread( closure));
     }
 
