@@ -18,9 +18,7 @@ Author : Russel Winder
 Author : Paul King
 $Revision$
 $Date$
-
 -->
-
 <project name="Groovy" default="all" basedir=".">
     <property name="rootDirectory" location="."/>
     <property name="bootstrapDirectory" location="bootstrap"/>

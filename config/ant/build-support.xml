@@ -15,7 +15,6 @@ Groovy community. See the NOTICE.txt file distributed with this work for additio
 Author : Paul King
 $Revision: 5086 $
 $Date: 2007-02-18 20:17:16 +1000 (Sun, 18 Feb 2007) $
-
 -->
 <project name="build-support" default="" basedir=".">
     <property name="masterDirectory" location="../.."/>
