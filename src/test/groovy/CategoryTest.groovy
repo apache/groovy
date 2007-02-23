@@ -2,6 +2,12 @@ package groovy
 
 class CategoryTest extends GroovyTestCase {
 
+    void setUp() {
+        def dummy = null
+        CategoryTestPropertyCategory.setSomething(dummy, 'hello')
+        CategoryTestHelperPropertyReplacer.setAProperty(dummy, 'anotherValue')
+    }
+
   void testCategories() {
     use (StringCategory.class) {
       assert "Sam".lower() == "sam";
@@ -15,16 +21,16 @@ class CategoryTest extends GroovyTestCase {
   }
   
   void testCategoryDefinedProperties() {
-  
-    use(CategoryTestPropertyCategory) { 
+
+    use(CategoryTestPropertyCategory) {
       assert getSomething() == "hello"
       assert something == "hello"
       something = "nihao"
       assert something == "nihao"
     }
-    
+
     // test the new value again in a new block
-    use(CategoryTestPropertyCategory) { 
+    use(CategoryTestPropertyCategory) {
       assert something == "nihao"
     }
   }
