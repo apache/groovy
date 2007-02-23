@@ -168,6 +168,7 @@ grant codeBase "file:${user.dir}/src/test/groovy/bugs/BadScriptNameBug.groovy" {
 
 grant codeBase "file:${user.dir}/src/test/groovy/ClosureListenerTest.groovy" {
 	permission java.util.PropertyPermission "java.awt.headless", "read";
+	// below seems like a new requirement in jdk 1.6/1.7
 	permission java.util.PropertyPermission "os.version", "read";
 };
 
