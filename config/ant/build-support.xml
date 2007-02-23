@@ -13,7 +13,7 @@ This work is copyright by the author(s) and is part of a greater work collective
 Groovy community. See the NOTICE.txt file distributed with this work for additional information.
 
 Author : Paul King
-$Revision$ ($By: someone $)
+$Revision$ ($LastChangedBy$)
 $Date$
 -->
 <project name="build-support" default="" basedir=".">
