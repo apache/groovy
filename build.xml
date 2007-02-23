@@ -10,7 +10,14 @@ http://www.apache.org/licenses/LICENSE-2.0
 Unless required by applicable law or agreed to in writing, software distributed under the License is
 distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing permissions and limitations under the License.
-See the NOTICE.txt file distributed with this work for additional information regarding copyright ownership.
+This work is copyright by the author(s) and is part of a greater work collectively copyright by the
+Groovy community. See the NOTICE.txt file distributed with this work for additional information.
+
+Author : Russel Winder
+Author : Paul King
+$Revision$
+$Date$
+
 -->
 
 <project name="Groovy" default="all" basedir=".">
