@@ -71,7 +71,7 @@ See the NOTICE.txt file distributed with this work for additional information re
         </sequential>
     </macrodef>
 
-    <target name="-fetch-maven-init" depends="-maven-ant-taskdef,-maven-pom-definitions,-maven-repository-definitions"/>
+    <target name="-initMaven" depends="-mavenAntTaskdef,-maven-pom-definitions,-maven-repository-definitions"/>
 
     <target name="-maven-pom-definitions">
         <maven.pom file="config/maven/main.pom" id="maven.artifact.main"/>
@@ -83,13 +83,13 @@ See the NOTICE.txt file distributed with this work for additional information re
         <maven.remote.repository id="ibiblio.remote.repository" url="http://ibiblio.org/maven2/"/>
     </target>
 
-    <target name="-fetch-maven-all-modules" depends="-fetch-maven-init">
+    <target name="-mavenFetchAllModules" depends="-initMaven">
         <fetch.maven.all.modules/>
     </target>
 
-    <target name="-maven-fetch" depends="-fetch-maven-all-modules,-copy-libraries"/>
+    <target name="-fetchDependencies" depends="-mavenFetchAllModules,-copyLibraries"/>
 
-    <target name="-copy-libraries">
+    <target name="-copyLibraries">
         <delete dir="${mainTestDirectory}"/>
         <delete dir="${mainCompileDirectory}"/>
         <delete dir="${mainRuntimeDirectory}"/>
@@ -131,11 +131,30 @@ See the NOTICE.txt file distributed with this work for additional information re
         </path>
     </target>
 
-    <target name="-maven-ant-taskdef">
+    <target name="-mavenAntTaskdef">
         <typedef resource="org/apache/maven/artifact/ant/antlib.xml" uri="urn:maven-artifact-ant">
             <classpath>
                 <pathelement location="${bootstrapDirectory}/maven-artifact-ant-2.0.4-dep.jar"/>
             </classpath>
         </typedef>
+    </target>
+
+    <target name="-checkstyleTaskdef">
+        <taskdef resource="checkstyletask.properties" uri="antlib:com.puppycrawl.tools.checkstyle"
+                 classpathref="toolsPath"/>
+    </target>
+
+    <target name="-checkstyle" xmlns:cs="antlib:com.puppycrawl.tools.checkstyle" depends="-checkstyleTaskdef">
+        <mkdir dir="${checkstyleReportDirectory}"/>
+        <property name="checkstyle.result" location="${checkstyleReportDirectory}/result"/>
+        <cs:checkstyle config="config/checkstyle/config.xml"
+                       failureProperty="checkstyle.failure"
+                       failOnViolation="false"
+                classpathref="checkstyleLibPath">
+            <formatter type="xml" tofile="${checkstyle.result}.xml"/>
+            <fileset dir="${checkstyleSourceDirectory}"/>
+        </cs:checkstyle>
+        <xslt in="${checkstyle.result}.xml" out="${checkstyle.result}.html"
+               style="config/checkstyle/checkstyle-frames.xsl"/>
     </target>
 </project>

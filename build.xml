@@ -55,7 +55,7 @@ See the NOTICE.txt file distributed with this work for additional information re
     </target>
 
     <target name="init">
-        <antcall target="-maven-fetch"/>
+        <antcall target="-fetchDependencies"/>
     </target>
 
     <target name="compileMain" depends="init,ensureGrammers" description="Compile the Java and Groovy code in the main source.">
@@ -179,26 +179,15 @@ See the NOTICE.txt file distributed with this work for additional information re
         </delete>
     </target>
 
-    <target name="-initCheckstyle">
-        <taskdef resource="checkstyletask.properties" uri="antlib:com.puppycrawl.tools.checkstyle"
-                 classpathref="toolsPath"/>
-    </target>
-
-    <target name="checkstyle" xmlns:cs="antlib:com.puppycrawl.tools.checkstyle" depends="-initCheckstyle,-initReports">
-        <mkdir dir="${reportsDirectory}/checkstyle"/>
-        <property name="checkstyle.result" location="${reportsDirectory}/checkstyle/result"/>
-        <cs:checkstyle config="config/checkstyle/config.xml"
-                       failureProperty="checkstyle.failure"
-                       failOnViolation="false">
-            <classpath>
-                <pathelement path="${mainClassesDirectory}"/>
-                <path refid="mainTestPath"/>
-            </classpath>
-            <formatter type="xml" tofile="${checkstyle.result}.xml"/>
-            <fileset dir="${mainSourceDirectory}"/>
-        </cs:checkstyle>
-        <style in="${checkstyle.result}.xml" out="${checkstyle.result}.html"
-               style="config/checkstyle/checkstyle-frames.xsl"/>
+    <target name="checkstyle" depends="-initReports">
+        <path id="checkstyleLibPath">
+            <pathelement path="${mainClassesDirectory}"/>
+            <path refid="mainTestPath"/>
+        </path>
+        <antcall target="-checkstyle">
+            <param name="checkstyleReportDirectory" value="${reportsDirectory}/checkstyle"/>
+            <param name="checkstyleSourceDirectory" value="${mainSourceDirectory}"/>
+        </antcall>
     </target>
 
 </project>

@@ -18,6 +18,12 @@
             <groupId>checkstyle</groupId>
             <artifactId>checkstyle</artifactId>
             <version>4.2</version>
+            <exclusions>
+                <exclusion>
+                  <groupId>junit</groupId>
+                  <artifactId>junit</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>cobertura</groupId>
