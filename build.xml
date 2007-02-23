@@ -179,7 +179,7 @@ See the NOTICE.txt file distributed with this work for additional information re
         </delete>
     </target>
 
-    <target name="checkstyle" depends="-initReports">
+    <target name="checkstyle" depends="init,-initReports">
         <path id="checkstyleLibPath">
             <pathelement path="${mainClassesDirectory}"/>
             <path refid="mainTestPath"/>

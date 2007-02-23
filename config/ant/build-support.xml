@@ -144,7 +144,7 @@ See the NOTICE.txt file distributed with this work for additional information re
                  classpathref="toolsPath"/>
     </target>
 
-    <target name="-checkstyle" xmlns:cs="antlib:com.puppycrawl.tools.checkstyle" depends="init,-checkstyleTaskdef">
+    <target name="-checkstyle" xmlns:cs="antlib:com.puppycrawl.tools.checkstyle" depends="-checkstyleTaskdef">
         <mkdir dir="${checkstyleReportDirectory}"/>
         <property name="checkstyle.result" location="${checkstyleReportDirectory}/result"/>
         <cs:checkstyle config="config/checkstyle/config.xml"
