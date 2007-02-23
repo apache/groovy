@@ -2,8 +2,6 @@ package groovy.sql
 
 import javax.sql.DataSource
 
-import org.axiondb.jdbc.AxionDataSource
-
 class PersonTest extends GroovyTestCase {
 
     def type
@@ -46,7 +44,11 @@ class PersonTest extends GroovyTestCase {
     }
     
     protected DataSource createDataSource() {
-        return new AxionDataSource("jdbc:axiondb:foo" + getMethodName())
+        def ds = new org.hsqldb.jdbc.jdbcDataSource()
+        ds.database = "jdbc:hsqldb:mem:foo" + getMethodName()
+        ds.user = 'sa'
+        ds.password = ''
+        return ds
     }
     
     protected def createDataSet() {

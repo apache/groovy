@@ -1,6 +1,5 @@
 package groovy.sql
 
-import org.axiondb.jdbc.AxionDriver
 import java.sql.DriverManager
 
 /**
@@ -10,7 +9,7 @@ import java.sql.DriverManager
 class SqlCompleteWithoutDataSourceTest extends SqlCompleteTest {
     
     protected def newSql(String uri) {
-        def driver = AxionDriver
+        def driver = org.hsqldb.jdbcDriver
         println("Loading driver ${driver}")
         return new Sql(DriverManager.getConnection(uri))
     }

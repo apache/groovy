@@ -1,7 +1,5 @@
 package groovy.sql
 
-import org.axiondb.jdbc.AxionDataSource
-
 class TestHelper extends GroovyTestCase {
 
     static def counter = 1
@@ -50,7 +48,7 @@ class TestHelper extends GroovyTestCase {
     }
     
     protected def getURI() {
-		def answer = "jdbc:axiondb:foo"
+		def answer = "jdbc:hsqldb:mem:foo"
 		def name = getMethodName()
 		if (name == null) {name = ""}
 		name += counter++
@@ -58,7 +56,10 @@ class TestHelper extends GroovyTestCase {
     }
     
     protected def newSql(String uri) {
-	    def dataSource = new AxionDataSource(uri)
-	    return new Sql(dataSource)
+	    def ds = new org.hsqldb.jdbc.jdbcDataSource()
+        ds.database = uri
+        ds.user = 'sa'
+        ds.password = ''
+	    return new Sql(ds)
     }
 }

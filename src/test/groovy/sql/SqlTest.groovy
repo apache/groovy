@@ -1,7 +1,5 @@
 package groovy.sql
 
-import org.axiondb.jdbc.AxionDataSource
-
 /**
  * This is more of a sample program than a unit test and is here as an easy
  * to read demo of GDO. The actual full unit test case is in SqlCompleteTest
@@ -91,8 +89,11 @@ class SqlTest extends GroovyTestCase {
     }
     
     protected def createSql() {
-        def dataSource = new AxionDataSource("jdbc:axiondb:foo" + getMethodName())
-        def sql = new Sql(dataSource)
+        def ds = new org.hsqldb.jdbc.jdbcDataSource()
+        ds.database = "jdbc:hsqldb:mem:foo" + getMethodName()
+        ds.user = 'sa'
+        ds.password = ''
+        def sql = new Sql(ds)
         
         sql.execute("create table PERSON ( firstname varchar, lastname varchar )")     
         sql.execute("create table FOOD ( type varchar, name varchar)")

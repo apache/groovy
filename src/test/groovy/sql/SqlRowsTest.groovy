@@ -1,7 +1,5 @@
 package groovy.sql
 
-import org.axiondb.jdbc.AxionDriver
-
 class SqlRowsTest extends TestHelper {
 
     void testFirstRowWithPropertyName() {

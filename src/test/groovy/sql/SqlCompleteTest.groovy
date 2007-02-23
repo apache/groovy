@@ -4,85 +4,70 @@ class SqlCompleteTest extends TestHelper {
 
     void testSqlQuery() {
         def sql = createSql()
-        
         def results = [:]
         sql.eachRow("select * from PERSON") { results.put(it.firstname, it.lastname) }
-        
         def expected = ["James":"Strachan", "Bob":"Mcwhirter", "Sam":"Pullara"]
-					
         assert results == expected
     }
     
     void testSqlQueryWithWhereClause() {
         def sql = createSql()
-        
         def foo = "drink"
         def results = []
         sql.eachRow("select * from FOOD where type=${foo}") { results.add(it.name) }
-        
         def expected = ["beer", "coffee"]
         assert results == expected
     }
     
     void testSqlQueryWithWhereClauseWith2Arguments() {
         def sql = createSql()
-        
         def foo = "cheese"
         def bar = "edam"
         def results = []
         sql.eachRow("select * from FOOD where type=${foo} and name != ${bar}") { results.add(it.name) }
-        
         def expected = ["brie", "cheddar"]
         assert results == expected
     }
 
     void testSqlQueryWith2ParametersUsingQuestionMarkNotation() {
         def sql = createSql()
-        
         def results = []
         sql.eachRow("select * from FOOD where type=? and name != ?", ["cheese", "edam"]) { results.add(it.name) }
-        
         def expected = ["brie", "cheddar"]
         assert results == expected
     }
 
     void testDataSet() {
         def sql = createSql()
-        
         def results = []
         def people = sql.dataSet("PERSON")
         people.each { results.add(it.firstname) }
-        
         def expected = ["James", "Bob", "Sam"]
         assert results == expected
     }
     
     void testDataSetWithClosurePredicate() {
         def sql = createSql()
-        
         def results = []
         def food = sql.dataSet("FOOD")
         food.findAll { it.type == "cheese" }.each { results.add(it.name) }
-        
         def expected = ["edam", "brie", "cheddar"]
         assert results == expected
     }
     
     void testUpdatingDataSet() {
         def sql = createSql()
-        
         def results = []
         def features = sql.dataSet("FEATURE")
-        features.each { 
-            /** @todo Axion doesn't yet support ResultSet updating
+        features.each {
+            /** @todo HSQLDB doesn't yet support ResultSet updating
             if (it.id == 1) {
                 it.name = it.name + " Rocks!"
                 println("Changing name to ${it.name}")
             }
             */
-            results.add(it.name) 
+            results.add(it.name)
         }
-        
         def expected = ["GDO", "GPath", "GroovyMarkup"]
         assert results == expected
     }

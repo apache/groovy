@@ -1,6 +1,7 @@
 package groovy.xml;
 
 import groovy.util.GroovyTestCase
+import org.custommonkey.xmlunit.*
 
 /** 
  * Tests that special XML chars are entitized by MarkupBuilder.
@@ -13,6 +14,7 @@ import groovy.util.GroovyTestCase
  *   This test should success on Windows XP.
  *
  *   @author Pilho Kim
+ *   @author Paul King
  */
 class MarkupBuilderTest extends GroovyTestCase {
     private StringWriter writer
@@ -21,6 +23,7 @@ class MarkupBuilderTest extends GroovyTestCase {
     protected void setUp() {
         writer = new StringWriter()
         xml = new MarkupBuilder(writer)
+        XMLUnit.setIgnoreWhitespace(true)
     }
 
     /**
@@ -107,8 +110,8 @@ require escaping. The other characters consist of:
     * & - ampersand
 ''')
 
-        // Compare the generated markup with the 'expectedXml' string.
-        assertEquals(expectedXml, fixEOLs(writer.toString()))
+        def xmlDiff = new Diff(expectedXml, writer.toString())
+        assert xmlDiff.similar()
     }
 
     /**
@@ -144,7 +147,7 @@ require escaping. The other characters consist of:
             }
         }
 
-        // Check that the MarkupBuilder has generated the expected XML.
-        assertEquals(expectedXml, fixEOLs(writer.toString()))
-    }  
+        def xmlDiff = new Diff(expectedXml, writer.toString())
+        assert xmlDiff.similar()
+    }
 }
