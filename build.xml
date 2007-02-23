@@ -122,24 +122,9 @@ See the NOTICE.txt file distributed with this work for additional information re
         </javac>
     </target>
 
-    <!--
-    Some of the SQL-related tests in UberTestCase3 require access to the source code of the test.  Copy
-    the sources into the target tree so that the needed source files can be found.
-    -->
-    <target name="copySelectedGroovyFiles">
-        <mkdir dir="${testClassesDirectory}"/>
-        <copy todir="${testClassesDirectory}">
-            <fileset dir="${testSourceDirectory}">
-                <include name="groovy/sql/PersonTest.groovy"/>
-                <include name="groovy/sql/SqlCompleteTest.groovy"/>
-                <include name="groovy/sql/SqlTest.groovy"/>
-            </fileset>
-        </copy>
-    </target>
-
-    <target name="test" depends="compileTest,copySelectedGroovyFiles" description="Compile and test all the classes.">
+    <target name="test" depends="compileTest" description="Compile and test all the classes.">
         <mkdir dir="${reportsDirectory}"/>
-        <junit printsummary="true" fork="true" forkmode="once" includeantruntime="false" failureproperty="testFailed">
+        <junit printsummary="true" fork="true" includeantruntime="false" failureproperty="testFailed">
             <formatter type="plain"/>
             <!--<formatter type="xml"/>-->
             <batchtest todir="${reportsDirectory}">
@@ -149,6 +134,7 @@ See the NOTICE.txt file distributed with this work for additional information re
                 <path refid="mainTestPath"/>
                 <pathelement path="${mainClassesDirectory}"/>
                 <pathelement path="${testClassesDirectory}"/>
+                <pathelement path="src/test"/>
             </classpath>
         </junit>
     </target>

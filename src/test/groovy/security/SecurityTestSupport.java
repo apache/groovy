@@ -227,7 +227,7 @@ public class SecurityTestSupport extends GroovyTestCase {
         		}
         		if (otherFailure) {
         			new SecurityTestResultPrinter(System.out).print(result);
-        			fail("Security test expected an AccessControlException on " + missingPermission + ", but  failed for other reasons (results on System.out)");
+        			fail("Security test expected an AccessControlException on " + missingPermission + ", but failed for other reasons (results on System.out)");
         		}
         	}
         }
