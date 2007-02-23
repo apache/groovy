@@ -1,0 +1,141 @@
+<?xml version="1.0"?>
+<!--
+Ant build script for Groovy.
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
+compliance with the License. You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed under the License is
+distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+implied. See the License for the specific language governing permissions and limitations under the License.
+See the NOTICE.txt file distributed with this work for additional information regarding copyright ownership.
+-->
+<project name="build-support" default="" basedir=".">
+    <property name="masterDirectory" location="../.."/>
+
+    <macrodef name="fetch.maven.all.modules">
+        <sequential>
+            <fetch.maven.all.scopes module="main"/>
+            <!-- just runtime scope for tools, let's not get carried away -->
+            <fetch.maven scope="runtime" module="tools"/>
+        </sequential>
+    </macrodef>
+
+    <macrodef name="fetch.maven.all.scopes">
+        <attribute name="module"/>
+        <sequential>
+            <fetch.maven scope="compile" module="@{module}"/>
+            <fetch.maven scope="runtime" module="@{module}"/>
+            <fetch.maven scope="test" module="@{module}"/>
+        </sequential>
+    </macrodef>
+
+    <macrodef name="fetch.maven">
+        <attribute name="scope"/>
+        <attribute name="module"/>
+        <sequential>
+            <maven.dependencies useScope="@{scope}" filesetId="fs.@{scope}.@{module}"
+                                pomRefId="maven.artifact.@{module}"/>
+        </sequential>
+    </macrodef>
+
+    <macrodef name="maven.pom">
+        <attribute name="file"/>
+        <attribute name="id"/>
+        <sequential>
+            <artifact:pom xmlns:artifact="urn:maven-artifact-ant" file="@{file}" id="@{id}"/>
+        </sequential>
+    </macrodef>
+
+    <macrodef name="maven.remote.repository">
+        <attribute name="id"/>
+        <attribute name="url"/>
+        <sequential>
+            <artifact:remoteRepository xmlns:artifact="urn:maven-artifact-ant" id="@{id}" url="@{url}"/>
+        </sequential>
+    </macrodef>
+
+    <macrodef name="maven.dependencies">
+        <attribute name="useScope"/>
+        <attribute name="filesetId"/>
+        <attribute name="pomRefId"/>
+        <sequential>
+            <artifact:dependencies xmlns:artifact="urn:maven-artifact-ant" useScope="@{useScope}"
+                                   filesetId="@{filesetId}">
+                <remoteRepository refid="ibiblio.remote.repository"/>
+                <remoteRepository refid="repo1.remote.repository"/>
+                <pom refid="@{pomRefId}"/>
+            </artifact:dependencies>
+        </sequential>
+    </macrodef>
+
+    <target name="-fetch-maven-init" depends="-maven-ant-taskdef,-maven-pom-definitions,-maven-repository-definitions"/>
+
+    <target name="-maven-pom-definitions">
+        <maven.pom file="config/maven/main.pom" id="maven.artifact.main"/>
+        <maven.pom file="config/maven/tools.pom" id="maven.artifact.tools"/>
+    </target>
+
+    <target name="-maven-repository-definitions">
+        <maven.remote.repository id="repo1.remote.repository" url="http://repo1.maven.org/maven2/"/>
+        <maven.remote.repository id="ibiblio.remote.repository" url="http://ibiblio.org/maven2/"/>
+    </target>
+
+    <target name="-fetch-maven-all-modules" depends="-fetch-maven-init">
+        <fetch.maven.all.modules/>
+    </target>
+
+    <target name="-maven-fetch" depends="-fetch-maven-all-modules,-copy-libraries"/>
+
+    <target name="-copy-libraries">
+        <delete dir="${mainTestDirectory}"/>
+        <delete dir="${mainCompileDirectory}"/>
+        <delete dir="${mainRuntimeDirectory}"/>
+        <delete dir="${toolsDirectory}"/>
+
+        <mkdir dir="${mainDirectory}"/>
+        <mkdir dir="${mainTestDirectory}"/>
+        <mkdir dir="${mainCompileDirectory}"/>
+        <mkdir dir="${mainRuntimeDirectory}"/>
+        <mkdir dir="${toolsDirectory}"/>
+
+        <copy todir="${mainTestDirectory}">
+            <mapper type="flatten"/>
+            <fileset refid="fs.test.main"/>
+        </copy>
+        <path id="mainTestPath">
+            <fileset dir="${mainTestDirectory}" includes="**/*.jar"/>
+        </path>
+        <copy todir="${mainCompileDirectory}">
+            <mapper type="flatten"/>
+            <fileset refid="fs.compile.main"/>
+        </copy>
+        <path id="mainCompilePath">
+            <fileset dir="${mainCompileDirectory}" includes="**/*.jar"/>
+        </path>
+        <copy todir="${mainRuntimeDirectory}">
+            <mapper type="flatten"/>
+            <fileset refid="fs.runtime.main"/>
+        </copy>
+        <path id="mainRuntimePath">
+            <fileset dir="${mainRuntimeDirectory}" includes="**/*.jar"/>
+        </path>
+        <copy todir="${toolsDirectory}">
+            <mapper type="flatten"/>
+            <fileset refid="fs.runtime.tools"/>
+        </copy>
+        <path id="toolsPath">
+            <fileset dir="${toolsDirectory}" includes="**/*.jar"/>
+        </path>
+    </target>
+
+    <target name="-maven-ant-taskdef">
+        <typedef resource="org/apache/maven/artifact/ant/antlib.xml" uri="urn:maven-artifact-ant">
+            <classpath>
+                <pathelement location="${bootstrapDirectory}/maven-artifact-ant-2.0.4-dep.jar"/>
+            </classpath>
+        </typedef>
+    </target>
+</project>

@@ -52,6 +52,15 @@ grant codeBase "file:${maven.home}/-" {
 };
 
 /*
+ * When running from ant, this codebase is required.
+ * If not running from ant, the codesource will not be found, but will not cause an error.
+ * TODO: narrow this down to specific jars
+ */
+grant codeBase "file:${user.dir}/target/lib/main/-" {
+	permission java.security.AllPermission;
+};
+
+/*
  * When running the junit plugin from within eclipse, this codebase is required.
  * If not running from eclipse, the codesource will not be found, but will not cause an error.
  */

@@ -25,8 +25,6 @@ def end = new Date().time
 
 println "Indexing $numIndexed files took ${end - start} milliseconds"
 
-
-
 def index(indexDir, dataDir) {
     if (!dataDir.exists() || !dataDir.directory) {
         throw new IOException("$dataDir does not exist or is not a directory")

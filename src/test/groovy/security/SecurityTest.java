@@ -89,14 +89,14 @@ public class SecurityTest extends SecurityTestSupport {
     public void testScriptTest() {
 		assertExecute(new File("src/test/groovy/script/ScriptTest.groovy"), null);
 	}
-	
+
 	//In addition to requiring several permissions, this test is an example of the case
 	//where the groovy class loader is required at script invocation time as well as
 	//during compilation.
 	public void testSqlCompleteWithoutDataSourceTest() {
 		assertExecute(new File("src/test/groovy/sql/SqlCompleteWithoutDataSourceTest.groovy"), null);
 	}
-	
+
 	//Test to prevent scripts from invoking the groovy compiler.  This is done by restricting access
 	//to the org.codehaus.groovy packages.
 	public void testMetaClassTest() {
@@ -108,8 +108,11 @@ public class SecurityTest extends SecurityTestSupport {
 	//with a URL was causing an NPE.
 	public void testCodeSource() throws IOException, CompilationFailedException {
 		URL script = loader.getResource("groovy/ArrayTest.groovy");
-		GroovyCodeSource gcs = new GroovyCodeSource(script);
-		Class result = loader.parseClass(gcs);
+        try {
+            new GroovyCodeSource(script);
+        } catch (RuntimeException re) {
+            assertEquals("Could not construct a GroovyCodeSource from a null URL", re.getMessage());
+        }
 	}
 	
 }

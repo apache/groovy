@@ -56,17 +56,17 @@ class IntegerCategory {
 
 
 class CategoryTestPropertyCategory {
-     private static aVal = "hello"
-     static getSomething(Object self) { return aVal }
-     static void setSomething(Object self, newValue) { aVal = newValue }
+    private static aVal = "hello"
+    static getSomething(Object self) { return aVal }
+    static void setSomething(Object self, newValue) { aVal = newValue }
 }
 
 class CategoryTestHelper {
-  def aProperty = "aValue"
+    def aProperty = "aValue"
 }
 
 class CategoryTestHelperPropertyReplacer {
-     private static aVal = "anotherValue"
-     static getAProperty(CategoryTestHelper self) { return aVal }
-     static void setAProperty(CategoryTestHelper self, newValue) { aVal = newValue }
+    private static aVal = "anotherValue"
+    static getAProperty(CategoryTestHelper self) { return aVal }
+    static void setAProperty(CategoryTestHelper self, newValue) { aVal = newValue }
 }

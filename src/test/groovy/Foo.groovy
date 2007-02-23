@@ -41,7 +41,7 @@ class Foo implements Serializable {
     }
 
     public String getBody() {
-        return this.body
+        return this.body ? this.body : 'null'
     }
 
     public void setBody(String body) {

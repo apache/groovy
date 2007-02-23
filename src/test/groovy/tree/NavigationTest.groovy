@@ -14,7 +14,7 @@ class NavigationTest extends GroovyTestCase {
         assert names == expected
     }
     
-    void testBredthFirst() {
+    void testBreadthFirst() {
         def tree = createTree()
         
         def names = tree.breadthFirst().collect { it.name() }
