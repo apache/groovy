@@ -275,6 +275,15 @@ public class DefaultGroovyMethods {
         GroovyCategorySupport.use(categoryClassList, closure);
     }
 
+    /**
+     * Allows the usage of addShutdownHook without getting the runtime first. 
+     * 
+     * @param self the object the method is called on (ignored)
+     * @param closure the shutdown hook action
+     */
+    public static void addShutDownHook (Object self, Closure closure) {
+        Runtime.getRuntime().addShutdownHook(new Thread( closure));
+    }
 
     /**
      * use() a list of categories, specifying the list as varargs:<br>
