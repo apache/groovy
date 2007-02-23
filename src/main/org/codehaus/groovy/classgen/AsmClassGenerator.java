@@ -2529,9 +2529,12 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     public void visitGStringExpression(GStringExpression expression) {
+   	
+        cv.visitTypeInsn(NEW, "org/codehaus/groovy/runtime/GStringImpl");
+        cv.visitInsn(DUP);
+        
         int size = expression.getValues().size();
         helper.pushConstant(size);
-
         cv.visitTypeInsn(ANEWARRAY, "java/lang/Object");
 
         for (int i = 0; i < size; i++) {
@@ -2540,19 +2543,20 @@ public class AsmClassGenerator extends ClassGenerator {
             visitAndAutoboxBoolean(expression.getValue(i));
             cv.visitInsn(AASTORE);
         }
+        
+        List strings = expression.getStrings();
+    	size = strings.size();
+    	helper.pushConstant(size);
+    	cv.visitTypeInsn(ANEWARRAY, "java/lang/String");
+    	
+    	for (int i = 0; i < size; i++) {
+    		cv.visitInsn(DUP);
+    		helper.pushConstant(i);
+    		cv.visitLdcInsn( ((ConstantExpression)strings.get(i)).getValue());
+    		cv.visitInsn(AASTORE);
+    	}
 
-        int paramIdx = compileStack.defineTemporaryVariable("iterator",true);
-
-        ClassNode innerClass = createGStringClass(expression);
-        addInnerClass(innerClass);
-        String innerClassinternalName = BytecodeHelper.getClassInternalName(innerClass);
-
-        cv.visitTypeInsn(NEW, innerClassinternalName);
-        cv.visitInsn(DUP);
-        cv.visitVarInsn(ALOAD, paramIdx);
-
-        cv.visitMethodInsn(INVOKESPECIAL, innerClassinternalName, "<init>", "([Ljava/lang/Object;)V");
-        compileStack.removeVar(paramIdx);
+    	cv.visitMethodInsn(INVOKESPECIAL, "org/codehaus/groovy/runtime/GStringImpl", "<init>", "([Ljava/lang/Object;[Ljava/lang/String;)V");
     }
     
     /**

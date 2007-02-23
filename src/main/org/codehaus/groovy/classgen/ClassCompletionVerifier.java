@@ -239,6 +239,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         for (Iterator iter = methods.iterator(); iter.hasNext();) {
             MethodNode element = (MethodNode) iter.next();
             if (element == node) continue;
+            if (!element.getDeclaringClass().equals(node.getDeclaringClass())) continue;
             int modifiers = element.getModifiers();
             if (Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers)){
                 hasPublic=true;
