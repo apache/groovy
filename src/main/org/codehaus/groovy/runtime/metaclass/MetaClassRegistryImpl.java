@@ -115,7 +115,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         // Note that the user can replace the standard MetaClass with a custom MetaClass by including 
         // groovy.runtime.metaclass.java.lang.ObjectMetaClass in the classpath
         
-        metaClasses.putStrong(Object.class, GroovySystem.objectMetaClass);
+        metaClasses.putStrong(Object.class, GroovySystem.getObjectMetaClass());
    }
     
     private void registerMethods(final Class theClass, final boolean useInstanceMethods) {
@@ -213,7 +213,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     
         if (theSuperClass == null) {
             // The class is an interface - use Object's Metaclass
-            return GroovySystem.objectMetaClass.createMetaClass(theClass, this);
+            return GroovySystem.getObjectMetaClass().createMetaClass(theClass, this);
         } else {
             return getMetaClass(theSuperClass).createMetaClass(theClass, this);
         }

@@ -31,19 +31,32 @@ public class GroovySystem {
     /**
      * If true then the MetaClass will only use reflection for method dispatch, property acess, etc.
      */
-    public final static boolean useReflection;
+    private final static boolean useReflection;
     
     /**
      * Reference to the MetaClass Registry to be used by the Groovy run time system to map classes to MetaClasses
      */
-    public final static MetaClassRegistry metaClassRegistry;
+    private final static MetaClassRegistry metaClassRegistry;
     
     /**
      * The MetaClass for java.lang.Object
      */
-    public final static MetaClass objectMetaClass;
-    
-    
+    private final static MetaClass objectMetaClass;
+
+
+    public static boolean isUseReflection() {
+        return useReflection;
+    }
+
+
+    public static MetaClassRegistry getMetaClassRegistry() {
+        return metaClassRegistry;
+    }
+
+    public static MetaClass getObjectMetaClass() {
+        return objectMetaClass;
+    }
+
     //
     //  TODO: make this initialisation able to set useReflection true
     //  TODO: have some way of specifying another MetaClass Registry implementation

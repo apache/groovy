@@ -28,14 +28,14 @@ import org.codehaus.groovy.ast.ClassNode;
  */
 
 public class DelegatingMetaClass implements MetaClass {
-    protected final MetaClass delegate;
+    protected MetaClass delegate;
     
     public DelegatingMetaClass(final MetaClass delegate) {
         this.delegate = delegate;
     }
    
     public DelegatingMetaClass(final Class theClass) {
-        this(GroovySystem.metaClassRegistry.getMetaClass(theClass.getSuperclass() == null ? Object.class : theClass.getSuperclass()).createMetaClass(theClass, GroovySystem.metaClassRegistry));
+        this(GroovySystem.getMetaClassRegistry().getMetaClass(theClass.getSuperclass() == null ? Object.class : theClass.getSuperclass()).createMetaClass(theClass, GroovySystem.getMetaClassRegistry()));
     }
     
     public MetaClass createMetaClass(Class theClass, MetaClassRegistry registry) {
@@ -199,4 +199,8 @@ public class DelegatingMetaClass implements MetaClass {
     public int selectConstructorAndTransformArguments(int numberOfCosntructors, Object[] arguments) {
         return this.delegate.selectConstructorAndTransformArguments(numberOfCosntructors, arguments);
     }
+
+	public void setAdaptee(MetaClass adaptee) {
+		this.delegate = adaptee; 
+	}
 }

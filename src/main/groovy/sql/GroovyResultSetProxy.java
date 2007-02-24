@@ -138,7 +138,7 @@ public final class GroovyResultSetProxy implements InvocationHandler {
 
     private MetaClass getMetaClass() {
         if (metaClass==null) {
-            metaClass = GroovySystem.metaClassRegistry.getMetaClass(GroovyResultSet.class);
+            metaClass = GroovySystem.getMetaClassRegistry().getMetaClass(GroovyResultSet.class);
         } 
         return metaClass;
     }

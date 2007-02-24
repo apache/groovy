@@ -26,7 +26,7 @@ public class MockProxyMetaClass extends ProxyMetaClass {
      * convenience factory method for the most usual case.
      */
     public static MockProxyMetaClass make(Class theClass) throws IntrospectionException {
-        MetaClassRegistry metaRegistry = GroovySystem.metaClassRegistry;
+        MetaClassRegistry metaRegistry = GroovySystem.getMetaClassRegistry();
         MetaClass meta = metaRegistry.getMetaClass(theClass);
         return new MockProxyMetaClass(metaRegistry, theClass, meta);
     }

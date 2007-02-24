@@ -2092,7 +2092,7 @@ public class MetaClassImpl implements MetaClass {
            answer = new ReflectionMetaMethod(method);
        }
 
-       if (GroovySystem.useReflection) {
+       if (GroovySystem.isUseReflection()) {
            //log.warning("Creating reflection based dispatcher for: " + method);
            return new ReflectionMetaMethod(method);
        }

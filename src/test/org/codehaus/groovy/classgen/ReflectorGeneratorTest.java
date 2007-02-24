@@ -108,7 +108,7 @@ public class ReflectorGeneratorTest extends GroovyTestCase {
         ASMifierClassVisitor.main(new String[] { fileName });
 
         // now lets try class load it
-        MetaClassRegistry registry = GroovySystem.metaClassRegistry;
+        MetaClassRegistry registry = GroovySystem.getMetaClassRegistry();
         Object reflector = ((MetaClassRegistryImpl)registry).loadReflector(getClass(),methods);
          
         System.out.println("Created new reflector: " + reflector);

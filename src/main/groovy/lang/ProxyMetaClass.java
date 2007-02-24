@@ -21,7 +21,7 @@ public class ProxyMetaClass extends MetaClassImpl {
      * convenience factory method for the most usual case.
      */
     public static ProxyMetaClass getInstance(Class theClass) throws IntrospectionException {
-        MetaClassRegistry metaRegistry = GroovySystem.metaClassRegistry;
+        MetaClassRegistry metaRegistry = GroovySystem.getMetaClassRegistry();
         MetaClass meta = metaRegistry.getMetaClass(theClass);
         return new ProxyMetaClass(metaRegistry, theClass, meta);
     }

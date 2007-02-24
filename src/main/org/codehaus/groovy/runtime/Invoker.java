@@ -75,7 +75,7 @@ public class Invoker {
         return metaRegistry;
     }
 
-    private final MetaClassRegistry metaRegistry = GroovySystem.metaClassRegistry;
+    private final MetaClassRegistry metaRegistry = GroovySystem.getMetaClassRegistry();
 
     public MetaClass getMetaClass(Object object) {
         return metaRegistry.getMetaClass(object.getClass());
