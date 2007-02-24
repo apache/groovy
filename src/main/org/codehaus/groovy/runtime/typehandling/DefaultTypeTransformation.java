@@ -488,13 +488,6 @@ public class DefaultTypeTransformation {
             return comparable.compareTo(right);
         }
 
-        if (left.getClass().isArray()) {
-            Collection leftList = asCollection(left);
-            if (right.getClass().isArray()) {
-                right = asCollection(right);
-            }
-            return ((Comparable) leftList).compareTo(right);
-        }
         throw new GroovyRuntimeException("Cannot compare values: " + left + " and " + right);
     }
     
@@ -503,11 +496,30 @@ public class DefaultTypeTransformation {
         if (left == null || right == null) return false;
         if (left instanceof Comparable) {
             return compareTo(left, right) == 0;
-        } else if (left instanceof List && right instanceof List) {
-            return DefaultGroovyMethods.equals((List) left, (List) right);
-        } else {
-            return left.equals(right);
         }
+        // handle int[] on both sides as special case for efficiency
+        if (left instanceof int[] && right instanceof int[]) {
+            return DefaultGroovyMethods.equals((int[]) left, (int[]) right);
+        }
+        if (left.getClass().isArray() && left.getClass().getComponentType().isPrimitive()) {
+            left = primitiveArrayToList(left);
+        }
+        if (right.getClass().isArray() && right.getClass().getComponentType().isPrimitive()) {
+            right = primitiveArrayToList(right);
+        }
+        if (left instanceof Object[] && right instanceof Object[]) {
+            return DefaultGroovyMethods.equals((Object[]) left, (Object[]) right);
+        }
+        if (left instanceof Object[] && right instanceof List) {
+            return DefaultGroovyMethods.equals((Object[]) left, (List) right);
+        }
+        if (left instanceof List && right instanceof Object[]) {
+            return DefaultGroovyMethods.equals((List) left, (Object[]) right);
+        }
+        if (left instanceof List && right instanceof List) {
+            return DefaultGroovyMethods.equals((List) left, (List) right);
+        }
+        return left.equals(right);
     }
     
     /**

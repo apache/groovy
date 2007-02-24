@@ -82,6 +82,7 @@ import org.w3c.dom.NodeList;
  * @author Russel Winder
  * @author bing ran
  * @author Jochen Theodorou
+ * @author Paul King
  * @version $Revision$
  */
 public class DefaultGroovyMethods {
@@ -2657,10 +2658,8 @@ public class DefaultGroovyMethods {
         if (left.size() == 0 || right.size() == 0)
             return true;
 
-        boolean nlgnSort = sameType(new Collection[]{left, right});
-
-        Collection pickFrom = (Collection) new TreeSet(new NumberComparator());
-        ((TreeSet) pickFrom).addAll(right);
+        Collection pickFrom = new TreeSet(new NumberComparator());
+        pickFrom.addAll(right);
 
         for (Iterator iter = left.iterator(); iter.hasNext();) {
             final Object o = iter.next();
@@ -2691,6 +2690,96 @@ public class DefaultGroovyMethods {
         }
     }
 
+    public static boolean equals(int[] left, int[] right) {
+        if (left == null) {
+            return right == null;
+        }
+        if (right == null) {
+            return false;
+        }
+        if (left.length != right.length) {
+            return false;
+        }
+        for (int i = 0; i < left.length; i++) {
+            if (left[i] != right[i]) return false;
+        }
+        return true;
+    }
+
+    public static boolean equals(Object[] left, Object[] right) {
+        if (left == null) {
+            return right == null;
+        }
+        if (right == null) {
+            return false;
+        }
+        if (left.length != right.length) {
+            return false;
+        }
+        final NumberComparator numberComparator = new NumberComparator();
+        for (int i = left.length - 1; i >= 0; i--) {
+            final Object o1 = left[i];
+            final Object o2 = right[i];
+            if (o1 == null) {
+                if (o2 != null) return false;
+            } else {
+                if (o1 instanceof Number) {
+                    if (!(o2 instanceof Number && numberComparator.compare(o1, o2) == 0)) {
+                        return false;
+                    }
+                } else {
+                    // Use this way of calling equals in case the element is a List
+                    // or any other type which has an equals in DGM
+                    if (!invokeEquals(o1, o2)) return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private static boolean invokeEquals(Object o1, Object o2) {
+        return ((Boolean) InvokerHelper.invokeMethod(o1, "equals", new Object[]{o2})).booleanValue();
+    }
+
+    public static boolean equals(Object[] left, List right) {
+        return coercedEquals(left, right);
+    }
+
+    public static boolean equals(List left, Object[] right) {
+        return coercedEquals(right, left);
+    }
+
+    private static boolean coercedEquals(Object[] left, List right) {
+        if (left == null) {
+            return right == null;
+        }
+        if (right == null) {
+            return false;
+        }
+        if (left.length != right.size()) {
+            return false;
+        }
+        final NumberComparator numberComparator = new NumberComparator();
+        for (int i = left.length - 1; i >= 0; i--) {
+            final Object o1 = left[i];
+            final Object o2 = right.get(i);
+            if (o1 == null) {
+                if (o2 != null) return false;
+            } else {
+                if (o1 instanceof Number) {
+                    if (!(o2 instanceof Number && numberComparator.compare(o1, o2) == 0)) {
+                        return false;
+                    }
+                } else {
+                    // Use this way of calling equals in case the element is a List
+                    // or any other type which has an equals in DGM
+                    if (!invokeEquals(o1, o2)) return false;
+                }
+            }
+        }
+        return true;
+    }
+
     /**
      * Compare two Lists.
      * If numbers exits in the Lists, then they are compared as numbers,
@@ -2703,36 +2792,33 @@ public class DefaultGroovyMethods {
     public static boolean equals(List left, List right) {
         if (left == null) {
             return right == null;
-        } else if (right == null) {
+        }
+        if (right == null) {
             return false;
-        } else if (left.size() != right.size()) {
+        }
+        if (left.size() != right.size()) {
             return false;
-        } else {
-            final NumberComparator numberComparator = new NumberComparator();
-            final Iterator it1 = left.iterator(), it2 = right.iterator();
-
-            while (it1.hasNext()) {
-                final Object o1 = it1.next();
-                final Object o2 = it2.next();
-
-                if (o1 == null) {
-                    if (o2 != null) return false;
-                } else {
-                    if (o1 instanceof Number) {
-                        if (!(o2 instanceof Number && numberComparator.compare(o1, o2) == 0)) {
-                            return false;
-                        }
-                    } else {
-                        // Use this way of calling equals in case the elament is a List
-                        // or any other type which has an equals in DGM
-                        if (!((Boolean) InvokerHelper.invokeMethod(o1, "equals", new Object[]{o2})).booleanValue())
-                            return false;
+        }
+        final NumberComparator numberComparator = new NumberComparator();
+        final Iterator it1 = left.iterator(), it2 = right.iterator();
+        while (it1.hasNext()) {
+            final Object o1 = it1.next();
+            final Object o2 = it2.next();
+            if (o1 == null) {
+                if (o2 != null) return false;
+            } else {
+                if (o1 instanceof Number) {
+                    if (!(o2 instanceof Number && numberComparator.compare(o1, o2) == 0)) {
+                        return false;
                     }
+                } else {
+                    // Use this way of calling equals in case the element is a List
+                    // or any other type which has an equals in DGM
+                    if (!invokeEquals(o1, o2)) return false;
                 }
             }
-
-            return true;
         }
+        return true;
     }
 
     /**

@@ -54,7 +54,7 @@ import groovy.lang.MetaClass;
 import groovy.lang.MetaClassRegistry;
 import groovy.lang.MissingMethodException;
 
-import java.util.Map;
+import java.util.List;
 
 import org.codehaus.groovy.runtime.metaclass.MetaClassHelper;
 
@@ -128,6 +128,21 @@ public class Invoker {
 
     private Object invokePojoMethod(Object object, String methodName, Object arguments) {
         Class theClass = object.getClass();
+        // TODO move this out of here
+        if (theClass.isArray() && methodName.equals("equals") && arguments.getClass().isArray()) {
+            Object arg = ((Object[]) arguments)[0];
+            if (arg.getClass().isArray()) {
+                return Boolean.valueOf(DefaultGroovyMethods.equals((Object[])object, (Object[]) arg));
+            }
+            return Boolean.valueOf(DefaultGroovyMethods.equals((Object[])object, (List) arg));
+        }
+        else if (object instanceof List && methodName.equals("equals") && arguments.getClass().isArray()) {
+            Object arg = ((Object[]) arguments)[0];
+            if (arg.getClass().isArray()) {
+                return Boolean.valueOf(DefaultGroovyMethods.equals((List)object, (Object[]) arg));
+            }
+            return Boolean.valueOf(DefaultGroovyMethods.equals((List)object, (List) arg));
+        }
         MetaClass metaClass = metaRegistry.getMetaClass(theClass);
         return metaClass.invokeMethod(object, methodName, asArray(arguments));
     }
