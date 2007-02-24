@@ -55,9 +55,21 @@ public interface MetaObjectProtocol {
      * @param object The instance which the method is invoked on
      * @param methodName The name of the method
      * @param arguments The arguments to the method
-     * @return The return value of the method which is null if the return type if void
+     * @return The return value of the method which is null if the return type is void
      */
     Object invokeMethod(Object object, String methodName, Object[] arguments);
+
+    /**
+     * <p>Invokes a method on the given object, with the given name and single argument.</p>
+     *
+     * @see #invokeMethod(Object, String, Object[])
+     *
+     * @param object The Object to invoke the method on
+     * @param methodName The name of the method
+     * @param arguments The argument to the method
+     * @return The return value of the method which is null if the return type is void
+     */
+     Object invokeMethod(Object object, String methodName, Object arguments);
 
     /**
      * <p>Invokes a static method on the given Object with the given name and arguments.</p>

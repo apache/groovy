@@ -22,34 +22,94 @@ import java.util.List;
 
 import org.codehaus.groovy.ast.ClassNode;
 
-
-public abstract interface MetaClass extends MetaObjectProtocol {
-    /*
+/**
+ * A MetaClass within Groovy defines the behaviour of any given Groovy or Java class. The MetaClass
+ * interface defines two parts. The client API, which is defined via the extend MetaObjectProtocol interface
+ * and the contract with the Groovy runtime system.
+ *
+ * In general the compiler and Groovy runtime engine interact with methods on this class whilst MetaClass
+ * clients interact with the method defined by the MetaObjectProtocol interface
+ *
+ *
+ * @see org.codehaus.groovy.runtime.metaclass.MetaClassImpl
+ * @see groovy.lang.MetaObjectProtocol
+ * 
+ * @author John Wilson
+ * @author Graeme Rocher
+ */
+public interface MetaClass extends MetaObjectProtocol {
+    /**
      * Called on the MetaClass of the superclass of the class to allow that MetaClass to control
      * the behaviour of its subclass if it wants to.
+     *
+     * @param theClass The java.lang.Class instance to a create a MetaClass for
+     * @param registry The MetaClassRegistry instance
+     *
+     * @return A MetaClas for the specified java.lang.Class instance
      */
      MetaClass createMetaClass(Class theClass, MetaClassRegistry registry);
 
+
+    /**
+     * Invokes a method on the given receiver for the specified arguments. The sender is the class that invoked the method on the object.
+     * The MetaClass will attempt to establish the method to invoke based on the name and arguments provided.
+     *
+     * The isCallToSuper and fromInsideClass help the Groovy runtime perform optimisations on the call to go directly
+     * to the super class if necessary
+     *
+     * @param sender The java.lang.Class instance that invoked the method
+     * @param receiver The object which the method was invoked on
+     * @param methodName The name of the method
+     * @param arguments The arguments to the method
+     * @param isCallToSuper Whether the method is a call to a super class method
+     * @param fromInsideClass ??
+     *
+     * @return The return value of the method
+     */
+     Object invokeMethod(Class sender, Object receiver, String methodName, Object[] arguments, boolean isCallToSuper, boolean fromInsideClass);
+
+
+    /**
+     * Retrieves a property on the given receiver for the specified arguments. The sender is the class that is requesting the property from the object.
+     * The MetaClass will attempt to establish the method to invoke based on the name and arguments provided.
+     *
+     * The isCallToSuper and fromInsideClass help the Groovy runtime perform optimisations on the call to go directly
+     * to the super class if necessary
+     *
+     * @param sender The java.lang.Class instance that requested the property
+     * @param receiver The Object which the property is being retrieved from
+     * @param property The name of the property
+     * @param isCallToSuper Whether the call is to a super class property
+     * @param fromInsideClass ??
+     *
+     * @return The properties value
+     */
+     Object getProperty(Class sender, Object receiver, String property, boolean isCallToSuper, boolean fromInsideClass);
+
+    /**
+     * Retrieves a property on the given receiver for the specified arguments. The sender is the class that is requesting the property from the object.
+     * The MetaClass will attempt to establish the method to invoke based on the name and arguments provided.
+     *
+     * The isCallToSuper and fromInsideClass help the Groovy runtime perform optimisations on the call to go directly
+     * to the super class if necessary
+     *
+     * @param sender The java.lang.Class instance that is mutating the property
+     * @param receiver The Object which the property is being set on
+     * @param property The name of the property
+     * @param value The new value of the property to set
+     * @param isCallToSuper Whether the call is to a super class property
+     * @param fromInsideClass ??
+     *
+     */
+     void setProperty(Class sender, Object receiver, String property, Object value, boolean isCallToSuper, boolean fromInsideClass);
+
     /*
-     * 
-     * Do we need this method? 
-     * 
+     *
+     * Do we need this method?
+     *
      */
      Object invokeMissingMethod(Object instance, String methodName, Object[] arguments);
     
-    /*
-     * 
-     * Do we really want this method?
-     * 
-     */
-     Object invokeMethod(Object object, String methodName, Object arguments);
-    
-
-     Object invokeMethod(Class sender, Object receiver, String methodName, Object[] arguments, boolean isCallToSuper, boolean fromInsideClass);
-    
-     Object getProperty(Class sender, Object receiver, String messageName, boolean useSuper, boolean fromInsideClass);
-    
-     void setProperty(Class sender, Object receiver, String messageName, Object messageValue, boolean useSuper, boolean fromInsideClass);
     
     /*
      *  Why does this take only one boolean parameter?
@@ -59,22 +119,7 @@ public abstract interface MetaClass extends MetaObjectProtocol {
     
      void setAttribute(Class sender, Object receiver, String messageName, Object messageValue, boolean useSuper, boolean fromInsideClass);
     
-    /**
-     * adds a new instance method to this meta class. Instance
-     * methods are able to overwrite the original methods of the
-     * class. Calling this method should not be done after 
-     * initlise was called.
-     * @param method the method to be added
-     */
-     void addNewInstanceMethod(Method method);
-     
-    /**
-     * adds a new static method to this meta class. This is only
-     * possible as long as initilise was not called.
-     * @param method the method to be added
-     */
-     void addNewStaticMethod(Method method);
-     
+
      /*
       * 
       * do we need this?

@@ -45,21 +45,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 package org.codehaus.groovy.runtime.metaclass;
 
-import groovy.lang.Closure;
-import groovy.lang.GroovyClassLoader;
-import groovy.lang.GroovyObject;
-import groovy.lang.GroovyRuntimeException;
-import groovy.lang.GroovySystem;
-import groovy.lang.MetaArrayLengthProperty;
-import groovy.lang.MetaClass;
-import groovy.lang.MetaClassRegistry;
-import groovy.lang.MetaFieldProperty;
-import groovy.lang.MetaMethod;
-import groovy.lang.MetaProperty;
-import groovy.lang.MissingFieldException;
-import groovy.lang.MissingMethodException;
-import groovy.lang.MissingPropertyException;
-import groovy.lang.Tuple;
+import groovy.lang.*;
 
 import java.beans.BeanInfo;
 import java.beans.EventSetDescriptor;
@@ -116,7 +102,7 @@ import org.objectweb.asm.ClassVisitor;
 * @version $Revision$
 * @see groovy.lang.MetaClass
 */
-public class MetaClassImpl implements MetaClass {
+public class MetaClassImpl implements MetaClass, MutableMetaClass {
    protected static final Logger log = Logger.getLogger(MetaClass.class.getName());
 
    protected final Class theClass;
@@ -1390,7 +1376,7 @@ public class MetaClassImpl implements MetaClass {
     *  
     * @param mp The MetaBeanProperty
     */
-   protected void addMetaBeanProperty(MetaBeanProperty mp) {
+   public void addMetaBeanProperty(MetaBeanProperty mp) {
        Map propertyMap = getMap2MapNotNull(classPropertyIndex,theClass);
        //keep field
        MetaFieldProperty field = null;
@@ -1758,7 +1744,7 @@ public class MetaClassImpl implements MetaClass {
     * @see #initialize() 
     * @param method the MetaMethod
     */
-   protected void addMetaMethod(MetaMethod method) {
+   public void addMetaMethod(MetaMethod method) {
        if (isInitialized()) {
            throw new RuntimeException("Already initialized, cannot add new method: " + method);
        }
