@@ -29,14 +29,7 @@ public abstract interface MetaClass extends MetaObjectProtocol {
      * the behaviour of its subclass if it wants to.
      */
      MetaClass createMetaClass(Class theClass, MetaClassRegistry registry);
-    
-     /*
-      * 
-      * Do we need this?
-      * 
-      */
-     boolean isGroovyObject();
-    
+
     /*
      * 
      * Do we need this method? 

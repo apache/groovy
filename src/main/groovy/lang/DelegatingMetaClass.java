@@ -185,7 +185,7 @@ public class DelegatingMetaClass implements MetaClass {
     }
 
     public boolean isGroovyObject() {
-        return this.delegate.isGroovyObject();
+        return GroovyObject.class.isAssignableFrom(this.delegate.getTheClass());
     }
 
     public void setAttribute(Class sender, Object receiver, String messageName, Object messageValue, boolean useSuper, boolean fromInsideClass) {
