@@ -27,10 +27,13 @@ $Date$
     <property name="sourceDirectory" value="src"/>
     <property name="mainSourceDirectory" location="${sourceDirectory}/main"/>
     <property name="testSourceDirectory" value="${sourceDirectory}/test"/>
+    <property name="toolsSourceDirectory" location="${sourceDirectory}/tools"/>
     <property name="targetDirectory" value="target"/>
     <property name="stagingDirectory" value="${targetDirectory}/staging"/>
+    <property name="docsDirectory" value="${targetDirectory}/html"/>
     <property name="mainClassesDirectory" value="${targetDirectory}/classes"/>
     <property name="testClassesDirectory" value="${targetDirectory}/test-classes"/>
+    <property name="toolsClassesDirectory" value="${targetDirectory}/tools-classes"/>
     <property name="instrumentedClassesDirectory" value="${targetDirectory}/instrumented-classes"/>
     <property name="reportsDirectory" value="${targetDirectory}/reports"/>
     <property name="targetLibDirectory" value="${targetDirectory}/lib"/>
@@ -38,6 +41,7 @@ $Date$
     <property name="antlrDirectory" value="${mainSourceDirectory}/org/codehaus/groovy/antlr"/>
     <property name="groovyParserDirectory" value="${antlrDirectory}/parser"/>
     <property name="javaParserDirectory" value="${antlrDirectory}/java"/>
+    <property file="build.properties"/>
 
     <!-- dependency directories -->
     <property name="mainDirectory" value="${targetLibDirectory}/main"/>
@@ -46,9 +50,6 @@ $Date$
     <property name="mainRuntimeDirectory" value="${mainDirectory}/runtime"/>
     <property name="antlrJar" value="${mainCompileDirectory}/antlr-2.7.6.jar"/>
     <property name="toolsDirectory" value="${targetLibDirectory}/tools"/>
-
-    <!-- TODO: is this needed anymore? -->
-    <property file="build.properties"/>
 
     <target name="ensureGrammers" description="Ensure all the files generated from the Antlr grammar are up to date.">
         <mkdir dir="${groovyParserDirectory}"/>
@@ -66,8 +67,10 @@ $Date$
 
     <target name="init" depends="-fetchDependencies"/>
 
-    <target name="compileMain" depends="init,ensureGrammers" description="Compile the Java and Groovy code in the main source.">
+    <target name="compileMain" depends="init,ensureGrammers"
+            description="Compile the Java and Groovy code in the main source.">
         <mkdir dir="${mainClassesDirectory}"/>
+        <mkdir dir="${toolsClassesDirectory}"/>
         <javac srcdir="${mainSourceDirectory}" includeantruntime="false" destdir="${mainClassesDirectory}" debug="yes"
                source="1.4" target="1.4" fork="true" classpathref="mainCompilePath"/>
 
@@ -88,7 +91,17 @@ $Date$
             <arg value="${mainClassesDirectory}"/>
             <arg value="${mainSourceDirectory}"/>
         </java>
-
+        <!-- TODO split into own target? -->
+        <echo message="Groovyc of tools code."/>
+        <java classname="org.codehaus.groovy.ant.Groovyc">
+            <classpath>
+                <path refid="toolsPath"/>
+                <pathelement path="${mainClassesDirectory}"/>
+                <path refid="mainCompilePath"/>
+            </classpath>
+            <arg value="${toolsClassesDirectory}"/>
+            <arg value="${toolsSourceDirectory}"/>
+        </java>
     </target>
 
     <target name="-initReports">
@@ -190,6 +203,7 @@ $Date$
     </target>
 
     <target name="-createEmbeddableJar" depends="-jarjarTaskdef">
+        <delete dir="${stagingDirectory}" quiet="true"/>
         <mkdir dir="${stagingDirectory}"/>
         <unzip dest="${stagingDirectory}">
             <fileset dir="${mainRuntimeDirectory}">
@@ -243,4 +257,65 @@ $Date$
         </antcall>
     </target>
 
+    <target name="doc" depends="compileMain">
+        <mkdir dir="${docsDirectory}"/>
+        <java classname="org.codehaus.groovy.tools.DocGenerator" fork="yes">
+            <classpath>
+                <pathelement path="${toolsClassesDirectory}"/>
+                <path refid="toolsPath"/>
+                <pathelement path="${mainClassesDirectory}"/>
+            </classpath>
+        </java>
+        <property name="title" value="Groovy"/>
+        <javadoc destdir="${docsDirectory}/api" author="true" version="true"
+                 windowtitle="${title} (${groovyVersion})" doctitle="${title} (${groovyVersion})"
+                 encoding="ISO-8859-1" useexternalfile="true"
+                 footer="Copyright &amp;copy; 2003-2007 The Groovy Community. All rights reserved.">
+            <classpath>
+                <path path="${mainClassesDirectory}"/>
+                <fileset dir="${mainCompileDirectory}" includes="*.jar"/>
+            </classpath>
+            <fileset dir="${mainSourceDirectory}">
+                <include name="**/*.java"/>
+            </fileset>
+            <link href="http://java.sun.com/j2se/1.4.2/docs/api"/>
+            <link href="http://www.dpml.net/api/ant/1.6.5"/>
+            <link href="http://www.junit.org/junit/javadoc/3.8.1"/>
+            <link href="http://java.sun.com/j2ee/1.4/docs/api"/>
+        </javadoc>
+    </target>
+
+    <target name="install">
+        <delete dir="${stagingDirectory}" quiet="true"/>
+        <mkdir dir="${stagingDirectory}"/>
+        <mkdir dir="${stagingDirectory}/lib"/>
+        <mkdir dir="${stagingDirectory}/bin"/>
+        <mkdir dir="${stagingDirectory}/conf"/>
+        <mkdir dir="${stagingDirectory}/embeddable"/>
+        <copy file="${targetDistDirectory}/groovy-${groovyVersion}.jar" toDir="${stagingDirectory}/lib"/>
+        <copy file="${targetDistDirectory}/groovy-all-${groovyVersion}.jar" toDir="${stagingDirectory}/embeddable"/>
+        <copy toDir="${stagingDirectory}/lib">
+            <fileset dir="${mainRuntimeDirectory}">
+                <include name="*.jar"/>
+            </fileset>
+        </copy>
+        <copy toDir="${stagingDirectory}/conf">
+            <fileset dir="${sourceDirectory}/conf">
+                <include name="*"/>
+            </fileset>
+        </copy>
+        <copy toDir="${stagingDirectory}/bin">
+            <fileset dir="${sourceDirectory}/bin">
+                <include name="*"/>
+            </fileset>
+        </copy>
+        <fixcrlf srcdir="${stagingDirectory}/bin" eol="lf" excludes="*.bat"/>
+        <fixcrlf srcdir="${stagingDirectory}/bin" eol="crlf" includes="*.bat"/>
+        <chmod perm="ugo+x">
+            <fileset dir="${stagingDirectory}/bin">
+                <include name="*"/>
+                <include name="*.*"/>
+            </fileset>
+        </chmod>
+    </target>
 </project>

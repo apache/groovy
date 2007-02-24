@@ -7,8 +7,8 @@
     <artifactId>groovy-tools</artifactId>
     <version>internal</version>
     <packaging>jar</packaging>
+    <!-- intentionally leaving off scope here as scope is probably overkill for tools -->
     <dependencies>
-        <!-- intentionally leaving off scope here as scope is probably overkill for tools -->
         <dependency>
             <groupId>com.tonicsystems</groupId>
             <artifactId>jarjar</artifactId>
@@ -29,6 +29,13 @@
             <groupId>cobertura</groupId>
             <artifactId>cobertura</artifactId>
             <version>1.8</version>
+        </dependency>
+        <!-- used for the JavaDoc generator script -->
+        <dependency>
+            <groupId>qdox</groupId>
+            <artifactId>qdox</artifactId>
+            <version>1.5</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 </project>

@@ -496,6 +496,7 @@
             <groupId>castor</groupId>
             <artifactId>castor</artifactId>
             <version>0.9.9</version>
+            <!-- 1.0 has bad pom 24/Feb/2007 -->
             <!--<version>1.0</version>-->
             <scope>runtime</scope>
         </dependency>
@@ -506,13 +507,23 @@
             <scope>runtime</scope>
             <!-- exclude incompatible version of castor and unneeded specs -->
             <exclusions>
+<!-- paulk: removed this, investigating removing openejb-core dependency
                 <exclusion>
                     <groupId>castor</groupId>
                     <artifactId>castor</artifactId>
                 </exclusion>
+-->
+                <exclusion>
+                    <groupId>openejb</groupId>
+                    <artifactId>openejb-core</artifactId>
+                </exclusion>
                 <exclusion>
                     <groupId>org.apache.geronimo.specs</groupId>
                     <artifactId>geronimo-jta_1.0.1B_spec</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.geronimo.specs</groupId>
+                    <artifactId>geronimo-servlet_2.4_spec</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>org.apache.geronimo.specs</groupId>
@@ -532,8 +543,7 @@
             <scope>test</scope>
         </dependency>
 
-
-        <!-- only used for SQL library -->
+        <!-- used for SQL library -->
         <dependency>
             <groupId>hsqldb</groupId>
             <artifactId>hsqldb</artifactId>
@@ -541,7 +551,7 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- only used for servlet / gsp -->
+        <!-- used for servlet / gsp -->
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>servlet-api</artifactId>
@@ -555,7 +565,7 @@
             <scope>compile</scope>
         </dependency>
 
-        <!-- only used for the Wiki Ant tasks -->
+        <!-- used for the Wiki Ant tasks -->
         <dependency>
             <groupId>radeox</groupId>
             <artifactId>radeox</artifactId>
@@ -570,7 +580,7 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- only used for the HTML to Wiki script -->
+        <!-- used for the HTML to Wiki script -->
         <dependency>
             <groupId>nekohtml</groupId>
             <artifactId>nekohtml</artifactId>
@@ -578,15 +588,7 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- only used for the JavaDoc generator script -->
-        <dependency>
-            <groupId>qdox</groupId>
-            <artifactId>qdox</artifactId>
-            <version>1.5</version>
-            <scope>compile</scope>
-        </dependency>
-
-        <!-- only used in the samples (BlogLines client) -->
+        <!-- used in the samples (BlogLines client) -->
         <!-- Also needed for Ivy when Gant pulls Ivy in? -->
         <dependency>
             <groupId>commons-httpclient</groupId>
