@@ -28,10 +28,13 @@ $Date$
     <property name="mainSourceDirectory" location="${sourceDirectory}/main"/>
     <property name="testSourceDirectory" value="${sourceDirectory}/test"/>
     <property name="targetDirectory" value="target"/>
+    <property name="stagingDirectory" value="${targetDirectory}/staging"/>
     <property name="mainClassesDirectory" value="${targetDirectory}/classes"/>
     <property name="testClassesDirectory" value="${targetDirectory}/test-classes"/>
+    <property name="instrumentedClassesDirectory" value="${targetDirectory}/instrumented-classes"/>
     <property name="reportsDirectory" value="${targetDirectory}/reports"/>
     <property name="targetLibDirectory" value="${targetDirectory}/lib"/>
+    <property name="targetDistDirectory" value="${targetDirectory}/dist"/>
     <property name="antlrDirectory" value="${mainSourceDirectory}/org/codehaus/groovy/antlr"/>
     <property name="groovyParserDirectory" value="${antlrDirectory}/parser"/>
     <property name="javaParserDirectory" value="${antlrDirectory}/java"/>
@@ -61,9 +64,7 @@ $Date$
         </antlr>
     </target>
 
-    <target name="init">
-        <antcall target="-fetchDependencies"/>
-    </target>
+    <target name="init" depends="-fetchDependencies"/>
 
     <target name="compileMain" depends="init,ensureGrammers" description="Compile the Java and Groovy code in the main source.">
         <mkdir dir="${mainClassesDirectory}"/>
@@ -133,7 +134,7 @@ $Date$
         </javac>
     </target>
 
-    <target name="test" depends="-initReports,compileTest" description="Compile and test all the classes.">
+    <target name="test" depends="-initReports,compileTest,-instrument" description="Compile and test all the classes.">
         <property name="junitRawDirectory" value="${targetDirectory}/test-reports"/>
         <property name="junitReportsDirectory" value="${reportsDirectory}/junit"/>
         <mkdir dir="${junitRawDirectory}"/>
@@ -144,9 +145,12 @@ $Date$
             </batchtest>
             <classpath>
                 <path refid="mainTestPath"/>
+                <!-- instrumented before non -->
+                <pathelement path="${instrumentedClassesDirectory}"/>
                 <pathelement path="${mainClassesDirectory}"/>
                 <pathelement path="${testClassesDirectory}"/>
                 <pathelement path="src/test"/>
+                <path refid="coberturaPath"/>
             </classpath>
         </junit>
         <mkdir dir="${junitReportsDirectory}"/>
@@ -156,21 +160,63 @@ $Date$
         </junitreport>
     </target>
 
-    <target name="reportTestFailed" depends="test" if="testFailed">
+    <target name="reportTestFailed" depends="test,-coverageReport" if="testFailed">
         <echo>Test failed, not processing further targets.</echo>
     </target>
 
-    <target name="actuallyCreateJars" depends="test" unless="testFailed">
-        <mkdir dir="${targetLibDirectory}"/>
-        <jar destfile="${targetLibDirectory}/groovy-${groovyVersion}.jar" basedir="${mainClassesDirectory}"
+    <target name="-initJars" depends="test">
+        <mkdir dir="${targetDistDirectory}"/>
+    </target>
+
+    <target name="actuallyCreateJars" depends="-initJars" unless="testFailed">
+        <antcall target="-createBaseJar"/>
+        <antcall target="-createStarterJar"/>
+        <antcall target="-createEmbeddableJar"/>
+    </target>
+
+    <target name="-createBaseJar">
+        <jar destfile="${targetDistDirectory}/groovy-${groovyVersion}.jar" basedir="${mainClassesDirectory}"
              excludes="*.groovy"/>
-        <jar destfile="${targetLibDirectory}/groovy-starter-${groovyVersion}.jar">
+    </target>
+
+    <target name="-createStarterJar">
+        <jar destfile="${targetDistDirectory}/groovy-starter-${groovyVersion}.jar">
             <fileset dir="${mainClassesDirectory}">
                 <include name="org/codehaus/groovy/tools/RootLoader*.class"/>
                 <include name="org/codehaus/groovy/tools/GroovyStarter*.class"/>
                 <include name="org/codehaus/groovy/tools/LoaderConfiguration*.class"/>
             </fileset>
         </jar>
+    </target>
+
+    <target name="-createEmbeddableJar" depends="-jarjarTaskdef">
+        <mkdir dir="${stagingDirectory}"/>
+        <unzip dest="${stagingDirectory}">
+            <fileset dir="${mainRuntimeDirectory}">
+                <include name="antlr*.jar"/>
+                <include name="asm*.jar"/>
+                <exclude name="asm-attr*.jar"/>
+                <exclude name="asm-util*.jar"/>
+                <exclude name="asm-analysis*.jar"/>
+            </fileset>
+        </unzip>
+        <unzip dest="${stagingDirectory}">
+            <fileset dir="${targetDistDirectory}">
+                <include name="groovy-${groovyVersion}.jar"/>
+            </fileset>
+        </unzip>
+        <copy toDir="${stagingDirectory}/META-INF">
+            <fileset dir="${basedir}">
+                <include name="ASM-LICENSE.txt"/>
+            </fileset>
+        </copy>
+        <mkdir dir="${targetDistDirectory}"/>
+        <jarjar jarfile="${targetDistDirectory}/groovy-all-${groovyVersion}.jar"
+                manifest="${stagingDirectory}/META-INF/MANIFEST.MF">
+            <fileset dir="${stagingDirectory}"/>
+            <rule pattern="antlr.**" result="groovyjarjarantlr.@1"/>
+            <rule pattern="org.objectweb.**" result="groovyjarjarasm.@1"/>
+        </jarjar>
     </target>
 
     <target name="all" depends="reportTestFailed,actuallyCreateJars"

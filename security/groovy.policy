@@ -35,6 +35,10 @@ grant codeBase "file:${user.dir}/target/classes/-" {
 	permission java.security.AllPermission;
 };
 
+grant codeBase "file:${user.dir}/target/instrumented-classes/-" {
+	permission java.security.AllPermission;
+};
+
 grant codeBase "file:${user.dir}/target/test-classes/-" {
 	permission java.security.AllPermission;
 };

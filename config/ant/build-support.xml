@@ -138,9 +138,32 @@ $Date$
     <target name="-mavenAntTaskdef">
         <typedef resource="org/apache/maven/artifact/ant/antlib.xml" uri="urn:maven-artifact-ant">
             <classpath>
-                <pathelement location="${bootstrapDirectory}/maven-artifact-ant-2.0.4-dep.jar"/>
+                <fileset dir="${bootstrapDirectory}" includes="maven-artifact-ant-*-dep.jar"/>
             </classpath>
         </typedef>
+    </target>
+
+    <target name="-coberturaTaskdef">
+        <taskdef resource="tasks.properties" classpathref="toolsPath"/>
+        <path id="coberturaPath">
+            <fileset dir="${toolsDirectory}" includes="cobertura-*.jar"/>
+        </path>
+    </target>
+
+    <target name="-instrument" depends="-coberturaTaskdef">
+      <delete quiet="true" failonerror="false">
+        <fileset dir="${instrumentedClassesDirectory}" includes="**/*.class"/>
+      </delete>
+      <mkdir dir="${instrumentedClassesDirectory}"/>
+      <cobertura-instrument todir="${instrumentedClassesDirectory}">
+        <fileset dir="${mainClassesDirectory}">
+            <include name="**/*.class"/>
+        </fileset>
+      </cobertura-instrument>
+    </target>
+
+    <target name="-coverageReport">
+      <cobertura-report srcdir="${mainSourceDirectory}" destdir="${reportsDirectory}/cobertura"/>
     </target>
 
     <target name="-checkstyleTaskdef">
@@ -164,4 +187,9 @@ $Date$
             <param name="output.dir" expression="${checkstyleReportDirAbsolute}"/>
         </xslt>
     </target>
+
+    <target name="-jarjarTaskdef">
+        <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpathref="toolsPath"/>
+    </target>
+
 </project>
