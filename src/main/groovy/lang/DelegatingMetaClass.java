@@ -21,13 +21,14 @@ import java.lang.reflect.Method;
 import java.util.List;
 
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.runtime.metaclass.MetaBeanProperty;
 
 /**
  * @author John Wilson
  *
  */
 
-public class DelegatingMetaClass implements MetaClass {
+public class DelegatingMetaClass implements MetaClass, MutableMetaClass {
     protected MetaClass delegate;
     
     public DelegatingMetaClass(final MetaClass delegate) {
@@ -46,17 +47,30 @@ public class DelegatingMetaClass implements MetaClass {
      * @see groovy.lang.MetaClass#addNewInstanceMethod(java.lang.reflect.Method)
      */
     public void addNewInstanceMethod(Method method) {
-        delegate.addNewInstanceMethod(method);
+        if(delegate instanceof MutableMetaClass)
+            ((MutableMetaClass)delegate).addNewInstanceMethod(method);
     }
     /* (non-Javadoc)
      * @see groovy.lang.MetaClass#addNewStaticMethod(java.lang.reflect.Method)
      */
     public void addNewStaticMethod(Method method) {
-        delegate.addNewStaticMethod(method);
+        if(delegate instanceof MutableMetaClass)
+            ((MutableMetaClass)delegate).addNewStaticMethod(method);
     }
+
+    public void addMetaMethod(MetaMethod metaMethod) {
+        if(delegate instanceof MutableMetaClass)
+            ((MutableMetaClass)delegate).addMetaMethod(metaMethod);
+    }
+
+    public void addMetaBeanProperty(MetaBeanProperty metaBeanProperty) {
+        if(delegate instanceof MutableMetaClass)
+            ((MutableMetaClass)delegate).addMetaBeanProperty(metaBeanProperty);
+    }
+
     /* (non-Javadoc)
-     * @see groovy.lang.MetaClass#initialize()
-     */
+    * @see groovy.lang.MetaClass#initialize()
+    */
     public void initialize() {
         delegate.initialize();
     }
