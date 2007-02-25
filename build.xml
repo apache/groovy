@@ -293,6 +293,7 @@ $Date$
         <mkdir dir="${stagingDirectory}/conf"/>
         <mkdir dir="${stagingDirectory}/embeddable"/>
         <copy file="${targetDistDirectory}/groovy-${groovyVersion}.jar" toDir="${stagingDirectory}/lib"/>
+        <copy file="${targetDistDirectory}/groovy-starter-${groovyVersion}.jar" toDir="${stagingDirectory}/lib"/>
         <copy file="${targetDistDirectory}/groovy-all-${groovyVersion}.jar" toDir="${stagingDirectory}/embeddable"/>
         <copy toDir="${stagingDirectory}/lib">
             <fileset dir="${mainRuntimeDirectory}">
