@@ -336,6 +336,26 @@ public class DefaultGroovyMethods {
      * Printf to a console.  Only works with JDK1.5 or later.
      */
     public static void printf(Object self, String format, Object[] values) {
+        if (self instanceof PrintStream)
+            printf((PrintStream)self, format, values);
+        else
+            printf((PrintStream)System.out, format, values);
+    }
+
+    /**
+     * Sprintf to a string.  Only works with JDK1.5 or later.
+     */
+    public static String sprintf(Object self, String format, Object[] values) {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        PrintStream out = new PrintStream(outputStream);
+        printf(out, format, values);
+        return outputStream.toString();
+    }
+
+    /**
+     * Printf to a PrintStream.  Only works with JDK1.5 or later.
+     */
+    private static void printf(PrintStream out, String format, Object[] values) {
         char version = System.getProperty("java.version").charAt(2);
         if ( version >= '5') {
             //
@@ -353,7 +373,7 @@ public class DefaultGroovyMethods {
             //  forced into:
             //
             try {
-                System.out.getClass().getMethod("printf", new Class[]{String.class, Object[].class}).invoke(System.out, new Object[]{format, values});
+                out.getClass().getMethod("printf", new Class[]{String.class, Object[].class}).invoke(out, new Object[]{format, values});
             } catch (NoSuchMethodException nsme) {
                 throw new RuntimeException("getMethod threw a NoSuchMethodException.  This is impossible.");
             } catch (IllegalAccessException iae) {
@@ -367,7 +387,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Returns a formatted string using the specified format string and
+     * Prints a formatted string using the specified format string and
      * arguments.
      * <p/>
      * <p/>
@@ -392,23 +412,31 @@ public class DefaultGroovyMethods {
      * @param arg    Argument which is referenced by the format specifiers in the format
      *               string.  The type of <code>arg</code> should be one of Object[], List,
      *               int[], short[], byte[], char[], boolean[], long[], float[], or double[].
-     * @since JDK 1.5
      */
     public static void printf(Object self, String format, Object arg) {
+        if (self instanceof PrintStream)
+            printf((PrintStream)self, format, arg);
+        else
+            printf((PrintStream)System.out, format, arg);
+    }
+
+    private static void printf(PrintStream self, String format, Object arg) {
         if (arg instanceof Object[]) {
             printf(self, format, (Object[]) arg);
             return;
-        } else if (arg instanceof List) {
+        }
+        if (arg instanceof List) {
             printf(self, format, ((List) arg).toArray());
             return;
-        } else if (!arg.getClass().isArray()) {
+        }
+        if (!arg.getClass().isArray()) {
             Object[] o = (Object[]) java.lang.reflect.Array.newInstance(arg.getClass(), 1);
             o[0] = arg;
             printf(self, format, o);
             return;
         }
 
-        Object[] ans = null;
+        Object[] ans;
         String elemType = arg.getClass().getName();
         if (elemType.equals("[I")) {
             int[] ia = (int[]) arg;
@@ -462,6 +490,80 @@ public class DefaultGroovyMethods {
             throw new RuntimeException("printf(String," + arg + ")");
         }
         printf(self, format, (Object[]) ans);
+    }
+
+    /**
+     * Returns a formatted string using the specified format string and
+     * arguments.
+     * @todo: remove duplication with printf
+     */
+    public static String sprintf(Object self, String format, Object arg) {
+        if (arg instanceof Object[]) {
+            return sprintf(self, format, (Object[]) arg);
+        }
+        if (arg instanceof List) {
+            return sprintf(self, format, ((List) arg).toArray());
+        }
+        if (!arg.getClass().isArray()) {
+            Object[] o = (Object[]) java.lang.reflect.Array.newInstance(arg.getClass(), 1);
+            o[0] = arg;
+            return sprintf(self, format, o);
+        }
+
+        Object[] ans;
+        String elemType = arg.getClass().getName();
+        if (elemType.equals("[I")) {
+            int[] ia = (int[]) arg;
+            ans = new Integer[ia.length];
+            for (int i = 0; i < ia.length; i++) {
+                ans[i] = new Integer(ia[i]);
+            }
+        } else if (elemType.equals("[C")) {
+            char[] ia = (char[]) arg;
+            ans = new Character[ia.length];
+            for (int i = 0; i < ia.length; i++) {
+                ans[i] = new Character(ia[i]);
+            }
+        } else if (elemType.equals("[Z")) {
+            boolean[] ia = (boolean[]) arg;
+            ans = new Boolean[ia.length];
+            for (int i = 0; i < ia.length; i++) {
+                ans[i] = new Boolean(ia[i]);
+            }
+        } else if (elemType.equals("[B")) {
+            byte[] ia = (byte[]) arg;
+            ans = new Byte[ia.length];
+            for (int i = 0; i < ia.length; i++) {
+                ans[i] = new Byte(ia[i]);
+            }
+        } else if (elemType.equals("[S")) {
+            short[] ia = (short[]) arg;
+            ans = new Short[ia.length];
+            for (int i = 0; i < ia.length; i++) {
+                ans[i] = new Short(ia[i]);
+            }
+        } else if (elemType.equals("[F")) {
+            float[] ia = (float[]) arg;
+            ans = new Float[ia.length];
+            for (int i = 0; i < ia.length; i++) {
+                ans[i] = new Float(ia[i]);
+            }
+        } else if (elemType.equals("[J")) {
+            long[] ia = (long[]) arg;
+            ans = new Long[ia.length];
+            for (int i = 0; i < ia.length; i++) {
+                ans[i] = new Long(ia[i]);
+            }
+        } else if (elemType.equals("[D")) {
+            double[] ia = (double[]) arg;
+            ans = new Double[ia.length];
+            for (int i = 0; i < ia.length; i++) {
+                ans[i] = new Double(ia[i]);
+            }
+        } else {
+            throw new RuntimeException("sprintf(String," + arg + ")");
+        }
+        return sprintf(self, format, (Object[]) ans);
     }
 
 

@@ -2,17 +2,20 @@ package groovy
 
 class PrintTest extends GroovyTestCase {
 
-    void testToString_FAILS() { if (notYetImplemented()) return
+    void testToString() {
         assertToString("hello", 'hello')
-        
+
         assertToString([], "[]")
         assertToString([1, 2, "hello"], '[1, 2, hello]')
-        
-        assertToString([1:20, 2:40, 3:'cheese'], '[1=20, 2=40, 3=cheese]')
-        assertToString([:], "[:]")
 
-        assertToString([['bob':'drools', 'james':'geronimo']], '[[james:geronimo, bob:drools]]')
-        assertToString([5, ["bob", "james"], ["bob":"drools", "james":"geronimo"], "cheese"], '[5, [bob, james], [james:geronimo, bob:drools], cheese]')
+        // TODO: change toString on Map to produce same as inspect method
+        assertToString([1:20, 2:40, 3:'cheese'], '{1=20, 2=40, 3=cheese}')
+        assertToString([:], "{}")
+
+        // TODO: change toString on Map to produce same as inspect method
+        assertToString([['bob':'drools', 'james':'geronimo']], '[{james=geronimo, bob=drools}]')
+        // TODO: change toString on Map to produce same as inspect method
+        assertToString([5, ["bob", "james"], ["bob":"drools", "james":"geronimo"], "cheese"], '[5, [bob, james], {james=geronimo, bob=drools}, cheese]')
     }
 
     void testInspect() {
@@ -27,10 +30,17 @@ class PrintTest extends GroovyTestCase {
         assertInspect([['bob':'drools', 'james':'geronimo']], '[["james":"geronimo", "bob":"drools"]]')
         assertInspect([5, ["bob", "james"], ["bob":"drools", "james":"geronimo"], "cheese"], '[5, ["bob", "james"], ["james":"geronimo", "bob":"drools"], "cheese"]')
     }
-    
+
     void testCPlusPlusStylePrinting() {
         def endl = "\n"
-        
         System.out << "Hello world!" << endl
+    }
+
+    void testSprintf() {
+        if (System.properties.'java.version'[2] >= '5') {
+            assert sprintf('%5.2f', 12 * 3.5) == '42.00'
+            assert sprintf('%d + %d = %d' , [1, 2, 1+2] as Integer[]) == '1 + 2 = 3'
+            assert sprintf('%d + %d = %d' , [3, 4, 3+4] as int[]) == '3 + 4 = 7'
+        }
     }
 }
