@@ -1,4 +1,5 @@
 <?xml version="1.0"?>
+
 <!--
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
 compliance with the License. You may obtain a copy of the License at
@@ -16,13 +17,14 @@ Author : Paul King
 $Revision$ ($LastChangedBy$)
 $Date$
 -->
+
 <project name="build-support" default="" basedir=".">
+
     <property name="masterDirectory" location="../.."/>
 
     <macrodef name="fetch.maven.all.modules">
         <sequential>
             <fetch.maven.all.scopes module="main"/>
-            <!-- just runtime scope for tools, let's not get carried away -->
             <fetch.maven scope="runtime" module="tools"/>
         </sequential>
     </macrodef>
@@ -40,8 +42,7 @@ $Date$
         <attribute name="scope"/>
         <attribute name="module"/>
         <sequential>
-            <maven.dependencies useScope="@{scope}" filesetId="fs.@{scope}.@{module}"
-                                pomRefId="maven.artifact.@{module}"/>
+            <maven.dependencies useScope="@{scope}" filesetId="fs.@{scope}.@{module}" pomRefId="maven.artifact.@{module}"/>
         </sequential>
     </macrodef>
 
@@ -66,8 +67,7 @@ $Date$
         <attribute name="filesetId"/>
         <attribute name="pomRefId"/>
         <sequential>
-            <artifact:dependencies xmlns:artifact="urn:maven-artifact-ant" useScope="@{useScope}"
-                                   filesetId="@{filesetId}">
+            <artifact:dependencies xmlns:artifact="urn:maven-artifact-ant" useScope="@{useScope}" filesetId="@{filesetId}">
                 <remoteRepository refid="ibiblio.remote.repository"/>
                 <remoteRepository refid="repo1.remote.repository"/>
                 <pom refid="@{pomRefId}"/>
@@ -75,65 +75,7 @@ $Date$
         </sequential>
     </macrodef>
 
-    <target name="-initMaven" depends="-mavenAntTaskdef,-maven-pom-definitions,-maven-repository-definitions"/>
-
-    <target name="-maven-pom-definitions">
-        <maven.pom file="config/maven/main.pom" id="maven.artifact.main"/>
-        <maven.pom file="config/maven/tools.pom" id="maven.artifact.tools"/>
-    </target>
-
-    <target name="-maven-repository-definitions">
-        <maven.remote.repository id="repo1.remote.repository" url="http://repo1.maven.org/maven2/"/>
-        <maven.remote.repository id="ibiblio.remote.repository" url="http://ibiblio.org/maven2/"/>
-    </target>
-
-    <target name="-mavenFetchAllModules" depends="-initMaven">
-        <fetch.maven.all.modules/>
-    </target>
-
-    <target name="-fetchDependencies" depends="-mavenFetchAllModules,-copyLibraries"/>
-
-    <target name="-copyLibraries">
-        <delete dir="${mainTestDirectory}"/>
-        <delete dir="${mainCompileDirectory}"/>
-        <delete dir="${mainRuntimeDirectory}"/>
-        <delete dir="${toolsDirectory}"/>
-
-        <mkdir dir="${mainDirectory}"/>
-        <mkdir dir="${mainTestDirectory}"/>
-        <mkdir dir="${mainCompileDirectory}"/>
-        <mkdir dir="${mainRuntimeDirectory}"/>
-        <mkdir dir="${toolsDirectory}"/>
-
-        <copy todir="${mainTestDirectory}">
-            <mapper type="flatten"/>
-            <fileset refid="fs.test.main"/>
-        </copy>
-        <path id="mainTestPath">
-            <fileset dir="${mainTestDirectory}" includes="**/*.jar"/>
-        </path>
-        <copy todir="${mainCompileDirectory}">
-            <mapper type="flatten"/>
-            <fileset refid="fs.compile.main"/>
-        </copy>
-        <path id="mainCompilePath">
-            <fileset dir="${mainCompileDirectory}" includes="**/*.jar"/>
-        </path>
-        <copy todir="${mainRuntimeDirectory}">
-            <mapper type="flatten"/>
-            <fileset refid="fs.runtime.main"/>
-        </copy>
-        <path id="mainRuntimePath">
-            <fileset dir="${mainRuntimeDirectory}" includes="**/*.jar"/>
-        </path>
-        <copy todir="${toolsDirectory}">
-            <mapper type="flatten"/>
-            <fileset refid="fs.runtime.tools"/>
-        </copy>
-        <path id="toolsPath">
-            <fileset dir="${toolsDirectory}" includes="**/*.jar"/>
-        </path>
-    </target>
+    <target name="-initializeMaven" depends="-mavenAntTaskdef,-mavenPomDefinitions,-mavenRepositoryDefinitions"/>
 
     <target name="-mavenAntTaskdef">
         <typedef resource="org/apache/maven/artifact/ant/antlib.xml" uri="urn:maven-artifact-ant">
@@ -143,47 +85,99 @@ $Date$
         </typedef>
     </target>
 
-    <target name="-coberturaTaskdef">
-        <taskdef resource="tasks.properties" classpathref="toolsPath"/>
-        <path id="coberturaPath">
-            <fileset dir="${toolsDirectory}" includes="cobertura-*.jar"/>
+    <target name="-mavenPomDefinitions">
+        <maven.pom file="config/maven/main.pom" id="maven.artifact.main"/>
+        <maven.pom file="config/maven/tools.pom" id="maven.artifact.tools"/>
+    </target>
+
+    <target name="-mavenRepositoryDefinitions">
+        <maven.remote.repository id="repo1.remote.repository" url="http://repo1.maven.org/maven2/"/>
+        <maven.remote.repository id="ibiblio.remote.repository" url="http://ibiblio.org/maven2/"/>
+    </target>
+
+    <target name="-mavenFetchAllModules" depends="-initializeMaven">
+        <fetch.maven.all.modules/>
+    </target>
+
+    <target name="-fetchDependencies" depends="-mavenFetchAllModules,-copyLibraries"/>
+
+    <target name="-copyLibraries">
+        <delete dir="${compileLibDirectory}"/>
+        <delete dir="${testLibDirectory}"/>
+        <delete dir="${runtimeLibDirectory}"/>
+        <delete dir="${toolsLibDirectory}"/>
+
+        <mkdir dir="${compileLibDirectory}"/>
+        <mkdir dir="${testLibDirectory}"/>
+        <mkdir dir="${runtimeLibDirectory}"/>
+        <mkdir dir="${toolsLibDirectory}"/>
+
+        <copy todir="${compileLibDirectory}">
+            <mapper type="flatten"/>
+            <fileset refid="fs.compile.main"/>
+        </copy>
+        <path id="compilePath">
+            <fileset dir="${compileLibDirectory}" includes="**/*.jar"/>
+        </path>
+        <copy todir="${testLibDirectory}">
+            <mapper type="flatten"/>
+            <fileset refid="fs.test.main"/>
+        </copy>
+        <path id="testPath">
+            <fileset dir="${testLibDirectory}" includes="**/*.jar"/>
+        </path>
+        <copy todir="${runtimeLibDirectory}">
+            <mapper type="flatten"/>
+            <fileset refid="fs.runtime.main"/>
+        </copy>
+        <path id="runtimePath">
+            <fileset dir="${runtimeLibDirectory}" includes="**/*.jar"/>
+        </path>
+        <copy todir="${toolsLibDirectory}">
+            <mapper type="flatten"/>
+            <fileset refid="fs.runtime.tools"/>
+        </copy>
+        <path id="toolsPath">
+            <fileset dir="${toolsLibDirectory}" includes="**/*.jar"/>
         </path>
     </target>
 
-    <target name="-instrument" depends="-coberturaTaskdef">
-      <delete quiet="true" failonerror="false">
-        <fileset dir="${instrumentedClassesDirectory}" includes="**/*.class"/>
-      </delete>
+    <target name="-coberturaTaskdef">
+        <taskdef resource="tasks.properties" classpathref="toolsPath"/>
+        <path id="coberturaPath">
+            <fileset dir="${toolsLibDirectory}" includes="cobertura-*.jar"/>
+        </path>
+    </target>
+
+    <target name="-coberturaInitialize">
+      <delete dir="${instrumentedClassesDirectory}" quiet="true" failonerror="false"/>
+    </target>
+
+    <target name="-coberturaInstrument" depends="-coberturaTaskdef,-coberturaInitialize" unless="skipCobertura">
       <mkdir dir="${instrumentedClassesDirectory}"/>
       <cobertura-instrument todir="${instrumentedClassesDirectory}">
-        <fileset dir="${mainClassesDirectory}">
-            <include name="**/*.class"/>
-        </fileset>
+        <fileset dir="${mainClassesDirectory}" includes="**/*.class"/>
       </cobertura-instrument>
     </target>
 
-    <target name="-coverageReport">
+    <target name="-coverageReport" unless="skipCobertura">
       <cobertura-report srcdir="${mainSourceDirectory}" destdir="${reportsDirectory}/cobertura"/>
     </target>
 
     <target name="-checkstyleTaskdef">
-        <taskdef resource="checkstyletask.properties" uri="antlib:com.puppycrawl.tools.checkstyle"
-                 classpathref="toolsPath"/>
+        <taskdef resource="checkstyletask.properties" uri="antlib:com.puppycrawl.tools.checkstyle" classpathref="toolsPath"/>
     </target>
 
     <target name="-checkstyle" xmlns:cs="antlib:com.puppycrawl.tools.checkstyle" depends="-checkstyleTaskdef">
         <mkdir dir="${checkstyleReportDirectory}"/>
         <property name="checkstyle.result" location="${checkstyleReportDirectory}/result"/>
-        <cs:checkstyle config="config/checkstyle/config.xml"
-                       failureProperty="checkstyle.failure"
-                       failOnViolation="false"
-                classpathref="checkstyleLibPath">
+        <cs:checkstyle config="config/checkstyle/config.xml" failureProperty="checkstyle.failure"
+              failOnViolation="false" classpathref="checkstylePath">
             <formatter type="xml" tofile="${checkstyle.result}.xml"/>
             <fileset dir="${checkstyleSourceDirectory}"/>
         </cs:checkstyle>
         <property name="checkstyleReportDirAbsolute" location="${checkstyleReportDirectory}"/>
-        <xslt in="${checkstyle.result}.xml" out="${checkstyle.result}.html"
-               style="config/checkstyle/checkstyle-frames.xsl">
+        <xslt in="${checkstyle.result}.xml" out="${checkstyle.result}.html" style="config/checkstyle/checkstyle-frames.xsl">
             <param name="output.dir" expression="${checkstyleReportDirAbsolute}"/>
         </xslt>
     </target>

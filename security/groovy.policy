@@ -60,7 +60,7 @@ grant codeBase "file:${maven.home}/-" {
  * If not running from ant, the codesource will not be found, but will not cause an error.
  * TODO: narrow this down to specific jars
  */
-grant codeBase "file:${user.dir}/target/lib/main/-" {
+grant codeBase "file:${user.dir}/target/lib/-" {
 	permission java.security.AllPermission;
 };
 

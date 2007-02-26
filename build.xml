@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
 <!--
 Ant build script for Groovy.
 
@@ -19,8 +20,9 @@ Author : Paul King
 $Revision$ ($LastChangedBy$)
 $Date$
 -->
-<project name="Groovy" default="all" basedir=".">
-    <property name="rootDirectory" location="."/>
+
+<project name="Groovy" default="createJars" basedir=".">
+
     <property name="bootstrapDirectory" location="bootstrap"/>
     <import file="config/ant/build-support.xml"/>
 
@@ -28,7 +30,9 @@ $Date$
     <property name="mainSourceDirectory" location="${sourceDirectory}/main"/>
     <property name="testSourceDirectory" value="${sourceDirectory}/test"/>
     <property name="toolsSourceDirectory" location="${sourceDirectory}/tools"/>
+
     <property name="targetDirectory" value="target"/>
+    <property name="installDirectory" value="${targetDirectory}/install"/>
     <property name="stagingDirectory" value="${targetDirectory}/staging"/>
     <property name="docsDirectory" value="${targetDirectory}/html"/>
     <property name="mainClassesDirectory" value="${targetDirectory}/classes"/>
@@ -38,41 +42,35 @@ $Date$
     <property name="reportsDirectory" value="${targetDirectory}/reports"/>
     <property name="targetLibDirectory" value="${targetDirectory}/lib"/>
     <property name="targetDistDirectory" value="${targetDirectory}/dist"/>
+
     <property name="antlrDirectory" value="${mainSourceDirectory}/org/codehaus/groovy/antlr"/>
     <property name="groovyParserDirectory" value="${antlrDirectory}/parser"/>
     <property name="javaParserDirectory" value="${antlrDirectory}/java"/>
+
+    <property name="compileLibDirectory" value="${targetLibDirectory}/compile"/>
+    <property name="testLibDirectory" value="${targetLibDirectory}/test"/>
+    <property name="runtimeLibDirectory" value="${targetLibDirectory}/runtime"/>
+    <property name="toolsLibDirectory" value="${targetLibDirectory}/tools"/>
+
     <property file="build.properties"/>
 
-    <!-- dependency directories -->
-    <property name="mainDirectory" value="${targetLibDirectory}/main"/>
-    <property name="mainTestDirectory" value="${mainDirectory}/test"/>
-    <property name="mainCompileDirectory" value="${mainDirectory}/compile"/>
-    <property name="mainRuntimeDirectory" value="${mainDirectory}/runtime"/>
-    <property name="antlrJar" value="${mainCompileDirectory}/antlr-2.7.6.jar"/>
-    <property name="toolsDirectory" value="${targetLibDirectory}/tools"/>
-
-    <target name="ensureGrammers" description="Ensure all the files generated from the Antlr grammar are up to date.">
+    <target name="-ensureGrammers">
         <mkdir dir="${groovyParserDirectory}"/>
         <antlr target="${antlrDirectory}/groovy.g" outputdirectory="${groovyParserDirectory}">
-            <classpath>
-                <pathelement location="${antlrJar}"/>
-            </classpath>
+            <classpath refid="compilePath"/>
         </antlr>
         <antlr target="${javaParserDirectory}/java.g" outputdirectory="${javaParserDirectory}">
-            <classpath>
-                <pathelement location="${antlrJar}"/>
-            </classpath>
+            <classpath refid="compilePath"/>
         </antlr>
     </target>
 
-    <target name="init" depends="-fetchDependencies"/>
+    <target name="-initialize" depends="-fetchDependencies"/>
 
-    <target name="compileMain" depends="init,ensureGrammers"
-            description="Compile the Java and Groovy code in the main source.">
+    <target name="compileMain" depends="-initialize,-ensureGrammers" description="Compile the Java and Groovy code in the main source.">
         <mkdir dir="${mainClassesDirectory}"/>
         <mkdir dir="${toolsClassesDirectory}"/>
         <javac srcdir="${mainSourceDirectory}" includeantruntime="false" destdir="${mainClassesDirectory}" debug="yes"
-               source="1.4" target="1.4" fork="true" classpathref="mainCompilePath"/>
+               source="1.4" target="1.4" fork="true" classpathref="compilePath"/>
 
         <!--
         There seems to be a problem using the groovyc task directly.  If we use it directly as below then there is an
@@ -85,35 +83,20 @@ $Date$
         <echo message="Groovyc of main code."/>
         <java classname="org.codehaus.groovy.ant.Groovyc">
             <classpath>
-                <path refid="mainCompilePath"/>
+                <path refid="compilePath"/>
                 <pathelement path="${mainClassesDirectory}"/>
             </classpath>
             <arg value="${mainClassesDirectory}"/>
             <arg value="${mainSourceDirectory}"/>
         </java>
-        <!-- TODO split into own target? -->
-        <echo message="Groovyc of tools code."/>
-        <java classname="org.codehaus.groovy.ant.Groovyc">
-            <classpath>
-                <path refid="toolsPath"/>
-                <pathelement path="${mainClassesDirectory}"/>
-                <path refid="mainCompilePath"/>
-            </classpath>
-            <arg value="${toolsClassesDirectory}"/>
-            <arg value="${toolsSourceDirectory}"/>
-        </java>
     </target>
 
-    <target name="-initReports">
-        <mkdir dir="${reportsDirectory}"/>
-    </target>
-
-    <target name="compileTest" depends="compileMain" description="Compile the Java and Groovy code in the test source.">
+    <target name="compileTest" depends="compileMain" unless="skipTests" description="Compile the Java and Groovy code in the test source.">
         <mkdir dir="${testClassesDirectory}"/>
         <javac srcdir="${testSourceDirectory}" destdir="${testClassesDirectory}" includeantruntime="false" debug="yes"
                source="1.4" target="1.4" fork="true" excludes="UberTestCase*.java">
             <classpath>
-                <path refid="mainTestPath"/>
+                <path refid="testPath"/>
                 <pathelement path="${mainClassesDirectory}"/>
             </classpath>
         </javac>
@@ -131,7 +114,7 @@ $Date$
         <echo message="Groovyc of test code."/>
         <java classname="org.codehaus.groovy.ant.Groovyc" fork="true" maxmemory="128M">
             <classpath>
-                <path refid="mainTestPath"/>
+                <path refid="testPath"/>
                 <pathelement path="${mainClassesDirectory}"/>
                 <pathelement path="${testClassesDirectory}"/>
             </classpath>
@@ -139,15 +122,19 @@ $Date$
             <arg value="${testSourceDirectory}"/>
         </java>
         <javac srcdir="${testSourceDirectory}" destdir="${testClassesDirectory}" debug="yes"
-               source="1.4" target="1.4" classpathref="mainTestPath" includes="UberTestCase*.java">
+               source="1.4" target="1.4" classpathref="testPath" includes="UberTestCase*.java">
             <classpath>
-                <path refid="mainTestPath"/>
+                <path refid="testPath"/>
                 <pathelement path="${mainClassesDirectory}"/>
             </classpath>
         </javac>
     </target>
 
-    <target name="test" depends="-initReports,compileTest,-instrument" description="Compile and test all the classes.">
+    <target name="-initializeReports">
+        <mkdir dir="${reportsDirectory}"/>
+    </target>
+
+    <target name="test" depends="-initializeReports,compileTest,-coberturaInstrument" description="Compile and test all the classes." unless="skipTests">
         <property name="junitRawDirectory" value="${targetDirectory}/test-reports"/>
         <property name="junitReportsDirectory" value="${reportsDirectory}/junit"/>
         <mkdir dir="${junitRawDirectory}"/>
@@ -157,8 +144,7 @@ $Date$
                 <fileset dir="${testClassesDirectory}" includes="UberTest*.class"/>
             </batchtest>
             <classpath>
-                <path refid="mainTestPath"/>
-                <!-- instrumented before non -->
+                <path refid="testPath"/>
                 <pathelement path="${instrumentedClassesDirectory}"/>
                 <pathelement path="${mainClassesDirectory}"/>
                 <pathelement path="${testClassesDirectory}"/>
@@ -173,40 +159,25 @@ $Date$
         </junitreport>
     </target>
 
-    <target name="reportTestFailed" depends="test,-coverageReport" if="testFailed">
+    <target name="-reportTestFailed" depends="test,-coverageReport" if="testFailed">
         <echo>Test failed, not processing further targets.</echo>
     </target>
 
-    <target name="-initJars" depends="test">
+    <target name="-actuallyCreateJars" depends="-initializeJars,-createBaseJar,-createEmbeddableJar" unless="testFailed"/>
+
+    <target name="-initializeJars" depends="test">
         <mkdir dir="${targetDistDirectory}"/>
     </target>
 
-    <target name="actuallyCreateJars" depends="-initJars" unless="testFailed">
-        <antcall target="-createBaseJar"/>
-        <antcall target="-createStarterJar"/>
-        <antcall target="-createEmbeddableJar"/>
+    <target name="-createBaseJar" unless="testFailed">
+        <jar destfile="${targetDistDirectory}/groovy-${groovyVersion}.jar" basedir="${mainClassesDirectory}" excludes="*.groovy"/>
     </target>
 
-    <target name="-createBaseJar">
-        <jar destfile="${targetDistDirectory}/groovy-${groovyVersion}.jar" basedir="${mainClassesDirectory}"
-             excludes="*.groovy"/>
-    </target>
-
-    <target name="-createStarterJar">
-        <jar destfile="${targetDistDirectory}/groovy-starter-${groovyVersion}.jar">
-            <fileset dir="${mainClassesDirectory}">
-                <include name="org/codehaus/groovy/tools/RootLoader*.class"/>
-                <include name="org/codehaus/groovy/tools/GroovyStarter*.class"/>
-                <include name="org/codehaus/groovy/tools/LoaderConfiguration*.class"/>
-            </fileset>
-        </jar>
-    </target>
-
-    <target name="-createEmbeddableJar" depends="-jarjarTaskdef">
+    <target name="-createEmbeddableJar" depends="-jarjarTaskdef" unless="testFailed">
         <delete dir="${stagingDirectory}" quiet="true"/>
         <mkdir dir="${stagingDirectory}"/>
         <unzip dest="${stagingDirectory}">
-            <fileset dir="${mainRuntimeDirectory}">
+            <fileset dir="${runtimeLibDirectory}">
                 <include name="antlr*.jar"/>
                 <include name="asm*.jar"/>
                 <exclude name="asm-attr*.jar"/>
@@ -233,23 +204,41 @@ $Date$
         </jarjar>
     </target>
 
-    <target name="all" depends="reportTestFailed,actuallyCreateJars"
-            description="Build Groovy and create the jarfiles."/>
+    <target name="createJars" depends="-reportTestFailed,-actuallyCreateJars" description="Build Groovy and create the jarfiles."/>
 
-    <target name="clean" description="Clean out the built materials.">
-        <delete dir="${targetDirectory}" quiet="true"/>
-        <delete quiet="true">
-            <fileset dir="." includes="**/*~"/>
-            <fileset dir="${groovyParserDirectory}" includes="Groovy*.*"/>
-            <fileset dir="${javaParserDirectory}"
-                     includes="JavaLexer.java,JavaRecognizer.java,JavaTokenTypes.java,JavaTokenTypes.txt"/>
-        </delete>
+    <target name="install" depends="createJars"  unless="testFailed" description="Create an installation hierarchy in target/install.">
+        <delete dir="${installDirectory}" quiet="true"/>
+        <mkdir dir="${installDirectory}"/>
+        <mkdir dir="${installDirectory}/lib"/>
+        <mkdir dir="${installDirectory}/bin"/>
+        <mkdir dir="${installDirectory}/conf"/>
+        <mkdir dir="${installDirectory}/embeddable"/>
+        <copy file="${targetDistDirectory}/groovy-${groovyVersion}.jar" toDir="${installDirectory}/lib"/>
+        <!--copy file="${targetDistDirectory}/groovy-starter-${groovyVersion}.jar" toDir="${installDirectory}/lib"/-->
+        <copy file="${targetDistDirectory}/groovy-all-${groovyVersion}.jar" toDir="${installDirectory}/embeddable"/>
+        <copy toDir="${installDirectory}/lib">
+            <fileset dir="${runtimeLibDirectory}" includes="*.jar"/>
+        </copy>
+        <copy toDir="${installDirectory}/conf">
+            <fileset dir="${sourceDirectory}/conf" includes="*"/>
+        </copy>
+        <copy toDir="${installDirectory}/bin">
+            <fileset dir="${sourceDirectory}/bin" includes="*"/>
+            <filterset>
+                <filter token="GROOVYJAR" value="groovy-${groovyVersion}.jar"/>
+            </filterset>
+        </copy>
+        <fixcrlf srcdir="${installDirectory}/bin" eol="lf" excludes="*.bat"/>
+        <fixcrlf srcdir="${installDirectory}/bin" eol="crlf" includes="*.bat"/>
+        <chmod perm="ugo+x">
+            <fileset dir="${installDirectory}/bin" includes="*,*.*"/>
+        </chmod>
     </target>
 
-    <target name="checkstyle" depends="init,-initReports">
-        <path id="checkstyleLibPath">
+    <target name="checkstyle" depends="-initialize,-initializeReports" description="Create the code style reports.">
+        <path id="checkstylePath">
             <pathelement path="${mainClassesDirectory}"/>
-            <path refid="mainTestPath"/>
+            <path refid="testPath"/>
         </path>
         <antcall target="-checkstyle">
             <param name="checkstyleReportDirectory" value="${reportsDirectory}/checkstyle"/>
@@ -257,7 +246,20 @@ $Date$
         </antcall>
     </target>
 
-    <target name="doc" depends="compileMain">
+    <target name="-compileTools" depends="compileMain">
+        <echo message="Groovyc of tools code."/>
+        <java classname="org.codehaus.groovy.ant.Groovyc">
+            <classpath>
+                <path refid="toolsPath"/>
+                <pathelement path="${mainClassesDirectory}"/>
+                <path refid="compilePath"/>
+            </classpath>
+            <arg value="${toolsClassesDirectory}"/>
+            <arg value="${toolsSourceDirectory}"/>
+        </java>
+    </target>
+
+    <target name="doc" depends="-compileTools" description="Create the documentation.">
         <mkdir dir="${docsDirectory}"/>
         <java classname="org.codehaus.groovy.tools.DocGenerator" fork="yes">
             <classpath>
@@ -270,14 +272,12 @@ $Date$
         <javadoc destdir="${docsDirectory}/api" author="true" version="true"
                  windowtitle="${title} (${groovyVersion})" doctitle="${title} (${groovyVersion})"
                  encoding="ISO-8859-1" useexternalfile="true"
-                 footer="Copyright &amp;copy; 2003-2007 The Groovy Community. All rights reserved.">
+                 footer="Copyright &amp;copy; 2003-2007 The Codehaus. All rights reserved.">
             <classpath>
                 <path path="${mainClassesDirectory}"/>
                 <fileset dir="${mainCompileDirectory}" includes="*.jar"/>
             </classpath>
-            <fileset dir="${mainSourceDirectory}">
-                <include name="**/*.java"/>
-            </fileset>
+            <fileset dir="${mainSourceDirectory}" includes="**/*.java"/>
             <link href="http://java.sun.com/j2se/1.4.2/docs/api"/>
             <link href="http://www.dpml.net/api/ant/1.6.5"/>
             <link href="http://www.junit.org/junit/javadoc/3.8.1"/>
@@ -285,38 +285,13 @@ $Date$
         </javadoc>
     </target>
 
-    <target name="install">
-        <delete dir="${stagingDirectory}" quiet="true"/>
-        <mkdir dir="${stagingDirectory}"/>
-        <mkdir dir="${stagingDirectory}/lib"/>
-        <mkdir dir="${stagingDirectory}/bin"/>
-        <mkdir dir="${stagingDirectory}/conf"/>
-        <mkdir dir="${stagingDirectory}/embeddable"/>
-        <copy file="${targetDistDirectory}/groovy-${groovyVersion}.jar" toDir="${stagingDirectory}/lib"/>
-        <copy file="${targetDistDirectory}/groovy-starter-${groovyVersion}.jar" toDir="${stagingDirectory}/lib"/>
-        <copy file="${targetDistDirectory}/groovy-all-${groovyVersion}.jar" toDir="${stagingDirectory}/embeddable"/>
-        <copy toDir="${stagingDirectory}/lib">
-            <fileset dir="${mainRuntimeDirectory}">
-                <include name="*.jar"/>
-            </fileset>
-        </copy>
-        <copy toDir="${stagingDirectory}/conf">
-            <fileset dir="${sourceDirectory}/conf">
-                <include name="*"/>
-            </fileset>
-        </copy>
-        <copy toDir="${stagingDirectory}/bin">
-            <fileset dir="${sourceDirectory}/bin">
-                <include name="*"/>
-            </fileset>
-        </copy>
-        <fixcrlf srcdir="${stagingDirectory}/bin" eol="lf" excludes="*.bat"/>
-        <fixcrlf srcdir="${stagingDirectory}/bin" eol="crlf" includes="*.bat"/>
-        <chmod perm="ugo+x">
-            <fileset dir="${stagingDirectory}/bin">
-                <include name="*"/>
-                <include name="*.*"/>
-            </fileset>
-        </chmod>
+    <target name="clean" description="Clean out the built materials.">
+        <delete dir="${targetDirectory}" quiet="true"/>
+        <delete quiet="true">
+            <fileset dir="." includes="**/*~"/>
+            <fileset dir="${groovyParserDirectory}" includes="Groovy*.*"/>
+            <fileset dir="${javaParserDirectory}" includes="JavaLexer.java,JavaRecognizer.java,JavaTokenTypes.java,JavaTokenTypes.txt"/>
+        </delete>
     </target>
+
 </project>

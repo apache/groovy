@@ -14,7 +14,7 @@
     </organization>
     <inceptionYear>2003</inceptionYear>
     <url>http://groovy.codehaus.org/</url>
-    <description>Groovy: A powerful dynamic scripting language for the JVM</description>
+    <description>Groovy: A powerful, dynamic language for the JVM</description>
 
     <scm>
         <connection>scm:svn:http://svn.groovy.codehaus.org/browse/groovy/trunk/groovy/groovy-core</connection>
@@ -72,7 +72,7 @@
             <email></email>
             <organization>ThoughtWorks</organization>
             <roles>
-                <role>Developer</role>
+                <role>Developer Emeritus</role>
             </roles>
         </developer>
         <developer>
@@ -81,7 +81,7 @@
             <email></email>
             <organization>ThoughtWorks</organization>
             <roles>
-                <role>Developer</role>
+                <role>Developer Emeritus</role>
             </roles>
         </developer>
         <developer>
@@ -90,7 +90,7 @@
             <email></email>
             <organization>Three</organization>
             <roles>
-                <role>Developer</role>
+                <role>Developer Emeritus</role>
             </roles>
         </developer>
         <developer>
@@ -99,7 +99,7 @@
             <email></email>
             <organization>ThoughtWorks</organization>
             <roles>
-                <role>Developer</role>
+                <role>Developer Emeritus</role>
             </roles>
         </developer>
         <developer>
@@ -108,7 +108,7 @@
             <email>sam@sampullara.com</email>
             <organization></organization>
             <roles>
-                <role>Developer</role>
+                <role>Developer Emeritus</role>
             </roles>
         </developer>
         <developer>
@@ -117,7 +117,7 @@
             <email></email>
             <organization></organization>
             <roles>
-                <role>Developer</role>
+                <role>Developer Emeritus</role>
             </roles>
         </developer>
         <developer>
@@ -126,7 +126,7 @@
             <email></email>
             <organization></organization>
             <roles>
-                <role>Developer</role>
+                <role>Developer Emeritus</role>
             </roles>
         </developer>
         <developer>
@@ -135,7 +135,7 @@
             <email></email>
             <organization></organization>
             <roles>
-                <role>Developer</role>
+                <role>Developer Emeritus</role>
             </roles>
         </developer>
         <developer>
@@ -153,7 +153,7 @@
             <email>cpoirier@dreaming.org</email>
             <organization></organization>
             <roles>
-                <role>Developer</role>
+                <role>Developer Emeritus</role>
             </roles>
         </developer>
         <developer>
@@ -162,7 +162,7 @@
             <email>ckl@dacelo.nl</email>
             <organization>Dacelo WebDevelopment</organization>
             <roles>
-                <role>Developer</role>
+                <role>Developer Emeritus</role>
             </roles>
         </developer>
         <developer>
@@ -171,7 +171,7 @@
             <email>goetze@dovetail.com</email>
             <organization>Dovetailed Technologies, LLC</organization>
             <roles>
-                <role>Developer</role>
+                <role>Developer Emeritus</role>
             </roles>
         </developer>
         <developer>
@@ -180,7 +180,7 @@
             <email>b55r@sina.com</email>
             <organization>Leadingcare</organization>
             <roles>
-                <role>Developer</role>
+                <role>Developer Emeritus</role>
             </roles>
         </developer>
         <developer>
@@ -198,7 +198,7 @@
             <email>johnstump2@yahoo.com</email>
             <organization></organization>
             <roles>
-                <role>Developer</role>
+                <role>Developer Emeritus</role>
             </roles>
         </developer>
         <developer>
@@ -225,7 +225,7 @@
             <email>phkim@cluecom.co.kr</email>
             <organization></organization>
             <roles>
-                <role>Developer</role>
+                <role>Developer Emeritus</role>
             </roles>
         </developer>
         <developer>
@@ -234,7 +234,7 @@
             <email>sormuras@gmx.de</email>
             <organization>CTSR.de</organization>
             <roles>
-                <role>Developer</role>
+                <role>Developer Emeritus</role>
             </roles>
         </developer>
         <developer>
@@ -359,6 +359,12 @@
             <version>2.2</version>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>3.8.2</version>
+            <scope>compile</scope>
+        </dependency>
 
         <!-- dependencies used by optional features -->
         <dependency>
@@ -408,12 +414,6 @@
             <scope>runtime</scope>
         </dependency>
 
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>3.8.2</version>
-            <scope>compile</scope>
-        </dependency>
         <!-- only used for testing helper classes -->
         <dependency>
             <groupId>jmock</groupId>
@@ -563,29 +563,6 @@
             <artifactId>jsp-api</artifactId>
             <version>2.0</version>
             <scope>compile</scope>
-        </dependency>
-
-        <!-- used for the Wiki Ant tasks -->
-        <dependency>
-            <groupId>radeox</groupId>
-            <artifactId>radeox</artifactId>
-            <version>0.9</version>
-            <scope>compile</scope>
-            <!-- later version based on Java 5 -->
-        </dependency>
-        <dependency>
-            <groupId>radeox</groupId>
-            <artifactId>radeox-oro</artifactId>
-            <version>0.9</version>
-            <scope>runtime</scope>
-        </dependency>
-
-        <!-- used for the HTML to Wiki script -->
-        <dependency>
-            <groupId>nekohtml</groupId>
-            <artifactId>nekohtml</artifactId>
-            <version>0.9.5</version>
-            <scope>runtime</scope>
         </dependency>
 
         <!-- used in the samples (BlogLines client) -->
