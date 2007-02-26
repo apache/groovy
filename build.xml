@@ -140,6 +140,7 @@ $Date$
         <mkdir dir="${junitRawDirectory}"/>
         <junit printsummary="true" fork="true" includeantruntime="false" failureproperty="testFailed">
             <formatter type="xml"/>
+            <formatter type="plain"/>
             <batchtest todir="${junitRawDirectory}">
                 <fileset dir="${testClassesDirectory}" includes="UberTest*.class"/>
             </batchtest>
