@@ -110,7 +110,7 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
         buf.append('(');
         for (int i = 0; i < parameters.length; i++) {
             if (i > 0) {
-                buf.append(',');
+                buf.append(", ");
             }
             Parameter param = parameters[i];
             buf.append(param.getType().getName());

@@ -104,7 +104,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     }
 
     private String getDescription(MethodNode node) {
-        return "method '" + node.getName() + "'";
+        return "method '" + node.getTypeDescriptor() + "'";
     }
 
     private String getDescription(FieldNode node) {

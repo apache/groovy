@@ -20,17 +20,17 @@ public class ClassCompletionVerifierTest extends TestSupport {
     private static final String EXPECTED_INTERFACE_MODIFIER_ERROR_MESSAGE =
             "The interface '" + FINAL_INTERFACE + "' must not be final. It is by definition abstract.";
     private static final String EXPECTED_INTERFACE_FINAL_METHOD_ERROR_MESSAGE =
-            "The method 'xxx' from interface 'zzz' must not be final. It is by definition abstract.";
+            "The method 'java.lang.Object xxx()' from interface 'zzz' must not be final. It is by definition abstract.";
     private static final String EXPECTED_INTERFACE_STATIC_METHOD_ERROR_MESSAGE =
-            "The method 'yyy' from interface 'zzz' must not be static. Only fields may be static in an interface.";
+            "The method 'java.lang.Object yyy()' from interface 'zzz' must not be static. Only fields may be static in an interface.";
     private static final String EXPECTED_TRANSIENT_CLASS_ERROR_MESSAGE =
             "The class 'DodgyClass' has an incorrect modifier transient.";
     private static final String EXPECTED_VOLATILE_CLASS_ERROR_MESSAGE =
             "The class 'DodgyClass' has an incorrect modifier volatile.";
     private static final String EXPECTED_DUPLICATE_METHOD_ERROR_CLASS_MESSAGE =
-            "Repetitive method name/signature for method 'xxx' in class 'zzz'.";
+            "Repetitive method name/signature for method 'java.lang.Object xxx()' in class 'zzz'.";
     private static final String EXPECTED_DUPLICATE_METHOD_ERROR_INTERFACE_MESSAGE =
-            "Repetitive method name/signature for method 'xxx' in interface 'zzz'.";
+            "Repetitive method name/signature for method 'java.lang.Object xxx(java.lang.String)' in interface 'zzz'.";
 
     protected void setUp() throws Exception {
         super.setUp();
