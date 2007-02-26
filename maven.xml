@@ -260,6 +260,9 @@
       <fileset dir="${maven.src.dir}/bin">
         <include name="*"/>
       </fileset>
+      <filterset>
+        <filter token="GROOVYJAR" value="groovy-${pom.currentVersion}.jar"/>
+      </filterset>
     </copy>
     
     <!-- fix crlf-->
@@ -277,17 +280,6 @@
       </fileset>
     </chmod>
     <attainGoal name="groovy:embeddable-jar"/>
-    <attainGoal name="groovy:groovy-starter-jar"/>
-  </goal>
-
-  <goal name="groovy:groovy-starter-jar">
-     <jar destfile="${groovy.install.staging.dest}/lib/groovy-starter.jar" >
-       <fileset dir="${maven.build.dir}/classes" casesensitive="yes">
-         <include name="org/codehaus/groovy/tools/RootLoader*.class" />
-         <include name="org/codehaus/groovy/tools/GroovyStarter*.class" />
-         <include name="org/codehaus/groovy/tools/LoaderConfiguration*.class" />
-       </fileset>
-     </jar>
   </goal>
 
   <goal name="groovy:embeddable-jar">
