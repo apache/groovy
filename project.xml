@@ -26,7 +26,7 @@
   </packageGroups>
   
   
-  <shortDescription>groovy: a powerful and dynamic scripting language for the JVM</shortDescription>
+  <shortDescription>Groovy: a powerful, dynamic language for the JVM</shortDescription>
   <logo>/images/groovy-logo.png</logo>
 
   <description>
@@ -657,25 +657,6 @@
         <version>2.0</version>
       </dependency>
   
-    <!-- only used for the Wiki Ant tasks -->
-    <dependency>
-      <groupId>radeox</groupId>
-      <artifactId>radeox</artifactId>    
-      <version>0.9</version><!-- later version based on Java 5 -->
-    </dependency>
-    <dependency>
-      <groupId>radeox</groupId>
-      <artifactId>radeox-oro</artifactId>    
-      <version>0.9</version>
-    </dependency>
-
-    <!-- only used for the HTML to Wiki script -->
-    <dependency>
-      <groupId>nekohtml</groupId>
-      <artifactId>nekohtml</artifactId>    
-      <version>0.9.5</version>
-    </dependency>
-
     <!-- only used for the JavaDoc generator script -->
     <dependency>
       <groupId>qdox</groupId>

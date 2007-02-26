@@ -118,22 +118,7 @@
 
   <goal name="groovy:xdoc-stuff" prereqs="java:compile, setclasspath, groovy:make-new-javadoc">
     <mkdir dir="${maven.html2xdoc.dir}"/>
-    <!--
-    <copy toDir="${maven.html2xdoc.dir}">
-      <fileset dir="${basedir}/xdocs">
-        <include name="**/*.html"/>
-      </fileset>
-    </copy>
-    -->
-
-    <!-- now lets run the wiki plugin -->
-    <!--
-    <attainGoal name="java:compile"/>
-    <attainGoal name="setclasspath"/>
-    -->
-
-    <wiki2html srcdir="${basedir}/xdocs" destdir="${maven.html2xdoc.dir}"/>
-
+ 
     <!-- lets generate the HTML docs -->
     <attainGoal name="groovy:make-new-javadoc"/>
 
@@ -171,8 +156,6 @@
     </rootLoaderRef>
         
     <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpathref="test.classpath" loaderRef="tmp.groovy.groovyc"/> 
-    <taskdef name="wiki2html" classname="org.codehaus.groovy.wiki.Wiki2Markup" classpathref="test.classpath"/> 
-    <taskdef name="wiki2testcase" classname="org.codehaus.groovy.wiki.Wiki2TestCase" classpathref="test.classpath"/> 
   </goal>
   
   
@@ -187,10 +170,6 @@
   <goal name="groovy:compile" prereqs="java:compile, setclasspath"
     description="Compiles the Groovy code">
 
-    <!-- lets create the test cases from the wiki documentation -->
-    <mkdir dir="${basedir}/target/test-classes/wiki"/>
-    <wiki2testcase srcdir="${basedir}/xdocs" destdir="${basedir}/target/test-classes/wiki"/>
-    
     <copy todir="${basedir}/target/classes">
       <fileset dir="${basedir}/src/main">
         <include name="**/*.groovy"/>
