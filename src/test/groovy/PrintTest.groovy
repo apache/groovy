@@ -1,5 +1,7 @@
 package groovy
 
+import java.text.NumberFormat
+
 class PrintTest extends GroovyTestCase {
 
     void testToString() {
@@ -38,7 +40,9 @@ class PrintTest extends GroovyTestCase {
 
     void testSprintf() {
         if (System.properties.'java.version'[2] >= '5') {
-            assert sprintf('%5.2f', 12 * 3.5) == '42.00'
+            // would be nice to use JDK 1.6 DecimalFormatSymbols
+            def decimalSymbol = NumberFormat.instance.format(1.5) - '1' - '5'
+            assert sprintf('%5.2f', 12 * 3.5) == "42${decimalSymbol}00"
             assert sprintf('%d + %d = %d' , [1, 2, 1+2] as Integer[]) == '1 + 2 = 3'
             assert sprintf('%d + %d = %d' , [3, 4, 3+4] as int[]) == '3 + 4 = 7'
         }
