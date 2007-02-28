@@ -53,6 +53,7 @@ $Date$
     <property name="toolsLibDirectory" value="${targetLibDirectory}/tools"/>
 
     <property file="build.properties"/>
+    <property file="local.build.properties"/>
 
     <target name="-ensureGrammers">
         <mkdir dir="${groovyParserDirectory}"/>
