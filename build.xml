@@ -135,7 +135,28 @@ $Date$
         <mkdir dir="${reportsDirectory}"/>
     </target>
 
-    <target name="test" depends="-initializeReports,compileTest,-coberturaInstrument" description="Compile and test all the classes." unless="skipTests">
+    <target name="test" depends="-initializeReports,compileTest,-coberturaInstrument,-testOne,-testAll"
+            description="Compile and test all the classes." unless="skipTests"/>
+
+    <target name="-testOne" if="testCase">
+        <property name="junitRawDirectory" value="${targetDirectory}/test-reports"/>
+        <property name="junitReportsDirectory" value="${reportsDirectory}/junit"/>
+        <mkdir dir="${junitRawDirectory}"/>
+        <junit printsummary="true" fork="true" includeantruntime="false" haltonfailure="yes">
+            <test name="${testCase}" todir="${junitRawDirectory}"/>
+            <formatter type="brief" usefile="false"/>
+            <classpath>
+                <path refid="testPath"/>
+                <pathelement path="${instrumentedClassesDirectory}"/>
+                <pathelement path="${mainClassesDirectory}"/>
+                <pathelement path="${testClassesDirectory}"/>
+                <pathelement path="src/test"/>
+                <path refid="coberturaPath"/>
+            </classpath>
+        </junit>
+    </target>
+
+    <target name="-testAll" unless="testCase">
         <property name="junitRawDirectory" value="${targetDirectory}/test-reports"/>
         <property name="junitReportsDirectory" value="${reportsDirectory}/junit"/>
         <mkdir dir="${junitRawDirectory}"/>
