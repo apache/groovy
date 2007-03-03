@@ -323,7 +323,7 @@ $Date$
       footer="Copyright &amp;copy; 2003-2007 The Codehaus. All rights reserved.">
       <classpath>
         <path path="${mainClassesDirectory}"/>
-        <fileset dir="${mainCompileDirectory}" includes="*.jar"/>
+        <path refid="compilePath"/>
       </classpath>
       <fileset dir="${mainSourceDirectory}" includes="**/*.java"/>
       <link href="http://java.sun.com/j2se/1.4.2/docs/api"/>
