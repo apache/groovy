@@ -740,6 +740,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
            return MetaClassHelper.doMethodInvoke(object, method, arguments);
        }
 
+       if (sender.getSuperclass() != Object.class) {
+           return invokeStaticMethod(sender.getSuperclass(), methodName, arguments);
+       }
+
        throw new MissingMethodException(methodName, sender, arguments, true);
    }
    
