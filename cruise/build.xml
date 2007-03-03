@@ -26,6 +26,9 @@
     <echo message="*** groovy build Maven 1 successfully ended          ***"/>
     <echo message="*** Starting the groovy-specific Ant build parts ***"/>
     <exec dir=".." executable="ant" failonerror="true">
+      <arg value="clean"/>
+    </exec>
+    <exec dir=".." executable="ant" failonerror="true">
       <arg value="test"/>
     </exec>
     <echo message="*** groovy Ant build successfully ended          ***"/>
