@@ -363,11 +363,16 @@ class GroovyMethodsTest extends GroovyTestCase {
       doIt(lst)
     }
 
-    void testSet() {
+    void testSetWithExplicitCoercion() {
       def set  = [] as HashSet 
       doIt(set)
     }
                     
+    void testSetWithImplicitCoercion() {
+      Set set  = [] 
+      doIt(set)
+    }
+
     void testVector() {
       def vctr  = [] as Vector
       doIt(vctr)

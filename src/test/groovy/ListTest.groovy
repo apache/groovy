@@ -1,5 +1,6 @@
 package groovy
 
+// TODO: split a couple of Set tests into their own class?
 class ListTest extends GroovyTestCase {
 
     void testList() {
@@ -125,7 +126,14 @@ class ListTest extends GroovyTestCase {
         l3 = [1, 5.2, 9, 3, 4L]
         assert l1 + l2 == l3
     }
-    
+
+    void testSetPlus() {
+        Set s1 = [6, 4, 5, 1, 7, 2]
+        def s2 = [6, 4, 5, 1, 7, [4,5]]
+        def s3 = s1 + s2
+        assert s3 == [1, 2, 4, 5, 6, 7, [4,5]] as Set
+    }
+
     void testPlusOneElement() {
         def l1 = [6, 4, 5, 1, 7, 2]
         def l2 = "erererer"
@@ -154,6 +162,14 @@ class ListTest extends GroovyTestCase {
         def l1 = [1, 1, 2, 2, 3, 3, 3, 4, 5, 3, 5]
         def l2 = [1, 2.0, 4L]
         assert l1 - l2 == [3, 3, 3, 5, 3, 5] 
+    }
+
+    void testSetSimpleMinus() {
+        Set s1 = [1, 1, 2, 2, 3, 3, 3, 4, 5, 3, 5]
+        def s2 = s1 - [1, 4]
+        assert s2 == [2, 3, 5] as Set
+        def s3 = s1 - 4.0
+        assert s3 == [1, 2, 3, 5] as Set
     }
 
     // GROOVY-1006
@@ -203,12 +219,17 @@ class ListTest extends GroovyTestCase {
         b = a.unique()
         assert (b == a && a == [1, "foo", (short)3, 4L])
     }
-      
-    void testFlatten() {
+
+    void testListFlatten() {
         def l = [[[4, 5, 6, [46, 7, "erer"]], 4, [3, 6, 78]], 4]
         assert l.flatten() == [4, 5, 6, 46, 7, "erer", 4, 3, 6, 78, 4]
     }
     
+    void testSetFlatten() {
+        Set l = [[[4, 5, 6, [46, 7, "erer"] as Set] as Set, 4, [3, 6, 78] as Set] as Set, 4]
+        assert l.flatten() == [3, 4, 5, 6, 7, 46, 78, "erer"] as Set
+    }
+
     void testFlattenWithRanges() {
         def flat = [1, 3, 20..24, 33].flatten()
         assert flat == [1, 3, 20, 21, 22, 23, 24, 33]

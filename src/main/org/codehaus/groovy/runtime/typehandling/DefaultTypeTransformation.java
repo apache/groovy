@@ -15,13 +15,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
@@ -195,7 +189,6 @@ public class DefaultTypeTransformation {
         }
         
         if (type == object.getClass()) return object;
-        
         // TODO we should move these methods to groovy method, like g$asType() so that
         // we can use operator overloading to customize on a per-type basis
         if (type.isArray()) {
@@ -206,9 +199,13 @@ public class DefaultTypeTransformation {
             return object;
         }
         if (Collection.class.isAssignableFrom(type)) {
+            int modifiers = type.getModifiers();
+            Collection answer;
+            if (object instanceof Collection && type.isAssignableFrom(HashSet.class) &&
+                    (type == HashSet.class || Modifier.isAbstract(modifiers) || Modifier.isInterface(modifiers))) {
+                return new HashSet((Collection)object);
+            }
             if (object.getClass().isArray()) {
-                Collection answer;
-                int modifiers = type.getModifiers();
                 if (type.isAssignableFrom(ArrayList.class) && (Modifier.isAbstract(modifiers) || Modifier.isInterface(modifiers))) {
                     answer = new ArrayList();
                 } else {

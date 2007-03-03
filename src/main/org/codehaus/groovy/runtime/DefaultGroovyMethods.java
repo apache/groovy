@@ -812,6 +812,18 @@ public class DefaultGroovyMethods {
         }
     }
 
+    /**
+     * Iterate over each element of the list in the reverse order.
+     *
+     * @param self    a List
+     * @param closure a closure
+     */
+    public static void reverseEach(List self, Closure closure) {
+        List reversed = reverse(self);
+        for (Iterator iter = reversed.iterator(); iter.hasNext();) {
+            closure.call(iter.next());
+        }
+    }
 
     /**
      * Iterates over every element of a collection, and check whether a predicate is valid for all elements.
@@ -2679,28 +2691,40 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Create a List as a union of both Collections
+     * Create a Collection as a union of two collections. If the left collection
+     * is a Set, then the returned collection will be a Set otherwise a List.
+     * TODO: remove equivalent numbers after merge, e.g. 1L and 1G?
      *
      * @param left  the left Collection
      * @param right the right Collection
-     * @return a List
+     * @return the merged Collection
      */
-    public static List plus(Collection left, Collection right) {
-        List answer = new ArrayList(left.size() + right.size());
+    public static Collection plus(Collection left, Collection right) {
+        Collection answer;
+        if (left instanceof Set)
+            answer = new HashSet();
+        else
+            answer = new ArrayList(left.size() + right.size());
         answer.addAll(left);
         answer.addAll(right);
         return answer;
     }
 
     /**
-     * Create a List as a union of a Collection and an Object
+     * Create a collection as a union of a Collection and an Object. If the collection
+     * is a Set, then the returned collection will be a Set otherwise a List.
+     * TODO: remove equivalent numbers after merge, e.g. 1L and 1G?
      *
      * @param left  a Collection
-     * @param right an object to append
-     * @return a List
+     * @param right an object to add/append
+     * @return the resulting Collection
      */
-    public static List plus(Collection left, Object right) {
-        List answer = new ArrayList(left.size() + 1);
+    public static Collection plus(Collection left, Object right) {
+        Collection answer;
+        if (left instanceof Set)
+            answer = new HashSet();
+        else
+            answer = new ArrayList(left.size() + 1);
         answer.addAll(left);
         answer.add(right);
         return answer;
@@ -2924,6 +2948,31 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * Create a Set composed of the elements of the first set minus the elements of the collection
+     * TODO: remove using number comparator
+     */
+    public static Set minus(Set self, Collection removeMe) {
+        if (self.size() == 0)
+            return new HashSet();
+        Set ansSet = new HashSet(self);
+        ansSet.removeAll(removeMe);
+        return ansSet;
+    }
+
+    /**
+     * Create a Set composed of the elements of the first set minus the operand
+     */
+    public static Set minus(Set self, Object operand) {
+        Set ansSet = new HashSet();
+        Comparator numberComparator = new NumberComparator();
+        for (Iterator it = self.iterator(); it.hasNext();) {
+            Object o = it.next();
+            if (numberComparator.compare(o, operand) != 0) ansSet.add(o);
+        }
+        return ansSet;
+    }
+
+    /**
      * Create a List composed of the elements of the first list minus the elements of the collection
      *
      * @param self     a List
@@ -2937,15 +2986,15 @@ public class DefaultGroovyMethods {
 
         boolean nlgnSort = sameType(new Collection[]{self, removeMe});
 
-        //we can't use the same tactic as for intersection
-        //since AbstractCollection only does a remove on the first
-        //element it encounter.
+        // We can't use the same tactic as for intersection
+        // since AbstractCollection only does a remove on the first
+        // element it encounters.
 
         Comparator numberComparator = new NumberComparator();
 
         if (nlgnSort && (self.get(0) instanceof Comparable)) {
             //n*LOG(n) version
-            Set answer /* = null */;
+            Set answer;
             if (Number.class.isInstance(self.get(0))) {
                 answer = new TreeSet(numberComparator);
                 answer.addAll(self);
@@ -2997,6 +3046,9 @@ public class DefaultGroovyMethods {
         }
     }
 
+    /**
+     * Create a Set composed of the elements of the first set minus the operand
+     */
     public static List minus(List self, Object operand) {
         Comparator numberComparator = new NumberComparator();
         List ansList = new ArrayList();
@@ -3018,16 +3070,13 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Iterate over each element of the list in the reverse order.
+     * Flatten a set
      *
-     * @param self    a List
-     * @param closure a closure
+     * @param self a Set
+     * @return a flattened Set
      */
-    public static void reverseEach(List self, Closure closure) {
-        List reversed = reverse(self);
-        for (Iterator iter = reversed.iterator(); iter.hasNext();) {
-            closure.call(iter.next());
-        }
+    public static Set flatten(Set self) {
+        return new HashSet(flatten(self, new LinkedList()));
     }
 
     private static List flatten(Collection elements, List addTo) {
