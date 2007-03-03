@@ -45,16 +45,11 @@
  */
 package groovy.util;
 
+import groovy.xml.QName;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
-import groovy.xml.QName;
-
 import java.io.PrintWriter;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Represents an arbitrary tree node which can be used for structured metadata or any arbitrary XML-like tree.
@@ -76,15 +71,15 @@ public class Node implements java.io.Serializable {
     private Object value;
 
     public Node(Node parent, Object name) {
-        this(parent, name, Collections.EMPTY_MAP, Collections.EMPTY_LIST);
+        this(parent, name, new ArrayList());
     }
 
     public Node(Node parent, Object name, Object value) {
-        this(parent, name, Collections.EMPTY_MAP, value);
+        this(parent, name, new HashMap(), value);
     }
 
     public Node(Node parent, Object name, Map attributes) {
-        this(parent, name, attributes, Collections.EMPTY_LIST);
+        this(parent, name, attributes, new ArrayList());
     }
 
     public Node(Node parent, Object name, Map attributes, Object value) {
@@ -150,7 +145,7 @@ public class Node implements java.io.Serializable {
     
     public List children() {
         if (value == null) {
-            return Collections.EMPTY_LIST;
+            return new ArrayList();
         }
         else if (value instanceof List) {
             return (List) value;
