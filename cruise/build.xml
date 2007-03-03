@@ -30,7 +30,7 @@
       <arg value="clean"/>
     </exec>
     -->
-    <ant dir=".." antfile="build.xml" target="clean">
+    <ant dir=".." antfile="build.xml" target="clean"/>
 	<ant dir=".." antfile="build.xml" target="test"> <!-- dk: target should be 'cruise' soon -->
 		<property name="buildnumber" value="${label}"/>
 	</ant>
