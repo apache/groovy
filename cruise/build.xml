@@ -4,8 +4,8 @@
   <property name="dir.checkout" value=".."/>
   <property name="svn.user" value="dierk"/>
   
-  <target name="cruise" depends="update, copy-reporting-app, delegate"/>
-  <!--target name="cruise" depends="update, copy-reporting-app, delegate, tagLastBuild"/-->
+  <!--target name="cruise" depends="update, copy-reporting-app, delegate"/-->
+  <target name="cruise" depends="update, copy-reporting-app, delegate, tagLastBuild"/>
   
   <!-- label is given by CruiseControl, provides a default value here for the case where the admin starts
   this script manually. -->
@@ -24,6 +24,7 @@
     <echo message="*** Starting the groovy-specific Maven 1 build parts ***"/>
     <exec dir=".." executable="maven" failonerror="true"/>
     <echo message="*** groovy build Maven 1 successfully ended          ***"/>
+<!--
     <echo message="*** Starting the groovy-specific Ant build parts ***"/>
     <exec dir=".." executable="ant" failonerror="true">
       <arg value="clean"/>
@@ -32,6 +33,7 @@
       <arg value="test"/>
     </exec>
     <echo message="*** groovy Ant build successfully ended          ***"/>
+-->
   </target>
   
   <target name="tagLastBuild">
