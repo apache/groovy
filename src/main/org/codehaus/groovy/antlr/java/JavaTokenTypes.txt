@@ -1,4 +1,4 @@
-// $ANTLR 2.7.2: java.g -> JavaTokenTypes.txt$
+// $ANTLR 2.7.6 (2005-12-22): java.g -> JavaTokenTypes.txt$
 Java    // output token vocab name
 BLOCK=4
 MODIFIERS=5

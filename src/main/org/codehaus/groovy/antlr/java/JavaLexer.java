@@ -1,4 +1,4 @@
-// $ANTLR 2.7.2: "java.g" -> "JavaLexer.java"$
+// $ANTLR 2.7.6 (2005-12-22): "java.g" -> "JavaLexer.java"$
 
 package org.codehaus.groovy.antlr.java;
 import org.codehaus.groovy.antlr.*;
@@ -1770,7 +1770,7 @@ tryAgain:
 							synPredMatched411 = false;
 						}
 						rewind(_m411);
-						inputState.guessing--;
+inputState.guessing--;
 					}
 					if ( synPredMatched411 ) {
 						{

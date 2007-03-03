@@ -1,52 +1,55 @@
 <project name="groovy-cruisecontrol-starter" default="cruise"> 
+  
+  <property name="svn.tag" value="https://svn.codehaus.org/groovy/tags/cc"/>
+  <property name="dir.checkout" value=".."/>
+  <property name="svn.user" value="dierk"/>
+  
+  <target name="cruise" depends="update, copy-reporting-app, delegate"/>
+  <!--target name="cruise" depends="update, copy-reporting-app, delegate, tagLastBuild"/-->
+  
+  <!-- label is given by CruiseControl, provides a default value here for the case where the admin starts
+  this script manually. -->
 
-
-	<property name="svn.tag" value="https://svn.codehaus.org/groovy/tags/cc"/>
-	<property name="dir.checkout" value=".."/>
-	<property name="svn.user" value="dierk"/>
-
-	<target name="cruise" depends="update, copy-reporting-app, delegate, tagLastBuild"/>
-	
-	<!--
-    	label is given by CruiseControl, provides a default value here for the case where
-    	the admin starts this script manually.
-	-->
-	<property name="label" value="manualBuild"/>
-	
-	<target name="update">
-		<echo message="Getting the detected modifications...."/>
-		<exec executable="svn" failonerror="true">
-            <arg line="--username ${svn.user} --non-interactive"/>
-		    <arg line="update ${dir.checkout}"/>
-		</exec>
-	</target>
-
-	<target name="delegate" description="Groovy specific build parts">
-		<echo message="*** Starting the groovy specific build parts ***"/>
-		<exec dir=".." executable="maven" failonerror="true">
-		</exec>
-		<echo message="*** groovy build successfully ended          ***"/>
-	</target>
-
-	<target name="tagLastBuild">
-        <exec executable="svn" failonerror="true">
-            <arg line="--username ${svn.user} --non-interactive"/>
-            <arg line="copy -m '' ${dir.checkout} ${svn.tag}/${label}"/>
-        </exec>
-        <exec executable="svn" failonerror="true">
-            <arg line="--username ${svn.user} --non-interactive"/>
-            <arg line="rm -m '' ${svn.tag}/LAST_BUILD"/>
-        </exec>
-        <exec executable="svn" failonerror="true">
-            <arg line="--username ${svn.user} --non-interactive"/>
-            <arg line="copy -m '' ${svn.tag}/${label} ${svn.tag}/LAST_BUILD"/>
-        </exec>
-	</target>
-	
-	<target name="copy-reporting-app">
-	    <fail unless="reporting-app-dir" message="The property reporting-app-dir must be set from outside!" />
-		<copy todir="${reporting-app-dir}" >  <!-- overwrite="true" can be needed occasionally -->
-		    <fileset dir="reporting-app" />   <!-- only changes to web.xml need context reload -->
-		</copy>
-	</target>
+  <property name="label" value="manualBuild"/>
+  
+  <target name="update">
+    <echo message="Getting the detected modifications...."/>
+    <exec executable="svn" failonerror="true">
+      <arg line="--username ${svn.user} --non-interactive"/>
+      <arg line="update ${dir.checkout}"/>
+    </exec>
+  </target>
+  
+  <target name="delegate" description="Groovy-specific build parts">
+    <echo message="*** Starting the groovy-specific Maven 1 build parts ***"/>
+    <exec dir=".." executable="maven" failonerror="true"/>
+    <echo message="*** groovy build Maven 1 successfully ended          ***"/>
+    <echo message="*** Starting the groovy-specific Ant build parts ***"/>
+    <exec dir=".." executable="ant" failonerror="true">
+      <arg value="test"/>
+    </exec>
+    <echo message="*** groovy Ant build successfully ended          ***"/>
+  </target>
+  
+  <target name="tagLastBuild">
+    <exec executable="svn" failonerror="true">
+      <arg line="--username ${svn.user} --non-interactive"/>
+      <arg line="copy -m '' ${dir.checkout} ${svn.tag}/${label}"/>
+    </exec>
+    <exec executable="svn" failonerror="true">
+      <arg line="--username ${svn.user} --non-interactive"/>
+      <arg line="rm -m '' ${svn.tag}/LAST_BUILD"/>
+    </exec>
+    <exec executable="svn" failonerror="true">
+      <arg line="--username ${svn.user} --non-interactive"/>
+      <arg line="copy -m '' ${svn.tag}/${label} ${svn.tag}/LAST_BUILD"/>
+    </exec>
+  </target>
+  
+  <target name="copy-reporting-app">
+    <fail unless="reporting-app-dir" message="The property reporting-app-dir must be set from outside!" />
+    <copy todir="${reporting-app-dir}" >  <!-- overwrite="true" can be needed occasionally -->
+      <fileset dir="reporting-app" />   <!-- only changes to web.xml need context reload -->
+    </copy>
+  </target>
 </project>
