@@ -146,7 +146,7 @@ $Date$
   </target>
 
   <target name="test" depends="-initializeReports,compileTest,-coberturaInstrument,-testOne,-testAll"
-    description="Compile and test all the classes." unless="skipTests"/>
+    description="Compile and test all the classes (or just one class if testCase property is defined)." unless="skipTests"/>
 
   <target name="-testOne" if="testCase">
     <property name="junitRawDirectory" value="${targetDirectory}/test-reports"/>
