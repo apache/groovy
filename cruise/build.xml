@@ -34,7 +34,7 @@
 	<ant dir=".." antfile="build.xml" target="test"> <!-- dk: target should be 'cruise' soon -->
 		<property name="buildnumber" value="${label}"/>
 	</ant>
-    <echo message="*** groovy Ant build (${label}) successfully ended          ***"/>
+    <echo message="*** groovy (${label}) Ant build successfully ended          ***"/>
   </target>
   
   <target name="tagLastBuild">
