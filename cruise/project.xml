@@ -14,7 +14,7 @@ defaultmailhost
 		</modificationset>
 		<schedule>
 			<!-- buildfile is relative to checkout dir -->
-			<ant
+			<ant    antscript="/usr/local/java/apache-ant-1.7.0/bin/ant"
 				buildfile="&basedir;/groovy/cruisecontrol/checkout/cruise/build.xml"
 				antWorkingDir="&basedir;/groovy/cruisecontrol/checkout"
 				usedebug="false"
