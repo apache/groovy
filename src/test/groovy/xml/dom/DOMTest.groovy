@@ -27,9 +27,21 @@ class DOMTest extends GroovyTestCase {
         if (!benchmark) assertCorrect html
     }
 
-  void testStreamingDOMBuilder_FAILS() { if (notYetImplemented()) return
+    void testDOMBuilderWithNullValue() {
+        def html = DOMBuilder.newInstance().
+        html {
+          head {
+            title (testAttr:null, "Test")
+          }
+        }
+        use (DOMCategory) {
+            assert html.head.title[0].'@testAttr' == ''
+        }
+    }
 
-        def doc = new StreamingDOMBuilder().bind{
+    void testStreamingDOMBuilder() {
+        def builder = new StreamingDOMBuilder()
+        def doc = builder.bind{
           html {
             head {
               title (class:"mytitle", "Test")
@@ -38,35 +50,48 @@ class DOMTest extends GroovyTestCase {
               p (class:"mystyle", "This is a test.")
             }
           }
-        }()
-        if (!benchmark) { assertCorrect doc.documentElement }
+        }
+        if (!benchmark) assertCorrectStreaming doc().docElement
     }
 
-    private def assertCorrect(html) {
+    // TODO: reduce dup with assertCorrect
+    private def assertCorrectStreaming(html) {
         use (DOMCategory) {
-          assert html.head.title.collect{ it.text() } == ['Test']
-          assert html.head.title[0].text() == 'Test'
-          assert html.body.p[0].text() == 'This is a test.'
-          assert html.find { it.tagName == 'body' }.tagName == 'body'
-          assert html.getElementsByTagName('*').findAll{ it.'@class' != '' }.size() == 2
+            assert html.head.title[0].textContent == 'Test'
+            assert html.body.p[0].textContent == 'This is a test.'
+            assert html.find { it.tagName == 'body' }.tagName == 'body'
+            assert html.getElementsByTagName('*').findAll{ it.'@class' != '' }.size() == 2
         }
         // should fail outside category
         shouldFail (MissingPropertyException) { html.head }
     }
   
+    private def assertCorrect(html) {
+        use (DOMCategory) {
+            assert html.head.title.collect{ it.text() } == ['Test']
+            assert html.head.title[0].text() == 'Test'
+            assert html.body.p[0].text() == 'This is a test.'
+            assert html.find { it.tagName == 'body' }.tagName == 'body'
+            assert html.getElementsByTagName('*').findAll{ it.'@class' != '' }.size() == 2
+        }
+        // should fail outside category
+        shouldFail (MissingPropertyException) { html.head }
+    }
+
     static void main(args) {
         // Relative results:
-        // Test       05 May 2004  14 Oct 2006
-        // Parser:    1.0          1.0
-        // Builder:   1.05         2.90
-        // Streaming: 0.77         0.20
+        // When:      05 May 2004  14 Oct 2006  4 Mar 2007
+        // Notes:                  Xerces 2.4   Xerces 2.8
+        // Parser:    1.0          1.0          1.0
+        // Builder:   1.05         2.90         1.20
+        // Streaming: 0.77         0.20         0.20
         def x = args.size() == 0 ? 1000 : Integer.parseInt(args[0])
         def mydomtest = new DOMTest()
         def standard = 0
         mydomtest.benchmark = true
         [{ mydomtest.testDOMParser() },
          { mydomtest.testDOMBuilder() },
-         { mydomtest.testStreamingDOMBuilder_FAILS() }].eachWithIndex { testMethod, index ->
+         { mydomtest.testStreamingDOMBuilder() }].eachWithIndex { testMethod, index ->
             // Run the method once to fill any caches and to load classes
             testMethod()
             def start = System.currentTimeMillis()

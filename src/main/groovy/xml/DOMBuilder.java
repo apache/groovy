@@ -157,8 +157,8 @@ public class DOMBuilder extends BuilderSupport {
                     throw new IllegalArgumentException("The value of the xmlns attribute must be a Map of QNames to String URIs");
                 }
             } else {
-                // TODO handle null values and treat as ''
-                element.setAttribute(attrName, value.toString());
+                String valueText = (value != null) ? value.toString() : "";
+                element.setAttribute(attrName, valueText);
             }
         }
         return element;
