@@ -28,7 +28,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  * @author Steve Goetze
  */
 public class SecurityTestSupport extends GroovyTestCase {
-
+    private static final String POLICY_FILE = "security/groovy.policy";
 	private static int counter = 0;
 	private static boolean securityDisabled; 
 	private static boolean securityAvailable;
@@ -40,18 +40,8 @@ public class SecurityTestSupport extends GroovyTestCase {
 			securityDisabled = true;
 		} else {
 			securityDisabled = false;
-			String groovyLibDir = System.getProperty("groovy.lib");
-			if (groovyLibDir == null) {
-				//Try to find maven repository in the default user.home location
-				groovyLibDir = System.getProperty("user.home") + "/" + ".maven/repository";
-			}
-			if (groovyLibDir == null) {
-				//Try at user.dir/lib
-				groovyLibDir = "lib";
-			}
-			if (new File(groovyLibDir).exists()) {
+			if (new File(POLICY_FILE).exists()) {
 				securityAvailable = true;
-				System.setProperty("groovy.lib", groovyLibDir);
 				System.setProperty("java.security.policy", "=security/groovy.policy");
 			} else {
 				securityAvailable = false;
@@ -105,7 +95,8 @@ public class SecurityTestSupport extends GroovyTestCase {
 		if (!securityChecked) {
 			securityChecked = true;
 			if (!isSecurityAvailable()) {
-				fail("Security is not available - skipping security tests.  Ensure that groovy.lib is set and points to the groovy dependency jars.");
+				fail("Security is not available - skipping security tests.  Ensure that "
+                        + POLICY_FILE + " is available from the current execution directory.");
 			}
 		}
 		return isSecurityAvailable();
