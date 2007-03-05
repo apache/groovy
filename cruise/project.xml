@@ -32,7 +32,9 @@ defaultmailhost
 
 		<publishers>
 			<!-- htmlemail is used only for explicit subscribers -->
-			<htmlemail
+            <artifactspublisher dir="&basedir;/groovy/cruisecontrol/checkout/target/reports"
+                                dest="&basedir;/groovy/cruisecontrol/logs"/>
+            <htmlemail
 				buildresultsurl="http://&hostname;/groovy/"
 				mailhost="&defaultmailhost;"
 				defaultsuffix="@codehaus.org"
