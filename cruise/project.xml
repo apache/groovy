@@ -31,8 +31,10 @@ defaultmailhost
 
 		<publishers>
             <artifactspublisher dir="&basedir;/groovy/cruisecontrol/checkout/target/reports"
-            dest="&basedir;/groovy/cruisecontrol/logs"/>
-            <artifactspublisher dir="&basedir;/groovy/cruisecontrol/checkout/target/install"
+            dest="&basedir;/groovy/cruisecontrol/logs" subdirectory="reports"/>
+            <artifactspublisher dir="&basedir;/groovy/cruisecontrol/checkout/target/dist"
+            dest="&basedir;/groovy/cruisecontrol/logs" subdirectory="dist"/>
+            <artifactspublisher dir="&basedir;/groovy/cruisecontrol/checkout/target/root"
             dest="&basedir;/groovy/cruisecontrol/logs"/>
             <!-- htmlemail is used only for explicit subscribers -->
             <htmlemail

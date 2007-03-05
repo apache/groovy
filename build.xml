@@ -33,6 +33,7 @@ $Date$
 
   <property name="targetDirectory" value="target"/>
   <property name="installDirectory" value="${targetDirectory}/install"/>
+  <property name="cruiseReportRootDirectory" value="${targetDirectory}/root"/>
   <property name="stagingDirectory" value="${targetDirectory}/staging"/>
   <property name="docsDirectory" value="${targetDirectory}/html"/>
   <property name="mainClassesDirectory" value="${targetDirectory}/classes"/>
@@ -307,7 +308,17 @@ $Date$
     </java>
   </target>
 
-  <target name="cruise" depends="install,doc,checkstyle"/>
+    <target name="buildinfo">
+        <mkdir dir="${cruiseReportRootDirectory}"/>
+        <copy todir="${cruiseReportRootDirectory}">
+            <fileset dir="config/build"/>
+        </copy>
+        <zip destfile="${targetDistDirectory}/groovy-${groovyVersion}.zip">
+            <fileset dir="${installDirectory}"/>
+        </zip>
+    </target>
+
+    <target name="cruise" depends="install,doc,checkstyle,buildinfo"/>
 
   <target name="doc" depends="-compileTools" description="Create the documentation.">
     <mkdir dir="${docsDirectory}"/>
