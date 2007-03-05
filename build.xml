@@ -307,6 +307,8 @@ $Date$
     </java>
   </target>
 
+  <target name="cruise" depends="install,doc,checkstyle"/>
+
   <target name="doc" depends="-compileTools" description="Create the documentation.">
     <mkdir dir="${docsDirectory}"/>
     <java classname="org.codehaus.groovy.tools.DocGenerator" fork="yes">

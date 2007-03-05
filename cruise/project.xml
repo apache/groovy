@@ -7,7 +7,6 @@ hostname
 defaultmailhost
 -->
 
-
 <project name="groovy" buildafterfailed="false">
 		<modificationset quietperiod="120">
 			<svn localworkingcopy="&basedir;/groovy/cruisecontrol/checkout"/>
@@ -31,9 +30,11 @@ defaultmailhost
 		</log>
 
 		<publishers>
-			<!-- htmlemail is used only for explicit subscribers -->
             <artifactspublisher dir="&basedir;/groovy/cruisecontrol/checkout/target/reports"
-                                dest="&basedir;/groovy/cruisecontrol/logs"/>
+            dest="&basedir;/groovy/cruisecontrol/logs"/>
+            <artifactspublisher dir="&basedir;/groovy/cruisecontrol/checkout/target/install"
+            dest="&basedir;/groovy/cruisecontrol/logs"/>
+            <!-- htmlemail is used only for explicit subscribers -->
             <htmlemail
 				buildresultsurl="http://&hostname;/groovy/"
 				mailhost="&defaultmailhost;"

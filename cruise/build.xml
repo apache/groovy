@@ -13,7 +13,7 @@
   <property name="label" value="manualBuild"/>
   
   <target name="update">
-    <echo message="Getting the detected modifications...."/>
+    <echo message="*** getting the detected modifications ***"/>
     <exec executable="svn" failonerror="true">
       <arg line="--username ${svn.user} --non-interactive"/>
       <arg line="update ${dir.checkout}"/>
@@ -25,16 +25,12 @@
     <echo message="*** Starting the groovy-specific Maven 1 build parts ***"/>
     <exec dir=".." executable="maven" failonerror="true"/>
     <echo message="*** groovy build Maven 1 successfully ended          ***"/>
-    <echo message="*** Starting the groovy-specific Ant build parts ***"/>
-    <exec dir=".." executable="ant" failonerror="true">
-      <arg value="clean"/>
-    </exec>
     -->
     <ant dir=".." antfile="build.xml" target="clean"/>
-	<ant dir=".." antfile="build.xml" target="test"> <!-- dk: target should be 'cruise' soon -->
+	<ant dir=".." antfile="build.xml" target="cruise">
 		<property name="buildnumber" value="${label}"/>
 	</ant>
-    <echo message="*** groovy (${label}) Ant build successfully ended          ***"/>
+    <echo message="*** groovy (${label}) Ant build successfully ended ***"/>
   </target>
   
   <target name="tagLastBuild">
