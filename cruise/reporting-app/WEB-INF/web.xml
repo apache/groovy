@@ -92,7 +92,7 @@
         <servlet-class>net.sourceforge.cruisecontrol.servlet.FileServlet</servlet-class>
         <init-param>
             <param-name>rootDir</param-name>
-            <param-value>/opt/groovy/cruisecontrol/checkout/dist/</param-value>
+            <param-value>/opt/groovy/cruisecontrol/artifacts/</param-value>
         </init-param>
     </servlet>
 
