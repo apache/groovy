@@ -147,9 +147,18 @@ $Date$
   </target>
 
   <target name="test" depends="-initializeReports,compileTest,-coberturaInstrument,-testOne,-testAll"
-    description="Compile and test all the classes (or just one class if testCase property is defined)." unless="skipTests"/>
+    description="Compile and test all the classes (or just one class if testCase property is defined)."/>
 
-  <target name="-testOne" if="testCase">
+  <condition property="testOne">
+    <and>
+      <not>
+        <istrue value="${skipTests}"/>
+      </not>
+      <isset property="${testCase}"/>
+    </and>
+  </condition>
+
+  <target name="-testOne" if="testOne">
     <property name="junitRawDirectory" value="${targetDirectory}/test-reports"/>
     <property name="junitReportsDirectory" value="${reportsDirectory}/junit"/>
     <mkdir dir="${junitRawDirectory}"/>
@@ -166,8 +175,19 @@ $Date$
       </classpath>
     </junit>
   </target>
-  
-  <target name="-testAll" unless="testCase">
+
+  <condition property="testAll">
+    <and>
+      <not>
+        <istrue value="${skipTests}"/>
+      </not>
+      <not>
+        <isset property="${testOne}"/>
+      </not>
+    </and>
+  </condition>
+
+  <target name="-testAll" if="testAll">
     <property name="junitRawDirectory" value="${targetDirectory}/test-reports"/>
     <property name="junitReportsDirectory" value="${reportsDirectory}/junit"/>
     <mkdir dir="${junitRawDirectory}"/>
