@@ -3,44 +3,17 @@
 
  Copyright 2003 (C) James Strachan and Bob Mcwhirter. All Rights Reserved.
 
- Redistribution and use of this software and associated documentation
- ("Software"), with or without modification, are permitted provided
- that the following conditions are met:
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
+compliance with the License. You may obtain a copy of the License at
 
- 1. Redistributions of source code must retain copyright
-    statements and notices.  Redistributions must also contain a
-    copy of this document.
+http://www.apache.org/licenses/LICENSE-2.0
 
- 2. Redistributions in binary form must reproduce the
-    above copyright notice, this list of conditions and the
-    following disclaimer in the documentation and/or other
-    materials provided with the distribution.
+Unless required by applicable law or agreed to in writing, software distributed under the License is
+distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+implied. See the License for the specific language governing permissions and limitations under the License.
 
- 3. The name "groovy" must not be used to endorse or promote
-    products derived from this Software without prior written
-    permission of The Codehaus.  For written permission,
-    please contact info@codehaus.org.
-
- 4. Products derived from this Software may not be called "groovy"
-    nor may "groovy" appear in their names without prior written
-    permission of The Codehaus. "groovy" is a registered
-    trademark of The Codehaus.
-
- 5. Due credit should be given to The Codehaus -
-    http://groovy.codehaus.org/
-
- THIS SOFTWARE IS PROVIDED BY THE CODEHAUS AND CONTRIBUTORS
- ``AS IS'' AND ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT
- NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
- FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL
- THE CODEHAUS OR ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
- INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
- STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
- OF THE POSSIBILITY OF SUCH DAMAGE.
+This work is copyright by the author(s) and is part of a greater work collectively copyright by the
+Groovy community. See the NOTICE.txt file distributed with this work for additional information.
 
  */
 package groovy.swing;
@@ -153,7 +126,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
  * A helper class for creating Swing widgets using GroovyMarkup
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -195,8 +168,7 @@ public class SwingBuilder extends BuilderSupport {
                 KeyStroke stroke = null;
                 if (keyStroke instanceof String) {
                     stroke = KeyStroke.getKeyStroke((String) keyStroke);
-                }
-                else if (keyStroke instanceof KeyStroke) {
+                } else if (keyStroke instanceof KeyStroke) {
                     stroke = (KeyStroke) keyStroke;
                 }
                 if (stroke != null) {
@@ -205,37 +177,30 @@ public class SwingBuilder extends BuilderSupport {
                     component.getActionMap().put(key, action);
                 }
             }
-        }
-        else if (child instanceof LayoutManager) {
+        } else if (child instanceof LayoutManager) {
             if (parent instanceof RootPaneContainer) {
                 RootPaneContainer rpc = (RootPaneContainer) parent;
                 parent = rpc.getContentPane();
             }
             InvokerHelper.setProperty(parent, "layout", child);
-        }
-        else if (child instanceof JToolTip && parent instanceof JComponent) {
-            ((JToolTip)child).setComponent((JComponent)parent);
-        }
-        else if (parent instanceof JTable && child instanceof TableColumn) {
+        } else if (child instanceof JToolTip && parent instanceof JComponent) {
+            ((JToolTip) child).setComponent((JComponent) parent);
+        } else if (parent instanceof JTable && child instanceof TableColumn) {
             JTable table = (JTable) parent;
             TableColumn column = (TableColumn) child;
             table.addColumn(column);
-        }
-        else if (parent instanceof JTabbedPane && child instanceof Component) {
+        } else if (parent instanceof JTabbedPane && child instanceof Component) {
             JTabbedPane tabbedPane = (JTabbedPane) parent;
-            tabbedPane.add((Component)child);
-        } 
-        else if (child instanceof Window) {
+            tabbedPane.add((Component) child);
+        } else if (child instanceof Window) {
             // do nothing.  owner of window is set elsewhere, and this 
             // shouldn't get added to any parent as a child 
             // if it is a top level component anyway
-        }
-        else { 
+        } else {
             Component component = null;
             if (child instanceof Component) {
                 component = (Component) child;
-            }
-            else if (child instanceof ComponentFacade) {
+            } else if (child instanceof ComponentFacade) {
                 ComponentFacade facade = (ComponentFacade) child;
                 component = facade.getComponent();
             }
@@ -243,57 +208,46 @@ public class SwingBuilder extends BuilderSupport {
                 if (parent instanceof JFrame && component instanceof JMenuBar) {
                     JFrame frame = (JFrame) parent;
                     frame.setJMenuBar((JMenuBar) component);
-                }
-                else if (parent instanceof RootPaneContainer) {
+                } else if (parent instanceof RootPaneContainer) {
                     RootPaneContainer rpc = (RootPaneContainer) parent;
                     if (constraints != null) {
-                    	rpc.getContentPane().add(component, constraints);
+                        rpc.getContentPane().add(component, constraints);
                     } else {
-                    	rpc.getContentPane().add(component);
+                        rpc.getContentPane().add(component);
                     }
-                }
-                else if (parent instanceof JScrollPane) {
+                } else if (parent instanceof JScrollPane) {
                     JScrollPane scrollPane = (JScrollPane) parent;
                     if (child instanceof JViewport) {
-                        scrollPane.setViewport((JViewport)component);
-                    } 
-                    else {
+                        scrollPane.setViewport((JViewport) component);
+                    } else {
                         scrollPane.setViewportView(component);
                     }
-                }
-                else if (parent instanceof JSplitPane) {
+                } else if (parent instanceof JSplitPane) {
                     JSplitPane splitPane = (JSplitPane) parent;
                     if (splitPane.getOrientation() == JSplitPane.HORIZONTAL_SPLIT) {
                         if (splitPane.getTopComponent() == null) {
                             splitPane.setTopComponent(component);
-                        }
-                        else {
+                        } else {
                             splitPane.setBottomComponent(component);
                         }
-                    }
-                    else {
+                    } else {
                         if (splitPane.getLeftComponent() == null) {
                             splitPane.setLeftComponent(component);
-                        }
-                        else {
+                        } else {
                             splitPane.setRightComponent(component);
                         }
                     }
-                }
-                else if (parent instanceof JMenuBar && component instanceof JMenu) {
+                } else if (parent instanceof JMenuBar && component instanceof JMenu) {
                     JMenuBar menuBar = (JMenuBar) parent;
                     menuBar.add((JMenu) component);
-                }
-                else if (parent instanceof Container) {
+                } else if (parent instanceof Container) {
                     Container container = (Container) parent;
                     if (constraints != null) {
                         container.add(component, constraints);
-                    }
-                    else {
+                    } else {
                         container.add(component);
                     }
-                }
-                else if (parent instanceof ContainerFacade) {
+                } else if (parent instanceof ContainerFacade) {
                     ContainerFacade facade = (ContainerFacade) parent;
                     facade.addComponent(component);
                 }
@@ -324,35 +278,32 @@ public class SwingBuilder extends BuilderSupport {
     }
 
     protected Object createNode(Object name, Object value) {
-        if (passThroughNodes.containsKey(name) && (value != null) && ((Class)passThroughNodes.get(name)).isAssignableFrom(value.getClass())) {
+        if (passThroughNodes.containsKey(name) && (value != null) && ((Class) passThroughNodes.get(name)).isAssignableFrom(value.getClass())) {
             // value may need to go into containing windows list
             if (value instanceof Window) {
                 containingWindows.add(value);
             }
             return value;
-        }
-        else if (value instanceof String) {
+        } else if (value instanceof String) {
             Object widget = createNode(name);
             if (widget != null) {
                 InvokerHelper.invokeMethod(widget, "setText", value);
             }
             return widget;
-        }
-        else {
-        	throw new MissingMethodException((String) name, getClass(), new Object[] {value}, false);
+        } else {
+            throw new MissingMethodException((String) name, getClass(), new Object[]{value}, false);
         }
     }
 
     protected Object createNode(Object name, Map attributes, Object value) {
-        if (passThroughNodes.containsKey(name) && (value != null) && ((Class)passThroughNodes.get(name)).isAssignableFrom(value.getClass())) {
+        if (passThroughNodes.containsKey(name) && (value != null) && ((Class) passThroughNodes.get(name)).isAssignableFrom(value.getClass())) {
             // value may need to go into containing windows list
             if (value instanceof Window) {
                 containingWindows.add(value);
             }
             handleWidgetAttributes(value, attributes);
             return value;
-        }
-        else { 
+        } else {
             Object widget = createNode(name, attributes);
             if (widget != null) {
                 InvokerHelper.invokeMethod(widget, "setText", value.toString());
@@ -360,21 +311,20 @@ public class SwingBuilder extends BuilderSupport {
             return widget;
         }
     }
-    
+
     protected Object createNode(Object name, Map attributes) {
         String widgetName = (String) attributes.remove("id");
         constraints = attributes.remove("constraints");
         Object widget = null;
         if (passThroughNodes.containsKey(name)) {
             widget = attributes.get(name);
-            if ((widget != null) && ((Class)passThroughNodes.get(name)).isAssignableFrom(widget.getClass())) {
+            if ((widget != null) && ((Class) passThroughNodes.get(name)).isAssignableFrom(widget.getClass())) {
                 // value may need to go into containing windows list
                 if (widget instanceof Window) {
                     containingWindows.add(widget);
                 }
                 attributes.remove(name);
-            }
-            else {
+            } else {
                 widget = null;
             }
         }
@@ -388,8 +338,7 @@ public class SwingBuilder extends BuilderSupport {
                     }
                     if (widget == null) {
                         log.log(Level.WARNING, "Factory for name: " + name + " returned null");
-                    }
-                    else {
+                    } else {
                         if (log.isLoggable(Level.FINE)) {
                             log.fine("For name: " + name + " created widget: " + widget);
                         }
@@ -398,8 +347,7 @@ public class SwingBuilder extends BuilderSupport {
                 catch (Exception e) {
                     throw new RuntimeException("Failed to create component for" + name + " reason: " + e, e);
                 }
-            }
-            else {
+            } else {
                 log.log(Level.WARNING, "Could not find match for name: " + name);
             }
         }
@@ -445,13 +393,12 @@ public class SwingBuilder extends BuilderSupport {
                     action.putValue(actionName, value);
                 }
 
-            }
-            else {
+            } else {
                 // some special cases...
                 if (attributes.containsKey("buttonGroup")) {
                     Object o = attributes.get("buttonGroup");
                     if ((o instanceof ButtonGroup) && (widget instanceof AbstractButton)) {
-                        ((AbstractButton)widget).getModel().setGroup((ButtonGroup)o);
+                        ((AbstractButton) widget).getModel().setGroup((ButtonGroup) o);
                         attributes.remove("buttonGroup");
                     }
                 }
@@ -459,11 +406,10 @@ public class SwingBuilder extends BuilderSupport {
                 // this next statement nd if/else is a workaround until GROOVY-305 is fixed
                 Object mnemonic = attributes.remove("mnemonic");
                 if ((mnemonic != null) && (mnemonic instanceof Number)) {
-                    InvokerHelper.setProperty(widget, "mnemonic", new Character((char)((Number)mnemonic).intValue()));
-                } 
-                else if (mnemonic != null) {
+                    InvokerHelper.setProperty(widget, "mnemonic", new Character((char) ((Number) mnemonic).intValue()));
+                } else if (mnemonic != null) {
                     InvokerHelper.setProperty(widget, "mnemonic", new Character(mnemonic.toString().charAt(0)));
-                } 
+                }
 
                 // set the properties
                 for (Iterator iter = attributes.entrySet().iterator(); iter.hasNext();) {
@@ -492,47 +438,43 @@ public class SwingBuilder extends BuilderSupport {
         // non-widget support classes
         //
         registerBeanFactory("action", DefaultAction.class);
-        passThroughNodes.put("action", javax.swing.Action.class);
+        passThroughNodes.put("action", Action.class);
         registerBeanFactory("buttonGroup", ButtonGroup.class);
         registerFactory("map", new Factory() {      // todo dk: is that still needed?
-            public Object newInstance(Map properties)
-                throws InstantiationException, InstantiationException, IllegalAccessException {
+            public Object newInstance(Map properties) throws InstantiationException, IllegalAccessException {
                 return properties;
             }
         });
         // ulimate pass through type
-        passThroughNodes.put("widget", java.awt.Component.class);
+        passThroughNodes.put("widget", Component.class);
 
         //
         // standalone window classes
         //
         registerFactory("dialog", new Factory() {
-            public Object newInstance(Map properties)
-                throws InstantiationException, InstantiationException, IllegalAccessException {
+            public Object newInstance(Map properties) throws InstantiationException, IllegalAccessException {
                 return createDialog(properties);
             }
         });
         registerFactory("frame", new Factory() {
-            public Object newInstance(Map properties)
-                throws InstantiationException, InstantiationException, IllegalAccessException {
+            public Object newInstance(Map properties) throws InstantiationException, IllegalAccessException {
                 return createFrame(properties);
             }
         });
         registerBeanFactory("fileChooser", JFileChooser.class);
         registerFactory("frame", new Factory() {        // todo dk: frame registered twice ???
-            public Object newInstance(Map properties)
-                throws InstantiationException, InstantiationException, IllegalAccessException {
+
+            public Object newInstance(Map properties) throws InstantiationException, IllegalAccessException {
                 return createFrame(properties);
             }
         });
         registerBeanFactory("optionPane", JOptionPane.class);
         registerFactory("window", new Factory() {
-            public Object newInstance(Map properties)
-                throws InstantiationException, InstantiationException, IllegalAccessException {
+            public Object newInstance(Map properties) throws InstantiationException, IllegalAccessException {
                 return createWindow(properties);
             }
         });
-        
+
         //
         // widgets
         //
@@ -541,16 +483,14 @@ public class SwingBuilder extends BuilderSupport {
         registerBeanFactory("checkBoxMenuItem", JCheckBoxMenuItem.class);
         registerBeanFactory("colorChooser", JColorChooser.class);
         registerFactory("comboBox", new Factory() {
-            public Object newInstance(Map properties)
-                throws InstantiationException, InstantiationException, IllegalAccessException {
+            public Object newInstance(Map properties) throws InstantiationException, IllegalAccessException {
                 return createComboBox(properties);
             }
         });
         registerBeanFactory("desktopPane", JDesktopPane.class);
         registerBeanFactory("editorPane", JEditorPane.class);
         registerFactory("formattedTextField", new Factory() {
-            public Object newInstance(Map properties)
-                throws InstantiationException, InstantiationException, IllegalAccessException {
+            public Object newInstance(Map properties) throws InstantiationException, IllegalAccessException {
                 return createFormattedTextField(properties);
             }
         });
@@ -589,21 +529,21 @@ public class SwingBuilder extends BuilderSupport {
         registerBeanFactory("textField", JTextField.class);
         registerBeanFactory("toggleButton", JToggleButton.class);
         registerBeanFactory("toolBar", JToolBar.class);
-        //registerBeanFactory("tooltip", JToolTip.class); // doens't work, user toolTipText property
+        //registerBeanFactory("tooltip", JToolTip.class); // doesn't work, use toolTipText property
         registerBeanFactory("tree", JTree.class);
         registerBeanFactory("viewport", JViewport.class); // sub class?
 
         //
-        // MVC models   
+        // MVC models
         //
         registerBeanFactory("boundedRangeModel", DefaultBoundedRangeModel.class);
 
         // spinner models
-	registerBeanFactory("spinnerDateModel", SpinnerDateModel.class);
+        registerBeanFactory("spinnerDateModel", SpinnerDateModel.class);
         registerBeanFactory("spinnerListModel", SpinnerListModel.class);
         registerBeanFactory("spinnerNumberModel", SpinnerNumberModel.class);
 
-	// table models
+        // table models
         registerFactory("tableModel", new Factory() {
             public Object newInstance(Map properties) {
                 ValueModel model = (ValueModel) properties.remove("model");
@@ -617,7 +557,7 @@ public class SwingBuilder extends BuilderSupport {
                 return new DefaultTableModel(model);
             }
         });
-        passThroughNodes.put("tableModel", javax.swing.table.TableModel.class);
+        passThroughNodes.put("tableModel", TableModel.class);
 
         registerFactory("propertyColumn", new Factory() {
             public Object newInstance(Map properties) {
@@ -637,8 +577,7 @@ public class SwingBuilder extends BuilderSupport {
                         type = Object.class;
                     }
                     return model.addPropertyColumn(header, property, type);
-                }
-                else {
+                } else {
                     throw new RuntimeException("propertyColumn must be a child of a tableModel");
                 }
             }
@@ -663,13 +602,11 @@ public class SwingBuilder extends BuilderSupport {
                         type = Object.class;
                     }
                     return model.addClosureColumn(header, readClosure, writeClosure, type);
-                }
-                else {
+                } else {
                     throw new RuntimeException("propertyColumn must be a child of a tableModel");
                 }
             }
         });
-
 
         //Standard Layouts
         registerBeanFactory("borderLayout", BorderLayout.class);
@@ -684,8 +621,7 @@ public class SwingBuilder extends BuilderSupport {
 
         // box layout
         registerFactory("boxLayout", new Factory() {
-            public Object newInstance(Map properties)
-                throws InstantiationException, InstantiationException, IllegalAccessException {
+            public Object newInstance(Map properties) throws InstantiationException, IllegalAccessException {
                 return createBoxLayout(properties);
             }
         });
@@ -704,12 +640,12 @@ public class SwingBuilder extends BuilderSupport {
         registerFactory("hstrut", new Factory() {
             public Object newInstance(Map properties) {
                 try {
-                Object num = properties.remove("width");
-                if (num instanceof Number) {
-                    return Box.createHorizontalStrut(((Number)num).intValue());
-                } else {
-                    return Box.createHorizontalStrut(6);
-                }
+                    Object num = properties.remove("width");
+                    if (num instanceof Number) {
+                        return Box.createHorizontalStrut(((Number) num).intValue());
+                    } else {
+                        return Box.createHorizontalStrut(6);
+                    }
                 } catch (RuntimeException re) {
                     re.printStackTrace(System.out);
                     throw re;
@@ -730,7 +666,7 @@ public class SwingBuilder extends BuilderSupport {
             public Object newInstance(Map properties) {
                 Object num = properties.remove("height");
                 if (num instanceof Number) {
-                    return Box.createVerticalStrut(((Number)num).intValue());
+                    return Box.createVerticalStrut(((Number) num).intValue());
                 } else {
                     return Box.createVerticalStrut(6);
                 }
@@ -750,15 +686,15 @@ public class SwingBuilder extends BuilderSupport {
                 } else {
                     int w, h;
                     o = properties.remove("width");
-                    w = ((o instanceof Number)) ? ((Number)o).intValue() : 6;
+                    w = ((o instanceof Number)) ? ((Number) o).intValue() : 6;
                     o = properties.remove("height");
-                    h = ((o instanceof Number)) ? ((Number)o).intValue() : 6;
+                    h = ((o instanceof Number)) ? ((Number) o).intValue() : 6;
                     dim = new Dimension(w, h);
                 }
                 return Box.createRigidArea(dim);
             }
         });
-        
+
         // table layout
         registerBeanFactory("tableLayout", TableLayout.class);
         registerFactory("tr", new Factory() {
@@ -766,8 +702,7 @@ public class SwingBuilder extends BuilderSupport {
                 Object parent = getCurrent();
                 if (parent instanceof TableLayout) {
                     return new TableLayoutRow((TableLayout) parent);
-                }
-                else {
+                } else {
                     throw new RuntimeException("'tr' must be within a 'tableLayout'");
                 }
             }
@@ -777,8 +712,7 @@ public class SwingBuilder extends BuilderSupport {
                 Object parent = getCurrent();
                 if (parent instanceof TableLayoutRow) {
                     return new TableLayoutCell((TableLayoutRow) parent);
-                }
-                else {
+                } else {
                     throw new RuntimeException("'td' must be within a 'tr'");
                 }
             }
@@ -794,18 +728,17 @@ public class SwingBuilder extends BuilderSupport {
                 Integer i = (Integer) axisObject;
                 axis = i.intValue();
             }
-            
+
             Container target = (Container) parent;
             if (target instanceof RootPaneContainer) {
-            	target = ((RootPaneContainer) target).getContentPane();
+                target = ((RootPaneContainer) target).getContentPane();
             }
             BoxLayout answer = new BoxLayout(target, axis);
-            
+
             // now lets try set the layout property
             InvokerHelper.setProperty(parent, "layout", answer);
             return answer;
-        }
-        else {
+        } else {
             throw new RuntimeException("Must be nested inside a Container");
         }
     }
@@ -819,30 +752,25 @@ public class SwingBuilder extends BuilderSupport {
         }
         if (owner instanceof Frame) {
             dialog = new JDialog((Frame) owner);
-        }
-        else if (owner instanceof Dialog) {
+        } else if (owner instanceof Dialog) {
             dialog = new JDialog((Dialog) owner);
-        }
-        else {
+        } else {
             dialog = new JDialog();
         }
         containingWindows.add(dialog);
         return dialog;
     }
-    
+
     /**
      * Uses 'format," or "value,"  (in order)
-     *
      */
     protected Object createFormattedTextField(Map properties) {
         JFormattedTextField ftf;
         if (properties.containsKey("format")) {
             ftf = new JFormattedTextField((Format) properties.remove("format"));
-        }
-        else if (properties.containsKey("value")) {
+        } else if (properties.containsKey("value")) {
             ftf = new JFormattedTextField(properties.remove("value"));
-        }
-        else {
+        } else {
             ftf = new JFormattedTextField();
         }
         return ftf;
@@ -853,7 +781,7 @@ public class SwingBuilder extends BuilderSupport {
         containingWindows.add(frame);
         return frame;
     }
-    
+
     protected Object createWindow(Map properties) {
         JWindow window;
         Object owner = properties.remove("owner");
@@ -863,11 +791,9 @@ public class SwingBuilder extends BuilderSupport {
         }
         if (owner instanceof Frame) {
             window = new JWindow((Frame) owner);
-        }
-        else if (owner instanceof Window) {
+        } else if (owner instanceof Window) {
             window = new JWindow((Window) owner);
-        }
-        else {
+        } else {
             window = new JWindow();
         }
         containingWindows.add(window);
@@ -878,15 +804,12 @@ public class SwingBuilder extends BuilderSupport {
         Object items = properties.remove("items");
         if (items instanceof Vector) {
             return new JComboBox((Vector) items);
-        }
-        else if (items instanceof List) {
+        } else if (items instanceof List) {
             List list = (List) items;
             return new JComboBox(list.toArray());
-        }
-        else if (items instanceof Object[]) {
+        } else if (items instanceof Object[]) {
             return new JComboBox((Object[]) items);
-        }
-        else {
+        } else {
             return new JComboBox();
         }
     }
