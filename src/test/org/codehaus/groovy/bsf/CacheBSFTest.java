@@ -41,7 +41,6 @@ import junit.framework.TestCase;
 import org.apache.bsf.BSFManager;
 import org.apache.bsf.BSFEngine;
 import org.apache.bsf.BSFException;
-import groovy.lang.GroovyShell;
 
 /**
  * Tests the Caching BSF integration

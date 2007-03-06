@@ -17,7 +17,6 @@
 
 package groovy.lang;
 
-import java.lang.reflect.Method;
 import java.util.List;
 
 import org.codehaus.groovy.ast.ClassNode;
@@ -181,8 +180,10 @@ public interface MetaClass extends MetaObjectProtocol {
      * not used during the method selection process when invoking a method
      * thereis no warranty for that.
      * 
-     * @returns a matching MetaMethod or null
+     * @return a matching MetaMethod or null
      * @throws GroovyRuntimeException if there is more than one matching method
+     * @param methodName the name of the method to pick
+     * @param arguments the method arguments
      */
      MetaMethod pickMethod(String methodName, Class[] arguments);
 }
