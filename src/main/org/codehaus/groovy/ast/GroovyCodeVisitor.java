@@ -90,142 +90,121 @@
 
 package org.codehaus.groovy.ast;
 
-
-
 import org.codehaus.groovy.ast.expr.*;
 
 import org.codehaus.groovy.ast.stmt.*;
 
-
-
 /**
-
  * An implementation of the visitor pattern for working with ASTNodes
-
- * 
-
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
-
  * @version $Revision$
-
  */
 
 public interface GroovyCodeVisitor {
-
-
 
     // statements
 
     //-------------------------------------------------------------------------
 
-    public void visitBlockStatement(BlockStatement statement);
+    void visitBlockStatement(BlockStatement statement);
 
-    public void visitForLoop(ForStatement forLoop);
+    void visitForLoop(ForStatement forLoop);
 
-    public void visitWhileLoop(WhileStatement loop);
+    void visitWhileLoop(WhileStatement loop);
 
-    public void visitDoWhileLoop(DoWhileStatement loop);
+    void visitDoWhileLoop(DoWhileStatement loop);
 
-    public void visitIfElse(IfStatement ifElse);
+    void visitIfElse(IfStatement ifElse);
 
-    public void visitExpressionStatement(ExpressionStatement statement);
+    void visitExpressionStatement(ExpressionStatement statement);
 
-    public void visitReturnStatement(ReturnStatement statement);
+    void visitReturnStatement(ReturnStatement statement);
 
-    public void visitAssertStatement(AssertStatement statement);
+    void visitAssertStatement(AssertStatement statement);
 
-    public void visitTryCatchFinally(TryCatchStatement finally1);
+    void visitTryCatchFinally(TryCatchStatement finally1);
 
-    public void visitSwitch(SwitchStatement statement);
+    void visitSwitch(SwitchStatement statement);
 
-    public void visitCaseStatement(CaseStatement statement);
+    void visitCaseStatement(CaseStatement statement);
 
-    public void visitBreakStatement(BreakStatement statement);
+    void visitBreakStatement(BreakStatement statement);
 
-    public void visitContinueStatement(ContinueStatement statement);
+    void visitContinueStatement(ContinueStatement statement);
 
-    public void visitThrowStatement(ThrowStatement statement);
+    void visitThrowStatement(ThrowStatement statement);
 
-    public void visitSynchronizedStatement(SynchronizedStatement statement);
+    void visitSynchronizedStatement(SynchronizedStatement statement);
     
-    public void visitCatchStatement(CatchStatement statement);
-
-    
+    void visitCatchStatement(CatchStatement statement);
 
     // expressions
 
     //-------------------------------------------------------------------------
 
-    public void visitMethodCallExpression(MethodCallExpression call);
+    void visitMethodCallExpression(MethodCallExpression call);
 
-    public void visitStaticMethodCallExpression(StaticMethodCallExpression expression);
+    void visitStaticMethodCallExpression(StaticMethodCallExpression expression);
 
-    public void visitConstructorCallExpression(ConstructorCallExpression expression);
+    void visitConstructorCallExpression(ConstructorCallExpression expression);
 
-    public void visitTernaryExpression(TernaryExpression expression);
+    void visitTernaryExpression(TernaryExpression expression);
 
-    public void visitBinaryExpression(BinaryExpression expression);
+    void visitBinaryExpression(BinaryExpression expression);
 
-    public void visitPrefixExpression(PrefixExpression expression);
+    void visitPrefixExpression(PrefixExpression expression);
 
-    public void visitPostfixExpression(PostfixExpression expression);
+    void visitPostfixExpression(PostfixExpression expression);
 
-    public void visitBooleanExpression(BooleanExpression expression);
+    void visitBooleanExpression(BooleanExpression expression);
 
-    public void visitClosureExpression(ClosureExpression expression);
+    void visitClosureExpression(ClosureExpression expression);
 
-    
+    void visitTupleExpression(TupleExpression expression);
 
-    public void visitTupleExpression(TupleExpression expression);
+    void visitMapExpression(MapExpression expression);
 
-    public void visitMapExpression(MapExpression expression);
+    void visitMapEntryExpression(MapEntryExpression expression);
 
-    public void visitMapEntryExpression(MapEntryExpression expression);
+    void visitListExpression(ListExpression expression);
 
-    public void visitListExpression(ListExpression expression);
+    void visitRangeExpression(RangeExpression expression);
 
-    public void visitRangeExpression(RangeExpression expression);
+    void visitPropertyExpression(PropertyExpression expression);
 
-    
+    void visitAttributeExpression(AttributeExpression attributeExpression);
 
-    public void visitPropertyExpression(PropertyExpression expression);
+    void visitFieldExpression(FieldExpression expression);
 
-    public void visitAttributeExpression(AttributeExpression attributeExpression);
+    void visitMethodPointerExpression(MethodPointerExpression expression);
 
-    public void visitFieldExpression(FieldExpression expression);
+    void visitConstantExpression(ConstantExpression expression);
 
-    public void visitMethodPointerExpression(MethodPointerExpression expression);
+    void visitClassExpression(ClassExpression expression);
 
+    void visitVariableExpression(VariableExpression expression);
 
+    void visitDeclarationExpression(DeclarationExpression expression);
 
-    public void visitConstantExpression(ConstantExpression expression);
+    void visitRegexExpression(RegexExpression expression);
 
-    public void visitClassExpression(ClassExpression expression);
+    void visitGStringExpression(GStringExpression expression);
 
-    public void visitVariableExpression(VariableExpression expression);
+    void visitArrayExpression(ArrayExpression expression);
 
-    public void visitDeclarationExpression(DeclarationExpression expression);
+    void visitSpreadExpression(SpreadExpression expression);
 
-    public void visitRegexExpression(RegexExpression expression);
+    void visitSpreadMapExpression(SpreadMapExpression expression);
 
-    public void visitGStringExpression(GStringExpression expression);
+    void visitNotExpression(NotExpression expression);
 
-    public void visitArrayExpression(ArrayExpression expression);
+    void visitNegationExpression(NegationExpression expression);
 
+    void visitBitwiseNegExpression(BitwiseNegExpression expression);
 
+    void visitCastExpression(CastExpression expression);
 
-    public void visitSpreadExpression(SpreadExpression expression);
-
-    public void visitSpreadMapExpression(SpreadMapExpression expression);
-    public void visitNotExpression(NotExpression expression);
-
-    public void visitNegationExpression(NegationExpression expression);
-
-    public void visitBitwiseNegExpression(BitwiseNegExpression expression);
-
-    public void visitCastExpression(CastExpression expression);
-
-
-    public void visitArgumentlistExpression(ArgumentListExpression expression);
+    void visitArgumentlistExpression(ArgumentListExpression expression);
 }
 
