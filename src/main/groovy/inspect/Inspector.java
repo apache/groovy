@@ -10,6 +10,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Field;
 import java.lang.reflect.Constructor;
 import java.util.*;
+import java.io.PrintStream;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
@@ -63,11 +64,7 @@ public class Inspector {
         Package pack = getClassUnderInspection().getPackage();
         result[CLASS_PACKAGE_IDX] = "package "+ ((pack == null) ? NOT_APPLICABLE : pack.getName());
         String modifiers = Modifier.toString(getClassUnderInspection().getModifiers());
-        String classOrInterface = "class";
-        if (getClassUnderInspection().isInterface()){
-            classOrInterface = "interface";
-        }
-        result[CLASS_CLASS_IDX] = modifiers + " "+ classOrInterface+" "+ shortName(getClassUnderInspection());
+        result[CLASS_CLASS_IDX] = modifiers + " class "+ shortName(getClassUnderInspection());
         result[CLASS_INTERFACE_IDX] = "implements ";
         Class[] interfaces = getClassUnderInspection().getInterfaces();
         for (int i = 0; i < interfaces.length; i++) {
@@ -274,16 +271,21 @@ public class Inspector {
     }
 
     public static void print(Object[] memberInfo) {
+        print(System.out, memberInfo);
+    }
+
+    static void print(final PrintStream out, Object[] memberInfo) {
         for (int i = 0; i < memberInfo.length; i++) {
             String[] metaMethod = (String[]) memberInfo[i];
-            System.out.print(i+":\t");
+            out.print(i+":\t");
             for (int j = 0; j < metaMethod.length; j++) {
                 String s = metaMethod[j];
-                System.out.print(s+" ");
+                out.print(s+" ");
             }
-            System.out.println("");
+            out.println("");
         }
     }
+
     public static Collection sort(List memberInfo) {
         Collections.sort(memberInfo, new MemberComparator());
         return memberInfo;

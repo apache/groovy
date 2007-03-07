@@ -3,6 +3,9 @@ package groovy.inspect;
 import junit.framework.TestCase;
 
 import java.io.Serializable;
+import java.io.StringWriter;
+import java.io.PrintStream;
+import java.io.ByteArrayOutputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.*;
@@ -16,7 +19,9 @@ public class InspectorTest extends TestCase implements Serializable {
     }
 
     public void testCtor() {
-        new Inspector(new Object());
+        Object object = new Object();
+        Inspector inspector = new Inspector(object);
+        assertEquals(object, inspector.getObject());
         try {
             new Inspector(null);
             fail("should have thown IllegalArgumentException");
@@ -96,6 +101,17 @@ public class InspectorTest extends TestCase implements Serializable {
         assertNameEquals(names, properties);
         String[] details = {"GROOVY", "public", "n/a", "Class", "class", "class groovy.inspect.InspectorTest"};
         assertContains(properties, details);
+    }
+
+    public void testPrint() {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        PrintStream printStream = new PrintStream(bytes);
+        String ls = System.getProperty("line.separator");
+        String[] first = {"a", "b"};
+        String[] second = {"x", "y"};
+        Object[] memberInfo = {first, second};
+        Inspector.print(printStream, memberInfo);
+        assertEquals("0:\ta b " + ls + "1:\tx y " + ls, bytes.toString());
     }
 
     private void assertNameEquals(String[] names, Object[] metaMethods) {
