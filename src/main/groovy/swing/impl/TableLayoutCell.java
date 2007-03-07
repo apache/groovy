@@ -51,14 +51,14 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /** 
- * Represents a cell in a table layout
+ * Represents a cell in a table layout.
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
 public class TableLayoutCell implements ContainerFacade {
 
-    protected static final Logger log = Logger.getLogger(TableLayoutCell.class.getName());
+    protected static final Logger LOG = Logger.getLogger(TableLayoutCell.class.getName());
     
     private TableLayoutRow parent;
     private Component component;
@@ -67,8 +67,8 @@ public class TableLayoutCell implements ContainerFacade {
     private String valign;
     private int colspan = 1;
     private int rowspan = 1;
-    private boolean colfill = false;
-    private boolean rowfill = false;
+    private boolean colfill;
+    private boolean rowfill;
 
         
     public TableLayoutCell(TableLayoutRow parent) {
@@ -77,7 +77,7 @@ public class TableLayoutCell implements ContainerFacade {
 
     public void addComponent(Component component)  {
         if (this.component != null) {
-            log.log(Level.WARNING, "This td cell already has a component: " + component);
+            LOG.log(Level.WARNING, "This td cell already has a component: " + component);
         }
         this.component = component;
         parent.addCell(this);

@@ -185,7 +185,8 @@ $Date$
         <cs:checkstyle config="config/checkstyle/config.xml" failureProperty="checkstyle.failure"
               failOnViolation="false" classpathref="checkstylePath">
             <formatter type="xml" tofile="${checkstyle.result}.xml"/>
-            <fileset dir="${checkstyleSourceDirectory}"/>
+            <fileset dir="${checkstyleSourceDirectory}"
+                    excludes="org/codehaus/groovy/antlr/parser/*,org/codehaus/groovy/antlr/java/*,org/codehaus/groovy/syntax/Types.java"/>
         </cs:checkstyle>
         <property name="checkstyleReportDirAbsolute" location="${checkstyleReportDirectory}"/>
         <xslt in="${checkstyle.result}.xml" out="${checkstyle.result}.html" style="config/checkstyle/checkstyle-frames.xsl">

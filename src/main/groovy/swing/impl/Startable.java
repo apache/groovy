@@ -45,14 +45,12 @@
  */
 package groovy.swing.impl;
 
-
 /** 
- * A simple lifecycle method called when an object is fully constructed
+ * A simple lifecycle method called when an object is fully constructed.
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
 public interface Startable {
-
-    public void start();
+    void start();
 }

@@ -104,22 +104,23 @@
         <module name="UnusedImports"/>
         <module name="ModifierOrder"/>
         <module name="RedundantModifier"/>
-        <module name="HiddenField"/>
+        <!-- current style has lots of occurrences of this, off for now -->
+        <!--<module name="HiddenField"/>-->
         <module name="MissingSwitchDefault"/>
         <module name="DefaultComesLast"/>
         <!-- very liberal values for metrics, perhaps tighten some later -->
         <module name="JavaNCSS">
-            <property name="methodMaximum" value="75"/>
-            <property name="classMaximum" value="260"/>
+            <property name="methodMaximum" value="80"/>
+            <property name="classMaximum" value="300"/>
         </module>
         <module name="ClassFanOutComplexity">
             <property name="max" value="22"/>
         </module>
         <module name="ClassDataAbstractionCoupling">
-            <property name="max" value="12"/>
+            <property name="max" value="14"/>
         </module>
         <module name="CyclomaticComplexity">
-            <property name="max" value="12"/>
+            <property name="max" value="14"/>
         </module>
         <module name="ExplicitInitialization"/>
         <module name="ParameterAssignment"/>
@@ -142,7 +143,7 @@
         <!--<module name="ArrayTypeStyle"/>-->
     </module>
     <module name="PackageHtml"/>
-    <module name="StrictDuplicateCode">
-        <property name="min" value="16"/>
+    <module name="au.com.redhillconsulting.simian.SimianCheck">
+        <property name="threshold" value="8"/>
     </module>
 </module>

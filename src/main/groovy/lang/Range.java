@@ -49,7 +49,7 @@ import java.util.List;
 
 /**
  * Represents the interface of a Range implementation which includes the
- * from and to values
+ * from and to values.
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
@@ -60,22 +60,22 @@ public interface Range extends List {
     /**
      * @return the lower value in the range
      */
-    public Comparable getFrom();
+    Comparable getFrom();
 
     /**
      * @return the upper value in the range
      */
-    public Comparable getTo();
+    Comparable getTo();
 
     /**
      * @return true if this is a reverse range, iterating backwards
      * starting from the to value and ending on the from value
      */
-    public boolean isReverse();
+    boolean isReverse();
 
     /**
      * @return the verbose String representation of this Range as would be typed into a console
      * to create the Range instance
      */
-    public String inspect();
+    String inspect();
 }

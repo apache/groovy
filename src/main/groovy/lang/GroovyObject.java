@@ -45,11 +45,10 @@
  */
 package groovy.lang;
 
-
-
 /**
- * The interface implemented by all Groovy objects which is handy for
- * using Groovy objects when in the Java world
+ * The interface implemented by all Groovy objects.
+ *
+ * Especially handy for using Groovy objects when in the Java world.
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
@@ -58,27 +57,26 @@ public interface GroovyObject {
 
     /** 
      * Invokes the given method
-     * 
      */
-    public Object invokeMethod(String name, Object args);
+    Object invokeMethod(String name, Object args);
     
     /**
      * @return the given property
      */
-    public Object getProperty(String property);
+    Object getProperty(String property);
 
     /**
      * Sets the given property to the new value
      */
-    public void setProperty(String property, Object newValue);
+    void setProperty(String property, Object newValue);
         
     /**
      * @return the metaClass of this instance
      */
-    public MetaClass getMetaClass();
+    MetaClass getMetaClass();
     
     /**
      * Allows the MetaClass to be replaced with a derived implementation
      */
-    public void setMetaClass(MetaClass metaClass);
+    void setMetaClass(MetaClass metaClass);
 }

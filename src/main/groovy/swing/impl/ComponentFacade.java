@@ -48,12 +48,11 @@ package groovy.swing.impl;
 import java.awt.Component;
 
 /** 
- * A facade to an object which contains a component
+ * A facade to an object which contains a component.
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
 public interface ComponentFacade {
-
-    public Component getComponent();
+    Component getComponent();
 }

@@ -26,6 +26,11 @@
             </exclusions>
         </dependency>
         <dependency>
+            <groupId>redhill</groupId>
+            <artifactId>simian</artifactId>
+            <version>2.2.4</version>
+        </dependency>
+        <dependency>
             <groupId>cobertura</groupId>
             <artifactId>cobertura</artifactId>
             <version>1.8</version>
