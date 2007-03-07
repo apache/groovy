@@ -26,6 +26,7 @@ $Date$
         <sequential>
             <fetch.maven.all.scopes module="main"/>
             <fetch.maven scope="runtime" module="tools"/>
+            <fetch.maven scope="runtime" module="examples"/>
         </sequential>
     </macrodef>
 
@@ -88,6 +89,7 @@ $Date$
     <target name="-mavenPomDefinitions">
         <maven.pom file="config/maven/main.pom" id="maven.artifact.main"/>
         <maven.pom file="config/maven/tools.pom" id="maven.artifact.tools"/>
+        <maven.pom file="config/maven/examples.pom" id="maven.artifact.examples"/>
     </target>
 
     <target name="-mavenRepositoryDefinitions">
@@ -106,11 +108,13 @@ $Date$
         <delete dir="${testLibDirectory}"/>
         <delete dir="${runtimeLibDirectory}"/>
         <delete dir="${toolsLibDirectory}"/>
+        <delete dir="${examplesLibDirectory}"/>
 
         <mkdir dir="${compileLibDirectory}"/>
         <mkdir dir="${testLibDirectory}"/>
         <mkdir dir="${runtimeLibDirectory}"/>
         <mkdir dir="${toolsLibDirectory}"/>
+        <mkdir dir="${examplesLibDirectory}"/>
 
         <copy todir="${compileLibDirectory}">
             <mapper type="flatten"/>
@@ -139,6 +143,13 @@ $Date$
         </copy>
         <path id="toolsPath">
             <fileset dir="${toolsLibDirectory}" includes="**/*.jar"/>
+        </path>
+        <copy todir="${examplesLibDirectory}">
+            <mapper type="flatten"/>
+            <fileset refid="fs.runtime.examples"/>
+        </copy>
+        <path id="examplesPath">
+            <fileset dir="${examplesLibDirectory}" includes="**/*.jar"/>
         </path>
     </target>
 

@@ -34,7 +34,6 @@ public class UberTestCase2 extends TestCase {
 //        groovy.lang.MockWriter.class
 //        groovy.mock.example.CheeseSlicer.class
 //        groovy.mock.example.SandwichMaker.class
-//        groovy.model.MvcDemo.class
 //        groovy.OuterUser.class
 //        groovy.script.AtomTestScript.class
 //        groovy.script.Entry.class
@@ -42,10 +41,6 @@ public class UberTestCase2 extends TestCase {
 //        groovy.script.PackageScript.class
 //        groovy.script.Person.class
 //        groovy.sql.Person.class
-//        groovy.swing.MyTableModel.class
-//        groovy.swing.SwingDemo.class
-//        groovy.swing.TableDemo.class
-//        groovy.swing.TableLayoutDemo.class
 //        groovy.txn.TransactionBean.class
 //        groovy.txn.TransactionBuilder.class
 //        groovy.util.Dummy.class

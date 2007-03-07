@@ -47,19 +47,38 @@
 package groovy.swing;
 
 import groovy.lang.GroovyObject;
+import groovy.lang.GroovyCodeSource;
+import groovy.lang.GroovyClassLoader;
+import groovy.util.GroovyTestCase;
 
-import org.codehaus.groovy.classgen.TestSupport;
+import java.io.File;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 /**
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class Demo extends TestSupport {
+public class Demo extends GroovyTestCase {
+    ClassLoader parentLoader = getClass().getClassLoader();
+    protected GroovyClassLoader loader =
+    	(GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
+    		public Object run() {
+    			return new GroovyClassLoader(parentLoader);
+    		}
+    	});
 
     public static void main(String[] args) throws Exception {
         Demo demo = new Demo();
-        GroovyObject object = demo.compile("src/test/groovy/swing/SwingDemo.groovy");
+        GroovyObject object = demo.compile("src/examples/groovy/swing/SwingDemo.groovy");
         object.invokeMethod("run", null);
+    }
+
+    protected GroovyObject compile(String fileName) throws Exception {
+        Class groovyClass = loader.parseClass(new GroovyCodeSource(new File(fileName)));
+        GroovyObject object = (GroovyObject) groovyClass.newInstance();
+        assertTrue(object != null);
+        return object;
     }
 }

@@ -565,15 +565,6 @@
             <scope>compile</scope>
         </dependency>
 
-        <!-- used in the samples (BlogLines client) -->
-        <!-- Also needed for Ivy when Gant pulls Ivy in? -->
-        <dependency>
-            <groupId>commons-httpclient</groupId>
-            <artifactId>commons-httpclient</artifactId>
-            <version>3.0.1</version>
-            <scope>runtime</scope>
-        </dependency>
-
         <!-- used to dump out the AST -->
         <dependency>
             <groupId>com.thoughtworks.xstream</groupId>
