@@ -83,11 +83,6 @@ public class Invoker {
 
     /**
      * Invokes the given method on the object.
-     *
-     * @param object
-     * @param methodName
-     * @param arguments
-     * @return
      */
     public Object invokeMethod(Object object, String methodName, Object arguments) {
         /*

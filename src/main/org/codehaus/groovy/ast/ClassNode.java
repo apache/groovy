@@ -958,7 +958,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
     /**
      * Marks if the current class uses annotations or not
-     * @param b
+     * @param flag
      */
     public void setAnnotated(boolean flag) {
         this.annotated = flag;

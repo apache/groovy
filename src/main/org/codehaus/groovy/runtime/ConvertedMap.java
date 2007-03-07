@@ -21,7 +21,7 @@ public class ConvertedMap extends ConversionHandler {
         
     /**
      * to create a ConvertedMap object.
-     * @param map the map of closres
+     * @param closures the map of closres
      */
     protected ConvertedMap(Map closures) {
         super(closures);

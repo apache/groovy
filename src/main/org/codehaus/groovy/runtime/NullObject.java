@@ -79,7 +79,7 @@ public class NullObject extends GroovyObjectSupport {
   /**
    * Tries to get a property on null, which will always fail
    * @param property - the property to get
-   * @returns a NPE
+   * @return a NPE
    **/
   public Object getProperty(String property) {
     throw new NullPointerException("Cannot get property " + property + "() on null object");
@@ -89,7 +89,6 @@ public class NullObject extends GroovyObjectSupport {
    * Tries to set a property on null, which will always fail
    * @param property - the proprty to set
    * @param newValue - the new value of the property
-   * @returns a NPE
    */
   public void setProperty(String property, Object newValue) {
       throw new NullPointerException("Cannot set property " + property + "() on null object");
@@ -99,7 +98,7 @@ public class NullObject extends GroovyObjectSupport {
    * Tries to invoke a method on null, which will always fail
    * @param name the name of the method to invoke
    * @param args - arguments to the method
-   * @returns a NPE
+   * @return a NPE
    * 
    **/
   public Object invokeMethod(String name, Object args) {
@@ -109,7 +108,7 @@ public class NullObject extends GroovyObjectSupport {
   /**
    * null is only equal to null
    * @param to - the reference object with which to compare
-   * @returns - true if this object is the same as the to argument
+   * @return - true if this object is the same as the to argument
    **/
   public boolean equals(Object to) {
     return to == null;

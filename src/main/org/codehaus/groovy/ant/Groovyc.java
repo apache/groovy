@@ -189,7 +189,6 @@ public class Groovyc extends MatchingTask {
     /**
      * Enable verbose compiling which will display which files
      * are being compiled
-     * @param verbose
      */
     public void setVerbose(boolean verbose) {
         configuration.setVerbose( verbose );
@@ -198,7 +197,6 @@ public class Groovyc extends MatchingTask {
     /**
      * Enable compiler to report stack trace information if a problem occurs
      * during compilation.
-     * @param stacktrace
      */
     public void setStacktrace(boolean stacktrace) {
         configuration.setDebug(stacktrace);
@@ -335,7 +333,6 @@ public class Groovyc extends MatchingTask {
     }
 
     /**
-     * @ant.attribute ignore="true"
      * @param proceed inverse of failoferror
      */
     public void setProceed(boolean proceed) {

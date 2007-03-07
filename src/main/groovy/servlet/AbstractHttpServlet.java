@@ -158,7 +158,7 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
 
     /**
      * Mirrors the static value of the reflection flag in MetaClass.
-     * See {@link AbstractHttpServlet#logGROOVY861}
+     * See AbstractHttpServlet#logGROOVY861
      */
     protected boolean reflection;
 

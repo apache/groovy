@@ -64,7 +64,7 @@ import java.util.Map;
  *  GroovyResultSetProxy only!</b></p>
  * 
  * @see GroovyResultSet
- * @see GrGroovyResultSetProxy
+ * @see GroovyResultSetProxy
  *  
  * @author Jochen Theodorou
  */

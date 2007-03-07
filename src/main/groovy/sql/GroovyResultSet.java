@@ -59,7 +59,7 @@ import groovy.lang.GroovyObject;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author <a href="mailto:ivan_ganza@yahoo.com">Ivan Ganza</a>
  * @version $Revision$
- * @Author Chris Stevenson
+ * @author Chris Stevenson
  */
 public interface GroovyResultSet extends GroovyObject, ResultSet {
     /**

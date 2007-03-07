@@ -7,7 +7,7 @@ import groovy.lang.GroovyShell;
 
 /**
  * Allow easy integration from Groovy into Java through convenience methods.
- * @see EvalTest
+ * 
  * @author Dierk Koenig
  */
 

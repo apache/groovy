@@ -102,7 +102,7 @@ public final class GroovyResultSetProxy implements InvocationHandler {
      * @param method the method name of this method will be used
      * to make a call on the extension. If this fails the call will be
      * done on proxy instead
-     * @params arguments for the call
+     * @param args for the call
      * @see ResultSet
      * @see java.lang.reflect.InvocationHandler#invoke(java.lang.Object, java.lang.reflect.Method, java.lang.Object[])
      */

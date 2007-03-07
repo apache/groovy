@@ -498,7 +498,8 @@ public class DefaultGroovyMethods {
     /**
      * Returns a formatted string using the specified format string and
      * arguments.
-     * @todo: remove duplication with printf
+     * 
+     * TODO: remove duplication with printf
      */
     public static String sprintf(Object self, String format, Object arg) {
         if (arg instanceof Object[]) {
@@ -704,7 +705,7 @@ public class DefaultGroovyMethods {
      * <p/>
      * <code><pre>
      *     class Person {
-     *         @Property fname, lname
+     *         def fname, lname
      *         public String toString() {
      *             return fname + " " + lname
      *         }
@@ -7217,9 +7218,6 @@ public class DefaultGroovyMethods {
 
     /**
      * Standard iterator for a input stream which iterates through the stream content in a byte-based fashion.
-     *
-     * @param is
-     * @return
      */
     public static Iterator iterator(InputStream is) {
         return iterator(new DataInputStream(is));
@@ -7227,9 +7225,6 @@ public class DefaultGroovyMethods {
 
     /**
      * Standard iterator for a data input stream which iterates through the stream content in a byte-based fashion.
-     *
-     * @param dis
-     * @return
      */
     public static Iterator iterator(final DataInputStream dis) {
         return new Iterator() {
@@ -7275,7 +7270,6 @@ public class DefaultGroovyMethods {
      * Standard iterator for a file which iterates through the file content in a line-based fashion.
      *
      * @param f
-     * @return
      * @throws IOException
      */
     public static Iterator iterator(File f) throws IOException {

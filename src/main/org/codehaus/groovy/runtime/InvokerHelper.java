@@ -297,7 +297,6 @@ public class InvokerHelper {
      *
      * @param left  string to compare
      * @param right regular expression to compare the string to
-     * @return
      */
     public static Matcher findRegex(Object left, Object right) {
         String stringToCompare;
@@ -328,7 +327,6 @@ public class InvokerHelper {
      *
      * @param left  string to compare
      * @param right regular expression to compare the string to
-     * @return
      */
     public static boolean matchRegex(Object left, Object right) {
         Pattern pattern;
@@ -445,9 +443,6 @@ public class InvokerHelper {
 
     /**
      * Sets the properties on the given object
-     *
-     * @param object
-     * @param map
      */
     public static void setProperties(Object object, Map map) {
         MetaClass mc = getInstance().getMetaClass(object);

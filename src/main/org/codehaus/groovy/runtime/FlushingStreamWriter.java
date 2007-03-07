@@ -42,7 +42,6 @@ import java.io.IOException;
  * Stream writer which flushes after each write operation.
  *
  * @author Guillaume Laforge
- * @cvs.date $Date$
  */
 public class FlushingStreamWriter extends OutputStreamWriter {
 

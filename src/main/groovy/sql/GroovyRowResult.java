@@ -56,7 +56,7 @@ import java.util.*;
  * of a SQL query by the name of the column, or by the column number.
  *
  * @version $Revision$
- * @Author Jean-Louis Berliet
+ * @author Jean-Louis Berliet
  */
 public class GroovyRowResult extends GroovyObjectSupport implements Map {
 

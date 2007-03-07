@@ -535,7 +535,6 @@ public class DefaultTypeTransformation {
     /**
      * @param a    array of primitives
      * @param type component type of the array
-     * @return
      */
     public static Object[] convertPrimitiveArray(Object a, Class type) {
 //        System.out.println("a.getClass() = " + a.getClass());
