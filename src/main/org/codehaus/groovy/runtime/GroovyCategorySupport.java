@@ -141,12 +141,13 @@ public class GroovyCategorySupport {
      *
      * @param categoryClass the class containing category methods
 	 * @param closure the closure during which to make the category class methods available
+     * @return the value returned from the closure
 	 */
-	public static void use(Class categoryClass, Closure closure) {
+	public static Object use(Class categoryClass, Closure closure) {
 		newScope();
 		try {
 			use(categoryClass);
-			closure.call();
+			return closure.call();
 		} finally {
 			endScope();
 		}
@@ -157,15 +158,16 @@ public class GroovyCategorySupport {
      *
      * @param categoryClasses the list of classes containing category methods
      * @param closure the closure during which to make the category class methods available
+     * @return the value returned from the closure
      */
-    public static void use(List categoryClasses, Closure closure) {
+    public static Object use(List categoryClasses, Closure closure) {
         newScope();
         try {
             for (Iterator i = categoryClasses.iterator(); i.hasNext(); ) {
                 Class clazz = (Class) i.next();
                 use(clazz);
             }
-            closure.call();
+            return closure.call();
         } finally {
             endScope();
         }

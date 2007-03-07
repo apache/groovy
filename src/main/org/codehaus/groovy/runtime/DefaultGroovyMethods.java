@@ -264,16 +264,18 @@ public class DefaultGroovyMethods {
 
     /**
      * Scoped use method
+     * @return the value returned from the closure
      */
-    public static void use(Object self, Class categoryClass, Closure closure) {
-        GroovyCategorySupport.use(categoryClass, closure);
+    public static Object use(Object self, Class categoryClass, Closure closure) {
+        return GroovyCategorySupport.use(categoryClass, closure);
     }
 
     /**
      * Scoped use method with list of categories
+     * @return the value returned from the closure
      */
-    public static void use(Object self, List categoryClassList, Closure closure) {
-        GroovyCategorySupport.use(categoryClassList, closure);
+    public static Object use(Object self, List categoryClassList, Closure closure) {
+        return GroovyCategorySupport.use(categoryClassList, closure);
     }
 
     /**
@@ -294,8 +296,9 @@ public class DefaultGroovyMethods {
      *
      * @param self
      * @param array
+     * @return the value returned from the closure
      */
-    public static void use(Object self, Object[] array) {
+    public static Object use(Object self, Object[] array) {
         if (array.length < 2)
             throw new IllegalArgumentException(
                     "Expecting at least 2 arguments, a category class and a Closure");
@@ -308,7 +311,7 @@ public class DefaultGroovyMethods {
         List list = new ArrayList(array.length - 1);
         for (int i = 0; i < array.length - 1; ++i)
             list.add(array[i]);
-        GroovyCategorySupport.use(list, closure);
+        return GroovyCategorySupport.use(list, closure);
     }
 
     /**
