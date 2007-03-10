@@ -52,10 +52,17 @@ public class NodeAsHTMLPrinter extends VisitorAdapter {
 
     public void visitDefault(GroovySourceAST t,int visit) {
         if (visit == OPENING_VISIT) {
-            out.print("<code title='" + tokenNames[t.getType()] + "'><font color='#" + colour(t) + "'>");
-        } else {
+            out.print("<code title=" + quote(tokenNames[t.getType()]) + "><font color='#" + colour(t) + "'>");
+        } else if (visit == CLOSING_VISIT) {
             out.print("</font></code>");
         }
+    }
+
+    private String quote(String tokenName) {
+        if (tokenName.length() > 0 && tokenName.charAt(0) != '\'')
+            return "'" + tokenName + "'";
+        else
+            return "\"" + tokenName + "\"";
     }
 
     public void tearDown() {
