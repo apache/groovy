@@ -51,6 +51,7 @@ public class AllCodehausJavaTestsSuite {
         suite.addTestSuite(MethodTest.class);
         suite.addTestSuite(ModuleNodeTest.class);
         suite.addTestSuite(NewStaticMetaMethodTest.class);
+        suite.addTestSuite(NodeAsHTMLPrinterTest.class);
         suite.addTestSuite(org.codehaus.groovy.classgen.PropertyTest.class);
         suite.addTestSuite(org.codehaus.groovy.runtime.PropertyTest.class);
         suite.addTestSuite(ReflectorGeneratorTest.class);
