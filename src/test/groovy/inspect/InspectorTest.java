@@ -10,6 +10,8 @@ import java.lang.reflect.Field;
 
 import groovy.lang.PropertyValue;
 import groovy.lang.MetaProperty;
+import groovy.lang.GroovyShell;
+import groovy.lang.GroovyObject;
 import org.jmock.Mock;
 import org.jmock.cglib.MockObjectTestCase;
 
@@ -18,6 +20,11 @@ public class InspectorTest extends MockObjectTestCase implements Serializable {
     public static final String SOME_CONST = "only for testing";
 
     public InspectorTest(String name) {
+        super(name);
+    }
+
+    // additional constructor not used directly but exercises inspection code
+    public InspectorTest(String name, Object other) throws RuntimeException, Throwable {
         super(name);
     }
 
@@ -32,7 +39,7 @@ public class InspectorTest extends MockObjectTestCase implements Serializable {
         }
     }
 
-    public void testClassProps() {
+    public void testClassPropsJava() {
         Inspector insp = new Inspector(this);
         String[] classProps = insp.getClassProps();
         assertEquals("package groovy.inspect",classProps[Inspector.CLASS_PACKAGE_IDX]);
@@ -41,6 +48,18 @@ public class InspectorTest extends MockObjectTestCase implements Serializable {
         assertEquals("extends MockObjectTestCase",classProps[Inspector.CLASS_SUPERCLASS_IDX]);
         assertEquals("is Primitive: false, is Array: false, is Groovy: false",classProps[Inspector.CLASS_OTHER_IDX]);
     }
+
+    public void testClassPropsGroovy() throws RuntimeException, Throwable {
+        Object testObject = new GroovyShell().evaluate("class Test {def meth1(a,b){}}\nreturn new Test()");
+        Inspector insp = new Inspector(testObject);
+        String[] classProps = insp.getClassProps();
+        assertEquals("package n/a",classProps[Inspector.CLASS_PACKAGE_IDX]);
+        assertEquals("public class Test",classProps[Inspector.CLASS_CLASS_IDX]);
+        assertEquals("implements GroovyObject ",classProps[Inspector.CLASS_INTERFACE_IDX]);
+        assertEquals("extends Object",classProps[Inspector.CLASS_SUPERCLASS_IDX]);
+        assertEquals("is Primitive: false, is Array: false, is Groovy: true",classProps[Inspector.CLASS_OTHER_IDX]);
+    }
+
     public void testMethods() {
         Inspector insp = new Inspector(new Object());
         Object[] methods = insp.getMethods();
@@ -82,8 +101,8 @@ public class InspectorTest extends MockObjectTestCase implements Serializable {
         private String hidden = "you can't see me";
     }
 
-    // TODO: if our code can never access inspect in this way better to move this
-    // to a boundary class and then no need for this test
+    // TODO: if our code can never access inspect in this way, it would be better
+    // to move this to a boundary class and then we wouldn't need this test
     public void testInspectPrivateField() throws NoSuchFieldException {
         ClassWithPrivate underInspection = new ClassWithPrivate();
         Field field = underInspection.getClass().getDeclaredField("hidden");
@@ -92,14 +111,14 @@ public class InspectorTest extends MockObjectTestCase implements Serializable {
         assertEquals(Inspector.NOT_APPLICABLE, result[Inspector.MEMBER_VALUE_IDX]);
     }
 
-    // TODO: if our code can never access inspect in this way better to move this
-    // to a boundary class and then no need for this test
+    // TODO: if our code can never access inspect in this way, it would be better
+    // to move this to a boundary class and then we wouldn't need this test
     public void testInspectUninspectableProperty() {
         Object dummyInstance = new Object();
         Inspector inspector = getTestableInspector(dummyInstance);
         Class[] paramTypes = {Object.class, MetaProperty.class};
         Object[] params = {null, null};
-        Mock mock = this.mock(PropertyValue.class, paramTypes, params);
+        Mock mock = mock(PropertyValue.class, paramTypes, params);
         mock.expects(once()).method("getType");
         mock.expects(once()).method("getName");
         mock.expects(once()).method("getValue").will(throwException(new RuntimeException()));
@@ -120,15 +139,26 @@ public class InspectorTest extends MockObjectTestCase implements Serializable {
         };
     }
 
-    public void testSort() {
+    public void testSortWithDifferentOrigin() {
         String[] details2 = {"JAVA","public","Object","void","println","Object","n/a"};
         String[] details1 = {"GROOVY","public","Object","void","println","Object","n/a"};
+        String[] first = sortWithMemberComparator(details1, details2);
+        assertEquals("GROOVY", first[0]);
+    }
+
+    public void testSortWithDifferentModifier() {
+        String[] details2 = {null,"public","Object","void","println","Object","n/a"};
+        String[] details1 = {null,"private","Object","void","println","Object","n/a"};
+        String[] first = sortWithMemberComparator(details1, details2);
+        assertEquals("private", first[1]);
+    }
+
+    private String[] sortWithMemberComparator(String[] details1, String[] details2) {
         List details = new ArrayList();
         details.add(details1);
         details.add(details2);
         Inspector.sort(details);
-        String[] first = (String[]) details.get(0);
-        assertEquals("GROOVY", first[0]);
+        return (String[]) details.get(0);
     }
 
     public void testStaticMetaMethods() {
@@ -169,6 +199,8 @@ public class InspectorTest extends MockObjectTestCase implements Serializable {
         Object[] memberInfo = {first, second};
         Inspector.print(printStream, memberInfo);
         assertEquals("0:\ta b " + ls + "1:\tx y " + ls, bytes.toString());
+        // just for coverage, print to System.out (yuck)
+        Inspector.print(memberInfo);
     }
 
     private void assertNameEquals(String[] names, Object[] metaMethods) {

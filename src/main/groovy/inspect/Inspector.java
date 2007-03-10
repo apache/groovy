@@ -22,7 +22,7 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods;
  * @author Dierk Koenig
  */
 public class Inspector {
-    protected Object objectUnderInspection = null;
+    protected Object objectUnderInspection;
 
     // Indexes to retrieve Class Property information
     public static final int CLASS_PACKAGE_IDX       = 0;
@@ -78,7 +78,7 @@ public class Inspector {
     }
 
     public boolean isGroovy() {
-        return getClassUnderInspection().isAssignableFrom(GroovyObject.class);
+        return GroovyObject.class.isAssignableFrom(getClassUnderInspection());
     }
     
     /**
@@ -199,10 +199,10 @@ public class Inspector {
         String[] result = new String[MEMBER_EXCEPTIONS_IDX+1];
 	    int mod = method.getModifiers();
         result[MEMBER_ORIGIN_IDX] = JAVA;
-        result[MEMBER_MODIFIER_IDX] = Modifier.toString(mod);
         result[MEMBER_DECLARER_IDX] = shortName(method.getDeclaringClass());
-        result[MEMBER_TYPE_IDX] = shortName(method.getReturnType());
+        result[MEMBER_MODIFIER_IDX] = Modifier.toString(mod);
         result[MEMBER_NAME_IDX] = method.getName();
+        result[MEMBER_TYPE_IDX] = shortName(method.getReturnType());
 	    Class[] params = method.getParameterTypes();
         StringBuffer sb = new StringBuffer();
 	    for (int j = 0; j < params.length; j++) {
@@ -219,6 +219,7 @@ public class Inspector {
         result[MEMBER_EXCEPTIONS_IDX] = sb.toString();
 	    return withoutNulls(result);
     }
+
     protected String[] methodInfo(Constructor ctor){
         String[] result = new String[MEMBER_EXCEPTIONS_IDX+1];
 	    int mod = ctor.getModifiers();
