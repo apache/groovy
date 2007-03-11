@@ -30,6 +30,7 @@ public class AllCodehausJavaTestsSuite {
         suite.addTestSuite(ClassNodeTest.class);
         suite.addTestSuite(CompilationUnitTest.class);
         suite.addTestSuite(CompilerTest.class);
+        suite.addTestSuite(CompositeVisitorTest.class);
         suite.addTestSuite(ConstructorTest.class);
         suite.addTestSuite(DefaultGroovyMethodsTest.class);
         suite.addTestSuite(FileSystemCompilerTest.class);

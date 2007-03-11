@@ -91,7 +91,7 @@ public class SummaryCollector extends VisitorAdapter {
         }
     }
 
-    /* figue out if this modifier node represents a public entity */
+    /* figure out if this modifier node represents a public entity */
     private boolean isPublic(GroovySourceAST modifiers) {
         boolean isPublic = true;
         if (modifiers != null) {

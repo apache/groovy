@@ -1150,10 +1150,6 @@ public class CompositeVisitor implements Visitor{
         while (itr.hasNext()) {((Visitor)itr.next()).visitWs(t,visit);}
     }
 
-
-
-
-
     public void visitDefault(GroovySourceAST t, int visit) {
         Iterator itr = itr(visit);
         while (itr.hasNext()) {((Visitor)itr.next()).visitDefault(t,visit);}
