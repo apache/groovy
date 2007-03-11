@@ -27,7 +27,7 @@ public class CompositeVisitorTest extends TestCase {
     }
 
     public void testCompositeTransparency() throws Exception {
-        // TODO: add more tests in here
+        // TODO: add more tests in here (is there a way to share snippets with SourcePrinterTest?)
         assertCompositeTransparency("public abstract class Foo{}");
         assertCompositeTransparency("int[] primes = new int[5]");
         assertCompositeTransparency("if (foo==~\"bar\"){}");

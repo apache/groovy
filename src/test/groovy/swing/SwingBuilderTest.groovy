@@ -4,6 +4,7 @@ import javax.swing.JFrame
 import javax.swing.JDialog
 
 class SwingBuilderTest extends GroovyTestCase {
+    // TODO: add more widgets in here
     void testNamedWidgetCreation() {
         def swing = new SwingBuilder()
         // invoke builder
