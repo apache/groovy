@@ -222,7 +222,7 @@ $Date$
         <mkdir dir="${junitRawDirectory}"/>
         <junit printsummary="true" fork="true" includeantruntime="false" failureproperty="testFailed">
             <formatter type="xml"/>
-            <formatter type="plain"/>
+            <formatter type="plain" unless="noTextReports"/><!-- mucks up cruise test count -->
             <batchtest todir="${junitRawDirectory}">
                 <fileset dir="${testClassesDirectory}" includes="UberTest*.class"/>
             </batchtest>
@@ -371,7 +371,11 @@ $Date$
         </zip>
     </target>
 
-    <target name="cruise" depends="install,compileExamples,doc,checkstyle,buildinfo"/>
+    <target name="cruiseProps">
+        <property name="noTextReports" value="true"/>
+    </target>
+
+    <target name="cruise" depends="install,cruiseProps,compileExamples,doc,checkstyle,buildinfo"/>
 
     <target name="doc" depends="-compileTools" description="Create the documentation.">
         <mkdir dir="${docsDirectory}"/>
