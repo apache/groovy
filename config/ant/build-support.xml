@@ -156,7 +156,7 @@ $Date$
     <target name="-coberturaTaskdef">
         <taskdef resource="tasks.properties" classpathref="toolsPath"/>
         <path id="coberturaPath">
-            <fileset dir="${toolsLibDirectory}" includes="cobertura-*.jar"/>
+            <fileset dir="${toolsLibDirectory}" includes="cobertura-*.jar,asm*.jar"/>
         </path>
     </target>
 
@@ -165,14 +165,25 @@ $Date$
     </target>
 
     <target name="-coberturaInstrument" depends="-coberturaTaskdef,-coberturaInitialize" unless="skipCobertura">
-      <mkdir dir="${instrumentedClassesDirectory}"/>
-      <cobertura-instrument todir="${instrumentedClassesDirectory}">
-        <fileset dir="${mainClassesDirectory}" includes="**/*.class"/>
-      </cobertura-instrument>
+        <mkdir dir="${instrumentedClassesDirectory}"/>
+        <cobertura-instrument todir="${instrumentedClassesDirectory}">
+            <fileset dir="${mainClassesDirectory}" includes="**/*.class">
+                <!-- exclude for now, eventually include some tests for Java2groovy and add back in -->
+                <exclude name="org/codehaus/groovy/antlr/java/JavaLexer.class"/>
+                <exclude name="org/codehaus/groovy/antlr/java/JavaRecognizer.class"/>
+                <exclude name="org/codehaus/groovy/antlr/java/JavaTokenTypes.class"/>
+            </fileset>
+        </cobertura-instrument>
     </target>
 
     <target name="-coverageReport" unless="skipCobertura">
-      <cobertura-report srcdir="${mainSourceDirectory}" destdir="${reportsDirectory}/cobertura"/>
+        <cobertura-report destdir="${reportsDirectory}/cobertura">
+            <fileset dir="${mainSourceDirectory}">
+                <exclude name="org/codehaus/groovy/antlr/java/JavaLexer.java"/>
+                <exclude name="org/codehaus/groovy/antlr/java/JavaRecognizer.java"/>
+                <exclude name="org/codehaus/groovy/antlr/java/JavaTokenTypes.java"/>
+            </fileset>
+        </cobertura-report>
     </target>
 
     <target name="-checkstyleTaskdef">

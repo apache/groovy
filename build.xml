@@ -375,7 +375,7 @@ $Date$
         <property name="noTextReports" value="true"/>
     </target>
 
-    <target name="cruise" depends="install,cruiseProps,compileExamples,doc,checkstyle,buildinfo"/>
+    <target name="cruise" depends="cruiseProps,install,compileExamples,doc,checkstyle,buildinfo"/>
 
     <target name="doc" depends="-compileTools" description="Create the documentation.">
         <mkdir dir="${docsDirectory}"/>
