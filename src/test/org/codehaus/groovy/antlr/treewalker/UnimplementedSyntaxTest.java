@@ -32,6 +32,8 @@ import org.codehaus.groovy.antlr.parser.GroovyLexer;
 import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
 
 import antlr.collections.AST;
+import antlr.RecognitionException;
+import antlr.TokenStreamException;
 
 /**
  * This tests code that is valid in parser, but has issues further down the line.
@@ -227,26 +229,9 @@ public class UnimplementedSyntaxTest extends GroovyTestCase {
 		assertNotNull(compile("class Foo<T extends C & I> {T t}")); // fails after parser
 	}
 
-	private Script compile(String input) throws Exception{
-        GroovyRecognizer parser = null;
-        SourceBuffer sourceBuffer = new SourceBuffer();
-        UnicodeEscapingReader unicodeReader = new UnicodeEscapingReader(new StringReader(input),sourceBuffer);
-        GroovyLexer lexer = new GroovyLexer(unicodeReader);
-        unicodeReader.setLexer(lexer);
-        parser = GroovyRecognizer.make(lexer);
-        parser.setSourceBuffer(sourceBuffer);
-
-        String[] tokenNames;
-        tokenNames = parser.getTokenNames();
-        parser.compilationUnit();
-        AST ast = parser.getAST();
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        Visitor visitor = new SourcePrinter(new PrintStream(baos),tokenNames,false);
-        AntlrASTProcessor traverser = new SourceCodeTraversal(visitor);
-
-        traverser.process(ast);
-
+    private Script compile(String input) throws Exception{
+        TraversalTestHelper traverser = new TraversalTestHelper();
+        traverser.traverse(input, SourcePrinter.class, Boolean.FALSE);
         GroovyShell groovyShell = new GroovyShell();
         return groovyShell.parse(input);
     }

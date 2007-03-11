@@ -255,18 +255,3 @@ public class VisitorAdapter implements Visitor {
     public void push(GroovySourceAST t) {}
     public GroovySourceAST pop() {return null;}
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -57,7 +57,7 @@ public class MindMapPrinter extends VisitorAdapter {
             String colour = getColour(t);
             String folded = getFolded(t);
             out.print("<node TEXT='" + name + "' POSITION='right'" + colour + folded + ">");
-        } else {
+        } else if (visit == CLOSING_VISIT) {
             out.println("</node>");
             depth--;
         }
@@ -354,6 +354,8 @@ public class MindMapPrinter extends VisitorAdapter {
         name = name.replace('"',' ');
         name = name.replace('\'',' ');
         name = name.replaceAll("&","&amp;");
+        name = name.replaceAll("<","&lt;");
+        name = name.replaceAll(">","&gt;");
         name = name.trim();
         return name;
     }

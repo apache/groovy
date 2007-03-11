@@ -50,6 +50,7 @@ public class AllCodehausJavaTestsSuite {
         suite.addTestSuite(MethodKeyTest.class);
         suite.addTestSuite(MethodTest.class);
         suite.addTestSuite(ModuleNodeTest.class);
+        suite.addTestSuite(MindMapPrinterTest.class);
         suite.addTestSuite(NewStaticMetaMethodTest.class);
         suite.addTestSuite(NodeAsHTMLPrinterTest.class);
         suite.addTestSuite(org.codehaus.groovy.classgen.PropertyTest.class);

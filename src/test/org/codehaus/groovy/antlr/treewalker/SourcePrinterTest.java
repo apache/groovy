@@ -854,31 +854,9 @@ public class SourcePrinterTest extends GroovyTestCase {
     	assertEquals("public boolean process(Set<? extends TypeElement> annotations) {println annotations}", pretty("public boolean process(Set<? extends TypeElement> annotations) {println annotations}"));
     }
 
-    public String pretty(String input) throws Exception{
-        GroovyRecognizer parser = null;
-        SourceBuffer sourceBuffer = new SourceBuffer();
-        UnicodeEscapingReader unicodeReader = new UnicodeEscapingReader(new StringReader(input),sourceBuffer);
-        GroovyLexer lexer = new GroovyLexer(unicodeReader);
-        unicodeReader.setLexer(lexer);
-        parser = GroovyRecognizer.make(lexer);
-        parser.setSourceBuffer(sourceBuffer);
-
-        String[] tokenNames;
-        tokenNames = parser.getTokenNames();
-        parser.compilationUnit();
-        AST ast = parser.getAST();
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        Visitor visitor = new SourcePrinter(new PrintStream(baos),tokenNames,false);
-        AntlrASTProcessor traverser = new SourceCodeTraversal(visitor);
-
-        traverser.process(ast);
-
-        // uncomment for full compile check
-        //GroovyShell groovyShell = new GroovyShell();
-        //groovyShell.parse(input);
-
-        return new String(baos.toByteArray());
+    public String pretty(String input) throws Exception {
+        TraversalTestHelper traverser = new TraversalTestHelper();
+        return traverser.traverse(input, SourcePrinter.class);
     }
 
 }
