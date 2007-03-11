@@ -36,6 +36,31 @@ public class CompositeVisitorTest extends TestCase {
         assertCompositeTransparency("x&=2");
         assertCompositeTransparency("def z = ~123");
         assertCompositeTransparency("def y = 1 | 2");
+        assertCompositeTransparency("y|=2");
+        assertCompositeTransparency("def q = 1 >>> 2");
+        assertCompositeTransparency("y>>>=2");
+        assertCompositeTransparency("def y = true ^ false");
+        assertCompositeTransparency("y^=false");
+        assertCompositeTransparency("switch(foo){case bar:x=1}");
+        assertCompositeTransparency("class Foo{def bar}");
+        assertCompositeTransparency("[1,2,3].each{println it}");
+        assertCompositeTransparency("def x = foo.bar(mooky) {x,y-> wibble(y,x)}");
+        assertCompositeTransparency("1<=>2");
+        assertCompositeTransparency("class Foo{Foo(int x) {this()}}");
+        assertCompositeTransparency("class Foo{Foo(x) {this()}}");
+        assertCompositeTransparency("class Foo {private Foo() {}}");
+        assertCompositeTransparency("--b");
+        assertCompositeTransparency("1/2");
+        assertCompositeTransparency("x/=2");
+        assertCompositeTransparency("java.util.Date d = new java.util.Date()");
+        assertCompositeTransparency("class Foo extends java.util.Date {}");
+        assertCompositeTransparency("foo.bar.mooky()");
+        assertCompositeTransparency("package foo.bar");
+        assertCompositeTransparency("import java.util.Date");
+        assertCompositeTransparency("import java.io.*");
+        assertCompositeTransparency("@foo.Bar mooky");
+        assertCompositeTransparency("def foo() throws bar.MookyException{}");
+        assertCompositeTransparency("def x = \"${foo.bar}\"");
     }
 
     private void assertCompositeTransparency(String input) throws Exception {

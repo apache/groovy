@@ -27,10 +27,10 @@ import org.codehaus.groovy.antlr.GroovySourceAST;
  */
 
 public interface Visitor {
-    final int OPENING_VISIT = 1;
-    final int SECOND_VISIT = 2; // only used on rare occasions, e.g. the '(' in this snippet...   @Foo  (  a=1, b=2, c=3)
-    final int SUBSEQUENT_VISIT = 3;
-    final int CLOSING_VISIT = 4;
+    int OPENING_VISIT = 1;
+    int SECOND_VISIT = 2; // only used on rare occasions, e.g. the '(' in this snippet...   @Foo  (  a=1, b=2, c=3)
+    int SUBSEQUENT_VISIT = 3;
+    int CLOSING_VISIT = 4;
 
     void setUp();
     void visitAbstract(GroovySourceAST t, int visit);

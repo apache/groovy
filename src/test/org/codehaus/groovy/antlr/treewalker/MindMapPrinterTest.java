@@ -5,7 +5,7 @@ import org.custommonkey.xmlunit.XMLUnit;
 import org.custommonkey.xmlunit.Diff;
 
 /**
- * Testcases for the antlr AST visitor that prints groovy source code nodes as HTML.
+ * Testcases for the antlr AST visitor that prints groovy source code nodes as Freemind compatible XML.
  */
 public class MindMapPrinterTest extends TestCase {
 
