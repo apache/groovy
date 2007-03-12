@@ -2,7 +2,7 @@ package groovy.lang
 
 class ClassReloadingTest extends GroovyTestCase {
 
-	public void testRealoding() {
+	public void testReloading() {
 		def file = File.createTempFile("TestReload",".groovy", new File("target"))
 		file.deleteOnExit()
 		def className = file.name-".groovy"
@@ -11,7 +11,6 @@ class ClassReloadingTest extends GroovyTestCase {
 		def currentDir = file.parentFile.absolutePath
 		cl.addClasspath(currentDir)
 		cl.shouldRecompile = true
-			
 		
         try {
      		file.write """

@@ -46,7 +46,7 @@ class SwingBuilderTest extends GroovyTestCase {
             gridLayout: GridLayout.class,
 //            overlayLayout: OverlayLayout.class,
             springLayout: SpringLayout.class,
-            boxLayout: BoxLayout.class
+//            boxLayout: BoxLayout.class
         ]
         def swing = new SwingBuilder()
         layouts.each{ name, expectedLayoutClass ->
