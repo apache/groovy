@@ -456,14 +456,8 @@ public class SwingBuilder extends BuilderSupport {
                 return createDialog(properties);
             }
         });
-        registerFactory("frame", new Factory() {
-            public Object newInstance(Map properties) throws InstantiationException, IllegalAccessException {
-                return createFrame(properties);
-            }
-        });
         registerBeanFactory("fileChooser", JFileChooser.class);
-        registerFactory("frame", new Factory() {        // todo dk: frame registered twice ???
-
+        registerFactory("frame", new Factory() {
             public Object newInstance(Map properties) throws InstantiationException, IllegalAccessException {
                 return createFrame(properties);
             }
