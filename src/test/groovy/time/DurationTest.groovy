@@ -38,10 +38,10 @@ class DurationTest extends GroovyTestCase {
             def thenOffset = then.daylightSavingsOffset
             def dstAdjustment = nowOffset - thenOffset
 
-            def week = then - 1.month - now + dstAdjustment
+            def week = then - 1.month - now - dstAdjustment
             assert week.toMilliseconds() == (7 * 24 * 60 * 60 * 1000)
 
-            week = then - (now + 1.month) + dstAdjustment
+            week = then - (now + 1.month) - dstAdjustment
             assert week.toMilliseconds() == (7 * 24 * 60 * 60 * 1000)
         }
     }
