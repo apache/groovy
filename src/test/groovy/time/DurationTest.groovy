@@ -22,14 +22,17 @@ class DurationTest extends GroovyTestCase {
             def twoMonthsA = 1.month + 1.month
             // subtract two absolute dates to get a duration
             def twoMonthsB = 2.months.from.now - 0.months.from.now
-            assert twoMonthsA.toMilliseconds() == twoMonthsB.toMilliseconds(): \
-                "Expected ${twoMonthsA.toMilliseconds()} but was ${twoMonthsB.toMilliseconds()}"
+            def dstAdjustment = 2.months.from.now.daylightSavingsOffset - 0.months.from.now.daylightSavingsOffset
+            assert twoMonthsA.toMilliseconds() == twoMonthsB.toMilliseconds() - dstAdjustment.toMilliseconds(): \
+                "Expected ${twoMonthsA.toMilliseconds()} but was ${twoMonthsB.toMilliseconds()-dstAdjustment.toMilliseconds()}"
+
             // add two durations
             def monthAndWeekA = 1.month + 1.week
             // subtract two absolute dates to get a duration
             def monthAndWeekB = 1.month.from.now - 1.week.ago
-            assert monthAndWeekA.toMilliseconds() == monthAndWeekB.toMilliseconds(): \
-                "Expected ${monthAndWeekA.toMilliseconds()} but was ${monthAndWeekB.toMilliseconds()}"
+            dstAdjustment = 1.month.from.now.daylightSavingsOffset - 1.week.ago.daylightSavingsOffset
+            assert monthAndWeekA.toMilliseconds() == monthAndWeekB.toMilliseconds() - dstAdjustment.toMilliseconds(): \
+                "Expected ${monthAndWeekA.toMilliseconds()} but was ${monthAndWeekB.toMilliseconds()-dstAdjustment.toMilliseconds()}"
         }
     }
 
