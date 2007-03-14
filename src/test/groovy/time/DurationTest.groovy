@@ -22,17 +22,16 @@ class DurationTest extends GroovyTestCase {
             def twoMonthsA = 1.month + 1.month
             // subtract two absolute dates to get a duration
             def twoMonthsB = 2.months.from.now - 0.months.from.now
-            def dstAdjustment = 2.months.from.now.daylightSavingsOffset - 0.months.from.now.daylightSavingsOffset
-            assert twoMonthsA.toMilliseconds() == twoMonthsB.toMilliseconds() - dstAdjustment.toMilliseconds(): \
-                "Expected ${twoMonthsA.toMilliseconds()} but was ${twoMonthsB.toMilliseconds()-dstAdjustment.toMilliseconds()}"
+            assert twoMonthsA.toMilliseconds() == twoMonthsB.toMilliseconds()
 
             // add two durations
             def monthAndWeekA = 1.month + 1.week
-            // subtract two absolute dates to get a duration
-            def monthAndWeekB = 1.month.from.now - 1.week.ago
-            dstAdjustment = 1.month.from.now.daylightSavingsOffset - 1.week.ago.daylightSavingsOffset
-            assert monthAndWeekA.toMilliseconds() == monthAndWeekB.toMilliseconds() - dstAdjustment.toMilliseconds(): \
-                "Expected ${monthAndWeekA.toMilliseconds()} but was ${monthAndWeekB.toMilliseconds()-dstAdjustment.toMilliseconds()}"
+            def offsetA = 0.months.from.now.daylightSavingsOffset
+            // add absolute date and a duration
+            def monthAndWeekB = 1.month.from.now + 1.week - 0.months.from.now
+            // println monthAndWeekB.from.now.time
+            def offsetB = 1.month.from.now.daylightSavingsOffset - 1.week.ago.daylightSavingsOffset
+            assert monthAndWeekA.toMilliseconds() == monthAndWeekB.toMilliseconds()
         }
     }
 
@@ -41,16 +40,16 @@ class DurationTest extends GroovyTestCase {
             def now = new Date()
             def nowOffset = now.daylightSavingsOffset
             def then = now + 1.month + 1.week
-            def thenOffset = then.daylightSavingsOffset
-            def dstAdjustment = nowOffset - thenOffset
 
-            def week = then - 1.month - now - dstAdjustment
-            assert week.toMilliseconds() == (7 * 24 * 60 * 60 * 1000): \
-                "Expected ${7 * 24 * 60 * 60 * 1000} but was ${week.toMilliseconds()} with an adjustment of ${dstAdjustment.toMilliseconds()}"
+            def week = then - 1.month - now
+            def dstAdjustment = week.from.now.daylightSavingsOffset - nowOffset
+            assert (week + dstAdjustment).toMilliseconds() == (7 * 24 * 60 * 60 * 1000): \
+                "Expected ${7 * 24 * 60 * 60 * 1000} but was ${(week + dstAdjustment).toMilliseconds()}"
 
             week = then - (now + 1.month) - dstAdjustment
-            assert week.toMilliseconds() == (7 * 24 * 60 * 60 * 1000): \
-                "Expected ${7 * 24 * 60 * 60 * 1000} but was ${week.toMilliseconds()} with an adjustment of ${dstAdjustment.toMilliseconds()}"
+            dstAdjustment = week.from.now.daylightSavingsOffset - nowOffset
+            assert (week + dstAdjustment).toMilliseconds() == (7 * 24 * 60 * 60 * 1000): \
+                "Expected ${7 * 24 * 60 * 60 * 1000} but was ${(week + dstAdjustment).toMilliseconds()}"
         }
     }
 }
