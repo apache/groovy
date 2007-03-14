@@ -46,11 +46,11 @@ class DurationTest extends GroovyTestCase {
 
             def week = then - 1.month - now - dstAdjustment
             assert week.toMilliseconds() == (7 * 24 * 60 * 60 * 1000): \
-                "Expected ${7 * 24 * 60 * 60 * 1000} but was ${week.toMilliseconds()} with an adjustment of $dstAdjustment"
+                "Expected ${7 * 24 * 60 * 60 * 1000} but was ${week.toMilliseconds()} with an adjustment of ${dstAdjustment.toMilliseconds()}"
 
             week = then - (now + 1.month) - dstAdjustment
             assert week.toMilliseconds() == (7 * 24 * 60 * 60 * 1000): \
-                "Expected ${7 * 24 * 60 * 60 * 1000} but was ${week.toMilliseconds()} with an adjustment of $dstAdjustment"
+                "Expected ${7 * 24 * 60 * 60 * 1000} but was ${week.toMilliseconds()} with an adjustment of ${dstAdjustment.toMilliseconds()}"
         }
     }
 }
