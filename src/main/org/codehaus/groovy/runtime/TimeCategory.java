@@ -25,6 +25,7 @@ import groovy.time.TimeDuration;
 
 import java.util.Calendar;
 import java.util.Date;
+import java.util.TimeZone;
 
 public class TimeCategory {
     /*
@@ -49,7 +50,20 @@ public class TimeCategory {
         
         return cal.getTime();
     }
-    
+
+    public static TimeZone getTimeZone(Date self) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(self);
+        return calendar.getTimeZone();
+    }
+
+    public static Duration getDaylightSavingsOffset(Date self) {
+        TimeZone timeZone = getTimeZone(self);
+        int millis = (timeZone.useDaylightTime() && timeZone.inDaylightTime(self))
+                ? timeZone.getDSTSavings() : 0;
+        return new TimeDuration(0,0, 0, millis);
+    }
+
     public static TimeDuration minus(final Date lhs, final Date rhs) {
         long milliseconds = lhs.getTime() - rhs.getTime();
         long days = milliseconds / (24 * 60 * 60 * 1000);

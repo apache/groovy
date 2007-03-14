@@ -8,8 +8,9 @@ class SqlDateTest extends GroovyTestCase {
         sqlDate++
         
         assertTrue  "incrementing a java.sql.Date returned an incorrect type: ${sqlDate.class}", sqlDate instanceof java.sql.Date
-        
+
         def diff = sqlDate.getTime() - rightNowMillis
+        // TODO adjust for daylight savings
         assertEquals "incrementing a java.sql.Date did not work properly", 1000 * 60 * 60 * 24, diff
     }
 
@@ -21,6 +22,7 @@ class SqlDateTest extends GroovyTestCase {
         assertTrue  "decrementing a java.sql.Date returned an incorrect type: ${sqlDate.class}", sqlDate instanceof java.sql.Date
         
         def diff = rightNowMillis - sqlDate.getTime()
+        // TODO adjust for daylight savings
         assertEquals "decrementing a java.sql.Date did not work properly", 1000 * 60 * 60 * 24, diff
     }
       
@@ -32,6 +34,7 @@ class SqlDateTest extends GroovyTestCase {
         assertTrue  "the plus operator applied to a java.sql.Date returned an incorrect type: ${sqlDate.class}", sqlDate instanceof java.sql.Date
         
         def diff = sqlDate.getTime() - rightNowMillis
+        // TODO adjust for daylight savings
         assertEquals "decrementing a java.sql.Date did not work properly", 1000 * 60 * 60 * 24, diff
     }
     
@@ -43,6 +46,7 @@ class SqlDateTest extends GroovyTestCase {
         assertTrue  "the minus operator applied to a java.sql.Date returned an incorrect type: ${sqlDate.class}", sqlDate instanceof java.sql.Date
         
         def diff = rightNowMillis - sqlDate.getTime()
+        // TODO adjust for daylight savings
         assertEquals "decrementing a java.sql.Date did not work properly", 1000 * 60 * 60 * 24, diff
     }
 }

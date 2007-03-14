@@ -44,7 +44,18 @@ class PrintTest extends GroovyTestCase {
             def decimalSymbol = NumberFormat.instance.format(1.5) - '1' - '5'
             assert sprintf('%5.2f', 12 * 3.5) == "42${decimalSymbol}00"
             assert sprintf('%d + %d = %d' , [1, 2, 1+2] as Integer[]) == '1 + 2 = 3'
-            assert sprintf('%d + %d = %d' , [3, 4, 3+4] as int[]) == '3 + 4 = 7'
+            assert sprintf('%d + %d = %d' , [2, 3, 2+3] as int[]) == '2 + 3 = 5'
+            assert sprintf('%d + %d = %d' , [3, 4, 3+4] as long[]) == '3 + 4 = 7'
+            assert sprintf('%d + %d = %d' , [4, 5, 4+5] as byte[]) == '4 + 5 = 9'
+            assert sprintf('%d + %d = %d' , [5, 6, 5+6] as short[]) == '5 + 6 = 11'
+            assert sprintf('%5.2f + %5.2f = %5.2f' , [3, 4, 3+4] as float[]) == ' 3.00 +  4.00 =  7.00'
+            assert sprintf('%5.2g + %5.2g = %5.2g' , [3, 4, 3+4] as double[]) == '  3.0 +   4.0 =   7.0'
+            assert sprintf('hi %s' , 'there') == 'hi there'
+            assert sprintf('%c' , 0x41) == 'A'
+            assert sprintf('%x' , 0x41) == '41'
+            assert sprintf('%o' , 0x41) == '101'
+            assert sprintf('%h' , 0x41) == '41'
+            assert sprintf('%b %b' , [true, false] as boolean[]) == 'true false'
         }
     }
 }
