@@ -17,7 +17,18 @@ import javax.swing.JOptionPane
 
 class SwingBuilderTest extends GroovyTestCase {
 
+    private boolean isHeadless() {
+        try {
+            new JFrame("testing")
+            return false
+        } catch (java.awt.HeadlessException he) {
+            return true
+        }
+    }
+
     void testNamedWidgetCreation() {
+        if (isHeadless()) return
+
         def topLevelWidgets = [
             frame: [JFrame.class, true],
             dialog: [JDialog.class, true],
@@ -38,6 +49,8 @@ class SwingBuilderTest extends GroovyTestCase {
     }
 
     void testLayoutCreation() {
+        if (isHeadless()) return
+
         def layouts = [
             borderLayout: BorderLayout.class,
             cardLayout: CardLayout.class,
