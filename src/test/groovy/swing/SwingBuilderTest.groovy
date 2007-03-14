@@ -5,7 +5,7 @@ import java.awt.CardLayout
 import java.awt.FlowLayout
 import java.awt.GridBagLayout
 import java.awt.GridLayout
-import javax.swing.BoxLayout
+//import javax.swing.BoxLayout
 //import javax.swing.OverlayLayout
 import javax.swing.SpringLayout
 
