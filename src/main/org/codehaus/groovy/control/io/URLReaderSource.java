@@ -43,7 +43,6 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-
 package org.codehaus.groovy.control.io;
 
 import java.io.IOException;
@@ -53,45 +52,31 @@ import java.net.URL;
 
 import org.codehaus.groovy.control.CompilerConfiguration;
 
-
 /**
- *  A ReaderSource for source files.
+ *  A ReaderSource for source files hosted at a URL.
  *
  *  @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
  *
  *  @version $Id$
  */
-
-public class URLReaderSource extends AbstractReaderSource
-{
-  //---------------------------------------------------------------------------
-  // CONSTRUCTION AND SUCH
-      
+public class URLReaderSource extends AbstractReaderSource {
     private URL url;  // The URL from which we produce Readers.
-    
     
    /**
     *  Creates the ReaderSource from a File descriptor.
+    * @param url url pointing to script source
+    * @param configuration configuration for compiling source
     */
-    
-    public URLReaderSource( URL url, CompilerConfiguration configuration )
-    {
-        super( configuration );
+    public URLReaderSource( URL url, CompilerConfiguration configuration ) {
+       super( configuration );
         this.url = url;
     }
-    
-    
-    
+
    /**
     *  Returns a new Reader on the underlying source object.  
     */
-    
-    public Reader getReader() throws IOException
-    {
-        return new InputStreamReader( url.openStream(), configuration.getSourceEncoding() );
+    public Reader getReader() throws IOException {
+       return new InputStreamReader( url.openStream(), configuration.getSourceEncoding() );
     }
-    
-    
-    
- 
+
 }

@@ -43,11 +43,9 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-
 package org.codehaus.groovy.control.io;
 
 import java.io.Writer;
-
 
 /**
  *  An Writer than eats its input.
@@ -56,9 +54,7 @@ import java.io.Writer;
  *
  *  @version $Id$
  */
-
-public class NullWriter extends Writer
-{
+public class NullWriter extends Writer {
     public static final NullWriter DEFAULT = new NullWriter();
     
     public void close() {}

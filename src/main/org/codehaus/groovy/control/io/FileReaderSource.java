@@ -43,7 +43,6 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-
 package org.codehaus.groovy.control.io;
 
 import java.io.File;
@@ -54,56 +53,30 @@ import java.io.Reader;
 
 import org.codehaus.groovy.control.CompilerConfiguration;
 
-
 /**
  *  A ReaderSource for source files.
  *
  *  @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
- *
  *  @version $Id$
  */
-
-public class FileReaderSource extends AbstractReaderSource
-{
-  //---------------------------------------------------------------------------
-  // CONSTRUCTION AND SUCH
-      
+public class FileReaderSource extends AbstractReaderSource {
     private File file;  // The File from which we produce Readers.
-    
-    
+
    /**
     *  Creates the ReaderSource from a File descriptor.
+    * @param file script source file
+    * @param configuration configuration for compiling source
     */
-    
-    public FileReaderSource( File file, CompilerConfiguration configuration )
-    {
-        super( configuration );
+    public FileReaderSource( File file, CompilerConfiguration configuration ) {
+       super( configuration );
         this.file = file;
     }
-    
-    
-    
-   /**
-    *  Creates the ReaderSource from a file path.
-    */
-    
-    public FileReaderSource( String path, CompilerConfiguration configuration )
-    {
-        this( new File(path), configuration );
-    }
-   
-    
-    
+
    /**
     *  Returns a new Reader on the underlying source object.  
     */
-    
-    public Reader getReader() throws IOException
-    {
-        return new InputStreamReader( new FileInputStream(file), configuration.getSourceEncoding() );
+    public Reader getReader() throws IOException {
+       return new InputStreamReader( new FileInputStream(file), configuration.getSourceEncoding() );
     }
     
-    
-    
- 
 }

@@ -43,7 +43,6 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-
 package org.codehaus.groovy.control.io;
 
 import java.io.BufferedReader;
@@ -52,27 +51,18 @@ import java.io.IOException;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.Janitor;
 
-
 /**
- *  For ReaderSources that can choose a parent class, a base that
- *  provides common functionality.
+ * For ReaderSources that can choose a parent class, a base that
+ * provides common functionality.
  *
- *  @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
- *
- *  @version $Id$
+ * @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
+ * @version $Id$
  */
 
-public abstract class AbstractReaderSource implements ReaderSource
-{
+public abstract class AbstractReaderSource implements ReaderSource {
     protected CompilerConfiguration configuration;   // Configuration data
 
-    
-   /**
-    *  Standard construction stuff.
-    */
-    
-    public AbstractReaderSource( CompilerConfiguration configuration )
-    {
+    public AbstractReaderSource(CompilerConfiguration configuration) {
         if (configuration == null) {
             throw new IllegalArgumentException("Compiler configuration must not be null!");
             // ... or more relaxed?
@@ -80,103 +70,75 @@ public abstract class AbstractReaderSource implements ReaderSource
         }
         this.configuration = configuration;
     }
-    
-    
-   /**
-    *  Returns true if the source can be restarted (ie. if getReader()
-    *  will return non-null on subsequent calls.
-    */
-    
-    public boolean canReopenSource()
-    {
+
+    /**
+     * Returns true if the source can be restarted (ie. if getReader()
+     * will return non-null on subsequent calls.
+     */
+    public boolean canReopenSource() {
         return true;
     }
-    
-    
-    
-  //---------------------------------------------------------------------------
-  // LINE SUPPLY
 
-    
     private BufferedReader lineSource = null;    // If set, a reader on the current source file
-    private String         line       = null;    // The last line read from the current source file
-    private int            number     = 0;       // The last line number read 
+    private String line = null;    // The last line read from the current source file
+    private int number = 0;       // The last line number read
 
-   
-   /**
-    *  Returns a line from the source, or null, if unavailable.  If
-    *  you supply a Janitor, resources will be cached.
-    */
-    
-    public String getLine( int lineNumber, Janitor janitor )
-    {
-        //
+    /**
+     * Returns a line from the source, or null, if unavailable.  If
+     * you supply a Janitor, resources will be cached.
+     */
+    public String getLine(int lineNumber, Janitor janitor) {
         // If the source is already open and is passed the line we
         // want, close it.
-        
-        if( lineSource != null && number > lineNumber )
-        {
+        if (lineSource != null && number > lineNumber) {
             cleanup();
         }
-    
-        
-        //
+
         // If the line source is closed, try to open it.
-        
-        if( lineSource == null )
-        {
-            try { lineSource = new BufferedReader( getReader() ); } catch( Exception e ) {}
+        if (lineSource == null) {
+            try {
+                lineSource = new BufferedReader(getReader());
+            } catch (Exception e) {
+            }
             number = 0;
         }
-        
-        
-        //
-        // Read until the appropriate line number.
 
-        if( lineSource != null )
-        {
-            while( number < lineNumber )
-            {
-                try
-                {
+        // Read until the appropriate line number.
+        if (lineSource != null) {
+            while (number < lineNumber) {
+                try {
                     line = lineSource.readLine();
                     number++;
                 }
-                catch( IOException e )
-                {
+                catch (IOException e) {
                     cleanup();
                 }
             }
-            
-            if( janitor == null )
-            {
+
+            if (janitor == null) {
                 cleanup();
-            }
-            else
-            {
-                janitor.register( this );
+            } else {
+                janitor.register(this);
             }
         }
-        
-        return line; 
+
+        return line;
     }
-    
-    
-    
-   /**
-    *  Cleans up any cached resources used by getLine().
-    */
-    
-    public void cleanup()
-    {
-        if( lineSource != null ) 
-        {
-            try { lineSource.close(); } catch( Exception e ) {}
+
+    /**
+     * Cleans up any cached resources used by getLine().
+     */
+    public void cleanup() {
+        if (lineSource != null) {
+            try {
+                lineSource.close();
+            } catch (Exception e) {
+            }
         }
-        
+
         lineSource = null;
-        line       = null;
-        number     = 0;
+        line = null;
+        number = 0;
     }
-    
+
 }

@@ -43,7 +43,6 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-
 package org.codehaus.groovy.control.io;
 
 import java.io.IOException;
@@ -53,67 +52,43 @@ import java.io.Reader;
 
 import org.codehaus.groovy.control.CompilerConfiguration;
 
-
 /**
- *  A ReaderSource for source strings.
+ * A ReaderSource for source strings.
  *
- *  @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
- *
- *  @version $Id$
+ * @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
+ * @version $Id$
  */
-
-public class InputStreamReaderSource extends AbstractReaderSource
-{
-    
-  //---------------------------------------------------------------------------
-  // CONSTRUCTION AND SUCH
-      
+public class InputStreamReaderSource extends AbstractReaderSource {
     private InputStream stream;  // The InputStream from which we produce a Reader.
-    
-    
-   /**
-    *  Creates the ReaderSource from a File descriptor.
-    */
-    
-    public InputStreamReaderSource( InputStream stream, CompilerConfiguration configuration )
-    {
-        super( configuration );
+
+    /**
+     * Creates the ReaderSource from a File descriptor.
+     *
+     * @param stream        stream containing source
+     * @param configuration configuration for compiling source
+     */
+    public InputStreamReaderSource(InputStream stream, CompilerConfiguration configuration) {
+        super(configuration);
         this.stream = stream;
     }
-    
-    
-    
-   /**
-    *  Returns a new Reader on the underlying source object.  
-    */
-    
-    public Reader getReader() throws IOException
-    {
-        if( stream != null )
-        {
-            Reader reader = new InputStreamReader( stream, configuration.getSourceEncoding() );
+
+    /**
+     * Returns a new Reader on the underlying source object.
+     */
+    public Reader getReader() throws IOException {
+        if (stream != null) {
+            Reader reader = new InputStreamReader(stream, configuration.getSourceEncoding());
             stream = null;
-            
             return reader;
         }
-        
         return null;
     }
 
-    
-
-   /**
-    *  Returns true if the source can be restarted (ie. if getReader()
-    *  will return non-null on subsequent calls.
-    */
-    
-    public boolean canReopenSource()
-    {
+    /**
+     * Returns true if the source can be restarted (ie. if getReader()
+     * will return non-null on subsequent calls.
+     */
+    public boolean canReopenSource() {
         return false;
     }
-    
-    
-    
-
-    
 }

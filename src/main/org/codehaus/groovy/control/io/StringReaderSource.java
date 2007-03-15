@@ -43,7 +43,6 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-
 package org.codehaus.groovy.control.io;
 
 import java.io.IOException;
@@ -51,7 +50,6 @@ import java.io.Reader;
 import java.io.StringReader;
 
 import org.codehaus.groovy.control.CompilerConfiguration;
-
 
 /**
  *  A ReaderSource for source strings.
@@ -61,37 +59,25 @@ import org.codehaus.groovy.control.CompilerConfiguration;
  *  @version $Id$
  */
 
-public class StringReaderSource extends AbstractReaderSource
-{
-    
-  //---------------------------------------------------------------------------
-  // CONSTRUCTION AND SUCH
-      
+public class StringReaderSource extends AbstractReaderSource {
     private String string;  // The String from which we produce Readers.
-    
-    
+
    /**
-    *  Creates the ReaderSource from a File descriptor.
+    * Creates the ReaderSource from a File descriptor.
+    *
+    * @param string string containing script source
+    * @param configuration configuration for compiling source
     */
-    
-    public StringReaderSource( String string, CompilerConfiguration configuration )
-    {
-        super( configuration );
+    public StringReaderSource( String string, CompilerConfiguration configuration ) {
+       super( configuration );
         this.string= string;
     }
-    
-    
     
    /**
     *  Returns a new Reader on the underlying source object.  
     */
-    
-    public Reader getReader() throws IOException
-    {
-        return new StringReader( string );
+    public Reader getReader() throws IOException {
+       return new StringReader( string );
     }
-    
-    
-    
- 
+
 }
