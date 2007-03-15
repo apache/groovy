@@ -48,15 +48,7 @@ package groovy.ui;
 import groovy.lang.GroovyShell;
 import groovy.lang.Script;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.math.BigInteger;
 import java.util.Iterator;
 import java.util.List;
@@ -126,28 +118,41 @@ public class GroovyMain {
      * @param args all command line args.
      */
     public static void main(String args[]) {
+        processArgs(args, System.out);
+    }
+
+    // package-level visibility for testing purposes (just usage/errors at this stage)
+    // TODO: should we have an 'err' printstream too for ParseException?
+    static void processArgs(String[] args, final PrintStream out) {
         Options options = buildOptions();
 
         try {
             CommandLine cmd = parseCommandLine(options, args);
 
             if (cmd.hasOption('h')) {
-                HelpFormatter formatter = new HelpFormatter();
-                formatter.printHelp("groovy", options);
+                printHelp(out, options);
             } else if (cmd.hasOption('v')) {
                 String version = InvokerHelper.getVersion();
-                System.out.println("Groovy Version: " + version + " JVM: " + System.getProperty("java.vm.version"));
+                out.println("Groovy Version: " + version + " JVM: " + System.getProperty("java.vm.version"));
             } else {
                 // If we fail, then exit with an error so scripting frameworks can catch it
+                // TODO: pass printstream(s) down through process
                 if (!process(cmd)) {
                     System.exit(1);
                 }
             }
         } catch (ParseException pe) {
-            System.out.println("error: " + pe.getMessage());
-            HelpFormatter formatter = new HelpFormatter();
-            formatter.printHelp("groovy", options);
+            out.println("error: " + pe.getMessage());
+            printHelp(out, options);
         }
+    }
+
+    private static void printHelp(PrintStream out, Options options) {
+        HelpFormatter formatter = new HelpFormatter();
+        PrintWriter pw = new PrintWriter(out);
+        formatter.printHelp( pw, formatter.defaultWidth, "groovy", null, options,
+                formatter.defaultLeftPad, formatter.defaultDescPad, null, false);
+        pw.flush();
     }
 
     /**
@@ -160,8 +165,7 @@ public class GroovyMain {
      */
     private static CommandLine parseCommandLine(Options options, String[] args) throws ParseException {
         CommandLineParser parser = new PosixParser();
-        CommandLine cmd = parser.parse(options, args, true);
-        return cmd;
+        return parser.parse(options, args, true);
     }
 
     /**
@@ -269,7 +273,7 @@ public class GroovyMain {
         main.processSockets = line.hasOption('l');
         if (main.processSockets) {
             String p = line.getOptionValue('l', "1960"); // default port to listen to
-            main.port = new Integer(p).intValue();
+            main.port = Integer.parseInt(p);
         }
         main.args = args;
 
@@ -360,7 +364,7 @@ public class GroovyMain {
     private void processFiles() throws CompilationFailedException, IOException {
         GroovyShell groovy = new GroovyShell(conf);
 
-        Script s = null;
+        Script s;
 
         if (isScriptFile) {
             s = groovy.parse(huntForTheScriptFile(script));
@@ -409,7 +413,7 @@ public class GroovyMain {
                 reader.close();
             }
         } else {
-            File backup = null;
+            File backup;
             if (backupExtension == null) {
                 backup = File.createTempFile("groovy_", ".tmp");
                 backup.deleteOnExit();
@@ -442,7 +446,7 @@ public class GroovyMain {
      * @param pw     output sink.
      */
     private void processReader(Script s, BufferedReader reader, PrintWriter pw) throws IOException {
-        String line = null;
+        String line;
         String lineCountName = "count";
         s.setProperty(lineCountName, BigInteger.ZERO);
         String autoSplitName = "split";
