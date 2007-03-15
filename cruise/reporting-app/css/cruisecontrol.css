@@ -121,6 +121,9 @@
 .distributables-oddrow {
 	BACKGROUND-COLOR: #ccccff
 }
+.distributables-evenrow {
+	BACKGROUND-COLOR: #ffffcc
+}
 .unittests-sectionheader {
 	FONT-SIZE: 10pt; COLOR: #336699; FONT-FAMILY: arial,helvetica,sans-serif; BACKGROUND-COLOR: #ffffaa
 }

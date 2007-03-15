@@ -78,6 +78,7 @@
                             All Tests Passed
                         </td>
                     </tr>
+                    <td colspan="2" class="unittests-data"><table>
                     <xsl:for-each select="$testsuite.list">
                         <tr>
                             <xsl:if test="position() mod 2 = 0">
@@ -86,11 +87,18 @@
                             <xsl:if test="position() mod 2 != 0">
                                 <xsl:attribute name="class">unittests-oddrow</xsl:attribute>
                             </xsl:if>
-                            <td colspan="2" class="unittests-data">
-                            <xsl:value-of select="concat('Name: ', @name, ',  Tests: ', @tests, ', Time: ', @time)"/>
+                            <td>
+                            <xsl:value-of select="concat('Suite: ', @name)"/>
+                            </td>
+                            <td>
+                            <xsl:value-of select="concat('Tests: ', @tests)"/>
+                            </td>
+                            <td>
+                            <xsl:value-of select="concat('Time: ', @time)"/>
                             </td>
                         </tr>
                     </xsl:for-each>
+                    </table></td>
                 </xsl:when>
             </xsl:choose>
             <tr>
