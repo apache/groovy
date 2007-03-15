@@ -41,7 +41,7 @@
 
     <xsl:output method="html"/>
 
-    <xsl:variable name="testsuite.list" select="//testsuite"/>
+    <xsl:variable name="testsuite.list" select="//testsuites/testsuite"/>
     <xsl:variable name="testsuite.error.count" select="count($testsuite.list/error)"/>
     <xsl:variable name="testcase.list" select="$testsuite.list/testcase"/>
     <xsl:variable name="testcase.error.list" select="$testcase.list/error"/>
@@ -78,6 +78,13 @@
                             All Tests Passed
                         </td>
                     </tr>
+                    <tr>
+                    <xsl:for-each select="$testsuite.list">
+                        <td>
+                            <xsl:value-of select="concat('Name: ', @name, ',  Tests: ', @tests, ', Time: ', @time)"/>
+                        </td>
+                    </xsl:for-each>
+                    </tr>
                 </xsl:when>
             </xsl:choose>
             <tr>
@@ -101,11 +108,11 @@
 
               <!-- (PENDING) Why doesn't this work if set up as variables up top? -->
               <xsl:call-template name="testdetail">
-                <xsl:with-param name="detailnodes" select="//testsuite/testcase[.//error]"/>
+                <xsl:with-param name="detailnodes" select="//testsuites/testsuite/testcase[.//error]"/>
               </xsl:call-template>
 
               <xsl:call-template name="testdetail">
-                <xsl:with-param name="detailnodes" select="//testsuite/testcase[.//failure]"/>
+                <xsl:with-param name="detailnodes" select="//testsuites/testsuite/testcase[.//failure]"/>
               </xsl:call-template>
 
 

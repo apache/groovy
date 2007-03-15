@@ -56,3 +56,5 @@
 <cruisecontrol:xsl xslFile="/xsl/modifications.xsl"/>
 <p>
 <cruisecontrol:xsl xslFile="/xsl/distributables.xsl"/>
+<p>
+<cruisecontrol:xsl xslFile="/xsl/breakdown.xsl"/>

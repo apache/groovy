@@ -23,7 +23,7 @@
 	<xsl:variable name="dist.count" select="count($jar.tasklist) + count($war.tasklist)"/>
 
 	<!-- collect all testsuite nodes in build, regardless of depth -->
-	<xsl:variable name="testsuite.list" select="//testsuite"/>
+	<xsl:variable name="testsuite.list" select="//testsuites/testsuite"/>
 	<!-- count error nodes directly under testsuite -->
 	<xsl:variable name="testsuite.error.count" select="count($testsuite.list/error)"/>
 

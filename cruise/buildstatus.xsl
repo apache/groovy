@@ -35,7 +35,7 @@
 					<xsl:variable name="modification.list"
 						select="cruisecontrol/modifications/modification"/>
 
-					<xsl:variable name="testsuite.list" select="//testsuite"/>
+					<xsl:variable name="testsuite.list" select="//testsuites/testsuite"/>
 					<xsl:variable name="testcase.list" select="$testsuite.list/testcase"/>
 					<title>
 						<xsl:choose>

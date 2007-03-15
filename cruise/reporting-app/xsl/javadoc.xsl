@@ -48,7 +48,7 @@
     <xsl:template match="/">
 
         <xsl:variable name="javadoc.error.messages" select="$javadoc.tasklist/message[@priority='error']"/>
-        <xsl:variable name="javadoc.warn.messages" select="$javadoc.tasklist/message[@priority='warn']"/>
+        <xsl:variable name="javadoc.warn.messages" select="$javadoc.tasklist/message[@priority='warn'][not(contains(text(), 'The first sentence is interpreted to be:'))]"/>
         <xsl:variable name="total.errorMessage.count" select="count($javadoc.warn.messages)  + count($javadoc.error.messages)"/>
 
         <xsl:if test="$total.errorMessage.count > 0">

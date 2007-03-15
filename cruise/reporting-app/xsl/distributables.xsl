@@ -42,7 +42,7 @@
 
     <xsl:output method="html"/>
     <xsl:variable name="tasklist" select="/cruisecontrol/build//target/task"/>
-    <xsl:variable name="jar.tasklist" select="$tasklist[@name='Jar']/message[@priority='info'] | $tasklist[@name='jar']/message[@priority='info']"/>
+    <xsl:variable name="jar.tasklist" select="$tasklist[@name='Jar']/message[@priority='info'] | $tasklist[@name='jar']/message[@priority='info'] | $tasklist[@name='zip']/message[@priority='info'] | $tasklist[@name='jarjar']/message[@priority='info']"/>
     <xsl:variable name="war.tasklist" select="$tasklist[@name='War']/message[@priority='info'] | $tasklist[@name='war']/message[@priority='info']"/>
     <xsl:variable name="ejbjar.tasklist" select="$tasklist[@name='ejbjar']/message[@priority='info']"/>
     <xsl:variable name="ear.tasklist" select="$tasklist[@name='ear']/message[@priority='info']"/>
@@ -63,7 +63,7 @@
         </table>
     </xsl:template>
 
-    <xsl:template match="task[@name='Jar']/message[@priority='info'] | task[@name='War']/message[@priority='info'] | task[@name='jar']/message[@priority='info'] | task[@name='war']/message[@priority='info'] | task[@name='ejbjar']/message[@priority='info'] | task[@name='ear']/message[@priority='info']">
+    <xsl:template match="task[@name='Jar']/message[@priority='info'] | task[@name='War']/message[@priority='info'] | task[@name='jar']/message[@priority='info'] | task[@name='zip']/message[@priority='info'] | task[@name='jarjar']/message[@priority='info'] | task[@name='war']/message[@priority='info'] | task[@name='ejbjar']/message[@priority='info'] | task[@name='ear']/message[@priority='info']">
         <tr>
             <xsl:if test="position() mod 2 = 0">
                 <xsl:attribute name="class">distributables-oddrow</xsl:attribute>
