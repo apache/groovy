@@ -1,3 +1,5 @@
+package org.codehaus.groovy.control.io
+
 class NullWriterTest extends GroovyTestCase {
 
     void testProperties() {
@@ -8,6 +10,6 @@ class NullWriterTest extends GroovyTestCase {
         def writer = NullWriter.DEFAULT
         writer.close()
         writer.flush()
-        writer.write(null, 0, 0)
+        writer.write((char[])null, 0, 0)
     }
 }
