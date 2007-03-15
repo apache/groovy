@@ -78,13 +78,13 @@
                             All Tests Passed
                         </td>
                     </tr>
-                    <tr>
                     <xsl:for-each select="$testsuite.list">
-                        <td>
+                        <tr>
+                            <td colspan="2" class="unittests-data">
                             <xsl:value-of select="concat('Name: ', @name, ',  Tests: ', @tests, ', Time: ', @time)"/>
-                        </td>
+                            </td>
+                        </tr>
                     </xsl:for-each>
-                    </tr>
                 </xsl:when>
             </xsl:choose>
             <tr>
