@@ -49,6 +49,10 @@ public class SecurityTest extends SecurityTestSupport {
 		assertExecute(new File("src/test/groovy/security/forbiddenCodeBase.gvy"), new GroovyCodeSourcePermission("/groovy/security/forbiddenCodeBase"));
 	}
 	
+    public void testForbiddenCodebaseWithActions() {
+		assertExecute(new File("src/test/groovy/security/forbiddenCodeBase.gvy"), new GroovyCodeSourcePermission("/groovy/security/forbiddenCodeBase", "unused actions string"));
+	}
+
 	//Check that the Security package.access control works.
 	public void testPackageAccess() {
 		String script = "new javax.print.PrintException();";
