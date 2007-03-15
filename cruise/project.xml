@@ -25,9 +25,7 @@ defaultmailhost
 		<listeners>
 			<currentbuildstatuslistener file="&basedir;/groovy/cruisecontrol/logs/status.txt"/>
 		</listeners>
-		<log dir="&basedir;/groovy/cruisecontrol/logs">
-			<merge dir="&basedir;/groovy/cruisecontrol/checkout/target/test-reports/"/>
-		</log>
+		<log dir="&basedir;/groovy/cruisecontrol/logs"/>
 
 		<publishers>
             <artifactspublisher dir="&basedir;/groovy/cruisecontrol/checkout/target/reports"
