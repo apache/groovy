@@ -81,10 +81,10 @@
                     <xsl:for-each select="$testsuite.list">
                         <tr>
                             <xsl:if test="position() mod 2 = 0">
-                                <xsl:attribute name="class">unittests-oddrow</xsl:attribute>
+                                <xsl:attribute name="class">unittests-evenrow</xsl:attribute>
                             </xsl:if>
                             <xsl:if test="position() mod 2 != 0">
-                                <xsl:attribute name="class">unittests-evenrow</xsl:attribute>
+                                <xsl:attribute name="class">unittests-oddrow</xsl:attribute>
                             </xsl:if>
                             <td colspan="2" class="unittests-data">
                             <xsl:value-of select="concat('Name: ', @name, ',  Tests: ', @tests, ', Time: ', @time)"/>

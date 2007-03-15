@@ -66,10 +66,10 @@
     <xsl:template match="task[@name='Jar']/message[@priority='info'] | task[@name='War']/message[@priority='info'] | task[@name='jar']/message[@priority='info'] | task[@name='zip']/message[@priority='info'] | task[@name='jarjar']/message[@priority='info'] | task[@name='war']/message[@priority='info'] | task[@name='ejbjar']/message[@priority='info'] | task[@name='ear']/message[@priority='info']">
         <tr>
             <xsl:if test="position() mod 2 = 0">
-                <xsl:attribute name="class">distributables-oddrow</xsl:attribute>
+                <xsl:attribute name="class">distributables-evenrow</xsl:attribute>
             </xsl:if>
             <xsl:if test="position() mod 2 != 0">
-                <xsl:attribute name="class">distributables-evenrow</xsl:attribute>
+                <xsl:attribute name="class">distributables-oddrow</xsl:attribute>
             </xsl:if>
             <td class="distributables-data">
                 <xsl:value-of select="text()"/>

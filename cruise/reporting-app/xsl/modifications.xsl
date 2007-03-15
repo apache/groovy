@@ -73,10 +73,10 @@
     <xsl:template match="modification[@type='p4']">
         <tr valign="top">
             <xsl:if test="position() mod 2=0">
-                <xsl:attribute name="class">changelists-oddrow</xsl:attribute>
+                <xsl:attribute name="class">changelists-evenrow</xsl:attribute>
             </xsl:if>
             <xsl:if test="position() mod 2!=0">
-                <xsl:attribute name="class">changelists-evenrow</xsl:attribute>
+                <xsl:attribute name="class">changelists-oddrow</xsl:attribute>
             </xsl:if>
             <td class="modifications-data">
                 <xsl:value-of select="revision"/>
@@ -97,10 +97,10 @@
         <xsl:if test="count(file) > 0">
             <tr valign="top">
                 <xsl:if test="position() mod 2=0">
-                    <xsl:attribute name="class">changelists-oddrow</xsl:attribute>
+                    <xsl:attribute name="class">changelists-evenrow</xsl:attribute>
                 </xsl:if>
                 <xsl:if test="position() mod 2!=0">
-                    <xsl:attribute name="class">changelists-evenrow</xsl:attribute>
+                    <xsl:attribute name="class">changelists-oddrow</xsl:attribute>
                 </xsl:if>
                 <td class="modifications-data" colspan="6">
                     <table align="right" cellpadding="1" cellspacing="0" border="0" width="95%">
@@ -121,10 +121,10 @@
     <xsl:template match="file">
         <tr valign="top" >
             <xsl:if test="position() mod 2=0">
-                <xsl:attribute name="class">changelists-file-oddrow</xsl:attribute>
+                <xsl:attribute name="class">changelists-file-evenrow</xsl:attribute>
             </xsl:if>
             <xsl:if test="position() mod 2!=0">
-                <xsl:attribute name="class">changelists-file-evenrow</xsl:attribute>
+                <xsl:attribute name="class">changelists-file-oddrow</xsl:attribute>
             </xsl:if>
 
             <td class="changelists-file-spacer">
@@ -147,10 +147,10 @@
     <xsl:template match="modification[file]">
         <tr>
             <xsl:if test="position() mod 2=0">
-                <xsl:attribute name="class">modifications-oddrow</xsl:attribute>
+                <xsl:attribute name="class">modifications-evenrow</xsl:attribute>
             </xsl:if>
             <xsl:if test="position() mod 2!=0">
-                <xsl:attribute name="class">modifications-evenrow</xsl:attribute>
+                <xsl:attribute name="class">modifications-oddrow</xsl:attribute>
             </xsl:if>
 
             <td class="modifications-data">
@@ -177,10 +177,10 @@
     <xsl:template match="modification">
         <tr>
             <xsl:if test="position() mod 2=0">
-                <xsl:attribute name="class">modifications-oddrow</xsl:attribute>
+                <xsl:attribute name="class">modifications-evenrow</xsl:attribute>
             </xsl:if>
             <xsl:if test="position() mod 2!=0">
-                <xsl:attribute name="class">modifications-evenrow</xsl:attribute>
+                <xsl:attribute name="class">modifications-oddrow</xsl:attribute>
             </xsl:if>
 
             <td class="modifications-data">
