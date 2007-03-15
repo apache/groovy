@@ -1,51 +1,15 @@
+!!!!!! Obsolete file!! Don't add anything here, use Jira instead.
+
+TODO: remove irrelevant entries, add others to Jira.
+
 Things to Test
 ==============
 
 * test synchronized statement
 
-* test compiler errors when
-	- duplicate methods testno 
-	- duplicate class in module
-	
-* test Button(actionPerformed:{event| event.println() }
-
-	
 Core Groovy Tasks
 =================
 
-* allow maps to be created using identifiers?
-	{name:'James', address:'London'}
-	
-	only issue is the identifiers could conflict.
-	
-	Could use a helper method?
-
-* handling sequences (0-n, 1-n)
-	they are Lists & behave like lists, any methods on the items will
-	be called etc.
-	
-	however how are they assigned / modified.
-	
-		foo.customers += customer
-		
-		foo.customers = [customer1, customer2]
-		
-		so assignment of sequence fields don't really do an assign; they do a set(List) instead
-		
-		- should we allow real assignments. e.g.
-		
-		Address* foo = ...;
-		foo = [1, 2, 3]
-		
-		foo keeps its type so its not a List
-		
-	how about handling mandatory values - 
-		the set we overload to do the non-null checks?
-		this must be a type. e.g.
-		
-			String! x = "hello"
-			x = null // error
-			
 * new GroovyMethods	to be added
 	- File.grep(pattern) -> List
 	- File.grep(pattern) { closure } 
@@ -53,78 +17,22 @@ Core Groovy Tasks
 		
 	- List.first(), List.last(), pop()
 	- Collection.removeIf { x | x > 0 }
-	- List.eachWithindex { item, idx | ... }
-	- List.reverseEach { ... }
 	- Collection.count(foo) -> returns number of objects that equal foo
-	- Collection.countIf { it > 5 } -> returns number of objects that match closure predicate
 
 	- Map.get(key, defaultValue)
 	- Map.setDefault(key, defaultValue) for things like
   		 map.setDefault(key, []).add(newValue)
 	
-	- Object.getMetaClass()
 	- Object.eachProperty
 	- Object.eachPropertyName { object.getProperty(it) }
 	- Object.setProperties(foo:'abc', x:123)
 	
-	- Map.eachKey, eachValue
-	- Map.index, Map.indexes
-	- configure method on beans?
-		bean.setProperties(name:'James', location:'London')
 	- some kind of Regexp iterator of strings like Ruby's scan
 	- maybe support Pythons' zip and reduce functions?
 	
 		maybe add the various readonly List APIs to Object[] and *[] types
 		if we ever support the DTD / Xed style type*, type+ then we can do the same
 		there too
-
-* add doesNotUnderstand() method for catching & handling unknown methods	
-		
-* is there a better way to add listeners in Groovy. e.g. how to remove added listeners
-
-	listener = bean.property + { some closure }
-	bean.property - listener
-	
-* BeanBuilder - builder which creates a tree of beans
-	builder.bean(class:SomeClass, x:123, b:'hello') {
-		nestedProperty(a:123)
-		nestedProperty2(class:DerivedClass, b:43)
-	}
-	using adder method as well as setter methods
-
-* MBeanBuilder?
-	builder.mlet {
-		mbean(class:SomeClass) {
-			someAttribute(value)
-		}
-		mbean(class:SomeClass, someAttribute:value) {
-			operation(1, 2)
-		}
-	}
-
-* templating - allow looping & conditionals?
-
-text = "
-<table>
-#for (f in foo)
-<tr>
-<td>${f.name}
-</tr>
-#end
-</table>
-"
-
-* allow if/switch to be the and of a function. i.e.
-	foo() {
-		if (x > 1) {
-			"hello"
-		}
-		else {
-			"cheese"
-		}
-	}
-	ditto for switch? i.e. make return statement optional.
-	
 
 * SQL builder
 
@@ -185,22 +93,10 @@ sql.table("users") {
 	- also it looks like there's various unnecessary stuff (creation of tuples) when invoking
 	methods
 	
-* groovy thread...
-	foo = new GroovyThread(args) { closure }
-	
-* MetaClass -> add getPropertyDescriptor which has methods
-	- get(), set(), type(), cardinality() etc
-	
-	could use naming conventions to detect cardinality - e.g. addFoo(), getFoos()
-	
-* generate property change listener stuff on properties
-
 * test identity -> hashCode + equals methods
 
 * support for property converters, based on type
 
-* go through all not-working @todo tests in src/test
-	
 * to support dynamic mixins we should use dynamic proxies to allow
 	a groovy object to change metaclass at runtime
 
@@ -209,16 +105,7 @@ sql.table("users") {
 	
 * immutable bean
 
-* MetaClass.deriveMetaClass()
-	MetaClass.addMixin(mixin)
-
-* constructors with map / tuple expressions, named parameter calling
- 
-* default values for parameters
-
-* test try / catch with multiple exception types
-
-* * support static newInstance() method for constructors
+* support static newInstance() method for constructors
 
 * maybe split up ClassGenerator - do code gen & class gen separately
 
@@ -243,41 +130,6 @@ sql.table("users") {
 STUFF TO PONDER
 ===============
 
-* if we allow statements in class declarations, then we could disallow the syntax sugar
-	for method invocation with closures. i.e. foo { code } would have to be foo ({code})
-	otherwise it'd be interpeted as a method declaration.
-	
-	e.g.
-	
-	module MyValidatingModule
-	
-	class Cheese {
-		readOnlyProperty('hello')
-		validatingProperty('name', { it.length > 0 } )
-		
-		lazilyCreatedProperty(:cheese, { new MySpecialCheese() })
-		
-		public(:methodA, :methodB, :methodC)
-	}
-	 
-	for now we could argue that only methods are allowed to be invoked inside the class declaration.
-	We could still do markup but just not as nice
-	
-	class Whatnot {
-		table( {
-			foo {
-			}
-			whatnot {
-			}
-		})
-		
-		blah = { 
-			a(x:1234, b:942) {
-				d()
-			}
-		}
-		
-	
 * Support multiple return values...
 
 	String, Number cheese() {
@@ -291,8 +143,6 @@ STUFF TO PONDER
 		a, b = 1, 2
 		a, b = b, a
 
-* maybe use syntax #[1, 2] to create arrays which behave just like immutable lists?
-		
 * using macros to avoid dependencies on logging stuff (say)
 
 	class GroovyLog {
@@ -313,8 +163,6 @@ STUFF TO PONDER
 	
 	doing things like this at compile time means no runtime dependencies. Ditto to do JDK based compiles
 	
-	
-	
 UI WORK
 =======
 
@@ -326,8 +174,6 @@ UI WORK
 	- plus we should be using normal method call mechanism & for groovy to do the rest to avoid
 	the long laborious Map coding
 	
-* add table layout cell spacing thingy
-
 * FormModel.addPropertyModel(property)
 	FormModel.addClosureModel(readClosure, writeClosure)
 
@@ -339,16 +185,6 @@ UI WORK
 
 * create a GroovyUI
 	-> interactive script + allows scripts to be run & objects explored
-
-
-
-
-ECLIPSE WORK
-============
-
-* Run as JUnit support for Groovy! 
-
-* Refactoring support for Groovy and tie it into the Java refactoring
 
 
 JUNIT WORK
