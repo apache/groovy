@@ -68,6 +68,9 @@
             <xsl:if test="position() mod 2 = 0">
                 <xsl:attribute name="class">distributables-oddrow</xsl:attribute>
             </xsl:if>
+            <xsl:if test="position() mod 2 != 0">
+                <xsl:attribute name="class">distributables-evenrow</xsl:attribute>
+            </xsl:if>
             <td class="distributables-data">
                 <xsl:value-of select="text()"/>
             </td>

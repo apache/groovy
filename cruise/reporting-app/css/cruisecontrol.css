@@ -127,6 +127,9 @@
 .unittests-oddrow {
 	BACKGROUND-COLOR: #ccccff
 }
+.unittests-evenrow {
+	BACKGROUND-COLOR: #ffffcc
+}
 .unittests-data {
 	FONT-SIZE: 8pt; COLOR: #000000; FONT-FAMILY: arial,helvetica,sans-serif
 }
