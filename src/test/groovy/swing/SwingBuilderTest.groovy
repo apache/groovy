@@ -175,6 +175,23 @@ class SwingBuilderTest extends GroovyTestCase {
         assert swing.vsplit.bottomComponent == swing.bottom
     }
 
+    void testNodeCreation() {
+        def swing = new SwingBuilder()
+        def frame = swing.frame(){
+            // 4 valid parameter combinations
+            button()
+            button('Text')
+            button(label:'Label')
+            button(label:'Label', 'Text')
+        }
+        shouldFail(){
+            frame = swing.frame(){
+                // invalid parameter
+                button(new Date())
+            }
+        }
+    }
+
     void testTableLayout() {
         def swing = new SwingBuilder()
         def msg = shouldFail(RuntimeException){
