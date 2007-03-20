@@ -5,54 +5,8 @@ import java.awt.CardLayout
 import java.awt.FlowLayout
 import java.awt.GridBagLayout
 import java.awt.GridLayout
-//import javax.swing.BoxLayout
-//import javax.swing.OverlayLayout
-import javax.swing.SpringLayout
 
-import javax.swing.JFrame
-import javax.swing.JDialog
-import javax.swing.JWindow
-
-import javax.swing.JButton
-import javax.swing.JCheckBox
-import javax.swing.JCheckBoxMenuItem
-import javax.swing.JColorChooser
-import javax.swing.JComboBox
-import javax.swing.JDesktopPane
-import javax.swing.JEditorPane;
-import javax.swing.JFileChooser
-import javax.swing.JFormattedTextField
-import javax.swing.JLayeredPane
-import javax.swing.JList
-import javax.swing.JMenu
-import javax.swing.JMenuBar
-import javax.swing.JMenuItem
-import javax.swing.JOptionPane
-import javax.swing.JPanel
-import javax.swing.JPasswordField
-import javax.swing.JPopupMenu
-import javax.swing.JProgressBar
-import javax.swing.JRadioButton
-import javax.swing.JRadioButtonMenuItem
-import javax.swing.JScrollBar
-import javax.swing.JScrollPane
-import javax.swing.JSeparator
-import javax.swing.JSlider
-import javax.swing.JSpinner
-import javax.swing.JSplitPane
-import javax.swing.JFileChooser
-import javax.swing.JInternalFrame
-import javax.swing.JLabel
-import javax.swing.JOptionPane
-import javax.swing.JTabbedPane
-import javax.swing.JTable
-import javax.swing.JTextArea
-import javax.swing.JTextField
-import javax.swing.JTextPane
-import javax.swing.JToggleButton
-import javax.swing.JToolBar
-import javax.swing.JTree
-import javax.swing.JViewport
+import javax.swing.*
 
 class SwingBuilderTest extends GroovyTestCase {
 
@@ -190,6 +144,61 @@ class SwingBuilderTest extends GroovyTestCase {
                 button(new Date())
             }
         }
+    }
+
+    void testSetMnemonic() {
+        def swing = new SwingBuilder()
+        swing.panel(layout:new BorderLayout()) {
+            label(id:'label0', text:'Name0', mnemonic:48)
+            label(id:'label1', text:'Name1', mnemonic:'N')
+        }
+        int expected0 = '0'
+        int expected1 = 'N'
+        assert swing.label0.displayedMnemonic == expected0
+        assert swing.label1.displayedMnemonic == expected1
+        swing.menuItem() {
+            action(id:'actionId', name:'About', mnemonic:'A')
+        }
+        int expected2 = 'A'
+        assert swing.actionId.getValue(Action.MNEMONIC_KEY) == expected2
+    }
+
+    void testSetAccelerator() {
+        def swing = new SwingBuilder()
+
+    }
+
+    void testClosureColumn() {
+        def swing = new SwingBuilder()
+        def msg = shouldFail{
+            swing.closureColumn()
+        }
+        println  msg
+        assert msg.contains('closureColumn must be a child of a tableModel')
+        //swing.tableModel()
+        msg = shouldFail{
+            swing.table{
+                tableModel(){
+                    closureColumn()
+                }
+            }
+        }
+        assert msg.contains("Must specify 'read' Closure property for a closureColumn")
+    }
+
+    void testSetConstraints() {
+        def swing = new SwingBuilder()
+        swing.panel(layout:new BorderLayout()) {
+            label(text:'Name', constraints:BorderLayout.CENTER)
+        }
+    }
+
+    void testSetToolTipText() {
+        def swing = new SwingBuilder()
+        swing.panel(layout:new BorderLayout()) {
+            label(id:'labelId', text:'Name', toolTipText:'This is the name field')
+        }
+
     }
 
     void testTableLayout() {

@@ -305,7 +305,7 @@ public class SwingBuilder extends BuilderSupport {
             return value;
         } else {
             Object widget = createNode(name, attributes);
-            if (widget != null) {
+            if (widget != null && value != null) {
                 InvokerHelper.invokeMethod(widget, "setText", value.toString());
             }
             return widget;
@@ -358,7 +358,7 @@ public class SwingBuilder extends BuilderSupport {
     protected void handleWidgetAttributes(Object widget, Map attributes) {
         if (widget != null) {
             if (widget instanceof Action) {
-                /** @todo we could move this custom logic into the MetaClass for Action */
+                /* TODO we could move this custom logic into the MetaClass for Action */
                 Action action = (Action) widget;
 
                 Closure closure = (Closure) attributes.remove("closure");
@@ -597,7 +597,7 @@ public class SwingBuilder extends BuilderSupport {
                     }
                     return model.addClosureColumn(header, readClosure, writeClosure, type);
                 } else {
-                    throw new RuntimeException("propertyColumn must be a child of a tableModel");
+                    throw new RuntimeException("closureColumn must be a child of a tableModel");
                 }
             }
         });
@@ -729,7 +729,7 @@ public class SwingBuilder extends BuilderSupport {
             }
             BoxLayout answer = new BoxLayout(target, axis);
 
-            // now lets try set the layout property
+            // now let's try to set the layout property
             InvokerHelper.setProperty(parent, "layout", answer);
             return answer;
         } else {
@@ -755,7 +755,7 @@ public class SwingBuilder extends BuilderSupport {
         return dialog;
     }
 
-    /**
+    /*
      * Uses 'format," or "value,"  (in order)
      */
     protected Object createFormattedTextField(Map properties) {
