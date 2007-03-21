@@ -68,12 +68,14 @@ public class AnnotationNode extends ASTNode {
     public static final int PARAMETER_TARGET =  1 << 4;
     public static final int LOCAL_VARIABLE_TARGET = 1 << 5;
     public static final int ANNOTATION_TARGET = 1 << 6;
+    private static final int ALL_TARGETS = TYPE_TARGET | CONSTRUCTOR_TARGET | METHOD_TARGET
+        | FIELD_TARGET | PARAMETER_TARGET | LOCAL_VARIABLE_TARGET | ANNOTATION_TARGET;
     
     private ClassNode classNode;
     private Map members = new HashMap();
     private boolean runtimeRetention= false;
     private boolean sourceRetention= false;
-    private int allowedTarges = 0;
+    private int allowedTarges = ALL_TARGETS;
     private boolean valid;
 
     public AnnotationNode(ClassNode classNode) {
