@@ -23,41 +23,9 @@ $Date$
 
 <project name="Groovy" default="createJars" basedir=".">
 
-    <property name="bootstrapDirectory" location="bootstrap"/>
-    <import file="config/ant/build-support.xml"/>
-
-    <property name="sourceDirectory" value="src"/>
-    <property name="mainSourceDirectory" location="${sourceDirectory}/main"/>
-    <property name="testSourceDirectory" value="${sourceDirectory}/test"/>
-    <property name="toolsSourceDirectory" location="${sourceDirectory}/tools"/>
-    <property name="examplesSourceDirectory" location="${sourceDirectory}/examples"/>
-
-    <property name="targetDirectory" value="target"/>
-    <property name="installDirectory" value="${targetDirectory}/install"/>
-    <property name="cruiseReportRootDirectory" value="${targetDirectory}/root"/>
-    <property name="stagingDirectory" value="${targetDirectory}/staging"/>
-    <property name="docsDirectory" value="${targetDirectory}/html"/>
-    <property name="mainClassesDirectory" value="${targetDirectory}/classes"/>
-    <property name="testClassesDirectory" value="${targetDirectory}/test-classes"/>
-    <property name="toolsClassesDirectory" value="${targetDirectory}/tools-classes"/>
-    <property name="examplesClassesDirectory" value="${targetDirectory}/examples-classes"/>
-    <property name="instrumentedClassesDirectory" value="${targetDirectory}/instrumented-classes"/>
-    <property name="reportsDirectory" value="${targetDirectory}/reports"/>
-    <property name="targetLibDirectory" value="${targetDirectory}/lib"/>
-    <property name="targetDistDirectory" value="${targetDirectory}/dist"/>
-
-    <property name="antlrDirectory" value="${mainSourceDirectory}/org/codehaus/groovy/antlr"/>
-    <property name="groovyParserDirectory" value="${antlrDirectory}/parser"/>
-    <property name="javaParserDirectory" value="${antlrDirectory}/java"/>
-
-    <property name="compileLibDirectory" value="${targetLibDirectory}/compile"/>
-    <property name="testLibDirectory" value="${targetLibDirectory}/test"/>
-    <property name="runtimeLibDirectory" value="${targetLibDirectory}/runtime"/>
-    <property name="toolsLibDirectory" value="${targetLibDirectory}/tools"/>
-    <property name="examplesLibDirectory" value="${targetLibDirectory}/examples"/>
-    <property name="junitRawDirectory" value="${targetDirectory}/test-reports"/>
-    <property name="junitReportsDirectory" value="${reportsDirectory}/junit"/>
-
+    <import file="config/ant/build-maven.xml"/>
+    <import file="config/ant/build-checkstyle.xml"/>
+    <import file="config/ant/build-cobertura.xml"/>
     <property file="build.properties"/>
     <property file="local.build.properties"/>
 
@@ -75,9 +43,9 @@ $Date$
         </antlr>
     </target>
 
-    <target name="-initialize" depends="-fetchDependencies"/>
+    <target name="-init" depends="-fetchDependencies"/>
 
-    <target name="compileMain" depends="-initialize,-ensureGrammers"
+    <target name="compileMain" depends="-init,-ensureGrammers"
             description="Compile the Java and Groovy code in the main source.">
         <mkdir dir="${mainClassesDirectory}"/>
         <mkdir dir="${toolsClassesDirectory}"/>
@@ -152,7 +120,8 @@ $Date$
     <target name="compileExamples" depends="compileMain" unless="skipExamples"
             description="Compile the Java and Groovy code in the examples source directory.">
         <mkdir dir="${examplesClassesDirectory}"/>
-        <javac srcdir="${examplesSourceDirectory}" destdir="${examplesClassesDirectory}" includeantruntime="false" debug="yes"
+        <javac srcdir="${examplesSourceDirectory}" destdir="${examplesClassesDirectory}" includeantruntime="false"
+               debug="yes"
                source="1.4" target="1.4" fork="true">
             <classpath>
                 <pathelement path="${mainClassesDirectory}"/>
@@ -177,7 +146,7 @@ $Date$
         <mkdir dir="${reportsDirectory}"/>
     </target>
 
-    <target name="test" depends="-initializeReports,compileTest,-coberturaInstrument,-testOne,-testAll"
+    <target name="test" depends="-initializeReports,compileTest,-coverageInstrument,-testOne,-testAll"
             description="Compile and test all the classes (or just one class if testCase property is defined)."/>
 
     <condition property="testOne">
@@ -220,7 +189,8 @@ $Date$
         <mkdir dir="${junitRawDirectory}"/>
         <junit printsummary="true" fork="true" includeantruntime="false" failureproperty="testFailed">
             <formatter type="xml"/>
-            <formatter type="plain" unless="noTextReports"/><!-- mucks up cruise test count -->
+            <formatter type="plain" unless="noTextReports"/>
+            <!-- mucks up cruise test count -->
             <batchtest todir="${junitRawDirectory}">
                 <fileset dir="${testClassesDirectory}" includes="UberTest*.class"/>
             </batchtest>
@@ -242,6 +212,15 @@ $Date$
 
     <target name="-reportTestFailed" depends="test,-coverageReport" if="testFailed">
         <echo>Test failed, not processing further targets.</echo>
+    </target>
+
+    <target name="-coverageInstrument" depends="-coberturaInit" unless="skipCobertura">
+        <mkdir dir="${instrumentedClassesDirectory}"/>
+        <coberturaInstrument classesDirectory="${mainClassesDirectory}"/>
+    </target>
+
+    <target name="-coverageReport" unless="skipCobertura">
+        <coberturaReport reportDirectory="${reportsDirectory}/cobertura" sourceDirectory="${mainSourceDirectory}"/>
     </target>
 
     <target name="-actuallyCreateJars" depends="-makeManifest,-initializeJars,-createBaseJar,-createEmbeddableJar"
@@ -271,7 +250,7 @@ $Date$
              excludes="*.groovy" manifest="${mainClassesDirectory}/META-INF/MANIFEST.MF"/>
     </target>
 
-    <target name="-createEmbeddableJar" depends="-jarjarTaskdef" unless="testFailed">
+    <target name="-createEmbeddableJar" depends="-jarjarInit" unless="testFailed">
         <delete dir="${stagingDirectory}" quiet="true"/>
         <mkdir dir="${stagingDirectory}"/>
         <unzip dest="${stagingDirectory}">
@@ -335,15 +314,16 @@ $Date$
         </chmod>
     </target>
 
-    <target name="checkstyle" depends="-initialize,-initializeReports" description="Create the code style reports.">
-        <path id="checkstylePath">
-            <pathelement path="${mainClassesDirectory}"/>
-            <path refid="testPath"/>
-        </path>
-        <antcall target="-checkstyle">
-            <param name="checkstyleReportDirectory" value="${reportsDirectory}/checkstyle"/>
-            <param name="checkstyleSourceDirectory" value="${mainSourceDirectory}"/>
-        </antcall>
+    <target name="checkstyle" depends="-init,-initializeReports,-checkstyleInit" description="Create the code style reports.">
+        <checkAndReport
+                reportDirectory="${reportsDirectory}/checkstyle"
+                sourceDirectory="${mainSourceDirectory}"
+                excludes="org/codehaus/groovy/antlr/parser/*,org/codehaus/groovy/antlr/java/*,org/codehaus/groovy/syntax/Types.java">
+            <path>
+                <pathelement path="${mainClassesDirectory}"/>
+                <path refid="testPath"/>
+            </path>
+        </checkAndReport>
     </target>
 
     <target name="-compileTools" depends="compileMain">
@@ -411,6 +391,15 @@ $Date$
             <fileset dir="${javaParserDirectory}"
                      includes="JavaLexer.java,JavaRecognizer.java,JavaTokenTypes.java,JavaTokenTypes.txt"/>
         </delete>
+    </target>
+
+    <target name="-jarjarInit">
+        <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpathref="toolsPath"/>
+    </target>
+
+    <target name="deploy" depends="-mavenDeployInit" xmlns:artifact="urn:maven-artifact-ant">
+        <mavenDeploy version="${groovyVersion}" artifact="groovy"/>
+        <mavenDeploy version="${groovyVersion}" artifact="groovy-all"/>
     </target>
 
 </project>

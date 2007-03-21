@@ -18,9 +18,9 @@ $Revision$ ($LastChangedBy$)
 $Date$
 -->
 
-<project name="build-support" default="" basedir=".">
+<project name="build-maven" default="" basedir="../.." xmlns:artifact="urn:maven-artifact-ant">
 
-    <property name="masterDirectory" location="../.."/>
+    <import file="build-setup.xml"/>
 
     <macrodef name="fetch.maven.all.modules">
         <sequential>
@@ -51,7 +51,7 @@ $Date$
         <attribute name="file"/>
         <attribute name="id"/>
         <sequential>
-            <artifact:pom xmlns:artifact="urn:maven-artifact-ant" file="@{file}" id="@{id}"/>
+            <artifact:pom file="@{file}" id="@{id}"/>
         </sequential>
     </macrodef>
 
@@ -59,7 +59,7 @@ $Date$
         <attribute name="id"/>
         <attribute name="url"/>
         <sequential>
-            <artifact:remoteRepository xmlns:artifact="urn:maven-artifact-ant" id="@{id}" url="@{url}"/>
+            <artifact:remoteRepository id="@{id}" url="@{url}"/>
         </sequential>
     </macrodef>
 
@@ -68,7 +68,7 @@ $Date$
         <attribute name="filesetId"/>
         <attribute name="pomRefId"/>
         <sequential>
-            <artifact:dependencies xmlns:artifact="urn:maven-artifact-ant" useScope="@{useScope}" filesetId="@{filesetId}">
+            <artifact:dependencies useScope="@{useScope}" filesetId="@{filesetId}">
                 <remoteRepository refid="ibiblio.remote.repository"/>
                 <remoteRepository refid="repo1.remote.repository"/>
                 <pom refid="@{pomRefId}"/>
@@ -76,9 +76,9 @@ $Date$
         </sequential>
     </macrodef>
 
-    <target name="-initializeMaven" depends="-mavenAntTaskdef,-mavenPomDefinitions,-mavenRepositoryDefinitions"/>
+    <target name="-mavenInit" depends="-mavenTaskdef,-mavenPomDefinitions,-mavenRepositoryDefinitions"/>
 
-    <target name="-mavenAntTaskdef">
+    <target name="-mavenTaskdef">
         <typedef resource="org/apache/maven/artifact/ant/antlib.xml" uri="urn:maven-artifact-ant">
             <classpath>
                 <fileset dir="${bootstrapDirectory}" includes="maven-artifact-ant-*-dep.jar"/>
@@ -97,7 +97,7 @@ $Date$
         <maven.remote.repository id="ibiblio.remote.repository" url="http://ibiblio.org/maven2/"/>
     </target>
 
-    <target name="-mavenFetchAllModules" depends="-initializeMaven">
+    <target name="-mavenFetchAllModules" depends="-mavenInit">
         <fetch.maven.all.modules/>
     </target>
 
@@ -153,60 +153,21 @@ $Date$
         </path>
     </target>
 
-    <target name="-coberturaTaskdef">
-        <taskdef resource="tasks.properties" classpathref="toolsPath"/>
-        <path id="coberturaPath">
-            <fileset dir="${toolsLibDirectory}" includes="cobertura-*.jar,asm*.jar"/>
-        </path>
+    <!--
+    This target is intended to be run only after a normal build has generated
+          the groovy-*.jar and groovy-all-*.jar artifacts.
+    -->
+    <target name="-mavenDeployInit" depends="-mavenInit">
+        <artifact:install-provider artifactId="wagon-webdav" version="1.0-beta-2"/>
     </target>
 
-    <target name="-coberturaInitialize">
-      <delete dir="${instrumentedClassesDirectory}" quiet="true" failonerror="false"/>
-    </target>
-
-    <target name="-coberturaInstrument" depends="-coberturaTaskdef,-coberturaInitialize" unless="skipCobertura">
-        <mkdir dir="${instrumentedClassesDirectory}"/>
-        <cobertura-instrument todir="${instrumentedClassesDirectory}">
-            <fileset dir="${mainClassesDirectory}" includes="**/*.class">
-                <!-- exclude for now, eventually include some tests for Java2groovy and add back in -->
-                <exclude name="org/codehaus/groovy/antlr/java/JavaLexer.class"/>
-                <exclude name="org/codehaus/groovy/antlr/java/JavaRecognizer.class"/>
-                <exclude name="org/codehaus/groovy/antlr/java/JavaTokenTypes.class"/>
-            </fileset>
-        </cobertura-instrument>
-    </target>
-
-    <target name="-coverageReport" unless="skipCobertura">
-        <cobertura-report destdir="${reportsDirectory}/cobertura">
-            <fileset dir="${mainSourceDirectory}">
-                <exclude name="org/codehaus/groovy/antlr/java/JavaLexer.java"/>
-                <exclude name="org/codehaus/groovy/antlr/java/JavaRecognizer.java"/>
-                <exclude name="org/codehaus/groovy/antlr/java/JavaTokenTypes.java"/>
-            </fileset>
-        </cobertura-report>
-    </target>
-
-    <target name="-checkstyleTaskdef">
-        <taskdef resource="checkstyletask.properties" uri="antlib:com.puppycrawl.tools.checkstyle" classpathref="toolsPath"/>
-    </target>
-
-    <target name="-checkstyle" xmlns:cs="antlib:com.puppycrawl.tools.checkstyle" depends="-checkstyleTaskdef">
-        <mkdir dir="${checkstyleReportDirectory}"/>
-        <property name="checkstyle.result" location="${checkstyleReportDirectory}/result"/>
-        <cs:checkstyle config="config/checkstyle/config.xml" failureProperty="checkstyle.failure"
-              failOnViolation="false" classpathref="checkstylePath">
-            <formatter type="xml" tofile="${checkstyle.result}.xml"/>
-            <fileset dir="${checkstyleSourceDirectory}"
-                    excludes="org/codehaus/groovy/antlr/parser/*,org/codehaus/groovy/antlr/java/*,org/codehaus/groovy/syntax/Types.java"/>
-        </cs:checkstyle>
-        <property name="checkstyleReportDirAbsolute" location="${checkstyleReportDirectory}"/>
-        <xslt in="${checkstyle.result}.xml" out="${checkstyle.result}.html" style="config/checkstyle/checkstyle-frames.xsl">
-            <param name="output.dir" expression="${checkstyleReportDirAbsolute}"/>
-        </xslt>
-    </target>
-
-    <target name="-jarjarTaskdef">
-        <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpathref="toolsPath"/>
-    </target>
-
+    <macrodef name="mavenDeploy">
+        <attribute name="version"/>
+        <attribute name="artifact"/>
+        <sequential>
+            <artifact:deploy file="${targetDistDirectory}/@{artifact}-@{version}.jar">
+                <pom refid="@{artifact}.pom"/>
+            </artifact:deploy>
+        </sequential>
+    </macrodef>
 </project>
