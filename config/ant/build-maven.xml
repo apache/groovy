@@ -22,11 +22,32 @@ $Date$
 
     <import file="build-setup.xml"/>
 
-    <macrodef name="fetch.maven.all.modules">
+    <macrodef name="maven.dependencies">
+        <attribute name="useScope"/>
+        <attribute name="filesetId"/>
+        <attribute name="pomRefId"/>
         <sequential>
-            <fetch.maven.all.scopes module="main"/>
-            <fetch.maven scope="runtime" module="tools"/>
-            <fetch.maven scope="runtime" module="examples"/>
+            <artifact:dependencies useScope="@{useScope}" filesetId="@{filesetId}">
+                <remoteRepository refid="ibiblio.remote.repository"/>
+                <remoteRepository refid="repo1.remote.repository"/>
+                <pom refid="@{pomRefId}"/>
+            </artifact:dependencies>
+        </sequential>
+    </macrodef>
+
+    <macrodef name="fetch.maven">
+        <attribute name="scope"/>
+        <attribute name="module"/>
+        <sequential>
+            <maven.dependencies useScope="@{scope}" filesetId="fs.@{scope}.@{module}" pomRefId="@{module}.pom"/>
+        </sequential>
+    </macrodef>
+
+    <macrodef name="maven.pom">
+        <attribute name="file"/>
+        <attribute name="id"/>
+        <sequential>
+            <artifact:pom file="@{file}" id="@{id}"/>
         </sequential>
     </macrodef>
 
@@ -39,19 +60,11 @@ $Date$
         </sequential>
     </macrodef>
 
-    <macrodef name="fetch.maven">
-        <attribute name="scope"/>
-        <attribute name="module"/>
+    <macrodef name="fetch.maven.all.modules">
         <sequential>
-            <maven.dependencies useScope="@{scope}" filesetId="fs.@{scope}.@{module}" pomRefId="maven.artifact.@{module}"/>
-        </sequential>
-    </macrodef>
-
-    <macrodef name="maven.pom">
-        <attribute name="file"/>
-        <attribute name="id"/>
-        <sequential>
-            <artifact:pom file="@{file}" id="@{id}"/>
+            <fetch.maven.all.scopes module="groovy"/>
+            <fetch.maven scope="runtime" module="groovy-tools"/>
+            <fetch.maven scope="runtime" module="groovy-examples"/>
         </sequential>
     </macrodef>
 
@@ -60,19 +73,6 @@ $Date$
         <attribute name="url"/>
         <sequential>
             <artifact:remoteRepository id="@{id}" url="@{url}"/>
-        </sequential>
-    </macrodef>
-
-    <macrodef name="maven.dependencies">
-        <attribute name="useScope"/>
-        <attribute name="filesetId"/>
-        <attribute name="pomRefId"/>
-        <sequential>
-            <artifact:dependencies useScope="@{useScope}" filesetId="@{filesetId}">
-                <remoteRepository refid="ibiblio.remote.repository"/>
-                <remoteRepository refid="repo1.remote.repository"/>
-                <pom refid="@{pomRefId}"/>
-            </artifact:dependencies>
         </sequential>
     </macrodef>
 
@@ -87,9 +87,13 @@ $Date$
     </target>
 
     <target name="-mavenPomDefinitions">
-        <maven.pom file="config/maven/main.pom" id="maven.artifact.main"/>
-        <maven.pom file="config/maven/tools.pom" id="maven.artifact.tools"/>
-        <maven.pom file="config/maven/examples.pom" id="maven.artifact.examples"/>
+        <maven.pom file="config/maven/groovy.pom" id="groovy.pom"/>
+        <xslt in="config/maven/groovy.pom" out="${targetDirectory}/groovy-all.pom" style="config/maven/groovy-all.xsl"/>
+        <maven.pom file="${targetDirectory}/groovy-all.pom" id="groovy-all.pom"/>
+        <xslt in="config/maven/groovy.pom" out="${targetDirectory}/groovy-all-minimal.pom" style="config/maven/groovy-all-minimal.xsl"/>
+        <maven.pom file="${targetDirectory}/groovy-all-minimal.pom" id="groovy-all-minimal.pom"/>
+        <maven.pom file="config/maven/groovy-tools.pom" id="groovy-tools.pom"/>
+        <maven.pom file="config/maven/groovy-examples.pom" id="groovy-examples.pom"/>
     </target>
 
     <target name="-mavenRepositoryDefinitions">
@@ -118,45 +122,41 @@ $Date$
 
         <copy todir="${compileLibDirectory}">
             <mapper type="flatten"/>
-            <fileset refid="fs.compile.main"/>
+            <fileset refid="fs.compile.groovy"/>
         </copy>
         <path id="compilePath">
             <fileset dir="${compileLibDirectory}" includes="**/*.jar"/>
         </path>
         <copy todir="${testLibDirectory}">
             <mapper type="flatten"/>
-            <fileset refid="fs.test.main"/>
+            <fileset refid="fs.test.groovy"/>
         </copy>
         <path id="testPath">
             <fileset dir="${testLibDirectory}" includes="**/*.jar"/>
         </path>
         <copy todir="${runtimeLibDirectory}">
             <mapper type="flatten"/>
-            <fileset refid="fs.runtime.main"/>
+            <fileset refid="fs.runtime.groovy"/>
         </copy>
         <path id="runtimePath">
             <fileset dir="${runtimeLibDirectory}" includes="**/*.jar"/>
         </path>
         <copy todir="${toolsLibDirectory}">
             <mapper type="flatten"/>
-            <fileset refid="fs.runtime.tools"/>
+            <fileset refid="fs.runtime.groovy-tools"/>
         </copy>
         <path id="toolsPath">
             <fileset dir="${toolsLibDirectory}" includes="**/*.jar"/>
         </path>
         <copy todir="${examplesLibDirectory}">
             <mapper type="flatten"/>
-            <fileset refid="fs.runtime.examples"/>
+            <fileset refid="fs.runtime.groovy-examples"/>
         </copy>
         <path id="examplesPath">
             <fileset dir="${examplesLibDirectory}" includes="**/*.jar"/>
         </path>
     </target>
 
-    <!--
-    This target is intended to be run only after a normal build has generated
-          the groovy-*.jar and groovy-all-*.jar artifacts.
-    -->
     <target name="-mavenDeployInit" depends="-mavenInit">
         <artifact:install-provider artifactId="wagon-webdav" version="1.0-beta-2"/>
     </target>
