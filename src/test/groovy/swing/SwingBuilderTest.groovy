@@ -5,6 +5,8 @@ import java.awt.CardLayout
 import java.awt.FlowLayout
 import java.awt.GridBagLayout
 import java.awt.GridLayout
+import java.awt.event.KeyEvent
+import java.awt.event.InputEvent
 
 import javax.swing.*
 
@@ -163,9 +165,46 @@ class SwingBuilderTest extends GroovyTestCase {
         assert swing.actionId.getValue(Action.MNEMONIC_KEY) == expected2
     }
 
+    void testBuilderProperties() {
+        def swing = new SwingBuilder()
+        assert swing.class.name == 'groovy.swing.SwingBuilder'
+    }
+
+    void testMisplacedActionsAreIgnored() {
+        def swing = new SwingBuilder()
+        // labels don't support actions; should be ignored
+        swing.label{
+            action(id:'actionId', name:'About', mnemonic:'A')
+        }
+    }
+
+    void testKeystrokesWithinActions() {
+        def swing = new SwingBuilder()
+        swing.panel{
+            button(id:'buttonId'){
+                action(id:'action1', keyStroke:'ctrl W')
+                action(id:'action2',
+                    keyStroke:KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, InputEvent.ALT_MASK))
+            }
+        }
+        def component = swing.buttonId
+        def expected1 = swing.action1.toString()
+        def expected2 = swing.action2.toString()
+        def keys = component.actionMap.allKeys().toList()
+        assert keys.contains(expected1)
+        assert keys.contains(expected2)
+        def inputMap = component.inputMap
+        def values = inputMap.allKeys().toList().collect{ inputMap.get(it) }
+        assert values.contains(expected1)
+        assert values.contains(expected2)
+    }
+
     void testSetAccelerator() {
         def swing = new SwingBuilder()
-
+        def help = swing.action(accelerator:'F1')
+        def about = swing.action(accelerator:KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, InputEvent.CTRL_MASK))
+        assert help.getValue(Action.ACCELERATOR_KEY).toString() == 'pressed F1'
+        assert about.getValue(Action.ACCELERATOR_KEY).toString() == 'ctrl pressed SPACE'
     }
 
     void testClosureColumn() {
