@@ -8,6 +8,8 @@ import java.awt.GridLayout
 import java.awt.event.KeyEvent
 import java.awt.event.InputEvent
 
+import java.text.SimpleDateFormat
+import javax.swing.text.*
 import javax.swing.*
 
 class SwingBuilderTest extends GroovyTestCase {
@@ -170,6 +172,37 @@ class SwingBuilderTest extends GroovyTestCase {
         assert swing.class.name == 'groovy.swing.SwingBuilder'
     }
 
+    void testFormattedTextField() {
+        def swing = new SwingBuilder()
+        def dummy = new Date()
+        def field = swing.formattedTextField(value:dummy)
+        assert field.value == dummy
+        assert field.formatter.class == DateFormatter.class
+        def dummyFormatter = new SimpleDateFormat()
+        field = swing.formattedTextField(format:dummyFormatter)
+        assert field.formatter.class == DateFormatter.class
+        field = swing.formattedTextField()
+        field.value = 3
+        assert field.formatter.class == NumberFormatter.class
+    }
+
+    void testTabbedPane() {
+        def swing = new SwingBuilder()
+        swing.tabbedPane{
+            button()
+        }
+    }
+
+    void testComboBox() {
+        def swing = new SwingBuilder()
+        Object[] objects = ['a','b']
+        def list = ['c', 'd', 'e']
+        def vector = new Vector(['f', 'g', 'h', 'i'])
+        assert swing.comboBox(items:objects).itemCount == 2
+        assert swing.comboBox(items:list).itemCount == 3
+        assert swing.comboBox(items:vector).itemCount == 4
+    }
+
     void testMisplacedActionsAreIgnored() {
         def swing = new SwingBuilder()
         // labels don't support actions; should be ignored
@@ -203,8 +236,24 @@ class SwingBuilderTest extends GroovyTestCase {
         def swing = new SwingBuilder()
         def help = swing.action(accelerator:'F1')
         def about = swing.action(accelerator:KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, InputEvent.CTRL_MASK))
-        assert help.getValue(Action.ACCELERATOR_KEY).toString() == 'pressed F1'
-        assert about.getValue(Action.ACCELERATOR_KEY).toString() == 'ctrl pressed SPACE'
+        assert help.getValue(Action.ACCELERATOR_KEY).toString().contains('F1')
+        def aboutStr = about.getValue(Action.ACCELERATOR_KEY).toString()
+        assert aboutStr.contains('ctrl')
+        assert aboutStr.contains('SPACE')
+    }
+
+    void testConstraints() {
+        def swing = new SwingBuilder()
+        swing.internalFrame(id:'frameId', layout:new BorderLayout(),
+                border:BorderFactory.createTitledBorder(BorderFactory.createLoweredBevelBorder())) {
+            vbox(id:'vboxId', constraints:BorderLayout.NORTH)
+            hbox(id:'hboxId', constraints:BorderLayout.WEST)
+            scrollPane(id:'scrollId', constraints:BorderLayout.CENTER,
+                border:BorderFactory.createRaisedBevelBorder())
+        }
+        assert swing.vboxId.parent == swing.frameId.contentPane
+        assert swing.hboxId.parent == swing.frameId.contentPane
+        assert swing.scrollId.parent == swing.frameId.contentPane
     }
 
     void testClosureColumn() {
