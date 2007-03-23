@@ -135,7 +135,17 @@ class SwingBuilderTest extends GroovyTestCase {
 
     void testNestedWindows() {
         def swing = new SwingBuilder()
-        swing.window{ window() }
+        swing.window{
+            window()
+            frame{ window() }
+        }
+    }
+
+    void testDialogs() {
+        def swing = new SwingBuilder()
+        swing.dialog()
+        swing.frame{ dialog() }
+        swing.dialog{ dialog() }
     }
 
     void testNodeCreation() {
@@ -212,7 +222,7 @@ class SwingBuilderTest extends GroovyTestCase {
         def swing = new SwingBuilder()
         // labels don't support actions; should be ignored
         swing.label{
-            action(id:'actionId', name:'About', mnemonic:'A')
+            action(id:'actionId', name:'About', mnemonic:'A', closure:{x->x})
         }
     }
 
@@ -267,7 +277,6 @@ class SwingBuilderTest extends GroovyTestCase {
         def msg = shouldFail{
             swing.closureColumn()
         }
-        println  msg
         assert msg.contains('closureColumn must be a child of a tableModel')
         //swing.tableModel()
         msg = shouldFail{
@@ -278,6 +287,13 @@ class SwingBuilderTest extends GroovyTestCase {
             }
         }
         assert msg.contains("Must specify 'read' Closure property for a closureColumn")
+        def closure = { x -> x }
+        swing.table{
+            tableModel(){
+                closureColumn(read:closure, write:closure)
+                closureColumn(read:closure, type:String.class)
+            }
+        }
     }
 
     void testSetConstraints() {
