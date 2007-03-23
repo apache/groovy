@@ -133,6 +133,11 @@ class SwingBuilderTest extends GroovyTestCase {
         assert swing.vsplit.bottomComponent == swing.bottom
     }
 
+    void testNestedWindows() {
+        def swing = new SwingBuilder()
+        swing.window{ window() }
+    }
+
     void testNodeCreation() {
         def swing = new SwingBuilder()
         def frame = swing.frame(){
@@ -237,16 +242,16 @@ class SwingBuilderTest extends GroovyTestCase {
         def help = swing.action(accelerator:'F1')
         def about = swing.action(accelerator:KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, InputEvent.CTRL_MASK))
         assert help.getValue(Action.ACCELERATOR_KEY).toString().contains('F1')
-        def aboutStr = about.getValue(Action.ACCELERATOR_KEY).toString()
-        println 'aboutStr=' + aboutStr
-        //assert aboutStr.contains('ctrl')
-        //assert aboutStr.contains('SPACE')
+        def aboutStr = about.getValue(Action.ACCELERATOR_KEY).toString().toLowerCase()
+        assert aboutStr.contains('ctrl')
+        assert aboutStr.contains('space')
     }
 
     void testConstraints() {
         def swing = new SwingBuilder()
-        swing.internalFrame(id:'frameId', layout:new BorderLayout(),
+        swing.internalFrame(id:'frameId',
                 border:BorderFactory.createTitledBorder(BorderFactory.createLoweredBevelBorder())) {
+            swing.frameId.contentPane.layout = new BorderLayout()
             vbox(id:'vboxId', constraints:BorderLayout.NORTH)
             hbox(id:'hboxId', constraints:BorderLayout.WEST)
             scrollPane(id:'scrollId', constraints:BorderLayout.CENTER,
