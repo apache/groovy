@@ -64,6 +64,12 @@ public class TimeCategory {
         return new TimeDuration(0,0, 0, millis);
     }
 
+    public static Duration getRelativeDaylightSavingsOffset(Date self, Date other) {
+        Duration d1 = getDaylightSavingsOffset(self);
+        Duration d2 = getDaylightSavingsOffset(other);
+        return new TimeDuration(0,0, 0, (int)(d2.toMilliseconds() - d1.toMilliseconds()));
+    }
+
     public static TimeDuration minus(final Date lhs, final Date rhs) {
         long milliseconds = lhs.getTime() - rhs.getTime();
         long days = milliseconds / (24 * 60 * 60 * 1000);
