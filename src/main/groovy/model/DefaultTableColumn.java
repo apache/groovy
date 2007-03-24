@@ -48,8 +48,7 @@ package groovy.model;
 import javax.swing.table.TableColumn;
 
 /** 
- * Represents a column using a ValueModel to extract
- * the value.
+ * Represents a column using a ValueModel to extract the value.
  *
  * @author <a href="mailto:jstrachan@apache.org">James Strachan</a>
  * @version $Revision$
@@ -73,6 +72,11 @@ public class DefaultTableColumn extends TableColumn {
     
     /**
      * Evaluates the value of a cell
+     *
+     * @return the value
+     * @param row the row of interest
+     * @param rowIndex the index of the row of interest
+     * @param columnIndex the column of interest
      */    
     public Object getValue(Object row, int rowIndex, int columnIndex) {
         if (valueModel instanceof NestedValueModel) {
@@ -90,11 +94,8 @@ public class DefaultTableColumn extends TableColumn {
         valueModel.setValue(value);
     }
 
-    // Properties
-    //-------------------------------------------------------------------------                    
-    
     /**
-     * @return the column type.
+     * @return the column type
      */
     public Class getType() {
         return valueModel.getType();

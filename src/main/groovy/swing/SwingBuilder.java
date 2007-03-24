@@ -177,11 +177,12 @@ public class SwingBuilder extends BuilderSupport {
                 }
             }
         } else if (child instanceof LayoutManager) {
+            Container target = (Container) parent;
             if (parent instanceof RootPaneContainer) {
                 RootPaneContainer rpc = (RootPaneContainer) parent;
-                parent = rpc.getContentPane();
+                target = rpc.getContentPane();
             }
-            InvokerHelper.setProperty(parent, "layout", child);
+            InvokerHelper.setProperty(target, "layout", child);
         } else if (child instanceof JToolTip && parent instanceof JComponent) {
             ((JToolTip) child).setComponent((JComponent) parent);
         } else if (parent instanceof JTable && child instanceof TableColumn) {
@@ -329,25 +330,25 @@ public class SwingBuilder extends BuilderSupport {
         }
         if (widget == null) {
             Factory factory = (Factory) factories.get(name);
-            if (factory != null) {
-                try {
-                    widget = factory.newInstance(attributes);
-                    if (widgetName != null) {
-                        widgets.put(widgetName, widget);
-                    }
-                    if (widget == null) {
-                        log.log(Level.WARNING, "Factory for name: " + name + " returned null");
-                    } else {
-                        if (log.isLoggable(Level.FINE)) {
-                            log.fine("For name: " + name + " created widget: " + widget);
-                        }
-                    }
-                }
-                catch (Exception e) {
-                    throw new RuntimeException("Failed to create component for" + name + " reason: " + e, e);
-                }
-            } else {
+            if (factory == null) {
                 log.log(Level.WARNING, "Could not find match for name: " + name);
+                return null;
+            }
+            try {
+                widget = factory.newInstance(attributes);
+                if (widget == null) {
+                    log.log(Level.WARNING, "Factory for name: " + name + " returned null");
+                    return null;
+                }
+                if (widgetName != null) {
+                    widgets.put(widgetName, widget);
+                }
+                if (log.isLoggable(Level.FINE)) {
+                    log.fine("For name: " + name + " created widget: " + widget);
+                }
+            }
+            catch (Exception e) {
+                throw new RuntimeException("Failed to create component for '" + name + "' reason: " + e, e);
             }
         }
         handleWidgetAttributes(widget, attributes);
@@ -355,68 +356,66 @@ public class SwingBuilder extends BuilderSupport {
     }
 
     protected void handleWidgetAttributes(Object widget, Map attributes) {
-        if (widget != null) {
-            if (widget instanceof Action) {
-                /* TODO we could move this custom logic into the MetaClass for Action */
-                Action action = (Action) widget;
+        if (widget instanceof Action) {
+            /* TODO we could move this custom logic into the MetaClass for Action */
+            Action action = (Action) widget;
 
-                Closure closure = (Closure) attributes.remove("closure");
-                if (closure != null && action instanceof DefaultAction) {
-                    DefaultAction defaultAction = (DefaultAction) action;
-                    defaultAction.setClosure(closure);
+            Closure closure = (Closure) attributes.remove("closure");
+            if (closure != null && action instanceof DefaultAction) {
+                DefaultAction defaultAction = (DefaultAction) action;
+                defaultAction.setClosure(closure);
+            }
+
+            Object accel = attributes.remove("accelerator");
+            KeyStroke stroke = null;
+            if (accel instanceof KeyStroke) {
+                stroke = (KeyStroke) accel;
+            } else if (accel != null) {
+                stroke = KeyStroke.getKeyStroke(accel.toString());
+            }
+            action.putValue(Action.ACCELERATOR_KEY, stroke);
+
+            Object mnemonic = attributes.remove("mnemonic");
+            if ((mnemonic != null) && !(mnemonic instanceof Number)) {
+                mnemonic = new Integer(mnemonic.toString().charAt(0));
+            }
+            action.putValue(Action.MNEMONIC_KEY, mnemonic);
+
+            for (Iterator iter = attributes.entrySet().iterator(); iter.hasNext();) {
+                Map.Entry entry = (Map.Entry) iter.next();
+                String actionName = (String) entry.getKey();    // todo dk: misleading naming. this can be any property name
+
+                // typically standard Action names start with upper case, so lets upper case it
+                actionName = capitalize(actionName);            // todo dk: in general, this shouldn't be capitalized
+                Object value = entry.getValue();
+
+                action.putValue(actionName, value);
+            }
+
+        } else {
+            // some special cases...
+            if (attributes.containsKey("buttonGroup")) {
+                Object o = attributes.get("buttonGroup");
+                if ((o instanceof ButtonGroup) && (widget instanceof AbstractButton)) {
+                    ((AbstractButton) widget).getModel().setGroup((ButtonGroup) o);
+                    attributes.remove("buttonGroup");
                 }
+            }
 
-                Object accel = attributes.remove("accelerator");
-                KeyStroke stroke = null;
-                if (accel instanceof KeyStroke) {
-                    stroke = (KeyStroke) accel;
-                } else if (accel != null) {
-                    stroke = KeyStroke.getKeyStroke(accel.toString());
-                }
-                action.putValue(Action.ACCELERATOR_KEY, stroke);
+            // this next statement nd if/else is a workaround until GROOVY-305 is fixed
+            Object mnemonic = attributes.remove("mnemonic");
+            if ((mnemonic != null) && (mnemonic instanceof Number)) {
+                InvokerHelper.setProperty(widget, "mnemonic", new Character((char) ((Number) mnemonic).intValue()));
+            } else if (mnemonic != null) {
+                InvokerHelper.setProperty(widget, "mnemonic", new Character(mnemonic.toString().charAt(0)));
+            }
 
-                Object mnemonic = attributes.remove("mnemonic");
-                if ((mnemonic != null) && !(mnemonic instanceof Number)) {
-                    mnemonic = new Integer(mnemonic.toString().charAt(0));
-                }
-                action.putValue(Action.MNEMONIC_KEY, mnemonic);
-
-                for (Iterator iter = attributes.entrySet().iterator(); iter.hasNext();) {
-                    Map.Entry entry = (Map.Entry) iter.next();
-                    String actionName = (String) entry.getKey();    // todo dk: misleading naming. this can be any property name
-
-                    // typically standard Action names start with upper case, so lets upper case it            
-                    actionName = capitalize(actionName);            // todo dk: in general, this shouldn't be capitalized
-                    Object value = entry.getValue();
-
-                    action.putValue(actionName, value);
-                }
-
-            } else {
-                // some special cases...
-                if (attributes.containsKey("buttonGroup")) {
-                    Object o = attributes.get("buttonGroup");
-                    if ((o instanceof ButtonGroup) && (widget instanceof AbstractButton)) {
-                        ((AbstractButton) widget).getModel().setGroup((ButtonGroup) o);
-                        attributes.remove("buttonGroup");
-                    }
-                }
-
-                // this next statement nd if/else is a workaround until GROOVY-305 is fixed
-                Object mnemonic = attributes.remove("mnemonic");
-                if ((mnemonic != null) && (mnemonic instanceof Number)) {
-                    InvokerHelper.setProperty(widget, "mnemonic", new Character((char) ((Number) mnemonic).intValue()));
-                } else if (mnemonic != null) {
-                    InvokerHelper.setProperty(widget, "mnemonic", new Character(mnemonic.toString().charAt(0)));
-                }
-
-                // set the properties
-                for (Iterator iter = attributes.entrySet().iterator(); iter.hasNext();) {
-                    Map.Entry entry = (Map.Entry) iter.next();
-                    String property = entry.getKey().toString();
-                    Object value = entry.getValue();
-                    InvokerHelper.setProperty(widget, property, value);
-                }
+            // set the properties
+            for (Iterator iter = attributes.entrySet().iterator(); iter.hasNext();) {
+                Map.Entry entry = (Map.Entry) iter.next();
+                String property = entry.getKey().toString();
+                Object value = entry.getValue();
+                InvokerHelper.setProperty(widget, property, value);
             }
         }
     }
@@ -517,6 +516,7 @@ public class SwingBuilder extends BuilderSupport {
         });
         registerBeanFactory("tabbedPane", JTabbedPane.class);
         registerBeanFactory("table", JTable.class);
+        registerBeanFactory("tableColumn", TableColumn.class);
         registerBeanFactory("textArea", JTextArea.class);
         registerBeanFactory("textPane", JTextPane.class);
         registerBeanFactory("textField", JTextField.class);
@@ -808,7 +808,6 @@ public class SwingBuilder extends BuilderSupport {
                 return beanClass.newInstance();
             }
         });
-
     }
 
     protected void registerFactory(String name, Factory factory) {

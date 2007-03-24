@@ -8,12 +8,11 @@ class TableModelTest extends GroovyTestCase {
         def listModel = new ValueHolder(list)
         
         def model = new DefaultTableModel(listModel)
-        def rowModel = model.getRowModel()
-        model.addColumn(new DefaultTableColumn("Name", new PropertyModel(rowModel, "name")))
-        model.addColumn(new DefaultTableColumn("Location", new PropertyModel(rowModel, "location")))
+        model.addColumn(new DefaultTableColumn("Name", new PropertyModel(model.rowModel, "name")))
+        model.addColumn(new DefaultTableColumn("Location", new PropertyModel(model.rowModel, "location")))
         
-        assert model.getRowCount() == 2
-        assert model.getColumnCount() == 2
+        assert model.rowCount == 2
+        assert model.columnCount == 2
         assertValueAt(model, 0, 0, 'James')
         assertValueAt(model, 0, 1, 'London')
         assertValueAt(model, 1, 0, 'Bob')
@@ -22,11 +21,11 @@ class TableModelTest extends GroovyTestCase {
         assert model.getColumnName(0) == 'Name'
         assert model.getColumnName(1) == 'Location'
         
-        // lets set some values
+        // let's set some values
         model.setValueAt('Antigua', 0, 1)
         assertValueAt(model, 0, 1, 'Antigua')
         
-        // lets check the real model changed too
+        // let's check the real model changed too
         def james = list.get(0)
         assert james.location == 'Antigua'
     }

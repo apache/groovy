@@ -49,7 +49,7 @@ import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 
 /**
- * A simple ValueModle implementation which is a holder of an object value. 
+ * A simple ValueModel implementation which is a holder of an object value. 
  * Used to share local variables with closures
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>

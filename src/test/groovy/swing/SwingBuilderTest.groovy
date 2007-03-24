@@ -117,6 +117,28 @@ class SwingBuilderTest extends GroovyTestCase {
         }
     }
 
+    void testButtonGroupOnlyForButtons() {
+        def swing = new SwingBuilder()
+        def buttonGroup = swing.buttonGroup()
+        shouldFail(MissingPropertyException) {
+            swing.label(buttonGroup:buttonGroup)
+        }
+    }
+
+    void testWidget() {
+        def swing = new SwingBuilder()
+        def label = swing.label()
+        swing.widget(label)
+    }
+
+    void testTableColumn() {
+        // TODO is this required?
+        def swing = new SwingBuilder()
+        swing.table{
+            tableColumn()
+        }
+    }
+
     void testSplitPane() {
         def swing = new SwingBuilder()
         def buttonGroup = swing.buttonGroup()
@@ -315,7 +337,8 @@ class SwingBuilderTest extends GroovyTestCase {
                 }
             }
         }
-        assert msg.contains("Must specify a property for a propertyColumn")
+        assert msg.contains("Must specify a property for a propertyColumn"): \
+            "Instead found message: " + msg
         swing.table{
             tableModel(){
                 propertyColumn(header:'header', propertyName:'foo')
@@ -337,11 +360,17 @@ class SwingBuilderTest extends GroovyTestCase {
                 }
             }
         }
-        assert msg.contains("Must specify 'read' Closure property for a closureColumn")
+        assert msg.contains("Must specify 'read' Closure property for a closureColumn"): \
+            "Instead found message: " + msg
         def closure = { x -> x }
         swing.table{
             tableModel(){
-                closureColumn(read:closure, write:closure)
+                closureColumn(read:closure, write:closure, header:'header')
+            }
+            tableModel(model:new groovy.model.ValueHolder('foo')){
+                closureColumn(read:closure, type:String.class)
+            }
+            tableModel(list:['a','b']){
                 closureColumn(read:closure, type:String.class)
             }
         }
