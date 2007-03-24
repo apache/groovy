@@ -26,11 +26,8 @@ class DurationTest extends GroovyTestCase {
 
             // add two durations
             def monthAndWeekA = 1.month + 1.week
-            def offsetA = 0.months.from.now.daylightSavingsOffset
             // add absolute date and a duration
             def monthAndWeekB = 1.month.from.now + 1.week - 0.months.from.now
-            // println monthAndWeekB.from.now.time
-            def offsetB = 1.month.from.now.daylightSavingsOffset - 1.week.ago.daylightSavingsOffset
             assert monthAndWeekA.toMilliseconds() == monthAndWeekB.toMilliseconds()
         }
     }
@@ -38,13 +35,10 @@ class DurationTest extends GroovyTestCase {
     void testDatumDependantArithmetic() {
         use(TimeCategory) {
             def now = new Date()
-            def nowOffset = now.daylightSavingsOffset
             def then = (now + 1.month) + 1.week
-
             def week = then - (now + 1.month)
-            def dstAdjustment = week.from.now.daylightSavingsOffset - nowOffset
-            assert (week + dstAdjustment).toMilliseconds() == (7 * 24 * 60 * 60 * 1000): \
-                "Expected ${7 * 24 * 60 * 60 * 1000} but was ${(week + dstAdjustment).toMilliseconds()}"
+            assert week.toMilliseconds() == (7 * 24 * 60 * 60 * 1000): \
+                "Expected ${7 * 24 * 60 * 60 * 1000} but was ${week.toMilliseconds()}"
         }
     }
 }
