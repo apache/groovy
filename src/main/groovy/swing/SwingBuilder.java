@@ -632,16 +632,11 @@ public class SwingBuilder extends BuilderSupport {
         });
         registerFactory("hstrut", new Factory() {
             public Object newInstance(Map properties) {
-                try {
-                    Object num = properties.remove("width");
-                    if (num instanceof Number) {
-                        return Box.createHorizontalStrut(((Number) num).intValue());
-                    } else {
-                        return Box.createHorizontalStrut(6);
-                    }
-                } catch (RuntimeException re) {
-                    re.printStackTrace(System.out);
-                    throw re;
+                Object num = properties.remove("width");
+                if (num instanceof Number) {
+                    return Box.createHorizontalStrut(((Number) num).intValue());
+                } else {
+                    return Box.createHorizontalStrut(6);
                 }
             }
         });

@@ -2,6 +2,8 @@ package groovy.swing
 
 import java.awt.BorderLayout
 import java.awt.CardLayout
+import java.awt.ComponentOrientation
+import java.awt.Dimension
 import java.awt.FlowLayout
 import java.awt.GridBagLayout
 import java.awt.GridLayout
@@ -117,10 +119,11 @@ class SwingBuilderTest extends GroovyTestCase {
 
     void testSplitPane() {
         def swing = new SwingBuilder()
+        def buttonGroup = swing.buttonGroup()
         def frame = swing.frame(){
             splitPane(id:'hsplit', orientation: JSplitPane.HORIZONTAL_SPLIT) {
-                button(id:'left')
-                button(id:'right')
+                button(id:'left', buttonGroup:buttonGroup)
+                button(id:'right', buttonGroup:buttonGroup)
             }
             splitPane(id:'vsplit', orientation: JSplitPane.VERTICAL_SPLIT) {
                 button(id:'top')
@@ -222,7 +225,24 @@ class SwingBuilderTest extends GroovyTestCase {
         def swing = new SwingBuilder()
         // labels don't support actions; should be ignored
         swing.label{
-            action(id:'actionId', name:'About', mnemonic:'A', closure:{x->x})
+            action(id:'actionId', Name:'about', mnemonic:'A', closure:{x->x})
+            map()
+        }
+    }
+
+    void testBoxLayout() {
+        def swing = new SwingBuilder()
+        def message = shouldFail{
+            swing.boxLayout()
+        }
+        assert message.contains('Must be nested inside a Container')
+        // default is X_AXIS
+        swing.panel(id:'panel'){
+            boxLayout(id:'layout1')
+        }
+        // can also set explicit axis
+        swing.frame(id:'frame'){
+            boxLayout(id:'layout2', axis:BoxLayout.Y_AXIS)
         }
     }
 
@@ -264,12 +284,44 @@ class SwingBuilderTest extends GroovyTestCase {
             swing.frameId.contentPane.layout = new BorderLayout()
             vbox(id:'vboxId', constraints:BorderLayout.NORTH)
             hbox(id:'hboxId', constraints:BorderLayout.WEST)
+            rigidArea(id:'area1', constraints:BorderLayout.EAST, size:[3,4] as Dimension)
+            rigidArea(id:'area2', constraints:BorderLayout.SOUTH, width:30, height:40)
             scrollPane(id:'scrollId', constraints:BorderLayout.CENTER,
                 border:BorderFactory.createRaisedBevelBorder())
+                glue()
+                vglue()
+                hglue()
+                vstrut()
+                vstrut(height:8)
+                hstrut()
+                hstrut(width:8)
+                rigidArea(id:'area3')
         }
         assert swing.vboxId.parent == swing.frameId.contentPane
         assert swing.hboxId.parent == swing.frameId.contentPane
         assert swing.scrollId.parent == swing.frameId.contentPane
+    }
+
+    void testPropertyColumn() {
+        def swing = new SwingBuilder()
+        def msg = shouldFail{
+            swing.propertyColumn()
+        }
+        assert msg.contains('propertyColumn must be a child of a tableModel')
+        msg = shouldFail{
+            swing.table{
+                tableModel(){
+                    propertyColumn()
+                }
+            }
+        }
+        assert msg.contains("Must specify a property for a propertyColumn")
+        swing.table{
+            tableModel(){
+                propertyColumn(header:'header', propertyName:'foo')
+                propertyColumn(propertyName:'bar', type:String.class)
+            }
+        }
     }
 
     void testClosureColumn() {
@@ -278,7 +330,6 @@ class SwingBuilderTest extends GroovyTestCase {
             swing.closureColumn()
         }
         assert msg.contains('closureColumn must be a child of a tableModel')
-        //swing.tableModel()
         msg = shouldFail{
             swing.table{
                 tableModel(){
@@ -327,5 +378,12 @@ class SwingBuilderTest extends GroovyTestCase {
             }
         }
         assert msg == "'td' must be within a 'tr'"
+        swing.frame(){
+            tableLayout(){
+                tr() {
+                    td()
+                }
+            }
+        }
     }
 }
