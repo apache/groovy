@@ -817,10 +817,15 @@ annotationsOpt  {Token first = LT(1);}
 ;
 
 annotationArguments
-    :   annotationMemberValueInitializer | anntotationMemberValuePairs
+    :   v:annotationMemberValueInitializer
+    		{ Token itkn = new Token(IDENT, "value");
+    		  AST i;
+    		  #i = #(create(IDENT, "value", itkn, itkn));
+    			#annotationArguments = #(create(ANNOTATION_MEMBER_VALUE_PAIR,"ANNOTATION_MEMBER_VALUE_PAIR",LT(1),LT(1)), i, v);} 
+    		| annotationMemberValuePairs
     ;
 
-anntotationMemberValuePairs
+annotationMemberValuePairs
     :   annotationMemberValuePair ( COMMA! nls! annotationMemberValuePair )*
     ;
 
