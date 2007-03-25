@@ -25,13 +25,12 @@ import org.codehaus.groovy.runtime.TimeCategory;
 
 /**
  * @author John Wilson tug@wilson.co.uk
- *
- * DatumDependentDuration represents durations whose length in milliseconds cannot be determined withou knowing the datum point.
- *
- * I don't know how many days in a year unless I know if it's a leap year or not.
- * 
- * I don't know how many days in a month unless I know the name of the month (and if it's a leap yaer if the month is February)
- * 
+ *         <p/>
+ *         DatumDependentDuration represents durations whose length in milliseconds cannot be determined withou knowing the datum point.
+ *         <p/>
+ *         I don't know how many days in a year unless I know if it's a leap year or not.
+ *         <p/>
+ *         I don't know how many days in a month unless I know the name of the month (and if it's a leap yaer if the month is February)
  */
 public class DatumDependentDuration extends BaseDuration {
     public DatumDependentDuration(final int years, final int months, final int days, final int hours, final int minutes, final int seconds, final int millis) {
@@ -45,61 +44,60 @@ public class DatumDependentDuration extends BaseDuration {
     public int getYears() {
         return this.years;
     }
-    
+
     public DatumDependentDuration plus(final DatumDependentDuration rhs) {
         return new DatumDependentDuration(this.getYears() + rhs.getYears(), this.getMonths() + rhs.getMonths(),
-                                          this.getDays() + rhs.getDays(), this.getHours() + rhs.getHours(),
-                                          this.getMinutes() + rhs.getMinutes(), this.getSeconds() + rhs.getSeconds(),
-                                          this.getMillis() + rhs.getMillis());
+                this.getDays() + rhs.getDays(), this.getHours() + rhs.getHours(),
+                this.getMinutes() + rhs.getMinutes(), this.getSeconds() + rhs.getSeconds(),
+                this.getMillis() + rhs.getMillis());
     }
-    
+
     public DatumDependentDuration plus(final TimeDatumDependentDuration rhs) {
         return rhs.plus(this);
     }
-    
+
     public DatumDependentDuration plus(final Duration rhs) {
         return new DatumDependentDuration(this.getYears(), this.getMonths(),
-                                          this.getDays() + rhs.getDays(), this.getHours() + rhs.getHours(),
-                                          this.getMinutes() + rhs.getMinutes(), this.getSeconds() + rhs.getSeconds(),
-                                          this.getMillis() + rhs.getMillis());
+                this.getDays() + rhs.getDays(), this.getHours() + rhs.getHours(),
+                this.getMinutes() + rhs.getMinutes(), this.getSeconds() + rhs.getSeconds(),
+                this.getMillis() + rhs.getMillis());
 
     }
-    
+
     public DatumDependentDuration plus(final TimeDuration rhs) {
         return rhs.plus(this);
 
     }
-    
+
     public DatumDependentDuration minus(final DatumDependentDuration rhs) {
         return new DatumDependentDuration(this.getYears() - rhs.getYears(), this.getMonths() - rhs.getMonths(),
-                                          this.getDays() - rhs.getDays(), this.getHours() - rhs.getHours(),
-                                          this.getMinutes() - rhs.getMinutes(), this.getSeconds() - rhs.getSeconds(),
-                                          this.getMillis() - rhs.getMillis());
+                this.getDays() - rhs.getDays(), this.getHours() - rhs.getHours(),
+                this.getMinutes() - rhs.getMinutes(), this.getSeconds() - rhs.getSeconds(),
+                this.getMillis() - rhs.getMillis());
 
     }
-    
+
     public DatumDependentDuration minus(final Duration rhs) {
         return new DatumDependentDuration(this.getYears(), this.getMonths(),
-                                          this.getDays() - rhs.getDays(), this.getHours() - rhs.getHours(),
-                                          this.getMinutes() - rhs.getMinutes(), this.getSeconds() - rhs.getSeconds(),
-                                          this.getMillis() - rhs.getMillis());
+                this.getDays() - rhs.getDays(), this.getHours() - rhs.getHours(),
+                this.getMinutes() - rhs.getMinutes(), this.getSeconds() - rhs.getSeconds(),
+                this.getMillis() - rhs.getMillis());
 
     }
-    
+
     /* (non-Javadoc)
-     * @see groovy.time.BaseDuration#toMilliseconds()
-     * 
-     * Do our best to change the duration into milliseconds
-     * We calculate the duartion relative to now
-     */
+    * @see groovy.time.BaseDuration#toMilliseconds()
+    *
+    * Do our best to change the duration into milliseconds
+    * We calculate the duration relative to now
+    */
     public long toMilliseconds() {
-    final Date now = new Date();
-    
+        final Date now = new Date();
         return TimeCategory.minus(plus(now), now).toMilliseconds();
     }
-    
+
     public Date getAgo() {
-    final Calendar cal = Calendar.getInstance();
+        final Calendar cal = Calendar.getInstance();
 
         cal.add(Calendar.YEAR, -this.getYears());
         cal.add(Calendar.MONTH, -this.getMonths());
@@ -108,11 +106,10 @@ public class DatumDependentDuration extends BaseDuration {
         cal.add(Calendar.MINUTE, -this.getMinutes());
         cal.add(Calendar.SECOND, -this.getSeconds());
         cal.add(Calendar.MILLISECOND, -this.getMillis());
-        
+
         //
         // SqlDate should not really care about these values but it seems to "remember" them
-        // so we clear them.
-        // We do the adds first incase we get carry into the day field
+        // so we clear them. We do the adds first in case we get carry into the day field.
         //
         cal.set(Calendar.HOUR_OF_DAY, 0);
         cal.set(Calendar.MINUTE, 0);
@@ -121,11 +118,11 @@ public class DatumDependentDuration extends BaseDuration {
 
         return new java.sql.Date(cal.getTimeInMillis());
     }
-    
+
     public From getFrom() {
         return new From() {
             public Date getNow() {
-            final Calendar cal = Calendar.getInstance();
+                final Calendar cal = Calendar.getInstance();
 
                 cal.add(Calendar.YEAR, DatumDependentDuration.this.getYears());
                 cal.add(Calendar.MONTH, DatumDependentDuration.this.getMonths());
@@ -134,19 +131,18 @@ public class DatumDependentDuration extends BaseDuration {
                 cal.add(Calendar.MINUTE, DatumDependentDuration.this.getMinutes());
                 cal.add(Calendar.SECOND, DatumDependentDuration.this.getSeconds());
                 cal.add(Calendar.MILLISECOND, DatumDependentDuration.this.getMillis());
-                
+
                 //
                 // SqlDate should not really care about these values but it seems to "remember" them
-                // so we clear them.
-                // We do the adds first incase we get carry into the day field
+                // so we clear them. We do the adds first in case we get carry into the day field.
                 //
                 cal.set(Calendar.HOUR_OF_DAY, 0);
                 cal.set(Calendar.MINUTE, 0);
                 cal.set(Calendar.SECOND, 0);
                 cal.set(Calendar.MILLISECOND, 0);
-                
+
                 return new java.sql.Date(cal.getTimeInMillis());
-             }
+            }
         };
     }
 }

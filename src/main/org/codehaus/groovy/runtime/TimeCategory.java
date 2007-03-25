@@ -64,6 +64,10 @@ public class TimeCategory {
         return new TimeDuration(0,0, 0, millis);
     }
 
+    public static Duration getDaylightSavingsOffset(BaseDuration self) {
+        return getDaylightSavingsOffset(new Date(self.toMilliseconds() + 1));
+    }
+
     public static Duration getRelativeDaylightSavingsOffset(Date self, Date other) {
         Duration d1 = getDaylightSavingsOffset(self);
         Duration d2 = getDaylightSavingsOffset(other);
