@@ -108,7 +108,7 @@ import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
-import javax.swing.JToolTip;
+//import javax.swing.JToolTip;
 import javax.swing.JTree;
 import javax.swing.JViewport;
 import javax.swing.JWindow;
@@ -154,37 +154,13 @@ public class SwingBuilder extends BuilderSupport {
 
     protected void setParent(Object parent, Object child) {
         if (child instanceof Action) {
-            Action action = (Action) child;
-            try {
-                InvokerHelper.setProperty(parent, "action", action);
-            } catch (RuntimeException re) {
-                // must not have an action property...
-                // so we ignore it and go on
-            }
-            Object keyStroke = action.getValue("KeyStroke");
-            if (parent instanceof JComponent) {
-                JComponent component = (JComponent) parent;
-                KeyStroke stroke = null;
-                if (keyStroke instanceof String) {
-                    stroke = KeyStroke.getKeyStroke((String) keyStroke);
-                } else if (keyStroke instanceof KeyStroke) {
-                    stroke = (KeyStroke) keyStroke;
-                }
-                if (stroke != null) {
-                    String key = action.toString();
-                    component.getInputMap().put(stroke, key);
-                    component.getActionMap().put(key, action);
-                }
-            }
+            setParentForAction(parent, (Action) child);
         } else if (child instanceof LayoutManager) {
-            Container target = (Container) parent;
-            if (parent instanceof RootPaneContainer) {
-                RootPaneContainer rpc = (RootPaneContainer) parent;
-                target = rpc.getContentPane();
-            }
+            Container target = getLayoutTarget(parent);
             InvokerHelper.setProperty(target, "layout", child);
-        } else if (child instanceof JToolTip && parent instanceof JComponent) {
-            ((JToolTip) child).setComponent((JComponent) parent);
+// doesn't work, use toolTipText property
+//        } else if (child instanceof JToolTip && parent instanceof JComponent) {
+//            ((JToolTip) child).setComponent((JComponent) parent);
         } else if (parent instanceof JTable && child instanceof TableColumn) {
             JTable table = (JTable) parent;
             TableColumn column = (TableColumn) child;
@@ -205,54 +181,91 @@ public class SwingBuilder extends BuilderSupport {
                 component = facade.getComponent();
             }
             if (component != null) {
-                if (parent instanceof JFrame && component instanceof JMenuBar) {
-                    JFrame frame = (JFrame) parent;
-                    frame.setJMenuBar((JMenuBar) component);
-                } else if (parent instanceof RootPaneContainer) {
-                    RootPaneContainer rpc = (RootPaneContainer) parent;
-                    if (constraints != null) {
-                        rpc.getContentPane().add(component, constraints);
-                    } else {
-                        rpc.getContentPane().add(component);
-                    }
-                } else if (parent instanceof JScrollPane) {
-                    JScrollPane scrollPane = (JScrollPane) parent;
-                    if (child instanceof JViewport) {
-                        scrollPane.setViewport((JViewport) component);
-                    } else {
-                        scrollPane.setViewportView(component);
-                    }
-                } else if (parent instanceof JSplitPane) {
-                    JSplitPane splitPane = (JSplitPane) parent;
-                    if (splitPane.getOrientation() == JSplitPane.HORIZONTAL_SPLIT) {
-                        if (splitPane.getTopComponent() == null) {
-                            splitPane.setTopComponent(component);
-                        } else {
-                            splitPane.setBottomComponent(component);
-                        }
-                    } else {
-                        if (splitPane.getLeftComponent() == null) {
-                            splitPane.setLeftComponent(component);
-                        } else {
-                            splitPane.setRightComponent(component);
-                        }
-                    }
-                } else if (parent instanceof JMenuBar && component instanceof JMenu) {
-                    JMenuBar menuBar = (JMenuBar) parent;
-                    menuBar.add((JMenu) component);
-                } else if (parent instanceof Container) {
-                    Container container = (Container) parent;
-                    if (constraints != null) {
-                        container.add(component, constraints);
-                    } else {
-                        container.add(component);
-                    }
-                } else if (parent instanceof ContainerFacade) {
-                    ContainerFacade facade = (ContainerFacade) parent;
-                    facade.addComponent(component);
-                }
+                setParentForComponent(parent, component);
             }
         }
+    }
+
+    private void setParentForComponent(Object parent, Component component) {
+        if (parent instanceof JFrame && component instanceof JMenuBar) {
+            JFrame frame = (JFrame) parent;
+            frame.setJMenuBar((JMenuBar) component);
+        } else if (parent instanceof RootPaneContainer) {
+            RootPaneContainer rpc = (RootPaneContainer) parent;
+            if (constraints != null) {
+                rpc.getContentPane().add(component, constraints);
+            } else {
+                rpc.getContentPane().add(component);
+            }
+        } else if (parent instanceof JScrollPane) {
+            JScrollPane scrollPane = (JScrollPane) parent;
+            if (component instanceof JViewport) {
+                scrollPane.setViewport((JViewport) component);
+            } else {
+                scrollPane.setViewportView(component);
+            }
+        } else if (parent instanceof JSplitPane) {
+            JSplitPane splitPane = (JSplitPane) parent;
+            if (splitPane.getOrientation() == JSplitPane.HORIZONTAL_SPLIT) {
+                if (splitPane.getTopComponent() == null) {
+                    splitPane.setTopComponent(component);
+                } else {
+                    splitPane.setBottomComponent(component);
+                }
+            } else {
+                if (splitPane.getLeftComponent() == null) {
+                    splitPane.setLeftComponent(component);
+                } else {
+                    splitPane.setRightComponent(component);
+                }
+            }
+        } else if (parent instanceof JMenuBar && component instanceof JMenu) {
+            JMenuBar menuBar = (JMenuBar) parent;
+            menuBar.add((JMenu) component);
+        } else if (parent instanceof Container) {
+            Container container = (Container) parent;
+            if (constraints != null) {
+                container.add(component, constraints);
+            } else {
+                container.add(component);
+            }
+        } else if (parent instanceof ContainerFacade) {
+            ContainerFacade facade = (ContainerFacade) parent;
+            facade.addComponent(component);
+        }
+    }
+
+    private void setParentForAction(Object parent, Action action) {
+        try {
+            InvokerHelper.setProperty(parent, "action", action);
+        } catch (RuntimeException re) {
+            // must not have an action property...
+            // so we ignore it and go on
+        }
+        Object keyStroke = action.getValue("KeyStroke");
+        if (parent instanceof JComponent) {
+            JComponent component = (JComponent) parent;
+            KeyStroke stroke = null;
+            if (keyStroke instanceof String) {
+                stroke = KeyStroke.getKeyStroke((String) keyStroke);
+            } else if (keyStroke instanceof KeyStroke) {
+                stroke = (KeyStroke) keyStroke;
+            }
+            if (stroke != null) {
+                String key = action.toString();
+                component.getInputMap().put(stroke, key);
+                component.getActionMap().put(key, action);
+            }
+        }
+    }
+
+    private Container getLayoutTarget(Object parent) {
+        Container target = (Container) parent;
+        if (target instanceof RootPaneContainer) {
+            RootPaneContainer rpc = (RootPaneContainer) target;
+            target = rpc.getContentPane();
+        }
+        return target;
     }
 
     protected void nodeCompleted(Object parent, Object node) {
@@ -717,10 +730,7 @@ public class SwingBuilder extends BuilderSupport {
                 axis = i.intValue();
             }
 
-            Container target = (Container) parent;
-            if (target instanceof RootPaneContainer) {
-                target = ((RootPaneContainer) target).getContentPane();
-            }
+            Container target = getLayoutTarget(parent);
             BoxLayout answer = new BoxLayout(target, axis);
 
             // now let's try to set the layout property

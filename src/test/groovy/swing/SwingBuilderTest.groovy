@@ -200,8 +200,12 @@ class SwingBuilderTest extends GroovyTestCase {
         int expected1 = 'N'
         assert swing.label0.displayedMnemonic == expected0
         assert swing.label1.displayedMnemonic == expected1
-        swing.menuItem() {
-            action(id:'actionId', name:'About', mnemonic:'A')
+        swing.menuBar{
+            menu{
+                menuItem {
+                    action(id:'actionId', name:'About', mnemonic:'A')
+                }
+            }
         }
         int expected2 = 'A'
         assert swing.actionId.getValue(Action.MNEMONIC_KEY) == expected2
@@ -249,6 +253,12 @@ class SwingBuilderTest extends GroovyTestCase {
         swing.label{
             action(id:'actionId', Name:'about', mnemonic:'A', closure:{x->x})
             map()
+        }
+        swing.panel{
+            borderLayout{
+                // layouts don't support actions, will be ignored
+                action(id:'actionId')
+            }
         }
     }
 
@@ -309,7 +319,7 @@ class SwingBuilderTest extends GroovyTestCase {
             rigidArea(id:'area1', constraints:BorderLayout.EAST, size:[3,4] as Dimension)
             rigidArea(id:'area2', constraints:BorderLayout.SOUTH, width:30, height:40)
             scrollPane(id:'scrollId', constraints:BorderLayout.CENTER,
-                border:BorderFactory.createRaisedBevelBorder())
+                border:BorderFactory.createRaisedBevelBorder()) {
                 glue()
                 vglue()
                 hglue()
@@ -318,6 +328,8 @@ class SwingBuilderTest extends GroovyTestCase {
                 hstrut()
                 hstrut(width:8)
                 rigidArea(id:'area3')
+                viewport()
+            }
         }
         assert swing.vboxId.parent == swing.frameId.contentPane
         assert swing.hboxId.parent == swing.frameId.contentPane
@@ -410,7 +422,9 @@ class SwingBuilderTest extends GroovyTestCase {
         swing.frame(){
             tableLayout(){
                 tr() {
-                    td()
+                    td {
+                        label()
+                    }
                 }
             }
         }
