@@ -126,7 +126,7 @@ public class ExtendedVerifier implements GroovyClassVisitor {
                 return;
             }
             if(!annotation.isTargetAllowed(target)) {
-                addError("Annotation @" + annotation.getClassNode().getTypeClass().getName()
+                addError("Annotation @" + annotation.getClassNode().getName()
                         + " is not allowed on element " + AnnotationNode.targetToName(target),
                         annotation);
             }

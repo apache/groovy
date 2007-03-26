@@ -2619,7 +2619,8 @@ public class AsmClassGenerator extends ClassGenerator {
                 constantAttrs.put(name, ((ConstantExpression) expr).getValue());
             }
             else if(expr instanceof ClassExpression) {
-                constantAttrs.put(name, Type.getType(expr.getType().getTypeClass()));
+                constantAttrs.put(name, 
+                        Type.getType(BytecodeHelper.getTypeDescription(expr.getType())));
             }
             else if(expr instanceof PropertyExpression) {
                 enumAttrs.put(name, expr);
@@ -2690,7 +2691,8 @@ public class AsmClassGenerator extends ClassGenerator {
                             av2.visit(null, ((ConstantExpression) exprIt.next()).getValue());
                             break;
                         case 3:
-                            av2.visit(null, Type.getType(((Expression) exprIt.next()).getType().getTypeClass()));
+                            av2.visit(null, Type.getType(
+                                    BytecodeHelper.getTypeDescription(((Expression) exprIt.next()).getType())));
                             break;
                         case 4:
                             PropertyExpression propExpr = (PropertyExpression) exprIt.next();

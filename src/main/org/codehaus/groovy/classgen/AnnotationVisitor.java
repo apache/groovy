@@ -53,6 +53,8 @@ import java.util.Map;
 
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.expr.AnnotationConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -69,9 +71,6 @@ import org.codehaus.groovy.syntax.SyntaxException;
  * - reading annotation metadata (@Retention, @Target, attribute types)
  * - verify that an <code>AnnotationNode</code> conforms to annotation meta
  * - enhancing an <code>AnnotationNode</code> AST to reflect real annotation meta
- * 
- * Current limitations:
- * - annotation attributes are not supported
  * 
  * @author <a href='mailto:the[dot]mindstorm[at]gmail[dot]com'>Alex Popescu</a>
  */
@@ -101,9 +100,14 @@ public class AnnotationVisitor {
         }
         
         this.annotation = node;
+        if(!node.getClassNode().isResolved()) {
+            addError("Current type was not yet resolved. Cannot introspect it.");
+            node.setValid(false);
+            return node;
+        }
         this.annotationClass = node.getClassNode().getTypeClass();
         
-        extractAnnotationMeta();
+        extractAnnotationMeta(this.annotationClass);
         
         if(this.errorCollector.hasErrors()) {
             this.annotation.setValid(false);
@@ -137,13 +141,7 @@ public class AnnotationVisitor {
      * @return
      */
     private boolean isValidAnnotationClass(AnnotationNode node) {
-        if(this.annotationRootClass == null) {
-            addError("java.lang.annotation.Annotation class is not available."
-                    + ExtendedVerifier.JVM_ERROR_MESSAGE);
-            return false;
-        }
-        
-        return this.annotationRootClass.isAssignableFrom(node.getClassNode().getTypeClass());
+        return node.getClassNode().implementsInterface("java.lang.annotation.Annotation");
     }
 
     protected void visitExpression(String attrName, Expression attrAst, Class attrType) {
@@ -157,16 +155,16 @@ public class AnnotationVisitor {
             }
         }
         if(attrType.isPrimitive()) {
-            visitConstantExpression(attrName, (ConstantExpression) attrAst, attrType);
+            visitConstantExpression(attrName, (ConstantExpression) attrAst, ClassHelper.getWrapper(ClassHelper.make(attrType)));
         }
         else if(String.class.equals(attrType)) {
-            visitConstantExpression(attrName, (ConstantExpression) attrAst, String.class);
+            visitConstantExpression(attrName, (ConstantExpression) attrAst, ClassHelper.make(String.class));
         }
         else if(Class.class.equals(attrType)) {
             // there is nothing to check about ClassExpressions
         }
         else if(isEnum(attrType)) {
-            visitEnumExpression(attrName, (PropertyExpression) attrAst, attrType);
+            visitEnumExpression(attrName, (PropertyExpression) attrAst, ClassHelper.make(attrType));
         }
         else if(isAnnotation(attrType)) {
             visitAnnotationExpression(attrName, (AnnotationConstantExpression) attrAst, attrType);
@@ -191,55 +189,20 @@ public class AnnotationVisitor {
         }
     }
     
-    protected void visitConstantExpression(String attrName, ConstantExpression constExpr, Class attrType) {
-        if(!isAssignable(attrType, constExpr.getType().getTypeClass())) {
+    protected void visitConstantExpression(String attrName, ConstantExpression constExpr, ClassNode attrType) {
+        if(!constExpr.getType().isDerivedFrom(attrType)) {
             addError("Attribute '" + attrName + "' should have type '" + attrType.getName() + "'; "
-                    + "but found type '" + constExpr.getType().getTypeClass().getName(),
+                    + "but found type '" + constExpr.getType().getName() + "'",
                     constExpr);
         }
     }
     
-    protected void visitEnumExpression(String attrName, PropertyExpression propExpr, Class attrType) {
-        if(!isEnum(propExpr.getObjectExpression().getType().getTypeClass())) {
-            addError("Attribute '" + attrName + "' should have type Enum, but found "
-                    + propExpr.getObjectExpression().getType().getTypeClass().getName(), 
+    protected void visitEnumExpression(String attrName, PropertyExpression propExpr, ClassNode attrType) {
+        if(!propExpr.getObjectExpression().getType().isDerivedFrom(attrType)) {
+            addError("Attribute '" + attrName + "' should have type '" + attrType.getName() +"' (Enum), but found "
+                    + propExpr.getObjectExpression().getType().getName(), 
                     propExpr);
         }
-    }
-    
-    /**
-     * Tests if two <code>Class</code> are assignable, considering also autoboxing.
-     */
-    private boolean isAssignable(Class attrType, Class typeClass) {
-        Class clazz = attrType;
-        if(attrType.isPrimitive()) {
-            if(boolean.class.equals(attrType)) {
-                clazz = Boolean.class;
-            }
-            else if(byte.class.equals(attrType)) {
-                clazz = Byte.class;
-            }
-            else if(char.class.equals(attrType)) {
-                clazz = Character.class;
-            }
-            else if(double.class.equals(attrType)) {
-                clazz = Double.class;
-            }
-            else if(float.class.equals(attrType)) {
-                clazz = Float.class;
-            }
-            else if(int.class.equals(attrType)) {
-                clazz = Integer.class;
-            }
-            else if(long.class.equals(attrType)) {
-                clazz = Long.class;
-            }
-            else if(short.class.equals(attrType)) {
-                clazz = Short.class;
-            }
-        }
-
-        return clazz.equals(typeClass);
     }
     
     private boolean isAnnotation(Class clazz) {
@@ -252,14 +215,14 @@ public class AnnotationVisitor {
         return result.booleanValue();
     }
     
-    private void extractAnnotationMeta() {
-        initializeAnnotationMeta();
-        initializeAttributeTypes();
+    private void extractAnnotationMeta(Class annotationClass) {
+        initializeAnnotationMeta(annotationClass);
+        initializeAttributeTypes(annotationClass);
     }
     
-    private void initializeAnnotationMeta() {
-        Object[] annotations = (Object[]) invoke(this.annotationClass.getClass(), 
-                "getAnnotations", EMPTY_ARG_TYPES, this.annotationClass, EMPTY_ARGS);
+    private void initializeAnnotationMeta(Class annotationClass) {
+        Object[] annotations = (Object[]) invoke(annotationClass.getClass(), 
+                "getAnnotations", EMPTY_ARG_TYPES, annotationClass, EMPTY_ARGS);
         if (annotations == null) {
             addError("Cannot retrieve annotation meta information. " 
                     + ExtendedVerifier.JVM_ERROR_MESSAGE);
@@ -272,16 +235,16 @@ public class AnnotationVisitor {
             if (annotationType == null) continue;
             
             if ("java.lang.annotation.Retention".equals(annotationType.getName())) {
-                initializeRetention(annotationType, annotations[i]);
+                initializeRetention(annotationClass, annotationType, annotations[i]);
             }
             else if("java.lang.annotation.Target".equals(annotationType.getName())) {
-                initializeTarget(annotationType, annotations[i]);
+                initializeTarget(annotationClass, annotationType, annotations[i]);
             }
         }
     }
     
-    private void initializeAttributeTypes() {
-        Method[] methods = this.annotationClass.getDeclaredMethods();
+    private void initializeAttributeTypes(Class annotationClass) {
+        Method[] methods = annotationClass.getDeclaredMethods();
         for(int i = 0; i < methods.length; i++) {
             Object defaultValue = invoke(Method.class, "getDefaultValue", EMPTY_ARG_TYPES, methods[i], EMPTY_ARGS);
             if (defaultValue != null) { 
@@ -294,11 +257,11 @@ public class AnnotationVisitor {
         }
     }
     
-    private void initializeRetention(Class retentionClass, Object retentionAnnotation) {
+    private void initializeRetention(Class annotationClass, Class retentionClass, Object retentionAnnotation) {
         Object retentionPolicyEnum = 
             invoke(retentionClass, "value", EMPTY_ARG_TYPES, retentionAnnotation, EMPTY_ARGS);
         if (retentionPolicyEnum == null) {
-            addError("Cannot read @RetentionPolicy on the @" + this.annotationClass.getName() 
+            addError("Cannot read @RetentionPolicy on the @" + annotationClass.getName() 
                     + ExtendedVerifier.JVM_ERROR_MESSAGE);
             return;
         }
@@ -311,11 +274,11 @@ public class AnnotationVisitor {
         }
     }
     
-    private void initializeTarget(Class targetClass, Object targetAnnotation) {
+    private void initializeTarget(Class annotationClass, Class targetClass, Object targetAnnotation) {
         Object[] elementTypeEnum =
             (Object[]) invoke(targetClass, "value", EMPTY_ARG_TYPES, targetAnnotation, EMPTY_ARGS);
         if (elementTypeEnum == null) {
-            addError("Cannot read @Target on the @" + this.annotationClass.getName() 
+            addError("Cannot read @Target on the @" + annotationClass.getName() 
                     + ExtendedVerifier.JVM_ERROR_MESSAGE);
             return;
         }
