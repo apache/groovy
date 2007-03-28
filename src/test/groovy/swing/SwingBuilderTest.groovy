@@ -70,6 +70,8 @@ class SwingBuilderTest extends GroovyTestCase {
     }
 
     void testWidgetCreation() {
+        if (isHeadless()) return
+
         def widgets = [
             button: JButton.class,
             checkBox: JCheckBox.class,
@@ -118,6 +120,8 @@ class SwingBuilderTest extends GroovyTestCase {
     }
 
     void testButtonGroupOnlyForButtons() {
+        if (isHeadless()) return
+
         def swing = new SwingBuilder()
         def buttonGroup = swing.buttonGroup()
         shouldFail(MissingPropertyException) {
@@ -126,12 +130,16 @@ class SwingBuilderTest extends GroovyTestCase {
     }
 
     void testWidget() {
+        if (isHeadless()) return
+
         def swing = new SwingBuilder()
         def label = swing.label()
         swing.widget(label)
     }
 
     void testTableColumn() {
+        if (isHeadless()) return
+
         // TODO is this required?
         def swing = new SwingBuilder()
         swing.table{
@@ -140,6 +148,8 @@ class SwingBuilderTest extends GroovyTestCase {
     }
 
     void testSplitPane() {
+        if (isHeadless()) return
+
         def swing = new SwingBuilder()
         def buttonGroup = swing.buttonGroup()
         def frame = swing.frame(){
@@ -159,6 +169,8 @@ class SwingBuilderTest extends GroovyTestCase {
     }
 
     void testNestedWindows() {
+        if (isHeadless()) return
+
         def swing = new SwingBuilder()
         swing.window{
             window()
@@ -167,6 +179,8 @@ class SwingBuilderTest extends GroovyTestCase {
     }
 
     void testDialogs() {
+        if (isHeadless()) return
+
         def swing = new SwingBuilder()
         swing.dialog()
         swing.frame{ dialog() }
@@ -174,6 +188,8 @@ class SwingBuilderTest extends GroovyTestCase {
     }
 
     void testNodeCreation() {
+        if (isHeadless()) return
+
         def swing = new SwingBuilder()
         def frame = swing.frame(){
             // 4 valid parameter combinations
@@ -191,6 +207,8 @@ class SwingBuilderTest extends GroovyTestCase {
     }
 
     void testSetMnemonic() {
+        if (isHeadless()) return
+
         def swing = new SwingBuilder()
         swing.panel(layout:new BorderLayout()) {
             label(id:'label0', text:'Name0', mnemonic:48)
@@ -212,11 +230,15 @@ class SwingBuilderTest extends GroovyTestCase {
     }
 
     void testBuilderProperties() {
+        if (isHeadless()) return
+
         def swing = new SwingBuilder()
         assert swing.class.name == 'groovy.swing.SwingBuilder'
     }
 
     void testFormattedTextField() {
+        if (isHeadless()) return
+
         def swing = new SwingBuilder()
         def dummy = new Date()
         def field = swing.formattedTextField(value:dummy)
@@ -231,6 +253,8 @@ class SwingBuilderTest extends GroovyTestCase {
     }
 
     void testTabbedPane() {
+        if (isHeadless()) return
+
         def swing = new SwingBuilder()
         swing.tabbedPane{
             button()
@@ -238,6 +262,8 @@ class SwingBuilderTest extends GroovyTestCase {
     }
 
     void testComboBox() {
+        if (isHeadless()) return
+
         def swing = new SwingBuilder()
         Object[] objects = ['a','b']
         def list = ['c', 'd', 'e']
@@ -248,6 +274,8 @@ class SwingBuilderTest extends GroovyTestCase {
     }
 
     void testMisplacedActionsAreIgnored() {
+        if (isHeadless()) return
+
         def swing = new SwingBuilder()
         // labels don't support actions; should be ignored
         swing.label{
@@ -263,6 +291,8 @@ class SwingBuilderTest extends GroovyTestCase {
     }
 
     void testBoxLayout() {
+        if (isHeadless()) return
+
         def swing = new SwingBuilder()
         def message = shouldFail{
             swing.boxLayout()
@@ -279,6 +309,8 @@ class SwingBuilderTest extends GroovyTestCase {
     }
 
     void testKeystrokesWithinActions() {
+        if (isHeadless()) return
+
         def swing = new SwingBuilder()
         swing.panel{
             button(id:'buttonId'){
@@ -300,6 +332,8 @@ class SwingBuilderTest extends GroovyTestCase {
     }
 
     void testSetAccelerator() {
+        if (isHeadless()) return
+
         def swing = new SwingBuilder()
         def help = swing.action(accelerator:'F1')
         def about = swing.action(accelerator:KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, InputEvent.CTRL_MASK))
@@ -310,6 +344,8 @@ class SwingBuilderTest extends GroovyTestCase {
     }
 
     void testConstraints() {
+        if (isHeadless()) return
+
         def swing = new SwingBuilder()
         swing.internalFrame(id:'frameId',
                 border:BorderFactory.createTitledBorder(BorderFactory.createLoweredBevelBorder())) {
@@ -337,6 +373,8 @@ class SwingBuilderTest extends GroovyTestCase {
     }
 
     void testPropertyColumn() {
+        if (isHeadless()) return
+
         def swing = new SwingBuilder()
         def msg = shouldFail{
             swing.propertyColumn()
@@ -360,6 +398,8 @@ class SwingBuilderTest extends GroovyTestCase {
     }
 
     void testClosureColumn() {
+        if (isHeadless()) return
+
         def swing = new SwingBuilder()
         def msg = shouldFail{
             swing.closureColumn()
@@ -389,6 +429,8 @@ class SwingBuilderTest extends GroovyTestCase {
     }
 
     void testSetConstraints() {
+        if (isHeadless()) return
+
         def swing = new SwingBuilder()
         swing.panel(layout:new BorderLayout()) {
             label(text:'Name', constraints:BorderLayout.CENTER)
@@ -396,6 +438,8 @@ class SwingBuilderTest extends GroovyTestCase {
     }
 
     void testSetToolTipText() {
+        if (isHeadless()) return
+
         def swing = new SwingBuilder()
         swing.panel(layout:new BorderLayout()) {
             label(id:'labelId', text:'Name', toolTipText:'This is the name field')
@@ -404,6 +448,8 @@ class SwingBuilderTest extends GroovyTestCase {
     }
 
     void testTableLayout() {
+        if (isHeadless()) return
+
         def swing = new SwingBuilder()
         def msg = shouldFail(RuntimeException){
             def frame = swing.frame(){
