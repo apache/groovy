@@ -266,57 +266,58 @@ public class GroovyShell extends GroovyObjectSupport {
         try {
             // let's find a main method
             scriptClass.getMethod("main", new Class[]{String[].class});
+            // if that main method exist, invoke it
+            return InvokerHelper.invokeMethod(scriptClass, "main", new Object[]{args});
         } catch (NoSuchMethodException e) {
-            // As no main() method was found, let's see if it's a unit test
+            // if it implements Runnable, try to instantiate it
+            if (Runnable.class.isAssignableFrom(scriptClass)) {
+                return runRunnable(scriptClass, args);
+            }
             // if it's a unit test extending GroovyTestCase, run it with JUnit's TextRunner
             if (isUnitTestCase(scriptClass)) {
                 return runTest(scriptClass);
             }
-            // no main() method, not a unit test,
-            // if it implements Runnable, try to instanciate it
-            else if (Runnable.class.isAssignableFrom(scriptClass)) {
-                Constructor constructor = null;
-                Runnable runnable = null;
-                Throwable reason = null;
-                try {
-                    // first, fetch the constructor taking String[] as parameter
-                    constructor = scriptClass.getConstructor(new Class[]{(new String[]{}).getClass()});
-                    try {
-                        // instanciate a runnable and run it
-                        runnable = (Runnable) constructor.newInstance(new Object[]{args});
-                    } catch (Throwable t) {
-                        reason = t;
-                    }
-                } catch (NoSuchMethodException e1) {
-                    try {
-                        // otherwise, find the default constructor
-                        constructor = scriptClass.getConstructor(new Class[]{});
-                        try {
-                            // instanciate a runnable and run it
-                            runnable = (Runnable) constructor.newInstance(new Object[]{});
-                        } catch (Throwable t) {
-                            reason = t;
-                        }
-                    } catch (NoSuchMethodException nsme) {
-                        reason = nsme;
-                    }
-                }
-                if (constructor != null && runnable != null) {
-                    runnable.run();
-                } else {
-                    throw new GroovyRuntimeException("This script or class could not be run. ", reason);
-                }
-            } else {
-                throw new GroovyRuntimeException("This script or class could not be run. \n" +
-                        "It should either: \n" +
-                        "- have a main method, \n" +
-                        "- be a class extending GroovyTestCase, \n" +
-                        "- or implement the Runnable interface.");
-            }
-            return null;
+            throw new GroovyRuntimeException("This script or class could not be run.\n" +
+                    "It should either: \n" +
+                    "- have a main method, \n" +
+                    "- be a class extending GroovyTestCase, \n" +
+                    "- or implement the Runnable interface.");
         }
-        // if that main method exist, invoke it
-        return InvokerHelper.invokeMethod(scriptClass, "main", new Object[]{args});
+    }
+
+    private Object runRunnable(Class scriptClass, String[] args) {
+        Constructor constructor = null;
+        Runnable runnable = null;
+        Throwable reason = null;
+        try {
+            // first, fetch the constructor taking String[] as parameter
+            constructor = scriptClass.getConstructor(new Class[]{(new String[]{}).getClass()});
+            try {
+                // instanciate a runnable and run it
+                runnable = (Runnable) constructor.newInstance(new Object[]{args});
+            } catch (Throwable t) {
+                reason = t;
+            }
+        } catch (NoSuchMethodException e1) {
+            try {
+                // otherwise, find the default constructor
+                constructor = scriptClass.getConstructor(new Class[]{});
+                try {
+                    // instanciate a runnable and run it
+                    runnable = (Runnable) constructor.newInstance(new Object[]{});
+                } catch (Throwable t) {
+                    reason = t;
+                }
+            } catch (NoSuchMethodException nsme) {
+                reason = nsme;
+            }
+        }
+        if (constructor != null && runnable != null) {
+            runnable.run();
+        } else {
+            throw new GroovyRuntimeException("This script or class was runnable but could not be run. ", reason);
+        }
+        return null;
     }
 
     /**
