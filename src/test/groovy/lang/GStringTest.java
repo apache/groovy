@@ -31,7 +31,6 @@
  * DAMAGE.
  *  
  */
-
 package groovy.lang;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -48,37 +47,31 @@ public class GStringTest extends GroovyTestCase {
 
     public void testIterateOverText() {
         DummyGString compString = new DummyGString(new Object[] { "James" });
-
         assertArrayEquals(new String[] { "Hello ", "!" }, compString.getStrings());
         assertArrayEquals(new Object[] { "James" }, compString.getValues());
-
         assertEquals("Hello James!", compString.toString());
     }
 
     public void testAppendString() {
         DummyGString a = new DummyGString(new Object[] { "James" });
-
         GString result = a.plus(" how are you?");
-
         assertEquals("Hello James! how are you?", result.toString());
+        assertEquals('m', a.charAt(2));
+        assertEquals("ame", a.subSequence(1,3));
     }
 
     public void testAppendString2() {
         DummyGString a = new DummyGString(new Object[] { "James" }, new String[] { "Hello " });
-
         GString result = a.plus(" how are you?");
-
         System.out.println("Found: " + result);
         System.out.println("Strings: " + InvokerHelper.toString(result.getStrings()));
         System.out.println("Values: " + InvokerHelper.toString(result.getValues()));
-
         assertEquals("Hello James how are you?", result.toString());
     }
 
     public void testAppendGString() {
         DummyGString a = new DummyGString(new Object[] { "James" });
         DummyGString b = new DummyGString(new Object[] { "Bob" });
-
         GString result = a.plus(b);
 
         //        System.out.println("Found: " + result);
@@ -93,7 +86,6 @@ public class GStringTest extends GroovyTestCase {
     public void testAppendGString2() {
         DummyGString a = new DummyGString(new Object[] { "James" }, new String[] { "Hello " });
         DummyGString b = new DummyGString(new Object[] { "Bob" }, new String[] { "Hello " });
-
         GString result = a.plus(b);
 
         //        System.out.println("Found: " + result);
@@ -108,14 +100,12 @@ public class GStringTest extends GroovyTestCase {
     public void testEqualsAndHashCode() {
         DummyGString a = new DummyGString(new Object[] { new Integer(1)});
         DummyGString b = new DummyGString(new Object[] { new Long(1)});
-        DummyGString c = new DummyGString(new Object[] { new Double(2.3)});
+        Comparable c = new DummyGString(new Object[] { new Double(2.3)});
 
         assertTrue("a == b", a.equals(b));
         assertEquals("hashcode a == b", a.hashCode(), b.hashCode());
-
         assertFalse("a != c", a.equals(c));
         assertTrue("hashcode a != c", a.hashCode() != c.hashCode());
-
         assertEquals("a <=> b", 0, a.compareTo(b));
         assertEquals("a <=> b", -1, a.compareTo(c));
     }
