@@ -6,6 +6,7 @@ import org.codehaus.groovy.tools.FileSystemCompilerTest;
 import org.codehaus.groovy.tools.CompilerTest;
 import org.codehaus.groovy.control.CompilationUnitTest;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessageTest;
+import org.codehaus.groovy.tools.groovydoc.GroovyDocToolTest;
 import org.codehaus.groovy.antlr.*;
 import org.codehaus.groovy.antlr.treewalker.*;
 import org.codehaus.groovy.bsf.*;
@@ -37,6 +38,7 @@ public class AllCodehausJavaTestsSuite {
         suite.addTestSuite(ForTest.class);
         suite.addTestSuite(GetPropertyTest.class);
         suite.addTestSuite(GroovyClassLoaderTest.class);
+	suite.addTestSuite(GroovyDocToolTest.class);
         suite.addTestSuite(GroovySourceASTTest.class);
         suite.addTestSuite(EnumSourceParsingTest.class);
         suite.addTestSuite(GStringTest.class);

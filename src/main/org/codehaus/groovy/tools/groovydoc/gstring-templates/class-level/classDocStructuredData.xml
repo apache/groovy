@@ -1,0 +1,11 @@
+<class name="${classDoc.name()}">
+  <methods><% for (method in classDoc.methods()) { %>
+    <method returns="${method.returnType().typeName()}" name="${method.name()}">
+      <parameters><% for (parameter in method.parameters()) { %>
+        <parameter type="${parameter.typeName()}" name="${parameter.name()}" /><% } %>
+      </parameters>
+      <comment>${method.commentText()}</comment>
+    </method>
+<% } %>
+  </methods>
+</class>

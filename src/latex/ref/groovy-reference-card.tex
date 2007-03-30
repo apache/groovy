@@ -53,6 +53,9 @@
 % -- tabular, good for html output
 \newcommand{\keywordSummaryHeader}[1]{\begin{tabular}{ll} #1 \end{tabular}}
 \newcommand{\keywordSummary}[2]{{\bf #1} & #2 \\}
+
+\newcommand{\operatorSummaryHeader}[1]{\begin{tabular}{ll} #1 \end{tabular}}
+\newcommand{\operatorSummary}[2]{ #1 & {\bf #2} \\}
 %\newcommand{\methodDetailHeader}[1]{\begin{tabular}{rll} #1 \end{tabular}}
 %\newcommand{\methodDetail}[3]{#1 & #2 & #3 \\}
 
@@ -90,11 +93,11 @@
 \vskip 1.8in
 %todo: black line
 
-GROOVY-1.0-BETA-7
+GROOVY-1.0
 
 \vskip 0.25 in
 
-{\em Second Edition\/} (September 2004)
+{\em Fourth Edition\/} (March 2007)
 
 This card is intended primarily for use by Groovy language programmers. It 
 contains basic language information summarized from the online
@@ -151,6 +154,33 @@ groovy.codehaus.org
 \keywordSummary{                }{   while {\em expr\/} {\em stmt*\/}}
 }
 
+
+\subsection{Modifiers}
+\keywordSummaryHeader{
+\keywordSummary{abstract        }{   abstract class {\em id\/}}
+\keywordSummary{Annotations     }{   @Annotation}
+\keywordSummary{Annotations     }{   @Annotation(x = 3, y = 5)}
+}
+
+\subsection{Lists and Maps}
+\keywordSummaryHeader{
+\keywordSummary{                }{   {\em type\/}[] {\em id\/} = new {\em type\/}[{\em size\/}]}
+}
+\subsection{Operators}
+\operatorSummaryHeader{
+\operatorSummary{ {\em id\/}                =                                       {\em expr\/} }{ assign}
+\operatorSummary{ {\em expr\/}              \&                                      {\em expr\/} }{ bitwise-and}
+\operatorSummary{ {\em id\/}                \&=                                     {\em expr\/} }{ bitwise-and assign}
+\operatorSummary{ {\em id\/} =              ~                                       {\em expr\/} }{ bitwise-not}
+\operatorSummary{ {\em expr\/}              \textbar\/                              {\em expr\/} }{ bitwise-or}
+\operatorSummary{ {\em id\/}                \textbar\/=                             {\em expr\/} }{ bitwise-or assign}
+\operatorSummary{ {\em id\/} = {\em expr\/} \textgreater\textgreater\textgreater\/  {\em expr\/} }{ bitwise-shift-right}
+\operatorSummary{ {\em id\/}                \textgreater\textgreater\textgreater=\/ {\em expr\/} }{ bitwise-shift-right assign}
+%\operatorSummary{ {\em expr\/}              \wedge                                  {\em expr\/} }{ bitwise-exclusive-or}
+}
+% not supported in groovy yet
+% "public @interface Foo{}"
+% "public @interface Foo{int bar() default 123}"
 
 
 % \subsection{Types}
@@ -403,7 +433,7 @@ class HighlandCow extends Cow {
 \rule{0.3\linewidth}{0.25pt}
 \scriptsize
 
-Copyright \copyright\ 2004 Jeremy Rayner
+Copyright \copyright\ 2004, 2007 Jeremy Rayner
 
 \verb!$Revision$, $Date$.!
 

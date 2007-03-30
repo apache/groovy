@@ -173,6 +173,7 @@
     <copy todir="${basedir}/target/classes">
       <fileset dir="${basedir}/src/main">
         <include name="**/*.groovy"/>
+	<include name="org/codehaus/groovy/tools/groovydoc/gstring-templates/**/*.*"/> <!-- groovydoc templates -->
       </fileset>
     </copy>
 
