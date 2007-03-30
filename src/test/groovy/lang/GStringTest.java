@@ -56,14 +56,13 @@ public class GStringTest extends GroovyTestCase {
         DummyGString a = new DummyGString(new Object[] { "James" });
         GString result = a.plus(" how are you?");
         assertEquals("Hello James! how are you?", result.toString());
-        assertEquals('m', a.charAt(2));
-        assertEquals("ame", a.subSequence(1,3));
+        assertEquals('J', a.charAt(6));
+        assertEquals("o J", a.subSequence(4,7));
     }
 
     public void testAppendString2() {
         DummyGString a = new DummyGString(new Object[] { "James" }, new String[] { "Hello " });
         GString result = a.plus(" how are you?");
-        System.out.println("Found: " + result);
         System.out.println("Strings: " + InvokerHelper.toString(result.getStrings()));
         System.out.println("Values: " + InvokerHelper.toString(result.getValues()));
         assertEquals("Hello James how are you?", result.toString());
@@ -74,7 +73,6 @@ public class GStringTest extends GroovyTestCase {
         DummyGString b = new DummyGString(new Object[] { "Bob" });
         GString result = a.plus(b);
 
-        //        System.out.println("Found: " + result);
         //        System.out.println("Strings: " +
 		// InvokerHelper.toString(result.getStrings()));
         //        System.out.println("Values: " +
