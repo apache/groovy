@@ -36,7 +36,9 @@ public class GroovyDocWriter {
 	private GroovyDocTool tool;
 	private OutputTool output;
 	private GroovyDocTemplateEngine templateEngine;
-	public GroovyDocWriter(GroovyDocTool tool, OutputTool output, GroovyDocTemplateEngine templateEngine) {
+    private static final String FS = File.separator;
+
+    public GroovyDocWriter(GroovyDocTool tool, OutputTool output, GroovyDocTemplateEngine templateEngine) {
 		this.tool = tool;
 		this.output = output;
 		this.templateEngine = templateEngine;
@@ -58,7 +60,7 @@ public class GroovyDocWriter {
 	public void writeClassToOutput(GroovyClassDoc classDoc, String destdir) throws Exception {
 		String renderedSrc = templateEngine.applyClassTemplates(classDoc);// todo
 		
-		String destFileName = destdir + File.separator + classDoc.getFullPathName() + ".html";
+		String destFileName = destdir + FS + classDoc.getFullPathName() + ".html";
 		System.out.println("Generating " + destFileName);
 		output.writeToOutput(destFileName, renderedSrc);
 	}	
@@ -67,7 +69,7 @@ public class GroovyDocWriter {
 		Iterator packageDocs = Arrays.asList(rootDoc.specifiedPackages()).iterator();
 		while (packageDocs.hasNext()) {
 			GroovyPackageDoc packageDoc = (GroovyPackageDoc) packageDocs.next();
-			output.makeOutputArea(destdir + File.separator + packageDoc.name());
+			output.makeOutputArea(destdir + FS + packageDoc.name());
 			writePackageToOutput(packageDoc, destdir);
 		}
 	}
@@ -79,7 +81,7 @@ public class GroovyDocWriter {
 
 			String renderedSrc = templateEngine.applyPackageTemplate(template, packageDoc); // todo
 			
-			String destFileName = destdir + File.separator + packageDoc.name() + File.separator + tool.getFile(template);
+			String destFileName = destdir + FS + packageDoc.name() + FS + tool.getFile(template);
 			System.out.println("Generating " + destFileName);
 			output.writeToOutput(destFileName, renderedSrc);
 		}
@@ -92,7 +94,7 @@ public class GroovyDocWriter {
 
 			String renderedSrc = templateEngine.applyRootDocTemplate(template, rootDoc); // todo
 			
-			String destFileName = destdir + File.separator + tool.getFile(template);
+			String destFileName = destdir + FS + tool.getFile(template);
 			System.out.println("Generating " + destFileName);
 			output.writeToOutput(destFileName, renderedSrc);
 		}

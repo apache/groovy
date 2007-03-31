@@ -18,6 +18,7 @@
 package org.codehaus.groovy.tools.groovydoc;
 
 import java.io.IOException;
+import java.io.File;
 
 import org.codehaus.groovy.groovydoc.GroovyRootDoc;
 
@@ -57,18 +58,10 @@ public class GroovyDocTool {
 	private GroovyDocTemplateEngine templateEngine;
 
 	String getPath(String filename) {
-		int idx = filename.lastIndexOf('/'); // todo - windows?
-		if (idx > 0) {
-			return filename.substring(0,idx);
-		}
-		return "";		
+        return new File(filename).getParent();
 	}
 	String getFile(String filename) {
-		int idx = filename.lastIndexOf('/'); // todo - windows?
-		if (idx > 0) {
-			return filename.substring(idx + 1);
-		}
-		return filename;		
+        return new File(filename).getName();        
 	}
 		
 

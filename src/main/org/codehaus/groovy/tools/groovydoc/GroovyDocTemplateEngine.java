@@ -43,7 +43,7 @@ public class GroovyDocTemplateEngine {
 	private TemplateEngine engine;
 	private GroovyDocTool tool;
 	private ResourceManager resourceManager;
-	private String relativeTemplatePath;
+//	private String relativeTemplatePath;
 	private Map docTemplates; // cache
 	private List docTemplatePaths; // once per documentation set
 	private Map packageTemplates; // cache
