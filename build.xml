@@ -391,6 +391,19 @@ $Date$
             <link href="http://www.junit.org/junit/javadoc/3.8.1"/>
             <link href="http://java.sun.com/j2ee/1.4/docs/api"/>
         </javadoc>
+        <taskdef name="groovydoc" classname="org.codehaus.groovy.ant.Groovydoc">
+            <classpath>
+                <path path="${mainClassesDirectory}"/>
+                <path refid="compilePath"/>
+            </classpath>
+        </taskdef>
+        <groovydoc
+            destdir="${docsDirectory}/gapi"
+            sourcepath="${mainSourceDirectory}"
+            packagenames="groovy.xml"
+            use="true"
+            windowtitle="groovydoc"
+            private="false"/>
     </target>
 
     <target name="clean" description="Clean out the built materials.">

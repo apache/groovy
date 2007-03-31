@@ -27,6 +27,8 @@ public class FileOutputTool implements OutputTool {
 	}
 
 	public void writeToOutput(String fileName, String text) throws Exception {
-		DefaultGroovyMethods.write(new File(fileName), text);		
+        File file = new File(fileName);
+        file.getParentFile().mkdirs();
+        DefaultGroovyMethods.write(file, text);
 	}
 }

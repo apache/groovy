@@ -280,7 +280,7 @@ public class Groovydoc extends Task {
 			}
 			
 			FileOutputTool output = new FileOutputTool();
-			htmlTool.renderToOutput(output, "doc"); //todo destdir
+			htmlTool.renderToOutput(output, destDir.getCanonicalPath()); // TODO push destDir through APIs?
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
