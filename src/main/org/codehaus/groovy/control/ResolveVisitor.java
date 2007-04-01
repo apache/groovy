@@ -776,7 +776,7 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
            for (Iterator iter = l.iterator(); iter.hasNext();) {
                ImportNode element = (ImportNode) iter.next();
                ClassNode type = element.getType();
-               if (resolve(type,false,false,false)) continue;
+               if (resolve(type,false,false,true)) continue;
                addError("unable to resolve class "+type.getName(),type);
            }
            module.setImportsResolved(true);
