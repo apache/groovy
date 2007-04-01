@@ -423,7 +423,7 @@ $Date$
         <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpathref="toolsPath"/>
     </target>
 
-    <target name="deploy" depends="-mavenDeployInit" description="Deploy jars to maven repository after previous successful build.">
+    <target name="deploy" depends="-mavenDeployInit,install" description="Deploy jars to maven repository after previous successful build.">
         <mavenDeploy version="${groovyVersion}" artifact="groovy"/>
         <mavenDeploy version="${groovyVersion}" artifact="groovy-all"/>
         <mavenDeploy version="${groovyVersion}" artifact="groovy-all-minimal"/>
