@@ -41,12 +41,12 @@
         <repository>
             <id>codehaus.org</id>
             <name>Groovy Central Repository</name>
-            <url>dav:https://dav.codehaus.org/repository/</url>
+            <url>dav:https://dav.codehaus.org/repository/groovy/</url>
         </repository>
         <snapshotRepository>
             <id>codehaus.org</id>
             <name>Groovy Central Development Repository</name>
-            <url>dav:https://dav.codehaus.org/snapshots.repository/</url>
+            <url>dav:https://dav.codehaus.org/snapshots.repository/groovy/</url>
         </snapshotRepository>
     </distributionManagement>
 
