@@ -1,4 +1,14 @@
 <class name="${classDoc.name()}">
+  <constructors><% for (constructor in classDoc.constructors()) { %>
+    <constructor name="${constructor.name()}">
+      <parameters><% for (parameter in constructor.parameters()) { %>
+        <parameter type="${parameter.typeName()}" name="${parameter.name()}" /><% } %>
+      </parameters>
+      <comment>${constructor.commentText()}</comment>
+    </constructor>
+<% } %>
+  </constructors>
+
   <methods><% for (method in classDoc.methods()) { %>
     <method returns="${method.returnType().typeName()}" name="${method.name()}">
       <parameters><% for (parameter in method.parameters()) { %>

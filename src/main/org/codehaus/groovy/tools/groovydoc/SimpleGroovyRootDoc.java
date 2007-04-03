@@ -17,7 +17,10 @@
  */
 package org.codehaus.groovy.tools.groovydoc;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
@@ -36,7 +39,9 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
 	
 	public GroovyClassDoc classNamed(String arg0) {/*todo*/return null;}
 	public GroovyClassDoc[] classes() {
-		return (GroovyClassDoc[]) classDocs.values().toArray(new GroovyClassDoc[classDocs.values().size()]);		
+		List classDocValues = new ArrayList(classDocs.values());
+		Collections.sort(classDocValues); // todo - performance / maybe move into a sortMe() method
+		return (GroovyClassDoc[]) classDocValues.toArray(new GroovyClassDoc[classDocValues.size()]);		
 	}
 	public String[][] options() {/*todo*/return null;}
 	public GroovyPackageDoc packageNamed(String packageName) {

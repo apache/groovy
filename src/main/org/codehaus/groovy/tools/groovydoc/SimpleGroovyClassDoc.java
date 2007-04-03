@@ -25,14 +25,27 @@ import java.util.StringTokenizer;
 import org.codehaus.groovy.groovydoc.*;
 
 public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implements GroovyClassDoc {
+	private List constructors;
 	private List fields;
 	private List methods;
 	private String fullPathName;
 
 	public SimpleGroovyClassDoc(String name) {
 		super(name);
+		constructors = new ArrayList();
 		fields = new ArrayList();
 		methods = new ArrayList();
+	}
+
+	/**
+	 * returns a sorted array of constructors
+	 */
+	public GroovyConstructorDoc[] constructors() {
+		Collections.sort(constructors); // todo - performance / maybe move into a sortMe() method
+		return (GroovyConstructorDoc[]) constructors.toArray(new GroovyConstructorDoc[constructors.size()]);
+	}
+	public boolean add(GroovyConstructorDoc constructor) {
+		return constructors.add(constructor);
 	}
 
 	/**
@@ -77,8 +90,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
 	
 	// methods from GroovyClassDoc
 	
-//	public GroovyConstructorDoc[] constructors() {/*todo*/return null;}
-//	public GroovyConstructorDoc[] constructors(boolean filter) {/*todo*/return null;}
+	public GroovyConstructorDoc[] constructors(boolean filter) {/*todo*/return null;}
 	public boolean definesSerializableFields() {/*todo*/return false;}
 	public GroovyFieldDoc[] enumConstants() {/*todo*/return null;}
 	public GroovyFieldDoc[] fields(boolean filter) {/*todo*/return null;}

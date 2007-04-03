@@ -35,6 +35,25 @@ function windowTitle()
 <BR>
 <FONT CLASS="ClassTitleFont">Class ${classDoc.name()}</FONT></H2>
 
+<!-- ======== CONSTRUCTOR SUMMARY ======== -->
+
+<A NAME="constructor_summary"><!-- --></A>
+<TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
+<TR BGCOLOR="#90DDF7" CLASS="TableHeadingColor">
+<TD COLSPAN=2><FONT SIZE="+2">
+<B>Constructor Summary</B></FONT></TD>
+
+</TR>
+<% for (constructor in classDoc.constructors()) { %>
+<TR BGCOLOR="white" CLASS="TableRowColor">
+<TD><CODE><B><a href="">${constructor.name()}</a></B>(<%= constructor.parameters().collect{ param -> "${param.typeName()} ${param.name()}" }.join(", ") %>)</CODE>
+
+<BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TD>
+</TR>
+<% } %>
+</TABLE>
+&nbsp;
 <!-- ========== METHOD SUMMARY =========== -->
 
 <A NAME="method_summary"><!-- --></A>

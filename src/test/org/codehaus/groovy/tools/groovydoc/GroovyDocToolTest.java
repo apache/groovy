@@ -48,7 +48,8 @@ public class GroovyDocToolTest extends GroovyTestCase {
         System.out.println("output = " + output);
 
         String categoryMethodDocument = output.getText(MOCK_DOC + FS + "org" + FS + "codehaus" + FS + "groovy" + FS + "runtime/CategoryMethod.html"); // todo - figure out how to get xml extension for templates
-		assertTrue(categoryMethodDocument.indexOf("<method returns=\"boolean\" name=\"hasCategoryInAnyThread\">") > 0);
+        
+        assertTrue(categoryMethodDocument.indexOf("<method returns=\"boolean\" name=\"hasCategoryInAnyThread\">") > 0);
 		
 		String packageDocument = output.getText(MOCK_DOC + FS + "org" + FS + "codehaus" + FS + "groovy" + FS + "runtime/packageDocStructuredData.xml");
         // TODO: fix code then reinstate assertion
@@ -60,4 +61,14 @@ public class GroovyDocToolTest extends GroovyTestCase {
 		// assertTrue(rootDocument.indexOf("<class path=\"org/codehaus/groovy/runtime/CategoryMethod\" name=\"CategoryMethod\" />") > 0);
 	}
 
+	public void testConstructors() throws Exception {
+		xmlTool.add("groovy" + FS + "ui/Console.groovy");
+		MockOutputTool output = new MockOutputTool();
+        xmlTool.renderToOutput(output, "mock/doc");
+
+        String consoleDoc = output.getText("mock/doc/groovy/ui/Console.html");
+        System.out.println(consoleDoc);
+        assertTrue(consoleDoc.indexOf("<constructor name=\"Console\">") > 0);
+        assertTrue(consoleDoc.indexOf("<parameter type=\"ClassLoader\" name=\"parent\" />") > 0);
+	}
 }

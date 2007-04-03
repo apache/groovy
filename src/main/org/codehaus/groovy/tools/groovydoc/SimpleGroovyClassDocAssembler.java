@@ -28,11 +28,13 @@ import org.codehaus.groovy.antlr.LineColumn;
 import org.codehaus.groovy.antlr.SourceBuffer;
 import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
 import org.codehaus.groovy.antlr.treewalker.VisitorAdapter;
+import org.codehaus.groovy.groovydoc.GroovyExecutableMemberDoc;
 
 public class SimpleGroovyClassDocAssembler extends VisitorAdapter {
     private Stack stack;
 	private Map classDocs;
 	private SimpleGroovyClassDoc currentClassDoc; // todo - stack?
+	private SimpleGroovyConstructorDoc currentConstructorDoc; // todo - stack?
 	private SimpleGroovyMethodDoc currentMethodDoc; // todo - stack?
 	private SourceBuffer sourceBuffer;
 	private String packagePath;
@@ -76,7 +78,26 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter {
         }
     }
 
-    public void visitMethodDef(GroovySourceAST t, int visit) {
+	public void visitCtorIdent(GroovySourceAST t,int visit) {
+    	if (visit == OPENING_VISIT) {
+        	// now... get relevant values from the AST
+
+    		// name of class for the constructor
+    		currentConstructorDoc = new SimpleGroovyConstructorDoc(currentClassDoc.name());
+
+    		// comments
+    		String commentText = getJavaDocCommentsBeforeNode(t);
+    		currentConstructorDoc.setRawCommentText(commentText);
+    		
+    		addParametersTo(currentConstructorDoc, t, visit);
+    		
+        	// don't forget to tell the class about this constructor.
+        	currentClassDoc.add(currentConstructorDoc);
+    	}		
+	}
+
+
+	public void visitMethodDef(GroovySourceAST t, int visit) {
     	if (visit == OPENING_VISIT) {
         	// init
 
@@ -95,21 +116,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter {
         	SimpleGroovyType returnType = new SimpleGroovyType(returnTypeName); // todo !!!
         	currentMethodDoc.setReturnType(returnType);
 
-    		// parameters
-    		GroovySourceAST parametersNode = t.childOfType(GroovyTokenTypes.PARAMETERS);
-    		if (parametersNode != null && parametersNode.getNumberOfChildren() > 0) {
-    			GroovySourceAST currentNode = (GroovySourceAST) parametersNode.getFirstChild();
-        		while (currentNode != null) {
-	    			String parameterTypeName = getTypeNodeAsText(currentNode.childOfType(GroovyTokenTypes.TYPE),"def");
-	        		String parameterName = getText(currentNode.childOfType(GroovyTokenTypes.IDENT));
-	        		SimpleGroovyParameter parameter = new SimpleGroovyParameter(parameterName);
-	        		parameter.setTypeName(parameterTypeName);
-	        		
-	        		currentMethodDoc.add(parameter);
-	        		
-	        		currentNode = (GroovySourceAST)currentNode.getNextSibling();
-        		}
-    		}
+    		addParametersTo(currentMethodDoc, t, visit);
     		
         	// don't forget to tell the class about this method so carefully constructed.
         	currentClassDoc.add(currentMethodDoc);
@@ -175,6 +182,27 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter {
 		return returnValue;
 	}
 
+	
+	private void addParametersTo(SimpleGroovyExecutableMemberDoc executableMemberDoc, GroovySourceAST t,int visit) {
+		// parameters
+		GroovySourceAST parametersNode = t.childOfType(GroovyTokenTypes.PARAMETERS);
+		if (parametersNode != null && parametersNode.getNumberOfChildren() > 0) {
+			GroovySourceAST currentNode = (GroovySourceAST) parametersNode.getFirstChild();
+    		while (currentNode != null) {
+    			String parameterTypeName = getTypeNodeAsText(currentNode.childOfType(GroovyTokenTypes.TYPE),"def");
+        		String parameterName = getText(currentNode.childOfType(GroovyTokenTypes.IDENT));
+        		SimpleGroovyParameter parameter = new SimpleGroovyParameter(parameterName);
+        		parameter.setTypeName(parameterTypeName);
+        		
+        		executableMemberDoc.add(parameter);
+        		
+        		currentNode = (GroovySourceAST)currentNode.getNextSibling();
+    		}
+		}
+	}
+
+	
+	
 	public void push(GroovySourceAST t) {
         stack.push(t);
     }

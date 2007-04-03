@@ -18,8 +18,8 @@
 package org.codehaus.groovy.groovydoc;
 
 public interface GroovyClassDoc extends GroovyType, GroovyProgramElementDoc{
-//	public GroovyConstructorDoc[] constructors();
-//	public GroovyConstructorDoc[] constructors(boolean filter);
+	public GroovyConstructorDoc[] constructors();
+	public GroovyConstructorDoc[] constructors(boolean filter);
 	public boolean definesSerializableFields();
 	public GroovyFieldDoc[] enumConstants();
 	public GroovyFieldDoc[] fields();

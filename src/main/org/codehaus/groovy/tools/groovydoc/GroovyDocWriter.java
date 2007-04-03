@@ -58,10 +58,10 @@ public class GroovyDocWriter {
 	}
 
 	public void writeClassToOutput(GroovyClassDoc classDoc, String destdir) throws Exception {
-		String renderedSrc = templateEngine.applyClassTemplates(classDoc);// todo
-		
 		String destFileName = destdir + FS + classDoc.getFullPathName() + ".html";
 		System.out.println("Generating " + destFileName);
+
+		String renderedSrc = templateEngine.applyClassTemplates(classDoc);// todo		
 		output.writeToOutput(destFileName, renderedSrc);
 	}	
 
