@@ -5,9 +5,10 @@
  * @author Dierk Koenig
  * @version $Revision$
  */
+
+import groovy.util.AllTestSuite;
 import junit.framework.Test;
 import junit.framework.TestCase;
-import groovy.util.AllTestSuite;
 
 public class UberTestCase3 extends TestCase {
     public static Test suite() {

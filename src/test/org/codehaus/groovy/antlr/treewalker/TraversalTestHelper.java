@@ -1,15 +1,15 @@
 package org.codehaus.groovy.antlr.treewalker;
 
 import antlr.collections.AST;
-import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
-import org.codehaus.groovy.antlr.parser.GroovyLexer;
+import org.codehaus.groovy.antlr.AntlrASTProcessor;
 import org.codehaus.groovy.antlr.SourceBuffer;
 import org.codehaus.groovy.antlr.UnicodeEscapingReader;
-import org.codehaus.groovy.antlr.AntlrASTProcessor;
+import org.codehaus.groovy.antlr.parser.GroovyLexer;
+import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
 
-import java.io.StringReader;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.io.StringReader;
 import java.lang.reflect.Constructor;
 
 public class TraversalTestHelper {
@@ -24,7 +24,7 @@ public class TraversalTestHelper {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         GroovyRecognizer parser;
         SourceBuffer sourceBuffer = new SourceBuffer();
-        UnicodeEscapingReader unicodeReader = new UnicodeEscapingReader(new StringReader(input),sourceBuffer);
+        UnicodeEscapingReader unicodeReader = new UnicodeEscapingReader(new StringReader(input), sourceBuffer);
         GroovyLexer lexer = new GroovyLexer(unicodeReader);
         unicodeReader.setLexer(lexer);
         parser = GroovyRecognizer.make(lexer);

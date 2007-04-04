@@ -3,6 +3,7 @@ import junit.framework.TestCase;
 
 /**
  * Collecting all Groovy Unit Tests, written in Java.
+ *
  * @author Christian Stein
  * @author Dierk Koenig
  */

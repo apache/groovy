@@ -46,25 +46,17 @@
 
 package org.codehaus.groovy.runtime;
 
-import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GString;
+import groovy.lang.GroovyRuntimeException;
 import groovy.util.GroovyTestCase;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Collections;
-import java.util.Arrays;
-
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
+
+import java.util.*;
 
 
 /**
  * Test the Invoker class
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -73,7 +65,7 @@ public class InvokerTest extends GroovyTestCase {
     protected Invoker invoker = new Invoker();
 
     public void testAsCollectionWithArray() {
-        Object[] array = { "A", "B", "C" };
+        Object[] array = {"A", "B", "C"};
         assertAsCollection(array, 3);
     }
 
@@ -112,15 +104,15 @@ public class InvokerTest extends GroovyTestCase {
         assertAsBoolean(false, Boolean.FALSE);
         assertAsBoolean(false, (String) null);
         assertAsBoolean(false, "");
-        GString emptyGString = new GString(new Object[] { "" }) {
+        GString emptyGString = new GString(new Object[]{""}) {
             public String[] getStrings() {
-                return new String[] { "" };
+                return new String[]{""};
             }
         };
         assertAsBoolean(false, emptyGString);
-        GString nonEmptyGString = new GString(new Object[] { "x" }) {
+        GString nonEmptyGString = new GString(new Object[]{"x"}) {
             public String[] getStrings() {
-                return new String[] { "x" };
+                return new String[]{"x"};
             }
         };
         assertAsBoolean(true, nonEmptyGString);
@@ -132,23 +124,23 @@ public class InvokerTest extends GroovyTestCase {
         assertAsBoolean(true, new Character((char) 1));
         assertAsBoolean(false, new Character((char) 0));
         assertAsBoolean(false, Collections.EMPTY_LIST);
-		assertAsBoolean(true, Arrays.asList(new Integer[] { new Integer(1) }));
-       }
-    
+        assertAsBoolean(true, Arrays.asList(new Integer[]{new Integer(1)}));
+    }
+
     public void testLessThan() {
         assertTrue(ScriptBytecodeAdapter.compareLessThan(new Integer(1), new Integer(2)));
         assertTrue(ScriptBytecodeAdapter.compareLessThanEqual(new Integer(2), new Integer(2)));
     }
-    
+
     public void testGreaterThan() {
         assertTrue(ScriptBytecodeAdapter.compareGreaterThan(new Integer(3), new Integer(2)));
         assertTrue(ScriptBytecodeAdapter.compareGreaterThanEqual(new Integer(2), new Integer(2)));
     }
-    
+
     public void testCompareTo() {
         assertTrue(DefaultTypeTransformation.compareEqual("x", new Integer('x')));
     }
-    
+
     // Implementation methods
     //-------------------------------------------------------------------------
 
@@ -185,9 +177,9 @@ public class InvokerTest extends GroovyTestCase {
         }
 
         assertFalse(
-            message + ": should not have item after iterating through: " + count + " items",
-            iterator.hasNext());
+                message + ": should not have item after iterating through: " + count + " items",
+                iterator.hasNext());
     }
 
-   
+
 }

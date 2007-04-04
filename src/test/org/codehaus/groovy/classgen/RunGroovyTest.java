@@ -48,11 +48,9 @@ package org.codehaus.groovy.classgen;
 
 import groovy.lang.GroovyObject;
 
-import org.codehaus.groovy.classgen.TestSupport;
-
 /**
  * Tests dynamically compiling and running a new class
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */

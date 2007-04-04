@@ -46,11 +46,7 @@
 
 package org.codehaus.groovy.classgen;
 
-import org.codehaus.groovy.ast.ClassHelper;
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.ConstructorNode;
-import org.codehaus.groovy.ast.MethodNode;
-import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
@@ -58,7 +54,6 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
- * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -74,10 +69,10 @@ public class MethodTest extends TestSupport {
 
         classNode.addMethod(new MethodNode("a", ACC_PUBLIC, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, statementA));
         classNode.addMethod(new MethodNode("b", ACC_PUBLIC, null, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, statementB));
-        
+
         classNode.addMethod(new MethodNode("noReturnMethodA", ACC_PUBLIC, null, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, emptyStatement));
         classNode.addMethod(new MethodNode("noReturnMethodB", ACC_PUBLIC, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, emptyStatement));
-        
+
         classNode.addMethod(new MethodNode("c", ACC_PUBLIC, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, emptyStatement));
 
         Class fooClass = loadClass(classNode);
@@ -85,7 +80,7 @@ public class MethodTest extends TestSupport {
 
         Object bean = fooClass.newInstance();
         assertTrue("Created instance of class: " + bean, bean != null);
- 
+
         assertCallMethod(bean, "a", "calledA");
         assertCallMethod(bean, "b", "calledB");
         assertCallMethod(bean, "noReturnMethodA", null);

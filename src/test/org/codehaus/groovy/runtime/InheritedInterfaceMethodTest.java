@@ -45,10 +45,10 @@
  */
 package org.codehaus.groovy.runtime;
 
+import junit.framework.TestCase;
+
 import java.util.ArrayList;
 import java.util.List;
-
-import junit.framework.TestCase;
 
 /**
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
@@ -58,7 +58,7 @@ public class InheritedInterfaceMethodTest extends TestCase {
 
     public void testInvokeNewListMethodOnArrayList() {
         List list = new ArrayList();
-        Object answer = InvokerHelper.invokeMethod(list, "count", new Object[] { "123" });
+        Object answer = InvokerHelper.invokeMethod(list, "count", new Object[]{"123"});
         assertEquals(new Integer(0), answer);
 
         System.out.println("Found: " + answer);

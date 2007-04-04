@@ -45,29 +45,30 @@
  */
 package org.codehaus.groovy.ast;
 
-import java.util.List;
-
 import org.codehaus.groovy.syntax.parser.TestParserSupport;
+
+import java.util.List;
 
 /**
  * Tests the ClassNode
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
 public class ModuleNodeTest extends TestParserSupport {
 
-    public void testStatementClass_FAILS() throws Exception { if (notYetImplemented()) return;
-        
+    public void testStatementClass_FAILS() throws Exception {
+        if (notYetImplemented()) return;
+
         ModuleNode module = parse("x = [1, 2, 3]; println(x)", "Cheese.groovy");
-        
-        assertTrue("Should have statements", ! module.getStatementBlock().isEmpty());
-        
+
+        assertTrue("Should have statements", !module.getStatementBlock().isEmpty());
+
         List classes = module.getClasses();
         assertEquals("Number of classes", 1, classes.size());
-        
+
         ClassNode classNode = (ClassNode) classes.get(0);
-        
+
         assertEquals("Class name", "Cheese", classNode.getName());
     }
 }

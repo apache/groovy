@@ -45,11 +45,11 @@
  */
 package groovy.lang;
 
-import java.util.List;
-import java.util.Iterator;
-import java.math.BigDecimal;
-
 import junit.framework.TestCase;
+
+import java.math.BigDecimal;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * @author James Strachan
@@ -183,7 +183,7 @@ public class RangeTest extends TestCase {
         Range r = createRange(5, 11);
 
         int i = 5;
-        for (Iterator it = r.iterator(); it.hasNext(); ) {
+        for (Iterator it = r.iterator(); it.hasNext();) {
             assertEquals("equals to " + i, new Integer(i), (Integer) (it.next()));
             i++;
         }
@@ -192,7 +192,7 @@ public class RangeTest extends TestCase {
         BigDecimal one = new BigDecimal("1.0");
 
         BigDecimal val = new BigDecimal("5.0");
-        for (Iterator it = r.iterator(); it.hasNext(); ) {
+        for (Iterator it = r.iterator(); it.hasNext();) {
             assertEquals("equals to " + val, val, (BigDecimal) (it.next()));
             val = val.add(one);
         }
@@ -201,11 +201,11 @@ public class RangeTest extends TestCase {
     protected Range createRange(int from, int to) {
         return new ObjectRange(new Integer(from), new Integer(to));
     }
-    
+
     protected Range createRange(BigDecimal from, BigDecimal to) {
         return new ObjectRange(from, to);
     }
-    
+
     protected void assertEquals(String msg, int expected, Object value) {
         assertEquals(msg, new Integer(expected), value);
     }

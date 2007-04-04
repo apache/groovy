@@ -21,31 +21,30 @@ import groovy.lang.Closure;
 
 /**
  * @author John Wilson
- *
  */
 
 public class Tt1c {
-  public Closure x = new Closure(null) {
-                          public Object doCall(final Object params) {
-                            return "field";
-                          }
-                        };
-  
-  public Closure getX() {
-    return this.p1;
-  }
-  
-  public void setX(final Closure y) {
-    this.p1 = y;
-  }
-  
-  public String x() {
-    return "method";
-  }
+    public Closure x = new Closure(null) {
+        public Object doCall(final Object params) {
+            return "field";
+        }
+    };
 
-  private Closure p1 = new Closure(null) {
-    public Object doCall(final Object params) {
-      return "property";
+    public Closure getX() {
+        return this.p1;
     }
-  };
+
+    public void setX(final Closure y) {
+        this.p1 = y;
+    }
+
+    public String x() {
+        return "method";
+    }
+
+    private Closure p1 = new Closure(null) {
+        public Object doCall(final Object params) {
+            return "property";
+        }
+    };
 }

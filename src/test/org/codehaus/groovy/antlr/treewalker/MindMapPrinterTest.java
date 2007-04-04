@@ -1,8 +1,8 @@
 package org.codehaus.groovy.antlr.treewalker;
 
 import junit.framework.TestCase;
-import org.custommonkey.xmlunit.XMLUnit;
 import org.custommonkey.xmlunit.Diff;
+import org.custommonkey.xmlunit.XMLUnit;
 
 /**
  * Testcases for the antlr AST visitor that prints groovy source code nodes as Freemind compatible XML.
@@ -11,6 +11,7 @@ public class MindMapPrinterTest extends TestCase {
 
     private static final String HEADER = "<map version='0.7.1'><node TEXT='AST'>";
     private static final String FOOTER = "</node></map>";
+
     protected void setUp() throws Exception {
         XMLUnit.setIgnoreWhitespace(true);
     }

@@ -49,14 +49,14 @@ package groovy.lang;
 
 /**
  * A mock class for testing writer based code
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
 public class MockWriter {
 
     private String output;
-    
+
     public String getOutput() {
         String answer = output;
         output = null;
@@ -70,7 +70,7 @@ public class MockWriter {
     public void println() {
         setOutput("println()");
     }
-    
+
     public void println(Object object) {
         setOutput("println(" + object + ")");
     }

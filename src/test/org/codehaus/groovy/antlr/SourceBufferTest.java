@@ -52,7 +52,6 @@ import java.io.Reader;
 import java.io.StringReader;
 
 /**
- *
  * @author <a href="mailto:groovy@ross-rayner.com">Jeremy Rayner</a>
  * @version $Revision$
  */
@@ -60,12 +59,12 @@ public class SourceBufferTest extends GroovyTestCase {
 
     public void testEmptyBuffer() throws Exception {
         SourceBuffer buffer = getSourceBuffer("");
-        assertNull(buffer.getSnippet(new LineColumn(1,1),new LineColumn(1,1)));
+        assertNull(buffer.getSnippet(new LineColumn(1, 1), new LineColumn(1, 1)));
     }
 
     public void testSimpleUsage() throws Exception {
         SourceBuffer buffer = getSourceBuffer("println 'hello world'");
-        assertEquals("hello",buffer.getSnippet(new LineColumn(1,10),new LineColumn(1,15)));
+        assertEquals("hello", buffer.getSnippet(new LineColumn(1, 10), new LineColumn(1, 15)));
     }
 
     public void testUnixLineUsage() throws Exception {
@@ -74,10 +73,10 @@ public class SourceBufferTest extends GroovyTestCase {
         src.append("println 'hello world'").append(endOfLine);
         src.append("println 'oh not, not that again'").append(endOfLine);
         SourceBuffer buffer = getSourceBuffer(src.toString());
-        assertEquals("hello",buffer.getSnippet(new LineColumn(1,10),new LineColumn(1,15)));
-        assertEquals("world'" + endOfLine + "print",buffer.getSnippet(new LineColumn(1,16),new LineColumn(2,6)));
-        assertEquals(endOfLine,buffer.getSnippet(new LineColumn(1,22),new LineColumn(1,23)));
-        assertEquals(endOfLine,buffer.getSnippet(new LineColumn(2,33),new LineColumn(2,34)));
+        assertEquals("hello", buffer.getSnippet(new LineColumn(1, 10), new LineColumn(1, 15)));
+        assertEquals("world'" + endOfLine + "print", buffer.getSnippet(new LineColumn(1, 16), new LineColumn(2, 6)));
+        assertEquals(endOfLine, buffer.getSnippet(new LineColumn(1, 22), new LineColumn(1, 23)));
+        assertEquals(endOfLine, buffer.getSnippet(new LineColumn(2, 33), new LineColumn(2, 34)));
     }
 
     public void testDOSLineUsage() throws Exception {
@@ -86,11 +85,11 @@ public class SourceBufferTest extends GroovyTestCase {
         src.append("println 'hello world'").append(endOfLine);
         src.append("println 'oh not, not that again'").append(endOfLine);
         SourceBuffer buffer = getSourceBuffer(src.toString());
-        assertEquals("hello",buffer.getSnippet(new LineColumn(1,10),new LineColumn(1,15)));
-        assertEquals("oh not",buffer.getSnippet(new LineColumn(2,10),new LineColumn(2,16)));
-        assertEquals("world'" + endOfLine + "print",buffer.getSnippet(new LineColumn(1,16),new LineColumn(2,6)));
-        assertEquals(endOfLine,buffer.getSnippet(new LineColumn(1,22),new LineColumn(1,24)));
-        assertEquals(endOfLine,buffer.getSnippet(new LineColumn(2,33),new LineColumn(2,35)));
+        assertEquals("hello", buffer.getSnippet(new LineColumn(1, 10), new LineColumn(1, 15)));
+        assertEquals("oh not", buffer.getSnippet(new LineColumn(2, 10), new LineColumn(2, 16)));
+        assertEquals("world'" + endOfLine + "print", buffer.getSnippet(new LineColumn(1, 16), new LineColumn(2, 6)));
+        assertEquals(endOfLine, buffer.getSnippet(new LineColumn(1, 22), new LineColumn(1, 24)));
+        assertEquals(endOfLine, buffer.getSnippet(new LineColumn(2, 33), new LineColumn(2, 35)));
     }
 
     public void testOutOfBounds() throws Exception {
@@ -99,15 +98,15 @@ public class SourceBufferTest extends GroovyTestCase {
         src.append("println 'hello world'").append(endOfLine);
         src.append("println 'oh not, not that again'").append(endOfLine);
         SourceBuffer buffer = getSourceBuffer(src.toString());
-        assertEquals("println",buffer.getSnippet(new LineColumn(0,0),new LineColumn(1,8)));
-        assertEquals("println",buffer.getSnippet(new LineColumn(-10,-1),new LineColumn(1,8)));
-        assertEquals(endOfLine,buffer.getSnippet(new LineColumn(2,33),new LineColumn(2,40)));
-        assertEquals("",buffer.getSnippet(new LineColumn(3,33),new LineColumn(6,40)));
+        assertEquals("println", buffer.getSnippet(new LineColumn(0, 0), new LineColumn(1, 8)));
+        assertEquals("println", buffer.getSnippet(new LineColumn(-10, -1), new LineColumn(1, 8)));
+        assertEquals(endOfLine, buffer.getSnippet(new LineColumn(2, 33), new LineColumn(2, 40)));
+        assertEquals("", buffer.getSnippet(new LineColumn(3, 33), new LineColumn(6, 40)));
     }
 
     private SourceBuffer getSourceBuffer(String text) throws Exception {
         SourceBuffer buffer = new SourceBuffer();
-        Reader reader = new UnicodeEscapingReader(new StringReader(text),buffer);
+        Reader reader = new UnicodeEscapingReader(new StringReader(text), buffer);
 
         while (reader.read() != -1) {
             // empty loop

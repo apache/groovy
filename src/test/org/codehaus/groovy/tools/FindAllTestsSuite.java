@@ -111,7 +111,7 @@ public class FindAllTestsSuite extends TestSuite {
 
         name = name.substring(testDirectory.length() + 1, name.length() - ".class".length());
         name = name.replace(File.separatorChar, '.');
-        
+
         //System.out.println("Found: " + name);
         Class type = loadClass(name);
         addTestSuite(type);

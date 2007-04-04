@@ -48,10 +48,7 @@ package org.codehaus.groovy.classgen;
 
 import groovy.lang.GroovyObject;
 
-import org.codehaus.groovy.classgen.TestSupport;
-
 /**
- * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */

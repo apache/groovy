@@ -18,37 +18,35 @@
 package gls.ch06.s05.testClasses;
 
 
-import org.codehaus.groovy.runtime.InvokerHelper;
-
 import groovy.lang.GroovyObject;
 import groovy.lang.MetaClass;
+import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
  * @author John Wilson
- *
  */
 
 public class Tt1cgi extends Tt1c implements GroovyObject {
 
-  private MetaClass metaClass = InvokerHelper.getMetaClass(this);
-  
-  public MetaClass getMetaClass() {
-    return this.metaClass;
-  }
+    private MetaClass metaClass = InvokerHelper.getMetaClass(this);
 
-  public Object getProperty(final String property) {
-    return this.metaClass.getProperty(this, property);
-  }
+    public MetaClass getMetaClass() {
+        return this.metaClass;
+    }
 
-  public Object invokeMethod(final String name, final Object args) {
-    return this.metaClass.invokeMethod(this, name, args);
-  }
+    public Object getProperty(final String property) {
+        return this.metaClass.getProperty(this, property);
+    }
 
-  public void setMetaClass(final MetaClass metaClass) {
-    this.metaClass = metaClass;
-  }
+    public Object invokeMethod(final String name, final Object args) {
+        return this.metaClass.invokeMethod(this, name, args);
+    }
 
-  public void setProperty(final String property, final Object newValue) {
-    this.metaClass.setProperty(this, property, newValue);
-  }
+    public void setMetaClass(final MetaClass metaClass) {
+        this.metaClass = metaClass;
+    }
+
+    public void setProperty(final String property, final Object newValue) {
+        this.metaClass.setProperty(this, property, newValue);
+    }
 }

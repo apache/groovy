@@ -35,16 +35,15 @@
 
 package org.codehaus.groovy.classgen;
 
-import java.util.List;
-
 import groovy.lang.MetaMethod;
-
 import org.codehaus.groovy.runtime.Reflector;
+
+import java.util.List;
 
 /**
  * This is a scratch class used to experiment with ASM to see what kind of
  * stuff is output for normal Java code
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -78,11 +77,11 @@ public class DummyReflector extends Reflector {
 
     public Object invoke(MetaMethod method, Object object, Object[] arguments) {
         switch (method.getMethodIndex()) {
-            case 1 :
+            case 1:
                 return ((String) object).toCharArray();
-            case 2 :
+            case 2:
                 return new Boolean(((List) object).contains(arguments[0]));
-            default :
+            default:
                 return noSuchMethod(method, object, arguments);
         }
     }

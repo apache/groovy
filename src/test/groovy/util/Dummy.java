@@ -53,20 +53,20 @@ public class Dummy implements DummyMBean {
 
     public Dummy() {
     }
-    
+
     public Dummy(String name, String location) {
         this.name = name;
         this.location = location;
     }
-    
+
     public void start() {
         System.out.println("Started!");
     }
-    
+
     public void stop() {
         System.out.println("Stopped!");
     }
-    
+
     public String getLocation() {
         return location;
     }

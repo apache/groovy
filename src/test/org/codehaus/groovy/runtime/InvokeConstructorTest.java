@@ -51,7 +51,7 @@ import groovy.util.GroovyTestCase;
 
 /**
  * Tests method invocation
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -68,19 +68,19 @@ public class InvokeConstructorTest extends GroovyTestCase {
     }
 
     public void testInvokeConstructorOneParamWhichIsNull() throws Throwable {
-        assertConstructor(new DummyBean("Bob", new Integer(1707)), new Object[] { "Bob", new Integer(1707)});
+        assertConstructor(new DummyBean("Bob", new Integer(1707)), new Object[]{"Bob", new Integer(1707)});
     }
 
     public void testConstructorWithGStringCoercion() throws Throwable {
-        GString gstring = new GString(new Object[] { new Integer(123)}) {
+        GString gstring = new GString(new Object[]{new Integer(123)}) {
             public String[] getStrings() {
-                return new String[] { "" };
+                return new String[]{""};
             }
         };
 
         Object expected = new Long(gstring.toString());
 
-        assertConstructor(expected, new Object[] { gstring });
+        assertConstructor(expected, new Object[]{gstring});
     }
 
     protected void assertConstructor(Object expected, Object arguments) throws Throwable {

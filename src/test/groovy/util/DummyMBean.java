@@ -47,11 +47,18 @@ package groovy.util;
 
 public interface DummyMBean {
     public void start();
+
     public void stop();
+
     public String getLocation();
+
     public void setLocation(String location);
+
     public String getName();
+
     public void setName(String name);
+
     public int getSize();
+
     public void setSize(int size);
 }

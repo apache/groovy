@@ -50,19 +50,17 @@ import groovy.lang.GroovySystem;
 import groovy.lang.MetaClassRegistry;
 import groovy.lang.MetaMethod;
 import groovy.util.GroovyTestCase;
-
-import java.io.FileOutputStream;
-import java.util.ArrayList;
-import java.util.List;
-
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.util.ASMifierClassVisitor;
 import org.objectweb.asm.util.CheckClassAdapter;
 
+import java.io.FileOutputStream;
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -74,23 +72,22 @@ public class ReflectorGeneratorTest extends GroovyTestCase {
         //methods.add(new MetaMethod("toString", String.class, new Class[0], String.class, 0));
         testMethods(methods);
     }
-    
+
     public void testObjectGenerator() throws Exception {
         List methods = InvokerHelper.getMetaClass(new Object()).getMethods();
         testMethods(methods);
     }
-    
+
     public void testDummyReflector() throws Exception {
         DummyReflector dummy = new DummyReflector();
         assertTrue(dummy != null);
     }
-    
+
     protected void testMethods(List methods) throws Exception {
         ReflectorGenerator generator = new ReflectorGenerator(methods);
         String name = getClass().getName() + "." + getMethodName();
         ClassWriter cw = new ClassWriter(true);
 
-        
         //ASMifierClassVisitor dumper = new ASMifierClassVisitor(new PrintWriter(new OutputStreamWriter(System.out)));
         //generator.generate(dumper, name);
 
@@ -105,12 +102,12 @@ public class ReflectorGeneratorTest extends GroovyTestCase {
         out.close();
 
         // now lets try dump it
-        ASMifierClassVisitor.main(new String[] { fileName });
+        ASMifierClassVisitor.main(new String[]{fileName});
 
         // now lets try class load it
         MetaClassRegistry registry = GroovySystem.getMetaClassRegistry();
-        Object reflector = ((MetaClassRegistryImpl)registry).loadReflector(getClass(),methods);
-         
+        Object reflector = ((MetaClassRegistryImpl) registry).loadReflector(getClass(), methods);
+
         System.out.println("Created new reflector: " + reflector);
     }
 }

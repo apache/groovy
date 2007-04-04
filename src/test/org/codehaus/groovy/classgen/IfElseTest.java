@@ -46,13 +46,7 @@
 
 package org.codehaus.groovy.classgen;
 
-import org.codehaus.groovy.ast.ClassHelper;
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.ConstructorNode;
-import org.codehaus.groovy.ast.FieldNode;
-import org.codehaus.groovy.ast.MethodNode;
-import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
@@ -64,7 +58,6 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.syntax.Token;
 
 /**
- * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -78,20 +71,20 @@ public class IfElseTest extends TestSupport {
         classNode.addProperty(new PropertyNode("result", ACC_PUBLIC, ClassHelper.STRING_TYPE, classNode, null, null, null));
 
         BooleanExpression expression =
-            new BooleanExpression(
-                new BinaryExpression(
-                    new FieldExpression(
-                        new FieldNode("bar", ACC_PRIVATE, ClassHelper.STRING_TYPE, classNode, ConstantExpression.NULL)),
-                    Token.newSymbol("==", 0, 0),
-                    new ConstantExpression("abc")));
+                new BooleanExpression(
+                        new BinaryExpression(
+                                new FieldExpression(
+                                        new FieldNode("bar", ACC_PRIVATE, ClassHelper.STRING_TYPE, classNode, ConstantExpression.NULL)),
+                                Token.newSymbol("==", 0, 0),
+                                new ConstantExpression("abc")));
 
         Statement trueStatement =
-            new ExpressionStatement(
-                new BinaryExpression(
-                    new FieldExpression(
-                        new FieldNode("result", ACC_PRIVATE, ClassHelper.STRING_TYPE, classNode, ConstantExpression.NULL)),
-                    Token.newSymbol("=", 0, 0),
-                    new ConstantExpression("worked")));
+                new ExpressionStatement(
+                        new BinaryExpression(
+                                new FieldExpression(
+                                        new FieldNode("result", ACC_PRIVATE, ClassHelper.STRING_TYPE, classNode, ConstantExpression.NULL)),
+                                Token.newSymbol("=", 0, 0),
+                                new ConstantExpression("worked")));
 
         Statement falseStatement = createPrintlnStatement(new ConstantExpression("false"));
 

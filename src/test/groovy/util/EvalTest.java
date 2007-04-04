@@ -26,13 +26,13 @@ public class EvalTest extends TestCase {
 
     public void testXY() throws CompilationFailedException {
         Integer ten = new Integer(10);
-        Object result = Eval.xy(ten,ten, "x+y");
+        Object result = Eval.xy(ten, ten, "x+y");
         assertEquals("20", result.toString());
     }
 
-     public void testXYZ() throws CompilationFailedException {
+    public void testXYZ() throws CompilationFailedException {
         Integer ten = new Integer(10);
-        Object result = Eval.xyz(ten,ten,ten, "x+y+z");
+        Object result = Eval.xyz(ten, ten, ten, "x+y+z");
         assertEquals("30", result.toString());
     }
 }

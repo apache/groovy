@@ -18,46 +18,44 @@
 package gls.ch06.s05.testClasses;
 
 
-import org.codehaus.groovy.runtime.InvokerHelper;
-
 import groovy.lang.GroovyInterceptable;
 import groovy.lang.GroovyObject;
 import groovy.lang.MetaClass;
+import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
  * @author John Wilson
- *
  */
 
 public class Tt1gi extends Tt1 implements GroovyObject, GroovyInterceptable {
 
-  private MetaClass metaClass = InvokerHelper.getMetaClass(this);
-  
-  public MetaClass getMetaClass() {
-    return this.metaClass;
-  }
+    private MetaClass metaClass = InvokerHelper.getMetaClass(this);
 
-  public Object getProperty(final String property) {
-    if ("x".equals(property)) {
-      return "dynamic property";
-    } else {
-      return this.metaClass.getProperty(this, property);
+    public MetaClass getMetaClass() {
+        return this.metaClass;
     }
-  }
 
-  public Object invokeMethod(final String name, final Object args) {
-    if ("x".equals(name)) {
-      return "dynamic method";
-    } else {
-      return this.metaClass.invokeMethod(this, name, args);
+    public Object getProperty(final String property) {
+        if ("x".equals(property)) {
+            return "dynamic property";
+        } else {
+            return this.metaClass.getProperty(this, property);
+        }
     }
-  }
 
-  public void setMetaClass(final MetaClass metaClass) {
-    this.metaClass = metaClass;
-  }
+    public Object invokeMethod(final String name, final Object args) {
+        if ("x".equals(name)) {
+            return "dynamic method";
+        } else {
+            return this.metaClass.invokeMethod(this, name, args);
+        }
+    }
 
-  public void setProperty(final String property, final Object newValue) {
-    this.metaClass.setProperty(this, property, newValue);
-  }
+    public void setMetaClass(final MetaClass metaClass) {
+        this.metaClass = metaClass;
+    }
+
+    public void setProperty(final String property, final Object newValue) {
+        this.metaClass.setProperty(this, property, newValue);
+    }
 }

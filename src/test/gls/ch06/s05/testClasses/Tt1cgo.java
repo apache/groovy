@@ -23,31 +23,30 @@ import groovy.lang.GroovyObjectSupport;
 
 /**
  * @author John Wilson
- *
  */
 
 public class Tt1cgo extends GroovyObjectSupport {
-  public Closure x = new Closure(null) {
-    public Object doCall(final Object params) {
-      return "field";
-    }
-  };
+    public Closure x = new Closure(null) {
+        public Object doCall(final Object params) {
+            return "field";
+        }
+    };
 
-  public Closure getX() {
-    return this.p1;
-  }
-
-  public void setX(final Closure x) {
-    this.p1 = x;
-  }
-  
-  public String x() {
-    return "method";
-  }
-  
-  private Closure p1 = new Closure(null) {
-    public Object doCall(final Object params) {
-      return "property";
+    public Closure getX() {
+        return this.p1;
     }
-  };
+
+    public void setX(final Closure x) {
+        this.p1 = x;
+    }
+
+    public String x() {
+        return "method";
+    }
+
+    private Closure p1 = new Closure(null) {
+        public Object doCall(final Object params) {
+            return "property";
+        }
+    };
 }

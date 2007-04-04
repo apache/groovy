@@ -56,6 +56,6 @@ import org.codehaus.groovy.classgen.TestSupport;
 public class ScriptBug extends TestSupport {
 
     public void testBug() throws Exception {
-        assertScript( "println 'hello world'" );
+        assertScript("println 'hello world'");
     }
 }

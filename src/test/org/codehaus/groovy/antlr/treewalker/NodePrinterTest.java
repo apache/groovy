@@ -2,7 +2,6 @@ package org.codehaus.groovy.antlr.treewalker;
 
 import junit.framework.TestCase;
 import org.custommonkey.xmlunit.XMLUnit;
-import org.custommonkey.xmlunit.Diff;
 
 /**
  * Testcases for the antlr AST visitor that prints groovy source code nodes as Pseudo XML.

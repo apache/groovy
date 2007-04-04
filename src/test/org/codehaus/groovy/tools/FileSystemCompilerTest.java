@@ -47,14 +47,13 @@
 package org.codehaus.groovy.tools;
 
 import groovy.util.GroovyTestCase;
+import org.codehaus.groovy.control.CompilerConfiguration;
 
 import java.io.File;
 
-import org.codehaus.groovy.control.CompilerConfiguration;
-
 /**
  * Tests the compiling & running of GroovyTestCases
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -73,21 +72,21 @@ public class FileSystemCompilerTest extends GroovyTestCase {
 
     protected void runTest(String name) throws Exception {
         File file = new File("src/test/groovy/" + name);
-        
+
         assertTrue("Could not find source file: " + file, file.exists());
 
-        compiler.compile(new File[] { file });
+        compiler.compile(new File[]{file});
     }
 
     protected void setUp() throws Exception {
         File dir = new File("target/test-generated-classes");
         dir.mkdirs();
-        
+
         CompilerConfiguration configuration = new CompilerConfiguration();
         configuration.setTargetDirectory(dir);
         configuration.setVerbose(dumpClass);
-        
-        compiler = new FileSystemCompiler( configuration );
+
+        compiler = new FileSystemCompiler(configuration);
     }
 
 }

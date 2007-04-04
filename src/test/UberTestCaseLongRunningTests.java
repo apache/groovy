@@ -8,7 +8,10 @@
  * @author <a href="mailto:jeremy.rayner@bigfoot.com">Jeremy Rayner</a>
  * @version $Revision$
  */
-import junit.framework.*;
+
+import junit.framework.Test;
+import junit.framework.TestCase;
+
 public class UberTestCaseLongRunningTests extends TestCase {
     public static Test suite() {
         return AllCodehausJavaTestsSuite.suite();

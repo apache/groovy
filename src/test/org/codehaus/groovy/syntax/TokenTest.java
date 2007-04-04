@@ -4,11 +4,9 @@ package org.codehaus.groovy.syntax;
 import groovy.util.GroovyTestCase;
 
 public class TokenTest
-    extends GroovyTestCase
-{
+        extends GroovyTestCase {
 
-    public void testNothing()
-    {
+    public void testNothing() {
     }
 
 /*

@@ -45,16 +45,15 @@
  */
 package org.codehaus.groovy.bsf;
 
+import junit.framework.TestCase;
+import org.apache.bsf.BSFEngine;
+import org.apache.bsf.BSFException;
+import org.apache.bsf.BSFManager;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+
 import java.io.File;
 import java.util.List;
 import java.util.Vector;
-
-import junit.framework.TestCase;
-
-import org.apache.bsf.BSFManager;
-import org.apache.bsf.BSFException;
-import org.apache.bsf.BSFEngine;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 /**
  * Tests the BSF integration

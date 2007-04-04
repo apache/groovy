@@ -53,7 +53,6 @@ import java.util.Map;
 
 
 /**
- * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -61,9 +60,9 @@ public class TupleListTest extends GroovyTestCase {
 
     public void testIterateOverTuple() throws Exception {
         StringBuffer buffer = new StringBuffer();
-        for (Iterator iter = InvokerHelper.asIterator(InvokerHelper.createTuple(new Object[] { "a", "b", "c" }));
-            iter.hasNext();
-            ) {
+        for (Iterator iter = InvokerHelper.asIterator(InvokerHelper.createTuple(new Object[]{"a", "b", "c"}));
+             iter.hasNext();
+                ) {
             Object i = iter.next();
             buffer.append(i);
         }
@@ -73,9 +72,9 @@ public class TupleListTest extends GroovyTestCase {
 
     public void testIterateOverList() throws Exception {
         StringBuffer buffer = new StringBuffer();
-        for (Iterator iter = InvokerHelper.asIterator(InvokerHelper.createList(new Object[] { "a", "b", "c" }));
-            iter.hasNext();
-            ) {
+        for (Iterator iter = InvokerHelper.asIterator(InvokerHelper.createList(new Object[]{"a", "b", "c"}));
+             iter.hasNext();
+                ) {
             Object i = iter.next();
             buffer.append(i);
         }
@@ -84,11 +83,11 @@ public class TupleListTest extends GroovyTestCase {
     }
 
     public void testCreateMap() throws Exception {
-        Map map = InvokerHelper.createMap(new Object[] {"a", "x", "b", "y"});
+        Map map = InvokerHelper.createMap(new Object[]{"a", "x", "b", "y"});
 
         assertNotNull("map", map);
         assertEquals("size", 2, map.size());
         assertEquals("value of a", "x", map.get("a"));
-        assertEquals("value of b", "y", map.get("b"));            
+        assertEquals("value of b", "y", map.get("b"));
     }
 }

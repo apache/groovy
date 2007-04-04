@@ -46,15 +46,14 @@
 
 package groovy.lang;
 
-import java.util.List;
-
+import groovy.util.GroovyTestCase;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
-import groovy.util.GroovyTestCase;
+import java.util.List;
 
 /**
  * Tests the use of the structured Attribute type
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -70,11 +69,11 @@ public class SequenceTest extends GroovyTestCase {
         assertEquals("Element", "Bob", sequence.get(1));
 
         // now lets try some methods on each item in the list
-        List answer = (List) InvokerHelper.invokeMethod(sequence, "startsWith", new Object[] { "Ja" });
-        assertArrayEquals(new Object[] { Boolean.TRUE, Boolean.FALSE }, answer.toArray());
+        List answer = (List) InvokerHelper.invokeMethod(sequence, "startsWith", new Object[]{"Ja"});
+        assertArrayEquals(new Object[]{Boolean.TRUE, Boolean.FALSE}, answer.toArray());
 
         answer = (List) InvokerHelper.invokeMethod(sequence, "length", null);
-        assertArrayEquals(new Object[] { new Integer(5), new Integer(3)}, answer.toArray());
+        assertArrayEquals(new Object[]{new Integer(5), new Integer(3)}, answer.toArray());
     }
 
     public void testAddingWrongTypeFails() {

@@ -8,8 +8,8 @@ import groovy.text.XmlTemplateEngineTest;
 import groovy.tree.NodePrinterTest;
 import groovy.util.EvalTest;
 import groovy.util.MBeanTest;
-import groovy.xml.XmlTest;
 import groovy.xml.FactorySupportTest;
+import groovy.xml.XmlTest;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 

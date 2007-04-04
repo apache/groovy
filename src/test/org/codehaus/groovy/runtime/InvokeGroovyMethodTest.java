@@ -55,7 +55,7 @@ import java.util.List;
 
 /**
  * Tests method invocation
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -96,16 +96,17 @@ public class InvokeGroovyMethodTest extends GroovyTestCase {
     }
 
     public void testMatchesWithList() throws Throwable {
-        assertMatches(new Integer(1), Arrays.asList(new Object[] { new Integer(2), new Integer(1)}), true);
-        assertMatches(new Integer(1), Arrays.asList(new Object[] { new Integer(2), new Integer(3)}), false);
+        assertMatches(new Integer(1), Arrays.asList(new Object[]{new Integer(2), new Integer(1)}), true);
+        assertMatches(new Integer(1), Arrays.asList(new Object[]{new Integer(2), new Integer(3)}), false);
     }
 
     // Implementation methods
     //-------------------------------------------------------------------------
     protected void assertMatches(Object switchValue, Object caseValue, boolean expected) {
         assertEquals(
-            "Switch on: " + switchValue + " Case: " + caseValue,
-            expected,
-            ((Boolean) (InvokerHelper.invokeMethod(caseValue, "isCase", switchValue))).booleanValue());    }
+                "Switch on: " + switchValue + " Case: " + caseValue,
+                expected,
+                ((Boolean) (InvokerHelper.invokeMethod(caseValue, "isCase", switchValue))).booleanValue());
+    }
 
 }

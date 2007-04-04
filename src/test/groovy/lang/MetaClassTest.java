@@ -35,12 +35,11 @@
 package groovy.lang;
 
 import groovy.util.GroovyTestCase;
+import org.codehaus.groovy.runtime.InvokerHelper;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Iterator;
-
-import org.codehaus.groovy.runtime.InvokerHelper;
+import java.util.List;
 
 /**
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
@@ -60,7 +59,7 @@ public class MetaClassTest extends GroovyTestCase {
     }
 
     public void testArray() {
-        String[] value = new String[] { "hello" };
+        String[] value = new String[]{"hello"};
 
         MetaClass metaClass = InvokerHelper.getMetaClass(value);
 
@@ -93,19 +92,19 @@ public class MetaClassTest extends GroovyTestCase {
 
     public void testPublicField() {
         DymmyClass dymmyClass = new DymmyClass();
-        
+
         MetaClass metaClass = InvokerHelper.getMetaClass(dymmyClass);
-        
+
         assertEquals(metaClass.getProperty(dymmyClass, "x"), new Integer(0));
         assertEquals(metaClass.getProperty(dymmyClass, "y"), "none");
-        
+
         metaClass.setProperty(dymmyClass, "x", new Integer(25));
         assertEquals(dymmyClass.x, 25);
 
         metaClass.setProperty(dymmyClass, "y", "newvalue");
         assertEquals(dymmyClass.y, "newvalue");
     }
-    
+
     public void testSetPropertyWithInt() {
         DymmyClass dymmyClass = new DymmyClass();
         MetaClass metaClass = InvokerHelper.getMetaClass(dymmyClass);
@@ -116,14 +115,14 @@ public class MetaClassTest extends GroovyTestCase {
         DymmyClass dymmyClass = new DymmyClass();
         MetaClass metaClass = InvokerHelper.getMetaClass(dymmyClass);
         Double[][] matrix2 =
-        {
                 {
-                        new Double(35), new Double(50), new Double(120)
-                }, 
-                {
-                        new Double(75), new Double(80), new Double(150)
-                }
-        };
+                        {
+                                new Double(35), new Double(50), new Double(120)
+                        },
+                        {
+                                new Double(75), new Double(80), new Double(150)
+                        }
+                };
         metaClass.setProperty(dymmyClass, "matrix", matrix2);
         metaClass.setProperty(dymmyClass, "matrix2", matrix2);
     }
@@ -170,7 +169,7 @@ public class MetaClassTest extends GroovyTestCase {
         for (Iterator iter = methods.iterator(); iter.hasNext();) {
             MetaMethod method = (MetaMethod) iter.next();
             int count = 0;
-            for (Iterator inner = methods.iterator(); inner.hasNext(); ) {
+            for (Iterator inner = methods.iterator(); inner.hasNext();) {
                 MetaMethod runner = (MetaMethod) inner.next();
                 if (method.equals(runner)) {
                     System.out.println("runner = " + runner);
@@ -178,13 +177,12 @@ public class MetaClassTest extends GroovyTestCase {
                     count++;
                 }
             }
-            assertEquals("count of Method "+method.getName(), 1, count);
+            assertEquals("count of Method " + method.getName(), 1, count);
         }
 
     }
 
 
-    
     public void doSomething() {
         System.out.println("Called doSomething()");
     }
@@ -194,7 +192,7 @@ public class MetaClassTest extends GroovyTestCase {
 class DymmyClass {
     public int x = 0;
     public String y = "none";
-    
+
     private int anInt;
     private int[] ints;
     private Integer[] integers;

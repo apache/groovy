@@ -1,21 +1,19 @@
 package org.codehaus.groovy.antlr.treewalker;
 
+import antlr.collections.AST;
 import junit.framework.TestCase;
-import org.custommonkey.xmlunit.XMLUnit;
-import org.custommonkey.xmlunit.Diff;
-import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
-import org.codehaus.groovy.antlr.parser.GroovyLexer;
+import org.codehaus.groovy.antlr.AntlrASTProcessor;
 import org.codehaus.groovy.antlr.SourceBuffer;
 import org.codehaus.groovy.antlr.UnicodeEscapingReader;
-import org.codehaus.groovy.antlr.AntlrASTProcessor;
+import org.codehaus.groovy.antlr.parser.GroovyLexer;
+import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
+import org.custommonkey.xmlunit.XMLUnit;
 
 import java.io.ByteArrayOutputStream;
-import java.io.StringReader;
 import java.io.PrintStream;
-import java.util.List;
+import java.io.StringReader;
 import java.util.ArrayList;
-
-import antlr.collections.AST;
+import java.util.List;
 
 /**
  * Testcases for the composite visitor.
@@ -67,7 +65,7 @@ public class CompositeVisitorTest extends TestCase {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         GroovyRecognizer parser;
         SourceBuffer sourceBuffer = new SourceBuffer();
-        UnicodeEscapingReader unicodeReader = new UnicodeEscapingReader(new StringReader(input),sourceBuffer);
+        UnicodeEscapingReader unicodeReader = new UnicodeEscapingReader(new StringReader(input), sourceBuffer);
         GroovyLexer lexer = new GroovyLexer(unicodeReader);
         unicodeReader.setLexer(lexer);
         parser = GroovyRecognizer.make(lexer);

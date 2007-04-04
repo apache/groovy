@@ -46,7 +46,7 @@
 
 package org.codehaus.groovy.runtime;
 
-import java.awt.Point;
+import java.awt.*;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.util.HashMap;
@@ -54,7 +54,7 @@ import java.util.Map;
 
 /**
  * A bean used by the test cases
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -64,7 +64,7 @@ public class DummyBean {
     private Map dynamicProperties = new HashMap();
     private Point point;
     private PropertyChangeSupport changeSupport = new PropertyChangeSupport(this);
-    
+
     public DummyBean() {
     }
 
@@ -80,7 +80,7 @@ public class DummyBean {
     public void addPropertyChangeListener(PropertyChangeListener listener) {
         changeSupport.addPropertyChangeListener(listener);
     }
-    
+
     public Integer getI() {
         return i;
     }
@@ -109,14 +109,14 @@ public class DummyBean {
     public static String dummyStaticMethod(String text) {
         return text.toUpperCase();
     }
-    
+
     public boolean equals(Object that) {
         if (that instanceof DummyBean) {
             return equals((DummyBean) that);
         }
         return false;
     }
-    
+
     public boolean equals(DummyBean that) {
         return this.name.equals(that.name) && this.i.equals(that.i);
     }

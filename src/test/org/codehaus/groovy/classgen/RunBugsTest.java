@@ -37,13 +37,11 @@ package org.codehaus.groovy.classgen;
 
 import groovy.lang.GroovyObject;
 
-import org.codehaus.groovy.classgen.TestSupport;
-
 /**
  * A helper class for testing bugs in code generation errors. By turning on the
  * logging in TestSupport we can dump the ASM code generation code for inner
  * classes etc.
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -141,12 +139,11 @@ public class RunBugsTest extends TestSupport {
     }
     
     */
-        
+
     public void testGroovy303_Bug() throws Exception {
         GroovyObject object = compile("src/test/groovy/bugs/Groovy303_Bug.groovy");
         object.invokeMethod("testBug", null);
     }
-    
-    
-    
-   }
+
+
+}

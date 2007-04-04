@@ -45,13 +45,12 @@
  */
 package org.codehaus.groovy.ast;
 
-import org.objectweb.asm.Opcodes;
-
 import junit.framework.TestCase;
+import org.objectweb.asm.Opcodes;
 
 /**
  * Tests the ClassNode
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -73,10 +72,10 @@ public class ClassNodeTest extends TestCase implements Opcodes {
         assertNull(classNode.getOuterField("field"));
         assertNotNull(innerClassNode.getOuterField("field"));
     }
-    
+
     public void testPackageName() {
         assertEquals("Package", null, classNode.getPackageName());
-        
+
         ClassNode packageNode = new ClassNode("com.acme.Foo", ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
         assertEquals("Package", "com.acme", packageNode.getPackageName());
     }

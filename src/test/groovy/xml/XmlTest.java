@@ -47,11 +47,9 @@
 package groovy.xml;
 
 import groovy.lang.GroovyObject;
-
 import org.codehaus.groovy.classgen.TestSupport;
 
 /**
- * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -63,9 +61,9 @@ public class XmlTest extends TestSupport {
     }
 
     public void testQName() throws Exception {
-        QName qname = new QName("urn:mynamespace","localPart","x");
+        QName qname = new QName("urn:mynamespace", "localPart", "x");
 
-        assertTrue(qname.equals(new QName("urn:mynamespace","localPart")));
+        assertTrue(qname.equals(new QName("urn:mynamespace", "localPart")));
         assertTrue(qname.equals("urn:mynamespace:localPart"));
         assertTrue(qname.equals("x:localPart"));
 

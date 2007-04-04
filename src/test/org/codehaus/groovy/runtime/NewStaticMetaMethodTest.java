@@ -45,11 +45,10 @@
  */
 package org.codehaus.groovy.runtime;
 
-import java.lang.reflect.Method;
-
+import junit.framework.TestCase;
 import org.codehaus.groovy.runtime.metaclass.ReflectionMetaMethod;
 
-import junit.framework.TestCase;
+import java.lang.reflect.Method;
 
 /**
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
@@ -58,31 +57,31 @@ import junit.framework.TestCase;
 public class NewStaticMetaMethodTest extends TestCase {
 
     public void testInvokeMetaMethod() throws Exception {
-        Method method = getClass().getMethod("dummyMethod", new Class[] { String.class, String.class });
+        Method method = getClass().getMethod("dummyMethod", new Class[]{String.class, String.class});
         assertTrue("Should have found a method", method != null);
 
         NewInstanceMetaMethod metaMethod = createNewMetaMethod(method);
 
-        Object answer = metaMethod.invoke("abc", new Object[] { "xyz" });
+        Object answer = metaMethod.invoke("abc", new Object[]{"xyz"});
         assertEquals("def", answer);
 
         assertTrue("Should not appear as static method", metaMethod.isStatic() == false);
     }
 
     public void testInvokeDefaultGroovyMethod() throws Exception {
-        Method method = DefaultGroovyMethods.class.getMethod("plus", new Class[] { String.class, Object.class });
+        Method method = DefaultGroovyMethods.class.getMethod("plus", new Class[]{String.class, Object.class});
         assertTrue("Should have found a method", method != null);
 
         NewInstanceMetaMethod metaMethod = createNewMetaMethod(method);
 
-        Object answer = metaMethod.invoke("abc", new Object[] { "123" });
+        Object answer = metaMethod.invoke("abc", new Object[]{"123"});
         assertEquals("abc123", answer);
 
         System.out.println("Found: " + answer);
     }
 
     public void testInvokeDefaultGroovyMethodUsingMetaClass() {
-        Object answer = InvokerHelper.invokeMethod("abc", "plus", new Object[] { "123" });
+        Object answer = InvokerHelper.invokeMethod("abc", "plus", new Object[]{"123"});
         assertEquals("abc123", answer);
 
         System.out.println("Found: " + answer);

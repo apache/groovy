@@ -1,19 +1,18 @@
 package groovy.inspect;
 
-import java.io.Serializable;
-import java.io.PrintStream;
-import java.io.ByteArrayOutputStream;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.*;
-import java.lang.reflect.Field;
-
-import groovy.lang.PropertyValue;
-import groovy.lang.MetaProperty;
 import groovy.lang.GroovyShell;
-import groovy.lang.GroovyObject;
+import groovy.lang.MetaProperty;
+import groovy.lang.PropertyValue;
 import org.jmock.Mock;
 import org.jmock.cglib.MockObjectTestCase;
+
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.io.Serializable;
+import java.lang.reflect.Field;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class InspectorTest extends MockObjectTestCase implements Serializable {
     public String someField = "only for testing";
@@ -42,34 +41,34 @@ public class InspectorTest extends MockObjectTestCase implements Serializable {
     public void testClassPropsJava() {
         Inspector insp = new Inspector(this);
         String[] classProps = insp.getClassProps();
-        assertEquals("package groovy.inspect",classProps[Inspector.CLASS_PACKAGE_IDX]);
-        assertEquals("public class InspectorTest",classProps[Inspector.CLASS_CLASS_IDX]);
-        assertEquals("implements Serializable ",classProps[Inspector.CLASS_INTERFACE_IDX]);
-        assertEquals("extends MockObjectTestCase",classProps[Inspector.CLASS_SUPERCLASS_IDX]);
-        assertEquals("is Primitive: false, is Array: false, is Groovy: false",classProps[Inspector.CLASS_OTHER_IDX]);
+        assertEquals("package groovy.inspect", classProps[Inspector.CLASS_PACKAGE_IDX]);
+        assertEquals("public class InspectorTest", classProps[Inspector.CLASS_CLASS_IDX]);
+        assertEquals("implements Serializable ", classProps[Inspector.CLASS_INTERFACE_IDX]);
+        assertEquals("extends MockObjectTestCase", classProps[Inspector.CLASS_SUPERCLASS_IDX]);
+        assertEquals("is Primitive: false, is Array: false, is Groovy: false", classProps[Inspector.CLASS_OTHER_IDX]);
     }
 
     public void testClassPropsGroovy() throws RuntimeException, Throwable {
         Object testObject = new GroovyShell().evaluate("class Test {def meth1(a,b){}}\nreturn new Test()");
         Inspector insp = new Inspector(testObject);
         String[] classProps = insp.getClassProps();
-        assertEquals("package n/a",classProps[Inspector.CLASS_PACKAGE_IDX]);
-        assertEquals("public class Test",classProps[Inspector.CLASS_CLASS_IDX]);
-        assertEquals("implements GroovyObject ",classProps[Inspector.CLASS_INTERFACE_IDX]);
-        assertEquals("extends Object",classProps[Inspector.CLASS_SUPERCLASS_IDX]);
-        assertEquals("is Primitive: false, is Array: false, is Groovy: true",classProps[Inspector.CLASS_OTHER_IDX]);
+        assertEquals("package n/a", classProps[Inspector.CLASS_PACKAGE_IDX]);
+        assertEquals("public class Test", classProps[Inspector.CLASS_CLASS_IDX]);
+        assertEquals("implements GroovyObject ", classProps[Inspector.CLASS_INTERFACE_IDX]);
+        assertEquals("extends Object", classProps[Inspector.CLASS_SUPERCLASS_IDX]);
+        assertEquals("is Primitive: false, is Array: false, is Groovy: true", classProps[Inspector.CLASS_OTHER_IDX]);
     }
 
     public void testMethods() {
         Inspector insp = new Inspector(new Object());
         Object[] methods = insp.getMethods();
         assertEquals(10, methods.length);
-        String[] names = {"hashCode","getClass","wait","wait","wait","equals","notify","notifyAll","toString","java.lang.Object"};
+        String[] names = {"hashCode", "getClass", "wait", "wait", "wait", "equals", "notify", "notifyAll", "toString", "java.lang.Object"};
         assertNameEquals(names, methods);
-        String[] details = {"JAVA","public final","Object","void","wait","long, int","InterruptedException"};
+        String[] details = {"JAVA", "public final", "Object", "void", "wait", "long, int", "InterruptedException"};
         assertContains(methods, details);
         // ctors are not considered static !
-        String[] ctorDetails = {"JAVA","public","Object","Object","java.lang.Object","",""};
+        String[] ctorDetails = {"JAVA", "public", "Object", "Object", "java.lang.Object", "", ""};
         assertContains(methods, ctorDetails);
     }
 
@@ -78,7 +77,7 @@ public class InspectorTest extends MockObjectTestCase implements Serializable {
         Object[] methods = insp.getMethods();
         for (int i = 0; i < methods.length; i++) {
             String[] strings = (String[]) methods[i];
-            if(strings[1].indexOf("static") > -1) return; // ok, found one static method
+            if (strings[1].indexOf("static") > -1) return; // ok, found one static method
         }
         fail("there should have been at least one static method in this TestCase, e.g. 'fail'.");
     }
@@ -86,14 +85,14 @@ public class InspectorTest extends MockObjectTestCase implements Serializable {
     public void testMetaMethods() {
         Inspector insp = new Inspector(new Object());
         Object[] metaMethods = insp.getMetaMethods();
-        String[] names = { "sleep", "sleep", "println", "println", "println", "find", "print", "print", "each", "invokeMethod", "asType",
-                           "inspect", "is", "isCase", "identity", "getAt", "putAt", "dump", "getMetaPropertyValues",  "getProperties",
-                           "use", "use", "use", "printf", "printf", "eachWithIndex", "every", "every", "any", "any", "grep", "collect", "collect", "findAll",
-                           "findIndexOf", "iterator", "addShutdownHook", "sprintf", "sprintf"
-                         };
+        String[] names = {"sleep", "sleep", "println", "println", "println", "find", "print", "print", "each", "invokeMethod", "asType",
+                "inspect", "is", "isCase", "identity", "getAt", "putAt", "dump", "getMetaPropertyValues", "getProperties",
+                "use", "use", "use", "printf", "printf", "eachWithIndex", "every", "every", "any", "any", "grep", "collect", "collect", "findAll",
+                "findIndexOf", "iterator", "addShutdownHook", "sprintf", "sprintf"
+        };
         assertEquals(names.length, metaMethods.length);
         assertNameEquals(names, metaMethods);
-        String[] details = {"GROOVY","public","Object","void","println","Object","n/a"};
+        String[] details = {"GROOVY", "public", "Object", "void", "println", "Object", "n/a"};
         assertContains(metaMethods, details);
     }
 
@@ -140,15 +139,15 @@ public class InspectorTest extends MockObjectTestCase implements Serializable {
     }
 
     public void testSortWithDifferentOrigin() {
-        String[] details2 = {"JAVA","public","Object","void","println","Object","n/a"};
-        String[] details1 = {"GROOVY","public","Object","void","println","Object","n/a"};
+        String[] details2 = {"JAVA", "public", "Object", "void", "println", "Object", "n/a"};
+        String[] details1 = {"GROOVY", "public", "Object", "void", "println", "Object", "n/a"};
         String[] first = sortWithMemberComparator(details1, details2);
         assertEquals("GROOVY", first[0]);
     }
 
     public void testSortWithDifferentModifier() {
-        String[] details2 = {null,"public","Object","void","println","Object","n/a"};
-        String[] details1 = {null,"private","Object","void","println","Object","n/a"};
+        String[] details2 = {null, "public", "Object", "void", "println", "Object", "n/a"};
+        String[] details1 = {null, "private", "Object", "void", "println", "Object", "n/a"};
         String[] first = sortWithMemberComparator(details1, details2);
         assertEquals("private", first[1]);
     }
@@ -166,7 +165,7 @@ public class InspectorTest extends MockObjectTestCase implements Serializable {
         Inspector insp = new Inspector(matcher);
         Object[] metaMethods = insp.getMetaMethods();
         assertUnique(Inspector.sort(Arrays.asList(metaMethods)));
-        String[] details = {"GROOVY","public static","Matcher","Matcher","getLastMatcher","","n/a"};
+        String[] details = {"GROOVY", "public static", "Matcher", "Matcher", "getLastMatcher", "", "n/a"};
         assertContains(metaMethods, details);
     }
 
@@ -174,9 +173,9 @@ public class InspectorTest extends MockObjectTestCase implements Serializable {
         Inspector insp = new Inspector(this);
         Object[] fields = insp.getPublicFields();
         assertEquals(5, fields.length); // 3 from JMock
-        String[] names = { "someField","SOME_CONST" ,"ANYTHING", "NULL", "NOT_NULL"};
+        String[] names = {"someField", "SOME_CONST", "ANYTHING", "NULL", "NOT_NULL"};
         assertNameEquals(names, fields);
-        String[] details = {"JAVA","public","InspectorTest","String","someField","\"only for testing\""};
+        String[] details = {"JAVA", "public", "InspectorTest", "String", "someField", "\"only for testing\""};
         assertContains(fields, details);
     }
 
@@ -184,7 +183,7 @@ public class InspectorTest extends MockObjectTestCase implements Serializable {
         Inspector insp = new Inspector(this);
         Object[] properties = insp.getPropertyInfo();
         assertEquals(2, properties.length);
-        String[] names = {"class","name" };
+        String[] names = {"class", "name"};
         assertNameEquals(names, properties);
         String[] details = {"GROOVY", "public", "n/a", "Class", "class", "class groovy.inspect.InspectorTest"};
         assertContains(properties, details);
@@ -222,15 +221,15 @@ public class InspectorTest extends MockObjectTestCase implements Serializable {
         fail("should have found sample: " + sampleBuffer);
     }
 
-    private void assertUnique(Collection sortedMembers){
+    private void assertUnique(Collection sortedMembers) {
         if (sortedMembers.size() < 2) return;
         Comparator comp = new Inspector.MemberComparator();
         Iterator iter = sortedMembers.iterator();
         Object last = iter.next();
         while (iter.hasNext()) {
             Object element = iter.next();
-            if (0 == comp.compare(last, element)){
-                fail("found duplication for element "+element);
+            if (0 == comp.compare(last, element)) {
+                fail("found duplication for element " + element);
             }
             last = element;
         }

@@ -2,13 +2,11 @@ package groovy;
 
 /**
  * <p>Sample class used for testing that groovy can call inner classes contructors.</p>
- * 
+ *
  * @author Guillaume Laforge
- * 
  * @cvs.revision $Revision$
  */
-public class OuterUser
-{
+public class OuterUser {
     private String name;
     private Integer age;
 
@@ -28,8 +26,7 @@ public class OuterUser
         this.age = age;
     }
 
-    public static class InnerAddress
-    {
+    public static class InnerAddress {
         private String city;
         private Integer zipcode;
 
@@ -49,8 +46,7 @@ public class OuterUser
             this.zipcode = zipcode;
         }
 
-        public static class Street
-        {
+        public static class Street {
             private String name;
             private int number;
 

@@ -1,19 +1,8 @@
 package org.codehaus.groovy.antlr.treewalker;
 
-import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
-import org.codehaus.groovy.antlr.parser.GroovyLexer;
-import org.codehaus.groovy.antlr.SourceBuffer;
-import org.codehaus.groovy.antlr.UnicodeEscapingReader;
-import org.codehaus.groovy.antlr.AntlrASTProcessor;
-
-import java.io.StringReader;
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-
-import antlr.collections.AST;
-import org.custommonkey.xmlunit.*;
-
 import junit.framework.TestCase;
+import org.custommonkey.xmlunit.Diff;
+import org.custommonkey.xmlunit.XMLUnit;
 
 /**
  * Testcases for the antlr AST visitor that prints groovy source code nodes as HTML.
@@ -22,6 +11,7 @@ public class NodeAsHTMLPrinterTest extends TestCase {
 
     private static final String HEADER = "<html><head></head><body><pre>";
     private static final String FOOTER = "</pre></body></html>";
+
     protected void setUp() throws Exception {
         XMLUnit.setIgnoreWhitespace(true);
     }

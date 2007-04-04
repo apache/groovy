@@ -33,13 +33,12 @@
  */
 package groovy.text;
 
+import junit.framework.TestCase;
+import org.codehaus.groovy.control.CompilationFailedException;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-
-import junit.framework.TestCase;
-
-import org.codehaus.groovy.control.CompilationFailedException;
 
 /**
  * @author sam

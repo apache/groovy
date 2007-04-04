@@ -6,19 +6,19 @@
  */
 package groovy.security;
 
+import junit.framework.TestCase;
+import junit.framework.TestResult;
+import junit.framework.TestSuite;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import junit.framework.TestCase;
-import junit.framework.TestResult;
-import junit.framework.TestSuite;
-
 /**
  * Run all the .groovy scripts found under the src/test tree with a security manager active.
  * Not currently part of the build because it adds about 4 minutes to the build process.
- * 
+ *
  * @author Steve Goetze
  */
 public class RunAllGroovyScriptsSuite extends SecurityTestSupport {
@@ -35,16 +35,15 @@ public class RunAllGroovyScriptsSuite extends SecurityTestSupport {
             File file = files[i];
             if (file.isDirectory()) {
                 traverseList.add(file);
-            }
-            else {
+            } else {
                 String name = file.getName();
                 if (name.endsWith("Test.groovy") || name.endsWith("Bug.groovy")) {
-                //if (name.endsWith("IanMaceysBug.groovy")) {
-                	Class clazz = parseClass(file);
-            		if (TestCase.class.isAssignableFrom(clazz)) {
-            			TestSuite suite = new TestSuite(clazz);
-            			suite.run(result);
-            		}
+                    //if (name.endsWith("IanMaceysBug.groovy")) {
+                    Class clazz = parseClass(file);
+                    if (TestCase.class.isAssignableFrom(clazz)) {
+                        TestSuite suite = new TestSuite(clazz);
+                        suite.run(result);
+                    }
                 }
             }
         }
@@ -53,15 +52,15 @@ public class RunAllGroovyScriptsSuite extends SecurityTestSupport {
         }
     }
 
-	public void testGroovyScripts() throws Exception {
-    	if (!isSecurityAvailable()) {
-    		return;
-    	}
-   		TestResult result = new TestResult();
-   		executeTests(new File("src/test"), result);
-   		if (!result.wasSuccessful()) {
-   			new SecurityTestResultPrinter(System.out).print(result);
-   			fail("At least one groovy testcase did not run under the secure groovy environment.  Results in the testcase output");
-   		}
+    public void testGroovyScripts() throws Exception {
+        if (!isSecurityAvailable()) {
+            return;
+        }
+        TestResult result = new TestResult();
+        executeTests(new File("src/test"), result);
+        if (!result.wasSuccessful()) {
+            new SecurityTestResultPrinter(System.out).print(result);
+            fail("At least one groovy testcase did not run under the secure groovy environment.  Results in the testcase output");
+        }
     }
 }

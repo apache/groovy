@@ -35,22 +35,20 @@
 package groovy.lang;
 
 import groovy.util.GroovyTestCase;
+import junit.framework.Test;
+import junit.framework.TestSuite;
+import junit.textui.TestRunner;
+import org.codehaus.groovy.control.CompilerConfiguration;
 
 import java.io.ByteArrayInputStream;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.codehaus.groovy.control.CompilerConfiguration;
-
-import junit.framework.Test;
-import junit.framework.TestSuite;
-import junit.textui.TestRunner;
-
 /**
  * @author sam
- * 
- * To change the template for this generated type comment go to Window -
- * Preferences - Java - Code Generation - Code and Comments
+ *         <p/>
+ *         To change the template for this generated type comment go to Window -
+ *         Preferences - Java - Code Generation - Code and Comments
  */
 public class GroovyShellTest extends GroovyTestCase {
 
@@ -59,7 +57,7 @@ public class GroovyShellTest extends GroovyTestCase {
     public static void main(String[] args) {
         TestRunner.run(suite());
     }
-    
+
     public static Test suite() {
         return new TestSuite(GroovyShellTest.class);
     }
@@ -77,9 +75,11 @@ public class GroovyShellTest extends GroovyTestCase {
 
     private static class PropertyHolder {
         private Map map = new HashMap();
+
         public void set(String key, Object value) {
             map.put(key, value);
         }
+
         public Object get(String key) {
             return map.get(key);
         }
@@ -99,7 +99,7 @@ public class GroovyShellTest extends GroovyTestCase {
             fail(e.toString());
         }
     }
-    
+
     public void testScriptWithDerivedBaseClass() throws Exception {
         Binding context = new Binding();
         CompilerConfiguration config = new CompilerConfiguration();

@@ -46,13 +46,9 @@
 
 package groovy.lang;
 
-import groovy.lang.GString;
-import groovy.lang.MetaClass;
-
-
 /**
  * A hand crafted example GString
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -60,16 +56,16 @@ public class DummyGString extends GString {
 
     private String[] strings;
     private MetaClass metaClass;
-    
+
     public DummyGString(Object[] values) {
-        this(values, new String[] { "Hello ", "!" });
+        this(values, new String[]{"Hello ", "!"});
     }
-    
+
     public DummyGString(Object[] values, String[] strings) {
         super(values);
         this.strings = strings;
     }
-    
+
     public String[] getStrings() {
         return strings;
     }

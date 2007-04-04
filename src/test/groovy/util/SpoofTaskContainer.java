@@ -1,13 +1,13 @@
 package groovy.util;
 
+import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Task;
 import org.apache.tools.ant.TaskContainer;
 import org.apache.tools.ant.UnknownElement;
-import org.apache.tools.ant.BuildException;
 
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 public class SpoofTaskContainer extends Task implements TaskContainer {
     private List tasks = new ArrayList();
@@ -18,21 +18,21 @@ public class SpoofTaskContainer extends Task implements TaskContainer {
         spoof("SpoofTaskContainer ctor");
     }
 
-    static StringBuffer getSpoof(){
+    static StringBuffer getSpoof() {
         return spoof;
     }
 
     static void resetSpoof() {
-    	spoof = new StringBuffer();
+        spoof = new StringBuffer();
     }
-    
-    static void spoof(String message){
+
+    static void spoof(String message) {
         spoof.append(message);
         spoof.append("\n");
     }
 
     public void addTask(Task task) {
-    	// to work with ant 1.6
+        // to work with ant 1.6
         spoof("in addTask");
         if (task instanceof UnknownElement) {
             spoof("configuring UnknownElement");

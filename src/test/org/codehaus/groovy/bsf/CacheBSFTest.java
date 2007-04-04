@@ -33,14 +33,13 @@
  */
 package org.codehaus.groovy.bsf;
 
-import java.util.List;
-import java.util.Vector;
-
 import junit.framework.TestCase;
-
-import org.apache.bsf.BSFManager;
 import org.apache.bsf.BSFEngine;
 import org.apache.bsf.BSFException;
+import org.apache.bsf.BSFManager;
+
+import java.util.List;
+import java.util.Vector;
 
 /**
  * Tests the Caching BSF integration
@@ -55,7 +54,7 @@ public class CacheBSFTest extends TestCase {
 
     protected void setUp() throws Exception {
         // override standard engine with caching one
-        BSFManager.registerScriptingEngine("groovy", CACHING_ENGINE.getName(), new String[] { "groovy", "gy" });
+        BSFManager.registerScriptingEngine("groovy", CACHING_ENGINE.getName(), new String[]{"groovy", "gy"});
         manager = new BSFManager();
     }
 

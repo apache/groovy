@@ -46,14 +46,12 @@
 
 package groovy.tree;
 
-import java.util.logging.Logger;
-
 import groovy.lang.GroovyObject;
-
 import org.codehaus.groovy.classgen.TestSupport;
 
+import java.util.logging.Logger;
+
 /**
- * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -78,17 +76,17 @@ public class NodePrinterTest extends TestSupport {
         GroovyObject object = compile("src/test/groovy/LittleClosureTest.groovy");
         object.invokeMethod("testClosure", null);
     }
-    
+
     public void testNestedClosureBug() throws Exception {
         GroovyObject object = compile("src/test/groovy/tree/NestedClosureBugTest.groovy");
         object.invokeMethod("testNestedClosureBug", null);
     }
-    
+
     public void testClosureClassLoaderBug() throws Exception {
         GroovyObject object = compile("src/test/groovy/tree/ClosureClassLoaderBug.groovy");
         object.invokeMethod("testTree", null);
     }
-    
+
     public void testLogging() {
         Logger log = Logger.getLogger(getClass().getName());
         log.info("Logging using JDK 1.4 logging");

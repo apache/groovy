@@ -18,12 +18,11 @@
 
 package org.codehaus.groovy.control;
 
-import java.util.Iterator;
-
+import groovy.lang.GroovyClassLoader;
 import org.jmock.Mock;
 import org.jmock.cglib.MockObjectTestCase;
 
-import groovy.lang.GroovyClassLoader;
+import java.util.Iterator;
 
 public class CompilationUnitTest extends MockObjectTestCase {
 

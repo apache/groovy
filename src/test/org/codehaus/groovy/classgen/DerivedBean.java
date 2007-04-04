@@ -49,7 +49,7 @@ package org.codehaus.groovy.classgen;
 
 /**
  * A simple bean
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */

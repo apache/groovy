@@ -48,17 +48,15 @@ package groovy.j2ee;
 
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyShell;
-
-import java.util.Properties;
+import org.codehaus.groovy.runtime.InvokerHelper;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
-
-import org.codehaus.groovy.runtime.InvokerHelper;
+import java.util.Properties;
 
 /**
  * A J2EE console
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -90,11 +88,11 @@ public class J2eeConsole {
         }
         try {
             InitialContext ctx = new InitialContext(p);
-            
+
             GroovyShell shell = new GroovyShell();
             shell.setVariable("context", ctx);
             //shell.evaluate("src/test/groovy/j2ee/CreateData.groovy");
-            
+
             //shell.evaluate("src/main/groovy/ui/Console.groovy");
             GroovyObject console = (GroovyObject) InvokerHelper.invokeConstructorOf("groovy.ui.Console", null);
             console.setProperty("shell", shell);

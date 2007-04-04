@@ -47,14 +47,14 @@
 package groovy.bugs;
 
 /**
- * @author 
+ * @author
  * @version $Revision$
  */
 public class SimpleModel {
     public String s;
 
-    SimpleModel () {
-        s="Hi!";
+    SimpleModel() {
+        s = "Hi!";
     }
 
     public void show() {

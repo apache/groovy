@@ -45,10 +45,10 @@
  */
 package groovy.lang;
 
-import java.util.List;
-import java.math.BigInteger;
-
 import junit.framework.TestCase;
+
+import java.math.BigInteger;
+import java.util.List;
 
 /**
  * @author James Strachan
@@ -154,7 +154,7 @@ public class IntRangeTest extends TestCase {
     protected IntRange createRange(int from, int to) {
         return new IntRange(from, to);
     }
-    
+
     protected void assertEquals(String msg, int expected, Object value) {
         assertEquals(msg, new Integer(expected), value);
     }

@@ -51,7 +51,7 @@ import groovy.lang.GroovyObjectSupport;
 
 /**
  * A POGO used by the test cases
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -60,7 +60,7 @@ public class MockGroovyObject extends GroovyObjectSupport {
     public Object methodThatFails() {
         return invokeMethod("nonExistentMethod", "hello");
     }
-    
+
     public Object callClosure(Closure closure) {
         return closure.call(this);
     }

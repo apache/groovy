@@ -39,18 +39,12 @@ import groovy.lang.GString;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.IntRange;
 import groovy.util.GroovyTestCase;
+import junit.framework.AssertionFailedError;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-
-import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
-
-import junit.framework.AssertionFailedError;
+import java.util.*;
 
 /**
  * Tests method invocation
@@ -79,7 +73,7 @@ public class InvokeMethodTest extends GroovyTestCase {
     }
 
     public void testInvokeMethodOneParamWhichIsNull() throws Throwable {
-        Object value = invoke(this, "mockCallWithOneNullParam", new Object[] { null });
+        Object value = invoke(this, "mockCallWithOneNullParam", new Object[]{null});
         assertEquals("return value", "OneParamWithNull", value);
 
         value = invoke(this, "mockCallWithOneNullParam", null);
@@ -87,14 +81,14 @@ public class InvokeMethodTest extends GroovyTestCase {
     }
 
     public void testInvokeOverloadedMethodWithOneParamWhichIsNull() throws Throwable {
-        Object value = invoke(this, "mockOverloadedMethod", new Object[] { null });
+        Object value = invoke(this, "mockOverloadedMethod", new Object[]{null});
         assertEquals("return value", "Object", value);
     }
 
     public void testInvokeMethodOneCollectionParameter() throws Throwable {
-        Object[] foo = { "a", "b", "c" };
+        Object[] foo = {"a", "b", "c"};
 
-        Object value = invoke(this, "mockCallWithOneCollectionParam", new Object[] { foo });
+        Object value = invoke(this, "mockCallWithOneCollectionParam", new Object[]{foo});
         assertEquals("return value", new Integer(3), value);
 
         List list = new ArrayList();
@@ -110,7 +104,7 @@ public class InvokeMethodTest extends GroovyTestCase {
     }
 
     public void testMethodChooserNull() throws Throwable {
-        assertMethodChooser("Object", new Object[] { null });
+        assertMethodChooser("Object", new Object[]{null});
     }
 
     public void testMethodChooserNoParams() throws Throwable {
@@ -122,7 +116,8 @@ public class InvokeMethodTest extends GroovyTestCase {
         assertMethodChooser("Object", new Date());
     }
 
-    public void testMethodChooserString_FAILS() throws Throwable { if (notYetImplemented()) return;
+    public void testMethodChooserString_FAILS() throws Throwable {
+        if (notYetImplemented()) return;
         assertMethodChooser("String", "foo");
         assertMethodChooser("String", new StringBuffer());
         assertMethodChooser("String", new Character('a'));
@@ -139,7 +134,7 @@ public class InvokeMethodTest extends GroovyTestCase {
         list.add("bar");
         assertMethodChooser("Object,Object", list.toArray());
 
-        Object[] blah = { "a", "b" };
+        Object[] blah = {"a", "b"};
         assertMethodChooser("Object,Object", blah);
     }
 
@@ -150,13 +145,13 @@ public class InvokeMethodTest extends GroovyTestCase {
     }
 
     public void testMethodChooserTwoParamsWithSecondAnObjectArray() throws Throwable {
-        Object[] blah = { "a", new Object[] { "b" }
+        Object[] blah = {"a", new Object[]{"b"}
         };
         assertMethodChooser("Object,Object[]", blah);
     }
 
     public void testCollectionMethods() throws Throwable {
-        Object list = InvokerHelper.createList(new Object[] { "a", "b" });
+        Object list = InvokerHelper.createList(new Object[]{"a", "b"});
 
         Object value = invoke(list, "size", null);
         assertEquals("size of collection", new Integer(2), value);
@@ -181,8 +176,8 @@ public class InvokeMethodTest extends GroovyTestCase {
         assertEquals("toString", object.toString(), value);
     }
 
-	//SPG modified to reflect DefaultGroovyMethod name change and expected result from
-	//Integer/Integer division.
+    //SPG modified to reflect DefaultGroovyMethod name change and expected result from
+    //Integer/Integer division.
     public void testDivideNumbers() throws Throwable {
         assertMethodCall(new Double(10), "div", new Double(2), new Double(5));
         assertMethodCall(new Double(10), "div", new Integer(2), new Double(5));
@@ -213,7 +208,7 @@ public class InvokeMethodTest extends GroovyTestCase {
 
     public void testInvalidOverloading() throws Throwable {
         try {
-            invoke(this, "badOverload", new Object[] { "a", "b" });
+            invoke(this, "badOverload", new Object[]{"a", "b"});
             fail("Should fail as an unambiguous method is invoked");
         }
         catch (GroovyRuntimeException e) {
@@ -223,12 +218,12 @@ public class InvokeMethodTest extends GroovyTestCase {
 
     public void testPlusWithNull() throws Throwable {
         String param = "called with: ";
-        Object value = invoke(param, "plus", new Object[] { null });
+        Object value = invoke(param, "plus", new Object[]{null});
         assertEquals("called with null", param + null, value);
     }
 
     public void testCallIntMethodWithInteger() throws Throwable {
-        Object value = invoke(this, "overloadedRemove", new Object[] { new Integer(5)});
+        Object value = invoke(this, "overloadedRemove", new Object[]{new Integer(5)});
         assertEquals("called with integer", "int5", value);
     }
 
@@ -237,28 +232,28 @@ public class InvokeMethodTest extends GroovyTestCase {
         list.add("foo");
         list.add("bar");
 
-        invoke(list, "remove", new Object[] { new Integer(0)});
+        invoke(list, "remove", new Object[]{new Integer(0)});
 
         assertEquals("Should have just 1 item left: " + list, 1, list.size());
     }
 
     public void testCoerceGStringToString() throws Throwable {
-        GString param = new GString(new Object[] { "James" }) {
+        GString param = new GString(new Object[]{"James"}) {
             public String[] getStrings() {
-                return new String[] { "Hello " };
+                return new String[]{"Hello "};
             }
         };
-        Object value = invoke(this, "methodTakesString", new Object[] { param });
+        Object value = invoke(this, "methodTakesString", new Object[]{param});
         assertEquals("converted GString to string", param.toString(), value);
     }
 
     public void testCoerceGStringToStringOnGetBytes() throws Throwable {
-        GString param = new GString(new Object[] { "US-ASCII" }) {
+        GString param = new GString(new Object[]{"US-ASCII"}) {
             public String[] getStrings() {
-                return new String[] { "" };
+                return new String[]{""};
             }
         };
-        Object value = invoke("test", "getBytes", new Object[] { param });
+        Object value = invoke("test", "getBytes", new Object[]{param});
         assertEquals("converted GString to string", "test".getBytes("US-ASCII").getClass(), value.getClass());
     }
 
@@ -267,10 +262,10 @@ public class InvokeMethodTest extends GroovyTestCase {
             invoke(Math.class, "floor", new BigDecimal("1.7E309"));
         } catch (IllegalArgumentException e) {
             assertTrue("Math.floor(1.7E309) should fail because it is out of range for a Double. "
-                    +e,e.getMessage().indexOf("out of range") > 0);
+                    + e, e.getMessage().indexOf("out of range") > 0);
             return;
         }
-        fail("Math.floor(1.7E309) should fail because it is out of range for a Double.");        
+        fail("Math.floor(1.7E309) should fail because it is out of range for a Double.");
     }
 
     public void testClassMethod() throws Throwable {
@@ -299,12 +294,12 @@ public class InvokeMethodTest extends GroovyTestCase {
         Object value = invoke(object, "substring", new Integer(2));
         assertEquals("substring(2)", object.substring(2), value);
 
-        value = invoke(object, "substring", new Object[] { new Integer(1), new Integer(3)});
+        value = invoke(object, "substring", new Object[]{new Integer(1), new Integer(3)});
         assertEquals("substring(1,3)", object.substring(1, 3), value);
     }
 
     public void testListGetWithRange() throws Throwable {
-        List list = Arrays.asList(new Object[] { "a", "b", "c" });
+        List list = Arrays.asList(new Object[]{"a", "b", "c"});
         Object range = new IntRange(0, 2);
         Object value = invoke(list, "getAt", range);
         assertTrue("Returned List: " + value, value instanceof List);
@@ -313,9 +308,9 @@ public class InvokeMethodTest extends GroovyTestCase {
     }
 
     public void testSetLenientOnDateFormat() throws Throwable {
-        SimpleDateFormat a = new SimpleDateFormat( "MM/dd/yyyy" );
-        
-        Object value = invoke(a, "setLenient", new Object[] { Boolean.FALSE });
+        SimpleDateFormat a = new SimpleDateFormat("MM/dd/yyyy");
+
+        Object value = invoke(a, "setLenient", new Object[]{Boolean.FALSE});
         assertEquals("void method", null, value);
     }
 
@@ -331,7 +326,7 @@ public class InvokeMethodTest extends GroovyTestCase {
 
     public void testInvokeMethodWithWrongNumberOfParameters() throws Throwable {
         try {
-            Object[] args = { "a", "b" };
+            Object[] args = {"a", "b"};
             invoke(this, "unknownMethod", args);
             fail("Should have thrown an exception");
         }
@@ -428,19 +423,17 @@ public class InvokeMethodTest extends GroovyTestCase {
     }
 
     protected void assertMethodCall(Object object, String method, Object param, Object expected) {
-        Object value = InvokerHelper.invokeMethod(object, method, new Object[] { param });
+        Object value = InvokerHelper.invokeMethod(object, method, new Object[]{param});
         assertEquals("result of method: " + method, expected, value);
     }
 
     /**
-	 * Asserts that invoking the method chooser finds the right overloaded
-	 * method implementation
-	 * 
-	 * @param expected
-	 *            is the expected value of the method
-	 * @param arguments
-	 *            the argument(s) to the method invocation
-	 */
+     * Asserts that invoking the method chooser finds the right overloaded
+     * method implementation
+     *
+     * @param expected  is the expected value of the method
+     * @param arguments the argument(s) to the method invocation
+     */
     protected void assertMethodChooser(Object expected, Object arguments) throws Throwable {
         Object value = invoke(this, "mockOverloadedMethod", arguments);
 

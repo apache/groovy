@@ -47,11 +47,6 @@
 package org.codehaus.groovy.classgen;
 
 import groovy.lang.GroovyClassLoader;
-
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.control.CompilationUnit;
@@ -59,13 +54,17 @@ import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.util.CheckClassAdapter;
 import org.objectweb.asm.util.ASMifierClassVisitor;
+import org.objectweb.asm.util.CheckClassAdapter;
+
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
 /**
- * A class loader used for debugging the bytecode generation. 
+ * A class loader used for debugging the bytecode generation.
  * This will log all bytecode being loaded
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -77,14 +76,14 @@ public class DumpingClassLoader extends GroovyClassLoader implements Opcodes {
     public DumpingClassLoader(ClassLoader parentLoader) {
         super(parentLoader);
     }
-    
-    
+
+
     protected class DebugCollector extends ClassCollector {
 
         DebugCollector(GroovyClassLoader cl, CompilationUnit unit, SourceUnit su) {
             super(new GroovyClassLoader.InnerLoader(cl), unit, su);
         }
-        
+
         public void call(ClassVisitor classWriter, ClassNode classNode) {
             // lets test out the class verifier
             if (DUMP_CLASS) {
@@ -94,20 +93,20 @@ public class DumpingClassLoader extends GroovyClassLoader implements Opcodes {
             if (CHECK_CLASS) {
                 checker.visitClass(classNode);
             }
-            
+
             super.call(classWriter, classNode);
         }
     }
-    
+
     protected ClassCollector createCollector(CompilationUnit unit) {
-        return new DebugCollector(this,unit, null);
+        return new DebugCollector(this, unit, null);
     }
 
     protected ASMifierClassVisitor dumpVisitor = new ASMifierClassVisitor(new PrintWriter(new OutputStreamWriter(System.out)));
     protected ASMifierClassVisitor invisibleDumpVisitor = new ASMifierClassVisitor(new PrintWriter(new StringWriter()));
     protected CompileUnit unit = new CompileUnit(this, new CompilerConfiguration());
     protected ClassGenerator checker =
-        new AsmClassGenerator(new GeneratorContext(unit), new CheckClassAdapter(invisibleDumpVisitor), this, null);
+            new AsmClassGenerator(new GeneratorContext(unit), new CheckClassAdapter(invisibleDumpVisitor), this, null);
     protected ClassGenerator dumper = new AsmClassGenerator(new GeneratorContext(unit), dumpVisitor, this, null);
 
 }

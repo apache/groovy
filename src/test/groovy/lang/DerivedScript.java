@@ -42,7 +42,7 @@ public abstract class DerivedScript extends Script {
     public String getCheese() {
         return "Cheddar";
     }
-    
+
     public String doSomething(String food) {
         return "I like " + food;
     }

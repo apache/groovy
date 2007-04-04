@@ -1,13 +1,15 @@
 package org.codehaus.groovy.classgen;
 
-import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.control.SourceUnit;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
 /**
- *
  * @author Paul King
  */
 public class ClassCompletionVerifierTest extends TestSupport {
@@ -50,7 +52,7 @@ public class ClassCompletionVerifierTest extends TestSupport {
     }
 
     public void testDetectsDuplicateMethodsForInterfaceOneParam() throws Exception {
-        Parameter[] stringParam = { new Parameter(ClassHelper.STRING_TYPE, "x") };
+        Parameter[] stringParam = {new Parameter(ClassHelper.STRING_TYPE, "x")};
         checkDetectsDuplicateMethods(ACC_INTERFACE, EXPECTED_DUPLICATE_METHOD_ERROR_INTERFACE_MESSAGE, stringParam);
     }
 

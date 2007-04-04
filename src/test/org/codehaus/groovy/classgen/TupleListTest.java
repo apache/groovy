@@ -46,29 +46,17 @@
 
 package org.codehaus.groovy.classgen;
 
-import org.codehaus.groovy.ast.ClassHelper;
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.ConstructorNode;
-import org.codehaus.groovy.ast.MethodNode;
-import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.PropertyNode;
-import org.codehaus.groovy.ast.expr.DeclarationExpression;
-import org.codehaus.groovy.ast.expr.ConstantExpression;
-import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.ListExpression;
-import org.codehaus.groovy.ast.expr.MapExpression;
-import org.codehaus.groovy.ast.expr.TupleExpression;
-import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
-import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.syntax.Token;
 
 /**
- * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -81,7 +69,7 @@ public class TupleListTest extends TestSupport {
         listExpression.addExpression(new ConstantExpression("c"));
         assertIterate("iterateOverTuple", listExpression);
     }
-    
+
     public void testIterateOverList() throws Exception {
         ListExpression listExpression = new ListExpression();
         listExpression.addExpression(new ConstantExpression("a"));
@@ -92,7 +80,7 @@ public class TupleListTest extends TestSupport {
         listExpression.addExpression(new ConstantExpression("c"));
         assertIterate("iterateOverList", listExpression);
     }
-    
+
     public void testIterateOverMap() throws Exception {
         MapExpression mapExpression = new MapExpression();
         mapExpression.addMapEntryExpression(new ConstantExpression("a"), new ConstantExpression("x"));
@@ -100,7 +88,7 @@ public class TupleListTest extends TestSupport {
         mapExpression.addMapEntryExpression(new ConstantExpression("c"), new ConstantExpression("z"));
         assertIterate("iterateOverMap", mapExpression);
     }
-    
+
     protected void assertIterate(String methodName, Expression listExpression) throws Exception {
         ClassNode classNode = new ClassNode("Foo", ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
         classNode.addConstructor(new ConstructorNode(ACC_PUBLIC, null));
@@ -110,7 +98,7 @@ public class TupleListTest extends TestSupport {
 
         BlockStatement block = new BlockStatement();
         block.addStatement(new ExpressionStatement(new DeclarationExpression(new VariableExpression("list"), Token.newSymbol("=", 0, 0), listExpression)));
-        block.addStatement(new ForStatement(new Parameter(ClassHelper.DYNAMIC_TYPE,"i"), new VariableExpression("list"), loopStatement));
+        block.addStatement(new ForStatement(new Parameter(ClassHelper.DYNAMIC_TYPE, "i"), new VariableExpression("list"), loopStatement));
         classNode.addMethod(new MethodNode(methodName, ACC_PUBLIC, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, block));
 
         Class fooClass = loadClass(classNode);
@@ -120,7 +108,7 @@ public class TupleListTest extends TestSupport {
         assertTrue("Managed to create bean", bean != null);
 
         System.out.println("################ Now about to invoke method");
-        
+
         try {
             InvokerHelper.invokeMethod(bean, methodName, null);
         }
@@ -129,6 +117,7 @@ public class TupleListTest extends TestSupport {
             e.getCause().printStackTrace();
             fail("Should not have thrown an exception");
         }
-        System.out.println("################ Done");    }
+        System.out.println("################ Done");
+    }
 
 }

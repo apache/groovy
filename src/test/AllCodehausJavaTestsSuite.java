@@ -1,19 +1,21 @@
-import org.codehaus.groovy.syntax.TokenTest;
-import org.codehaus.groovy.runtime.*;
-//import org.codehaus.groovy.wiki.RunWikiTest;
-//import org.codehaus.groovy.wiki.TestCaseRenderEngineTest;
-import org.codehaus.groovy.tools.FileSystemCompilerTest;
-import org.codehaus.groovy.tools.CompilerTest;
-import org.codehaus.groovy.control.CompilationUnitTest;
-import org.codehaus.groovy.control.messages.SyntaxErrorMessageTest;
-import org.codehaus.groovy.tools.groovydoc.GroovyDocToolTest;
-import org.codehaus.groovy.antlr.*;
-import org.codehaus.groovy.antlr.treewalker.*;
-import org.codehaus.groovy.bsf.*;
-import org.codehaus.groovy.ast.*;
-import org.codehaus.groovy.classgen.*;
 import junit.framework.Test;
 import junit.framework.TestSuite;
+import org.codehaus.groovy.antlr.EnumSourceParsingTest;
+import org.codehaus.groovy.antlr.GroovySourceASTTest;
+import org.codehaus.groovy.antlr.SourceBufferTest;
+import org.codehaus.groovy.antlr.treewalker.*;
+import org.codehaus.groovy.ast.ClassNodeTest;
+import org.codehaus.groovy.ast.ModuleNodeTest;
+import org.codehaus.groovy.bsf.BSFTest;
+import org.codehaus.groovy.bsf.CacheBSFTest;
+import org.codehaus.groovy.classgen.*;
+import org.codehaus.groovy.control.CompilationUnitTest;
+import org.codehaus.groovy.control.messages.SyntaxErrorMessageTest;
+import org.codehaus.groovy.runtime.*;
+import org.codehaus.groovy.syntax.TokenTest;
+import org.codehaus.groovy.tools.CompilerTest;
+import org.codehaus.groovy.tools.FileSystemCompilerTest;
+import org.codehaus.groovy.tools.groovydoc.GroovyDocToolTest;
 
 /**
  * All Java Unit tests in the 'org.codehaus.groovy' dir
@@ -38,7 +40,7 @@ public class AllCodehausJavaTestsSuite {
         suite.addTestSuite(ForTest.class);
         suite.addTestSuite(GetPropertyTest.class);
         suite.addTestSuite(GroovyClassLoaderTest.class);
-	suite.addTestSuite(GroovyDocToolTest.class);
+        suite.addTestSuite(GroovyDocToolTest.class);
         suite.addTestSuite(GroovySourceASTTest.class);
         suite.addTestSuite(EnumSourceParsingTest.class);
         suite.addTestSuite(GStringTest.class);

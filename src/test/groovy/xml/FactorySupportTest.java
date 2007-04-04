@@ -3,8 +3,8 @@ package groovy.xml;
 import junit.framework.TestCase;
 
 import javax.xml.parsers.ParserConfigurationException;
-import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 
 public class FactorySupportTest extends TestCase {
     private static final PrivilegedActionException PRIVILEGED_ACTION_EXCEPTION = new PrivilegedActionException(new IllegalStateException());
@@ -17,7 +17,7 @@ public class FactorySupportTest extends TestCase {
 
     public void testParserConfigurationExceptionNotWrapped() throws ParserConfigurationException {
         try {
-            FactorySupport.createFactory(new PrivilegedExceptionAction(){
+            FactorySupport.createFactory(new PrivilegedExceptionAction() {
                 public Object run() throws Exception {
                     throw PARSER_CONFIGURATION_EXCEPTION;
                 }
@@ -30,7 +30,7 @@ public class FactorySupportTest extends TestCase {
 
     public void testOtherExceptionsWrappedAsUnchecked() throws ParserConfigurationException {
         try {
-            FactorySupport.createFactory(new PrivilegedExceptionAction(){
+            FactorySupport.createFactory(new PrivilegedExceptionAction() {
                 public Object run() throws Exception {
                     throw PRIVILEGED_ACTION_EXCEPTION;
                 }

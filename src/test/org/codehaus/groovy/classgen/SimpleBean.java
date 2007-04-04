@@ -49,7 +49,7 @@ package org.codehaus.groovy.classgen;
 
 /**
  * A simple bean
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -67,12 +67,12 @@ public class SimpleBean {
     public void setBar(String value) {
         this.bar = value;
     }
-    
-    
+
+
     public void setNumber() {
         x = new Integer(123);
     }
-    
+
     public void setFloat() {
         x = new Double(123);
     }

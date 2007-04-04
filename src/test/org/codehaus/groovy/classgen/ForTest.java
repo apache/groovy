@@ -48,8 +48,8 @@ package org.codehaus.groovy.classgen;
 
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.VariableExpression;
-import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
@@ -80,7 +80,7 @@ public class ForTest extends TestSupport {
         Object value = new Integer(10000);
 
         try {
-            InvokerHelper.invokeMethod(bean, "oneParamDemo", new Object[] {value});
+            InvokerHelper.invokeMethod(bean, "oneParamDemo", new Object[]{value});
         } catch (InvokerInvocationException e) {
             System.out.println("Caught: " + e.getCause());
             e.getCause().printStackTrace();
@@ -98,7 +98,7 @@ public class ForTest extends TestSupport {
 
         Statement loopStatement = createPrintlnStatement(new VariableExpression("i"));
 
-        ForStatement statement = new ForStatement(new Parameter(ClassHelper.OBJECT_TYPE,"i"), new VariableExpression("coll"), loopStatement);
+        ForStatement statement = new ForStatement(new Parameter(ClassHelper.OBJECT_TYPE, "i"), new VariableExpression("coll"), loopStatement);
         classNode.addMethod(new MethodNode("iterateDemo", ACC_PUBLIC, ClassHelper.VOID_TYPE, parameters, ClassNode.EMPTY_ARRAY, statement));
 
         Class fooClass = loadClass(classNode);
@@ -124,7 +124,7 @@ public class ForTest extends TestSupport {
         ClassNode classNode = new ClassNode("Foo", ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
         classNode.addConstructor(new ConstructorNode(ACC_PUBLIC, null));
 
-        Parameter[] parameters = { new Parameter(ClassHelper.OBJECT_TYPE, "coll1"), new Parameter(ClassHelper.OBJECT_TYPE, "coll2"), new Parameter(ClassHelper.OBJECT_TYPE, "coll3") };
+        Parameter[] parameters = {new Parameter(ClassHelper.OBJECT_TYPE, "coll1"), new Parameter(ClassHelper.OBJECT_TYPE, "coll2"), new Parameter(ClassHelper.OBJECT_TYPE, "coll3")};
 
         BlockStatement statement = new BlockStatement();
         statement.addStatement(createPrintlnStatement(new VariableExpression("coll1")));
@@ -140,7 +140,7 @@ public class ForTest extends TestSupport {
         assertTrue("Managed to create bean", bean != null);
 
         System.out.println("################ Now about to invoke a method with many parameters");
-        Object[] array = {new Integer(1000*1000), "foo-", "bar~"};
+        Object[] array = {new Integer(1000 * 1000), "foo-", "bar~"};
 
         try {
             InvokerHelper.invokeMethod(bean, "manyParamDemo", array);

@@ -50,20 +50,16 @@ import groovy.lang.MissingMethodException;
 import groovy.util.GroovyTestCase;
 import groovy.util.Node;
 
-import java.awt.HeadlessException;
-import java.awt.Point;
+import javax.swing.*;
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-
 /**
  * Test the property access of the Invoker class
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -91,20 +87,21 @@ public class PropertyTest extends GroovyTestCase {
         assertGetSetProperty(bean, "dynamicFoo", "aValue", "NewValue");
     }
 
-/** todo this is no longer possible in new groovy
-    public void testUsingMethodProperty() throws Exception {
-        DummyBean bean = new DummyBean();
+    /**
+     * todo this is no longer possible in new groovy
+     * public void testUsingMethodProperty() throws Exception {
+     * DummyBean bean = new DummyBean();
+     * <p/>
+     * assertGetSetProperty(bean, "name", "James", "Bob");
+     * <p/>
+     * Object value = InvokerHelper.getProperty(bean, "getName");
+     * assertTrue("Should have returned a closure: " + value, value instanceof Closure);
+     * Closure closure = (Closure) value;
+     * Object result = closure.call(null);
+     * assertEquals("Result of call to closure", "Bob", result);
+     * }
+     */
 
-        assertGetSetProperty(bean, "name", "James", "Bob");
-
-        Object value = InvokerHelper.getProperty(bean, "getName");
-        assertTrue("Should have returned a closure: " + value, value instanceof Closure);
-        Closure closure = (Closure) value;
-        Object result = closure.call(null);
-        assertEquals("Result of call to closure", "Bob", result);
-    }
-**/   
-    
 
     public void testStaticProperty() throws Exception {
         Object value = InvokerHelper.getProperty(System.class, "out");
@@ -130,17 +127,18 @@ public class PropertyTest extends GroovyTestCase {
         assertEquals("value property", "x", value);
     }
 
-/** todo this is no longer possible in new groovy
-    public void testMethodProperty() throws Exception {
-        Object value = InvokerHelper.getProperty(this, "getCheese");
-        assertTrue("Should have returned a closure: " + value, value instanceof Closure);
-
-        Object result = ((Closure) value).call();
-        assertEquals("result of closure call", getCheese(), result);
-
-        System.out.println("Closure: " + value + " and cheese: " + result);
-    }
-**/
+    /**
+     * todo this is no longer possible in new groovy
+     * public void testMethodProperty() throws Exception {
+     * Object value = InvokerHelper.getProperty(this, "getCheese");
+     * assertTrue("Should have returned a closure: " + value, value instanceof Closure);
+     * <p/>
+     * Object result = ((Closure) value).call();
+     * assertEquals("result of closure call", getCheese(), result);
+     * <p/>
+     * System.out.println("Closure: " + value + " and cheese: " + result);
+     * }
+     */
 
     public void testListCoercionProperty() throws Exception {
         DummyBean bean = new DummyBean();
@@ -154,13 +152,13 @@ public class PropertyTest extends GroovyTestCase {
 
     public void testListCoercionPropertyOnJFrame() throws Exception {
         try {
-	        JFrame bean = new JFrame();
-	        List list = new ArrayList();
-	        list.add(new Integer(10));
-	        list.add(new Integer(20));
-	
-	        InvokerHelper.setProperty(bean, "location", list);
-	        assertEquals("Should have set a point", new Point(10, 20), bean.getLocation());
+            JFrame bean = new JFrame();
+            List list = new ArrayList();
+            list.add(new Integer(10));
+            list.add(new Integer(20));
+
+            InvokerHelper.setProperty(bean, "location", list);
+            assertEquals("Should have set a point", new Point(10, 20), bean.getLocation());
         }
         catch (HeadlessException e) {
             // its fine to not run this test on headless environments
@@ -178,20 +176,20 @@ public class PropertyTest extends GroovyTestCase {
         list.add(new DummyBean("Bob"));
 
         List value = (List) InvokerHelper.getProperty(list, "name");
-        assertArrayEquals(new Object[] { "James", "Bob" }, value.toArray());
+        assertArrayEquals(new Object[]{"James", "Bob"}, value.toArray());
     }
 
     public void testListOfListNavigationProperty() throws Exception {
-       List list = new ArrayList();
-       list.add(new DummyBean("James"));
-       list.add(new DummyBean("Bob"));
+        List list = new ArrayList();
+        list.add(new DummyBean("James"));
+        list.add(new DummyBean("Bob"));
 
-       List listOfList = new ArrayList();
-       listOfList.add(list);
-       
-       List value = (List) InvokerHelper.getProperty(listOfList, "name");
-       assertArrayEquals(new Object[] { "James", "Bob" }, value.toArray());
-   }
+        List listOfList = new ArrayList();
+        listOfList.add(list);
+
+        List value = (List) InvokerHelper.getProperty(listOfList, "name");
+        assertArrayEquals(new Object[]{"James", "Bob"}, value.toArray());
+    }
 
     public void testNodeNavigationProperty() throws Exception {
         Node z = new Node(null, "z");
@@ -210,22 +208,22 @@ public class PropertyTest extends GroovyTestCase {
         // @todo should try with just a node as the child
 
         List value = (List) InvokerHelper.getProperty(b, "x");
-        assertArrayEquals(new Object[] { x }, value.toArray());
+        assertArrayEquals(new Object[]{x}, value.toArray());
 
         value = (List) InvokerHelper.getProperty(value, "z");
-        assertArrayEquals(new Object[] { z }, value.toArray());
+        assertArrayEquals(new Object[]{z}, value.toArray());
     }
 
     public void testUsingInPropertyOnProcessViaGroovyMethod() throws Exception {
         Process process = DefaultGroovyMethods.execute("java -version");
         Object value = InvokerHelper.getProperty(process, "in");
         assertNotNull(value);
-        
+
         System.out.println("Found in: " + value);
-        
+
         process.destroy();
     }
-    
+
     public Object getCheese() {
         return "cheddar";
     }
@@ -233,13 +231,13 @@ public class PropertyTest extends GroovyTestCase {
     public void testComponentParent() {
         JPanel panel = new JPanel();
         JButton bean = new JButton();
-        
+
         panel.add(bean);
-        
+
         Object value = InvokerHelper.getProperty(bean, "parent");
         assertTrue(value != null);
     }
-    
+
     // Implementation methods
     //-------------------------------------------------------------------------
 

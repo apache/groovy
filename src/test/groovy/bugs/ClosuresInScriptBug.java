@@ -56,6 +56,6 @@ import org.codehaus.groovy.classgen.TestSupport;
 public class ClosuresInScriptBug extends TestSupport {
 
     public void testBug() throws Exception {
-        assertScript( "a = 1\n [2].each { a = it }\n assert a == 2" );
+        assertScript("a = 1\n [2].each { a = it }\n assert a == 2");
     }
 }

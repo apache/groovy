@@ -46,12 +46,10 @@
 
 package org.codehaus.groovy.classgen;
 
+import groovy.util.GroovyTestCase;
 import org.codehaus.groovy.ast.ClassHelper;
 
-import groovy.util.GroovyTestCase;
-
 /**
- * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -65,10 +63,10 @@ public class BytecodeHelperTest extends GroovyTestCase {
         String answer = BytecodeHelper.getMethodDescriptor(char[].class, new Class[0]);
         assertEquals("()[C", answer);
 
-        answer = BytecodeHelper.getMethodDescriptor(int.class, new Class[] { long.class });
+        answer = BytecodeHelper.getMethodDescriptor(int.class, new Class[]{long.class});
         assertEquals("(J)I", answer);
 
-        answer = BytecodeHelper.getMethodDescriptor(String[].class, new Class[] { String.class, int.class });
+        answer = BytecodeHelper.getMethodDescriptor(String[].class, new Class[]{String.class, int.class});
         assertEquals("(Ljava/lang/String;I)[Ljava/lang/String;", answer);
-       }
+    }
 }

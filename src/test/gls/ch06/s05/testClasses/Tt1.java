@@ -18,26 +18,25 @@
 package gls.ch06.s05.testClasses;
 
 
-
 /**
-* @author John Wilson
-*
-*/
+ * @author John Wilson
+ */
 
 public class Tt1 {
-  public String x ="field";
-  
-  public String getX() {
-    return this.p1;
-  }
-  
-  public void setX(final String x) {
-    this.p1 = x;
-  }
-  
-  public String x() {
-    return "method";
-  }
-  private String p1 = "property";
+    public String x = "field";
+
+    public String getX() {
+        return this.p1;
+    }
+
+    public void setX(final String x) {
+        this.p1 = x;
+    }
+
+    public String x() {
+        return "method";
+    }
+
+    private String p1 = "property";
 }
 

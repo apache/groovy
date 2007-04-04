@@ -33,35 +33,34 @@
  */
 package groovy.lang;
 
-import org.codehaus.groovy.runtime.InvokerHelper;
-
 import groovy.util.GroovyTestCase;
+import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
  * Tests the use of the structured Attribute type
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
 public class GStringTest extends GroovyTestCase {
 
     public void testIterateOverText() {
-        DummyGString compString = new DummyGString(new Object[] { "James" });
-        assertArrayEquals(new String[] { "Hello ", "!" }, compString.getStrings());
-        assertArrayEquals(new Object[] { "James" }, compString.getValues());
+        DummyGString compString = new DummyGString(new Object[]{"James"});
+        assertArrayEquals(new String[]{"Hello ", "!"}, compString.getStrings());
+        assertArrayEquals(new Object[]{"James"}, compString.getValues());
         assertEquals("Hello James!", compString.toString());
     }
 
     public void testAppendString() {
-        DummyGString a = new DummyGString(new Object[] { "James" });
+        DummyGString a = new DummyGString(new Object[]{"James"});
         GString result = a.plus(" how are you?");
         assertEquals("Hello James! how are you?", result.toString());
         assertEquals('J', a.charAt(6));
-        assertEquals("o J", a.subSequence(4,7));
+        assertEquals("o J", a.subSequence(4, 7));
     }
 
     public void testAppendString2() {
-        DummyGString a = new DummyGString(new Object[] { "James" }, new String[] { "Hello " });
+        DummyGString a = new DummyGString(new Object[]{"James"}, new String[]{"Hello "});
         GString result = a.plus(" how are you?");
         System.out.println("Strings: " + InvokerHelper.toString(result.getStrings()));
         System.out.println("Values: " + InvokerHelper.toString(result.getValues()));
@@ -69,36 +68,36 @@ public class GStringTest extends GroovyTestCase {
     }
 
     public void testAppendGString() {
-        DummyGString a = new DummyGString(new Object[] { "James" });
-        DummyGString b = new DummyGString(new Object[] { "Bob" });
+        DummyGString a = new DummyGString(new Object[]{"James"});
+        DummyGString b = new DummyGString(new Object[]{"Bob"});
         GString result = a.plus(b);
 
         //        System.out.println("Strings: " +
-		// InvokerHelper.toString(result.getStrings()));
+        // InvokerHelper.toString(result.getStrings()));
         //        System.out.println("Values: " +
-		// InvokerHelper.toString(result.getValues()));
+        // InvokerHelper.toString(result.getValues()));
 
         assertEquals("Hello James!Hello Bob!", result.toString());
     }
 
     public void testAppendGString2() {
-        DummyGString a = new DummyGString(new Object[] { "James" }, new String[] { "Hello " });
-        DummyGString b = new DummyGString(new Object[] { "Bob" }, new String[] { "Hello " });
+        DummyGString a = new DummyGString(new Object[]{"James"}, new String[]{"Hello "});
+        DummyGString b = new DummyGString(new Object[]{"Bob"}, new String[]{"Hello "});
         GString result = a.plus(b);
 
         //        System.out.println("Found: " + result);
         //        System.out.println("Strings: " +
-		// InvokerHelper.toString(result.getStrings()));
+        // InvokerHelper.toString(result.getStrings()));
         //        System.out.println("Values: " +
-		// InvokerHelper.toString(result.getValues()));
+        // InvokerHelper.toString(result.getValues()));
 
         assertEquals("Hello JamesHello Bob", result.toString());
     }
 
     public void testEqualsAndHashCode() {
-        DummyGString a = new DummyGString(new Object[] { new Integer(1)});
-        DummyGString b = new DummyGString(new Object[] { new Long(1)});
-        Comparable c = new DummyGString(new Object[] { new Double(2.3)});
+        DummyGString a = new DummyGString(new Object[]{new Integer(1)});
+        DummyGString b = new DummyGString(new Object[]{new Long(1)});
+        Comparable c = new DummyGString(new Object[]{new Double(2.3)});
 
         assertTrue("a == b", a.equals(b));
         assertEquals("hashcode a == b", a.hashCode(), b.hashCode());

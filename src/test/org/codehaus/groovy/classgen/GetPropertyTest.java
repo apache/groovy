@@ -48,11 +48,9 @@ package org.codehaus.groovy.classgen;
 
 import groovy.lang.GroovyObject;
 
-import org.codehaus.groovy.classgen.TestSupport;
-
 /**
  * Tests using the GroovyObject API from Java on a groovy object
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */

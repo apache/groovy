@@ -45,9 +45,9 @@
  */
 package groovy.lang;
 
-import java.util.List;
-
 import junit.framework.TestCase;
+
+import java.util.List;
 
 /**
  * @author James Strachan
@@ -55,7 +55,7 @@ import junit.framework.TestCase;
  */
 public class TupleTest extends TestCase {
 
-    Object[] data = { "a", "b", "c" };
+    Object[] data = {"a", "b", "c"};
     Tuple t = new Tuple(data);
 
     public void testSize() {
@@ -97,9 +97,9 @@ public class TupleTest extends TestCase {
     }
 
     public void testHashCodeAndEquals() {
-        Tuple a = new Tuple(new Object[] { "a", "b", "c" });
-        Tuple b = new Tuple(new Object[] { "a", "b", "c" });
-        Tuple c = new Tuple(new Object[] { "d", "b", "c" });
+        Tuple a = new Tuple(new Object[]{"a", "b", "c"});
+        Tuple b = new Tuple(new Object[]{"a", "b", "c"});
+        Tuple c = new Tuple(new Object[]{"d", "b", "c"});
 
         assertEquals("hashcode", a.hashCode(), b.hashCode());
         assertTrue("hashcode", a.hashCode() != c.hashCode());

@@ -19,7 +19,6 @@
 package org.codehaus.groovy.control.messages;
 
 import junit.framework.TestCase;
-
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.SyntaxException;
 

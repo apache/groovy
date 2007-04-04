@@ -1,9 +1,9 @@
 package groovy.text;
 
+import junit.framework.TestCase;
+
 import java.util.HashMap;
 import java.util.Map;
-
-import junit.framework.TestCase;
 
 public class XmlTemplateEngineTest extends TestCase {
 
@@ -26,5 +26,5 @@ public class XmlTemplateEngineTest extends TestCase {
         Template template = xmlTemplateEngine.createTemplate(xmlScript);
         assertEquals(xmlResult, template.make(binding).toString());
     }
-    
+
 }

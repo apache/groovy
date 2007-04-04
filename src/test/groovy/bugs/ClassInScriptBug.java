@@ -56,6 +56,6 @@ import org.codehaus.groovy.classgen.TestSupport;
 public class ClassInScriptBug extends TestSupport {
 
     public void testBug() throws Exception {
-        assertScript( "class X {}\nx = new X()\nprintln(x)" );
+        assertScript("class X {}\nx = new X()\nprintln(x)");
     }
 }

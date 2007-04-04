@@ -46,18 +46,17 @@
 
 package groovy.util;
 
+import groovy.lang.GroovyObject;
+import org.codehaus.groovy.classgen.TestSupport;
+
 import javax.management.MBeanServer;
 import javax.management.MBeanServerFactory;
 import javax.management.ObjectName;
 
-import groovy.lang.GroovyObject;
-
-import org.codehaus.groovy.classgen.TestSupport;
-
 /**
- * Tests using the GroovyObject API from Java to access MBeans via 
+ * Tests using the GroovyObject API from Java to access MBeans via
  * the normal properties API (to simulate normal Groovy property access)
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -71,13 +70,13 @@ public class MBeanTest extends TestSupport {
         assertEquals("JMX value of Name", "James", mbeanServer.getAttribute(name, "Name"));
 
         GroovyObject object = new GroovyMBean(mbeanServer, name);
-        
+
         Object value = object.getProperty("Name");
         assertEquals("Name property", "James", value);
 
         object.setProperty("Name", "Bob");
         assertEquals("Name property", "Bob", object.getProperty("Name"));
-        
+
         // now lets look up the name via JMX to checki
         assertEquals("JMX value of Name", "Bob", mbeanServer.getAttribute(name, "Name"));
     }

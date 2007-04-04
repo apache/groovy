@@ -46,23 +46,8 @@ package org.codehaus.groovy.classgen;
 
  */
 
-import groovy.lang.Binding;
-import groovy.lang.GroovyClassLoader;
-import groovy.lang.GroovyCodeSource;
-import groovy.lang.GroovyObject;
-import groovy.lang.Script;
+import groovy.lang.*;
 import groovy.util.GroovyTestCase;
-
-import java.beans.BeanInfo;
-import java.beans.Introspector;
-import java.beans.PropertyDescriptor;
-import java.io.File;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.FieldNode;
@@ -75,9 +60,19 @@ import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.objectweb.asm.Opcodes;
 
+import java.beans.BeanInfo;
+import java.beans.Introspector;
+import java.beans.PropertyDescriptor;
+import java.io.File;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+
 /**
  * Base class for test cases
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -87,15 +82,15 @@ public class TestSupport extends GroovyTestCase implements Opcodes {
 
     // ClassLoader parentLoader = Thread.currentThread().getContextClassLoader();
     ClassLoader parentLoader = getClass().getClassLoader();
-    protected GroovyClassLoader loader = 
-    	(GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
-    		public Object run() {
-    			return new GroovyClassLoader(parentLoader);
-    		}
-    	});
+    protected GroovyClassLoader loader =
+            (GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
+                public Object run() {
+                    return new GroovyClassLoader(parentLoader);
+                }
+            });
     CompileUnit unit = new CompileUnit(loader, new CompilerConfiguration());
     ModuleNode module = new ModuleNode(unit);
-    
+
     protected Class loadClass(ClassNode classNode) {
         classNode.setModule(module);
         Class fooClass = loader.defineClass(classNode, classNode.getName() + ".groovy", "groovy.testSupport");
@@ -107,7 +102,7 @@ public class TestSupport extends GroovyTestCase implements Opcodes {
         Method method = descriptor.getWriteMethod();
         assertTrue("has setter method", method != null);
 
-        Object[] args = { newValue };
+        Object[] args = {newValue};
         Object value = invokeMethod(bean, method, args);
 
         assertEquals("should return null", null, value);
@@ -131,7 +126,7 @@ public class TestSupport extends GroovyTestCase implements Opcodes {
         if (expected == null) { System.out.println("Expected is null"); }
         if (value == null) { System.out.println("value is null"); }
         */
-        
+
         assertEquals("property value", expected, value);
     }
 
@@ -169,10 +164,10 @@ public class TestSupport extends GroovyTestCase implements Opcodes {
 
     protected ExpressionStatement createPrintlnStatement(Expression expression) throws NoSuchFieldException {
         return new ExpressionStatement(
-            new MethodCallExpression(
-                new FieldExpression(FieldNode.newStatic(System.class, "out")),
-                "println",
-                expression));
+                new MethodCallExpression(
+                        new FieldExpression(FieldNode.newStatic(System.class, "out")),
+                        "println",
+                        expression));
     }
 
     /**
@@ -181,28 +176,28 @@ public class TestSupport extends GroovyTestCase implements Opcodes {
     protected void assertScript(String text) throws Exception {
         assertScript(text, getTestClassName());
     }
-    
+
     protected void assertScript(final String text, final String scriptName) throws Exception {
         log.info("About to execute script");
         log.info(text);
-    	GroovyCodeSource gcs = (GroovyCodeSource) AccessController.doPrivileged(new PrivilegedAction() {
-    		public Object run() {
-    			return new GroovyCodeSource(text, scriptName, "/groovy/testSupport");
-    		}
-    	});
+        GroovyCodeSource gcs = (GroovyCodeSource) AccessController.doPrivileged(new PrivilegedAction() {
+            public Object run() {
+                return new GroovyCodeSource(text, scriptName, "/groovy/testSupport");
+            }
+        });
         Class groovyClass = loader.parseClass(gcs);
         Script script = InvokerHelper.createScript(groovyClass, new Binding());
         script.run();
     }
-    
+
     protected void assertScriptFile(String fileName) throws Exception {
         log.info("About to execute script: " + fileName);
-        
+
         Class groovyClass = loader.parseClass(new GroovyCodeSource(new File(fileName)));
         Script script = InvokerHelper.createScript(groovyClass, new Binding());
         script.run();
     }
-    
+
     protected GroovyObject compile(String fileName) throws Exception {
         Class groovyClass = loader.parseClass(new GroovyCodeSource(new File(fileName)));
 

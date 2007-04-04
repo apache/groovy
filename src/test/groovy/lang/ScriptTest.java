@@ -57,8 +57,7 @@ import java.io.IOException;
  *
  * @author Guillaume Laforge
  */
-public class ScriptTest extends TestSupport
-{
+public class ScriptTest extends TestSupport {
     /**
      * When a method is not found in the current script, checks that it's possible to call a method closure from the binding.
      *
@@ -67,8 +66,7 @@ public class ScriptTest extends TestSupport
      * @throws IllegalAccessException
      * @throws InstantiationException
      */
-    public void testInvokeMethodFallsThroughToMethodClosureInBinding() throws IOException, CompilationFailedException, IllegalAccessException, InstantiationException
-    {
+    public void testInvokeMethodFallsThroughToMethodClosureInBinding() throws IOException, CompilationFailedException, IllegalAccessException, InstantiationException {
         String text = "if (method() == 3) { println 'succeeded' }";
 
         GroovyCodeSource codeSource = new GroovyCodeSource(text, "groovy.script", "groovy.script");

@@ -54,7 +54,7 @@ import java.io.File;
 
 /**
  * Tests dynamically compiling a new class
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -64,20 +64,20 @@ public class GroovyClassLoaderTest extends TestSupport {
         Class groovyClass = loader.parseClass(new File("src/test/org/codehaus/groovy/classgen/Main.groovy"));
 
         System.out.println("Invoking main...");
-        
+
         GroovyObject object = (GroovyObject) groovyClass.newInstance();
-        
+
         assertTrue(object != null);
 
         MetaClass metaClass = object.getMetaClass();
         System.out.println("Metaclass: " + metaClass);
-        
+
         Class type = object.getClass();
         System.out.println("Type: " + type);
-        
+
         // invoke via metaclass
         metaClass.invokeMethod(object, "main", null);
-        
+
         // invoke directly
         object.invokeMethod("main", null);
     }

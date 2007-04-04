@@ -4,12 +4,14 @@
  * @author <a href="mailto:jeremy.rayner@bigfoot.com">Jeremy Rayner</a>
  * @version $Revision$
  */
-import junit.framework.*;
+
 import groovy.util.AllTestSuite;
+import junit.framework.Test;
+import junit.framework.TestCase;
 
 public class UberTestCase2 extends TestCase {
     public static Test suite() {
-        return AllTestSuite.suite("./src/test/groovy","**/*Bug.groovy");
+        return AllTestSuite.suite("./src/test/groovy", "**/*Bug.groovy");
     }
 
 // no tests inside (should we have an AbstractGroovyTestCase???)

@@ -46,38 +46,38 @@
 
 package groovy.bugs;
 
+import groovy.util.GroovyTestCase;
+
 import java.util.Arrays;
 import java.util.Iterator;
 
-import groovy.util.GroovyTestCase;
-
 /**
  * Base class for test cases
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
 public class TestSupport extends GroovyTestCase {
 
     public String[] getMockArguments() {
-        return new String[] { "a", "b", "c" };
+        return new String[]{"a", "b", "c"};
     }
-    
+
     public static String mockStaticMethod() {
         return "cheese";
     }
-    
+
     public static String getMockStaticProperty() {
         return "cheese";
     }
-    
+
     public static int[] getIntArray() {
-        return new int[] { 1, 2, 3, 4, 5 };
+        return new int[]{1, 2, 3, 4, 5};
     }
-    
+
     public Iterator iterator() {
         System.out.println("Calling custom iterator() method for " + this);
-        
+
         return Arrays.asList(getMockArguments()).iterator();
     }
 }
