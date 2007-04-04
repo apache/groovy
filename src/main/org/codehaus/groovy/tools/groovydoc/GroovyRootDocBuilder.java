@@ -25,6 +25,7 @@ import java.util.Map;
 import org.codehaus.groovy.antlr.AntlrASTProcessor;
 import org.codehaus.groovy.antlr.SourceBuffer;
 import org.codehaus.groovy.antlr.UnicodeEscapingReader;
+import org.codehaus.groovy.antlr.java.Groovifier;
 import org.codehaus.groovy.antlr.java.Java2GroovyConverter;
 import org.codehaus.groovy.antlr.java.JavaLexer;
 import org.codehaus.groovy.antlr.java.JavaRecognizer;
@@ -76,7 +77,7 @@ public class GroovyRootDocBuilder {
 		} else {
 			// not java, try groovy instead :-)
 			classDocsFromSrc = parseGroovy(packagePath, file, src);
-		}
+		}		
 		return classDocsFromSrc;
 	}
 
@@ -87,11 +88,17 @@ public class GroovyRootDocBuilder {
         parser.compilationUnit();
         AST ast = parser.getAST();
 
-        // modify the Java AST into a Groovy AST
+        // modify the Java AST into a Groovy AST (just token types)
 		Visitor java2groovyConverter = new Java2GroovyConverter(tokenNames);
         AntlrASTProcessor java2groovyTraverser = new PreOrderTraversal(java2groovyConverter);
         java2groovyTraverser.process(ast);
 
+        // now mutate (groovify) the ast into groovy
+		Visitor groovifier = new Groovifier(tokenNames);
+        AntlrASTProcessor groovifierTraverser = new PreOrderTraversal(groovifier);
+        groovifierTraverser.process(ast);
+
+        
         // now do the business     
         Visitor visitor = new SimpleGroovyClassDocAssembler(packagePath, file, sourceBuffer);
         AntlrASTProcessor traverser = new SourceCodeTraversal(visitor);

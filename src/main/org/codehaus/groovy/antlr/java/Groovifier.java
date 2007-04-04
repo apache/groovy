@@ -19,6 +19,18 @@ public class Groovifier extends VisitorAdapter implements GroovyTokenTypes {
         	if (t.getType() == LITERAL_public) {
         		t.setType(EXPR);
         	}
+        	
+        	// constructors are not distinguished from methods in java ast
+        	if (t.getType() == METHOD_DEF) {
+        		String methodName = t.childOfType(IDENT).getText();
+        		if (methodName != null && methodName.length() > 0) {
+        			if (Character.isUpperCase(methodName.charAt(0))) { // todo - replace naive uppercase check for constructors with check for current classname
+        				t.setType(CTOR_IDENT);
+        			}
+        		}
+        	}
+
+        	
 /*        	if (t.getType() == MODIFIERS) {
        			GroovySourceAST publicNode = t.childOfType(LITERAL_public);
        			if (t.getNumberOfChildren() > 1 && publicNode != null) {

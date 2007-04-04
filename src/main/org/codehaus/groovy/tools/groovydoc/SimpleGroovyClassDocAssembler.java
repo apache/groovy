@@ -18,6 +18,7 @@
 package org.codehaus.groovy.tools.groovydoc;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Stack;
 import java.util.regex.Matcher;
@@ -28,7 +29,7 @@ import org.codehaus.groovy.antlr.LineColumn;
 import org.codehaus.groovy.antlr.SourceBuffer;
 import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
 import org.codehaus.groovy.antlr.treewalker.VisitorAdapter;
-import org.codehaus.groovy.groovydoc.GroovyExecutableMemberDoc;
+import org.codehaus.groovy.groovydoc.GroovyConstructorDoc;
 
 public class SimpleGroovyClassDocAssembler extends VisitorAdapter {
     private Stack stack;
@@ -57,7 +58,22 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter {
 	}
 	
 	public Map getGroovyClassDocs() {
+		postProcessClassDocs();
 		return classDocs;
+	}
+	
+	private void postProcessClassDocs() {
+		Iterator classDocIterator = classDocs.values().iterator();
+		while (classDocIterator.hasNext()) {
+			SimpleGroovyClassDoc classDoc = (SimpleGroovyClassDoc) classDocIterator.next();
+			GroovyConstructorDoc[] constructors = classDoc.constructors();
+			if (constructors != null && constructors.length == 0) { // add default constructor to doc
+	    		// name of class for the constructor
+	    		GroovyConstructorDoc constructorDoc = new SimpleGroovyConstructorDoc(classDoc.name());
+	        	// don't forget to tell the class about this default constructor.
+	        	classDoc.add(constructorDoc);				
+			}
+		}
 	}
 	
 	
