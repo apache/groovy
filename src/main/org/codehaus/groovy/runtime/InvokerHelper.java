@@ -61,8 +61,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -372,7 +372,7 @@ public class InvokerHelper {
     }
 
     public static Map createMap(Object[] values) {
-        Map answer = new HashMap(values.length / 2);
+        Map answer = new LinkedHashMap(values.length / 2);
         int i = 0;
         while (i < values.length - 1) {
             if ((values[i] instanceof SpreadMap) && (values[i+1] instanceof Map)) {

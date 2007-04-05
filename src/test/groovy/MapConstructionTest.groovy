@@ -34,7 +34,7 @@ class MapConstructionTest extends GroovyTestCase {
 
     void assertMap(m) {
         assert m instanceof Map
-        assert m.getClass().getName() == "java.util.HashMap"
+        // do not test the final type, i.e. assumiong m is a HashMap
 
         def result = 0
         def text = ""

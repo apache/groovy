@@ -475,4 +475,27 @@ class SwingBuilderTest extends GroovyTestCase {
             }
         }
     }
+
+    void testAttributeOrdering() {
+        if (isHeadless()) return
+
+        def swing = new SwingBuilder()
+
+        def frame = swing.frame(
+            size:[500,500],
+            locationRelativeTo:null
+        )
+        def locationFirst = frame.location
+
+        frame = swing.frame(
+            locationRelativeTo:null,
+            size:[500,500]
+        )
+        def locationLast = frame.location
+
+        // setLocationReativeTo(null) places the component in the center of 
+        // the screen, relative to it's size, so centering it after sizing it 
+        // should result in a 250,250 offset from centering it before sizing it
+        assert locationFirst != locationLast
+    }
 }
