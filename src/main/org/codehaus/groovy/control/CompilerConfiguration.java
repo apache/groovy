@@ -386,7 +386,7 @@ public class CompilerConfiguration {
      * Sets the output writer.
      */
     public void setOutput(PrintWriter output) {
-        if (this.output == null) {
+        if (output == null) {
             this.output = new PrintWriter(NullWriter.DEFAULT);
         }
         else {
