@@ -415,7 +415,7 @@ class SwingBuilderTest extends GroovyTestCase {
         assert msg.contains("Must specify 'read' Closure property for a closureColumn"): \
             "Instead found message: " + msg
         def closure = { x -> x }
-        swing.table{
+        def table = swing.table{
             tableModel(){
                 closureColumn(read:closure, write:closure, header:'header')
             }
@@ -426,6 +426,8 @@ class SwingBuilderTest extends GroovyTestCase {
                 closureColumn(read:closure, type:String.class)
             }
         }
+
+        assert 'Table Column Model is set to the model used inside of groovy\'s default column model', table.columnModel.class.name == 'groovy.model.DefaultTableModel$MyTableColumnModel'
     }
 
     void testSetConstraints() {
@@ -493,8 +495,8 @@ class SwingBuilderTest extends GroovyTestCase {
         )
         def locationLast = frame.location
 
-        // setLocationReativeTo(null) places the component in the center of 
-        // the screen, relative to it's size, so centering it after sizing it 
+        // setLocationReativeTo(null) places the component in the center of
+        // the screen, relative to it's size, so centering it after sizing it
         // should result in a 250,250 offset from centering it before sizing it
         assert locationFirst != locationLast
     }

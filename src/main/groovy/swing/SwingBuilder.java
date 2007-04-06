@@ -274,6 +274,9 @@ public class SwingBuilder extends BuilderSupport {
             JTable table = (JTable) parent;
             TableModel model = (TableModel) node;
             table.setModel(model);
+            if (model instanceof DefaultTableModel) {
+                table.setColumnModel(((DefaultTableModel)model).getColumnModel());
+            }
         }
         if (node instanceof Startable) {
             Startable startable = (Startable) node;
