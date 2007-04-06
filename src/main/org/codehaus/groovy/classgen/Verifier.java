@@ -117,7 +117,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 
         if ((classNode.getModifiers() & Opcodes.ACC_INTERFACE) >0) {
             //interfaces have no construcotrs, but this code expects one, 
-            //so creta a dummy and don't add it to the class node
+            //so create a dummy and don't add it to the class node
             ConstructorNode dummy = new ConstructorNode(0,null);
             addInitialization(node, dummy);
             node.visitContents(this);
@@ -282,9 +282,22 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
         
         addInitialization(node);
+        checkReturnInObjectInitializer(node.getObjectInitializerStatements());
         node.getObjectInitializerStatements().clear();
         node.visitContents(this);
     }
+    private void checkReturnInObjectInitializer(List init) {
+        CodeVisitorSupport cvs = new CodeVisitorSupport() {
+            public void visitReturnStatement(ReturnStatement statement) {
+                throw new RuntimeParserException("'return' is not allowed in object initializer",statement);
+            }
+        };
+        for (Iterator iterator = init.iterator(); iterator.hasNext();) {
+            Statement stm = (Statement) iterator.next();
+            stm.visit(cvs);
+        }
+    }
+
     public void visitConstructor(ConstructorNode node) {
         CodeVisitorSupport checkSuper = new CodeVisitorSupport() {
             boolean firstMethodCall = true;

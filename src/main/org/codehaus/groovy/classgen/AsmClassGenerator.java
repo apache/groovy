@@ -290,7 +290,6 @@ public class AsmClassGenerator extends ClassGenerator {
         this.dummyClassWriter = new ClassWriter(true);
         dummyGen  = new DummyClassGenerator(context, dummyClassWriter, classLoader, sourceFile);
         compileStack = new CompileStack();
-
     }
     
     protected SourceUnit getSourceUnit() {
@@ -1023,7 +1022,15 @@ public class AsmClassGenerator extends ClassGenerator {
         onLineNumber(statement, "visitReturnStatement");
         visitStatement(statement);
         
-        ClassNode returnType = methodNode.getReturnType();
+        ClassNode returnType;
+        if (methodNode!=null) {
+            returnType = methodNode.getReturnType();
+        } else if (constructorNode!=null){
+            returnType = constructorNode.getReturnType();
+        } else {
+            throw new GroovyBugError("I spotted a return that is neither in a method nor in a constructor... I can not handle that");
+        }
+        
         if (returnType==ClassHelper.VOID_TYPE) {
         	if (!(statement == ReturnStatement.RETURN_NULL_OR_VOID)) {
                 throwException("Cannot use return statement with an expression on a method that returns void");
