@@ -45,11 +45,6 @@
  */
 package org.codehaus.groovy.ast.expr;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-
-import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
 /**
@@ -66,11 +61,6 @@ public class PropertyExpression extends Expression {
     private boolean safe = false;
     private boolean isStatic = false;
 
-    private Method getter = null;
-    private Method setter = null;
-
-    private Field field = null;
-    private int access = -1;
     private boolean implicitThis = false;
 
     public boolean isStatic() {
@@ -148,32 +138,6 @@ public class PropertyExpression extends Expression {
 
     public void setStatic(boolean aStatic) {
         this.isStatic = aStatic;
-    }
-
-    public Method getGetter() {
-        return getter;
-    }
-
-    public Method getSetter() {
-        return setter;
-    }
-
-    public void setField(Field fld) {
-        field = fld;
-        setStatic(Modifier.isStatic(fld.getModifiers()));
-        setType(ClassHelper.make(fld.getType()));
-    }
-    
-    public Field getField() {
-        return field;
-    }
-
-    public void setAccess(int access) {
-        this.access = access;
-    }
-
-    public int getAccess() {
-        return access;
     }
     
     public boolean isImplicitThis(){
