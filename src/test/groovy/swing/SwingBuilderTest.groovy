@@ -427,7 +427,7 @@ class SwingBuilderTest extends GroovyTestCase {
             }
         }
 
-        assert 'Table Column Model is set to the model used inside of groovy\'s default column model', table.columnModel.class.name == 'groovy.model.DefaultTableModel$MyTableColumnModel'
+        assert table.columnModel.class.name == 'groovy.model.DefaultTableModel$MyTableColumnModel'
     }
 
     void testSetConstraints() {
