@@ -523,6 +523,8 @@ class SwingBuilderTest extends GroovyTestCase {
     }
     
     void testWidgetPassthroughConstraints() {
+        if (isHeadless()) return
+
         def swing = new SwingBuilder()
         def foo = swing.button('North')
         def frame = swing.frame() {
