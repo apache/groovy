@@ -6,7 +6,6 @@ import java.awt.GridBagConstraints
 import javax.swing.BorderFactory
 import javax.swing.SwingConstants
 import javax.swing.WindowConstants
-import groovy.model.MvcDemo
 
 class Widgets {
 
