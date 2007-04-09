@@ -113,8 +113,8 @@ class PrimitiveArraysTest extends GroovyTestCase {
     
     void testBoolean() {
       def ba = new boolean[1][2][3]
-      assert ba[0].size() == 2
-      assert ba[0][0].size() == 3
+      assert ba[0].length == 2
+      assert ba[0][0].length == 3
       ba = [true,true] as boolean[]
       ba.each { assert it==true }
       assert ba.class.name == "[Z"
