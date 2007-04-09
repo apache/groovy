@@ -108,7 +108,6 @@ import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
-//import javax.swing.JToolTip;
 import javax.swing.JTree;
 import javax.swing.JViewport;
 import javax.swing.JWindow;
@@ -290,59 +289,36 @@ public class SwingBuilder extends BuilderSupport {
     }
 
     protected Object createNode(Object name) {
-        return createNode(name, Collections.EMPTY_MAP);
+        return createNode(name, Collections.EMPTY_MAP, null);
     }
 
     protected Object createNode(Object name, Object value) {
-        if (passThroughNodes.containsKey(name) && (value != null) && ((Class) passThroughNodes.get(name)).isAssignableFrom(value.getClass())) {
-            // value may need to go into containing windows list
-            if (value instanceof Window) {
-                containingWindows.add(value);
-            }
-            return value;
-        } else if (value instanceof String) {
-            Object widget = createNode(name);
-            if (widget != null) {
-                InvokerHelper.invokeMethod(widget, "setText", value);
-            }
-            return widget;
-        } else {
-            throw new MissingMethodException((String) name, getClass(), new Object[]{value}, false);
-        }
-    }
-
-    protected Object createNode(Object name, Map attributes, Object value) {
-        if (passThroughNodes.containsKey(name) && (value != null) && ((Class) passThroughNodes.get(name)).isAssignableFrom(value.getClass())) {
-            // value may need to go into containing windows list
-            if (value instanceof Window) {
-                containingWindows.add(value);
-            }
-            handleWidgetAttributes(value, attributes);
-            return value;
-        } else {
-            Object widget = createNode(name, attributes);
-            if (widget != null && value != null) {
-                InvokerHelper.invokeMethod(widget, "setText", value.toString());
-            }
-            return widget;
-        }
+        return createNode(name, Collections.EMPTY_MAP, value);
     }
 
     protected Object createNode(Object name, Map attributes) {
+        return createNode(name, attributes, null);
+    }
+
+    protected Object createNode(Object name, Map attributes, Object value) {
         String widgetName = (String) attributes.remove("id");
         constraints = attributes.remove("constraints");
         Object widget = null;
         if (passThroughNodes.containsKey(name)) {
-            widget = attributes.get(name);
+            widget = value;
+            if (widget == null) {
+                widget = attributes.remove(name);
+            }
             if ((widget != null) && ((Class) passThroughNodes.get(name)).isAssignableFrom(widget.getClass())) {
                 // value may need to go into containing windows list
                 if (widget instanceof Window) {
                     containingWindows.add(widget);
                 }
-                attributes.remove(name);
             } else {
                 widget = null;
             }
+        } else if ((value != null) && !(value instanceof String)) {
+            throw new MissingMethodException((String) name, getClass(), new Object[]{value}, false);
         }
         if (widget == null) {
             Factory factory = (Factory) factories.get(name);
@@ -368,6 +344,9 @@ public class SwingBuilder extends BuilderSupport {
             }
         }
         handleWidgetAttributes(widget, attributes);
+        if ((widget != null) && (value != null) && (widget != value)) {
+            InvokerHelper.invokeMethod(widget, "setText", value.toString());
+        }
         return widget;
     }
 
