@@ -680,14 +680,21 @@ public class AsmClassGenerator extends ClassGenerator {
         
         Label l0 = new Label();
         cv.visitJumpInsn(IFEQ, l0);
-
+        
+        // if-else is here handled as a special version
+        // of a booelan expression
+        compileStack.pushBooleanExpression();
         ifElse.getIfBlock().visit(this);
+        compileStack.pop();
 
         Label l1 = new Label();
         cv.visitJumpInsn(GOTO, l1);
         cv.visitLabel(l0);
 
+        compileStack.pushBooleanExpression();
         ifElse.getElseBlock().visit(this);
+        compileStack.pop();
+        
         cv.visitLabel(l1);
     }
 
