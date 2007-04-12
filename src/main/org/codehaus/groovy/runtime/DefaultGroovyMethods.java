@@ -5748,6 +5748,23 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * Common code for {@link #eachFile(File, Closure)} and {@link #eachDir(File, Closure)}
+     * @param self
+     * @param closure
+     * @param onlyDir if normal file should be skipped
+     */
+    private static void eachFile(final File self, final Closure closure, final boolean onlyDir) 
+    		throws FileNotFoundException, IllegalArgumentException {
+        checkDir(self);
+        final File[] files = self.listFiles();
+        for (int i = 0; i < files.length; i++) {
+        	if (!onlyDir || files[i].isDirectory()) {
+        		closure.call(files[i]);
+        	}
+        }
+    }
+
+    /**
      * Invokes the closure for each file in the given directory
      *
      * @param self    a File
@@ -5755,11 +5772,41 @@ public class DefaultGroovyMethods {
      * @throws FileNotFoundException    Thrown if the given directory does not exist
      * @throws IllegalArgumentException Thrown if the provided File object does not represent a directory
      */
-    public static void eachFile(File self, Closure closure) throws FileNotFoundException, IllegalArgumentException {
+    public static void eachFile(final File self, final Closure closure) throws FileNotFoundException, IllegalArgumentException {
+    	eachFile(self, closure, false);
+    }
+
+    /**
+     * Invokes the closure for each directory in the given directory,
+     * ignoring regular files.
+     *
+     * @param self    a directory
+     * @param closure a closure
+     * @throws FileNotFoundException    Thrown if the given directory does not exist
+     * @throws IllegalArgumentException Thrown if the provided File object does not represent a directory
+     */
+    public static void eachDir(File self, Closure closure) throws FileNotFoundException, IllegalArgumentException {
+    	eachFile(self, closure, true);
+    }
+
+    /**
+     * Common code for {@link #eachFileRecurse(File, Closure)} and {@link #eachDirRecurse(File, Closure)}
+     * @param self
+     * @param closure
+     * @param onlyDir if normal file should be skipped
+     */
+    private static void eachFileRecurse(final File self, final Closure closure, final boolean onlyDir) 
+    		throws FileNotFoundException, IllegalArgumentException {
         checkDir(self);
-        File[] files = self.listFiles();
+        final File[] files = self.listFiles();
         for (int i = 0; i < files.length; i++) {
-            closure.call(files[i]);
+            if (files[i].isDirectory()) {
+                closure.call(files[i]);
+                eachFileRecurse(files[i], closure, onlyDir);
+            }
+            else if (!onlyDir) {
+                closure.call(files[i]);
+            }
         }
     }
 
@@ -5773,33 +5820,40 @@ public class DefaultGroovyMethods {
      * @throws IllegalArgumentException Thrown if the provided File object does not represent a directory
      */
     public static void eachFileRecurse(File self, Closure closure) throws FileNotFoundException, IllegalArgumentException {
-        checkDir(self);
-        File[] files = self.listFiles();
-        for (int i = 0; i < files.length; i++) {
-            if (files[i].isDirectory()) {
-                closure.call(files[i]);
-                eachFileRecurse(files[i], closure);
-            } else {
-                closure.call(files[i]);
-            }
-        }
+    	eachFileRecurse(self, closure, false);
     }
 
     /**
-     * Invokes the closure for each directory in the given directory,
-     * ignoring regular files.
+     * Invokes the closure for each directory in the given directory and recursively ignoring regular files.
+     * It is a depth-first exploration, directories are included in the search.
      *
      * @param self    a directory
      * @param closure a closure
      * @throws FileNotFoundException    Thrown if the given directory does not exist
      * @throws IllegalArgumentException Thrown if the provided File object does not represent a directory
+     * @since 1.1 beta 1
      */
-    public static void eachDir(File self, Closure closure) throws FileNotFoundException, IllegalArgumentException {
+    public static void eachDirRecurse(final File self, final Closure closure) throws FileNotFoundException, IllegalArgumentException {
+    	eachFileRecurse(self, closure, true);
+    }
+
+    /**
+     * Common code for {@link #eachFileMatch(File, Closure)} and {@link #eachFileMatch(File, Closure)}
+     * @param self
+     * @param filter  the filter to perform on the directory (using the isCase(object) method)
+     * @param closure
+     * @param onlyDir if normal file should be skipped
+     */
+    private static void eachFileMatch(final File self, final Object filter, final Closure closure, final boolean onlyDir) 
+    		throws FileNotFoundException, IllegalArgumentException {
         checkDir(self);
-        File[] files = self.listFiles();
+        final File[] files = self.listFiles();
+        final MetaClass metaClass = InvokerHelper.getMetaClass(filter);
         for (int i = 0; i < files.length; i++) {
-            if (files[i].isDirectory()) {
-                closure.call(files[i]);
+        	final File curentFile = files[i];
+            if ((!onlyDir || curentFile.isDirectory())
+            		&& DefaultTypeTransformation.castToBoolean(metaClass.invokeMethod(filter, "isCase", curentFile.getName()))) {
+                closure.call(curentFile);
             }
         }
     }
@@ -5815,15 +5869,25 @@ public class DefaultGroovyMethods {
      * @throws FileNotFoundException    Thrown if the given directory does not exist
      * @throws IllegalArgumentException Thrown if the provided File object does not represent a directory
      */
-    public static void eachFileMatch(File self, Object filter, Closure closure) throws FileNotFoundException, IllegalArgumentException {
-        checkDir(self);
-        File[] files = self.listFiles();
-        MetaClass metaClass = InvokerHelper.getMetaClass(filter);
-        for (int i = 0; i < files.length; i++) {
-            if (DefaultTypeTransformation.castToBoolean(metaClass.invokeMethod(filter, "isCase", files[i].getName()))) {
-                closure.call(files[i]);
-            }
-        }
+    public static void eachFileMatch(final File self, final Object filter, final Closure closure) 
+    		throws FileNotFoundException, IllegalArgumentException {
+    	eachFileMatch(self, filter, closure, false);
+    }
+
+    /**
+     * Invokes the closure for each directory matching the given filter in the given directory
+     * - calling the isCase() method used by switch statements.  This method can be used
+     * with different kinds of filters like regular expresions, classes, ranges etc.
+     *
+     * @param self    a file
+     * @param filter  the filter to perform on the directory (using the isCase(object) method)
+     * @param closure
+     * @throws FileNotFoundException    Thrown if the given directory does not exist
+     * @throws IllegalArgumentException Thrown if the provided File object does not represent a directory
+     * @since 1.1 beta 1
+     */
+    public static void eachDirMatch(final File self, final Object filter, final Closure closure) throws FileNotFoundException, IllegalArgumentException {
+    	eachFileMatch(self, filter, closure, true);
     }
 
     /**
