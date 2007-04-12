@@ -2744,6 +2744,7 @@ public class AsmClassGenerator extends ClassGenerator {
         } 
 
         Parameter[] localVariableParams = getClosureSharedVariables(expression);
+        removeInitialValues(localVariableParams);
 
         InnerClassNode answer = new InnerClassNode(outerClass, name, 0, ClassHelper.CLOSURE_TYPE); // closures are local inners and not public
         answer.setEnclosingMethod(this.methodNode);
@@ -2850,6 +2851,21 @@ public class AsmClassGenerator extends ClassGenerator {
         ASTNode sn = answer.addConstructor(ACC_PUBLIC, params, ClassNode.EMPTY_ARRAY, block);
         sn.setSourcePosition(expression);
         return answer;
+    }
+    
+    /**
+     * this method is called for local variables shared between scopes. 
+     * These variables must not have init values because these would 
+     * then in later steps be used to create multiple versions of the
+     * same method, in this case the constructor. A closure should not 
+     * have more than one constructor! 
+     */
+    private void removeInitialValues(Parameter[] params) {
+        for (int i = 0; i < params.length; i++) {
+            if (params[i].hasInitialExpression()) {
+                params[i] = new Parameter(params[i].getType(),params[i].getName());
+            }
+        }
     }
     
     protected Parameter[] getClosureSharedVariables(ClosureExpression ce){
