@@ -42,6 +42,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -1025,7 +1026,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         for (node = node.getNextSibling(); isType(CASE_GROUP, node); node = node.getNextSibling()) {
             AST child = node.getFirstChild();
             if (isType(LITERAL_case, child)) {
-                list.add(caseStatement(child));
+                list.addAll(caseStatements(child));
             } else {
                 defaultStatement = statement(child.getNextSibling());
             }
@@ -1038,8 +1039,8 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         return switchStatement;
     }
 
-    protected CaseStatement caseStatement(AST node) {
-        List expressions = new ArrayList();
+    protected List caseStatements(AST node) {
+        List expressions = new LinkedList();
         Statement statement = EmptyStatement.INSTANCE;
         AST nextSibling = node;
         do {
@@ -1050,18 +1051,19 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         if (!isType(LITERAL_default, nextSibling) && nextSibling != null) {
              statement = statement(nextSibling);
         }
-        CaseStatement answer;
-        if (expressions.size() == 1) {
-            // single case uses original code for effiiency
-            answer = new CaseStatement((Expression) expressions.get(0), statement);
-        } else {
-            // multiple cases in casegroup are grouped as an expression
-            // doesn't seem to mix well with certain case expressions, e.g. regex
-            ListExpression listExpression = new ListExpression(expressions);
-            answer = new CaseStatement(listExpression, statement);
+        LinkedList cases = new LinkedList();
+        for (Iterator iterator = expressions.iterator(); iterator.hasNext();) {
+            Expression expr = (Expression) iterator.next();
+            Statement stmt;
+            if (iterator.hasNext()) {
+                stmt = new CaseStatement(expr,EmptyStatement.INSTANCE);
+            } else {
+                stmt = new CaseStatement(expr,statement);
+            }
+            configureAST(stmt,node);
+            cases.add(stmt);
         }
-        configureAST(answer, node);
-        return answer;
+        return cases;
     }
 
     protected Statement synchronizedStatement(AST syncNode) {
