@@ -109,4 +109,22 @@ class SwitchTest extends GroovyTestCase {
         }
     }
     
+    /** older versions of groovy produced a ListExpression for a
+        fall through. the result was that it worked in some cases
+        and in other cases not. For example not for patterns **/
+    void testFallthrough() {
+      def a = [ 'FileName.java', 'AnotherFileName.groovy' ]
+      def i = 0
+      a.each {
+        switch( it ) {
+  	      case ~/.*java$/:
+  	      case ~/.*groovy$/:
+  	        i++
+            break;
+  	      default:
+	        assert false
+	    }
+      }
+      assert i==2
+    }
 }
