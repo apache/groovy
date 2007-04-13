@@ -117,6 +117,7 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
     private VariableScope currentScope;
 
     private boolean isTopLevelProperty = true;
+    private boolean inPropertyExpression = false;
     private boolean inClosure = false;
 
     public ResolveVisitor(CompilationUnit cu) {
@@ -565,6 +566,21 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
         if (name.length()>0) return name.substring(0,name.length()-1);
         return null;
     }
+    
+    // iterate from the outside to the inside and throw an error 
+    // for each VariableExpression that is found but not referenced
+    // do this only in a static scope
+    private void checkStaticScope(PropertyExpression pe){
+        if(inClosure) return;
+        for (Expression it = pe; it!=null; it = ((PropertyExpression)it).getObjectExpression()) {
+            if (it instanceof PropertyExpression) continue;
+            if (it instanceof VariableExpression) {
+                VariableExpression ve = (VariableExpression) it;
+                addStaticVariableError(ve);
+            }
+            return;
+        }
+    }
 
     // iterate from the inner most to the outer and check for classes
     // this check will ignore a .class property, for Exmaple Integer.class will be
@@ -602,12 +618,17 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
     
     protected Expression transformPropertyExpression(PropertyExpression pe) {
         boolean itlp = isTopLevelProperty;
+        boolean ipe = inPropertyExpression;
         
         Expression objectExpression = pe.getObjectExpression();
+        inPropertyExpression = true;
         isTopLevelProperty = !(objectExpression.getClass()==PropertyExpression.class);
         objectExpression = transform(objectExpression);
+        // we handle the property part as if it where not part of the property
+        inPropertyExpression = false;
         Expression property = transform(pe.getProperty());
         isTopLevelProperty = itlp;
+        inPropertyExpression = ipe;
         
         boolean spreadSafe = pe.isSpreadSafe();
         pe = new PropertyExpression(objectExpression,property,pe.isSafe());
@@ -624,9 +645,12 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
             ClassNode type = ClassHelper.make(ce.getType().getName()+"$"+pe.getPropertyAsString());
             if (resolve(type,false,false,false)) return new ClassExpression(type);
         }
-        if (isTopLevelProperty) return correctClassClassChain(pe);
-        
-        return pe;
+        Expression ret = pe;
+        if (isTopLevelProperty) {
+            checkStaticScope(pe);
+            ret = correctClassClassChain(pe);
+        }        
+        return ret;
     }
        
     protected Expression transformVariableExpression(VariableExpression ve) {
@@ -647,14 +671,24 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
                 ClassExpression ce = new ClassExpression(t);
                 ce.setSourcePosition(ve);
                 return ce;
-            } else if (!inClosure && ve.isInStaticContext()) {
-                addError("the name "+v.getName()+" doesn't refer to a declared variable or class. The static"+
-                         " scope requires to declare variables before using them. If the variable should have"+
-                         " been a class check the spelling.",ve);
-            }
+            } else if (!inPropertyExpression) {
+                addStaticVariableError(ve);
+            } 
         }
         resolveOrFail(ve.getType(),ve);
         return ve;
+    }
+    
+    private void addStaticVariableError(VariableExpression ve){
+        // closures are always dynamic
+        // propertiesExpressions will handle the error a bit different
+        if (inClosure || !ve.isInStaticContext()) return;
+        if (ve==VariableExpression.THIS_EXPRESSION || ve==VariableExpression.SUPER_EXPRESSION) return;
+        Variable v = ve.getAccessedVariable();
+        if (v!=null && !(v instanceof DynamicVariable) && v.isInStaticContext()) return;
+        addError("the name "+ve.getName()+" doesn't refer to a declared variable or class. The static"+
+                " scope requires to declare variables before using them. If the variable should have"+
+                " been a class check the spelling.",ve);
     }
     
     protected Expression transformBinaryExpression(BinaryExpression be) {
