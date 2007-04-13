@@ -40,5 +40,18 @@ public class StaticScopeTest extends CompilableTestSupport {
      
    }
    
+   public void testFullyQualifiedClassName() {
+      assertScript """
+        static foo() {java.lang.Integer}
+        assert foo() == java.lang.Integer
+      """
+      shouldNotCompile """
+        static foo() { java.lang.JavaOrGroovyThatsTheQuestion }
+      """
+      shouldCompile """
+        foo() { java.lang.JavaOrGroovyThatsTheQuestion }
+      """
+   }
+   
    
 }
