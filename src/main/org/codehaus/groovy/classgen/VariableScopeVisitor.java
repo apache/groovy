@@ -68,6 +68,7 @@ import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
@@ -84,6 +85,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     private ClassNode currentClass=null;
     private SourceUnit source;
     private boolean inClosure=false;
+    private boolean inPropertyExpression = false;
     
     private LinkedList stateStack=new LinkedList();
     
@@ -332,7 +334,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     }
     
     private void checkVariableContextAccess(Variable v, Expression expr) {
-        if (v.isInStaticContext() || !currentScope.isInStaticContext()) return;        
+        if (inPropertyExpression || v.isInStaticContext() || !currentScope.isInStaticContext()) return;        
         
         String msg =  v.getName()+
                       " is declared in a dynamic context, but you tried to"+
@@ -382,6 +384,15 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         if (v==null) return;
         expression.setAccessedVariable(v);
         checkVariableContextAccess(v,expression);
+    }
+    
+    public void visitPropertyExpression(PropertyExpression expression) {
+        boolean ipe = inPropertyExpression;
+        inPropertyExpression = true;
+        expression.getObjectExpression().visit(this);
+        ipe=false;
+        expression.getProperty().visit(this);
+        inPropertyExpression = ipe;
     }
     
     public void visitClosureExpression(ClosureExpression expression) {
