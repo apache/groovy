@@ -1,14 +1,16 @@
 /** 
- *  simple patchwork graphics demo
+ * Simple patchwork graphics demo
  * @author: Jeremy Rayner, changes by Dierk Koenig
  */
+import javax.swing.WindowConstants as WC
+import groovy.swing.SwingBuilder
 
 def width = 500; def height = 400; def blockSize = 10
-def g = createGraphics()
+def g = createGraphics(width, height)
 
 // main loop
 while (true) {
-    drawBlock()
+    drawBlock(width, height, blockSize, g)
 }
 
 // --------------------------------------------------
@@ -19,31 +21,31 @@ def rnd(upperBound){
 }
 
 // draw a random coloured square within bounds
-def drawBlock() {
-    def row    = rnd(height / blockSize)
-    def column = rnd(width  / blockSize)
+def drawBlock(w, h, b, g) {
+    def row    = rnd(h / b)
+    def column = rnd(w / b)
     def colour = new java.awt.Color(rnd(255),rnd(255),rnd(255))
-    g.setColor(colour)
-    g.fillRect(column * blockSize, row * blockSize, blockSize, blockSize)
+    g.color = colour
+    g.fillRect(column * b, row * b, b, b)
 }
 
 
 // create a new frame and clear screen
-def createGraphics() {
-    def frame = new groovy.swing.SwingBuilder().
-              frame(title:'Painting by numbers', 
-                    location:[20,20], 
-                    size:[width,height],
-                    defaultCloseOperation:javax.swing.WindowConstants.EXIT_ON_CLOSE) {
-    }
+def createGraphics(w, h) {
+    def frame = new SwingBuilder().frame(
+        title:'Painting by numbers',
+        location:[20,20],
+        size:[w, h],
+        defaultCloseOperation:WC.EXIT_ON_CLOSE
+    )
     frame.show()
               
     // obtain graphics context
-    def gfx = frame.getGraphics()
+    def gfx = frame.graphics
               
     // clear screen
-    gfx.setColor(java.awt.Color.BLACK)
-    gfx.fillRect(0,0,width,height)
+    gfx.color = java.awt.Color.BLACK
+    gfx.fillRect(0, 0, w, h)
 
     return gfx
 }
