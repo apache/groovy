@@ -5,15 +5,13 @@
 import javax.swing.WindowConstants as WC
 import groovy.swing.SwingBuilder
 
-def width = 500; def height = 400; def blockSize = 10
+def width = 500, height = 400, blockSize = 10
 def g = createGraphics(width, height)
 
 // main loop
 while (true) {
     drawBlock(width, height, blockSize, g)
 }
-
-// --------------------------------------------------
 
 // random integer
 def rnd(upperBound){
@@ -28,7 +26,6 @@ def drawBlock(w, h, b, g) {
     g.color = colour
     g.fillRect(column * b, row * b, b, b)
 }
-
 
 // create a new frame and clear screen
 def createGraphics(w, h) {
