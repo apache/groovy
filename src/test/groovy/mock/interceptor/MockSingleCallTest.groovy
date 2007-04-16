@@ -16,6 +16,31 @@ class MockSingleCallTest extends GroovyTestCase {
         mocker = new MockFor(Collaborator.class)
     }
 
+    void testMockGetter() {
+       mocker.demand.getFoo { "foo" }
+       mocker.demand.getFoo { "foobar" }
+       mocker.use {
+           assertEquals "foo", new Caller().callFoo1()
+           assertEquals "foobar", new Caller().callFoo2()       
+       }
+    }
+
+    void testMockSetter() {
+
+        def result = null
+        
+        mocker.demand.setBar { result = it }
+        mocker.demand.setBar { result = it }
+
+        mocker.use {
+            new Caller().setBar1()
+            assertEquals result, "bar1"
+            new Caller().setBar2()
+            assertEquals result, "bar2"
+
+        }
+    }
+    
     void testSingleCallNoArgs() {
         mocker.demand.one { 1 }
         mocker.use {

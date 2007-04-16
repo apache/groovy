@@ -22,4 +22,21 @@ class Caller {
         return 'whatever'.toString()
     }
 
+    String callFoo1() {
+        return new Collaborator().foo
+    }
+    String callFoo2() {
+        return new Collaborator().foo
+    }
+
+    void setBar1() {
+        new Collaborator().bar = "bar1"
+        return
+    }
+
+    void setBar2() {
+        new Collaborator().setBar("bar2")
+        return
+    }
+
 }

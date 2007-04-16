@@ -6,6 +6,10 @@ package groovy.mock.interceptor
 */
 
 class Collaborator {
+
+    String foo = "bar"
+    String bar = "foo"
+    
     def one() {
         throw new RuntimeException('Never reach here. Should have been mocked.')
     }

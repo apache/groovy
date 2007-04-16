@@ -1,8 +1,21 @@
+/*
+ * Copyright 2004-2005 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package groovy.lang;
 
 import java.beans.IntrospectionException;
-
-import groovy.lang.MetaClassImpl;
 
 /**
  * As subclass of MetaClass, ProxyMetaClass manages calls from Groovy Objects to POJOs.
@@ -10,12 +23,24 @@ import groovy.lang.MetaClassImpl;
  * an Interceptor. To this end, it acts as a decorator (decorator pattern) allowing
  * to add or withdraw this feature at runtime.
  * See groovy/lang/InterceptorTest.groovy for details.
+ *
+ * <p>WARNING: This implementation of ProxyMetaClass is NOT threadsafe and hence should only be used for
+ * as a per-instance MetaClass running in a single thread. Do not place this MetaClass in the MetaClassRegistry
+ * as it will result in unpredictable behaviour
+ *
+ * @see groovy.lang.MetaClassRegistry
+ *
+ *
  * @author Dierk Koenig
+ * @author Graeme Rocher
  */
-public class ProxyMetaClass extends MetaClassImpl {
+public class ProxyMetaClass extends MetaClassImpl implements AdaptingMetaClass {
 
     protected MetaClass adaptee = null;
     protected Interceptor interceptor = null;
+
+
+
 
     /**
      * convenience factory method for the most usual case.
@@ -122,6 +147,60 @@ public class ProxyMetaClass extends MetaClassImpl {
                 return adaptee.invokeConstructor(arguments);
             }
         });
+    }
+
+    /**
+     * Interceptors the call to getProperty if a PropertyAccessInterceptor is
+     * available
+     *
+     * @param object the object to invoke the getter on
+     * @param property the property name
+     *
+     * @return the value of the property
+     */
+    public Object getProperty(Class aClass, Object object, String property, boolean b, boolean b1) {
+        if (null == interceptor) {
+            return super.getProperty(aClass, object, property, b, b1);
+        }
+        if(interceptor instanceof PropertyAccessInterceptor) {
+        	PropertyAccessInterceptor pae = (PropertyAccessInterceptor)interceptor;
+
+	        Object result = pae.beforeGet(object,property);
+	        if (interceptor.doInvoke()) {
+	            result = super.getProperty(aClass, object, property, b, b1);
+	        }
+	        return result;
+        }
+        return super.getProperty(aClass, object, property, b, b1);
+    }
+
+    /**
+	 * Interceptors the call to a property setter if a PropertyAccessInterceptor
+	 * is available
+	 *
+	 * @param object The object to invoke the setter on
+	 * @param property The property name to set
+	 * @param newValue The new value of the property
+	 */
+    public void setProperty(Class aClass, Object object, String property, Object newValue, boolean b, boolean b1) {
+        if (null == interceptor) {
+            super.setProperty(aClass,object, property,newValue,b,b1);
+        }
+        if(interceptor instanceof PropertyAccessInterceptor) {
+        	PropertyAccessInterceptor pae = (PropertyAccessInterceptor)interceptor;
+        	
+	        pae.beforeSet(object,property,newValue);
+	        if (interceptor.doInvoke()) {
+	        	super.setProperty(aClass,object, property,newValue,b,b1);
+	        }
+        }
+        else {
+            super.setProperty(aClass,object, property, newValue,b,b1);
+        }
+    }
+
+    public MetaClass getAdaptee() {
+        return this.adaptee;
     }
 
     // since Java has no Closures...

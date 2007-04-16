@@ -1,9 +1,6 @@
 package groovy.mock.interceptor;
 
-import groovy.lang.GroovySystem;
-import groovy.lang.MetaClass;
-import groovy.lang.MetaClassRegistry;
-import groovy.lang.ProxyMetaClass;
+import groovy.lang.*;
 
 import java.beans.IntrospectionException;
 
@@ -44,6 +41,34 @@ public class MockProxyMetaClass extends ProxyMetaClass {
             throw new RuntimeException("cannot invoke without interceptor");
         }
         return interceptor.beforeInvoke(object, methodName, arguments);
+    }
+
+    public Object getProperty(Class aClass, Object object, String property, boolean b, boolean b1) {
+        if (null == interceptor) {
+            throw new RuntimeException("cannot invoke without interceptor");
+        }
+        if(interceptor instanceof PropertyAccessInterceptor) {
+            return ((PropertyAccessInterceptor)interceptor).beforeGet(object,property);
+        }
+        else {
+            return super.getProperty(aClass,object,property,b,b);
+        }
+
+
+    }
+
+    public void setProperty(Class aClass, Object object, String property, Object newValue, boolean b, boolean b1) {
+        if (null == interceptor) {
+            throw new RuntimeException("cannot invoke without interceptor");
+        }
+
+        if(interceptor instanceof PropertyAccessInterceptor) {
+            ((PropertyAccessInterceptor)interceptor).beforeSet(object,property, newValue);
+        }
+        else {
+            super.setProperty(aClass,object,property,newValue,b,b);
+        }
+
     }
 
     /**
