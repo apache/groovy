@@ -32,7 +32,7 @@
  * DAMAGE.
  *
  */
-package org.codehaus.groovy.runtime.metaclass;
+package org.codehaus.groovy.runtime;
 
 
 /**

@@ -43,7 +43,7 @@ import java.util.logging.Logger;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.Reflector;
-import org.codehaus.groovy.runtime.metaclass.MetaClassHelper;
+import org.codehaus.groovy.runtime.MetaClassHelper;
 
 /**
  * Represents a Method on a Java object a little like {@link java.lang.reflect.Method}

@@ -15,7 +15,7 @@
  *
  */
 
-package org.codehaus.groovy.runtime.metaclass;
+package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
 import groovy.lang.GString;

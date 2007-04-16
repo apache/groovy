@@ -45,18 +45,9 @@
  */
 package org.codehaus.groovy.runtime;
 
-import groovy.lang.Closure;
-import groovy.lang.GroovyInterceptable;
-import groovy.lang.GroovyObject;
-import groovy.lang.GroovyRuntimeException;
-import groovy.lang.GroovySystem;
-import groovy.lang.MetaClass;
-import groovy.lang.MetaClassRegistry;
-import groovy.lang.MissingMethodException;
+import groovy.lang.*;
 
 import java.util.List;
-
-import org.codehaus.groovy.runtime.metaclass.MetaClassHelper;
 
 /**
  * A helper class to invoke methods or extract properties on arbitrary Java objects dynamically

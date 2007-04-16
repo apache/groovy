@@ -17,7 +17,7 @@
 
 package groovy.lang;
 
-import org.codehaus.groovy.runtime.metaclass.MetaBeanProperty;
+import groovy.lang.MetaBeanProperty;
 
 import java.lang.reflect.Method;
 
@@ -32,7 +32,7 @@ import java.lang.reflect.Method;
  * but not after, thus ensuring Thread safety once a MetaClass has been constructed and placed in the registry</p>
  *
  *
- * @see org.codehaus.groovy.runtime.metaclass.MetaClassImpl
+ * @see MetaClassImpl
  * @see MetaClass
  *
  * @author Graeme Rocher

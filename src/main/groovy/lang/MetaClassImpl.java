@@ -43,9 +43,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
-package org.codehaus.groovy.runtime.metaclass;
-
-import groovy.lang.*;
+package groovy.lang;
 
 import java.beans.BeanInfo;
 import java.beans.EventSetDescriptor;
@@ -81,14 +79,8 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.classgen.BytecodeHelper;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.Phases;
-import org.codehaus.groovy.runtime.CurriedClosure;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
-import org.codehaus.groovy.runtime.GroovyCategorySupport;
-import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.runtime.MethodClosure;
-import org.codehaus.groovy.runtime.NewInstanceMetaMethod;
-import org.codehaus.groovy.runtime.NewStaticMetaMethod;
-import org.codehaus.groovy.runtime.Reflector;
+import org.codehaus.groovy.runtime.*;
+import org.codehaus.groovy.runtime.metaclass.*;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 import org.objectweb.asm.ClassVisitor;

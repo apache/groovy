@@ -21,7 +21,7 @@ import java.lang.reflect.Method;
 import java.util.List;
 
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.runtime.metaclass.MetaBeanProperty;
+import groovy.lang.MetaBeanProperty;
 
 /**
  * @author John Wilson

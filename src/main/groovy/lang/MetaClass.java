@@ -30,7 +30,7 @@ import org.codehaus.groovy.ast.ClassNode;
  * clients interact with the method defined by the MetaObjectProtocol interface
  *
  *
- * @see org.codehaus.groovy.runtime.metaclass.MetaClassImpl
+ * @see MetaClassImpl
  * @see groovy.lang.MetaObjectProtocol
  * 
  * @author John Wilson

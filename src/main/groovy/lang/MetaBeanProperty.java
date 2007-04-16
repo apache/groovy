@@ -32,7 +32,7 @@
  * DAMAGE.
  *
  */
-package org.codehaus.groovy.runtime.metaclass;
+package groovy.lang;
 
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaFieldProperty;
@@ -42,6 +42,7 @@ import groovy.lang.MetaProperty;
 import java.lang.reflect.Modifier;
 
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
+import org.codehaus.groovy.runtime.MetaClassHelper;
 
 /**
  * Represents a property on a bean which may have a getter and/or a setter

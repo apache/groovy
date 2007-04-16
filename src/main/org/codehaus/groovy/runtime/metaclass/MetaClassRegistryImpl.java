@@ -209,15 +209,30 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
      * @return An instance of the MetaClass which will handle this class
      */
     private MetaClass getMetaClassFor(final Class theClass) {
-    final Class theSuperClass = theClass.getSuperclass();
-    
-        if (theSuperClass == null) {
-            // The class is an interface - use Object's Metaclass
-            return GroovySystem.getObjectMetaClass().createMetaClass(theClass, this);
-        } else {
-            return getMetaClass(theSuperClass).createMetaClass(theClass, this);
-        }
+        return metaClassCreationHandle.create(theClass,this);
     }
+
+    // the following is experimental code, not intended for stable use yet
+    private MetaClassCreationHandle metaClassCreationHandle = new MetaClassCreationHandle();
+    /**
+     * Gets a handle internally used to create MetaClass implementations
+     * WARNING: experimental code, likely to change soon
+     * @return the handle
+     */
+    public MetaClassCreationHandle getMetaClassCreationHandler() {
+        return metaClassCreationHandle;
+    }
+    /**
+     * Sets a handle internally used to create MetaClass implementations.
+     * When replacing the handle with a custom version, you should
+     * resuse the old handle to keep custom logic and to use the
+     * default logic as fallback.
+     * WARNING: experimental code, likely to change soon
+     * @param handle the handle
+     */
+    public void setMetaClassCreationHandle(MetaClassCreationHandle handle) {
+        metaClassCreationHandle = handle;
+    }    
 
     /**
      * Singleton of MetaClassRegistry. Shall we use threadlocal to store the instance?

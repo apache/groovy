@@ -22,7 +22,7 @@ package groovy.lang;
  * <p>An interface that defines the API usable by clients of Groovy's Meta Object Protocol (MOP). These methods are
  * implemented by the reference implementation of the @link groovy.lang.MetaClass interface.</p>
  *
- * @see org.codehaus.groovy.runtime.metaclass.MetaClassImpl
+ * @see MetaClassImpl
  *
  * @author John Wilson
  * @author Graeme Rocher
@@ -93,7 +93,7 @@ public interface MetaObjectProtocol {
      * <p>What this means is largely down to the MetaClass implementation, however the default case would result
      * in an attempt to invoke a JavaBean getter, or if no such getter exists a public field of the instance.</p>
      *
-     * @see org.codehaus.groovy.runtime.metaclass.MetaClassImpl
+     * @see MetaClassImpl
      *
      * @param object An instance of the class returned by the getTheClass() method
      * @param property The name of the property to retrieve the value for
@@ -107,7 +107,7 @@ public interface MetaObjectProtocol {
      * <p>What this means is largely down to the MetaClass implementation, however the default case would result
      * in an attempt to invoke a JavaBean setter, or if no such setter exists to set a public field of the instance.</p>
      *
-     * @see org.codehaus.groovy.runtime.metaclass.MetaClassImpl
+     * @see MetaClassImpl
      *
      * @param object An instance of the class returned by the getTheClass() method
      * @param property The name of the property to set
@@ -121,7 +121,7 @@ public interface MetaObjectProtocol {
      * <p>What this means is largely down to the MetaClass implementation, however the default case would result
      * in attempt to read a field of the instance.</p>
      *
-     * @see org.codehaus.groovy.runtime.metaclass.MetaClassImpl
+     * @see MetaClassImpl
      *
      * @param object An instance of the class returned by the getTheClass() method
      * @param attribute The name of the attribute to retrieve the value for
@@ -135,7 +135,7 @@ public interface MetaObjectProtocol {
      * <p>What this means is largely down to the MetaClass implementation, however the default case would result
      * in an attempt to set a field of the instance.</p>
      *
-     * @see org.codehaus.groovy.runtime.metaclass.MetaClassImpl
+     * @see MetaClassImpl
      *
      * @param object An instance of the class returned by the getTheClass() method
      * @param attribute The name of the attribute to set
