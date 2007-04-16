@@ -37,16 +37,6 @@ import org.codehaus.groovy.ast.ClassNode;
  * @author Graeme Rocher
  */
 public interface MetaClass extends MetaObjectProtocol {
-    /**
-     * Called on the MetaClass of the superclass of the class to allow that MetaClass to control
-     * the behaviour of its subclass if it wants to.
-     *
-     * @param theClass The java.lang.Class instance to a create a MetaClass for
-     * @param registry The MetaClassRegistry instance
-     *
-     * @return A MetaClas for the specified java.lang.Class instance
-     */
-     MetaClass createMetaClass(Class theClass, MetaClassRegistry registry);
 
 
     /**

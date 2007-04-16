@@ -36,13 +36,9 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass {
     }
    
     public DelegatingMetaClass(final Class theClass) {
-        this(GroovySystem.getMetaClassRegistry().getMetaClass(theClass.getSuperclass() == null ? Object.class : theClass.getSuperclass()).createMetaClass(theClass, GroovySystem.getMetaClassRegistry()));
+        this(GroovySystem.getMetaClassRegistry().getMetaClass(theClass));
     }
     
-    public MetaClass createMetaClass(Class theClass, MetaClassRegistry registry) {
-        return this.delegate.createMetaClass(theClass, registry);
-    }
-
     /* (non-Javadoc)
      * @see groovy.lang.MetaClass#addNewInstanceMethod(java.lang.reflect.Method)
      */

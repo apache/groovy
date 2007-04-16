@@ -16,7 +16,9 @@
  *   limitations under the License.
  *
  */
-package groovy.lang;
+package groovy.lang;    
+
+import java.lang.reflect.Constructor;
 
 /**
  * A MetaClassRegistry is an object that is responsible for managing the a cache of MetaClass instances. Each
@@ -76,13 +78,16 @@ public interface MetaClassRegistry {
      */
     public static class MetaClassCreationHandle {
         public MetaClass create(Class theClass, MetaClassRegistry registry) {
-            final Class theSuperClass = theClass.getSuperclass();
-            if (theSuperClass == null) {
-                // The class is an interface - use Object's Metaclass
-                return GroovySystem.getObjectMetaClass().createMetaClass(theClass, registry);
-            } else {
-                return registry.getMetaClass(theSuperClass).createMetaClass(theClass, registry);
-            }
+	       try {
+	           final Class customMetaClass = Class.forName("groovy.runtime.metaclass." + theClass.getName() + "MetaClass");
+	           final Constructor customMetaClassConstructor = customMetaClass.getConstructor(new Class[]{MetaClassRegistry.class, Class.class});
+
+	           return (MetaClass)customMetaClassConstructor.newInstance(new Object[]{registry, theClass});
+	       } catch (final ClassNotFoundException e) {
+	           return new MetaClassImpl(registry, theClass);
+	       } catch (final Exception e) {
+	           throw new GroovyRuntimeException("Could not instantiate custom Metaclass for class: " + theClass.getName() + ". Reason: " + e, e);
+	       }
         }
     }
 
