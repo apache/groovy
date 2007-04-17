@@ -533,4 +533,16 @@ class SwingBuilderTest extends GroovyTestCase {
             // a failed test throws MissingPropertyException by now
         }
     }    
+    
+    void testGROOVY1837ReeuseAction() {
+        if (isHeadless()) return
+        
+        def swing = new SwingBuilder()
+        def testAction = swing.action(name:'test', mnemonic:'A', accelerator:'ctrl R')
+        assert testAction.getValue(Action.MNEMONIC_KEY) != null
+        assert testAction.getValue(Action.ACCELERATOR_KEY) != null
+        swing.action(testAction)
+        assert testAction.getValue(Action.MNEMONIC_KEY) != null
+        assert testAction.getValue(Action.ACCELERATOR_KEY) != null
+    }
 }

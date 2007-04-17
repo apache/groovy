@@ -1,21 +1,3 @@
-/*
- $Id$
-
- Copyright 2003 (C) James Strachan and Bob Mcwhirter. All Rights Reserved.
-
-Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
-compliance with the License. You may obtain a copy of the License at
-
-http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software distributed under the License is
-distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
-implied. See the License for the specific language governing permissions and limitations under the License.
-
-This work is copyright by the author(s) and is part of a greater work collectively copyright by the
-Groovy community. See the NOTICE.txt file distributed with this work for additional information.
-
- */
 package groovy.swing;
 
 import groovy.lang.Closure;
@@ -168,8 +150,8 @@ public class SwingBuilder extends BuilderSupport {
             JTabbedPane tabbedPane = (JTabbedPane) parent;
             tabbedPane.add((Component) child);
         } else if (child instanceof Window) {
-            // do nothing.  owner of window is set elsewhere, and this 
-            // shouldn't get added to any parent as a child 
+            // do nothing.  owner of window is set elsewhere, and this
+            // shouldn't get added to any parent as a child
             // if it is a top level component anyway
         } else {
             Component component = null;
@@ -362,19 +344,23 @@ public class SwingBuilder extends BuilderSupport {
             }
 
             Object accel = attributes.remove("accelerator");
-            KeyStroke stroke = null;
-            if (accel instanceof KeyStroke) {
-                stroke = (KeyStroke) accel;
-            } else if (accel != null) {
-                stroke = KeyStroke.getKeyStroke(accel.toString());
+            if (accel != null) {
+                KeyStroke stroke = null;
+                if (accel instanceof KeyStroke) {
+                    stroke = (KeyStroke) accel;
+                } else {
+                    stroke = KeyStroke.getKeyStroke(accel.toString());
+                }
+                action.putValue(Action.ACCELERATOR_KEY, stroke);
             }
-            action.putValue(Action.ACCELERATOR_KEY, stroke);
 
             Object mnemonic = attributes.remove("mnemonic");
-            if ((mnemonic != null) && !(mnemonic instanceof Number)) {
-                mnemonic = new Integer(mnemonic.toString().charAt(0));
+            if (mnemonic != null) {
+                if (!(mnemonic instanceof Number)) {
+                    mnemonic = new Integer(mnemonic.toString().charAt(0));
+                }
+                action.putValue(Action.MNEMONIC_KEY, mnemonic);
             }
-            action.putValue(Action.MNEMONIC_KEY, mnemonic);
 
             for (Iterator iter = attributes.entrySet().iterator(); iter.hasNext();) {
                 Map.Entry entry = (Map.Entry) iter.next();
@@ -399,10 +385,12 @@ public class SwingBuilder extends BuilderSupport {
 
             // this next statement nd if/else is a workaround until GROOVY-305 is fixed
             Object mnemonic = attributes.remove("mnemonic");
-            if ((mnemonic != null) && (mnemonic instanceof Number)) {
-                InvokerHelper.setProperty(widget, "mnemonic", new Character((char) ((Number) mnemonic).intValue()));
-            } else if (mnemonic != null) {
-                InvokerHelper.setProperty(widget, "mnemonic", new Character(mnemonic.toString().charAt(0)));
+            if (mnemonic != null) {
+                if (mnemonic instanceof Number) {
+                    InvokerHelper.setProperty(widget, "mnemonic", new Character((char) ((Number) mnemonic).intValue()));
+                } else {
+                    InvokerHelper.setProperty(widget, "mnemonic", new Character(mnemonic.toString().charAt(0)));
+                }
             }
 
             // set the properties
