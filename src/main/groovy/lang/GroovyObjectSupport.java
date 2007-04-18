@@ -55,7 +55,8 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  */
 public abstract class GroovyObjectSupport implements GroovyObject {
 
-    private MetaClass metaClass;
+	// never persist the MetaClass
+    private transient MetaClass metaClass;
 
     public GroovyObjectSupport() {
         this.metaClass = InvokerHelper.getMetaClass(this);
