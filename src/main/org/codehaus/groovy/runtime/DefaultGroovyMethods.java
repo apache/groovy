@@ -3495,6 +3495,10 @@ public class DefaultGroovyMethods {
         }
         primitiveArrayPut(array, idx, newValue);
     }
+    
+    public static int size(boolean[] array) {
+        return Array.getLength(array);
+    }
 
     public static int size(byte[] array) {
         return Array.getLength(array);

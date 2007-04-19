@@ -38,4 +38,12 @@ class DynamicMemberTest extends GroovyTestCase {
     assert this.@"${name}" == "tada"
   }
   
+  public void testDynamicMethodClosure() {
+    def cl = this.&"aTestMethod"
+    assert cl("String") == "String"
+    def name ="aTestMethod"
+    cl = this.&"$name"
+    assert cl("String") == "String"
+  }
+  
 }

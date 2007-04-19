@@ -18,9 +18,6 @@
  */
 package groovy.lang;
 
-import java.lang.reflect.Constructor;
-
-import groovy.lang.MetaClassImpl;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 
 public class GroovySystem {
@@ -41,7 +38,7 @@ public class GroovySystem {
     /**
      * The MetaClass for java.lang.Object
      */
-    private final static MetaClass objectMetaClass;
+    private  static MetaClass objectMetaClass;
 
 
     public static boolean isUseReflection() {
@@ -52,33 +49,13 @@ public class GroovySystem {
     public static MetaClassRegistry getMetaClassRegistry() {
         return metaClassRegistry;
     }
-
-    public static MetaClass getObjectMetaClass() {
-        return objectMetaClass;
-    }
-
+    
     //
     //  TODO: make this initialisation able to set useReflection true
     //  TODO: have some way of specifying another MetaClass Registry implementation
     //
     static {
-        useReflection = false;
-        
+        useReflection = true;
         metaClassRegistry = new MetaClassRegistryImpl();
-        
-        MetaClass metaClass;
-        try {
-            final Class customMetaClass = Class.forName("groovy.runtime.metaclass.java.lang.ObjectMetaClass");
-            final Constructor customMetaClassConstructor = customMetaClass.getConstructor(new Class[]{MetaClassRegistry.class, Class.class});
-                
-            metaClass = (MetaClass)customMetaClassConstructor.newInstance(new Object[]{metaClassRegistry, Object.class});
-            } catch (final ClassNotFoundException e) {
-                metaClass = new MetaClassImpl(metaClassRegistry, Object.class);
-            } catch (final Exception e) {
-                throw new GroovyRuntimeException("Could not instantiate custom Metaclass for class: java.lang.Object. Reason: " + e, e);
-            }
-            
-            metaClass.initialize(); 
-            objectMetaClass = metaClass;
     }
 }

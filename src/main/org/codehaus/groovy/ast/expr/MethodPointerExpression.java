@@ -63,9 +63,9 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 public class MethodPointerExpression extends Expression {
 
     private Expression expression;
-    private String methodName;
+    private Expression methodName;
 
-    public MethodPointerExpression(Expression expression, String methodName) {
+    public MethodPointerExpression(Expression expression, Expression methodName) {
         this.expression = expression;
         this.methodName = methodName;
     }
@@ -77,7 +77,7 @@ public class MethodPointerExpression extends Expression {
 	    return expression;
     }
 
-    public String getMethodName() {
+    public Expression getMethodName() {
         return methodName;
     }
 
@@ -87,10 +87,11 @@ public class MethodPointerExpression extends Expression {
 
     public Expression transformExpression(ExpressionTransformer transformer) {
         Expression ret;
+        Expression mname = transformer.transform(methodName);
         if (expression == null) {
-	        ret = new MethodPointerExpression(VariableExpression.THIS_EXPRESSION, methodName);
+	        ret = new MethodPointerExpression(VariableExpression.THIS_EXPRESSION, mname);
         } else {
-	        ret = new MethodPointerExpression(transformer.transform(expression), methodName);
+	        ret = new MethodPointerExpression(transformer.transform(expression), mname);
         }
         ret.setSourcePosition(this);
         return ret;        
@@ -100,7 +101,7 @@ public class MethodPointerExpression extends Expression {
         if (expression == null) {
             return "&" + methodName;
         } else {
-            return expression.getText() + ".&" + methodName;
+            return expression.getText() + ".&" + methodName.getText();
         }
     }
 

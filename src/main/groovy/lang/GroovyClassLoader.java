@@ -173,9 +173,10 @@ public class GroovyClassLoader extends URLClassLoader {
 
     /**
      * Loads the given class node returning the implementation Class
-     *
      * @param classNode
      * @return a class
+     * 
+     * @deprecated
      */
     public Class defineClass(ClassNode classNode, String file) {
         //return defineClass(classNode, file, "/groovy/defineClass");
@@ -455,7 +456,7 @@ public class GroovyClassLoader extends URLClassLoader {
         protected Class createClass(byte[] code, ClassNode classNode) {
             GroovyClassLoader cl = getDefiningClassLoader();
             Class theClass = cl.defineClass(classNode.getName(), code, 0, code.length, unit.getAST().getCodeSource());
-            cl.resolveClass(theClass);
+            //cl.resolveClass(theClass);
             this.loadedClasses.add(theClass);
 
             if (generatedClass == null) {

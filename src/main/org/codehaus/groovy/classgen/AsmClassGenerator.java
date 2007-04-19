@@ -1466,8 +1466,20 @@ public class AsmClassGenerator extends ClassGenerator {
     public void visitMethodPointerExpression(MethodPointerExpression expression) {
         Expression subExpression = expression.getExpression();
         subExpression.visit(this);
-        helper.loadConstant(expression.getMethodName());
+        loadDynamicName(expression.getMethodName());
         getMethodPointer.call(cv);
+    }
+
+    private void loadDynamicName(Expression name) {
+        if (name instanceof ConstantExpression) {
+            ConstantExpression ce = (ConstantExpression) name;
+            Object value = ce.getValue();
+            if (value instanceof String) {
+                helper.loadConstant(value);
+                return;
+            }            
+        } 
+        new CastExpression(ClassHelper.STRING_TYPE, name).visit(this);        
     }
 
     public void visitNegationExpression(NegationExpression expression) {

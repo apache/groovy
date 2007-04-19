@@ -14,9 +14,4 @@ class GroovySystemTest extends GroovyTestCase {
         assert GroovySystem.metaClassRegistry
         assert GroovySystem.getMetaClassRegistry()
     }
-
-    void testGetObjectMetaClass() {
-        assert GroovySystem.objectMetaClass
-        assert GroovySystem.getObjectMetaClass()
-    }
 }

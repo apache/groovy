@@ -46,7 +46,6 @@
 package org.codehaus.groovy.runtime.metaclass;
 
 import groovy.lang.GroovyRuntimeException;
-import groovy.lang.GroovySystem;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaClassRegistry;
 
@@ -55,7 +54,6 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.LinkedList;
 import java.util.List;
-
 import org.codehaus.groovy.classgen.ReflectorGenerator;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
@@ -115,7 +113,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         // Note that the user can replace the standard MetaClass with a custom MetaClass by including 
         // groovy.runtime.metaclass.java.lang.ObjectMetaClass in the classpath
         
-        metaClasses.putStrong(Object.class, GroovySystem.getObjectMetaClass());
+        //metaClasses.putStrong(Object.class, GroovySystem.getObjectMetaClass());
    }
     
     private void registerMethods(final Class theClass, final boolean useInstanceMethods) {
