@@ -15,13 +15,17 @@ def gui = swing.frame(title:'The Groovy Regex Coach', location:[20,40], size:[60
       panel(layout:new BorderLayout()) {
 	label(constraints:BorderLayout.NORTH, text:'Regular expression:')
 	scrollPane(constraints:BorderLayout.CENTER) {textPane(id:'regexPane')}
+	label(constraints:BorderLayout.SOUTH, id:'regexStatus', text:' ')
       }
       panel(layout:new BorderLayout()) {
 	label(constraints:BorderLayout.NORTH, text:'Target string:')
 	scrollPane(constraints:BorderLayout.CENTER) {textPane(id:'targetPane')}
-	panel(constraints:BorderLayout.SOUTH, layout:new FlowLayout()) {
-	  button('<<-', id:'scanLeft')
-	  button('->>', id:'scanRight')
+	panel(constraints:BorderLayout.SOUTH, layout:new BorderLayout()) {
+	  label(constraints:BorderLayout.NORTH, id:'targetStatus', text:' ')
+	  panel(constraints:BorderLayout.SOUTH, layout:new FlowLayout()) {
+	    button('<<-', id:'scanLeft')
+	    button('->>', id:'scanRight')
+	  }
 	}
       }
     }
@@ -52,31 +56,47 @@ class RegexHighlighter extends KeyAdapter implements ActionListener {
     doHighlights()
   }
 
-  // the main regex logic
-  private void doHighlights() {
-    try {
+  private resetView() {
       swing.regexPane.highlighter.removeAllHighlights()
       swing.targetPane.highlighter.removeAllHighlights()
+      swing.regexStatus.text = ' '
+      swing.targetStatus.text = ' '
+  }
+
+  // the main regex logic
+  private doHighlights() {
+    try {
+      resetView()
       def regex = swing.regexPane.text
       def target = swing.targetPane.text
+
       def matcher = (target =~ regex) 
+
+      // scan past the matches before the match we want
       int scan = 0
       while (scan < scanIndex) {
 	matcher.find()
 	scan++
       }
       if (matcher.find()) {
+	// highlight any captured groups
       	int i = 0
 	while (i++ < matcher.groupCount()) {
 	  swing.targetPane.highlighter.addHighlight(matcher.start(i), matcher.end(i), orange)
 	}
+       	// highlight whole match
 	swing.targetPane.highlighter.addHighlight(matcher.start(), matcher.end(), yellow)
-      } else {
+	if (regex.length() != 0) {
+	  swing.targetStatus.text = "Match #${scanIndex + 1} from ${matcher.start()} to ${matcher.end()}."
+	}
+      } else { // not found
 	scanIndex = Math.max(scan - 1, 0)
 	if (scanIndex > 0) {doHighlights()}
+	swing.targetStatus.text = "No match."
       }
     } catch (PatternSyntaxException e) {
       swing.regexPane.highlighter.addHighlight(e.index, e.index + 2, red)
+      swing.regexStatus.text = e.description
     }
   }
 }
