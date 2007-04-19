@@ -154,7 +154,7 @@ $Date$
             <not>
                 <istrue value="${skipTests}"/>
             </not>
-            <isset property="${testCase}"/>
+            <isset property="testCase"/>
         </and>
     </condition>
 
@@ -180,7 +180,7 @@ $Date$
                 <istrue value="${skipTests}"/>
             </not>
             <not>
-                <isset property="${testOne}"/>
+                <isset property="testOne"/>
             </not>
         </and>
     </condition>
