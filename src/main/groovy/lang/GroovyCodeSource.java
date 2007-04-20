@@ -139,10 +139,15 @@ public class GroovyCodeSource {
 	}
 
 	public InputStream getInputStream() {
-        try {
-            if (file!=null) return new FileInputStream(file);
-        } catch (FileNotFoundException fnfe) {}
-		return inputStream;
+        if(this.inputStream != null) {
+            return this.inputStream;
+        }
+        else {
+            try {
+                if (file!=null) return new FileInputStream(file);
+            } catch (FileNotFoundException fnfe) {}
+            return inputStream;            
+        }
 	}
 
 	public String getName() {
