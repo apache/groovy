@@ -34,6 +34,7 @@
  */
 package groovy.lang;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.security.AccessController;
@@ -122,6 +123,8 @@ public class MetaMethod implements Cloneable {
                 });
                 return method.invoke(object, arguments);
             }
+        } catch (InvocationTargetException ite) {
+            throw new InvokerInvocationException(ite.getCause());
         } catch (Exception e) {
             throw new InvokerInvocationException(e);
         }
