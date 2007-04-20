@@ -69,6 +69,8 @@ class Console implements CaretListener {
     int scriptNameCounter = 0
     def systemOutInterceptor
     def runThread = null
+    Closure beforeExecution
+    Closure afterExecution
     
 
     static void main(args) {
@@ -500,7 +502,13 @@ class Console implements CaretListener {
     		try {
     			SwingUtilities.invokeLater { showRunWaitDialog() }
 		        String name = "Script${scriptNameCounter++}"
+		        if(beforeExecution) {
+		            beforeExecution()
+                }
 				def result = shell.evaluate(record.textToRun, name);
+				if(afterExecution) {
+				    afterExecution()
+                }
 				SwingUtilities.invokeLater { finishNormal(result) }
 	    	} catch (Throwable t) {
 	    		SwingUtilities.invokeLater { finishException(t) }
@@ -512,6 +520,8 @@ class Console implements CaretListener {
 	    	}
     	}
     }
+
+
     
     def selectFilename(name = "Open") {
         def fc = new JFileChooser()

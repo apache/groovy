@@ -46,7 +46,15 @@
 package groovy.ui;
 
 import groovy.lang.Binding;
+import groovy.lang.Closure;
 import groovy.lang.GroovyShell;
+import org.codehaus.groovy.control.CompilationFailedException;
+import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.InvokerInvocationException;
+import org.codehaus.groovy.sandbox.ui.Prompt;
+import org.codehaus.groovy.sandbox.ui.PromptFactory;
+import org.codehaus.groovy.tools.ErrorReporter;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -56,14 +64,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-
-import org.codehaus.groovy.control.CompilationFailedException;
-import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.runtime.InvokerInvocationException;
-import org.codehaus.groovy.sandbox.ui.Prompt;
-import org.codehaus.groovy.sandbox.ui.PromptFactory;
-import org.codehaus.groovy.tools.ErrorReporter;
 
 /**
  * A simple interactive shell for evaluating groovy expressions
@@ -84,6 +84,9 @@ public class InteractiveShell {
     private final PrintStream out;
     private final PrintStream err;
     private Object lastResult;
+    private Closure beforeExecution;
+    private Closure afterExecution;
+
 
 
     /**
@@ -183,7 +186,13 @@ public class InteractiveShell {
             if (command.length() > 0) {
                 // We have a command that parses, so evaluate it.
                 try {
+                    if(this.beforeExecution != null) {
+                        this.beforeExecution.call();
+                    }
                     lastResult = shell.evaluate(command, "CommandLine.groovy");
+                    if(this.afterExecution != null) {
+                        this.afterExecution.call();
+                    }
                     out.println("\n===> " + lastResult);
                 } catch (CompilationFailedException e) {
                     err.println(e);
@@ -196,6 +205,25 @@ public class InteractiveShell {
                 }
             }
         }
+    }
+
+    /**
+     * A closure that is executed before the exection of a given script
+     *
+     * @param beforeExecution The closure to execute
+     */
+    public void setBeforeExecution(Closure beforeExecution) {
+        this.beforeExecution = beforeExecution;
+    }
+
+    /**
+     * A closure that is executed after the execution of the last script. The result of the
+     * execution is passed as the first argument to the closure (the value of 'it')
+     *
+     * @param afterExecution The closure to execute
+     */
+    public void setAfterExecution(Closure afterExecution) {
+        this.afterExecution = afterExecution;
     }
 
     /**
