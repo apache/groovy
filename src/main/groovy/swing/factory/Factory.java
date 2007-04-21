@@ -43,8 +43,9 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package groovy.swing.impl;
+package groovy.swing.factory;
 
+import groovy.swing.SwingBuilder;
 import java.util.Map;
 
 /** 
@@ -58,5 +59,5 @@ public interface Factory {
     /**
      * Create a new instance
      */    
-    Object newInstance(Map properties) throws InstantiationException, IllegalAccessException;
+    Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException;
 }
