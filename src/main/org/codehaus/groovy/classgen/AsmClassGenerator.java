@@ -329,7 +329,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 String outerClassName = owner.getName();
                 String name = outerClassName + "$" + context.getNextInnerClassIdx();
                 interfaceClassLoadingClass = new InnerClassNode(owner, name, 4128, ClassHelper.OBJECT_TYPE);
-                
+                interfaceClassLoadingClass.addStaticInitializerStatements(Collections.EMPTY_LIST, false);
                 super.visitClass(classNode);
                 createInterfaceSyntheticStaticFields();                
             } else {
@@ -395,6 +395,24 @@ public class AsmClassGenerator extends ClassGenerator {
      * @param isThis  if true, then we are creating a MOP method on "this", "super" else 
      */
     private void visitMopMethodList(List methods, boolean isThis){
+        HashMap mops = new HashMap();
+        class Key {
+            int hash=0;
+            String name; Parameter[] params;
+            Key(String name, Parameter[] params) {
+                this.name = name;
+                this.params = params;
+                hash = name.hashCode() << 2 + params.length;
+            }
+            public int hashCode() {
+                return hash;
+            }
+            public boolean equals(Object obj) {
+                Key other = (Key) obj;
+                return  other.name.equals(name);
+                //&&                        equalParameterTypes(other.params,params);
+            }
+        }
         LinkedList mopCalls = new LinkedList();
         for (Iterator iter = methods.iterator(); iter.hasNext();) {
             MethodNode mn = (MethodNode) iter.next();
@@ -404,21 +422,20 @@ public class AsmClassGenerator extends ClassGenerator {
             // --> results in XOR
             if (isThis ^ (mn.getModifiers() & (ACC_PUBLIC|ACC_PROTECTED)) == 0) continue; 
             String methodName = mn.getName();
-            if (isMopMethod(methodName) || methodName.startsWith("<")) continue;
+            if (isMopMethod(methodName)) {
+                mops.put(new Key(methodName, mn.getParameters()), mn);
+                continue;
+            }
+            if (methodName.startsWith("<")) continue;
             String name = getMopMethodName(mn,isThis);
-            if (containsMethod(methods,name,mn.getParameters())) continue;
+            Key key = new Key(name,mn.getParameters());
+            if (mops.containsKey(key)) continue;
+            mops.put(key, mn);
             mopCalls.add(mn);
         }
         generateMopCalls(mopCalls, isThis);
         mopCalls.clear();
-    }
-    
-    private boolean containsMethod(List methods, String name, Parameter[] paras) {
-        for (Iterator iter = methods.iterator(); iter.hasNext();) {
-            MethodNode element = (MethodNode) iter.next();
-            if (element.getName().equals(name) && equalParameterTypes(paras,element.getParameters())) return true;
-        }
-        return false;
+        mops.clear();
     }
     
     private boolean equalParameterTypes(Parameter[] p1, Parameter[] p2) {
@@ -502,12 +519,41 @@ public class AsmClassGenerator extends ClassGenerator {
             }
             
             compileStack.init(node.getVariableScope(),node.getParameters(),cv, classNode);
+
+            if (node.getName().equals("<clinit>")) {
+                // ensure we save the current (meta) class in a register
+                /*(new ClassExpression(classNode)).visit(this);
+                cv.visitInsn(POP);
+                (new ClassExpression(ClassHelper.METACLASS_TYPE)).visit(this);
+                cv.visitInsn(POP);*/
+                String internalClassName = this.internalClassName;
+                if (classNode.isInterface()) {
+                    internalClassName = BytecodeHelper.getClassInternalName(interfaceClassLoadingClass);
+                }
+                cv.visitLdcInsn(BytecodeHelper.getClassLoadingTypeDescription(classNode));
+                cv.visitMethodInsn(INVOKESTATIC, internalClassName, "class$", "(Ljava/lang/String;)Ljava/lang/Class;");
+                cv.visitInsn(DUP);
+                cv.visitFieldInsn(PUTSTATIC, internalClassName, "class$0", "Ljava/lang/Class;");
+                cv.visitLdcInsn(BytecodeHelper.getClassLoadingTypeDescription(ClassHelper.METACLASS_TYPE));
+                cv.visitMethodInsn(INVOKESTATIC, internalClassName, "class$", "(Ljava/lang/String;)Ljava/lang/Class;");
+                cv.visitInsn(DUP);
+                String mclassName = getStaticFieldName(ClassHelper.METACLASS_TYPE);
+                cv.visitFieldInsn(PUTSTATIC, internalClassName, mclassName, "Ljava/lang/Class;");
+                syntheticStaticFields.add("class$0");
+                syntheticStaticFields.add(mclassName);
+            } else {
+                // ensure we save the current (meta) class in a register
+                (new ClassExpression(classNode)).visit(this);
+                cv.visitInsn(POP);
+                (new ClassExpression(ClassHelper.METACLASS_TYPE)).visit(this);
+                cv.visitInsn(POP);                
+            }
             
             // ensure we save the current (meta) class in a register
-            (new ClassExpression(classNode)).visit(this);
+            /*(new ClassExpression(classNode)).visit(this);
             cv.visitInsn(POP);
             (new ClassExpression(ClassHelper.METACLASS_TYPE)).visit(this);
-            cv.visitInsn(POP);
+            cv.visitInsn(POP);*/
             
             // handle body
             super.visitConstructorOrMethod(node, isConstructor);
@@ -2332,14 +2378,24 @@ public class AsmClassGenerator extends ClassGenerator {
                 staticFieldName = "class$0";
                 if (compileStack.getCurrentClassIndex()!=-1) {
                     cv.visitVarInsn(ALOAD,compileStack.getCurrentClassIndex());
-                    return;
-                } 
+                } else {
+                    cv.visitFieldInsn(GETSTATIC, internalClassName, staticFieldName, "Ljava/lang/Class;");
+                    cv.visitInsn(DUP);
+                    int index = compileStack.defineTemporaryVariable("class$0",ClassHelper.CLASS_Type,true);
+                    compileStack.setCurrentClassIndex(index);
+                }
+                return;
             } else if (type.equals(ClassHelper.METACLASS_TYPE)) {
                 staticFieldName = getStaticFieldName(type);
                 if (compileStack.getCurrentMetaClassIndex()!=-1) {
                     cv.visitVarInsn(ALOAD,compileStack.getCurrentMetaClassIndex());
-                    return;
+                } else {
+                    cv.visitFieldInsn(GETSTATIC, internalClassName, staticFieldName, "Ljava/lang/Class;");
+                    cv.visitInsn(DUP);
+                    int index = compileStack.defineTemporaryVariable("meta$class$0",ClassHelper.CLASS_Type,true);
+                    compileStack.setCurrentMetaClassIndex(index);
                 }
+                return;
             } else {
                 staticFieldName = getStaticFieldName(type);
             }
@@ -2365,7 +2421,7 @@ public class AsmClassGenerator extends ClassGenerator {
             cv.visitFieldInsn(GETSTATIC, internalClassName, staticFieldName, "Ljava/lang/Class;");
             cv.visitLabel(l1);
             
-            if (type.equals(classNode)) {
+ /*           if (type.equals(classNode)) {
                 cv.visitInsn(DUP);
                 int index = compileStack.defineTemporaryVariable("class$0",ClassHelper.CLASS_Type,true);
                 compileStack.setCurrentClassIndex(index);
@@ -2374,6 +2430,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 int index = compileStack.defineTemporaryVariable("meta$class$0",ClassHelper.CLASS_Type,true);
                 compileStack.setCurrentMetaClassIndex(index);
             }
+            */
         }
     }
 
@@ -2862,6 +2919,9 @@ public class AsmClassGenerator extends ClassGenerator {
 
         ASTNode sn = answer.addConstructor(ACC_PUBLIC, params, ClassNode.EMPTY_ARRAY, block);
         sn.setSourcePosition(expression);
+        
+        // ensure there is a static initializer
+        answer.addStaticInitializerStatements(Collections.EMPTY_LIST,false);
         return answer;
     }
     
@@ -2906,38 +2966,6 @@ public class AsmClassGenerator extends ClassGenerator {
             }
         }
         return outermostClass;
-    }
-
-    protected ClassNode createGStringClass(GStringExpression expression) {
-        ClassNode owner = classNode;
-        if (owner instanceof InnerClassNode) {
-            owner = owner.getOuterClass();
-        }
-        String outerClassName = owner.getName();
-        String name = outerClassName + "$" + context.getNextInnerClassIdx();
-        InnerClassNode answer = new InnerClassNode(owner, name, 0, ClassHelper.GSTRING_TYPE);
-        answer.setEnclosingMethod(this.methodNode);
-        FieldNode stringsField =
-            answer.addField(
-                "strings",
-                ACC_PRIVATE /*| ACC_STATIC*/,
-                ClassHelper.STRING_TYPE.makeArray(),
-                new ArrayExpression(ClassHelper.STRING_TYPE, expression.getStrings()));
-        answer.addMethod(
-            "getStrings",
-            ACC_PUBLIC,
-            ClassHelper.STRING_TYPE.makeArray(),
-            Parameter.EMPTY_ARRAY,
-            ClassNode.EMPTY_ARRAY,
-            new ReturnStatement(new FieldExpression(stringsField)));
-        // lets make the constructor
-        BlockStatement block = new BlockStatement();
-        block.addStatement(
-            new ExpressionStatement(
-                new ConstructorCallExpression(ClassNode.SUPER, new VariableExpression("values"))));
-        Parameter[] contructorParams = new Parameter[] { new Parameter(ClassHelper.OBJECT_TYPE.makeArray(), "values")};
-        answer.addConstructor(ACC_PUBLIC, contructorParams, ClassNode.EMPTY_ARRAY, block);
-        return answer;
     }
 
     protected void doConvertAndCast(ClassNode type){
