@@ -82,4 +82,25 @@ class ClosureCurryTest extends GroovyTestCase {
 		value = clos7()
 		assert value == "afg"
     }  
+    
+    void testParameterTypes() {
+        def cl1 = { String s1, int i -> return s1 + i }
+        assert "foo5" == cl1("foo", 5)
+        assert [String, int] == cl1.getParameterTypes().toList()
+
+        def cl2 = cl1.curry("bla")
+        assert "bla4" == cl2(4)
+        assert null != cl2.getParameterTypes() 
+        assert [int] == cl2.getParameterTypes().toList() 
+    }    
+    
+    void testDelegate() {
+        def res = null
+        def c = {a -> res = z}
+        def cc = c.curry(1)
+
+        cc.delegate = [z: "goodbye"]
+        cc()
+        assert res == cc.delegate.z
+    }
 }

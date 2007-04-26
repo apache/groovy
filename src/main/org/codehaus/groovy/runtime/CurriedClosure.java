@@ -25,5 +25,20 @@ public class CurriedClosure extends Closure {
         System.arraycopy(arguments, 0, newCurriedParams, curriedParams.length, arguments.length);
         return newCurriedParams;        
     }
-
+    
+    public void setDelegate(Object delegate) {
+        ((Closure)getOwner()).setDelegate(delegate);
+    }
+    
+    public Object clone() {
+        Closure uncurriedClosure = (Closure) ((Closure) getOwner()).clone();
+        return new CurriedClosure(uncurriedClosure,curriedParams);
+    }
+    
+    public Class[] getParameterTypes() {
+        Class[] oldParams = ((Closure)getOwner()).getParameterTypes();
+        Class[] newParams = new Class[oldParams.length-curriedParams.length];
+        System.arraycopy(oldParams, curriedParams.length, newParams, 0, newParams.length);
+        return newParams;  
+    }
 }
