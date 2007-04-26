@@ -291,35 +291,26 @@ public class GroovyClassLoader extends URLClassLoader {
             
             // Was neither already loaded nor compiling, so compile and add to
             // cache.
-            try {
-                CompilationUnit unit = createCompilationUnit(config, codeSource.getCodeSource());
-                SourceUnit su = null;
-                if (codeSource.getFile()==null) {
-                    su = unit.addSource(codeSource.getName(), codeSource.getInputStream());
-                } else {
-                    su = unit.addSource(codeSource.getFile());
-                }
-                
-                ClassCollector collector = createCollector(unit,su);
-                unit.setClassgenCallback(collector);
-                int goalPhase = Phases.CLASS_GENERATION;
-                if (config != null && config.getTargetDirectory()!=null) goalPhase = Phases.OUTPUT;
-                unit.compile(goalPhase);
-                
-                answer = collector.generatedClass;
-                for (Iterator iter = collector.getLoadedClasses().iterator(); iter.hasNext();) {
-                    Class clazz = (Class) iter.next();
-                    setClassCacheEntry(clazz);
-                }
-                if (shouldCacheSource) sourceCache.put(codeSource.getName(), answer);
-            } finally {
-                try {
-                    InputStream is = codeSource.getInputStream();
-                    if (is!=null) is.close();
-                } catch (IOException e) {
-                    throw new GroovyRuntimeException("unable to close stream",e);
-                }
+            CompilationUnit unit = createCompilationUnit(config, codeSource.getCodeSource());
+            SourceUnit su = null;
+            if (codeSource.getFile()==null) {
+                su = unit.addSource(codeSource.getName(), codeSource.getInputStream());
+            } else {
+                su = unit.addSource(codeSource.getFile());
             }
+
+            ClassCollector collector = createCollector(unit,su);
+            unit.setClassgenCallback(collector);
+            int goalPhase = Phases.CLASS_GENERATION;
+            if (config != null && config.getTargetDirectory()!=null) goalPhase = Phases.OUTPUT;
+            unit.compile(goalPhase);
+
+            answer = collector.generatedClass;
+            for (Iterator iter = collector.getLoadedClasses().iterator(); iter.hasNext();) {
+                Class clazz = (Class) iter.next();
+                setClassCacheEntry(clazz);
+            }
+            if (shouldCacheSource) sourceCache.put(codeSource.getName(), answer);
             return answer;
         }
     }
