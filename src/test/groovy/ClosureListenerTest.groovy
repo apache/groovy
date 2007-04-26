@@ -42,4 +42,16 @@ class ClosureListenerTest extends GroovyTestCase {
     	def foo = b.actionPerformed
     	assert foo == null
     }
+    
+    void testNonStandardListener() {
+        def myWhat = null
+        def myWhere = null
+
+        def strangeBean = new StrangeBean()
+        strangeBean.somethingStrangeHappened = { what, where -> myWhat = what; myWhere = where}
+        strangeBean.somethingStrangeHappened('?', '!')
+    
+        assert myWhat == '?'
+        assert myWhere == '!'
+    }
 }
