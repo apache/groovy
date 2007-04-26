@@ -22,14 +22,15 @@ $Date$
 -->
 
 <project name="Groovy" default="createJars" basedir=".">
-  
-  <import file="config/ant/build-maven.xml"/>
-  <import file="config/ant/build-checkstyle.xml"/>
-  <import file="config/ant/build-cobertura.xml"/>
 
   <property file="local.build.properties"/>
   <property file="build.properties"/>
   
+  <!-- config/ant/build-maven.xml imports config/ant/build-setup.xml where all the paths are defined. -->
+  <import file="config/ant/build-maven.xml"/>
+  <import file="config/ant/build-checkstyle.xml"/>
+  <import file="config/ant/build-cobertura.xml"/>
+
   <condition property="_skipCobertura_">
     <or>
       <istrue value="${skipTests}"/>
@@ -53,14 +54,14 @@ $Date$
     description="Compile the Java and Groovy code in the main source.">
     <mkdir dir="${mainClassesDirectory}"/>
     <mkdir dir="${toolsClassesDirectory}"/>
-    <javac srcdir="${mainSourceDirectory}" includeantruntime="false" destdir="${mainClassesDirectory}" debug="yes"
-      source="1.4" target="1.4" fork="true" classpathref="compilePath"/>
+    <javac srcdir="${mainSourceDirectory}" includeantruntime="false" destdir="${mainClassesDirectory}"
+      debug="yes" source="1.4" target="1.4" fork="true" classpathref="compilePath"/>
     
     <!--
     
-    There seems to be a problem using the groovyc task directly.  If we use it directly as below then there is an
-    NoClassDefFoundError for class org/objectweb/asm/Opcodes.  If however we run a separate java task to run
-    the groovyc task then everything works as it should.
+    There seems to be a problem using the groovyc task directly.  If we use it directly as below then there
+    is an NoClassDefFoundError for class org/objectweb/asm/Opcodes.  If however we run a separate java task
+    to run the groovyc task then everything works as it should.
     
     <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpath="${mainClassesDirectory}"/>
     <groovyc srcdir="${mainSourceDirectory}" destdir="${mainClassesDirectory}" classpathref="groovyMainCompileDependencies"/>
@@ -228,7 +229,8 @@ $Date$
     <coberturaReport reportDirectory="${reportsDirectory}/cobertura" sourceDirectory="${mainSourceDirectory}"/>
   </target>
   
-  <target name="-actuallyCreateJars" depends="-makeManifest,-includeGroovyDocTemplates,-initializeJars,-createBaseJar,-createEmbeddableJar"
+  <target name="-actuallyCreateJars"
+    depends="-makeManifest,-includeGroovyDocTemplates,-initializeJars,-createBaseJar,-createEmbeddableJar"
     unless="testFailed"/>
   
   <target name="-makeManifest">
@@ -263,6 +265,10 @@ $Date$
       excludes="*.groovy" manifest="${mainClassesDirectory}/META-INF/MANIFEST.MF"/>
   </target>
   
+  <target name="-jarjarInit">
+    <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpathref="toolsPath"/>
+  </target>
+  
   <target name="-createEmbeddableJar" depends="-jarjarInit" unless="testFailed">
     <delete dir="${stagingDirectory}" quiet="true"/>
     <mkdir dir="${stagingDirectory}"/>
@@ -294,6 +300,7 @@ $Date$
     </jarjar>
     <copy file="${targetDistDirectory}/groovy-all-${groovyVersion}.jar"
       tofile="${targetDistDirectory}/groovy-all-minimal-${groovyVersion}.jar"/>
+    <delete dir="${stagingDirectory}" quiet="true"/>
   </target>
   
   <target name="createJars" depends="-reportTestFailed,-actuallyCreateJars"
@@ -424,14 +431,27 @@ $Date$
     </delete>
   </target>
   
-  <target name="-jarjarInit">
-    <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpathref="toolsPath"/>
-  </target>
-  
-  <target name="deploy" depends="-mavenDeployInit,install" description="Deploy jars to maven repository after previous successful build.">
+  <target name="deploy" depends="-mavenDeployInit,install"
+    description="Deploy jars to maven repository after previous successful build.">
     <mavenDeploy version="${groovyVersion}" artifact="groovy"/>
     <mavenDeploy version="${groovyVersion}" artifact="groovy-all"/>
     <mavenDeploy version="${groovyVersion}" artifact="groovy-all-minimal"/>
+  </target>
+
+  <target name="distribution" depends="install,doc" description="Create everything needed for a distribution.">
+    <zip destfile="${targetDirectory}/groovy-binary-${groovyVersion}.zip"
+      comment="The Groovy ${groovyVersion} binary distribution.">
+      <zipfileset dir="${installDirectory}" prefix="groovy-${groovyVersion}"/>
+    </zip>
+    <zip destfile="${targetDirectory}/groovy-docs-${groovyVersion}.zip"
+      comment="The Groovy ${groovyVersion} documentation distribution.">
+      <zipfileset dir="${docsDirectory}" prefix="groovy-${groovyVersion}/html"/>
+    </zip>
+    <zip destfile="${targetDirectory}/groovy-src-${groovyVersion}.zip"
+      comment="The Groovy ${groovyVersion} source distribution.">
+      <zipfileset dir="." prefix="groovy-${groovyVersion}"
+        excludes="${targetDirectory}/**/*,local.build.properties,cobertura.ser,junitvmwatcher*.properties"/>
+    </zip>
   </target>
   
 </project>
