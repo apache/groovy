@@ -46,10 +46,12 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.net.URLDecoder;
 import java.security.AccessController;
 import java.security.CodeSource;
 import java.security.PrivilegedAction;
@@ -739,6 +741,28 @@ public class GroovyClassLoader extends URLClassLoader {
         }
         return o.longValue();
     }
+    
+    /*
+     * This method will take a file name and try to "decode" any URL encoded characters.  For example
+     * if the file name contains any spaces this method call will take the resulting %20 encoded values
+     * and convert them to spaces.
+     * 
+     * This method was added specifically to fix defect:  Groovy-1787.  The defect involved a situation
+     * where two scripts were sitting in a directory with spaces in its name.  The code would fail
+     * when the class loader tried to resolve the file name and would choke on the URLEncoded space values.
+     * 
+     */
+    private String decodeFileName(String fileName){
+        String decodedFile = fileName;
+        try {
+            decodedFile = URLDecoder.decode(fileName,"UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            System.err.println("Encounted an invalid encoding scheme when trying to use URLDecoder.decode() inside of the GroovyClassLoader.decodeFileName() method.  Returning the unencoded URL.");
+            System.err.println("Please note that if you encounter this error and you have spaces in your directory you will run into issues.  Refer to GROOVY-1787 for description of this bug.");
+        }
+
+        return decodedFile;
+    }
 
     private URL getSourceFile(String name) {
         String filename = name.replace('.', '/') + config.getDefaultScriptExtension();
@@ -749,7 +773,7 @@ public class GroovyClassLoader extends URLClassLoader {
                 int index = fileWithoutPackage.lastIndexOf('/');
                 fileWithoutPackage = fileWithoutPackage.substring(index+1);
             }
-            File path = new File(ret.getFile()).getParentFile();
+            File path = new File(decodeFileName(ret.getFile())).getParentFile();
             if (path.exists() && path.isDirectory()) {
                 File file = new File(path, fileWithoutPackage);
                 if (file.exists()) {

@@ -192,11 +192,7 @@ public class CompilationUnit extends ProcessingUnit {
         addPhaseOperation(output);
         
         this.classgenCallback = null;
-    }
-    
-    
-    
-    
+    }    
     
     public void addPhaseOperation(SourceUnitOperation op, int phase) {
         if (phase<0 || phase>Phases.ALL) throw new IllegalArgumentException("phase "+phase+" is unknown");
@@ -536,7 +532,7 @@ public class CompilationUnit extends ProcessingUnit {
      * 
      * Note: this does not mean a file is recompiled. If a SoucreUnit has already passed
      * a phase it is skipped until a higher phase is reached. 
-     * @return TODO
+     * @return true if there was a queued source
      * 
      * @throws CompilationFailedException
      */    

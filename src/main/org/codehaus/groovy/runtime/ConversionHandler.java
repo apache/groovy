@@ -3,6 +3,7 @@ package org.codehaus.groovy.runtime;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 
 /**
  * This class is a general adapter to map a call to an Java interface 
@@ -86,8 +87,12 @@ public abstract class ConversionHandler implements InvocationHandler {
      * @see java.lang.Object#equals(java.lang.Object)
      */
     public boolean equals(Object obj) {
-        if (obj!=null && obj.getClass()==this.getClass()){
-            return (((ConversionHandler)obj).getDelegate()).equals(obj);
+        if (obj instanceof Proxy){
+            obj = Proxy.getInvocationHandler(obj);
+        }
+        
+        if (obj instanceof ConversionHandler){
+            return (((ConversionHandler)obj).getDelegate()).equals(delegate);
         } else {
             return false;
         }

@@ -210,4 +210,28 @@ public class DataSet extends Sql {
     public DataSet createView(Closure criteria) {
     	return new DataSet(this, criteria);
     }
+    
+    /**
+     * Returns a List of all of the rows from the table a DataSet
+     * represents
+     * @return  Returns a list of GroovyRowResult objects.
+     * @throws SQLException
+     */
+    public List rows() throws SQLException {
+        String sql  = "SELECT * FROM " + table;
+        return rows(sql);
+
+    }
+
+    /**
+     * Returns the first row from a DataSet's underying table
+     * 
+     * @return
+     * @throws SQLException
+     */
+    public Object firstRow() throws SQLException{
+        List rows = rows();
+        if (rows.isEmpty()) return null;
+        return(rows.get(0));
+    }
 }

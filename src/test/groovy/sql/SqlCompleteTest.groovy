@@ -115,4 +115,29 @@ class SqlCompleteTest extends TestHelper {
       def row = sql.firstRow("select * from FOOD where type=?", ["nothing"])
       assert row == null
     }
+    
+    void testDataSetWithRows(){
+      def sql = createSql()
+      def dataSet = new DataSet(sql,"FOOD")
+      def rows = dataSet.rows()
+
+      //Expected names of the food items
+      def expected = ["edam", "brie", "cheddar", "beer", "coffee"]
+         
+      //Checking to make sure I got one item back
+      assert rows.size() == 5
+      def results = []
+      rows.each{results.add(it.name)}
+
+      //Checking to make sure the results retrieved match the expected results
+      assert results == expected
+    }
+        
+    void testDataSetWithFirstRow(){
+      def sql = createSql()
+      def dataSet = new DataSet(sql,"FOOD")
+      def result = dataSet.firstRow()
+      assert result!=null
+      assert result["name"]=="edam"
+    }
 }

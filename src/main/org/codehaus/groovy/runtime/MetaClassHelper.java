@@ -24,11 +24,9 @@ import groovy.lang.MetaMethod;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Iterator;
@@ -37,7 +35,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.runtime.ClosureListener;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.MethodClosure;
@@ -535,23 +532,6 @@ public class MetaClassHelper {
             } 
         }
         return ans;
-    }
-    
-    /**
-     * @param listenerType
-     *            the interface of the listener to proxy
-     * @param listenerMethodName
-     *            the name of the method in the listener API to call the
-     *            closure on
-     * @param closure
-     *            the closure to invoke on the listenerMethodName method
-     *            invocation
-     * @return a dynamic proxy which calls the given closure on the given
-     *         method name
-     */
-    public static Object createListenerProxy(Class listenerType, final String listenerMethodName, final Closure closure) {
-        InvocationHandler handler = new ClosureListener(listenerMethodName, closure);
-        return Proxy.newProxyInstance(listenerType.getClassLoader(), new Class[] { listenerType }, handler);
     }
     
     public static Object doConstructorInvoke(Constructor constructor, Object[] argumentArray) {

@@ -100,7 +100,7 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
      */
     // TODO: add test case for type descriptor
     public String getTypeDescriptor() {
-        StringBuffer buf = new StringBuffer();
+        StringBuffer buf = new StringBuffer(name.length()+parameters.length*10);
         // buf.append(dynamicReturnType ? "$dynamic" : cleanupTypeName(returnType));
         //
         buf.append(returnType.getName()); // br  to replace the above. Dynamic type returns Object.

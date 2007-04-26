@@ -1452,7 +1452,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
            {
                // lets create a dynamic proxy
                Object proxy =
-                   MetaClassHelper.createListenerProxy(method.getParameterTypes()[0], name, (Closure) newValue);
+                   DefaultGroovyMethods.asType((Closure) newValue, method.getParameterTypes()[0]);
                arguments = new Object[] { proxy };
                newValue = proxy;
                usesProxy = true;
