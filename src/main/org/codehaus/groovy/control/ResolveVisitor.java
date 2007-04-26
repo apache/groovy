@@ -330,7 +330,7 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
                 .append(replacedPointType.substring(lastPoint + 1))
                 .toString();
             type.setName(replacedPointType);
-            if (resolve(type,false,false,true)) return true;
+            if (resolve(type,false,true,true)) return true;
             type.setName(name);
         }
         return false;
