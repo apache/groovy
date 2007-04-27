@@ -62,7 +62,7 @@ class PropertyTest extends GroovyTestCase {
         def foo = new Foo()
         
         // methods should fail on non-existent method calls
-        shouldFail { foo.blah = 4 }
+        //shouldFail { foo.blah = 4 }
         shouldFail { foo.setBlah(4) }
     }
     
@@ -119,7 +119,7 @@ class PropertyTest extends GroovyTestCase {
     
     void testFinalProperty() {
       def shell = new GroovyShell();
-      def text = """
+      assertScript """
         class A {
            final foo = 1
         }
@@ -129,7 +129,14 @@ class PropertyTest extends GroovyTestCase {
         }
         assert new A().foo==1
       """
-      shell.evaluate(text);
-    }
+      shouldFail { 
+        shell.execute """
+          class A {
+            final foo = 1
+          }
+          new A().foo = 2
+        """
+      }
+   }   
 }
 
