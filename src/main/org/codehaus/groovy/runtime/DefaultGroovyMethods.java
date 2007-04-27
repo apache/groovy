@@ -2356,6 +2356,26 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * <p>
+     * Returns a new Map containg all entries from <code>left</code> and <code>right</code>,
+     * giving precedence to <code>right</code>.
+     * </p>
+     *
+     * <p>
+     * Equivalent to <code>Map m = new HashMap(); m.putAll(left); m.putAll(right); return m;</code>
+     * </p>
+     *
+     * @param left  a Map
+     * @param right a Map
+     * @return a new Map containing all entries from left and right
+     */
+    public static Map plus(Map left, Map right) {
+        Map map = new TreeMap(left);
+        map.putAll(right);
+        return map;
+    }
+
+    /**
      * A helper method to allow lists to work with subscript operators
      *
      * @param self a Map

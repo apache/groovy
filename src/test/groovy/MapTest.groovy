@@ -96,4 +96,15 @@ class MapTest extends GroovyTestCase {
         assert [a:1] == ['a':1].findAll {true}
         assert [:]   == ['a':1].findAll {false}
     }
+
+    void testMapAddition() {
+        def left = [a:1, b:2]
+        def right = [c:3]
+        assert left + right == [a:1, b:2, c:3], "should contain all entries from both maps"
+        assert left == [a:1, b:2] && right == [c:3], "LHS/RHS should not be modified"
+
+        left = [a:1, b:1]
+        right = [a:2]
+        assert left + right == [a:2, b:1], "RHS should take precedence when entries have same key"
+    }
 }
