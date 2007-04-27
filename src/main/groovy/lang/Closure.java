@@ -58,9 +58,30 @@ import java.security.PrivilegedAction;
 
 /**
  * Represents any closure object in Groovy.
+ * <p/>
+ * Groovy allows instances of Closures to be called in a
+ * short form. For example:
+ * <pre>
+ *   def a = 1
+ *   def c = {a}
+ *   assert c() == 1
+ * </pre>
+ * To be able to use a Closure in this way with your own
+ * subclass, you need to provide a doCall method with any
+ * signature you want to. This ensures that 
+ * {@link #getMaximumNumberOfParameters()} and 
+ * {@link #getParameterTypes()} will work too without any 
+ * additional code. If no doCall method is provided a
+ * closure must be used in its long form like
+ * <pre>
+ *   def a = 1
+ *   def c = {a}
+ *   assert c.call() == 1
+ * </pre>
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author <a href="mailto:tug@wilson.co.uk">John Wilson</a>
+ * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
  * @version $Revision$
  */
 public abstract class Closure extends GroovyObjectSupport implements Cloneable, Runnable {
