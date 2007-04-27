@@ -62,7 +62,7 @@ class PropertyTest extends GroovyTestCase {
         def foo = new Foo()
         
         // methods should fail on non-existent method calls
-        //shouldFail { foo.blah = 4 }
+        shouldFail { foo.blah = 4 }
         shouldFail { foo.setBlah(4) }
     }
     

@@ -21,7 +21,7 @@ class AttributeSetExpressionBug extends GroovyTestCase {
 }
 
 class HasStaticFieldSomeClass {
-    public static String name = "bar" 
+    static String name = "bar" 
     static String getName() {
         return "gettter"
     }

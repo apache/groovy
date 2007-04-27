@@ -705,6 +705,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
        
        if (arguments==null) arguments = EMPTY_ARGUMENTS;
        Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
+       Object[] originalArguments = (Object[]) arguments.clone();
        unwrap(arguments);
        
        // lets try use the cache to find the method
@@ -719,10 +720,20 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
            return MetaClassHelper.doMethodInvoke(object, method, arguments);
        }
 
-       if (sender.getSuperclass() != Object.class) {
+       try {
+           Object prop = getProperty(theClass, theClass, methodName, false, false);
+           if (prop instanceof Closure) {
+               Closure closure = (Closure) prop;
+               MetaClass delegateMetaClass = closure.getMetaClass();
+               return delegateMetaClass.invokeMethod(closure.getClass(),closure,"doCall",originalArguments,false,false);
+           }
+       }  catch (MissingPropertyException mpe) {}
+
+       Class superClass = sender.getSuperclass();
+       if (superClass != Object.class && superClass != null) {
            return invokeStaticMethod(sender.getSuperclass(), methodName, arguments);
        }
-
+       
        throw new MissingMethodException(methodName, sender, arguments, true);
    }
    
@@ -1421,8 +1432,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
            if (mp instanceof MetaBeanProperty) {
                MetaBeanProperty mbp = (MetaBeanProperty) mp;
                method = mbp.getSetter();
-               if (method!=null) arguments = new Object[] { newValue };
-               field = mbp.getField();
+               MetaProperty f = mbp.getField();
+               if (method!=null || (f!=null && !Modifier.isFinal(f.getModifiers()))) {
+                   arguments = new Object[] { newValue };
+                   field = f;
+               } 
            } else {
                field = mp;
            }
@@ -1510,6 +1524,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
        if (ambigousListener){
            throw new GroovyRuntimeException("There are multiple listeners for the property "+name+". Please do not use the bean short form to access this listener.");
        } 
+       if (mp!=null) {
+           throw new ReadOnlyPropertyException(name,theClass);
+       }
        throw new MissingPropertyException(name, theClass);   
    }
    
