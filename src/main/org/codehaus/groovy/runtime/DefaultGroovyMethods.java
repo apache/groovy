@@ -5761,6 +5761,8 @@ public class DefaultGroovyMethods {
     		throws FileNotFoundException, IllegalArgumentException {
         checkDir(self);
         final File[] files = self.listFiles();
+        // null check because of http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4803836
+        if (files==null) return;
         for (int i = 0; i < files.length; i++) {
         	if (!onlyDir || files[i].isDirectory()) {
         		closure.call(files[i]);
@@ -5803,6 +5805,8 @@ public class DefaultGroovyMethods {
     		throws FileNotFoundException, IllegalArgumentException {
         checkDir(self);
         final File[] files = self.listFiles();
+        // null check because of http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4803836
+        if (files==null) return;
         for (int i = 0; i < files.length; i++) {
             if (files[i].isDirectory()) {
                 closure.call(files[i]);
@@ -5852,6 +5856,8 @@ public class DefaultGroovyMethods {
     		throws FileNotFoundException, IllegalArgumentException {
         checkDir(self);
         final File[] files = self.listFiles();
+        // null check because of http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4803836
+        if (files==null) return;
         final MetaClass metaClass = InvokerHelper.getMetaClass(filter);
         for (int i = 0; i < files.length; i++) {
         	final File curentFile = files[i];
