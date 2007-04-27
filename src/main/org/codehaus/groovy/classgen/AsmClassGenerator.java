@@ -296,6 +296,7 @@ public class AsmClassGenerator extends ClassGenerator {
         return null;
     }
 
+    
     // GroovyClassVisitor interface
     //-------------------------------------------------------------------------
     public void visitClass(ClassNode classNode) {
@@ -329,7 +330,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 String outerClassName = owner.getName();
                 String name = outerClassName + "$" + context.getNextInnerClassIdx();
                 interfaceClassLoadingClass = new InnerClassNode(owner, name, 4128, ClassHelper.OBJECT_TYPE);
-                interfaceClassLoadingClass.addStaticInitializerStatements(Collections.EMPTY_LIST, false);
+                
                 super.visitClass(classNode);
                 createInterfaceSyntheticStaticFields();                
             } else {
@@ -519,41 +520,12 @@ public class AsmClassGenerator extends ClassGenerator {
             }
             
             compileStack.init(node.getVariableScope(),node.getParameters(),cv, classNode);
-
-            if (node.getName().equals("<clinit>")) {
-                // ensure we save the current (meta) class in a register
-                /*(new ClassExpression(classNode)).visit(this);
-                cv.visitInsn(POP);
-                (new ClassExpression(ClassHelper.METACLASS_TYPE)).visit(this);
-                cv.visitInsn(POP);*/
-                String internalClassName = this.internalClassName;
-                if (classNode.isInterface()) {
-                    internalClassName = BytecodeHelper.getClassInternalName(interfaceClassLoadingClass);
-                }
-                cv.visitLdcInsn(BytecodeHelper.getClassLoadingTypeDescription(classNode));
-                cv.visitMethodInsn(INVOKESTATIC, internalClassName, "class$", "(Ljava/lang/String;)Ljava/lang/Class;");
-                cv.visitInsn(DUP);
-                cv.visitFieldInsn(PUTSTATIC, internalClassName, "class$0", "Ljava/lang/Class;");
-                cv.visitLdcInsn(BytecodeHelper.getClassLoadingTypeDescription(ClassHelper.METACLASS_TYPE));
-                cv.visitMethodInsn(INVOKESTATIC, internalClassName, "class$", "(Ljava/lang/String;)Ljava/lang/Class;");
-                cv.visitInsn(DUP);
-                String mclassName = getStaticFieldName(ClassHelper.METACLASS_TYPE);
-                cv.visitFieldInsn(PUTSTATIC, internalClassName, mclassName, "Ljava/lang/Class;");
-                syntheticStaticFields.add("class$0");
-                syntheticStaticFields.add(mclassName);
-            } else {
-                // ensure we save the current (meta) class in a register
-                (new ClassExpression(classNode)).visit(this);
-                cv.visitInsn(POP);
-                (new ClassExpression(ClassHelper.METACLASS_TYPE)).visit(this);
-                cv.visitInsn(POP);                
-            }
             
             // ensure we save the current (meta) class in a register
-            /*(new ClassExpression(classNode)).visit(this);
+            (new ClassExpression(classNode)).visit(this);
             cv.visitInsn(POP);
             (new ClassExpression(ClassHelper.METACLASS_TYPE)).visit(this);
-            cv.visitInsn(POP);*/
+            cv.visitInsn(POP);
             
             // handle body
             super.visitConstructorOrMethod(node, isConstructor);
@@ -2378,24 +2350,14 @@ public class AsmClassGenerator extends ClassGenerator {
                 staticFieldName = "class$0";
                 if (compileStack.getCurrentClassIndex()!=-1) {
                     cv.visitVarInsn(ALOAD,compileStack.getCurrentClassIndex());
-                } else {
-                    cv.visitFieldInsn(GETSTATIC, internalClassName, staticFieldName, "Ljava/lang/Class;");
-                    cv.visitInsn(DUP);
-                    int index = compileStack.defineTemporaryVariable("class$0",ClassHelper.CLASS_Type,true);
-                    compileStack.setCurrentClassIndex(index);
-                }
-                return;
+                    return;
+                } 
             } else if (type.equals(ClassHelper.METACLASS_TYPE)) {
                 staticFieldName = getStaticFieldName(type);
                 if (compileStack.getCurrentMetaClassIndex()!=-1) {
                     cv.visitVarInsn(ALOAD,compileStack.getCurrentMetaClassIndex());
-                } else {
-                    cv.visitFieldInsn(GETSTATIC, internalClassName, staticFieldName, "Ljava/lang/Class;");
-                    cv.visitInsn(DUP);
-                    int index = compileStack.defineTemporaryVariable("meta$class$0",ClassHelper.CLASS_Type,true);
-                    compileStack.setCurrentMetaClassIndex(index);
+                    return;
                 }
-                return;
             } else {
                 staticFieldName = getStaticFieldName(type);
             }
@@ -2421,7 +2383,7 @@ public class AsmClassGenerator extends ClassGenerator {
             cv.visitFieldInsn(GETSTATIC, internalClassName, staticFieldName, "Ljava/lang/Class;");
             cv.visitLabel(l1);
             
- /*           if (type.equals(classNode)) {
+            if (type.equals(classNode)) {
                 cv.visitInsn(DUP);
                 int index = compileStack.defineTemporaryVariable("class$0",ClassHelper.CLASS_Type,true);
                 compileStack.setCurrentClassIndex(index);
@@ -2430,7 +2392,6 @@ public class AsmClassGenerator extends ClassGenerator {
                 int index = compileStack.defineTemporaryVariable("meta$class$0",ClassHelper.CLASS_Type,true);
                 compileStack.setCurrentMetaClassIndex(index);
             }
-            */
         }
     }
 
@@ -2919,9 +2880,6 @@ public class AsmClassGenerator extends ClassGenerator {
 
         ASTNode sn = answer.addConstructor(ACC_PUBLIC, params, ClassNode.EMPTY_ARRAY, block);
         sn.setSourcePosition(expression);
-        
-        // ensure there is a static initializer
-        answer.addStaticInitializerStatements(Collections.EMPTY_LIST,false);
         return answer;
     }
     
