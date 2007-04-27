@@ -286,7 +286,7 @@ public class MetaClassHelper {
             int sub = 1+ getMaximumInterfaceDistance(interfaces[i],interfaceClass);
             max = Math.max(max,sub);
         }
-        return max;
+        return Math.max(max,getMaximumInterfaceDistance(c.getSuperclass(),interfaceClass));
     }
     
     public static long calculateParameterDistance(Class[] arguments, Class[] parameters) {
