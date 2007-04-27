@@ -88,6 +88,13 @@ class SqlTest extends GroovyTestCase {
             }
     }
     
+    void testExecuteInsert() {
+        def foo = 'food-drink'
+        def bar = 'guiness'
+        def keys = sql.executeInsert('insert into FOOD (type,name) values (?,?)', [foo,bar])
+        assert 1 == keys.size()
+    }
+    
     protected def createSql() {
         def ds = new org.hsqldb.jdbc.jdbcDataSource()
         ds.database = "jdbc:hsqldb:mem:foo" + getMethodName()
