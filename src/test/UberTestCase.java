@@ -5,24 +5,27 @@
  * @author Dierk Koenig (refactored to use AllTestSuite)
  * @version $Revision$
  */
-import junit.framework.*;
+
 import groovy.util.AllTestSuite;
-import groovy.ExecuteTest_LinuxSolaris;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 public class UberTestCase extends TestCase {
-    public static Test suite() {
+    public static Test suite() throws ClassNotFoundException {
         TestSuite suite = (TestSuite) AllTestSuite.suite("src/test/groovy", "*Test.groovy");
 
-        String osName = System.getProperty ( "os.name" ) ;
-        if ( osName.equals ( "Linux" ) || osName.equals ( "SunOS" ) ) {
-          suite.addTestSuite ( ExecuteTest_LinuxSolaris.class ) ;
-        }
-        else {
-          System.err.println ( "XXXXXX  No execute testsfor this OS.  XXXXXX" ) ;
+        String osName = System.getProperty("os.name");
+        if (osName.equals("Linux") || osName.equals("SunOS")) {
+            Class linuxTestClass = Class.forName("groovy.execute.ExecuteTest_LinuxSolaris");
+            suite.addTestSuite(linuxTestClass);
+        } else {
+            System.err.println("No execute tests for operating system: " + osName + "!!!");
         }
 
         return suite;
     }
+}
 
 //  The following classes appear in target/test-classes but do not extend junit.framework.TestCase
 //
@@ -68,4 +71,3 @@ public class UberTestCase extends TestCase {
 //        UseClosureInScript.class
 //        X.class
 //        createLoop.class
-}
