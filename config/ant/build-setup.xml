@@ -22,6 +22,7 @@ $Date: 2007-03-11 19:14:07 +1000 (Sun, 11 Mar 2007) $
 
     <property name="bootstrapDirectory" location="bootstrap"/>
     <property name="sourceDirectory" value="src"/>
+    <property name="resourcesDirectory" value="../resources"/>
     <property name="mainSourceDirectory" location="${sourceDirectory}/main"/>
     <property name="testSourceDirectory" value="${sourceDirectory}/test"/>
     <property name="toolsSourceDirectory" location="${sourceDirectory}/tools"/>

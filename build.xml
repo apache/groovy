@@ -436,18 +436,19 @@ $Date$
   </target>
 
   <target name="distribution" depends="install,doc" description="Create everything needed for a distribution.">
-    <zip destfile="${targetDirectory}/groovy-binary-${groovyVersion}.zip"
+    <zip destfile="${targetDistDirectory}/groovy-binary-${groovyVersion}.zip"
       comment="The Groovy ${groovyVersion} binary distribution.">
       <zipfileset dir="${installDirectory}" prefix="groovy-${groovyVersion}"/>
     </zip>
-    <zip destfile="${targetDirectory}/groovy-docs-${groovyVersion}.zip"
+    <zip destfile="${targetDistDirectory}/groovy-docs-${groovyVersion}.zip"
       comment="The Groovy ${groovyVersion} documentation distribution.">
+      <zipfileset dir="${resourcesDirectory}" includes="wiki-snapshot.pdf"  prefix="groovy-${groovyVersion}/pdf"/>
       <zipfileset dir="${docsDirectory}" prefix="groovy-${groovyVersion}/html"/>
     </zip>
-    <zip destfile="${targetDirectory}/groovy-src-${groovyVersion}.zip"
+    <zip destfile="${targetDistDirectory}/groovy-src-${groovyVersion}.zip"
       comment="The Groovy ${groovyVersion} source distribution.">
       <zipfileset dir="." prefix="groovy-${groovyVersion}"
-        excludes="${targetDirectory}/**/*,local.build.properties,cobertura.ser,junitvmwatcher*.properties"/>
+        excludes="${targetDirectory}/**/*,classes/**/*,cruise/**/*,.clover/*,local.build.properties,cobertura.ser,junitvmwatcher*.properties"/>
     </zip>
   </target>
   
