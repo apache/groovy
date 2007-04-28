@@ -374,7 +374,7 @@ $Date$
     <delete dir="${junitRawDirectory}" quiet="true" failonerror="false"/>
   </target>
   
-  <target name="cruise" depends="cruiseInit,install,compileExamples,doc,checkstyle,buildinfo,distribution"/>
+  <target name="cruise" depends="cruiseInit,compileExamples,checkstyle,distribution,buildinfo"/>
   
   <target name="-docInit">
     <mkdir dir="${docsDirectory}"/>
