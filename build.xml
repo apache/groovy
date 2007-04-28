@@ -442,7 +442,7 @@ $Date$
     </zip>
     <zip destfile="${targetDistDirectory}/groovy-docs-${groovyVersion}.zip"
       comment="The Groovy ${groovyVersion} documentation distribution.">
-      <zipfileset dir="${resourcesDirectory}" includes="wiki-snapshot.pdf"  prefix="groovy-${groovyVersion}/pdf"/>
+      <zipfileset dir="${sourceDirectory}" includes="wiki-snapshot.pdf"  prefix="groovy-${groovyVersion}/pdf"/>
       <zipfileset dir="${docsDirectory}" prefix="groovy-${groovyVersion}/html"/>
     </zip>
     <zip destfile="${targetDistDirectory}/groovy-src-${groovyVersion}.zip"
