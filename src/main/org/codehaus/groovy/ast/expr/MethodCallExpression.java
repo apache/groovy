@@ -82,7 +82,7 @@ public class MethodCallExpression extends Expression {
         this.method = method;
         this.arguments = arguments;
         //TODO: set correct type here
-        // if setting type and a methodcall is the last expresssion in a method,
+        // if setting type and a methodcall is the last expression in a method,
         // then the method will return null if the method itself is not void too!
         // (in bytecode after call: aconst_null, areturn)
         this.setType(ClassHelper.DYNAMIC_TYPE);
@@ -111,7 +111,7 @@ public class MethodCallExpression extends Expression {
     
     /**
      * This method returns the method name as String if it is no dynamic
-     * calculated method name, but an constant.
+     * calculated method name, but a constant.
      */
     public String getMethodAsString() {
         if (! (method instanceof ConstantExpression)) return null;
