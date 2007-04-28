@@ -333,7 +333,7 @@ public class Sql {
     }
 
     /**
-     * Construts an SQL instance using the given Connection. It is the callers
+     * Constructs an SQL instance using the given Connection. It is the caller's
      * responsibility to close the Connection after the Sql instance has been
      * used. You can do this on the connection object directly or by calling the
      * {@link java.sql.Connection#close()}  method.
@@ -754,7 +754,7 @@ public class Sql {
             statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             setParameters(params, statement);
             configure(statement);
-            boolean hasResultSet = statement.execute();
+            this.updateCount = statement.executeUpdate();
 
             // Prepare a list to contain the auto-generated column
             // values, and then fetch them from the statement.
@@ -772,10 +772,6 @@ public class Sql {
         		autoKeys.add(rowKeys);
         	}
 
-        	// Store the update count so that it can be retrieved by
-        	// clients, and then return the list of auto-generated
-        	// values.
-        	this.updateCount = statement.getUpdateCount();
         	return autoKeys;
         }
         catch (SQLException e) {
