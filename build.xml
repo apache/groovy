@@ -366,9 +366,6 @@ $Date$
     <copy todir="${cruiseReportRootDirectory}">
       <fileset dir="config/build"/>
     </copy>
-    <zip destfile="${targetDistDirectory}/groovy-binary-${groovyVersion}.zip">
-      <fileset dir="${installDirectory}"/>
-    </zip>
   </target>
   
   <target name="cruiseInit">
@@ -377,7 +374,7 @@ $Date$
     <delete dir="${junitRawDirectory}" quiet="true" failonerror="false"/>
   </target>
   
-  <target name="cruise" depends="cruiseInit,install,compileExamples,doc,checkstyle,buildinfo"/>
+  <target name="cruise" depends="cruiseInit,distribution,compileExamples,checkstyle,buildinfo"/>
   
   <target name="-docInit">
     <mkdir dir="${docsDirectory}"/>
@@ -445,7 +442,7 @@ $Date$
     </zip>
     <zip destfile="${targetDistDirectory}/groovy-docs-${groovyVersion}.zip"
       comment="The Groovy ${groovyVersion} documentation distribution.">
-      <zipfileset dir="${sourceDirectory}" includes="wiki-snapshot.pdf"  prefix="groovy-${groovyVersion}/pdf"/>
+      <zipfileset dir="${wikiPdfDirectory}" includes="wiki-snapshot.pdf"  prefix="groovy-${groovyVersion}/pdf"/>
       <zipfileset dir="${docsDirectory}" prefix="groovy-${groovyVersion}/html"/>
     </zip>
     <zip destfile="${targetDistDirectory}/groovy-src-${groovyVersion}.zip"
