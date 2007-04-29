@@ -1,7 +1,7 @@
 package groovy.lang
 
 class InnerClassResolvingTest extends GroovyTestCase {
-    public void testInnerClass() { /*
+    public void testInnerClass() {
         def caught = false
         def t = Thread.start {
 	        Thread.setDefaultUncaughtExceptionHandler(
@@ -10,5 +10,5 @@ class InnerClassResolvingTest extends GroovyTestCase {
         }
         t.join()
         assert caught==true
-*/    }
+    }
 }

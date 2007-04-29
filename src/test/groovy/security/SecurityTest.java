@@ -95,8 +95,7 @@ public class SecurityTest extends SecurityTestSupport {
     //In addition to requiring several permissions, this test is an example of the case
     //where the groovy class loader is required at script invocation time as well as
     //during compilation.
-    // TODO: reinstate - turned off to check other build changes
-    public void _testSqlCompleteWithoutDataSourceTest() {
+    public void testSqlCompleteWithoutDataSourceTest() {
         assertExecute(new File("src/test/groovy/sql/SqlCompleteWithoutDataSourceTest.groovy"), null);
     }
 
