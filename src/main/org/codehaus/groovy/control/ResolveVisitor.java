@@ -62,19 +62,7 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.VariableScope;
-import org.codehaus.groovy.ast.expr.AnnotationConstantExpression;
-import org.codehaus.groovy.ast.expr.BinaryExpression;
-import org.codehaus.groovy.ast.expr.BooleanExpression;
-import org.codehaus.groovy.ast.expr.ClassExpression;
-import org.codehaus.groovy.ast.expr.ClosureExpression;
-import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
-import org.codehaus.groovy.ast.expr.DeclarationExpression;
-import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.ExpressionTransformer;
-import org.codehaus.groovy.ast.expr.ListExpression;
-import org.codehaus.groovy.ast.expr.MethodCallExpression;
-import org.codehaus.groovy.ast.expr.PropertyExpression;
-import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.AssertStatement;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.CaseStatement;
@@ -97,8 +85,8 @@ import org.codehaus.groovy.syntax.Types;
  * Visitor to resolve Types and convert VariableExpression to
  * ClassExpressions if needed. The ResolveVisitor will try to
  * find the Class for a ClassExpression and prints an error if
- * it fails to do so. Constructions like C[], foo as C, (C) foo 
- * will force creation of a ClasssExpression for C   
+ * it fails to do so. Constructions like C[], foo as C, (C) foo
+ * will force creation of a ClassExpression for C
  *
  * Note: the method to start the resolving is  startResolving(ClassNode, SourceUnit).
  *
@@ -137,7 +125,7 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
             ClassNode t = paras[i].getType();
             resolveOrFail(t,node);
             if (paras[i].hasInitialExpression()) {
-                Expression init = paras[i].getInitialExpression(); 
+                Expression init = paras[i].getInitialExpression();
                 paras[i].setInitialExpression(transform(init));
             }
         }
@@ -196,13 +184,12 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
         if (prefereImports && resolveAliasFromModule(type)) return;
         resolveOrFail(type,node);
     }
-    
+
     private void resolveOrFail(ClassNode type, ASTNode node) {
         resolveOrFail(type,"",node);
     }
 
     private boolean resolve(ClassNode type) {
-        String name = type.getName();
         return resolve(type,true,true,true);
     }
 
@@ -275,7 +262,7 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
             else {
                 lastMod = source.openConnection().getLastModified();
             }
-            return lastMod > getTimeStamp(cls);            
+            return lastMod > getTimeStamp(cls);
         } catch (IOException e) {
             // if the stream can't be opened, let's keep the old reference
             return false;
@@ -288,7 +275,7 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
         if (cachedClasses.get(name)==NO_CLASS) return false;
         if (cachedClasses.get(name)==SCRIPT) cachedClasses.put(name,NO_CLASS);
         if (name.startsWith("java.")) return type.isResolved();
-        //TODO: don't ignore inner static classes completly
+        //TODO: don't ignore inner static classes completely
         if (name.indexOf('$')!=-1) return type.isResolved();
         ModuleNode module = currentClass.getModule();
         if (module.hasPackageName() && name.indexOf('.')==-1) return type.isResolved();
@@ -354,7 +341,7 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
                 return true;
             } else if (name.equals("BigDecimal")) {
                 type.setRedirect(ClassHelper.BigDecimal_TYPE);
-                return true;    
+                return true;
             }
         }
         return false;
@@ -378,19 +365,19 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
         n.setRedirect(cn);
     }
 
-    private void ambigousClass(ClassNode type, ClassNode iType, String name, boolean resolved){
+    private void ambiguousClass(ClassNode type, ClassNode iType, String name, boolean resolved){
         if (resolved && !type.getName().equals(iType.getName())) {
-            addError("reference to "+name+" is ambigous, both class "+type.getName()+" and "+iType.getName()+" match",type);
+            addError("reference to "+name+" is ambiguous, both class "+type.getName()+" and "+iType.getName()+" match",type);
         } else {
             type.setRedirect(iType);
         }
     }
-    
+
     private boolean resolveAliasFromModule(ClassNode type) {
         ModuleNode module = currentClass.getModule();
         if (module==null) return false;
         String name = type.getName();
-        
+
         // check module node imports aliases
         // the while loop enables a check for inner classes which are not fully imported,
         // but visible as the surrounding class is imported and the inner class is public/protected static
@@ -422,14 +409,78 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
             if (index==-1) break;
         }
          return false;
-        
+    }
+
+    private Expression findStaticFieldImportFromModule(String name) {
+        ModuleNode module = currentClass.getModule();
+        if (module == null) return null;
+        Map aliases = module.getStaticImportAliases();
+        if (aliases.containsKey(name)) {
+            ClassNode node = (ClassNode) aliases.get(name);
+            Map fields = module.getStaticImportFields();
+            String fieldName = (String) fields.get(name);
+            Expression expression = findStaticField(node, fieldName);
+            if (expression != null) return expression;
+    }
+        Map importedClasses = module.getStaticImportClasses();
+        Iterator it = importedClasses.keySet().iterator();
+        while (it.hasNext()) {
+            String className = (String) it.next();
+            ClassNode node = (ClassNode) importedClasses.get(className);
+            Expression expression = findStaticField(node, name);
+            if (expression != null) return expression;
+        }
+        return null;
+    }
+
+    private Expression findStaticField(ClassNode staticImportType, String fieldName) {
+        if (resolve(staticImportType, true, true, true)) {
+            staticImportType.getFields(); // force init
+            FieldNode field = staticImportType.getField(fieldName);
+            if (field != null && field.isStatic()) {
+                return new PropertyExpression(new ClassExpression(staticImportType), fieldName);
+            }
+        }
+        return null;
+    }
+
+    private Expression findStaticMethodImportFromModule(Expression method, Expression args) {
+        ModuleNode module = currentClass.getModule();
+        if (module == null || !(method instanceof ConstantExpression)) return null;
+        Map aliases = module.getStaticImportAliases();
+        ConstantExpression ce = (ConstantExpression) method;
+        final String name = (String) ce.getValue();
+        if (aliases.containsKey(name)) {
+            ClassNode node = (ClassNode) aliases.get(name);
+            Map fields = module.getStaticImportFields();
+            String fieldName = (String) fields.get(name);
+            Expression expression = findStaticMethod(node, fieldName, args);
+            if (expression != null) return expression;
+        }
+        Map importPackages = module.getStaticImportClasses();
+        Iterator it = importPackages.keySet().iterator();
+        while (it.hasNext()) {
+            String className = (String) it.next();
+            ClassNode starImportType = (ClassNode) importPackages.get(className);
+            Expression expression = findStaticMethod(starImportType, name, args);
+            if (expression != null) return expression;
+        }
+        return null;
+    }
+
+    private Expression findStaticMethod(ClassNode staticImportType, String methodName, Expression args) {
+        if (resolve(staticImportType, true, true, true)) {
+            if (staticImportType.hasPossibleStaticMethod(methodName, args)) {
+                return new StaticMethodCallExpression(staticImportType, methodName, args);
+            }
+        }
+        return null;
     }
 
     private boolean resolveFromModule(ClassNode type, boolean testModuleImports) {
+        String name = type.getName();
         ModuleNode module = currentClass.getModule();
         if (module==null) return false;
-
-        String name = type.getName();
 
         if (!type.hasPackageName() && module.hasPackageName()){
             type.setName(module.getPackageName()+name);
@@ -447,9 +498,9 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
 
         if (testModuleImports) {
             if (resolveAliasFromModule(type)) return true;
-            
+
             boolean resolved = false;
-            if (module.hasPackageName()) { 
+            if (module.hasPackageName()) {
                 // check package this class is defined in
                 type.setName(module.getPackageName()+name);
                 resolved = resolve(type,false,false,false);
@@ -462,7 +513,7 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
                 String fqn = packagePrefix+name;
                 iType.setName(fqn);
                 if (resolve(iType,false,false,true)) {
-                	ambigousClass(type,iType,name,resolved);
+                	ambiguousClass(type,iType,name,resolved);
                     return true;
                 }
                 iType.setName(name);
@@ -478,11 +529,10 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
         if (cachedClasses.get(name)==NO_CLASS) return false;
         if (currentClass.getModule().hasPackageName() && name.indexOf('.')==-1) return false;
         GroovyClassLoader loader  = compilationUnit.getClassLoader();
-        Class cls = null;
+        Class cls;
         try {
             // NOTE: it's important to do no lookup against script files
-            // here since the GroovyClassLoader would create a new
-            // CompilationUnit
+            // here since the GroovyClassLoader would create a new CompilationUnit
             cls = loader.loadClass(name,false,true);
         } catch (ClassNotFoundException cnfe) {
             cachedClasses.put(name,SCRIPT);
@@ -490,10 +540,10 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
         } catch (CompilationFailedException cfe) {
             compilationUnit.getErrorCollector().addErrorAndContinue(new ExceptionMessage(cfe,true,source));
             return false;
-        } 
+        }
         //TODO: the case of a NoClassDefFoundError needs a bit more research
         // a simple recompilation is not possible it seems. The current class
-        // we are searching for is there, so we should mark that somehow. 
+        // we are searching for is there, so we should mark that somehow.
         // Basically the missing class needs to be completly compiled before
         // we can again search for the current name.
         /*catch (NoClassDefFoundError ncdfe) {
@@ -548,7 +598,7 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
                 }
                 name= ve.getName()+"."+name;
                 break;
-            } 
+            }
             // anything other than PropertyExpressions, ClassExpression or
             // VariableExpressions will stop resolving
             else if (!(it.getClass()==PropertyExpression.class)) {
@@ -566,8 +616,8 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
         if (name.length()>0) return name.substring(0,name.length()-1);
         return null;
     }
-    
-    // iterate from the outside to the inside and throw an error 
+
+    // iterate from the outside to the inside and throw an error
     // for each VariableExpression that is found but not referenced
     // do this only in a static scope
     private void checkStaticScope(PropertyExpression pe){
@@ -583,7 +633,7 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
     }
 
     // iterate from the inner most to the outer and check for classes
-    // this check will ignore a .class property, for Exmaple Integer.class will be
+    // this check will ignore a .class property, for Example Integer.class will be
     // a PropertyExpression with the ClassExpression of Integer as objectExpression
     // and class as property
     private Expression correctClassClassChain(PropertyExpression pe){
@@ -615,11 +665,11 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
         classPropertyExpressionContainer.setObjectExpression(found);
         return pe;
     }
-    
+
     protected Expression transformPropertyExpression(PropertyExpression pe) {
         boolean itlp = isTopLevelProperty;
         boolean ipe = inPropertyExpression;
-        
+
         Expression objectExpression = pe.getObjectExpression();
         inPropertyExpression = true;
         isTopLevelProperty = !(objectExpression.getClass()==PropertyExpression.class);
@@ -629,18 +679,18 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
         Expression property = transform(pe.getProperty());
         isTopLevelProperty = itlp;
         inPropertyExpression = ipe;
-        
+
         boolean spreadSafe = pe.isSpreadSafe();
         pe = new PropertyExpression(objectExpression,property,pe.isSafe());
         pe.setSpreadSafe(spreadSafe);
-        
+
         String className = lookupClassName(pe);
         if (className!=null) {
             ClassNode type = ClassHelper.make(className);
             if (resolve(type)) return new ClassExpression(type);
-        }  
+        }
         if (objectExpression instanceof ClassExpression && pe.getPropertyAsString()!=null){
-            // possibly a inner class
+            // possibly an inner class
             ClassExpression ce = (ClassExpression) objectExpression;
             ClassNode type = ClassHelper.make(ce.getType().getName()+"$"+pe.getPropertyAsString());
             if (resolve(type,false,false,false)) return new ClassExpression(type);
@@ -649,19 +699,23 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
         if (isTopLevelProperty) {
             checkStaticScope(pe);
             ret = correctClassClassChain(pe);
-        }        
+    }
         return ret;
     }
-       
+
     protected Expression transformVariableExpression(VariableExpression ve) {
         if (ve.getName().equals("this"))  return VariableExpression.THIS_EXPRESSION;
         if (ve.getName().equals("super")) return VariableExpression.SUPER_EXPRESSION;
         Variable v = ve.getAccessedVariable();
         if (v instanceof DynamicVariable) {
+            Expression result = findStaticFieldImportFromModule(ve.getName());
+            if (result != null) {
+                return result;
+            }
             ClassNode t = ClassHelper.make(ve.getName());
             if (resolve(t)) {
                 // the name is a type so remove it from the scoping
-                // as it is only a classvariable, it is only in 
+                // as it is only a classvariable, it is only in
                 // referencedClassVariables, but must be removed
                 // for each parentscope too
                 for (VariableScope scope = currentScope; scope!=null && !scope.isRoot(); scope = scope.getParent()) {
@@ -673,12 +727,12 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
                 return ce;
             } else if (!inPropertyExpression) {
                 addStaticVariableError(ve);
-            } 
-        }
+            }
+            }
         resolveOrFail(ve.getType(),ve);
         return ve;
     }
-    
+
     private void addStaticVariableError(VariableExpression ve){
         // closures are always dynamic
         // propertiesExpressions will handle the error a bit different
@@ -690,11 +744,11 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
                 " scope requires to declare variables before using them. If the variable should have"+
                 " been a class check the spelling.",ve);
     }
-    
+
     protected Expression transformBinaryExpression(BinaryExpression be) {
         Expression left = transform(be.getLeftExpression());
         int type = be.getOperation().getType();
-        if ((type==Types.ASSIGNMENT_OPERATOR || type==Types.EQUAL) && 
+        if ((type==Types.ASSIGNMENT_OPERATOR || type==Types.EQUAL) &&
             left instanceof ClassExpression)
         {
             ClassExpression  ce = (ClassExpression) left;
@@ -704,7 +758,6 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
         if (left instanceof ClassExpression && be.getRightExpression() instanceof ListExpression) {
             // we have C[] if the list is empty -> should be an array then!
             ListExpression list = (ListExpression) be.getRightExpression();
-            ClassExpression ce = (ClassExpression) left;
             if (list.getExpressions().isEmpty()) {
                 return new ClassExpression(left.getType().makeArray());
             }
@@ -714,7 +767,7 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
         ret.setSourcePosition(be);
         return ret;
     }
-    
+
     protected Expression transformClosureExpression(ClosureExpression ce) {
         boolean oldInClosure = inClosure;
         inClosure = true;
@@ -733,27 +786,33 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
         inClosure = oldInClosure;
         return newCe;
     }
-    
+
     protected Expression transformConstructorCallExpression(ConstructorCallExpression cce){
     	ClassNode type = cce.getType();
     	resolveOrFail(type,cce);
-    	Expression expr = cce.transformExpression(this);
-        return expr;
+        return cce.transformExpression(this);
     }
-    
+
     protected Expression transformMethodCallExpression(MethodCallExpression mce) {
-        Expression obj = mce.getObjectExpression();
-        Expression newObject = transform(obj);
         Expression args = transform(mce.getArguments());
         Expression method = transform(mce.getMethod());
-        MethodCallExpression ret = new MethodCallExpression(newObject,method,args);
-        ret.setSafe(mce.isSafe());
-        ret.setImplicitThis(mce.isImplicitThis());
-        ret.setSpreadSafe(mce.isSpreadSafe());
-        ret.setSourcePosition(mce);
+
+        if (mce.isImplicitThis()) {
+            Expression ret = findStaticMethodImportFromModule(method, args);
+            if (ret != null) {
         return ret;
     }
-    
+        }
+        Expression obj = mce.getObjectExpression();
+        Expression newObject = transform(obj);
+        MethodCallExpression result = new MethodCallExpression(newObject,method,args);
+        result.setSafe(mce.isSafe());
+        result.setImplicitThis(mce.isImplicitThis());
+        result.setSpreadSafe(mce.isSpreadSafe());
+        result.setSourcePosition(mce);
+        return result;
+    }
+
     protected Expression transformDeclarationExpression(DeclarationExpression de) {
         Expression oldLeft = de.getLeftExpression();
         Expression left = transform(oldLeft);
@@ -766,25 +825,24 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
         if (right==de.getRightExpression()) return de;
         return new DeclarationExpression((VariableExpression) left,de.getOperation(),right);
     }
-    
+
     protected Expression transformAnnotationConstantExpression(AnnotationConstantExpression ace) {
         AnnotationNode an = (AnnotationNode) ace.getValue();
         ClassNode type = an.getClassNode();
         resolveOrFail(type, "unable to find class for annotation", an);
         for (Iterator iter = an.getMembers().entrySet().iterator(); iter.hasNext();) {
             Map.Entry member = (Map.Entry) iter.next();
-            String memberName = (String) member.getKey();
             Expression memberValue = (Expression) member.getValue();
             member.setValue(transform(memberValue));
-        }  
+        }
 
         return ace;
     }
-    
+
     public void visitAnnotations(AnnotatedNode node) {
         Map annotionMap = node.getAnnotations();
         if (annotionMap.isEmpty()) return;
-        Iterator it = annotionMap.values().iterator(); 
+        Iterator it = annotionMap.values().iterator();
         while (it.hasNext()) {
             AnnotationNode an = (AnnotationNode) it.next();
             //skip builtin properties
@@ -793,17 +851,16 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
             resolveOrFail(type,"unable to find class for annotation",an);
             for (Iterator iter = an.getMembers().entrySet().iterator(); iter.hasNext();) {
                 Map.Entry member = (Map.Entry) iter.next();
-                String memberName = (String) member.getKey();
                 Expression memberValue = (Expression) member.getValue();
                 member.setValue(transform(memberValue));
-            }  
+            }
         }
     }
 
     public void visitClass(ClassNode node) {
         ClassNode oldNode = currentClass;
         currentClass = node;
-        
+
         ModuleNode module = node.getModule();
         if (!module.hasImportsResolved()) {
            List l = module.getImports();
@@ -815,17 +872,17 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
            }
            module.setImportsResolved(true);
         }
-        
+
         ClassNode sn = node.getUnresolvedSuperClass();
         if (sn!=null) resolveOrFail(sn,node,true);
         ClassNode[] interfaces = node.getInterfaces();
         for (int i=0; i<interfaces.length; i++) {
             resolveOrFail(interfaces[i],node,true);
-        }        
+        }
         super.visitClass(node);
-        currentClass = oldNode;        
+        currentClass = oldNode;
     }
-    
+
     public void visitReturnStatement(ReturnStatement statement) {
        statement.setExpression(transform(statement.getExpression()));
     }
@@ -834,7 +891,7 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
         as.setBooleanExpression((BooleanExpression) (transform(as.getBooleanExpression())));
         as.setMessageExpression(transform(as.getMessageExpression()));
     }
-    
+
     public void visitCaseStatement(CaseStatement statement) {
     	statement.setExpression(transform(statement.getExpression()));
     	statement.getCode().visit(this);
@@ -844,7 +901,7 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
         resolveOrFail(cs.getExceptionType(),cs);
         if (cs.getExceptionType()==ClassHelper.DYNAMIC_TYPE) {
             cs.getVariable().setType(ClassHelper.make(Exception.class));
-        } 
+        }
         super.visitCatchStatement(cs);
     }
 
@@ -852,31 +909,31 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
         loop.setBooleanExpression((BooleanExpression) (transform(loop.getBooleanExpression())));
         super.visitDoWhileLoop(loop);
     }
-    
+
     public void visitForLoop(ForStatement forLoop) {
         forLoop.setCollectionExpression(transform(forLoop.getCollectionExpression()));
         resolveOrFail(forLoop.getVariableType(),forLoop);
         super.visitForLoop(forLoop);
     }
-    
+
     public void visitSynchronizedStatement(SynchronizedStatement sync) {
         sync.setExpression(transform(sync.getExpression()));
         super.visitSynchronizedStatement(sync);
     }
-    
+
     public void visitThrowStatement(ThrowStatement ts) {
         ts.setExpression(transform(ts.getExpression()));
     }
-    
+
     public void visitWhileLoop(WhileStatement loop) {
     	loop.setBooleanExpression((BooleanExpression) transform(loop.getBooleanExpression()));
     	super.visitWhileLoop(loop);
     }
-    
+
     public void visitExpressionStatement(ExpressionStatement es) {
         es.setExpression(transform(es.getExpression()));
     }
-    
+
     public void visitBlockStatement(BlockStatement block) {
         VariableScope oldScope = currentScope;
         currentScope = block.getVariableScope();

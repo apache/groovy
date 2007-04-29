@@ -48,12 +48,7 @@ package org.codehaus.groovy.ast;
 import groovy.lang.Binding;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
@@ -84,6 +79,9 @@ public class ModuleNode extends ASTNode implements Opcodes {
     private List imports = new ArrayList();
     private List importPackages = new ArrayList();
     private Map importIndex = new HashMap();
+    private Map staticImportAliases = new HashMap();
+    private Map staticImportFields = new LinkedHashMap();
+    private Map staticImportClasses = new LinkedHashMap();
     private CompileUnit unit;
     private String packageName;
     private String description;
@@ -340,4 +338,24 @@ public class ModuleNode extends ASTNode implements Opcodes {
         this.importsResolved = importsResolved;
     }
 
+    public Map getStaticImportAliases() {
+        return staticImportAliases;
+    }
+
+    public Map getStaticImportClasses() {
+        return staticImportClasses;
+    }
+
+    public Map getStaticImportFields() {
+        return staticImportFields;
+    }
+
+    public void addStaticMethodOrField(ClassNode type, String fieldName, String alias) {
+        staticImportAliases.put(alias, type);
+        staticImportFields.put(alias, fieldName);
+    }
+
+    public void addStaticImportClass(String name, ClassNode type) {
+        staticImportClasses.put(name, type);
+    }
 }

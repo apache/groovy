@@ -229,16 +229,13 @@ public class UnimplementedSyntaxTest extends GroovyTestCase {
     // -----------------------
     // feature: static imports
     // -----------------------
-    public void test_StaticImport1_FAILS() throws Exception {
-        if (notYetImplemented()) return;
-        // Unknown type: STATIC_IMPORT
-        assertNotNull(compile("import static foo.Bar.mooky")); // fails after parser
+    // TODO: move somewhere else
+    public void test_StaticImport1() throws Exception {
+        assertNotNull(compile("import static foo.Bar.mooky"));
     }
 
-    public void test_StaticImport2_FAILS() throws Exception {
-        if (notYetImplemented()) return;
-        // Unknown type: STATIC_IMPORT
-        assertNotNull(compile("import static foo.Bar.*")); // fails after parser
+    public void test_StaticImport2() throws Exception {
+        assertNotNull(compile("import static foo.Bar.*"));
     }
 
     // ------------------------

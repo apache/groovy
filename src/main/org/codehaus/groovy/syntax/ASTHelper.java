@@ -38,8 +38,6 @@ import java.util.Map;
  */
 public class ASTHelper {
 
-    private static final String[] EMPTY_STRING_ARRAY = new String[0];
-
     /** The SourceUnit controlling us */
     private SourceUnit controller;
 
@@ -47,7 +45,11 @@ public class ASTHelper {
     private ClassLoader classLoader;
 
     /** Our imports, simple name => fully qualified name */
-    private Map imports;
+    protected Map imports;
+    /** Our explicit static imports, simple name => fully qualified name */
+    protected Map staticImports;
+    /** Our implicit static imports */
+    protected List staticDotImports;
     protected ModuleNode output;
 
     /** The package name in which the module sits */
@@ -69,6 +71,8 @@ public class ASTHelper {
 
     public ASTHelper() {
         imports = new HashMap();
+        staticImports = new HashMap();
+        staticDotImports = new ArrayList();
     }
 
     public String getPackageName() {
@@ -293,16 +297,25 @@ public class ASTHelper {
     }
 
     protected void importClass(ClassNode type, String name, String as) {
-        if (as==null) as=name;
+        if (as == null) as=name;
 
         output.addImport(as, type); 
         imports.put(as, type);
     }
 
+    protected void staticImportMethodOrField(ClassNode type, String name, String alias) {
+        if (alias == null) alias = name;
+        output.addStaticMethodOrField(type, name, alias);
+    }
+
+    protected void staticImportClassWithStar(ClassNode type, String importClass) {
+        // keep track of the fact that it was a static import
+        output.addStaticImportClass(importClass, type);
+    }
+
     protected void importPackageWithStar(String importPackage) {
         String[] classes = output.addImportPackage( dot(importPackage) );
-        for( int i = 0; i < classes.length; i++ )
-        {
+        for( int i = 0; i < classes.length; i++ ) {
             imports.put( classes[i], dot(importPackage, classes[i]) );
         }
     }

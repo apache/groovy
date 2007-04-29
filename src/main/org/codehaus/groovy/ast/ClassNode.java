@@ -907,7 +907,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
         if (arguments instanceof TupleExpression) {
             TupleExpression tuple = (TupleExpression) arguments;
-            // TODO this won't strictly be true when using list expension in argument calls
+            // TODO this won't strictly be true when using list expansion in argument calls
             count = tuple.getExpressions().size();
         }
         ClassNode node = this;
@@ -924,6 +924,26 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         return false;
     }
     
+    /**
+     * Returns true if the given method has a possibly matching static method with the given name and arguments
+     */
+    public boolean hasPossibleStaticMethod(String name, Expression arguments) {
+        int count = 0;
+
+        if (arguments instanceof TupleExpression) {
+            TupleExpression tuple = (TupleExpression) arguments;
+            // TODO this won't strictly be true when using list expansion in argument calls
+            count = tuple.getExpressions().size();
+        }
+        for (Iterator iter = getMethods().iterator(); iter.hasNext();) {
+            MethodNode method = (MethodNode) iter.next();
+            if (name.equals(method.getName()) && method.getParameters().length == count && method.isStatic()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public boolean isInterface(){
         return (getModifiers() & Opcodes.ACC_INTERFACE) > 0; 
     }

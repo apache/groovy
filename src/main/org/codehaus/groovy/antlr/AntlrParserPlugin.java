@@ -197,6 +197,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                     packageDef(node);
                     break;
 
+                case STATIC_IMPORT:
                 case IMPORT:
                     importDef(node);
                     break;
@@ -236,7 +237,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
     
     protected void importDef(AST importNode) {
-        // TODO handle static imports
+        boolean isStatic = importNode.getType() == STATIC_IMPORT;
 
         AST node = importNode.getFirstChild();
 
@@ -249,11 +250,11 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         }
 
         if (node.getNumberOfChildren()==0) {
-            // import is like  "import Foo"
             String name = identifier(node);
+            // import is like  "import Foo"
             ClassNode type = ClassHelper.make(name);
             configureAST(type,importNode);
-            importClass(type,name,alias);
+            importClass(type, name, alias);
             return;
         }
 
@@ -261,17 +262,34 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         String packageName = qualifiedName(packageNode);
         AST nameNode = packageNode.getNextSibling();
         if (isType(STAR, nameNode)) {
-            // import is like "import foo.*"
-            importPackageWithStar(packageName);
+            if (isStatic) {
+                // import is like "import static foo.Bar.*"
+                // packageName is actually a className in this case
+                ClassNode type = ClassHelper.make(packageName);
+                configureAST(type, importNode);
+                staticImportClassWithStar(type, packageName);
+            } else {
+                // import is like "import foo.*"
+                importPackageWithStar(packageName);
+            }
+
             if (alias!=null) throw new GroovyBugError(
                     "imports like 'import foo.* as Bar' are not "+
                     "supported and should be caught by the grammar");
         } else {
-            // import is like "import foo.Bar"
             String name = identifier(nameNode);
-            ClassNode type = ClassHelper.make(packageName+"."+name);
-            configureAST(type,importNode);
-            importClass(type,name,alias);
+            if (isStatic) {
+                // import is like "import static foo.Bar.method"
+                // packageName is really class name in this case
+                ClassNode type = ClassHelper.make(packageName);
+                configureAST(type, importNode);
+                staticImportMethodOrField(type, name, alias);
+            } else {
+                // import is like "import foo.Bar"
+                ClassNode type = ClassHelper.make(packageName+"."+name);
+                configureAST(type, importNode);
+                importClass(type, name, alias);
+            }
         }
     }
 
@@ -658,7 +676,11 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         for (AST node = modifierNode.getFirstChild(); node != null; node = node.getNextSibling()) {
             int type = node.getType();
             switch (type) {
-                // annotations
+                case STATIC_IMPORT:
+                    // ignore
+                    break;
+
+                    // annotations
                 case ANNOTATION:
                     annotations.add(annotation(node));
                     break;
