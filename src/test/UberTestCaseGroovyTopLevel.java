@@ -16,9 +16,12 @@ public class UberTestCaseGroovyTopLevel extends TestCase {
         TestSuite suite = (TestSuite) AllTestSuite.suite("src/test", "groovy/*Test.groovy");
 
         String osName = System.getProperty("os.name");
-        if (osName.equals("Linux") || osName.equals("SunOS")) {
+        if (osName.equals("Linux") || osName.equals("SunOS") || osName.equals("Solaris") || osName.equals("Mac OS X")) {
             Class linuxTestClass = Class.forName("groovy.execute.ExecuteTest_LinuxSolaris");
             suite.addTestSuite(linuxTestClass);
+        } else if (osName.equals("Windows 2000") || osName.equals("Windows 2003") || osName.equals("Windows XP") || osName.equals("Windows Vista")) {
+            Class windowsTestClass = Class.forName("groovy.execute.ExecuteTest_Windows");
+            suite.addTestSuite(windowsTestClass);
         } else {
             System.err.println("No execute tests for operating system: " + osName + "!!!");
         }

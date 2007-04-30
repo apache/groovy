@@ -149,8 +149,22 @@ $Date$
   <target name="-initializeReports">
     <mkdir dir="${reportsDirectory}"/>
   </target>
-  
-  <target name="test" depends="-initializeReports,compileTest,-coverageInstrument,-testOne,-testAll"
+
+  <condition property="isMacOsX">
+    <os name="Mac OS X"/>
+  </condition>
+
+  <target name="-testInit" depends="-testInitMac">
+    <property name="headlessArg" value=""/>
+    <property name="junitJvmArgs"
+      value="-Xms${groovyJUnit_ms} -XX:PermSize=${groovyJUnit_permSize} -XX:MaxPermSize=${groovyJUnit_maxPermSize} ${headlessArg}"/>
+  </target>
+
+  <target name="-testInitMac" if="isMaxOsX">
+    <property name="headlessArg" value="-Djava.awt.headless=true"/>
+  </target>
+
+  <target name="test" depends="-initializeReports,compileTest,-coverageInstrument,-testInit,-testOne,-testAll"
     description="Compile and test all the classes (or just one class if testCase property is defined)."/>
   
   <condition property="testOne">
@@ -165,7 +179,7 @@ $Date$
   <target name="-testOne" if="testOne">
     <mkdir dir="${junitRawDirectory}"/>
     <junit printsummary="true" fork="true" includeantruntime="false" haltonfailure="yes" maxmemory="${groovyJUnit_mx}" dir="${basedir}">
-      <jvmarg line="-Xms${groovyJUnit_ms} -XX:PermSize=${groovyJUnit_permSize} -XX:MaxPermSize=${groovyJUnit_maxPermSize}"/>
+      <jvmarg line="${junitJvmArgs}"/>
       <test name="${testCase}" todir="${junitRawDirectory}"/>
       <formatter type="brief" usefile="false"/>
       <classpath>
@@ -193,7 +207,7 @@ $Date$
   <target name="-testAll" if="testAll">
     <mkdir dir="${junitRawDirectory}"/>
     <junit printsummary="true" fork="true" includeantruntime="false" failureproperty="testFailed" maxmemory="${groovyJUnit_mx}" dir="${basedir}">
-      <jvmarg line="-Xms${groovyJUnit_ms} -XX:PermSize=${groovyJUnit_permSize} -XX:MaxPermSize=${groovyJUnit_maxPermSize}"/>
+      <jvmarg line="${junitJvmArgs}"/>
       <formatter type="xml"/>
       <formatter type="plain" unless="noTextReports"/>
       <batchtest todir="${junitRawDirectory}">

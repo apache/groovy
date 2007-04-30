@@ -3,7 +3,7 @@
 package groovy.execute
 
 /**
- *  Test to ensure that the execute mechanism works fine on Linux and Solaris.  For these OSs we
+ *  Test to ensure that the execute mechanism works fine on *nix-like systems.  For these OSs we
  *  can effectively guarantee the existance of some programs that we can run.  Assume the search
  *  path is partway reasonable so we can access sh and echo.
  *
