@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.net.URL;
 import java.net.MalformedURLException;
+import java.net.URLConnection;
 
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
@@ -260,7 +261,9 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
                 lastMod = file.lastModified();
             }
             else {
-                lastMod = source.openConnection().getLastModified();
+                URLConnection conn = source.openConnection();
+                lastMod = conn.getLastModified();
+                conn.getInputStream().close();
             }
             return lastMod > getTimeStamp(cls);
         } catch (IOException e) {

@@ -51,6 +51,7 @@ import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.net.URLConnection;
 import java.net.URLDecoder;
 import java.security.AccessController;
 import java.security.CodeSource;
@@ -814,7 +815,9 @@ public class GroovyClassLoader extends URLClassLoader {
             lastMod = file.lastModified();
         }
         else {
-            lastMod = source.openConnection().getLastModified();
+            URLConnection conn = source.openConnection();
+            lastMod = conn.getLastModified();
+            conn.getInputStream().close();
         }
         long classTime = getTimeStamp(cls);
         return classTime+config.getMinimumRecompilationInterval() < lastMod;
