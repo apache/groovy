@@ -48,7 +48,11 @@ $Date$
     </antlr>
   </target>
   
-  <target name="-init" depends="-fetchDependencies"/>
+  <target name="-init" depends="-fetchDependencies">
+    <echo message="Operating system name: ${os.name}"/>
+    <echo message="Operating system architecture: ${os.arch}"/>
+    <echo message="Operating system version: ${os.version}"/>
+  </target>
 
   <target name="compileMain" depends="-init,ensureGrammars"
     description="Compile the Java and Groovy code in the main source.">
@@ -150,7 +154,7 @@ $Date$
     <mkdir dir="${reportsDirectory}"/>
   </target>
 
-  <condition property="isMacOsX">
+  <condition property="_isMacOsX_">
     <os name="Mac OS X"/>
   </condition>
 
@@ -160,14 +164,14 @@ $Date$
       value="-Xms${groovyJUnit_ms} -XX:PermSize=${groovyJUnit_permSize} -XX:MaxPermSize=${groovyJUnit_maxPermSize} ${headlessArg}"/>
   </target>
 
-  <target name="-testInitMac" if="isMaxOsX">
+  <target name="-testInitMac" if="_isMacOsX_">
     <property name="headlessArg" value="-Djava.awt.headless=true"/>
   </target>
 
   <target name="test" depends="-initializeReports,compileTest,-coverageInstrument,-testInit,-testOne,-testAll"
     description="Compile and test all the classes (or just one class if testCase property is defined)."/>
   
-  <condition property="testOne">
+  <condition property="_testOne_">
     <and>
       <not>
         <istrue value="${skipTests}"/>
@@ -176,7 +180,7 @@ $Date$
     </and>
   </condition>
   
-  <target name="-testOne" if="testOne">
+  <target name="-testOne" if="_testOne_">
     <mkdir dir="${junitRawDirectory}"/>
     <junit printsummary="true" fork="true" includeantruntime="false" haltonfailure="yes" maxmemory="${groovyJUnit_mx}" dir="${basedir}">
       <jvmarg line="${junitJvmArgs}"/>
@@ -193,18 +197,18 @@ $Date$
     </junit>
   </target>
   
-  <condition property="testAll">
+  <condition property="_testAll_">
     <and>
       <not>
         <istrue value="${skipTests}"/>
       </not>
       <not>
-        <isset property="testOne"/>
+        <isset property="_testOne_"/>
       </not>
     </and>
   </condition>
   
-  <target name="-testAll" if="testAll">
+  <target name="-testAll" if="_testAll_">
     <mkdir dir="${junitRawDirectory}"/>
     <junit printsummary="true" fork="true" includeantruntime="false" failureproperty="testFailed" maxmemory="${groovyJUnit_mx}" dir="${basedir}">
       <jvmarg line="${junitJvmArgs}"/>
