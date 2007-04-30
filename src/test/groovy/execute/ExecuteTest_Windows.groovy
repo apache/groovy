@@ -12,17 +12,18 @@ class ExecuteTest_Windows extends GroovyTestCase {
   void testShellEchoOneArray() {
     def process = ( [ "cmd.exe" , "/c" , "echo 1" ] as String[] ).execute()
     process.waitFor()
-    assert process.in.getText().trim() == "1"
+    assert process.in.text.trim() == "1"
   }
   void testShellEchoOneList() {
     def process = [ "cmd.exe" , "/c" , "echo 1" ].execute ( )
     process.waitFor()
-    assert process.in.getText().trim() == "1"
+    assert process.in.text.trim() == "1"
   }
   void testShellDate() {
     def process = "cmd.exe /c date.exe /t".execute()
     process.waitFor()
-    assert process.in.getText().trim().size() > 12
+    def theDate = process.in.text.trim()
+    assert theDate.size() > 9, "Expected '$theDate' to be at least 9 chars long" 
   }
   void testEchoOneArray() {
     try {

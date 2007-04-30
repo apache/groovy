@@ -16,12 +16,12 @@ class ExecuteTest_LinuxSolaris extends GroovyTestCase {
   void testShellEchoOneArray ( ) {
     def process = ( [ "sh" , "-c" , "echo 1" ] as String[] ).execute ( )
     process.waitFor ( )
-    assert process.in.getText ( ).trim ( ) == "1"
+    assert process.in.text.trim ( ) == "1"
   }
   void testShellEchoOneList ( ) {
     def process = [ "sh" , "-c" , "echo 1" ].execute ( )
     process.waitFor ( )
-    assert process.in.getText ( ).trim ( ) == "1"
+    assert process.in.text.trim ( ) == "1"
   }
   void testEchoOneArray ( ) {
     try {
@@ -42,16 +42,16 @@ class ExecuteTest_LinuxSolaris extends GroovyTestCase {
   void testEchoOneScalar ( ) {
     def process = "echo 1".execute ( )
     process.waitFor ( )
-    assert process.in.getText ( ).trim ( ) == "1"
+    assert process.in.text.trim ( ) == "1"
   }
   void testEchoArray ( ) {
     def process = ( [ "echo" , "1" ] as String[] ).execute ( )
     process.waitFor ( )
-    assert process.in.getText ( ).trim ( ) == "1"
+    assert process.in.text.trim ( ) == "1"
    }
   void testEchoList ( ) {
     def process = [ "echo" , "1" ].execute ( )
     process.waitFor ( )
-    assert process.in.getText ( ).trim ( ) == "1"
+    assert process.in.text.trim ( ) == "1"
    }
 }
