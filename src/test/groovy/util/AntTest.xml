@@ -15,4 +15,13 @@ as what we expect from the AntBuilder
             <spoof foo="123"/>
         </spoofcontainer>
     </target>
+	
+	<target name="testAntBuilderWithinGroovyTask" description="Test for GROOVY-1602">
+		<taskdef name="groovy" classname="org.codehaus.groovy.ant.Groovy"/>
+		<echo message="before groovy task"/>
+		<groovy>
+			ant.echo(message: 'ant builder within groovy task')
+		</groovy>
+		<echo message="after groovy task"/>
+	</target>
 </project>

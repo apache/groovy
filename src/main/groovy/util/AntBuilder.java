@@ -109,6 +109,23 @@ public class AntBuilder extends BuilderSupport {
         project.addDataTypeDefinition("fileScanner", FileScanner.class);
     }
 
+    public AntBuilder(final Task parentTask) {
+    	this(parentTask.getProject(), parentTask.getOwningTarget());
+    	
+    	// define "owning" task as wrapper to avoid having tasks added to the target
+    	// but it needs to be an UnknownElement and no access is available from
+    	// task to its original UnknownElement 
+        final UnknownElement ue = new UnknownElement(parentTask.getTaskName());
+        ue.setProject(parentTask.getProject());
+        ue.setTaskType(parentTask.getTaskType());
+        ue.setTaskName(parentTask.getTaskName());
+        ue.setLocation(parentTask.getLocation());
+        ue.setOwningTarget(parentTask.getOwningTarget());
+        ue.setRuntimeConfigurableWrapper(parentTask.getRuntimeConfigurableWrapper());
+        parentTask.getRuntimeConfigurableWrapper().setProxy(ue);
+    	antXmlContext.pushWrapper(parentTask.getRuntimeConfigurableWrapper());
+    }
+
     // dk: introduced for convenience in subclasses
     protected Project getProject() {
         return project;

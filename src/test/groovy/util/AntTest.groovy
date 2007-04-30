@@ -1,11 +1,16 @@
 package groovy.util
 
 import java.io.File
+import org.apache.tools.ant.BuildEvent
 import org.apache.tools.ant.Project
 import org.apache.tools.ant.ProjectHelper
 import groovy.xml.NamespaceBuilder
 
-
+/**
+Tests for the <groovy> task.
+@Author Unknown
+@Author Marc Guillemot
+*/
 class AntTest extends GroovyTestCase {
     
     void testAnt() {
@@ -168,4 +173,54 @@ end SpoofTaskContainer execute
         }
         assertEquals "false", ant.project.properties["equalsHi"]
     }
+
+    /**
+     * Tests that using the AntBuilder within the <groovy> task doesn't cause double execution
+     * (test for GROOVY-1602)
+     */
+     void testAntBuilderWithinGroovyTask() {
+        def antFile = new File("src/test/groovy/util/AntTest.xml")
+        assertTrue "Couldn't find ant test script", antFile.exists()
+
+        def project = new Project()
+		project.init()
+		ProjectHelper.projectHelper.parse(project, antFile)
+		
+		def customListener = new SimpleListener()
+ 		project.addBuildListener customListener
+		
+		project.executeTarget("testAntBuilderWithinGroovyTask");
+ 		
+		def expectedSpoof =
+"""started: taskdef["name":"groovy", "classname":"org.codehaus.groovy.ant.Groovy"]
+finished: taskdef["name":"groovy", "classname":"org.codehaus.groovy.ant.Groovy"]
+started: echo["message":"before groovy task"]
+finished: echo["message":"before groovy task"]
+started: groovy[:]
+started: echo["message":"ant builder within groovy task"]
+finished: echo["message":"ant builder within groovy task"]
+finished: groovy[:]
+started: echo["message":"after groovy task"]
+finished: echo["message":"after groovy task"]
+"""
+
+         assertEquals expectedSpoof, customListener.spoof.toString()
+     }
+}
+
+class SimpleListener extends org.apache.tools.ant.DefaultLogger
+{
+	def spoof = new StringBuffer()
+	void taskStarted(BuildEvent event)
+	{
+		spoof << "started: " + logTask(event.task) + "\n"
+	}
+	void taskFinished(BuildEvent event)
+	{
+		spoof << "finished: " + logTask(event.task) + "\n"
+	}
+	private String logTask(task)
+	{
+		task.taskName + task.wrapper.attributeMap
+	}
 }

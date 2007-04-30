@@ -358,7 +358,7 @@ public class Groovy extends Task {
         final GroovyShell groovy = new GroovyShell(classLoader, new Binding(), configuration);
         try {
             final Script script = groovy.parse(txt);
-            script.setProperty("ant", new AntBuilder(project, getOwningTarget()));
+            script.setProperty("ant", new AntBuilder(this));
             script.setProperty("project", project);
             script.setProperty("properties", new AntProjectPropertiesDelegate(project));
             script.setProperty("target", getOwningTarget());
