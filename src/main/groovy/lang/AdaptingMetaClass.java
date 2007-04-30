@@ -34,4 +34,10 @@ public interface AdaptingMetaClass extends MetaClass {
      */
     MetaClass getAdaptee();
 
+    /**
+     * Sets the MetaClass adapted by this MetaClass
+     *
+     * @param metaClass The MetaClass to adapt
+     */
+    void setAdaptee(MetaClass metaClass);
 }

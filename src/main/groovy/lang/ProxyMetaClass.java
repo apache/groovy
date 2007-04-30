@@ -203,6 +203,10 @@ public class ProxyMetaClass extends MetaClassImpl implements AdaptingMetaClass {
         return this.adaptee;
     }
 
+    public void setAdaptee(MetaClass metaClass) {
+        this.adaptee = metaClass;
+    }
+
     // since Java has no Closures...
     private interface Callable{
         Object call();
