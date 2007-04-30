@@ -208,6 +208,7 @@ finished: echo["message":"after groovy task"]
      }
 }
 
+
 class SimpleListener extends org.apache.tools.ant.DefaultLogger
 {
 	def spoof = new StringBuffer()
