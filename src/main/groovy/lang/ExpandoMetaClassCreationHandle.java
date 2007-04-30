@@ -16,7 +16,7 @@
 package groovy.lang;
 
 import groovy.lang.MetaClassRegistry.MetaClassCreationHandle;
-import org.apache.commons.collections.map.ReferenceMap;
+import org.codehaus.groovy.runtime.metaclass.MemoryAwareConcurrentReadMap;
 
 import java.util.*;
 
@@ -30,7 +30,7 @@ import java.util.*;
 public class ExpandoMetaClassCreationHandle extends MetaClassCreationHandle {
 
 	private static Map modifiedExpandos = Collections.synchronizedMap(new HashMap());
-	private static Map parentClassToChildMap = Collections.synchronizedMap(new ReferenceMap(ReferenceMap.SOFT, ReferenceMap.SOFT));
+	private static MemoryAwareConcurrentReadMap parentClassToChildMap = new MemoryAwareConcurrentReadMap();
 
 	/* (non-Javadoc)
 	 * @see groovy.lang.MetaClassRegistry.MetaClassCreationHandle#create(java.lang.Class, groovy.lang.MetaClassRegistry)
