@@ -49,6 +49,8 @@ $Date$
   </target>
   
   <target name="-init" depends="-fetchDependencies">
+    <echo message="Java Runtime Environment version: ${java.version}"/>
+    <echo message="Java Runtime Environment vendor: ${java.vendor}"/>
     <echo message="Operating system name: ${os.name}"/>
     <echo message="Operating system architecture: ${os.arch}"/>
     <echo message="Operating system version: ${os.version}"/>
