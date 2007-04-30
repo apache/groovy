@@ -431,13 +431,13 @@
         <dependency>
             <groupId>jmock</groupId>
             <artifactId>jmock</artifactId>
-            <version>1.1.0</version>
+            <version>1.2.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>jmock</groupId>
             <artifactId>jmock-cglib</artifactId>
-            <version>1.1.0</version>
+            <version>1.2.0</version>
             <scope>test</scope>
             <!-- exclude incompatible version of ASM -->
             <exclusions>
@@ -481,7 +481,6 @@
 
         <!-- only used for BSF adapter-->
 
-        <!-- 2.4.0 POM not in the repository, yields warning but OK -->
         <dependency>
             <groupId>bsf</groupId>
             <artifactId>bsf</artifactId>
@@ -493,7 +492,7 @@
         <dependency>
             <groupId>mx4j</groupId>
             <artifactId>mx4j</artifactId>
-            <version>3.0.1</version>
+            <version>3.0.2</version>
             <scope>compile</scope>
         </dependency>
 
