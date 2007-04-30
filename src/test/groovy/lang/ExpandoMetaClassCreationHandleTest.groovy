@@ -32,7 +32,7 @@ class ExpandoMetaClassCreationHandleTest extends GroovyTestCase {
 	}
 
 	void tearDown() {
-		registry.metaClassCreationHandle = original
+		registry.metaClassCreationHandle = MetaClassRegistry.MetaClassCreationHandle.newInstance()
 		original = null
 		registry = null
 	}
@@ -54,6 +54,7 @@ class ExpandoMetaClassCreationHandleTest extends GroovyTestCase {
 
 		assertEquals "http://grails.org", url.toString()
 		assertEquals "HTTP://GRAILS.ORG", url.toUpperString()
+        registry.metaClassCreationHandle = MetaClassRegistry.MetaClassCreationHandle.newInstance()		
 	}
 
 	void testExpandoInheritance() {
@@ -74,5 +75,6 @@ class ExpandoMetaClassCreationHandleTest extends GroovyTestCase {
 
 		assertEquals "bar", uri.toBar()
 		assertEquals "bar", s.toBar()
+        registry.metaClassCreationHandle = MetaClassRegistry.MetaClassCreationHandle.newInstance()		
 	}
 }
