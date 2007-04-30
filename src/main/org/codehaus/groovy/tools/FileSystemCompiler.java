@@ -96,8 +96,8 @@ public class FileSystemCompiler
 
     public static void displayVersion() 
     {
-        System.err.println("groovy compiler version 1.0-rc1");
-        System.err.println("Copyright 2003-2004 The Codehaus. http://groovy.codehaus.org/");
+        System.err.println("Groovy compiler version 1.1-beta-1");
+        System.err.println("Copyright 2003-2007 The Codehaus. http://groovy.codehaus.org/");
         System.err.println("");
     }
 

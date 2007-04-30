@@ -135,14 +135,19 @@
         <tag>GROOVY_1_0_RC_1</tag>
     </version>
     <version>
-        <id>rc1</id>
+        <id>rc2</id>
         <name>1.0-RC-2</name>
         <tag>GROOVY_1_0_RC_2</tag>
     </version>
     <version>
-        <id>rc1</id>
+        <id>1.0-FINAL</id>
         <name>1.0</name>
         <tag>GROOVY_1_0</tag>
+    </version>
+    <version>
+        <id>1.1-BETA-1</id>
+        <name>1.1-BETA-1</name>
+        <tag>GROOVY_1_1_BETA_1</tag>
     </version>
   </versions>
 
