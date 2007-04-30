@@ -11,17 +11,24 @@ import groovy.lang.Closure;
  * Jul 27, 2006 3:50:51 PM
  */
 public class ConvertedClosure extends ConversionHandler {
+    private String methodName;
     
     /**
      * to create a ConvertedClosure object.
      * @param closure the closure object.
      */
-    protected ConvertedClosure(Closure closure) {
+    public ConvertedClosure(Closure closure, String method) {
         super(closure);
+        this.methodName = method;
+    }
+    
+    public ConvertedClosure(Closure closure) {
+        this(closure,null);
     }
     
     public Object invokeCustom(Object proxy, Method method, Object[] args)
     throws Throwable {
+        if (methodName!=null && !methodName.equals(method.getName())) return null;
         return ((Closure) getDelegate()).call(args);
     }
 }

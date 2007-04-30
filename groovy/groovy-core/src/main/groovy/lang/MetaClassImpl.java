@@ -54,6 +54,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Proxy;
 import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -1465,8 +1466,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 newValue instanceof Closure) 
            {
                // lets create a dynamic proxy
-               Object proxy =
-                   DefaultGroovyMethods.asType((Closure) newValue, method.getParameterTypes()[0]);
+               Object proxy = Proxy.newProxyInstance(
+                       theClass.getClassLoader(),
+                       new Class[]{method.getParameterTypes()[0]},
+                       new ConvertedClosure((Closure) newValue,name));
                arguments = new Object[] { proxy };
                newValue = proxy;
                usesProxy = true;
