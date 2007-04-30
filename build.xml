@@ -71,8 +71,8 @@ $Date$
     <echo message="Groovyc of main code."/>
     <java classname="org.codehaus.groovy.ant.Groovyc">
       <classpath>
-        <path refid="compilePath"/>
         <pathelement path="${mainClassesDirectory}"/>
+        <path refid="compilePath"/>
       </classpath>
       <arg value="${mainClassesDirectory}"/>
       <arg value="${mainSourceDirectory}"/>
@@ -106,9 +106,9 @@ $Date$
     <echo message="Groovyc of test code."/>
     <java classname="org.codehaus.groovy.ant.Groovyc" fork="true" maxmemory="128M">
       <classpath>
-        <path refid="testPath"/>
         <pathelement path="${mainClassesDirectory}"/>
         <pathelement path="${testClassesDirectory}"/>
+        <path refid="testPath"/>
       </classpath>
       <arg value="${testClassesDirectory}"/>
       <arg value="${testSourceDirectory}"/>
@@ -116,8 +116,8 @@ $Date$
     <javac srcdir="${testSourceDirectory}" destdir="${testClassesDirectory}" debug="yes"
       source="1.4" target="1.4" classpathref="testPath" includes="UberTestCase*.java">
       <classpath>
-        <path refid="testPath"/>
         <pathelement path="${mainClassesDirectory}"/>
+        <path refid="testPath"/>
       </classpath>
     </javac>
   </target>
@@ -196,7 +196,6 @@ $Date$
       <jvmarg line="-Xms${groovyJUnit_ms} -XX:PermSize=${groovyJUnit_permSize} -XX:MaxPermSize=${groovyJUnit_maxPermSize}"/>
       <formatter type="xml"/>
       <formatter type="plain" unless="noTextReports"/>
-      <!-- mucks up cruise test count -->
       <batchtest todir="${junitRawDirectory}">
         <fileset dir="${testClassesDirectory}" includes="UberTest*.class"/>
       </batchtest>

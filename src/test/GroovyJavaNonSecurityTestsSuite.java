@@ -14,10 +14,10 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 
 /**
- * All Java Unit tests in the 'groovy' dir
+ * All non-security related Java Unit tests in the 'groovy' dir
  */
 
-public class AllGroovyJavaTestsSuite {
+public class GroovyJavaNonSecurityTestsSuite {
 
     public static Test suite() {
         TestSuite suite = new TestSuite();
@@ -32,8 +32,6 @@ public class AllGroovyJavaTestsSuite {
         suite.addTestSuite(ScriptTest.class);
         suite.addTestSuite(SequenceTest.class);
         suite.addTestSuite(TupleTest.class);
-        suite.addTestSuite(SecurityTest.class);
-        suite.addTestSuite(SignedJarTest.class);
         suite.addTestSuite(GroovyServletTest.class);
         suite.addTestSuite(TemplateTest.class);
         suite.addTestSuite(XmlTemplateEngineTest.class);
@@ -42,7 +40,6 @@ public class AllGroovyJavaTestsSuite {
         suite.addTestSuite(MBeanTest.class);
         suite.addTestSuite(XmlTest.class);
         suite.addTestSuite(FactorySupportTest.class);
-
         return suite;
     }
 }

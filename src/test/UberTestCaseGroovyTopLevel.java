@@ -11,9 +11,9 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-public class UberTestCase extends TestCase {
+public class UberTestCaseGroovyTopLevel extends TestCase {
     public static Test suite() throws ClassNotFoundException {
-        TestSuite suite = (TestSuite) AllTestSuite.suite("src/test/groovy", "*Test.groovy");
+        TestSuite suite = (TestSuite) AllTestSuite.suite("src/test", "groovy/*Test.groovy");
 
         String osName = System.getProperty("os.name");
         if (osName.equals("Linux") || osName.equals("SunOS")) {
