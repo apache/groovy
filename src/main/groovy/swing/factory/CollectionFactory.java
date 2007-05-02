@@ -17,19 +17,25 @@
 
 package groovy.swing.factory;
 
+import groovy.lang.MissingPropertyException;
 import groovy.swing.SwingBuilder;
+import java.util.ArrayList;
 import java.util.Map;
-import javax.swing.JFrame;
 
-public class FrameFactory implements Factory {
+/**
+ * This returns a mutable java.util.Collection of some sort, to which items are added.  
+ */
+public class CollectionFactory implements Factory {
     
     public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
-        if (SwingBuilder.checkValueIsType(value, name, JFrame.class)) {
-            return value;
+        SwingBuilder.checkValueIsNull(value, name);
+        if (properties.isEmpty()) {
+            return new ArrayList();
+        } else {
+            Map.Entry item = (Map.Entry) properties.entrySet().iterator().next();
+            throw new MissingPropertyException(
+                "The builder element '" + name + "' is a collections element and has no properties",
+                item.getKey().toString(), item.getValue().getClass());
         }
-        JFrame frame = new JFrame();
-        builder.getContainingWindows().add(frame);
-        return frame;
     }
-
 }

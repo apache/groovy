@@ -23,13 +23,10 @@ import java.util.Map;
 import javax.swing.BoxLayout;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
-/**
- *
- * @author Danno Ferrin
- */
 public class BoxLayoutFactory implements Factory {
     
     public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+        SwingBuilder.checkValueIsNull(value, name);
         Object parent = builder.getCurrent();
         if (parent instanceof Container) {
             Object axisObject = properties.remove("axis");
@@ -39,7 +36,7 @@ public class BoxLayoutFactory implements Factory {
                 axis = i.intValue();
             }
 
-            Container target = SwingBuilder.getLayoutTarget(parent);
+            Container target = SwingBuilder.getLayoutTarget((Container)parent);
             BoxLayout answer = new BoxLayout(target, axis);
 
             // now let's try to set the layout property

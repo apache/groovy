@@ -26,14 +26,10 @@ import java.util.ArrayList;
 import java.util.Map;
 import javax.swing.table.TableModel;
 
-/**
- *
- * @author Danno Ferrin
- */
 public class TableModelFactory implements Factory {
     
     public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
-        if (value instanceof TableModel) {
+        if (SwingBuilder.checkValueIsType(value, name, TableModel.class)) {
             return value;
         } else if (properties.get(name) instanceof TableModel) {
             return properties.remove(name);
@@ -53,6 +49,7 @@ public class TableModelFactory implements Factory {
     public static class PropertyColumnFactory implements Factory {
     
         public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+            SwingBuilder.checkValueIsNull(value, name);
             Object current = builder.getCurrent();
             if (current instanceof DefaultTableModel) {
                 DefaultTableModel model = (DefaultTableModel) current;
@@ -78,6 +75,7 @@ public class TableModelFactory implements Factory {
     public static class ClosureColumnFactory implements Factory {
     
         public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+            SwingBuilder.checkValueIsNull(value, name);
             Object current = builder.getCurrent();
             if (current instanceof DefaultTableModel) {
                 DefaultTableModel model = (DefaultTableModel) current;

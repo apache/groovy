@@ -21,19 +21,15 @@ import groovy.swing.SwingBuilder;
 import java.awt.Component;
 import java.util.Map;
 
-/**
- *
- * @author Danno Ferrin
- */
 public class WidgetFactory implements Factory {
     
     public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
-        Object answer = null;
-        if (value instanceof Component) {
-            answer = value;
+        if (SwingBuilder.checkValueIsType(value, name, Component.class)) {
+            return value;
         } else if (properties.get(name) instanceof Component) {
-            answer = properties.remove(name);
+            return properties.remove(name);
+        } else {
+            throw new RuntimeException(name + " must have a value argument of type java.awt.Component or a property named " + name + " of type java.awt.Component");
         }
-        return answer;
     }    
 }

@@ -23,13 +23,12 @@ import java.util.Map;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 
-/**
- *
- * @author Danno Ferrin
- */
 public class BoxFactory implements Factory {
     
     public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+        if (SwingBuilder.checkValueIsType(value, name, Box.class)) {
+            return value;
+        }
         int axis = BoxLayout.X_AXIS; // default to X so it behaves like FlowLayout
         if (properties.containsKey("axis")) {
             Object o = properties.remove("axis");
@@ -40,21 +39,23 @@ public class BoxFactory implements Factory {
         return new Box(axis);
     }
     
-    
     public static class HBoxFactory implements Factory {
         public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+            SwingBuilder.checkValueIsNull(value, name);
             return Box.createHorizontalBox();
         }
     }
     
     public static class HGlueFactory implements Factory {
         public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+            SwingBuilder.checkValueIsNull(value, name);
             return Box.createHorizontalGlue();
         }
     }
     
     public static class HStrutFactory implements Factory {
         public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+            SwingBuilder.checkValueIsType(value, name, Number.class);
             Object num;
             if (value != null) {
                 num = value;
@@ -71,18 +72,21 @@ public class BoxFactory implements Factory {
     
     public static class VBoxFactory implements Factory {
         public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+            SwingBuilder.checkValueIsNull(value, name);
             return Box.createVerticalBox();
         }
     }
     
     public static class VGlueFactory implements Factory {
         public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+            SwingBuilder.checkValueIsNull(value, name);
             return Box.createVerticalGlue();
         }
     }
     
     public static class VStrutFactory implements Factory {
         public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+            SwingBuilder.checkValueIsType(value, name, Number.class);
             Object num;
             if (value != null) {
                 num = value;
@@ -99,12 +103,14 @@ public class BoxFactory implements Factory {
     
     public static class GlueFactory implements Factory {
         public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+            SwingBuilder.checkValueIsNull(value, name);
             return Box.createGlue();
         }
     }
     
     public static class RigidAreaFactory implements Factory {
         public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+            SwingBuilder.checkValueIsNull(value, name);
             Dimension dim;
             Object o = properties.remove("size");
             if (o instanceof Dimension) {

@@ -23,13 +23,11 @@ import java.util.Map;
 import java.util.Vector;
 import javax.swing.JComboBox;
 
-/**
- *
- * @author Danno Ferrin
- */
 public class ComboBoxFactory implements Factory {
     
     public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+        SwingBuilder.checkValueIsNull(value, name);
+        //TODO expand to allow the value arg to be items
         Object items = properties.remove("items");
         if (items instanceof Vector) {
             return new JComboBox((Vector) items);

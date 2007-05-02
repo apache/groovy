@@ -24,13 +24,11 @@ import java.util.LinkedList;
 import java.util.Map;
 import javax.swing.JWindow;
 
-/**
- *
- * @author Danno Ferrin
- */
 public class WindowFactory implements Factory {
     
     public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+        SwingBuilder.checkValueIsNull(value, name);
+        //TODO we could make the value arg the owner, or a window to allow adding more compnents
         JWindow window;
         Object owner = properties.remove("owner");
         LinkedList containingWindows = builder.getContainingWindows();

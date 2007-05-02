@@ -19,17 +19,24 @@ package groovy.swing.factory;
 
 import groovy.swing.SwingBuilder;
 import java.util.Map;
-import javax.swing.JFrame;
+import javax.swing.Action;
+import javax.swing.Icon;
+import javax.swing.JRadioButtonMenuItem;
 
-public class FrameFactory implements Factory {
+public class RadioButtonMenuItemFactory implements Factory {
     
     public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
-        if (SwingBuilder.checkValueIsType(value, name, JFrame.class)) {
-            return value;
+        if (value instanceof Action) {
+            return new JRadioButtonMenuItem((Action)value);
+        } else if (value instanceof Icon) {
+            return new JRadioButtonMenuItem((Icon)value);
+        } else if (value instanceof String) {
+            return new JRadioButtonMenuItem((String)value);
+        } else if (value != null) {
+            throw new RuntimeException(name + " can only have a value argument of type javax.swing.Action, javax.swing.Icon, or a String.");
+        } else {
+            return new JRadioButtonMenuItem();
         }
-        JFrame frame = new JFrame();
-        builder.getContainingWindows().add(frame);
-        return frame;
     }
 
 }

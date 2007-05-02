@@ -23,18 +23,19 @@ import groovy.swing.impl.TableLayoutCell;
 import groovy.swing.impl.TableLayoutRow;
 import java.util.Map;
 
-/**
- *
- * @author Danno Ferrin
- */
 public class TableLayoutFactory implements Factory {
     
     public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+        if (SwingBuilder.checkValueIsType(value, name, TableLayout.class)) {
+            return value;
+        }
         return new TableLayout();
     }
     
     public static class TRFactory implements Factory {
         public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+            SwingBuilder.checkValueIsNull(value, name);
+            //TODO we could make the value arg the parent
             Object parent = builder.getCurrent();
             if (parent instanceof TableLayout) {
                 return new TableLayoutRow((TableLayout) parent);
@@ -46,6 +47,8 @@ public class TableLayoutFactory implements Factory {
     
     public static class TDFactory implements Factory {
         public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+            SwingBuilder.checkValueIsNull(value, name);
+            //TODO we could make the value arg the TR
             Object parent = builder.getCurrent();
             if (parent instanceof TableLayoutRow) {
                 return new TableLayoutCell((TableLayoutRow) parent);

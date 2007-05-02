@@ -23,15 +23,24 @@ import groovy.model.DefaultTableModel;
 import groovy.swing.factory.ActionFactory;
 import groovy.swing.factory.BoxFactory;
 import groovy.swing.factory.BoxLayoutFactory;
+import groovy.swing.factory.ButtonFactory;
+import groovy.swing.factory.CheckBoxFactory;
+import groovy.swing.factory.CheckBoxMenuItemFactory;
+import groovy.swing.factory.CollectionFactory;
 import groovy.swing.factory.ComboBoxFactory;
 import groovy.swing.factory.DialogFactory;
 import groovy.swing.factory.Factory;
 import groovy.swing.factory.FormattedTextFactory;
 import groovy.swing.factory.FrameFactory;
 import groovy.swing.factory.MapFactory;
+import groovy.swing.factory.MenuItemFactory;
+import groovy.swing.factory.RadioButtonFactory;
+import groovy.swing.factory.RadioButtonMenuItemFactory;
+import groovy.swing.factory.SeparatorFactory;
 import groovy.swing.factory.SplitPaneFactory;
 import groovy.swing.factory.TableLayoutFactory;
 import groovy.swing.factory.TableModelFactory;
+import groovy.swing.factory.ToggleButtonFactory;
 import groovy.swing.factory.WidgetFactory;
 import groovy.swing.factory.WindowFactory;
 
@@ -52,6 +61,7 @@ import java.awt.GridLayout;
 import java.awt.LayoutManager;
 import java.awt.Window;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -64,9 +74,6 @@ import javax.swing.AbstractButton;
 import javax.swing.Action;
 import javax.swing.ButtonGroup;
 import javax.swing.DefaultBoundedRangeModel;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JColorChooser;
 import javax.swing.JComponent;
 import javax.swing.JDesktopPane;
@@ -79,17 +86,13 @@ import javax.swing.JLayeredPane;
 import javax.swing.JList;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JPopupMenu;
 import javax.swing.JProgressBar;
-import javax.swing.JRadioButton;
-import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
-import javax.swing.JSeparator;
 import javax.swing.JSlider;
 import javax.swing.JSpinner;
 import javax.swing.JSplitPane;
@@ -98,7 +101,6 @@ import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
-import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 import javax.swing.JTree;
 import javax.swing.JViewport;
@@ -142,10 +144,12 @@ public class SwingBuilder extends BuilderSupport {
     }
     
     protected void setParent(Object parent, Object child) {
-        if (child instanceof Action) {
+        if (parent instanceof Collection) {
+            ((Collection)parent).add(child);
+        } else if (child instanceof Action) {
             setParentForAction(parent, (Action) child);
-        } else if (child instanceof LayoutManager) {
-            Container target = getLayoutTarget(parent);
+        } else if ((child instanceof LayoutManager) && (parent instanceof Container)) {
+            Container target = getLayoutTarget((Container)parent);
             InvokerHelper.setProperty(target, "layout", child);
             // doesn't work, use toolTipText property
             //        } else if (child instanceof JToolTip && parent instanceof JComponent) {
@@ -248,13 +252,12 @@ public class SwingBuilder extends BuilderSupport {
         }
     }
     
-    public static Container getLayoutTarget(Object parent) {
-        Container target = (Container) parent;
-        if (target instanceof RootPaneContainer) {
-            RootPaneContainer rpc = (RootPaneContainer) target;
-            target = rpc.getContentPane();
+    public static Container getLayoutTarget(Container parent) {
+        if (parent instanceof RootPaneContainer) {
+            RootPaneContainer rpc = (RootPaneContainer) parent;
+            parent = rpc.getContentPane();
         }
-        return target;
+        return parent;
     }
     
     protected void nodeCompleted(Object parent, Object node) {
@@ -315,16 +318,9 @@ public class SwingBuilder extends BuilderSupport {
             throw new RuntimeException("Failed to create component for '" + name + "' reason: " + e, e);
         }
         handleWidgetAttributes(widget, attributes);
-        if ((widget != null) && (value != null) && (widget != value)) {
-            if (value instanceof String) {
-                InvokerHelper.invokeMethod(widget, "setText", (String) value);
-            } else {
-                throw new RuntimeException("The first argument of " + name + " must be a String.");
-            }
-        }
         return widget;
     }
-    
+
     protected void handleWidgetAttributes(Object widget, Map attributes) {
         // first, short circuit
         if (attributes.isEmpty() || (widget == null)) {
@@ -375,11 +371,13 @@ public class SwingBuilder extends BuilderSupport {
         // non-widget support classes
         //
         registerFactory("action", new ActionFactory());
+        registerFactory("actions", new CollectionFactory());
         registerBeanFactory("buttonGroup", ButtonGroup.class);
         registerFactory("map", new MapFactory());
 
-        // ulimate pass through type
-        registerFactory("widget", new WidgetFactory());
+        // ulimate pass through types
+        registerFactory("widget", new WidgetFactory()); //TODO prohibit child content somehow
+        registerFactory("container", new WidgetFactory());
         
         //
         // standalone window classes
@@ -393,9 +391,9 @@ public class SwingBuilder extends BuilderSupport {
         //
         // widgets
         //
-        registerBeanFactory("button", JButton.class);
-        registerBeanFactory("checkBox", JCheckBox.class);
-        registerBeanFactory("checkBoxMenuItem", JCheckBoxMenuItem.class);
+        registerFactory("button", new ButtonFactory());
+        registerFactory("checkBox", new CheckBoxFactory());
+        registerFactory("checkBoxMenuItem", new CheckBoxMenuItemFactory());
         registerBeanFactory("colorChooser", JColorChooser.class);
         registerFactory("comboBox", new ComboBoxFactory());
         registerBeanFactory("desktopPane", JDesktopPane.class);
@@ -407,16 +405,16 @@ public class SwingBuilder extends BuilderSupport {
         registerBeanFactory("list", JList.class);
         registerBeanFactory("menu", JMenu.class);
         registerBeanFactory("menuBar", JMenuBar.class);
-        registerBeanFactory("menuItem", JMenuItem.class);
+        registerFactory("menuItem", new MenuItemFactory());
         registerBeanFactory("panel", JPanel.class);
         registerBeanFactory("passwordField", JPasswordField.class);
         registerBeanFactory("popupMenu", JPopupMenu.class);
         registerBeanFactory("progressBar", JProgressBar.class);
-        registerBeanFactory("radioButton", JRadioButton.class);
-        registerBeanFactory("radioButtonMenuItem", JRadioButtonMenuItem.class);
+        registerFactory("radioButton", new RadioButtonFactory());
+        registerFactory("radioButtonMenuItem", new RadioButtonMenuItemFactory());
         registerBeanFactory("scrollBar", JScrollBar.class);
         registerBeanFactory("scrollPane", JScrollPane.class);
-        registerBeanFactory("separator", JSeparator.class);
+        registerFactory("separator", new SeparatorFactory());
         registerBeanFactory("slider", JSlider.class);
         registerBeanFactory("spinner", JSpinner.class);
         registerFactory("splitPane", new SplitPaneFactory());
@@ -426,7 +424,7 @@ public class SwingBuilder extends BuilderSupport {
         registerBeanFactory("textArea", JTextArea.class);
         registerBeanFactory("textPane", JTextPane.class);
         registerBeanFactory("textField", JTextField.class);
-        registerBeanFactory("toggleButton", JToggleButton.class);
+        registerFactory("toggleButton", new ToggleButtonFactory());
         registerBeanFactory("toolBar", JToolBar.class);
         //registerBeanFactory("tooltip", JToolTip.class); // doesn't work, use toolTipText property
         registerBeanFactory("tree", JTree.class);
@@ -447,7 +445,9 @@ public class SwingBuilder extends BuilderSupport {
         registerFactory("propertyColumn", new TableModelFactory.PropertyColumnFactory());
         registerFactory("closureColumn", new TableModelFactory.ClosureColumnFactory());
         
-        //Standard Layouts
+        //
+        // Layouts
+        //
         registerBeanFactory("borderLayout", BorderLayout.class);
         registerBeanFactory("cardLayout", CardLayout.class);
         registerBeanFactory("flowLayout", FlowLayout.class);
@@ -457,11 +457,9 @@ public class SwingBuilder extends BuilderSupport {
         registerBeanFactory("springLayout", SpringLayout.class);
         registerBeanFactory("gridBagConstraints", GridBagConstraints.class);
         registerBeanFactory("gbc", GridBagConstraints.class); // shortcut name
-        
-        // box layout
+
+        // Box layout and friends
         registerFactory("boxLayout", new BoxLayoutFactory());
-        
-        // Box related layout components
         registerFactory("box", new BoxFactory());
         registerFactory("hbox", new BoxFactory.HBoxFactory());
         registerFactory("hglue", new BoxFactory.HGlueFactory());
@@ -473,16 +471,20 @@ public class SwingBuilder extends BuilderSupport {
         registerFactory("rigidArea", new BoxFactory.RigidAreaFactory());
         
         // table layout
-        //registerBeanFactory("tableLayout", TableLayout.class);
         registerFactory("tableLayout", new TableLayoutFactory());
         registerFactory("tr", new TableLayoutFactory.TRFactory());
         registerFactory("td", new TableLayoutFactory.TDFactory());
+        
     }
     
-    public void registerBeanFactory(String name, final Class beanClass) {
-        registerFactory(name, new Factory() {
+    public void registerBeanFactory(String theName, final Class beanClass) {
+        registerFactory(theName, new Factory() {
             public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
-                return beanClass.newInstance();
+                if (checkValueIsTypeNotString(value, name, beanClass)) {
+                    return value;
+                } else {
+                    return beanClass.newInstance();
+                }
             }
         });
     }
@@ -498,4 +500,37 @@ public class SwingBuilder extends BuilderSupport {
     public Object getCurrent() {
         return super.getCurrent();
     }
+
+    public static final void checkValueIsNull(Object value, Object name) {
+        if (value != null) {
+            throw new RuntimeException(name + " elements do not accept a value argument.");
+        }
+    }
+    
+    public static final boolean checkValueIsType(Object value, Object name, Class type) {
+        if (value != null) {
+            if (type.isAssignableFrom(value.getClass())) {
+                return true;
+            } else {
+                throw new RuntimeException("The value argument of " + name + " must be of type " + type.getName());
+            }
+        } else {
+            return false;
+        }
+    }
+    
+    public static final boolean checkValueIsTypeNotString(Object value, Object  name, Class type) {
+        if (value != null) {
+            if (type.isAssignableFrom(value.getClass())) {
+                return true;
+            } else if (value instanceof String) {
+                return false;
+            } else {
+                throw new RuntimeException("The value argument of " + name + " must be of type " + type.getName() + " or a String.");
+            }
+        } else {
+            return false;
+        }
+    }
+
 }

@@ -35,7 +35,7 @@ public class ActionFactory implements Factory {
     
     public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
         Action action = null;
-        if (value instanceof Action) {
+        if (SwingBuilder.checkValueIsTypeNotString(value, name, Action.class)) {
             action = (Action) value;
         } else if (properties.get(name) instanceof Action) {
             action = (Action) properties.remove(name);

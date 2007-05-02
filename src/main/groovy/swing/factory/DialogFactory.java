@@ -24,13 +24,12 @@ import java.util.LinkedList;
 import java.util.Map;
 import javax.swing.JDialog;
 
-/**
- *
- * @author Danno Ferrin
- */
 public class DialogFactory implements Factory {
     
     public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+        if (SwingBuilder.checkValueIsType(value, name, JDialog.class)) {
+            return value;
+        }
         JDialog dialog;
         Object owner = properties.remove("owner");
         LinkedList containingWindows = builder.getContainingWindows();

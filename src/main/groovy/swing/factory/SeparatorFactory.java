@@ -19,17 +19,22 @@ package groovy.swing.factory;
 
 import groovy.swing.SwingBuilder;
 import java.util.Map;
-import javax.swing.JFrame;
+import javax.swing.JMenu;
+import javax.swing.JPopupMenu;
+import javax.swing.JSeparator;
+import javax.swing.JToolBar;
 
-public class FrameFactory implements Factory {
+public class SeparatorFactory implements Factory {
     
     public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
-        if (SwingBuilder.checkValueIsType(value, name, JFrame.class)) {
-            return value;
+        SwingBuilder.checkValueIsNull(value, name);
+        Object parent = builder.getCurrent();
+        if (parent instanceof JMenu) {
+            return new JPopupMenu.Separator();
+        } else if (parent instanceof JToolBar) {
+            return new JToolBar.Separator();
+        } else {
+            return new JSeparator();
         }
-        JFrame frame = new JFrame();
-        builder.getContainingWindows().add(frame);
-        return frame;
     }
-
 }

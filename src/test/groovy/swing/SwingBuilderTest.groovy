@@ -207,6 +207,15 @@ class SwingBuilderTest extends GroovyTestCase {
         swing.dialog{ dialog() }
     }
 
+    void testWindows() {
+        if (isHeadless()) return
+
+        def swing = new SwingBuilder()
+        swing.window()
+        swing.frame{ window() }
+        swing.dialog{ window() }
+    }
+
     void testNodeCreation() {
         if (isHeadless()) return
 
@@ -534,15 +543,213 @@ class SwingBuilderTest extends GroovyTestCase {
         }
     }    
     
-    void testGROOVY1837ReeuseAction() {
+    void testGROOVY1837ReuseAction() {
         if (isHeadless()) return
         
         def swing = new SwingBuilder()
+
         def testAction = swing.action(name:'test', mnemonic:'A', accelerator:'ctrl R')
         assert testAction.getValue(Action.MNEMONIC_KEY) != null
         assert testAction.getValue(Action.ACCELERATOR_KEY) != null
+        
         swing.action(testAction)
         assert testAction.getValue(Action.MNEMONIC_KEY) != null
         assert testAction.getValue(Action.ACCELERATOR_KEY) != null
+    }
+
+    void testSeparators() {
+        if (isHeadless()) return
+        
+        def swing = new SwingBuilder()
+        swing.frame() {
+            menu("test") {
+                separator(id:"menuSep")
+            }
+            toolBar() {
+                separator(id:"tbSep")
+            }
+            separator(id:"sep")
+        }
+        assert swing.menuSep instanceof JPopupMenu.Separator
+        assert swing.tbSep instanceof JToolBar.Separator
+        assert swing.sep instanceof JSeparator
+    }
+
+    void testCollectionNodes() {
+        if (isHeadless()) return
+        
+        def swing = new SwingBuilder()
+        def collection = swing.actions() {
+            action(id:'test')
+        }
+        assert collection.contains(swing.test)
+    }
+
+    void testFactoryCornerCases() {
+        if (isHeadless()) return
+        
+        def swing = new SwingBuilder()
+        assert swing.bogusWidget() == null
+
+        swing.registerFactory("nullWidget", 
+            [newInstance:{builder, name, value, props -> null}] as groovy.swing.factory.Factory)
+        assert swing.nullWidget() == null
+    } 
+
+    void testFactoryLogging() {
+        def logger = java.util.logging.Logger.getLogger(SwingBuilder.class.name)
+        def oldLevel = logger.getLevel()
+        logger.setLevel(java.util.logging.Level.FINE)
+        def swing = new SwingBuilder()
+        swing.label()
+        logger.setLevel(oldLevel)
+    }
+
+    void testEnhancedValueArguments() {
+        if (isHeadless()) return
+        
+        def swing = new SwingBuilder()
+
+        def anAction = swing.action(name:"test action")
+        def icon = new javax.swing.plaf.metal.MetalComboBoxIcon()
+        def richActionItems = [
+            'button', 
+            'checkBox', 
+            'radioButton', 
+            'toggleButton',
+            'menuItem', 
+            'checkBoxMenuItem', 
+            'radioButtonMenuItem'
+        ]
+
+        richActionItems.each {name ->
+            swing."$name"(anAction, id:"${name}Action".toString())
+            swing."$name"(icon, id:"${name}Icon".toString())
+            swing."$name"("string", id:"${name}String".toString())
+            swing."$name"(swing."${name}Action".toString(), id:"${name}Self".toString())
+
+            assert swing."${name}Action"
+            assert swing."${name}Icon"
+            assert swing."${name}String"
+            assert swing."${name}Self"
+            shouldFail {
+                swing."$name"(['bad'])
+            }
+        }
+
+        def noValueItems = [ // elements that take no value argument
+            "actions",
+            "boxLayout",
+            "comboBox",
+            "formattedTextField",
+            "glue",
+            "hbox",
+            "hglue",
+            "hstrut",
+            "map",
+            "rigidArea",
+            "separator",
+            "vbox",
+            "vglue",
+            "vstrut",
+            "window",
+        ]
+
+        noValueItems.each {name ->
+            println name
+            shouldFail {
+                swing.frame() {
+                    "$name"(swing."$name"(), id:"${name}Self".toString())
+                }
+	    }
+        }
+
+        def selfItems = [ // elements that only take their own type as a value argument
+            "action",
+            "borderLayout",
+            "boundedRangeModel",
+            "box",
+            "buttonGroup",
+            "cardLayout",
+            //"closureColumn",
+            "colorChooser",
+            //"container",
+            "desktopPane",
+            "dialog",
+            "editorPane",
+            "fileChooser",
+            "flowLayout",
+            "frame",
+            "gbc",
+            "gridBagConstraints",
+            "gridBagLayout",
+            "gridLayout",
+            "internalFrame",
+            "label",
+            "layeredPane",
+            "list",
+            "menu",
+            "menuBar",
+            "optionPane",
+            //"overlayLayout",
+            "panel",
+            "passwordField",
+            "popupMenu",
+            "progressBar",
+            //"propertyColumn",
+            "scrollBar",
+            "scrollPane",
+            "slider",
+            "spinner",
+            "spinnerDateModel",
+            "spinnerListModel",
+            "spinnerNumberModel",
+            "splitPane",
+            "springLayout",
+            "tabbedPane",
+            "table",
+            "tableColumn",
+            "tableLayout",
+            "tableModel",
+            //"td",
+            "textArea",
+            "textField",
+            "textPane",
+            "toolBar",
+            //"tr",
+            "tree",
+            "viewport",
+            //"widget",
+        ]
+        selfItems.each {name ->
+            println name
+            swing.frame() {
+                "$name"(swing."$name"(), id:"${name}Self".toString())
+            }
+
+            shouldFail {
+                swing.frame() {
+                    swing."$name"(icon)
+                }
+	    }
+        }
+
+        // leftovers...
+        swing.frame() {
+            action(action:anAction)
+            box(axis:BoxLayout.Y_AXIS)
+            hstrut(5)
+            vstrut(5)
+            tableModel(tableModel:tableModel())
+            container(panel()) {
+                widget(label("label"))
+            }
+        }
+        shouldFail() {
+            swing.actions(property:'fails')
+        }
+        shouldFail() {
+            swing.widget()
+        }
     }
 }

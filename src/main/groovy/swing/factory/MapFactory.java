@@ -20,13 +20,10 @@ package groovy.swing.factory;
 import groovy.swing.SwingBuilder;
 import java.util.Map;
 
-/**
- *
- * @author Danno Ferrin
- */
 public class MapFactory implements Factory {
     
     public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+        SwingBuilder.checkValueIsNull(value, name);
         return properties;
     }
 }

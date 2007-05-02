@@ -21,13 +21,12 @@ import groovy.swing.SwingBuilder;
 import java.util.Map;
 import javax.swing.JSplitPane;
 
-/**
- *
- * @author Danno Ferrin
- */
 public class SplitPaneFactory implements Factory {
     
     public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+        if (SwingBuilder.checkValueIsType(value, name, JSplitPane.class)) {
+            return value;
+        }
         JSplitPane answer = new JSplitPane();
         answer.setLeftComponent(null);
         answer.setRightComponent(null);

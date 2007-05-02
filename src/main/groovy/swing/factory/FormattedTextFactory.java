@@ -22,13 +22,11 @@ import java.text.Format;
 import java.util.Map;
 import javax.swing.JFormattedTextField;
 
-/**
- *
- * @author Danno Ferrin
- */
 public class FormattedTextFactory implements Factory {
     
     public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+        SwingBuilder.checkValueIsNull(value, name);
+        //TODO expand value arg to take format
         JFormattedTextField ftf;
         if (properties.containsKey("format")) {
             ftf = new JFormattedTextField((Format) properties.remove("format"));
