@@ -354,7 +354,7 @@ $Date$
       <fileset dir="${installDirectory}/bin" includes="*,*.*"/>
     </chmod>
   </target>
-  
+
   <target name="checkstyle" depends="-init,-initializeReports,-checkstyleInit" description="Create the code style reports.">
     <checkAndReport
       reportDirectory="${reportsDirectory}/checkstyle"
@@ -448,10 +448,17 @@ $Date$
   </target>
   
   <target name="deploy" depends="-mavenDeployInit,install"
-    description="Deploy jars to maven repository after previous successful build.">
+    description="Deploy jars to maven repository.">
     <mavenDeploy version="${groovyVersion}" artifact="groovy"/>
     <mavenDeploy version="${groovyVersion}" artifact="groovy-all"/>
     <mavenDeploy version="${groovyVersion}" artifact="groovy-all-minimal"/>
+  </target>
+
+  <target name="installRepo" depends="-mavenInit,install"
+    description="Deploy artifacts to local maven repository.">
+    <mavenInstallRepo version="${groovyVersion}" artifact="groovy"/>
+    <mavenInstallRepo version="${groovyVersion}" artifact="groovy-all"/>
+    <mavenInstallRepo version="${groovyVersion}" artifact="groovy-all-minimal"/>
   </target>
 
   <target name="distribution" depends="install,doc" description="Create everything needed for a distribution.">

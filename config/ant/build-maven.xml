@@ -170,4 +170,15 @@ $Date$
             </artifact:deploy>
         </sequential>
     </macrodef>
+
+    <macrodef name="mavenInstallRepo">
+        <attribute name="version"/>
+        <attribute name="artifact"/>
+        <sequential>
+            <artifact:install file="${targetDistDirectory}/@{artifact}-@{version}.jar">
+                <pom refid="@{artifact}.pom"/>
+            </artifact:install>
+        </sequential>
+    </macrodef>
+
 </project>

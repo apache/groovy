@@ -48,6 +48,12 @@
             <name>Groovy Central Development Repository</name>
             <url>dav:https://dav.codehaus.org/snapshots.repository/groovy/</url>
         </snapshotRepository>
+        <!-- not currently used -->
+        <site>
+            <id>codehaus.org</id>
+            <name>Groovy Web Site</name>
+            <url>dav:https://dav.codehaus.org/groovy</url>
+        </site>
     </distributionManagement>
 
     <developers>
