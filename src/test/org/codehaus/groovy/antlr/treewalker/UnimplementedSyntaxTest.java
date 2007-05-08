@@ -238,6 +238,19 @@ public class UnimplementedSyntaxTest extends GroovyTestCase {
         assertNotNull(compile("import static foo.Bar.*"));
     }
 
+    // TODO: move somewhere else GROOVY-1874
+    public void test_staticBlockWithNewLines() throws Exception {
+        assertNotNull(compile("class MyClass \n{\n\tstatic\n{\nprintln 2\n}\n}"));
+    }
+    
+    public void test_staticBlockWithNoStartNewLines() throws Exception {
+        assertNotNull(compile("class MyClass \n{\n\tstatic {\nprintln 2\n}\n}"));
+    }
+    
+    public void test_staticBlockWithNoNewLines() throws Exception {
+        assertNotNull(compile("class MyClass \n{\n\tstatic { println 2 }}"));
+    }
+    
     // ------------------------
     // feature: type parameters
     // ------------------------

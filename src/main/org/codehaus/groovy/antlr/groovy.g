@@ -1154,7 +1154,7 @@ classField!  {Token first = LT(1);}
         )
 
     // "static { ... }" class initializer
-    |   "static" s3:compoundStatement
+    |   "static" nls! s3:compoundStatement
         {#classField = #(create(STATIC_INIT,"STATIC_INIT",first,LT(1)), s3);}
 
     // "{ ... }" instance initializer
