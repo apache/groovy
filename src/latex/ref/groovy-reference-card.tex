@@ -90,53 +90,38 @@
                                                         &   {\large\textbf{Summary}}
 \end{tabular}
 
-\vskip 1.8in
-%todo: black line
-
 GROOVY-1.0
 
-\vskip 0.25 in
+{\em Fourth Edition\/} (May 2007)
 
-{\em Fourth Edition\/} (March 2007)
-
-This card is intended primarily for use by Groovy language programmers. It 
-contains basic language information summarized from the online
-documentation (http://groovy.codehaus.org). The card will be updated from 
-time to time. However the above manual and others cited on the card
-are the authoritative reference sources and will be first to reflect changes.
-
-To distinguish them from instructions carried over from the Java Language,
-the names of instructions essentially new with Groovy are shown
-in italics.
-
-Comments about this publication may be sent to the address below.
-
-\vskip 2 in
-Groovy Technical Publications Systems 
-
-groovy.codehaus.org
-
+\vskip 0.05 in
+Italics are used, where possible, to show differences to Java
+\vskip 0.15 in
 
 \section{Keywords}
 \subsection{Grammar}
 \keywordSummaryHeader{
 \keywordSummary{{\em as}        }{   import {\em type\/} as {\em id\/}}
+\keywordSummary{                }{   {\em expr\/} as {\em type\/}}
 \keywordSummary{assert          }{   assert {\em expr expr?\/}}
-\keywordSummary{break           }{   break {\em lbl?\/}}
+\keywordSummary{break           }{   break}
 \keywordSummary{case            }{   switch {\em expr\/} case {\em expr stmt*\/}}
 \keywordSummary{catch           }{   try {\em stmt*\/} catch {\em type id stmt*\/}}
 \keywordSummary{class           }{   {\em mod*\/} class {\em id\/}}
-\keywordSummary{continue        }{   continue {\em lbl?\/}}
+\keywordSummary{continue        }{   continue}
 \keywordSummary{{\em def}       }{   def {\em methodDeclaration\/}}
+\keywordSummary{                }{   def {\em variableDeclaration\/}}
 \keywordSummary{default         }{   switch {\em expr\/} case default{\em stmt*\/} }
-\keywordSummary{do              }{   do {\em stmt*\/} while {\em expr\/}}
 \keywordSummary{else            }{   if {\em expr stmt*\/} else if {\em expr stmt*\/}}
+% todo - enum
 \keywordSummary{extends         }{   {\em mod*\/} class {\em id\/} extends {\em type\/}}
+% todo - syntax supports "generic" extends, but has no effect in groovy 1.0
 \keywordSummary{finally         }{   try {\em stmt*} finally {\em stmt*}}
-\keywordSummary{for             }{   for {\em expr*};{\em expr};{\em expr} {\em stmt*\/}}
+%\keywordSummary{for             }{   for {\em expr*};{\em expr};{\em expr} {\em stmt*\/}}
 \keywordSummary{{\em for}       }{   for {\em id\/} in {\em id stmt*\/}}
 \keywordSummary{if              }{   if {\em expr stmt*\/} else if {\em expr stmt*\/}}
 \keywordSummary{{\em in}        }{   for {\em id\/} in {\em id stmt*\/}}
+\keywordSummary{                }{   if {\em id\/} in {\em collection stmt*\/}}
 \keywordSummary{implements      }{   {\em mod*\/} class {\em id\/} implements {\em type*}}
 \keywordSummary{import          }{   import {\em type\/}}
 \keywordSummary{instanceof      }{   {\em expr\/} instanceof {\em type}}
@@ -144,14 +129,14 @@ groovy.codehaus.org
 %\keywordSummary{{\em mixin}     }{   {\em mod*\/} mixin {\em id\/}}
 \keywordSummary{new             }{   new {\em type\/} }
 \keywordSummary{package         }{   package {\em id\/}}
-\keywordSummary{{\em property}  }{   {\em mod*\/} property {\em type?\/} {\em id\/}}
 \keywordSummary{return          }{   return {\em expr?/} }
+% not sure if 'super' and 'this' are worth including here?
 \keywordSummary{switch          }{   switch {\em expr\/} case {\em expr stmt*\/} }
 \keywordSummary{throw           }{   throw {\em expr\/} }
 \keywordSummary{throws          }{   {\em methodDeclaration} throws {\em type\/} }
 \keywordSummary{try             }{   try {\em stmt*\/} catch {\em type id stmt*\/}}
-\keywordSummary{while           }{   do {\em stmt*\/} while {\em expr\/}}
-\keywordSummary{                }{   while {\em expr\/} {\em stmt*\/}}
+\keywordSummary{while           }{   while {\em expr\/} {\em stmt*\/}}
+% quiet on statics, static imports etc (if they want to use statics, make em look! bwha ha ha)
 }
 
 
@@ -160,23 +145,91 @@ groovy.codehaus.org
 \keywordSummary{abstract        }{   abstract class {\em id\/}}
 \keywordSummary{Annotations     }{   @Annotation}
 \keywordSummary{Annotations     }{   @Annotation(x = 3, y = 5)}
+\keywordSummary{final           }{   final int {\em id\/} = 42}
+%todo - native
+\keywordSummary{private         }{   private String mySecret}
+\keywordSummary{protected       }{   protected List foo}
+\keywordSummary{public          }{   public Date newYear}
+\keywordSummary{static          }{   static int {\em id\/}}
+\keywordSummary{strictfp        }{   strictfp float {\em id\/}}
+\keywordSummary{synchronized    }{   synchronized myMethod()}
+\keywordSummary{transient       }{   transient long distance}
+\keywordSummary{volatile        }{   volatile int diamond}
 }
 
 \subsection{Lists and Maps}
 \keywordSummaryHeader{
 \keywordSummary{                }{   {\em type\/}[] {\em id\/} = new {\em type\/}[{\em size\/}]}
+\keywordSummary{                }{   List people = [fred, barney] }
+\keywordSummary{                }{   Map wilma = [friend:betty, age:unknown] }
 }
 \subsection{Operators}
 \operatorSummaryHeader{
 \operatorSummary{ {\em id\/}                =                                       {\em expr\/} }{ assign}
 \operatorSummary{ {\em expr\/}              \&                                      {\em expr\/} }{ bitwise-and}
 \operatorSummary{ {\em id\/}                \&=                                     {\em expr\/} }{ bitwise-and assign}
-\operatorSummary{ {\em id\/} =              ~                                       {\em expr\/} }{ bitwise-not}
+\operatorSummary{ {\em id\/} =              ~                                       {\em expr\/} }{ bitwise-not} %todo - doesn't render
 \operatorSummary{ {\em expr\/}              \textbar\/                              {\em expr\/} }{ bitwise-or}
 \operatorSummary{ {\em id\/}                \textbar\/=                             {\em expr\/} }{ bitwise-or assign}
-\operatorSummary{ {\em id\/} = {\em expr\/} \textgreater\textgreater\textgreater\/  {\em expr\/} }{ bitwise-shift-right}
+\operatorSummary{ {\em expr\/}              \textgreater\textgreater\textgreater\/  {\em expr\/} }{ bitwise-shift-right}
 \operatorSummary{ {\em id\/}                \textgreater\textgreater\textgreater=\/ {\em expr\/} }{ bitwise-shift-right assign}
 %\operatorSummary{ {\em expr\/}              \wedge                                  {\em expr\/} }{ bitwise-exclusive-or}
+%\operatorSummary{ {\em expr\/}              \wedge\/=                                  {\em expr\/} }{ bitwise-exclusive-or assign}
+\operatorSummary{ {\em expr\/}              \textless=\textgreater\/                {\em expr\/} }{ {\em compare to\/}}
+\operatorSummary{                           $--$                                    {\em id\/}   }{ pre-decrement}
+\operatorSummary{ {\em expr\/}              $/$                                     {\em expr\/} }{ division}
+\operatorSummary{ {\em id\/}                $/=$                                    {\em expr\/} }{ division assign}
+\operatorSummary{ {\em expr\/}              ==                                      {\em expr\/} }{ equal}
+\operatorSummary{ {\em expr\/}              $>=$                                    {\em expr\/} }{ greater or equal}
+\operatorSummary{ {\em expr\/}              $>$                                     {\em expr\/} }{ greater than}
+\operatorSummary{                           $++$                                    {\em id\/}   }{ pre-increment}
+\operatorSummary{ {\em expr\/}              \&\&                                    {\em expr\/} }{ logical-and}
+\operatorSummary{ {\em expr\/}              $<=$                                    {\em expr\/} }{ less or equal}
+\operatorSummary{                           !                                       {\em expr\/} }{ logical-not}
+\operatorSummary{ {\em expr\/}              \textbar\textbar\/                      {\em expr\/} }{ logical-or}
+\operatorSummary{ {\em expr\/}              \textless\/                             {\em expr\/} }{ less}
+\operatorSummary{ {\em expr\/}              .\&                                     {\em expr\/} }{ {\em member-pointer\/}}
+\operatorSummary{ {\em expr\/}              -                                       {\em expr\/} }{ minus}
+\operatorSummary{ {\em id\/}                -=                                      {\em expr\/} }{ minus assign}
+\operatorSummary{ {\em expr\/}              \%                                      {\em expr\/} }{ modulus}
+\operatorSummary{ {\em id\/}                \%=                                     {\em expr\/} }{ modulus assign}
+\operatorSummary{ {\em expr\/}              !=                                      {\em expr\/} }{ not equal}
+\operatorSummary{ {\em expr\/}              ?.                                      {\em expr\/} }{ {\em optional dot\/}}
+\operatorSummary{ {\em expr\/}              +                                       {\em expr\/} }{ plus}
+\operatorSummary{ {\em id\/}                +=                                      {\em expr\/} }{ plus assign}
+\operatorSummary{ {\em id\/}                $++$                                                 }{ post-decrement}
+\operatorSummary{ {\em id\/}                $++$                                                 }{ post-increment}
+}
+\subsection{Operators2}
+\operatorSummaryHeader{
+\operatorSummary{ {\em expr\/}              ?                        {\em expr\/} : {\em expr\/} }{ ternary if/else}
+\operatorSummary{ {\em expr\/}              ..\textless                             {\em expr\/} }{ {\em range exclusive\/}}
+\operatorSummary{ {\em expr\/}              ..                                      {\em expr\/} }{ {\em range inclusive\/}}
+\operatorSummary{                           /{\em regex\/}/                                      }{ {\em regex literal\/}}
+\operatorSummary{ {\em id\/}                =~                                    /{\em regex\/}/}{ {\em regex find\/}} %todo - tilde doesn't render
+\operatorSummary{ {\em id\/}                ==~                                   /{\em regex\/}/}{ {\em regex match\/}} %todo - tilde doesn't render
+\operatorSummary{ {\em expr\/}              .@                                     {\em expr\/} }{ {\em select slot\/}}
+\operatorSummary{ {\em expr\/}              \textless\textless\/                   {\em expr\/} }{ shift-left}
+\operatorSummary{ {\em expr\/}              \textless\textless=\/                  {\em expr\/} }{ shift-left-assign}
+\operatorSummary{                           *                                      {\em cltn\/} }{ {\em spread arg\/}}
+\operatorSummary{ {\em cltn\/}              *.                                     {\em expr\/} }{ {\em spread dot\/}}
+\operatorSummary{                           *:                                     {\em map \/} }{ {\em spread-map arg\/}}
+\operatorSummary{ {\em expr\/}              \textgreater\textgreater\/             {\em expr\/} }{ shift-right}
+\operatorSummary{ {\em expr\/}              \textgreater\textgreater=\/            {\em expr\/} }{ shift-right-assign}
+\operatorSummary{ {\em expr\/}              *                                      {\em expr\/} }{ multiply}
+\operatorSummary{ {\em id\/}                *=                                     {\em expr\/} }{ multiply assign}
+\operatorSummary{ {\em expr\/}              **                                     {\em expr\/} }{ to-the-power-of}
+\operatorSummary{ {\em id\/}                **=                                    {\em expr\/} }{ to-the-power-of assign}
+\operatorSummary{                           `{\em string\/}'                                    }{ {\em string literal\/}}
+\operatorSummary{                           ``{\em string\/}"                                   }{ string literal}
+\operatorSummary{                           ` ` `{\em string\/}' ' '                            }{ {\em multi-line-string literal\/}}
+\operatorSummary{                           ``````{\em string\/}"""                             }{ {\em multi-line-string literal\/}} 
+\operatorSummary{                           $-$                                    {\em id\/}   }{ unary-minus}
+\operatorSummary{                           $+$                                    {\em id\/}   }{ unary-plus}
+\operatorSummary{ {\em type\/}              ...                                    {\em id\/}   }{ variable parameters}
+
+%todo - perhaps put index operators here, i.e. foo[1]
+
 }
 % not supported in groovy yet
 % "public @interface Foo{}"
@@ -195,6 +248,11 @@ groovy.codehaus.org
 % \keywordSummary{                }{   to 9,223,372,036,854,775,807}
 % \keywordSummary{short           }{   -32,768 to 32,767}
 % \keywordSummary{void            }{   }
+% todo - exponents e.g. 1.2e-10
+% todo - hex digits e.g. 0xCaFe
+% todo - big decimal/int literals e.g. 9.8g and 9g
+% todo - float and double literals e.g. 34.4f and 53.5d
+% todo - long literals e.g. 12l
 % }
 
 \vskip 0.5 in
@@ -365,7 +423,17 @@ groovy.codehaus.org
 }
 
 \section{Snippets}
-\begin{tabbing} jezjezjez \= jez-repeated-for-tab-settings-only \kill 
+\begin{tabbing} jezjezjezjezjez \= jez-repeated-for-tab-settings-only \kill 
+{\bf Closures}\>
+{\scriptsize implicit/explicit}\\
+\verb+ { println it }+\\
+\verb+ { x, y -> println(x * y) }+\\
+{\bf Dynamic Members}\>
+{\scriptsize }\\
+\verb+ foo.bar.mooky."$randomProperty"+\\
+{\bf Construct and call setters}\>
+{\scriptsize }\\
+\verb+ new Foo(bar:123, mooky:'red')+\\
 {\bf Builder}\>
 {\scriptsize Markup, Node, StreamingMarkup, DOM, }\\
 {\scriptsize Ant, JavaDoc, Swt, JFace, Swing}\\
@@ -389,55 +457,69 @@ groovy.codehaus.org
 %
 %\end{verbatim}
 
-\section{Sample Groovy code}
-\begin{verbatim}
-package com.example
-
-import org.example.Cow
-
-/**
- * This is a sample of Groovy
- */
-class HighlandCow extends Cow {
-  
-  void mooAtPeople() {
-    sql = Sql.newInstance("jdbc:foo:bar")
-    sql.eachRow("select * from PERSON") {
-      println("Och-Aye ${it.firstname}")
-    }
-  }
-}        
-\end{verbatim}
+%\section{Sample Groovy code}
+%\begin{verbatim}
+%package com.example
+%
+%import org.example.Cow
+%
+%/**
+% * This is a sample of Groovy
+% */
+%class HighlandCow extends Cow {
+%  
+%  void mooAtPeople() {
+%    sql = Sql.newInstance("jdbc:foo:bar")
+%    sql.eachRow("select * from PERSON") {
+%      println("Och-Aye ${it.firstname}")
+%    }
+%  }
+%}        
+%\end{verbatim}
 
 \section{Tools}
-\subsection{Ant task}
+\subsection{Ant tasks}
 \begin{verbatim}
-<taskdef name="groovyc" 
-         classname="org.codehaus.groovy.ant.Groovyc" 
-         classpathref="my.classpath"/>
-<groovyc destdir="${build.classes.dir}" 
-         srcdir="${src.dir}" 
-         listfiles="true">
-  <classpath refid="my.classpath"/>
-</groovyc>
+<taskdef
+    name="groovy" 
+    classname="org.codehaus.groovy.ant.Groovy"/>
+<groovy>ant.mkdir(dir:"myDir")</groovy>
+
+<taskdef
+    name="groovyc" 
+    classname="org.codehaus.groovy.ant.Groovyc"/>
+<groovyc 
+    destdir="${build.classes.dir}" 
+    srcdir="${src.dir}"/>
+
+<taskdef
+    name="groovydoc"
+    classname="org.codehaus.groovy.ant.Groovydoc"/>
+<groovydoc
+    sourcepath="${src.dir}" 
+    destdir="${javadoc.dir}" 
+    packagenames="${javadoc.packages}"/>
 \end{verbatim}
 \subsection{Command Line Tools}                                      
 \toolDetailHeader{
-\toolDetail{ \textgreater }{ groovy        }{ [options] cheese.groovy [args] }{ interpret and execute specified groovy script }
-\toolDetail{ \textgreater }{ groovyc       }{ [options] cheese.groovy        }{ compiles specified groovy script }
+\toolDetail{ \textgreater }{ groovy        }{ [options] Telson.groovy [args] }{ interpret and execute specified groovy script }
+\toolDetail{ \textgreater }{ groovyc       }{ [options] Darv.groovy          }{ compiles specified groovy script }
 \toolDetail{ \textgreater }{ groovysh      }{                                }{ begins an interactive groovy session }
 \toolDetail{ \textgreater }{ groovyConsole }{                                }{ begins a GUI based groovy session }
+\toolDetail{ \textgreater }{ java2groovy   }{ Astra.java                     }{ rough source code translation of Java into Groovy}
+
 %\toolDetail{ \textgreater }{ grok   }{                  }{ groovy javadoc }
 }
 
 \rule{0.3\linewidth}{0.25pt}
 \scriptsize
 
-Copyright \copyright\ 2004, 2007 Jeremy Rayner
+Copyright \copyright\ 2004, 2007 Jeremy Rayner 
+\textless\/groovy@ross-rayner.com\textgreater\/\/http://javanicus.com/blog2
 
-\verb!$Revision$, $Date$.!
+$Revision$
+$Date$
 
-http://javanicus.com/
 
 
 \end{multicols}
