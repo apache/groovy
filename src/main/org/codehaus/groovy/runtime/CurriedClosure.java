@@ -18,6 +18,10 @@ public class CurriedClosure extends Closure {
         curriedParams = arguments;
         maximumNumberOfParameters = uncurriedClosure.getMaximumNumberOfParameters()-arguments.length;
     }
+    
+    public CurriedClosure(Closure uncurriedClosure, int i) {
+        this(uncurriedClosure, new Object[]{new Integer(i)});
+    }
 
     public Object[] getUncurriedArguments(Object[] arguments) {
         final Object newCurriedParams[] = new Object[curriedParams.length + arguments.length];
