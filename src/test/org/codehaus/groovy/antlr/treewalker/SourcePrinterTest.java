@@ -117,6 +117,12 @@ public class SourcePrinterTest extends GroovyTestCase {
         // todo: above is not quite the spacing I would expect, but good enough for now...
     }
 
+    public void testClosureList() throws Exception { // not in java
+        assertEquals("for (int i = 0; i++; i < 10){}", pretty("for (int i=0;i++;i<10){}")); // not in java
+        assertEquals("def x = (int i = 0; i++; i < 10)", pretty("def x = (int i=0;i++;i<10)")); // not in java
+//todo        assertEquals("myMethod(int i = 0; i++; i < 10)", pretty("myMethod(int i=0;i++;i<10)")); // not in java
+    }
+
     public void testCompareTo() throws Exception { // not in java
         assertEquals("1 <=> 2", pretty("1<=>2")); // not in java
     }
@@ -162,7 +168,7 @@ public class SourcePrinterTest extends GroovyTestCase {
 
     public void testElist() throws Exception {
         assertEquals("println 2 + 2", pretty("println 2 + 2"));
-        assertEquals("for (i = 0, j = 2 ; i < 10 ; i++, j--){print i}", pretty("for (i = 0,j = 2;i < 10; i++, j--) {print i}")); // fails after parser
+        assertEquals("for (i = 0; j = 2; i < 10; i++; j--){print i}", pretty("for (i = 0;j = 2;i < 10; i++; j--) {print i}")); // fails after parser
         assertEquals("foo()", pretty("foo()")); // empty ELIST
         assertEquals("foo(bar, mooky)", pretty("foo( bar , mooky )"));
     }
@@ -210,7 +216,7 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
 
     public void testForCondition() throws Exception {
-        assertEquals("for (i = 0 ; i < 10 ; i++){println i}", pretty("for (i=0;i<10;i++) {println i}")); // fails after parser
+        assertEquals("for (i = 0; i < 10; i++){println i}", pretty("for (i=0;i<10;i++) {println i}")); // fails after parser
     }
 
     // testForInit() covered by testForCondition()

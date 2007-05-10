@@ -57,6 +57,7 @@ public interface Visitor {
     void visitCaseGroup(GroovySourceAST t, int visit);
     void visitClassDef(GroovySourceAST t, int visit);
     void visitClosedBlock(GroovySourceAST t, int visit);
+    void visitClosureList(GroovySourceAST t, int visit);
     void visitClosureOp(GroovySourceAST t, int visit);
     void visitColon(GroovySourceAST t, int visit);
     void visitComma(GroovySourceAST t, int visit);

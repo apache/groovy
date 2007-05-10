@@ -19,7 +19,6 @@ package org.codehaus.groovy.control;
 
 import org.codehaus.groovy.syntax.Reduction;
 import org.codehaus.groovy.syntax.ParserException;
-import org.codehaus.groovy.syntax.SourceSummary;
 import org.codehaus.groovy.ast.ModuleNode;
 
 import java.io.Reader;
@@ -32,8 +31,6 @@ import java.io.Reader;
 public interface ParserPlugin {
 
     public Reduction parseCST(SourceUnit sourceUnit, Reader reader) throws CompilationFailedException;
-
-    public SourceSummary getSummary();
 
     public ModuleNode buildAST(SourceUnit sourceUnit, ClassLoader classLoader, Reduction cst) throws ParserException;
 }

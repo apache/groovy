@@ -56,6 +56,7 @@ public class VisitorAdapter implements Visitor {
     public void visitClassDef(GroovySourceAST t,int visit) {visitDefault(t,visit);}
     public void visitClosedBlock(GroovySourceAST t,int visit) {visitDefault(t,visit);}
     public void visitClosureOp(GroovySourceAST t,int visit) {visitDefault(t,visit);}
+    public void visitClosureList(GroovySourceAST t,int visit) {visitDefault(t,visit);}
     public void visitColon(GroovySourceAST t,int visit) {visitDefault(t,visit);}
     public void visitComma(GroovySourceAST t,int visit) {visitDefault(t,visit);}
     public void visitCompareTo(GroovySourceAST t,int visit) {visitDefault(t,visit);}

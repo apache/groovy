@@ -51,6 +51,7 @@ import java.math.BigInteger;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.objectweb.asm.MethodVisitor;
@@ -703,6 +704,30 @@ public class BytecodeHelper implements Opcodes {
             cv.visitInsn(ARETURN);
         }
         
+    }
+
+    public static String getGenericsSignature(GenericsType[] genericsTypes) {
+        //"<T:Ljava/lang/Object;>Ljava/lang/Object;"
+        //"<Y:Ljava/lang/Object;T:Ljava/util/ArrayList<TY;;>Ljava/lang/Object;
+        if (genericsTypes==null) return null;
+        StringBuffer ret = new StringBuffer(100);
+        ret.append('<');
+        for (int i = 0; i < genericsTypes.length; i++) {
+            ret.append(genericsTypes[i].getName());
+            
+            ret.append(':');
+            
+            ret.append('L');
+            ClassNode upperBound = genericsTypes[i].getUpperBound();
+            if (upperBound !=null) {
+                ret.append(getClassInternalName(upperBound));
+            } else {
+                ret.append("java/lang/Object");
+            }
+            ret.append(';');
+        }
+        ret.append(">Ljava/lang/Object;");
+        return ret.toString();        
     }
     
 }

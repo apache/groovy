@@ -186,4 +186,7 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
         visitStatement(loop);
         super.visitWhileLoop(loop);
     }
+    
+    public void visitGenericType(GenericsType genericsType) {
+    }
 }

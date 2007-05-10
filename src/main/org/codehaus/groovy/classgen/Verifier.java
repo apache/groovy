@@ -58,6 +58,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.GroovyClassVisitor;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
@@ -637,6 +638,10 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             }
         }
         return statement;
+    }
+
+    public void visitGenericType(GenericsType genericsType) {
+
     }
 
 }

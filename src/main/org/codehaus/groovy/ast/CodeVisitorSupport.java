@@ -310,4 +310,8 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
     public void visitArgumentlistExpression(ArgumentListExpression ale) {
     	visitTupleExpression(ale);
     }
+    
+    public void visitClosureListExpression(ClosureListExpression cle) {
+        visitListOfExpressions(cle.getExpressions());
+    }
 }

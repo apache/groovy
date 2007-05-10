@@ -64,11 +64,17 @@ import java.util.Map;
  * phase of the compiler the real ClassNode for the plain name may be
  * found. To avoid the need of exchanging this ClassNode with an 
  * instance of the correct ClassNode the correct ClassNode is set as 
- * redirect. All method calls are then redirected to that ClassNode.
+ * redirect. Most method calls are then redirected to that ClassNode.
  * <br>
- * Note: the proxy mechanism is only allowed for classes being marked
+ * <b>Note:</b> the proxy mechanism is only allowed for classes being marked
  * as primary ClassNode which means they represent no actual class. 
  * The redirect itself can be any type of ClassNode
+ * <br>
+ * To descirbe generic type signature see {@link #getGenericsTypes()} and
+ * {@link #setGenericsTypes(GenericsType[])}. These emthods are not proxied,
+ * they describe the type signature used at the point of declaration or the
+ * type signatures provided by the class. If the type signatures provided
+ * by the class are needed, then a call to {@link #redirect()} will help.
  *
  * @see org.codehaus.groovy.ast.ClassHelper
  * 
@@ -115,6 +121,9 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     private ClassNode redirect=null; 
     // flag if the classes or its members are annotated
     private boolean annotated;
+    
+    // type spec for generics
+    private GenericsType[] genericsTypes=null;
     
     /**
      * Returns the ClassNode this ClassNode is redirecting to.
@@ -819,6 +828,12 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
     public void visitContents(GroovyClassVisitor visitor) {
         
+        if (genericsTypes!=null) {
+            for (int i = 0; i < genericsTypes.length; i++) {
+                visitor.visitGenericType(genericsTypes[i]);
+            }
+        }
+        
         // now lets visit the contents of the class
         for (Iterator iter = getProperties().iterator(); iter.hasNext();) {
             PropertyNode pn = (PropertyNode) iter.next();
@@ -896,7 +911,20 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public String toString() {
-        return super.toString() + "[name: " + getName() + "]";
+        String ret = getClass().getName() + "[" + getName(); // + "]";
+        if (genericsTypes!=null) {
+            ret += " <";
+            for (int i = 0; i < genericsTypes.length; i++) {
+                if (i!=0) ret+=", ";
+                ret += genericsTypes[i];
+            }
+            ret += ">";
+        }
+        ret += "]";
+        if (redirect!=null) {
+            ret += " -> "+redirect().toString();
+        }
+        return ret;
     }
 
     /**
@@ -986,5 +1014,13 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     
     public boolean isAnnotated() {
         return this.annotated;
+    }
+
+    public GenericsType[] getGenericsTypes() {
+        return genericsTypes;
+    }
+
+    public void setGenericsTypes(GenericsType[] genericsTypes) {
+        this.genericsTypes = genericsTypes;
     }
 }

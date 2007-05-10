@@ -106,13 +106,6 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         return null; //new Reduction(Tpken.EOF);
     }
 
-    public SourceSummary getSummary() {
-        SummaryCollector summaryCollector = new SummaryCollector();
-        AntlrASTProcessor treewalker = new PreOrderTraversal(summaryCollector);
-        treewalker.process(ast);
-        return summaryCollector.getSourceSummary();
-    }
-
     private void outputASTInVariousFormsIfNeeded(SourceUnit sourceUnit) {
         // straight xstream output of AST
         if ("xml".equals(System.getProperty("antlr.ast"))) {
@@ -335,6 +328,12 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
         String name = identifier(node);
         node = node.getNextSibling();
+        
+        GenericsType[] genericsType = null;
+        if (isType(TYPE_PARAMETERS,node)) {
+            genericsType = makeGenericsType(node);
+            node = node.getNextSibling();
+        }
 
         ClassNode superClass = null;
         if (isType(EXTENDS_CLAUSE, node)) {
@@ -354,6 +353,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         addNewClassName(name);
         classNode = new ClassNode(dot(getPackageName(), name), modifiers, superClass, interfaces, mixins);
         classNode.addAnnotations(annotations);
+        classNode.setGenericsTypes(genericsType);
         configureAST(classNode, classDef);
 
         assertNodeType(OBJBLOCK, node);
@@ -908,44 +908,34 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
     protected Statement forStatement(AST forNode) {
-        assertNotLegacyFor(forNode);
         AST inNode = forNode.getFirstChild();
-        AST variableNode = inNode.getFirstChild();
-        AST collectionNode = variableNode.getNextSibling();
-
-        ClassNode type = ClassHelper.OBJECT_TYPE;
-        if (isType(VARIABLE_DEF, variableNode)) {
-            AST typeNode = variableNode.getFirstChild();
-            assertNodeType(TYPE, typeNode);
-
-            type = type(typeNode);
-            variableNode = typeNode.getNextSibling();
+        Expression collectionExpression;
+        Parameter forParameter;
+        if (isType(CLOSURE_LIST, inNode)) {
+            collectionExpression = closureListExpression(inNode);
+            forParameter=ForStatement.FOR_LOOP_DUMMY;
+        } else {        
+            AST variableNode = inNode.getFirstChild();
+            AST collectionNode = variableNode.getNextSibling();
+    
+            ClassNode type = ClassHelper.OBJECT_TYPE;
+            if (isType(VARIABLE_DEF, variableNode)) {
+                AST typeNode = variableNode.getFirstChild();
+                assertNodeType(TYPE, typeNode);
+    
+                type = type(typeNode);
+                variableNode = typeNode.getNextSibling();
+            }
+            String variable = identifier(variableNode);
+    
+            collectionExpression = expression(collectionNode);
+            forParameter = new Parameter(type,variable);
         }
-        String variable = identifier(variableNode);
 
-        Expression collectionExpression = expression(collectionNode);
         Statement block = statement(inNode.getNextSibling());
-        Parameter forParameter = new Parameter(type,variable);
-
         ForStatement forStatement = new ForStatement(forParameter, collectionExpression, block);
         configureAST(forStatement, forNode);
         return forStatement;
-    }
-
-    private void assertNotLegacyFor(AST forNode) {
-        AST childNode = forNode.getFirstChild();
-        boolean legacy = false;
-        while (childNode != null) {
-            int type = childNode.getType();
-            if (type == FOR_INIT || type == FOR_CONDITION || type == FOR_ITERATOR) {
-                legacy = true;
-                break;
-            }
-            childNode = childNode.getNextSibling();
-        }
-        if (legacy) {
-            throw new ASTRuntimeException(forNode, "For statement contains unexpected tokens. Possible attempt to use unsupported Java-style for loop.");
-        }
     }
 
     protected Statement ifStatement(AST ifNode) {
@@ -981,7 +971,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         return expressionStatement;
     }
 
-    protected Statement variableDef(AST variableDef) {
+    protected Expression declarationExpression(AST variableDef) {
         AST node = variableDef.getFirstChild();
         ClassNode type = null;
         if (isType(MODIFIERS, node)) {
@@ -1010,6 +1000,12 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         DeclarationExpression expression = new DeclarationExpression(leftExpression, token, rightExpression);
         configureAST(expression, variableDef);
         ExpressionStatement expressionStatement = new ExpressionStatement(expression);
+        configureAST(expressionStatement, variableDef);
+        return expression;
+    }
+    
+    protected Statement variableDef(AST variableDef) {
+        ExpressionStatement expressionStatement = new ExpressionStatement(declarationExpression(variableDef));
         configureAST(expressionStatement, variableDef);
         return expressionStatement;
     }
@@ -1466,6 +1462,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             case BSR_ASSIGN:
                 return binaryExpression(Types.RIGHT_SHIFT_UNSIGNED_EQUAL, node);
 
+            case VARIABLE_DEF:
+                return declarationExpression(node);
+                
                 // Regex
             case REGEX_FIND:
                 return binaryExpression(Types.FIND_REGEX, node);
@@ -1489,11 +1488,34 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 
             case ANNOTATION:
                 return new AnnotationConstantExpression(annotation(node));
+
+            case CLOSURE_LIST:
+                return closureListExpression(node);
                 
             default:
                 unknownAST(node);
         }
         return null;
+    }
+    
+    private Expression closureListExpression(AST node) {
+        AST exprNode = node.getFirstChild();
+        LinkedList list = new LinkedList();
+        while (exprNode!=null) {
+            if (isType(EXPR,exprNode)) {
+                Expression expr = expression(exprNode);
+                configureAST(expr, exprNode);
+                list.add(expr);                
+            } else {
+                assertNodeType(EMPTY_STAT, exprNode);
+                list.add(EmptyExpression.INSTANCE);
+            }
+            
+            exprNode = exprNode.getNextSibling();
+        }
+        ClosureListExpression cle = new ClosureListExpression(list);
+        configureAST(cle,node);
+        return cle;
     }
 
     protected Expression dynamicMemberExpression(AST dynamicMemberNode) {
@@ -2159,7 +2181,59 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             return qualifiedNameNode.getText();
         }
     }
+    
+    protected ClassNode makeTypeWithArguments(AST rootNode) {
+        ClassNode basicType = makeType(rootNode);
+        LinkedList typeArgumentList = new LinkedList();
+        AST node = rootNode.getFirstChild();
+        if (node==null) return basicType;
+        node = node.getFirstChild();
+        if (node==null) return basicType;
+        assertNodeType(TYPE_ARGUMENTS, node);
+        AST typeArgument = node.getFirstChild();
+        
+        while (node != null) {
+            assertNodeType(TYPE_ARGUMENT, typeArgument);            
+            ClassNode argument = makeType(typeArgument.getFirstChild());
+            GenericsType gt = new GenericsType(argument);
+            configureAST(gt, node);
+            typeArgumentList.add(gt);
+            node = node.getNextSibling();
+        }
+        
+        if (typeArgumentList.size()>0) {
+            basicType.setGenericsTypes((GenericsType[]) typeArgumentList.toArray(new GenericsType[0]));
+        }
+        
+        return basicType;
+    }
+    
+    protected GenericsType[] makeGenericsType(AST rootNode) {
+        AST typeParameter = rootNode.getFirstChild();
+        LinkedList ret = new LinkedList();
+        assertNodeType(TYPE_PARAMETER, typeParameter);
 
+        while (isType(TYPE_PARAMETER, typeParameter)) {
+            AST typeNode = typeParameter.getFirstChild();
+            ClassNode type = makeType(typeParameter);
+            
+            AST bounds = typeNode.getNextSibling();
+            ClassNode upperBound = null;
+            if (bounds!=null) {
+                assertNodeType(TYPE_UPPER_BOUNDS, bounds);
+                upperBound = makeTypeWithArguments(bounds);
+                configureAST(upperBound, bounds);
+            }
+            
+            GenericsType gt = new GenericsType(type,upperBound);
+            configureAST(gt, typeNode);
+            
+            ret.add(gt);
+            typeParameter = typeParameter.getNextSibling();
+        }
+        return (GenericsType[]) ret.toArray(new GenericsType[0]);
+    }
+    
     protected ClassNode makeType(AST typeNode) {
         ClassNode answer = ClassHelper.DYNAMIC_TYPE;
         AST node = typeNode.getFirstChild();
@@ -2167,7 +2241,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             if (isType(INDEX_OP, node) || isType(ARRAY_DECLARATOR, node)) {
                 return makeType(node).makeArray();
              }
-            return ClassHelper.make(qualifiedName(node));
+            answer = ClassHelper.make(qualifiedName(node));
         }
         return answer;
     }

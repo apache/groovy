@@ -206,5 +206,7 @@ public interface GroovyCodeVisitor {
     void visitCastExpression(CastExpression expression);
 
     void visitArgumentlistExpression(ArgumentListExpression expression);
+
+    void visitClosureListExpression(ClosureListExpression closureListExpression);
 }
 

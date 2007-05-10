@@ -108,10 +108,6 @@ public class SourceUnit extends ProcessingUnit {
     protected Reduction cst;
 
     /**
-     * A facade over the CST
-     */
-    protected SourceSummary sourceSummary;
-    /**
      * The root of the Abstract Syntax Tree for the source
      */
     protected ModuleNode ast;
@@ -169,12 +165,6 @@ public class SourceUnit extends ProcessingUnit {
         return this.cst;
     }
 
-    /**
-     * Returns the Source Summary
-     */
-    public SourceSummary getSourceSummary() {
-        return this.sourceSummary;
-    }
     /**
      * Returns the Abstract Syntax Tree produced during parse()ing
      * and expanded during later phases.
@@ -277,7 +267,6 @@ public class SourceUnit extends ProcessingUnit {
             parserPlugin = getConfiguration().getPluginFactory().createParserPlugin();
 
             cst = parserPlugin.parseCST(this, reader);
-            sourceSummary = parserPlugin.getSummary();
 
             reader.close();
             

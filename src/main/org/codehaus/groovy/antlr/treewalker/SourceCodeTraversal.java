@@ -94,6 +94,7 @@ public class SourceCodeTraversal extends TraversalHelper {
                     accept_v_FirstChild_2ndv_SecondChild_v___LastChild_v(t);
                     break;
 
+                case GroovyTokenTypes.CLOSURE_LIST: // (a=1; a<10; a++)
                 case GroovyTokenTypes.ELIST: // a,b,c
                 case GroovyTokenTypes.PARAMETERS: // a,b,c
                 case GroovyTokenTypes.TYPE_ARGUMENTS: // <String, Object>

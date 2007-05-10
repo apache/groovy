@@ -61,11 +61,11 @@ public class UnimplementedSyntaxTest extends GroovyTestCase {
     public void test_ClassicJavaForLoop1_FAILS() throws Exception {
         if (notYetImplemented()) return;
         // For statement contains unexpected tokens. Possible attempt to use unsupported Java-style for loop.
+        // This syntax now replaced with closure list i.e. for (i=0;j=2;i<10;i++;j--) {...
         assertNotNull(compile("for (i = 0,j = 2;i < 10; i++, j--) {print i}")); // fails after parser
     }
 
-    public void test_ClassicJavaForLoop2_FAILS() throws Exception {
-        if (notYetImplemented()) return;
+    public void test_ClassicJavaForLoop2() throws Exception {
         // For statement contains unexpected tokens. Possible attempt to use unsupported Java-style for loop.
         assertNotNull(compile("for (i=0;i<10;i++) {println i}")); // fails after parser
     }

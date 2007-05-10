@@ -192,6 +192,9 @@ public class SourcePrinter extends VisitorAdapter {
         printUpdatingTabLevel(t,visit,"{","-> ","}");
     }
     
+    public void visitClosureList(GroovySourceAST t, int visit) {
+    	print(t,visit,"(","; ",")");
+    }
     // visitClosureOp ...
 	//   token type CLOSABLE_BLOCK_OP never created/visited, see CLOSABLE_BLOCK...
 	
@@ -471,7 +474,7 @@ public class SourcePrinter extends VisitorAdapter {
     public void visitLiteralFor(GroovySourceAST t,int visit) {
         print(t,visit,"for ",null,null);
     }
-
+    
     public void visitLiteralIf(GroovySourceAST t,int visit) {
         // slightly strange as subsequent visit is done after closing visit
         printUpdatingTabLevel(t,visit,"if ("," else ",") ");

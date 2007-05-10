@@ -185,6 +185,11 @@ public class CompositeVisitor implements Visitor{
         while (itr.hasNext()) {((Visitor)itr.next()).visitClosedBlock(t,visit);}
     }
 
+	public void visitClosureList(GroovySourceAST t, int visit) {
+        Iterator itr = itr(visit);
+        while (itr.hasNext()) {((Visitor)itr.next()).visitClosureList(t,visit);}
+	}
+
     public void visitClosureOp(GroovySourceAST t, int visit) {
         Iterator itr = itr(visit);
         while (itr.hasNext()) {((Visitor)itr.next()).visitClosureOp(t,visit);}
@@ -1170,5 +1175,4 @@ public class CompositeVisitor implements Visitor{
         while (itr.hasNext()) {lastNodePopped = (GroovySourceAST) ((Visitor)itr.next()).pop();}
         return lastNodePopped;
     }
-
 }

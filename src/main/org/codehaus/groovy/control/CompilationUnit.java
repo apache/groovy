@@ -79,8 +79,6 @@ import org.codehaus.groovy.control.messages.ExceptionMessage;
 import org.codehaus.groovy.control.messages.Message;
 import org.codehaus.groovy.control.messages.SimpleMessage;
 import org.codehaus.groovy.syntax.SyntaxException;
-import org.codehaus.groovy.syntax.ClassSource;
-import org.codehaus.groovy.syntax.SourceSummary;
 import org.codehaus.groovy.tools.GroovyClass;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -184,7 +182,6 @@ public class CompilationUnit extends ProcessingUnit {
                 source.parse();
             }
         }, Phases.PARSING);
-        addPhaseOperation(summarize, Phases.PARSING);
         addPhaseOperation(convert,   Phases.CONVERSION);
         addPhaseOperation(resolve,   Phases.SEMANTIC_ANALYSIS);
         addPhaseOperation(compileCompleteCheck, Phases.CANONICALIZATION);
@@ -549,32 +546,6 @@ public class CompilationUnit extends ProcessingUnit {
         }
         return dequeue;
     }
-
-
-    /**
-     * Adds summary of each class to maps
-     */
-    private SourceUnitOperation summarize = new SourceUnitOperation() {
-        public void call(SourceUnit source) throws CompilationFailedException {
-            SourceSummary sourceSummary = source.getSourceSummary();
-            if (sourceSummary != null) {
-                summariesBySourceName.put(source.getName(),sourceSummary);
-                List publicClassSources = sourceSummary.getPublicClassSources();
-                if (publicClassSources == null || publicClassSources.size() == 0) {
-                    //todo - is this the best way to handle scripts?
-                    summariesByPublicClassName.put("*NoName*",sourceSummary);
-                    // nothing to put into classSourcesByClassName as no ClassSource
-                } else {
-                    Iterator itr = publicClassSources.iterator();
-                    while (itr.hasNext()) {
-                        ClassSource classSource = (ClassSource)itr.next();
-                        summariesByPublicClassName.put(classSource.getName(),sourceSummary);
-                        classSourcesByPublicClassName.put(classSource.getName(),classSource);
-                    }
-                }
-            }
-        }
-    };
     
     /**
      * Resolves all types

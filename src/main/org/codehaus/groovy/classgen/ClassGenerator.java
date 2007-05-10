@@ -80,4 +80,7 @@ public abstract class ClassGenerator extends ClassCodeVisitorSupport implements 
   protected SourceUnit getSourceUnit() {
       return null;
   }
+
+  public void visitBytecodeSequence(BytecodeSequence bytecodeSequence) {
+  }
 }

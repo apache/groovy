@@ -45,6 +45,7 @@
  */
 package org.codehaus.groovy.ast.stmt;
 
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.Parameter;
@@ -58,6 +59,7 @@ import org.codehaus.groovy.ast.expr.Expression;
  * @version $Revision$
  */
 public class ForStatement extends Statement {
+    public final static Parameter FOR_LOOP_DUMMY = new Parameter(ClassHelper.OBJECT_TYPE,"forLoopDummyParameter");
 
     private Parameter variable;
     private Expression collectionExpression;
@@ -66,7 +68,7 @@ public class ForStatement extends Statement {
     
 
     public ForStatement(Parameter variable, Expression collectionExpression, Statement loopBlock) {
-        this.variable = variable;
+        this.variable = variable; 
         this.collectionExpression = collectionExpression;
         this.loopBlock = loopBlock;
     }

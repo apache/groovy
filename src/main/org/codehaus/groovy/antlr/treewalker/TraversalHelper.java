@@ -84,6 +84,7 @@ public abstract class TraversalHelper implements AntlrASTProcessor {
                 case GroovyTokenTypes.CLASS_DEF                     :   v.visitClassDef(ast,n);                     break;
                 case GroovyTokenTypes.CLOSABLE_BLOCK                :   v.visitClosedBlock(ast,n);                  break;
                 case GroovyTokenTypes.CLOSABLE_BLOCK_OP             :   v.visitClosureOp(ast,n);                    break;
+                case GroovyTokenTypes.CLOSURE_LIST                  :   v.visitClosureList(ast,n);                  break;
                 case GroovyTokenTypes.COLON                         :   v.visitColon(ast,n);                        break;
                 case GroovyTokenTypes.COMMA                         :   v.visitComma(ast,n);                        break;
                 case GroovyTokenTypes.COMPARE_TO                    :   v.visitCompareTo(ast,n);                    break;

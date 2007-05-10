@@ -189,7 +189,7 @@ import antlr.LexerSharedInputState;
 
 class GroovyRecognizer extends Parser;
 options {
-    k = 3;                            // three token lookahead
+    k = 2;                            // two token lookahead
     exportVocab=Groovy;               // Call its vocabulary "Groovy"
     codeGenMakeSwitchThreshold = 2;   // Some optimizations
     codeGenBitsetTestThreshold = 3;
@@ -217,7 +217,7 @@ tokens {
     STATIC_IMPORT; ENUM_DEF; ENUM_CONSTANT_DEF; FOR_EACH_CLAUSE; ANNOTATION_DEF; ANNOTATIONS;
     ANNOTATION; ANNOTATION_MEMBER_VALUE_PAIR; ANNOTATION_FIELD_DEF; ANNOTATION_ARRAY_INIT;
     TYPE_ARGUMENTS; TYPE_ARGUMENT; TYPE_PARAMETERS; TYPE_PARAMETER; WILDCARD_TYPE;
-    TYPE_UPPER_BOUNDS; TYPE_LOWER_BOUNDS;
+    TYPE_UPPER_BOUNDS; TYPE_LOWER_BOUNDS; CLOSURE_LIST;
 }
 
 {
@@ -535,9 +535,9 @@ declarationStart!
     ;
 
 qualifiedTypeName!
-				 :
-				 			 IDENT (DOT IDENT)* DOT upperCaseIdent
-				 ;
+	:
+		IDENT DOT (IDENT DOT)* upperCaseIdent
+	;
 	
 /** Used to look ahead for a constructor 
  */
@@ -1621,7 +1621,7 @@ statement[int prevToken]
 forStatement
     :   f:"for"^
         LPAREN!
-        (   (forInit SEMI)=>traditionalForClause
+        (   (SEMI |(strictContextExpression SEMI))=>closureList
             // *OBS*
             // There's no need at all for squeezing in the new Java 5 "for"
             // syntax, since Groovy's is a suitable alternative.
@@ -1630,15 +1630,35 @@ forStatement
         |   // the coast is clear; it's a modern Groovy for statement
             forInClause
         )
-        RPAREN! nlsWarn!
+        RPAREN! nls!
         compatibleBodyStatement                                  // statement to loop over
     ;
 
-traditionalForClause
+closureList
+	{Token first = LT(1); boolean wasSemi=true;}
     :
-        forInit SEMI!   // initializer
-        forCond SEMI!   // condition test
-        forIter         // updater
+    	
+    	(strictContextExpression {wasSemi=false;})?
+    	(SEMI!
+    		{
+    			if (wasSemi) {
+    				astFactory.addASTChild(currentAST,astFactory.create(EMPTY_STAT, "EMPTY_STAT"));
+    			}
+    			wasSemi=true;
+    		} 
+    		(( 	SEMI!
+        		{
+        			if (wasSemi) {
+        				astFactory.addASTChild(currentAST,astFactory.create(EMPTY_STAT, "EMPTY_STAT"));
+        			}
+        			wasSemi=true;
+        		})
+        	| (
+        		strictContextExpression
+        		{wasSemi=false;}
+        	))
+    	)*
+		{#closureList = #(create(CLOSURE_LIST,"CLOSURE_LIST",first,LT(1)),#closureList);}
     ;
 
 /*OBS*
@@ -1882,9 +1902,13 @@ handler
  *  Unlike parenthesized arguments, these must be plain expressions,
  *  without labels or spread operators.
  */
-commandArguments[AST head]  {Token first = LT(1);}
+commandArguments[AST head]  
+  {
+  	Token first = LT(1);
+  	int hls=0;
+  }
     :
-        expression[0] ( COMMA! nls! expression[0] )*
+        commandArgument ( COMMA! nls! commandArgument )*
         // println 2+2 //OK
         // println(2+2) //OK
         // println (2)+2 //BAD
@@ -1892,7 +1916,7 @@ commandArguments[AST head]  {Token first = LT(1);}
         // (println(2)+2) //OK
         // compare (2), 2 //BAD
         // compare( (2), 2 ) //OK
-        // foo.bar baz{bat}, bang{boz} //OK?!
+        // foo.bar baz{bat}, bang{boz} //OK
         {
             AST elist = #(create(ELIST,"ELIST",first,LT(1)), #commandArguments);
             AST headid = getASTFactory().dup(#head);
@@ -1900,6 +1924,14 @@ commandArguments[AST head]  {Token first = LT(1);}
             headid.setText("<command>");
             #commandArguments = #(headid, head, elist);
         }
+    ;
+
+commandArgument
+    :
+        (argumentLabel COLON) => (
+            argumentLabel c:COLON^  expression[0]  {#c.setType(LABELED_ARG);}
+        )
+        |  expression[0]
     ;
 
 // expressions
@@ -2264,7 +2296,8 @@ equalityExpression[int lc_stmt]
 // boolean relational expressions (level 7)
 relationalExpression[int lc_stmt]
     :   shiftExpression[lc_stmt]
-        (   (   (   LT^
+        (	options {greedy=true;} : (	
+        		(   LT^
                 |   GT^
                 |   LE^
                 |   GE^
@@ -2272,10 +2305,11 @@ relationalExpression[int lc_stmt]
                 )
                 nls!
                 shiftExpression[0]
-            )?
-        |   "instanceof"^ nls! typeSpec[true]
-        |   "as"^         nls! typeSpec[true] //TODO: Rework to allow type expression?
-        )
+            
+        	)
+        	|   "instanceof"^ nls! typeSpec[true]
+        	|   "as"^         nls! typeSpec[true] //TODO: Rework to allow type expression?
+        )?
     ;
 
 
@@ -2411,8 +2445,19 @@ primaryExpression
 // Note:  This is guaranteed to be an EXPR AST.
 // That is, parentheses are preserved, in case the walker cares about them.
 // They are significant sometimes, as in (f(x)){y} vs. f(x){y}.
-parenthesizedExpression
-    :   LPAREN! strictContextExpression RPAREN!
+parenthesizedExpression { Token first = LT(1); boolean hasClosureList=false; }
+    :   LPAREN! 
+           strictContextExpression
+           (SEMI! nls! 
+             {hasClosureList=true;}
+             (strictContextExpression | { astFactory.addASTChild(currentAST,astFactory.create(EMPTY_STAT, "EMPTY_STAT")); })  
+           )*
+        RPAREN!
+        {
+        	if (hasClosureList) {
+        		#parenthesizedExpression = #(create(CLOSURE_LIST,"CLOSURE_LIST",first,LT(1)),#parenthesizedExpression);
+        	}
+        }
     ;
 
 scopeEscapeExpression
@@ -2659,45 +2704,69 @@ anonymousInnerClassBlock
 *NYI*/
 
 argList
-    {Token first = LT(1); boolean hl = false, hl2; }
-    :   (
-            hl=argument
-            (
-                options { greedy=true; }:
-                COMMA! hl2=argument             { hl |= hl2; }
-                // Note:  nls not needed, since we are inside parens,
-                // and those insignificant newlines are suppressed by the lexer.
-            )*
-            {#argList = #(create(ELIST,"ELIST",first,LT(1)), argList);}
-        |   /*nothing*/
-            {#argList = create(ELIST,"ELIST",first,LT(1));}
-        )
-
-        // DECIDE: Allow an extra trailing comma, for easy editing of long lists.
-        // This applies uniformly to [x,y,] and (x,y,).  It is inspired by Java's a[] = {x,y,}.
-        (   COMMA!  )?
-        { argListHasLabels = hl; }  // return the value
+    {
+    	Token first = LT(1); 
+    	Token lastComma = null;
+    	int hls=0, hls2=0; 
+    	boolean hasClosureList=false;
+    	boolean trailingComma=false; 
+   	}
+    :	
+        // Note:  nls not needed, since we are inside parens,
+        // and those insignificant newlines are suppressed by the lexer.
+    	(hls=argument
+    	(( 
+    		(
+    			SEMI! {hasClosureList=true;}
+    			(
+    				strictContextExpression
+    				| { astFactory.addASTChild(currentAST,astFactory.create(EMPTY_STAT, "EMPTY_STAT")); }
+    			)
+    		)+
+    		{#argList = #(create(CLOSURE_LIST,"CLOSURE_LIST",first,LT(1)),#argList);}
+    	) | (	
+    			(   {lastComma = LT(1);}
+        	  		COMMA! 
+        	  		(
+        	  			(hls2=argument {hls |= hls2;})
+        	  			|
+        	  			(
+        	  			 {  if (trailingComma) throw new NoViableAltException(lastComma, getFilename());
+        	  			 	trailingComma=true;
+        	  			 }
+        	  			)
+        	  		)	 
+        	  			
+        		)*
+    	        {#argList = #(create(ELIST,"ELIST",first,LT(1)), argList);}
+	        )
+    	) | (
+			{#argList = create(ELIST,"ELIST",first,LT(1));}
+    	)
+    	)	
+    	{argListHasLabels = (hls&1)!=0; }
     ;
 
 /** A single argument in (...) or [...].  Corresponds to to a method or closure parameter.
  *  May be labeled.  May be modified by the spread operator '*' ('*:' for keywords).
  */
 argument
-returns [boolean hasLabel = false]
+returns [byte hasLabelOrSpread = 0]
     :
         // Optional argument label.
         // Usage:  Specifies a map key, or a keyworded argument.
         (   (argumentLabelStart) =>
             argumentLabel c:COLON^          {#c.setType(LABELED_ARG);}
 
-            {   hasLabel = true;  }  // signal to caller the presence of a label
+            {   hasLabelOrSpread |= 1;  }  // signal to caller the presence of a label
 
         |   // Spread operator:  f(*[a,b,c])  ===  f(a,b,c);  f(1,*null,2)  ===  f(1,2).
             sp:STAR^                        {#sp.setType(SPREAD_ARG);}
+            {   hasLabelOrSpread |= 2;  }  // signal to caller the presence of a spread operator
             // spread maps are marked, as f(*:m) for f(a:x, b:y) if m==[a:x, b:y]
             (
                 COLON!                      {#sp.setType(SPREAD_MAP_ARG);}
-                { hasLabel = true; }  // signal to caller the presence of a label
+                { hasLabelOrSpread |= 1; }  // signal to caller the presence of a label
             )?
         )?
 

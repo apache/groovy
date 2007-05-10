@@ -69,6 +69,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
@@ -84,9 +85,11 @@ import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
+import org.codehaus.groovy.ast.expr.ClosureListExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
+import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ExpressionTransformer;
 import org.codehaus.groovy.ast.expr.FieldExpression;
@@ -277,6 +280,8 @@ public class AsmClassGenerator extends ClassGenerator {
     private ClassNode interfaceClassLoadingClass;
 
     private boolean implicitThis = false;
+    
+    private Map genericParameterNames = null;
 
     public AsmClassGenerator(
             GeneratorContext context, ClassVisitor classVisitor,
@@ -290,6 +295,7 @@ public class AsmClassGenerator extends ClassGenerator {
         this.dummyClassWriter = new ClassWriter(true);
         dummyGen  = new DummyClassGenerator(context, dummyClassWriter, classLoader, sourceFile);
         compileStack = new CompileStack();
+        genericParameterNames = new HashMap();
     }
     
     protected SourceUnit getSourceUnit() {
@@ -315,7 +321,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 getBytecodeVersion(),
                 classNode.getModifiers(),
                 internalClassName,
-                null,
+                BytecodeHelper.getGenericsSignature(classNode.getGenericsTypes()),
                 internalBaseClassName,
                 BytecodeHelper.getClassInternalNames(classNode.getInterfaces())
             );            
@@ -367,6 +373,11 @@ public class AsmClassGenerator extends ClassGenerator {
             e.setModule(classNode.getModule());
             throw e;
         }
+    }
+    
+    public void visitGenericType(GenericsType genericsType) {
+        ClassNode type = genericsType.getType();
+        genericParameterNames.put(type.getName(),genericsType);
     }
    
     private void createMopMethods() {
@@ -1096,6 +1107,7 @@ public class AsmClassGenerator extends ClassGenerator {
         if (!ignoreAutoboxing && ClassHelper.isPrimitiveType(type)) {
             type = ClassHelper.getWrapper(type);
         }
+        
         if (forceCast || (type!=null && !type.equals(expType))) {
             doConvertAndCast(type,coerce);
         }
@@ -2340,7 +2352,7 @@ public class AsmClassGenerator extends ClassGenerator {
     /** load class object on stack */
     public void visitClassExpression(ClassExpression expression) {
         ClassNode type = expression.getType();
-
+        
         if (ClassHelper.isPrimitiveType(type)) {
             ClassNode objectType = ClassHelper.getWrapper(type);
             cv.visitFieldInsn(GETSTATIC, BytecodeHelper.getClassInternalName(objectType), "TYPE", "Ljava/lang/Class;");          
@@ -2549,6 +2561,163 @@ public class AsmClassGenerator extends ClassGenerator {
         if (sizeExpression==null && ClassHelper.isPrimitiveType(elementType)) {
             int par = compileStack.defineTemporaryVariable("par",true);
             cv.visitVarInsn(ALOAD, par);
+        }
+    }
+
+    public void visitClosureListExpression(ClosureListExpression expression) {
+        compileStack.pushVariableScope(expression.getVariableScope());
+
+        List expressions = expression.getExpressions();
+        final int size = expressions.size();
+        // init declarations
+        LinkedList declarations = new LinkedList();
+        for (int i=0; i<size; i++) {
+            Object expr = expressions.get(i);
+            if (expr instanceof DeclarationExpression) {
+                declarations.add(expr);
+                DeclarationExpression de = (DeclarationExpression) expr;
+                BinaryExpression be = new BinaryExpression(
+                        de.getLeftExpression(),
+                        de.getOperation(),
+                        de.getRightExpression());
+                expressions.set(i,be);
+                de.setRightExpression(ConstantExpression.NULL);
+                visitDeclarationExpression(de);
+            }
+        }
+        
+        LinkedList instructions = new LinkedList();
+        BytecodeSequence seq = new BytecodeSequence(instructions);
+        BlockStatement bs = new BlockStatement();
+        bs.addStatement(seq);
+        Parameter closureIndex = new Parameter(ClassHelper.int_TYPE,"__closureIndex");
+        ClosureExpression ce = new ClosureExpression(new Parameter[]{closureIndex},bs);
+        ce.setVariableScope(expression.getVariableScope());        
+        
+        // to keep stack hight put a null on stack
+        instructions.add(ConstantExpression.NULL);
+        
+        // init table
+        final Label dflt = new Label();
+        final Label tableEnd = new Label();
+        final Label[] labels = new Label[size];
+        instructions.add(new BytecodeInstruction(){
+            void visit(MethodVisitor cv) {
+                cv.visitVarInsn(ILOAD,1);
+                cv.visitTableSwitchInsn(0, size-1, dflt, labels);
+            }
+        });
+        
+        // visit cases
+        for (int i=0; i<size; i++) {
+            final Label label = new Label();
+            Object expr = expressions.get(i);
+            final boolean isStatement = expr instanceof Statement;
+            labels[i] = label;
+            instructions.add(new BytecodeInstruction(){
+                void visit(MethodVisitor cv) {
+                    cv.visitLabel(label);
+                    // expressions will leave a value on stack, statements not
+                    // so expressions need to pop the alibi null
+                    if (!isStatement) cv.visitInsn(POP);
+                }
+            });
+            instructions.add(expr);
+            instructions.add(new BytecodeInstruction(){
+                void visit(MethodVisitor cv) {
+                    cv.visitJumpInsn(GOTO, tableEnd);
+                }
+            });
+        }
+        
+        // default case
+        {
+            instructions.add(new BytecodeInstruction(){
+                void visit(MethodVisitor cv) {
+                    cv.visitLabel(dflt);
+                }
+            });
+            ConstantExpression text = new ConstantExpression("invalid index for closure");
+            ConstructorCallExpression cce = new ConstructorCallExpression(ClassHelper.make(IllegalArgumentException.class),text);
+            ThrowStatement ts = new ThrowStatement(cce);
+            instructions.add(ts);
+        }
+        
+        // return
+        instructions.add(new BytecodeInstruction(){
+            void visit(MethodVisitor cv) {
+                cv.visitLabel(tableEnd);
+                cv.visitInsn(ARETURN);
+            }
+        });        
+        
+        // load main Closure
+        visitClosureExpression(ce);
+        
+        // we need later an array to store the curried
+        // closures, so we create it here and ave it
+        // in a temporary variable
+        helper.pushConstant(size);
+        cv.visitTypeInsn(ANEWARRAY, "java/lang/Object");
+        int listArrayVar = compileStack.defineTemporaryVariable("_listOfClosures", true);
+        
+        // add curried versions
+        for (int i=0; i<size; i++) {
+            // stack: closure
+            
+            // we need to create a curried closure version
+            // so we store the type on stack
+            cv.visitTypeInsn(NEW, "org/codehaus/groovy/runtime/CurriedClosure");
+            // stack: closure, type
+            // for a constructor call we need the type two times 
+
+            // and the closure after them
+            cv.visitInsn(DUP2);
+            cv.visitInsn(SWAP);
+            // stack: closure,type,type,closure
+            
+            // so we can create the curried closure
+            helper.pushConstant(i);
+            cv.visitMethodInsn(INVOKESPECIAL, "org/codehaus/groovy/runtime/CurriedClosure", "<init>", "(Lgroovy/lang/Closure;I)V");
+            // stack: closure,curriedClosure
+
+            // we need to save the result
+            cv.visitVarInsn(ALOAD, listArrayVar);
+            cv.visitInsn(SWAP);
+            helper.pushConstant(i);
+            cv.visitInsn(SWAP);
+            cv.visitInsn(AASTORE);
+            // stack: closure
+        }
+        
+        // we don't need the closure any longer, so remove it
+        cv.visitInsn(POP);
+        // we load the array and create a list from it
+        cv.visitVarInsn(ALOAD, listArrayVar);
+        createListMethod.call(cv);
+        
+        // remove the temporary variable to keep the 
+        // stack clean
+        compileStack.removeVar(listArrayVar);
+        compileStack.pop();
+    }
+    
+    public void visitBytecodeSequence(BytecodeSequence bytecodeSequence) {
+        List instructions = bytecodeSequence.getInstructions();
+        for (Iterator iterator = instructions.iterator(); iterator.hasNext();) {
+            Object part = iterator.next();
+            if (part == EmptyExpression.INSTANCE) {
+                cv.visitInsn(ACONST_NULL);
+            } else if (part instanceof Expression) {
+                visitAndAutoboxBoolean((Expression) part);
+            } else if (part instanceof Statement) {
+                Statement stm = (Statement) part;
+                stm.visit(this);
+                cv.visitInsn(ACONST_NULL);                
+            } else {
+                BytecodeInstruction runner = (BytecodeInstruction) part;
+                runner.visit(cv);
+            }
         }
     }
 
@@ -3448,10 +3617,13 @@ public class AsmClassGenerator extends ClassGenerator {
     }    
     
     protected int getBytecodeVersion() {
-        if(!this.classNode.isAnnotated()) return Opcodes.V1_3;
+        if (  classNode.getGenericsTypes()==null &&
+             !classNode.isAnnotated()) 
+        {
+            return Opcodes.V1_3;
+        }
         
         final String target = getCompileUnit().getConfig().getTargetBytecode();
-        
         return CompilerConfiguration.POST_JDK5.equals(target) ? Opcodes.V1_5 : Opcodes.V1_3;
     }
 

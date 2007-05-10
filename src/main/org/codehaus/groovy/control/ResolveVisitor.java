@@ -56,6 +56,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.DynamicVariable;
 import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.ImportNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.ModuleNode;
@@ -108,6 +109,8 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
     private boolean isTopLevelProperty = true;
     private boolean inPropertyExpression = false;
     private boolean inClosure = false;
+    
+    private Map genericParameterNames = new HashMap();
 
     public ResolveVisitor(CompilationUnit cu) {
         compilationUnit = cu;
@@ -208,6 +211,11 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
 
         // test if vanilla name is current class name
         if (currentClass==type) return true;
+        if (genericParameterNames.get(type.getName())!=null) {
+            ClassNode gt = (ClassNode) genericParameterNames.get(type.getName());
+            type.setRedirect(gt);
+            return true;
+        }
         if (currentClass.getNameWithoutPackage().equals(type.getName())) {
             type.setRedirect(currentClass);
             return true;
@@ -946,5 +954,17 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
 
     protected SourceUnit getSourceUnit() {
         return source;
+    }
+    
+    public void visitGenericType(GenericsType genericsType) {
+        ClassNode type = genericsType.getType();
+        genericParameterNames.put(type.getName(),type);
+        ClassNode upperBound = genericsType.getUpperBound();
+        if (upperBound!=null) {
+            resolveOrFail(upperBound, genericsType);
+            type.setRedirect(upperBound);
+        } else {
+            type.setRedirect(ClassHelper.OBJECT_TYPE);
+        }
     }
 }
