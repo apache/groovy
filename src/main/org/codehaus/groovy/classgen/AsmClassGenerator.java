@@ -624,14 +624,89 @@ public class AsmClassGenerator extends ClassGenerator {
         super.visitBlockStatement(block);
         compileStack.pop();
     }
+    
+    private void visitExpressionOrStatement(Object o) {
+        if (o==EmptyExpression.INSTANCE) return;
+        if (o instanceof Expression) {
+            Expression expr = (Expression) o;
+            visitAndAutoboxBoolean(expr);
+            if (isPopRequired(expr)) cv.visitInsn(POP);
+        } else {
+            ((Statement) o).visit(this);
+        }
+    }
 
-    public void visitForLoop(ForStatement loop) {
-        onLineNumber(loop, "visitForLoop");
-        visitStatement(loop);
-
+    private void visitForLoopWithClosureList(ForStatement loop) {
         compileStack.pushLoop(loop.getVariableScope(),loop.getStatementLabel());
 
-        //
+        ClosureListExpression clExpr = (ClosureListExpression) loop.getCollectionExpression();
+        compileStack.pushVariableScope(clExpr.getVariableScope());
+        
+        List expressions = clExpr.getExpressions();
+        int size = expressions.size();
+        
+        // middle element is condition, lower half is init, higher half is increment
+        int condIndex = (size-1)/2;
+        
+        // visit init
+        for (int i=0; i<condIndex; i++) {
+            visitExpressionOrStatement(expressions.get(i));
+        }
+
+        Label continueLabel = compileStack.getContinueLabel();
+        Label breakLabel = compileStack.getBreakLabel();
+        
+        cv.visitLabel(continueLabel);
+        
+        // visit condition leave boolean on stack
+        {
+            Expression condExpr = (Expression) expressions.get(condIndex);
+            if (condExpr==EmptyExpression.INSTANCE) {
+                cv.visitIntInsn(BIPUSH, 0);
+            } else if (isComparisonExpression(condExpr)) {
+                condExpr.visit(this);
+            } else {
+                visitAndAutoboxBoolean(condExpr);
+                helper.unbox(ClassHelper.boolean_TYPE);
+            }
+        }
+        // jump if we don't want to continue
+        // note: ifeq tests for ==0, a boolean is 0 if it is false
+        cv.visitJumpInsn(IFEQ, breakLabel);
+        
+        // Generate the loop body
+        loop.getLoopBlock().visit(this);
+
+        // visit increment
+        for (int i=condIndex+1; i<size; i++) {
+            visitExpressionOrStatement(expressions.get(i));
+        }
+
+        // jump to test the condition again
+        cv.visitJumpInsn(GOTO, continueLabel);        
+        
+        // loop end
+        cv.visitLabel(breakLabel);
+        
+        compileStack.pop();
+        compileStack.pop();
+        
+    }
+
+    public void visitForLoop(ForStatement loop) {
+        
+        onLineNumber(loop, "visitForLoop");
+        visitStatement(loop);
+        
+
+        Parameter loopVar = loop.getVariable();
+        if (loopVar==ForStatement.FOR_LOOP_DUMMY) {
+            visitForLoopWithClosureList(loop);
+            return;
+        }
+        
+        compileStack.pushLoop(loop.getVariableScope(),loop.getStatementLabel());
+        
         // Declare the loop counter.
         Variable variable = compileStack.defineVariable(loop.getVariable(),false);
 
