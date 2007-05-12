@@ -85,7 +85,7 @@ class BinaryStreamsTest extends GroovyTestCase {
 
     void testRawSocketsProcessing() {
         def server
-        def port = 4321
+        def port = 999
         Thread.start{
             server = new ServerSocket(port)
             server.accept() { socket ->
@@ -119,7 +119,7 @@ class BinaryStreamsTest extends GroovyTestCase {
 
     void testObjectSocketsProcessing() {
         def server
-        def port = 4321
+        def port = 999
         Thread.start{
             server = new ServerSocket(port)
             server.accept() { socket ->
