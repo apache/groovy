@@ -270,6 +270,9 @@ public class DefaultGroovyMethods {
 
     /**
      * Scoped use method
+     * @param self any Object
+     * @param categoryClass a category class to use
+     * @param closure the closure to invoke with the category in place
      * @return the value returned from the closure
      */
     public static Object use(Object self, Class categoryClass, Closure closure) {
@@ -277,7 +280,11 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Scoped use method with list of categories
+     * Scoped use method with list of categories.
+     *
+     * @param self any Object
+     * @param categoryClassList a list of category classes
+     * @param closure the closure to invoke with the categories in place
      * @return the value returned from the closure
      */
     public static Object use(Object self, List categoryClassList, Closure closure) {
@@ -300,8 +307,8 @@ public class DefaultGroovyMethods {
      * This method prevents the error of forgetting to wrap the the category
      * classes in a list.
      *
-     * @param self
-     * @param array
+     * @param self any Object
+     * @param array a list of category classes and a Closure
      * @return the value returned from the closure
      */
     public static Object use(Object self, Object[] array) {
@@ -321,9 +328,10 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Print to a console in interactive format.
+     * Print a value to the standard output stream.
      *
      * @param self any Object
+     * @param value the value to print
      */
     public static void print(Object self, Object value) {
         System.out.print(InvokerHelper.toString(value));
@@ -342,6 +350,7 @@ public class DefaultGroovyMethods {
      * Print a value (followed by a newline) to the standard output stream.
      *
      * @param self any Object
+     * @param value the value to print
      */
     public static void println(Object self, Object value) {
         System.out.println(InvokerHelper.toString(value));
@@ -349,6 +358,10 @@ public class DefaultGroovyMethods {
 
     /**
      * Printf to a console.  Only works with JDK1.5 or later.
+     *
+     * @param self any Object
+     * @param format a format string
+     * @param values values referenced by the format specifiers in the format string.
      */
     public static void printf(Object self, String format, Object[] values) {
         if (self instanceof PrintStream)
@@ -359,6 +372,11 @@ public class DefaultGroovyMethods {
 
     /**
      * Sprintf to a string.  Only works with JDK1.5 or later.
+     *
+     * @param self any Object
+     * @param format a format string
+     * @param values values referenced by the format specifiers in the format string.
+     * @return the resulting formatted string
      */
     public static String sprintf(Object self, String format, Object[] values) {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -369,6 +387,10 @@ public class DefaultGroovyMethods {
 
     /**
      * Printf to a PrintStream.  Only works with JDK1.5 or later.
+     *
+     * @param out a PrintStream object
+     * @param format a format string
+     * @param values values referenced by the format specifiers in the format string.
      */
     private static void printf(PrintStream out, String format, Object[] values) {
         char version = System.getProperty("java.version").charAt(2);
@@ -423,6 +445,7 @@ public class DefaultGroovyMethods {
      * </pre>
      * <p/>
      *
+     * @param self any Object
      * @param format A format string
      * @param arg    Argument which is referenced by the format specifiers in the format
      *               string.  The type of <code>arg</code> should be one of Object[], List,
@@ -432,7 +455,7 @@ public class DefaultGroovyMethods {
         if (self instanceof PrintStream)
             printf((PrintStream)self, format, arg);
         else
-            printf((PrintStream)System.out, format, arg);
+            printf(System.out, format, arg);
     }
 
     private static void printf(PrintStream self, String format, Object arg) {
@@ -633,6 +656,7 @@ public class DefaultGroovyMethods {
      * @param object any Object
      * @param method the name of the method to call
      * @param arguments the arguments to use
+     * @return the result of the method call
      */
     public static Object invokeMethod(Object object, String method, Object arguments) {
         return InvokerHelper.invokeMethod(object, method, arguments);
@@ -2824,7 +2848,8 @@ public class DefaultGroovyMethods {
         if (left.size() == 0)
             return new ArrayList();
 
-        boolean nlgnSort = sameType(new Collection[]{left, right});
+        // TODO optomise if same type?
+        // boolean nlgnSort = sameType(new Collection[]{left, right});
 
         ArrayList result = new ArrayList();
         //creates the collection to look for values.
@@ -3302,6 +3327,7 @@ public class DefaultGroovyMethods {
      * @param self  an ObjectOutputStream
      * @param value an object to write to the stream
      * @throws IOException if an I/O error occurs.
+     * @since 1.1 beta 2
      */
     public static void leftShift(ObjectOutputStream self, Object value) throws IOException {
         self.writeObject(value);
@@ -6747,6 +6773,7 @@ public class DefaultGroovyMethods {
      * @param socket  a Socket
      * @param closure a Closure
      * @throws IOException if an IOException occurs.
+     * @since 1.1 beta 2
      */
     public static void withObjectStreams(Socket socket, Closure closure) throws IOException {
         InputStream input = socket.getInputStream();
