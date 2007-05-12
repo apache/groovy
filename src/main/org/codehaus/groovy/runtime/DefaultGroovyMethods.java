@@ -321,21 +321,27 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Print to a console in interactive format
+     * Print to a console in interactive format.
+     *
+     * @param self any Object
      */
     public static void print(Object self, Object value) {
         System.out.print(InvokerHelper.toString(value));
     }
 
     /**
-     * Print a linebreak to the standard out.
+     * Print a linebreak to the standard output stream.
+     *
+     * @param self any Object
      */
     public static void println(Object self) {
         System.out.println();
     }
 
     /**
-     * Print to a console in interactive format along with a newline
+     * Print a value (followed by a newline) to the standard output stream.
+     *
+     * @param self any Object
      */
     public static void println(Object self, Object value) {
         System.out.println(InvokerHelper.toString(value));
@@ -498,7 +504,7 @@ public class DefaultGroovyMethods {
         } else {
             throw new RuntimeException("printf(String," + arg + ")");
         }
-        printf(self, format, (Object[]) ans);
+        printf(self, format, ans);
     }
 
     /**
@@ -506,6 +512,13 @@ public class DefaultGroovyMethods {
      * arguments.
      * 
      * TODO: remove duplication with printf
+     *
+     * @param self any Object
+     * @param format A format string
+     * @param arg    Argument which is referenced by the format specifiers in the format
+     *               string.  The type of <code>arg</code> should be one of Object[], List,
+     *               int[], short[], byte[], char[], boolean[], long[], float[], or double[].
+     * @return the resulting printf'd string
      */
     public static String sprintf(Object self, String format, Object arg) {
         if (arg instanceof Object[]) {
@@ -578,6 +591,7 @@ public class DefaultGroovyMethods {
 
 
     /**
+     * @param self any Object
      * @return a String that matches what would be typed into a terminal to
      *         create this object. e.g. [1, 'hello'].inspect() -> [1, "hello"]
      */
@@ -586,7 +600,10 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Print to a console in interactive format
+     * Print to a console in interactive format.
+     *
+     * @param self any Object
+     * @param out the PrintWriter used for printing
      */
     public static void print(Object self, PrintWriter out) {
         if (out == null) {
@@ -596,8 +613,9 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Print to a console in interactive format
+     * Print to a console in interactive format.
      *
+     * @param self any Object
      * @param out the PrintWriter used for printing
      */
     public static void println(Object self, PrintWriter out) {
@@ -611,6 +629,10 @@ public class DefaultGroovyMethods {
     /**
      * Provide a dynamic method invocation method which can be overloaded in
      * classes to implement dynamic proxies easily.
+     *
+     * @param object any Object
+     * @param method the name of the method to call
+     * @param arguments the arguments to use
      */
     public static Object invokeMethod(Object object, String method, Object arguments) {
         return InvokerHelper.invokeMethod(object, method, arguments);
@@ -1273,6 +1295,7 @@ public class DefaultGroovyMethods {
         try {
             classref = Class.forName("java.lang.Number");
         } catch (Exception ex) {
+            // Ignore
         }
 
         for (Iterator iter = self.iterator(); iter.hasNext();) {
@@ -1725,7 +1748,7 @@ public class DefaultGroovyMethods {
                 for (int i = 0; i <= count; i++) {
                     groups.add(matcher.group(i));
                 }
-                matcher.appendReplacement(sb, String.valueOf(closure.call((Object[]) groups.toArray())));
+                matcher.appendReplacement(sb, String.valueOf(closure.call(groups.toArray())));
             }
             matcher.appendTail(sb);
             return sb.toString();
@@ -1745,6 +1768,7 @@ public class DefaultGroovyMethods {
     /**
      * Pad a String with the characters appended to the left
      *
+     * @param self a String object
      * @param numberOfChars the total number of characters
      * @param padding       the charaters used for padding
      * @return the String padded to the left
@@ -1761,6 +1785,7 @@ public class DefaultGroovyMethods {
     /**
      * Pad a String with the spaces appended to the left
      *
+     * @param self a String object
      * @param numberOfChars the total number of characters
      * @return the String padded to the left
      */
@@ -1772,6 +1797,7 @@ public class DefaultGroovyMethods {
     /**
      * Pad a String with the characters appended to the right
      *
+     * @param self a String object
      * @param numberOfChars the total number of characters
      * @param padding       the charaters used for padding
      * @return the String padded to the right
@@ -1789,6 +1815,7 @@ public class DefaultGroovyMethods {
     /**
      * Pad a String with the spaces appended to the right
      *
+     * @param self a String object
      * @param numberOfChars the total number of characters
      * @return the String padded to the right
      */
@@ -1800,6 +1827,7 @@ public class DefaultGroovyMethods {
     /**
      * Center a String and padd it with the characters appended around it
      *
+     * @param self a String object
      * @param numberOfChars the total number of characters
      * @param padding       the charaters used for padding
      * @return the String centered with padded character around
@@ -1823,6 +1851,7 @@ public class DefaultGroovyMethods {
     /**
      * Center a String and padd it with spaces appended around it
      *
+     * @param self a String object
      * @param numberOfChars the total number of characters
      * @return the String centered with padded character around
      */
@@ -2392,6 +2421,7 @@ public class DefaultGroovyMethods {
      *
      * @param self a Map
      * @param key  an Object as a key for the map
+     * @param value the value to put into the map
      * @return the value corresponding to the given key
      */
     public static Object putAt(Map self, Object key, Object value) {
@@ -2402,8 +2432,9 @@ public class DefaultGroovyMethods {
     /**
      * This converts a possibly negative index to a real index into the array.
      *
-     * @param i
-     * @param size
+     * @param i the unnormalised index
+     * @param size the array size
+     * @return the normalised index
      */
     protected static int normaliseIndex(int i, int size) {
         int temp = i;
@@ -2607,9 +2638,9 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Avoids doing unnecessary work when sorting an already sorted set
+     * Avoids doing unnecessary work when sorting an already sorted set.
      *
-     * @param self
+     * @param self an identity function for an already sorted set
      * @return the sorted set
      */
     public static SortedSet sort(SortedSet self) {
@@ -2984,19 +3015,28 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Create a Set composed of the elements of the first set minus the elements of the collection
+     * Create a Set composed of the elements of the first set minus the elements of the collection.
+     *
      * TODO: remove using number comparator
+     *
+     * @param self a set object
+     * @param operands the items to remove from the set
+     * @return the resulting set
      */
-    public static Set minus(Set self, Collection removeMe) {
+    public static Set minus(Set self, Collection operands) {
         if (self.size() == 0)
             return new HashSet();
         Set ansSet = new HashSet(self);
-        ansSet.removeAll(removeMe);
+        ansSet.removeAll(operands);
         return ansSet;
     }
 
     /**
-     * Create a Set composed of the elements of the first set minus the operand
+     * Create a Set composed of the elements of the first set minus the operand.
+     *
+     * @param self a set object
+     * @param operand the operand to remove from the set
+     * @return the resulting set
      */
     public static Set minus(Set self, Object operand) {
         Set ansSet = new HashSet();
@@ -3084,6 +3124,9 @@ public class DefaultGroovyMethods {
 
     /**
      * Create a Set composed of the elements of the first set minus the operand
+     * @param self a List object
+     * @param operand an element to remove from the list
+     * @return the resulting list with the operand removed
      */
     public static List minus(List self, Object operand) {
         Comparator numberComparator = new NumberComparator();
@@ -3193,25 +3236,37 @@ public class DefaultGroovyMethods {
     /**
      * Implementation of the left shift operator for integral types.  Non integral
      * Number types throw UnsupportedOperationException.
+     *
+     * @param self a Number object
+     * @param operand the shift distance by which to left shift the number
+     * @return the resulting number
      */
-    public static Number leftShift(Number left, Number right) {
-        return NumberMath.leftShift(left, right);
+    public static Number leftShift(Number self, Number operand) {
+        return NumberMath.leftShift(self, operand);
     }
 
     /**
      * Implementation of the right shift operator for integral types.  Non integral
      * Number types throw UnsupportedOperationException.
+     *
+     * @param self a Number object
+     * @param operand the shift distance by which to right shift the number
+     * @return the resulting number
      */
-    public static Number rightShift(Number left, Number right) {
-        return NumberMath.rightShift(left, right);
+    public static Number rightShift(Number self, Number operand) {
+        return NumberMath.rightShift(self, operand);
     }
 
     /**
      * Implementation of the right shift (unsigned) operator for integral types.  Non integral
      * Number types throw UnsupportedOperationException.
+     *
+     * @param self a Number object
+     * @param operand the shift distance by which to right shift (unsigned) the number
+     * @return the resulting number
      */
-    public static Number rightShiftUnsigned(Number left, Number right) {
-        return NumberMath.rightShiftUnsigned(left, right);
+    public static Number rightShiftUnsigned(Number self, Number operand) {
+        return NumberMath.rightShiftUnsigned(self, operand);
     }
 
     /**
@@ -5395,26 +5450,8 @@ public class DefaultGroovyMethods {
             self = null;
             temp.close();
         } finally {
-            if (self != null) {
-                try {
-                    self.close();
-                }
-                catch (Exception e) {
-                    // ignore this exception since there
-                    // has to be another already
-                    LOG.warning("Caught exception closing Reader: " + e);
-                }
-            }
-            if (br != null) {
-                try {
-                    br.close();
-                }
-                catch (Exception e) {
-                    // ignore this exception since this
-                    // is only our internal problem
-                    LOG.warning("Caught exception closing Reader: " + e);
-                }
-            }
+            closeReaderWithWarning(self);
+            closeReaderWithWarning(br);
         }
     }
 
@@ -5461,24 +5498,8 @@ public class DefaultGroovyMethods {
             self = null;
             temp.close();
         } finally {
-            if (self != null) {
-                try {
-                    self.close();
-                } catch (Exception e) {
-                    // ignore this exception since there
-                    // has to be another already
-                    LOG.warning("Caught exception closing Reader: " + e);
-                }
-            }
-            if (br != null) {
-                try {
-                    br.close();
-                } catch (Exception e) {
-                    // ignore this exception since this
-                    // is only our internal problem
-                    LOG.warning("Caught exception closing Reader: " + e);
-                }
-            }
+            closeReaderWithWarning(self);
+            closeReaderWithWarning(br);
         }
     }
 
@@ -5633,14 +5654,7 @@ public class DefaultGroovyMethods {
             reader = null;
             temp.close();
         } finally {
-            if (reader != null) {
-                try {
-                    reader.close();
-                } catch (Exception e) {
-                    // ignore since there has to be an exception already
-                    LOG.warning("Caught exception closing Reader: " + e);
-                }
-            }
+            closeReaderWithWarning(reader);
         }
         return answer.toString();
     }
@@ -5676,14 +5690,7 @@ public class DefaultGroovyMethods {
             writer = null;
             temp.close();
         } finally {
-            if (writer != null) {
-                try {
-                    writer.close();
-                } catch (Exception e) {
-                    // ignore since there has to be an exception already
-                    LOG.warning("Caught exception closing Writer: " + e);
-                }
-            }
+            closeWriterWithWarning(writer);
         }
     }
 
@@ -5719,14 +5726,7 @@ public class DefaultGroovyMethods {
             writer = null;
             temp.close();
         } finally {
-            if (writer != null) {
-                try {
-                    writer.close();
-                } catch (Exception e) {
-                    // ignore since there has to be an exception already
-                    LOG.warning("Caught exception closing Writer: " + e);
-                }
-            }
+            closeWriterWithWarning(writer);
         }
     }
 
@@ -5748,14 +5748,7 @@ public class DefaultGroovyMethods {
             writer = null;
             temp.close();
         } finally {
-            if (writer != null) {
-                try {
-                    writer.close();
-                } catch (Exception e) {
-                    // ignore since there has to be an exception already
-                    LOG.warning("Caught exception closing Writer: " + e);
-                }
-            }
+            closeWriterWithWarning(writer);
         }
     }
 
@@ -5778,14 +5771,7 @@ public class DefaultGroovyMethods {
             writer = null;
             temp.close();
         } finally {
-            if (writer != null) {
-                try {
-                    writer.close();
-                } catch (Exception e) {
-                    // ignore since there has to be an exception already
-                    LOG.warning("Caught exception closing Writer: " + e);
-                }
-            }
+            closeWriterWithWarning(writer);
         }
     }
 
@@ -5865,8 +5851,8 @@ public class DefaultGroovyMethods {
 
     /**
      * Common code for {@link #eachFileRecurse(File, Closure)} and {@link #eachDirRecurse(File, Closure)}
-     * @param self
-     * @param closure
+     * @param self a file object
+     * @param closure the closure to invoke on each file
      * @param onlyDir if normal file should be skipped
      * @throws FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided File object does not represent a directory
@@ -6040,6 +6026,7 @@ public class DefaultGroovyMethods {
      * Helper method to create a buffered output stream for a file
      *
      * @param file a file object
+     * @return the created OutputStream
      * @throws IOException if an IOException occurs.
      */
     public static BufferedOutputStream newOutputStream(File file) throws IOException {
@@ -6050,6 +6037,7 @@ public class DefaultGroovyMethods {
      * Helper method to create a data output stream for a file
      *
      * @param file a file object
+     * @return the created DataOutputStream
      * @throws IOException if an IOException occurs.
      */
     public static DataOutputStream newDataOutputStream(File file) throws IOException {
@@ -6223,6 +6211,7 @@ public class DefaultGroovyMethods {
      *
      * @param file a File
      * @throws IOException if an IOException occurs.
+     * @return the created PrintWriter
      */
     public static PrintWriter newPrintWriter(File file) throws IOException {
         return new PrintWriter(newWriter(file));
@@ -6245,6 +6234,7 @@ public class DefaultGroovyMethods {
      * passes it into the closure and ensures its closed again afterwords
      *
      * @param file a File
+     * @param closure the closure to invoke with the PrintWriter
      * @throws IOException if an IOException occurs.
      */
     public static void withPrintWriter(File file, Closure closure) throws IOException {
@@ -6269,14 +6259,7 @@ public class DefaultGroovyMethods {
             writer = null;
             temp.close();
         } finally {
-            if (writer != null) {
-                try {
-                    writer.close();
-                } catch (Exception e) {
-                    // ignore since there has to be an exception already
-                    LOG.warning("Caught exception closing Writer: " + e);
-                }
-            }
+            closeWriterWithWarning(writer);
         }
     }
 
@@ -6297,14 +6280,7 @@ public class DefaultGroovyMethods {
             reader = null;
             temp.close();
         } finally {
-            if (reader != null) {
-                try {
-                    reader.close();
-                } catch (Exception e) {
-                    // ignore since there has to be an exception already
-                    LOG.warning("Caught exception closing Reader: " + e);
-                }
-            }
+            closeReaderWithWarning(reader);
         }
     }
 
@@ -6325,14 +6301,7 @@ public class DefaultGroovyMethods {
             stream = null;
             temp.close();
         } finally {
-            if (stream != null) {
-                try {
-                    stream.close();
-                } catch (Exception e) {
-                    // ignore since there has to be an exception already
-                    LOG.warning("Caught exception closing InputStream: " + e);
-                }
-            }
+            closeInputStreamWithWarning(stream);
         }
     }
 
@@ -6371,9 +6340,10 @@ public class DefaultGroovyMethods {
 
     /**
      * Helper method to create a new BufferedReader for a URL and then
-     * passes it into the closure and ensures its closed again afterwords
+     * passes it into the closure and ensures its closed again afterwords.
      *
      * @param url a URL
+     * @param closure the closure to invoke with the reader
      * @throws IOException if an IOException occurs.
      */
     public static void withReader(URL url, Closure closure) throws IOException {
@@ -6382,9 +6352,10 @@ public class DefaultGroovyMethods {
 
     /**
      * Helper method to create a new BufferedReader for a stream and then
-     * passes it into the closure and ensures its closed again afterwords
+     * passes it into the closure and ensures its closed again afterwords.
      *
      * @param in a stream
+     * @param closure the closure to invoke with the InputStream
      * @throws IOException if an IOException occurs.
      */
     public static void withReader(InputStream in, Closure closure) throws IOException {
@@ -6436,13 +6407,7 @@ public class DefaultGroovyMethods {
             os = null;
             temp.close();
         } finally {
-            if (os != null) {
-                try {
-                    os.close();
-                } catch (IOException e) {
-                    LOG.warning("Caught exception closing OutputStream: " + e);
-                }
-            }
+            closeOutputStreamWithWarning(os);
         }
     }
 
@@ -6503,13 +6468,7 @@ public class DefaultGroovyMethods {
             is = null;
             temp.close();
         } finally {
-            if (is != null) {
-                try {
-                    is.close();
-                } catch (IOException e) {
-                    LOG.warning("Caught exception closing InputStream: " + e);
-                }
-            }
+            closeInputStreamWithWarning(is);
         }
     }
 
@@ -6526,18 +6485,19 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Transforms the characters from a reader with a Closure and
-     * write them to a writer.
+     * Transforms the characters from a self with a Closure and
+     * writes them to a writer.
      *
-     * @param reader
-     * @param writer
-     * @param closure
+     * @param self a Reader object
+     * @param writer a Writer to receive the transformed characters
+     * @param closure a closure that performs the required transformation
+     * @throws IOException if an IOException occurs.
      */
-    public static void transformChar(Reader reader, Writer writer, Closure closure) throws IOException {
+    public static void transformChar(Reader self, Writer writer, Closure closure) throws IOException {
         int c;
         try {
             char[] chars = new char[1];
-            while ((c = reader.read()) != -1) {
+            while ((c = self.read()) != -1) {
                 chars[0] = (char) c;
                 writer.write((String) closure.call(new String(chars)));
             }
@@ -6546,24 +6506,12 @@ public class DefaultGroovyMethods {
             Writer temp2 = writer;
             writer = null;
             temp2.close();
-            Reader temp1 = reader;
-            reader = null;
+            Reader temp1 = self;
+            self = null;
             temp1.close();
         } finally {
-            if (reader != null) {
-                try {
-                    reader.close();
-                } catch (IOException e) {
-                    LOG.warning("Caught exception closing Reader: " + e);
-                }
-            }
-            if (writer != null) {
-                try {
-                    writer.close();
-                } catch (IOException e) {
-                    LOG.warning("Caught exception closing Writer: " + e);
-                }
-            }
+            closeReaderWithWarning(self);
+            closeWriterWithWarning(writer);
         }
     }
 
@@ -6576,6 +6524,7 @@ public class DefaultGroovyMethods {
      * @param writer  Where transformed lines are written. Writer is closed afterwards.
      * @param closure Single parameter closure that is called to transform each line of
      *                text from the reader, before writing it to the writer.
+     * @throws IOException if an IOException occurs.
      */
     public static void transformLine(Reader reader, Writer writer, Closure closure) throws IOException {
         BufferedReader br = new BufferedReader(reader);
@@ -6598,34 +6547,10 @@ public class DefaultGroovyMethods {
             reader = null;
             temp1.close();
         } finally {
-            if (br != null) {
-                try {
-                    br.close();
-                } catch (IOException e) {
-                    LOG.warning("Caught exception closing Reader: " + e);
-                }
-            }
-            if (reader != null) {
-                try {
-                    reader.close();
-                } catch (IOException e) {
-                    LOG.warning("Caught exception closing Reader: " + e);
-                }
-            }
-            if (bw != null) {
-                try {
-                    bw.close();
-                } catch (IOException e) {
-                    LOG.warning("Caught exception closing Writer: " + e);
-                }
-            }
-            if (writer != null) {
-                try {
-                    writer.close();
-                } catch (IOException e) {
-                    LOG.warning("Caught exception closing Writer: " + e);
-                }
-            }
+            closeReaderWithWarning(br);
+            closeReaderWithWarning(reader);
+            closeWriterWithWarning(bw);
+            closeWriterWithWarning(writer);
         }
     }
 
@@ -6659,34 +6584,10 @@ public class DefaultGroovyMethods {
             reader = null;
             temp1.close();
         } finally {
-            if (br != null) {
-                try {
-                    br.close();
-                } catch (IOException e) {
-                    LOG.warning("Caught exception closing Reader: " + e);
-                }
-            }
-            if (reader != null) {
-                try {
-                    reader.close();
-                } catch (IOException e) {
-                    LOG.warning("Caught exception closing Reader: " + e);
-                }
-            }
-            if (bw != null) {
-                try {
-                    bw.close();
-                } catch (IOException e) {
-                    LOG.warning("Caught exception closing Writer: " + e);
-                }
-            }
-            if (writer != null) {
-                try {
-                    writer.close();
-                } catch (IOException e) {
-                    LOG.warning("Caught exception closing Writer: " + e);
-                }
-            }
+            closeReaderWithWarning(br);
+            closeReaderWithWarning(reader);
+            closeWriterWithWarning(bw);
+            closeWriterWithWarning(writer);
         }
 
     }
@@ -6772,6 +6673,7 @@ public class DefaultGroovyMethods {
      * @param self      an InputStream
      * @param writer    a writer to write output to
      * @param predicate a closure which returns a boolean and takes a line as input
+     * @throws IOException if an IOException occurs.
      */
     public static void filterLine(InputStream self, Writer writer, Closure predicate)
             throws IOException {
@@ -6783,6 +6685,7 @@ public class DefaultGroovyMethods {
      *
      * @param file a File
      * @return a List of Bytes
+     * @throws IOException if an IOException occurs.
      */
     public static byte[] readBytes(File file) throws IOException {
         byte[] bytes = new byte[(int) file.length()];
@@ -6831,19 +6734,87 @@ public class DefaultGroovyMethods {
             output = null;
             temp2.close();
         } finally {
-            if (input != null) {
-                try {
-                    input.close();
-                } catch (IOException e) {
-                    LOG.warning("Caught exception closing InputStream: " + e);
-                }
+            closeInputStreamWithWarning(input);
+            closeOutputStreamWithWarning(output);
+        }
+    }
+
+    /**
+     * Allows an InputObjectStream and an OutputObjectStream from a Socket to be used,
+     * calling the closure with the object streams and then ensuring that the streams
+     * are closed down again irrespective of whether exceptions occur.
+     *
+     * @param socket  a Socket
+     * @param closure a Closure
+     * @throws IOException if an IOException occurs.
+     */
+    public static void withObjectStreams(Socket socket, Closure closure) throws IOException {
+        InputStream input = socket.getInputStream();
+        OutputStream output = socket.getOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(output);
+        ObjectInputStream ois = new ObjectInputStream(input);
+        try {
+            closure.call(new Object[]{ois, oos});
+
+            InputStream temp1 = ois;
+            ois = null;
+            temp1.close();
+            temp1 = input;
+            input = null;
+            temp1.close();
+            OutputStream temp2 = oos;
+            oos = null;
+            temp2.close();
+            temp2 = output;
+            output = null;
+            temp2.close();
+        } finally {
+            closeInputStreamWithWarning(ois);
+            closeInputStreamWithWarning(input);
+            closeOutputStreamWithWarning(oos);
+            closeOutputStreamWithWarning(output);
+        }
+    }
+
+    // TODO reduce duplication by using Closable if we raise minimum requirement to Java 1.5
+    private static void closeInputStreamWithWarning(InputStream input) {
+        if (input != null) {
+            try {
+                input.close();
+            } catch (IOException e) {
+                LOG.warning("Caught exception closing InputStream: " + e);
             }
-            if (output != null) {
-                try {
-                    output.close();
-                } catch (IOException e) {
-                    LOG.warning("Caught exception closing OutputStream: " + e);
-                }
+        }
+    }
+
+    private static void closeOutputStreamWithWarning(OutputStream output) {
+        if (output != null) {
+            try {
+                output.close();
+            } catch (IOException e) {
+                LOG.warning("Caught exception closing OutputStream: " + e);
+            }
+        }
+    }
+
+    private static void closeReaderWithWarning(Reader reader) {
+        if (reader != null) {
+            try {
+                reader.close();
+            } catch (Exception e) {
+                // ignore this exception since this
+                // is only our internal problem
+                LOG.warning("Caught exception closing Reader: " + e);
+            }
+        }
+    }
+
+    private static void closeWriterWithWarning(Writer writer) {
+        if (writer != null) {
+            try {
+                writer.close();
+            } catch (IOException e) {
+                LOG.warning("Caught exception closing Writer: " + e);
             }
         }
     }
@@ -6855,6 +6826,7 @@ public class DefaultGroovyMethods {
      * @param self  a Socket
      * @param value a value to append
      * @return a Writer
+     * @throws IOException if an IOException occurs.
      */
     public static Writer leftShift(Socket self, Object value) throws IOException {
         return leftShift(self.getOutputStream(), value);
@@ -6867,6 +6839,7 @@ public class DefaultGroovyMethods {
      * @param self  a Socket
      * @param value a value to append
      * @return an OutputStream
+     * @throws IOException if an IOException occurs.
      */
     public static OutputStream leftShift(Socket self, byte[] value) throws IOException {
         return leftShift(self.getOutputStream(), value);
@@ -7082,7 +7055,7 @@ public class DefaultGroovyMethods {
                 // and give it all groups as a array
                 closure.call((Object) groups.toArray());
             } else {
-                closure.call((Object[]) groups.toArray());
+                closure.call(groups.toArray());
             }
         }
     }
@@ -7131,12 +7104,14 @@ public class DefaultGroovyMethods {
      * == may fail as the class may be loaded through different classloaders.
      *
      * @see org.codehaus.groovy.tools.RootLoader
+     * @param self a ClassLoader
+     * @return the rootLoader for the ClassLoader
      */
-    public static ClassLoader getRootLoader(ClassLoader cl) {
+    public static ClassLoader getRootLoader(ClassLoader self) {
         while (true) {
-            if (cl == null) return null;
-            if (cl.getClass().getName().equals(RootLoader.class.getName())) return cl;
-            cl = cl.getParent();
+            if (self == null) return null;
+            if (self.getClass().getName().equals(RootLoader.class.getName())) return self;
+            self = self.getParent();
         }
     }
 
@@ -7178,6 +7153,7 @@ public class DefaultGroovyMethods {
             try {
                 process.waitFor();
             } catch (InterruptedException e) {
+                // Ignore
             }
             synchronized (this) {
                 notifyAll();
@@ -7190,6 +7166,7 @@ public class DefaultGroovyMethods {
                 try {
                     wait(millis);
                 } catch (InterruptedException e) {
+                    // Ignore
                 }
                 if (!finished) {
                     process.destroy();
@@ -7439,8 +7416,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Returns itself for an iterator, supporting 'duck-typing' when trying to get an iterator for each
-     * object within a collection, some of which may already be iterators.
+     * An identity function for iterators, supporting 'duck-typing' when trying to get an
+     * iterator for each object within a collection, some of which may already be iterators.
      *
      * @param self an iterator object
      * @return itself

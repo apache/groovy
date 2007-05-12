@@ -83,6 +83,66 @@ class BinaryStreamsTest extends GroovyTestCase {
         }
     }
 
+    void testRawSocketsProcessing() {
+        def server
+        def port = 54321
+        Thread.start{
+            server = new ServerSocket(port)
+            server.accept() { socket ->
+                socket.withStreams { input, output ->
+                    def ois = new ObjectInputStream(input)
+                    def oos = new ObjectOutputStream(output)
+                    def arg1 = ois.readObject()
+                    def arg2 = ois.readObject()
+                    oos << arg1 + arg2
+                    ois.close()
+                    oos.close()
+                }
+            }
+        }
+
+        def result
+        def client = new Socket("localhost", port)
+        client.withStreams{ input, output ->
+            def oos = new ObjectOutputStream(output)
+            def ois = new ObjectInputStream(input)
+            oos << 1000
+            oos << 24
+            result = ois.readObject()
+            ois.close()
+            oos.close()
+        }
+        client.close()
+        server.close()
+        assert result == 1024
+    }
+
+    void testObjectSocketsProcessing() {
+        def server
+        def port = 54321
+        Thread.start{
+            server = new ServerSocket(port)
+            server.accept() { socket ->
+                socket.withObjectStreams { ois, oos ->
+                    def arg1 = ois.readObject()
+                    def arg2 = ois.readObject()
+                    oos << arg1 + arg2
+                }
+            }
+        }
+
+        def result
+        def client = new Socket("localhost", port)
+        client.withObjectStreams{ ois, oos ->
+            oos << 1000
+            oos << 24
+            result = ois.readObject()
+        }
+        client.close()
+        server.close()
+        assert result == 1024
+    }
+
     private File getTempFile() {
         def temp = File.createTempFile("BinaryStreamsTestFile", ".dat")
         temp.deleteOnExit()
