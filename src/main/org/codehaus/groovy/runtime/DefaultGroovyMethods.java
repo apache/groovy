@@ -3183,6 +3183,7 @@ public class DefaultGroovyMethods {
      * @param self  a Writer
      * @param value a value to append
      * @return a StringWriter
+     * @throws IOException if an I/O error occurs.
      */
     public static Writer leftShift(Writer self, Object value) throws IOException {
         InvokerHelper.write(self, value);
@@ -3220,17 +3221,19 @@ public class DefaultGroovyMethods {
      *
      * @param self     a Writer
      * @param writable an object implementing the Writable interface
+     * @throws IOException if an I/O error occurs.
      */
     public static void write(Writer self, Writable writable) throws IOException {
         writable.writeTo(self);
     }
 
     /**
-     * Overloads the left shift operator to provide an append mechanism to add things to a stream
+     * Overloads the leftShift operator to provide an append mechanism to add values to a stream.
      *
      * @param self  an OutputStream
      * @param value a value to append
      * @return a Writer
+     * @throws IOException if an I/O error occurs.
      */
     public static Writer leftShift(OutputStream self, Object value) throws IOException {
         OutputStreamWriter writer = new FlushingStreamWriter(self);
@@ -3239,12 +3242,23 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Pipe an inputstream into an outputstream for efficient stream copying.
+     * Overloads the leftShift operator to add objects to an ObjectOutputStream.
+     *
+     * @param self  an ObjectOutputStream
+     * @param value an object to write to the stream
+     * @throws IOException if an I/O error occurs.
+     */
+    public static void leftShift(ObjectOutputStream self, Object value) throws IOException {
+        self.writeObject(value);
+    }
+
+    /**
+     * Pipe an InputStream into an OutputStream for efficient stream copying.
      *
      * @param self stream on which to write
      * @param in   stream to read from
      * @return the outputstream itself
-     * @throws IOException
+     * @throws IOException if an I/O error occurs.
      */
     public static OutputStream leftShift(OutputStream self, InputStream in) throws IOException {
         byte[] buf = new byte[1024];
@@ -3262,11 +3276,12 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Overloads the left shift operator to provide an append mechanism to add bytes to a stream
+     * Overloads the leftShift operator to provide an append mechanism to add bytes to a stream.
      *
      * @param self  an OutputStream
      * @param value a value to append
      * @return an OutputStream
+     * @throws IOException if an I/O error occurs.
      */
     public static OutputStream leftShift(OutputStream self, byte[] value) throws IOException {
         self.write(value);
@@ -5187,6 +5202,7 @@ public class DefaultGroovyMethods {
      * Subtracts a number of days from this date and returns the new date
      *
      * @param self a Date
+     * @param days the number of days to subtract
      * @return the new date
      */
     public static Date minus(Date self, int days) {
@@ -5197,6 +5213,7 @@ public class DefaultGroovyMethods {
      * Subtracts a number of days from this date and returns the new date
      *
      * @param self a java.sql.Date
+     * @param days the number of days to subtract
      * @return the new date
      */
     public static java.sql.Date minus(java.sql.Date self, int days) {
@@ -5230,10 +5247,9 @@ public class DefaultGroovyMethods {
      *
      * @param file a file
      * @return an object input stream
-     * @throws FileNotFoundException
-     * @throws IOException
+     * @throws IOException if an IOException occurs.
      */
-    public static ObjectInputStream newObjectInputStream(File file) throws FileNotFoundException, IOException {
+    public static ObjectInputStream newObjectInputStream(File file) throws IOException {
         return new ObjectInputStream(new FileInputStream(file));
     }
 
@@ -5242,8 +5258,7 @@ public class DefaultGroovyMethods {
      *
      * @param file a file
      * @return an object output stream
-     * @throws FileNotFoundException
-     * @throws IOException
+     * @throws IOException if an IOException occurs.
      */
     public static ObjectOutputStream newObjectOutputStream(File file) throws IOException {
         return new ObjectOutputStream(new FileOutputStream(file));
@@ -5254,8 +5269,8 @@ public class DefaultGroovyMethods {
      *
      * @param self    a File
      * @param closure a closure
-     * @throws IOException
-     * @throws ClassNotFoundException
+     * @throws IOException if an IOException occurs.
+     * @throws ClassNotFoundException if the class  is not found.
      */
     public static void eachObject(File self, Closure closure) throws IOException, ClassNotFoundException {
         eachObject(newObjectInputStream(self), closure);
@@ -5267,8 +5282,8 @@ public class DefaultGroovyMethods {
      *
      * @param ois     an ObjectInputStream, closed after the operation
      * @param closure a closure
-     * @throws IOException
-     * @throws ClassNotFoundException
+     * @throws IOException if an IOException occurs.
+     * @throws ClassNotFoundException if the class  is not found.
      */
     public static void eachObject(ObjectInputStream ois, Closure closure) throws IOException, ClassNotFoundException {
         try {
@@ -5304,7 +5319,7 @@ public class DefaultGroovyMethods {
      *
      * @param file a File
      * @param closure a closure
-     * @throws FileNotFoundException
+     * @throws IOException if an IOException occurs.
      */
     public static void withObjectInputStream(File file, Closure closure) throws IOException {
         withStream(newObjectInputStream(file), closure);
@@ -5316,7 +5331,7 @@ public class DefaultGroovyMethods {
      *
      * @param file a File
      * @param closure a closure
-     * @throws FileNotFoundException
+     * @throws IOException if an IOException occurs.
      */
     public static void withObjectOutputStream(File file, Closure closure) throws IOException {
         withStream(newObjectOutputStream(file), closure);
@@ -5327,7 +5342,7 @@ public class DefaultGroovyMethods {
      *
      * @param self    a File
      * @param closure a closure
-     * @throws IOException
+     * @throws IOException if an IOException occurs.
      */
     public static void eachLine(File self, Closure closure) throws IOException {
         eachLine(newReader(self), closure);
@@ -5339,7 +5354,7 @@ public class DefaultGroovyMethods {
      *
      * @param self    a Reader, closed after the method returns
      * @param closure a closure
-     * @throws IOException
+     * @throws IOException if an IOException occurs.
      */
     public static void eachLine(Reader self, Closure closure) throws IOException {
         BufferedReader br /* = null */;
@@ -5391,7 +5406,7 @@ public class DefaultGroovyMethods {
      * @param self    a File
      * @param sep     a String separator
      * @param closure a closure
-     * @throws IOException
+     * @throws IOException if an IOException occurs.
      */
     public static void splitEachLine(File self, String sep, Closure closure) throws IOException {
         splitEachLine(newReader(self), sep, closure);
@@ -5404,7 +5419,7 @@ public class DefaultGroovyMethods {
      * @param self    a Reader, closed after the method returns
      * @param sep     a String separator
      * @param closure a closure
-     * @throws IOException
+     * @throws IOException if an IOException occurs.
      */
     public static void splitEachLine(Reader self, String sep, Closure closure) throws IOException {
         BufferedReader br /* = null */;
@@ -5454,7 +5469,7 @@ public class DefaultGroovyMethods {
      *
      * @param self a Reader
      * @return a line
-     * @throws IOException
+     * @throws IOException if an IOException occurs.
      */
     public static String readLine(Reader self) throws IOException {
         BufferedReader br /* = null */;
@@ -5472,7 +5487,7 @@ public class DefaultGroovyMethods {
      *
      * @param stream an InputStream
      * @return a line
-     * @throws IOException
+     * @throws IOException if an IOException occurs.
      */
     public static String readLine(InputStream stream) throws IOException {
         return readLine(new InputStreamReader(stream));
@@ -5483,7 +5498,7 @@ public class DefaultGroovyMethods {
      *
      * @param file a File
      * @return a List of lines
-     * @throws IOException
+     * @throws IOException if an IOException occurs.
      */
     public static List readLines(File file) throws IOException {
         IteratorClosureAdapter closure = new IteratorClosureAdapter(file);
@@ -5497,7 +5512,7 @@ public class DefaultGroovyMethods {
      * @param file    the file whose content we want to read
      * @param charset the charset used to read the content of the file
      * @return a String containing the content of the file
-     * @throws IOException
+     * @throws IOException if an IOException occurs.
      */
     public static String getText(File file, String charset) throws IOException {
         BufferedReader reader = newReader(file, charset);
@@ -5509,7 +5524,7 @@ public class DefaultGroovyMethods {
      *
      * @param file the file whose content we want to read
      * @return a String containing the content of the file
-     * @throws IOException
+     * @throws IOException if an IOException occurs.
      */
     public static String getText(File file) throws IOException {
         BufferedReader reader = newReader(file);
@@ -5521,7 +5536,7 @@ public class DefaultGroovyMethods {
      *
      * @param url URL to read content from
      * @return the text from that URL
-     * @throws IOException
+     * @throws IOException if an IOException occurs.
      */
     public static String getText(URL url) throws IOException {
         return getText(url, CharsetToolkit.getDefaultSystemCharset().toString());
@@ -5533,7 +5548,7 @@ public class DefaultGroovyMethods {
      * @param url     URL to read content from
      * @param charset opens the stream with a specified charset
      * @return the text from that URL
-     * @throws IOException
+     * @throws IOException if an IOException occurs.
      */
     public static String getText(URL url, String charset) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(url.openConnection().getInputStream(), charset));
@@ -5545,7 +5560,7 @@ public class DefaultGroovyMethods {
      *
      * @param is an input stream
      * @return the text from that URL
-     * @throws IOException
+     * @throws IOException if an IOException occurs.
      */
     public static String getText(InputStream is) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(is));
@@ -5558,7 +5573,7 @@ public class DefaultGroovyMethods {
      * @param is      an input stream
      * @param charset opens the stream with a specified charset
      * @return the text from that URL
-     * @throws IOException
+     * @throws IOException if an IOException occurs.
      */
     public static String getText(InputStream is, String charset) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(is, charset));
@@ -5570,7 +5585,7 @@ public class DefaultGroovyMethods {
      *
      * @param reader a Reader whose content we want to read
      * @return a String containing the content of the buffered reader
-     * @throws IOException
+     * @throws IOException if an IOException occurs.
      */
     public static String getText(Reader reader) throws IOException {
         BufferedReader bufferedReader = new BufferedReader(reader);
@@ -5583,7 +5598,7 @@ public class DefaultGroovyMethods {
      *
      * @param reader a BufferedReader whose content we want to read
      * @return a String containing the content of the buffered reader
-     * @throws IOException
+     * @throws IOException if an IOException occurs.
      */
     public static String getText(BufferedReader reader) throws IOException {
         StringBuffer answer = new StringBuffer();
@@ -5618,7 +5633,7 @@ public class DefaultGroovyMethods {
      *
      * @param writer a BufferedWriter
      * @param line   the line to write
-     * @throws IOException
+     * @throws IOException if an IOException occurs.
      */
     public static void writeLine(BufferedWriter writer, String line) throws IOException {
         writer.write(line);
@@ -5630,7 +5645,7 @@ public class DefaultGroovyMethods {
      *
      * @param file a File
      * @param text the text to write to the File
-     * @throws IOException
+     * @throws IOException if an IOException occurs.
      */
     public static void write(File file, String text) throws IOException {
         BufferedWriter writer = null;
@@ -5659,7 +5674,8 @@ public class DefaultGroovyMethods {
      *
      * @param file a File
      * @param text the text to write to the File
-     * @throws IOException
+     * @return the original file
+     * @throws IOException if an IOException occurs.
      */
     public static File leftShift(File file, Object text) throws IOException {
         append(file, text);
@@ -5672,7 +5688,7 @@ public class DefaultGroovyMethods {
      * @param file    a File
      * @param text    the text to write to the File
      * @param charset the charset used
-     * @throws IOException
+     * @throws IOException if an IOException occurs.
      */
     public static void write(File file, String text, String charset) throws IOException {
         BufferedWriter writer = null;
@@ -5701,7 +5717,7 @@ public class DefaultGroovyMethods {
      *
      * @param file a File
      * @param text the text to append at the end of the File
-     * @throws IOException
+     * @throws IOException if an IOException occurs.
      */
     public static void append(File file, Object text) throws IOException {
         BufferedWriter writer = null;
@@ -5731,7 +5747,7 @@ public class DefaultGroovyMethods {
      * @param file    a File
      * @param text    the text to append at the end of the File
      * @param charset the charset used
-     * @throws IOException
+     * @throws IOException if an IOException occurs.
      */
     public static void append(File file, Object text, String charset) throws IOException {
         BufferedWriter writer = null;
@@ -5760,7 +5776,7 @@ public class DefaultGroovyMethods {
      *
      * @param reader a Reader
      * @return a List of lines
-     * @throws IOException
+     * @throws IOException if an IOException occurs.
      */
     public static List readLines(Reader reader) throws IOException {
         IteratorClosureAdapter closure = new IteratorClosureAdapter(reader);
@@ -5773,8 +5789,8 @@ public class DefaultGroovyMethods {
      * are used incorrectly.
      *
      * @param dir The directory to check
-     * @throws FileNotFoundException    Thrown if the given directory does not exist
-     * @throws IllegalArgumentException Thrown if the provided File object does not represent a directory
+     * @throws FileNotFoundException    if the given directory does not exist
+     * @throws IllegalArgumentException if the provided File object does not represent a directory
      */
     private static void checkDir(File dir) throws FileNotFoundException, IllegalArgumentException {
         if (!dir.exists())
@@ -5788,6 +5804,8 @@ public class DefaultGroovyMethods {
      * @param self a file object
      * @param closure the closure to invoke
      * @param onlyDir if normal file should be skipped
+     * @throws FileNotFoundException    if the given directory does not exist
+     * @throws IllegalArgumentException if the provided File object does not represent a directory
      */
     private static void eachFile(final File self, final Closure closure, final boolean onlyDir) 
     		throws FileNotFoundException, IllegalArgumentException {
@@ -5807,8 +5825,8 @@ public class DefaultGroovyMethods {
      *
      * @param self    a File
      * @param closure a closure
-     * @throws FileNotFoundException    Thrown if the given directory does not exist
-     * @throws IllegalArgumentException Thrown if the provided File object does not represent a directory
+     * @throws FileNotFoundException    if the given directory does not exist
+     * @throws IllegalArgumentException if the provided File object does not represent a directory
      */
     public static void eachFile(final File self, final Closure closure) throws FileNotFoundException, IllegalArgumentException {
     	eachFile(self, closure, false);
@@ -5820,8 +5838,8 @@ public class DefaultGroovyMethods {
      *
      * @param self    a directory
      * @param closure a closure
-     * @throws FileNotFoundException    Thrown if the given directory does not exist
-     * @throws IllegalArgumentException Thrown if the provided File object does not represent a directory
+     * @throws FileNotFoundException    if the given directory does not exist
+     * @throws IllegalArgumentException if the provided File object does not represent a directory
      */
     public static void eachDir(File self, Closure closure) throws FileNotFoundException, IllegalArgumentException {
     	eachFile(self, closure, true);
@@ -5832,6 +5850,8 @@ public class DefaultGroovyMethods {
      * @param self
      * @param closure
      * @param onlyDir if normal file should be skipped
+     * @throws FileNotFoundException    if the given directory does not exist
+     * @throws IllegalArgumentException if the provided File object does not represent a directory
      */
     private static void eachFileRecurse(final File self, final Closure closure, final boolean onlyDir) 
     		throws FileNotFoundException, IllegalArgumentException {
@@ -5856,8 +5876,8 @@ public class DefaultGroovyMethods {
      *
      * @param self    a File
      * @param closure a closure
-     * @throws FileNotFoundException    Thrown if the given directory does not exist
-     * @throws IllegalArgumentException Thrown if the provided File object does not represent a directory
+     * @throws FileNotFoundException    if the given directory does not exist
+     * @throws IllegalArgumentException if the provided File object does not represent a directory
      */
     public static void eachFileRecurse(File self, Closure closure) throws FileNotFoundException, IllegalArgumentException {
     	eachFileRecurse(self, closure, false);
@@ -5869,8 +5889,8 @@ public class DefaultGroovyMethods {
      *
      * @param self    a directory
      * @param closure a closure
-     * @throws FileNotFoundException    Thrown if the given directory does not exist
-     * @throws IllegalArgumentException Thrown if the provided File object does not represent a directory
+     * @throws FileNotFoundException    if the given directory does not exist
+     * @throws IllegalArgumentException if the provided File object does not represent a directory
      * @since 1.1 beta 1
      */
     public static void eachDirRecurse(final File self, final Closure closure) throws FileNotFoundException, IllegalArgumentException {
@@ -5883,6 +5903,8 @@ public class DefaultGroovyMethods {
      * @param filter  the filter to perform on the directory (using the isCase(object) method)
      * @param closure the closure to invoke
      * @param onlyDir if normal file should be skipped
+     * @throws FileNotFoundException    if the given directory does not exist
+     * @throws IllegalArgumentException if the provided File object does not represent a directory
      */
     private static void eachFileMatch(final File self, final Object filter, final Closure closure, final boolean onlyDir)
     		throws FileNotFoundException, IllegalArgumentException {
@@ -5908,8 +5930,8 @@ public class DefaultGroovyMethods {
      * @param self    a file
      * @param filter  the filter to perform on the directory (using the isCase(object) method)
      * @param closure the closure to invoke
-     * @throws FileNotFoundException    Thrown if the given directory does not exist
-     * @throws IllegalArgumentException Thrown if the provided File object does not represent a directory
+     * @throws FileNotFoundException    if the given directory does not exist
+     * @throws IllegalArgumentException if the provided File object does not represent a directory
      */
     public static void eachFileMatch(final File self, final Object filter, final Closure closure) 
     		throws FileNotFoundException, IllegalArgumentException {
@@ -5924,8 +5946,8 @@ public class DefaultGroovyMethods {
      * @param self    a file
      * @param filter  the filter to perform on the directory (using the isCase(object) method)
      * @param closure the closure to invoke
-     * @throws FileNotFoundException    Thrown if the given directory does not exist
-     * @throws IllegalArgumentException Thrown if the provided File object does not represent a directory
+     * @throws FileNotFoundException    if the given directory does not exist
+     * @throws IllegalArgumentException if the provided File object does not represent a directory
      * @since 1.1 beta 1
      */
     public static void eachDirMatch(final File self, final Object filter, final Closure closure) throws FileNotFoundException, IllegalArgumentException {
@@ -5953,7 +5975,7 @@ public class DefaultGroovyMethods {
      *
      * @param file a File
      * @return a BufferedReader
-     * @throws IOException
+     * @throws IOException if an IOException occurs.
      */
     public static BufferedReader newReader(File file) throws IOException {
         CharsetToolkit toolkit = new CharsetToolkit(file);
@@ -5988,9 +6010,9 @@ public class DefaultGroovyMethods {
      * Helper method to create a new BufferedReader for a file and then
      * passes it into the closure and ensures its closed again afterwords
      *
-     * @param file
+     * @param file a file object
      * @param closure a closure
-     * @throws FileNotFoundException
+     * @throws IOException if an IOException occurs.
      */
     public static void withReader(File file, Closure closure) throws IOException {
         withReader(newReader(file), closure);
@@ -5999,8 +6021,8 @@ public class DefaultGroovyMethods {
     /**
      * Helper method to create a buffered output stream for a file
      *
-     * @param file
-     * @throws FileNotFoundException
+     * @param file a file object
+     * @throws IOException if an IOException occurs.
      */
     public static BufferedOutputStream newOutputStream(File file) throws IOException {
         return new BufferedOutputStream(new FileOutputStream(file));
@@ -6009,8 +6031,8 @@ public class DefaultGroovyMethods {
     /**
      * Helper method to create a data output stream for a file
      *
-     * @param file
-     * @throws FileNotFoundException
+     * @param file a file object
+     * @throws IOException if an IOException occurs.
      */
     public static DataOutputStream newDataOutputStream(File file) throws IOException {
         return new DataOutputStream(new FileOutputStream(file));
@@ -6022,7 +6044,7 @@ public class DefaultGroovyMethods {
      *
      * @param file a File
      * @param closure a closure
-     * @throws FileNotFoundException
+     * @throws IOException if an IOException occurs.
      */
     public static void withOutputStream(File file, Closure closure) throws IOException {
         withStream(newOutputStream(file), closure);
@@ -6034,7 +6056,7 @@ public class DefaultGroovyMethods {
      *
      * @param file a File
      * @param closure a closure
-     * @throws FileNotFoundException
+     * @throws IOException if an IOException occurs.
      */
     public static void withInputStream(File file, Closure closure) throws IOException {
         withStream(newInputStream(file), closure);
@@ -6046,7 +6068,7 @@ public class DefaultGroovyMethods {
      *
      * @param file a File
      * @param closure a closure
-     * @throws FileNotFoundException
+     * @throws IOException if an IOException occurs.
      */
     public static void withDataOutputStream(File file, Closure closure) throws IOException {
         withStream(newDataOutputStream(file), closure);
@@ -6058,7 +6080,7 @@ public class DefaultGroovyMethods {
      *
      * @param file a File
      * @param closure a closure
-     * @throws FileNotFoundException
+     * @throws IOException if an IOException occurs.
      */
     public static void withDataInputStream(File file, Closure closure) throws IOException {
         withStream(newDataInputStream(file), closure);
@@ -6069,7 +6091,7 @@ public class DefaultGroovyMethods {
      *
      * @param file a File
      * @return a BufferedWriter
-     * @throws FileNotFoundException
+     * @throws IOException if an IOException occurs.
      */
     public static BufferedWriter newWriter(File file) throws IOException {
         return new BufferedWriter(new FileWriter(file));
@@ -6081,7 +6103,7 @@ public class DefaultGroovyMethods {
      * @param file   a File
      * @param append true if in append mode
      * @return a BufferedWriter
-     * @throws FileNotFoundException
+     * @throws IOException if an IOException occurs.
      */
     public static BufferedWriter newWriter(File file, boolean append) throws IOException {
         return new BufferedWriter(new FileWriter(file, append));
@@ -6094,7 +6116,7 @@ public class DefaultGroovyMethods {
      * @param charset the name of the encoding used to write in this file
      * @param append  true if in append mode
      * @return a BufferedWriter
-     * @throws FileNotFoundException
+     * @throws IOException if an IOException occurs.
      */
     public static BufferedWriter newWriter(File file, String charset, boolean append) throws IOException {
         if (append) {
@@ -6117,7 +6139,7 @@ public class DefaultGroovyMethods {
      * @param file    a File
      * @param charset the name of the encoding used to write in this file
      * @return a BufferedWriter
-     * @throws FileNotFoundException
+     * @throws IOException if an IOException occurs.
      */
     public static BufferedWriter newWriter(File file, String charset) throws IOException {
         return newWriter(file, charset, false);
@@ -6128,7 +6150,7 @@ public class DefaultGroovyMethods {
      *
      * @param stream    the FileOuputStream to write the BOM to
      * @param bigEndian true if UTF 16 Big Endian or false if Low Endian
-     * @throws IOException
+     * @throws IOException if an IOException occurs.
      */
     private static void writeUtf16Bom(FileOutputStream stream, boolean bigEndian) throws IOException {
         if (bigEndian) {
@@ -6146,7 +6168,7 @@ public class DefaultGroovyMethods {
      *
      * @param file    a File
      * @param closure a closure
-     * @throws FileNotFoundException
+     * @throws IOException if an IOException occurs.
      */
     public static void withWriter(File file, Closure closure) throws IOException {
         withWriter(newWriter(file), closure);
@@ -6159,7 +6181,7 @@ public class DefaultGroovyMethods {
      * @param file    a File
      * @param charset the charset used
      * @param closure a closure
-     * @throws FileNotFoundException
+     * @throws IOException if an IOException occurs.
      */
     public static void withWriter(File file, String charset, Closure closure) throws IOException {
         withWriter(newWriter(file, charset), closure);
@@ -6172,7 +6194,7 @@ public class DefaultGroovyMethods {
      * @param file    a File
      * @param charset the charset used
      * @param closure a closure
-     * @throws FileNotFoundException
+     * @throws IOException if an IOException occurs.
      */
     public static void withWriterAppend(File file, String charset, Closure closure) throws IOException {
         withWriter(newWriter(file, charset, true), closure);
@@ -6182,7 +6204,7 @@ public class DefaultGroovyMethods {
      * Helper method to create a new PrintWriter for a file
      *
      * @param file a File
-     * @throws FileNotFoundException
+     * @throws IOException if an IOException occurs.
      */
     public static PrintWriter newPrintWriter(File file) throws IOException {
         return new PrintWriter(newWriter(file));
@@ -6194,7 +6216,7 @@ public class DefaultGroovyMethods {
      * @param file    a File
      * @param charset the charset
      * @return a PrintWriter
-     * @throws FileNotFoundException
+     * @throws IOException if an IOException occurs.
      */
     public static PrintWriter newPrintWriter(File file, String charset) throws IOException {
         return new PrintWriter(newWriter(file, charset));
@@ -6205,7 +6227,7 @@ public class DefaultGroovyMethods {
      * passes it into the closure and ensures its closed again afterwords
      *
      * @param file a File
-     * @throws FileNotFoundException
+     * @throws IOException if an IOException occurs.
      */
     public static void withPrintWriter(File file, Closure closure) throws IOException {
         withWriter(newPrintWriter(file), closure);
@@ -6218,7 +6240,7 @@ public class DefaultGroovyMethods {
      *
      * @param writer  the writer which is used and then closed
      * @param closure the closure that the writer is passed into
-     * @throws IOException
+     * @throws IOException if an IOException occurs.
      */
     public static void withWriter(Writer writer, Closure closure) throws IOException {
         try {
@@ -6247,7 +6269,7 @@ public class DefaultGroovyMethods {
      *
      * @param reader  the reader which is used and then closed
      * @param closure the closure that the writer is passed into
-     * @throws IOException
+     * @throws IOException if an IOException occurs.
      */
     public static void withReader(Reader reader, Closure closure) throws IOException {
         try {
@@ -6275,7 +6297,7 @@ public class DefaultGroovyMethods {
      *
      * @param stream  the stream which is used and then closed
      * @param closure the closure that the stream is passed into
-     * @throws IOException
+     * @throws IOException if an IOException occurs.
      */
     public static void withStream(InputStream stream, Closure closure) throws IOException {
         try {
@@ -6301,7 +6323,7 @@ public class DefaultGroovyMethods {
      *
      * @param stream a stream
      * @return a List of lines
-     * @throws IOException
+     * @throws IOException if an IOException occurs.
      */
     public static List readLines(InputStream stream) throws IOException {
         return readLines(new BufferedReader(new InputStreamReader(stream)));
@@ -6312,7 +6334,7 @@ public class DefaultGroovyMethods {
      *
      * @param stream  a stream
      * @param closure a closure
-     * @throws IOException
+     * @throws IOException if an IOException occurs.
      */
     public static void eachLine(InputStream stream, Closure closure) throws IOException {
         eachLine(new InputStreamReader(stream), closure);
@@ -6323,7 +6345,7 @@ public class DefaultGroovyMethods {
      *
      * @param url     a URL to open and read
      * @param closure a closure to apply on each line
-     * @throws IOException
+     * @throws IOException if an IOException occurs.
      */
     public static void eachLine(URL url, Closure closure) throws IOException {
         eachLine(url.openConnection().getInputStream(), closure);
@@ -6334,7 +6356,7 @@ public class DefaultGroovyMethods {
      * passes it into the closure and ensures its closed again afterwords
      *
      * @param url a URL
-     * @throws FileNotFoundException
+     * @throws IOException if an IOException occurs.
      */
     public static void withReader(URL url, Closure closure) throws IOException {
         withReader(url.openConnection().getInputStream(), closure);
@@ -6345,7 +6367,7 @@ public class DefaultGroovyMethods {
      * passes it into the closure and ensures its closed again afterwords
      *
      * @param in a stream
-     * @throws FileNotFoundException
+     * @throws IOException if an IOException occurs.
      */
     public static void withReader(InputStream in, Closure closure) throws IOException {
         withReader(new InputStreamReader(in), closure);
@@ -6358,7 +6380,7 @@ public class DefaultGroovyMethods {
      *
      * @param stream  the stream which is used and then closed
      * @param closure the closure that the writer is passed into
-     * @throws IOException
+     * @throws IOException if an IOException occurs.
      */
     public static void withWriter(OutputStream stream, Closure closure) throws IOException {
         withWriter(new OutputStreamWriter(stream), closure);
@@ -6372,7 +6394,7 @@ public class DefaultGroovyMethods {
      * @param stream  the stream which is used and then closed
      * @param charset the charset used
      * @param closure the closure that the writer is passed into
-     * @throws IOException
+     * @throws IOException if an IOException occurs.
      */
     public static void withWriter(OutputStream stream, String charset, Closure closure) throws IOException {
         withWriter(new OutputStreamWriter(stream, charset), closure);
@@ -6385,7 +6407,7 @@ public class DefaultGroovyMethods {
      *
      * @param os      the stream which is used and then closed
      * @param closure the closure that the stream is passed into
-     * @throws IOException
+     * @throws IOException if an IOException occurs.
      */
     public static void withStream(OutputStream os, Closure closure) throws IOException {
         try {
@@ -6411,7 +6433,7 @@ public class DefaultGroovyMethods {
      *
      * @param file a File
      * @return a BufferedInputStream of the file
-     * @throws FileNotFoundException
+     * @throws FileNotFoundException if the file is not found.
      */
     public static BufferedInputStream newInputStream(File file) throws FileNotFoundException {
         return new BufferedInputStream(new FileInputStream(file));
@@ -6422,7 +6444,7 @@ public class DefaultGroovyMethods {
      *
      * @param file a File
      * @return a DataInputStream of the file
-     * @throws FileNotFoundException
+     * @throws FileNotFoundException if the file is not found.
      */
     public static DataInputStream newDataInputStream(File file) throws FileNotFoundException {
         return new DataInputStream(new FileInputStream(file));
@@ -6433,6 +6455,7 @@ public class DefaultGroovyMethods {
      *
      * @param self    a File
      * @param closure a closure
+     * @throws IOException if an IOException occurs.
      */
     public static void eachByte(File self, Closure closure) throws IOException {
         BufferedInputStream is = newInputStream(self);
@@ -6445,7 +6468,7 @@ public class DefaultGroovyMethods {
      *
      * @param is      stream to iterate over, closed after the method call
      * @param closure closure to apply to each byte
-     * @throws IOException
+     * @throws IOException if an IOException occurs.
      */
     public static void eachByte(InputStream is, Closure closure) throws IOException {
         try {
@@ -6477,7 +6500,7 @@ public class DefaultGroovyMethods {
      *
      * @param url     url to iterate over
      * @param closure closure to apply to each byte
-     * @throws IOException
+     * @throws IOException if an IOException occurs.
      */
     public static void eachByte(URL url, Closure closure) throws IOException {
         InputStream is = url.openConnection().getInputStream();
@@ -6596,7 +6619,7 @@ public class DefaultGroovyMethods {
      * @param reader  a reader, closed after the call
      * @param writer  a writer, closed after the call
      * @param closure the closure which returns booleans
-     * @throws IOException
+     * @throws IOException if an IOException occurs.
      */
     public static void filterLine(Reader reader, Writer writer, Closure closure) throws IOException {
         BufferedReader br = new BufferedReader(reader);
@@ -6775,7 +6798,7 @@ public class DefaultGroovyMethods {
      *
      * @param socket  a Socket
      * @param closure a Closure
-     * @throws IOException
+     * @throws IOException if an IOException occurs.
      */
     public static void withStreams(Socket socket, Closure closure) throws IOException {
         InputStream input = socket.getInputStream();
@@ -6837,7 +6860,7 @@ public class DefaultGroovyMethods {
      * @param serverSocket a ServerSocket
      * @param closure      a Closure
      * @return a Socket
-     * @throws IOException
+     * @throws IOException if an IOException occurs.
      */
     public static Socket accept(ServerSocket serverSocket, final Closure closure) throws IOException {
         final Socket socket = serverSocket.accept();
@@ -6932,7 +6955,7 @@ public class DefaultGroovyMethods {
      *
      * @param self a Process
      * @return the text of the output
-     * @throws IOException
+     * @throws IOException if an IOException occurs.
      */
     public static String getText(Process self) throws IOException {
         return getText(new BufferedReader(new InputStreamReader(self.getInputStream())));
@@ -6965,6 +6988,7 @@ public class DefaultGroovyMethods {
      * @param self  a Process
      * @param value a value to append
      * @return a Writer
+     * @throws IOException if an IOException occurs.
      */
     public static Writer leftShift(Process self, Object value) throws IOException {
         return leftShift(self.getOutputStream(), value);
@@ -6977,6 +7001,7 @@ public class DefaultGroovyMethods {
      * @param self  a Process
      * @param value a value to append
      * @return an OutputStream
+     * @throws IOException if an IOException occurs.
      */
     public static OutputStream leftShift(Process self, byte[] value) throws IOException {
         return leftShift(self.getOutputStream(), value);
@@ -7049,14 +7074,13 @@ public class DefaultGroovyMethods {
      * @param closure a closure
      */
     public static void each(Matcher self, Closure closure) {
-        Matcher m = self;
-        while (m.find()) {
-            int count = m.groupCount();
+        while (self.find()) {
+            int count = self.groupCount();
             ArrayList groups = new ArrayList();
             for (int i = 0; i <= count; i++) {
-                groups.add(m.group(i));
+                groups.add(self.group(i));
             }
-            closure.call((Object[]) groups.toArray());
+            closure.call(groups.toArray());
         }
     }
 
@@ -7188,7 +7212,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * @return an Iterator for an Enumeration
+     * @param enumeration an Enumeration object
+     * @return an Iterator for the Enumeration
      */
     public static Iterator iterator(final Enumeration enumeration) {
         return new Iterator() {
@@ -7212,6 +7237,7 @@ public class DefaultGroovyMethods {
     // TODO move into DOMCategory once we can make use of optional categories transparent
 
     /**
+     * @param nodeList a NodeList
      * @return an Iterator for a NodeList
      */
     public static Iterator iterator(final NodeList nodeList) {
@@ -7233,6 +7259,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * @param matcher a Matcher object
      * @return an Iterator for a Matcher
      */
     public static Iterator iterator(final Matcher matcher) {
@@ -7270,14 +7297,15 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * @return an Iterator for a Reader
+     * @param self a Reader object
+     * @return an Iterator for the Reader
      */
-    public static Iterator iterator(Reader value) {
+    public static Iterator iterator(Reader self) {
         final BufferedReader bufferedReader;
-        if (value instanceof BufferedReader)
-            bufferedReader = (BufferedReader) value;
+        if (self instanceof BufferedReader)
+            bufferedReader = (BufferedReader) self;
         else
-            bufferedReader = new BufferedReader(value);
+            bufferedReader = new BufferedReader(self);
         return new Iterator() {
             String nextVal /* = null */;
             boolean nextMustRead = true;
@@ -7324,13 +7352,19 @@ public class DefaultGroovyMethods {
 
     /**
      * Standard iterator for a input stream which iterates through the stream content in a byte-based fashion.
+     *
+     * @param self an InputStream object
+     * @return an Iterator for the InputStream
      */
-    public static Iterator iterator(InputStream is) {
-        return iterator(new DataInputStream(is));
+    public static Iterator iterator(InputStream self) {
+        return iterator(new DataInputStream(self));
     }
 
     /**
      * Standard iterator for a data input stream which iterates through the stream content in a byte-based fashion.
+     *
+     * @param self a DataInputStream object
+     * @return an Iterator for the DataInputStream
      */
     public static Iterator iterator(final DataInputStream dis) {
         return new Iterator() {
