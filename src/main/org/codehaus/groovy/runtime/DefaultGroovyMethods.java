@@ -83,6 +83,7 @@ import org.w3c.dom.NodeList;
  * @author bing ran
  * @author Jochen Theodorou
  * @author Paul King
+ * @author Michael Baehr
  * @version $Revision$
  */
 public class DefaultGroovyMethods {
@@ -94,8 +95,8 @@ public class DefaultGroovyMethods {
      * Identity check. Since == is overridden in Groovy with the meaning of equality
      * we need some fallback to check for object identity.
      *
-     * @param self
-     * @param other
+     * @param self an object
+     * @param other an object to compare identity with
      * @return true if self and other are identical, false otherwise
      */
     public static boolean is(Object self, Object other) {
@@ -122,6 +123,8 @@ public class DefaultGroovyMethods {
      * property names.
      *
      * @param self the object to act upon
+     * @param property the property of interest
+     * @return the property value
      */
     public static Object getAt(Object self, String property) {
         return InvokerHelper.getProperty(self, property);
@@ -143,7 +146,10 @@ public class DefaultGroovyMethods {
 
     /**
      * Generates a detailed dump string of an object showing its class,
-     * hashCode and fields
+     * hashCode and fields.
+     *
+     * @param self an object
+     * @return the dump representation
      */
     public static String dump(Object self) {
         if (self == null) {
@@ -342,7 +348,7 @@ public class DefaultGroovyMethods {
         if (self instanceof PrintStream)
             printf((PrintStream)self, format, values);
         else
-            printf((PrintStream)System.out, format, values);
+            printf(System.out, format, values);
     }
 
     /**
@@ -675,8 +681,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * A convenience method for making a collection unique using a closure as a comparator
-     * (by Michael Baehr)
+     * A convenience method for making a collection unique using a closure as a comparator.
      *
      * @param self    a Collection
      * @param closure a Closure used as a comparator
@@ -1512,34 +1517,40 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Provide the standard Groovy size method
-     */
-    public static long size(File file) {
-        return file.length();
-    }
-
-
-    /**
-     * Provide the standard Groovy size method
-     */
-    public static long size(Matcher matcher) {
-        return getCount(matcher);
-    }
-
-    /**
-     * Makes an Array look like a Collection by adding support for the size() method
+     * Provide the standard Groovy size method for a file.
      *
-     * @param self an Array of Object
-     * @return the size of the Array
+     * @param self a file object
+     * @return the file's size (length)
+     */
+    public static long size(File self) {
+        return self.length();
+    }
+
+
+    /**
+     * Provide the standard Groovy size method for a matcher.
+     *
+     * @param self a matcher object
+     * @return the matcher's size (count)
+     */
+    public static long size(Matcher self) {
+        return getCount(self);
+    }
+
+    /**
+     * Provide the standard Groovy size method for an array.
+     *
+     * @param self an Array of objects
+     * @return the size (length) of the Array
      */
     public static int size(Object[] self) {
         return self.length;
     }
 
     /**
-     * Support the subscript operator for String.
+     * Support the subscript operator for CharSequence.
      *
-     * @param text  a String
+     * @param text  a CharSequence
      * @param index the index of the Character to get
      * @return the Character at the given index
      */
@@ -1549,10 +1560,11 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Support the subscript operator for String
+     * Support the subscript operator for String.
      *
      * @param text a String
-     * @return the Character object at the given index
+     * @param index the index of the Character to get
+     * @return the Character at the given index
      */
     public static String getAt(String text, int index) {
         index = normaliseIndex(index, text.length());
@@ -5773,8 +5785,8 @@ public class DefaultGroovyMethods {
 
     /**
      * Common code for {@link #eachFile(File, Closure)} and {@link #eachDir(File, Closure)}
-     * @param self
-     * @param closure
+     * @param self a file object
+     * @param closure the closure to invoke
      * @param onlyDir if normal file should be skipped
      */
     private static void eachFile(final File self, final Closure closure, final boolean onlyDir) 
@@ -5866,13 +5878,13 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Common code for {@link #eachFileMatch(File, Closure)} and {@link #eachFileMatch(File, Closure)}
-     * @param self
+     * Common code for {@link #eachFileMatch(File, Object, Closure)} and {@link #eachDirMatch(File, Object, Closure)}
+     * @param self    a file
      * @param filter  the filter to perform on the directory (using the isCase(object) method)
-     * @param closure
+     * @param closure the closure to invoke
      * @param onlyDir if normal file should be skipped
      */
-    private static void eachFileMatch(final File self, final Object filter, final Closure closure, final boolean onlyDir) 
+    private static void eachFileMatch(final File self, final Object filter, final Closure closure, final boolean onlyDir)
     		throws FileNotFoundException, IllegalArgumentException {
         checkDir(self);
         final File[] files = self.listFiles();
@@ -5880,10 +5892,10 @@ public class DefaultGroovyMethods {
         if (files==null) return;
         final MetaClass metaClass = InvokerHelper.getMetaClass(filter);
         for (int i = 0; i < files.length; i++) {
-        	final File curentFile = files[i];
-            if ((!onlyDir || curentFile.isDirectory())
-            		&& DefaultTypeTransformation.castToBoolean(metaClass.invokeMethod(filter, "isCase", curentFile.getName()))) {
-                closure.call(curentFile);
+        	final File currentFile = files[i];
+            if ((!onlyDir || currentFile.isDirectory())
+            		&& DefaultTypeTransformation.castToBoolean(metaClass.invokeMethod(filter, "isCase", currentFile.getName()))) {
+                closure.call(currentFile);
             }
         }
     }
@@ -5895,7 +5907,7 @@ public class DefaultGroovyMethods {
      *
      * @param self    a file
      * @param filter  the filter to perform on the directory (using the isCase(object) method)
-     * @param closure
+     * @param closure the closure to invoke
      * @throws FileNotFoundException    Thrown if the given directory does not exist
      * @throws IllegalArgumentException Thrown if the provided File object does not represent a directory
      */
@@ -5911,7 +5923,7 @@ public class DefaultGroovyMethods {
      *
      * @param self    a file
      * @param filter  the filter to perform on the directory (using the isCase(object) method)
-     * @param closure
+     * @param closure the closure to invoke
      * @throws FileNotFoundException    Thrown if the given directory does not exist
      * @throws IllegalArgumentException Thrown if the provided File object does not represent a directory
      * @since 1.1 beta 1
@@ -5925,7 +5937,7 @@ public class DefaultGroovyMethods {
      *
      * @param timer   a timer object
      * @param delay   the delay in milliseconds before running the closure code
-     * @param closure
+     * @param closure the closure to invoke
      */
     public static void runAfter(Timer timer, int delay, final Closure closure) {
         TimerTask timerTask = new TimerTask() {
@@ -7363,14 +7375,22 @@ public class DefaultGroovyMethods {
     /**
      * Standard iterator for a file which iterates through the file content in a line-based fashion.
      *
-     * @param f
-     * @throws IOException
+     * @param self a file object
+     * @return a line-based iterator
+     * @throws IOException if there is a problem processing the file (e.g. file is not found)
      */
-    public static Iterator iterator(File f) throws IOException {
-        return iterator(newReader(f));
+    public static Iterator iterator(File self) throws IOException {
+        return iterator(newReader(self));
     }
 
-    public static Iterator iterator(Iterator it) {
-        return it;
+    /**
+     * Returns itself for an iterator, supporting 'duck-typing' when trying to get an iterator for each
+     * object within a collection, some of which may already be iterators.
+     *
+     * @param self an iterator object
+     * @return itself
+     */
+    public static Iterator iterator(Iterator self) {
+        return self;
     }
 }
