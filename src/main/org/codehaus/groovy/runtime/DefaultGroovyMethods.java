@@ -3749,26 +3749,39 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Implements the getAt(int) method for primitve type arrays
+     * Implements the getAt(int) method for primitve type arrays.
+     *
+     * @param self an array object
+     * @param idx the index of interest
+     * @return the returned value from the array
      */
-    protected static Object primitiveArrayGet(Object array, int idx) {
-        return Array.get(array, normaliseIndex(idx, Array.getLength(array)));
+    protected static Object primitiveArrayGet(Object self, int idx) {
+        return Array.get(self, normaliseIndex(idx, Array.getLength(self)));
     }
 
     /**
-     * Implements the getAt(Range) method for primitve type arrays
+     * Implements the getAt(Range) method for primitve type arrays.
+     *
+     * @param self an array object
+     * @param range the range of indices of interest
+     * @return the returned values from the array corresponding to the range
+
      */
-    protected static List primitiveArrayGet(Object array, Range range) {
+    protected static List primitiveArrayGet(Object self, Range range) {
         List answer = new ArrayList();
         for (Iterator iter = range.iterator(); iter.hasNext();) {
             int idx = DefaultTypeTransformation.intUnbox(iter.next());
-            answer.add(primitiveArrayGet(array, idx));
+            answer.add(primitiveArrayGet(self, idx));
         }
         return answer;
     }
 
     /**
-     * Implements the getAt(Collection) method for primitve type arrays
+     * Implements the getAt(Collection) method for primitve type arrays.
+     *
+     * @param self an array object
+     * @param indices the indices of interest
+     * @return the returned values from the array
      */
     protected static List primitiveArrayGet(Object self, Collection indices) {
         List answer = new ArrayList();
@@ -3787,10 +3800,14 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Implements the set(int idx) method for primitve type arrays
+     * Implements the set(int idx) method for primitve type arrays.
+     *
+     * @param self an object
+     * @param idx the index of interest
+     * @param newValue the new value to be put into the index of interest
      */
-    protected static void primitiveArrayPut(Object array, int idx, Object newValue) {
-        Array.set(array, normaliseIndex(idx, Array.getLength(array)), newValue);
+    protected static void primitiveArrayPut(Object self, int idx, Object newValue) {
+        Array.set(self, normaliseIndex(idx, Array.getLength(self)), newValue);
     }
 
     // String methods
@@ -3982,6 +3999,7 @@ public class DefaultGroovyMethods {
      *
      * @param self a command line String
      * @return the Process which has just started for this command line string
+     * @throws IOException if an IOException occurs.
      */
     public static Process execute(String self) throws IOException {
         return Runtime.getRuntime().exec(self);
@@ -3996,6 +4014,7 @@ public class DefaultGroovyMethods {
      * @param commandArray an array of <code>String<code> containing the command name and
      *                     parameters as separate items in the array.
      * @return the Process which has just started for this command line string.
+     * @throws IOException if an IOException occurs.
      */
     public static Process execute(String[] commandArray) throws IOException {
         return Runtime.getRuntime().exec(commandArray);
@@ -4016,6 +4035,7 @@ public class DefaultGroovyMethods {
      *             <tt>null</tt> if the subprocess should inherit
      *             the working directory of the current process.
      * @return the Process which has just started for this command line string.
+     * @throws IOException if an IOException occurs.
      */
     public static Process execute(String self, final String[] envp, File dir) throws IOException {
         return Runtime.getRuntime().exec(self, envp, dir);
@@ -4030,6 +4050,7 @@ public class DefaultGroovyMethods {
      * @param commandList a list of <code>String<code> containing the command name and
      *                    parameters as separate items in the list.
      * @return the Process which has just started for this command line string.
+     * @throws IOException if an IOException occurs.
      */
     public static Process execute(List commandList) throws IOException {
         final String[] commandArray = new String[commandList.size()];
@@ -4055,19 +4076,16 @@ public class DefaultGroovyMethods {
      *             <tt>null</tt> if the subprocess should inherit
      *             the working directory of the current process.
      * @return the Process which has just started for this command line string.
+     * @throws IOException if an IOException occurs.
      */
     public static Process execute(String self, List envp, File dir) throws IOException {
         if (envp==null) {
             return execute(self, (String[]) null, dir);
         }
         String[] commandArray = new String[envp.size()];
-        if (envp != null) {
-        	Iterator it = envp.iterator();
-        	for (int i = 0; it.hasNext(); ++i) {
-            	commandArray[i] = it.next().toString();
-        	}
-        } else {
-        	commandArray = null;
+        Iterator it = envp.iterator();
+        for (int i = 0; it.hasNext(); ++i) {
+            commandArray[i] = it.next().toString();
         }
         return execute(self, commandArray, dir);
     }
@@ -6944,7 +6962,8 @@ public class DefaultGroovyMethods {
      * An alias method so that a process appears similar to System.out, System.in, System.err;
      * you can use process.in, process.out, process.err in a similar way
      *
-     * @return an InputStream
+     * @param self a Process object
+     * @return the InputStream for the process
      */
     public static InputStream getIn(Process self) {
         return self.getInputStream();
@@ -6965,7 +6984,8 @@ public class DefaultGroovyMethods {
      * An alias method so that a process appears similar to System.out, System.in, System.err;
      * you can use process.in, process.out, process.err in a similar way
      *
-     * @return an InputStream
+     * @param self a Process object
+     * @return the error InputStream for the process
      */
     public static InputStream getErr(Process self) {
         return self.getErrorStream();
@@ -6975,7 +6995,8 @@ public class DefaultGroovyMethods {
      * An alias method so that a process appears similar to System.out, System.in, System.err;
      * you can use process.in, process.out, process.err in a similar way
      *
-     * @return an OutputStream
+     * @param self a Process object
+     * @return the OutputStream for the process
      */
     public static OutputStream getOut(Process self) {
         return self.getOutputStream();
@@ -7366,7 +7387,7 @@ public class DefaultGroovyMethods {
      * @param self a DataInputStream object
      * @return an Iterator for the DataInputStream
      */
-    public static Iterator iterator(final DataInputStream dis) {
+    public static Iterator iterator(final DataInputStream self) {
         return new Iterator() {
             Byte nextVal;
             boolean nextMustRead = true;
@@ -7375,7 +7396,7 @@ public class DefaultGroovyMethods {
             public boolean hasNext() {
                 if (nextMustRead && hasNext) {
                     try {
-                        byte bPrimitive = dis.readByte();
+                        byte bPrimitive = self.readByte();
                         nextVal = new Byte(bPrimitive);
                         nextMustRead = false;
                     } catch (IOException e) {
@@ -7389,7 +7410,7 @@ public class DefaultGroovyMethods {
                 Byte retval = null;
                 if (nextMustRead) {
                     try {
-                        byte b = dis.readByte();
+                        byte b = self.readByte();
                         retval = new Byte(b);
                     } catch (IOException e) {
                         hasNext = false;
