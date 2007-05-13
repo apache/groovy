@@ -187,7 +187,7 @@ public class TableLayoutCell implements ContainerFacade {
     }
     
     /**
-     * @return the GridBagConstraints enumeration for achor
+     * @return the GridBagConstraints enumeration for anchor
      */
     protected int getAnchor() {
         boolean isTop = "top".equalsIgnoreCase(valign);

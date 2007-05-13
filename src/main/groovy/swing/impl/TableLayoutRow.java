@@ -83,14 +83,14 @@ public class TableLayoutRow implements Startable {
             GridBagConstraints c = cell.getConstraints();
 
             // are we the last cell in the row
-            if ( iter.hasNext() ) {
-                // not last in row
-                c.gridwidth = GridBagConstraints.RELATIVE;                
-            }
-            else {
-                // end of row
-                c.gridwidth = GridBagConstraints.REMAINDER;
-            }
+//            if ( iter.hasNext() ) {
+//                // not last in row
+//                c.gridwidth = GridBagConstraints.RELATIVE;
+//            }
+//            else {
+//                // end of row
+//                c.gridwidth = GridBagConstraints.REMAINDER;
+//            }
             c.gridy = rowIndex;
             
             // now lets add the cell to the table
