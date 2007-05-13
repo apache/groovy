@@ -36,7 +36,7 @@ public class GroovyDocWriter {
 	private GroovyDocTool tool;
 	private OutputTool output;
 	private GroovyDocTemplateEngine templateEngine;
-    private static final String FS = File.separator;
+    private static final String FS = "/";
 
     public GroovyDocWriter(GroovyDocTool tool, OutputTool output, GroovyDocTemplateEngine templateEngine) {
 		this.tool = tool;
