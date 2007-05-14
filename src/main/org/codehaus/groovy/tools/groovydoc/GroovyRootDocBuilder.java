@@ -54,6 +54,7 @@ public class GroovyRootDocBuilder {
 	private GroovyDocTool tool;
 	private String sourcepath;
 	private SimpleGroovyRootDoc rootDoc;
+	private static final char FS = '/';
 
 	
 	public GroovyRootDocBuilder(GroovyDocTool tool,
@@ -145,10 +146,11 @@ public class GroovyRootDocBuilder {
 	}
 
 	public void buildTree(String filename) throws IOException, RecognitionException, TokenStreamException {
-		String srcFileName = sourcepath + File.separator + filename;
+		String srcFileName = sourcepath + FS + filename;
 		String src = DefaultGroovyMethods.getText(new File(srcFileName));
 
 		String packagePath = tool.getPath(filename);
+		packagePath = packagePath.replace('\\', FS);
 		String file = tool.getFile(filename);
 		Map classDocs = getClassDocsFromSingleSource(packagePath, file, src);
 		
