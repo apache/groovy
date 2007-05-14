@@ -70,37 +70,28 @@ public class TableLayoutRow implements Startable {
      * Adds a new cell to this row
      */
     public void addCell(TableLayoutCell tag) {
-        tag.getConstraints().gridx = cells.size();
+        int gridx = 0;
+        for (Iterator iter = cells.iterator(); iter.hasNext(); ) {
+            TableLayoutCell cell = (TableLayoutCell) iter.next();
+            gridx += cell.getColspan();
+        }
+        tag.getConstraints().gridx = gridx;
         cells.add(tag);
-    }        
+    }
     
     public void start() {
         rowIndex = parent.nextRowIndex();
-        
-        // now iterate through the rows and add each one to the layout...
+
+        // iterate through the rows and add each one to the layout...
         for (Iterator iter = cells.iterator(); iter.hasNext(); ) {
             TableLayoutCell cell = (TableLayoutCell) iter.next();
             GridBagConstraints c = cell.getConstraints();
-
-            // are we the last cell in the row
-//            if ( iter.hasNext() ) {
-//                // not last in row
-//                c.gridwidth = GridBagConstraints.RELATIVE;
-//            }
-//            else {
-//                // end of row
-//                c.gridwidth = GridBagConstraints.REMAINDER;
-//            }
             c.gridy = rowIndex;
-            
-            // now lets add the cell to the table
+            // add the cell to the table
             parent.addCell(cell);
         }        
     }
-    
-    // Properties
-    //-------------------------------------------------------------------------                    
-    
+
     /**
      * @return the row index of this row
      */

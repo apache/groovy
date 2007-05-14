@@ -65,6 +65,15 @@ public class TableLayoutCell implements ContainerFacade {
     private GridBagConstraints constraints;
     private String align;
     private String valign;
+
+    public int getColspan() {
+        return colspan;
+    }
+
+    public int getRowspan() {
+        return rowspan;
+    }
+
     private int colspan = 1;
     private int rowspan = 1;
     private boolean colfill;
