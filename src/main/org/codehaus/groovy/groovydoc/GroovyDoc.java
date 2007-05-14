@@ -42,4 +42,6 @@ public interface GroovyDoc extends Comparable {
 	public void setRawCommentText(String arg0);
 //	public GroovyTag[] tags();
 //	public GroovyTag[] tags(String arg0);
+	
+	public String firstSentenceCommentText();
 }

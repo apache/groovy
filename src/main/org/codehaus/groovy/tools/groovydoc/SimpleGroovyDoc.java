@@ -17,6 +17,9 @@
  */
 package org.codehaus.groovy.tools.groovydoc;
 
+import java.text.BreakIterator;
+import java.util.Locale;
+
 import org.codehaus.groovy.groovydoc.*;
 
 public class SimpleGroovyDoc implements GroovyDoc {
@@ -24,7 +27,9 @@ public class SimpleGroovyDoc implements GroovyDoc {
 		this.name = name;
 	}
 	private String name;
+	private String commentText;
 	private String rawCommentText;
+	private String firstSentenceCommentText;
 	public String name() {
 		return name;
 	}
@@ -33,13 +38,38 @@ public class SimpleGroovyDoc implements GroovyDoc {
 		return "" + getClass() + "(" + name + ")";
 	}
 	public String commentText() {
-		/*todo*/return rawCommentText;
+		return commentText; // derived from rawCommentText
 	}
 	public String getRawCommentText() {
 		return rawCommentText;
 	}
+	public String firstSentenceCommentText() {
+		return firstSentenceCommentText; // derived from rawCommentText
+	}
+
 	public void setRawCommentText(String rawCommentText) {
 		this.rawCommentText = rawCommentText;
+		
+		// remove all the * from beginning of lines
+		this.commentText = rawCommentText.replaceAll("(?m)^\\s*\\*", ""); // todo precompile regex Patterns
+
+		// Comment Summary using first sentence (Locale sensitive)
+		BreakIterator boundary = BreakIterator.getSentenceInstance(Locale.getDefault()); // todo - allow locale to be passed in
+        boundary.setText(commentText);
+        int start = boundary.first();
+        int end = boundary.next();
+        if (start > -1 && end > -1) {
+        	// need to abbreviate this comment for the summary
+        	this.firstSentenceCommentText = commentText.substring(start,end);
+        } else {
+        	this.firstSentenceCommentText = commentText;
+        }
+		// hack to reformat groovydoc tags into html (todo: tags)
+		this.commentText = this.commentText.replaceAll("(?m)@([a-z]*)\\s*(.*)$","<DL><DT><B>$1:</B></DT><DD>$2</DD></DL>");			// note: use of $ here is a reference to a subsequence (as defined in Matcher.appendReplacement())
+
+		// hack to hide groovydoc tags in summaries
+		this.firstSentenceCommentText = this.firstSentenceCommentText.replaceAll("(?m)@([a-z]*\\s*.*)$",""); // remove @return etc from summaries
+        
 	}
 
 	

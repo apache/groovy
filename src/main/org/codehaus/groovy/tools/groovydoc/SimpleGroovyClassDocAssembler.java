@@ -17,8 +17,10 @@
  */
 package org.codehaus.groovy.tools.groovydoc;
 
+import java.text.BreakIterator;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Stack;
 import java.util.regex.Matcher;
@@ -39,6 +41,8 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter {
 	private SimpleGroovyMethodDoc currentMethodDoc; // todo - stack?
 	private SourceBuffer sourceBuffer;
 	private String packagePath;
+	private Pattern previousJavaDocCommentPattern;
+	private static final String FS = "/";
 	
 	public SimpleGroovyClassDocAssembler(String packagePath, String file, SourceBuffer sourceBuffer) {
 		this.sourceBuffer = sourceBuffer;
@@ -53,8 +57,10 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter {
         	className = file.substring(0,idx);
         }
 		currentClassDoc = new SimpleGroovyClassDoc(className);
-		currentClassDoc.setFullPathName(packagePath + "/" + className);
+		currentClassDoc.setFullPathName(packagePath + FS + className);
 		classDocs.put(currentClassDoc.getFullPathName(),currentClassDoc);
+		
+		previousJavaDocCommentPattern = Pattern.compile("(?s)/\\*\\*(.*?)\\*/");
 	}
 	
 	public Map getGroovyClassDocs() {
@@ -82,14 +88,17 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter {
 	
 	public void visitClassDef(GroovySourceAST t,int visit) {
         if (visit == OPENING_VISIT) {
-
             // todo is this correct for java + groovy src?
         	String className = t.childOfType(GroovyTokenTypes.IDENT).getText();
-        	currentClassDoc = (SimpleGroovyClassDoc) classDocs.get(packagePath + "/" + className);
+        	currentClassDoc = (SimpleGroovyClassDoc) classDocs.get(packagePath + FS + className);
         	if (currentClassDoc == null) {
         		currentClassDoc = new SimpleGroovyClassDoc(className);
         	}
-            currentClassDoc.setFullPathName(packagePath + "/" + currentClassDoc.name());
+    		// comments
+    		String commentText = getJavaDocCommentsBeforeNode(t);
+    		currentClassDoc.setRawCommentText(commentText);
+
+    		currentClassDoc.setFullPathName(packagePath + FS + currentClassDoc.name());
         	classDocs.put(currentClassDoc.getFullPathName(), currentClassDoc);
         }
     }
@@ -138,26 +147,24 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter {
         	currentClassDoc.add(currentMethodDoc);
     	}
 	}
-
+	
+	// todo - If no comment before node, then get comment from same node on parent class - ouch!
+	
 	private String getJavaDocCommentsBeforeNode(GroovySourceAST t) {
 		String returnValue = "";
 		
 		String text = sourceBuffer.getSnippet(new LineColumn(1,1), new LineColumn(t.getLine(), t.getColumn()));
-		
-//		Pattern p = Pattern.compile("(?s).*/\\*\\*(.*?)\\*/\\s*$");
-		Pattern p = Pattern.compile("(?s).*/\\*\\*([^/]*?)\\*/[^\\*/}]*$");
-		Matcher m = p.matcher(text);
-		if (m.matches()) {
-			int lastGroupIndex = m.groupCount();
-			if (lastGroupIndex > 0) {
-				returnValue = m.group(lastGroupIndex);
-				
-				// todo: this was quick hack to just do summary...
-				int firstFullStopIndex = returnValue.indexOf(".");
-				if (firstFullStopIndex >= 0) {
-					returnValue = returnValue.substring(0,returnValue.indexOf("."));
-				}
-			}
+
+		int openBlockIndex = text.lastIndexOf("{");
+		int closingBlockIndex = text.lastIndexOf("}");
+		int lastBlockIndex = Math.max(openBlockIndex, closingBlockIndex);
+		if (lastBlockIndex > 0) {
+			text = text.substring(lastBlockIndex);
+		}
+
+		Matcher m = previousJavaDocCommentPattern.matcher(text);
+		if (m.find()) {
+			returnValue = m.group(1);
 		}
 		
 		

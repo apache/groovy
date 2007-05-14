@@ -24,12 +24,14 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 public class FileSystemResourceManager implements ResourceManager {
 	private String basedir;
+    private static final String FS = "/";
+	
 	public FileSystemResourceManager() {
 		basedir = "";
 	}
 	
 	public FileSystemResourceManager(String basedir) {
-		this.basedir = basedir + "/";
+		this.basedir = basedir + FS;
 	}
 	public Reader getReader(String resourceName) throws IOException {
 		return DefaultGroovyMethods.newReader(new File(basedir + resourceName));

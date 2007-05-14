@@ -1,4 +1,5 @@
 <class name="${classDoc.name()}">
+  <comment>${classDoc.commentText()}</comment>
   <constructors><% for (constructor in classDoc.constructors()) { %>
     <constructor name="${constructor.name()}">
       <parameters><% for (parameter in constructor.parameters()) { %>

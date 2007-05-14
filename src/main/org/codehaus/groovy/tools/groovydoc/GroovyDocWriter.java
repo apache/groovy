@@ -17,7 +17,6 @@
  */
 package org.codehaus.groovy.tools.groovydoc;
 
-import java.io.File;
 import java.util.Arrays;
 import java.util.Iterator;
 
