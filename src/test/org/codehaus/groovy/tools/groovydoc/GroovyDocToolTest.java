@@ -76,7 +76,15 @@ public class GroovyDocToolTest extends GroovyTestCase {
         xmlTool.renderToOutput(output, MOCK_DIR);
 
         String domBuilderDoc = output.getText(MOCK_DIR + FS + "groovy" + FS + "xml" + FS + "DOMBuilder.html");
-        System.out.println(domBuilderDoc);
         assertTrue(domBuilderDoc.indexOf("A helper class for creating a W3C DOM tree") > 0);
+    }
+
+    public void testPackageName() throws Exception {
+        xmlTool.add("groovy" + FS + "xml" + FS + "DOMBuilder.java");
+        MockOutputTool output = new MockOutputTool();
+        xmlTool.renderToOutput(output, MOCK_DIR);
+
+        String domBuilderDoc = output.getText(MOCK_DIR + FS + "groovy" + FS + "xml" + FS + "DOMBuilder.html");
+        assertTrue(domBuilderDoc.indexOf("<containingPackage name=\"groovy" + FS + "xml\">groovy.xml</containingPackage>") > 0);
     }
 }

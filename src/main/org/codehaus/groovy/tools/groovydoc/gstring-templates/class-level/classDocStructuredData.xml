@@ -1,4 +1,5 @@
 <class name="${classDoc.name()}">
+  <containingPackage name="${classDoc.containingPackage().name()}">${classDoc.containingPackage().nameWithDots()}</containingPackage>
   <comment>${classDoc.commentText()}</comment>
   <constructors><% for (constructor in classDoc.constructors()) { %>
     <constructor name="${constructor.name()}">

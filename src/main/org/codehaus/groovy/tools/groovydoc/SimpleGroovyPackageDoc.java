@@ -18,12 +18,14 @@
 package org.codehaus.groovy.tools.groovydoc;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyPackageDoc;
 
 public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPackageDoc {
+	private static final char FS = '/';
 	Map classDocs;
 	public SimpleGroovyPackageDoc(String name) {
 		super(name);
@@ -33,7 +35,19 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
 		return (GroovyClassDoc[]) classDocs.values().toArray(new GroovyClassDoc[classDocs.values().size()]); // todo performance? sorting?
 	}
 	public void putAll(Map classes) {
+		// 2 way relationship
+		// add reference to classes inside this package
 		classDocs.putAll(classes);
+		
+		// add reference to this package inside classes
+		Iterator itr = classes.values().iterator();
+		while (itr.hasNext()) {
+			SimpleGroovyProgramElementDoc programElement = (SimpleGroovyProgramElementDoc)itr.next();
+			programElement.setContainingPackage(this);
+		}
+	}
+	public String nameWithDots() {
+		return name().replace(FS, '.');
 	}
 	
 	public GroovyClassDoc[] allClasses(boolean arg0) {/*todo*/return null;}

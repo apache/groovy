@@ -40,7 +40,7 @@ function windowTitle()
 <!-- ======== START OF CLASS DATA ======== -->
 <H2>
 <FONT SIZE="-1">
-<!--todo classDoc.containingPackage.name()--></FONT>
+${classDoc.containingPackage().nameWithDots()}</FONT>
 <BR>
 <FONT CLASS="ClassTitleFont">Class ${classDoc.name()}</FONT></H2>
 <P>
@@ -60,7 +60,7 @@ ${classDoc.commentText()}
 <TD><CODE><B><a href="">${constructor.name()}</a></B>(<%= constructor.parameters().collect{ param -> "${param.typeName()} ${param.name()}" }.join(", ") %>)</CODE>
 
 <BR>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TD>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${constructor.firstSentenceCommentText()}</TD>
 </TR>
 <% } %>
 </TABLE>
@@ -95,7 +95,59 @@ ${classDoc.commentText()}
 </TABLE>
 &nbsp;
 <P>
+<!-- ========= CONSTRUCTOR DETAIL ======== -->
 
+<A NAME="constructor_detail"><!-- --></A>
+<TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
+<TR BGCOLOR="#CCCCFF" CLASS="TableHeadingColor">
+<TH ALIGN="left" COLSPAN="1"><FONT SIZE="+2">
+<B>Constructor Detail</B></FONT></TH>
+</TR>
+</TABLE>
+<% for (constructor in classDoc.constructors()) { %>
+<A NAME="QName(java.lang.String)"><!-- --></A><H3>
+${constructor.name()}</H3>
+<PRE>
+<!-- todo - public--> <B>${constructor.name()}</B>(<%= constructor.parameters().collect{ param -> "${param.typeName()} ${param.name()}" }.join(", ") %>)</PRE>
+<DL>
+<DD>${constructor.commentText()}
+<P>
+<!--<DL>
+<DT> todo <B>Parameters:</B><DD><CODE>localPart</CODE> - Local part of the QName</DL>-->§
+
+</DL>
+<HR>
+<% } %>
+
+<!-- ============ METHOD DETAIL ========== -->
+
+<A NAME="method_detail"><!-- --></A>
+<TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
+<TR BGCOLOR="#CCCCFF" CLASS="TableHeadingColor">
+<TH ALIGN="left" COLSPAN="1"><FONT SIZE="+2">
+<B>Method Detail</B></FONT></TH>
+</TR>
+</TABLE>
+<% for (method in classDoc.methods()) { %>
+<A NAME="${method.name()}"><!-- --></A><H3>
+${method.name()}</H3>
+<PRE>
+<!-- todo - public--> ${method.returnType().typeName()} <B>${method.name()}</B>(<%= method.parameters().collect{ param -> "${param.typeName()} ${param.name()}" }.join(", ") %>)</PRE>
+
+<DL>
+<DD>${method.commentText()}
+<P>
+<DD><DL>
+</DL>
+</DD>
+<DD><DL>
+
+<DT><B><!--todo Returns:--></B><DD><!-- todo --></DL>
+</DD>
+</DL>
+<HR>
+<% } %>
+	
 <!-- ========= END OF CLASS DATA ========= -->
 <HR>
 

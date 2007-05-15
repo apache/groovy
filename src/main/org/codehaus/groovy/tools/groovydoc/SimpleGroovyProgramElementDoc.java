@@ -19,14 +19,20 @@ package org.codehaus.groovy.tools.groovydoc;
 import org.codehaus.groovy.groovydoc.*;
 
 public class SimpleGroovyProgramElementDoc extends SimpleGroovyDoc implements GroovyProgramElementDoc {
-
+	private GroovyPackageDoc packageDoc;
+	
 	public SimpleGroovyProgramElementDoc(String name) {
 		super(name);
 	}
 	
+	public GroovyPackageDoc containingPackage() {
+		return packageDoc;
+	}
+	public void setContainingPackage(GroovyPackageDoc packageDoc) {
+		this.packageDoc = packageDoc;
+	}
 	//	public GroovyAnnotationDesc[] annotations() {/*todo*/return null;}
 	public GroovyClassDoc containingClass() {/*todo*/return null;}
-	public GroovyPackageDoc containingPackage() {/*todo*/return null;}
 	public boolean isFinal() {/*todo*/return false;}
 	public boolean isPackagePrivate() {/*todo*/return false;}
 	public boolean isPrivate() {/*todo*/return false;}
@@ -36,4 +42,5 @@ public class SimpleGroovyProgramElementDoc extends SimpleGroovyDoc implements Gr
 	public String modifiers() {/*todo*/return null;}
 	public int modifierSpecifier() {/*todo*/return 0;}
 	public String qualifiedName() {/*todo*/return null;}
+
 }

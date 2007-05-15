@@ -11,4 +11,6 @@ public interface GroovyPackageDoc extends GroovyDoc {
 	public GroovyClassDoc findClass(String arg0);
 	public GroovyClassDoc[] interfaces();
 	public GroovyClassDoc[] ordinaryClasses();
+	
+	public String nameWithDots(); // not in JavaDoc API
 }
