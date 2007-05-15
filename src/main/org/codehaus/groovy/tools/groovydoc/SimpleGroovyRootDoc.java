@@ -56,8 +56,9 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
 	
 	public GroovyClassDoc[] specifiedClasses() {/*todo*/return null;}
 	public GroovyPackageDoc[] specifiedPackages() {
-		// todo - array sorted by name
-		return (GroovyPackageDoc[]) packageDocs.values().toArray(new GroovyPackageDoc[packageDocs.values().size()]);
+		List packageDocValues = new ArrayList(packageDocs.values());
+		Collections.sort(packageDocValues);
+		return (GroovyPackageDoc[]) packageDocValues.toArray(new GroovyPackageDoc[packageDocValues.size()]);
 	}
 
 	

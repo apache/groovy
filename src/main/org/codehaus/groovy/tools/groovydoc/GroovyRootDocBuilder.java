@@ -152,16 +152,22 @@ public class GroovyRootDocBuilder {
 		String packagePath = tool.getPath(filename);
 		packagePath = packagePath.replace('\\', FS);
 		String file = tool.getFile(filename);
-		Map classDocs = getClassDocsFromSingleSource(packagePath, file, src);
+		try {
+			Map classDocs = getClassDocsFromSingleSource(packagePath, file, src);
 		
-		rootDoc.putAllClasses(classDocs);
+			rootDoc.putAllClasses(classDocs);
 
-		SimpleGroovyPackageDoc packageDoc = (SimpleGroovyPackageDoc) rootDoc.packageNamed(packagePath);
-		if (packageDoc == null) {
-			packageDoc = new SimpleGroovyPackageDoc(packagePath);
+			SimpleGroovyPackageDoc packageDoc = (SimpleGroovyPackageDoc) rootDoc.packageNamed(packagePath);
+			if (packageDoc == null) {
+				packageDoc = new SimpleGroovyPackageDoc(packagePath);
+			}
+			packageDoc.putAll(classDocs);		
+			rootDoc.put(packagePath, packageDoc);
+		} catch (RecognitionException e) {
+			System.out.println("ignored due to RecognitionException: " + filename);
+		} catch (TokenStreamException e) {
+			System.out.println("ignored due to TokenStreamException: " + filename);
 		}
-		packageDoc.putAll(classDocs);		
-		rootDoc.put(packagePath, packageDoc);
 	}
 
 

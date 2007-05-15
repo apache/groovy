@@ -431,7 +431,7 @@ $Date$
     <groovydoc
       destdir="${docsDirectory}/gapi"
       sourcepath="${mainSourceDirectory}"
-      packagenames="groovy.xml"
+      packagenames="**.*"
       use="true"
       windowtitle="groovydoc"
       private="false"/>
@@ -447,7 +447,7 @@ $Date$
     <groovydoc
       destdir="${docsDirectory}/gapi"
       sourcepath="${mainSourceDirectory}"
-      packagenames="groovy.xml"
+      packagenames="**.*"
       use="true"
       windowtitle="groovydoc"
       private="false"/>
