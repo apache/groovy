@@ -4,7 +4,7 @@ import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 
 public class MemoryAwareConcurrentReadMap {
-
+ 
     private interface Ref {
         public Object get();
         public void clear();
@@ -98,7 +98,6 @@ public class MemoryAwareConcurrentReadMap {
 
     private volatile long concurrentReads = 0;
     private Object writeLock = new Object();
-    private Object writeQueue = new Object();
     
     private Entry[] table;
     private int tableSize;
@@ -123,68 +122,67 @@ public class MemoryAwareConcurrentReadMap {
             return;
         }
 
-        synchronized(writeLock) {
-            waitForWriteState();
-            putNonBlocking(key,value,false);
-        }
+        putNonBlocking(key,value,false);
     }
     
     /**
      * call never without setting the write lock
      */
     private void putNonBlocking(Object key, Object value, boolean hard) {
-        removeDereferencedEntries();
-        int hash = key.hashCode();
-        
-        // find existing entry to replace
-        int index = index(hash, table.length);
-        
-        Entry current=table[index];
-        Entry prev = null;
-        while (current!=null) {
-            if (hash==current.hash) {
-                Object oldKey = current.getKey();
-                if (!current.isValid()) {
-                    if (prev!=null) {
-                        prev.next = current.next;
-                    } else {
-                        table[index] = current.next;
+        synchronized( writeLock) {
+            Entry[] table = this.table;
+            int size = this.size;
+            
+            removeDereferencedEntries();
+            int hash = key.hashCode();
+
+            // find existing entry to replace
+            int index = index(hash, table.length);
+
+            Entry current=table[index];
+            Entry prev = null;
+            while (current!=null) {
+                if (hash==current.hash) {
+                    Object oldKey = current.getKey();
+                    if (!current.isValid()) {
+                        if (prev!=null) {
+                            prev.next = current.next;
+                        } else {
+                            table[index] = current.next;
+                        }
+                        current = current.invalidate();
+                        size--;
+                        continue;
                     }
-                    current = current.invalidate();
-                    size--;
-                    continue;
+                    if (key==oldKey | key.equals(oldKey)) {
+                        current.setValue(oldKey,value,hard);
+                        return;
+                    }
                 }
-                if (key==oldKey | key.equals(oldKey)) {
-                    current.setValue(oldKey,value,hard);
-                    return;
-                }
+                prev = current;
+                current = current.next;
             }
-            prev = current;
-            current = current.next;
+
+            Entry newEntry = new Entry(key,value,hash,hard);
+            Entry oldEntry = table[index];
+            newEntry.next = oldEntry;
+            table[index] = newEntry;
+
+            this.size = size+1;
+            if (size>threshold) rehash();
         }
-        
-        Entry newEntry = new Entry(key,value,hash,hard);
-        Entry oldEntry = table[index];
-        newEntry.next = oldEntry;
-        table[index] = newEntry;
-        size++;
-        if (size>threshold) rehash();
     }
     
     private void rehash() {
         if (size<threshold) return;
-        synchronized(writeLock) {
-            waitForWriteState();
-            removeDereferencedEntries();
-            if (size<threshold) return;
-            removeStaleEntries();
-            if (size<threshold) return;
-            tableSize *= 2;
-            Entry[] newTable = new Entry[tableSize];
-            transfer(table,newTable);
-            table = newTable;
-            threshold = newThreshold();
-        }
+        waitForWriteState();
+        removeStaleEntries();
+        if (size<threshold) return;
+        tableSize *= 2;
+        Entry[] newTable = new Entry[tableSize];
+        transfer(table,newTable);
+        table = newTable;
+        threshold = newThreshold();
     }
     
     private void removeDereferencedEntries(){
@@ -301,10 +299,10 @@ public class MemoryAwareConcurrentReadMap {
     }
 
     private void waitForWriteState() {
-        synchronized (writeQueue) {
-            while (concurrentReads!=0) {
+        synchronized (writeLock) {
+            if (concurrentReads!=0) {
                 try {
-                    writeQueue.wait();
+                    writeLock.wait();
                 } catch (InterruptedException e) {}
             }
         }
@@ -316,10 +314,7 @@ public class MemoryAwareConcurrentReadMap {
             return;
         }
 
-        synchronized(writeLock) {
-            waitForWriteState();
-            putNonBlocking(key,value,true);
-        }
+        putNonBlocking(key,value,true);
     }
     
     private void lockWrite() {
@@ -331,9 +326,7 @@ public class MemoryAwareConcurrentReadMap {
     private void unlockWrite(){
         synchronized (writeLock) {
             concurrentReads--;
-        }
-        synchronized (writeQueue) {
-            writeQueue.notify();
+            if (concurrentReads==0) writeLock.notify();
         }
     }
     
