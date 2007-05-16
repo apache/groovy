@@ -206,18 +206,13 @@ class ExpandoMetaClassTest extends GroovyTestCase {
 	void testNewPropertyMethod() {
 	   	 def metaClass = new ExpandoMetaClass(Test.class)
 
-         def map = [:]
-		 metaClass.getSomething = {->map[System.identityHashCode(delegate)+'_something']}
-		 metaClass.setSomething = { String txt -> map[System.identityHashCode(delegate)+'_something'] = txt }
+		 metaClass.something = "testme"
 
 	   	metaClass.initialize()
 
 		 def t = new Test()
 	   	 t.metaClass = metaClass
 
-         t.something = "testme"
-
-         
 		 assertEquals "testme", t.getSomething()
 		 assertEquals "testme", t.something
 
@@ -227,9 +222,8 @@ class ExpandoMetaClassTest extends GroovyTestCase {
 
 		 def t2 = new Test()
 	   	 t2.metaClass = metaClass
-	   	 t2.something = "foo"
 	   	 // now check that they're not sharing the same property!
-	   	 assertEquals "foo", t2.something
+	   	 assertEquals "testme", t2.something
 	   	 assertEquals "test2", t.something
 
 	   	 t2.setSomething("test3")
@@ -408,6 +402,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
 		 assertEquals "mine blah!", t.borrowMe("blah")
 
 	}
+
 
 
 }

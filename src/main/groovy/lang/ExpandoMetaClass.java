@@ -18,6 +18,7 @@ package groovy.lang;
 import org.codehaus.groovy.runtime.*;
 import org.codehaus.groovy.runtime.metaclass.ClosureMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.ClosureStaticMetaMethod;
+import org.codehaus.groovy.runtime.metaclass.ThreadManagedMetaBeanProperty;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -407,7 +408,10 @@ public class  ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 		else if(property.equals("allowChangesAfterInit")) {
 			this.allowChangesAfterInit = ((Boolean)newValue).booleanValue();
 		}
-	}
+		else {
+			registerBeanProperty(property, newValue);
+		}          
+    }
 
 
 	protected void performOperationOnMetaClass(Callable c) {
@@ -508,7 +512,31 @@ public class  ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 	}
 
 
-	private void registerBeanPropertyForMethod(ClosureMetaMethod metaMethod, String propertyName, boolean getter) {
+	/**
+	 * Registers a new bean property
+	 *
+	 * @param property The property name
+	 * @param newValue The properties initial value
+	 */
+	protected void registerBeanProperty(final String property, final Object newValue) {
+			performOperationOnMetaClass(new Callable() {
+				public void call() {
+					Class type = newValue == null ? Object.class : newValue.getClass();
+
+					MetaBeanProperty mbp = new ThreadManagedMetaBeanProperty(theClass,property,type,newValue);
+
+					addMetaMethod(mbp.getGetter());
+					addMetaMethod(mbp.getSetter());
+					expandoMethods.add(mbp.getSetter());
+					expandoMethods.add(mbp.getGetter());
+					expandoProperties.add(mbp);
+					addMetaBeanProperty(mbp);
+				}
+
+			});
+	}
+    
+    private void registerBeanPropertyForMethod(ClosureMetaMethod metaMethod, String propertyName, boolean getter) {
 		MetaBeanProperty beanProperty = (MetaBeanProperty)beanPropertyCache.get(propertyName);
 		if(beanProperty == null) {
 			if(getter)
