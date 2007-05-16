@@ -245,6 +245,10 @@ public class DefaultGroovyMethods {
         return props;
     }
 
+
+
+
+
     /**
      * Convenience method that calls {@link #getMetaPropertyValues(Object)}(self)
      * and provides the data in form of simple key/value pairs, i.e. without
@@ -7162,6 +7166,28 @@ public class DefaultGroovyMethods {
         if (args==null) args=new Object[]{null};
         return InvokerHelper.getInstance().invokeConstructorOf(c,args);
     }
+
+
+    /**
+     * Adds a "metaClass" property to all class objects so you can use the syntax
+     * String.metaClass.myMethod = { println "foo" }
+     *
+     * @param c The java.lang.Class instance
+     * @return An ExpandoMetaClass instance
+     */
+    public static ExpandoMetaClass getMetaClass(Class c) {
+        MetaClassRegistry metaClassRegistry = GroovySystem.getMetaClassRegistry();
+        MetaClass mc = metaClassRegistry.getMetaClass(c);
+        if(mc instanceof ExpandoMetaClass) return (ExpandoMetaClass)mc;
+        else {
+            ExpandoMetaClass emc = new ExpandoMetaClass(c);
+            emc.initialize();
+            emc.setAllowChangesAfterInit(true);            
+            metaClassRegistry.setMetaClass(c, emc);
+            return emc;
+        }
+    }
+
 
     /**
      * A Runnable which waits for a process to complete together with a notification scheme

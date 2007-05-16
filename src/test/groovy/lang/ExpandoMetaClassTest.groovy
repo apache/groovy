@@ -21,6 +21,11 @@ package groovy.lang
 
 class ExpandoMetaClassTest extends GroovyTestCase {
 
+    void testWithMetaClassPropertyFromDGM() {
+        String.metaClass.upper = {-> delegate.toUpperCase() }
+
+        assertEquals "FOO", "foo".upper()
+    }
 
 	void testInheritedInjectedMethods() {
 		 def metaClass = new ExpandoMetaClass(Test.class)
