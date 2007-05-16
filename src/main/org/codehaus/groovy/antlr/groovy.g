@@ -529,7 +529,7 @@ declarationStart!
          	| (   upperCaseIdent
            		|   builtInType
            		|   qualifiedTypeName
-              ) (LBRACK balancedTokens RBRACK)*
+              ) (typeParameters)? (LBRACK balancedTokens RBRACK)*
         )+
         IDENT 
     ;

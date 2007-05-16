@@ -24,14 +24,16 @@ package org.codehaus.groovy.ast;
  * @see ClassNode
  */
 public class GenericsType extends ASTNode {
-    ClassNode upperBound;
-    ClassNode type;
-    String name;
+    private ClassNode upperBound;
+    private ClassNode type;
+    private String name;
+    private boolean placeholder;
     
     public GenericsType(ClassNode type, ClassNode upperBound) {
         this.type = type;
         this.name = type.getName();
         this.upperBound = upperBound;
+        placeholder=false;
     }
     
     public GenericsType(ClassNode basicType) {
@@ -58,5 +60,13 @@ public class GenericsType extends ASTNode {
     
     public String getName(){
         return name;
+    }
+
+    public boolean isPlaceholder() {
+        return placeholder;
+    }
+
+    public void setPlaceholder(boolean placeholder) {
+        this.placeholder = placeholder;
     }
 }

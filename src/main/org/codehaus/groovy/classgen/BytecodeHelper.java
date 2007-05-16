@@ -707,27 +707,60 @@ public class BytecodeHelper implements Opcodes {
     }
 
     public static String getGenericsSignature(GenericsType[] genericsTypes) {
-        //"<T:Ljava/lang/Object;>Ljava/lang/Object;"
-        //"<Y:Ljava/lang/Object;T:Ljava/util/ArrayList<TY;;>Ljava/lang/Object;
         if (genericsTypes==null) return null;
         StringBuffer ret = new StringBuffer(100);
         ret.append('<');
         for (int i = 0; i < genericsTypes.length; i++) {
-            ret.append(genericsTypes[i].getName());
+            String name = genericsTypes[i].getName();
+            ret.append(name);
             
             ret.append(':');
-            
-            ret.append('L');
-            ClassNode upperBound = genericsTypes[i].getUpperBound();
-            if (upperBound !=null) {
-                ret.append(getClassInternalName(upperBound));
-            } else {
-                ret.append("java/lang/Object");
+            if (genericsTypes[i].getType().isInterface()) {
+                ret.append(':');
             }
-            ret.append(';');
+            
+            writeGenericsBounds(ret,genericsTypes[i]);
         }
         ret.append(">Ljava/lang/Object;");
         return ret.toString();        
+    }
+    
+    public static String getGenericsBounds(ClassNode type) {
+        GenericsType[] genericsTypes = type.getGenericsTypes();
+        if (genericsTypes==null) return null;
+        StringBuffer ret = new StringBuffer(100);
+        GenericsType gt = new GenericsType(type);
+        writeGenericsBounds(ret,gt);
+        return ret.toString();
+    }
+    
+    private static void writeGenericsBounds(StringBuffer ret, GenericsType type) {
+        ret.append('L');
+        ClassNode upperBound = type.getUpperBound();
+        if (upperBound !=null) {
+            ret.append(getClassInternalName(upperBound));
+            addSubTypes(ret,upperBound.getGenericsTypes());
+        } else {
+            ret.append(getClassInternalName(type.getType()));
+            addSubTypes(ret,type.getType().getGenericsTypes());
+        }            
+        ret.append(';');
+    }
+    
+    private static void addSubTypes(StringBuffer ret, GenericsType[] types) {
+        if (types==null) return;
+        ret.append('<');
+        for (int i=0; i<types.length; i++) {
+           String name = types[i].getName();
+           if (types[i].isPlaceholder()) {
+               ret.append('T');
+               ret.append(name);
+               ret.append(';');
+           } else {
+               writeGenericsBounds(ret,types[i]);
+           }
+        }
+        ret.append('>');
     }
     
 }

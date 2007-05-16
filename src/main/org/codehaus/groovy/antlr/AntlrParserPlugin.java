@@ -527,7 +527,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
         ClassNode type = null;
         if (isType(TYPE, node)) {
-            type = makeType(node);
+            type = makeTypeWithArguments(node);
             node = node.getNextSibling();
         }
 
@@ -2186,19 +2186,19 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         ClassNode basicType = makeType(rootNode);
         LinkedList typeArgumentList = new LinkedList();
         AST node = rootNode.getFirstChild();
-        if (node==null) return basicType;
+        if (node==null || isType(INDEX_OP, node) || isType(ARRAY_DECLARATOR, node))  return basicType;
         node = node.getFirstChild();
         if (node==null) return basicType;
         assertNodeType(TYPE_ARGUMENTS, node);
         AST typeArgument = node.getFirstChild();
         
-        while (node != null) {
+        while (typeArgument != null) {
             assertNodeType(TYPE_ARGUMENT, typeArgument);            
-            ClassNode argument = makeType(typeArgument.getFirstChild());
+            ClassNode argument = makeTypeWithArguments(typeArgument.getFirstChild());
             GenericsType gt = new GenericsType(argument);
             configureAST(gt, node);
             typeArgumentList.add(gt);
-            node = node.getNextSibling();
+            typeArgument = typeArgument.getNextSibling();
         }
         
         if (typeArgumentList.size()>0) {

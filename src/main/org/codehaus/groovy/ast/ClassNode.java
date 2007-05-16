@@ -911,7 +911,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public String toString() {
-        String ret = getClass().getName() + "[" + getName(); // + "]";
+        String ret = getName(); 
         if (genericsTypes!=null) {
             ret += " <";
             for (int i = 0; i < genericsTypes.length; i++) {
@@ -920,7 +920,6 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
             }
             ret += ">";
         }
-        ret += "]";
         if (redirect!=null) {
             ret += " -> "+redirect().toString();
         }

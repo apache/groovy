@@ -191,6 +191,7 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
 
     private void resolveOrFail(ClassNode type, ASTNode node) {
         resolveOrFail(type,"",node);
+        resolveGenericsTypes(type.getGenericsTypes());
     }
 
     private boolean resolve(ClassNode type) {
@@ -957,14 +958,41 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
     }
     
     public void visitGenericType(GenericsType genericsType) {
-        ClassNode type = genericsType.getType();
-        genericParameterNames.put(type.getName(),type);
-        ClassNode upperBound = genericsType.getUpperBound();
-        if (upperBound!=null) {
-            resolveOrFail(upperBound, genericsType);
-            type.setRedirect(upperBound);
-        } else {
-            type.setRedirect(ClassHelper.OBJECT_TYPE);
+        resolveGenericsType(genericsType,false);
+    }
+    
+    private void resolveGenericsTypes(GenericsType[] types) {
+        if (types==null) return;
+        for (int i=0; i<types.length; i++) {
+            resolveGenericsType(types[i],true);
         }
+    }
+    
+    private void resolveGenericsType(GenericsType genericsType, boolean forceParameterResolving) {
+        ClassNode type = genericsType.getType();
+        // save name before redirect
+        String name = type.getName();
+        ClassNode upperBound = genericsType.getUpperBound();
+        if (!genericParameterNames.containsKey(name)) {
+            if (upperBound!=null) {
+                resolveOrFail(upperBound, genericsType);
+                type.setRedirect(upperBound);
+            } else if (forceParameterResolving) {
+                resolveOrFail(type, genericsType);
+            } else {
+                type.setRedirect(ClassHelper.OBJECT_TYPE);
+            }
+        } else {
+            type.setRedirect((ClassNode) genericParameterNames.get(name));
+            genericsType.setPlaceholder(true);
+        }
+        
+        if (!forceParameterResolving) {
+            genericParameterNames.put(name,type);
+            genericsType.setPlaceholder(true);
+        }
+        
+        if (upperBound!=null) resolveGenericsTypes(upperBound.getGenericsTypes());
+        resolveGenericsTypes(type.getGenericsTypes());
     }
 }

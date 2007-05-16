@@ -585,11 +585,12 @@ public class AsmClassGenerator extends ClassGenerator {
     public void visitField(FieldNode fieldNode) {
         onLineNumber(fieldNode, "visitField: " + fieldNode.getName());
         ClassNode t = fieldNode.getType();
+        String signature = helper.getGenericsBounds(t);
         FieldVisitor fv = cw.visitField(
             fieldNode.getModifiers(),
             fieldNode.getName(),
             BytecodeHelper.getTypeDescription(t),
-            null, //fieldValue,  //br  all the sudden that one cannot init the field here. init is done in static initilizer and instace intializer.
+            signature, //fieldValue,  //br  all the sudden that one cannot init the field here. init is done in static initilizer and instace intializer.
             null);
         visitAnnotations(fieldNode, fv);
         fv.visitEnd();
