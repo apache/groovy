@@ -299,8 +299,20 @@ public class MemoryAwareConcurrentReadMap {
     }
 
     private void waitForWriteState() {
+        // the loop is needed
+        // given two reading threads (TR1,TR2), 
+        // one writing Thread TW and TR1 is in unlockWrite,
+        // TR2 waits for the monitor in lockWrite,
+        // TW waits for a notify. If now TR1 releases
+        // the monitor, and TR2 is running, then TW
+        // will run as soon as TR2 is leaving lockWrite
+        // This means a concurrent erite and read would
+        // happen. lockWrite modifies concurrentReads to !=0
+        // so if that is rechecked TW goes to sleep again and
+        // will be notified as soon as TR2 has passed 
+        // unlockWrite.
         synchronized (writeLock) {
-            if (concurrentReads!=0) {
+            while (concurrentReads!=0) {
                 try {
                     writeLock.wait();
                 } catch (InterruptedException e) {}
@@ -318,15 +330,29 @@ public class MemoryAwareConcurrentReadMap {
     }
     
     private void lockWrite() {
+        // no write should happen while a read
+        // is done. concurrentReads==0 means a write
+        // is allowed, concurrentReads!=0 means we
+        // have a read and the write must wait
+        // concurrentReads gives the number of 
+        // currently running reads
         synchronized (writeLock) {
             concurrentReads++;
         }
     }
     
     private void unlockWrite(){
+        // after the read is finnished we decrease
+        // the number of reads by one. If it reaches
+        // 0 we wake up the waiting write threads.
+        // We wake up all of them, because if we have
+        // two waiting wrtier threads only one would been
+        // waked up by a notify. The next write would 
+        // have to wait till the next read, before it is
+        // waked up again... which may mean to wait forever
         synchronized (writeLock) {
             concurrentReads--;
-            if (concurrentReads==0) writeLock.notify();
+            if (concurrentReads==0) writeLock.notifyAll();
         }
     }
     
