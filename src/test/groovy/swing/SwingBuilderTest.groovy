@@ -630,7 +630,7 @@ class SwingBuilderTest extends GroovyTestCase {
 
             assert swing."${name}Action"
             assert swing."${name}Icon"
-            assert swing."${name}String"
+            assert swing."${name}String".text == 'string'
             assert swing."${name}Self"
             shouldFail {
                 swing."$name"(['bad'])
@@ -676,7 +676,6 @@ class SwingBuilderTest extends GroovyTestCase {
             //"container",
             "desktopPane",
             "dialog",
-            "editorPane",
             "fileChooser",
             "flowLayout",
             "frame",
@@ -685,7 +684,6 @@ class SwingBuilderTest extends GroovyTestCase {
             "gridBagLayout",
             "gridLayout",
             "internalFrame",
-            "label",
             "layeredPane",
             "list",
             "menu",
@@ -693,7 +691,6 @@ class SwingBuilderTest extends GroovyTestCase {
             "optionPane",
             //"overlayLayout",
             "panel",
-            "passwordField",
             "popupMenu",
             "progressBar",
             //"propertyColumn",
@@ -712,9 +709,6 @@ class SwingBuilderTest extends GroovyTestCase {
             "tableLayout",
             "tableModel",
             //"td",
-            "textArea",
-            "textField",
-            "textPane",
             "toolBar",
             //"tr",
             "tree",
@@ -734,6 +728,29 @@ class SwingBuilderTest extends GroovyTestCase {
 	    }
         }
 
+        def textItems = [ // elements take their own type as a value argument or a stringa s a text property
+            "editorPane",
+            "label",
+            "passwordField",
+            "textArea",
+            "textField",
+            "textPane",
+        ]
+        textItems.each {name ->
+            println name
+            swing.frame() {
+                "$name"(swing."$name"(), id:"${name}Self".toString())
+                "$name"('text', id:"${name}Text".toString())
+            }
+            assert swing."${name}Text".text == 'text'
+
+            shouldFail {
+                swing.frame() {
+                    swing."$name"(icon)
+                }
+	    }
+        }
+        
         // leftovers...
         swing.frame() {
             action(action:anAction)
