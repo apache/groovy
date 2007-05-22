@@ -125,7 +125,7 @@ class GroovyMethodsTest extends GroovyTestCase {
     }
 
     void testFileSize() {
-        assert new File('project.properties').size()
+        assert new File('build.properties').size()
     }
 
     void testMatcherSize() {
