@@ -46,6 +46,7 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.*;
+import org.codehaus.groovy.runtime.wrappers.PojoWrapper;
 
 import java.util.List;
 
@@ -138,14 +139,14 @@ public class Invoker {
         try {
             // if it's a pure interceptable object (even intercepting toString(), clone(), ...)
             if (groovy instanceof GroovyInterceptable) {
-                return groovy.invokeMethod(methodName, asArray(arguments));
+                return groovy.invokeMethod(methodName, asUnwrappedArray(arguments));
             }
             //else try a statically typed method or a GDK method
             return groovy.getMetaClass().invokeMethod(object, methodName, asArray(arguments));
         } catch (MissingMethodException e) {
             if (e.getMethod().equals(methodName) && object.getClass() == e.getType()) {
                 // in case there's nothing else, invoke the object's own invokeMethod()
-                return groovy.invokeMethod(methodName, asArray(arguments));
+                return groovy.invokeMethod(methodName, asUnwrappedArray(arguments));
             }
             throw e;
         }
@@ -177,13 +178,27 @@ public class Invoker {
      * cast otherwise wrap it in an array
      */
     public Object[] asArray(Object arguments) {
-        if (arguments == null) {
-            return EMPTY_ARGUMENTS;
+
+    	if (arguments == null) {
+    		return EMPTY_ARGUMENTS;
+    	}
+    	if (arguments instanceof Object[]) {
+    		return  (Object[]) arguments;
+    	}
+    	return new Object[]{arguments};
+    }
+
+    public Object[] asUnwrappedArray(Object arguments) {
+
+        Object[] args = asArray(arguments);
+
+        for (int i=0; i<args.length; i++) {
+            if (args[i] instanceof PojoWrapper) {
+                args[i] = ((PojoWrapper)args[i]).unwrap();
+            }
         }
-        if (arguments instanceof Object[]) {
-            return (Object[]) arguments;
-        }
-        return new Object[]{arguments};
+
+        return args;
     }
 
     /**
