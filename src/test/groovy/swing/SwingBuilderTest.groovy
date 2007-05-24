@@ -626,12 +626,12 @@ class SwingBuilderTest extends GroovyTestCase {
             swing."$name"(anAction, id:"${name}Action".toString())
             swing."$name"(icon, id:"${name}Icon".toString())
             swing."$name"("string", id:"${name}String".toString())
-            swing."$name"(swing."${name}Action".toString(), id:"${name}Self".toString())
+            swing."$name"(swing."${name}Action", id:"${name}Self".toString())
 
             assert swing."${name}Action"
             assert swing."${name}Icon"
             assert swing."${name}String".text == 'string'
-            assert swing."${name}Self"
+            assert swing."${name}Self" == swing."${name}Action"
             shouldFail {
                 swing."$name"(['bad'])
             }
