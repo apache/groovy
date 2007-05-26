@@ -68,11 +68,15 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.xml.serialize.OutputFormat;
-import org.apache.xml.serialize.XMLSerializer;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.typehandling.IntegerCache;
 import org.w3c.dom.Element;
+
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.dom.DOMSource;
 
 /**
  * A static helper class to make bytecode generation easier and act as a facade over the Invoker
@@ -576,18 +580,14 @@ public class InvokerHelper {
         }
         else if (arguments instanceof Element) {
             Element node = (Element) arguments;
-            OutputFormat format = new OutputFormat(node.getOwnerDocument());
-            format.setOmitXMLDeclaration(true);
-            format.setIndenting(true);
-            format.setLineWidth(0);
-            format.setPreserveSpace(true);
+            TransformerFactory transformerFactory = TransformerFactory.newInstance();
             StringWriter sw = new StringWriter();
-            XMLSerializer serializer = new XMLSerializer(sw, format);
             try {
-                serializer.asDOMSerializer();
-                serializer.serialize(node);
+                Transformer transformer = transformerFactory.newTransformer();
+                transformer.setOutputProperty("indent", "yes");
+                transformer.transform(new DOMSource(node), new StreamResult(sw));
             }
-            catch (IOException e) {
+            catch (TransformerException e) {
             }
             return sw.toString();
         }

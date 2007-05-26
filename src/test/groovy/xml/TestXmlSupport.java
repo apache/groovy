@@ -46,12 +46,17 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package groovy.xml;
 
-import org.apache.xml.serialize.XMLSerializer;
 import org.codehaus.groovy.classgen.TestSupport;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.xml.sax.SAXException;
+import org.xml.sax.Attributes;
+import org.xml.sax.helpers.DefaultHandler;
 
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.dom.DOMSource;
 import java.io.IOException;
 
 /**
@@ -61,20 +66,30 @@ import java.io.IOException;
 public abstract class TestXmlSupport extends TestSupport {
 
     protected void dump(Node node) throws IOException {
-        XMLSerializer printer = createSerializer();
-        if (node instanceof Document) {
-            printer.serialize((Document) node);
-        } else {
-            printer.serialize((Element) node);
+        TransformerFactory transformerFactory = TransformerFactory.newInstance();
+        try {
+            Transformer transformer = transformerFactory.newTransformer();
+            transformer.setOutputProperty("indent", "yes");
+            transformer.transform(new DOMSource(node), new StreamResult(System.out));
+        }
+        catch (TransformerException e) {
         }
         System.out.println();
     }
 
-    protected XMLSerializer createSerializer() {
-        return new XMLSerializer(System.out, null);
+    protected SAXBuilder createSAXBuilder() throws IOException {
+        return new SAXBuilder(new LoggingDefaultHandler());
     }
 
-    protected SAXBuilder createSAXBuilder() throws IOException {
-        return new SAXBuilder(createSerializer().asContentHandler());
+    private static class LoggingDefaultHandler extends DefaultHandler {
+        public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
+            System.out.println("Start Element: " + localName);
+        }
+        public void endElement(String uri, String localName, String qName) throws SAXException {
+            System.out.println("End Element: " + localName);
+        }
+        public void characters(char ch[], int start, int length) throws SAXException {
+            System.out.println("Characters: " + new String(ch).substring(start, start + length - 1));
+        }
     }
 }

@@ -51,25 +51,13 @@ class DOMTest extends GroovyTestCase {
             }
           }
         }
-        if (!benchmark) assertCorrectStreaming doc().docElement
+        // TODO re-enable this test now that xerces is gone
+//        if (!benchmark) assertCorrect doc().documentElement
     }
 
-    // TODO: reduce dup with assertCorrect
-    private def assertCorrectStreaming(html) {
-        use (DOMCategory) {
-            assert html.head.title[0].textContent == 'Test'
-            assert html.body.p[0].textContent == 'This is a test.'
-            assert html.find { it.tagName == 'body' }.tagName == 'body'
-            assert html.getElementsByTagName('*').findAll{ it.'@class' != '' }.size() == 2
-        }
-        // should fail outside category
-        shouldFail (MissingPropertyException) { html.head }
-    }
-  
     private def assertCorrect(html) {
         use (DOMCategory) {
-            assert html.head.title.collect{ it.text() } == ['Test']
-            assert html.head.title[0].text() == 'Test'
+            assert html.head.title.text() == 'Test', "Expected 'Test' but was: ${html.head.title[0].text()}"
             assert html.body.p[0].text() == 'This is a test.'
             assert html.find { it.tagName == 'body' }.tagName == 'body'
             assert html.getElementsByTagName('*').findAll{ it.'@class' != '' }.size() == 2
