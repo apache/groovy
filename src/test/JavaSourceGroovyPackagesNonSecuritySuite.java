@@ -17,7 +17,7 @@ import junit.framework.TestSuite;
  * All non-security related Java Unit tests in the 'groovy' dir
  */
 
-public class GroovyJavaNonSecurityTestsSuite {
+public class JavaSourceGroovyPackagesNonSecuritySuite {
 
     public static Test suite() {
         TestSuite suite = new TestSuite();
