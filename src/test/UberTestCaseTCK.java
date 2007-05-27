@@ -14,7 +14,7 @@ import junit.framework.TestSuite;
 public class UberTestCaseTCK extends TestCase {
     public static Test suite() {
         TestSuite suite = (TestSuite) AllTestSuite.suite("src/test/gls", "**/*Test.groovy");
-        suite.addTest(AllGlsJavaTestsSuite.suite());
+        suite.addTest(JavaSourceTckSuite.suite());
         return suite;
     }
 }

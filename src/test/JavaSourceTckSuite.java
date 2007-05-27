@@ -6,7 +6,7 @@ import junit.framework.TestSuite;
  * All Java Unit tests in the 'gls' dir
  */
 
-public class AllGlsJavaTestsSuite {
+public class JavaSourceTckSuite {
 
     public static Test suite() {
         TestSuite suite = new TestSuite();

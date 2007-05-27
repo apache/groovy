@@ -21,7 +21,7 @@ import org.codehaus.groovy.tools.groovydoc.GroovyDocToolTest;
  * All Java Unit tests in the 'org.codehaus.groovy' dir
  */
 
-public class AllCodehausJavaTestsSuite {
+public class JavaSourceCodehausPackagesSuite {
 
     public static Test suite() {
         TestSuite suite = new TestSuite();

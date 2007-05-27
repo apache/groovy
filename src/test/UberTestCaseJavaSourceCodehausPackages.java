@@ -14,7 +14,7 @@ import junit.framework.TestCase;
 
 public class UberTestCaseJavaSourceCodehausPackages extends TestCase {
     public static Test suite() {
-        return AllCodehausJavaTestsSuite.suite();
+        return JavaSourceCodehausPackagesSuite.suite();
     }
 
 }
