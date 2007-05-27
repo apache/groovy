@@ -17,7 +17,7 @@ import groovy.xml.FactorySupportTest;
  * All Java security-related Unit tests in the 'groovy' dir
  */
 
-public class GroovyJavaSecurityTestsSuite {
+public class JavaSourceGroovyPackagesSecuritySuite {
 
     public static Test suite() {
         TestSuite suite = new TestSuite();

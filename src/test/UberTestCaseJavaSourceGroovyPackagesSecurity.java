@@ -10,7 +10,7 @@ import junit.framework.TestCase;
 public class UberTestCaseJavaSourceGroovyPackagesSecurity extends TestCase {
 
     public static Test suite() {
-        return GroovyJavaSecurityTestsSuite.suite();
+        return JavaSourceGroovyPackagesSecuritySuite.suite();
     }
 
 }
