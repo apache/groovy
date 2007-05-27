@@ -12,7 +12,7 @@
 import junit.framework.Test;
 import junit.framework.TestCase;
 
-public class UberTestCaseJavaCodehaus extends TestCase {
+public class UberTestCaseJavaSourceCodehausPackages extends TestCase {
     public static Test suite() {
         return AllCodehausJavaTestsSuite.suite();
     }

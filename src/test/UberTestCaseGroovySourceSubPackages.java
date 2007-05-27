@@ -10,7 +10,7 @@ import groovy.util.AllTestSuite;
 import junit.framework.Test;
 import junit.framework.TestCase;
 
-public class UberTestCaseGroovyOtherLevels extends TestCase {
+public class UberTestCaseGroovySourceSubPackages extends TestCase {
     public static Test suite() {
         return AllTestSuite.suite("src/test", "groovy/**/*Test.groovy");
     }

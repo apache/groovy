@@ -48,24 +48,9 @@ package groovy.util;
 import groovy.lang.GroovyObjectSupport;
 import groovy.lang.GroovyRuntimeException;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Collection;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Iterator;
+import javax.management.*;
 import java.io.IOException;
-
-import javax.management.Attribute;
-import javax.management.JMException;
-import javax.management.MBeanException;
-import javax.management.MBeanInfo;
-import javax.management.MBeanOperationInfo;
-import javax.management.MBeanParameterInfo;
-import javax.management.ObjectName;
-import javax.management.MBeanServerConnection;
-import javax.management.MBeanAttributeInfo;
-
+import java.util.*;
 
 /**
  * A GroovyObject facade for an underlying MBean which acts like a normal
@@ -76,21 +61,33 @@ import javax.management.MBeanAttributeInfo;
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Steve Button
+ * @author Paul King
  * @version $Revision$
  */
 public class GroovyMBean extends GroovyObjectSupport {
-
     private MBeanServerConnection server;
     private ObjectName name;
     private MBeanInfo beanInfo;
+    private boolean ignoreErrors;
     private Map operations = new HashMap();
 
+    public GroovyMBean(MBeanServerConnection server, String objectName) throws JMException, IOException {
+        this(server, objectName, false);
+    }
+
+    public GroovyMBean(MBeanServerConnection server, String objectName, boolean ignoreErrors) throws JMException, IOException {
+        this(server, new ObjectName(objectName), ignoreErrors);
+    }
 
     public GroovyMBean(MBeanServerConnection server, ObjectName name) throws JMException, IOException {
+        this(server, name, false);
+    }
+
+    public GroovyMBean(MBeanServerConnection server, ObjectName name, boolean ignoreErrors) throws JMException, IOException {
         this.server = server;
         this.name = name;
+        this.ignoreErrors = ignoreErrors;
         this.beanInfo = server.getMBeanInfo(name);
-
 
         MBeanOperationInfo[] operationInfos = beanInfo.getOperations();
         for (int i = 0; i < operationInfos.length; i++) {
@@ -102,7 +99,6 @@ public class GroovyMBean extends GroovyObjectSupport {
             String operationKey = createOperationKey(info.getName(), signature.length);
             operations.put(operationKey, signature);
         }
-
     }
 
     public MBeanServerConnection server() {
@@ -122,11 +118,14 @@ public class GroovyMBean extends GroovyObjectSupport {
             return server.getAttribute(name, property);
         }
         catch (MBeanException e) {
-            throw new GroovyRuntimeException("Could not access property: " + property + ". Reason: " + e, e.getTargetException());
+            if (!ignoreErrors)
+                throw new GroovyRuntimeException("Could not access property: " + property + ". Reason: " + e, e.getTargetException());
         }
         catch (Exception e) {
-            throw new GroovyRuntimeException("Could not access property: " + property + ". Reason: " + e, e);
+            if (!ignoreErrors)
+                throw new GroovyRuntimeException("Could not access property: " + property + ". Reason: " + e, e);
         }
+        return null;
     }
 
     public void setProperty(String property, Object value) {
@@ -134,10 +133,12 @@ public class GroovyMBean extends GroovyObjectSupport {
             server.setAttribute(name, new Attribute(property, value));
         }
         catch (MBeanException e) {
-            throw new GroovyRuntimeException("Could not set property: " + property + ". Reason: " + e, e.getTargetException());
+            if (!ignoreErrors)
+                throw new GroovyRuntimeException("Could not set property: " + property + ". Reason: " + e, e.getTargetException());
         }
         catch (Exception e) {
-            throw new GroovyRuntimeException("Could not set property: " + property + ". Reason: " + e, e);
+            if (!ignoreErrors)
+                throw new GroovyRuntimeException("Could not set property: " + property + ". Reason: " + e, e);
         }
     }
 
@@ -159,11 +160,14 @@ public class GroovyMBean extends GroovyObjectSupport {
                 return server.invoke(name, method, argArray, signature);
             }
             catch (MBeanException e) {
-                throw new GroovyRuntimeException("Could not invoke method: " + method + ". Reason: " + e, e.getTargetException());
+                if (!ignoreErrors)
+                    throw new GroovyRuntimeException("Could not invoke method: " + method + ". Reason: " + e, e.getTargetException());
             }
             catch (Exception e) {
-                throw new GroovyRuntimeException("Could not invoke method: " + method + ". Reason: " + e, e);
+                if (!ignoreErrors)
+                    throw new GroovyRuntimeException("Could not invoke method: " + method + ". Reason: " + e, e);
             }
+            return null;
         } else {
             return super.invokeMethod(method, arguments);
         }
@@ -203,10 +207,9 @@ public class GroovyMBean extends GroovyObjectSupport {
                 MBeanAttributeInfo attr = attrs[i];
                 list.add(attr.getName());
             }
-        }
-        catch (Throwable t) {
-        }
-        finally {
+        } catch (Exception e) {
+            if (!ignoreErrors)
+                throw new GroovyRuntimeException("Could not list attribute names. Reason: " + e, e);
         }
         return list;
     }
@@ -226,16 +229,13 @@ public class GroovyMBean extends GroovyObjectSupport {
                 if (val != null) {
                     list.add(name + " : " + val.toString());
                 }
-            }
-            catch (RuntimeException e) {
-                // todo: fix this behaviour properly
-                // Do nothing here, just handle the error silently.
-                //e.printStackTrace();
+            } catch (Exception e) {
+                if (!ignoreErrors)
+                    throw new GroovyRuntimeException("Could not list attribute values. Reason: " + e, e);
             }
         }
         return list;
     }
-
 
     /**
      * List of string representations of all of the attributes on the MBean.
@@ -250,10 +250,9 @@ public class GroovyMBean extends GroovyObjectSupport {
                 MBeanAttributeInfo attr = attrs[i];
                 list.add(describeAttribute(attr));
             }
-        }
-        catch (Throwable t) {
-        }
-        finally {
+        } catch (Exception e) {
+            if (!ignoreErrors)
+                throw new GroovyRuntimeException("Could not list attribute descriptions. Reason: " + e, e);
         }
         return list;
     }
@@ -296,8 +295,9 @@ public class GroovyMBean extends GroovyObjectSupport {
                     return describeAttribute(attribute);
                 }
             }
-        }
-        catch (Throwable t) {
+        } catch (Exception e) {
+            if (!ignoreErrors)
+                throw new GroovyRuntimeException("Could not describe attribute '" + attributeName + "'. Reason: " + e, e);
         }
         return ret;
     }
@@ -315,12 +315,12 @@ public class GroovyMBean extends GroovyObjectSupport {
                 MBeanOperationInfo operation = operations[i];
                 list.add(operation.getName());
             }
-        }
-        catch (Throwable t) {
+        } catch (Exception e) {
+            if (!ignoreErrors)
+                throw new GroovyRuntimeException("Could not list operation names. Reason: " + e, e);
         }
         return list;
     }
-
 
     /**
      * Description of all of the operations available on the MBean.
@@ -335,17 +335,18 @@ public class GroovyMBean extends GroovyObjectSupport {
                 MBeanOperationInfo operation = operations[i];
                 list.add(describeOperation(operation));
             }
-        }
-        catch (Throwable t) {
+        } catch (Exception e) {
+            if (!ignoreErrors)
+                throw new GroovyRuntimeException("Could not list operation descriptions. Reason: " + e, e);
         }
         return list;
     }
 
     /**
-     * Get the dessciptions of the named operation.  This returns a Collection since
+     * Get the description of the specified operation.  This returns a Collection since
      * operations can be overloaded and one operationName can have multiple forms.
      *
-     * @param operationName
+     * @param operationName the name of the operation to describe
      * @return Collection of operation description
      */
     public List describeOperation(String operationName) {
@@ -358,17 +359,18 @@ public class GroovyMBean extends GroovyObjectSupport {
                     list.add(describeOperation(operation));
                 }
             }
-        }
-        catch (Throwable t) {
+        } catch (Exception e) {
+            if (!ignoreErrors)
+                throw new GroovyRuntimeException("Could not describe operations matching name '" + operationName + "'. Reason: " + e, e);
         }
         return list;
     }
 
     /**
-     * Dessciption of the named operation.
+     * Description of the operation.
      *
-     * @param operation
-     * @return description
+     * @param operation the operation to describe
+     * @return pretty-printed description
      */
     protected String describeOperation(MBeanOperationInfo operation) {
         StringBuffer buf = new StringBuffer();
@@ -391,9 +393,9 @@ public class GroovyMBean extends GroovyObjectSupport {
         return buf.toString();
     }
 
-
     /**
      * Return an end user readable representation of the underlying MBean
+     *
      * @return the user readable description
      */
     public String toString() {
@@ -417,5 +419,5 @@ public class GroovyMBean extends GroovyObjectSupport {
             }
         }
         return buf.toString();
-  }
+    }
 }

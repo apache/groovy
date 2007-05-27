@@ -1,5 +1,5 @@
-import junit.framework.TestCase;
 import junit.framework.Test;
+import junit.framework.TestCase;
 
 /**
  * Collecting all security-related Unit Tests under groovy package, written in Java.
@@ -7,8 +7,10 @@ import junit.framework.Test;
  * @author Christian Stein
  * @author Dierk Koenig
  */
-public class UberTestCaseJavaGroovyNonSecurity extends TestCase {
+public class UberTestCaseJavaSourceGroovyPackagesSecurity extends TestCase {
+
     public static Test suite() {
-        return GroovyJavaNonSecurityTestsSuite.suite();
+        return GroovyJavaSecurityTestsSuite.suite();
     }
+
 }

@@ -11,7 +11,7 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-public class UberTestCaseGroovyTopLevel extends TestCase {
+public class UberTestCaseGroovySourceRootPackage extends TestCase {
     public static Test suite() throws ClassNotFoundException {
         TestSuite suite = (TestSuite) AllTestSuite.suite("src/test", "groovy/*Test.groovy");
 
