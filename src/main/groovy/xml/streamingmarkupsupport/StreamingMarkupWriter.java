@@ -55,6 +55,8 @@ public class StreamingMarkupWriter extends Writer {
     protected final String encoding;
     protected final CharsetEncoder encoder;
     protected boolean writingAttribute = false;
+    protected boolean haveHighSurrogate = false;
+    protected StringBuffer surrogatePair = new StringBuffer(2);
 	private final Writer escapedWriter =  new Writer() {
 											/* (non-Javadoc)
 											 * @see java.io.Writer#close()
@@ -74,20 +76,14 @@ public class StreamingMarkupWriter extends Writer {
 											 * @see java.io.Writer#write(int)
 											 */
 											public void write(final int c) throws IOException {
-												if (!StreamingMarkupWriter.this.encoder.canEncode((char)c)) {
-													StreamingMarkupWriter.this.writer.write("&#x");
-													StreamingMarkupWriter.this.writer.write(Integer.toHexString(c));
-													StreamingMarkupWriter.this.writer.write(';');
-												} else if (c == '<') {
+												if (c == '<') {
 													StreamingMarkupWriter.this.writer.write("&lt;");
 												} else if (c == '>') {
 													StreamingMarkupWriter.this.writer.write("&gt;");
                                                    } else if (c == '&') {
                                                        StreamingMarkupWriter.this.writer.write("&amp;");
-                                                   } else if (c == '\'' && StreamingMarkupWriter.this.writingAttribute) {
-                                                       StreamingMarkupWriter.this.writer.write("&apos;");
-												} else {
-													StreamingMarkupWriter.this.writer.write(c);
+                                                   } else {
+													StreamingMarkupWriter.this.write(c);
 												}
 											}
 											
@@ -149,14 +145,41 @@ public class StreamingMarkupWriter extends Writer {
      * @see java.io.Writer#write(int)
      */
     public void write(final int c) throws IOException {
-        if (!this.encoder.canEncode((char)c)) {
-            this.writer.write("&#x");
-            this.writer.write(Integer.toHexString(c));
-            this.writer.write(';');
-        } else if (c == '\'' && this.writingAttribute) {
-            this.writer.write("&apos;");
+        if (c >= 0XDC00 && c <= 0XDFFF) {
+            // Low surrogate
+            this.surrogatePair.append((char)c);
+            
+            if (this.encoder.canEncode(this.surrogatePair)) {
+                this.writer.write(this.surrogatePair.toString());
+            } else {
+                this.writer.write("&#x");
+                this.writer.write(Integer.toHexString(0X10000 + ((this.surrogatePair.charAt(0) & 0X3FF) << 10) + (c & 0X3FF)));
+                this.writer.write(';');
+            }
+            
+            this.haveHighSurrogate = false;
+            this.surrogatePair.setLength(0);
         } else {
-            this.writer.write(c);
+            if (this.haveHighSurrogate) {
+                this.haveHighSurrogate = false;
+                this.surrogatePair.setLength(0);
+                throw new IOException("High Surrogate not followed by Low Surrogate");
+            }
+            
+            if (c >= 0XD800 && c <= 0XDBFF) {
+                // High surrogate
+                this.surrogatePair.append((char)c);
+                this.haveHighSurrogate = true;
+            
+            } else if (!this.encoder.canEncode((char)c)) {
+                this.writer.write("&#x");
+                this.writer.write(Integer.toHexString(c));
+                this.writer.write(';');
+            } else if (c == '\'' && this.writingAttribute) {
+                this.writer.write("&apos;");
+            } else {
+                this.writer.write(c);
+            }
         }
     }
     
