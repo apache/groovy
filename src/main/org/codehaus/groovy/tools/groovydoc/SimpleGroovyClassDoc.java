@@ -30,6 +30,9 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
 	private List methods;
 	private String fullPathName;
 
+	private String superClassName;
+	private GroovyClassDoc superClass;
+	
 	public SimpleGroovyClassDoc(String name) {
 		super(name);
 		constructors = new ArrayList();
@@ -87,7 +90,25 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
 		return sb.toString();
 	}	
 	
+	public void setSuperClassName(String className) {
+		superClassName = className;
+	}
+	public GroovyClassDoc superclass() {
+		return superClass;
+	}
 	
+	void resolve(GroovyRootDoc rootDoc) {
+		//resolve type references
+		if (superClassName != null) {
+			superClass = rootDoc.classNamed(superClassName); // todo - take package names into account ?!
+			if (superClass == null) {
+				// The superClass is not in the tree being documented
+				superClass = new SimpleGroovyClassDoc(superClassName); // dummy class with name, not to be put into main tree
+			}
+		} else {
+			superClass = new SimpleGroovyClassDoc("Object"); // dummy class representing java.lang.Object, not to be put into main tree
+		}
+	}
 	// methods from GroovyClassDoc
 	
 	public GroovyConstructorDoc[] constructors(boolean filter) {/*todo*/return null;}
@@ -108,7 +129,6 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
 	public GroovyFieldDoc[] serializableFields() {/*todo*/return null;}
 	public GroovyMethodDoc[] serializationMethods() {/*todo*/return null;}
 	public boolean subclassOf(GroovyClassDoc gcd) {/*todo*/return false;}
-	public GroovyClassDoc superclass() {/*todo*/return null;}
 	public GroovyType superclassType() {/*todo*/return null;}
 //	public GroovyTypeVariable[] typeParameters() {/*todo*/return null;} // not supported in groovy
 //	public GroovyParamTag[] typeParamTags() {/*todo*/return null;} // not supported in groovy

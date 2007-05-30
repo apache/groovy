@@ -20,6 +20,7 @@ package org.codehaus.groovy.tools.groovydoc;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -30,14 +31,28 @@ import org.codehaus.groovy.groovydoc.GroovyRootDoc;
 public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDoc {
 	private Map packageDocs;
 	private Map classDocs;
-	
+
 	public SimpleGroovyRootDoc(String name) {
 		super(name);
 		packageDocs = new HashMap();
 		classDocs = new HashMap();
 	}
-	
-	public GroovyClassDoc classNamed(String arg0) {/*todo*/return null;}
+
+	// todo - take account of package names !
+	public GroovyClassDoc classNamed(String name) {
+		Iterator itr = classDocs.keySet().iterator();
+		while (itr.hasNext()) {
+			String key = (String) itr.next();
+			int lastSlashIdx = key.lastIndexOf('/');
+			if (lastSlashIdx > 0) {
+				String shortKey = key.substring(lastSlashIdx + 1);
+				if (shortKey.equals(name)) {
+					return (GroovyClassDoc) classDocs.get(key);
+				}
+			}
+		}		
+		return null;
+	}
 	public GroovyClassDoc[] classes() {
 		List classDocValues = new ArrayList(classDocs.values());
 		Collections.sort(classDocValues); // todo - performance / maybe move into a sortMe() method
@@ -70,6 +85,16 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
 //	public void printNotice(GroovySourcePosition arg0, String arg1) {/*todo*/}
 	public void printWarning(String arg0) {/*todo*/}
 //	public void printWarning(GroovySourcePosition arg0, String arg1) {/*todo*/}
+
+	public void resolve() {
+		//resolve class names at the end of adding all files to the tree
+		Iterator itr = classDocs.values().iterator();
+		while (itr.hasNext()) {
+			SimpleGroovyClassDoc classDoc = (SimpleGroovyClassDoc) itr.next();
+			classDoc.resolve(this);
+		}
+		
+	}
 
 
 }

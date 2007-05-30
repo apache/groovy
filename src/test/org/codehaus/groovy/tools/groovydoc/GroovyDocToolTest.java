@@ -87,4 +87,23 @@ public class GroovyDocToolTest extends GroovyTestCase {
         String domBuilderDoc = output.getText(MOCK_DIR + FS + "groovy" + FS + "xml" + FS + "DOMBuilder.html");
         assertTrue(domBuilderDoc.indexOf("<containingPackage name=\"groovy" + FS + "xml\">groovy.xml</containingPackage>") > 0);
     }
+
+    public void testExtendsClauseWithoutSuperClassInTree() throws Exception {
+        xmlTool.add("groovy" + FS + "xml" + FS + "DOMBuilder.java");
+        MockOutputTool output = new MockOutputTool();
+        xmlTool.renderToOutput(output, MOCK_DIR);
+
+        String domBuilderDoc = output.getText(MOCK_DIR + FS + "groovy" + FS + "xml" + FS + "DOMBuilder.html");
+        assertTrue(domBuilderDoc.indexOf("<extends>BuilderSupport</extends>") > 0);
+    }
+
+    public void testExtendsClauseWithSuperClassInTree() throws Exception {
+        xmlTool.add("groovy" + FS + "xml" + FS + "DOMBuilder.java");
+        xmlTool.add("groovy" + FS + "util" + FS + "BuilderSupport.java");
+        MockOutputTool output = new MockOutputTool();
+        xmlTool.renderToOutput(output, MOCK_DIR);
+
+        String domBuilderDoc = output.getText(MOCK_DIR + FS + "groovy" + FS + "xml" + FS + "DOMBuilder.html");
+        assertTrue(domBuilderDoc.indexOf("<extends>BuilderSupport</extends>") > 0);
+    }
 }

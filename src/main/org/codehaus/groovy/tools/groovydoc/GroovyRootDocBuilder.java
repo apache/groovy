@@ -172,6 +172,8 @@ public class GroovyRootDocBuilder {
 
 
 	public GroovyRootDoc getRootDoc() {
+		rootDoc.resolve();
+		
 		return rootDoc;
 	}
 }

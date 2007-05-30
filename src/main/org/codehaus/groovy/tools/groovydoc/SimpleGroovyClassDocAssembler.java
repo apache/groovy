@@ -17,10 +17,8 @@
  */
 package org.codehaus.groovy.tools.groovydoc;
 
-import java.text.BreakIterator;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Stack;
 import java.util.regex.Matcher;
@@ -46,7 +44,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter {
 	
 	public SimpleGroovyClassDocAssembler(String packagePath, String file, SourceBuffer sourceBuffer) {
 		this.sourceBuffer = sourceBuffer;
-		this.packagePath = packagePath;
+		this.packagePath = packagePath;		
 		
 		stack = new Stack();
         classDocs = new HashMap();
@@ -68,10 +66,12 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter {
 		return classDocs;
 	}
 	
+	// Step through ClassDocs and tie up loose ends
 	private void postProcessClassDocs() {
 		Iterator classDocIterator = classDocs.values().iterator();
 		while (classDocIterator.hasNext()) {
 			SimpleGroovyClassDoc classDoc = (SimpleGroovyClassDoc) classDocIterator.next();
+			
 			GroovyConstructorDoc[] constructors = classDoc.constructors();
 			if (constructors != null && constructors.length == 0) { // add default constructor to doc
 	    		// name of class for the constructor
@@ -82,9 +82,15 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter {
 		}
 	}
 	
-	
-	
-	
+    public void visitExtendsClause(GroovySourceAST t,int visit) {
+        if (visit == OPENING_VISIT) {
+        	GroovySourceAST superClassNode = t.childOfType(GroovyTokenTypes.IDENT);
+        	if (superClassNode != null) {
+        		String superClassName = superClassNode.getText();
+        		currentClassDoc.setSuperClassName(superClassName); // un 'packaged' class name
+        	}
+        }
+    }
 	
 	public void visitClassDef(GroovySourceAST t,int visit) {
         if (visit == OPENING_VISIT) {
