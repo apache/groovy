@@ -945,7 +945,7 @@ varInitializer
 	;
 
 // This is an initializer used to set up an array.
-/*arrayInitializer
+arrayInitializer
 	:	lc:LCURLY^ {#lc.setType(ARRAY_INIT);}
 			(	initializer
 				(
@@ -963,13 +963,12 @@ varInitializer
 			)?
 		RCURLY!
 	;
-*/
 
 // The two "things" that can initialize an array element are an expression
 // and another (nested) array initializer.
 initializer
 	:	expression
-//	|	arrayInitializer
+	|	arrayInitializer
 	;
 
 // This is the header of a method. It includes the name and parameters
@@ -1087,8 +1086,7 @@ statement
 	|	"while"^ LPAREN! expression RPAREN! statement
 
 	// do-while statement
-//not supported in java2groovy
-	//	|	"do"^ statement "while"! LPAREN! expression RPAREN! SEMI!
+	|	"do"^ statement "while"! LPAREN! expression RPAREN! SEMI!
 
 	// get out of a loop (or switch)
 	|	"break"^ (IDENT)? SEMI!
@@ -1560,7 +1558,7 @@ newExpression
 			//   a) [ expr ] and [ ] are not mixed
 			//   b) [ expr ] and an init are not used together
 
-		|	newArrayDeclarator// (arrayInitializer)?
+		|	newArrayDeclarator (arrayInitializer)?
 		)
 	;
 
@@ -1590,6 +1588,7 @@ newArrayDeclarator
 
 constant
 	:	NUM_INT
+	|	CHAR_LITERAL
 	|	STRING_LITERAL
 	|	NUM_FLOAT
 	|	NUM_LONG
@@ -1788,12 +1787,15 @@ ML_COMMENT
 	;
 
 
-// string literals
-STRING_LITERAL
-	:	'"' (ESC|~('"'|'\\'|'\n'|'\r'))* '"'
-	// no CHAR_LITERALs in groovy...
-	|	'\'' ( ESC | ~('\''|'\n'|'\r'|'\\') ) '\''
-	;
+//	 character literals
+	CHAR_LITERAL
+		:	'\'' ( ESC | ~('\''|'\n'|'\r'|'\\') ) '\''
+		;
+
+//	 string literals
+	STRING_LITERAL
+		:	'"' (ESC|~('"'|'\\'|'\n'|'\r'))* '"'
+		;
 
 
 // escape sequence -- note that this is protected; it can only be called
