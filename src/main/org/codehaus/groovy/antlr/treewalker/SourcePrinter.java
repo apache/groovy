@@ -1034,6 +1034,7 @@ public class SourcePrinter extends VisitorAdapter {
                     }
                     if (lastLinePrinted > currentLine) {
                         out.println();
+                        lastLinePrinted = currentLine;
                     }
                     if (visit == OPENING_VISIT || (visit == CLOSING_VISIT && lastLinePrinted > currentLine)) {
                         for (int i=0;i<tabLevel;i++) {

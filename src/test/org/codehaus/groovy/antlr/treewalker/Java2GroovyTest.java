@@ -32,7 +32,7 @@ public class Java2GroovyTest extends GroovyTestCase {
     }
 
     private String convert(String input) throws Exception {
-        return Java2GroovyMain.convert(input);
+        return Java2GroovyMain.convert("Java2GroovyTest.java", input);
     }
 
     private String mindmap(String input) throws Exception {

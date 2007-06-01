@@ -19,6 +19,8 @@ package org.codehaus.groovy.antlr.java;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.PrintStream;
 import java.io.StringReader;
 import java.util.Arrays;
@@ -58,22 +60,36 @@ public class Java2GroovyMain {
             	String filename = (String) i.next();
             	File f = new File(filename);
             	String text = DefaultGroovyMethods.getText(f);
-            	System.out.println(convert(text, true, true));
+            	System.out.println(convert(filename, text, true, true));
             }
 		} catch (Throwable t) {
 			t.printStackTrace();
 		}
 	}
 
-	public static String convert(String input) throws Exception{
-		return convert(input, false, false);
+	public static String convert(String filename, String input) throws Exception{
+		return convert(filename, input, false, false);
 	}
 	
-	public static String convert(String input,boolean withHeader, boolean withNewLines) throws Exception{
+	public static String convert(String filename, String input,boolean withHeader, boolean withNewLines) throws Exception{
         JavaRecognizer parser = getJavaParser(input);
         String[] tokenNames = parser.getTokenNames();
         parser.compilationUnit();
         AST ast = parser.getAST();
+        
+        // output AST in format suitable for opening in http://freemind.sourceforge.net
+        // which is a really nice way of seeing the AST, folding nodes etc
+        if ("mindmap".equals(System.getProperty("antlr.ast"))) {
+            try {
+                PrintStream out = new PrintStream(new FileOutputStream(filename + ".mm"));
+                Visitor visitor = new MindMapPrinter(out,tokenNames);
+                AntlrASTProcessor treewalker = new PreOrderTraversal(visitor);
+                treewalker.process(ast);
+            } catch (FileNotFoundException e) {
+                System.out.println("Cannot create " + filename + ".mm");
+            }
+        }
+        
         // modify the Java AST into a Groovy AST
         modifyJavaASTintoGroovyAST(tokenNames, ast);
         String[] groovyTokenNames = getGroovyTokenNames(input);
@@ -116,7 +132,13 @@ public class Java2GroovyMain {
 	 * @param ast
 	 */
 	private static void modifyJavaASTintoGroovyAST(String[] tokenNames, AST ast) {
-		Visitor java2groovyConverter = new Java2GroovyConverter(tokenNames);
+		// mutate the tree when in Javaland
+		Visitor preJava2groovyConverter = new PreJava2GroovyConverter(tokenNames);
+		AntlrASTProcessor preJava2groovyTraverser = new PreOrderTraversal(preJava2groovyConverter);
+		preJava2groovyTraverser.process(ast);
+
+        // map the nodes to Groovy types
+        Visitor java2groovyConverter = new Java2GroovyConverter(tokenNames);
         AntlrASTProcessor java2groovyTraverser = new PreOrderTraversal(java2groovyConverter);
         java2groovyTraverser.process(ast);
 	}

@@ -39,7 +39,7 @@ public class Java2GroovyConverter extends VisitorAdapter{
 		typeMapping[JavaTokenTypes.POST_DEC] = GroovyTokenTypes.POST_DEC;
 		typeMapping[JavaTokenTypes.METHOD_CALL] = GroovyTokenTypes.METHOD_CALL;
 		typeMapping[JavaTokenTypes.EXPR] = GroovyTokenTypes.EXPR;
-//		typeMapping[JavaTokenTypes.ARRAY_INIT] = GroovyTokenTypes.ARRAY_INIT;
+		typeMapping[JavaTokenTypes.ARRAY_INIT] = GroovyTokenTypes.LIST_CONSTRUCTOR; // this assumes LIST_CONSTRUCTOR set by PreJava2GroovyConvertor
 		typeMapping[JavaTokenTypes.IMPORT] = GroovyTokenTypes.IMPORT;
 		typeMapping[JavaTokenTypes.UNARY_MINUS] = GroovyTokenTypes.UNARY_MINUS;
 		typeMapping[JavaTokenTypes.UNARY_PLUS] = GroovyTokenTypes.UNARY_PLUS;
@@ -125,6 +125,7 @@ public class Java2GroovyConverter extends VisitorAdapter{
 		typeMapping[JavaTokenTypes.LITERAL_if] = GroovyTokenTypes.LITERAL_if;
 		typeMapping[JavaTokenTypes.LITERAL_else] = GroovyTokenTypes.LITERAL_else;
 		typeMapping[JavaTokenTypes.LITERAL_while] = GroovyTokenTypes.LITERAL_while;
+		typeMapping[JavaTokenTypes.LITERAL_do] = GroovyTokenTypes.LITERAL_while; // warning - do...while... ignored
 		typeMapping[JavaTokenTypes.LITERAL_break] = GroovyTokenTypes.LITERAL_break;
 		typeMapping[JavaTokenTypes.LITERAL_continue] = GroovyTokenTypes.LITERAL_continue;
 		typeMapping[JavaTokenTypes.LITERAL_return] = GroovyTokenTypes.LITERAL_return;
@@ -170,6 +171,7 @@ public class Java2GroovyConverter extends VisitorAdapter{
 		typeMapping[JavaTokenTypes.LITERAL_null] = GroovyTokenTypes.LITERAL_null;
 		typeMapping[JavaTokenTypes.LITERAL_new] = GroovyTokenTypes.LITERAL_new;
 		typeMapping[JavaTokenTypes.NUM_INT] = GroovyTokenTypes.NUM_INT;
+		typeMapping[JavaTokenTypes.CHAR_LITERAL] = GroovyTokenTypes.STRING_LITERAL; // warning: treating Java chars as "String" in Groovy
 		typeMapping[JavaTokenTypes.STRING_LITERAL] = GroovyTokenTypes.STRING_LITERAL;
 		typeMapping[JavaTokenTypes.NUM_FLOAT] = GroovyTokenTypes.NUM_FLOAT;
 		typeMapping[JavaTokenTypes.NUM_LONG] = GroovyTokenTypes.NUM_LONG;
@@ -186,7 +188,7 @@ public class Java2GroovyConverter extends VisitorAdapter{
 	
     public void visitDefault(GroovySourceAST t,int visit) {
         if (visit == OPENING_VISIT) {
-            // only want to do this once per node...
+        	// only want to do this once per node...
         	t.setType(typeMapping[t.getType()]);
            	// ----
 
@@ -194,13 +196,20 @@ public class Java2GroovyConverter extends VisitorAdapter{
         	// as groovy AST doesn't expect to have them
         	if (t.getType() == GroovyTokenTypes.STRING_LITERAL) {
         		String text = t.getText();
-        		if (isDoubleQuoted(text)) {
+        		if (isSingleQuoted(text)) {
+        			t.setText(text.substring(1, text.length() - 1)); // chop off the single quotes at start and end
+        		} else if (isDoubleQuoted(text)) {
         			t.setText(text.substring(1, text.length() - 1)); // chop off the double quotes at start and end
         		}
         	}
         }
     }
 
+	private boolean isSingleQuoted(String text) {
+		return text != null && text.length() > 2 
+				&& text.charAt(0) == '\'' 
+				&& text.charAt(text.length() - 1) == '\'';
+	}
 	private boolean isDoubleQuoted(String text) {
 		return text != null && text.length() > 2 
 				&& text.charAt(0) == '"' 
