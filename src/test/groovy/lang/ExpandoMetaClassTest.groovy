@@ -15,17 +15,102 @@
  */
 package groovy.lang
 
+
 /**
  * @author Graeme Rocher
  */
 
 class ExpandoMetaClassTest extends GroovyTestCase {
 
-    void testWithMetaClassPropertyFromDGM() {
-        String.metaClass.upper = {-> delegate.toUpperCase() }
 
-        assertEquals "FOO", "foo".upper()
+
+    void testOverrideInvokeMethod() {
+	   	def mc = new ExpandoMetaClass(TestInvokeMethod.class)
+        mc.initialize()
+        mc.allowChangesAfterInit = true
+
+        assert mc.hasMetaMethod("invokeMe", [String] as Class[])
+
+        mc.invokeMethod = { String name, args ->
+            println "invoking method!"
+            def mm = delegate.metaClass.getMetaMethod(name, args)
+
+            mm ? mm.invoke(delegate, args) : "bar!!"
+        }
+
+		def t = new TestInvokeMethod()
+	   	t.metaClass = mc
+
+
+        assertEquals "bar!!", t.doStuff()
+        assertEquals "Foo!! hello", t.invokeMe("hello")
+
     }
+
+    void testOverrideSetProperty() {
+	   	def mc = new ExpandoMetaClass(TestGetProperty.class)
+        mc.initialize()
+        mc.allowChangesAfterInit = true
+
+        assert mc.hasMetaProperty("name")
+
+
+        def testValue = null
+        mc.setProperty = { String name, value ->
+            def mp = delegate.metaClass.getMetaProperty(name)
+
+            if(mp) { mp.setProperty(delegate, value) } else { testValue = value }
+        }
+
+
+		def t = new TestGetProperty()
+	   	t.metaClass = mc
+
+        t.name = "Bob"
+        assertEquals "Bob", t.name
+
+        t.foo = "bar"
+        assertEquals "bar",testValue
+
+    }
+
+    void testOverrideGetProperty() {
+	   	def mc = new ExpandoMetaClass(TestGetProperty.class)
+        mc.initialize()
+        mc.allowChangesAfterInit = true
+
+        assert mc.hasMetaProperty("name")
+
+        mc.getProperty = { String name ->
+            def mp = delegate.metaClass.getMetaProperty(name)
+
+            mp ? mp.getProperty(delegate) : "foo $name"
+        }
+
+
+		def t = new TestGetProperty()
+	   	t.metaClass = mc
+
+	   	assertEquals "foo bar", t.getProperty("bar")
+	   	assertEquals "foo bar", t.bar
+	   	assertEquals "Fred", t.getProperty("name")
+	   	assertEquals "Fred", t.name
+
+    }
+
+	void testBooleanGetterWithClosure() {
+	   	def metaClass = new ExpandoMetaClass(Test.class)
+        metaClass.initialize()
+        metaClass.allowChangesAfterInit = true
+		metaClass.isValid = {-> true }
+
+		def t = new Test()
+	   	t.metaClass = metaClass
+
+        assert t.isValid()
+        assert t.valid
+    }
+
 
 	void testInheritedInjectedMethods() {
 		 def metaClass = new ExpandoMetaClass(Test.class)
@@ -119,6 +204,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
 		 }
 	}
 
+
 	void testPropertyGetterWithClosure() {
 	   	 def metaClass = new ExpandoMetaClass(Test.class)
 
@@ -207,6 +293,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
 	   	 assertEquals 11, t.doSomething(10)
 
 	}
+
 
 	void testNewPropertyMethod() {
 	   	 def metaClass = new ExpandoMetaClass(Test.class)
@@ -345,20 +432,25 @@ class ExpandoMetaClassTest extends GroovyTestCase {
 		 assert t
 		 assertEquals "testme", t.name
 
+		 GroovySystem.metaClassRegistry.removeMetaClass(Test.class)
+
 	}
 
 	void testReplaceConstructor() {
-	   	 def metaClass = new ExpandoMetaClass(ConstructTest.class, true)
+	   	 def metaClass = new ExpandoMetaClass(Test.class, true)
 
 		 metaClass.constructor = { ->
-			 return "testme"
+			 "testme"
 		 }
 
 	   	metaClass.initialize()
 
-		 def t = new ConstructTest()
+		 def t = new Test()
 		 assert t
 		 assertEquals "testme", t
+
+		 GroovySystem.metaClassRegistry.removeMetaClass(Test.class)
+
 	}
 
 
@@ -409,9 +501,14 @@ class ExpandoMetaClassTest extends GroovyTestCase {
 	}
 
 
-
 }
 
+class TestInvokeMethod {
+    def invokeMe(String boo) { "Foo!! $boo" }
+}
+class TestGetProperty {
+    String name = "Fred"
+}
 class Test {
 	String name
 
@@ -437,8 +534,5 @@ class Child extends Test {
 
 	def aChildMethod() {
 		"hello children"
-}
-}
-class ConstructTest {
-
+	}
 }
