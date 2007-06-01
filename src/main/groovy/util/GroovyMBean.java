@@ -118,12 +118,11 @@ public class GroovyMBean extends GroovyObjectSupport {
             return server.getAttribute(name, property);
         }
         catch (MBeanException e) {
-            if (!ignoreErrors)
-                throw new GroovyRuntimeException("Could not access property: " + property + ". Reason: " + e, e.getTargetException());
+            throwExceptionWithTarget("Could not access property: " + property + ". Reason: ", e);
         }
         catch (Exception e) {
             if (!ignoreErrors)
-                throw new GroovyRuntimeException("Could not access property: " + property + ". Reason: " + e, e);
+            throwException("Could not access property: " + property + ". Reason: ", e);
         }
         return null;
     }
@@ -133,12 +132,10 @@ public class GroovyMBean extends GroovyObjectSupport {
             server.setAttribute(name, new Attribute(property, value));
         }
         catch (MBeanException e) {
-            if (!ignoreErrors)
-                throw new GroovyRuntimeException("Could not set property: " + property + ". Reason: " + e, e.getTargetException());
+            throwExceptionWithTarget("Could not set property: " + property + ". Reason: ", e);
         }
         catch (Exception e) {
-            if (!ignoreErrors)
-                throw new GroovyRuntimeException("Could not set property: " + property + ". Reason: " + e, e);
+            throwException("Could not set property: " + property + ". Reason: ", e);
         }
     }
 
@@ -160,12 +157,10 @@ public class GroovyMBean extends GroovyObjectSupport {
                 return server.invoke(name, method, argArray, signature);
             }
             catch (MBeanException e) {
-                if (!ignoreErrors)
-                    throw new GroovyRuntimeException("Could not invoke method: " + method + ". Reason: " + e, e.getTargetException());
+                throwExceptionWithTarget("Could not invoke method: " + method + ". Reason: ", e);
             }
             catch (Exception e) {
-                if (!ignoreErrors)
-                    throw new GroovyRuntimeException("Could not invoke method: " + method + ". Reason: " + e, e);
+                throwException("Could not invoke method: " + method + ". Reason: ", e);
             }
             return null;
         } else {
@@ -208,8 +203,7 @@ public class GroovyMBean extends GroovyObjectSupport {
                 list.add(attr.getName());
             }
         } catch (Exception e) {
-            if (!ignoreErrors)
-                throw new GroovyRuntimeException("Could not list attribute names. Reason: " + e, e);
+            throwException("Could not list attribute names. Reason: ", e);
         }
         return list;
     }
@@ -230,8 +224,7 @@ public class GroovyMBean extends GroovyObjectSupport {
                     list.add(name + " : " + val.toString());
                 }
             } catch (Exception e) {
-                if (!ignoreErrors)
-                    throw new GroovyRuntimeException("Could not list attribute values. Reason: " + e, e);
+                throwException("Could not list attribute values. Reason: ", e);
             }
         }
         return list;
@@ -251,8 +244,7 @@ public class GroovyMBean extends GroovyObjectSupport {
                 list.add(describeAttribute(attr));
             }
         } catch (Exception e) {
-            if (!ignoreErrors)
-                throw new GroovyRuntimeException("Could not list attribute descriptions. Reason: " + e, e);
+            throwException("Could not list attribute descriptions. Reason: ", e);
         }
         return list;
     }
@@ -296,8 +288,7 @@ public class GroovyMBean extends GroovyObjectSupport {
                 }
             }
         } catch (Exception e) {
-            if (!ignoreErrors)
-                throw new GroovyRuntimeException("Could not describe attribute '" + attributeName + "'. Reason: " + e, e);
+            throwException("Could not describe attribute '" + attributeName + "'. Reason: ", e);
         }
         return ret;
     }
@@ -316,8 +307,7 @@ public class GroovyMBean extends GroovyObjectSupport {
                 list.add(operation.getName());
             }
         } catch (Exception e) {
-            if (!ignoreErrors)
-                throw new GroovyRuntimeException("Could not list operation names. Reason: " + e, e);
+            throwException("Could not list operation names. Reason: ", e);
         }
         return list;
     }
@@ -336,8 +326,7 @@ public class GroovyMBean extends GroovyObjectSupport {
                 list.add(describeOperation(operation));
             }
         } catch (Exception e) {
-            if (!ignoreErrors)
-                throw new GroovyRuntimeException("Could not list operation descriptions. Reason: " + e, e);
+            throwException("Could not list operation descriptions. Reason: ", e);
         }
         return list;
     }
@@ -360,8 +349,7 @@ public class GroovyMBean extends GroovyObjectSupport {
                 }
             }
         } catch (Exception e) {
-            if (!ignoreErrors)
-                throw new GroovyRuntimeException("Could not describe operations matching name '" + operationName + "'. Reason: " + e, e);
+            throwException("Could not describe operations matching name '" + operationName + "'. Reason: ", e);
         }
         return list;
     }
@@ -419,5 +407,17 @@ public class GroovyMBean extends GroovyObjectSupport {
             }
         }
         return buf.toString();
+    }
+
+    private void throwException(String m, Exception e) {
+        if (!ignoreErrors) {
+            throw new GroovyRuntimeException(m + e, e);
+        }
+    }
+
+    private void throwExceptionWithTarget(String m, MBeanException e) {
+        if (!ignoreErrors) {
+            throw new GroovyRuntimeException(m + e, e.getTargetException());
+        }
     }
 }
