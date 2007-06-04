@@ -289,7 +289,26 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             ClassNode classScope = scope.getClassScope();
             if (classScope!=null) {
                 Variable member = findClassMember(classScope,var.getName());
-                if (member!=null && (currentScope.isInStaticContext() ^ member instanceof DynamicVariable)) var = member;
+                if (member!=null) {
+                    boolean cc = currentScope.isInStaticContext();
+                    boolean cm = member.isInStaticContext();
+                    //
+                    // we don't allow access from dynamic context to static context
+                    //
+                    // cm==cc: 
+                    //   we always allow access if the context is in both cases static 
+                    //   or dynamic
+                    // cm==true: 
+                    //   the member is static, which means access is always allowed
+                    // cm||cm==cc:
+                    //   is false only for the case cc==true and cm==false, which means
+                    //   the member is a dynamic context, but the current scope is static.
+                    //
+                    // One example for (cm||cm==cc)==false is a static method trying to 
+                    // access a non static field.
+                    //
+                    if (cm || cm==cc) var = member;
+                }
                 break;
             }            
             scope = scope.getParent();
