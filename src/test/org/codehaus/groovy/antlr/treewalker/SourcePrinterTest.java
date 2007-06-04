@@ -113,7 +113,7 @@ public class SourcePrinterTest extends GroovyTestCase {
 
     public void testClosedBlock() throws Exception { // not in java
         assertEquals("[1, 2, 3].each {println it}", pretty("[1,2,3].each{println it}")); // not in java
-        assertEquals("def x = foo.bar(mooky){ x, y -> wibble(y, x)}", pretty("def x = foo.bar(mooky) {x,y-> wibble(y,x)}")); // not in java
+        assertEquals("def x = foo.bar(mooky){x,y -> wibble(y, x)}", pretty("def x = foo.bar(mooky) {x,y-> wibble(y,x)}")); // not in java
         // todo: above is not quite the spacing I would expect, but good enough for now...
     }
 
@@ -129,8 +129,7 @@ public class SourcePrinterTest extends GroovyTestCase {
 
     public void testCtorCall() throws Exception {
         assertEquals("class Foo {Foo(int x) {this()}}", pretty("class Foo{Foo(int x) {this()}}"));
-        assertEquals("class Foo {Foo( x) {this()}}", pretty("class Foo{Foo(x) {this()}}"));
-        // todo: above is not quite the spacing I would expect, but good enough for now...
+        assertEquals("class Foo {Foo(x) {this()}}", pretty("class Foo{Foo(x) {this()}}"));
     }
 
     public void testCtorIdent() throws Exception {
@@ -179,9 +178,7 @@ public class SourcePrinterTest extends GroovyTestCase {
 
     public void testEnumDef() throws Exception {
         assertEquals("enum Season {WINTER, SPRING, SUMMER, AUTUMN}", pretty("enum Season{WINTER,SPRING,SUMMER,AUTUMN}")); // fails after parser
-
-        //todo: more strange spacing in following line
-        assertEquals("enum Operation {ADDITION{double eval( x,  y) {return x + y}}}", pretty("enum Operation {ADDITION {double eval(x,y) {return x + y}}}")); // fails after parser
+        assertEquals("enum Operation {ADDITION{double eval(x, y) {return x + y}}}", pretty("enum Operation {ADDITION {double eval(x,y) {return x + y}}}")); // fails after parser
     }
 
     public void testEqual() throws Exception {
@@ -307,7 +304,7 @@ public class SourcePrinterTest extends GroovyTestCase {
     public void testLiteralAs() throws Exception { // not in java
         assertEquals("import java.util.Date as MyDate", pretty("import java.util.Date as MyDate")); // not in java
         // todo suspicious spacing in the following assertion
-        assertEquals("x = 12 as Long ", pretty("x = 12 as Long")); // not in java
+        assertEquals("x = 12 as Long", pretty("x = 12 as Long")); // not in java
     }
 
     public void testLiteralAssert() throws Exception {
@@ -366,7 +363,7 @@ public class SourcePrinterTest extends GroovyTestCase {
         assertEquals("def myMethod() {return 0}", pretty("def myMethod(){return 0}")); // not in java
         // note: def not needed in parameter declarations, but it is valid
         //todo: is it ok to strip out 'def' from parameter declarations?
-        assertEquals("def foo( bar) {}", pretty("def foo(def bar){}")); // not in java
+        assertEquals("def foo(bar) {}", pretty("def foo(def bar){}")); // not in java
     }
 
     public void testLiteralDefault() throws Exception {
@@ -665,11 +662,10 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
 
     public void testParameterDef() throws Exception {
-        //todo spacing slightly suspect with "foo( bar)"
-        assertEquals("def foo( bar) {}", pretty("def foo(bar){}"));
+        assertEquals("def foo(bar) {}", pretty("def foo(bar){}"));
         assertEquals("def foo(String bar, String mooky) {}", pretty("def foo(String bar, String mooky){}"));
-        assertEquals("def c = { x -> println x}", pretty("def c = {x->println x}"));
-        assertEquals("def c = { x, y -> println(x + y)}", pretty("def c={x,y->println(x+y)}"));
+        assertEquals("def c = {x -> println x}", pretty("def c = {x->println x}"));
+        assertEquals("def c = {x,y -> println(x + y)}", pretty("def c={x,y->println(x+y)}"));
         assertEquals("def c = {int x,int y -> println(x + y)}", pretty("def c={int x, int y->println(x+y)}"));
     }
 
@@ -824,10 +820,10 @@ public class SourcePrinterTest extends GroovyTestCase {
 
     public void testSuperCtorCall() throws Exception {
         assertEquals("class Foo {Foo(int x) {super(12, 3)}}", pretty("class Foo{Foo(int x) {super(12, 3)}}"));
-        assertEquals("class Foo {Foo( x) {super()}}", pretty("class Foo{Foo(x) {super()}}"));
+        assertEquals("class Foo {Foo(x) {super()}}", pretty("class Foo{Foo(x) {super()}}"));
         // todo: above is not quite the spacing I would expect, but good enough for now...
         // todo not yet implemented in parser: assertEquals("(new Outer()).super()", pretty("(new Outer()).super()"));
-    }
+    }    
 
     public void testType() throws Exception {
         assertEquals("def bar", pretty("def bar"));
@@ -868,11 +864,10 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
 
     public void testVariableDef() throws Exception {
-        assertEquals("def x = 1", pretty("def x = 1"));
-        assertEquals("int y = 2", pretty("int y = 2"));
-        assertEquals("String y", pretty("String y"));
-        assertEquals("def foo() {int b = 9}", pretty("def foo(){int b = 9}"));
-    }
+        assertEquals("void myMethod(String param1, String... others) {}", pretty("void myMethod(String param1, String ... others) {}"));
+        assertEquals("void myMethod(final int ... others) {}", pretty("void myMethod(final int ... others) {}"));
+        assertEquals("void myMethod(def... others) {}", pretty("void myMethod(def ... others) {}"));
+	}
 
     public void testVariableDef_FAILS() throws Exception {
         if (notYetImplemented()) return;
@@ -880,9 +875,9 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
 
     public void testVaribleParameterDef() throws Exception {
-        assertEquals("void myMethod(String param1, String ... others) {}", pretty("void myMethod(String param1, String ... others) {}"));
+        assertEquals("void myMethod(String param1, String... others) {}", pretty("void myMethod(String param1, String ... others) {}"));
         assertEquals("void myMethod(final int ... others) {}", pretty("void myMethod(final int ... others) {}"));
-        assertEquals("void myMethod(def ... others) {}", pretty("void myMethod(def ... others) {}"));
+        assertEquals("void myMethod(def... others) {}", pretty("void myMethod(def ... others) {}"));
     }
 
     public void testWildcardType() throws Exception {

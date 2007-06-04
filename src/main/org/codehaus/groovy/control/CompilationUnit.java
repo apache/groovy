@@ -476,11 +476,11 @@ public class CompilationUnit extends ProcessingUnit {
                 }
             }
             
-            if (dequeued()) continue;
-           
             if (progressCallback != null) progressCallback.call(this, phase);
             completePhase();
             applyToSourceUnits(mark);
+           
+            if (dequeued()) continue;
             
             gotoPhase(phase+1);
             

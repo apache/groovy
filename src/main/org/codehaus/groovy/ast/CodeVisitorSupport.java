@@ -213,6 +213,7 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
 
     public void visitArrayExpression(ArrayExpression expression) {
         visitListOfExpressions(expression.getExpressions());
+        visitListOfExpressions(expression.getSizeExpression());
     }
     
     public void visitMapExpression(MapExpression expression) {
@@ -291,18 +292,18 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
     }
 
     protected void visitListOfExpressions(List list) {
-        Expression expression, expr2, expr3;
+        if (list==null) return;
         for (Iterator iter = list.iterator(); iter.hasNext(); ) {
-            expression = (Expression) iter.next();
+            Expression expression = (Expression) iter.next();
             if (expression instanceof SpreadExpression) {
-                expr2 = ((SpreadExpression) expression).getExpression();
-                expr2.visit(this);
-            }
-            else {
+                Expression spread = ((SpreadExpression) expression).getExpression();
+                spread.visit(this);
+            } else {
                 expression.visit(this);
             }
         }
     }
+    
     public void visitCatchStatement(CatchStatement statement) {
     	statement.getCode().visit(this);
     }

@@ -124,6 +124,11 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     
     // type spec for generics
     private GenericsType[] genericsTypes=null;
+    private boolean usesGenerics=false;
+    
+    // if set tot true the name getGenericsTypes consists
+    // of 1 element describing the name of the placeholder
+    private boolean placeholder;
     
     /**
      * Returns the ClassNode this ClassNode is redirecting to.
@@ -140,6 +145,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     public void setRedirect(ClassNode cn) {
         if (isPrimaryNode) throw new GroovyBugError("tried to set a redirect for a primary ClassNode ("+getName()+"->"+cn.getName()+").");
         if (cn!=null) cn = cn.redirect();
+        if (cn==this) return;
         redirect = cn;
     }
     
@@ -744,12 +750,17 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
     
     public ClassNode getUnresolvedSuperClass() {
+        return getUnresolvedSuperClass(true);
+    }
+
+    public ClassNode getUnresolvedSuperClass(boolean useRedirect) {
+        if (!useRedirect) return superClass;
         if (!lazyInitDone) {
             lazyClassInit();
         }
         return redirect().superClass;
     }
-
+    
     /**
      * Factory method to create a new MethodNode via reflection
      */
@@ -827,12 +838,6 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public void visitContents(GroovyClassVisitor visitor) {
-        
-        if (genericsTypes!=null) {
-            for (int i = 0; i < genericsTypes.length; i++) {
-                visitor.visitGenericType(genericsTypes[i]);
-            }
-        }
         
         // now lets visit the contents of the class
         for (Iterator iter = getProperties().iterator(); iter.hasNext();) {
@@ -1020,6 +1025,25 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public void setGenericsTypes(GenericsType[] genericsTypes) {
+        usesGenerics = usesGenerics || genericsTypes!=null;
         this.genericsTypes = genericsTypes;
     }
+
+    public void setGenericsPlaceHolder(boolean b) {
+        usesGenerics = usesGenerics || b;
+        placeholder = b;
+    }
+    
+    public boolean isGenericsPlaceHolder() {
+        return placeholder;
+    }
+    
+    public boolean isUsingGenerics() {
+        return usesGenerics;
+    }
+    
+    public void setUsingGenerics(boolean b) {
+        usesGenerics = b;
+    }
+    
 }

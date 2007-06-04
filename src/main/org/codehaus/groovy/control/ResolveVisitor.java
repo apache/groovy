@@ -120,17 +120,24 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
         this.source = source;
         visitClass(node);
     }
-
+    
     protected void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {
         VariableScope oldScope = currentScope;
         currentScope = node.getVariableScope();
+        Map oldPNames = genericParameterNames;
+        genericParameterNames = new HashMap(genericParameterNames);
+        
+        resolveGenericsHeader(node.getGenericsTypes());
+        
         Parameter[] paras = node.getParameters();
         for (int i=0; i<paras.length; i++) {
-            ClassNode t = paras[i].getType();
-            resolveOrFail(t,node);
-            if (paras[i].hasInitialExpression()) {
-                Expression init = paras[i].getInitialExpression();
-                paras[i].setInitialExpression(transform(init));
+            Parameter p = paras[i];
+            
+            resolveOrFail(p.getType(),p.getType());
+            
+            if (p.hasInitialExpression()) {
+                Expression init = p.getInitialExpression();
+                p.setInitialExpression(transform(init));
             }
         }
         ClassNode[] exceptions = node.getExceptions();
@@ -139,7 +146,10 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
             resolveOrFail(t,node);
         }
         resolveOrFail(node.getReturnType(),node);
+        
         super.visitConstructorOrMethod(node,isConstructor);
+        
+        genericParameterNames = oldPNames;
         currentScope = oldScope;
     }
 
@@ -185,13 +195,13 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
     }
 
     private void resolveOrFail(ClassNode type, ASTNode node, boolean prefereImports) {
+        resolveGenericsTypes(type.getGenericsTypes());
         if (prefereImports && resolveAliasFromModule(type)) return;
         resolveOrFail(type,node);
     }
 
     private void resolveOrFail(ClassNode type, ASTNode node) {
         resolveOrFail(type,"",node);
-        resolveGenericsTypes(type.getGenericsTypes());
     }
 
     private boolean resolve(ClassNode type) {
@@ -200,6 +210,7 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
 
     private boolean resolve(ClassNode type, boolean testModuleImports, boolean testDefaultImports, boolean testStaticInnerClasses) {
         if (type.isResolved()) return true;
+        resolveGenericsTypes(type.getGenericsTypes());
         if (type.isArray()) {
             ClassNode element = type.getComponentType();
             boolean resolved = resolve(element,testModuleImports,testDefaultImports,testStaticInnerClasses);
@@ -212,11 +223,15 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
 
         // test if vanilla name is current class name
         if (currentClass==type) return true;
+        
         if (genericParameterNames.get(type.getName())!=null) {
-            ClassNode gt = (ClassNode) genericParameterNames.get(type.getName());
-            type.setRedirect(gt);
+            GenericsType gt = (GenericsType) genericParameterNames.get(type.getName());
+            type.setRedirect(gt.getType());
+            type.setGenericsTypes(new GenericsType[]{gt});
+            type.setGenericsPlaceHolder(true);
             return true;
         }
+        
         if (currentClass.getNameWithoutPackage().equals(type.getName())) {
             type.setRedirect(currentClass);
             return true;
@@ -413,7 +428,7 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
                     String newName = aliasedNode.getName()+name.substring(pname.length());
                     type.setName(newName);
                     if (resolve(type,true,true,true)) return true;
-                    // was not resolved soit was a fake match
+                    // was not resolved so it was a fake match
                     type.setName(name);
                 }
             }
@@ -740,7 +755,7 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
             } else if (!inPropertyExpression) {
                 addStaticVariableError(ve);
             }
-            }
+        }
         resolveOrFail(ve.getType(),ve);
         return ve;
     }
@@ -873,6 +888,8 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
         ClassNode oldNode = currentClass;
         currentClass = node;
 
+        resolveGenericsHeader(node.getGenericsTypes());
+        
         ModuleNode module = node.getModule();
         if (!module.hasImportsResolved()) {
            List l = module.getImports();
@@ -887,11 +904,15 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
 
         ClassNode sn = node.getUnresolvedSuperClass();
         if (sn!=null) resolveOrFail(sn,node,true);
+        
         ClassNode[] interfaces = node.getInterfaces();
         for (int i=0; i<interfaces.length; i++) {
             resolveOrFail(interfaces[i],node,true);
+            
         }
+        
         super.visitClass(node);
+        
         currentClass = oldNode;
     }
 
@@ -957,42 +978,69 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
         return source;
     }
     
-    public void visitGenericType(GenericsType genericsType) {
-        resolveGenericsType(genericsType,false);
-    }
-    
     private void resolveGenericsTypes(GenericsType[] types) {
         if (types==null) return;
         for (int i=0; i<types.length; i++) {
-            resolveGenericsType(types[i],true);
+            resolveGenericsType(types[i]);
         }
     }
     
-    private void resolveGenericsType(GenericsType genericsType, boolean forceParameterResolving) {
+    private void resolveGenericsHeader(GenericsType[] types) {
+        if (types==null) return;
+        for (int i=0; i<types.length; i++) {
+            ClassNode type = types[i].getType();
+            String name = type.getName();
+            ClassNode[] bounds = types[i].getUpperBounds();
+            if (bounds!=null) {
+                boolean nameAdded = false;
+                for (int j = 0; j < bounds.length; j++) {
+                    ClassNode upperBound = bounds[j];
+                    if (!nameAdded && upperBound!=null || !resolve(type)) {
+                        genericParameterNames.put(name, types[i]);
+                        types[i].setPlaceholder(true);
+                        type.setRedirect(upperBound);
+                        nameAdded=true;
+                    } 
+                    resolveOrFail(upperBound, type);
+                }
+            } else {
+                genericParameterNames.put(name, types[i]);
+                type.setRedirect(ClassHelper.OBJECT_TYPE);
+                types[i].setPlaceholder(true);
+            } 
+        }
+    }
+    
+    private void resolveGenericsType(GenericsType genericsType) {
+        if (genericsType.isResolved()) return;
         ClassNode type = genericsType.getType();
         // save name before redirect
         String name = type.getName();
-        ClassNode upperBound = genericsType.getUpperBound();
+        ClassNode[] bounds = genericsType.getUpperBounds();
         if (!genericParameterNames.containsKey(name)) {
-            if (upperBound!=null) {
-                resolveOrFail(upperBound, genericsType);
-                type.setRedirect(upperBound);
-            } else if (forceParameterResolving) {
-                resolveOrFail(type, genericsType);
-            } else {
+            if (bounds!=null) {
+                for (int j = 0; j < bounds.length; j++) {
+                    ClassNode upperBound = bounds[j];
+                    resolveOrFail(upperBound, genericsType);
+                    type.setRedirect(upperBound);
+                    resolveGenericsTypes(upperBound.getGenericsTypes());
+                }
+            } else if (genericsType.isWildcard()){
                 type.setRedirect(ClassHelper.OBJECT_TYPE);
+            } else {
+                resolveOrFail(type, genericsType);
             }
         } else {
-            type.setRedirect((ClassNode) genericParameterNames.get(name));
+            GenericsType gt = (GenericsType) genericParameterNames.get(name);
+            type.setRedirect(gt.getType());
             genericsType.setPlaceholder(true);
         }
         
-        if (!forceParameterResolving) {
-            genericParameterNames.put(name,type);
-            genericsType.setPlaceholder(true);
-        }
         
-        if (upperBound!=null) resolveGenericsTypes(upperBound.getGenericsTypes());
+        if (genericsType.getLowerBound()!=null) {
+            resolveOrFail(genericsType.getLowerBound(),genericsType);
+        }
         resolveGenericsTypes(type.getGenericsTypes());
+        genericsType.setResolved(true);
     }
 }

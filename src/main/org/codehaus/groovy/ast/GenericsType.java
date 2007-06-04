@@ -24,20 +24,25 @@ package org.codehaus.groovy.ast;
  * @see ClassNode
  */
 public class GenericsType extends ASTNode {
-    private ClassNode upperBound;
+    private ClassNode[] upperBounds;
+    private ClassNode lowerBound;
     private ClassNode type;
     private String name;
     private boolean placeholder;
+    private boolean resolved;
+    private boolean wildcard;
     
-    public GenericsType(ClassNode type, ClassNode upperBound) {
+    public GenericsType(ClassNode type, ClassNode[] upperBounds, ClassNode lowerBound) {
         this.type = type;
         this.name = type.getName();
-        this.upperBound = upperBound;
-        placeholder=false;
+        this.upperBounds = upperBounds;
+        this.lowerBound = lowerBound;
+        placeholder = false;
+        resolved = false;
     }
     
     public GenericsType(ClassNode basicType) {
-        this(basicType,null);
+        this(basicType,null,null);
     }
 
     public ClassNode getType() {
@@ -50,12 +55,20 @@ public class GenericsType extends ASTNode {
     
     public String toString() {
         String ret = name;
-        if (upperBound!=null) ret += " extends "+upperBound.toString();
+        if (upperBounds!=null) {
+            ret += " extends ";
+            for (int i = 0; i < upperBounds.length; i++) {
+                ret += upperBounds[i].toString();
+                if (i+1<upperBounds.length) ret += " & ";
+            }
+        } else if (lowerBound!=null) {
+            ret += " super "+lowerBound;
+        }
         return ret;
     }
 
-    public ClassNode getUpperBound() {
-        return upperBound;
+    public ClassNode[] getUpperBounds() {
+        return upperBounds;
     }
     
     public String getName(){
@@ -68,5 +81,29 @@ public class GenericsType extends ASTNode {
 
     public void setPlaceholder(boolean placeholder) {
         this.placeholder = placeholder;
+    }
+    
+    public boolean isResolved() {
+        return resolved || placeholder;
+    }
+    
+    public void setResolved(boolean res) {
+        resolved = res;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public boolean isWildcard() {
+        return wildcard;
+    }
+
+    public void setWildcard(boolean wildcard) {
+        this.wildcard = wildcard;
+    }
+    
+    public ClassNode getLowerBound() {
+        return lowerBound;
     }
 }

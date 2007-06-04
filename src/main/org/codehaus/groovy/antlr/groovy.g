@@ -471,6 +471,21 @@ declaration!
         {#declaration = #v2;}
     ;
 
+customizedMethod! 
+	:
+        // method using a 'def' or a modifier; type is optional
+        m:modifiers
+        p:typeParameters
+        t:typeSpec[false]
+        v:variableDefinitions[#m, #t]
+        {
+        	#customizedMethod = #v;
+			AST old = #v.getFirstChild();
+        	#customizedMethod.setFirstChild(#p);
+        	#p.setNextSibling(old);
+        }
+	;
+
 
 // *TODO* We must also audit the various occurrences of warning
 // suppressions like "options { greedy = true; }".
@@ -523,16 +538,31 @@ singleDeclaration
  *  just put a TODO comment in.
  */
 declarationStart!
-    :   (	  "def" nls 
+    :   (	  "def" nls
     		| modifier nls 
     		| annotation nls
          	| (   upperCaseIdent
            		|   builtInType
            		|   qualifiedTypeName
-              ) (typeParameters)? (LBRACK balancedTokens RBRACK)*
+              ) (typeArguments)? (LBRACK balancedTokens RBRACK)*
         )+
         IDENT 
     ;
+
+/**
+ * lookahead predicate for usage of generics in methods
+ * as parameter for the method. Example:
+ * static <T> T foo(){}
+ * <T> must be first after the modifier.
+ * This rule allows more and does no exact match, but it
+ * is only a lookahead, not the real rule. 
+ */
+customizedMethodStart!
+    :   (	  "def" nls
+    		| modifier nls 
+    		| annotation nls
+    	)+ LT	
+    ;		
 
 qualifiedTypeName!
 	:
@@ -629,8 +659,9 @@ typeArgument  {Token first = LT(1);}
 
 // Wildcard type indicating all types (with possible constraint)
 wildcardType
-    :   q:QUESTION^ {#q.setType(WILDCARD_TYPE);}
+    :   QUESTION 
         (("extends" | "super")=> typeArgumentBounds)?
+        {#wildcardType.setType(WILDCARD_TYPE);}
     ;
 
 // Type arguments to a class or interface type
@@ -671,7 +702,7 @@ protected typeArgumentsOrParametersEnd
 typeArgumentBounds
     {Token first = LT(1);boolean isUpperBounds = false;}
     :
-        ( "extends"! {isUpperBounds=true;} | "super"! ) nls! classOrInterfaceType[false] nls!
+        ( "extends"! {isUpperBounds=true;} | "super"! ) nls! classOrInterfaceType[true] nls!
         {
             if (isUpperBounds)
             {
@@ -952,8 +983,8 @@ typeParameter  {Token first = LT(1);}
 
 typeParameterBounds  {Token first = LT(1);}
     :
-        "extends"! nls! classOrInterfaceType[false]
-        (BAND! nls! classOrInterfaceType[false])*
+        "extends"! nls! classOrInterfaceType[true]
+        (BAND! nls! classOrInterfaceType[true])*
         {#typeParameterBounds = #(create(TYPE_UPPER_BOUNDS,"TYPE_UPPER_BOUNDS",first,LT(1)), #typeParameterBounds);}
     ;
 
@@ -1118,7 +1149,7 @@ enumConstantField!  {Token first = LT(1);}
 interfaceExtends  {Token first = LT(1);}
     :   (
             e:"extends"! nls!
-            classOrInterfaceType[false] ( COMMA! nls! classOrInterfaceType[false] )* nls!
+            classOrInterfaceType[true] ( COMMA! nls! classOrInterfaceType[true] )* nls!
         )?
         {#interfaceExtends = #(create(EXTENDS_CLAUSE,"EXTENDS_CLAUSE",first,LT(1)),
                                #interfaceExtends);}
@@ -1128,7 +1159,7 @@ interfaceExtends  {Token first = LT(1);}
 implementsClause  {Token first = LT(1);}
     :   (
             i:"implements"! nls!
-            classOrInterfaceType[false] ( COMMA! nls! classOrInterfaceType[false] )* nls!
+            classOrInterfaceType[true] ( COMMA! nls! classOrInterfaceType[true] )* nls!
         )?
         {#implementsClause = #(create(IMPLEMENTS_CLAUSE,"IMPLEMENTS_CLAUSE",first,LT(1)),
                                #implementsClause);}
@@ -1141,9 +1172,14 @@ classField!  {Token first = LT(1);}
         mc:modifiersOpt! ctor:constructorDefinition[#mc]
         {#classField = #ctor;}
     |
+        (customizedMethodStart)=>
+        dg:customizedMethod
+        {#classField = #dg;}
+    |
         (declarationStart)=>
-        d:declaration
-        {#classField = #d;}
+        dd:declaration
+        {#classField = #dd;}
+        
     |
         //TODO - unify typeDeclaration and typeDefinitionInternal names
         // type declaration
@@ -2448,7 +2484,7 @@ primaryExpression
 parenthesizedExpression { Token first = LT(1); boolean hasClosureList=false; }
     :   LPAREN! 
            strictContextExpression
-           (SEMI! nls! 
+           (SEMI!  
              {hasClosureList=true;}
              (strictContextExpression | { astFactory.addASTChild(currentAST,astFactory.create(EMPTY_STAT, "EMPTY_STAT")); })  
            )*

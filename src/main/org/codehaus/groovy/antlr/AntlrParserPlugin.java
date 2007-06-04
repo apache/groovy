@@ -337,7 +337,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
         ClassNode superClass = null;
         if (isType(EXTENDS_CLAUSE, node)) {
-            superClass = makeType(node);
+            superClass = makeTypeWithArguments(node);
             node = node.getNextSibling();
         }
 
@@ -405,10 +405,17 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     	next = node.getFirstChild();
     	if (next!=null) throwsList(next, list);
     }
-
+    
     protected void methodDef(AST methodDef) {
         List annotations = new ArrayList();
         AST node = methodDef.getFirstChild();
+        
+        GenericsType[] generics=null;
+        if (isType(TYPE_PARAMETERS, node)) {
+            generics = makeGenericsType(node);
+            node = node.getNextSibling();
+        }
+        
         int modifiers = Opcodes.ACC_PUBLIC;
         if (isType(MODIFIERS, node)) {
             modifiers = modifiers(node, annotations, modifiers);
@@ -458,6 +465,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
         MethodNode methodNode = new MethodNode(name, modifiers, returnType, parameters, exceptions, code);
         methodNode.addAnnotations(annotations);
+        methodNode.setGenericsTypes(generics);
         configureAST(methodNode, methodDef);
         if (classNode != null) {
             classNode.addMethod(methodNode);
@@ -599,7 +607,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     protected ClassNode[] interfaces(AST node) {
         List interfaceList = new ArrayList();
         for (AST implementNode = node.getFirstChild(); implementNode != null; implementNode = implementNode.getNextSibling()) {
-        	interfaceList.add(ClassHelper.make(qualifiedName(implementNode)));
+            interfaceList.add(makeTypeWithArguments(implementNode));
         }
         ClassNode[] interfaces = {};
         if (!interfaceList.isEmpty()) {
@@ -642,7 +650,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
         ClassNode type = ClassHelper.DYNAMIC_TYPE;
         if (isType(TYPE, node)) {
-            type = makeType(node);
+            type = makeTypeWithArguments(node);
             if (variableParameterDef) type = type.makeArray();
             node = node.getNextSibling();
         }
@@ -2166,7 +2174,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             StringBuffer buffer = new StringBuffer();
             boolean first = true;
 
-            for (; node != null; node = node.getNextSibling()) {
+            for (; node != null && !isType(TYPE_ARGUMENTS,node); node = node.getNextSibling()) {
                 if (first) {
                     first = false;
                 }
@@ -2182,21 +2190,64 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         }
     }
     
+    private static AST getTypeArgumentsNode(AST root) {
+        while (root!=null && !isType(TYPE_ARGUMENTS,root)) {
+            root = root.getNextSibling();
+        }
+        return root;
+    }
+    
+    private int getBoundType(AST node) {
+        if (node==null) return -1;
+        if (isType(TYPE_UPPER_BOUNDS,node)) return TYPE_UPPER_BOUNDS;
+        if (isType(TYPE_LOWER_BOUNDS,node)) return TYPE_LOWER_BOUNDS;
+        throw new ASTRuntimeException(node, 
+                "Unexpected node type: " + getTokenName(node) + 
+                " found when expecting type: " + getTokenName(TYPE_UPPER_BOUNDS) +
+                " or type: " + getTokenName(TYPE_LOWER_BOUNDS));       
+    }
+    
+    private GenericsType makeGenericsArgumentType(AST rootNode) {
+        GenericsType gt;
+        if (isType(WILDCARD_TYPE,rootNode)) {
+            ClassNode base = ClassHelper.makeWithoutCaching("?");
+            if (rootNode.getNextSibling()!=null) {
+                int boundType = getBoundType(rootNode.getNextSibling());
+                ClassNode[] gts = makeGenericsBounds(rootNode,boundType);
+                if (boundType==TYPE_UPPER_BOUNDS) {
+                    gt = new GenericsType(base,gts,null);
+                } else {
+                    gt = new GenericsType(base,null,gts[0]);
+                }
+            } else {
+                gt = new GenericsType(base,null,null);
+            }
+            gt.setName("?");
+            gt.setWildcard(true);
+        } else {
+            ClassNode argument = makeTypeWithArguments(rootNode);
+            gt = new GenericsType(argument);
+        }
+        configureAST(gt, rootNode);
+        return gt;
+    }
+    
     protected ClassNode makeTypeWithArguments(AST rootNode) {
         ClassNode basicType = makeType(rootNode);
         LinkedList typeArgumentList = new LinkedList();
         AST node = rootNode.getFirstChild();
-        if (node==null || isType(INDEX_OP, node) || isType(ARRAY_DECLARATOR, node))  return basicType;
+        if (node==null || isType(INDEX_OP, node) || isType(ARRAY_DECLARATOR, node)) return basicType;
+        //TODO: recognize combinatons of inner classes and generic types
+        if (isType(DOT, node)) return basicType;
         node = node.getFirstChild();
         if (node==null) return basicType;
         assertNodeType(TYPE_ARGUMENTS, node);
         AST typeArgument = node.getFirstChild();
+        if (classNode!=null) classNode.setUsingGenerics(true);
         
         while (typeArgument != null) {
             assertNodeType(TYPE_ARGUMENT, typeArgument);            
-            ClassNode argument = makeTypeWithArguments(typeArgument.getFirstChild());
-            GenericsType gt = new GenericsType(argument);
-            configureAST(gt, node);
+            GenericsType gt = makeGenericsArgumentType(typeArgument.getFirstChild());
             typeArgumentList.add(gt);
             typeArgument = typeArgument.getNextSibling();
         }
@@ -2208,24 +2259,35 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         return basicType;
     }
     
+    private ClassNode[] makeGenericsBounds(AST rn, int boundType) {
+        AST boundsRoot = rn.getNextSibling();
+        if (boundsRoot==null) return null;
+        assertNodeType(boundType, boundsRoot);
+        LinkedList bounds = new LinkedList();
+        for ( AST boundsNode = boundsRoot.getFirstChild(); 
+              boundsNode!=null; 
+              boundsNode=boundsNode.getNextSibling()
+        ) {
+            ClassNode bound = null;
+            bound = makeTypeWithArguments(boundsNode);
+            configureAST(bound, boundsNode);
+            bounds.add(bound);
+        }
+        if (bounds.size()==0) return null;
+        return (ClassNode[]) bounds.toArray(new ClassNode[0]);
+    }
+    
     protected GenericsType[] makeGenericsType(AST rootNode) {
         AST typeParameter = rootNode.getFirstChild();
         LinkedList ret = new LinkedList();
         assertNodeType(TYPE_PARAMETER, typeParameter);
+        if (classNode!=null) classNode.setUsingGenerics(true);
 
         while (isType(TYPE_PARAMETER, typeParameter)) {
             AST typeNode = typeParameter.getFirstChild();
             ClassNode type = makeType(typeParameter);
             
-            AST bounds = typeNode.getNextSibling();
-            ClassNode upperBound = null;
-            if (bounds!=null) {
-                assertNodeType(TYPE_UPPER_BOUNDS, bounds);
-                upperBound = makeTypeWithArguments(bounds);
-                configureAST(upperBound, bounds);
-            }
-            
-            GenericsType gt = new GenericsType(type,upperBound);
+            GenericsType gt = new GenericsType(type, makeGenericsBounds(typeNode,TYPE_UPPER_BOUNDS),null);
             configureAST(gt, typeNode);
             
             ret.add(gt);

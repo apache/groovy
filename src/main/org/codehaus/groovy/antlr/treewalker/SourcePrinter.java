@@ -913,10 +913,20 @@ public class SourcePrinter extends VisitorAdapter {
                 		parent.getType() != GroovyTokenTypes.PARAMETER_DEF) { // no need for 'def' if in a parameter list
                     print(t,visit,"def");
                 }
+            } 
+            if (visit == CLOSING_VISIT) {
+                if (  parent.getType() == GroovyTokenTypes.VARIABLE_DEF         ||
+                      parent.getType() == GroovyTokenTypes.METHOD_DEF           ||
+                      parent.getType() == GroovyTokenTypes.ANNOTATION_FIELD_DEF ||
+                     (parent.getType() == GroovyTokenTypes.PARAMETER_DEF && t.getNumberOfChildren()!=0))             
+                {
+                    print(t,visit," ");
+                }
             }
-        	if (visit == CLOSING_VISIT) {
+            
+        	/*if (visit == CLOSING_VISIT) {
         		print(t,visit," ");
-            }
+            }*/
         } else {
         	if (visit == CLOSING_VISIT) {
         		if (t.getNumberOfChildren() != 0) {

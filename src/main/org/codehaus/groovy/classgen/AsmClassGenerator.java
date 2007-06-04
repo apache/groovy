@@ -306,8 +306,6 @@ public class AsmClassGenerator extends ClassGenerator {
     // GroovyClassVisitor interface
     //-------------------------------------------------------------------------
     public void visitClass(ClassNode classNode) {
-        // todo to be tested
-        // createDummyClass(classNode);
 
         try {
             syntheticStaticFields.clear();
@@ -321,7 +319,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 getBytecodeVersion(),
                 classNode.getModifiers(),
                 internalClassName,
-                BytecodeHelper.getGenericsSignature(classNode.getGenericsTypes()),
+                BytecodeHelper.getGenericsSignature(classNode),
                 internalBaseClassName,
                 BytecodeHelper.getClassInternalNames(classNode.getInterfaces())
             );            
@@ -519,7 +517,8 @@ public class AsmClassGenerator extends ClassGenerator {
     protected void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {
         String methodType = BytecodeHelper.getMethodDescriptor(node.getReturnType(), node.getParameters());
 
-        cv = cw.visitMethod(node.getModifiers(), node.getName(), methodType, null, buildExceptions(node.getExceptions()));
+        String signature = BytecodeHelper.getGenericsMethodSignature(node);
+        cv = cw.visitMethod(node.getModifiers(), node.getName(), methodType, signature, buildExceptions(node.getExceptions()));
         visitAnnotations(node, cv);
         helper = new BytecodeHelper(cv);
         if (!node.isAbstract()) { 
@@ -3693,7 +3692,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }    
     
     protected int getBytecodeVersion() {
-        if (  classNode.getGenericsTypes()==null &&
+        if ( !classNode.isUsingGenerics() &&
              !classNode.isAnnotated()) 
         {
             return Opcodes.V1_3;

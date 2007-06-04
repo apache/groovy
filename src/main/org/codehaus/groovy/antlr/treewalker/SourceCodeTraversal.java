@@ -242,6 +242,10 @@ public class SourceCodeTraversal extends TraversalHelper {
                 case GroovyTokenTypes.MODIFIERS:
                     accept_v_FirstChild_v_RestOfTheChildren(t);
                     break;
+                    
+                case GroovyTokenTypes.WILDCARD_TYPE:
+                    accept_v_Siblings(t);
+                    break;
 
                 default:
                     accept_v_FirstChild_v(t);
