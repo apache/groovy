@@ -48,17 +48,18 @@ package org.codehaus.groovy.runtime.metaclass;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaClassRegistry;
-
-import java.lang.reflect.Method;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.util.LinkedList;
-import java.util.List;
 import org.codehaus.groovy.classgen.ReflectorGenerator;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
 import org.codehaus.groovy.runtime.Reflector;
 import org.objectweb.asm.ClassWriter;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * A registery of MetaClass instances which caches introspection &
@@ -68,6 +69,8 @@ import org.objectweb.asm.ClassWriter;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author John Wilson
  * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
+ * @author Graeme Rocher
+ *
  * @version $Revision$
  */
 public class MetaClassRegistryImpl implements MetaClassRegistry{
@@ -107,14 +110,27 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
             registerMethods(DefaultGroovyMethods.class, true);
             registerMethods(DefaultGroovyStaticMethods.class, false);
         }
-        
-        // Initialise the registry with the MetaClass for java.lang.Object
-        // This is needed this MetaClass is used to create The Metaclasses for all the classes which subclass Object
-        // Note that the user can replace the standard MetaClass with a custom MetaClass by including 
-        // groovy.runtime.metaclass.java.lang.ObjectMetaClass in the classpath
-        
-        //metaClasses.putStrong(Object.class, GroovySystem.getObjectMetaClass());
+
+        installMetaClassCreationHandle();
    }
+
+    /**
+     * Looks for a class called 'groovy.runtime.metaclass.CustomMetaClassCreationHandle' and if it exists uses it as the MetaClassCreationHandle
+     * otherwise uses the default
+     *
+     * @see groovy.lang.MetaClassRegistry.MetaClassCreationHandle
+     */
+    private void installMetaClassCreationHandle() {
+	       try {
+	           final Class customMetaClassHandle = Class.forName("groovy.runtime.metaclass.CustomMetaClassCreationHandle");
+	           final Constructor customMetaClassHandleConstructor = customMetaClassHandle.getConstructor(new Class[]{});
+				 this.metaClassCreationHandle = (MetaClassCreationHandle)customMetaClassHandleConstructor.newInstance(new Object[]{});
+	       } catch (final ClassNotFoundException e) {
+	           this.metaClassCreationHandle = new MetaClassCreationHandle();
+	       } catch (final Exception e) {
+	           throw new GroovyRuntimeException("Could not instantiate custom Metaclass creation handle: "+ e, e);
+	       }
+    }
     
     private void registerMethods(final Class theClass, final boolean useInstanceMethods) {
         Method[] methods = theClass.getMethods();
