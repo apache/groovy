@@ -980,6 +980,7 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
     
     private void resolveGenericsTypes(GenericsType[] types) {
         if (types==null) return;
+        currentClass.setUsingGenerics(true);
         for (int i=0; i<types.length; i++) {
             resolveGenericsType(types[i]);
         }
@@ -987,6 +988,7 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
     
     private void resolveGenericsHeader(GenericsType[] types) {
         if (types==null) return;
+        currentClass.setUsingGenerics(true);
         for (int i=0; i<types.length; i++) {
             ClassNode type = types[i].getType();
             String name = type.getName();
@@ -1013,6 +1015,7 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
     
     private void resolveGenericsType(GenericsType genericsType) {
         if (genericsType.isResolved()) return;
+        currentClass.setUsingGenerics(true);
         ClassNode type = genericsType.getType();
         // save name before redirect
         String name = type.getName();

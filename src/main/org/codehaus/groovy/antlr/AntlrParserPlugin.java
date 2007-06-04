@@ -2243,7 +2243,6 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         if (node==null) return basicType;
         assertNodeType(TYPE_ARGUMENTS, node);
         AST typeArgument = node.getFirstChild();
-        if (classNode!=null) classNode.setUsingGenerics(true);
         
         while (typeArgument != null) {
             assertNodeType(TYPE_ARGUMENT, typeArgument);            
@@ -2281,7 +2280,6 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         AST typeParameter = rootNode.getFirstChild();
         LinkedList ret = new LinkedList();
         assertNodeType(TYPE_PARAMETER, typeParameter);
-        if (classNode!=null) classNode.setUsingGenerics(true);
 
         while (isType(TYPE_PARAMETER, typeParameter)) {
             AST typeNode = typeParameter.getFirstChild();
