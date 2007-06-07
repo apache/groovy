@@ -171,6 +171,7 @@ $Date$
 
     <target name="-initHeadless" if="_shouldBeHeadless_">
         <property name="headlessArg" value="-Djava.awt.headless=true"/>
+        <echo message="Setting headless mode ..."/>
     </target>
 
     <target name="test" depends="-initializeReports,compileTest,-coverageInstrument,-testInit,-testOne,-testAll"
