@@ -305,7 +305,7 @@ class GroovyMethodsTest extends GroovyTestCase {
         long start = System.currentTimeMillis()
         sleep 1000
         long slept = System.currentTimeMillis() - start
-        long epsilon = 100
+        long epsilon = 150
         assert  slept-epsilon < 1000 : "should have slept >= 1s but was ${slept-epsilon}ms"
     }
     
