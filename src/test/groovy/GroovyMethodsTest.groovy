@@ -295,8 +295,9 @@ class GroovyMethodsTest extends GroovyTestCase {
         long start = System.currentTimeMillis()
         sleep 1000
         long slept = System.currentTimeMillis() - start
-        long epsilon = 100
-        assert  slept-epsilon < 1000 : "should have slept >= 1s but was ${slept-epsilon}ms"
+        long epsilon = 120
+        assert (slept > 1000 - epsilon) && (slept < 1000 + epsilon):\
+            "should have slept for 1s (+/- " + epsilon + "ms) but was ${slept}ms"
     }
 
     void testObjectSleepInterrupted(){
@@ -305,8 +306,9 @@ class GroovyMethodsTest extends GroovyTestCase {
         long start = System.currentTimeMillis()
         sleep 1000
         long slept = System.currentTimeMillis() - start
-        long epsilon = 150
-        assert  slept-epsilon < 1000 : "should have slept >= 1s but was ${slept-epsilon}ms"
+        long epsilon = 120
+        assert (slept > 1000 - epsilon) && (slept < 1000 + epsilon):\
+            "should have slept for 1s (+/- " + epsilon + "ms) but was ${slept}ms"
     }
     
     void testObjectSleepWithOnInterruptHandler(){
