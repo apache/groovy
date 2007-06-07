@@ -81,7 +81,7 @@ $Date$
     <target name="-mavenTaskdef">
         <typedef resource="org/apache/maven/artifact/ant/antlib.xml" uri="urn:maven-artifact-ant">
             <classpath>
-                <fileset dir="${bootstrapDirectory}" includes="maven-artifact-ant-*-dep.jar"/>
+                <fileset dir="${bootstrapDirectory}" includes="maven-ant-tasks-*.jar"/>
             </classpath>
         </typedef>
     </target>
