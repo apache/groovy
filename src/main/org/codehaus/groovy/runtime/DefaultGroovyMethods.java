@@ -2008,7 +2008,7 @@ public class DefaultGroovyMethods {
      * Support the range subscript operator for a List
      *
      * @param self  a List
-     * @param range a Range
+     * @param range a Range indicating the items to get
      * @return a sublist based on range borders or a new list if range is reversed
      * @see java.util.List#subList(int,int)
      */
