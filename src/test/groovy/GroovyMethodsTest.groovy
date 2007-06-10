@@ -84,6 +84,14 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert x instanceof Character
     }
 
+    void testCharSequenceGetAt() {
+        def x = "matrix"
+        assert x[0, 5..0] == 'mxirtam'
+        assert x[3..0, 0..3] == 'rtammatr'
+        assert x[2..-4, 3..-4, 3..-3] == 'trtr'
+        assert x[-1..-3, -3..-1] == 'xirrix'
+    }
+
     void testListGrep() {
         def list = ["James", "Bob", "Guillaume", "Sam"]
         def answer = list.grep(~".*a.*")

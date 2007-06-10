@@ -1640,7 +1640,8 @@ public class DefaultGroovyMethods {
             to = tmp;
         }
 
-        return text.subSequence(from, to + 1);
+        CharSequence sequence = text.subSequence(from, to + 1);
+        return range.isReverse() ? reverse((String) sequence) : sequence;
     }
 
     /**
