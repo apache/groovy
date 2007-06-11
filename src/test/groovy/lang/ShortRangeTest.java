@@ -1,5 +1,5 @@
 /*
- $Id$
+ $Id: ShortRangeTest.java,v 1.1 2006/11/13 10:23:58 edwin Exp edwin $
 
  Copyright 2003 (C) James Strachan and Bob Mcwhirter. All Rights Reserved.
 
@@ -45,45 +45,20 @@
  */
 package groovy.lang;
 
+
 /**
- * Provides unit tests for the <code>IntRange</code> class.
+ * Tests {@link ObjectRange}s of {@link Short}s.
  *
- * @author James Strachan
+ * @author $Author$
  * @version $Revision$
  */
-public class IntRangeTest extends NumberRangeTest {
-
-    public void testCreateTooBigRange() {
-        try {
-            createRange(0, Integer.MAX_VALUE);
-            fail("too large range accepted");
-        }
-        catch (IllegalArgumentException e) {
-            assertTrue("expected exception thrown", true);
-        }
-    }
+public class ShortRangeTest extends NumberRangeTest {
 
     /**
-     * Tests providing invalid arguments to the protected constructor.
+     * {@inheritDoc}
      */
-    public void testInvalidArgumentsToConstructor() {
-        try {
-            new IntRange(2, 1, true);
-            fail("invalid range created");
-        }
-        catch (IllegalArgumentException e) {
-            assertTrue("expected exception thrown", true);
-        }
-    }
-
-    /**
-     * Tests getting the to and from values as <code>int</code>s.
-     */
-    public void testGetToFromInt() {
-        final int from = 3, to = 7;
-        final IntRange range = new IntRange(from, to);
-        assertEquals("wrong 'from'", from, range.getFromInt());
-        assertEquals("wrong 'to'", to, range.getToInt());
+    protected Range createRange(int from, int to) {
+        return new ObjectRange(new Short((short) from), new Short((short) to));
     }
 
     /**
@@ -91,12 +66,5 @@ public class IntRangeTest extends NumberRangeTest {
      */
     protected Comparable createValue(int value) {
         return new Integer(value);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    protected Range createRange(int from, int to) {
-        return new IntRange(from, to);
     }
 }

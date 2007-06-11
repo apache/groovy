@@ -373,10 +373,8 @@ class ListTest extends GroovyTestCase {
         list[-1..-1] = [-1]
         assert list == [0, 1, 2, -1]        , 'left of left border'
         list = [0,1,2,3]
-        shouldFail (IndexOutOfBoundsException.class) {
-            list[3..4] = [3,4]
-            assert list == [0, 1, 2, 3, 4]
-        }
+        list[3..4] = [3,4]
+        assert list == [0, 1, 2, 3, 4]
         // structural changes
         list = [0,1,2,3]
         list[1..2] = ['x']

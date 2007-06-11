@@ -140,7 +140,12 @@ public class RangeTest extends TestCase {
         r = createRange(new BigDecimal("2.1"), new BigDecimal("10.0"));
 
         assertTrue("contains 9.1", r.contains(new BigDecimal("9.1")));
-        assertTrue("contains 8.0", r.contains(new BigDecimal("8.0")));
+        assertFalse("contains 10.1", r.contains(new BigDecimal("10.1")));
+        assertFalse("contains 8.0", r.contains(new BigDecimal("8.0")));
+        assertTrue("containsWithinBounds 8.0", r.containsWithinBounds(new BigDecimal("8.0")));
+        assertTrue("containsWithinBounds 9.9999", r.containsWithinBounds(new BigDecimal("9.9999")));
+        assertTrue("containsWithinBounds 10.0", r.containsWithinBounds(new BigDecimal("10.0")));
+        assertFalse("containsWithinBounds 10.0001", r.containsWithinBounds(new BigDecimal("10.0001")));
     }
 
     public void testSubList() {

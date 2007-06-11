@@ -7,87 +7,93 @@ import java.util.*;
 /**
  * Constructing Ranges like 0..<0
  * @author Dierk Koenig
+ * @author Edwin Tellman
  */
-public class EmptyRange implements Range {
+public class EmptyRange extends AbstractList implements Range {
+    
+    /**
+     * The value at which the range originates (may be <code>null</code>).
+     */
     protected Comparable at;
-    protected final List EMPTY_LIST = new ArrayList();
 
+    /**
+     * Creates a new {@link EmptyRange}.
+     * 
+     * @param at the value at which the range starts (may be <code>null</code>).
+     */
     public EmptyRange(Comparable at) {
        this.at = at;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public Comparable getFrom() {
         return at;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public Comparable getTo() {
         return at;
     }
 
+    /**
+     * Returns <code>false</code>
+     * 
+     * @return <code>false</code>
+     */
     public boolean isReverse() {
         return false;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    public boolean containsWithinBounds(Object o) {
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public String inspect() {
-        return InvokerHelper.inspect(at)+"..<"+InvokerHelper.inspect(at);
+        return InvokerHelper.inspect(at) + "..<" + InvokerHelper.inspect(at);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public String toString() {
-        if (null == at) return "null..<null";
-        return at.toString()+"..<"+at.toString();
+        return (null == at) 
+            ? "null..<null"
+            : at.toString() + "..<" + at.toString();
     }
 
+    /**
+     * Returns 0
+     * 
+     * @return 0
+     */
     public int size() {
         return 0;
     }
 
-    public void clear() {
-    }
-
-    public boolean isEmpty() {
-        return true;
-    }
-
-    public Object[] toArray() {
-        return new Object[0];
-    }
-
-    public Object get(int index) {
-        return null;
-    }
-
-    public Object remove(int index) {
-        return null;
-    }
-
     /**
-     * @throws UnsupportedOperationException
+     * Throws <code>IndexOutOfBoundsException</code>.
+     * 
+     * @throws IndexOutOfBoundsException always
      */
-    public void add(int index, Object element) {
-        throw new UnsupportedOperationException("cannot add to Empty Ranges");
-    }
-
-    public int indexOf(Object o) {
-        return -1;
-    }
-
-    public int lastIndexOf(Object o) {
-        return -1;
+    public Object get(int index) {
+        throw new IndexOutOfBoundsException("can't get values from Empty Ranges");
     }
 
     /**
-     * @throws UnsupportedOperationException
+     * @throws UnsupportedOperationException always
      */
     public boolean add(Object o) {
         throw new UnsupportedOperationException("cannot add to Empty Ranges");
-    }
-
-    public boolean contains(Object o) {
-        return false;
-    }
-
-    public boolean remove(Object o) {
-        return false;
     }
 
     /**
@@ -103,33 +109,33 @@ public class EmptyRange implements Range {
     public boolean addAll(Collection c) {
         throw new UnsupportedOperationException("cannot add to Empty Ranges");
     }
-
-    public boolean containsAll(Collection c) {
-        return false;
+    
+    /** 
+     * @throws UnsupportedOperationException
+     */
+    public boolean remove(Object o) {
+        throw new UnsupportedOperationException("cannot remove from Empty Ranges");
     }
 
+    /** 
+     * @throws UnsupportedOperationException
+     */
+    public Object remove(int index) {
+        throw new UnsupportedOperationException("cannot remove from Empty Ranges");
+    }
+
+    /**
+     * @throws UnsupportedOperationException
+     */
     public boolean removeAll(Collection c) {
-        return false;
+        throw new UnsupportedOperationException("cannot remove from Empty Ranges");
     }
 
+    /**
+     * @throws UnsupportedOperationException
+     */
     public boolean retainAll(Collection c) {
-        return false;
-    }
-
-    public Iterator iterator() {
-        return EMPTY_LIST.iterator();
-    }
-
-    public List subList(int fromIndex, int toIndex) {
-        return EMPTY_LIST.subList(fromIndex, toIndex);
-    }
-
-    public ListIterator listIterator() {
-        return EMPTY_LIST.listIterator();
-    }
-
-    public ListIterator listIterator(int index) {
-        return EMPTY_LIST.listIterator(index);
+        throw new UnsupportedOperationException("cannot retainAll in Empty Ranges");
     }
 
      /**
@@ -139,14 +145,16 @@ public class EmptyRange implements Range {
         throw new UnsupportedOperationException("cannot set in Empty Ranges");
     }
 
-    public Object[] toArray(Object a[]) {
-        return new Object[0];
-    }
-
+    /**
+     * {@inheritDoc}
+     */
     public void step(int step, Closure closure) {
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public List step(int step) {
-        return EMPTY_LIST;
+        return new ArrayList();
     }
 }

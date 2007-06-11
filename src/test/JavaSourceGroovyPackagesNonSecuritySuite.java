@@ -1,7 +1,5 @@
 import groovy.inspect.InspectorTest;
 import groovy.lang.*;
-import groovy.security.SecurityTest;
-import groovy.security.SignedJarTest;
 import groovy.servlet.GroovyServletTest;
 import groovy.text.TemplateTest;
 import groovy.text.XmlTemplateEngineTest;
@@ -26,7 +24,6 @@ public class JavaSourceGroovyPackagesNonSecuritySuite {
         suite.addTestSuite(GStringTest.class);
         suite.addTestSuite(IntRangeTest.class);
         suite.addTestSuite(MetaClassTest.class);
-        suite.addTestSuite(RangeTest.class);
         suite.addTestSuite(ScriptIntegerDivideTest.class);
         suite.addTestSuite(ScriptPrintTest.class);
         suite.addTestSuite(ScriptTest.class);
@@ -40,6 +37,7 @@ public class JavaSourceGroovyPackagesNonSecuritySuite {
         suite.addTestSuite(MBeanTest.class);
         suite.addTestSuite(XmlTest.class);
         suite.addTestSuite(FactorySupportTest.class);
+        suite.addTest(new RangeTestSuite());
         return suite;
     }
 }
