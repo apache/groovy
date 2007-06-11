@@ -138,7 +138,7 @@ public class IntRange extends AbstractList implements Range {
         if (index >= size()) {
             throw new IndexOutOfBoundsException("Index: " + index + " too big for range: " + this);
         }
-        int value = (reverse) ? to - index : index + from;
+        int value = reverse ? to - index : index + from;
         return new Integer(value);
     }
 
@@ -152,9 +152,9 @@ public class IntRange extends AbstractList implements Range {
 
     public Iterator iterator() {
         return new Iterator() {
-            int index = 0;
-            int size = size();
-            int value = (reverse) ? to : from;
+            private int index;
+            private int size = size();
+            private int value = reverse ? to : from;
 
             public boolean hasNext() {
                 return index < size;
@@ -197,7 +197,7 @@ public class IntRange extends AbstractList implements Range {
     }
 
     public String toString() {
-        return (reverse) ? "" + to + ".." + from : "" + from + ".." + to;
+        return reverse ? "" + to + ".." + from : "" + from + ".." + to;
     }
     
     public String inspect() {

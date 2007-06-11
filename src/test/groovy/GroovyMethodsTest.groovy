@@ -84,6 +84,15 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert x instanceof Character
     }
 
+    void testPutAtRange() {
+        def list
+        list = ['a','b','c']; list[4] = 'x'; assert list == ["a", "b", "c", null, "x"]
+        list = ['a','b','c']; list[1..2] = ['x', 'y']; assert list == ["a", "x", "y"]
+        list = ['a','b','c']; list[1..2] = 'x'; assert list == ["a", "x"]
+        list = ['a','b','c']; list[4..5] = ['x', 'y']; assert list == ["a", "b", "c", null, "x", "y"]
+        list = ['a','b','c']; list[4..5] = 'x'; assert list == ["a", "b", "c", null, "x"]
+    }
+
     void testCharSequenceGetAt() {
         def x = "matrix"
         assert x[0, 5..0] == 'mxirtam'

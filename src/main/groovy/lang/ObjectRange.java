@@ -110,7 +110,7 @@ public class ObjectRange extends AbstractList implements Range {
                 throw new IllegalArgumentException("Incompatible Strings for Range: starting String is longer than ending string");
             }
             int length = Math.min(start.length(), end.length());
-            int i = 0;
+            int i;
             for (i = 0; i < length; i++) {
                 if (start.charAt(i) != end.charAt(i)) break;
             }
@@ -173,7 +173,7 @@ public class ObjectRange extends AbstractList implements Range {
         if (index >= size()) {
             throw new IndexOutOfBoundsException("Index: " + index + " is too big for range: " + this);
         }
-        Object value = null;
+        Object value;
         if (reverse) {
             value = to;
 
@@ -191,8 +191,8 @@ public class ObjectRange extends AbstractList implements Range {
 
     public Iterator iterator() {
         return new Iterator() {
-            int index = 0;
-            Object value = (reverse) ? to : from;
+            private int index;
+            private Object value = reverse ? to : from;
 
             public boolean hasNext() {
                 return index < size();
@@ -222,20 +222,20 @@ public class ObjectRange extends AbstractList implements Range {
     public int size() {
         if (size == -1) {
             if (from instanceof Integer && to instanceof Integer) {
-                // lets fast calculate the size
+                // fast calculate the size
                 size = 0;
                 int fromNum = ((Integer) from).intValue();
                 int toNum = ((Integer) to).intValue();
                 size = toNum - fromNum + 1;
             } else if (from instanceof BigDecimal || to instanceof BigDecimal) {
-                // lets fast calculate the size
+                // fast calculate the size
                 size = 0;
                 BigDecimal fromNum = new BigDecimal("" + from);
                 BigDecimal toNum = new BigDecimal("" + to);
                 BigInteger sizeNum = toNum.subtract(fromNum).add(new BigDecimal(1.0)).toBigInteger();
                 size = sizeNum.intValue();
             } else {
-                // lets lazily calculate the size
+                // lazily calculate the size
                 size = 0;
                 Object value = from;
                 while (to.compareTo(value) >= 0) {
@@ -266,13 +266,13 @@ public class ObjectRange extends AbstractList implements Range {
     }
 
     public String toString() {
-        return (reverse) ? "" + to + ".." + from : "" + from + ".." + to;
+        return reverse ? "" + to + ".." + from : "" + from + ".." + to;
     }
 
     public String inspect() {
         String toText = InvokerHelper.inspect(to);
         String fromText = InvokerHelper.inspect(from);
-        return (reverse) ? "" + toText + ".." + fromText : "" + fromText + ".." + toText;
+        return reverse ? "" + toText + ".." + fromText : "" + fromText + ".." + toText;
     }
 
     public boolean contains(Object value) {

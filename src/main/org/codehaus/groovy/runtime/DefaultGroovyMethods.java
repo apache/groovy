@@ -2343,6 +2343,12 @@ public class DefaultGroovyMethods {
      */
     public static void putAt(List self, IntRange range, Object value) {
         RangeInfo info = subListBorders(self.size(), range);
+        int size = self.size();
+        if (info.to >= size) {
+            while (size < info.to) {
+                self.add(size++, null);
+            }
+        }
         List sublist = self.subList(info.from, info.to);
         sublist.clear();
         if (value instanceof Collection) {

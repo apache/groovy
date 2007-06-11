@@ -9,7 +9,7 @@ import java.util.*;
  * @author Dierk Koenig
  */
 public class EmptyRange implements Range {
-    protected Comparable at = null;
+    protected Comparable at;
     protected final List EMPTY_LIST = new ArrayList();
 
     public EmptyRange(Comparable at) {
