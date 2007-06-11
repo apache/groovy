@@ -428,7 +428,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
         ClassNode returnType = null;
         if (isType(TYPE, node)) {
-            returnType = makeType(node);
+            returnType = makeTypeWithArguments(node);
             node = node.getNextSibling();
         }
 

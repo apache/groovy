@@ -754,9 +754,24 @@ public class BytecodeHelper implements Opcodes {
         return ret.toString();
     }
     
+    private static boolean usesGenericsInClassSignature(ClassNode node) {
+        if (!node.isUsingGenerics()) return false;
+        if (node.getGenericsTypes()!=null) return true;
+        ClassNode sclass = node.getUnresolvedSuperClass(false);
+        if (sclass.isUsingGenerics()) return true;
+        ClassNode[] interfaces = node.getInterfaces();
+        if (interfaces!=null) {
+            for (int i = 0; i < interfaces.length; i++) {
+                if (interfaces[i].isUsingGenerics()) return true;
+            }
+        }
+        
+        return false;
+    }
+    
     public static String getGenericsSignature(ClassNode node) {
+        if (!usesGenericsInClassSignature(node)) return null;
         GenericsType[] genericsTypes = node.getGenericsTypes();
-        if (genericsTypes==null) return null;
         StringBuffer ret = new StringBuffer(100);
         getGenericsTypeSpec(ret, genericsTypes);
         GenericsType extendsPart = new GenericsType(node.getUnresolvedSuperClass(false));
@@ -785,8 +800,12 @@ public class BytecodeHelper implements Opcodes {
         GenericsType[] genericsTypes = type.getGenericsTypes();
         if (genericsTypes==null) return null;
         StringBuffer ret = new StringBuffer(100);
-        GenericsType gt = new GenericsType(type);
-        writeGenericsBounds(ret,gt,false);
+        if (type.isGenericsPlaceHolder()) {
+            addSubTypes(ret, type.getGenericsTypes(), "", "");
+        } else {
+            GenericsType gt = new GenericsType(type);
+            writeGenericsBounds(ret,gt,false);
+        }
         
         return ret.toString();
     }

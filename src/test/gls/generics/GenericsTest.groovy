@@ -138,6 +138,30 @@ class GenericsTest extends GenericsTestBase {
 			f4 : "Ljava/util/Map<Ljava/lang/String;*>;"   
 	    	]
 	}
+	
+	public void testParameterAsParameterForReturnTypeAndFieldClass() {
+	    createClassInfo """
+		   	public class B<T> {
+   				private T owner;
+   				public Class<T> getOwnerClass(){}
+   
+			} 
+	    """
+	    assert signatures==[
+			"class" : "<T:Ljava/lang/Object;>Ljava/lang/Object;Lgroovy/lang/GroovyObject;",
+			"owner" : "TT;",
+			"getOwnerClass()Ljava/lang/Class;" : "()Ljava/lang/Class<TT;>;"
+			]
+	}
+	
+	public void testClassWithoutParameterExtendsClassWithFixedParameter() {
+	    createClassInfo """
+			class B extends ArrayList<Long> {} 
+	    """
+	    assert signatures==[
+			"class" : "Ljava/util/ArrayList<Ljava/lang/Long;>;Lgroovy/lang/GroovyObject;",
+			]
+	}
 
 	public void testInvalidParameterUsage_FAILS() {
 	    if (notYetImplemented()) return

@@ -281,6 +281,14 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         this.interfaces = interfaces;
         this.mixins = mixins;
         isPrimaryNode = true;
+        if (superClass!=null) {
+            usesGenerics = superClass.isUsingGenerics();
+        }
+        if (!usesGenerics && interfaces!=null) {
+            for (int i = 0; i < interfaces.length; i++) {
+                usesGenerics = usesGenerics || interfaces[i].isUsingGenerics();
+            }
+        }
     }
 
     
