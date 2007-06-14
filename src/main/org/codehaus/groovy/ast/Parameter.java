@@ -47,14 +47,16 @@ package org.codehaus.groovy.ast;
 
 import org.codehaus.groovy.ast.expr.*;
 
+import java.util.Map;
+
 /**
  * Represents a parameter on a constructor or method call. The type name is
- * optional - it should be defaulted to java.lang.Object if unknown.
+ * optional - it defaults to java.lang.Object if unknown.
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class Parameter implements Variable {
+public class Parameter extends AnnotatedNode implements Variable {
 
     public static final Parameter[] EMPTY_ARRAY = {
     };

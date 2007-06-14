@@ -51,9 +51,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-
 /**
- * Base class for any AST node which is capable of being annotationed
+ * Base class for any AST node which is capable of being annotated
  *
  * @author <a href="mailto:jstrachan@protique.com">James Strachan</a>
  * @version $Revision$
@@ -106,7 +105,6 @@ public class AnnotatedNode extends ASTNode {
             AnnotationNode node = (AnnotationNode) iter.next();
             addAnnotation(node.getClassNode().getName(), node);
         }
-
     }
 
     public boolean isSynthetic() {

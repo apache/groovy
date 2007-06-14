@@ -38,7 +38,7 @@ import org.codehaus.groovy.ast.*;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
 
-import java.util.*;
+import java.util.Iterator;
 
 /**
  * To generate a class that has all the fields and methods, except that fields are not initilized
@@ -47,13 +47,12 @@ import java.util.*;
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author <a href="mailto:b55r@sina.com">Bing Ran</a>
- *
  * @version $Revision$
  */
 public class DummyClassGenerator extends ClassGenerator {
 
-    private ClassVisitor cw;
-    private MethodVisitor cv;
+    private ClassVisitor cv;
+    private MethodVisitor mv;
     private GeneratorContext context;
 
     private String sourceFile;
@@ -65,13 +64,13 @@ public class DummyClassGenerator extends ClassGenerator {
 
 
     public DummyClassGenerator(
-        GeneratorContext context,
-        ClassVisitor classVisitor,
-        ClassLoader classLoader,
-        String sourceFile) {
+            GeneratorContext context,
+            ClassVisitor classVisitor,
+            ClassLoader classLoader,
+            String sourceFile) {
         super(classLoader);
         this.context = context;
-        this.cw = classVisitor;
+        this.cv = classVisitor;
         this.sourceFile = sourceFile;
     }
 
@@ -86,14 +85,14 @@ public class DummyClassGenerator extends ClassGenerator {
 
             this.internalBaseClassName = BytecodeHelper.getClassInternalName(classNode.getSuperClass());
 
-            cw.visit(
-                asmJDKVersion,
-                classNode.getModifiers(),
-                internalClassName,
-                (String)null,
-                internalBaseClassName,
-                BytecodeHelper.getClassInternalNames(classNode.getInterfaces())
-                );
+            cv.visit(
+                    asmJDKVersion,
+                    classNode.getModifiers(),
+                    internalClassName,
+                    (String) null,
+                    internalBaseClassName,
+                    BytecodeHelper.getClassInternalNames(classNode.getInterfaces())
+            );
 
             classNode.visitContents(this);
 
@@ -107,13 +106,13 @@ public class DummyClassGenerator extends ClassGenerator {
                     // local inner classes do not specify the outer class name
                     outerClassName = null;
                 }
-                cw.visitInnerClass(
-                    innerClassInternalName,
-                    outerClassName,
-                    innerClassType.getName(),
-                    innerClass.getModifiers());
+                cv.visitInnerClass(
+                        innerClassInternalName,
+                        outerClassName,
+                        innerClassType.getName(),
+                        innerClass.getModifiers());
             }
-            cw.visitEnd();
+            cv.visitEnd();
         }
         catch (GroovyRuntimeException e) {
             e.setModule(classNode.getModule());
@@ -126,13 +125,13 @@ public class DummyClassGenerator extends ClassGenerator {
         visitParameters(node, node.getParameters());
 
         String methodType = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, node.getParameters());
-        cv = cw.visitMethod(node.getModifiers(), "<init>", methodType, null, null);
-        cv.visitTypeInsn(NEW, "java/lang/RuntimeException");
-        cv.visitInsn(DUP);
-        cv.visitLdcInsn("not intended for execution");
-        cv.visitMethodInsn(INVOKESPECIAL, "java/lang/RuntimeException", "<init>", "(Ljava/lang/String;)V");
-        cv.visitInsn(ATHROW);
-        cv.visitMaxs(0, 0);
+        mv = cv.visitMethod(node.getModifiers(), "<init>", methodType, null, null);
+        mv.visitTypeInsn(NEW, "java/lang/RuntimeException");
+        mv.visitInsn(DUP);
+        mv.visitLdcInsn("not intended for execution");
+        mv.visitMethodInsn(INVOKESPECIAL, "java/lang/RuntimeException", "<init>", "(Ljava/lang/String;)V");
+        mv.visitInsn(ATHROW);
+        mv.visitMaxs(0, 0);
     }
 
     public void visitMethod(MethodNode node) {
@@ -140,25 +139,25 @@ public class DummyClassGenerator extends ClassGenerator {
         visitParameters(node, node.getParameters());
 
         String methodType = BytecodeHelper.getMethodDescriptor(node.getReturnType(), node.getParameters());
-        cv = cw.visitMethod(node.getModifiers(), node.getName(), methodType, null, null);
+        mv = cv.visitMethod(node.getModifiers(), node.getName(), methodType, null, null);
 
-        cv.visitTypeInsn(NEW, "java/lang/RuntimeException");
-        cv.visitInsn(DUP);
-        cv.visitLdcInsn("not intended for execution");
-        cv.visitMethodInsn(INVOKESPECIAL, "java/lang/RuntimeException", "<init>", "(Ljava/lang/String;)V");
-        cv.visitInsn(ATHROW);
+        mv.visitTypeInsn(NEW, "java/lang/RuntimeException");
+        mv.visitInsn(DUP);
+        mv.visitLdcInsn("not intended for execution");
+        mv.visitMethodInsn(INVOKESPECIAL, "java/lang/RuntimeException", "<init>", "(Ljava/lang/String;)V");
+        mv.visitInsn(ATHROW);
 
-        cv.visitMaxs(0, 0);
+        mv.visitMaxs(0, 0);
     }
 
     public void visitField(FieldNode fieldNode) {
 
-        cw.visitField(
-            fieldNode.getModifiers(),
-            fieldNode.getName(),
-            BytecodeHelper.getTypeDescription(fieldNode.getType()),
-            null, //fieldValue,  //br  all the sudden that one cannot init the field here. init is done in static initilizer and instace intializer.
-            null);
+        cv.visitField(
+                fieldNode.getModifiers(),
+                fieldNode.getName(),
+                BytecodeHelper.getTypeDescription(fieldNode.getType()),
+                null, //fieldValue,  //br  all the sudden that one cannot init the field here. init is done in static initilizer and instace intializer.
+                null);
     }
 
     /**
@@ -166,7 +165,7 @@ public class DummyClassGenerator extends ClassGenerator {
      */
     public void visitProperty(PropertyNode statement) {
     }
-    
+
     protected CompileUnit getCompileUnit() {
         CompileUnit answer = classNode.getCompileUnit();
         if (answer == null) {
@@ -176,7 +175,7 @@ public class DummyClassGenerator extends ClassGenerator {
     }
 
     protected void visitParameters(ASTNode node, Parameter[] parameters) {
-        for (int i = 0, size = parameters.length; i < size; i++ ) {
+        for (int i = 0, size = parameters.length; i < size; i++) {
             visitParameter(node, parameters[i]);
         }
     }

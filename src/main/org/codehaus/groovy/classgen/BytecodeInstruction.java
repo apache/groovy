@@ -23,9 +23,9 @@ import org.objectweb.asm.MethodVisitor;
  * Helper class used by the class generator. Usually
  * an inner class is produced, that contains bytecode
  * creation code in the visit method.
- * 
+ *
  * @author Jochen Theodorou
  */
 public abstract class BytecodeInstruction {
-  abstract void visit(MethodVisitor cv);
+    abstract void visit(MethodVisitor mv);
 }

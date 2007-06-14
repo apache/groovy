@@ -75,7 +75,7 @@ public class AnnotationNode extends ASTNode {
     private Map members = new HashMap();
     private boolean runtimeRetention= false;
     private boolean sourceRetention= false;
-    private int allowedTarges = ALL_TARGETS;
+    private int allowedTargets = ALL_TARGETS;
     private boolean valid;
 
     public AnnotationNode(ClassNode classNode) {
@@ -160,11 +160,11 @@ public class AnnotationNode extends ASTNode {
     }
 
     public void setAllowedTargets(int bitmap) {
-        this.allowedTarges = bitmap;
+        this.allowedTargets = bitmap;
     }
     
     public boolean isTargetAllowed(int target) {
-        return (this.allowedTarges & target) == target;
+        return (this.allowedTargets & target) == target;
     }
     
     /**

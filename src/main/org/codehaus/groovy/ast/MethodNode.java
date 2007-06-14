@@ -71,7 +71,7 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
     
     // type spec for generics
     private GenericsType[] genericsTypes=null;
-    
+
     public MethodNode(String name, int modifiers, ClassNode returnType, Parameter[] parameters, ClassNode[] exceptions, Statement code) {
         this.name = name;
         this.modifiers = modifiers;

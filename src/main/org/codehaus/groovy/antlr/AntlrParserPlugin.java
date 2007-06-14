@@ -669,9 +669,8 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         else
             parameter = new Parameter(type, name);
 
-        // TODO
-        //configureAST(parameter,paramNode);
-        //parameter.addAnnotations(annotations);
+        configureAST(parameter, paramNode);
+        parameter.addAnnotations(annotations);
         return parameter;
     }
 
@@ -692,7 +691,6 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 case ANNOTATION:
                     annotations.add(annotation(node));
                     break;
-
 
                     // core access scope modifiers
                 case LITERAL_private:

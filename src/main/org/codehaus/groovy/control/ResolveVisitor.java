@@ -132,9 +132,10 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
         Parameter[] paras = node.getParameters();
         for (int i=0; i<paras.length; i++) {
             Parameter p = paras[i];
-            
+
             resolveOrFail(p.getType(),p.getType());
-            
+            visitAnnotations(p);
+
             if (p.hasInitialExpression()) {
                 Expression init = p.getInitialExpression();
                 p.setInitialExpression(transform(init));

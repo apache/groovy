@@ -47,7 +47,7 @@ package org.codehaus.groovy.classgen;
 
 /**
  * An exception thrown by the class generator
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
