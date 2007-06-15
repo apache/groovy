@@ -1,36 +1,20 @@
 /*
- * $Id$
- * 
- * Copyright 2003 (C) Jochen Theodorou. All Rights Reserved.
- * 
- * Redistribution and use of this software and associated documentation
- * ("Software"), with or without modification, are permitted provided that the
- * following conditions are met: 1. Redistributions of source code must retain
- * copyright statements and notices. Redistributions must also contain a copy
- * of this document. 2. Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer in
- * the documentation and/or other materials provided with the distribution. 3.
- * The name "groovy" must not be used to endorse or promote products derived
- * from this Software without prior written permission of The Codehaus. For
- * written permission, please contact info@codehaus.org. 4. Products derived
- * from this Software may not be called "groovy" nor may "groovy" appear in
- * their names without prior written permission of The Codehaus. "groovy" is a
- * registered trademark of The Codehaus. 5. Due credit should be given to The
- * Codehaus - http://groovy.codehaus.org/
- * 
- * THIS SOFTWARE IS PROVIDED BY THE CODEHAUS AND CONTRIBUTORS ``AS IS'' AND ANY
- * EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE CODEHAUS OR ITS CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
- * DAMAGE.
- *  
+ * Copyright 2005 Jochen Theodorou
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
  */
+
 package org.codehaus.groovy.runtime.metaclass;
 
 import java.security.ProtectionDomain;
@@ -40,39 +24,69 @@ import org.codehaus.groovy.runtime.Reflector;
 
 /**
  * Reflector creation helper. This class is used to define the Refloctor classes.
- * For each ClassLoader such a Loader will be created by the MetaClass.
- * The only special about this loader is, that it knows the class Reflector, 
- * which is the base class of all runtime created Reflectors. 
+ * For each ClassLoader such a loader will be created by MetaClass.
+ * Special about this loader is, that it knows the classes form the 
+ * Groovy Runtime. The Reflector class is resolved in different ways: During
+ * the definition of a class Reflector will resolve to the Reflector class of
+ * the runtime, even if there is another Reflector class in the parent loader.
+ * After the new class is defined Reflector will resolve like other Groovy
+ * classes. This loader is able to resolve all Groovy classes even if the
+ * parent does not know them, but the parent serves first (Reflector during a
+ * class defintion is different). 
  * 
  * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
  * @version $Revision$
  */
 public class ReflectorLoader extends ClassLoader {
+    private boolean inDefine = false;
     private HashMap loadedClasses = new HashMap();
+    private ClassLoader delegatationLoader; 
+
+    private static String REFLECTOR = Reflector.class.getName();
     
     /**
-     * returns the Reflector class.
+     * Tries to find a Groovy class.
      * 
-     * @return the Reflector class if the name matches
-     * @throws ClassNotFoundException if the name is not matching Reflector
-     * @see Reflector
+     * @return the class if found
+     * @throws ClassNotFoundException if not found
      */
     protected Class findClass(String name) throws ClassNotFoundException {
-        if (delegatationLoader==null) return super.loadClass(name);
+        if (delegatationLoader==null) return super.findClass(name);
         return delegatationLoader.loadClass(name);
     }
     
     /**
-     * helper method to define Reflector classes
+     * Loads a class per name. Unlike a normal loadClass this version
+     * behaves different during a class definition. In that case it
+     * checks if the class we want to load is Reflector and returns 
+     * class if the check is successful. If it is not during a class
+     * definition it just calls the super class version of loadClass. 
+     * 
+     * @param name of the class to load
+     * @param resolve is true if the class should be resolved
+     * @see Reflector
+     * @see ClassLoader#loadClass(String, boolean)
+     */
+    protected synchronized Class loadClass(String name, boolean resolve) throws ClassNotFoundException {
+        if (inDefine) {
+            if (name.equals(REFLECTOR)) return Reflector.class;
+        }
+        return super.loadClass(name, resolve);
+    }
+    
+    /**
+     * helper method to define Reflector classes.
      * @param name of the Reflector
      * @param bytecode the bytecode
      * @param domain  the protection domain
      * @return the generated class
      */
-    public Class defineClass(String name, byte[] bytecode, ProtectionDomain domain) {
+    public synchronized Class defineClass(String name, byte[] bytecode, ProtectionDomain domain) {
+        inDefine = true;
         Class c = defineClass(name, bytecode, 0, bytecode.length, domain);
-        synchronized(loadedClasses) { loadedClasses.put(name,c); }
+        loadedClasses.put(name,c); 
         resolveClass(c);
+        inDefine = false;
         return c;
     }
     
@@ -85,11 +99,12 @@ public class ReflectorLoader extends ClassLoader {
         delegatationLoader = getClass().getClassLoader();
     }
     
-    public Class getLoadedClass(String name) {
-        synchronized (loadedClasses) {
-            return (Class)loadedClasses.get(name);
-        }
+    /**
+     * try to load one of the defined Reflector classes by name.
+     * @param name of the Reflector class
+     * @return the Reflector class if defined else null.
+     */
+    public synchronized Class getLoadedClass(String name) {
+        return (Class)loadedClasses.get(name);
     }
-    
-    private ClassLoader delegatationLoader; 
 }
