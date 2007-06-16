@@ -65,7 +65,7 @@ $Date$
         <mkdir dir="${mainClassesDirectory}"/>
         <mkdir dir="${toolsClassesDirectory}"/>
         <javac srcdir="${mainSourceDirectory}" includeantruntime="false" destdir="${mainClassesDirectory}"
-               debug="yes" source="1.4" target="1.4" fork="true" classpathref="compilePath"/>
+               deprecation="on" debug="yes" source="1.4" target="1.4" fork="true" classpathref="compilePath"/>
 
         <!--
 
