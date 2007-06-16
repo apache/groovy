@@ -209,7 +209,7 @@ if $cygwin ; then
             convArg=$arg
         fi
         ARGUMENTS[$count]=$convArg
-        count+=1
+        let count+=1
     done
 
     #  For some bizarre reason Dash (/bin/sh) on Ubuntu 6.10 Edgy Eft will not parse the array expression
