@@ -834,7 +834,13 @@ public class  ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
             Object[] allArgs = (Object[]) args;
             Class[] types = new Class[allArgs.length];
             for (int i = 0; i < types.length; i++) {
-                types[i] = allArgs[i].getClass();
+                if(allArgs[i] != null) {
+                    types[i] = allArgs[i].getClass();
+                }
+                else {
+                    types[i] = null;
+                }
+
             }
             return this.getMetaMethod(name, types);
         }
