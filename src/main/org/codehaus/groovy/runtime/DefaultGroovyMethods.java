@@ -84,6 +84,7 @@ import org.w3c.dom.NodeList;
  * @author Jochen Theodorou
  * @author Paul King
  * @author Michael Baehr
+ * @author Joachim Baumann
  * @version $Revision$
  */
 public class DefaultGroovyMethods {
@@ -244,10 +245,6 @@ public class DefaultGroovyMethods {
         }
         return props;
     }
-
-
-
-
 
     /**
      * Convenience method that calls {@link #getMetaPropertyValues(Object)}(self)
@@ -1212,8 +1209,10 @@ public class DefaultGroovyMethods {
     public static Map groupBy(Collection self, Closure closure) {
         Map answer = new HashMap();
         for (Iterator iter = self.iterator(); iter.hasNext();) {
-            groupCurrentElement(closure, answer, iter);
-        }
+	    Object element = iter.next();
+	    Object value = closure.call(element);
+	    groupAnswer(answer, element, value);
+	}
         return answer;
     }
 
@@ -1225,33 +1224,30 @@ public class DefaultGroovyMethods {
      * @param closure  a closure mapping entries on keys
      * @return         a new Map grouped by keys
      */
-    /* Removed for 1.0, to be discussed for 1.1
     public static Map groupBy(Map self, Closure closure) {
         final Map answer = new HashMap();
         for (final Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
-            groupCurrentElement(closure, answer, iter);
+	    Map.Entry entry = (Map.Entry)iter.next();
+	    Object value = callClosureForMapEntry(closure, entry);//closure.call(element);
+	    groupAnswer(answer, entry, value);
         }
         return answer;
     }
-    */
 
     /**
-     * Groups the current element of the iterator as determined
-     * by the mapping closure.
+     * Groups the current element according to the value
      *
-     * @param closure  a closure mapping the current entry on a key
      * @param answer   the map containing the results
-     * @param iter     the iterator from which the current element stems
+     * @param element  the element to be placed
+     * @param value    the value according to which the element will be placed
      */
-    private static void groupCurrentElement(Closure closure, Map answer, Iterator iter) {
-	Object element = iter.next();
-	Object value = closure.call(element);
+    protected static void groupAnswer(final Map answer, Object element, Object value) {
 	if (answer.containsKey(value)) {
-	    ((List) answer.get(value)).add(element);
+	((List) answer.get(value)).add(element);
 	} else {
-	    ArrayList groupedElements = new ArrayList();
-	    groupedElements.add(element);
-	    answer.put(value, groupedElements);
+	ArrayList groupedElements = new ArrayList();
+	groupedElements.add(element);
+	answer.put(value, groupedElements);
 	}
     }
 
