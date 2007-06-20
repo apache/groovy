@@ -89,6 +89,8 @@ public abstract class Script extends GroovyObjectSupport {
     public void setProperty(String property, Object newValue) {
         if ("binding".equals(property))
             setBinding((Binding) newValue);
+        else if("metaClass".equals(property))
+            setMetaClass((MetaClass)newValue);
         else
             binding.setVariable(property, newValue);
     }
