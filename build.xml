@@ -92,13 +92,6 @@ $Date$
     <target name="compileTest" depends="compileMain" unless="skipTests"
             description="Compile the Java and Groovy code in the test source.">
         <mkdir dir="${testClassesDirectory}"/>
-        <javac srcdir="${testSourceDirectory}" destdir="${testClassesDirectory}" includeantruntime="false" debug="yes"
-               source="1.4" target="1.4" fork="true" excludes="UberTestCase*.java">
-            <classpath>
-                <path refid="testPath"/>
-                <pathelement path="${mainClassesDirectory}"/>
-            </classpath>
-        </javac>
 
         <!--
 
@@ -122,27 +115,16 @@ $Date$
             </classpath>
             <arg value="${testClassesDirectory}"/>
             <arg value="${testSourceDirectory}"/>
+            <arg value="-j"/>
+            <arg value="-Jsource=1.4"/>
+            <arg value="-Jtarget=1.4"/>
         </java>
-        <javac srcdir="${testSourceDirectory}" destdir="${testClassesDirectory}" debug="yes"
-               source="1.4" target="1.4" classpathref="testPath" includes="UberTestCase*.java">
-            <classpath>
-                <pathelement path="${mainClassesDirectory}"/>
-                <path refid="testPath"/>
-            </classpath>
-        </javac>
     </target>
 
     <target name="compileExamples" depends="compileMain" unless="skipExamples"
             description="Compile the Java and Groovy code in the examples source directory.">
         <mkdir dir="${examplesClassesDirectory}"/>
-        <javac srcdir="${examplesSourceDirectory}" destdir="${examplesClassesDirectory}" includeantruntime="false"
-               debug="yes" source="1.4" target="1.4" fork="true">
-            <classpath>
-                <pathelement path="${mainClassesDirectory}"/>
-                <path refid="compilePath"/>
-                <path refid="examplesPath"/>
-            </classpath>
-        </javac>
+
         <echo message="Groovyc of example code."/>
         <java classname="org.codehaus.groovy.ant.Groovyc" fork="true">
             <classpath>
@@ -153,6 +135,9 @@ $Date$
             </classpath>
             <arg value="${examplesClassesDirectory}"/>
             <arg value="${examplesSourceDirectory}"/>
+            <arg value="-j"/>
+            <arg value="-Jsource=1.4"/>
+            <arg value="-Jtarget=1.4"/>
         </java>
     </target>
 
