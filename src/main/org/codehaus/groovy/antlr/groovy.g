@@ -3525,7 +3525,8 @@ options {
     :
         (
             ~('*'|'/'|'$'|'\\'|'\n'|'\r'|'\uffff')
-        |   '\\' ~('\n'|'\r')   // most backslashes are passed through unchanged
+        |   { LA(2)!='/' && LA(2)!='\n' && LA(2)!='\r' }? '\\' // backslash only escapes '/' and EOL
+        |   '\\' '/'                   { $setText('/'); }
         |!  '\\' ONE_NL[false]         { $setText('\n'); }     // always normalize to newline
         )
         ('*')*      // stars handled specially to avoid ambig. on /**/

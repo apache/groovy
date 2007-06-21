@@ -113,8 +113,8 @@ y''', 3, 'x\ny');
     void testRegexpStringLiterals() {
         assert "foo" == /foo/
         assert '\\$$' == /\$$/
-        assert "\\/\\*" == /\/\*/
-        // Backslash before newline disappears (all others are preserved):
+        // Backslash before newline or slash disappears (all others are preserved):
+        assert "/\\*" == /\/\*/
         assert "\n" == /\
 /
     }
