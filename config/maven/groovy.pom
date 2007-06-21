@@ -163,7 +163,7 @@
             <email>tug@wilson.co.uk</email>
             <organization>The Wilson Partnership</organization>
             <roles>
-                <role>Developer</role>
+                <role>Developer Emeritus</role>
             </roles>
         </developer>
         <developer>
@@ -232,8 +232,8 @@
         <developer>
             <name>Russel Winder</name>
             <id>russel</id>
-            <email>russel@itzinteractive.com</email>
-            <organization>It'z Interactive Ltd</organization>
+            <email>russel@russel.org.uk</email>
+            <organization>Concertant LLP &amp; It'z Interactive Ltd</organization>
             <roles>
                 <role>Developer</role>
             </roles>

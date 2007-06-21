@@ -73,7 +73,7 @@ public class GroovyScriptEngine implements ResourceConnector {
     public static void main(String[] urls) throws Exception {
         URL[] roots = new URL[urls.length];
         for (int i = 0; i < roots.length; i++) {
-            roots[i] = new File(urls[i]).toURL();
+          roots[i] = new File(urls[i]).toURI().toURL();
         }
         GroovyScriptEngine gse = new GroovyScriptEngine(roots);
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
@@ -216,7 +216,7 @@ public class GroovyScriptEngine implements ResourceConnector {
     public GroovyScriptEngine(String[] urls) throws IOException {
         roots = new URL[urls.length];
         for (int i = 0; i < roots.length; i++) {
-            roots[i] = new File(urls[i]).toURL();
+          roots[i] = new File(urls[i]).toURI().toURL();
         }
         this.rc = this;
         initGroovyLoader (getClass().getClassLoader ());
@@ -229,7 +229,7 @@ public class GroovyScriptEngine implements ResourceConnector {
 
     public GroovyScriptEngine(String url) throws IOException {
         roots = new URL[1];
-        roots[0] = new File(url).toURL();
+        roots[0] = new File(url).toURI().toURL();
         this.rc = this;
         initGroovyLoader (getClass().getClassLoader ());
     }
