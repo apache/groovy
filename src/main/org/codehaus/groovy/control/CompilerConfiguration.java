@@ -53,6 +53,7 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.StringTokenizer;
 
@@ -141,6 +142,11 @@ public class CompilerConfiguration {
      * sets the bytecode version target
      */
     private String targetBytecode;
+
+    /**
+     * options for joint compilation (null by default == no joint compilation)
+     */
+    private Map jointCompilationOptions;
     
     /**
      * Sets the Flags to defaults.
@@ -620,5 +626,13 @@ public class CompilerConfiguration {
         }
         
         return PRE_JDK5;
+    }
+    
+    public Map getJointCompilationOptions() {
+        return jointCompilationOptions;
+    }
+    
+    public void setJointCompilationOptions(Map options) {
+        jointCompilationOptions = options;
     }
 }

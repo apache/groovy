@@ -50,6 +50,8 @@ import groovy.util.GroovyTestCase;
 import org.codehaus.groovy.control.CompilerConfiguration;
 
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Tests the compiling & running of GroovyTestCases
@@ -81,10 +83,13 @@ public class FileSystemCompilerTest extends GroovyTestCase {
     protected void setUp() throws Exception {
         File dir = new File("target/test-generated-classes");
         dir.mkdirs();
+        Map options = new HashMap();
+        options.put("stubDir", dir);
 
         CompilerConfiguration configuration = new CompilerConfiguration();
         configuration.setTargetDirectory(dir);
         configuration.setVerbose(dumpClass);
+        configuration.setJointCompilationOptions(options);
 
         compiler = new FileSystemCompiler(configuration);
     }

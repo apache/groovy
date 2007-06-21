@@ -46,6 +46,9 @@
 package org.codehaus.groovy.tools;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.OptionBuilder;
@@ -54,15 +57,18 @@ import org.apache.commons.cli.PosixParser;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ConfigurationException;
+import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit;
 
 public class FileSystemCompiler  
 {
     private CompilationUnit unit;
 
-    
-    public FileSystemCompiler( CompilerConfiguration configuration ) throws ConfigurationException
-    {
-        this.unit = new CompilationUnit( configuration );
+    public FileSystemCompiler( CompilerConfiguration configuration) throws ConfigurationException {
+        if (configuration.getJointCompilationOptions()!=null) {
+            this.unit = new JavaAwareCompilationUnit(configuration);
+        } else {
+            this.unit = new CompilationUnit(configuration);
+        }
     }
 
     
@@ -91,6 +97,7 @@ public class FileSystemCompiler
         System.err.println("  --version                 Print the verion");
         System.err.println("  --help                    Print a synopsis of standard options");
         System.err.println("  --exception               Print stack trace on error");
+        System.err.println("  --jointCompilation        attach javac compiler to compile .java files");
         System.err.println("");
     }
 
@@ -118,16 +125,7 @@ public class FileSystemCompiler
             {
                 System.err.println( "error: file not readable: " + file );
                 ++errors;
-            } else {
-                String name = file.getName();
-                int p = name.lastIndexOf(".");
-                if ( p++ >= 0) {
-                    if (name.substring(p).equals("java")) {
-                        System.err.println( "error: cannot compile file with .java extension: " + file );
-                        ++errors;
-                    }
-                }
-            }
+            } 
         }
 
         return errors;
@@ -143,6 +141,7 @@ public class FileSystemCompiler
     public static void main( String[] args )
     {
         boolean displayStackTraceOnError = false;
+        boolean jointCompilation = false;
         
         try
         {
@@ -153,13 +152,25 @@ public class FileSystemCompiler
     
             options.addOption(OptionBuilder.withLongOpt("classpath").hasArg().withArgName("classpath").create());
             options.addOption(OptionBuilder.withLongOpt("sourcepath").hasArg().withArgName("sourcepath").create());
+            options.addOption(OptionBuilder.withLongOpt("temp").hasArg().withArgName("temp").create());
             options.addOption(OptionBuilder.withLongOpt("encoding").hasArg().withArgName("encoding").create());
             options.addOption(OptionBuilder.hasArg().create('d'));
 //            options.addOption(OptionBuilder.withLongOpt("strict").create('s'));
             options.addOption(OptionBuilder.withLongOpt("help").create('h'));
             options.addOption(OptionBuilder.withLongOpt("version").create('v'));
             options.addOption(OptionBuilder.withLongOpt("exception").create('e'));
+            options.addOption(OptionBuilder.withLongOpt("jointCompilation").create('j'));
     
+            options.addOption(
+                    OptionBuilder.withArgName( "property=value" )
+                    .withValueSeparator()
+                    .hasArgs(2)
+                    .create( "J" ));
+            options.addOption(
+                    OptionBuilder.withArgName( "property=value" )
+                    .hasArg()
+                    .create( "F" ));
+            
             PosixParser cliParser = new PosixParser();
     
             CommandLine cli = cliParser.parse(options, args);
@@ -197,6 +208,19 @@ public class FileSystemCompiler
 
             displayStackTraceOnError = cli.hasOption('e');
             
+            // joint compilation parameters
+            jointCompilation = cli.hasOption('j');
+            if (jointCompilation) {
+                Map compilerOptions =  new HashMap();
+                
+                String[] opts = cli.getOptionValues("J");
+                compilerOptions.put("namedValues", opts);
+                
+                opts = cli.getOptionValues("F");
+                compilerOptions.put("flags", opts);
+                
+                configuration.setJointCompilationOptions(compilerOptions);
+            }            
             
             //
             // Load the file name list
@@ -210,13 +234,16 @@ public class FileSystemCompiler
     
             int errors = checkFiles( filenames );
     
-            
             //
             // Create and start the compiler
             
             if( errors == 0 ) 
             {
-                FileSystemCompiler compiler = new FileSystemCompiler( configuration );
+                if (jointCompilation) {
+                    File tmpDir = createTempDir();
+                    configuration.getJointCompilationOptions().put("stubDir",tmpDir);
+                }
+                FileSystemCompiler compiler = new FileSystemCompiler(configuration);
                 compiler.compile( filenames );
             }
         }
@@ -225,5 +252,15 @@ public class FileSystemCompiler
             new ErrorReporter( e, displayStackTraceOnError ).write( System.err );
         }
     }
+    
+
+
+    private static File createTempDir() throws IOException {
+        File tempFile = File.createTempFile("generated-", "java-source");
+        tempFile.delete();
+        tempFile.mkdirs();
+        return tempFile;
+    }
+    
     
 }

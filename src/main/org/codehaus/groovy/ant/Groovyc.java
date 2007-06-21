@@ -48,12 +48,20 @@ package org.codehaus.groovy.ant;
 import groovy.lang.GroovyClassLoader;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.charset.Charset;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.OptionBuilder;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+import org.apache.commons.cli.PosixParser;
 import org.apache.tools.ant.AntClassLoader;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.DirectoryScanner;
@@ -67,6 +75,7 @@ import org.apache.tools.ant.util.SourceFileScanner;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.tools.ErrorReporter;
+import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit;
 
 
 /**
@@ -77,6 +86,7 @@ import org.codehaus.groovy.tools.ErrorReporter;
  * <li>destdir
  * <li>classpath
  * <li>stacktrace
+ * <li>jointCompilation
  * </ul>
  * Of these arguments, the <b>sourcedir</b> and <b>destdir</b> are required.
  * <p>
@@ -102,8 +112,19 @@ public class Groovyc extends MatchingTask {
     protected boolean failOnError = true;
     protected boolean listFiles = false;
     protected File[] compileList = new File[0];
+    
+    private boolean jointCompilation;
 
     public static void main(String[] args) {
+
+        Project project = new Project();
+        project.addBuildListener(new AnsiColorLogger());
+        
+        Groovyc compiler = new Groovyc();
+        compiler.setProject(project);
+
+        args = compiler.evalCompilerFlags(args);
+        
         String dest = ".";
         String src = ".";
         boolean listFiles = false;
@@ -119,16 +140,54 @@ public class Groovyc extends MatchingTask {
                 listFiles = true;
             }
         }
-
-        Project project = new Project();
-        project.addBuildListener(new AnsiColorLogger());
-
-        Groovyc compiler = new Groovyc();
-        compiler.setProject(project);
+        
         compiler.setSrcdir(new Path(project, src));
         compiler.setDestdir(project.resolveFile(dest));
         compiler.setListfiles(listFiles);
+        
         compiler.execute();
+    }
+
+    private String[] evalCompilerFlags(String[] args) {
+        //
+        // Parse the command line
+        
+        Options options = new Options();
+        options.addOption(
+                OptionBuilder.withArgName( "property=value" )
+                .withValueSeparator('=')
+                .hasArgs(2)
+                .create( "J" ));
+        options.addOption(
+                OptionBuilder.withArgName( "property=value" )
+                .hasArg()
+                .create( "F" ));
+        options.addOption(OptionBuilder.withLongOpt("jointCompilation").create('j'));
+        
+        PosixParser cliParser = new PosixParser();
+
+        CommandLine cli;
+        try {
+            cli = cliParser.parse(options, args);
+        } catch (ParseException e) {
+            throw new BuildException(e);
+        }
+        
+        jointCompilation = cli.hasOption('j');
+        if (jointCompilation) {
+            Map compilerOptions =  new HashMap();
+            
+            String[] opts = cli.getOptionValues("J");
+            compilerOptions.put("namedValues", opts);
+            
+            opts = cli.getOptionValues("F");
+            compilerOptions.put("flags", opts);
+            
+            compilerOptions.put("stubDir", createTempDir());    
+            configuration.setJointCompilationOptions(compilerOptions);
+        }            
+        
+        return cli.getArgs();
     }
 
     public Groovyc() {
@@ -394,7 +453,17 @@ public class Groovyc extends MatchingTask {
         m.setTo("*.class");
         SourceFileScanner sfs = new SourceFileScanner(this);
         File[] newFiles = sfs.restrictAsFiles(files, srcDir, destDir, m);
-
+        addToCompileList(newFiles);
+        
+        if (jointCompilation) {
+            m.setFrom("*.java");
+            m.setTo("*.class");
+            newFiles = sfs.restrictAsFiles(files, srcDir, destDir, m);
+            addToCompileList(newFiles);
+        }
+    }
+    
+    private void addToCompileList(File[] newFiles) {
         if (newFiles.length > 0) {
             File[] newCompileList = new File[compileList.length + newFiles.length];
             System.arraycopy(compileList, 0, newCompileList, 0, compileList.length);
@@ -463,7 +532,13 @@ public class Groovyc extends MatchingTask {
                     configuration.setSourceEncoding(encoding);
                 }
 
-                CompilationUnit unit = new CompilationUnit(configuration, null, buildClassLoaderFor());
+                CompilationUnit unit;
+                if (jointCompilation) {
+                    unit = new JavaAwareCompilationUnit(configuration, buildClassLoaderFor());
+                } else {
+                    unit = new CompilationUnit(configuration, null, buildClassLoaderFor());
+                }
+
                 unit.addSources(compileList);
                 unit.compile();
             }
@@ -482,6 +557,18 @@ public class Groovyc extends MatchingTask {
 
             }
         }
+    }
+    
+    private static File createTempDir()  {
+        File tempFile;
+        try {
+            tempFile = File.createTempFile("generated-", "java-source");
+            tempFile.delete();
+            tempFile.mkdirs();
+        } catch (IOException e) {
+            throw new BuildException(e);
+        }
+        return tempFile;
     }
 
     private GroovyClassLoader buildClassLoaderFor() {
@@ -509,6 +596,11 @@ public class Groovyc extends MatchingTask {
             }
         }
         return new GroovyClassLoader(parent, configuration);
+    }
+    
+    public void setJointCompilationOptions(String options) {
+        String[] args = options.split("\\s+");
+        evalCompilerFlags(args);
     }
 
 }
