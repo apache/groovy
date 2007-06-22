@@ -140,7 +140,7 @@ public class RootLoader extends URLClassLoader {
         if (c!=null) return c;
      
         try {
-            c = findClass(name);
+            c = oldFindClass(name);
         } catch (ClassNotFoundException cnfe) {}
         if (c==null) c= super.loadClass(name,resolve);
 
@@ -163,5 +163,13 @@ public class RootLoader extends URLClassLoader {
      */
     public void addURL(URL url) {
         super.addURL(url);
+    }
+    
+    private Class oldFindClass(String name) throws ClassNotFoundException {
+        return super.findClass(name);
+    }
+    
+    protected Class findClass(String name) throws ClassNotFoundException {
+        throw new ClassNotFoundException(name);
     }
 }
