@@ -790,7 +790,7 @@ public class ScriptBytecodeAdapter {
             } else if (value.getClass().isArray()) {
                 ret.addAll(DefaultTypeTransformation.primitiveArrayToList(value));
             } else {
-                throw new IllegalArgumentException("connot spread the type " + value.getClass().getName() + " with value " + value);
+                throw new IllegalArgumentException("cannot spread the type " + value.getClass().getName() + " with value " + value);
             }
             spreadPos++;
         }
