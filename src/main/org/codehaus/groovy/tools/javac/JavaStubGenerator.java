@@ -13,9 +13,7 @@ import org.objectweb.asm.Opcodes;
 
 import groovy.lang.GroovyObjectSupport;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.util.*;
 
 public class JavaStubGenerator {
@@ -40,50 +38,63 @@ public class JavaStubGenerator {
         mkdirs(outputPath,fileName);
         toCompile.add(fileName);
 
-        PrintWriter out = new PrintWriter(new File(outputPath, fileName + ".java"));
+        File file = new File(outputPath, fileName + ".java");
+        FileOutputStream fos = new FileOutputStream(file);
+        PrintWriter out = new PrintWriter(fos);
 
-        String packageName = classNode.getPackageName();
-        if (packageName != null) {
-            out.println("package " + packageName + ";\n");
-        }
+        try {
+            String packageName = classNode.getPackageName();
+            if (packageName != null) {
+                out.println("package " + packageName + ";\n");
+            }
 
-        genImports(classNode, out);
+            genImports(classNode, out);
 
-        boolean isInterface = classNode.isInterface();
+            boolean isInterface = classNode.isInterface();
 
-        printModifiers(out, classNode.getModifiers()
-                & ~(isInterface ? Opcodes.ACC_ABSTRACT : 0));
-        out.println((isInterface ? "interface " : "class ")
-                + classNode.getNameWithoutPackage());
+            printModifiers(out, classNode.getModifiers()
+                    & ~(isInterface ? Opcodes.ACC_ABSTRACT : 0));
+            out.println((isInterface ? "interface " : "class ")
+                    + classNode.getNameWithoutPackage());
 
-        ClassNode superClass = classNode.getSuperClass();
+            ClassNode superClass = classNode.getSuperClass();
 
-        if (!isInterface) {
-            if (superClass.equals(ClassHelper.OBJECT_TYPE))
-                superClass = ClassHelper.make(GroovyObjectSupport.class);
-            out.println("  extends " + superClass.getName());
-        } else {
-            if (!superClass.equals(ClassHelper.OBJECT_TYPE))
+            if (!isInterface) {
+                if (superClass.equals(ClassHelper.OBJECT_TYPE))
+                    superClass = ClassHelper.make(GroovyObjectSupport.class);
                 out.println("  extends " + superClass.getName());
+            } else {
+                if (!superClass.equals(ClassHelper.OBJECT_TYPE))
+                    out.println("  extends " + superClass.getName());
+            }
+
+            ClassNode[] interfaces = classNode.getInterfaces();
+            if (interfaces != null && interfaces.length > 0) {
+                out.println("  implements");
+                for (int i = 0; i < interfaces.length - 1; ++i)
+                    out.println("    " + interfaces[i].getName() + ",");
+                out.println("    "
+                        + interfaces[interfaces.length - 1].getName());
+            }
+            out.println("{");
+
+            genMethods(classNode, out);
+            genFields(classNode, out);
+            genProps(classNode, out);
+
+            out.println("}");
+        } finally {
+            try {
+                out.close();
+            } catch (Exception e) {
+                // ignore
+            }
+            try {
+                fos.close();
+            } catch (IOException e) {
+                // ignore
+            }
         }
-
-        ClassNode[] interfaces = classNode.getInterfaces();
-        if (interfaces != null && interfaces.length > 0) {
-            out.println("  implements");
-            for (int i = 0; i < interfaces.length - 1; ++i)
-                out.println("    " + interfaces[i].getName() + ",");
-            out.println("    "
-                    + interfaces[interfaces.length - 1].getName());
-        }
-        out.println("{");
-
-        genMethods(classNode, out);
-        genFields(classNode, out);
-        genProps(classNode, out);
-
-        out.println("}");
-
-        out.close();
     }
 
     private void genMethods(ClassNode classNode, PrintWriter out) {
