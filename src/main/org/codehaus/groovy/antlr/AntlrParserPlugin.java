@@ -1050,7 +1050,10 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         for (node = node.getNextSibling(); isType(CASE_GROUP, node); node = node.getNextSibling()) {
             AST child = node.getFirstChild();
             if (isType(LITERAL_case, child)) {
-                list.addAll(caseStatements(child));
+                List cases = new LinkedList();
+                // default statement can be grouped with previous case
+                defaultStatement = caseStatements(child, cases);
+                list.addAll(cases);
             } else {
                 defaultStatement = statement(child.getNextSibling());
             }
@@ -1063,19 +1066,24 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         return switchStatement;
     }
 
-    protected List caseStatements(AST node) {
+    protected Statement caseStatements(AST node, List cases) {
         List expressions = new LinkedList();
         Statement statement = EmptyStatement.INSTANCE;
+        Statement defaultStatement = EmptyStatement.INSTANCE;
         AST nextSibling = node;
         do {
             Expression expression = expression(nextSibling.getFirstChild());
             expressions.add(expression);
             nextSibling = nextSibling.getNextSibling();
         } while (isType(LITERAL_case, nextSibling));
-        if (!isType(LITERAL_default, nextSibling) && nextSibling != null) {
-             statement = statement(nextSibling);
+        if (nextSibling != null) {
+            if (isType(LITERAL_default, nextSibling)) {
+                defaultStatement = statement(nextSibling.getNextSibling());
+                statement = EmptyStatement.INSTANCE;
+            } else {
+                statement = statement(nextSibling);
+            }
         }
-        LinkedList cases = new LinkedList();
         for (Iterator iterator = expressions.iterator(); iterator.hasNext();) {
             Expression expr = (Expression) iterator.next();
             Statement stmt;
@@ -1087,7 +1095,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             configureAST(stmt,node);
             cases.add(stmt);
         }
-        return cases;
+        return defaultStatement;
     }
 
     protected Statement synchronizedStatement(AST syncNode) {
