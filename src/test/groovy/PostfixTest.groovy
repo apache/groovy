@@ -29,4 +29,15 @@ class PostfixTest extends GroovyTestCase {
         
         assert x == "bbd"
     }
+    
+    
+    void testArrayPostfix() {
+        int[] i = [1]
+        
+        def y = i[0]++
+        
+        assert y == 1
+        assert i[0]++ == 2
+        assert i[0] == 3
+    }
 }

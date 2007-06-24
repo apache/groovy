@@ -34,4 +34,15 @@ class PrefixTest extends GroovyTestCase {
         
         assert x == "bbb"
     }
+    
+    void testArrayPrefix() {
+        int[] i = [1]
+        
+        ++i[0]
+        assert i[0] == 2
+        
+        --i[0]
+        --i[0]
+        assert i[0] == 0
+    }
 }

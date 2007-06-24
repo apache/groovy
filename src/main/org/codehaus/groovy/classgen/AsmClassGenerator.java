@@ -3336,20 +3336,48 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
-    protected void evaluatePrefixMethod(String method, Expression expression) {
+    private void execMethodAndStoreForSubscriptOperator(String method, Expression expression) {
         // execute method
         makeCall(
                 expression,
                 new ConstantExpression(method),
-                MethodCallExpression.NO_ARGUMENTS, invokeMethod,
-                false, false, false);
-
-        // store 
-        leftHandExpression = true;
-        expression.visit(this);
+                MethodCallExpression.NO_ARGUMENTS,
+                invokeMethod,false,false,false);
+        
+        // we need special code for arrays to store the result
+        boolean handled = false;
+        if (expression instanceof BinaryExpression) {
+            BinaryExpression be = (BinaryExpression) expression;
+            if (be.getOperation().getType()==Types.LEFT_SQUARE_BRACKET) {
+                cv.visitInsn(DUP);
+                final int resultIdx = compileStack.defineTemporaryVariable("postfix_" + method, true);
+                BytecodeExpression result = new BytecodeExpression() {
+                    public void visit(GroovyCodeVisitor visitor) {
+                        cv.visitVarInsn(ALOAD, resultIdx);
+                    }
+                };
+                TupleExpression args = new ArgumentListExpression();
+                args.addExpression(be.getRightExpression());
+                args.addExpression(result);
+                makeCall(
+                        be.getLeftExpression(), new ConstantExpression("putAt"),
+                        args,
+                        invokeMethod,false,false,false);
+                handled = true;
+            } 
+        }
+        if (!handled) {
+            leftHandExpression = true;
+            expression.visit(this);
+            leftHandExpression = false;
+        }
+    }
+    
+    protected void evaluatePrefixMethod(String method, Expression expression) {
+        // execute Method
+        execMethodAndStoreForSubscriptOperator(method,expression);
 
         // reload new value
-        leftHandExpression = false;
         expression.visit(this);
     }
 
@@ -3360,16 +3388,8 @@ public class AsmClassGenerator extends ClassGenerator {
         // save value for later
         int tempIdx = compileStack.defineTemporaryVariable("postfix_" + method, true);
 
-        //execute method
-        makeCall(
-                expression, new ConstantExpression(method),
-                MethodCallExpression.NO_ARGUMENTS,
-                invokeMethod, false, false, false);
-
-        // store
-        leftHandExpression = true;
-        expression.visit(this);
-        leftHandExpression = false;
+        // execute Method
+        execMethodAndStoreForSubscriptOperator(method,expression);
 
         //reload saved value
         mv.visitVarInsn(ALOAD, tempIdx);
