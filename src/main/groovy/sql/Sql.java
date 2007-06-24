@@ -429,6 +429,16 @@ public class Sql {
      * result set
      */
     public void eachRow(String sql, Closure closure) throws SQLException {
+        eachRow(sql,(Closure) null,closure);
+    }
+
+    /**
+     * Performs the given SQL query calling closures for metadata and each row
+     * @param sql the sql statement
+     * @param metaClosure called for meta data (only once after sql execution)
+     * @param rowClosure called for each row with a GroovyResultSet
+     */
+    public void eachRow(String sql, Closure metaClosure, Closure rowClosure) throws SQLException {
         Connection connection = createConnection();
         Statement statement = connection.createStatement();
         configure(statement);
@@ -436,17 +446,17 @@ public class Sql {
         try {
             log.fine(sql);
             results = statement.executeQuery(sql);
-
+            
+            if (metaClosure!=null) metaClosure.call( results.getMetaData() );
+            
             GroovyResultSet groovyRS = new GroovyResultSetProxy(results).getImpl();
             while (groovyRS.next()) {
-                closure.call(groovyRS);
+                rowClosure.call(groovyRS);
             }
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             log.log(Level.FINE, "Failed to execute: " + sql, e);
             throw e;
-        }
-        finally {
+        } finally {
             closeResources(connection, statement, results);
         }
     }
@@ -508,34 +518,44 @@ public class Sql {
      * Performs the given SQL query and return the rows of the result set
      */
      public List rows(String sql) throws SQLException {
-        List results = new ArrayList();
-        Connection connection = createConnection();
-        Statement statement = connection.createStatement();
-        configure(statement);
-        ResultSet rs = null;
-        try {
-            log.fine(sql);
-            rs = statement.executeQuery(sql);
-            while (rs.next()) {
-                ResultSetMetaData metadata = rs.getMetaData();
-                LinkedHashMap lhm = new LinkedHashMap(metadata.getColumnCount(),1,true);
-                for(int i=1 ; i<=metadata.getColumnCount() ; i++) {
-                      lhm.put(metadata.getColumnName(i),rs.getObject(i));
-                }
-                GroovyRowResult row = new GroovyRowResult(lhm);
-                results.add(row);
-            }
-            return(results);
-        }
-        catch (SQLException e) {
-            log.log(Level.FINE, "Failed to execute: " + sql, e);
-            throw e;
-        }
-        finally {
-            closeResources(connection, statement, rs);
-        }
+        return rows(sql,(Closure) null);
     }
 
+    /**
+     * Performs the given SQL query and return the rows of the result set
+     * @param sql the SQL statement
+     * @param metaClosure called with meta data of the ResultSet
+     */
+     public List rows(String sql, Closure metaClosure) throws SQLException {
+         List results = new ArrayList();
+         Connection connection = createConnection();
+         Statement statement = connection.createStatement();
+         configure(statement);
+         ResultSet rs = null;
+         try {
+             log.fine(sql);
+             rs = statement.executeQuery(sql);
+
+             if (metaClosure!=null) metaClosure.call( rs.getMetaData() );
+
+             while (rs.next()) {
+                 ResultSetMetaData metadata = rs.getMetaData();
+                 LinkedHashMap lhm = new LinkedHashMap(metadata.getColumnCount(),1,true);
+                 for(int i=1 ; i<=metadata.getColumnCount() ; i++) {
+                     lhm.put(metadata.getColumnName(i),rs.getObject(i));
+                 }
+                 GroovyRowResult row = new GroovyRowResult(lhm);
+                 results.add(row);
+             }
+             return(results);
+         } catch (SQLException e) {
+             log.log(Level.FINE, "Failed to execute: " + sql, e);
+             throw e;
+         } finally {
+             closeResources(connection, statement, rs);
+         }
+    }
+      
     /**
      * Performs the given SQL query and return the first row of the result set
      */
