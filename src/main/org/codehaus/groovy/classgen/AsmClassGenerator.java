@@ -3349,11 +3349,11 @@ public class AsmClassGenerator extends ClassGenerator {
         if (expression instanceof BinaryExpression) {
             BinaryExpression be = (BinaryExpression) expression;
             if (be.getOperation().getType()==Types.LEFT_SQUARE_BRACKET) {
-                cv.visitInsn(DUP);
+                mv.visitInsn(DUP);
                 final int resultIdx = compileStack.defineTemporaryVariable("postfix_" + method, true);
                 BytecodeExpression result = new BytecodeExpression() {
                     public void visit(GroovyCodeVisitor visitor) {
-                        cv.visitVarInsn(ALOAD, resultIdx);
+                        mv.visitVarInsn(ALOAD, resultIdx);
                     }
                 };
                 TupleExpression args = new ArgumentListExpression();
