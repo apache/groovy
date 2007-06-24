@@ -294,6 +294,10 @@ public class DefaultTypeTransformation {
                 }
                 return answer;
             }
+        } else if (type == File.class) {
+            if (object instanceof String || object instanceof GString) {
+                return new File(object.toString());
+            }
         }
         Object[] args = null;
         if (object instanceof Collection) {
