@@ -83,6 +83,7 @@ public class CompilerTest extends GroovyTestCase {
         dir.mkdirs();
 
         CompilerConfiguration config = new CompilerConfiguration();
+        config.setTargetDirectory(dir);
         config.setDebug(dumpClass);
 
         compiler = new Compiler(config);
