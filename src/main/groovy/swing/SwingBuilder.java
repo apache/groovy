@@ -18,7 +18,6 @@ Groovy community. See the NOTICE.txt file distributed with this work for additio
  */
 package groovy.swing;
 
-import groovy.lang.Closure;
 import groovy.lang.GroovyRuntimeException;
 import groovy.model.DefaultTableModel;
 
@@ -52,6 +51,7 @@ import java.awt.CardLayout;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.FlowLayout;
+import java.awt.GraphicsEnvironment;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
@@ -121,7 +121,6 @@ import javax.swing.table.TableColumn;
 import javax.swing.table.TableModel;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.runtime.MethodClosure;
 
 /**
  * A helper class for creating Swing widgets using GroovyMarkup
@@ -137,9 +136,12 @@ public class SwingBuilder extends BuilderSupport {
     private Map widgets = new HashMap();
     // tracks all containing windows, for auto-owned dialogs
     private LinkedList containingWindows = new LinkedList();
+    private boolean headless = false;
+    
     
     public SwingBuilder() {
         registerWidgets();
+        headless = GraphicsEnvironment.isHeadless();
     }
     
     public Object getProperty(String name) {
@@ -543,7 +545,7 @@ public class SwingBuilder extends BuilderSupport {
     }
 
     public Object invokeMethod(final String methodName, final Object args) {
-        if (SwingUtilities.isEventDispatchThread()){
+        if (headless || SwingUtilities.isEventDispatchThread()){
             return super.invokeMethod(methodName, args);
         } else {
             final Object[] ret = new Object[1];
