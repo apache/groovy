@@ -6945,6 +6945,13 @@ public class DefaultGroovyMethods {
         return answer;
     }
 
+    public static Object asType(GString self, Class c) {
+        if (c == File.class) {
+            return new File(self.toString());
+        }
+        return asType((Object) self, c);
+    }
+
     public static Object asType(String self, Class c) {
         if (c == List.class) {
             return toList(self);
@@ -6958,6 +6965,8 @@ public class DefaultGroovyMethods {
             return toDouble(self);
         } else if (c == Float.class) {
             return toFloat(self);
+        } else if (c == File.class) {
+            return new File(self);
         }
         return asType((Object) self, c);
     }
