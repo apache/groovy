@@ -472,7 +472,7 @@ public class MetaClassHelper {
                  argument = DefaultTypeTransformation.convertToFloatArray(argument);
              } else if (paramComponent == double.class &&
                         (argumentClass == Double[].class || argumentClass==Float[].class  
-                         || BigDecimal.class.isAssignableFrom(argumentClass)))
+                         || BigDecimal[].class.isAssignableFrom(argumentClass)))
              {
                  argument = DefaultTypeTransformation.convertToDoubleArray(argument);
              }

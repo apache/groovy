@@ -13,6 +13,25 @@ class VArgsTest extends GroovyTestCase {
     assert primitiveMethod(1,1)==2
     assert primitiveMethod(1,1,1)==13 
     assert primitiveMethod([1,2,2,2] as int[])==14
+  }  
+
+  def doubleMethod(double[] id) {20+id.length}
+    
+  void testDoubleMethod() {
+    // with BigDecimal
+    assert doubleMethod()==20
+    assert doubleMethod(1.0)==21
+    assert doubleMethod(1.0,1.0)==22
+    assert doubleMethod(1.0,1.0,1.0)==23 
+    assert doubleMethod([1,2,2,2] as BigDecimal[])==24
+    
+    // with double
+    assert doubleMethod()==20
+    assert doubleMethod(1.0d)==21
+    assert doubleMethod(1.0d,1.0d)==22
+    assert doubleMethod(1.0d,1.0d,1.0d)==23 
+    assert doubleMethod([1,2,2,2] as double[])==24
+    
   }
   
   def objectMethod(){0}
