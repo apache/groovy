@@ -171,11 +171,21 @@ public class CompilerConfiguration {
         //
         // Try for better defaults, ignore errors.
 
+        String encoding = null;
         try {
-            setSourceEncoding(System.getProperty("file.encoding", "US-ASCII"));
+            //
+            // Source file encoding
+            encoding = System.getProperty("groovy.source.encoding");
+        } catch (Exception e) {
+            //
+            // Try for better defaults, ignore errors.
+            try {
+                encoding = System.getProperty("file.encoding", "US-ASCII");
+            } catch (Exception ee) {
+            }
         }
-        catch (Exception e) {
-        }
+        setSourceEncoding(encoding);
+
         try {
             setOutput(new PrintWriter(System.err));
         }
@@ -376,6 +386,7 @@ public class CompilerConfiguration {
      * Sets the encoding to be used when reading source files.
      */
     public void setSourceEncoding(String encoding) {
+        if (encoding == null) encoding = "US-ASCII";
         this.sourceEncoding = encoding;
     }
 
