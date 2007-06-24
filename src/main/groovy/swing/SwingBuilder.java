@@ -18,6 +18,8 @@ Groovy community. See the NOTICE.txt file distributed with this work for additio
  */
 package groovy.swing;
 
+import groovy.lang.Closure;
+import groovy.lang.GroovyRuntimeException;
 import groovy.model.DefaultTableModel;
 
 import groovy.swing.factory.ActionFactory;
@@ -56,6 +58,7 @@ import java.awt.GridLayout;
 import java.awt.LayoutManager;
 import java.awt.Window;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -113,10 +116,12 @@ import javax.swing.SpinnerDateModel;
 import javax.swing.SpinnerListModel;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SpringLayout;
+import javax.swing.SwingUtilities;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableModel;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.MethodClosure;
 
 /**
  * A helper class for creating Swing widgets using GroovyMarkup
@@ -537,4 +542,24 @@ public class SwingBuilder extends BuilderSupport {
         }
     }
 
+    public Object invokeMethod(final String methodName, final Object args) {
+        if (SwingUtilities.isEventDispatchThread()){
+            return super.invokeMethod(methodName, args);
+        } else {
+            final Object[] ret = new Object[1];
+            Runnable run = new Runnable(){
+                public void run() {
+                    ret[0] = SwingBuilder.super.invokeMethod(methodName,args);
+                }
+            };
+            try {
+                SwingUtilities.invokeAndWait(run);
+            } catch (InterruptedException e) {
+                throw new GroovyRuntimeException("interrupted swing interaction",e);
+            } catch (InvocationTargetException e) {
+                throw new GroovyRuntimeException("exception in event dispatch thread",e);
+            }
+            return ret[0];
+        }
+    }
 }
