@@ -451,6 +451,7 @@ public class CompileStack implements Opcodes {
         int index = currentVariableIndex;
         if (methodParameterUsedInClosure) {
             index = localVariableOffset++;
+            type = ClassHelper.getWrapper(type);
         }
         Variable answer = new Variable(index, type, name);
         usedVariables.add(answer);
@@ -480,15 +481,15 @@ public class CompileStack implements Opcodes {
         for (int i = 0; i < paras.length; i++) {
             String name = paras[i].getName();
             Variable answer;
+            ClassNode type = paras[i].getType();
             if (paras[i].isClosureSharedVariable()) {
-                answer = defineVar(name, ClassHelper.getWrapper(paras[i].getType()), true);
-                ClassNode type = paras[i].getType();
+                answer = defineVar(name, type, true);
                 helper.load(type,currentVariableIndex);
                 helper.box(type);
                 createReference(answer);
                 hasHolder = true;
             } else {
-                answer = defineVar(name,paras[i].getType(),false);
+                answer = defineVar(name,type,false);
             }
             answer.setStartLabel(startLabel);
             stackVariables.put(name, answer);

@@ -31,6 +31,10 @@ class MethodParameterAccessWithinClosureTest extends GroovyTestCase {
         assert null == vendor4()
     }
     
+    void testDoubleParameterAndsingleParameterUsedInClosure() {
+         assert vendor5(5.0d,2) == 7.0d
+    }
+    
     private String vendor1(cheese) {
         cheese
     }
@@ -46,5 +50,10 @@ class MethodParameterAccessWithinClosureTest extends GroovyTestCase {
     /** note: cheese is a field, that is intended **/
     private vendor4(aCheese=cheese) {
         shop.find() {it == aCheese}
+    }
+    
+    private vendor5(double a, int b) {
+        b.times {a++}
+        return a
     }
 }
