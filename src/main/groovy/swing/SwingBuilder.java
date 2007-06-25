@@ -20,107 +20,21 @@ package groovy.swing;
 
 import groovy.lang.GroovyRuntimeException;
 import groovy.model.DefaultTableModel;
-
-import groovy.swing.factory.ActionFactory;
-import groovy.swing.factory.BoxFactory;
-import groovy.swing.factory.BoxLayoutFactory;
-import groovy.swing.factory.RichActionWidgetFactory;
-import groovy.swing.factory.CollectionFactory;
-import groovy.swing.factory.ComboBoxFactory;
-import groovy.swing.factory.DialogFactory;
-import groovy.swing.factory.Factory;
-import groovy.swing.factory.FormattedTextFactory;
-import groovy.swing.factory.FrameFactory;
-import groovy.swing.factory.MapFactory;
-import groovy.swing.factory.SeparatorFactory;
-import groovy.swing.factory.SplitPaneFactory;
-import groovy.swing.factory.TableLayoutFactory;
-import groovy.swing.factory.TableModelFactory;
-import groovy.swing.factory.TextArgWidgetFactory;
-import groovy.swing.factory.WidgetFactory;
-import groovy.swing.factory.WindowFactory;
-
+import groovy.swing.factory.*;
 import groovy.swing.impl.ComponentFacade;
 import groovy.swing.impl.ContainerFacade;
 import groovy.swing.impl.Startable;
-
 import groovy.util.BuilderSupport;
+import org.codehaus.groovy.runtime.InvokerHelper;
 
-import java.awt.BorderLayout;
-import java.awt.CardLayout;
-import java.awt.Component;
-import java.awt.Container;
-import java.awt.FlowLayout;
-import java.awt.GraphicsEnvironment;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.GridLayout;
-import java.awt.LayoutManager;
-import java.awt.Window;
-
-import java.lang.reflect.InvocationTargetException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import javax.swing.AbstractButton;
-import javax.swing.Action;
-import javax.swing.ButtonGroup;
-import javax.swing.DefaultBoundedRangeModel;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JCheckBoxMenuItem;
-import javax.swing.JColorChooser;
-import javax.swing.JComponent;
-import javax.swing.JDesktopPane;
-import javax.swing.JEditorPane;
-import javax.swing.JFileChooser;
-import javax.swing.JFrame;
-import javax.swing.JInternalFrame;
-import javax.swing.JLabel;
-import javax.swing.JLayeredPane;
-import javax.swing.JList;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JPasswordField;
-import javax.swing.JPopupMenu;
-import javax.swing.JProgressBar;
-import javax.swing.JRadioButton;
-import javax.swing.JRadioButtonMenuItem;
-import javax.swing.JScrollBar;
-import javax.swing.JScrollPane;
-import javax.swing.JSlider;
-import javax.swing.JSpinner;
-import javax.swing.JSplitPane;
-import javax.swing.JTabbedPane;
-import javax.swing.JTable;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.JTextPane;
-import javax.swing.JToggleButton;
-import javax.swing.JToolBar;
-import javax.swing.JTree;
-import javax.swing.JViewport;
-import javax.swing.KeyStroke;
-import javax.swing.OverlayLayout;
-import javax.swing.RootPaneContainer;
-import javax.swing.SpinnerDateModel;
-import javax.swing.SpinnerListModel;
-import javax.swing.SpinnerNumberModel;
-import javax.swing.SpringLayout;
-import javax.swing.SwingUtilities;
+import javax.swing.*;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableModel;
-
-import org.codehaus.groovy.runtime.InvokerHelper;
+import java.awt.*;
+import java.lang.reflect.InvocationTargetException;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A helper class for creating Swing widgets using GroovyMarkup
@@ -129,7 +43,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  * @version $Revision$
  */
 public class SwingBuilder extends BuilderSupport {
-    
+
     private Logger log = Logger.getLogger(getClass().getName());
     private Map factories = new HashMap();
     private Object constraints;
@@ -137,13 +51,13 @@ public class SwingBuilder extends BuilderSupport {
     // tracks all containing windows, for auto-owned dialogs
     private LinkedList containingWindows = new LinkedList();
     private boolean headless = false;
-    
-    
+
+
     public SwingBuilder() {
         registerWidgets();
         headless = GraphicsEnvironment.isHeadless();
     }
-    
+
     public Object getProperty(String name) {
         Object widget = widgets.get(name);
         if (widget == null) {
@@ -151,14 +65,14 @@ public class SwingBuilder extends BuilderSupport {
         }
         return widget;
     }
-    
+
     protected void setParent(Object parent, Object child) {
         if (parent instanceof Collection) {
-            ((Collection)parent).add(child);
+            ((Collection) parent).add(child);
         } else if (child instanceof Action) {
             setParentForAction(parent, (Action) child);
         } else if ((child instanceof LayoutManager) && (parent instanceof Container)) {
-            Container target = getLayoutTarget((Container)parent);
+            Container target = getLayoutTarget((Container) parent);
             InvokerHelper.setProperty(target, "layout", child);
             // doesn't work, use toolTipText property
             //        } else if (child instanceof JToolTip && parent instanceof JComponent) {
@@ -187,7 +101,7 @@ public class SwingBuilder extends BuilderSupport {
             }
         }
     }
-    
+
     private void setParentForComponent(Object parent, Component component) {
         if (parent instanceof JFrame && component instanceof JMenuBar) {
             JFrame frame = (JFrame) parent;
@@ -236,7 +150,7 @@ public class SwingBuilder extends BuilderSupport {
             facade.addComponent(component);
         }
     }
-    
+
     private void setParentForAction(Object parent, Action action) {
         try {
             InvokerHelper.setProperty(parent, "action", action);
@@ -260,7 +174,7 @@ public class SwingBuilder extends BuilderSupport {
             }
         }
     }
-    
+
     public static Container getLayoutTarget(Container parent) {
         if (parent instanceof RootPaneContainer) {
             RootPaneContainer rpc = (RootPaneContainer) parent;
@@ -268,7 +182,7 @@ public class SwingBuilder extends BuilderSupport {
         }
         return parent;
     }
-    
+
     protected void nodeCompleted(Object parent, Object node) {
         // set models after the node has been completed
         if (node instanceof TableModel && parent instanceof JTable) {
@@ -276,7 +190,7 @@ public class SwingBuilder extends BuilderSupport {
             TableModel model = (TableModel) node;
             table.setModel(model);
             if (model instanceof DefaultTableModel) {
-                table.setColumnModel(((DefaultTableModel)model).getColumnModel());
+                table.setColumnModel(((DefaultTableModel) model).getColumnModel());
             }
         }
         if (node instanceof Startable) {
@@ -289,23 +203,23 @@ public class SwingBuilder extends BuilderSupport {
             }
         }
     }
-    
+
     protected Object createNode(Object name) {
         return createNode(name, Collections.EMPTY_MAP, null);
     }
-    
+
     protected Object createNode(Object name, Object value) {
         return createNode(name, Collections.EMPTY_MAP, value);
     }
-    
+
     protected Object createNode(Object name, Map attributes) {
         return createNode(name, attributes, null);
     }
-    
+
     protected Object createNode(Object name, Map attributes, Object value) {
         String widgetName = (String) attributes.remove("id");
         constraints = attributes.remove("constraints");
-        Object widget = null;
+        Object widget;
         Factory factory = (Factory) factories.get(name);
         if (factory == null) {
             log.log(Level.WARNING, "Could not find match for name: " + name);
@@ -335,7 +249,7 @@ public class SwingBuilder extends BuilderSupport {
         if (attributes.isEmpty() || (widget == null)) {
             return;
         }
-        
+
         // some special cases...
         if (attributes.containsKey("buttonGroup")) {
             Object o = attributes.get("buttonGroup");
@@ -363,7 +277,7 @@ public class SwingBuilder extends BuilderSupport {
             InvokerHelper.setProperty(widget, property, value);
         }
     }
-    
+
     public static String capitalize(String text) {
         char ch = text.charAt(0);
         if (Character.isUpperCase(ch)) {
@@ -374,7 +288,7 @@ public class SwingBuilder extends BuilderSupport {
         buffer.append(text.substring(1));
         return buffer.toString();
     }
-    
+
     protected void registerWidgets() {
         //
         // non-widget support classes
@@ -387,7 +301,7 @@ public class SwingBuilder extends BuilderSupport {
         // ulimate pass through types
         registerFactory("widget", new WidgetFactory()); //TODO prohibit child content somehow
         registerFactory("container", new WidgetFactory());
-        
+
         //
         // standalone window classes
         //
@@ -396,7 +310,7 @@ public class SwingBuilder extends BuilderSupport {
         registerFactory("frame", new FrameFactory());
         registerBeanFactory("optionPane", JOptionPane.class);
         registerFactory("window", new WindowFactory());
-        
+
         //
         // widgets
         //
@@ -440,22 +354,22 @@ public class SwingBuilder extends BuilderSupport {
         //registerBeanFactory("tooltip", JToolTip.class); // doesn't work, use toolTipText property
         registerBeanFactory("tree", JTree.class);
         registerBeanFactory("viewport", JViewport.class); // sub class?
-        
+
         //
         // MVC models
         //
         registerBeanFactory("boundedRangeModel", DefaultBoundedRangeModel.class);
-        
+
         // spinner models
         registerBeanFactory("spinnerDateModel", SpinnerDateModel.class);
         registerBeanFactory("spinnerListModel", SpinnerListModel.class);
         registerBeanFactory("spinnerNumberModel", SpinnerNumberModel.class);
-        
+
         // table models
         registerFactory("tableModel", new TableModelFactory());
         registerFactory("propertyColumn", new TableModelFactory.PropertyColumnFactory());
         registerFactory("closureColumn", new TableModelFactory.ClosureColumnFactory());
-        
+
         //
         // Layouts
         //
@@ -480,14 +394,14 @@ public class SwingBuilder extends BuilderSupport {
         registerFactory("vstrut", new BoxFactory.VStrutFactory());
         registerFactory("glue", new BoxFactory.GlueFactory());
         registerFactory("rigidArea", new BoxFactory.RigidAreaFactory());
-        
+
         // table layout
         registerFactory("tableLayout", new TableLayoutFactory());
         registerFactory("tr", new TableLayoutFactory.TRFactory());
         registerFactory("td", new TableLayoutFactory.TDFactory());
-        
+
     }
-    
+
     public void registerBeanFactory(String theName, final Class beanClass) {
         registerFactory(theName, new Factory() {
             public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
@@ -499,26 +413,26 @@ public class SwingBuilder extends BuilderSupport {
             }
         });
     }
-    
+
     public void registerFactory(String name, Factory factory) {
         factories.put(name, factory);
     }
-    
+
     public LinkedList getContainingWindows() {
         return containingWindows;
     }
-    
+
     public Object getCurrent() {
         return super.getCurrent();
     }
 
-    public static final void checkValueIsNull(Object value, Object name) {
+    public static void checkValueIsNull(Object value, Object name) {
         if (value != null) {
             throw new RuntimeException(name + " elements do not accept a value argument.");
         }
     }
-    
-    public static final boolean checkValueIsType(Object value, Object name, Class type) {
+
+    public static boolean checkValueIsType(Object value, Object name, Class type) {
         if (value != null) {
             if (type.isAssignableFrom(value.getClass())) {
                 return true;
@@ -529,8 +443,8 @@ public class SwingBuilder extends BuilderSupport {
             return false;
         }
     }
-    
-    public static final boolean checkValueIsTypeNotString(Object value, Object  name, Class type) {
+
+    public static boolean checkValueIsTypeNotString(Object value, Object name, Class type) {
         if (value != null) {
             if (type.isAssignableFrom(value.getClass())) {
                 return true;
@@ -545,21 +459,21 @@ public class SwingBuilder extends BuilderSupport {
     }
 
     public Object invokeMethod(final String methodName, final Object args) {
-        if (headless || SwingUtilities.isEventDispatchThread()){
+        if (headless || SwingUtilities.isEventDispatchThread()) {
             return super.invokeMethod(methodName, args);
         } else {
             final Object[] ret = new Object[1];
-            Runnable run = new Runnable(){
+            Runnable run = new Runnable() {
                 public void run() {
-                    ret[0] = SwingBuilder.super.invokeMethod(methodName,args);
+                    ret[0] = SwingBuilder.super.invokeMethod(methodName, args);
                 }
             };
             try {
                 SwingUtilities.invokeAndWait(run);
             } catch (InterruptedException e) {
-                throw new GroovyRuntimeException("interrupted swing interaction",e);
+                throw new GroovyRuntimeException("interrupted swing interaction", e);
             } catch (InvocationTargetException e) {
-                throw new GroovyRuntimeException("exception in event dispatch thread",e);
+                throw new GroovyRuntimeException("exception in event dispatch thread", e.getTargetException());
             }
             return ret[0];
         }
