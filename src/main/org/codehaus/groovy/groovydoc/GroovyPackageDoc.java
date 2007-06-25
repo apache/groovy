@@ -13,4 +13,5 @@ public interface GroovyPackageDoc extends GroovyDoc {
 	public GroovyClassDoc[] ordinaryClasses();
 	
 	public String nameWithDots(); // not in JavaDoc API
+	public String getRelativeRootPath(); // not in JavaDoc API
 }

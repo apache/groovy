@@ -21,6 +21,7 @@ import groovy.util.GroovyTestCase;
 
 public class GroovyDocToolTest extends GroovyTestCase {
     GroovyDocTool xmlTool;
+    GroovyDocTool xmlToolForTests;
     private static final String FS = "/";
     private static final String MOCK_DIR = "mock" + FS + "doc";
     private static final String TEMPLATES_DIR = "main" + FS + "org" + FS + "codehaus" + FS + "groovy" + FS + "tools" + FS + "groovydoc" + FS + "gstring-templates";
@@ -29,6 +30,14 @@ public class GroovyDocToolTest extends GroovyTestCase {
         xmlTool = new GroovyDocTool(
                 new FileSystemResourceManager("src"), // template storage
                 "src" + FS + "main", // source file dirs
+                new String[]{TEMPLATES_DIR + FS + "top-level" + FS + "rootDocStructuredData.xml"},
+                new String[]{TEMPLATES_DIR + FS + "package-level" + FS + "packageDocStructuredData.xml"},
+                new String[]{TEMPLATES_DIR + FS + "class-level" + FS + "classDocStructuredData.xml"}
+        );
+
+        xmlToolForTests = new GroovyDocTool(
+                new FileSystemResourceManager("src"), // template storage
+                "src" + FS + "test", // source file dirs
                 new String[]{TEMPLATES_DIR + FS + "top-level" + FS + "rootDocStructuredData.xml"},
                 new String[]{TEMPLATES_DIR + FS + "package-level" + FS + "packageDocStructuredData.xml"},
                 new String[]{TEMPLATES_DIR + FS + "class-level" + FS + "classDocStructuredData.xml"}
@@ -44,7 +53,6 @@ public class GroovyDocToolTest extends GroovyTestCase {
         xmlTool.add("org" + FS + "codehaus" + FS + "groovy" + FS + "runtime" + FS + "ConvertedMap.java");
         MockOutputTool output = new MockOutputTool();
         xmlTool.renderToOutput(output, MOCK_DIR);
-        System.out.println("output = " + output);
 
         String categoryMethodDocument = output.getText(MOCK_DIR + FS + "org" + FS + "codehaus" + FS + "groovy" + FS + "runtime" + FS + "CategoryMethod.html"); // todo - figure out how to get xml extension for templates
 
@@ -79,6 +87,16 @@ public class GroovyDocToolTest extends GroovyTestCase {
         assertTrue(domBuilderDoc.indexOf("A helper class for creating a W3C DOM tree") > 0);
     }
 
+    public void testMethodComment() throws Exception {
+        xmlTool.add("groovy" + FS + "model" + FS + "DefaultTableColumn.java");
+        MockOutputTool output = new MockOutputTool();
+        xmlTool.renderToOutput(output, MOCK_DIR);
+
+        String defTabColDoc = output.getText(MOCK_DIR + FS + "groovy" + FS + "model" + FS + "DefaultTableColumn.html");
+        System.out.println(defTabColDoc);
+
+        assertTrue(defTabColDoc.indexOf("Evaluates the value of a cell") > 0);
+    }
     public void testPackageName() throws Exception {
         xmlTool.add("groovy" + FS + "xml" + FS + "DOMBuilder.java");
         MockOutputTool output = new MockOutputTool();
@@ -105,5 +123,13 @@ public class GroovyDocToolTest extends GroovyTestCase {
 
         String domBuilderDoc = output.getText(MOCK_DIR + FS + "groovy" + FS + "xml" + FS + "DOMBuilder.html");
         assertTrue(domBuilderDoc.indexOf("<extends>BuilderSupport</extends>") > 0);
+    }
+    
+    public void testDefaultPackage() throws Exception {
+    	xmlToolForTests.add("UberTestCaseBugs.java");
+        MockOutputTool output = new MockOutputTool();
+        xmlToolForTests.renderToOutput(output, MOCK_DIR);
+        String domBuilderDoc = output.getText(MOCK_DIR + FS + "DefaultPackage" + FS + "UberTestCaseBugs.html");
+        assertTrue(domBuilderDoc.indexOf("<extends>TestCase</extends>") > 0);    	
     }
 }

@@ -58,7 +58,12 @@ public class GroovyDocTool {
 	private GroovyDocTemplateEngine templateEngine;
 
 	String getPath(String filename) {
-        return new File(filename).getParent();
+		String path = new File(filename).getParent();
+		// path length of 1 indicates that probably is 'default package' i.e. "/"
+		if (path == null || path.length() == 1) {
+			path = "DefaultPackage"; // "DefaultPackage" for 'default package' path, rather than null...
+		}
+		return path;
 	}
 	String getFile(String filename) {
         return new File(filename).getName();        

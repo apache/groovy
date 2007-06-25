@@ -17,9 +17,13 @@
  */
 package org.codehaus.groovy.tools.groovydoc;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.StringTokenizer;
 
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyPackageDoc;
@@ -57,6 +61,18 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
 	public GroovyClassDoc findClass(String arg0) {/*todo*/return null;}
 	public GroovyClassDoc[] interfaces() {/*todo*/return null;}
 	public GroovyClassDoc[] ordinaryClasses() {
-		return (GroovyClassDoc[]) classDocs.values().toArray(new GroovyClassDoc[classDocs.values().size()]); // todo CURRENTLY ALL CLASSES!
+		List classDocValues = new ArrayList(classDocs.values());
+		Collections.sort(classDocValues); // todo - performance / maybe move into a sortMe() method
+		return (GroovyClassDoc[]) classDocValues.toArray(new GroovyClassDoc[classDocValues.size()]); // todo CURRENTLY ALL CLASSES!
 	}
+	public String getRelativeRootPath() {
+		StringTokenizer tokenizer = new StringTokenizer(name(), "" + FS);
+		StringBuffer sb = new StringBuffer();
+		while (tokenizer.hasMoreTokens()) {
+			tokenizer.nextToken();
+			sb.append("../");
+		}
+		return sb.toString();
+	}	
+
 }

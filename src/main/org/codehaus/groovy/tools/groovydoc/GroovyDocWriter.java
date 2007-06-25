@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
+import org.codehaus.groovy.groovydoc.GroovyMethodDoc;
 import org.codehaus.groovy.groovydoc.GroovyPackageDoc;
 import org.codehaus.groovy.groovydoc.GroovyRootDoc;
 
@@ -59,7 +60,6 @@ public class GroovyDocWriter {
 	public void writeClassToOutput(GroovyClassDoc classDoc, String destdir) throws Exception {
 		String destFileName = destdir + FS + classDoc.getFullPathName() + ".html";
 		System.out.println("Generating " + destFileName);
-
 		String renderedSrc = templateEngine.applyClassTemplates(classDoc);// todo		
 		output.writeToOutput(destFileName, renderedSrc);
 	}	
