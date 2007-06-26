@@ -2,7 +2,6 @@
 <classpath>
 	<classpathentry kind="src" path="src/main"/>
 	<classpathentry excluding="**/.cvsignore" kind="src" path="src/test"/>
-	<classpathentry kind="lib" path="target/test-classes"/>
 	<classpathentry kind="var" path="MAVEN_REPO/ant/jars/ant-1.6.5.jar"/>
 	<classpathentry kind="var" path="MAVEN_REPO/ant/jars/ant-junit-1.6.5.jar"/>
 	<classpathentry kind="var" path="MAVEN_REPO/ant/jars/ant-launcher-1.6.5.jar"/>
@@ -35,5 +34,6 @@
 	<classpathentry kind="lib" path="security/GroovyJarTest.jar"/>
 	<classpathentry kind="var" path="MAVEN_REPO/javax.servlet/jars/servlet-api-2.4.jar"/>
 	<classpathentry kind="var" path="MAVEN_REPO/javax.servlet/jars/jsp-api-2.0.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/xmlunit/jars/xmlunit-1.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
