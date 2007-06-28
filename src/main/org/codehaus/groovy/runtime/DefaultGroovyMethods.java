@@ -708,13 +708,13 @@ public class DefaultGroovyMethods {
         if (self instanceof Set)
             return self;
         List answer = new ArrayList();
-        NumberComparator comparator = new NumberComparator();
+        NumberAwareComparator numberAwareComparator = new NumberAwareComparator();
         for (Iterator it = self.iterator(); it.hasNext();) {
             Object o = it.next();
             boolean duplicated = false;
             for (Iterator it2 = answer.iterator(); it2.hasNext();) {
                 Object o2 = it2.next();
-                if (comparator.compare(o, o2) == 0) {
+                if (numberAwareComparator.compare(o, o2) == 0) {
                     duplicated = true;
                     break;
                 }
@@ -2664,7 +2664,7 @@ public class DefaultGroovyMethods {
      */
     public static List sort(Collection self) {
         List answer = asList(self);
-        Collections.sort(answer, new NumberComparator());
+        Collections.sort(answer, new NumberAwareComparator());
         return answer;
     }
 
@@ -2855,12 +2855,12 @@ public class DefaultGroovyMethods {
         if (left.size() == 0)
             return new ArrayList();
 
-        // TODO optomise if same type?
+        // TODO optimise if same type?
         // boolean nlgnSort = sameType(new Collection[]{left, right});
 
         ArrayList result = new ArrayList();
         //creates the collection to look for values.
-        Collection pickFrom = new TreeSet(new NumberComparator());
+        Collection pickFrom = new TreeSet(new NumberAwareComparator());
         pickFrom.addAll(left);
 
         for (Iterator iter = right.iterator(); iter.hasNext();) {
@@ -2872,18 +2872,18 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Returns <code>true</code> if the intersection of two collenctions is empty.
+     * Returns <code>true</code> if the intersection of two collections is empty.
      *
      * @param left  a Collection
      * @param right a Collection
-     * @return boolean   <code>true</code> if the intersection of two collenctions is empty, <code>false</code> otherwise.
+     * @return boolean   <code>true</code> if the intersection of two collections is empty, <code>false</code> otherwise.
      */
     public static boolean disjoint(Collection left, Collection right) {
 
         if (left.size() == 0 || right.size() == 0)
             return true;
 
-        Collection pickFrom = new TreeSet(new NumberComparator());
+        Collection pickFrom = new TreeSet(new NumberAwareComparator());
         pickFrom.addAll(right);
 
         for (Iterator iter = left.iterator(); iter.hasNext();) {
@@ -2894,20 +2894,27 @@ public class DefaultGroovyMethods {
         return true;
     }
 
-    // Default comparator for numbers of different types.
-    private static class NumberComparator implements Comparator {
+    // Default comparator for objects accounting for numbers of different types.
+    // Also handles nulls. Null is less than everything else.
+    private static class NumberAwareComparator implements Comparator {
         public int compare(Object o1, Object o2) {
+            if (o1 == null) {
+                return o2 == null ? 0 : -1;
+            }
+            if (o2 == null) {
+                return 1;
+            }
             if (o1 instanceof Number && o2 instanceof Number) {
                 BigDecimal x1 = new BigDecimal("" + o1);
                 BigDecimal x2 = new BigDecimal("" + o2);
                 return x1.compareTo(x2);
-            } else if (o1.getClass() == o2.getClass() && o1 instanceof Comparable) {
-                return ((Comparable) o1).compareTo((Comparable) o2);
-            } else {
-                int x1 = o1.hashCode();
-                int x2 = o2.hashCode();
-                return (x1 - x2);
             }
+            if (o1.getClass() == o2.getClass() && o1 instanceof Comparable) {
+                return ((Comparable) o1).compareTo((Comparable) o2);
+            }
+            int x1 = o1.hashCode();
+            int x2 = o2.hashCode();
+            return (x1 - x2);
         }
 
         public boolean equals(Object obj) {
@@ -2941,7 +2948,7 @@ public class DefaultGroovyMethods {
         if (left.length != right.length) {
             return false;
         }
-        final NumberComparator numberComparator = new NumberComparator();
+        final NumberAwareComparator numberAwareComparator = new NumberAwareComparator();
         for (int i = left.length - 1; i >= 0; i--) {
             final Object o1 = left[i];
             final Object o2 = right[i];
@@ -2949,7 +2956,7 @@ public class DefaultGroovyMethods {
                 if (o2 != null) return false;
             } else {
                 if (o1 instanceof Number) {
-                    if (!(o2 instanceof Number && numberComparator.compare(o1, o2) == 0)) {
+                    if (!(o2 instanceof Number && numberAwareComparator.compare(o1, o2) == 0)) {
                         return false;
                     }
                 } else {
@@ -2984,7 +2991,7 @@ public class DefaultGroovyMethods {
         if (left.length != right.size()) {
             return false;
         }
-        final NumberComparator numberComparator = new NumberComparator();
+        final NumberAwareComparator numberAwareComparator = new NumberAwareComparator();
         for (int i = left.length - 1; i >= 0; i--) {
             final Object o1 = left[i];
             final Object o2 = right.get(i);
@@ -2992,7 +2999,7 @@ public class DefaultGroovyMethods {
                 if (o2 != null) return false;
             } else {
                 if (o1 instanceof Number) {
-                    if (!(o2 instanceof Number && numberComparator.compare(o1, o2) == 0)) {
+                    if (!(o2 instanceof Number && numberAwareComparator.compare(o1, o2) == 0)) {
                         return false;
                     }
                 } else {
@@ -3024,7 +3031,7 @@ public class DefaultGroovyMethods {
         if (left.size() != right.size()) {
             return false;
         }
-        final NumberComparator numberComparator = new NumberComparator();
+        final NumberAwareComparator numberAwareComparator = new NumberAwareComparator();
         final Iterator it1 = left.iterator(), it2 = right.iterator();
         while (it1.hasNext()) {
             final Object o1 = it1.next();
@@ -3033,7 +3040,7 @@ public class DefaultGroovyMethods {
                 if (o2 != null) return false;
             } else {
                 if (o1 instanceof Number) {
-                    if (!(o2 instanceof Number && numberComparator.compare(o1, o2) == 0)) {
+                    if (!(o2 instanceof Number && numberAwareComparator.compare(o1, o2) == 0)) {
                         return false;
                     }
                 } else {
@@ -3072,7 +3079,7 @@ public class DefaultGroovyMethods {
      */
     public static Set minus(Set self, Object operand) {
         Set ansSet = new HashSet();
-        Comparator numberComparator = new NumberComparator();
+        Comparator numberComparator = new NumberAwareComparator();
         for (Iterator it = self.iterator(); it.hasNext();) {
             Object o = it.next();
             if (numberComparator.compare(o, operand) != 0) ansSet.add(o);
@@ -3098,7 +3105,7 @@ public class DefaultGroovyMethods {
         // since AbstractCollection only does a remove on the first
         // element it encounters.
 
-        Comparator numberComparator = new NumberComparator();
+        Comparator numberComparator = new NumberAwareComparator();
 
         if (nlgnSort && (self.get(0) instanceof Comparable)) {
             //n*LOG(n) version
@@ -3161,7 +3168,7 @@ public class DefaultGroovyMethods {
      * @return the resulting list with the operand removed
      */
     public static List minus(List self, Object operand) {
-        Comparator numberComparator = new NumberComparator();
+        Comparator numberComparator = new NumberAwareComparator();
         List ansList = new ArrayList();
         for (Iterator it = self.iterator(); it.hasNext();) {
             Object o = it.next();

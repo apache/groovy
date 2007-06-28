@@ -6,27 +6,35 @@ package groovy
  */
 class SortTest extends GroovyTestCase {
 
+    // GROOVY-1956
+    void testSortWithNull() {
+        // normal case, should sort in place and return result
+        def x = [1, 2, 3, 1, 2, 3, null, 'a', null]
+        assert x.is(x.sort())
+        def y = x.sort()
+        assert (y == x && x == [null, null, 1, 1, 2, 2, 3, 3, 'a'])
+
+        // transitivity
+        x = [1, 2, 3, 1, 2, 3, null, 'a', null]
+        x.unique().sort()
+        y = [1, 2, 3, 1, 2, 3, null, 'a', null]
+        y.sort().unique()
+        assert (x == y && y == [null, 1, 2, 3, 'a'])
+    }
+
     void testSortWithOrderBy() {
         def list = getPeople()
         def order = new OrderBy( { it.cheese } )
         list.sort(order)
-        
         assert list[0].name == 'Joe'
         assert list[-1].name == 'Chris'
         assert list.name == ['Joe', 'Bob', 'James', 'Chris']
-
-        println "Sorted by cheeee"
-        list.each { println it.dump() }
     }
     
     void testSortWithClosure() {
         def list = getPeople()
         list.sort { it.cheese }
-        
         assert list.name == ['Joe', 'Bob', 'James', 'Chris']
-
-        println "Sorted by cheeee"
-        list.each { println it.dump() }
     }
     
     def getPeople() {
