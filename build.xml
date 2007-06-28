@@ -31,6 +31,10 @@ $Date$
     <import file="config/ant/build-checkstyle.xml"/>
     <import file="config/ant/build-cobertura.xml"/>
 
+  <condition property="_skipTests_">
+    <istrue value="${skipTests}"/>
+  </condition>
+
     <target name="-initCoverage">
         <condition property="_forceCoverage_">
             <and>
@@ -89,7 +93,7 @@ $Date$
         </java>
     </target>
 
-    <target name="compileTest" depends="compileMain" unless="skipTests"
+    <target name="compileTest" depends="compileMain" unless="_skipTests_"
             description="Compile the Java and Groovy code in the test source.">
         <mkdir dir="${testClassesDirectory}"/>
 
