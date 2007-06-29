@@ -97,16 +97,6 @@ public class UnimplementedSyntaxTest extends GroovyTestCase {
         assertNotNull(compile("enum EarthSeason implements Season{SPRING}")); // fails after parser
     }
 
-    // ---------------------------
-    // deprecate in parser?: 'any'
-    // ---------------------------
-
-    public void test_LiteralAny_FAILS() throws Exception {
-        if (notYetImplemented()) return;
-        // unable to resolve class any
-        assertNotNull(compile("any x = 2")); // fails after parser
-    }
-
     // ------------------------------------------------
     // deprecate in parser?: 'break' allowed in methods
     // ------------------------------------------------
@@ -183,15 +173,6 @@ public class UnimplementedSyntaxTest extends GroovyTestCase {
         if (notYetImplemented()) return;
         // Unknown type: "threadsafe"
         assertNotNull(compile("public static transient final native threadsafe synchronized volatile strictfp foo() {}")); // fails after parser
-    }
-
-    // -------------
-    // feature: with
-    // -------------
-    public void test_With_FAILS() throws Exception {
-        if (notYetImplemented()) return;
-        // AST node not implemented yet for type: "with"
-        assertNotNull(compile("with(myObject) {x = 1}")); // fails after parser
     }
 
     // -------------------------------
