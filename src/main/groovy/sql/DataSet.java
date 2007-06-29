@@ -65,6 +65,7 @@ import org.codehaus.groovy.ast.stmt.Statement;
  * Represents an extent of objects
  * 
  * @author Chris Stevenson
+ * @author Paul King
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -214,20 +215,18 @@ public class DataSet extends Sql {
     /**
      * Returns a List of all of the rows from the table a DataSet
      * represents
-     * @return  Returns a list of GroovyRowResult objects.
-     * @throws SQLException
+     * @return  Returns a list of GroovyRowResult objects from the dataset
+     * @throws SQLException if a database error occurs
      */
     public List rows() throws SQLException {
-        String sql  = "SELECT * FROM " + table;
-        return rows(sql);
-
+        return rows(getSql(), getParameters());
     }
 
     /**
-     * Returns the first row from a DataSet's underying table
+     * Returns the first row from a DataSet's underlying table
      * 
-     * @return
-     * @throws SQLException
+     * @return  Returns the first GroovyRowResult object from the dataset
+     * @throws SQLException if a database error occurs
      */
     public Object firstRow() throws SQLException{
         List rows = rows();
