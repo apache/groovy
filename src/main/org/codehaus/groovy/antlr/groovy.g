@@ -1790,7 +1790,7 @@ statementLabelPrefix
  *  <p>
  *  Certain "suspicious" looking forms are flagged for the user to disambiguate.
  */
-// DECIDE: A later semantic pass can flag dumb expressions that dot occur in
+// DECIDE: A later semantic pass can flag dumb expressions that don't occur in
 //         positions where their value is not used, e.g., <code>{1+1;println}</code>
 expressionStatement[int prevToken]
         {Token first = LT(1);boolean isPathExpr = false;  }
