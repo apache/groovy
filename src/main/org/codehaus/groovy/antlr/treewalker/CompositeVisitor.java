@@ -435,11 +435,6 @@ public class CompositeVisitor implements Visitor{
         while (itr.hasNext()) {((Visitor)itr.next()).visitListConstructor(t,visit);}
     }
 
-    public void visitLiteralAny(GroovySourceAST t, int visit) {
-        Iterator itr = itr(visit);
-        while (itr.hasNext()) {((Visitor)itr.next()).visitLiteralAny(t,visit);}
-    }
-
     public void visitLiteralAs(GroovySourceAST t, int visit) {
         Iterator itr = itr(visit);
         while (itr.hasNext()) {((Visitor)itr.next()).visitLiteralAs(t,visit);}
@@ -695,11 +690,6 @@ public class CompositeVisitor implements Visitor{
         while (itr.hasNext()) {((Visitor)itr.next()).visitLiteralWhile(t,visit);}
     }
 
-    public void visitLiteralWith(GroovySourceAST t, int visit) {
-        Iterator itr = itr(visit);
-        while (itr.hasNext()) {((Visitor)itr.next()).visitLiteralWith(t,visit);}
-    }
-
     public void visitLnot(GroovySourceAST t, int visit) {
         Iterator itr = itr(visit);
         while (itr.hasNext()) {((Visitor)itr.next()).visitLnot(t,visit);}
@@ -918,11 +908,6 @@ public class CompositeVisitor implements Visitor{
     public void visitRparen(GroovySourceAST t, int visit) {
         Iterator itr = itr(visit);
         while (itr.hasNext()) {((Visitor)itr.next()).visitRparen(t,visit);}
-    }
-
-    public void visitScopeEscape(GroovySourceAST t, int visit) {
-        Iterator itr = itr(visit);
-        while (itr.hasNext()) {((Visitor)itr.next()).visitScopeEscape(t,visit);}
     }
 
     public void visitSelectSlot(GroovySourceAST t, int visit) {

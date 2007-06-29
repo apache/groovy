@@ -133,7 +133,6 @@ public abstract class TraversalHelper implements AntlrASTProcessor {
                 case GroovyTokenTypes.LE                            :   v.visitLe(ast,n);                           break;
                 case GroovyTokenTypes.LETTER                        :   v.visitLetter(ast,n);                       break;
                 case GroovyTokenTypes.LIST_CONSTRUCTOR              :   v.visitListConstructor(ast,n);              break;
-                case GroovyTokenTypes.LITERAL_any                   :   v.visitLiteralAny(ast,n);                   break;
                 case GroovyTokenTypes.LITERAL_as                    :   v.visitLiteralAs(ast,n);                    break;
                 case GroovyTokenTypes.LITERAL_assert                :   v.visitLiteralAssert(ast,n);                break;
                 case GroovyTokenTypes.LITERAL_boolean               :   v.visitLiteralBoolean(ast,n);               break;
@@ -185,7 +184,6 @@ public abstract class TraversalHelper implements AntlrASTProcessor {
                 case GroovyTokenTypes.LITERAL_void                  :   v.visitLiteralVoid(ast,n);                  break;
                 case GroovyTokenTypes.LITERAL_volatile              :   v.visitLiteralVolatile(ast,n);              break;
                 case GroovyTokenTypes.LITERAL_while                 :   v.visitLiteralWhile(ast,n);                 break;
-                case GroovyTokenTypes.LITERAL_with                  :   v.visitLiteralWith(ast,n);                  break;
                 case GroovyTokenTypes.LNOT                          :   v.visitLnot(ast,n);                         break;
                 case GroovyTokenTypes.LOR                           :   v.visitLor(ast,n);                          break;
                 case GroovyTokenTypes.LPAREN                        :   v.visitLparen(ast,n);                       break;
@@ -230,7 +228,6 @@ public abstract class TraversalHelper implements AntlrASTProcessor {
                 case GroovyTokenTypes.REGEX_FIND                    :   v.visitRegexFind(ast,n);                    break;
                 case GroovyTokenTypes.REGEX_MATCH                   :   v.visitRegexMatch(ast,n);                   break;
                 case GroovyTokenTypes.RPAREN                        :   v.visitRparen(ast,n);                       break;
-                case GroovyTokenTypes.SCOPE_ESCAPE                  :   v.visitScopeEscape(ast,n);                  break;
                 case GroovyTokenTypes.SELECT_SLOT                   :   v.visitSelectSlot(ast,n);                   break;
                 case GroovyTokenTypes.SEMI                          :   v.visitSemi(ast,n);                         break;
                 case GroovyTokenTypes.SH_COMMENT                    :   v.visitShComment(ast,n);                    break;

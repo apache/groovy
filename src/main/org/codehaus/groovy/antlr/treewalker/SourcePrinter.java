@@ -393,10 +393,6 @@ public class SourcePrinter extends VisitorAdapter {
         printUpdatingTabLevel(t,visit,"[",null,"]");
     }
 
-    public void visitLiteralAny(GroovySourceAST t,int visit) {
-        print(t,visit,"any",null,null);
-    }
-
     public void visitLiteralAs(GroovySourceAST t,int visit) {
         print(t,visit," as ",null,null);
     }
@@ -611,9 +607,10 @@ public class SourcePrinter extends VisitorAdapter {
         printUpdatingTabLevel(t,visit,"while (",null,") ");
     }
 
-    public void visitLiteralWith(GroovySourceAST t,int visit) {
-        printUpdatingTabLevel(t,visit,"with (",null,") ");
-    }
+//deprecated
+//  public void visitLiteralWith(GroovySourceAST t,int visit) {
+//        printUpdatingTabLevel(t,visit,"with (",null,") ");
+//    }
     
     public void visitLnot(GroovySourceAST t, int visit) {
         print(t,visit,"!",null,null);
@@ -783,9 +780,6 @@ public class SourcePrinter extends VisitorAdapter {
     // visit rparen()
     //   token type RPAREN only used inside parser, never visited/created
 
-    public void visitScopeEscape(GroovySourceAST t, int visit) {
-    	print(t,visit,"$",null,null);
-    }
     public void visitSelectSlot(GroovySourceAST t, int visit) {
     	print(t,visit,"@",null,null);
     }

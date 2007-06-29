@@ -210,7 +210,7 @@ public class SourceCodeTraversal extends TraversalHelper {
                     break;
 
                 case GroovyTokenTypes.LITERAL_while:
-                case GroovyTokenTypes.LITERAL_with:
+//deprecated                case GroovyTokenTypes.LITERAL_with:
                 case GroovyTokenTypes.TYPECAST: // (String)itr.next()
                     accept_v_FirstChildsFirstChild_v_RestOfTheChildren(t);
                     break;

@@ -107,7 +107,6 @@ public interface Visitor {
     void visitLe(GroovySourceAST t, int visit);
     void visitLetter(GroovySourceAST t, int visit);
     void visitListConstructor(GroovySourceAST t, int visit);
-    void visitLiteralAny(GroovySourceAST t, int visit);
     void visitLiteralAs(GroovySourceAST t, int visit);
     void visitLiteralAssert(GroovySourceAST t, int visit);
     void visitLiteralBoolean(GroovySourceAST t, int visit);
@@ -159,7 +158,6 @@ public interface Visitor {
     void visitLiteralVoid(GroovySourceAST t, int visit);
     void visitLiteralVolatile(GroovySourceAST t, int visit);
     void visitLiteralWhile(GroovySourceAST t, int visit);
-    void visitLiteralWith(GroovySourceAST t, int visit);
     void visitLnot(GroovySourceAST t, int visit);
     void visitLor(GroovySourceAST t, int visit);
     void visitLparen(GroovySourceAST t, int visit);
@@ -204,7 +202,6 @@ public interface Visitor {
     void visitRegexFind(GroovySourceAST t, int visit);
     void visitRegexMatch(GroovySourceAST t, int visit);
     void visitRparen(GroovySourceAST t, int visit);
-    void visitScopeEscape(GroovySourceAST t, int visit);
     void visitSelectSlot(GroovySourceAST t, int visit);
     void visitSemi(GroovySourceAST t, int visit);
     void visitShComment(GroovySourceAST t, int visit);

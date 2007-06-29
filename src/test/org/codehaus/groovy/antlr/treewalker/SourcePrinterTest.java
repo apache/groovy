@@ -297,10 +297,6 @@ public class SourcePrinterTest extends GroovyTestCase {
         assertEquals("[a, b]", pretty("[a,b]")); // not in java
     }
 
-    public void testLiteralAny() throws Exception { // not in java
-        assertEquals("any x = 2", pretty("any x = 2")); // fails after parser  // not in java
-    }
-
     public void testLiteralAs() throws Exception { // not in java
         assertEquals("import java.util.Date as MyDate", pretty("import java.util.Date as MyDate")); // not in java
         // todo suspicious spacing in the following assertion
@@ -322,10 +318,11 @@ public class SourcePrinterTest extends GroovyTestCase {
         assertEquals("for (i in 1..100) {break }", pretty("for (i in 1..100) {break}"));
         assertEquals("switch (foo) {default:break }", pretty("switch(foo){default:break}"));
         assertEquals("def myMethod() {break }", pretty("def myMethod(){break}")); // fails after parser
-        assertEquals("for (i in 1..100) {break 2}", pretty("for (i in 1..100) {break 2}")); // fails after parser
+        // deprecated -> assertEquals("for (i in 1..100) {break 2}", pretty("for (i in 1..100) {break 2}")); // fails after parser
 
         //todo should the colon be postfixed to the label?
-        assertEquals("for (i in 1..100) {break label1:}", pretty("for (i in 1..100) {break label1:}")); // fails after parser
+        // deprecated -> assertEquals("for (i in 1..100) {break label1:}", pretty("for (i in 1..100) {break label1:}")); // fails after parser
+        assertEquals("for (i in 1..100) {break label1}", pretty("for (i in 1..100) {break label1}"));
     }
 
     public void testLiteralByte() throws Exception {
@@ -351,10 +348,12 @@ public class SourcePrinterTest extends GroovyTestCase {
 
     public void testLiteralContinue() throws Exception {
         assertEquals("for (i in 1..100) {continue }", pretty("for (i in 1..100) {continue}"));
-        assertEquals("for (i in 1..100) {continue 2}", pretty("for (i in 1..100) {continue 2}")); // fails after parser
+        // deprecated -> assertEquals("for (i in 1..100) {continue 2}", pretty("for (i in 1..100) {continue 2}")); // fails after parser
 
         //todo should the colon be postfixed to the label?
-        assertEquals("for (i in 1..100) {continue label1:}", pretty("for (i in 1..100) {continue label1:}")); // fails after parser
+        // deprecate -> assertEquals("for (i in 1..100) {continue label1:}", pretty("for (i in 1..100) {continue label1:}")); // fails after parser
+        assertEquals("for (i in 1..100) {continue label1}", pretty("for (i in 1..100) {continue label1}")); // fails after parser
+        
         assertEquals("[1, 2, 3].each {continue }", pretty("[1,2,3].each{continue}")); // fails after parser
     }
 
@@ -559,9 +558,10 @@ public class SourcePrinterTest extends GroovyTestCase {
         assertEquals("while (true) {}", pretty("while(true){}"));
     }
 
-    public void testLiteralWith() throws Exception { // not in java
-        assertEquals("with (myObject) {x = 1}", pretty("with(myObject) {x = 1}")); // fails after parser // not in java
-    }
+// deprecated
+//    public void testLiteralWith() throws Exception { // not in java
+//        assertEquals("with (myObject) {x = 1}", pretty("with(myObject) {x = 1}")); // fails after parser // not in java
+//    }
 
     public void testLnot() throws Exception {
         assertEquals("if (!isRaining) {}", pretty("if (!isRaining) {}"));
@@ -723,10 +723,10 @@ public class SourcePrinterTest extends GroovyTestCase {
         assertEquals("if (foo ==~ \"bar\") {}", pretty("if (foo==~\"bar\"){}"));
     }
 
-    public void testScopeEscape() throws Exception { // not in java
-        // todo - 31 July + 14 Dec 2006 - test fine, however this parses but causes error in AntlrParserPlugin
-        assertEquals("println([$x, x, y])", pretty("println([$x, x, y])")); // fails after parser // not in java
-    }
+// deprecated
+//    public void testScopeEscape() throws Exception { // not in java
+//        assertEquals("println([$x, x, y])", pretty("println([$x, x, y])")); // fails after parser // not in java
+//    }
 
     public void testSelectSlot() throws Exception { // not in java
         assertEquals("def x = foo.@bar", pretty("def x = foo . @ bar")); // not in java

@@ -106,12 +106,24 @@ public class DefaultGroovyMethods {
 
     /**
      * Allows the closure to be called for the object reference self
+     * synonym for 'with()'
      *
      * @param self    the object to have a closure act upon
      * @param closure the closure to call on the object
      * @return result of calling the closure
      */
     public static Object identity(Object self, Closure closure) {
+        return DefaultGroovyMethods.with(self, closure);        
+    }
+
+    /**
+     * Allows the closure to be called for the object reference self
+     *
+     * @param self    the object to have a closure act upon
+     * @param closure the closure to call on the object
+     * @return result of calling the closure
+     */
+    public static Object with(Object self, Closure closure) {
         final Closure clonedClosure = (Closure) closure.clone();
         clonedClosure.setDelegate(self);
         return clonedClosure.call(self);

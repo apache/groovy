@@ -397,12 +397,15 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
     
     protected void throwsList(AST node,List list) {
-    	String clazz = identifier(node);
-    	ClassNode exception = ClassHelper.make(clazz);
+    	String name;
+    	if (isType(DOT, node)) {
+    		name = qualifiedName(node);
+    	} else {
+    		name = identifier(node);
+    	}
+    	ClassNode exception = ClassHelper.make(name);
     	list.add(exception);
     	AST next = node.getNextSibling();
-    	if (next!=null) throwsList(next, list);
-    	next = node.getFirstChild();
     	if (next!=null) throwsList(next, list);
     }
     
@@ -846,10 +849,6 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 statement = switchStatement(node);
                 break;
 
-            case LITERAL_with:
-                statement = withStatement(node);
-                break;
-
             case LITERAL_try:
                 statement = tryStatement(node);
                 break;
@@ -1169,11 +1168,6 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         WhileStatement whileStatement = new WhileStatement(booleanExpression, block);
         configureAST(whileStatement, whileNode);
         return whileStatement;
-    }
-
-    protected Statement withStatement(AST node) {
-        notImplementedYet(node);
-        return null; /** TODO */
     }
 
 
@@ -2172,8 +2166,8 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
     public static String qualifiedName(AST qualifiedNameNode) {
-        if (isType(IDENT, qualifiedNameNode)) {
-            return qualifiedNameNode.getText();
+    	if (isType(IDENT, qualifiedNameNode)) {
+        	return qualifiedNameNode.getText();
         }
         if (isType(DOT, qualifiedNameNode)) {
             AST node = qualifiedNameNode.getFirstChild();

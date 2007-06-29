@@ -211,7 +211,7 @@ tokens {
     STRING_CONSTRUCTOR; STRING_CTOR_MIDDLE;
     CLOSABLE_BLOCK; IMPLICIT_PARAMETERS;
     SELECT_SLOT; DYNAMIC_MEMBER;
-    LABELED_ARG; SPREAD_ARG; SPREAD_MAP_ARG; SCOPE_ESCAPE;
+    LABELED_ARG; SPREAD_ARG; SPREAD_MAP_ARG; //deprecated - SCOPE_ESCAPE;
     LIST_CONSTRUCTOR; MAP_CONSTRUCTOR;
     FOR_IN_ITERABLE;
     STATIC_IMPORT; ENUM_DEF; ENUM_CONSTANT_DEF; FOR_EACH_CLAUSE; ANNOTATION_DEF; ANNOTATIONS;
@@ -762,7 +762,6 @@ builtInType
     |   "float"
     |   "long"
     |   "double"
-    |   "any"
     ;
 
 // A (possibly-qualified) java identifier. We start with the first IDENT
@@ -1622,7 +1621,7 @@ statement[int prevToken]
     *OBS*/
     // With statement
     // (This is the Groovy scope-shift mechanism, used for builders.)
-    |   "with"^ LPAREN! strictContextExpression RPAREN! nlsWarn! compoundStatement
+//deprecated    |   "with"^ LPAREN! strictContextExpression RPAREN! nlsWarn! compoundStatement
 
     // Splice statement, meaningful only inside a "with" expression.
     // PROPOSED, DECIDE.  Prevents the namespace pollution of a "text" method or some such.
@@ -1752,11 +1751,7 @@ branchStatement
     // break:  get out of a loop, or switch, or method call
     // continue:  do next iteration of a loop, or leave a closure
     |   ("break"^ | "continue"^)
-        (
-            (IDENT COLON)=>
-            statementLabelPrefix
-        )?
-        ( expression[0] )?
+        ( IDENT )?
 
     // throw an exception
     |   "throw"^ expression[0]
@@ -2468,7 +2463,7 @@ primaryExpression
     |   closableBlockConstructorExpression
     |   listOrMapConstructorExpression
     |   stringConstructorExpression         // "foo $bar baz"; presented as multiple tokens
-    |   scopeEscapeExpression               // $x
+//deprecated    |   scopeEscapeExpression               // $x
     |   builtInType
     /*OBS*  //class names work fine as expressions
             // look for int.class and int[].class
@@ -2496,14 +2491,15 @@ parenthesizedExpression { Token first = LT(1); boolean hasClosureList=false; }
         }
     ;
 
-scopeEscapeExpression
-    :   DOLLAR^  {#DOLLAR.setType(SCOPE_ESCAPE);} (IDENT | scopeEscapeExpression)
+//deprecated jun 2007
+//    scopeEscapeExpression
+//    :   DOLLAR^  {#DOLLAR.setType(SCOPE_ESCAPE);} (IDENT | scopeEscapeExpression)
         // PROPOSE: The SCOPE_ESCAPE operator pops its operand out of the scope of a "with" block.
         // If not within a "with" block, it pops the operand out of the static global scope,
         // into whatever dynamic (unchecked) global scope is available when the script is run,
         // regardless of package and imports.
         // Example of SCOPE_ESCAPE:  def x=1; with ([x:2,y:-1]) { def y=3; println [$x, x, y] }  =>  "[1, 2, 3]"
-    ;
+//    ;
 
 /** Things that can show up as expressions, but only in strict
  *  contexts like inside parentheses, argument lists, and list constructors.
@@ -2554,10 +2550,6 @@ stringConstructorExpression  {Token first = LT(1);}
 
 stringConstructorValuePart
     :
-    (
-        // PROPOSE: allow spread markers on string constructor arguments
-        sp:STAR^                        {#sp.setType(SPREAD_ARG);}
-    )?
     (   identifier
     |   openOrClosableBlock
     )
@@ -3036,7 +3028,6 @@ options {
         case NUM_BIG_DECIMAL:   // 0.0g / y
         case IDENT:             // x / y
         // and a bunch of keywords (all of them; no sense picking and choosing):
-        case LITERAL_any:
         case LITERAL_as:
         case LITERAL_assert:
         case LITERAL_boolean:
@@ -3088,7 +3079,6 @@ options {
         case LITERAL_void:
         case LITERAL_volatile:
         case LITERAL_while:
-        case LITERAL_with:
             return true;
         default:
             return false;

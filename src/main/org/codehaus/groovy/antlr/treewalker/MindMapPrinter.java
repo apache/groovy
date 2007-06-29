@@ -199,7 +199,6 @@ public class MindMapPrinter extends VisitorAdapter {
             case GroovyTokenTypes.REGEX_FIND                    :
             case GroovyTokenTypes.REGEX_MATCH                   :
             case GroovyTokenTypes.RPAREN                        :
-            case GroovyTokenTypes.SCOPE_ESCAPE                  :
             case GroovyTokenTypes.SELECT_SLOT                   :
             case GroovyTokenTypes.SEMI                          :
             case GroovyTokenTypes.SH_COMMENT                    :
@@ -256,7 +255,6 @@ public class MindMapPrinter extends VisitorAdapter {
             case GroovyTokenTypes.EXTENDS_CLAUSE                :
             case GroovyTokenTypes.IMPLEMENTS_CLAUSE             :
             case GroovyTokenTypes.IMPORT                        :
-            case GroovyTokenTypes.LITERAL_any                   :
             case GroovyTokenTypes.LITERAL_as                    :
             case GroovyTokenTypes.LITERAL_assert                :
             case GroovyTokenTypes.LITERAL_boolean               :
@@ -308,7 +306,6 @@ public class MindMapPrinter extends VisitorAdapter {
             case GroovyTokenTypes.LITERAL_void                  :
             case GroovyTokenTypes.LITERAL_volatile              :
             case GroovyTokenTypes.LITERAL_while                 :
-            case GroovyTokenTypes.LITERAL_with                  :
             case GroovyTokenTypes.PACKAGE_DEF                   :
             case GroovyTokenTypes.TYPE                          :
                 colour = blue;

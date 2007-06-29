@@ -105,7 +105,6 @@ public class VisitorAdapter implements Visitor {
     public void visitLe(GroovySourceAST t,int visit) {visitDefault(t,visit);}
     public void visitLetter(GroovySourceAST t,int visit) {visitDefault(t,visit);}
     public void visitListConstructor(GroovySourceAST t,int visit) {visitDefault(t,visit);}
-    public void visitLiteralAny(GroovySourceAST t,int visit) {visitDefault(t,visit);}
     public void visitLiteralAs(GroovySourceAST t,int visit) {visitDefault(t,visit);}
     public void visitLiteralAssert(GroovySourceAST t,int visit) {visitDefault(t,visit);}
     public void visitLiteralBoolean(GroovySourceAST t,int visit) {visitDefault(t,visit);}
@@ -157,7 +156,6 @@ public class VisitorAdapter implements Visitor {
     public void visitLiteralVoid(GroovySourceAST t,int visit) {visitDefault(t,visit);}
     public void visitLiteralVolatile(GroovySourceAST t,int visit) {visitDefault(t,visit);}
     public void visitLiteralWhile(GroovySourceAST t,int visit) {visitDefault(t,visit);}
-    public void visitLiteralWith(GroovySourceAST t,int visit) {visitDefault(t,visit);}
     public void visitLnot(GroovySourceAST t,int visit) {visitDefault(t,visit);}
     public void visitLor(GroovySourceAST t,int visit) {visitDefault(t,visit);}
     public void visitLparen(GroovySourceAST t,int visit) {visitDefault(t,visit);}
@@ -202,7 +200,6 @@ public class VisitorAdapter implements Visitor {
     public void visitRegexFind(GroovySourceAST t,int visit) {visitDefault(t,visit);}
     public void visitRegexMatch(GroovySourceAST t,int visit) {visitDefault(t,visit);}
     public void visitRparen(GroovySourceAST t,int visit) {visitDefault(t,visit);}
-    public void visitScopeEscape(GroovySourceAST t,int visit) {visitDefault(t,visit);}
     public void visitSelectSlot(GroovySourceAST t,int visit) {visitDefault(t,visit);}
     public void visitSemi(GroovySourceAST t,int visit) {visitDefault(t,visit);}
     public void visitShComment(GroovySourceAST t,int visit) {visitDefault(t,visit);}
