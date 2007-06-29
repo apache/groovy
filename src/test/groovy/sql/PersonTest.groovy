@@ -16,20 +16,15 @@ class PersonTest extends GroovyTestCase {
 
     void testWhereWithAndClause() {
         def persons = createDataSet()
-		
         def blogs = persons.findAll { it.lastName == "Bloggs" }
-        
         def bigBlogs = blogs.findAll { it.size > 100 }
-		
         assertSql(bigBlogs, "select * from person where lastName = ? and size > ?", ['Bloggs', 100])
     }
 
     void testWhereClosureWithAnd() {
         def persons = createDataSet()
-		
         def blogs = persons.findAll { it.size < 10 && it.lastName == "Bloggs" }
-		
-        assertSql(blogs, "select * from person where size < ? and lastName = ?", [10, 'Bloggs'])
+        assertSql(blogs, "select * from person where (size < ? and lastName = ?)", [10, 'Bloggs'])
     }
  
     protected def compareFn(value) {

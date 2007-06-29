@@ -33,7 +33,9 @@ public class SqlWhereVisitor extends CodeVisitorSupport {
     public void visitBinaryExpression(BinaryExpression expression) {
         Expression left = expression.getLeftExpression();
         Expression right = expression.getRightExpression();
+        boolean leaf = (right instanceof ConstantExpression);
 
+        if (!leaf) buffer.append("(");
         left.visit(this);
         buffer.append(" ");
 
@@ -42,6 +44,7 @@ public class SqlWhereVisitor extends CodeVisitorSupport {
 
         buffer.append(" ");
         right.visit(this);
+        if (!leaf) buffer.append(")");
     }
 
     public void visitBooleanExpression(BooleanExpression expression) {
@@ -51,6 +54,7 @@ public class SqlWhereVisitor extends CodeVisitorSupport {
     public void visitConstantExpression(ConstantExpression expression) {
         getParameters().add(expression.getValue());
         buffer.append("?");
+        
     }
 
     public void visitPropertyExpression(PropertyExpression expression) {
