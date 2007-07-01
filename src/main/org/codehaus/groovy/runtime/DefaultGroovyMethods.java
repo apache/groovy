@@ -1315,7 +1315,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Sums the non-null items in a collection.
+     * Sums the items in a collection.
      *
      * @param self Collection of values to add together.
      * @return The sum of all of the list itmems.
@@ -1325,7 +1325,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Sums the non-null items in a collection.
+     * Sums the items in a collection to some initial value.
      *
      * @param self a collection of values to sum.
      * @param initialValue the items in the collection will be summed to this initial value
@@ -1366,7 +1366,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Sums the result of apply a closure to each item of a collection.
+     * Sums the result of apply a closure to each item of a collection to sum intial value.
      * <code>coll.sum(closure)</code> is equivalent to:
      * <code>coll.collect(closure).sum()</code>.
      *
