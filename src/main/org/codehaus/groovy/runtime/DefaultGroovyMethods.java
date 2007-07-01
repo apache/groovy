@@ -1299,12 +1299,13 @@ public class DefaultGroovyMethods {
      * next iteration the value of the previous closure.
      *
      * @param self    an Object[]
-     * @param value   a value
+     * @param initialValue   an initialValue
      * @param closure a closure
      * @return the last value of the last iteration
      */
-    public static Object inject(Object[] self, Object value, Closure closure) {
+    public static Object inject(Object[] self, Object initialValue, Closure closure) {
         Object[] params = new Object[2];
+        Object value = initialValue;
         for (int i = 0; i < self.length; i++) {
             params[0] = value;
             params[1] = self[i];
@@ -1314,42 +1315,36 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Sums a collection of numeric values. <code>coll.sum()</code> is equivalent to:
-     * <code>coll.inject(0) {value, item -> value + item}</code>.
+     * Sums the non-null items in a collection.
      *
      * @param self Collection of values to add together.
      * @return The sum of all of the list itmems.
      */
     public static Object sum(Collection self) {
-        Object result = null;
+        return sum(self, null, true);
+    }
 
-        if (self.size() == 0) return result;
+    /**
+     * Sums the non-null items in a collection.
+     *
+     * @param self a collection of values to sum.
+     * @param initialValue the items in the collection will be summed to this initial value
+     * @return The sum of all of the collection items.
+     */
+    public static Object sum(Collection self, Object initialValue) {
+        return sum(self, initialValue, false);
+    }
 
-        boolean isNumber = true;
-
-        Class classref = null;
-        try {
-            classref = Class.forName("java.lang.Number");
-        } catch (Exception ex) {
-            // Ignore
-        }
-
-        for (Iterator iter = self.iterator(); iter.hasNext();) {
-            if (!classref.isInstance(iter.next())) {
-                isNumber = false;
-                break;
-            }
-        }
-
-        if (isNumber) {
-            result = new Integer(0);
-        } else {
-            result = new String();
-        }
-
+    private static Object sum(Collection self, Object initialValue, boolean first) {
+        Object result = initialValue;
         Object[] param = new Object[1];
         for (Iterator iter = self.iterator(); iter.hasNext();) {
             param[0] = iter.next();
+            if (first) {
+                result = param[0];
+                first = false;
+                continue;
+            }
             MetaClass metaClass = InvokerHelper.getMetaClass(result);
             result = metaClass.invokeMethod(result, "plus", param);
         }
@@ -1367,12 +1362,36 @@ public class DefaultGroovyMethods {
      *         item of the list.
      */
     public static Object sum(Collection self, Closure closure) {
-        Object result = new Integer(0);
+        return sum(self, null, closure, true);
+    }
+
+    /**
+     * Sums the result of apply a closure to each item of a collection.
+     * <code>coll.sum(closure)</code> is equivalent to:
+     * <code>coll.collect(closure).sum()</code>.
+     *
+     * @param self    a Collection
+     * @param closure a single parameter closure that returns a numeric value.
+     * @param initialValue the closure results will be summed to this initial value
+     * @return The sum of the values returned by applying the closure to each
+     *         item of the list.
+     */
+    public static Object sum(Collection self, Object initialValue, Closure closure) {
+        return sum(self, initialValue, closure, false);
+    }
+
+    private static Object sum(Collection self, Object initialValue, Closure closure, boolean first) {
+        Object result = initialValue;
         Object[] closureParam = new Object[1];
         Object[] plusParam = new Object[1];
         for (Iterator iter = self.iterator(); iter.hasNext();) {
             closureParam[0] = iter.next();
             plusParam[0] = closure.call(closureParam);
+            if (first) {
+                result = plusParam[0];
+                first = false;
+                continue;
+            }
             MetaClass metaClass = InvokerHelper.getMetaClass(result);
             result = metaClass.invokeMethod(result, "plus", plusParam);
         }
