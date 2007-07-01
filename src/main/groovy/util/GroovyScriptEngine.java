@@ -37,10 +37,7 @@ import groovy.lang.Binding;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.Script;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -129,12 +126,22 @@ public class GroovyScriptEngine implements ResourceConnector {
                                 } catch (ResourceException e1) {
                                     throw new ClassNotFoundException("Could not read " + className + ": " + e1);
                                 }
+                                InputStream inputStream = null;
                                 try {
-                                    return parseClass(dependentScriptConn.getInputStream(), filename);
+                                    inputStream = dependentScriptConn.getInputStream();
+                                    return parseClass(inputStream, filename);
                                 } catch (CompilationFailedException e2) {
                                     throw new ClassNotFoundException("Syntax error in " + className + ": " + e2);
                                 } catch (IOException e2) {
                                     throw new ClassNotFoundException("Problem reading " + className + ": " + e2);
+                                } finally {
+                                    if (inputStream != null) {
+                                        try {
+                                            inputStream.close();
+                                        } catch (IOException e) {
+
+                                        }
+                                    }
                                 }
                             }
                         };
