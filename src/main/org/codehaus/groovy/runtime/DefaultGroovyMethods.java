@@ -7517,9 +7517,14 @@ public class DefaultGroovyMethods {
      * @param self a file object
      * @return a line-based iterator
      * @throws IOException if there is a problem processing the file (e.g. file is not found)
+     * @deprecated use File#eachLine instead please
      */
     public static Iterator iterator(File self) throws IOException {
-        return iterator(newReader(self));
+        throw new DeprecationException(
+                "Iterators on files are not supported any more. "+
+                "Use File.eachLine() instead. Alternatively you can use FileReader.iterator() "+
+                "and provide your own exception handling."
+             );
     }
 
     /**

@@ -169,11 +169,7 @@ class ClosureMethodTest extends GroovyTestCase {
             file = new File("Bar.groovy")
         }
 
-        println("Contents of file: " + file)
-
         file.eachLine { line -> println(line) }
-
-        println("")
     }
 
     void testForEachLine() {
@@ -182,11 +178,9 @@ class ClosureMethodTest extends GroovyTestCase {
             file = new File("Bar.groovy")
         }
 
-        println("For loop to display contents of file: " + file)
-
-        for (line in file) { println(line) }
-
-        println("")
+        shouldFail (DeprecationException) {
+          for (line in file) { println(line) }
+        }
     }
 
     void testReadLines() {
