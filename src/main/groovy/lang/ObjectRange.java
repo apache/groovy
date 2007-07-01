@@ -48,6 +48,7 @@ package groovy.lang;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.IteratorClosureAdapter;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -117,18 +118,25 @@ public class ObjectRange extends AbstractList implements Range {
     }
 
     private void constructorHelper(Comparable from, Comparable to) {
-        if (from instanceof Short && to instanceof Short) {
-            this.from = new Integer(((Short) from).intValue());
-            this.to = new Integer(((Short) to).intValue());
-        } else if (from instanceof Float && to instanceof Float) {
-            this.from = new Double(((Float) from).doubleValue());
-            this.to = new Double(((Float) to).doubleValue());
-        } else if (from.getClass() == to.getClass()) {
+        if (from instanceof Short) {
+            from = new Integer(((Short) from).intValue());
+        }
+        if (to instanceof Short) {
+            to = new Integer(((Short) to).intValue());
+        }
+        if (from instanceof Float) {
+            from = new Double(((Float) from).doubleValue());
+        }
+        if (to instanceof Float) {
+            to = new Double(((Float) to).doubleValue());
+        }
+        // TODO: should we care about different types here?
+        if (from.getClass() == to.getClass()) {
             this.from = from;
             this.to = to;
         } else {
-            this.from = normaliseType(from);
-            this.to = normaliseType(to);
+            this.from = normaliseStringType(from);
+            this.to = normaliseStringType(to);
         }
         if (from instanceof String || to instanceof String) {
             // this test depends deeply on the String.next implementation
@@ -161,12 +169,13 @@ public class ObjectRange extends AbstractList implements Range {
      * Compares an {@link ObjectRange} to another {@link ObjectRange}.
      *
      * @return <code>true</code> if the ranges are equal
+     * @param that the object to check equality with
      */
     public boolean equals(ObjectRange that) {
         return that != null
                 && this.reverse == that.reverse
-                && this.from.equals(that.from)
-                && this.to.equals(that.to);
+                && DefaultTypeTransformation.compareEqual(this.from, that.from)
+                && DefaultTypeTransformation.compareEqual(this.to, that.to);
     }
 
     /**
@@ -200,7 +209,7 @@ public class ObjectRange extends AbstractList implements Range {
         if (index >= size()) {
             throw new IndexOutOfBoundsException("Index: " + index + " is too big for range: " + this);
         }
-        Object value = null;
+        Object value;
         if (reverse) {
             value = to;
 
@@ -338,6 +347,19 @@ public class ObjectRange extends AbstractList implements Range {
         return (reverse) ? "" + toText + ".." + fromText : "" + fromText + ".." + toText;
     }
 
+    public boolean contains(Object value) {
+        Iterator it = iterator();
+        if (value==null) return false;
+        while (it.hasNext()) {
+            try {
+                if (DefaultTypeTransformation.compareEqual(value, it.next())) return true;
+            } catch (ClassCastException e) {
+                return false;
+            }
+        }
+        return false;
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -394,7 +416,7 @@ public class ObjectRange extends AbstractList implements Range {
         return InvokerHelper.invokeMethod(value, "previous", null);
     }
 
-    private static Comparable normaliseType(final Comparable operand) {
+    private static Comparable normaliseStringType(final Comparable operand) {
         if (operand instanceof Character) {
             return new Integer(((Character) operand).charValue());
         } else if (operand instanceof String) {

@@ -89,19 +89,30 @@ public class RangeTest extends TestCase {
         }
     }
 
+    public void testNullForFromOrToIsIllegal() {
+        Comparable dontcare = new Integer(0);
+        try {
+            new ObjectRange((Comparable)null, dontcare);
+            fail("Should have thrown IllegalArgumentException");
+        }
+        catch (IllegalArgumentException e) {
+            // worked
+        }
+    }
+
     public void testGetOutOfRange() {
         Range r = createRange(10, 20);
 
         try {
             r.get(-1);
-            fail("Should have thrown IndexOut");
+            fail("Should have thrown IndexOutOfBoundsException");
         }
         catch (IndexOutOfBoundsException e) {
             // worked
         }
         try {
             r.get(11);
-            fail("Should have thrown IndexOut");
+            fail("Should have thrown IndexOutOfBoundsException");
         }
         catch (IndexOutOfBoundsException e) {
             // worked
@@ -111,14 +122,14 @@ public class RangeTest extends TestCase {
 
         try {
             r.get(-1);
-            fail("Should have thrown IndexOut");
+            fail("Should have thrown IndexOutOfBoundsException");
         }
         catch (IndexOutOfBoundsException e) {
             // worked
         }
         try {
             r.get(7);
-            fail("Should have thrown IndexOut");
+            fail("Should have thrown IndexOutOfBoundsException");
         }
         catch (IndexOutOfBoundsException e) {
             // worked
@@ -146,6 +157,22 @@ public class RangeTest extends TestCase {
         assertTrue("containsWithinBounds 9.9999", r.containsWithinBounds(new BigDecimal("9.9999")));
         assertTrue("containsWithinBounds 10.0", r.containsWithinBounds(new BigDecimal("10.0")));
         assertFalse("containsWithinBounds 10.0001", r.containsWithinBounds(new BigDecimal("10.0001")));
+    }
+
+    public void testContainsWithLikeNumbers() {
+        Range r = new ObjectRange(new Integer(1), new Short((short)3));
+        assertTrue("contains 2", r.contains(new Integer(2)));
+        r = new ObjectRange(new Float(1.0), new Double(3.0));
+        assertTrue("contains 2.0d", r.contains(new Double(2.0)));
+        assertTrue("contains 2.0g", r.contains(new BigDecimal(2.0)));
+        r = new ObjectRange(new BigDecimal(1.0), new BigDecimal(3.0));
+        assertTrue("contains 2.0d", r.contains(new Double(2.0)));
+        assertTrue("contains 2.0f", r.contains(new Float(2.0)));
+    }
+
+    public void testContainsWithIncompatibleType() {
+        Range r = new ObjectRange(new Integer(1), new Short((short)3));
+        assertFalse("shouldn't contain string", r.contains("String"));
     }
 
     public void testSubList() {
