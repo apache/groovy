@@ -241,9 +241,7 @@ public class GroovyMain {
         List args = line.getArgList();
 
         // add the ability to parse scripts with a specified encoding
-        if (line.hasOption('c')) {
-            main.conf.setSourceEncoding(line.getOptionValue("encoding"));
-        }
+        main.conf.setSourceEncoding(line.getOptionValue('c',main.conf.getSourceEncoding()));
 
         main.isScriptFile = !line.hasOption('e');
         main.debug = line.hasOption('d');
