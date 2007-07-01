@@ -6040,14 +6040,17 @@ public class DefaultGroovyMethods {
      * @param timer   a timer object
      * @param delay   the delay in milliseconds before running the closure code
      * @param closure the closure to invoke
+     * 
+     * @return The timer task which has been scheduled.
      */
-    public static void runAfter(Timer timer, int delay, final Closure closure) {
+    public static TimerTask runAfter(Timer timer, int delay, final Closure closure) {
         TimerTask timerTask = new TimerTask() {
             public void run() {
                 closure.call();
             }
         };
         timer.schedule(timerTask, delay);
+        return timerTask;
     }
 
     /**
