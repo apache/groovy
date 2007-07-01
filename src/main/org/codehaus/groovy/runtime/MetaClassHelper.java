@@ -351,15 +351,18 @@ public class MetaClassHelper {
      *         object (e.g. Object)
      */
     public static Object chooseEmptyMethodParams(List methods) {
+        Object vargsMethod = null;
         for (Iterator iter = methods.iterator(); iter.hasNext();) {
             Object method = iter.next();
             Class[] paramTypes = getParameterTypes(method);
             int paramLength = paramTypes.length;
             if (paramLength == 0) {
                 return method;
+            } else if (paramLength==1 && isVargsMethod(paramTypes,EMPTY_ARRAY)) {
+                vargsMethod = method;
             }
         }
-        return null;
+        return vargsMethod;
     }
     
     /**
@@ -370,16 +373,34 @@ public class MetaClassHelper {
         // lets look for methods with 1 argument which matches the type of the
         // arguments
         Class closestClass = null;
+        Class closestVargsClass = null;
         Object answer = null;
-        
         for (Iterator iter = methods.iterator(); iter.hasNext();) {
             Object method = iter.next();
             Class[] paramTypes = getParameterTypes(method);
             int paramLength = paramTypes.length;
-            if (paramLength == 1) {
-                Class theType = paramTypes[0];
-                if (theType.isPrimitive()) continue;
+            if (paramLength==0 || paramLength > 2) continue;
+
+            Class theType = paramTypes[0];
+            if (theType.isPrimitive()) continue;
+            
+            if (paramLength==2) {
+                if (!isVargsMethod(paramTypes, ARRAY_WITH_NULL)) continue;
+                if (closestClass == theType) {
+                    if (closestVargsClass == null) continue;
+                    Class newVargsClass = paramTypes[1];
+                    if (closestVargsClass==null || isAssignableFrom(newVargsClass, closestVargsClass)) {
+                        closestVargsClass = newVargsClass;
+                        answer = method;
+                    }
+                } else if (closestClass == null || isAssignableFrom(theType, closestClass)) {
+                    closestVargsClass = paramTypes[1];
+                    closestClass = theType;
+                    answer = method;
+                }
+            } else {
                 if (closestClass == null || isAssignableFrom(theType, closestClass)) {
+                    closestVargsClass = null;
                     closestClass = theType;
                     answer = method;
                 }

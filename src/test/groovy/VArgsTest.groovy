@@ -72,4 +72,21 @@ class VArgsTest extends GroovyTestCase {
     assert stringMethod("a","a","a") == 3
     assert stringMethod(["a"] as String[]) == 1
   }
+  
+  //tests related to GROOVY-1807
+  
+  def overloadedMethod1(String s){1}
+  def overloadedMethod1(Object[] args){2}
+  
+  void testOverloadedMethod1() {
+    assert overloadedMethod1() == 2
+  }
+  
+  def overloadedMethod2(x,y){1}
+  def overloadedMethod2(x,Object... y){2}
+  
+  void testOverloadedMethod2() {
+    assert overloadedMethod2(null) == 2
+    assert overloadedMethod2("foo") == 2
+  }
 }
