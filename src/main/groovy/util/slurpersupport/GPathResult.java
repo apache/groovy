@@ -432,6 +432,29 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
     public boolean isEmpty() {
         return size() == 0;
     }
+    
+    public Closure getBody() {
+        return new Closure(this.parent(),this) {
+            public void doCall(Object[] args) {
+                final GroovyObject delegate = (GroovyObject)getDelegate();
+                final GPathResult thisObject = (GPathResult)getThisObject();
+
+                Node node = (Node)thisObject.getAt(0);
+                List children = node.children();
+
+                for(int i=0;  i<children.size(); i++){
+                    Object child = children.get(i);
+                    delegate.getProperty("mkp");
+                    if(child instanceof Node){
+                        delegate.invokeMethod("yield", new Object[]{new NodeChild((Node)child, thisObject,"*",null)});
+                    }   
+                    else{
+                        delegate.invokeMethod("yield", new Object[]{child});
+                    }   
+                }                
+            }
+        };
+    }
 
     public abstract int size();
 

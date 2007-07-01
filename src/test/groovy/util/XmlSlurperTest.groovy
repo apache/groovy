@@ -3,6 +3,7 @@ package groovy.util
 import groovy.xml.TraversalTestSupport
 import groovy.xml.GpathSyntaxTestSupport
 import groovy.xml.MixedMarkupTestSupport
+import groovy.xml.StreamingMarkupBuilder
 
 class XmlSlurperTest extends GroovyTestCase {
 
@@ -60,5 +61,18 @@ class XmlSlurperTest extends GroovyTestCase {
 
     void testMixedMarkup() {
         MixedMarkupTestSupport.checkMixedMarkup(getRoot)
+    }
+    
+    void testReplace() {
+        def input = "<doc><sec>Hello<p>World</p></sec></doc>"
+        def replaceSlurper = new XmlSlurper().parseText(input) 
+        
+        replaceSlurper.sec.replaceNode{ node ->
+          t(){ delegate.mkp.yield node.getBody() }
+        }
+        
+        def outputSlurper = new StreamingMarkupBuilder()
+        String output = outputSlurper.bind{ mkp.yield replaceSlurper }
+        assert output == "<doc><t>Hello<p>World</p></t></doc>"
     }
 }

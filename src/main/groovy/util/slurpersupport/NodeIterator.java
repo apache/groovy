@@ -23,31 +23,37 @@ import java.util.Iterator;
  * @author John Wilson
  *
  */
-
 public abstract class NodeIterator implements Iterator {
-private final Iterator iter;
-private Object nextNode;
+    private final static Object DELAYED_INIT = new Object();
+    private final Iterator iter;
+    private Object nextNode;
 
-  public NodeIterator(final Iterator iter) {
-    this.iter = iter;
-    this.nextNode = getNextNode(iter);
-  }
-  
-  public boolean hasNext() {
-    return this.nextNode != null;
-  }
-  
-  public Object next() {
-    try {
-      return this.nextNode;
-    } finally {
-      this.nextNode = getNextNode(this.iter);
+    public NodeIterator(final Iterator iter) {
+        this.iter = iter;
+        this.nextNode = DELAYED_INIT;
     }
-  }
-  
-  public void remove() {
-    throw new UnsupportedOperationException();
-  }
-  
-  protected abstract Object getNextNode(final Iterator iter);
+
+    private void initNextNode(){
+        if (nextNode==DELAYED_INIT) nextNode = getNextNode(iter);
+    }
+
+    public boolean hasNext() {
+        initNextNode();
+        return this.nextNode != null;
+    }
+
+    public Object next() {
+        initNextNode();
+        try {
+            return this.nextNode;
+        } finally {
+            this.nextNode = getNextNode(this.iter);
+        }
+    }
+
+    public void remove() {
+        throw new UnsupportedOperationException();
+    }
+
+    protected abstract Object getNextNode(final Iterator iter);
 }
