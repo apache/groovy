@@ -3611,66 +3611,66 @@ public class DefaultGroovyMethods {
         return primitiveArrayGet(array, indices);
     }
 
-    public static void putAt(boolean[] array, int idx, Boolean newValue) {
-        primitiveArrayPut(array, idx, newValue);
+    public static Boolean putAt(boolean[] array, int idx, Boolean newValue) {
+        return (Boolean) primitiveArrayPut(array, idx, newValue);
     }
 
-    public static void putAt(byte[] array, int idx, Object newValue) {
+    public static Byte putAt(byte[] array, int idx, Object newValue) {
         if (!(newValue instanceof Byte)) {
             Number n = (Number) newValue;
             newValue = new Byte(n.byteValue());
         }
-        primitiveArrayPut(array, idx, newValue);
+        return (Byte) primitiveArrayPut(array, idx, newValue);
     }
 
-    public static void putAt(char[] array, int idx, Object newValue) {
+    public static Character putAt(char[] array, int idx, Object newValue) {
         if (newValue instanceof String) {
             String s = (String) newValue;
             if (s.length() != 1) throw new IllegalArgumentException("String of length 1 expected but got a bigger one");
             char c = s.charAt(0);
             newValue = new Character(c);
         }
-        primitiveArrayPut(array, idx, newValue);
+        return (Character) primitiveArrayPut(array, idx, newValue);
     }
 
-    public static void putAt(short[] array, int idx, Object newValue) {
+    public static Short putAt(short[] array, int idx, Object newValue) {
         if (!(newValue instanceof Short)) {
             Number n = (Number) newValue;
             newValue = new Short(n.shortValue());
         }
-        primitiveArrayPut(array, idx, newValue);
+        return (Short) primitiveArrayPut(array, idx, newValue);
     }
 
-    public static void putAt(int[] array, int idx, Object newValue) {
+    public static Integer putAt(int[] array, int idx, Object newValue) {
         if (!(newValue instanceof Integer)) {
             Number n = (Number) newValue;
             newValue = new Integer(n.intValue());
         }
-        primitiveArrayPut(array, idx, newValue);
+        return (Integer) primitiveArrayPut(array, idx, newValue);
     }
 
-    public static void putAt(long[] array, int idx, Object newValue) {
+    public static Long putAt(long[] array, int idx, Object newValue) {
         if (!(newValue instanceof Long)) {
             Number n = (Number) newValue;
             newValue = new Long(n.longValue());
         }
-        primitiveArrayPut(array, idx, newValue);
+        return (Long) primitiveArrayPut(array, idx, newValue);
     }
 
-    public static void putAt(float[] array, int idx, Object newValue) {
+    public static Float putAt(float[] array, int idx, Object newValue) {
         if (!(newValue instanceof Float)) {
             Number n = (Number) newValue;
             newValue = new Float(n.floatValue());
         }
-        primitiveArrayPut(array, idx, newValue);
+        return (Float) primitiveArrayPut(array, idx, newValue);
     }
 
-    public static void putAt(double[] array, int idx, Object newValue) {
+    public static Double putAt(double[] array, int idx, Object newValue) {
         if (!(newValue instanceof Double)) {
             Number n = (Number) newValue;
             newValue = new Double(n.doubleValue());
         }
-        primitiveArrayPut(array, idx, newValue);
+        return (Double) primitiveArrayPut(array, idx, newValue);
     }
     
     public static int size(boolean[] array) {
@@ -3936,8 +3936,9 @@ public class DefaultGroovyMethods {
      * @param idx the index of interest
      * @param newValue the new value to be put into the index of interest
      */
-    protected static void primitiveArrayPut(Object self, int idx, Object newValue) {
+    protected static Object primitiveArrayPut(Object self, int idx, Object newValue) {
         Array.set(self, normaliseIndex(idx, Array.getLength(self)), newValue);
+        return newValue;
     }
 
     // String methods

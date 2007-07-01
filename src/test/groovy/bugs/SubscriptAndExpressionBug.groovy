@@ -59,4 +59,10 @@ class SubscriptAndExpressionBug extends GroovyTestCase {
         
         assert cheese == "cheese"
     }
+    
+    void testBooleanExpression() {
+       int[] a = new int[1]
+       assert (a[0] = 42) == 42 
+       assert a[0] == 42
+    }
 }
