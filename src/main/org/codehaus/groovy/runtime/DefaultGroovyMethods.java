@@ -713,6 +713,10 @@ public class DefaultGroovyMethods {
         }
     }
 
+    public static boolean isCase(Number caseValue, Number switchValue) {
+      return NumberMath.compareTo(caseValue, switchValue)==0;
+    }
+    
     // Collection based methods
     //-------------------------------------------------------------------------
 

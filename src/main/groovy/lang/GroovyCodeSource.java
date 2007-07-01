@@ -68,25 +68,6 @@ public class GroovyCodeSource {
 			throw new RuntimeException("A CodeSource file URL cannot be constructed from the supplied codeBase: " + codeBase);
 		}
 	}
-
-	/** 
-	 * Package private constructor called by GroovyClassLoader for signed jar entries
-	 */
-	GroovyCodeSource(InputStream inputStream, String name, final File path, final Certificate[] certs) {
-		this.inputStream = inputStream;
-		this.name = name;
-		try {
-			this.codeSource = (CodeSource) AccessController.doPrivileged( new PrivilegedExceptionAction() {
-				public Object run() throws MalformedURLException {
-					//toURI().toURL() will encode, but toURL() will not.
-					return new CodeSource(path.toURI().toURL(), certs);
-				}
-			});
-		} catch (PrivilegedActionException pae) {
-			//shouldn't happen
-			throw new RuntimeException("Could not construct a URL from: " + path);
-		}
-	}
 	
 	public GroovyCodeSource(final File file) throws FileNotFoundException {
 		if (!file.exists())

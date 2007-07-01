@@ -24,7 +24,31 @@ class SwitchWithDifferentTypesTest extends GroovyTestCase {
         assertSwitch("abc", new Date(), 5.32, 23)
     }
 
-
+    void testSwitchWithMixedNumberValues() {
+        def i = 1 as Integer
+        def bi = 1 as BigInteger
+        def bd1 = 1.0 as BigDecimal
+        def bd2 = 1.0000 as BigDecimal
+        assertSwitchMixed(i, bi, 2, 3)
+        assertSwitchMixed(i, bd1, 2, 3)
+        assertSwitchMixed(i, bd2, 2, 3)
+        assertSwitchMixed(bi, i, 2, 3)
+        assertSwitchMixed(bi, bd1, 2, 3)
+        assertSwitchMixed(bi, bd2, 2, 3)
+        assertSwitchMixed(bd1, i, 2, 3)
+        assertSwitchMixed(bd1, bi, 2, 3)
+        assertSwitchMixed(bd1, bd2, 2, 3)
+        assertSwitchMixed(bd2, i, 2, 3)
+        assertSwitchMixed(bd2, bi, 2, 3)
+        assertSwitchMixed(bd2, bd1, 2, 3)
+    }
+    
+    void assertSwitchMixed(switchValue, matchingValue, nonmatchingValue1, nonmatchingValue2) {
+      assertSwitchMatch1(switchValue, matchingValue, nonmatchingValue1, nonmatchingValue2)
+      assertSwitchMatch2(switchValue, nonmatchingValue1, matchingValue, nonmatchingValue2)
+      assertSwitchMatch3(switchValue, nonmatchingValue1, nonmatchingValue2, matchingValue)
+    }
+    
     void assertSwitch(a, b, c, d) {
         assertSwitchMatch1(a, a, b, c)
         assertSwitchMatch2(b, a, b, c)
