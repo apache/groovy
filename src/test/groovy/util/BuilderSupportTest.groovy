@@ -17,20 +17,30 @@ class BuilderSupportTest extends GroovyTestCase{
         def b = new SpoofBuilder()
         assert b.log == []
         def node = b.foo()
-        assert b.log == ['create_with_name','foo','node_completed',null, node]
+        assert b.log == [  'create_with_name','foo',
+                           'node_completed',null, node, 
+                           'post_node_completion',null, node
+                        ]
     }
 
     void testSimpleNodeWithValue() {
         def b = new SpoofBuilder()
         def node = b.foo('value')
-        assert b.log == ['create_with_name_and_value','foo','value', 'node_completed',null,node]
+        assert b.log == [  'create_with_name_and_value','foo',
+                           'value', 'node_completed',null,node,
+                           'post_node_completion',null, node
+                        ]
     }
 
     void testSimpleNodeWithOneAttribute() {
         def b = new SpoofBuilder()
         def node = b.foo(name:'value')
         assert b.log == [
-            'create_with_name_and_map','foo', 'name','value', 'node_completed',null,'x']
+                           'create_with_name_and_map','foo', 
+                           'name','value', 
+                           'node_completed',null,'x',
+                           'post_node_completion',null, 'x'
+                        ]
     }
 
     void testSimpleNodeWithClosure() {
@@ -43,31 +53,50 @@ class BuilderSupportTest extends GroovyTestCase{
                 'create_with_name','bar',
             'set_parent', 'x', 'x',
                 'node_completed','x','x',
-            'node_completed',null,'x']
+                'post_node_completion', 'x', 'x',
+            'node_completed',null,'x',
+            'post_node_completion',null, 'x'
+            ]
     }
 
     void testSimpleNodeWithOneAttributeAndValue() {
         def b = new SpoofBuilder()
         def node = b.foo(bar:'baz', 'value')
-        assert b.log == ['create_with_name_map_and_value', 'foo', 'bar', 'baz','value', 'node_completed',null,node]
+        assert b.log == [
+                          'create_with_name_map_and_value', 'foo', 'bar', 'baz','value', 
+                          'node_completed',null,node,
+                          'post_node_completion',null, node
+                        ]
     }
 
     void testSimpleNodeWithValueAndOneAttribute() {
         def b = new SpoofBuilder()
         def node = b.foo('value', bar:'baz')
-        assert b.log == ['create_with_name_map_and_value', 'foo', 'bar', 'baz','value', 'node_completed',null,node]
+        assert b.log == [
+                          'create_with_name_map_and_value', 'foo', 'bar', 'baz','value', 
+                          'node_completed',null,node,
+                          'post_node_completion',null, node
+                        ]
     }
 
     void testSimpleNodeWithOneAttributeAndValueAndClosure() {
         def b = new SpoofBuilder()
         def node = b.foo(bar:'baz', 'value') { 1 }
-        assert b.log == ['create_with_name_map_and_value', 'foo', 'bar', 'baz','value', 'node_completed',null,node]
+        assert b.log == [
+                          'create_with_name_map_and_value', 'foo', 'bar', 'baz','value', 
+                          'node_completed',null,node,
+                          'post_node_completion',null, node
+                        ]
     }
 
     void testSimpleNodeWithValueAndOneAttributeAndClosure() {
         def b = new SpoofBuilder()
         def node = b.foo('value', bar:'baz') { 1 }
-        assert b.log == ['create_with_name_map_and_value', 'foo', 'bar', 'baz','value', 'node_completed',null,node]
+        assert b.log == [
+                          'create_with_name_map_and_value', 'foo', 'bar', 'baz','value', 
+                          'node_completed',null,node,
+                          'post_node_completion',null, node
+                        ]
     }
 
     void testSimpleNodeTwoValues() {
@@ -145,5 +174,12 @@ class SpoofBuilder extends BuilderSupport{
         log << 'node_completed'
         log << parent
         log << node
+    }
+    
+    protected Object postNodeCompletion(Object parent, Object node) {
+        log << 'post_node_completion'
+        log << parent
+        log << node
+        node
     }
 }

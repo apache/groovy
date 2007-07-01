@@ -182,7 +182,7 @@ public abstract class BuilderSupport extends GroovyObjectSupport {
         }
 
         proxyBuilder.nodeCompleted(current, node);
-        return node;
+        return proxyBuilder.postNodeCompletion(current, node);
     }
 
     /**
@@ -224,6 +224,18 @@ public abstract class BuilderSupport extends GroovyObjectSupport {
      * children applied
      */
     protected void nodeCompleted(Object parent, Object node) {
+    }
+
+    /**
+     * A hook to allow nodes to be processed once they have had all of their
+     * children applied and allows the actual node object that represents
+     * the Markup element to be changed
+     *
+     * @ param node the current node
+     * @ return the node, possibly new, that represents the markup element
+     */
+    protected Object postNodeCompletion(Object parent, Object node) {
+        return node;
     }
 
     protected Object getCurrent() {
