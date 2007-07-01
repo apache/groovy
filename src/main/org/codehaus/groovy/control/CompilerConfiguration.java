@@ -156,7 +156,6 @@ public class CompilerConfiguration {
         // Set in safe defaults
 
         setWarningLevel(WarningMessage.LIKELY_ERRORS);
-        setSourceEncoding("US-ASCII");
         setOutput(null);
         setTargetDirectory((File) null);
         setClasspath("");
@@ -168,22 +167,16 @@ public class CompilerConfiguration {
         setMinimumRecompilationInterval(100);
         setTargetBytecode(getVMVersion());
 
-        //
-        // Try for better defaults, ignore errors.
 
+        //
+        // Source file encoding
         String encoding = null;
         try {
-            //
-            // Source file encoding
-            encoding = System.getProperty("groovy.source.encoding");
-        } catch (Exception e) {
-            //
-            // Try for better defaults, ignore errors.
-            try {
-                encoding = System.getProperty("file.encoding", "US-ASCII");
-            } catch (Exception ee) {
-            }
-        }
+            encoding = System.getProperty("file.encoding", "US-ASCII");
+        } catch (Exception e) {}
+        try {
+            encoding = System.getProperty("groovy.source.encoding", encoding);
+        } catch (Exception e) {}
         setSourceEncoding(encoding);
 
         try {
