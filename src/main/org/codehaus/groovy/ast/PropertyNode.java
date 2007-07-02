@@ -83,6 +83,10 @@ public class PropertyNode extends AnnotatedNode implements Opcodes,Variable {
     public boolean isPrivate() {
         return (modifiers & ACC_PRIVATE) != 0;
     }
+    
+    public boolean isStatic() {
+        return (modifiers & ACC_STATIC) != 0;
+    }
 
     public boolean hasInitialExpression() {
         return field.hasInitialExpression();

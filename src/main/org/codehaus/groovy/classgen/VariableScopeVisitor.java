@@ -464,5 +464,17 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     	}
         super.visitMethodCallExpression(call);
     }
+    
+    public void visitProperty(PropertyNode node) {
+        pushState(node.isStatic());
+        super.visitProperty(node);
+        popState();
+    }
+    
+    public void visitField(FieldNode node) {
+        pushState(node.isStatic());
+        super.visitField(node);
+        popState();
+    }
 
 }

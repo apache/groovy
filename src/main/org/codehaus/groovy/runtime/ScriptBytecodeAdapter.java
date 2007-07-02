@@ -525,13 +525,7 @@ public class ScriptBytecodeAdapter {
     //  --------------------------------------------------------       
 
     public static Object getGroovyObjectProperty(Class senderClass, GroovyObject receiver, String messageName) throws Throwable {
-        // TODO make try/catch not needed by producing smarter bytecode
-        try {
-            return receiver.getProperty(messageName);
-        } catch (LinkageError e) {
-            // catch nasty VM errors and change them to something (slightly) more meaningful
-            throw new GroovyException("Unable to get property '" + messageName + "'", e);
-        }
+        return receiver.getProperty(messageName);
     }
 
     public static Object getGroovyObjectPropertySafe(Class senderClass, GroovyObject receiver, String messageName) throws Throwable {
