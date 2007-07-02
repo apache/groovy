@@ -531,7 +531,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
            Class[] newArgClasses = MetaClassHelper.convertToTypeArray(newArguments);
            method = getMethodWithCaching(sender, methodName, newArgClasses, isCallToSuper);
            if (method!=null) {
-               MethodKey methodKey = new DefaultMethodKey(sender, methodName, argClasses, isCallToSuper);
                method = new TransformMetaMethod(method) {
                    public Object invoke(Object object, Object[] arguments) {
                        Object firstArgument = arguments[0];
@@ -540,8 +539,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                        return super.invoke(object, arguments);
                    }
                };
-               cacheInstanceMethod(methodKey, method);
-               return invokeMethod(sender,object,methodName, originalArguments, isCallToSuper, fromInsideClass);
            }
        }
 
