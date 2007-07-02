@@ -116,4 +116,18 @@ class FinallyTest extends GroovyTestCase{
     }
     return calls
   }
+  
+  def multipleReturn() {
+    try { 
+        if (0 == 1) return 1
+        return 2
+    }
+    finally { 
+        return 3
+    }
+  }
+  
+  void testMultipleReturn(){
+    assert multipleReturn() == 3
+  }
 }

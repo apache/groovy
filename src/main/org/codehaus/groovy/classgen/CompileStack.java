@@ -598,7 +598,6 @@ public class CompileStack implements Opcodes {
         for (Iterator iter = blocks.iterator(); iter.hasNext();) {
             Runnable block = (Runnable) iter.next();
             if (visitedBlocks.contains(block)) continue;
-            visitedBlocks.add(block);
             block.run();
         }     
     }
@@ -619,5 +618,13 @@ public class CompileStack implements Opcodes {
     public void popFinallyBlock() {
         popState();
         finallyBlocks.removeFirst();
+    }
+
+    public void pushFinallyBlockVisit(Runnable block) {
+        visitedBlocks.add(block);
+    }
+    
+    public void popFinallyBlockVisit(Runnable block) {
+        visitedBlocks.remove(block);
     }
 }

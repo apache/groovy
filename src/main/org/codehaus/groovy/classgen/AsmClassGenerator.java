@@ -822,7 +822,9 @@ public class AsmClassGenerator extends ClassGenerator {
             compileStack.pushFinallyBlock(
                     new Runnable() {
                         public void run() {
+                            compileStack.pushFinallyBlockVisit(this);
                             finallyStatement.visit(AsmClassGenerator.this);
+                            compileStack.popFinallyBlockVisit(this);
                         }
                     }
             );
