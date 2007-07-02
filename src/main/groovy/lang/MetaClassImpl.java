@@ -80,8 +80,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
    private Map classPropertyIndexForSuper = new HashMap();
    private Map staticPropertyIndex = new HashMap();
    private Map listeners = new HashMap();
-   private Map methodCache = Collections.synchronizedMap(new HashMap());
-   private Map staticMethodCache = Collections.synchronizedMap(new HashMap());
+   private Map methodCache = new ConcurrentReaderHashMap();
+   private Map staticMethodCache = new ConcurrentReaderHashMap();
    private MetaMethod genericGetMethod;
    private MetaMethod genericSetMethod;
    private List constructors;

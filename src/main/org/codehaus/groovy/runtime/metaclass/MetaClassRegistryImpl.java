@@ -44,7 +44,9 @@ import java.util.List;
  * @version $Revision$
  */
 public class MetaClassRegistryImpl implements MetaClassRegistry{
-    private MemoryAwareConcurrentReadMap metaClasses = new MemoryAwareConcurrentReadMap();
+    private volatile int constantMetaClassCount = 0;
+    private ConcurrentReaderHashMap constantMetaClasses = new ConcurrentReaderHashMap();
+    private MemoryAwareConcurrentReadMap weakMetaClasses = new MemoryAwareConcurrentReadMap();
     private MemoryAwareConcurrentReadMap loaderMap = new MemoryAwareConcurrentReadMap();
     private boolean useAccessible;
     
@@ -120,22 +122,28 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     }
 
     public MetaClass getMetaClass(Class theClass) {
+        MetaClass answer=null;
+        if (constantMetaClassCount!=0) answer = (MetaClass) constantMetaClasses.get(theClass);
+        if (answer==null) answer = (MetaClass) weakMetaClasses.get(theClass);
+        if (answer!=null) return answer;
+       
         synchronized (theClass) {
-        MetaClass answer = (MetaClass) metaClasses.get(theClass);
-        
-            if (answer == null) {
-                answer = getMetaClassFor(theClass);
-                answer.initialize();
-                metaClasses.put(theClass, answer);
-            }
-            
+            answer = getMetaClassFor(theClass);
+            answer.initialize();
+            weakMetaClasses.put(theClass, answer);
             return answer;
         }
     }
 
     public void removeMetaClass(Class theClass) {
-        synchronized (theClass) {
-            metaClasses.remove(theClass);
+        Object answer=null;
+        if (constantMetaClassCount!=0) answer = constantMetaClasses.remove(theClass);
+        if (answer==null) {
+            weakMetaClasses.remove(theClass);
+        } else {
+            synchronized(theClass) {
+                constantMetaClassCount--;
+            }
         }
     }
 
@@ -148,7 +156,8 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
      */
     public void setMetaClass(Class theClass, MetaClass theMetaClass) {
         synchronized(theClass) {
-            metaClasses.putStrong(theClass, theMetaClass);
+            constantMetaClassCount++;
+            constantMetaClasses.put(theClass, theMetaClass);
         }
     }
 
@@ -156,33 +165,22 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         return useAccessible;
     }
 
-    private ReflectorLoader getReflectorLoader(final ClassLoader loader) {
-        synchronized (loaderMap) {
-            ReflectorLoader reflectorLoader = (ReflectorLoader) loaderMap.get(loader);
-            if (reflectorLoader == null) {
-                reflectorLoader = (ReflectorLoader) AccessController.doPrivileged(new PrivilegedAction() {
-                    public Object run() {
-                        return new ReflectorLoader(loader);
-                    }
-                }); 
-                loaderMap.put(loader, reflectorLoader);
-            }
-            return reflectorLoader;
-        }
-    }
-
     /**
-     * Used by MetaClass when registering new methods which avoids initializing the MetaClass instances on lookup
+     * create Reflector loader instance if not in map. This method
+     * is only used with a lock on "this" and since loaderMap is not
+     * used anywhere else no sync is needed here
      */
-    MetaClass lookup(Class theClass) {
-        synchronized (theClass) {
-            MetaClass answer = (MetaClass) metaClasses.get(theClass);
-            if (answer == null) {
-                answer = getMetaClassFor(theClass);
-                metaClasses.put(theClass, answer);
-            }
-            return answer;
+    private ReflectorLoader getReflectorLoader(final ClassLoader loader) {
+        ReflectorLoader reflectorLoader = (ReflectorLoader) loaderMap.get(loader);
+        if (reflectorLoader == null) {
+            reflectorLoader = (ReflectorLoader) AccessController.doPrivileged(new PrivilegedAction() {
+                public Object run() {
+                    return new ReflectorLoader(loader);
+                }
+            }); 
+            loaderMap.put(loader, reflectorLoader);
         }
+        return reflectorLoader;
     }
 
     /**
