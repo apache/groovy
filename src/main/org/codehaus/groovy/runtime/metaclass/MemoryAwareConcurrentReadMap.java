@@ -719,8 +719,9 @@ public class MemoryAwareConcurrentReadMap {
         Entry(int hash, SoftRef key, Reference value, Entry next) {
             this.hash = hash;
             this.key = key;
+            key.entry = this;
             this.next = next;
-            this.value = value;
+            this.setValue(value);
         }
         
         // Map.Entry Ops 
