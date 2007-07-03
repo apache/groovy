@@ -201,7 +201,7 @@ public class MemoryAwareConcurrentReadMap {
     }
 
     /** 
-     * Check for referenial equality, null allowed 
+     * Check for referential equality, null allowed 
      **/
     protected boolean eq(Object x, Object y) {
         return x == y;
