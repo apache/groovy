@@ -32,7 +32,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * A registery of MetaClass instances which caches introspection &
+ * A registry of MetaClass instances which caches introspection &
  * reflection information and allows methods to be dynamically added to
  * existing classes at runtime
  *
