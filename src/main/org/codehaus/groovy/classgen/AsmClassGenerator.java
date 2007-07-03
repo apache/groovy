@@ -1670,7 +1670,11 @@ public class AsmClassGenerator extends ClassGenerator {
         if (methodName != null && isThisExpression && isFieldOrVariable(methodName) && !classNode.hasPossibleMethod(methodName, arguments)) {
             // lets invoke the closure method
             visitVariableExpression(new VariableExpression(methodName));
-            arguments.visit(this);
+            if (arguments instanceof TupleExpression) {
+                arguments.visit(this);
+            } else {
+                new TupleExpression().addExpression(arguments).visit(this);
+            }
             invokeClosureMethod.call(mv);
         } else {
             MethodCallerMultiAdapter adapter = invokeMethod;

@@ -19,6 +19,21 @@ class ClosureMethodCallTest extends GroovyTestCase {
         assert foo == "hello sam and james"
     }
     
+    void testClosureAsLocalVar() {
+        def local = { Map params -> params.x * params.y  }
+        assert local(x : 2, y : 3) == 6
+    }
+    
+    void testClosureDirectly() {
+        assert { Map params -> params.x * params.y }(x : 2, y : 3) == 6
+    }
+    
+    def attribute
+    
+    void testClosureAsAttribute() {
+        attribute = { Map params ->  params.x * params.y  } 
+        assert attribute(x : 2, y : 3) == 6
+    }
     
     void testSystemOutPrintlnAsAClosure() {
         def closure = System.out.&println
