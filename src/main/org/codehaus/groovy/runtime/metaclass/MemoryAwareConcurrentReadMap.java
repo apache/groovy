@@ -323,7 +323,7 @@ public class MemoryAwareConcurrentReadMap {
             Object eValue = e.getValue();
 
             if (e.hash == hash && eq(key, eKey)) {
-                if (eValue != null) return eValue;
+                if (e.value != DUMMY_REF) return eValue;
 
                 // Entry was invalidated during deletion. But it could
                 // have been re-inserted, so we must retraverse.
@@ -338,7 +338,7 @@ public class MemoryAwareConcurrentReadMap {
                 e = first = tab[index = hash & (tab.length-1)];
 
             } 
-            else
+            else 
                 e = e.next;
         }
     }
@@ -649,6 +649,7 @@ public class MemoryAwareConcurrentReadMap {
                     
                     tab[index] = head;
                     recordModification(head);
+                    break;
                 }
             } 
         }
@@ -721,6 +722,7 @@ public class MemoryAwareConcurrentReadMap {
             this.key = key;
             key.entry = this;
             this.next = next;
+            this.value = DUMMY_REF;
             this.setValue(value);
         }
         
