@@ -15,6 +15,7 @@
  */
 package groovy.swing;
 
+import groovy.lang.Closure;
 import groovy.lang.GroovyRuntimeException;
 import groovy.model.DefaultTableModel;
 import groovy.swing.factory.*;
@@ -455,24 +456,24 @@ public class SwingBuilder extends BuilderSupport {
         }
     }
 
-    public Object invokeMethod(final String methodName, final Object args) {
+    public SwingBuilder edt(Closure c) {
+        c.setDelegate(this);
         if (headless || SwingUtilities.isEventDispatchThread()) {
-            return super.invokeMethod(methodName, args);
+            c.call(this);
         } else {
-            final Object[] ret = new Object[1];
-            Runnable run = new Runnable() {
-                public void run() {
-                    ret[0] = SwingBuilder.super.invokeMethod(methodName, args);
-                }
-            };
             try {
-                SwingUtilities.invokeAndWait(run);
+                SwingUtilities.invokeAndWait(c.curry(new Object[]{this}));
             } catch (InterruptedException e) {
                 throw new GroovyRuntimeException("interrupted swing interaction", e);
             } catch (InvocationTargetException e) {
                 throw new GroovyRuntimeException("exception in event dispatch thread", e.getTargetException());
             }
-            return ret[0];
         }
+        return this;
+    }
+    
+    public static SwingBuilder build(Closure c) {
+        SwingBuilder builder = new SwingBuilder();
+        return builder.edt(c);
     }
 }
