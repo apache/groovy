@@ -201,7 +201,7 @@ public class MemoryAwareConcurrentReadMap {
     }
 
     /** 
-     * Check for equality of non-null references x and y. 
+     * Check for referenial equality, null allowed 
      **/
     protected boolean eq(Object x, Object y) {
         return x == y;
@@ -625,8 +625,13 @@ public class MemoryAwareConcurrentReadMap {
         
         while ((ref=(SoftRef)queue.poll())!=null) {
             Entry entry = ref.entry;
+            // if entry== null, then it is already deleted
+            // form the map
             if (entry == null) continue;
             ref.entry = null;
+            // if neither entry.key nor entry.value == ref then
+            // the entry was reused, but the value has become invalid
+            if (entry.key!=ref && entry.value!=ref) continue;
             int hash = entry.hash;
             int index = hash & (tab.length-1);
             Entry first = tab[index];
@@ -730,9 +735,11 @@ public class MemoryAwareConcurrentReadMap {
 
         public Object setValue(Reference value) {
             Object oldValue = this.value.get();
-            if (value == null) {
-                value = DUMMY_REF;
+            if (value == null || value == DUMMY_REF) {
+                this.value = DUMMY_REF;
             } else {
+                SoftRef ref = (SoftRef) value;
+                ref.entry = this;
                 this.value = value;
             }
             return oldValue;
