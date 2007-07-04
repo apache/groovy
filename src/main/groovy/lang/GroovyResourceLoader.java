@@ -30,6 +30,7 @@ public interface GroovyResourceLoader {
      *
      * @param filename name of the file
      * @return a URL
+     * @throws java.net.MalformedURLException if the URL is invalid
      */
-    public URL loadGroovySource(String filename) throws MalformedURLException;
+    URL loadGroovySource(String filename) throws MalformedURLException;
 }

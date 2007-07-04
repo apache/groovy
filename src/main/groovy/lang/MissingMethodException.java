@@ -28,9 +28,9 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  */
 public class MissingMethodException extends GroovyRuntimeException {
 
-    private String method;
-    private Class type;
-    private boolean isStatic;
+    private final String method;
+    private final Class type;
+    private final boolean isStatic;
 
     public MissingMethodException(String method, Class type, Object[] arguments) {
         this(method,type,arguments,false);

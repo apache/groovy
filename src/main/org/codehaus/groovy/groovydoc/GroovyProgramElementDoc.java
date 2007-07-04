@@ -17,16 +17,27 @@ package org.codehaus.groovy.groovydoc;
 
 public interface GroovyProgramElementDoc extends GroovyDoc {
 
-//	public GroovyAnnotationDesc[] annotations();
-	public GroovyClassDoc containingClass();
-	public GroovyPackageDoc containingPackage();
-	public boolean isFinal();
-	public boolean isPackagePrivate();
-	public boolean isPrivate();
-	public boolean isProtected();
-	public boolean isPublic();
-	public boolean isStatic();
-	public String modifiers();
-	public int modifierSpecifier();
-	public String qualifiedName();
+//    GroovyAnnotationDesc[] annotations();
+
+    GroovyClassDoc containingClass();
+
+    GroovyPackageDoc containingPackage();
+
+    boolean isFinal();
+
+    boolean isPackagePrivate();
+
+    boolean isPrivate();
+
+    boolean isProtected();
+
+    boolean isPublic();
+
+    boolean isStatic();
+
+    String modifiers();
+
+    int modifierSpecifier();
+
+    String qualifiedName();
 }

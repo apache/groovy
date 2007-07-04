@@ -56,10 +56,6 @@ import java.security.PrivilegedAction;
  */
 public abstract class Closure extends GroovyObjectSupport implements Cloneable, Runnable {
 
-    private static final Object noParameters[] = new Object[]{null};
-    private static final Object emptyArray[] = new Object[0];
-    private static final Object emptyArrayParameter[] = new Object[]{emptyArray};
-
     private Object delegate;
     private final Object owner;
     private Class[] parameterTypes;
@@ -68,15 +64,14 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
 
 
     private int directive = 0;
-    public final static int DONE = 1, SKIP = 2;
+    public static final int DONE = 1, SKIP = 2;
 
     public Closure(Object owner, Object thisObject) {
         this.owner = owner;
         this.delegate = owner;
         this.thisObject = thisObject;
 
-        Class closureClass = this.getClass();
-        final Class clazz = closureClass;
+        final Class clazz = this.getClass();
         final Method[] methods = (Method[]) AccessController.doPrivileged(new  PrivilegedAction() {
             public Object run() {
                 return clazz.getDeclaredMethods();
@@ -219,7 +214,7 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
     /**
      * Allows the delegate to be changed such as when performing markup building
      *
-     * @param delegate
+     * @param delegate the new delegate
      */
     public void setDelegate(Object delegate) {
         this.delegate = delegate;
@@ -258,7 +253,8 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
     /**
      * Support for closure currying
      *
-     * @param arguments
+     * @param arguments the arguments to bind
+     * @return the new closure with its arguments bound
      */
     public Closure curry(final Object arguments[]) {
         return new CurriedClosure(this,arguments);

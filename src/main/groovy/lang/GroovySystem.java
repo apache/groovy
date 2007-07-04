@@ -17,7 +17,7 @@ package groovy.lang;
 
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 
-public class GroovySystem {
+public final class GroovySystem {
     private GroovySystem() {
         // Do not allow this class to be instantiated
     }
@@ -25,26 +25,24 @@ public class GroovySystem {
     /**
      * If true then the MetaClass will only use reflection for method dispatch, property acess, etc.
      */
-    private final static boolean useReflection;
+    private static final boolean USE_REFLECTION;
     
     /**
      * Reference to the MetaClass Registry to be used by the Groovy run time system to map classes to MetaClasses
      */
-    private final static MetaClassRegistry metaClassRegistry;
+    private static final MetaClassRegistry META_CLASS_REGISTRY;
     
     /**
      * The MetaClass for java.lang.Object
      */
-    private  static MetaClass objectMetaClass;
-
+    private static MetaClass objectMetaClass;
 
     public static boolean isUseReflection() {
-        return useReflection;
+        return USE_REFLECTION;
     }
 
-
     public static MetaClassRegistry getMetaClassRegistry() {
-        return metaClassRegistry;
+        return META_CLASS_REGISTRY;
     }
     
     //
@@ -52,7 +50,7 @@ public class GroovySystem {
     //  TODO: have some way of specifying another MetaClass Registry implementation
     //
     static {
-        useReflection = true;
-        metaClassRegistry = new MetaClassRegistryImpl();
+        USE_REFLECTION = true;
+        META_CLASS_REGISTRY = new MetaClassRegistryImpl();
     }
 }

@@ -16,16 +16,16 @@
 package org.codehaus.groovy.groovydoc;
 
 public interface GroovyExecutableMemberDoc extends GroovyMemberDoc {
-	public String flatSignature();
-	public boolean isNative();
-	public boolean isSynchronized();
-	public boolean isVarArgs();
-//	public GroovyParameter[] parameters();
-//	public GroovyParamTag[] paramTags();
-	public String signature();
-	public GroovyClassDoc[] thrownExceptions();
-	public GroovyType[] thrownExceptionTypes();
-//	public GroovyThrowsTag[] throwsTags();
-//	public GroovyTypeVariable[] typeParameters();
-//	public GroovyParamTag[] typeParamTags();
+    String flatSignature();
+    boolean isNative();
+    boolean isSynchronized();
+    boolean isVarArgs();
+//    GroovyParameter[] parameters();
+//    GroovyParamTag[] paramTags();
+    String signature();
+    GroovyClassDoc[] thrownExceptions();
+    GroovyType[] thrownExceptionTypes();
+//    GroovyThrowsTag[] throwsTags();
+//    GroovyTypeVariable[] typeParameters();
+//    GroovyParamTag[] typeParamTags();
 }

@@ -200,8 +200,8 @@ public class ObjectRange extends AbstractList implements Range {
      */
     public Iterator iterator() {
         return new Iterator() {
-            int index = 0;
-            Object value = (reverse) ? to : from;
+            private int index;
+            private Object value = reverse ? to : from;
 
             public boolean hasNext() {
                 return index < size();
@@ -305,7 +305,7 @@ public class ObjectRange extends AbstractList implements Range {
      * {@inheritDoc}
      */
     public String toString() {
-        return (reverse) ? "" + to + ".." + from : "" + from + ".." + to;
+        return reverse ? "" + to + ".." + from : "" + from + ".." + to;
     }
 
     /**
@@ -314,7 +314,7 @@ public class ObjectRange extends AbstractList implements Range {
     public String inspect() {
         String toText = InvokerHelper.inspect(to);
         String fromText = InvokerHelper.inspect(from);
-        return (reverse) ? "" + toText + ".." + fromText : "" + fromText + ".." + toText;
+        return reverse ? "" + toText + ".." + fromText : "" + fromText + ".." + toText;
     }
 
     public boolean contains(Object value) {

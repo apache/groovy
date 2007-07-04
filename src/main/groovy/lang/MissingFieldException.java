@@ -28,8 +28,8 @@ package groovy.lang;
  */
 public class MissingFieldException extends GroovyRuntimeException {
 
-    private String field;
-    private Class type;
+    private final String field;
+    private final Class type;
 
     public MissingFieldException(String field, Class type) {
         super("No such field: " + field + " for class: " + type.getName());

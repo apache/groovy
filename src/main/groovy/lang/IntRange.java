@@ -16,10 +16,8 @@
 
 package groovy.lang;
 
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.IteratorClosureAdapter;
 
-import javax.naming.OperationNotSupportedException;
 import java.math.BigInteger;
 import java.util.AbstractList;
 import java.util.Collection;
@@ -45,17 +43,17 @@ public class IntRange extends AbstractList implements Range {
         /**
          * Counts from 0 up to size - 1.
          */
-        int index = 0;
+        private int index;
 
         /**
          * The number of values in the range.
          */
-        int size = size();
+        private int size = size();
 
         /**
          * The next value to return.
          */
-        int value = (reverse) ? to : from;
+        private int value = reverse ? to : from;
 
         /**
          * {@inheritDoc}
@@ -85,7 +83,7 @@ public class IntRange extends AbstractList implements Range {
         /**
          * Not supported.
          *
-         * @throws OperationNotSupportedException always
+         * @throws javax.naming.OperationNotSupportedException always
          */
         public void remove() {
             IntRange.this.remove(index);
@@ -162,8 +160,8 @@ public class IntRange extends AbstractList implements Range {
      * It is not necessary to override <code>hashCode</code>, as
      * {@link AbstractList#hashCode()} provides a suitable hash code.<p>
      * <p/>
-     * Note that equals is generally handled by {@link DefaultGroovyMethods#equals(List,List)} instead of this
-     * method.
+     * Note that equals is generally handled by {@link org.codehaus.groovy.runtime.DefaultGroovyMethods#equals(List,List)}
+     * instead of this method.
      *
      * @param that the object to compare
      * @return <code>true</code> if the objects are equal
@@ -176,6 +174,7 @@ public class IntRange extends AbstractList implements Range {
      * Compares an {@link IntRange} to another {@link IntRange}.
      *
      * @return <code>true</code> if the ranges are equal
+     * @param that the object to compare for equality
      */
     public boolean equals(IntRange that) {
         return that != null && this.reverse == that.reverse && this.from == that.from && this.to == that.to;

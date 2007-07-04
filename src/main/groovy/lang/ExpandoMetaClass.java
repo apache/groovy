@@ -91,22 +91,22 @@ public class  ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     private static final String GROOVY_CONSTRUCTOR = "<init>";
 
     // These two properties are used when no ExpandoMetaClassCreationHandle is present
-    private static final Map classInheritanceMapping = Collections.synchronizedMap(new HashMap());
-    private boolean hasCreationHandle = false;
+    private static final Map CLASS_INHERITANCE_MAPPING = Collections.synchronizedMap(new HashMap());
+    private boolean hasCreationHandle;
     private MetaClass myMetaClass;
-    private boolean allowChangesAfterInit = false;
+    private boolean allowChangesAfterInit;
 
     private boolean initialized;
-    private boolean initCalled = false;
-    private boolean modified = false;
+    private boolean initCalled;
+    private boolean modified;
     private boolean inRegistry;
     private final Set inheritedMetaMethods = new HashSet();
     private final Map beanPropertyCache = new HashMap();
     private final Set expandoMethods = new HashSet();
     private final Map expandoProperties = new LinkedHashMap();
-    private ClosureMetaMethod getPropertyMethod = null;
-    private ClosureMetaMethod invokeMethodMethod = null;
-    private ClosureMetaMethod setPropertyMethod = null;
+    private ClosureMetaMethod getPropertyMethod;
+    private ClosureMetaMethod invokeMethodMethod;
+    private ClosureMetaMethod setPropertyMethod;
 
     /**
      * For simulating closures in Java
@@ -170,7 +170,7 @@ public class  ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
             List superClasses = getSuperClasses();
             for (Iterator i = superClasses.iterator(); i.hasNext();) {
                 Class c = (Class) i.next();
-                Map methodMap = (Map)classInheritanceMapping.get(c);
+                Map methodMap = (Map) CLASS_INHERITANCE_MAPPING.get(c);
                 if(methodMap!=null) {
                     for (Iterator j = methodMap.values().iterator(); j.hasNext();) {
                         List methods = (List) j.next();
@@ -272,7 +272,7 @@ public class  ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 	protected class ExpandoMetaProperty extends GroovyObjectSupport {
 
 		String propertyName;
-		boolean isStatic = false;
+		boolean isStatic;
 		protected ExpandoMetaProperty(String name) {
 			this(name, false);
 		}
@@ -612,10 +612,10 @@ public class  ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 
 
 	private static void registerWithInheritenceManager(Class theClass, ClosureMetaMethod metaMethod) {
-		Map methodMap = (Map)classInheritanceMapping .get(theClass);
+		Map methodMap = (Map) CLASS_INHERITANCE_MAPPING.get(theClass);
 		if(methodMap == null) {
 			methodMap = new HashMap();
-			classInheritanceMapping.put(theClass, methodMap);
+			CLASS_INHERITANCE_MAPPING.put(theClass, methodMap);
 		}
 		List methodList = (List)methodMap.get(metaMethod.getName());
 		if(methodList == null) {

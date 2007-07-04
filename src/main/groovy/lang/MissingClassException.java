@@ -29,7 +29,7 @@ import org.codehaus.groovy.ast.ClassNode;
  */
 public class MissingClassException extends GroovyRuntimeException {
 
-    private String type;
+    private final String type;
 
     public MissingClassException(String type, ASTNode node, String message) {
         super("No such class: " + type + " " + message, node);

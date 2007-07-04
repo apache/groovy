@@ -16,33 +16,33 @@
 package org.codehaus.groovy.groovydoc;
 
 public interface GroovyClassDoc extends GroovyType, GroovyProgramElementDoc{
-	public GroovyConstructorDoc[] constructors();
-	public GroovyConstructorDoc[] constructors(boolean filter);
-	public boolean definesSerializableFields();
-	public GroovyFieldDoc[] enumConstants();
-	public GroovyFieldDoc[] fields();
-	public GroovyFieldDoc[] fields(boolean filter);
-	public GroovyClassDoc findClass(String className);
-	public GroovyClassDoc[] importedClasses();
-	public GroovyPackageDoc[] importedPackages();
-	public GroovyClassDoc[] innerClasses(); // not supported in groovy
-	public GroovyClassDoc[] innerClasses(boolean filter); // not supported in groovy
-	public GroovyClassDoc[] interfaces();
-	public GroovyType[] interfaceTypes();
-	public boolean isAbstract();
-	public boolean isExternalizable();
-	public boolean isSerializable();
-	public GroovyMethodDoc[] methods();
-	public GroovyMethodDoc[] methods(boolean filter);
-	public GroovyFieldDoc[] serializableFields();
-	public GroovyMethodDoc[] serializationMethods();
-	public boolean subclassOf(GroovyClassDoc gcd);
-	public GroovyClassDoc superclass();
-	public GroovyType superclassType();
-//	public GroovyTypeVariable[] typeParameters(); // not supported in groovy
-//	public GroovyParamTag[] typeParamTags(); // not supported in groovy
+    GroovyConstructorDoc[] constructors();
+    GroovyConstructorDoc[] constructors(boolean filter);
+    boolean definesSerializableFields();
+    GroovyFieldDoc[] enumConstants();
+    GroovyFieldDoc[] fields();
+    GroovyFieldDoc[] fields(boolean filter);
+    GroovyClassDoc findClass(String className);
+    GroovyClassDoc[] importedClasses();
+    GroovyPackageDoc[] importedPackages();
+    GroovyClassDoc[] innerClasses(); // not supported in groovy
+    GroovyClassDoc[] innerClasses(boolean filter); // not supported in groovy
+    GroovyClassDoc[] interfaces();
+    GroovyType[] interfaceTypes();
+    boolean isAbstract();
+    boolean isExternalizable();
+    boolean isSerializable();
+    GroovyMethodDoc[] methods();
+    GroovyMethodDoc[] methods(boolean filter);
+    GroovyFieldDoc[] serializableFields();
+    GroovyMethodDoc[] serializationMethods();
+    boolean subclassOf(GroovyClassDoc gcd);
+    GroovyClassDoc superclass();
+    GroovyType superclassType();
+//    GroovyTypeVariable[] typeParameters(); // not supported in groovy
+//    GroovyParamTag[] typeParamTags(); // not supported in groovy
 
 
-	public String getFullPathName(); // not in Java Doclet API
-	public String getRelativeRootPath(); // not in Java Doclet API	
+    String getFullPathName(); // not in Java Doclet API
+    String getRelativeRootPath(); // not in Java Doclet API	
 }

@@ -16,10 +16,10 @@
 package org.codehaus.groovy.groovydoc;
 
 public interface GroovyMethodDoc extends GroovyExecutableMemberDoc {
-	public boolean isAbstract();
-	public GroovyClassDoc overriddenClass();
-	public GroovyMethodDoc overriddenMethod();
-	public GroovyType overriddenType();
-	public boolean overrides(GroovyMethodDoc arg0);
-	public GroovyType returnType();
+    boolean isAbstract();
+    GroovyClassDoc overriddenClass();
+    GroovyMethodDoc overriddenMethod();
+    GroovyType overriddenType();
+    boolean overrides(GroovyMethodDoc arg0);
+    GroovyType returnType();
 }

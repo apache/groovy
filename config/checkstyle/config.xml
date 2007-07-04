@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!DOCTYPE module PUBLIC
-    "-//Puppy Crawl//DTD Check Configuration 1.1//EN"
-    "http://www.puppycrawl.com/dtds/configuration_1_1.dtd">
+        "-//Puppy Crawl//DTD Check Configuration 1.1//EN"
+        "http://www.puppycrawl.com/dtds/configuration_1_1.dtd">
 <!--
 
   A Checkstyle configuration that checks against the recommendations
@@ -34,7 +34,7 @@
         <!-- this will not find violations that contain linebreaks -->
         <module name="GenericIllegalRegexp">
             <property name="format"
-                value="((public)|(protected))\s+void\s+finalize\(\s*\)"/>
+                      value="((public)|(protected))\s+void\s+finalize\(\s*\)"/>
         </module>
 
         <!-- Item 8 - Always override hashCode when you override equals -->
@@ -81,7 +81,7 @@
 
         <!-- Item 38 - Adhere to generally accepted naming conventions -->
         <module name="PackageName">
-            <property name="format" value="^[a-z]+(\.[a-z][a-z0-9]{1,9})*$"/>
+            <property name="format" value="^[a-z]+(\.[a-z][a-z0-9]{1,15})*$"/>
         </module>
         <module name="TypeName"/>
         <module name="ConstantName"/>
@@ -125,7 +125,8 @@
         <module name="ExplicitInitialization"/>
         <module name="ParameterAssignment"/>
         <module name="IllegalType">
-            <property name="format" value="^$"/> <!-- otherwise default of '*Abstract' is illegal -->
+            <property name="format" value="^$"/>
+            <!-- otherwise default of '*Abstract' is illegal -->
         </module>
         <module name="UpperEll"/>
         <module name="UnnecessaryParentheses"/>
@@ -136,8 +137,8 @@
         <module name="MutableException"/>
         <!-- add below in eventually? -->
         <!--<module name="LeftCurly">-->
-            <!--<property name="option" value="nl"/>-->
-            <!--<property name="tokens" value="CLASS_DEF,INTERFACE_DEF"/>-->
+        <!--<property name="option" value="nl"/>-->
+        <!--<property name="tokens" value="CLASS_DEF,INTERFACE_DEF"/>-->
         <!--</module>-->
         <!-- add below in eventually for consistency -->
         <!--<module name="ArrayTypeStyle"/>-->
@@ -145,5 +146,7 @@
     <module name="PackageHtml"/>
     <module name="au.com.redhillconsulting.simian.SimianCheck">
         <property name="threshold" value="8"/>
+        <!-- remove language once Simian understands Groovy -->
+        <property name="language" value="java"/>
     </module>
 </module>

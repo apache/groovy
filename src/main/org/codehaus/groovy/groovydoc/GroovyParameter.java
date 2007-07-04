@@ -16,9 +16,8 @@
 package org.codehaus.groovy.groovydoc;
 
 public interface GroovyParameter{
-//	public GroovyAnnotationDesc[] annotations();
-	public String name();
-	public GroovyType type();
-	public String typeName();
-
+//	GroovyAnnotationDesc[] annotations();
+	String name();
+	GroovyType type();
+	String typeName();
 }

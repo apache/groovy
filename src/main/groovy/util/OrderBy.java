@@ -31,7 +31,7 @@ import java.util.List;
  */
 public class OrderBy implements Comparator {
 
-    List closures;
+    private List closures;
 
     public OrderBy() {
         this.closures = new ArrayList();

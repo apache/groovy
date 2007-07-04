@@ -51,6 +51,7 @@ public interface Range extends List {
      * Indicates whether this is a reverse range which iterates backwards
      * starting from the to value and ending on the from value
      *
+     * @param o the object to check against the boundaries of the range
      * @return <code>true</code> if the object is between the from and to values
      */
     boolean containsWithinBounds(Object o);
@@ -62,7 +63,7 @@ public interface Range extends List {
      *                range backwards.
      * @param closure the {@link Closure} to call
      */
-    public void step(int step, Closure closure);
+    void step(int step, Closure closure);
 
     /**
      * Forms a list by stepping through the range by the indicated interval.
@@ -72,7 +73,7 @@ public interface Range extends List {
      * @return the list formed by stepping through the range by the indicated
      *         interval.
      */
-    public List step(int step);
+    List step(int step);
 
     /**
      * @return the verbose {@link String} representation of this {@link Range} as would be typed into a console

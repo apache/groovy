@@ -17,29 +17,29 @@ package org.codehaus.groovy.groovydoc;
 
 public interface GroovyDoc extends Comparable {
 
-	public String commentText();
-//	public GroovyTag[] firstSentenceTags();
-	public String getRawCommentText();
-//	public GroovyTag[] inlineTags();
-	public boolean isAnnotationType();
-	public boolean isAnnotationTypeElement();
-	public boolean isClass();
-	public boolean isConstructor();
-	public boolean isEnum();
-	public boolean isEnumConstant();
-	public boolean isError();
-	public boolean isException();
-	public boolean isField();
-	public boolean isIncluded();
-	public boolean isInterface();
-	public boolean isMethod();
-	public boolean isOrdinaryClass();
-	public String name();
-//	public GroovySourcePosition position();
-//	public GroovySeeTag[] seeTags();
-	public void setRawCommentText(String arg0);
-//	public GroovyTag[] tags();
-//	public GroovyTag[] tags(String arg0);
+    String commentText();
+//    GroovyTag[] firstSentenceTags();
+    String getRawCommentText();
+//    GroovyTag[] inlineTags();
+    boolean isAnnotationType();
+    boolean isAnnotationTypeElement();
+    boolean isClass();
+    boolean isConstructor();
+    boolean isEnum();
+    boolean isEnumConstant();
+    boolean isError();
+    boolean isException();
+    boolean isField();
+    boolean isIncluded();
+    boolean isInterface();
+    boolean isMethod();
+    boolean isOrdinaryClass();
+    String name();
+//    GroovySourcePosition position();
+//    GroovySeeTag[] seeTags();
+    void setRawCommentText(String arg0);
+//    GroovyTag[] tags();
+//    GroovyTag[] tags(String arg0);
 	
-	public String firstSentenceCommentText();
+    String firstSentenceCommentText();
 }

@@ -81,7 +81,7 @@ public class GroovyClassLoader extends URLClassLoader {
     protected Map classCache = new HashMap();
     protected Map sourceCache = new HashMap();
     private CompilerConfiguration config;
-    private Boolean recompile = null;
+    private Boolean recompile;
     // use 1000000 as offset to avoid conflicts with names form the GroovyShell 
     private static int scriptNameCounter = 1000000;
     
@@ -417,7 +417,7 @@ public class GroovyClassLoader extends URLClassLoader {
         private GroovyClassLoader cl;
         private SourceUnit su;
         private CompilationUnit unit;
-        private Collection loadedClasses = null;
+        private Collection loadedClasses;
 
         protected ClassCollector(InnerLoader cl, CompilationUnit unit, SourceUnit su) {
             this.cl = cl;
@@ -472,7 +472,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * loads a class from a file or a parent classloader.
      * This method does call loadClass(String, boolean, boolean, boolean)
      * with the last parameter set to false.
-     * @throws CompilationFailedException 
+     * @throws CompilationFailedException if compilation was not successful
      */
     public Class loadClass(final String name, boolean lookupScriptFiles, boolean preferClassOverScript)
         throws ClassNotFoundException, CompilationFailedException
@@ -494,8 +494,7 @@ public class GroovyClassLoader extends URLClassLoader {
     protected Class getClassCacheEntry(String name) {
         if (name==null) return null;
         synchronized (classCache) {
-            Class cls = (Class) classCache.get(name);
-            return cls;
+            return (Class) classCache.get(name);
         }
     }
     

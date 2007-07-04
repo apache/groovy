@@ -21,8 +21,8 @@ package org.codehaus.groovy;
 
 public interface GroovyExceptionInterface {
 
-    public boolean isFatal();
+    boolean isFatal();
 
-    public void setFatal( boolean fatal );
+    void setFatal( boolean fatal );
     
 }

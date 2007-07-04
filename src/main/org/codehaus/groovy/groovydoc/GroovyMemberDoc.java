@@ -16,5 +16,5 @@
 package org.codehaus.groovy.groovydoc;
 
 public interface GroovyMemberDoc extends GroovyProgramElementDoc{
-	public boolean isSynthetic();
+    boolean isSynthetic();
 }

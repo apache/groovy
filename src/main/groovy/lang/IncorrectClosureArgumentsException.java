@@ -26,9 +26,9 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  */
 public class IncorrectClosureArgumentsException extends GroovyRuntimeException {
 
-    private Closure closure;
-    private Object arguments;
-    private Class[] expected;
+    private final Closure closure;
+    private final Object arguments;
+    private final Class[] expected;
 
     public IncorrectClosureArgumentsException(Closure closure, Object arguments, Class[] expected) {
         super(

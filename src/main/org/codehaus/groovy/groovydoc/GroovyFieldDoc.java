@@ -17,10 +17,10 @@ package org.codehaus.groovy.groovydoc;
 
 
 public interface GroovyFieldDoc extends GroovyMemberDoc {
-	public Object constantValue();
-	public String constantValueExpression();
-	public boolean isTransient();
-	public boolean isVolatile();
-//	public GroovySerialFieldTag[] serialFieldTags();
-	public GroovyType type();
+    Object constantValue();
+    String constantValueExpression();
+    boolean isTransient();
+    boolean isVolatile();
+//    GroovySerialFieldTag[] serialFieldTags();
+    GroovyType type();
 }

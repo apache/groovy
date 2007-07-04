@@ -16,14 +16,14 @@
 package org.codehaus.groovy.groovydoc;
 
 public interface GroovyType {
-//	public GroovyAnnotationTypeDoc asAnnotationTypeDoc();
-	public GroovyClassDoc asClassDoc();
-//	public GroovyParameterizedType asParameterizedType();
-//	public GroovyTypeVariable asTypeVariable();
-//	public GroovyWildcardType asWildcardType();
-	public String dimension();
-	public boolean isPrimitive();
-	public String qualifiedTypeName();
-	public String simpleTypeName();
-	public String typeName();
+//	GroovyAnnotationTypeDoc asAnnotationTypeDoc();
+	GroovyClassDoc asClassDoc();
+//	GroovyParameterizedType asParameterizedType();
+//	GroovyTypeVariable asTypeVariable();
+//	GroovyWildcardType asWildcardType();
+	String dimension();
+	boolean isPrimitive();
+	String qualifiedTypeName();
+	String simpleTypeName();
+	String typeName();
 }
