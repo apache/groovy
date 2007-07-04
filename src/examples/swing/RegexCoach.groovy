@@ -44,7 +44,7 @@ class RegexHighlighter extends KeyAdapter implements ActionListener {
   def orange = new DefaultHighlighter.DefaultHighlightPainter(Color.ORANGE)
   def yellow = new DefaultHighlighter.DefaultHighlightPainter(Color.YELLOW)
   def red = new DefaultHighlighter.DefaultHighlightPainter(Color.RED)
-
+  
   // react to user actions
   public void actionPerformed(ActionEvent event) {
     if (event.actionCommand == '<<-') {scanIndex = Math.max(scanIndex - 1, 0)}
@@ -67,8 +67,10 @@ class RegexHighlighter extends KeyAdapter implements ActionListener {
   private doHighlights() {
     try {
       resetView()
-      def regex = swing.regexPane.text
-      def target = swing.targetPane.text
+      // note: get the text from the underlying document, 
+      // otherwise carriage return/line feeds different when using the JTextPane text
+      def regex = swing.regexPane.document.getText(0,swing.regexPane.document.length) 
+      def target = swing.targetPane.document.getText(0,swing.targetPane.document.length)
 
       def matcher = (target =~ regex) 
 
