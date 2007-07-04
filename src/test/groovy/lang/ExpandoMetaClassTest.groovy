@@ -499,10 +499,47 @@ class ExpandoMetaClassTest extends GroovyTestCase {
 		 assertEquals "mine blah!", t.borrowMe("blah")
 
 	}
+	
+    void testAddIdenticalPropertyToChildAndParent() {
+        ExpandoMetaClass.enableGlobally()
+        doMethods(SuperClass.class)
+        doMethods(ChildClass.class)
 
+        def child = new ChildClass()
+        def parent = new SuperClass()
+
+        assert parent.errors == null
+        parent.errors = [3,2,1,0]
+        assert parent.errors.size() == 4
+
+        assert child.errors == null
+        child.errors = [1,2,3]
+        assert child.errors.size() == 3
+        //TODO disable ExpandoMetaClass
+    }
+
+    def doMethods(clazz){
+
+        def metaClass = clazz.metaClass
+
+        metaClass.setErrors = { errors ->
+          thingo = errors
+        }
+
+        metaClass.getErrors = { ->
+          return thingo
+        }
+
+    }
 
 }
+class SuperClass {
+  def thingo
+}
 
+class ChildClass extends SuperClass {
+
+}
 class TestInvokeMethod {
     def invokeMe(String boo) { "Foo!! $boo" }
 }

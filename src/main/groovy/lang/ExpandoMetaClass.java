@@ -636,9 +636,6 @@ public class  ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
                     beanProperty = new MetaBeanProperty(propertyName,Object.class,null,metaMethod);
 
                 beanPropertyCache.put(propertyName, beanProperty);
-                synchronized(expandoProperties) {
-                    expandoProperties.put(beanProperty.getName(),beanProperty);
-                }
             }
             else {
                 if(getter) {
@@ -651,6 +648,9 @@ public class  ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
                     beanProperty = new MetaBeanProperty(propertyName,metaMethod.getParameterTypes()[0],getterMethod,metaMethod);
                     beanPropertyCache .put(propertyName, beanProperty);
                 }
+            }            
+            synchronized(expandoProperties) {
+                expandoProperties.put(beanProperty.getName(),beanProperty);
             }
 		    addMetaBeanProperty(beanProperty);
         }
@@ -760,6 +760,19 @@ public class  ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
             return getPropertyMethod.invoke(object, new Object[]{name});
         }
         return super.getProperty(sender, object, name, useSuper, fromInsideClass);
+    }    
+
+
+    /**
+     * Overrides default implementation just in case getProperty method has been overriden by ExpandoMetaClass
+     *
+     * @see MetaClassImpl#getProperty(Object, String)
+     */    
+    public Object getProperty(Object object, String name) {
+        if(hasOverrideGetProperty(name)) {
+            return getPropertyMethod.invoke(object, new Object[]{name});
+        }
+        return super.getProperty(object,name);
     }
 
     private boolean hasOverrideGetProperty(String name) {
