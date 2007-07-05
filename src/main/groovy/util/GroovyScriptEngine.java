@@ -74,7 +74,8 @@ public class GroovyScriptEngine implements ResourceConnector {
     private ResourceConnector rc;
     // private ClassLoader parentClassLoader = getClass().getClassLoader();
 
-    private ScriptCacheEntry currentCacheEntry = null;
+    //private ScriptCacheEntry currentCacheEntry = null;
+    private static ThreadLocal currentCacheEntryHolder = new ThreadLocal();
     private GroovyClassLoader groovyLoader = null;
     
     private static class ScriptCacheEntry {
@@ -102,6 +103,7 @@ public class GroovyScriptEngine implements ResourceConnector {
                                 URLConnection dependentScriptConn = null;
                                 try {
                                     dependentScriptConn = rc.getResourceConnection(filename);
+                                    ScriptCacheEntry currentCacheEntry = (ScriptCacheEntry)currentCacheEntryHolder.get();
                                     currentCacheEntry.dependencies.put(
                                             dependentScriptConn.getURL(),
                                             new Long(dependentScriptConn.getLastModified()));
@@ -339,12 +341,16 @@ public class GroovyScriptEngine implements ResourceConnector {
 
             if (entry == null || entry.lastModified < lastModified || dependencyOutOfDate) {
                 // Make a new entry
-                currentCacheEntry = new ScriptCacheEntry();
+                ScriptCacheEntry currentCacheEntry = new ScriptCacheEntry();
+                currentCacheEntryHolder.set(currentCacheEntry);
                 try {
                     currentCacheEntry.scriptClass = groovyLoader.parseClass(groovyScriptConn.getInputStream(), scriptName);
                 } catch (Exception e) {
                     throw new ScriptException("Could not parse scriptName: " + scriptName, e);
+                } finally{
+                    currentCacheEntryHolder.set(null);
                 }
+                
                 currentCacheEntry.lastModified = lastModified;
                 scriptCache.put(scriptName, currentCacheEntry);
                 
