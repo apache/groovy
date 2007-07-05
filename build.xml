@@ -60,14 +60,22 @@ $Date$
         <echo message="Operating system version: ${os.version}"/>
     </target>
     
-    <target name="-checkAntVersion">
-        <fail message="You are using ant ${ant.version}, please install using ant 1.7">
+    <target name="-checkAntVersion" description="Ensure that we're running ant 1.7+">
+        <fail message="You are using ant ${ant.version}, please install using ant 1.7+">
             <condition>
-                <not>
-                    <contains string="${ant.version}" substring="1.7"/>
-                </not>
+                <or>
+                    <contains string="${ant.version}" substring="1.1"></contains>
+                    <contains string="${ant.version}" substring="1.2"></contains>
+                    <contains string="${ant.version}" substring="1.3"></contains>
+                    <contains string="${ant.version}" substring="1.4"></contains>
+                    <contains string="${ant.version}" substring="1.5"></contains>
+                    <contains string="${ant.version}" substring="1.6"></contains>
+                </or>
             </condition>
-        </fail>
+       </fail>
+       <fail message="You are using ant ${ant.version}, please install using ant 1.7+">
+           <condition><not><antversion atleast="1.7"/></not></condition>
+       </fail>
     </target>
 
     <target name="compileMain" depends="-init,ensureGrammars"
