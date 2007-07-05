@@ -73,7 +73,7 @@ public class FileSystemCompiler
 
     public static void displayVersion() 
     {
-        System.err.println("Groovy compiler version 1.1-beta-2");
+        System.err.println("Groovy compiler version 1.1-beta-3-SNAPSHOT");
         System.err.println("Copyright 2003-2007 The Codehaus. http://groovy.codehaus.org/");
         System.err.println("");
     }
