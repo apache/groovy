@@ -1,0 +1,17 @@
+#!/bin/sh
+
+##############################################################################
+##                                                                          ##
+##  Groovy Console script for UN*X                                          ##
+##                                                                          ##
+##############################################################################
+
+##
+## $Revision$
+## $Date$
+##
+
+DIRNAME=`dirname "$0"`
+. "$DIRNAME/startGroovy"
+
+startGroovy groovy.ui.InteractiveShell "$@"
