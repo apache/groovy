@@ -16,21 +16,16 @@
 package org.codehaus.groovy.ast;
 
 import groovy.lang.Binding;
-
-import java.io.File;
-import java.util.*;
-
-import org.codehaus.groovy.ast.expr.ArgumentListExpression;
-import org.codehaus.groovy.ast.expr.ClassExpression;
-import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.MethodCallExpression;
-import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.objectweb.asm.Opcodes;
+
+import java.io.File;
+import java.util.*;
 
 /**
  * Represents a module, which consists typically of a class declaration
@@ -219,9 +214,8 @@ public class ModuleNode extends ASTNode implements Opcodes {
                         new ClassExpression(ClassHelper.make(InvokerHelper.class)),
                         "runScript",
                         new ArgumentListExpression(
-                            new Expression[] {
                                 new ClassExpression(classNode),
-                                new VariableExpression("args")})))));
+                                new VariableExpression("args"))))));
 
         classNode.addMethod(
             new MethodNode("run", ACC_PUBLIC, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, statementBlock));
@@ -232,8 +226,7 @@ public class ModuleNode extends ASTNode implements Opcodes {
                             new VariableExpression("super"),
             				"setBinding",
             				new ArgumentListExpression(
-                                    new Expression[] {
-                                        new VariableExpression("context")})));
+                                        new VariableExpression("context"))));
 
         classNode.addConstructor(
             ACC_PUBLIC,

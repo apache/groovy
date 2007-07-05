@@ -1673,7 +1673,7 @@ public class AsmClassGenerator extends ClassGenerator {
             if (arguments instanceof TupleExpression) {
                 arguments.visit(this);
             } else {
-                new TupleExpression().addExpression(arguments).visit(this);
+                new TupleExpression(arguments).visit(this);
             }
             invokeClosureMethod.call(mv);
         } else {
@@ -2982,9 +2982,7 @@ public class AsmClassGenerator extends ClassGenerator {
         VariableExpression thisObject = new VariableExpression("_thisObject");
         thisObject.setSourcePosition(expression);
         block.getVariableScope().getReferencedLocalVariables().put("_thisObject", thisObject);
-        TupleExpression conArgs = new TupleExpression();
-        conArgs.addExpression(outer);
-        conArgs.addExpression(thisObject);
+        TupleExpression conArgs = new TupleExpression(outer, thisObject);
         block.addStatement(
                 new ExpressionStatement(
                         new ConstructorCallExpression(
@@ -3147,7 +3145,7 @@ public class AsmClassGenerator extends ClassGenerator {
         makeCall(
                 expression.getLeftExpression(),
                 new ConstantExpression(method),
-                new ArgumentListExpression().addExpression(expression.getRightExpression()),
+                new ArgumentListExpression(expression.getRightExpression()),
                 invokeMethod, false, false, false
         );
     }
@@ -3183,7 +3181,7 @@ public class AsmClassGenerator extends ClassGenerator {
                         new MethodCallExpression(
                                 expression.getLeftExpression(),
                                 method,
-                                new ArgumentListExpression(new Expression[]{expression.getRightExpression()}));
+                                new ArgumentListExpression(expression.getRightExpression()));
 
                 Expression safeIndexExpr = createReusableExpression(leftBinExpr.getRightExpression());
 
@@ -3191,7 +3189,7 @@ public class AsmClassGenerator extends ClassGenerator {
                         new MethodCallExpression(
                                 leftBinExpr.getLeftExpression(),
                                 "putAt",
-                                new ArgumentListExpression(new Expression[]{safeIndexExpr, methodCall})));
+                                new ArgumentListExpression(safeIndexExpr, methodCall)));
                 //cv.visitInsn(POP);
                 return;
             }

@@ -50,6 +50,18 @@ public class ArgumentListExpression extends TupleExpression {
             addExpression(new VariableExpression(parameter.getName()));
         }
     }
+    
+    public ArgumentListExpression(Expression expr) {
+        super(expr);
+    }
+
+    public ArgumentListExpression(Expression expr1, Expression expr2) {
+        super(expr1, expr2);
+    }
+
+    public ArgumentListExpression(Expression expr1, Expression expr2, Expression expr3) {
+        super(expr1, expr2, expr3);
+    }
 
     public Expression transformExpression(ExpressionTransformer transformer) {
         Expression ret = new ArgumentListExpression(transformExpressions(getExpressions(), transformer));

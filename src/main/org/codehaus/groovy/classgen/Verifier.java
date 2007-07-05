@@ -17,46 +17,19 @@ package org.codehaus.groovy.classgen;
 
 import groovy.lang.GroovyObject;
 import groovy.lang.MetaClass;
+import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.stmt.*;
+import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
+import org.codehaus.groovy.syntax.RuntimeParserException;
+import org.codehaus.groovy.syntax.Token;
+import org.codehaus.groovy.syntax.Types;
+import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-
-import org.codehaus.groovy.ast.ClassHelper;
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.CodeVisitorSupport;
-import org.codehaus.groovy.ast.ConstructorNode;
-import org.codehaus.groovy.ast.FieldNode;
-import org.codehaus.groovy.ast.GenericsType;
-import org.codehaus.groovy.ast.GroovyClassVisitor;
-import org.codehaus.groovy.ast.InnerClassNode;
-import org.codehaus.groovy.ast.MethodNode;
-import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.PropertyNode;
-import org.codehaus.groovy.ast.VariableScope;
-import org.codehaus.groovy.ast.expr.ArgumentListExpression;
-import org.codehaus.groovy.ast.expr.BinaryExpression;
-import org.codehaus.groovy.ast.expr.BooleanExpression;
-import org.codehaus.groovy.ast.expr.ClosureExpression;
-import org.codehaus.groovy.ast.expr.ConstantExpression;
-import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
-import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.FieldExpression;
-import org.codehaus.groovy.ast.expr.MethodCallExpression;
-import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
-import org.codehaus.groovy.ast.expr.VariableExpression;
-import org.codehaus.groovy.ast.stmt.BlockStatement;
-import org.codehaus.groovy.ast.stmt.EmptyStatement;
-import org.codehaus.groovy.ast.stmt.ExpressionStatement;
-import org.codehaus.groovy.ast.stmt.IfStatement;
-import org.codehaus.groovy.ast.stmt.ReturnStatement;
-import org.codehaus.groovy.ast.stmt.Statement;
-import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
-import org.codehaus.groovy.syntax.Types;
-import org.codehaus.groovy.syntax.Token;
-import org.codehaus.groovy.syntax.RuntimeParserException;
-import org.objectweb.asm.Opcodes;
 
 /**
  * Verifies the AST node and adds any defaulted AST code before
@@ -165,10 +138,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                                     metaClassVar,
                                     "invokeMethod",
                                     new ArgumentListExpression(
-                                        new Expression[] {
                                             VariableExpression.THIS_EXPRESSION,
                                             vMethods,
-                                            vArguments}
+                                            vArguments
                                         )
                                     )
                                 )
@@ -193,9 +165,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                                         metaClassVar,
                                         "getProperty",
                                         new ArgumentListExpression(
-                                            new Expression[] {
                                                 VariableExpression.THIS_EXPRESSION,
-                                                new VariableExpression("property")})))
+                                                new VariableExpression("property"))))
                             },
                             new VariableScope()
                         ));
@@ -222,10 +193,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                                         metaClassVar,
                                         "setProperty",
                                         new ArgumentListExpression(
-                                            new Expression[] {
                                                 VariableExpression.THIS_EXPRESSION,
                                                 vProp,
-                                                vValue})))
+                                                vValue)))
                             },
                             blockScope
                     ));

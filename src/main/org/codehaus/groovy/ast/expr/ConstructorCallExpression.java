@@ -32,9 +32,7 @@ public class ConstructorCallExpression extends Expression {
     public ConstructorCallExpression(ClassNode type, Expression arguments) {
         super.setType(type);
         if (!(arguments instanceof TupleExpression)){
-            TupleExpression tuple = new TupleExpression();
-            tuple.addExpression(arguments);
-            this.arguments = tuple;
+            this.arguments = new TupleExpression(arguments);
         } else {
             this.arguments = arguments;
         }

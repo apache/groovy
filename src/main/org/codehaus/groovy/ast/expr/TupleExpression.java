@@ -32,7 +32,29 @@ public class TupleExpression extends Expression {
     private List expressions;
 
     public TupleExpression() {
-        this(new ArrayList());
+        this(0);
+    }
+
+    public TupleExpression(Expression expr) {
+        this(1);
+        addExpression(expr);
+    }
+
+    public TupleExpression(Expression expr1, Expression expr2) {
+        this(2);
+        addExpression(expr1);
+        addExpression(expr2);
+    }
+
+    public TupleExpression(Expression expr1, Expression expr2, Expression expr3) {
+        this(3);
+        addExpression(expr1);
+        addExpression(expr2);
+        addExpression(expr3);
+    }
+    
+    public TupleExpression(int length) {
+        this.expressions = new ArrayList(length);
     }
     
     public TupleExpression(List expressions) {
