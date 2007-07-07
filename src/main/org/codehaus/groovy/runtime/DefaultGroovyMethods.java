@@ -1130,9 +1130,9 @@ public class DefaultGroovyMethods {
      */
     public static Object find(Map self, Closure closure) {
         for (Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
-            Object value = iter.next();
-            if (DefaultTypeTransformation.castToBoolean(closure.call(value))) {
-                return value;
+            Map.Entry entry = (Map.Entry) iter.next();
+            if (DefaultTypeTransformation.castToBoolean(callClosureForMapEntry(closure, entry))) {
+                return entry;
             }
         }
         return null;

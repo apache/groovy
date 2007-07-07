@@ -10,8 +10,7 @@ class ClosureMethodTest extends GroovyTestCase {
 
     void testListCollect() {
         def list = [1, 2, 3, 4]
-        def answer = list.collect( {item -> return item * 2 } )
-
+        def answer = list.collect{item -> return item * 2 }
         assert answer.size() == 4
 
         def expected = [2, 4, 6, 8]
@@ -20,7 +19,7 @@ class ClosureMethodTest extends GroovyTestCase {
 
     void testMapCollect() {
         def map = [1:2, 2:4, 3:6, 4:8]
-        def answer = map.collect( {e-> return e.key + e.value } )
+        def answer = map.collect{e-> return e.key + e.value }
 
         // lest sort the results since maps are in hash code order
         answer = answer.sort()
@@ -35,27 +34,37 @@ class ClosureMethodTest extends GroovyTestCase {
 
     void testListFind() {
         def list = ["a", "b", "c"]
-        def answer = list.find( {item-> return item == "b" })
+        def answer = list.find{item-> item == "b" }
         assert answer == "b"
 
-        answer = list.find{item-> return item == "z" }
+        answer = list.find{item-> item == "z" }
         assert answer == null
     }
 
     void testMapFind() {
         def map = [1:2, 2:4, 3:6, 4:8]
-        def answer = map.find( {entry-> return entry.value == 6 })
+        def answer = map.find{entry -> entry.value == 6 }
         assert answer != null
         assert answer.key == 3
         assert answer.value == 6
 
-        answer = map.find{entry-> return entry.value == 0 }
+        answer = map.find{entry -> entry.value == 0 }
         assert answer == null
+
+        answer = map.find{ k, v -> v > 5 }
+        assert answer instanceof Map.Entry
+        assert answer.key == 3
+        assert answer.value == 6
+
+        answer = map.find{ k, v -> k == 2 }
+        assert answer instanceof Map.Entry
+        assert answer.key == 2
+        assert answer.value == 4
     }
 
     void testListFindAll() {
         def list = [20, 5, 40, 2]
-        def answer = list.findAll( {item-> return item < 10 } )
+        def answer = list.findAll{item -> item < 10 }
 
         assert answer.size() == 2
         assert answer == [5, 2]
@@ -63,60 +72,48 @@ class ClosureMethodTest extends GroovyTestCase {
 
     void testMapFindAll() {
         def map = [1:2, 2:4, 3:6, 4:8]
-        def answer = map.findAll( {entry-> return entry.value > 5 })
-
+        def answer = map.findAll{entry -> entry.value > 5 }
         assert answer.size() == 2
 
-        def keys = answer.collect( {entry-> return entry.key })
-        def values = answer.collect {entry-> return entry.value }
-
-        println("keys " + keys + " values " + values)
+        def keys = answer.collect {entry -> entry.key }
+        def values = answer.collect {entry -> entry.value }
 
         // maps are in hash order so lets sort the results
         keys.sort()
         values.sort()
 
-        assert keys == [3, 4]
-        assert values == [6, 8]
-    }
-
-    void testListEach() {
-        def count = 0
-
-        def list = [1, 2, 3, 4]
-        list.each({item-> count = count + item })
-
-        assert count == 10
-
-        list.each{item-> count = count + item }
-
-        assert count == 20
+        assert keys == [3, 4], "Expected [3, 4] but was $keys"
+        assert values == [6, 8], "Expected [6, 8] but was $values"
     }
 
     void testMapEach() {
         def count = 0
-
         def map = [1:2, 2:4, 3:6, 4:8]
-        map.each({e-> count = count + e.value })
-
+        map.each{e-> count = count + e.value }
         assert count == 20
 
-        map.each({e-> count = count + e.value + e.key })
-
+        map.each{e-> count = count + e.value + e.key }
         assert count == 50
     }
 
     void testMapEachWith2Params() {
         def count = 0
-
         def map = [1:2, 2:4, 3:6, 4:8]
         map.each {key, value -> count = count + value }
-
         assert count == 20
 
         map.each {key, value -> count = count + value + key }
-
         assert count == 50
+    }
+
+    void testListEach() {
+        def count = 0
+        def list = [1, 2, 3, 4]
+        list.each({item-> count = count + item })
+        assert count == 10
+
+        list.each{item-> count = count + item }
+        assert count == 20
     }
 
     void testListEvery() {
@@ -168,7 +165,6 @@ class ClosureMethodTest extends GroovyTestCase {
         if(file.exists() == false) {
             file = new File("Bar.groovy")
         }
-
         file.eachLine { line -> println(line) }
     }
 
@@ -188,13 +184,9 @@ class ClosureMethodTest extends GroovyTestCase {
         if(file.exists() == false) {
             file = new File("Bar.groovy")
         }
-
         def lines = file.readLines()
-
         assert lines != null
-        assert lines.size() > 0
-
-        println("File has: " + lines.size() + " line(s)")
+        assert lines.size() > 0, "File has: ${lines.size()} line(s)"
     }
 
     void testEachFile() {
@@ -202,17 +194,13 @@ class ClosureMethodTest extends GroovyTestCase {
         if(!file.exists()) {
             file = new File(".")
         }
-
         println("Closure loop to display contents of dir: " + file)
-
         file.eachFile { f -> println(f.getName()) }
-        
         println("")
     }
     
     void testTokenize() {
         def text = "hello-there-how-are-you"
-        
         def answer = []
         for (i in text.tokenize('-')) {
             answer.add(i)
@@ -222,9 +210,7 @@ class ClosureMethodTest extends GroovyTestCase {
     
     void testUpto() {
         def answer = []
-        
         1.upto(5) { answer.add(it) }
-        
         assert answer == [1, 2, 3, 4, 5]
     }
 }
