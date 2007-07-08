@@ -168,14 +168,33 @@ public class ScriptBytecodeAdapter {
 
     public static Object invokeMethodNSpreadSafe(Class senderClass, Object receiver, String messageName, Object[] messageArguments) throws Throwable {
         if (receiver == null) return null;
-        if (!(receiver instanceof List)) return invokeMethodN(senderClass, receiver, messageName, messageArguments);
+        if (receiver.getClass().isArray()) {
+            return invokeMethodNSpreadSafeArray(senderClass, receiver, messageName, messageArguments);
+        }
+        if (receiver instanceof List) {
+            List answer = new ArrayList();
+            for (Iterator it = ((List) receiver).iterator(); it.hasNext();) {
+                answer.add(invokeMethodNSafe(senderClass, it.next(), messageName, messageArguments));
+            }
+            return answer;
+        }
+        return invokeMethodN(senderClass, receiver, messageName, messageArguments);
+    }
 
-        List list = (List) receiver;
+    private static Object invokeMethodNSpreadSafeArray(Class senderClass, Object receiver, String messageName,
+                                                       Object[] messageArguments) throws Throwable {
         List answer = new ArrayList();
-        for (Iterator it = list.iterator(); it.hasNext();) {
-            answer.add(invokeMethodNSafe(senderClass, it.next(), messageName, messageArguments));
+        // assume we want to box if we are going to apply a method
+        boolean mustBox = receiver.getClass().getComponentType().isPrimitive();
+        Object[] arrayItems = mustBox ? getBoxedItems(receiver) : (Object[]) receiver;
+        for (int i = 0; i < arrayItems.length; i++) {
+            answer.add(invokeMethodNSafe(senderClass, arrayItems[i], messageName, messageArguments));
         }
         return answer;
+    }
+
+    private static Object[] getBoxedItems(Object receiver) {
+        return DefaultTypeTransformation.primitiveArrayToList(receiver).toArray();
     }
 
     public static Object invokeMethod0(Class senderClass, Object receiver, String messageName) throws Throwable {

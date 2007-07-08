@@ -1,11 +1,19 @@
-package groovy
-
 /*
- * SpreadDotTest.groovy
+ * Copyright 2003-2007 the original author or authors.
  *
- * @author  Pilho Kim
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
-
+ package groovy
 
 /**
  * Test for the spread dot operator "*.".
@@ -14,6 +22,9 @@ package groovy
  *          list*.property
  * means
  *          list.collect { it?.property }
+ *
+ * @author  Pilho Kim
+ * @author  Paul King
  */
 public class SpreadDotTest extends GroovyTestCase {
     public void testSpreadDot() {
@@ -50,11 +61,26 @@ public class SpreadDotTest extends GroovyTestCase {
         def b = new SpreadDotDemo2()
         def x = [a, b]
 
-        println ([a,b]*.fnB("1"))
-        assert [a,b]*.fnB("1") == [a.fnB("1"), b.fnB("1")]
-
-        println ([a,b]*.fnB())
+        assert x*.fnB("1") == [a.fnB("1"), b.fnB("1")]
         assert [a,b]*.fnB() == [a.fnB(), b.fnB()]
+    }
+
+    public void testSpreadDotArrays() {
+        def a = new SpreadDotDemo()
+        def b = new SpreadDotDemo2()
+        Object[] x = [a, b]
+
+        assert x*.fnB("1") == [a.fnB("1"), b.fnB("1")]
+        assert [a,b]*.fnB() == [a.fnB(), b.fnB()]
+
+        int[] nums = [3, 4, 5]
+        assert nums*.toString() == ['3', '4', '5']
+
+        boolean[] answers = [true, false, true]
+        assert answers*.toString() == ['true', 'false', 'true']
+
+        String[] pets = ['ant', 'bear', 'camel']
+        assert pets*.length() == nums
     }
 }
 
