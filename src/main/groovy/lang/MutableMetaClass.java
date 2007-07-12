@@ -16,8 +16,6 @@
 
 package groovy.lang;
 
-import groovy.lang.MetaBeanProperty;
-
 import java.lang.reflect.Method;
 
 /**
@@ -41,7 +39,7 @@ import java.lang.reflect.Method;
  *        Created: Feb 24, 2007
  *        Time: 4:05:44 PM
  */
-public interface MutableMetaClass {
+public interface MutableMetaClass extends MetaClass {
 
     /**
      * adds a new instance method to this MetaClass. Instance
@@ -69,12 +67,11 @@ public interface MutableMetaClass {
     void addMetaMethod(MetaMethod metaMethod);
 
     /**
-     * Adds a new MetaBeanProperty to the method
+     * Adds a new MetaBeanProperty to the MetaClass
      *
      * @param metaBeanProperty The MetaBeanProperty instance
      */
     void addMetaBeanProperty(MetaBeanProperty metaBeanProperty);
-
-
+    
     // TODO: Add methods like addMetaConstructor, addMetaAttribute, addMetaAnnotation etc.
 }

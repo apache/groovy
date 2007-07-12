@@ -33,7 +33,20 @@ class ExpandoMetaClassCreationHandleTest extends GroovyTestCase {
 	}
 
 
+    void testInheritFromInterfaceHeirarchy() {
+        registry.removeMetaClass(IBar.class)
+        registry.removeMetaClass(Foo.class)
+        registry.removeMetaClass(Test1.class)
 
+        def metaClass = registry.getMetaClass(IBar.class)
+        assertTrue(metaClass instanceof ExpandoMetaClass)
+
+        metaClass.helloWorld = {-> "goodbye!" }
+
+        def t = new Test1()
+        assertEquals "goodbye!", t.helloWorld()        
+    }
+    
     void testExpandoInterfaceInheritanceWithOverrideDGM() {
 	    registry.removeMetaClass(Foo.class)
 	    registry.removeMetaClass(Test1.class)
@@ -198,7 +211,8 @@ class ExpandoMetaClassCreationHandleTest extends GroovyTestCase {
 
 }
 
-interface Foo {
+interface IBar { }
+interface Foo extends IBar {
 
 }
 class Test1 implements Foo {

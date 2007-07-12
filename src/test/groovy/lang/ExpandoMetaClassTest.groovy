@@ -22,7 +22,38 @@ package groovy.lang
 
 class ExpandoMetaClassTest extends GroovyTestCase {
 
+    void testStaticBeanStyleProperties() {
 
+        def mc = new ExpandoMetaClass(TestInvokeMethod.class, true)
+        mc.initialize()
+        mc.allowChangesAfterInit = true
+        GroovySystem.metaClassRegistry.setMetaClass(TestInvokeMethod.class, mc)
+
+        mc.'static'.getHello = {-> "bar!" }
+        
+        assertEquals "bar!", TestInvokeMethod.hello
+    }
+
+    void testOverrideInvokeStaticMethod() {        
+        def mc = new ExpandoMetaClass(TestInvokeMethod.class, true)
+        mc.initialize()
+        mc.allowChangesAfterInit = true
+        GroovySystem.metaClassRegistry.setMetaClass(TestInvokeMethod.class, mc) 
+         
+
+          mc.'static'.invokeMethod = { String methodName, args ->
+                def metaMethod = mc.getStaticMetaMethod(methodName, args)
+                def result = null
+                if(metaMethod) result = metaMethod.invoke(delegate, args)
+                else {
+                    result = "foo!"
+                }
+                result
+          }
+
+          assertEquals "bar!", TestInvokeMethod.myStaticMethod()
+          assertEquals "foo!", TestInvokeMethod.dynamicMethod()
+    }
 
     void testOverrideInvokeMethod() {
 	   	def mc = new ExpandoMetaClass(TestInvokeMethod.class)
@@ -32,7 +63,6 @@ class ExpandoMetaClassTest extends GroovyTestCase {
         assert mc.hasMetaMethod("invokeMe", [String] as Class[])
 
         mc.invokeMethod = { String name, args ->
-            println "invoking method!"
             def mm = delegate.metaClass.getMetaMethod(name, args)
 
             mm ? mm.invoke(delegate, args) : "bar!!"
@@ -542,6 +572,8 @@ class ChildClass extends SuperClass {
 }
 class TestInvokeMethod {
     def invokeMe(String boo) { "Foo!! $boo" }
+
+    static myStaticMethod() { "bar!" }
 }
 class TestGetProperty {
     String name = "Fred"

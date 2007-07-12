@@ -16,10 +16,10 @@
 
 package groovy.lang;
 
+import org.codehaus.groovy.ast.ClassNode;
+
 import java.lang.reflect.Method;
 import java.util.List;
-
-import org.codehaus.groovy.ast.ClassNode;
 
 /**
  * @author John Wilson
@@ -174,6 +174,26 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass {
 
     public Object getProperty(Class sender, Object receiver, String messageName, boolean useSuper, boolean fromInsideClass) {
         return this.delegate.getProperty(sender, receiver, messageName, useSuper, fromInsideClass);
+    }
+
+    public MetaProperty getMetaProperty(String name) {
+        return this.delegate.getMetaProperty(name);
+    }
+
+    public MetaMethod getStaticMetaMethod(String name, Object[] args) {
+        return this.delegate.getStaticMetaMethod(name, args);
+    }
+
+    public MetaMethod getStaticMetaMethod(String name, Class[] argTypes) {
+        return this.delegate.getStaticMetaMethod(name, argTypes);
+    }
+
+    public MetaMethod getMetaMethod(String name, Object[] args) {
+        return this.delegate.getMetaMethod(name, args);
+    }
+
+    public MetaMethod getMetaMethod(String name, Class[] argTypes) {
+        return this.delegate.getMetaMethod(name, argTypes);
     }
 
     public Class getTheClass() {

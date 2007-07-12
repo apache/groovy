@@ -25,6 +25,53 @@ package groovy.lang;
  * @author Graeme Rocher
  */
 public interface MetaObjectProtocol {
+
+    /**
+     * Returns a MetaProperty for the given name or null if it doesn't exist
+     *
+     * @param name The name of the MetaProperty
+     * @return A MeatProperty or null
+     */
+    MetaProperty getMetaProperty(String name);
+
+    /**
+     * Retreives a static MetaMethod for the given name and argument values, using the types of the arguments
+     * to establish the chosen MetaMethod
+     *
+     * @param name The name of the MetaMethod
+     * @param args The argument values
+     * @return A MetaMethod or null if it doesn't exist
+     */
+    MetaMethod getStaticMetaMethod(String name, Object[] args);
+
+    /**
+     * Retrieves a static MetaMethod for the given name and argument types
+     *
+     * @param name The name of the MetaMethod
+     * @param argTypes The argument types
+     * @return A MetaMethod or null if it doesn't exist
+     */
+    MetaMethod getStaticMetaMethod(String name, Class[] argTypes);
+
+    /**
+     * Retrieves an instance MetaMethod for the given name and argument values, using the types of the
+     * argument values to establish the chosen MetaMethod
+     *
+     * @param name The name of the MetaMethod
+     * @param args The argument values
+     * @return A MetaMethod or null if it doesn't exist
+     */
+    MetaMethod getMetaMethod(String name, Object[] args);
+
+    /**
+     * Retrieves an instance MetaMethod for the given name and argument types
+     *
+     * @param name The name of the MetaMethod
+     * @param argTypes The argument types
+     * @return A MetaMethod or null if it doesn't exist
+     */
+    MetaMethod getMetaMethod(String name, Class[] argTypes);
+
     /**
      * Retrieves that Java Class that the attached Meta behaviours apply to
      *

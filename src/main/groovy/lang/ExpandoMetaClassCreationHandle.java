@@ -16,6 +16,7 @@
 package groovy.lang;
 
 import groovy.lang.MetaClassRegistry.MetaClassCreationHandle;
+import org.codehaus.groovy.runtime.metaclass.ConcurrentReaderHashMap;
 import org.codehaus.groovy.runtime.metaclass.MemoryAwareConcurrentReadMap;
 
 import java.util.*;
@@ -38,7 +39,7 @@ import java.util.*;
  */
 public class ExpandoMetaClassCreationHandle extends MetaClassCreationHandle {
 
-	private final Map modifiedExpandos = new HashMap();
+	private final Map modifiedExpandos = new ConcurrentReaderHashMap();
 	private final MemoryAwareConcurrentReadMap parentClassToChildMap = new MemoryAwareConcurrentReadMap();
 
 	/* (non-Javadoc)
@@ -123,9 +124,12 @@ public class ExpandoMetaClassCreationHandle extends MetaClassCreationHandle {
     private void populateSupersFromInterfaces(Set modifiedSupers, Class[] interfaces) {
         for (int i = 0; i < interfaces.length; i++) {
             Class anInterface = interfaces[i];
+            final Class[] superInterfaces = anInterface.getInterfaces();
             if(modifiedExpandos.containsKey(anInterface)) {
                 modifiedSupers.add(modifiedExpandos.get(anInterface));
             }
+            if(superInterfaces.length > 0)
+                populateSupersFromInterfaces(modifiedSupers, superInterfaces);
         }
     }
 
@@ -139,9 +143,7 @@ public class ExpandoMetaClassCreationHandle extends MetaClassCreationHandle {
      * @param emc The EMC
      */
     public void registerModifiedMetaClass(ExpandoMetaClass emc) {
-        synchronized(this) {
-            modifiedExpandos.put(emc.getJavaClass(), emc);
-        }
+        modifiedExpandos.put(emc.getJavaClass(), emc);
 	}
 
 	public boolean hasModifiedMetaClass(ExpandoMetaClass emc) {
