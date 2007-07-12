@@ -52,15 +52,45 @@ import java.security.PrivilegedAction;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author <a href="mailto:tug@wilson.co.uk">John Wilson</a>
  * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
+ * @author Graeme Rocher
+ *
  * @version $Revision$
  */
 public abstract class Closure extends GroovyObjectSupport implements Cloneable, Runnable {
+
+    /**
+     * With this resolveStrategy set the closure will attempt to resolve property references to the
+     * owner first
+     */
+    public static final int OWNER_FIRST = 0;
+    /**
+     * With this resolveStrategy set the closure will attempt to resolve property references to the
+     * delegate first
+     */
+    public static final int DELEGATE_FIRST = 1;
+    /**
+     * With this resolveStrategy set the closure will resolve property references to the owner only
+     * and not call the delegate at all
+     */
+    public static final int OWNER_ONLY = 2;
+    /**
+     * With this resolveStrategy set the closure will resolve property references to the delegate
+     * only and entirely bypass the owner
+     */
+    public static final int DELEGATE_ONLY = 3;
+    /**
+     * With this resolveStrategy set the closure will resolve property references to itself and go
+     * through the usual MetaClass look-up process. This allows the developer to override getProperty
+     * using ExpandoMetaClass of the closure itself
+     */
+    public static final int TO_SELF = 4;
 
     private Object delegate;
     private final Object owner;
     private Class[] parameterTypes;
     protected int maximumNumberOfParameters;
     private final Object thisObject;
+    private int resolveStrategy = OWNER_FIRST;
 
 
     private int directive = 0;
@@ -93,7 +123,22 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
     public Closure(Object owner) {
         this(owner,null);
     }
-    
+
+    /**
+     * Sets the strategy which the closure uses to resolve property references. The default is Closure.OWNER_FIRST
+     *
+     * @param resolveStrategy The resolve strategy to set
+     *
+     * @see groovy.lang.Closure#DELEGATE_FIRST
+     * @see groovy.lang.Closure#DELEGATE_ONLY
+     * @see groovy.lang.Closure#OWNER_FIRST
+     * @see groovy.lang.Closure#OWNER_ONLY
+     * @see groovy.lang.Closure#TO_SELF
+     */
+    public void setResolveStrategy(int resolveStrategy) {
+        this.resolveStrategy = resolveStrategy;
+    }
+
     protected Object getThisObject(){
         return thisObject;
     }
@@ -112,22 +157,47 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
         } else if ("class".equals(property)) {
             return getClass();
         } else {
-            try {
-                // lets try getting the property on the owner
-                return InvokerHelper.getProperty(this.owner, property);
-            } catch (MissingPropertyException e1) {
-                if (this.delegate != null && this.delegate != this && this.delegate != this.owner) {
-                    try {
-                        // lets try getting the property on the delegate
-                        return InvokerHelper.getProperty(this.delegate, property);
-                    } catch (GroovyRuntimeException e2) {
-                        // ignore, we'll throw e1
-                    }
-                }
-
-                throw e1;
+            switch(resolveStrategy) {
+                case DELEGATE_FIRST:
+                    return getPropertyDelegateFirst(property);
+                case DELEGATE_ONLY:
+                    return InvokerHelper.getProperty(this.delegate, property);
+                case OWNER_ONLY:
+                    return InvokerHelper.getProperty(this.owner, property);
+                case TO_SELF:
+                    return super.getProperty(property);
+                default:
+                    return getPropertyOwnerFirst(property);
             }
         }
+    }
+
+    private Object getPropertyDelegateFirst(String property) {
+        if(delegate == null) return getPropertyOwnerFirst(property);
+        return getPropertyTryThese(property, this.delegate, this.owner);
+
+    }
+
+    private Object getPropertyTryThese(String property, Object firstTry, Object secondTry) {
+        try {
+            // lets try getting the property on the owner
+            return InvokerHelper.getProperty(firstTry, property);
+        } catch (MissingPropertyException e1) {
+            if (secondTry != null && firstTry != this && firstTry != secondTry) {
+                try {
+                    // lets try getting the property on the delegate
+                    return InvokerHelper.getProperty(secondTry, property);
+                } catch (GroovyRuntimeException e2) {
+                    // ignore, we'll throw e1
+                }
+            }
+
+            throw e1;
+        }
+    }
+
+    private Object getPropertyOwnerFirst(String property) {
+        return getPropertyTryThese(property, this.owner, this.delegate);
     }
 
     public void setProperty(String property, Object newValue) {
@@ -135,25 +205,56 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
             setDelegate(newValue);
         } else if ("metaClass".equals(property)) {
             setMetaClass((MetaClass) newValue);
-        } else {
-            try {
-                // lets try setting the property on the owner
-                InvokerHelper.setProperty(this.owner, property, newValue);
-                return;
-            } catch (GroovyRuntimeException e1) {
-                if (this.delegate != null && this.delegate != this && this.delegate != this.owner) {
-                    try {
-                        // lets try setting the property on the delegate
-                        InvokerHelper.setProperty(this.delegate, property, newValue);
-                        return;
-                    } catch (GroovyRuntimeException e2) {
-                        // ignore, we'll throw e1
-                    }
-                }
-
-                throw e1;
+        } else if ("resolveStrategy".equals(property)) {
+            setResolveStrategy(((Number)newValue).intValue());
+        }
+        else {
+            switch(resolveStrategy) {
+                case DELEGATE_FIRST:
+                    setPropertyDelegateFirst(property, newValue);
+                break;
+                case DELEGATE_ONLY:
+                    InvokerHelper.setProperty(this.delegate, property, newValue);
+                break;
+                case OWNER_ONLY:
+                    InvokerHelper.setProperty(this.owner, property, newValue);
+                break;
+                case TO_SELF:
+                    super.setProperty(property, newValue);
+                break;
+                default:
+                    setPropertyOwnerFirst(property, newValue);
             }
         }
+    }
+
+    private void setPropertyDelegateFirst(String property, Object newValue) {
+        if(delegate == null) setPropertyOwnerFirst(property, newValue); 
+        else
+            setPropertyTryThese(property, newValue, this.delegate, this.owner);
+    }
+
+    private void setPropertyTryThese(String property, Object newValue, Object firstTry, Object secondTry) {
+        try {
+            // lets try setting the property on the owner
+            InvokerHelper.setProperty(firstTry, property, newValue);
+        } catch (GroovyRuntimeException e1) {
+            if (firstTry != null && firstTry != this && firstTry != secondTry) {
+                try {
+                    // lets try setting the property on the delegate
+                    InvokerHelper.setProperty(secondTry, property, newValue);
+                    return;
+                } catch (GroovyRuntimeException e2) {
+                    // ignore, we'll throw e1
+                }
+            }
+
+            throw e1;
+        }
+    }
+
+    private void setPropertyOwnerFirst(String property, Object newValue) {
+        setPropertyTryThese(property, newValue, this.owner, this.delegate);
     }
 
     public boolean isCase(Object candidate){
