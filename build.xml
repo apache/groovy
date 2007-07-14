@@ -32,6 +32,14 @@ $Date$
     <import file="config/ant/build-checkstyle.xml"/>
     <import file="config/ant/build-cobertura.xml"/>
 
+  <condition property="_skipTests_">
+    <istrue value="${skipTests}"/>
+  </condition>
+
+  <condition property="_skipExamples_">
+    <istrue value="${skipExamples}"/>
+  </condition>
+
     <target name="-initCoverage">
         <condition property="_forceCoverage_">
             <and>
@@ -116,7 +124,7 @@ $Date$
         </java>
     </target>
 
-    <target name="compileTest" depends="compileMain" unless="skipTests"
+    <target name="compileTest" depends="compileMain" unless="_skipTests_"
             description="Compile the Java and Groovy code in the test source.">
         <mkdir dir="${testClassesDirectory}"/>
 
@@ -148,10 +156,9 @@ $Date$
         </java>
     </target>
 
-    <target name="compileExamples" depends="compileMain" unless="skipExamples"
+    <target name="compileExamples" depends="compileMain" unless="_skipExamples_"
             description="Compile the Java and Groovy code in the examples source directory.">
         <mkdir dir="${examplesClassesDirectory}"/>
-
         <echo message="Groovyc of example code."/>
         <java classname="org.codehaus.groovy.ant.Groovyc" fork="true">
             <classpath>
