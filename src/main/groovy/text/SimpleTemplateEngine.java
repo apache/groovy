@@ -36,7 +36,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 /**
  * This simple template engine uses JSP <% %> script and <%= %> expression syntax.  It also lets you use normal groovy expressions in
  * the template text much like the new JSP EL functionality.  The variable 'out' is bound to the writer that the template is being written to.
- * 
+ *
  * @author sam
  * @author Christian Stein
  */
@@ -53,8 +53,13 @@ public class SimpleTemplateEngine extends TemplateEngine {
     }
 
     public Template createTemplate(Reader reader) throws CompilationFailedException, IOException {
+        return createTemplate(GroovyShell.class.getClassLoader(), reader);
+    }
+
+    public Template createTemplate(ClassLoader parentLoader, Reader reader)
+            throws CompilationFailedException, IOException {
         SimpleTemplate template = new SimpleTemplate();
-        GroovyShell shell = new GroovyShell();
+        GroovyShell shell = new GroovyShell(parentLoader);
         String script = template.parse(reader);
         if (verbose) {
             System.out.println("\n-- script source --");
@@ -114,9 +119,10 @@ public class SimpleTemplateEngine extends TemplateEngine {
         /**
          * Parse the text document looking for <% or <%= and then call out to the appropriate handler, otherwise copy the text directly
          * into the script while escaping quotes.
-         * 
-         * @param reader
-         * @throws IOException
+         *
+         * @param reader a reader for the template text
+         * @throws IOException if something goes wrong
+         * @return the parsed text
          */
         protected String parse(Reader reader) throws IOException {
             if (!reader.markSupported()) {
@@ -124,7 +130,6 @@ public class SimpleTemplateEngine extends TemplateEngine {
             }
             StringWriter sw = new StringWriter();
             startScript(sw);
-            boolean start = false;
             int c;
             while ((c = reader.read()) != -1) {
                 if (c == '<') {
@@ -165,8 +170,7 @@ public class SimpleTemplateEngine extends TemplateEngine {
                 sw.write(c);
             }
             endScript(sw);
-            String result = sw.toString();
-            return result;
+            return sw.toString();
         }
 
         private void startScript(StringWriter sw) {
@@ -180,10 +184,10 @@ public class SimpleTemplateEngine extends TemplateEngine {
 
         /**
          * Closes the currently open write and writes out the following text as a GString expression until it reaches an end %>.
-         * 
-         * @param reader
-         * @param sw
-         * @throws IOException
+         *
+         * @param reader a reader for the template text
+         * @param sw a StringWriter to write expression content
+         * @throws IOException if something goes wrong
          */
         private void groovyExpression(Reader reader, StringWriter sw) throws IOException {
             sw.write("\");out.print(\"${");
@@ -206,10 +210,10 @@ public class SimpleTemplateEngine extends TemplateEngine {
 
         /**
          * Closes the currently open write and writes the following text as normal Groovy script code until it reaches an end %>.
-         * 
-         * @param reader
-         * @param sw
-         * @throws IOException
+         *
+         * @param reader a reader for the template text
+         * @param sw a StringWriter to write expression content
+         * @throws IOException if something goes wrong
          */
         private void groovySection(Reader reader, StringWriter sw) throws IOException {
             sw.write("\");");
