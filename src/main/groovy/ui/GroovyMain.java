@@ -120,8 +120,8 @@ public class GroovyMain {
     private static void printHelp(PrintStream out, Options options) {
         HelpFormatter formatter = new HelpFormatter();
         PrintWriter pw = new PrintWriter(out);
-        formatter.printHelp( pw, formatter.defaultWidth, "groovy", null, options,
-                formatter.defaultLeftPad, formatter.defaultDescPad, null, false);
+        formatter.printHelp( pw, formatter.getWidth(), "groovy", null, options,
+                             formatter.getLeftPadding(), formatter.getDescPadding(), null, false);
         pw.flush();
     }
 

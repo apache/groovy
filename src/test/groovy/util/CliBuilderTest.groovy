@@ -33,7 +33,14 @@ class CliBuilderTest extends GroovyTestCase {
         assert options.c
         assertEquals 'ASCII', options.getOptionValue('c')
         assertEquals 'ASCII', options.c
+        /*
+         *  For Commons CLI 1.0 we had
+         *
         assertEquals false, options.encoding
+         *
+         *  but for Commons CLI 1.1 we have:
+         */
+        assertEquals 'ASCII', options.encoding
 
         assertEquals false, options.noSuchOptionGiven
         assertEquals false, options.x
@@ -45,8 +52,16 @@ class CliBuilderTest extends GroovyTestCase {
         def options = cli.parse(['-a','1,2'])
         assertEquals '1', options.a
         assertEquals(['1','2'], options.as)
+        /*
+         *  For Commons CLI 1.0 we had
+         *
         assertEquals false, options.arg
         assertEquals(false, options.args)
+         *
+         *  but for Commons CLI 1.1 we have:
+         */
+        assertEquals '1', options.arg
+        assertEquals(['1','2'], options.args)
     }
 
     void testArgs() {
@@ -60,13 +75,10 @@ class CliBuilderTest extends GroovyTestCase {
         def writer = new StringWriter()
         def cli = new CliBuilder(writer: new PrintWriter(writer))
         cli.x(required:true, 'message')
-
         def options = cli.parse([])
-
-        assert writer.toString().tokenize("\r\n").join("\n") ==
-'''error: -x
+        assertEquals '''error: Missing required option: x
 usage: groovy
- -x   message'''
+ -x   message''',  writer.toString().tokenize("\r\n").join("\n")
 
     }
 }
