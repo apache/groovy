@@ -52,7 +52,7 @@ public class GroovyScriptEngine implements ResourceConnector {
     public static void main(String[] urls) throws Exception {
         URL[] roots = new URL[urls.length];
         for (int i = 0; i < roots.length; i++) {
-          roots[i] = new File(urls[i]).toURI().toURL();
+            roots[i] = new File(urls[i]).toURI().toURL();
         }
         GroovyScriptEngine gse = new GroovyScriptEngine(roots);
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
@@ -77,7 +77,7 @@ public class GroovyScriptEngine implements ResourceConnector {
     //private ScriptCacheEntry currentCacheEntry = null;
     private static ThreadLocal currentCacheEntryHolder = new ThreadLocal();
     private GroovyClassLoader groovyLoader = null;
-    
+
     private static class ScriptCacheEntry {
         private Class scriptClass;
         private long lastModified;
@@ -89,51 +89,51 @@ public class GroovyScriptEngine implements ResourceConnector {
      * A GroovyScriptEngine should only use one GroovyClassLoader but since in version
      * prior to 1.0-RC-01 you could set a new parentClassLoader
      * Ultimately groovyLoader should be final and only set in the constructor
-     * 
+     *
      * @param parentClassLoader
      */
-    private void initGroovyLoader (final ClassLoader parentClassLoader) {
+    private void initGroovyLoader(final ClassLoader parentClassLoader) {
         if (groovyLoader == null || groovyLoader.getParent() != parentClassLoader) {
-            groovyLoader = 
-                (GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
-                    public Object run() {
-                        return new GroovyClassLoader(parentClassLoader) {
-                            protected Class findClass(String className) throws ClassNotFoundException {
-                                String filename = className.replace('.', File.separatorChar) + ".groovy";
-                                URLConnection dependentScriptConn = null;
-                                try {
-                                    dependentScriptConn = rc.getResourceConnection(filename);
-                                    ScriptCacheEntry currentCacheEntry = (ScriptCacheEntry)currentCacheEntryHolder.get();
-                                    currentCacheEntry.dependencies.put(
-                                            dependentScriptConn.getURL(),
-                                            new Long(dependentScriptConn.getLastModified()));
-                                } catch (ResourceException e1) {
-                                    throw new ClassNotFoundException("Could not read " + className + ": " + e1);
-                                }
-                                InputStream inputStream = null;
-                                try {
-                                    inputStream = dependentScriptConn.getInputStream();
-                                    return parseClass(inputStream, filename);
-                                } catch (CompilationFailedException e2) {
-                                    throw new ClassNotFoundException("Syntax error in " + className + ": " + e2);
-                                } catch (IOException e2) {
-                                    throw new ClassNotFoundException("Problem reading " + className + ": " + e2);
-                                } finally {
-                                    if (inputStream != null) {
-                                        try {
-                                            inputStream.close();
-                                        } catch (IOException e) {
+            groovyLoader =
+                    (GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
+                        public Object run() {
+                            return new GroovyClassLoader(parentClassLoader) {
+                                protected Class findClass(String className) throws ClassNotFoundException {
+                                    String filename = className.replace('.', File.separatorChar) + ".groovy";
+                                    URLConnection dependentScriptConn = null;
+                                    try {
+                                        dependentScriptConn = rc.getResourceConnection(filename);
+                                        ScriptCacheEntry currentCacheEntry = (ScriptCacheEntry) currentCacheEntryHolder.get();
+                                        currentCacheEntry.dependencies.put(
+                                                dependentScriptConn.getURL(),
+                                                new Long(dependentScriptConn.getLastModified()));
+                                    } catch (ResourceException e1) {
+                                        throw new ClassNotFoundException("Could not read " + className + ": " + e1);
+                                    }
+                                    InputStream inputStream = null;
+                                    try {
+                                        inputStream = dependentScriptConn.getInputStream();
+                                        return parseClass(inputStream, filename);
+                                    } catch (CompilationFailedException e2) {
+                                        throw new ClassNotFoundException("Syntax error in " + className + ": " + e2);
+                                    } catch (IOException e2) {
+                                        throw new ClassNotFoundException("Problem reading " + className + ": " + e2);
+                                    } finally {
+                                        if (inputStream != null) {
+                                            try {
+                                                inputStream.close();
+                                            } catch (IOException e) {
 
+                                            }
                                         }
                                     }
                                 }
-                            }
-                        };
-                    }
-                });
+                            };
+                        }
+                    });
         }
     }
-    
+
     /**
      * Get a resource connection as a <code>URLConnection</code> to retrieve a script
      * from the <code>ResourceConnector</code>
@@ -149,6 +149,7 @@ public class GroovyScriptEngine implements ResourceConnector {
         ResourceException se = null;
         for (int i = 0; i < roots.length; i++) {
             URL scriptURL = null;
+            InputStream in = null;
             try {
                 scriptURL = new URL(roots[i], resourceName);
 
@@ -156,7 +157,7 @@ public class GroovyScriptEngine implements ResourceConnector {
 
                 // Make sure we can open it, if we can't it doesn't exist.
                 // Could be very slow if there are any non-file:// URLs in there
-                groovyScriptConn.getInputStream();
+                in = groovyScriptConn.getInputStream();
 
                 break; // Now this is a bit unusual
 
@@ -173,6 +174,12 @@ public class GroovyScriptEngine implements ResourceConnector {
                     se = new ResourceException(message);
                 } else {
                     se = new ResourceException(message, se);
+                }
+            } finally {
+                try {
+                    in.close();
+                } catch (IOException e) {
+                    // Do nothing: Just want to make sure it is closed
                 }
             }
         }
@@ -191,53 +198,53 @@ public class GroovyScriptEngine implements ResourceConnector {
      * groovy in other containers like games and application servers.
      *
      * @param roots This an array of URLs where Groovy scripts will be stored. They should
-     * be layed out using their package structure like Java classes 
+     *              be layed out using their package structure like Java classes
      */
     public GroovyScriptEngine(URL[] roots) {
         this.roots = roots;
         this.rc = this;
-        initGroovyLoader (getClass().getClassLoader());
-   }
+        initGroovyLoader(getClass().getClassLoader());
+    }
 
     public GroovyScriptEngine(URL[] roots, ClassLoader parentClassLoader) {
         this(roots);
-        initGroovyLoader (parentClassLoader);
+        initGroovyLoader(parentClassLoader);
     }
 
     public GroovyScriptEngine(String[] urls) throws IOException {
         roots = new URL[urls.length];
         for (int i = 0; i < roots.length; i++) {
-          roots[i] = new File(urls[i]).toURI().toURL();
+            roots[i] = new File(urls[i]).toURI().toURL();
         }
         this.rc = this;
-        initGroovyLoader (getClass().getClassLoader ());
-   }
+        initGroovyLoader(getClass().getClassLoader());
+    }
 
     public GroovyScriptEngine(String[] urls, ClassLoader parentClassLoader) throws IOException {
         this(urls);
-        initGroovyLoader (parentClassLoader);
+        initGroovyLoader(parentClassLoader);
     }
 
     public GroovyScriptEngine(String url) throws IOException {
         roots = new URL[1];
         roots[0] = new File(url).toURI().toURL();
         this.rc = this;
-        initGroovyLoader (getClass().getClassLoader ());
+        initGroovyLoader(getClass().getClassLoader());
     }
 
     public GroovyScriptEngine(String url, ClassLoader parentClassLoader) throws IOException {
         this(url);
-        initGroovyLoader (parentClassLoader);
+        initGroovyLoader(parentClassLoader);
     }
 
     public GroovyScriptEngine(ResourceConnector rc) {
         this.rc = rc;
-        initGroovyLoader (getClass().getClassLoader());
+        initGroovyLoader(getClass().getClassLoader());
     }
 
     public GroovyScriptEngine(ResourceConnector rc, ClassLoader parentClassLoader) {
         this(rc);
-        initGroovyLoader (parentClassLoader);
+        initGroovyLoader(parentClassLoader);
     }
 
     /**
@@ -248,7 +255,7 @@ public class GroovyScriptEngine implements ResourceConnector {
      * @return parent classloader used to load scripts
      */
     public ClassLoader getParentClassLoader() {
-        return groovyLoader.getParent ();
+        return groovyLoader.getParent();
     }
 
     /**
@@ -259,20 +266,21 @@ public class GroovyScriptEngine implements ResourceConnector {
         if (parentClassLoader == null) {
             throw new IllegalArgumentException("The parent class loader must not be null.");
         }
-        initGroovyLoader (parentClassLoader);
+        initGroovyLoader(parentClassLoader);
     }
 
     /**
      * Get the class of the scriptName in question, so that you can instantiate Groovy objects with caching and reloading.
-     * Note: This method is deprecated because we should not use a different parentClassLoader
+     *
      * @param scriptName
      * @return the loaded scriptName as a compiled class
      * @throws ResourceException
      * @throws ScriptException
-     * @deprecated
      */
     public Class loadScriptByName(String scriptName) throws ResourceException, ScriptException {
-        return loadScriptByName( scriptName, groovyLoader);
+        scriptName = scriptName.replace('.', File.separatorChar) + ".groovy";
+        ScriptCacheEntry entry = updateCacheEntry(scriptName);
+        return entry.scriptClass;
     }
 
 
@@ -287,10 +295,8 @@ public class GroovyScriptEngine implements ResourceConnector {
      */
     public Class loadScriptByName(String scriptName, ClassLoader parentClassLoader)
             throws ResourceException, ScriptException {
-        scriptName = scriptName.replace('.', File.separatorChar) + ".groovy";
-        initGroovyLoader (parentClassLoader);
-        ScriptCacheEntry entry = updateCacheEntry(scriptName);
-        return entry.scriptClass;
+        initGroovyLoader(parentClassLoader);
+        return loadScriptByName(scriptName);
     }
 
     /**
@@ -302,8 +308,7 @@ public class GroovyScriptEngine implements ResourceConnector {
      * @throws ScriptException
      */
     private ScriptCacheEntry updateCacheEntry(String scriptName)
-            throws ResourceException, ScriptException
-    {
+            throws ResourceException, ScriptException {
         ScriptCacheEntry entry;
 
         scriptName = scriptName.intern();
@@ -343,17 +348,25 @@ public class GroovyScriptEngine implements ResourceConnector {
                 // Make a new entry
                 ScriptCacheEntry currentCacheEntry = new ScriptCacheEntry();
                 currentCacheEntryHolder.set(currentCacheEntry);
+                InputStream in = null;
+
                 try {
-                    currentCacheEntry.scriptClass = groovyLoader.parseClass(groovyScriptConn.getInputStream(), scriptName);
+                    in = groovyScriptConn.getInputStream();
+                    currentCacheEntry.scriptClass = groovyLoader.parseClass(in, scriptName);
                 } catch (Exception e) {
                     throw new ScriptException("Could not parse scriptName: " + scriptName, e);
-                } finally{
+                } finally {
                     currentCacheEntryHolder.set(null);
+                    try {
+                        in.close();
+                    } catch (IOException e) {
+                        // Do nothing: Just want to make sure it is closed
+                    }
                 }
-                
+
                 currentCacheEntry.lastModified = lastModified;
                 scriptCache.put(scriptName, currentCacheEntry);
-                
+
                 entry = currentCacheEntry;
                 currentCacheEntry = null;
             }
@@ -365,7 +378,7 @@ public class GroovyScriptEngine implements ResourceConnector {
      * Run a script identified by name.
      *
      * @param scriptName name of the script to run
-     * @param argument a single argument passed as a variable named <code>arg</code> in the binding
+     * @param argument   a single argument passed as a variable named <code>arg</code> in the binding
      * @return a <code>toString()</code> representation of the result of the execution of the script
      * @throws ResourceException
      * @throws ScriptException
@@ -381,7 +394,7 @@ public class GroovyScriptEngine implements ResourceConnector {
      * Run a script identified by name.
      *
      * @param scriptName name of the script to run
-     * @param binding binding to pass to the script
+     * @param binding    binding to pass to the script
      * @return an object
      * @throws ResourceException
      * @throws ScriptException
