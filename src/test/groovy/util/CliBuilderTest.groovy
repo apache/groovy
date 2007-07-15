@@ -15,6 +15,7 @@
 package groovy.util
 
 import org.apache.commons.cli.GnuParser
+import org.apache.commons.cli.Option
 import org.apache.commons.cli.OptionBuilder
 import org.apache.commons.cli.PosixParser
 import org.apache.commons.cli.BasicParser
@@ -87,19 +88,15 @@ class CliBuilderTest extends GroovyTestCase {
     assertEquals ( false, options.noSuchOptionGiven )
     assertEquals ( false, options.x )
   }
-  
   void testSampleShort_GnuParser ( ) {
     runSample ( new CliBuilder ( usage : usageString , writer : printWriter , parser : new GnuParser ( ) ) , [ '-h' , '-c' , expectedParameter ] )
   }
-
   void testSampleShort_PosixParser ( ) {
     runSample ( new CliBuilder ( usage : usageString , writer : printWriter , parser : new PosixParser ( ) ) , [ '-h' , '-c' , expectedParameter ] )
   }
-  
   void testSampleLong_GnuParser ( ) {
     runSample ( new CliBuilder ( usage : usageString , writer : printWriter , parser : new GnuParser ( ) ) , [ '--help' , '--encoding' , expectedParameter ] )
   }
-
   /*
    *  Cannot run this test because of the "--" instead of "ASCII" problem.  See testLongAndShortOpts_PosixParser below.
    */
@@ -109,7 +106,7 @@ class CliBuilderTest extends GroovyTestCase {
 
   void testMultipleArgs ( ) {
     def cli = new CliBuilder ( )
-    cli.a ( longOpt :'arg' , args : 2 , valueSeparator : ',' as char , 'arguments' )
+    cli.a ( longOpt : 'arg' , args : 2 , valueSeparator : ',' as char , 'arguments' )
     def options = cli.parse ( [ '-a' , '1,2' ] )
     assertEquals ( '1' , options.a )
     assertEquals ( [ '1' , '2' ] , options.as )
@@ -218,10 +215,8 @@ usage: groovy
     def options = cli.parse ( [ '-x' , '-yyy' , '--zzz' , 'something' ] )
     assertEquals ( [ '-x' , '-yyy' , '--zzz' , 'something' ] , options.arguments ( ) )
   }
-  
   void testUnrecognizedOptions_BasicParser ( ) { unknownOptions ( new BasicParser ( ) ) }
   void testUnrecognizedOptions_GnuParser ( ) { unknownOptions ( new GnuParser ( ) ) }
-
   //
   //  The Posix Parser absorbs unrecognized options rather than passing them through.  It is not clear if
   //  this is the correct or incorrect behaviour.
@@ -238,10 +233,8 @@ usage: groovy
     def options = cli.parse ( [ '-xxxx' ] )
     assertEquals ( [ '-xxxx' ] , options.arguments ( ) )
   }
-  
   void testBizarreProcessing_BasicParser ( ) { bizarreProcessing ( new BasicParser ( ) ) }
   void testBizarreProcessing_GnuParser ( ) { bizarreProcessing ( new GnuParser ( ) ) }
-
   //
   //  This behaviour by the PosixParser is truly bizarre and so militates in favour of the switch from
   //  PosixParser to GnuParser as the CliBuilder default.
@@ -251,4 +244,70 @@ usage: groovy
     def options = cli.parse ( [ '-xxx' ] )
     assertEquals ( [ 'xxx' , 'xx' , 'x' ] , options.arguments ( ) )
   }
+
+  private void multipleOccurrencesSeparateSeparate ( parser ) {
+    def cli = new CliBuilder ( parser : parser )
+    cli.a ( longOpt : 'arg' , args : Option.UNLIMITED_VALUES , 'arguments' )
+    def options = cli.parse ( [ '-a' , '1' , '-a' , '2' , '-a' , '3' ] )
+    assertEquals ( '1' , options.a )
+    assertEquals ( [ '1' , '2' , '3' ] , options.as )
+    assertEquals ( '1' , options.arg )
+    assertEquals ( [ '1' , '2' , '3' ] , options.args )
+    assertEquals ( [ ] , options.arguments ( ) )
+  }
+  void testMultipleOccurrencesSeparateSeparate_BasicParser ( ) { multipleOccurrencesSeparateSeparate ( new BasicParser ( ) ) }
+  void testMultipleOccurrencesSeparateSeparate_GnuParser ( ) { multipleOccurrencesSeparateSeparate ( new GnuParser ( ) ) }
+  void testMultipleOccurrencesSeparateSeparate_PosixParser ( ) { multipleOccurrencesSeparateSeparate ( new PosixParser ( ) ) }
+
+  private void multipleOccurrencesSeparateJuxtaposed ( parser ) {
+    def cli = new CliBuilder ( parser : parser )
+    cli.a ( longOpt : 'arg' , args : Option.UNLIMITED_VALUES , 'arguments' )
+    def options = cli.parse ( [ '-a1' , '-a2' , '-a3' ] )
+    assertEquals ( '1' , options.a )
+    assertEquals ( [ '1' , '2' , '3' ] , options.as )
+    assertEquals ( '1' , options.arg )
+    assertEquals ( [ '1' , '2' , '3' ] , options.args )
+    assertEquals ( [ ] , options.arguments ( ) )
+  }
+  //
+  //  BasicParser cannot handle this one.
+  //
+  //void testMultipleOccurrencesSeparateJuxtaposed_BasicParser ( ) { multipleOccurrencesSeparateJuxtaposed ( new BasicParser ( ) ) }
+  void testMultipleOccurrencesSeparateJuxtaposed_GnuParser ( ) { multipleOccurrencesSeparateJuxtaposed ( new GnuParser ( ) ) }
+  void testMultipleOccurrencesSeparateJuxtaposed_PosixParser ( ) { multipleOccurrencesSeparateJuxtaposed ( new PosixParser ( ) ) }
+
+  private void multipleOccurrencesTogetherSeparate ( parser ) {
+    def cli = new CliBuilder ( parser : parser )
+    cli.a ( longOpt : 'arg' , args : Option.UNLIMITED_VALUES , valueSeparator : ',' as char , 'arguments' )
+    def options = cli.parse ( [ '-a 1,2,3' ] )
+    assertEquals ( ' 1' , options.a )
+    assertEquals ( [ ' 1' , '2' , '3' ] , options.as )
+    assertEquals ( ' 1' , options.arg )
+    assertEquals ( [ ' 1' , '2' , '3' ] , options.args )
+    assertEquals ( [ ] , options.arguments ( ) )
+  }
+  //
+  //  BasicParser cannot handle this one.
+  //
+  //void testMultipleOccurrencesTogetherSeparate_BasicParser ( ) { multipleOccurrencesTogetherSeparate ( new BasicParser ( ) ) }
+  void testMultipleOccurrencesTogetherSeparate_GnuParser ( ) { multipleOccurrencesTogetherSeparate ( new GnuParser ( ) ) }
+  void testMultipleOccurrencesTogetherSeparate_PosixParser ( ) { multipleOccurrencesTogetherSeparate ( new PosixParser ( ) ) }
+
+  private void multipleOccurrencesTogetherJuxtaposed ( parser ) {
+    def cli = new CliBuilder ( parser : parser )
+    cli.a ( longOpt : 'arg' , args : Option.UNLIMITED_VALUES , valueSeparator : ',' as char , 'arguments' )
+    def options = cli.parse ( [ '-a1,2,3' ] )
+    assertEquals ( '1' , options.a )
+    assertEquals ( [ '1' , '2' , '3' ] , options.as )
+    assertEquals ( '1' , options.arg )
+    assertEquals ( [ '1' , '2' , '3' ] , options.args )
+    assertEquals ( [ ] , options.arguments ( ) )
+  }
+  //
+  //  BasicParser cannot handle this one.
+  //
+  //void testMultipleOccurrencesTogetherJuxtaposed_BasicParser ( ) { multipleOccurrencesTogetherJuxtaposed ( new BasicParser ( ) ) }
+  void testMultipleOccurrencesTogetherJuxtaposed_GnuParser ( ) { multipleOccurrencesTogetherJuxtaposed ( new GnuParser ( ) ) }
+  void testMultipleOccurrencesTogetherJuxtaposed_PosixParser ( ) { multipleOccurrencesTogetherJuxtaposed ( new PosixParser ( ) ) }
+
 }
