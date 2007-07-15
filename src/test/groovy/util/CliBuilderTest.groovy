@@ -17,6 +17,7 @@ package groovy.util
 import org.apache.commons.cli.GnuParser
 import org.apache.commons.cli.OptionBuilder
 import org.apache.commons.cli.PosixParser
+import org.apache.commons.cli.BasicParser
 
 /**
  *  Test class for the CliBuilder -- but then that is obvious from the name :-)
@@ -33,7 +34,7 @@ import org.apache.commons.cli.PosixParser
  *  problem does not happen with the <code>PosixParser</code>.</p>
  *
  *  @author Dierk König
- *  @aithor Russel Winder
+ *  @author Russel Winder
  */
 
 class CliBuilderTest extends GroovyTestCase {
@@ -79,6 +80,7 @@ class CliBuilderTest extends GroovyTestCase {
   void testSampleShort_GnuParser ( ) {
     runSample ( new CliBuilder ( usage : 'groovy [option]* filename' , writer : new PrintWriter ( writer ) , parser : new GnuParser ( ) ) , [ '-h' , '-c' , 'ASCII' ] )
   }
+
   void testSampleShort_PosixParser ( ) {
     runSample ( new CliBuilder ( usage : 'groovy [option]* filename' , writer : new PrintWriter ( writer ) , parser : new PosixParser ( ) ) , [ '-h' , '-c' , 'ASCII' ] )
   }
@@ -86,6 +88,7 @@ class CliBuilderTest extends GroovyTestCase {
   void testSampleLong_GnuParser ( ) {
     runSample ( new CliBuilder ( usage : 'groovy [option]* filename' , writer : new PrintWriter ( writer ) , parser : new GnuParser ( ) ) , [ '--help' , '--encoding' , 'ASCII' ] )
   }
+
   /*
    *  Cannot run this test because of the "--" instead of "something" problem.  See testLongAndShortOpts_PosixParser below.
    */
@@ -156,22 +159,26 @@ usage: groovy
     assert ! options.v
   }
 
-  void testLongAndShortOpts_GnuParser ( ) {
-    def cli = new CliBuilder ( writer : new PrintWriter ( writer ) , parser : new GnuParser ( ) )
-    def anOption = OptionBuilder.withLongOpt ( 'anOption' ).hasArg ( ).withDescription ( 'An option.' ).create ( )
-    cli.options.addOption ( anOption )
-    cli.v ( longOpt : 'verbose' , 'verbose mode' )
-    def options = cli.parse ( [ '-v' , '--anOption' , 'something' ] )
-    cli.usage ( )
-    assertEquals '''usage: groovy
-    --anOption <arg>   An option.
- -v,--verbose          verbose mode''' , writer.toString ( ).tokenize ( '\r\n' ).join ( '\n' )
+  void testLongAndShortOpts_BasicParser ( ) {
+    def options = createOptionsWithLongAndShortOpts ( new BasicParser ( ) )
     assertEquals 'something' , options.getOptionValue ( 'anOption' )
     assertEquals 'something' , options.anOption
-    assert options.v
   }
+
   void testLongAndShortOpts_PosixParser ( ) {
-    def cli = new CliBuilder ( writer : new PrintWriter ( writer ) , parser : new PosixParser ( ) )
+    def options = createOptionsWithLongAndShortOpts ( new PosixParser ( ) )
+    assertEquals '--' , options.getOptionValue ( 'anOption' )
+    assertEquals '--' , options.anOption
+  }
+
+  void testLongAndShortOpts_GnuParser ( ) {
+    def options = createOptionsWithLongAndShortOpts ( new GnuParser ( ) )
+    assertEquals 'something' , options.getOptionValue ( 'anOption' )
+    assertEquals 'something' , options.anOption
+  }
+
+  private createOptionsWithLongAndShortOpts ( parser ) {
+    def cli = new CliBuilder ( writer : new PrintWriter ( writer ) , parser : parser )
     def anOption = OptionBuilder.withLongOpt ( 'anOption' ).hasArg ( ).withDescription ( 'An option.' ).create ( )
     cli.options.addOption ( anOption )
     cli.v ( longOpt : 'verbose' , 'verbose mode' )
@@ -181,12 +188,7 @@ usage: groovy
     --anOption <arg>   An option.
  -v,--verbose          verbose mode''' , writer.toString ( ).tokenize ( '\r\n' ).join ( '\n' )
     assert options.v
-    /*
-     *  There seems to be some sort of bug that means we get "--" instead of "something".  This is WRONG,
-     *  the GnuParser does not behave like this.
-     */ 
-    assertEquals '--' , options.getOptionValue ( 'anOption' )
-    assertEquals '--' , options.anOption
+    return options
   }
 
 }
