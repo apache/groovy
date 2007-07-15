@@ -1,39 +1,35 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="src" path="src/main"/>
+	<classpathentry excluding="**/.cvsignore" kind="src" path="src/main"/>
 	<classpathentry excluding="**/.cvsignore" kind="src" path="src/test"/>
-	<classpathentry kind="var" path="MAVEN_REPO/ant/jars/ant-1.6.5.jar"/>
-	<classpathentry kind="var" path="MAVEN_REPO/ant/jars/ant-junit-1.6.5.jar"/>
-	<classpathentry kind="var" path="MAVEN_REPO/ant/jars/ant-launcher-1.6.5.jar"/>
-	<classpathentry exported="true" kind="var" path="MAVEN_REPO/antlr/jars/antlr-2.7.5.jar"/>
-	<classpathentry kind="var" path="MAVEN_REPO/asm/jars/asm-2.2.jar"/>
-	<classpathentry kind="var" path="MAVEN_REPO/asm/jars/asm-analysis-2.2.jar"/>
-	<classpathentry kind="var" path="MAVEN_REPO/asm/jars/asm-attrs-2.2.jar"/>
-	<classpathentry kind="var" path="MAVEN_REPO/asm/jars/asm-tree-2.2.jar"/>
-	<classpathentry kind="var" path="MAVEN_REPO/asm/jars/asm-util-2.2.jar"/>
-	<classpathentry kind="var" path="MAVEN_REPO/axion/jars/axion-1.0-M3-dev.jar"/>
-	<classpathentry kind="var" path="MAVEN_REPO/bsf/jars/bsf-2.4.0.jar"/>
-	<classpathentry kind="var" path="MAVEN_REPO/commons-cli/jars/commons-cli-1.0.jar"/>
-	<classpathentry kind="var" path="MAVEN_REPO/commons-collections/jars/commons-collections-3.2.jar"/>
-	<classpathentry kind="var" path="MAVEN_REPO/commons-logging/jars/commons-logging-1.0.3.jar"/>
-	<classpathentry kind="var" path="MAVEN_REPO/jmock/jars/jmock-cglib-1.1.0.jar"/>
-	<classpathentry kind="var" path="MAVEN_REPO/jmock/jars/jmock-1.1.0.jar"/>
-	<classpathentry kind="var" path="MAVEN_REPO/junit/jars/junit-3.8.1.jar"/>
-	<classpathentry kind="var" path="MAVEN_REPO/mockobjects/jars/mockobjects-core-0.09.jar"/>
-	<classpathentry kind="var" path="MAVEN_REPO/mx4j/jars/mx4j-3.0.1.jar"/>
-	<classpathentry kind="var" path="MAVEN_REPO/nekohtml/jars/nekohtml-0.9.5.jar"/>
-	<classpathentry kind="var" path="MAVEN_REPO/openejb/jars/openejb-loader-1.0.jar"/>
-	<classpathentry kind="var" path="MAVEN_REPO/qdox/jars/qdox-1.5.jar"/>
-	<classpathentry kind="var" path="MAVEN_REPO/radeox/jars/radeox-0.9.jar"/>
-	<classpathentry kind="var" path="MAVEN_REPO/radeox/jars/radeox-oro-0.9.jar"/>
-	<classpathentry kind="var" path="MAVEN_REPO/regexp/jars/regexp-1.3.jar"/>
-	<classpathentry kind="var" path="MAVEN_REPO/xerces/jars/xerces-2.4.0.jar"/>
-	<classpathentry kind="var" path="MAVEN_REPO/xml-apis/jars/xml-apis-1.0.b2.jar"/>
-	<classpathentry kind="var" path="MAVEN_REPO/xstream/jars/xstream-1.2.jar"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="security/GroovyJarTest.jar"/>
-	<classpathentry kind="var" path="MAVEN_REPO/javax.servlet/jars/servlet-api-2.4.jar"/>
-	<classpathentry kind="var" path="MAVEN_REPO/javax.servlet/jars/jsp-api-2.0.jar"/>
-	<classpathentry kind="var" path="MAVEN_REPO/xmlunit/jars/xmlunit-1.0.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/J2SE-1.4"/>
+	<classpathentry kind="var" path="MAVEN_REPO/antlr/antlr/2.7.6/antlr-2.7.6.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/org/apache/ant/ant/1.7.0/ant-1.7.0.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/org/apache/ant/ant-junit/1.7.0/ant-junit-1.7.0.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/org/apache/ant/ant-launcher/1.7.0/ant-launcher-1.7.0.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/asm/asm/2.2/asm-2.2.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/asm/asm-attrs/2.2/asm-attrs-2.2.jar"/>	
+	<classpathentry kind="var" path="MAVEN_REPO/asm/asm-util/2.2/asm-util-2.2.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/asm/asm-tree/2.2/asm-tree-2.2.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/asm/asm-analysis/2.2/asm-analysis-2.2.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/castor/castor/0.9.9/castor-0.9.9.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/cglib/cglib-nodep/2.1_3/cglib-nodep-2.1_3.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/bsf/bsf/2.4.0/bsf-2.4.0.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/javax/servlet/servlet-api/2.4/servlet-api-2.4.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/javax/servlet/jsp-api/2.0/jsp-api-2.0.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/commons-cli/commons-cli/1.1/commons-cli-1.1.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/commons-logging/commons-logging/1.0.4/commons-logging-1.0.4.jar"/>	
+	<classpathentry kind="var" path="MAVEN_REPO/log4j/log4j/1.2.8/log4j-1.2.8.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/com/thoughtworks/xstream/xstream/1.2.2/xstream-1.2.2.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/hsqldb/hsqldb/1.8.0.7/hsqldb-1.8.0.7.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/mx4j/mx4j/3.0.2/mx4j-3.0.2.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/openejb/openejb-loader/1.0/openejb-loader-1.0.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/xpp3/xpp3_min/1.1.3.4.O/xpp3_min-1.1.3.4.O.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/junit/junit/3.8.2/junit-3.8.2.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/mockobjects/mockobjects-core/0.09/mockobjects-core-0.09.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/xmlunit/xmlunit/1.0/xmlunit-1.0.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/jmock/jmock/1.2.0/jmock-1.2.0.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/jmock/jmock-cglib/1.2.0/jmock-cglib-1.2.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
