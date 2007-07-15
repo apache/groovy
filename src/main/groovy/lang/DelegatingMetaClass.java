@@ -202,9 +202,9 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass {
 
     /**
      *
-     * @param at
-     * @param arguments
-     * @return
+     * @param at the new objects class
+     * @param arguments the args for the constructor call
+     * @return the constructed object
      * @deprecated use invokeConstructor instead
      */
     public Object invokeConstructorAt(Class at, Object[] arguments) {

@@ -15,7 +15,6 @@
  */
 package groovy.util;
 
-
 import groovy.lang.Closure;
 import groovy.lang.GroovyObjectSupport;
 import groovy.lang.MissingMethodException;
@@ -178,8 +177,10 @@ public abstract class BuilderSupport extends GroovyObjectSupport {
 
     /**
      * A hook to allow names to be converted into some other object
-     * such as a QName in XML or ObjectName in JMX
-     * @param methodName
+     * such as a QName in XML or ObjectName in JMX.
+     *
+     * @param methodName the name of the desired method
+     * @return the object representing the name
      */
     protected Object getName(String methodName) {
         if (nameMappingClosure != null) {
@@ -191,7 +192,10 @@ public abstract class BuilderSupport extends GroovyObjectSupport {
 
     /**
      * A hook to allow nodes to be processed once they have had all of their
-     * children applied
+     * children applied.
+     *
+     * @param node the current node being processed
+     * @param parent the parent of the node being processed
      */
     protected void nodeCompleted(Object parent, Object node) {
     }
@@ -201,8 +205,9 @@ public abstract class BuilderSupport extends GroovyObjectSupport {
      * children applied and allows the actual node object that represents
      * the Markup element to be changed
      *
-     * @ param node the current node
-     * @ return the node, possibly new, that represents the markup element
+     * @param node the current node being processed
+     * @param parent the parent of the node being processed
+     * @return the node, possibly new, that represents the markup element
      */
     protected Object postNodeCompletion(Object parent, Object node) {
         return node;
