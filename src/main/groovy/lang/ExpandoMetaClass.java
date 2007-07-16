@@ -195,7 +195,12 @@ public class  ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 		performOperationOnMetaClass(new Callable() {
 			public void call() {
 
-				MetaMethod existing = pickMethod(metaMethodFromSuper.getName(), metaMethodFromSuper.getParameterTypes());
+				MetaMethod existing = null;
+				try {
+					existing = pickMethod(metaMethodFromSuper.getName(), metaMethodFromSuper.getParameterTypes());}
+				catch ( GroovyRuntimeException e) { 
+					// ignore, this happens with overlapping method definitions
+				}
 
 				if(existing == null) {
                         addMethodWithKey(metaMethodFromSuper);
@@ -239,7 +244,7 @@ public class  ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 	 * @param theClass The class that the MetaClass applies to
 	 */
 	public ExpandoMetaClass(Class theClass) {
-		super(InvokerHelper.getInstance().getMetaRegistry(), theClass);
+		super(GroovySystem.getMetaClassRegistry(), theClass);
 		this.myMetaClass = InvokerHelper.getMetaClass(this);
 
 	}
@@ -249,15 +254,11 @@ public class  ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 	 * in the MetaClassRegistry automatically
 	 *
 	 * @param theClass The class that the MetaClass applies to
-	 * @param register True if the MetaClass should be registered inside the MetaClassRegistry
+	 * @param register True if the MetaClass should be registered inside the MetaClassRegistry. This defaults to true and ExpandoMetaClass will effect all instances if changed
 	 */
 	public ExpandoMetaClass(Class theClass, boolean register) {
 		this(theClass);
-
-		if(register) {
-			super.registry.setMetaClass(theClass, this);
-			this.inRegistry = true;
-		}
+	    this.inRegistry = true;
 	}
 
 	/**
@@ -274,9 +275,11 @@ public class  ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 	 */
 	protected class ExpandoMetaProperty extends GroovyObjectSupport {
 
-		String propertyName;
-		boolean isStatic;
-		protected ExpandoMetaProperty(String name) {
+		protected String propertyName;
+		protected boolean isStatic;
+
+
+        protected ExpandoMetaProperty(String name) {
 			this(name, false);
 		}
 		protected ExpandoMetaProperty(String name, boolean isStatic) {
@@ -284,7 +287,10 @@ public class  ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 			this.isStatic = isStatic;
 		}
 
-		public Object leftShift(Object arg) {
+        public String getPropertyName() { return this.propertyName; }
+        public boolean isStatic() { return this.isStatic; }
+        
+        public Object leftShift(Object arg) {
 			registerIfClosure(arg, false);
 			return this;
 		}
@@ -493,7 +499,7 @@ public class  ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 				public void call() {
 					Class type = newValue == null ? Object.class : newValue.getClass();
 
-					MetaBeanProperty mbp = new ThreadManagedMetaBeanProperty(theClass,property,type,newValue);
+					MetaBeanProperty mbp = newValue instanceof MetaBeanProperty ? (MetaBeanProperty)newValue : new ThreadManagedMetaBeanProperty(theClass,property,type,newValue);
 
                     final MetaMethod getter = mbp.getGetter();
                     final MethodKey getterKey = new DefaultMethodKey(theClass,getter.getName(), new Class[0],false );
@@ -507,7 +513,8 @@ public class  ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
                     expandoProperties.put(mbp.getName(),mbp);
 
 					addMetaBeanProperty(mbp);
-				}
+                    performRegistryCallbacks();
+                }
 
 			});
 	}
@@ -584,21 +591,22 @@ public class  ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 
 
     private void performRegistryCallbacks() {
-		MetaClassRegistry registry =  InvokerHelper.getInstance().getMetaRegistry();
-		if(!modified && !inRegistry) {
+		MetaClassRegistry registry =  GroovySystem.getMetaClassRegistry();
+		if(!modified) {
 			modified = true;
-			// Implementation note: By default Groovy uses soft references to store MetaClass
-			// this insures the registry doesn't grow and get out of hand. By doing this we're
-			// saying this this EMC will be a hard reference in the registry. As we're only
-			// going have a small number of classes that have modified EMC this is ok
-            MetaClass currMetaClass = registry.getMetaClass(theClass);
-            if(!(currMetaClass instanceof ExpandoMetaClass) && currMetaClass instanceof AdaptingMetaClass) {
-                ((AdaptingMetaClass)currMetaClass).setAdaptee(this);
-            } else {
-                registry.setMetaClass(theClass, this);
+            // Implementation note: By default Groovy uses soft references to store MetaClass
+            // this insures the registry doesn't grow and get out of hand. By doing this we're
+            // saying this this EMC will be a hard reference in the registry. As we're only
+            // going have a small number of classes that have modified EMC this is ok
+            if(inRegistry) {                
+                MetaClass currMetaClass = registry.getMetaClass(theClass);
+                if(!(currMetaClass instanceof ExpandoMetaClass) && currMetaClass instanceof AdaptingMetaClass) {
+                    ((AdaptingMetaClass)currMetaClass).setAdaptee(this);
+                } else {
+                    registry.setMetaClass(theClass, this);
+                }
             }
 
-			this.inRegistry = true;
 		}
 		// Implementation note: EMC handles most cases by itself except for the case where yuou
 		// want to call a dynamically injected method registered with a parent on a child class
@@ -686,7 +694,7 @@ public class  ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
                         String propertyName = getPropertyForSetter(methodName);
                         registerBeanPropertyForMethod(metaMethod, propertyName, false, true);
                     }
-
+                    performRegistryCallbacks();
                     expandoMethods.put(key,metaMethod);
                     cacheStaticMethod(key, metaMethod);
                 }
