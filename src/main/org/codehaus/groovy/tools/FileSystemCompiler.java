@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.PosixParser;
@@ -56,19 +57,10 @@ public class FileSystemCompiler
     }
 
 
-    public static void displayHelp() // todo: use HelpFormatter to avoid duplication between help and OptionBuilder
+    public static void displayHelp(final Options options)
     {
-        System.err.println("Usage: groovyc <options> <source files>");
-        System.err.println("where possible options include: ");
-        System.err.println("  --classpath <path>        Specify where to find user class files");
-        System.err.println("  -d <directory>            Specify where to place generated class files");
-        System.err.println("  --encoding <encoding>     Specify the encoding of the user class files");
-//        System.err.println("  --strict                  Turn on strict type safety");
-        System.err.println("  --version                 Print the verion");
-        System.err.println("  --help                    Print a synopsis of standard options");
-        System.err.println("  --exception               Print stack trace on error");
-        System.err.println("  --jointCompilation        attach javac compiler to compile .java files");
-        System.err.println("");
+      final HelpFormatter formatter = new HelpFormatter ( ) ;
+      formatter.printHelp ( formatter.getWidth ( ) , "groovyc <options> <source-files>" , "where possible options are:" , options , "" ) ;
     }
 
     public static void displayVersion() 
@@ -120,25 +112,27 @@ public class FileSystemCompiler
             
             Options options = new Options();
     
-            options.addOption(OptionBuilder.withLongOpt("classpath").hasArg().withArgName("classpath").create());
-            options.addOption(OptionBuilder.withLongOpt("sourcepath").hasArg().withArgName("sourcepath").create());
-            options.addOption(OptionBuilder.withLongOpt("temp").hasArg().withArgName("temp").create());
-            options.addOption(OptionBuilder.withLongOpt("encoding").hasArg().withArgName("encoding").create());
-            options.addOption(OptionBuilder.hasArg().create('d'));
-//            options.addOption(OptionBuilder.withLongOpt("strict").create('s'));
-            options.addOption(OptionBuilder.withLongOpt("help").create('h'));
-            options.addOption(OptionBuilder.withLongOpt("version").create('v'));
-            options.addOption(OptionBuilder.withLongOpt("exception").create('e'));
-            options.addOption(OptionBuilder.withLongOpt("jointCompilation").create('j'));
+            options.addOption(OptionBuilder.withLongOpt("classpath").hasArg().withArgName("path").withDescription("Specify where to find the class files.").create());
+            options.addOption(OptionBuilder.withLongOpt("sourcepath").hasArg().withArgName("path").withDescription("Specify where to find the source files.").create());
+            options.addOption(OptionBuilder.withLongOpt("temp").hasArg().withArgName("temp").withDescription("").create());
+            options.addOption(OptionBuilder.withLongOpt("encoding").hasArg().withArgName("encoding").withDescription("Specify the encoding of the user class files.").create());
+            options.addOption(OptionBuilder.hasArg().withDescription("Specify where to place generated class files.").create('d'));
+//            options.addOption(OptionBuilder.withLongOpt("strict").withDescription("Turn on strict type safety.").create('s'));
+            options.addOption(OptionBuilder.withLongOpt("help").withDescription("Print a synopsis of standard options.").create('h'));
+            options.addOption(OptionBuilder.withLongOpt("version").withDescription("Print the version.").create('v'));
+            options.addOption(OptionBuilder.withLongOpt("exception").withDescription("Print stack trace on error.").create('e'));
+            options.addOption(OptionBuilder.withLongOpt("jointCompilation").withDescription("Attach javac compiler to compile .java files.").create('j'));
     
             options.addOption(
                     OptionBuilder.withArgName( "property=value" )
                     .withValueSeparator()
                     .hasArgs(2)
+                    .withDescription("")
                     .create( "J" ));
             options.addOption(
                     OptionBuilder.withArgName( "property=value" )
                     .hasArg()
+                    .withDescription("")
                     .create( "F" ));
             
             PosixParser cliParser = new PosixParser();
@@ -147,7 +141,7 @@ public class FileSystemCompiler
     
             if( cli.hasOption('h') ) 
             {
-                displayHelp();
+                displayHelp(options);
                 return;
             }
     
@@ -198,7 +192,7 @@ public class FileSystemCompiler
             String[] filenames = cli.getArgs();
             if( filenames.length == 0 ) 
             {
-                displayHelp();
+                displayHelp(options);
                 return;
             }
     
