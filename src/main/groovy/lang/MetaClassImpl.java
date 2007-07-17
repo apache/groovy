@@ -52,37 +52,39 @@ import java.util.logging.Logger;
 * @see groovy.lang.MetaClass
 */
 public class MetaClassImpl implements MetaClass, MutableMetaClass {
-   protected static final Logger log = Logger.getLogger(MetaClass.class.getName());
-
-   protected final Class theClass;
-   protected MetaClassRegistry registry;
-   protected boolean isGroovyObject;
-   protected boolean isMap;
-   private ClassNode classNode;
-   private Map classMethodIndex = new HashMap();
-   private Map classMethodIndexForSuper;
-   private Map classStaticMethodIndex = new HashMap();
-   private Map classPropertyIndex = new HashMap();
-   private Map classPropertyIndexForSuper = new HashMap();
-   private Map staticPropertyIndex = new HashMap();
-   private Map listeners = new HashMap();
-   private Map methodCache = new ConcurrentReaderHashMap();
-   private Map staticMethodCache = new ConcurrentReaderHashMap();
-   private MetaMethod genericGetMethod;
-   private MetaMethod genericSetMethod;
-   private List constructors;
-   private List allMethods = new ArrayList();
-   private List interfaceMethods;
-   private Reflector reflector;
-   private boolean initialized;
-   // we only need one of these that can be reused over and over.
-   private MetaProperty arrayLengthProperty = new MetaArrayLengthProperty();
-   private final static MetaMethod AMBIGOUS_LISTENER_METHOD = new MetaMethod(null,null,new Class[]{},null,0);
-   private static final Object[] EMPTY_ARGUMENTS = {};
-   private List newGroovyMethodsList = new LinkedList();
     private static final String CLOSURE_CALL_METHOD = "call";
     private static final String CLOSURE_DO_CALL_METHOD = "doCall";
     private static final String CLOSURE_CURRY_METHOD = "curry";
+    private static final String METHOD_MISSING = "methodMissing";
+
+    protected static final Logger log = Logger.getLogger(MetaClass.class.getName());
+    protected final Class theClass;
+    protected MetaClassRegistry registry;
+    protected boolean isGroovyObject;
+    protected boolean isMap;
+    private ClassNode classNode;
+    private Map classMethodIndex = new HashMap();
+    private Map classMethodIndexForSuper;
+    private Map classStaticMethodIndex = new HashMap();
+    private Map classPropertyIndex = new HashMap();
+    private Map classPropertyIndexForSuper = new HashMap();
+    private Map staticPropertyIndex = new HashMap();
+    private Map listeners = new HashMap();
+    private Map methodCache = new ConcurrentReaderHashMap();
+    private Map staticMethodCache = new ConcurrentReaderHashMap();
+    private MetaMethod genericGetMethod;
+    private MetaMethod genericSetMethod;
+    private List constructors;
+    private List allMethods = new ArrayList();
+    private List interfaceMethods;
+    private Reflector reflector;
+    private boolean initialized;
+    // we only need one of these that can be reused over and over.
+   private MetaProperty arrayLengthProperty = new MetaArrayLengthProperty();
+    private final static MetaMethod AMBIGOUS_LISTENER_METHOD = new MetaMethod(null,null,new Class[]{},null,0);
+    private static final Object[] EMPTY_ARGUMENTS = {};
+    private List newGroovyMethodsList = new LinkedList();
+    private static final Class[] METHOD_MISSING_ARGS = new Class[]{String.class, Object.class};
 
     protected MetaClassImpl(final Class theClass) {
        this.theClass = theClass;
@@ -497,10 +499,19 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
    }  
    
    public Object invokeMissingMethod(Object instance, String methodName, Object[] arguments) {
-       return invokeMethodOnGroovyObject(methodName, arguments, instance);
+       return invokeMissingMethod(instance, methodName, arguments, null);
    }
-   
-   /**
+
+    private Object invokeMissingMethod(Object instance, String methodName, Object[] arguments, RuntimeException original) {
+        MetaMethod method = getMetaMethod(METHOD_MISSING, METHOD_MISSING_ARGS);
+        if(method!=null) {
+            return method.invoke(instance,new Object[]{methodName, arguments});
+        }
+        else if(original!=null) throw original;
+        else throw new MissingMethodException(methodName, theClass, arguments, false);
+    }
+
+    /**
     * Invokes the given method on the object.
     * TODO: should this be deprecated? If so, we have to propogate to many places.
     */
@@ -622,7 +633,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                        last = mme;
                    }
                }
-               if (last!=null) throw last;
+               if (last!=null) return invokeMissingMethod(object, methodName, originalArguments, last);
            }
        }
 
@@ -642,11 +653,14 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                return delegateMetaClass.invokeMethod(closure.getClass(),closure, CLOSURE_DO_CALL_METHOD,originalArguments,false,fromInsideClass);
            }
 
-           throw new MissingMethodException(methodName, theClass, originalArguments, false);
+           return invokeMissingMethod(object, methodName, originalArguments);
        }
-   }private Object invokeMethodOnGroovyObject(String methodName, Object[] originalArguments, Object owner) {
-    GroovyObject go = (GroovyObject) owner;
-                       return go.invokeMethod(methodName,originalArguments);}
+   }
+    
+    private Object invokeMethodOnGroovyObject(String methodName, Object[] originalArguments, Object owner) {
+        GroovyObject go = (GroovyObject) owner;
+        return go.invokeMethod(methodName,originalArguments);
+    }
 
     private MetaMethod lookupMetaMethodFromObject(String methodName, Class[] argClasses, Object instance) {
         MetaMethod method;
