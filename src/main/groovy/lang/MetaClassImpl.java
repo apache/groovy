@@ -755,8 +755,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
            MetaClassHelper.logMethodCall(object, methodName, arguments);
        }
        
-       Class sender = object.getClass();
-       if (object instanceof Class) sender = (Class) object;
+       final Class sender = object instanceof Class ? (Class)object : object.getClass();
        if (sender!=theClass) {
            MetaClass mc = registry.getMetaClass(sender);
            return mc.invokeStaticMethod(sender,methodName,arguments);
@@ -793,11 +792,19 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
        if (superClass != Object.class && superClass != null) {
            return invokeStaticMethod(sender.getSuperclass(), methodName, arguments);
        }
-       
-       throw new MissingMethodException(methodName, sender, arguments, true);
+
+       return invokeStaticMissingMethod(sender, methodName, arguments);
    }
-   
-   private MetaMethod pickStaticMethod(Class sender, String methodName, Class[] arguments) {
+
+    private Object invokeStaticMissingMethod(Class sender, String methodName, Object[] arguments) {
+        MetaMethod metaMethod = getStaticMetaMethod(METHOD_MISSING, METHOD_MISSING_ARGS);
+        if(metaMethod!=null) {
+            return metaMethod.invoke(sender, new Object[]{methodName, arguments});
+        }
+        throw new MissingMethodException(methodName, sender, arguments, true);
+    }
+
+    private MetaMethod pickStaticMethod(Class sender, String methodName, Class[] arguments) {
        MetaMethod method = null;
        List methods = getStaticMethods(sender,methodName);
 

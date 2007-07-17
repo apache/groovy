@@ -44,6 +44,28 @@ class MethodMissingTest extends GroovyTestCase {
 
     }
 
+    void testStaticMethodMissing() {
+        assertEquals "world", MMTest4.hello()
+        assertEquals "bar", MMTest4.stuff()
+
+        def t = new MMTest4()
+        assertEquals "world", t.hello()
+        assertEquals "bar", t.stuff()
+    }
+
+    void testStaticMethodMissingViaMetaClass() {
+
+        assertEquals "world", MMTest3.hello()
+        shouldFail(MissingMethodException) {
+            MMTest3.stuff()            
+        }
+        MMTest3.metaClass.'static'.methodMissing = { String name, args->
+             "foo"
+        }
+
+        assertEquals "world", MMTest3.hello()
+        assertEquals "foo", MMTest3.stuff()
+    }
 }
 class MMTest {
     def hello() { "world" }
@@ -53,4 +75,13 @@ class MMTest {
 }
 class MMTest2 {
     def hello() { "world" }
+}
+class MMTest3 {
+    static hello() { "world" }
+}
+class MMTest4 {
+    static hello() { "world" }
+    static methodMissing(String name, args) {
+        "bar"
+    }
 }
