@@ -34,6 +34,18 @@ import org.apache.commons.cli.BasicParser
  *  some sort is defined.  This must be a <code>CliBuilder</code>/<code>OptionAccessor</code> problem.  This
  *  problem does not happen with the <code>PosixParser</code>.</p>
  *
+ *  <p>Commons CLI 1.0 appears not to be able to access arguments using a long name, if that option has a
+ *  short name -- in this case access is only using a short name.  This means it is possible to work with
+ *  long name option if and only if they have no short name.</p>
+ *
+ *  <p>Commons CLI 1.1 whilst it has fixed most of the problems in 1.0, appears to have a broken
+ *  getOptionValues -- it returns only the first value -- and so is worse than useless.</p>
+ *
+ *  <p>1.0 PosixBuilder removes unrecognized single letter options silently.  1.1 version may also do this.
+ *  GnuParser behaves according to the <code>stopAtNonOption</code> parameter -- throw
+ *  <code>UnrecognizedOptionException</code> when <code>false</code>, terminate parse leaving everything
+ *  following unprocessed if <code>true</code>.
+ *
  *  @author Dierk König
  *  @author Russel Winder
  */
@@ -54,7 +66,8 @@ class CliBuilderTest extends GroovyTestCase {
   private final expectedParameter = 'ASCII'
   private final usageString =  'groovy [option]* filename'
 
-  private void runSample ( cli , optionList ) {
+  private void runSample ( parser , optionList ) {
+    def cli = new CliBuilder ( usage : usageString , writer : printWriter , parser : parser )
     cli.h ( longOpt : 'help', 'usage information' )
     cli.c ( argName : 'charset' , args :1 , longOpt : 'encoding' , 'character encoding' )
     cli.i ( argName : 'extension' , optionalArg : true, 'modify files in place, create backup if extension is given (e.g. \'.bak\')' )
@@ -82,30 +95,39 @@ class CliBuilderTest extends GroovyTestCase {
     ////if ( options.help ) { cli.usage ( ) }
     ////assertEquals ( expectedUsage , stringWriter.toString ( ).tokenize ( '\r\n' ).join ( '\n' ) )
     assert options.hasOption ( 'c' )
+    assert options.c
     ////assert options.hasOption ( 'encoding' )
     ////assert options.encoding
     assertEquals ( expectedParameter, options.getOptionValue ( 'c' ) )
-    ////assertEquals ( expectedParameter, options.getOptionValue ( 'encoding' ) )
     assertEquals ( expectedParameter, options.c )
+    ////assertEquals ( expectedParameter, options.getOptionValue ( 'encoding' ) )
     ////assertEquals ( expectedParameter, options.encoding )
     assertEquals ( false, options.noSuchOptionGiven )
+    assertEquals ( false, options.hasOption ( 'noSuchOptionGiven' ) )
     assertEquals ( false, options.x )
+    assertEquals ( false, options.hasOption ( 'x' ) )
+  }
+  void testSampleShort_BasicParser ( ) {
+    runSample ( new BasicParser ( ) , [ '-h' , '-c' , expectedParameter ] )
   }
   void testSampleShort_GnuParser ( ) {
-    runSample ( new CliBuilder ( usage : usageString , writer : printWriter , parser : new GnuParser ( ) ) , [ '-h' , '-c' , expectedParameter ] )
+    runSample ( new GnuParser ( ) , [ '-h' , '-c' , expectedParameter ] )
   }
   void testSampleShort_PosixParser ( ) {
-    runSample ( new CliBuilder ( usage : usageString , writer : printWriter , parser : new PosixParser ( ) ) , [ '-h' , '-c' , expectedParameter ] )
+    runSample ( new PosixParser ( ) , [ '-h' , '-c' , expectedParameter ] )
+  }
+  void testSampleLong_BasicParser ( ) {
+    runSample ( new GnuParser ( ) , [ '--help' , '--encoding' , expectedParameter ] )
   }
   void testSampleLong_GnuParser ( ) {
-    runSample ( new CliBuilder ( usage : usageString , writer : printWriter , parser : new GnuParser ( ) ) , [ '--help' , '--encoding' , expectedParameter ] )
+    runSample ( new GnuParser ( ) , [ '--help' , '--encoding' , expectedParameter ] )
   }
   /*
    *  Cannot run this test because of the "--" instead of "ASCII" problem.  See
    *  testLongAndShortOpts_PosixParser below.  This is a 1.0 and a 1.1 problem.
    */
   void XXX_testSampleLong_PosixParser ( ) {
-    runSample ( new CliBuilder ( usage : usageString , writer : printWriter , parser : new PosixParser ( ) ) , [ '--help' , '--encoding' , expectedParameter ] )
+    runSample ( new PosixParser ( ) , [ '--help' , '--encoding' , expectedParameter ] )
   }
 
   void testMultipleArgs ( ) {
@@ -146,7 +168,16 @@ usage: groovy
     def anOption = OptionBuilder.withLongOpt ( 'anOption' ).hasArg ( ).withDescription ( 'An option.' ).create ( )
     cli.options.addOption ( anOption )
     def options = cli.parse ( [ '-v' , '--anOption' , 'something' ] )
-    cli.usage ( )
+    /*
+     *  The behaviour here depends ont whether stopAtNonOption is true or false in the call to parser.parse
+     *  in CliBuilder.parse.  Currently this is true, so parse simply terminates.  Any options after the
+     *  unrecognized one are unprocessed.
+     *
+    assertEquals ( '''error: -v
+usage: groovy
+ --anOption   message''',  stringWriter.toString ( ).tokenize ( '\r\n' ).join ( '\n' ) )
+    */
+    assertEquals ( '''''', stringWriter.toString ( ).tokenize ( '\r\n' ).join ( '\n' ) )
     assert ! options.v
     /*
      *  In 1.1, when run individually using testOne groovy.util.CliBuilderTest, but not when run using testAll or
@@ -160,9 +191,11 @@ usage: groovy
     --anOption <arg>   An option.''' , stringWriter.toString ( ).tokenize ( '\r\n' ).join ( '\n' ) )
     *
     *  1.0 gets it wrong always :-(
-    */ 
+    */
+    /*
     assertEquals ( '''usage: groovy
     --anOption    An option.''' , stringWriter.toString ( ).tokenize ( '\r\n' ).join ( '\n' ) )
+    */
     /*
      *  For some reason, no matter how this test is run, anOption is not a recognized option.  This is the
      *  extant behaviour and not what should happen, i.e. this is a bug to be investigated and fixed.  This
@@ -338,5 +371,70 @@ usage: groovy
   //void testMultipleOccurrencesTogetherJuxtaposed_BasicParser ( ) { multipleOccurrencesTogetherJuxtaposed ( new BasicParser ( ) ) }
   void testMultipleOccurrencesTogetherJuxtaposed_GnuParser ( ) { multipleOccurrencesTogetherJuxtaposed ( new GnuParser ( ) ) }
   void testMultipleOccurrencesTogetherJuxtaposed_PosixParser ( ) { multipleOccurrencesTogetherJuxtaposed ( new PosixParser ( ) ) }
+
+  /*
+   *  Investigate problems with unrecognized options.  Should add the BasicParser here as well.
+   */
+
+  void testUnrecognizedOptionSilentlyIgnored_GnuParser ( ) {
+    def cli = new CliBuilder ( usage : usageString , writer : printWriter , parser : new GnuParser ( ) )
+    def options = cli.parse ( [ '-v' ] )
+    /*
+     *  The behaviour here depends on whether stopAtNonOption is true or false in the call to parser.parse
+     *  in CliBuilder.parse.  Currently this is true, so parse simply terminates.  Any options after the
+     *  unrecognized one are unprocessed.
+     *
+    assertEquals ( '''error: Unrecognized option: -v
+usage: groovy [option]* filename''', stringWriter.toString ( ).tokenize ( '\r\n' ).join ( '\n' ) )
+    assertEquals ( null , options )
+    */
+    assertEquals ( '''''', stringWriter.toString ( ).tokenize ( '\r\n' ).join ( '\n' ) )
+    assert !options.v
+  }
+  void testUnrecognizedOptionSilentlyIgnored_PosixParser ( ) {
+    //
+    //  The PosixParser silently absorbs unrecognized options.
+    //
+    def cli = new CliBuilder ( usage : usageString , writer : printWriter , parser : new PosixParser ( ) )
+    def options = cli.parse ( [ '-v' ] )
+    assertEquals ( '''''', stringWriter.toString ( ).tokenize ( '\r\n' ).join ( '\n' ) )
+    assert ! options.v
+  }
+  void testUnrecognizedOptionTerminatesParse_GnuParser ( ) {
+    def cli = new CliBuilder ( usage : usageString , writer : printWriter , parser : new GnuParser ( ) )
+    cli.h ( longOpt : 'help', 'usage information' )
+    def options = cli.parse ( [ '-v' , '-h' ] )
+    /*
+     *  The behaviour here depends on whether stopAtNonOption is true or false in the call to parser.parse
+     *  in CliBuilder.parse.  Currently this is true, so parse simply terminates.  Any options after the
+     *  unrecognized one are unprocessed.
+     *
+    assertEquals ( '''error: Unrecognized option: -v
+usage: groovy [option]* filename''', stringWriter.toString ( ).tokenize ( '\r\n' ).join ( '\n' ) )
+    assertEquals ( null , options )
+    */
+    assertEquals ( '''''', stringWriter.toString ( ).tokenize ( '\r\n' ).join ( '\n' ) )
+    assert !options.v
+    //
+    //  Why is options.h not recognized here.  This is weird.
+    //
+    //assert ! options.h
+    assertEquals ( [ '-v' , '-h' ] , options.arguments ( ) )
+  }
+  void testUnrecognizedOptionTerminatesParse_PosixParser ( ) {
+    //
+    //  The PosixParser silently absorbs unrecognized options.
+    //
+    def cli = new CliBuilder ( usage : usageString , writer : printWriter , parser : new PosixParser ( ) )
+    cli.h ( longOpt : 'help', 'usage information' )
+    def options = cli.parse ( [ '-v' , '-h' ] )
+    assertEquals ( '''''', stringWriter.toString ( ).tokenize ( '\r\n' ).join ( '\n' ) )
+    assert ! options.v
+    //
+    //  Why is options.h not recognized here.  This is weird.
+    //
+    //assert ! options.h
+    assertEquals ( [ ] , options.arguments ( ) )
+  }
 
 }
