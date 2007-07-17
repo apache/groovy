@@ -47,7 +47,20 @@ class ClosureResolvingTest extends GroovyTestCase {
         c.metaClass = metaClass
 
         assertEquals "hello!", c.call()
+
+        c = { doStuff() }
+        c.resolveStrategy = Closure.TO_SELF
+        shouldFail {
+            c.call()
+        }
+        metaClass = c.class.metaClass
+        metaClass.doStuff = {-> "hello" }
+        c.metaClass = metaClass
+
+        assertEquals "hello", c.call()
     }
+
+    def doStuff() { "stuff" }
 
     void testResolveDelegateFirst() {
 
@@ -60,6 +73,14 @@ class ClosureResolvingTest extends GroovyTestCase {
 
         assertEquals "hello!", c.call()                        
 
+
+        c = { doStuff() }
+        c.setResolveStrategy(Closure.DELEGATE_FIRST)
+        
+        assertEquals "stuff", c.call()
+        c.delegate = new TestResolve1()
+        assertEquals "foo", c.call()
+
     }
 
     void testResolveOwnerFirst() {
@@ -70,6 +91,10 @@ class ClosureResolvingTest extends GroovyTestCase {
         c.delegate = [foo:"hello!"]
 
         assertEquals "bar", c.call()
+
+        c = { doStuff() }
+        c.delegate = new TestResolve1()
+        assertEquals "stuff", c.call()
     }
 
     void testResolveDelegateOnly() {
@@ -91,6 +116,12 @@ class ClosureResolvingTest extends GroovyTestCase {
         c.delegate = new TestResolve2()
 
         assertEquals "helloworld", c.call()
+
+        c = { doStuff() }
+        c.resolveStrategy = Closure.DELEGATE_ONLY
+        c.delegate = new TestResolve1()
+        assertEquals "foo", c.call()
+
     }
 
     void testResolveOwnerOnly() {
@@ -101,12 +132,23 @@ class ClosureResolvingTest extends GroovyTestCase {
 
         c.delegate = new TestResolve2()
         assertEquals "barfoo", c.call()
+
+        c = { doStuff() }
+        assertEquals "stuff", c.call()
+        c.resolveStrategy = Closure.OWNER_ONLY
+        c.delegate = new TestResolve1()
+        assertEquals "stuff", c.call()
+
     }
 }
 class TestResolve1 {
     def foo = "hello"
+
+    def doStuff() { "foo" }
 }
 class TestResolve2 {
     def foo = "hello"
     def bar = "world"
+
+    def doStuff() { "bar" }
 }

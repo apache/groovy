@@ -30,7 +30,7 @@ public interface MetaObjectProtocol {
      * Returns a MetaProperty for the given name or null if it doesn't exist
      *
      * @param name The name of the MetaProperty
-     * @return A MeatProperty or null
+     * @return A MetaProperty or null
      */
     MetaProperty getMetaProperty(String name);
 

@@ -139,6 +139,21 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
         this.resolveStrategy = resolveStrategy;
     }
 
+    /**
+     * Gets the strategy which the closure users to resolve methods and properties
+     *
+     * @return The resolve strategy
+     * 
+     * @see groovy.lang.Closure#DELEGATE_FIRST
+     * @see groovy.lang.Closure#DELEGATE_ONLY
+     * @see groovy.lang.Closure#OWNER_FIRST
+     * @see groovy.lang.Closure#OWNER_ONLY
+     * @see groovy.lang.Closure#TO_SELF
+     */
+    public int getResolveStrategy() {
+        return resolveStrategy;
+    }
+
     protected Object getThisObject(){
         return thisObject;
     }

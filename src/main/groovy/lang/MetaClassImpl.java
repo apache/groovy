@@ -46,6 +46,8 @@ import java.util.logging.Logger;
 * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
 * @author Guillaume Laforge
 * @author Jochen Theodorou
+* @author Graeme Rocher
+ * 
 * @version $Revision$
 * @see groovy.lang.MetaClass
 */
@@ -78,8 +80,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
    private final static MetaMethod AMBIGOUS_LISTENER_METHOD = new MetaMethod(null,null,new Class[]{},null,0);
    private static final Object[] EMPTY_ARGUMENTS = {};
    private List newGroovyMethodsList = new LinkedList();
-   
-   protected MetaClassImpl(final Class theClass) {
+    private static final String CLOSURE_CALL_METHOD = "call";
+    private static final String CLOSURE_DO_CALL_METHOD = "doCall";
+    private static final String CLOSURE_CURRY_METHOD = "curry";
+
+    protected MetaClassImpl(final Class theClass) {
        this.theClass = theClass;
        this.isGroovyObject = GroovyObject.class.isAssignableFrom(theClass);
        this.isMap = Map.class.isAssignableFrom(theClass);
@@ -99,12 +104,17 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @see MetaObjectProtocol#getMetaProperty(String)
      */
     public MetaProperty getMetaProperty(String name) {
-        List properties = getProperties();
-        for (Iterator i = properties.iterator(); i.hasNext();) {
-            MetaProperty metaProperty = (MetaProperty) i.next();
-            if (name.equals(metaProperty.getName())) return metaProperty;
+        Map propertyMap = (Map)classPropertyIndex.get(theClass);
+        if(propertyMap.containsKey(name)) {
+            return (MetaProperty)propertyMap.get(name);
         }
-        return null;
+        else if(staticPropertyIndex.containsKey(name)) {
+            return (MetaProperty)staticPropertyIndex.get(name);
+        }
+        else {
+            propertyMap = (Map)classPropertyIndexForSuper.get(theClass);
+            return (MetaProperty)propertyMap.get(name);
+        }
     }
     /**
      * @see MetaObjectProtocol#getStaticMetaMethod(String, Object[])
@@ -487,8 +497,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
    }  
    
    public Object invokeMissingMethod(Object instance, String methodName, Object[] arguments) {
-       GroovyObject pogo = (GroovyObject) instance;
-       return pogo.invokeMethod(methodName,arguments);
+       return invokeMethodOnGroovyObject(methodName, arguments, instance);
    }
    
    /**
@@ -512,9 +521,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
        if (log.isLoggable(Level.FINER)){
            MetaClassHelper.logMethodCall(object, methodName, originalArguments);
        }
-       Object[] arguments = originalArguments;
-       if (arguments==null) arguments = EMPTY_ARGUMENTS;
-       Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
+       final Object[] arguments = originalArguments == null ? EMPTY_ARGUMENTS : originalArguments;
+       final Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
+
        unwrap(arguments);
        
        MetaMethod method = getMethodWithCaching(sender, methodName, argClasses, isCallToSuper);
@@ -535,71 +544,86 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
            }
        }
 
-       boolean isClosure = object instanceof Closure;
+       final boolean isClosure = object instanceof Closure;
        if (isClosure) {
-           Closure closure = (Closure) object;
-           Object delegate = closure.getDelegate();
-           Object owner = closure.getOwner();
-           
-           
-           if ("call".equals(methodName) || "doCall".equals(methodName)) {
-               if (object.getClass()==MethodClosure.class) {
-                   MethodClosure mc = (MethodClosure) object;
-                   methodName = mc.getMethod();
-                   Class ownerClass = owner.getClass();
-                   if (owner instanceof Class) ownerClass = (Class) owner;
-                   MetaClass ownerMetaClass = registry.getMetaClass(ownerClass);
-                   return ownerMetaClass.invokeMethod(ownerClass,owner,methodName,arguments,false,false);
-               } else if (object.getClass()==CurriedClosure.class) {
-                   CurriedClosure cc = (CurriedClosure) object;
-                   // change the arguments for an uncurried call
-                   arguments = cc.getUncurriedArguments(arguments);
-                   Class ownerClass = owner.getClass();
-                   if (owner instanceof Class) ownerClass = (Class) owner;
-                   MetaClass ownerMetaClass = registry.getMetaClass(ownerClass);
-                   return ownerMetaClass.invokeMethod(owner,methodName,arguments);
+           final Closure closure = (Closure) object;
+
+           final Object owner = closure.getOwner();
+
+           if (CLOSURE_CALL_METHOD.equals(methodName) || CLOSURE_DO_CALL_METHOD.equals(methodName)) {
+               final Class objectClass = object.getClass();
+               if (objectClass ==MethodClosure.class) {
+                   return invokeMethodClosure(object, arguments, owner);
+               } else if (objectClass ==CurriedClosure.class) {
+                   return invokeCurriedClosure(object, methodName, arguments, owner);
                }
-           } else if ("curry".equals(methodName)) {
+           } else if (CLOSURE_CURRY_METHOD.equals(methodName)) {
                return closure.curry(arguments);
            }
 
-           if (method==null && owner!=closure) {
-               Class ownerClass = owner.getClass();
-               if (owner instanceof Class) ownerClass = (Class) owner;
-               MetaClass ownerMetaClass = registry.getMetaClass(ownerClass);
-               method = ownerMetaClass.pickMethod(methodName,argClasses);
-               if (method!=null) return ownerMetaClass.invokeMethod(owner,methodName,originalArguments);
+           final Object delegate = closure.getDelegate();
+
+           final boolean isClosureNotOwner = owner != closure;
+           final int resolveStrategy = closure.getResolveStrategy();
+           
+           switch(resolveStrategy) {
+               case Closure.TO_SELF:
+                   method = closure.getMetaClass().pickMethod(methodName, argClasses);
+                   if(method !=null)return method.invoke(closure, arguments);
+                   break;
+               case Closure.DELEGATE_ONLY:
+                   if (method==null && delegate!=closure && delegate!=null) {
+                       method = lookupMetaMethodFromObject(methodName, argClasses, delegate);
+                       if (method!=null) return method.invoke(delegate, originalArguments);
+                   }
+               break;
+               case Closure.OWNER_ONLY:
+                   if (method==null && isClosureNotOwner) {
+                       method = lookupMetaMethodFromObject(methodName, argClasses, owner);
+                       if (method!=null) return method.invoke(owner, originalArguments);
+                   }
+               break;
+               case Closure.DELEGATE_FIRST:
+                   if (method==null && delegate!=closure && delegate!=null) {
+                       method = lookupMetaMethodFromObject(methodName, argClasses, delegate);
+                       if (method!=null) return method.invoke(delegate, originalArguments);
+                   }
+                   if (method==null && isClosureNotOwner) {
+                       method = lookupMetaMethodFromObject(methodName, argClasses, owner);
+                       if (method!=null) return method.invoke(owner, originalArguments);
+                   }
+               break;
+               default:
+                   if (method==null && isClosureNotOwner) {
+                       method = lookupMetaMethodFromObject(methodName, argClasses, owner);
+                       if (method!=null) return method.invoke(owner, originalArguments);
+                   }
+
+                   if (method==null && delegate!=closure && delegate!=null) {
+                       method = lookupMetaMethodFromObject(methodName, argClasses, delegate);
+                       if (method!=null) return method.invoke(delegate, originalArguments);
+                   }
            }
-           if (method==null && delegate!=closure && delegate!=null) {
-               Class delegateClass = delegate.getClass();
-               if (delegate instanceof Class) delegateClass = (Class) delegate;
-               MetaClass delegateMetaClass = registry.getMetaClass(delegateClass);
-               method = delegateMetaClass.pickMethod(methodName,argClasses);
-               if (method!=null) return delegateMetaClass.invokeMethod(delegate,methodName,originalArguments);
-           }
-           if (method==null) {
+           if (method==null && closure.getResolveStrategy() != Closure.TO_SELF) {
                // still no methods found, test if delegate or owner are GroovyObjects
                // and invoke the method on them if so.
                MissingMethodException last = null;
-               if (owner!=closure && (owner instanceof GroovyObject)) {
+               if (isClosureNotOwner && (owner instanceof GroovyObject)) {
                    try {
-                       GroovyObject go = (GroovyObject) owner;
-                       return go.invokeMethod(methodName,originalArguments);
+                       return invokeMethodOnGroovyObject(methodName, originalArguments, owner);
                    } catch (MissingMethodException mme) {
                        if (last==null) last = mme;
                    }
                }
                if (delegate!=closure && (delegate instanceof GroovyObject)) {
                    try {
-                       GroovyObject go = (GroovyObject) delegate;
-                       return go.invokeMethod(methodName,originalArguments);
+                        return invokeMethodOnGroovyObject(methodName, originalArguments, delegate);
                    } catch (MissingMethodException mme) {
                        last = mme;
                    }
                }
                if (last!=null) throw last;
            }
-
        }
 
        if (method != null) {
@@ -615,14 +639,44 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
            if (value instanceof Closure) {  // This test ensures that value != this If you ever change this ensure that value != this
                Closure closure = (Closure) value;
                MetaClass delegateMetaClass = closure.getMetaClass();
-               return delegateMetaClass.invokeMethod(closure.getClass(),closure,"doCall",originalArguments,false,fromInsideClass);
+               return delegateMetaClass.invokeMethod(closure.getClass(),closure, CLOSURE_DO_CALL_METHOD,originalArguments,false,fromInsideClass);
            }
 
            throw new MissingMethodException(methodName, theClass, originalArguments, false);
        }
-   }
-   
-   public MetaMethod getMethodWithCaching(Class sender, String methodName, Class[] arguments, boolean isCallToSuper) {
+   }private Object invokeMethodOnGroovyObject(String methodName, Object[] originalArguments, Object owner) {
+    GroovyObject go = (GroovyObject) owner;
+                       return go.invokeMethod(methodName,originalArguments);}
+
+    private MetaMethod lookupMetaMethodFromObject(String methodName, Class[] argClasses, Object instance) {
+        MetaMethod method;
+        final Class ownerClass = instance instanceof Class ? (Class)instance : instance.getClass();
+        final MetaClass ownerMetaClass = registry.getMetaClass(ownerClass);
+        method = ownerMetaClass.pickMethod(methodName,argClasses);
+        return method;
+    }
+
+    private Object invokeCurriedClosure(Object object, String methodName, Object[] arguments, Object owner) {
+        CurriedClosure cc = (CurriedClosure) object;
+        // change the arguments for an uncurried call
+        Object[] curriedArguments = cc.getUncurriedArguments(arguments);
+        Class ownerClass = owner.getClass();
+        if (owner instanceof Class) ownerClass = (Class) owner;
+        MetaClass ownerMetaClass = registry.getMetaClass(ownerClass);
+        return ownerMetaClass.invokeMethod(owner,methodName,curriedArguments);
+    }
+
+    private Object invokeMethodClosure(Object object, Object[] arguments, Object owner) {
+        String methodName;
+        MethodClosure mc = (MethodClosure) object;
+        methodName = mc.getMethod();
+        Class ownerClass = owner.getClass();
+        if (owner instanceof Class) ownerClass = (Class) owner;
+        MetaClass ownerMetaClass = registry.getMetaClass(ownerClass);
+        return ownerMetaClass.invokeMethod(ownerClass,owner,methodName,arguments,false,false);
+    }
+
+    public MetaMethod getMethodWithCaching(Class sender, String methodName, Class[] arguments, boolean isCallToSuper) {
        // lets try use the cache to find the method
        if (GroovyCategorySupport.hasCategoryInAnyThread() && !isCallToSuper) {
            return getMethodWithoutCaching(sender, methodName, arguments, isCallToSuper);
@@ -718,7 +772,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
        if (prop instanceof Closure) {
            Closure closure = (Closure) prop;
            MetaClass delegateMetaClass = closure.getMetaClass();
-           return delegateMetaClass.invokeMethod(closure.getClass(),closure,"doCall",originalArguments,false,false);
+           return delegateMetaClass.invokeMethod(closure.getClass(),closure, CLOSURE_DO_CALL_METHOD,originalArguments,false,false);
        }
 
        Class superClass = sender.getSuperclass();
