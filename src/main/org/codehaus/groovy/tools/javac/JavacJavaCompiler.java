@@ -53,9 +53,12 @@ public class JavacJavaCompiler implements JavaCompiler {
         Map options = config.getJointCompilationOptions();
         LinkedList paras = new LinkedList();
 
+        File target = config.getTargetDirectory();
+        if (target==null) target=new File(".");
+        
         // defaults
         paras.add("-d");
-        paras.add(config.getTargetDirectory().getAbsolutePath());
+        paras.add(target.getAbsolutePath());
         paras.add("-sourcepath");
         paras.add(((File)options.get("stubDir")).getAbsolutePath());
         
