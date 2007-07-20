@@ -351,7 +351,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         forLoop.setVariableScope(currentScope);
         Parameter p = (Parameter) forLoop.getVariable();
         p.setInStaticContext(currentScope.isInStaticContext());
-        declare(p, forLoop);        
+        if (p!=ForStatement.FOR_LOOP_DUMMY) declare(p, forLoop);        
         super.visitForLoop(forLoop);
         popState();
     }

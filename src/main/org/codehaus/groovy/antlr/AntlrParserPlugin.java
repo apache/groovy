@@ -915,7 +915,12 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         Expression collectionExpression;
         Parameter forParameter;
         if (isType(CLOSURE_LIST, inNode)) {
-            collectionExpression = closureListExpression(inNode);
+            ClosureListExpression clist =  closureListExpression(inNode);
+            int size = clist.getExpressions().size();
+            if (size!=3) {
+                throw new ASTRuntimeException(inNode, "3 expressions are required for the classic for loop, you gave "+size);
+            }
+            collectionExpression = clist;
             forParameter=ForStatement.FOR_LOOP_DUMMY;
         } else {        
             AST variableNode = inNode.getFirstChild();
@@ -1504,7 +1509,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         return null;
     }
     
-    private Expression closureListExpression(AST node) {
+    private ClosureListExpression closureListExpression(AST node) {
         AST exprNode = node.getFirstChild();
         LinkedList list = new LinkedList();
         while (exprNode!=null) {
