@@ -582,7 +582,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
            }
 
            final Object delegate = closure.getDelegate();
-
            final boolean isClosureNotOwner = owner != closure;
            final int resolveStrategy = closure.getResolveStrategy();
 
@@ -596,6 +595,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                        MetaClass delegateMetaClass = lookupObjectMetaClass(delegate);
                        method = delegateMetaClass.pickMethod(methodName,argClasses);
                        if (method!=null) return delegateMetaClass.invokeMethod(delegate,methodName,originalArguments);
+                       else if (delegate!=closure && (delegate instanceof GroovyObject)) {
+                           return invokeMethodOnGroovyObject(methodName, originalArguments, delegate);
+                       }
                    }
                break;
                case Closure.OWNER_ONLY:
@@ -603,7 +605,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                        MetaClass ownerMetaClass = lookupObjectMetaClass(owner);
                        method = ownerMetaClass.pickMethod(methodName,argClasses);
                        if (method!=null) return ownerMetaClass.invokeMethod(owner,methodName,originalArguments);
-                   }
+                   } 
                break;
                case Closure.DELEGATE_FIRST:
                    if (method==null && delegate!=closure && delegate!=null) {
@@ -616,6 +618,27 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                        method = ownerMetaClass.pickMethod(methodName,argClasses);
                        if (method!=null) return ownerMetaClass.invokeMethod(owner,methodName,originalArguments);
                    }
+                   if (method==null && resolveStrategy != Closure.TO_SELF) {
+                       // still no methods found, test if delegate or owner are GroovyObjects
+                       // and invoke the method on them if so.
+                       MissingMethodException last = null;
+                       if (delegate!=closure && (delegate instanceof GroovyObject)) {
+                           try {
+                               return invokeMethodOnGroovyObject(methodName, originalArguments, delegate);
+                           } catch (MissingMethodException mme) {
+                               if (last==null) last = mme;
+                           }
+                       }
+                       if (isClosureNotOwner && (owner instanceof GroovyObject)) {
+                           try {
+                               return invokeMethodOnGroovyObject(methodName, originalArguments, owner);
+                           } catch (MissingMethodException mme) {
+                               last = mme;
+                           }
+                       }
+                       if (last!=null) return invokeMissingMethod(object, methodName, originalArguments, last);
+                   }
+
                break;
                default:
                    if (method==null && owner!=closure) {
@@ -628,26 +651,26 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                        method = delegateMetaClass.pickMethod(methodName,argClasses);
                        if (method!=null) return delegateMetaClass.invokeMethod(delegate,methodName,originalArguments);
                    }
-           }
-           if (method==null && closure.getResolveStrategy() != Closure.TO_SELF) {
-               // still no methods found, test if delegate or owner are GroovyObjects
-               // and invoke the method on them if so.
-               MissingMethodException last = null;
-               if (isClosureNotOwner && (owner instanceof GroovyObject)) {
-                   try {
-                       return invokeMethodOnGroovyObject(methodName, originalArguments, owner);
-                   } catch (MissingMethodException mme) {
-                       if (last==null) last = mme;
+                   if (method==null && resolveStrategy != Closure.TO_SELF) {
+                       // still no methods found, test if delegate or owner are GroovyObjects
+                       // and invoke the method on them if so.
+                       MissingMethodException last = null;
+                       if (isClosureNotOwner && (owner instanceof GroovyObject)) {
+                           try {
+                               return invokeMethodOnGroovyObject(methodName, originalArguments, owner);
+                           } catch (MissingMethodException mme) {
+                               if (last==null) last = mme;
+                           }
+                       }
+                       if (delegate!=closure && (delegate instanceof GroovyObject)) {
+                           try {
+                               return invokeMethodOnGroovyObject(methodName, originalArguments, delegate);
+                           } catch (MissingMethodException mme) {
+                               last = mme;
+                           }
+                       }
+                       if (last!=null) return invokeMissingMethod(object, methodName, originalArguments, last);
                    }
-               }
-               if (delegate!=closure && (delegate instanceof GroovyObject)) {
-                   try {
-                        return invokeMethodOnGroovyObject(methodName, originalArguments, delegate);
-                   } catch (MissingMethodException mme) {
-                       last = mme;
-                   }
-               }
-               if (last!=null) return invokeMissingMethod(object, methodName, originalArguments, last);
            }
        }
 
