@@ -32,7 +32,7 @@ import java.net.URLConnection;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
-import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
+import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
@@ -47,20 +47,10 @@ import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.*;
-import org.codehaus.groovy.ast.stmt.AssertStatement;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
-import org.codehaus.groovy.ast.stmt.CaseStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
-import org.codehaus.groovy.ast.stmt.DoWhileStatement;
-import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
-import org.codehaus.groovy.ast.stmt.IfStatement;
-import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
-import org.codehaus.groovy.ast.stmt.SwitchStatement;
-import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
-import org.codehaus.groovy.ast.stmt.ThrowStatement;
-import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.messages.ExceptionMessage;
 import org.codehaus.groovy.syntax.Types;
@@ -77,7 +67,7 @@ import org.codehaus.groovy.syntax.Types;
  *
  * @author Jochen Theodorou
  */
-public class ResolveVisitor extends ClassCodeVisitorSupport implements ExpressionTransformer {
+public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private ClassNode currentClass;
     // note: BigInteger and BigDecimal are also imported by default
     private static final String[] DEFAULT_IMPORTS = {"java.lang.", "java.io.", "java.net.", "java.util.", "groovy.lang.", "groovy.util."};
@@ -117,11 +107,6 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
 
             resolveOrFail(p.getType(),p.getType());
             visitAnnotations(p);
-
-            if (p.hasInitialExpression()) {
-                Expression init = p.getInitialExpression();
-                p.setInitialExpression(transform(init));
-            }
         }
         ClassNode[] exceptions = node.getExceptions();
         for (int i=0; i<exceptions.length; i++) {
@@ -136,40 +121,16 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
         currentScope = oldScope;
     }
 
-    public void visitSwitch(SwitchStatement statement) {
-        Expression exp = statement.getExpression();
-        statement.setExpression(transform(exp));
-        List list = statement.getCaseStatements();
-        for (Iterator iter = list.iterator(); iter.hasNext(); ) {
-            CaseStatement caseStatement = (CaseStatement) iter.next();
-            caseStatement.visit(this);
-        }
-        statement.getDefaultStatement().visit(this);
-    }
-
     public void visitField(FieldNode node) {
-        visitAnnotations(node);
         ClassNode t = node.getType();
         resolveOrFail(t,node);
-        Expression init = node.getInitialExpression();
-        node.setInitialValueExpression(transform(init));
+        super.visitField(node);
     }
 
     public void visitProperty(PropertyNode node) {
-        visitAnnotations(node);
         ClassNode t = node.getType();
         resolveOrFail(t,node);
-        Statement code = node.getGetterBlock();
-        if (code!=null) code.visit(this);
-        code = node.getSetterBlock();
-        if (code!=null) code.visit(this);
-    }
-
-    public void visitIfElse(IfStatement ifElse) {
-        visitStatement(ifElse);
-        ifElse.setBooleanExpression((BooleanExpression) (transform(ifElse.getBooleanExpression())));
-        ifElse.getIfBlock().visit(this);
-        ifElse.getElseBlock().visit(this);
+        super.visitProperty(node);
     }
 
     private void resolveOrFail(ClassNode type, String msg, ASTNode node) {
@@ -192,7 +153,7 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
     }
 
     private boolean resolve(ClassNode type, boolean testModuleImports, boolean testDefaultImports, boolean testStaticInnerClasses) {
-        if (type.isResolved()) return true;
+        if (type.isResolved() || type.isPrimaryClassNode()) return true;
         resolveGenericsTypes(type.getGenericsTypes());
         if (type.isArray()) {
             ClassNode element = type.getComponentType();
@@ -419,72 +380,6 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
             if (index==-1) break;
         }
          return false;
-    }
-
-    private Expression findStaticFieldImportFromModule(String name) {
-        ModuleNode module = currentClass.getModule();
-        if (module == null) return null;
-        Map aliases = module.getStaticImportAliases();
-        if (aliases.containsKey(name)) {
-            ClassNode node = (ClassNode) aliases.get(name);
-            Map fields = module.getStaticImportFields();
-            String fieldName = (String) fields.get(name);
-            Expression expression = findStaticField(node, fieldName);
-            if (expression != null) return expression;
-    }
-        Map importedClasses = module.getStaticImportClasses();
-        Iterator it = importedClasses.keySet().iterator();
-        while (it.hasNext()) {
-            String className = (String) it.next();
-            ClassNode node = (ClassNode) importedClasses.get(className);
-            Expression expression = findStaticField(node, name);
-            if (expression != null) return expression;
-        }
-        return null;
-    }
-
-    private Expression findStaticField(ClassNode staticImportType, String fieldName) {
-        if (resolve(staticImportType, true, true, true)) {
-            staticImportType.getFields(); // force init
-            FieldNode field = staticImportType.getField(fieldName);
-            if (field != null && field.isStatic()) {
-                return new PropertyExpression(new ClassExpression(staticImportType), fieldName);
-            }
-        }
-        return null;
-    }
-
-    private Expression findStaticMethodImportFromModule(Expression method, Expression args) {
-        ModuleNode module = currentClass.getModule();
-        if (module == null || !(method instanceof ConstantExpression)) return null;
-        Map aliases = module.getStaticImportAliases();
-        ConstantExpression ce = (ConstantExpression) method;
-        final String name = (String) ce.getValue();
-        if (aliases.containsKey(name)) {
-            ClassNode node = (ClassNode) aliases.get(name);
-            Map fields = module.getStaticImportFields();
-            String fieldName = (String) fields.get(name);
-            Expression expression = findStaticMethod(node, fieldName, args);
-            if (expression != null) return expression;
-        }
-        Map importPackages = module.getStaticImportClasses();
-        Iterator it = importPackages.keySet().iterator();
-        while (it.hasNext()) {
-            String className = (String) it.next();
-            ClassNode starImportType = (ClassNode) importPackages.get(className);
-            Expression expression = findStaticMethod(starImportType, name, args);
-            if (expression != null) return expression;
-        }
-        return null;
-    }
-
-    private Expression findStaticMethod(ClassNode staticImportType, String methodName, Expression args) {
-        if (resolve(staticImportType, true, true, true)) {
-            if (staticImportType.hasPossibleStaticMethod(methodName, args)) {
-                return new StaticMethodCallExpression(staticImportType, methodName, args);
-            }
-        }
-        return null;
     }
 
     private boolean resolveFromModule(ClassNode type, boolean testModuleImports) {
@@ -718,10 +613,6 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
         if (ve.getName().equals("super")) return VariableExpression.SUPER_EXPRESSION;
         Variable v = ve.getAccessedVariable();
         if (v instanceof DynamicVariable) {
-            Expression result = findStaticFieldImportFromModule(ve.getName());
-            if (result != null) {
-                return result;
-            }
             ClassNode t = ClassHelper.make(ve.getName());
             if (resolve(t)) {
                 // the name is a type so remove it from the scoping
@@ -807,12 +698,6 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
         Expression args = transform(mce.getArguments());
         Expression method = transform(mce.getMethod());
 
-        if (mce.isImplicitThis()) {
-            Expression ret = findStaticMethodImportFromModule(method, args);
-            if (ret != null) {
-        return ret;
-    }
-        }
         Expression obj = mce.getObjectExpression();
         Expression newObject = transform(obj);
         MethodCallExpression result = new MethodCallExpression(newObject,method,args);
@@ -865,8 +750,8 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
                 member.setValue(transform(memberValue));
             }
         }
-    }
-
+    }    
+    
     public void visitClass(ClassNode node) {
         ClassNode oldNode = currentClass;
         currentClass = node;
@@ -881,6 +766,22 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
                ClassNode type = element.getType();
                if (resolve(type,false,false,true)) continue;
                addError("unable to resolve class "+type.getName(),type);
+           }
+           Map importPackages = module.getStaticImportClasses();
+           for (Iterator iter = importPackages.values().iterator(); iter.hasNext();) {
+               ClassNode type = (ClassNode) iter.next();
+               if (resolve(type,false,false,true)) continue;
+               addError("unable to resolve class "+type.getName(),type);               
+           }
+           for (Iterator iter = module.getStaticImportAliases().values().iterator(); iter.hasNext();) {
+               ClassNode type = (ClassNode) iter.next();
+               if (resolve(type,true,true,true)) continue;
+               addError("unable to resolve class "+type.getName(),type);               
+           }
+           for (Iterator iter = module.getStaticImportClasses().values().iterator(); iter.hasNext();) {
+               ClassNode type = (ClassNode) iter.next();
+               if (resolve(type,true,true,true)) continue;
+               addError("unable to resolve class "+type.getName(),type);               
            }
            module.setImportsResolved(true);
         }
@@ -898,21 +799,7 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
         
         currentClass = oldNode;
     }
-
-    public void visitReturnStatement(ReturnStatement statement) {
-       statement.setExpression(transform(statement.getExpression()));
-    }
-
-    public void visitAssertStatement(AssertStatement as) {
-        as.setBooleanExpression((BooleanExpression) (transform(as.getBooleanExpression())));
-        as.setMessageExpression(transform(as.getMessageExpression()));
-    }
-
-    public void visitCaseStatement(CaseStatement statement) {
-    	statement.setExpression(transform(statement.getExpression()));
-    	statement.getCode().visit(this);
-    }
-
+    
     public void visitCatchStatement(CatchStatement cs) {
         resolveOrFail(cs.getExceptionType(),cs);
         if (cs.getExceptionType()==ClassHelper.DYNAMIC_TYPE) {
@@ -920,34 +807,10 @@ public class ResolveVisitor extends ClassCodeVisitorSupport implements Expressio
         }
         super.visitCatchStatement(cs);
     }
-
-    public void visitDoWhileLoop(DoWhileStatement loop) {
-        loop.setBooleanExpression((BooleanExpression) (transform(loop.getBooleanExpression())));
-        super.visitDoWhileLoop(loop);
-    }
-
+    
     public void visitForLoop(ForStatement forLoop) {
-        forLoop.setCollectionExpression(transform(forLoop.getCollectionExpression()));
         resolveOrFail(forLoop.getVariableType(),forLoop);
         super.visitForLoop(forLoop);
-    }
-
-    public void visitSynchronizedStatement(SynchronizedStatement sync) {
-        sync.setExpression(transform(sync.getExpression()));
-        super.visitSynchronizedStatement(sync);
-    }
-
-    public void visitThrowStatement(ThrowStatement ts) {
-        ts.setExpression(transform(ts.getExpression()));
-    }
-
-    public void visitWhileLoop(WhileStatement loop) {
-    	loop.setBooleanExpression((BooleanExpression) transform(loop.getBooleanExpression()));
-    	super.visitWhileLoop(loop);
-    }
-
-    public void visitExpressionStatement(ExpressionStatement es) {
-        es.setExpression(transform(es.getExpression()));
     }
 
     public void visitBlockStatement(BlockStatement block) {

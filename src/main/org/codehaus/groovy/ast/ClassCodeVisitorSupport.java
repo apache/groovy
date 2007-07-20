@@ -63,7 +63,6 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
             if (an.isBuiltIn()) continue;
             for (Iterator iter = an.getMembers().entrySet().iterator(); iter.hasNext();) {
                 Map.Entry member = (Map.Entry) iter.next();
-//                String memberName = (String) member.getKey();
                 Expression memberValue = (Expression) member.getValue();
                 memberValue.visit(this);
             }  
@@ -101,6 +100,7 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
     }
     
     public void visitProperty(PropertyNode node) {
+        visitAnnotations(node);
         Statement statement = node.getGetterBlock();
         visitClassCodeContainer(statement);
         

@@ -17,7 +17,6 @@ package org.codehaus.groovy.ast;
 
 import org.codehaus.groovy.ast.expr.*;
 
-import java.util.Map;
 
 /**
  * Represents a parameter on a constructor or method call. The type name is

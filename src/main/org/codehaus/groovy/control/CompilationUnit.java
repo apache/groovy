@@ -88,7 +88,8 @@ public class CompilationUnit extends ProcessingUnit {
     protected ClassgenCallback classgenCallback;  // A callback for use during classgen()
     protected ProgressCallback progressCallback;  // A callback for use during compile()
     protected ResolveVisitor resolveVisitor;
-
+    protected StaticImportVisitor staticImportVisitor;
+    
     LinkedList[] phaseOperations;
     
 
@@ -136,6 +137,7 @@ public class CompilationUnit extends ProcessingUnit {
 
         this.verifier = new Verifier();
         this.resolveVisitor = new ResolveVisitor(this);
+        this.staticImportVisitor = new StaticImportVisitor(this);
         
         phaseOperations = new LinkedList[Phases.ALL+1];
         for (int i=0; i<phaseOperations.length; i++) {
@@ -146,10 +148,11 @@ public class CompilationUnit extends ProcessingUnit {
                 source.parse();
             }
         }, Phases.PARSING);
-        addPhaseOperation(convert,   Phases.CONVERSION);
-        addPhaseOperation(resolve,   Phases.SEMANTIC_ANALYSIS);
+        addPhaseOperation(convert,      Phases.CONVERSION);
+        addPhaseOperation(resolve,      Phases.SEMANTIC_ANALYSIS);
+        addPhaseOperation(staticImport, Phases.SEMANTIC_ANALYSIS);
         addPhaseOperation(compileCompleteCheck, Phases.CANONICALIZATION);
-        addPhaseOperation(classgen,  Phases.CLASS_GENERATION);
+        addPhaseOperation(classgen,     Phases.CLASS_GENERATION);
         addPhaseOperation(output);
         
         this.classgenCallback = null;
@@ -526,6 +529,12 @@ public class CompilationUnit extends ProcessingUnit {
                 resolveVisitor.startResolving(node,source);
             }
             
+        }
+    };
+    
+    private PrimaryClassNodeOperation staticImport = new PrimaryClassNodeOperation() {
+        public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
+                staticImportVisitor.visitClass(classNode);
         }
     };
     
