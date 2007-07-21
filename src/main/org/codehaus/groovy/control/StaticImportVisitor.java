@@ -30,7 +30,7 @@ import org.codehaus.groovy.ast.expr.*;
  * Visitor to resolve constants and method calls from static Imports
  *
  * @author Jochen Theodorou
- * @auther Paul King
+ * @author Paul King
  */
 public class StaticImportVisitor extends ClassCodeExpressionTransformer {
     private ClassNode currentClass;
