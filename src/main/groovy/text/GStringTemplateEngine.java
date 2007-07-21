@@ -29,11 +29,9 @@ import java.util.Map;
 
 import org.codehaus.groovy.control.CompilationFailedException;
 
-
 /**
-* @author tug@wilson.co.uk
-*
-*/
+ * @author tug@wilson.co.uk
+ */
 public class GStringTemplateEngine extends TemplateEngine {
     /* (non-Javadoc)
      * @see groovy.text.TemplateEngine#createTemplate(java.io.Reader)
@@ -49,15 +47,15 @@ public class GStringTemplateEngine extends TemplateEngine {
          * Turn the template into a writable Closure
          * When executed the closure evaluates all the code embedded in the
          * template and then writes a GString containing the fixed and variable items
-         * to the writer passed as a paramater
-         *
+         * to the writer passed as a parameter
+         * <p/>
          * For example:
-         *
+         * <p/>
          * '<%= "test" %> of expr and <% test = 1 %>${test} script.'
-         *
+         * <p/>
          * would compile into:
-         *
-         * { |out| out << "${"test"} of expr and "; test = 1 ; out << "${test} script."}.asWritable()
+         * <p/>
+         * { out -> out << "${"test"} of expr and "; test = 1 ; out << "${test} script."}.asWritable()
          *
          * @param reader
          * @throws CompilationFailedException
@@ -65,44 +63,39 @@ public class GStringTemplateEngine extends TemplateEngine {
          * @throws IOException
          */
         public GStringTemplate(final Reader reader) throws CompilationFailedException, ClassNotFoundException, IOException {
-        final StringBuffer templateExpressions = new StringBuffer("package groovy.tmp.templates\n def getTemplate() { return { out -> delegate = new Binding(delegate); out << \"\"\"");
-        boolean writingString = true;
-       
-            while(true) {
+            final StringBuffer templateExpressions = new StringBuffer("package groovy.tmp.templates\n def getTemplate() { return { out -> delegate = new Binding(delegate); out << \"\"\"");
+            boolean writingString = true;
+
+            while (true) {
                 int c = reader.read();
-
-                    if (c == -1) break;
-
+                if (c == -1) break;
                 if (c == '<') {
                     c = reader.read();
-
                     if (c == '%') {
                         c = reader.read();
-
                         if (c == '=') {
-                                parseExpression(reader, writingString, templateExpressions);
-                                writingString = true;
-                                continue;
+                            parseExpression(reader, writingString, templateExpressions);
+                            writingString = true;
+                            continue;
                         } else {
-                                parseSection(c, reader, writingString, templateExpressions);
-                                writingString = false;
-                                continue;
+                            parseSection(c, reader, writingString, templateExpressions);
+                            writingString = false;
+                            continue;
                         }
                     } else {
                         appendCharacter('<', templateExpressions, writingString);
                         writingString = true;
                     }
                 } else if (c == '"') {
-                        appendCharacter('\\', templateExpressions, writingString);
-                        writingString = true;
-                   }
-
-                    appendCharacter((char)c, templateExpressions, writingString);
+                    appendCharacter('\\', templateExpressions, writingString);
                     writingString = true;
+                }
+                appendCharacter((char) c, templateExpressions, writingString);
+                writingString = true;
             }
 
             if (writingString) {
-                    templateExpressions.append("\"\"\"");
+                templateExpressions.append("\"\"\"");
             }
 
             templateExpressions.append("}.asWritable()}");
@@ -111,17 +104,17 @@ public class GStringTemplateEngine extends TemplateEngine {
 
             final ClassLoader parentLoader = getClass().getClassLoader();
             final GroovyClassLoader loader =
-                (GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
-                    public Object run() {
-                        return new GroovyClassLoader(parentLoader);
-                    }
-                });
+                    (GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
+                        public Object run() {
+                            return new GroovyClassLoader(parentLoader);
+                        }
+                    });
             final Class groovyClass = loader.parseClass(new GroovyCodeSource(templateExpressions.toString(), "C", "x"));
 
             try {
                 final GroovyObject object = (GroovyObject) groovyClass.newInstance();
 
-                this.template = (Closure)object.invokeMethod("getTemplate", null);
+                this.template = (Closure) object.invokeMethod("getTemplate", null);
             } catch (InstantiationException e) {
                 throw new ClassNotFoundException(e.getMessage());
             } catch (IllegalAccessException e) {
@@ -131,12 +124,10 @@ public class GStringTemplateEngine extends TemplateEngine {
 
         private static void appendCharacter(final char c,
                                             final StringBuffer templateExpressions,
-                                            final boolean writingString)
-        {
+                                            final boolean writingString) {
             if (!writingString) {
                 templateExpressions.append("out << \"\"\"");
             }
-
             templateExpressions.append(c);
         }
 
@@ -155,30 +146,24 @@ public class GStringTemplateEngine extends TemplateEngine {
                                          final Reader reader,
                                          final boolean writingString,
                                          final StringBuffer templateExpressions)
-            throws IOException
-        {
+                throws IOException {
             if (writingString) {
                 templateExpressions.append("\"\"\"; ");
             }
-            templateExpressions.append((char)pendingC);
+            templateExpressions.append((char) pendingC);
 
-                while (true) {
-                    int c = reader.read();
-
-                    if (c == -1) break;
-
-                    if (c =='%') {
-                        c = reader.read();
-
-                        if (c == '>') break;
-                        
-                        templateExpressions.append('%');
-                    }
-
-                    templateExpressions.append((char)c);
+            while (true) {
+                int c = reader.read();
+                if (c == -1) break;
+                if (c == '%') {
+                    c = reader.read();
+                    if (c == '>') break;
+                    templateExpressions.append('%');
                 }
+                templateExpressions.append((char) c);
+            }
 
-                templateExpressions.append(";\n ");
+            templateExpressions.append(";\n ");
         }
 
         /**
@@ -190,45 +175,37 @@ public class GStringTemplateEngine extends TemplateEngine {
          * @throws IOException
          */
         private static void parseExpression(final Reader reader,
-                                          final boolean writingString,
-                                          final StringBuffer templateExpressions)
-            throws IOException
-        {
+                                            final boolean writingString,
+                                            final StringBuffer templateExpressions)
+                throws IOException {
             if (!writingString) {
                 templateExpressions.append("out << \"\"\"");
             }
 
             templateExpressions.append("${");
 
-                while (true) {
-                    int c = reader.read();
-
-                    if (c == -1) break;
-
-                    if (c =='%') {
-                        c = reader.read();
-
-                        if (c == '>') break;
-                        
-                        templateExpressions.append('%');
-                    }
-
-                    templateExpressions.append((char)c);
+            while (true) {
+                int c = reader.read();
+                if (c == -1) break;
+                if (c == '%') {
+                    c = reader.read();
+                    if (c == '>') break;
+                    templateExpressions.append('%');
                 }
+                templateExpressions.append((char) c);
+            }
 
             templateExpressions.append('}');
         }
 
         public Writable make() {
-           return make(null);
-       }
+            return make(null);
+        }
 
-       public Writable make(final Map map) {
-       final Closure template = (Closure)this.template.clone();
-           
-           template.setDelegate(map);
-           
-           return (Writable)template;
-       }
+        public Writable make(final Map map) {
+            final Closure template = (Closure) this.template.clone();
+            template.setDelegate(map);
+            return (Writable) template;
+        }
     }
 }

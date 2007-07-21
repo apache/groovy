@@ -265,7 +265,7 @@ $Date$
     </target>
 
     <target name="-reportTestFailed" depends="test,-coverageReport" if="testFailed">
-        <echo>Test failed, not processing further targets.</echo>
+        <fail message="Test failed, not processing further targets."/>
     </target>
 
     <target name="-coverageInstrument" depends="-initCoverage,-coberturaInit" if="_forceCoverage_">
