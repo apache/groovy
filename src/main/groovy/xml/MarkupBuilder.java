@@ -58,6 +58,7 @@ public class MarkupBuilder extends BuilderSupport {
      * Returns <code>true</code> if attribute values are output with
      * double quotes; <code>false</code> if single quotes are used.
      * By default, single quotes are used.
+     * @return true if double quotes are used for attributes
      */
     public boolean getDoubleQuotes() {
         return this.useDoubleQuotes;

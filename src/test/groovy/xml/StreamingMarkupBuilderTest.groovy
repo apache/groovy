@@ -89,6 +89,17 @@ class StreamingMarkupBuilderTest extends TestXmlSupport {
         assert xmlDiff.similar(), xmlDiff.toString()
     }
 
+    void testObjectOperationsInMarkup() {
+        def doc = new StreamingMarkupBuilder().bind {
+            root {
+                (1..3).each {
+                    item()
+                }
+            }
+        }
+        assert doc.toString() == "<root><item/><item/><item/></root>"
+    }
+
     void testMixedMarkup() {
         def b = new StreamingMarkupBuilder()
         def writer = new StringWriter()
@@ -116,7 +127,6 @@ class StreamingMarkupBuilderTest extends TestXmlSupport {
 </html>'''
 
         writer << b.bind(m)
-        println writer.toString()
         XMLUnit.ignoreWhitespace = true
         def xmlDiff = new Diff(expectedXml, writer.toString())
         assert xmlDiff.similar(), xmlDiff.toString()

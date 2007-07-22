@@ -17,7 +17,7 @@ package groovy.xml
 
 import org.custommonkey.xmlunit.*
 
-/** 
+/**
  * Tests that special XML chars are entitized by MarkupBuilder.
  *
  * @version $Revision: 1.4 $
@@ -34,6 +34,77 @@ class MarkupBuilderTest extends GroovyTestCase {
         writer = new StringWriter()
         xml = new MarkupBuilder(writer)
         XMLUnit.setIgnoreWhitespace(true)
+    }
+
+    private assertExpectedXml(expectedXml) {
+        def xmlDiff = new Diff(expectedXml, writer.toString())
+        assert xmlDiff.similar(), xmlDiff.toString()
+    }
+
+    void testSmallTree() {
+        xml.root1(a:5, b:7) {
+            elem1('hello1')
+            elem2('hello2')
+            elem3(x:7)
+        }
+        assertExpectedXml('''\
+<root1 a='5' b='7'>
+  <elem1>hello1</elem1>
+  <elem2>hello2</elem2>
+  <elem3 x='7' />
+</root1>''')
+    }
+
+    void testTree() {
+        xml.root2(a:5, b:7) {
+            elem1('hello1')
+            elem2('hello2')
+            nestedElem(x:'abc', y:'def') {
+                child(z:'def')
+                child2()
+            }
+            nestedElem2(z:'zzz') {
+                child(z:'def')
+                child2("hello")
+            }
+        }
+        assertExpectedXml('''\
+<root2 a='5' b='7'>
+  <elem1>hello1</elem1>
+  <elem2>hello2</elem2>
+  <nestedElem x='abc' y='def'>
+    <child z='def' />
+    <child2 />
+  </nestedElem>
+  <nestedElem2 z='zzz'>
+    <child z='def' />
+    <child2>hello</child2>
+  </nestedElem2>
+</root2>''')
+    }
+
+    void testContentAndDataInMarkup() {
+        xml.a(href:"http://groovy.codehaus.org", "groovy")
+        assertExpectedXml("<a href='http://groovy.codehaus.org'>groovy</a>")
+    }
+
+    void testMarkupWithColonsAndNamespaces() {
+        def expectedXml = '''\
+<ns1:customer-description>
+  <last-name>Laforge</last-name>
+  <first-name>
+    <first>Guillaume</first>
+    <initial-letters>A.J.</initial-letters>
+  </first-name>
+</ns1:customer-description>'''
+        xml."ns1:customer-description"{
+            "last-name"("Laforge")
+            "first-name"{
+                first("Guillaume")
+                "initial-letters"("A.J.")
+            }
+        }
+        assertEquals(expectedXml, fixEOLs(writer.toString()))
     }
 
     /**
@@ -102,13 +173,6 @@ class MarkupBuilderTest extends GroovyTestCase {
      * when the content contains line-endings.
      */
     void testEscapingMultiLineContent() {
-        def expectedXml = '''\
-<element>This is multi-line content with characters, such as &lt;, that
-require escaping. The other characters consist of:
-
-    * &gt; - greater than
-    * &amp; - ampersand
-</element>'''
 
         // Generate the markup.
         xml.element('''This is multi-line content with characters, such as <, that
@@ -118,8 +182,13 @@ require escaping. The other characters consist of:
     * & - ampersand
 ''')
 
-        def xmlDiff = new Diff(expectedXml, writer.toString())
-        assert xmlDiff.similar()
+        assertExpectedXml('''\
+<element>This is multi-line content with characters, such as &lt;, that
+require escaping. The other characters consist of:
+
+    * &gt; - greater than
+    * &amp; - ampersand
+</element>''')
     }
 
     /**
@@ -127,21 +196,6 @@ require escaping. The other characters consist of:
      * not closed.
      */
     void testMarkupForClosingTags() {
-        def expectedXml = '''\
-<ELEM1>
-  <ELEM2 type='2' id='first'>
-    <ELEM3A id='first' />
-    <ELEM3B type='3'>text</ELEM3B>
-  </ELEM2>
-  <ELEM2 type='2' id='second'>
-    <ELEM3A id='second' />
-    <ELEM3B type='3'>text</ELEM3B>
-  </ELEM2>
-  <ELEM2 type='2' id='third'>
-    <ELEM3A id='third' />
-    <ELEM3B type='3'>text</ELEM3B>
-  </ELEM2>
-</ELEM1>'''
 
         // Generate the XML.
         def list = ['first', 'second', 'third']
@@ -155,7 +209,21 @@ require escaping. The other characters consist of:
             }
         }
 
-        def xmlDiff = new Diff(expectedXml, writer.toString())
-        assert xmlDiff.similar()
+        assertExpectedXml('''\
+<ELEM1>
+  <ELEM2 type='2' id='first'>
+    <ELEM3A id='first' />
+    <ELEM3B type='3'>text</ELEM3B>
+  </ELEM2>
+  <ELEM2 type='2' id='second'>
+    <ELEM3A id='second' />
+    <ELEM3B type='3'>text</ELEM3B>
+  </ELEM2>
+  <ELEM2 type='2' id='third'>
+    <ELEM3A id='third' />
+    <ELEM3B type='3'>text</ELEM3B>
+  </ELEM2>
+</ELEM1>''')
     }
+
 }
