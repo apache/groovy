@@ -1,18 +1,28 @@
-package groovy.xml;
+/*
+ * Copyright 2003-2007 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package groovy.xml
 
-import groovy.util.GroovyTestCase
 import org.custommonkey.xmlunit.*
 
 /** 
  * Tests that special XML chars are entitized by MarkupBuilder.
  *
- * @author <a href="mailto:scottstirling@rcn.com">Scott Stirling</a>
- *
  * @version $Revision: 1.4 $
  *
- *   Fix the cr lf handling of multiline stringon both of linux and Windows XP.
- *   This test should success on Windows XP.
- *
+ *   @author Scott Stirling
  *   @author Pilho Kim
  *   @author Paul King
  */
@@ -32,7 +42,8 @@ class MarkupBuilderTest extends GroovyTestCase {
      * correct entities.
      */
     void testBuilder() {
-        String expectedXml = '''<chars>
+        String expectedXml = '''\
+<chars>
   <ampersand a='&amp;'>&amp;</ampersand>
   <quote attr='"'>"</quote>
   <apostrophe attr='&apos;'>'</apostrophe>
@@ -53,8 +64,6 @@ class MarkupBuilderTest extends GroovyTestCase {
             emptyElement()
         }
 
-        // Compare the MarkupBuilder generated XML with the 'expectedXml'
-        // string.
         assertEquals(expectedXml, fixEOLs(writer.toString()))
     }
 
@@ -62,7 +71,8 @@ class MarkupBuilderTest extends GroovyTestCase {
      * Tests the builder with double quotes for attribute values.
      */
     void testBuilderWithDoubleQuotes() {
-        String expectedXml = '''<chars>
+        String expectedXml = '''\
+<chars>
   <ampersand a="&amp;">&amp;</ampersand>
   <quote attr="&quot;">"</quote>
   <apostrophe attr="'">'</apostrophe>
@@ -84,8 +94,6 @@ class MarkupBuilderTest extends GroovyTestCase {
             emptyElement()
         }
 
-        // Compare the MarkupBuilder generated XML with the 'expectedXml'
-        // string.
         assertEquals(expectedXml, fixEOLs(writer.toString()))
     }
 
@@ -94,8 +102,8 @@ class MarkupBuilderTest extends GroovyTestCase {
      * when the content contains line-endings.
      */
     void testEscapingMultiLineContent() {
-        def expectedXml = 
-'''<element>This is multi-line content with characters, such as &lt;, that
+        def expectedXml = '''\
+<element>This is multi-line content with characters, such as &lt;, that
 require escaping. The other characters consist of:
 
     * &gt; - greater than
@@ -119,8 +127,8 @@ require escaping. The other characters consist of:
      * not closed.
      */
     void testMarkupForClosingTags() {
-        def expectedXml =
-'''<ELEM1>
+        def expectedXml = '''\
+<ELEM1>
   <ELEM2 type='2' id='first'>
     <ELEM3A id='first' />
     <ELEM3B type='3'>text</ELEM3B>
