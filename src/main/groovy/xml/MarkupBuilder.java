@@ -17,6 +17,7 @@ package groovy.xml;
 
 import groovy.util.BuilderSupport;
 import groovy.util.IndentPrinter;
+import groovy.lang.Closure;
 
 import java.io.PrintWriter;
 import java.io.Writer;
@@ -79,6 +80,37 @@ public class MarkupBuilder extends BuilderSupport {
     }
 
     protected void setParent(Object parent, Object child) { }
+
+    protected void setClosureDelegate(Closure closure, Object node) {
+        super.setClosureDelegate(closure, node);
+        closure.setResolveStrategy(Closure.DELEGATE_FIRST);
+    }
+
+    public Object getMkp() {
+        return this;
+    }
+
+    public void yield(String value) {
+        if (state == 1) {
+            state = 2;
+            this.nodeIsEmpty = false;
+            out.print(">");
+        }
+        if (state == 2 || state == 3) {
+            out.print(escapeElementContent(value));
+        }
+    }
+
+    public void yieldUnescaped(String value) {
+        if (state == 1) {
+            state = 2;
+            this.nodeIsEmpty = false;
+            out.print(">");
+        }
+        if (state == 2 || state == 3) {
+            out.print(value);
+        }
+    }
 
     protected Object createNode(Object name) {
         this.nodeIsEmpty = true;
@@ -327,7 +359,9 @@ public class MarkupBuilder extends BuilderSupport {
                 switch (next) {
                     case 1:
                     case 2:
-                        throw new Error();
+                        out.print("<");
+                        print(name);
+                        break;
                     case 3:
                         out.print("</");
                         print(name);

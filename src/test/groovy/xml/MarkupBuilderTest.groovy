@@ -226,4 +226,16 @@ require escaping. The other characters consist of:
 </ELEM1>''')
     }
 
+    void testMixedMarkup() {
+        xml.p {
+            em('Usually')
+            mkp.yield ' Hearts & Diamonds '
+            b('beats')
+            mkp.yieldUnescaped ' Spades &amp; Clubs'
+        }
+
+        assertExpectedXml('''\
+<p><em>Usually</em> Hearts &amp; Diamonds <b>beats</b> Spades &amp; Clubs </p>''')
+    }
+
 }
