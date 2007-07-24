@@ -506,14 +506,28 @@
         </dependency>
 
         <!-- only used for EJB browser -->
+        <!-- TODO: can we remove this dependency altogether? -->
         <dependency>
-            <groupId>castor</groupId>
+            <groupId>org.codehaus.castor</groupId>
             <artifactId>castor</artifactId>
-            <version>0.9.9</version>
-            <!-- 1.0 has bad pom 24/Feb/2007 -->
-            <!--<version>1.0</version>-->
+            <version>1.1.2.1</version>
             <scope>runtime</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-logging</groupId>
+                    <artifactId>commons-logging</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>xerces</groupId>
+                    <artifactId>xerces</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
+
         <dependency>
             <groupId>openejb</groupId>
             <artifactId>openejb-loader</artifactId>
