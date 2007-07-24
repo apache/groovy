@@ -123,13 +123,16 @@
             <property name="max" value="14"/>
         </module>
         <module name="ExplicitInitialization"/>
-        <module name="ParameterAssignment"/>
+        <!-- turned off - instead, keep methods short and make
+             parameters final in cases where confusion is possible -->
+        <!--<module name="ParameterAssignment"/>-->
         <module name="IllegalType">
             <property name="format" value="^$"/>
             <!-- otherwise default of '*Abstract' is illegal -->
         </module>
         <module name="UpperEll"/>
-        <module name="UnnecessaryParentheses"/>
+        <!-- off for now - to allow parenteses which add clarity -->
+        <!--<module name="UnnecessaryParentheses"/>-->
         <module name="JUnitTestCase"/>
         <module name="FinalClass"/>
         <!-- good to have but pollutes coverage -->
