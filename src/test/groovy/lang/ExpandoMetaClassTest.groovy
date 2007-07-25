@@ -21,6 +21,14 @@ package groovy.lang
 
 class ExpandoMetaClassTest extends GroovyTestCase {
 
+    void testOverrideStaticMethod() {        
+        TestStatic.metaClass.'static'.f = { "first" }
+        TestStatic.metaClass.'static'.f = { "second" }
+
+        assertEquals "second",TestStatic.f("")
+    }
+
+
     void testStaticBeanStyleProperties() {
         def mc = new ExpandoMetaClass(TestInvokeMethod.class, true)
         mc.initialize()
@@ -576,3 +584,4 @@ class Child extends Test {
         "hello children"
     }
 }
+class TestStatic {}

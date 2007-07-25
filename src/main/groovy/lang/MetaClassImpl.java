@@ -1898,6 +1898,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
    
    private void addMethodToList(List list, MetaMethod method) {
        MetaMethod match = removeMatchingMethod(list,method);
+
        if (match==null) {
            list.add(method);
        } else if (match.isPrivate()){
@@ -1911,10 +1912,17 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
            Class methodC = method.getDeclaringClass();
            Class matchC = match.getDeclaringClass();
            if (methodC == matchC){
+               if(method.getName().equals("f"))
+                    System.out.println("adding original method back " + method);
+               
                if (method instanceof NewInstanceMetaMethod) {
                    // let DGM replace existing methods
                    list.add(method);
-               } else {
+               }
+               else if(method instanceof NewStaticMetaMethod) {
+                   list.add(method);
+               }
+               else {
                    list.add(match);
                }               
            } else if (MetaClassHelper.isAssignableFrom(methodC,matchC)){
