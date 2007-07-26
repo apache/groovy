@@ -1912,9 +1912,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
            Class methodC = method.getDeclaringClass();
            Class matchC = match.getDeclaringClass();
            if (methodC == matchC){
-               if(method.getName().equals("f"))
-                    System.out.println("adding original method back " + method);
-               
                if (method instanceof NewInstanceMetaMethod) {
                    // let DGM replace existing methods
                    list.add(method);
