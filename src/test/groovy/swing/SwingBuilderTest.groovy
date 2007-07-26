@@ -373,6 +373,29 @@ class SwingBuilderTest extends GroovyTestCase {
         assert aboutStr.contains('space')
     }
 
+    Action verifyAccel(Action action, int mustHave = 0) {
+        int mods = action.getValue(Action.ACCELERATOR_KEY).modifiers
+        assert mods != 0
+        assert (mods & mustHave) == mustHave
+        // don't assert (modd % musthave) != 0 because mustHave may be the platform shortcut modifer
+        return action
+    }
+
+    void testSetAcceleratorShortcuts() {
+        if (isHeadless()) return
+
+        def swing = new SwingBuilder()
+        char q = 'Q'
+        swing.actions() {
+            verifyAccel(action(accelerator: shortcut(q)))
+            verifyAccel(action(accelerator: shortcut(q, InputEvent.SHIFT_DOWN_MASK)), InputEvent.SHIFT_DOWN_MASK)
+            verifyAccel(action(accelerator: shortcut(KeyEvent.VK_NUMPAD5)))
+            verifyAccel(action(accelerator: shortcut(KeyEvent.VK_NUMPAD5, InputEvent.SHIFT_DOWN_MASK)), InputEvent.SHIFT_DOWN_MASK)
+            verifyAccel(action(accelerator: shortcut('DELETE')))
+            verifyAccel(action(accelerator: shortcut('DELETE', InputEvent.SHIFT_DOWN_MASK)), InputEvent.SHIFT_DOWN_MASK)
+        }
+    }
+
     void testBorderLayoutConstraints() {
         if (isHeadless()) return
 

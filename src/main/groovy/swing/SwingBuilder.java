@@ -42,7 +42,7 @@ import java.util.logging.Logger;
  */
 public class SwingBuilder extends BuilderSupport {
 
-    private Logger log = Logger.getLogger(getClass().getName());
+    private static final Logger log = Logger.getLogger(SwingBuilder.class.getName());
     private Map factories = new HashMap();
     private Object constraints;
     private Map widgets = new HashMap();
@@ -420,10 +420,10 @@ public class SwingBuilder extends BuilderSupport {
         return containingWindows;
     }
 
-    public Object getCurrent() {
+    public Object getCurrent() { //NOPMD not pointless, makes it public from private
         return super.getCurrent();
     }
-
+    
     public static void checkValueIsNull(Object value, Object name) {
         if (value != null) {
             throw new RuntimeException(name + " elements do not accept a value argument.");
@@ -475,5 +475,42 @@ public class SwingBuilder extends BuilderSupport {
     public static SwingBuilder build(Closure c) {
         SwingBuilder builder = new SwingBuilder();
         return builder.edt(c);
+    }
+    
+    public KeyStroke shortcut(int key, int modifier) {
+        return KeyStroke.getKeyStroke(key, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask() | modifier);
+    }
+
+    public KeyStroke shortcut(int key) {
+        return shortcut(key, 0);
+    }
+
+    public KeyStroke shortcut(char key, int modifier) {
+        return KeyStroke.getKeyStroke(key, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask() | modifier);
+    }
+
+    public KeyStroke shortcut(char key) {
+        return shortcut(key, 0);
+    }
+
+    public KeyStroke shortcut(Character key, int modifier) {
+        return shortcut(key.charValue(), modifier);
+    }
+
+    public KeyStroke shortcut(Character key) {
+        return shortcut(key.charValue(), 0);
+    }
+
+    public KeyStroke shortcut(String key, int modifier) {
+        KeyStroke ks = KeyStroke.getKeyStroke(key);
+        if (ks == null) {
+            return null;
+        } else {
+            return KeyStroke.getKeyStroke(ks.getKeyCode(), ks.getModifiers() | modifier | Toolkit.getDefaultToolkit().getMenuShortcutKeyMask());
+        }             
+    }
+
+    public KeyStroke shortcut(String key) {
+        return shortcut(key, 0);
     }
 }

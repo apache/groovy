@@ -108,10 +108,8 @@ class Console implements CaretListener {
 
     void run() {
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
-        // if menu modifier is two keys we are out of luck as the javadocs
-        // indicates it returns "Control+Shift" instead of "Control Shift"
-        def menuModifier = KeyEvent.getKeyModifiersText(
-            Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()).toLowerCase() + ' '
+        System.setProperty("apple.laf.useScreenMenuBar", "true")
+        System.setProperty("com.apple.mrj.application.apple.menu.about.name", "GroovyConsole")
 
         swing = new SwingBuilder()
 
@@ -120,70 +118,71 @@ class Console implements CaretListener {
                 name:'New File', 
                 closure: this.&fileNewFile, 
                 mnemonic: 'N',
-                accelerator: menuModifier + 'Q'
+                accelerator: shortcut('Q')
             )
             action(id:'newWindowAction',
                 name:'New Window', 
                 closure: this.&fileNewWindow, 
-                mnemonic: 'W'
+                mnemonic: 'W',
+                accelerator: shortcut('shift N')
             )
             action(id:'openAction',
                 name:'Open', 
                 closure: this.&fileOpen, 
                 mnemonic: 'O', 
-                accelerator: menuModifier + 'O'
+                accelerator: shortcut('O')
             )
             action(id:'saveAction',
                 name:'Save', 
                 closure: this.&fileSave,  
                 mnemonic: 'S', 
-                accelerator: menuModifier + 'S'
+                accelerator: shortcut('S')
             )
             action(id:'exitAction',
                 name:'Exit', 
                 closure: this.&exit, 
-                mnemonic: 'x', 
+                mnemonic: 'X', 
                 accelerator: 'alt F4'
             )
             action(id:'historyPrevAction',
                 name:'Previous', 
                 closure: this.&historyPrev, 
                 mnemonic: 'P', 
-                accelerator: 'ctrl P'
+                accelerator: shortcut('P')
             )
             action(id:'historyNextAction', 
                 name: 'Next', 
                 closure: this.&historyNext, 
                 mnemonic: 'N', 
-                accelerator: 'ctrl N'
+                accelerator: shortcut('N')
             )
             action(id:'clearOutputAction',
                 name:'Clear Output', 
                 closure: this.&clearOutput, 
                 mnemonic: 'l', 
                 keyStroke: 'ctrl W',
-                accelerator: 'ctrl W'
+                accelerator: shortcut('W')
             )
             action(id:'runAction',
                 name:'Run', 
                 closure: this.&runScript, 
                 mnemonic: 'R', 
                 keyStroke: 'ctrl ENTER',
-                accelerator: 'ctrl R'
+                accelerator: shortcut('R')
             )
             action(id:'inspectLastAction',
                 name:'Inspect Last', 
                 closure: this.&inspectLast, 
                 mnemonic: 'I', 
                 keyStroke: 'ctrl I',
-                accelerator: 'ctrl I'
+                accelerator: shortcut('I')
             )
             action(id:'inspectVariablesAction',
                 name:'Inspect Variables', 
                 closure: this.&inspectVariables, 
                 mnemonic: 'V', 
                 keyStroke: 'ctrl J',
-                accelerator: 'ctrl J'
+                accelerator: shortcut('J')
             )
             action(id:'captureStdOutAction',
                 name:'Capture Standard Output', 
