@@ -72,13 +72,13 @@ import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit;
  */
 public class Groovyc extends MatchingTask {
 
-    private CompilerConfiguration configuration = new CompilerConfiguration();
     private Path src;
     private File destDir;
     private Path compileClasspath;
     private Path compileSourcepath;
     private String encoding;
-
+    
+    protected CompilerConfiguration configuration = new CompilerConfiguration();
     protected boolean failOnError = true;
     protected boolean listFiles = false;
     protected File[] compileList = new File[0];
