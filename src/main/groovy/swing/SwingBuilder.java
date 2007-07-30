@@ -416,6 +416,10 @@ public class SwingBuilder extends BuilderSupport {
         factories.put(name, factory);
     }
 
+    public Object getConstraints() {
+        return constraints;
+    }
+    
     public LinkedList getContainingWindows() {
         return containingWindows;
     }
