@@ -73,7 +73,7 @@ import java.util.*;
  * @author Graeme Rocher
  * @since 1.1
  */
-public class  ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
+public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 
 	private static final String META_CLASS = "metaClass";
 	private static final String CLASS = "class";
@@ -92,7 +92,7 @@ public class  ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     private static final String GROOVY_CONSTRUCTOR = "<init>";
 
     // These two properties are used when no ExpandoMetaClassCreationHandle is present
-    private static final Map CLASS_INHERITANCE_MAPPING = new ConcurrentReaderHashMap();
+
     private boolean hasCreationHandle;
     private MetaClass myMetaClass;
     private boolean allowChangesAfterInit;
@@ -110,6 +110,199 @@ public class  ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     private ClosureMetaMethod invokeMethodMethod;
     private ClosureMetaMethod setPropertyMethod;
     private ClosureStaticMetaMethod invokeStaticMethodMethod;
+
+    /**
+	 * Constructs a new ExpandoMetaClass instance for the given class
+	 *
+	 * @param theClass The class that the MetaClass applies to
+	 */
+	public ExpandoMetaClass(Class theClass) {
+		super(GroovySystem.getMetaClassRegistry(), theClass);
+		this.myMetaClass = InvokerHelper.getMetaClass(this);
+
+	}
+
+	/**
+	 * Constructs a new ExpandoMetaClass instance for the given class optionally placing the MetaClass
+	 * in the MetaClassRegistry automatically
+	 *
+	 * @param theClass The class that the MetaClass applies to
+	 * @param register True if the MetaClass should be registered inside the MetaClassRegistry. This defaults to true and ExpandoMetaClass will effect all instances if changed
+	 */
+	public ExpandoMetaClass(Class theClass, boolean register) {
+		this(theClass);
+	    this.inRegistry = register;
+	}
+
+
+    /**
+     * Overrides the default missing method behaviour and adds the capability to look up a method from super class
+     *
+     * @see MetaClassImpl#invokeMissingMethod(Object, String, Object[])  
+     */
+    public Object invokeMissingMethod(Object instance, String methodName, Object[] arguments) {
+        Class superClass = instance instanceof Class ? (Class)instance : instance.getClass();
+        while(superClass != Object.class) {
+            final MetaMethod method = findMethodInClassHeirarchy(methodName, arguments, superClass);
+            if(method != null) {
+                addSuperMethodIfNotOverriden(method);
+                return method.invoke(instance, arguments);
+            }
+            superClass = superClass.getSuperclass();
+        }
+        // still not method here, so see if there is an invokeMethod method up the heirarchy
+        final Object[] invokeMethodArgs = {methodName, arguments};
+        final MetaMethod method = findMethodInClassHeirarchy(INVOKE_METHOD_METHOD, invokeMethodArgs, theClass );
+        if(method!=null && method instanceof ClosureMetaMethod) {
+            this.invokeMethodMethod = (ClosureMetaMethod)method;
+            return method.invoke(instance, invokeMethodArgs);
+        }
+
+        return super.invokeMissingMethod(instance, methodName, arguments);
+    }
+
+    /**
+     * Overrides the default missing method behaviour and adds the capability to look up a method from the super class in the case
+     * where it has been overriden
+     *
+     * @param instance The instance of the object
+     * @param propertyName The property name
+     * @param optionalValue The property value in the case of a setter
+     * @param isGetter True if it is a getter
+     * @return The return value if of a getProperty call or a MissingPropertyException is thrown
+     */
+    public Object invokeMissingProperty(Object instance, String propertyName, Object optionalValue, boolean isGetter) {
+        Class theClass = instance instanceof Class ? (Class)instance : instance.getClass();
+        Class superClass = theClass;
+        while(superClass != Object.class) {
+            final MetaBeanProperty property = findPropertyInClassHierarchy(propertyName, superClass);
+            if(property != null) {
+                addMetaBeanProperty(property);
+                if(!isGetter) {
+                    property.setProperty(instance, optionalValue);
+                    return null;
+                }
+                else {
+                    return property.getProperty(instance);
+                }
+            }
+            superClass = superClass.getSuperclass();
+        }
+        // got here to property not found, look for getProperty or setProperty overrides
+        if(isGetter) {
+            final Object[] getPropertyArgs = {propertyName};
+            final MetaMethod method = findMethodInClassHeirarchy(GET_PROPERTY_METHOD, getPropertyArgs, theClass);
+            if(method != null && method instanceof ClosureMetaMethod) {
+                this.getPropertyMethod = (ClosureMetaMethod)method;
+                return method.invoke(instance,getPropertyArgs);
+            }
+        }
+        else {
+            final Object[] setPropertyArgs = {propertyName, optionalValue};
+            final MetaMethod method = findMethodInClassHeirarchy(SET_PROPERTY_METHOD, setPropertyArgs, theClass);
+            if(method != null && method instanceof ClosureMetaMethod) {
+                this.setPropertyMethod = (ClosureMetaMethod)method;
+                return method.invoke(instance, setPropertyArgs);
+            }
+        }
+        return super.invokeMissingProperty(instance, propertyName, optionalValue, isGetter);
+    }
+
+    private MetaBeanProperty findPropertyInClassHierarchy(String propertyName, Class theClass) {
+        MetaBeanProperty property= null;
+        final Class superClass = theClass.getSuperclass();
+        MetaClass metaClass = this.registry.getMetaClass(superClass);
+        if(metaClass instanceof MutableMetaClass) {
+            property = getMetaPropertyFromMutableMetaClass(propertyName,metaClass);
+            if(property == null) {
+                if(superClass != Object.class) {
+                    property = findPropertyInClassHierarchy(propertyName, superClass);
+                }
+                if(property == null) {
+                    final Class[] interfaces = theClass.getInterfaces();
+                    property = searchInterfacesForMetaProperty(propertyName, interfaces);
+                }
+            }
+        }
+        return property;
+
+    }
+
+    private MetaBeanProperty searchInterfacesForMetaProperty(String propertyName, Class[] interfaces) {
+        MetaBeanProperty property = null;
+        for (int i = 0; i < interfaces.length; i++) {
+            Class anInterface = interfaces[i];
+            MetaClass metaClass = this.registry.getMetaClass(anInterface);
+            if(metaClass instanceof MutableMetaClass) {
+                property = getMetaPropertyFromMutableMetaClass(propertyName,metaClass);
+                if(property != null) break;
+            }
+            Class[] superInterfaces = anInterface.getInterfaces();
+            if(superInterfaces.length > 0) {
+                property = searchInterfacesForMetaProperty(propertyName, superInterfaces);
+                if(property!=null) break;
+            }
+
+        }
+        return property;
+    }
+
+    private MetaBeanProperty getMetaPropertyFromMutableMetaClass(String propertyName, MetaClass metaClass) {
+        final boolean isModified = ((MutableMetaClass) metaClass).isModified();
+        final MetaProperty metaProperty = metaClass.getMetaProperty(propertyName);
+        if(metaProperty instanceof MetaBeanProperty)
+            return isModified ? (MetaBeanProperty)metaProperty : null;
+        else
+            return null;
+
+    }
+
+    private MetaMethod findMethodInClassHeirarchy(String methodName, Object[] arguments, Class theClass) {
+        MetaMethod method = null;
+        final Class superClass = theClass.getSuperclass();
+        MetaClass metaClass = this.registry.getMetaClass(superClass);
+        if(metaClass instanceof MutableMetaClass) {
+            method = getMetaMethodFromMutableMetaClass(methodName, arguments, metaClass);
+            if(method == null) {
+                if(superClass != Object.class) {
+                    method = findMethodInClassHeirarchy(methodName, arguments, superClass);
+                }
+                if(method == null) {                    
+                    final Class[] interfaces = theClass.getInterfaces();
+                    method = searchInterfacesForMetaMethod(methodName, arguments, interfaces);
+                }
+            }
+        }
+        return method;
+    }
+
+    private MetaMethod searchInterfacesForMetaMethod(String methodName, Object[] arguments, Class[] interfaces) {
+        MetaMethod method = null;
+        for (int i = 0; i < interfaces.length; i++) {
+            Class anInterface = interfaces[i];
+            MetaClass metaClass = this.registry.getMetaClass(anInterface);
+            if(metaClass instanceof MutableMetaClass) {
+                method = getMetaMethodFromMutableMetaClass(methodName, arguments, metaClass);
+                if(method != null) break;
+            }
+            Class[] superInterfaces = anInterface.getInterfaces();
+            if(superInterfaces.length > 0) {
+                method = searchInterfacesForMetaMethod(methodName,arguments, superInterfaces);
+                if(method!=null) break;
+            }
+
+        }
+        return method;
+    }
+
+    private MetaMethod getMetaMethodFromMutableMetaClass(String methodName, Object[] arguments, MetaClass metaClass) {
+        final boolean isModified = ((MutableMetaClass) metaClass).isModified();
+        return isModified ? metaClass.getMetaMethod(methodName, arguments) : null;
+    }
+
+    public boolean isModified() {
+        return this.modified;
+    }
 
     /**
      * For simulating closures in Java
@@ -147,7 +340,6 @@ public class  ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 	 */
 	public synchronized void initialize() {
         if (!this.initialized) {
-            inheritSelfTrackedExpandoMethods();
             super.initialize();
             this.initialized = true;
             this.initCalled = true;
@@ -162,40 +354,12 @@ public class  ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 		return this.initialized;
 	}
 
-	/**
-	 * If their is no ExpandoMetaClassCreationHandle the EMC will attempt to track inheritance
-	 * methods itself. In this case inherited methods will only work if both the parent and the child
-	 * have an EMC. The best way to get method inheritance working properly is to register a
-	 * ExpandoMetaClassCreationHandle, which may have a performance drawback (Disclaimer: not measured)
-	 */
-	private void inheritSelfTrackedExpandoMethods() {
-        if(!(GroovySystem.getMetaClassRegistry().getMetaClassCreationHandler() instanceof ExpandoMetaClassCreationHandle)) {
-            List superClasses = getSuperClasses();
-            for (Iterator i = superClasses.iterator(); i.hasNext();) {
-                Class c = (Class) i.next();
-                Map methodMap = (Map) CLASS_INHERITANCE_MAPPING.get(c);
-                if(methodMap!=null) {
-                    for (Iterator j = methodMap.values().iterator(); j.hasNext();) {
-                        List methods = (List) j.next();
-                        for (Iterator k = methods.iterator(); k.hasNext();) {
-                            MetaMethod metaMethodFromSuper = (MetaMethod) k.next();
-                            if(!metaMethodFromSuper.isStatic()) {
-                                addSuperMethodIfNotOverriden(metaMethodFromSuper);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-	}
-
-
 
 	private void addSuperMethodIfNotOverriden(final MetaMethod metaMethodFromSuper) {
 		performOperationOnMetaClass(new Callable() {
 			public void call() {
 
-				MetaMethod existing = null;
+                MetaMethod existing = null;
 				try {
 					existing = pickMethod(metaMethodFromSuper.getName(), metaMethodFromSuper.getParameterTypes());}
 				catch ( GroovyRuntimeException e) { 
@@ -207,6 +371,8 @@ public class  ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 				}
 				else {
                     boolean isGroovyMethod = getMetaMethods().contains(existing);
+
+
                     if(isGroovyMethod) {
                         addMethodWithKey(metaMethodFromSuper);
                     }
@@ -215,7 +381,7 @@ public class  ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 
                         addMethodWithKey(metaMethodFromSuper);
                     }
-				}
+                }
 
 			}
 
@@ -230,7 +396,7 @@ public class  ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
                     MethodKey key = new DefaultMethodKey(getJavaClass(),name, localMethod.getParameterTypes(),false );
                     cacheInstanceMethod(key, localMethod);
 
-                    checkIfGroovyObjectMethod(localMethod, name, cloned);
+                    checkIfGroovyObjectMethod(localMethod, name);
                     expandoMethods.put(key,localMethod);
 
                 }
@@ -238,28 +404,7 @@ public class  ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 		});
 	}
 
-    /**
-	 * Constructs a new ExpandoMetaClass instance for the given class
-	 *
-	 * @param theClass The class that the MetaClass applies to
-	 */
-	public ExpandoMetaClass(Class theClass) {
-		super(GroovySystem.getMetaClassRegistry(), theClass);
-		this.myMetaClass = InvokerHelper.getMetaClass(this);
 
-	}
-
-	/**
-	 * Constructs a new ExpandoMetaClass instance for the given class optionally placing the MetaClass
-	 * in the MetaClassRegistry automatically
-	 *
-	 * @param theClass The class that the MetaClass applies to
-	 * @param register True if the MetaClass should be registered inside the MetaClassRegistry. This defaults to true and ExpandoMetaClass will effect all instances if changed
-	 */
-	public ExpandoMetaClass(Class theClass, boolean register) {
-		this(theClass);
-	    this.inRegistry = true;
-	}
 
 	/**
 	 * Instances of this class are returned when using the << left shift operator.
@@ -530,7 +675,7 @@ public class  ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 			performOperationOnMetaClass(new Callable() {
 				public void call() {
 					ClosureMetaMethod metaMethod = new ClosureMetaMethod(methodName, theClass,callable);
-                    checkIfGroovyObjectMethod(metaMethod, methodName, callable);
+                    checkIfGroovyObjectMethod(metaMethod, methodName);
                     MethodKey key = new DefaultMethodKey(theClass,methodName, metaMethod.getParameterTypes(),false );
 
 
@@ -547,9 +692,6 @@ public class  ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 						registerBeanPropertyForMethod(metaMethod, propertyName, false, false);
 					}
 					performRegistryCallbacks();
-					if(!hasCreationHandle) {
-						registerWithInheritenceManager(theClass, metaMethod);
-					}
 				}
 
 			});
@@ -560,15 +702,14 @@ public class  ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
      *
      * @param metaMethod The metaMethod instance
      * @param methodName The method name
-     * @param callable The closure from the meta method
      *
      * @see groovy.lang.GroovyObject
      */
-    private void checkIfGroovyObjectMethod(ClosureMetaMethod metaMethod, String methodName, Closure callable) {
+    private void checkIfGroovyObjectMethod(ClosureMetaMethod metaMethod, String methodName) {
         if(isGetPropertyMethod(methodName)) {
             getPropertyMethod = metaMethod;
         }
-        else if(isInvokeMethod(methodName, callable)) {
+        else if(isInvokeMethod(methodName, metaMethod)) {
             invokeMethodMethod = metaMethod;
         }
         else if(isSetPropertyMethod(methodName, metaMethod)) {
@@ -584,7 +725,7 @@ public class  ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         return GET_PROPERTY_METHOD.equals(methodName);
     }
 
-    private boolean isInvokeMethod(String methodName, Closure metaMethod) {
+    private boolean isInvokeMethod(String methodName, ClosureMetaMethod metaMethod) {
         return INVOKE_METHOD_METHOD.equals(methodName) && metaMethod.getParameterTypes().length == 2;
     }
 
@@ -618,23 +759,8 @@ public class  ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 			hasCreationHandle  = true;
 			if(!creationHandler.hasModifiedMetaClass(this))
 				creationHandler.registerModifiedMetaClass(this);
-			creationHandler.notifyOfMetaClassChange(this);
-		}
-	}
 
-
-	private static void registerWithInheritenceManager(Class theClass, ClosureMetaMethod metaMethod) {
-		Map methodMap = (Map) CLASS_INHERITANCE_MAPPING.get(theClass);
-		if(methodMap == null) {
-			methodMap = new HashMap();
-			CLASS_INHERITANCE_MAPPING.put(theClass, methodMap);
-		}
-		List methodList = (List)methodMap.get(metaMethod.getName());
-		if(methodList == null) {
-			methodList = new LinkedList();
-			methodMap.put(metaMethod.getName(), methodList);
-		}
-		methodList.add(metaMethod);
+        }
 	}
 
 
@@ -721,6 +847,8 @@ public class  ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
                 List metaMethods = superExpando.getExpandoMethods();
                 for (Iterator j = metaMethods.iterator(); j.hasNext();) {
                     MetaMethod metaMethod = (MetaMethod) j.next();
+                    if(metaMethod.isStatic()) continue; // don't inherit static methodsw
+                    
                     addSuperMethodIfNotOverriden(metaMethod);
                 }
                 Collection metaProperties = superExpando.getExpandoProperties();

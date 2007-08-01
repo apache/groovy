@@ -454,7 +454,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
        return answer;
    }
 
-   public void addNewInstanceMethod(Method method) {
+    public boolean isModified() {
+        return false;  // MetaClassImpl not designed for modification, just return false
+    }
+
+    public void addNewInstanceMethod(Method method) {
        NewInstanceMetaMethod newMethod = new NewInstanceMetaMethod(createMetaMethod(method));
        if (! newGroovyMethodsList.contains(newMethod)){
            newGroovyMethodsList.add(newMethod);
@@ -501,6 +505,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
    public Object invokeMissingMethod(Object instance, String methodName, Object[] arguments) {
        return invokeMissingMethod(instance, methodName, arguments, null);
    }
+
+    public Object invokeMissingProperty(Object instance, String propertyName, Object optionalValue, boolean isGetter) {
+        throw new MissingPropertyException(propertyName, theClass);
+    }
 
     private Object invokeMissingMethod(Object instance, String methodName, Object[] arguments, RuntimeException original) {
         MetaMethod method = getMetaMethod(METHOD_MISSING, METHOD_MISSING_ARGS);
@@ -1077,7 +1085,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
        //----------------------------------------------------------------------
        // error due to missing method/field
        //----------------------------------------------------------------------
-       throw new MissingPropertyException(name, theClass);   
+       return invokeMissingProperty(object, name, null, true);
    }
 
    private MetaMethod getCategoryMethodGetter(Class sender, String name, boolean useLongVersion) {
@@ -1659,7 +1667,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
        if (mp!=null) {
            throw new ReadOnlyPropertyException(name,theClass);
        }
-       throw new MissingPropertyException(name, theClass);   
+
+       invokeMissingProperty(object, name, newValue, false);
    }
    
    private MetaProperty getMetaProperty(Class clazz, String name, boolean useSuper, boolean useStatic) {

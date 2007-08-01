@@ -42,6 +42,12 @@ import java.lang.reflect.Method;
 public interface MutableMetaClass extends MetaClass {
 
     /**
+     * Return whether the MetaClass has been modified or not
+     * @return True if it has
+     */
+    boolean isModified();
+
+    /**
      * adds a new instance method to this MetaClass. Instance
      * methods are able to overwrite the original methods of the
      * class. Calling this method should not be done after

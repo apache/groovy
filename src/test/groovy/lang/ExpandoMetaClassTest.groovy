@@ -138,22 +138,6 @@ class ExpandoMetaClassTest extends GroovyTestCase {
         assert t.valid
     }
 
-    void testInheritedInjectedMethods() {
-        def metaClass = new ExpandoMetaClass(Test.class)
-        metaClass.allowChangesAfterInit = true
-
-        metaClass.testMe << {->
-            "testme"
-        }
-        metaClass.initialize()
-
-        def c = new Child()
-        def childMeta = new ExpandoMetaClass(Child.class)
-        childMeta.initialize()
-        c.metaClass = childMeta
-
-        assertEquals "testme", c.testMe()
-    }
 
     void testAllowAdditionOfProperties() {
         def metaClass = new ExpandoMetaClass(Test.class)

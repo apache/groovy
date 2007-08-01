@@ -16,9 +16,9 @@
 
 package groovy.lang;
 
-import java.util.List;
-
 import org.codehaus.groovy.ast.ClassNode;
+
+import java.util.List;
 
 /**
  * A MetaClass within Groovy defines the behaviour of any given Groovy or Java class. The MetaClass
@@ -39,10 +39,10 @@ public interface MetaClass extends MetaObjectProtocol {
 
 
     /**
-     * Invokes a method on the given receiver for the specified arguments. The sender is the class that invoked the method on the object.
+     * <p>Invokes a method on the given receiver for the specified arguments. The sender is the class that invoked the method on the object.
      * The MetaClass will attempt to establish the method to invoke based on the name and arguments provided.
      *
-     * The isCallToSuper and fromInsideClass help the Groovy runtime perform optimisations on the call to go directly
+     * <p>The isCallToSuper and fromInsideClass help the Groovy runtime perform optimisations on the call to go directly
      * to the super class if necessary
      *
      * @param sender The java.lang.Class instance that invoked the method
@@ -50,7 +50,7 @@ public interface MetaClass extends MetaObjectProtocol {
      * @param methodName The name of the method
      * @param arguments The arguments to the method
      * @param isCallToSuper Whether the method is a call to a super class method
-     * @param fromInsideClass ??
+     * @param fromInsideClass Whether the call was invoked from the inside or the outside of the class
      *
      * @return The return value of the method
      */
@@ -58,10 +58,10 @@ public interface MetaClass extends MetaObjectProtocol {
 
 
     /**
-     * Retrieves a property on the given receiver for the specified arguments. The sender is the class that is requesting the property from the object.
+     * <p>Retrieves a property on the given receiver for the specified arguments. The sender is the class that is requesting the property from the object.
      * The MetaClass will attempt to establish the method to invoke based on the name and arguments provided.
      *
-     * The isCallToSuper and fromInsideClass help the Groovy runtime perform optimisations on the call to go directly
+     * <p>The isCallToSuper and fromInsideClass help the Groovy runtime perform optimisations on the call to go directly
      * to the super class if necessary
      *
      * @param sender The java.lang.Class instance that requested the property
@@ -75,10 +75,10 @@ public interface MetaClass extends MetaObjectProtocol {
      Object getProperty(Class sender, Object receiver, String property, boolean isCallToSuper, boolean fromInsideClass);
 
     /**
-     * Retrieves a property on the given receiver for the specified arguments. The sender is the class that is requesting the property from the object.
+     * <p>Retrieves a property on the given receiver for the specified arguments. The sender is the class that is requesting the property from the object.
      * The MetaClass will attempt to establish the method to invoke based on the name and arguments provided.
      *
-     * The isCallToSuper and fromInsideClass help the Groovy runtime perform optimisations on the call to go directly
+     * <p>The isCallToSuper and fromInsideClass help the Groovy runtime perform optimisations on the call to go directly
      * to the super class if necessary
      *
      * @param sender The java.lang.Class instance that is mutating the property
@@ -91,30 +91,56 @@ public interface MetaClass extends MetaObjectProtocol {
      */
      void setProperty(Class sender, Object receiver, String property, Object value, boolean isCallToSuper, boolean fromInsideClass);
 
-    /*
+    /**
      *
-     * Do we need this method?
+     * <p>Attempts to invoke the methodMissing method otherwise throws a MissingMethodException
      *
+     * @see groovy.lang.MissingMethodException
+     *
+     * @param instance The instance to invoke methodMissing on
+     * @param methodName The name of the method
+     * @param arguments The arguments to the method
+     * @return The results of methodMissing or throws MissingMethodException
      */
      Object invokeMissingMethod(Object instance, String methodName, Object[] arguments);
-    
-    
-    /*
-     *  Why does this take only one boolean parameter?
+
+    /**
+     * Invokes the propertyMissing method otherwise throws a MissingPropertyException
+     *
+     * @param instance The instance of the class
+     * @param propertyName The name of the property
+     * @param optionalValue The value of the property which could be null in the case of a getter
+     * @param isGetter Whether the missing property event was the result of a getter or a setter
      * 
+     * @return The result of the propertyMissing method or throws MissingPropertyException
+     */
+     Object invokeMissingProperty(Object instance, String propertyName, Object optionalValue, boolean isGetter);
+
+
+    /**
+     * Retrieves the value of an attribute (field). This method is to support the Groovy runtime and not for general client API usage.
+     *
+     * @param sender The class of the object that requested the attribute
+     * @param receiver The instance
+     * @param messageName The name of the attribute
+     * @param useSuper Whether to look-up on the super class or not
+     * @return The attribute value
      */
      Object getAttribute(Class sender, Object receiver, String messageName, boolean useSuper);
-    
+
+    /**
+     * Sets the value of an attribute (field). This method is to support the Groovy runtime and not for general client API usage.
+     *
+     * @param sender The class of the object that requested the attribute
+     * @param receiver The instance
+     * @param messageName The name of the attribute
+     * @param messageValue The value of the attribute
+     * @param useSuper Whether to look-up on the super class or not
+     * @param fromInsideClass Whether the call happened from the inside or the outside of a class
+     */
      void setAttribute(Class sender, Object receiver, String messageName, Object messageValue, boolean useSuper, boolean fromInsideClass);
     
 
-     /*
-      * 
-      * do we need this?
-      * 
-      * surely the MetaClass can do lazy initialisation on the first call of 
-      * one of its MetaClass methods?
-      */
     /**
      * complete the initlialisation process. After this method
      * is called no methods should be added to the meta class.
@@ -126,41 +152,51 @@ public interface MetaClass extends MetaObjectProtocol {
      * method.
      */
      void initialize();
-    
+
+
+    /**
+     * Retrives a list of MetaProperty instances that the MetaClass has
+     *
+     * @see MetaProperty
+     *
+     * @return A list of MetaProperty instances
+     */
      List getProperties();
-     
+
+    /**
+     * Retrieves a list of MetaMethods held by the class
+     *
+     * @return A list of MetaMethods
+     *
+     */
      List getMethods();
      
-     /*
-      * 
-      * This is the problematic method used by SQL
-      * We really need to find a way to either do this properly or to remove it
+     /**
+      * Obtains a reference to the original AST for the MetaClass if it is available at runtime
+      *
+      * @return The original AST or null if it cannot be returned
       */
      ClassNode getClassNode();
      
      
-     /*
-      * 
-      * Why have this and getMethods() what's the difference?
+     /**
+      * Retrieves a list of MetaMethod instances held by this class
+      * @return A list of MetaMethod instances
       */
      List getMetaMethods();
     
-    /**
-     * Warning, this method will be removed
-     * @deprecated use invokeConstructor instead
-     */
-     Object invokeConstructorAt(Class at, Object[] arguments);
-     
-     /*
-      * 
-      * What is this for?
-      * 
+
+     /**
+      *
+      * Internal method to support Groovy runtime. Not for client usage.
+      *
+      * @param numberOfConstructors The number of constructors
+      * @param arguments The arguments
+      *
+      * @return
       */
-     int selectConstructorAndTransformArguments(int numberOfCosntructors, Object[] arguments);
-     
-     /*
-      * Do we need this?
-      */
+     int selectConstructorAndTransformArguments(int numberOfConstructors, Object[] arguments);
+
     /**
      * Selects a method by name and argument classes. This method
      * does not search for an exact match, it searches for a compatible
@@ -168,7 +204,7 @@ public interface MetaClass extends MetaObjectProtocol {
      * bye the implementation of this MetaClass. pickMethod may or may
      * not used during the method selection process when invoking a method
      * thereis no warranty for that.
-     * 
+     *
      * @return a matching MetaMethod or null
      * @throws GroovyRuntimeException if there is more than one matching method
      * @param methodName the name of the method to pick

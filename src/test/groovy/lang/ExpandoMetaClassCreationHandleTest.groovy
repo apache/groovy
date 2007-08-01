@@ -21,10 +21,9 @@ package groovy.lang;
 
 class ExpandoMetaClassCreationHandleTest extends GroovyTestCase {
 
-	def registry
+	def registry = GroovySystem.metaClassRegistry
 
 	void setUp() {
-	    registry = GroovySystem.metaClassRegistry
         ExpandoMetaClass.enableGlobally()
 	}
 
@@ -125,15 +124,18 @@ class ExpandoMetaClassCreationHandleTest extends GroovyTestCase {
 
     void testOverrideInvokeMethodViaInterface() {
 	    registry.removeMetaClass(Foo.class)
+	    registry.removeMetaClass(Object.class)
+	    registry.removeMetaClass(IBar.class)
 	    registry.removeMetaClass(Test1.class)
 
 	    def metaClass = registry.getMetaClass(Foo.class)
 
+
 	    metaClass.invokeMethod = { String name, args ->
            def mm = delegate.metaClass.getMetaMethod(name, args)
-
             mm ? mm.invoke(delegate, args) : "bar!!"
 	    }
+
 
 	    def t = new Test1()
 
@@ -217,7 +219,38 @@ class ExpandoMetaClassCreationHandleTest extends GroovyTestCase {
 
 
 
+     void testAddMethodToChildThenParent() {
+         registry.removeMetaClass(Test1)
+         registry.removeMetaClass(EMCInheritTest)
 
+         EMCInheritTest.metaClass.foo = {-> "hello!" }
+
+         def emc = new EMCInheritTest()
+
+         assertEquals "hello!", emc.foo()
+
+         Test1.metaClass.foo = {-> "uck" }
+         emc = new EMCInheritTest()
+         // make sure original foo wasn't overridden
+         assertEquals "hello!", emc.foo()
+     }
+
+     void testAddMethodMissingToChildThenParent() {
+         registry.removeMetaClass(Test1)
+         registry.removeMetaClass(EMCInheritTest)
+
+         EMCInheritTest.metaClass.methodMissing = {String name, args-> "hello!" }
+
+         def emc = new EMCInheritTest()
+
+         assertEquals "hello!", emc.foo()
+
+         Test1.metaClass.methodMissing = {String name, args-> "uck" }
+         emc = new EMCInheritTest()
+         // make sure original foo wasn't overridden
+         assertEquals "hello!", emc.bar()
+
+     }
 
 
 }
@@ -229,4 +262,7 @@ interface Foo extends IBar {
 class Test1 implements Foo {
     String name = "Fred"
       def invokeMe() { "foo" }
+}
+class EMCInheritTest extends Test1 {
+
 }

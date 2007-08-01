@@ -17,7 +17,6 @@ package groovy.lang;
 
 import groovy.lang.MetaClassRegistry.MetaClassCreationHandle;
 import org.codehaus.groovy.runtime.metaclass.ConcurrentReaderHashMap;
-import org.codehaus.groovy.runtime.metaclass.MemoryAwareConcurrentReadMap;
 
 import java.util.*;
 
@@ -40,7 +39,7 @@ import java.util.*;
 public class ExpandoMetaClassCreationHandle extends MetaClassCreationHandle {
 
 	private final Map modifiedExpandos = new ConcurrentReaderHashMap();
-	private final MemoryAwareConcurrentReadMap parentClassToChildMap = new MemoryAwareConcurrentReadMap();
+
 
 	/* (non-Javadoc)
 	 * @see groovy.lang.MetaClassRegistry.MetaClassCreationHandle#create(java.lang.Class, groovy.lang.MetaClassRegistry)
@@ -50,11 +49,9 @@ public class ExpandoMetaClassCreationHandle extends MetaClassCreationHandle {
 			ExpandoMetaClass emc = new ExpandoMetaClass(theClass);
 			emc.setAllowChangesAfterInit(true);
 			Set modifiedSuperExpandos = retrieveModifiedSuperExpandos(emc);
-
             emc.refreshInheritedMethods(modifiedSuperExpandos);
 			emc.initialize();
 
-            registerTrackedExpando(emc);
 			return emc;
 		}
 		else {
@@ -62,50 +59,10 @@ public class ExpandoMetaClassCreationHandle extends MetaClassCreationHandle {
 		}
 	}
 
-	private void registerTrackedExpando(ExpandoMetaClass emc) {
-        LinkedList superClassList = emc.getSuperClasses();
-        Class[] superClasses = (Class[])superClassList.toArray(new Class[superClassList.size()]);
-        for (int i = 0; i < superClasses.length; i++) {
-            Class c = superClasses[i];
-            registerWithParentToChildMap(emc, c);
-        }
-        Class[] interfaces = emc.getJavaClass().getInterfaces();
-        for (int i = 0; i < interfaces.length; i++) {
-            registerWithParentToChildMap(emc, interfaces[i]);
-        }
-
-    }
-
-    private void registerWithParentToChildMap(ExpandoMetaClass emc, Class c) {
-        synchronized(this) {
-            Set children = (Set)parentClassToChildMap.get(c);
-            if(children == null) {
-                children = new HashSet();
-                    parentClassToChildMap.put(c, children);
-                }
-
-            children.add(emc);
-        }
-    }
-
-    /**
-     * Notifies child classes or interface implementors when a parent class or interface changes
-     *
-     * @param changed The changed MetaClass
+    /*
+     * Looks for modified super class ExpandoMetaClass instances for the given child ExpandoMetaClass
      */
-    public void notifyOfMetaClassChange(ExpandoMetaClass changed) {
-		Set subMetas = retrieveKnownSubclasses(changed);
-		if(subMetas != null) {
-			for (Iterator i = subMetas.iterator(); i.hasNext();) {
-				ExpandoMetaClass child = (ExpandoMetaClass) i.next();
-
-				Set modifiedSuperExpandos = retrieveModifiedSuperExpandos(child);
-				child.refreshInheritedMethods(modifiedSuperExpandos);
-			}
-		}
-	}
-
-	private Set retrieveModifiedSuperExpandos(ExpandoMetaClass child) {
+    private Set retrieveModifiedSuperExpandos(ExpandoMetaClass child) {
 		Set modifiedSupers = new HashSet();
 		List superClasses = child.getSuperClasses();
 		for (Iterator i = superClasses.iterator(); i.hasNext();) {
@@ -121,6 +78,9 @@ public class ExpandoMetaClassCreationHandle extends MetaClassCreationHandle {
         return modifiedSupers;
 	}
 
+    /*
+     * Searches through a given array of interfaces for modified ExpandoMetaClass instances for each interface
+     */
     private void populateSupersFromInterfaces(Set modifiedSupers, Class[] interfaces) {
         for (int i = 0; i < interfaces.length; i++) {
             Class anInterface = interfaces[i];
@@ -133,9 +93,6 @@ public class ExpandoMetaClassCreationHandle extends MetaClassCreationHandle {
         }
     }
 
-    private Set retrieveKnownSubclasses(ExpandoMetaClass changed) {
-		return (Set)parentClassToChildMap.get(changed.getJavaClass());
-	}
 
     /**
      * Registers a modified ExpandoMetaClass with the creation handle

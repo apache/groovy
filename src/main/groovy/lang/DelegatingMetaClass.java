@@ -36,7 +36,10 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass {
     public DelegatingMetaClass(final Class theClass) {
         this(GroovySystem.getMetaClassRegistry().getMetaClass(theClass));
     }
-    
+
+    public boolean isModified() {
+        return this.delegate instanceof MutableMetaClass && ((MutableMetaClass) this.delegate).isModified();
+    }
     /* (non-Javadoc)
      * @see groovy.lang.MetaClass#addNewInstanceMethod(java.lang.reflect.Method)
      */
@@ -200,23 +203,16 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass {
         return this.delegate.getTheClass();
     }
 
-    /**
-     *
-     * @param at the new objects class
-     * @param arguments the args for the constructor call
-     * @return the constructed object
-     * @deprecated use invokeConstructor instead
-     */
-    public Object invokeConstructorAt(Class at, Object[] arguments) {
-        return this.delegate.invokeConstructorAt(at, arguments);
-    }
-
     public Object invokeMethod(Class sender, Object receiver, String methodName, Object[] arguments, boolean isCallToSuper, boolean fromInsideClass) {
         return this.delegate.invokeMethod(sender, receiver, methodName, arguments, isCallToSuper, fromInsideClass);
     }
 
     public Object invokeMissingMethod(Object instance, String methodName, Object[] arguments) {
         return this.delegate.invokeMissingMethod(instance, methodName, arguments);
+    }
+
+    public Object invokeMissingProperty(Object instance, String propertyName, Object optionalValue, boolean isGetter) {
+        return this.delegate.invokeMissingProperty(instance, propertyName, optionalValue, isGetter);
     }
 
     public boolean isGroovyObject() {
