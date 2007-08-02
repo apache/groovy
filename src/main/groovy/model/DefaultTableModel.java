@@ -66,6 +66,13 @@ public class DefaultTableModel extends AbstractTableModel {
     }
     
     /**
+     * Adds a property model column to the table
+     */
+    public DefaultTableColumn addPropertyColumn(Object headerValue, String property, Class type, boolean editable) {
+        return addColumn(headerValue, new PropertyModel(rowModel, property, type, editable));
+    }
+    
+    /**
      * Adds a closure based column to the table
      */
     public DefaultTableColumn addClosureColumn(Object headerValue, Closure readClosure, Closure writeClosure, Class type) {

@@ -28,15 +28,22 @@ public class PropertyModel implements ValueModel, NestedValueModel {
     private ValueModel sourceModel;
     private String property;
     private Class type;
+    boolean editable;
 
     public PropertyModel(ValueModel sourceModel, String property) {
-        this(sourceModel, property, Object.class);
+        this(sourceModel, property, Object.class, true);
     }
 
     public PropertyModel(ValueModel sourceModel, String property, Class type) {
+        this(sourceModel, property, type, true);
+    }
+
+    public PropertyModel(ValueModel sourceModel, String property, Class type, boolean editable) {
         this.sourceModel = sourceModel;
         this.property = property;
         this.type = type;
+        //TODO After 1.1 we should introspect the meta property and set editable to false if the property is read only
+        this.editable = editable;
     }
 
     public String getProperty() {
@@ -67,8 +74,7 @@ public class PropertyModel implements ValueModel, NestedValueModel {
     }
 
     public boolean isEditable() {
-        /** @todo implement this! */
-        return true;
+        return editable;
     }
 
 }

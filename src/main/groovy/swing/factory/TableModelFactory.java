@@ -52,19 +52,23 @@ public class TableModelFactory implements Factory {
             Object current = builder.getCurrent();
             if (current instanceof DefaultTableModel) {
                 DefaultTableModel model = (DefaultTableModel) current;
-                Object header = properties.remove("header");
-                if (header == null) {
-                    header = "";
-                }
                 String property = (String) properties.remove("propertyName");
                 if (property == null) {
                     throw new IllegalArgumentException("Must specify a property for a propertyColumn");
+                }
+                Object header = properties.remove("header");
+                if (header == null) {
+                    header = "";
                 }
                 Class type = (Class) properties.remove("type");
                 if (type == null) {
                     type = Object.class;
                 }
-                return model.addPropertyColumn(header, property, type);
+                Boolean editable = (Boolean) properties.remove("editable");
+                if (editable == null) {
+                    editable = Boolean.TRUE;
+                }
+                return model.addPropertyColumn(header, property, type, editable.booleanValue());
             } else {
                 throw new RuntimeException("propertyColumn must be a child of a tableModel");
             }

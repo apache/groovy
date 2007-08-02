@@ -443,10 +443,25 @@ class SwingBuilderTest extends GroovyTestCase {
         assert msg.contains("Must specify a property for a propertyColumn"): \
             "Instead found message: " + msg
         swing.table{
-            tableModel(){
-                propertyColumn(header:'header', propertyName:'foo')
-                propertyColumn(propertyName:'bar', type:String.class)
+            tableModel(id: 'model'){
+                propertyColumn(propertyName:'p')
+                propertyColumn(propertyName:'ph', header: 'header')
+                propertyColumn(propertyName:'pt', type: String)
+                propertyColumn(propertyName:'pth', type: String, header: 'header')
+                propertyColumn(propertyName:'pe', editable:false)
+                propertyColumn(propertyName:'peh', editable:false, header: 'header')
+                propertyColumn(propertyName:'pet', editable:false, type: String, )
+                propertyColumn(propertyName:'peth', editable:false, type: String, header: 'header')
             }
+        }
+        swing.model.columnList.each() { col ->
+            def propName = col.valueModel.property
+            println propName
+            assert (col.headerValue == 'header') ^ !propName.contains('h')
+            assert (col.type == String) ^ !propName.contains('t')
+            println col.valueModel.editable
+            println propName.contains('e')
+            assert col.valueModel.editable ^ propName.contains('e')
         }
     }
 
