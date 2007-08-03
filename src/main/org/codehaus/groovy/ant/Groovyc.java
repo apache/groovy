@@ -529,7 +529,7 @@ public class Groovyc extends MatchingTask {
         }
     }
     
-    private static File createTempDir()  {
+    protected File createTempDir()  {
         File tempFile;
         try {
             tempFile = File.createTempFile("generated-", "java-source");
