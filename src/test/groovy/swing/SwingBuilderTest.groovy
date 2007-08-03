@@ -456,11 +456,8 @@ class SwingBuilderTest extends GroovyTestCase {
         }
         swing.model.columnList.each() { col ->
             def propName = col.valueModel.property
-            println propName
             assert (col.headerValue == 'header') ^ !propName.contains('h')
             assert (col.type == String) ^ !propName.contains('t')
-            println col.valueModel.editable
-            println propName.contains('e')
             assert col.valueModel.editable ^ propName.contains('e')
         }
     }
@@ -806,5 +803,19 @@ class SwingBuilderTest extends GroovyTestCase {
         shouldFail() {
             swing.widget()
         }
+    }
+
+    public void testEDT() {
+        if (isHeadless()) return
+        
+        def swing = new SwingBuilder()
+        
+        boolean pass = false
+        swing.edt() { pass = SwingUtilities.isEventDispatchThread() }
+        assert pass
+        
+        pass = false
+        swing.edt() { swing.edt() { pass = SwingUtilities.isEventDispatchThread() } }
+        assert pass
     }
 }
