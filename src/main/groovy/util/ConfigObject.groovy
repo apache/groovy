@@ -36,17 +36,16 @@ class ConfigObject extends LinkedHashMap implements Writable {
 
     static final TAB_CHARACTER = '\t'
 
-    URL file
+	/**
+	 * The config file that was used when parsing this ConfigObject
+	 */
+    URL configFile
 
     ConfigObject(URL file) {
-        this.file = file
+        this.configFile = file
     }
 
     ConfigObject() {}
-
-    URL getConfigFile() {
-        return this.file    
-    }         
 
     /**
 	 * Writes this config object into a String serialized representation which can later be parsed back using the parse()
@@ -72,13 +71,14 @@ class ConfigObject extends LinkedHashMap implements Writable {
      * Overrides the default getProperty implementation to create nested ConfigObject instances on demand
      * for non-existant keys
      */
-    def getProperty(String name) {
+    def getProperty(String name) {  
+		if(name == 'configFile') return this.configFile
         def prop = get(name)
-        if(prop == null) prop = new ConfigObject(this.file)
+        if(prop == null) prop = new ConfigObject(this.configFile)
         put(name, prop)
         return prop
     }
-
+    
     /**
      * A ConfigObject is a tree structure consisting of nested maps. This flattens the maps into
      * a single level structure like a properties file
