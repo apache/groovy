@@ -61,4 +61,13 @@ class PrintTest extends GroovyTestCase {
             assert sprintf('%b %b' , [true, false] as boolean[]) == 'true false'
         }
     }
+    
+    void testSprintfExceptionPropagation() {
+	   if (System.properties.'java.version'[2] >= '5') {
+	       
+	       shouldFail(java.util.IllegalFormatConversionException){
+		       sprintf('%2.4f', {3})
+	       }
+	   }
+    }
 }

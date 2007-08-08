@@ -408,9 +408,11 @@ public class DefaultGroovyMethods {
             } catch (NoSuchMethodException nsme) {
                 throw new RuntimeException("getMethod threw a NoSuchMethodException.  This is impossible.");
             } catch (IllegalAccessException iae) {
-                throw new RuntimeException("invoke threw a IllegalAccessException.  This is impossible.");
+                throw new RuntimeException("invoke threw an IllegalAccessException.  This is impossible.");
             } catch (java.lang.reflect.InvocationTargetException ite) {
-                throw new RuntimeException("invoke threw a InvocationTargetException.  This is impossible.");
+        	if(ite.getCause() instanceof RuntimeException)
+        	    throw (RuntimeException)ite.getCause();
+                throw new RuntimeException("invoke threw an InvocationTargetException without runtime exception.  This is impossible.");
             }
         } else {
             throw new RuntimeException("printf requires JDK1.5 or later.");
