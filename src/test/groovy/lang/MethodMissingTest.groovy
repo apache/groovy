@@ -12,6 +12,16 @@
 package groovy.lang
 class MethodMissingTest extends GroovyTestCase {
 
+    void testMethodMissingWithInheritance() {
+         assertEquals "world",MMTest6.hello()
+         assertEquals "cruel world",MMTest6.goodbye()
+         assertEquals "foo",MMTest6.bar()
+
+         shouldFail(MissingMethodException) {
+             MMTest5.bar()
+         }
+    }
+
     void testSimpleMethodMissing() {
         def t = new MMTest()
         assertEquals "world", t.hello()
@@ -84,4 +94,11 @@ class MMTest4 {
     static methodMissing(String name, args) {
         "bar"
     }
+}
+class MMTest5 {
+    static hello() { "world" }
+}
+class MMTest6 extends MMTest5 {
+    static goodbye() { "cruel world" }
+    static methodMissing(String name, args) { "foo" }
 }

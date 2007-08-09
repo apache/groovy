@@ -811,7 +811,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
        if (sender==Class.class) {
            return invokeMethod(object,methodName,arguments);
        }
-       
+
        if (arguments==null) arguments = EMPTY_ARGUMENTS;
        Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
        Object[] originalArguments = (Object[]) arguments.clone();
@@ -831,18 +831,36 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
        }
 
        if (prop instanceof Closure) {
-           Closure closure = (Closure) prop;
-           MetaClass delegateMetaClass = closure.getMetaClass();
-           return delegateMetaClass.invokeMethod(closure.getClass(),closure, CLOSURE_DO_CALL_METHOD,originalArguments,false,false);
+           return invokeStaticClosureProperty(originalArguments, prop);
        }
 
        Class superClass = sender.getSuperclass();
-       if (superClass != Object.class && superClass != null) {
-           return invokeStaticMethod(sender.getSuperclass(), methodName, arguments);
+       while(superClass != Object.class && superClass != null) {
+           MetaClass mc = registry.getMetaClass(superClass);
+           method = mc.getStaticMetaMethod(methodName, argClasses);
+           if(method!=null)return MetaClassHelper.doMethodInvoke(object, method, arguments);
+
+           try {
+               prop = mc.getProperty(superClass, superClass, methodName, false, false);
+           }  catch (MissingPropertyException mpe) {
+               // ignore
+           }
+
+           if (prop instanceof Closure) {
+               return invokeStaticClosureProperty(originalArguments, prop);
+           }
+
+           superClass = superClass.getSuperclass();
        }
 
        return invokeStaticMissingMethod(sender, methodName, arguments);
    }
+
+    private Object invokeStaticClosureProperty(Object[] originalArguments, Object prop) {
+        Closure closure = (Closure) prop;
+        MetaClass delegateMetaClass = closure.getMetaClass();
+        return delegateMetaClass.invokeMethod(closure.getClass(),closure, CLOSURE_DO_CALL_METHOD,originalArguments,false,false);
+    }
 
     private Object invokeStaticMissingMethod(Class sender, String methodName, Object[] arguments) {
         MetaMethod metaMethod = getStaticMetaMethod(METHOD_MISSING, METHOD_MISSING_ARGS);
