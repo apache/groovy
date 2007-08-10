@@ -16,7 +16,7 @@ To build everything, run tests and create a complete installation:
 
     ant install
 
-To build with out running tests:
+To build without running tests:
 
     ant install -DskipTests=true
 
