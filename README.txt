@@ -12,11 +12,11 @@ For detailed instructions please see:
 
     http://groovy.codehaus.org/Building+Groovy+from+Source
 
-To build everything, run tests and create a complete installation in
-target/install/, run:
+To build everything, run tests and create a complete installation:
 
     ant install
 
 To build with out running tests:
 
     ant install -DskipTests=true
+
