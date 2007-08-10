@@ -151,7 +151,7 @@ public class LoaderConfiguration {
             addFile(new File(filter));
             return;
         }
-        filter = filter.replaceAll("\\"+WILDCARD, WILD_CARD_REGEX).replaceAll("\\.","\\\\.");
+        filter = filter.replaceAll("\\"+WILDCARD, WILD_CARD_REGEX).replaceAll("\\.","\\\\.").replaceAll("\\\\", "\\\\\\\\");
         Pattern pattern = Pattern.compile(filter);
         String startDir = filter.substring(0, starIndex-1);
         File root = new File(startDir);
