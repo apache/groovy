@@ -7,10 +7,16 @@ import static java.awt.Color.*
 import static junit.framework.Assert.format
 import static junit.framework.Assert.assertEquals
 import static StaticImportTarget.x
+// TODO: make below work if we leave off java.lang.
+import static java.lang.Math.*
 
 class StaticImportTest extends GroovyTestCase {
     void testNormalUsage() {
         assert !F
+    }
+
+    void testMath() {
+        assert cos(2 * PI) == 1.0
     }
 
     void testAliasing() {
