@@ -15,15 +15,12 @@
  */
 package org.codehaus.groovy.tools;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * class used to configure a RootLoader from a stream or by using 
@@ -67,7 +64,9 @@ public class LoaderConfiguration {
     private ArrayList classPath = new ArrayList();
     private String main;
     private boolean requireMain;
-    
+    private static final char WILDCARD = '*';
+    private static final String WILD_CARD_REGEX = "[^/]+?";
+
     /**
      * creates a new loader configuration
      */
@@ -147,26 +146,36 @@ public class LoaderConfiguration {
      * by using the * wildcard like in any shell
      */
     private void loadFilteredPath(String filter) {
-        int starIndex = filter.indexOf('*');
+        int starIndex = filter.indexOf(WILDCARD);
         if (starIndex==-1) {
             addFile(new File(filter));
             return;
-        } 
-        if (!parentPathDoesExist(filter)) return;        
-        String filterPart = getParentPath(filter);
-        int index = filterPart.indexOf('*');
-        final String prefix = filterPart.substring(0,index);
-        final String suffix = filterPart.substring(index+1);
-        File dir = new File(filter.substring(0,filter.length()-filterPart.length()));
-        FilenameFilter ff = new FilenameFilter() {
-            public boolean accept(File dir, String name) {
-                if (!name.startsWith(prefix)) return false;
-                if (!name.endsWith(suffix)) return false;
-                return true;
+        }
+        filter = filter.replaceAll("\\"+WILDCARD, WILD_CARD_REGEX).replaceAll("\\.","\\\\.");
+        Pattern pattern = Pattern.compile(filter);
+        String startDir = filter.substring(0, starIndex-1);
+        File root = new File(startDir);
+
+        final File[] files = root.listFiles();
+        if(files!=null) {
+            findMatchingFiles(files, pattern);
+        }
+    }
+
+    private void findMatchingFiles(File[] files, Pattern pattern) {
+        for (int i = 0; i < files.length; i++) {
+            File file = files[i];
+            Matcher m = pattern.matcher(file.getAbsolutePath());
+            if(m.matches() && file.isFile()) {
+                addFile(file);
             }
-        };
-        File[] matches = dir.listFiles(ff);
-        for (int i=0; i<matches.length; i++) addFile(matches[i]);
+            if(file.isDirectory()) {
+                final File[] dirFiles = file.listFiles();
+                if(dirFiles!=null) {                    
+                    findMatchingFiles(dirFiles, pattern);
+                }
+            }
+        }
     }
     
     /**
