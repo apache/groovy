@@ -352,6 +352,20 @@ class GroovyMethodsTest extends GroovyTestCase {
         assertEquals 'java.lang.InterruptedException: sleep interrupted', log.toString()
     }
 
+    void testObjectSleepWithOnInterruptHandlerContinueSleeping(){
+        def log = ''
+        def interruptor = new groovy.TestInterruptor(Thread.currentThread())
+        new Thread(interruptor).start()
+        long start = System.currentTimeMillis()
+        sleep(2000){ 
+            log += it.toString() 
+            false // continue sleeping
+        }
+        long slept = System.currentTimeMillis() - start
+        assert slept >= 2000, "should have continued sleeping ${slept}ms < 2s"
+        assertEquals 'java.lang.InterruptedException: sleep interrupted', log.toString()
+    }
+
     void testObjectIdentity() {
         def a = new Object()
         def b = a

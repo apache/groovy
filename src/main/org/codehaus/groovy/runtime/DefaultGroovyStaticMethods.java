@@ -19,6 +19,8 @@ import groovy.lang.Closure;
 
 import java.util.regex.Matcher;
 
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
+
 /**
  * This class defines all the new static groovy methods which appear on normal JDK
  * classes inside the Groovy environment. Static methods are used with the
@@ -26,6 +28,7 @@ import java.util.regex.Matcher;
  *
  * @author Guillaume Laforge
  * @author Dierk Koenig
+ * @author Joachim Baumann
  * @version $Revision$
  */
 public class DefaultGroovyStaticMethods {
@@ -33,6 +36,7 @@ public class DefaultGroovyStaticMethods {
     /**
      * Start a Thread with the given closure as a Runnable instance.
      *
+     * @param self the thread on which the method is called
      * @param closure the Runnable closure
      * @return the started thread
      */
@@ -45,6 +49,7 @@ public class DefaultGroovyStaticMethods {
     /**
      * Start a daemon Thread with the given closure as a Runnable instance.
      *
+     * @param self the thread on which the method is called
      * @param closure the Runnable closure
      * @return the started thread
      */
@@ -66,36 +71,52 @@ public class DefaultGroovyStaticMethods {
     }
 
     /**
-     * Sleep for so many milliseconds, even if interrupted.
+     * This method is used by both sleep() methods to imlement sleeping
+     * for the given time even if interrupted
      * @param object receiver
-     * @param milliseconds the number of milliseconds to sleep
+     * @param millis the number of milliseconds to sleep
+     * @param closure optional closure called when interrupted
+     *                if the closure returns true the sleep continues
      */
-    public static void sleep(Object object, long milliseconds){
-        sleepImpl(object, milliseconds);
-    }
-
-    protected static void sleepImpl(Object object, long millis) {
+    protected static void sleepImpl(Object object, long millis, Closure closure) {
         long start = System.currentTimeMillis();
-        try {
-            Thread.sleep(millis);
-        } catch (InterruptedException e) {
-            long slept = System.currentTimeMillis() - start;
-            long rest  = millis - slept;
-            if (rest > 0) sleepImpl(object, rest);    // recursion to sleep the rest
+        long rest = millis;
+        long current;
+        while (rest > 0) {
+            try {
+                Thread.sleep(rest);
+                rest = 0;
+            } catch (InterruptedException e) {
+                if (closure != null) {
+                    if (DefaultTypeTransformation.castToBoolean(closure.call(e))) {
+                        return;
+                    }
+                }
+                current = System.currentTimeMillis(); // compensate for closure's time
+                rest = millis + start - current;
+            }
         }
     }
 
     /**
+     * Sleep for so many milliseconds, even if interrupted.
+     * 
+     * @param object receiver
+     * @param milliseconds the number of milliseconds to sleep
+     */
+    public static void sleep(Object object, long milliseconds) {
+	sleepImpl(object, milliseconds, null);
+    }
+
+    /**
      * Sleep for so many milliseconds
+     * 
      * @param object receiver
      * @param milliseconds the number of milliseconds to sleep
      * @param onInterrupt interrupt handler, InterruptedException is passed to the Closure
+     *                    if it returns true, the sleep continues
      */
     public static void sleep(Object object, long milliseconds, Closure onInterrupt){
-        try {
-            Thread.sleep(milliseconds);
-        } catch (InterruptedException e) {
-            onInterrupt.call(e);
-        }
+	sleepImpl(object, milliseconds, onInterrupt);
     }
 }
