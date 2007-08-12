@@ -76,8 +76,7 @@ class WriterAppendTest extends GroovyTestCase {
 		expected += text
 		assert hasContents(file, expected, UTF8_ENCODING)
 	}
-	 		
-
+/*
 	void testAppendWritableWithEncoding(){
 		def expected
 		
@@ -133,7 +132,7 @@ class WriterAppendTest extends GroovyTestCase {
 		expected += gPathWriteTo
 		assert hasContents(file, expected, UTF8_ENCODING)
 	}		 
-
+*/
 
 	boolean hasContents(File f, String expected, String charSet)
 	{
