@@ -580,5 +580,7 @@ $Date$
             </zipfileset>
         </zip>
     </target>
+    
+    <target name="dist" depends="distribution" description="Alias to distribution for the lazy."/>
 
 </project>
