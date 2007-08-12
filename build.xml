@@ -278,7 +278,7 @@ $Date$
     </target>
 
     <target name="-actuallyCreateJars"
-            depends="-makeManifest,-includeGroovyDocTemplates,-initializeJars,-createBaseJar,-createEmbeddableJar"
+            depends="-makeManifest,-includeResources,-initializeJars,-createBaseJar,-createEmbeddableJar"
             unless="testFailed"/>
 
     <target name="-makeManifest">
@@ -295,7 +295,15 @@ $Date$
             <attribute name="Implementation-Vendor" value="The Codehaus"/>
         </manifest>
     </target>
-
+    
+    <target name="-includeResources" depends="-includeGroovyDocTemplates">
+        <copy todir="${mainClassesDirectory}">
+            <fileset dir="${mainSourceDirectory}">
+                <include name="groovy/ui/*.properties"/>
+            </fileset>
+        </copy>
+    </target>
+    
     <target name="-includeGroovyDocTemplates">
         <copy todir="${mainClassesDirectory}">
             <fileset dir="${mainSourceDirectory}">

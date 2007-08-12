@@ -284,6 +284,15 @@
                 <role>Developer</role>
             </roles>
         </developer>
+        <developer>
+            <name>Jason Dillon</name>
+            <id>user57</id>
+            <email>jason@planet57.com</email>
+            <roles>
+                <role>Developer</role>
+                <role>Avid Crack Smoker</role>
+            </roles>
+        </developer>
     </developers>
 
     <contributors>
@@ -598,6 +607,14 @@
             <groupId>com.thoughtworks.xstream</groupId>
             <artifactId>xstream</artifactId>
             <version>1.2.2</version>
+            <scope>compile</scope>
+        </dependency>
+        
+        <!-- Used for richer interactive groovysh support -->
+        <dependency>
+            <groupId>jline</groupId>
+            <artifactId>jline</artifactId>
+            <version>0.9.91</version>
             <scope>compile</scope>
         </dependency>
 
