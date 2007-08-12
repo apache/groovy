@@ -365,7 +365,7 @@ $Date$
         <mkdir dir="${installDirectory}"/>
         
         <!-- Install license files -->
-        <copy todir="${targetDistDirectory}">
+        <copy todir="${installDirectory}">
             <fileset dir="${basedir}">
                 <include name="LICENSE.txt"/>
                 <include name="ASM-LICENSE.txt"/>
