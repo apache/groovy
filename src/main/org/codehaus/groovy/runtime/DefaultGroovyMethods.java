@@ -6355,8 +6355,11 @@ public class DefaultGroovyMethods {
     public static void withWriter(Writer writer, Closure closure) throws IOException {
         try {
             closure.call(writer);
-            writer.flush();
-
+            try {
+                writer.flush();
+            } catch(IOException e) {
+                // try to continue even in case of error
+            }
             Writer temp = writer;
             writer = null;
             temp.close();
