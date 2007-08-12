@@ -125,6 +125,8 @@ public class LoaderConfiguration {
             
             String propertyKey = str.substring(propertyIndexStart+2,propertyIndexEnd);
             String propertyValue = System.getProperty(propertyKey);
+            // assume properties contain paths
+            propertyValue = getSlashyPath(propertyValue);
             result+=propertyValue;
             
             propertyIndexEnd++;
@@ -151,14 +153,13 @@ public class LoaderConfiguration {
             addFile(new File(filter));
             return;
         }
-        filter = filter
-					.replaceAll("\\\\","\\\\\\\\")
-					.replaceAll("\\"+WILDCARD, WILD_CARD_REGEX)
-					.replaceAll("\\.","\\\\.");					
-		
-        Pattern pattern = Pattern.compile(filter);
+
         String startDir = filter.substring(0, starIndex-1);
         File root = new File(startDir);
+
+        filter = filter.replaceAll("\\.","\\\\.");
+        filter = filter.replaceAll("\\" + WILDCARD, WILD_CARD_REGEX);
+        Pattern pattern = Pattern.compile(filter);
 
         final File[] files = root.listFiles();
         if(files!=null) {
@@ -169,7 +170,7 @@ public class LoaderConfiguration {
     private void findMatchingFiles(File[] files, Pattern pattern) {
         for (int i = 0; i < files.length; i++) {
             File file = files[i];
-            Matcher m = pattern.matcher(file.getAbsolutePath());
+            Matcher m = pattern.matcher(getSlashyPath(file.getAbsolutePath()));
             if(m.matches() && file.isFile()) {
                 addFile(file);
             }
@@ -181,7 +182,17 @@ public class LoaderConfiguration {
             }
         }
     }
-    
+
+    // change path representation to something more system independent.
+    // This solution is based on an absolute path
+    private String getSlashyPath(final String path) {
+        String changedPath = path;
+        if (File.separatorChar != '/')
+            changedPath = changedPath.replace(File.separatorChar, '/');
+
+        return changedPath;
+    }
+
     /**
      * return true if the parent of the path inside the given
      * string does exist
