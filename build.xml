@@ -376,10 +376,10 @@ $Date$
         
         <!-- Install generated artifacts and runtime dependencies -->
         <mkdir dir="${installDirectory}/lib"/>
-        <copy todir="${installDirectory}/lib"/>
+        <copy todir="${installDirectory}/lib">
             <fileset file="${targetDistDirectory}/groovy-${groovyVersion}.jar"/>
             <fileset dir="${runtimeLibDirectory}" includes="*.jar"/>
-        </target>
+        </copy>
         
         <!-- Install the embeddable bits -->
         <mkdir dir="${installDirectory}/embeddable"/>
