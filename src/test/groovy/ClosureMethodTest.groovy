@@ -148,6 +148,22 @@ class ClosureMethodTest extends GroovyTestCase {
         assert value == 10
     }
 
+    void testObjectInject() {
+        def value = [1:1, 2:2, 3:3].inject('counting: ') { str, item -> str + item.value }
+        assert value == "counting: 123"
+
+        value = [1:1, 2:2, 3:3].inject(0) { c, item -> c + item.value }
+        assert value == 6
+    }
+
+    void testIteratorInject() {
+        def value = [1:1, 2:2, 3:3].iterator().inject('counting: ') { str, item -> str + item.value }
+        assert value == "counting: 123"
+
+        value = [1:1, 2:2, 3:3].iterator().inject(0) { c, item -> c + item.value }
+        assert value == 6
+    }
+
     void testDump() {
         def text = dump()
         println("Dumping object ${text}")
