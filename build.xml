@@ -356,27 +356,53 @@ $Date$
 
     <target name="install" depends="createJars" unless="testFailed"
             description="Create an installation hierarchy in target/install.">
+        
+        <!--
+        FIXME: Its not really a good idea to delete stuff, as it tends to negate Ant's (or other tools)
+               ability to run faster incremental builds.
+        -->
         <delete dir="${installDirectory}" quiet="true"/>
         <mkdir dir="${installDirectory}"/>
-        <mkdir dir="${installDirectory}/lib"/>
-        <mkdir dir="${installDirectory}/bin"/>
-        <mkdir dir="${installDirectory}/conf"/>
-        <mkdir dir="${installDirectory}/embeddable"/>
-        <copy file="${targetDistDirectory}/groovy-${groovyVersion}.jar" toDir="${installDirectory}/lib"/>
-        <!--copy file="${targetDistDirectory}/groovy-starter-${groovyVersion}.jar" toDir="${installDirectory}/lib"/-->
-        <copy file="${targetDistDirectory}/groovy-all-${groovyVersion}.jar" toDir="${installDirectory}/embeddable"/>
-        <copy toDir="${installDirectory}/lib">
-            <fileset dir="${runtimeLibDirectory}" includes="*.jar"/>
+        
+        <!-- Install license files -->
+        <copy todir="${targetDistDirectory}">
+            <fileset dir="${basedir}">
+                <include name="LICENSE.txt"/>
+                <include name="ASM-LICENSE.txt"/>
+                <include name="NOTICE.txt"/>
+            </fileset>
         </copy>
+        <fixcrlf srcdir="${installDirectory}" eol="crlf" includes="*.txt"/>
+        
+        <!-- Install generated artifacts and runtime dependencies -->
+        <mkdir dir="${installDirectory}/lib"/>
+        <copy todir="${installDirectory}/lib"/>
+            <fileset file="${targetDistDirectory}/groovy-${groovyVersion}.jar"/>
+            <fileset dir="${runtimeLibDirectory}" includes="*.jar"/>
+        </target>
+        
+        <!-- Install the embeddable bits -->
+        <mkdir dir="${installDirectory}/embeddable"/>
+        <copy todir="${installDirectory}/embeddable">
+            <fileset file="${targetDistDirectory}/groovy-all-${groovyVersion}.jar"/>
+        </copy>
+        
+        <!-- Install configuration files -->
+        <mkdir dir="${installDirectory}/conf"/>
         <copy toDir="${installDirectory}/conf">
             <fileset dir="${sourceDirectory}/conf" includes="*"/>
         </copy>
+        
+        <!-- Install scripts -->
+        <mkdir dir="${installDirectory}/bin"/>
         <copy toDir="${installDirectory}/bin">
             <fileset dir="${sourceDirectory}/bin" includes="*"/>
             <filterset>
                 <filter token="GROOVYJAR" value="groovy-${groovyVersion}.jar"/>
             </filterset>
         </copy>
+        
+        <!-- Tweak scripts for platform compatibility -->
         <fixcrlf srcdir="${installDirectory}/bin" eol="lf" excludes="*.bat"/>
         <fixcrlf srcdir="${installDirectory}/bin" eol="crlf" includes="*.bat"/>
         <chmod perm="ugo+x">
@@ -512,18 +538,46 @@ $Date$
 
     <target name="distribution" depends="install,doc" description="Create everything needed for a distribution.">
         <zip destfile="${targetDistDirectory}/groovy-binary-${groovyVersion}.zip"
-             comment="The Groovy ${groovyVersion} binary distribution.">
-            <zipfileset dir="${installDirectory}" prefix="groovy-${groovyVersion}"/>
+            comment="The Groovy ${groovyVersion} binary distribution.">
+            
+            <!-- Make unix scripts executable -->
+            <zipfileset dir="${installDirectory}" prefix="groovy-${groovyVersion}" filemode="775">
+                <include name="bin/*"/>
+                <exclude name="bin/*.*"/>
+                <exclude name="bin/startGroovy*"/>
+            </zipfileset>
+            
+            <!-- Include the other scripts asis -->
+            <zipfileset dir="${installDirectory}" prefix="groovy-${groovyVersion}">
+                <include name="bin/*.*"/>
+                <include name="bin/startGroovy*"/>
+            </zipfileset>
+            
+            <!-- Include everything else asis too -->
+            <zipfileset dir="${installDirectory}" prefix="groovy-${groovyVersion}">
+                <exclude name="bin/**"/>
+                <include name="**"/>
+            </zipfileset>
         </zip>
+        
         <zip destfile="${targetDistDirectory}/groovy-docs-${groovyVersion}.zip"
              comment="The Groovy ${groovyVersion} documentation distribution.">
             <zipfileset dir="${wikiPdfDirectory}" includes="wiki-snapshot.pdf" prefix="groovy-${groovyVersion}/pdf"/>
             <zipfileset dir="${docsDirectory}" prefix="groovy-${groovyVersion}/html"/>
         </zip>
+        
         <zip destfile="${targetDistDirectory}/groovy-src-${groovyVersion}.zip"
              comment="The Groovy ${groovyVersion} source distribution.">
-            <zipfileset dir="." prefix="groovy-${groovyVersion}"
-                        excludes="${targetDirectory}/**/*,classes/**/*,cruise/**/*,.clover/*,local.build.properties,cobertura.ser,junitvmwatcher*.properties"/>
+            <zipfileset dir="${basedir}" prefix="groovy-${groovyVersion}">
+                <!-- Exclude generated bits as well as any other bits that shouldn't make it in -->
+                <exclude name="${targetDirectory}/**"/>
+                <exclude name="classes/**"/>
+                <exclude name="cruise/**"/>
+                <exclude name=".clover/*"/>
+                <exclude name="local.build.properties"/>
+                <exclude name="cobertura.ser"/>
+                <exclude name="junitvmwatcher*.properties"/>
+            </zipfileset>
         </zip>
     </target>
 
