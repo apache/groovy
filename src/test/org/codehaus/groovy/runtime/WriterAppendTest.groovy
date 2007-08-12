@@ -7,7 +7,7 @@ import java.io.Reader
  * Test Writer append and left shift methods in Groovy
  * 
  * @author Joachim Baumann</a>
- * @version $Revision: 4294 $
+ * @version $Revision$
  */
 class WriterAppendTest extends GroovyTestCase {
 	/**
@@ -76,7 +76,7 @@ class WriterAppendTest extends GroovyTestCase {
 		expected += text
 		assert hasContents(file, expected, UTF8_ENCODING)
 	}
-/*
+
 	void testAppendWritableWithEncoding(){
 		def expected
 		
@@ -132,7 +132,6 @@ class WriterAppendTest extends GroovyTestCase {
 		expected += gPathWriteTo
 		assert hasContents(file, expected, UTF8_ENCODING)
 	}		 
-*/
 
 	boolean hasContents(File f, String expected, String charSet)
 	{
