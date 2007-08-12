@@ -133,6 +133,81 @@ class WriterAppendTest extends GroovyTestCase {
 		assert hasContents(file, expected, UTF8_ENCODING)
 	}		 
 
+	///////////////////////////////////////
+	void testAppendStringDefaultEncoding(){
+		def expected
+		// test new
+		file.withWriterAppend { writer ->
+		    writer.write(text)
+		}
+		expected = text
+		assert hasContents(file, expected, defaultEncoding)
+		
+		// test existing
+		file.withWriterAppend { writer ->
+		    writer.write(text)
+		}
+		expected += text
+		assert hasContents(file, expected, defaultEncoding)
+	}
+
+	void testAppendWritableDefaultEncoding(){
+		def expected
+		
+		// test new
+		file.withWriterAppend { writer ->
+		    writer.write(gPathResult)
+		}
+		expected = gPathWriteTo
+		assert hasContents(file, expected, defaultEncoding)
+		
+		// test existing
+		file.withWriterAppend { writer ->
+		    writer.write(gPathResult)
+		}
+		expected += gPathWriteTo
+		assert hasContents(file, expected, defaultEncoding)
+	}
+
+
+	void testLeftShiftStringDefaultEncoding(){
+		def expected
+		
+		// test new
+		file.withWriterAppend { writer ->
+		    writer << text
+		}
+		expected = text
+		assert hasContents(file, expected, defaultEncoding)
+		
+		// test existing
+		file.withWriterAppend { writer ->
+		    writer << text
+		}
+		expected += text
+		assert hasContents(file, expected, defaultEncoding)
+	}
+			
+
+	void testLeftShiftWritableDefaultEncoding(){
+		def expected
+		
+		// test new
+		file.withWriterAppend { writer ->
+		    writer << gPathResult
+		}
+		expected = gPathWriteTo
+		assert hasContents(file, expected, defaultEncoding)
+		
+		// test existing
+		file.withWriterAppend { writer ->
+		    writer << gPathResult
+		}
+		expected += gPathWriteTo
+		assert hasContents(file, expected, defaultEncoding)
+	}		 
+
+	
 	boolean hasContents(File f, String expected, String charSet)
 	{
 		// read contents the Java way

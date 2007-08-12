@@ -6298,6 +6298,17 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * Helper method to create a new BufferedWriter for a file in append mode
+     * and then passes it into the closure and ensures it is closed again afterwords
+     *
+     * @param file    a File
+     * @param closure a closure
+     * @throws IOException if an IOException occurs.
+     */
+    public static void withWriterAppend(File file, Closure closure) throws IOException {
+        withWriter(newWriter(file, true), closure);
+    }
+    /**
      * Helper method to create a new PrintWriter for a file
      *
      * @param file a File
