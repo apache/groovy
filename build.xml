@@ -114,7 +114,7 @@ $Date$
         -->
 
         <echo message="Groovyc of main code."/>
-        <java classname="org.codehaus.groovy.ant.Groovyc">
+        <java classname="org.codehaus.groovy.ant.Groovyc" failonerror="true">
             <classpath>
                 <pathelement path="${mainClassesDirectory}"/>
                 <path refid="compilePath"/>
