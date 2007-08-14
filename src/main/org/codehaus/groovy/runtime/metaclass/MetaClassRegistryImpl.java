@@ -124,10 +124,11 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     public MetaClass getMetaClass(Class theClass) {
         MetaClass answer=null;
         if (constantMetaClassCount!=0) answer = (MetaClass) constantMetaClasses.get(theClass);
-        if (answer==null) answer = (MetaClass) weakMetaClasses.get(theClass);
         if (answer!=null) return answer;
        
         synchronized (theClass) {
+            answer = (MetaClass) weakMetaClasses.get(theClass);
+            if (answer!=null) return answer;
             answer = getMetaClassFor(theClass);
             answer.initialize();
             weakMetaClasses.put(theClass, answer);
