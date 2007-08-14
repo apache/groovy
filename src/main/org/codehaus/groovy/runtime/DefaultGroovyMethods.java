@@ -410,9 +410,7 @@ public class DefaultGroovyMethods {
             } catch (IllegalAccessException iae) {
                 throw new RuntimeException("invoke threw an IllegalAccessException.  This is impossible.");
             } catch (java.lang.reflect.InvocationTargetException ite) {
-        	if(ite.getCause() instanceof RuntimeException)
-        	    throw (RuntimeException)ite.getCause();
-                throw new RuntimeException("invoke threw an InvocationTargetException without runtime exception.  This is impossible.");
+                throw new InvokerInvocationException(ite);
             }
         } else {
             throw new RuntimeException("printf requires JDK1.5 or later.");
