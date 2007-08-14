@@ -17,7 +17,7 @@ package groovy.util;
 
 import groovy.lang.GroovyObjectSupport;
 
-
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 /**
  * Represents an arbitrary logging service. By default this outputs to
@@ -42,8 +42,12 @@ public class GroovyLog extends GroovyObjectSupport {
         this("");
     }
 
-    public GroovyLog(Class owner) {
-        this(owner.getName());
+    public GroovyLog(Class type) {
+        this(type.getName());
+    }
+
+    public GroovyLog(Object obj) {
+        this(obj.getClass());
     }
 
     public GroovyLog(String prefix) {
@@ -51,7 +55,12 @@ public class GroovyLog extends GroovyObjectSupport {
     }
 
     public Object invokeMethod(String name, Object args) {
+        if (args != null && args.getClass().isArray()) {
+            args = DefaultGroovyMethods.join((Object[])args, ",");    
+        }
+
         System.out.println(prefix + name + "] " + args);
+
         return null;
     }
 }
