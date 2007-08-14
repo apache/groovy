@@ -24,7 +24,7 @@ import groovy.lang.Closure;
  * 
  * @author Jochen Theodorou
  */
-public class CurriedClosure extends Closure {
+public final class CurriedClosure extends Closure {
 
     private Object[] curriedParams;
     
