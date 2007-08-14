@@ -26,7 +26,7 @@ import java.io.FileInputStream;
 public class GroovyStarter {
 
     static void printUsage() {
-        System.out.println("possible programs are 'groovyc','groovy','console','grok' and 'groovysh'");
+        System.out.println("possible programs are 'groovyc','groovy','console', and 'groovysh'");
         System.exit(1);
     }
     
@@ -174,8 +174,6 @@ public class GroovyStarter {
                 m.invoke(null, new Object[]{args});
             } else if (program.equals("groovysh")) {
                 InteractiveShell.main(args);
-             } else if (program.equals("grok")) {
-                org.codehaus.groovy.tools.Grok.main(args);
             } else {
                 System.out.println("unknown program "+program);
                 printUsage();
