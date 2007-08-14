@@ -535,6 +535,14 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
         public Closure curry(final Object arguments[]) {
             return (new CurriedClosure(this,arguments)).asWritable();
         }
+
+        public void setResolveStrategy(int resolveStrategy) {
+            Closure.this.setResolveStrategy(resolveStrategy);
+        }
+        
+        public int getResolveStrategy() {
+            return Closure.this.getResolveStrategy();
+        }
     }
 
     /**
