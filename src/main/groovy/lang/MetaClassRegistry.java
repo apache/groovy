@@ -17,6 +17,9 @@ package groovy.lang;
 
 import java.lang.reflect.Constructor;
 
+import org.codehaus.groovy.runtime.GeneratedClosure;
+import org.codehaus.groovy.runtime.metaclass.ClosureMetaClass;
+
 /**
  * A MetaClassRegistry is an object that is responsible for managing the a cache of MetaClass instances. Each
  * java.lang.Class instance has an associated MetaClass and client code can query this interface for the MetaClass for
@@ -68,8 +71,7 @@ public interface MetaClassRegistry {
      * the class name it is created for with the prefix
      * "groovy.runtime.metaclass." By replacing the handle in the registry
      * you can have any control over the creation of what MetaClass is used
-     * for a class that you want to have. For example giving all classes
-     * extending a different MetaClass then normal is possible this way.
+     * for a class that you want to have. 
      * WARNING: experimental code, likely to change soon
      * @author Jochen Theodorou
      */
@@ -78,13 +80,20 @@ public interface MetaClassRegistry {
 	       try {
 	           final Class customMetaClass = Class.forName("groovy.runtime.metaclass." + theClass.getName() + "MetaClass");
 	           final Constructor customMetaClassConstructor = customMetaClass.getConstructor(new Class[]{MetaClassRegistry.class, Class.class});
-
 	           return (MetaClass)customMetaClassConstructor.newInstance(new Object[]{registry, theClass});
 	       } catch (final ClassNotFoundException e) {
-	           return new MetaClassImpl(registry, theClass);
+               return createNormalMetaclass(theClass, registry);
 	       } catch (final Exception e) {
 	           throw new GroovyRuntimeException("Could not instantiate custom Metaclass for class: " + theClass.getName() + ". Reason: " + e, e);
 	       }
+        }
+
+        private MetaClass createNormalMetaclass(Class theClass,MetaClassRegistry registry) {
+            if (GeneratedClosure.class.isAssignableFrom(theClass)) {
+                return new ClosureMetaClass(registry,theClass);
+            } else {
+                return new MetaClassImpl(registry, theClass);
+            }
         }
     }
 

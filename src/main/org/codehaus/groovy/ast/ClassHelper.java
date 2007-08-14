@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.codehaus.groovy.runtime.GeneratedClosure;
 import org.objectweb.asm.Opcodes;
 
 /**
@@ -58,7 +59,8 @@ public class ClassHelper {
         Double.class.getName(),     Float.class.getName(),
         BigDecimal.class.getName(), BigInteger.class.getName(),
         Void.class.getName(),       Reference.class.getName(),
-        Class.class.getName(),      MetaClass.class.getName()
+        Class.class.getName(),      MetaClass.class.getName(),
+        GeneratedClosure.class.getName(),
     };
     
     private static Class[] classes = new Class[] {
@@ -68,7 +70,7 @@ public class ClassHelper {
         Pattern.class, Script.class, String.class,  Boolean.class, 
         Character.class, Byte.class, Short.class, Integer.class, Long.class,
         Double.class, Float.class, BigDecimal.class, BigInteger.class, Void.class,
-        Reference.class, Class.class, MetaClass.class
+        Reference.class, Class.class, MetaClass.class, GeneratedClosure.class,
     };
     
     public static final ClassNode 
@@ -91,7 +93,9 @@ public class ClassHelper {
         BigDecimal_TYPE = new ClassNode(java.math.BigDecimal.class),
         void_WRAPPER_TYPE = new ClassNode(Void.class),   
         
-        CLASS_Type = new ClassNode(Class.class),        METACLASS_TYPE = new ClassNode(MetaClass.class);
+        CLASS_Type = new ClassNode(Class.class),        METACLASS_TYPE = new ClassNode(MetaClass.class),
+        GENERATED_CLOSURE_Type = new ClassNode(GeneratedClosure.class);
+        
         
     
     private static ClassNode[] types = new ClassNode[] {
@@ -103,7 +107,8 @@ public class ClassHelper {
         SCRIPT_TYPE, STRING_TYPE, Boolean_TYPE, Character_TYPE,
         Byte_TYPE, Short_TYPE, Integer_TYPE, Long_TYPE,
         Double_TYPE, Float_TYPE, BigDecimal_TYPE, BigInteger_TYPE, 
-        void_WRAPPER_TYPE, REFERENCE_TYPE, CLASS_Type, METACLASS_TYPE
+        void_WRAPPER_TYPE, REFERENCE_TYPE, CLASS_Type, METACLASS_TYPE,
+        GENERATED_CLOSURE_Type,
     };
 
     

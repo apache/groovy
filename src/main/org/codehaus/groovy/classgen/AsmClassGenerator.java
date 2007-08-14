@@ -233,7 +233,9 @@ public class AsmClassGenerator extends ClassGenerator {
                 createInterfaceSyntheticStaticFields();
             } else {
                 super.visitClass(classNode);
-                createMopMethods();
+                if (!classNode.declaresInterface(ClassHelper.GENERATED_CLOSURE_Type.getName())) {
+                    createMopMethods();
+                }
                 createSyntheticStaticFields();
             }
 
@@ -1371,6 +1373,7 @@ public class AsmClassGenerator extends ClassGenerator {
     public void visitClosureExpression(ClosureExpression expression) {
         ClassNode innerClass = createClosureClass(expression);
         addInnerClass(innerClass);
+        innerClass.addInterface(ClassHelper.GENERATED_CLOSURE_Type);
         String innerClassinternalName = BytecodeHelper.getClassInternalName(innerClass);
 
         passingClosureParams = true;
@@ -1731,13 +1734,30 @@ public class AsmClassGenerator extends ClassGenerator {
                 invokeStaticMethod,
                 false, false, false);
     }
+    
+    private void addGeneratedClosureConstructorCall(ConstructorCallExpression call) {
+        mv.visitVarInsn(ALOAD, 0);
+        ClassNode callNode = classNode.getSuperClass();
+        TupleExpression arguments = (TupleExpression) call.getArguments();
+        if (arguments.getExpressions().size()!=2) throw new GroovyBugError("expected 2 arguments for closure constructor super call, but got"+arguments.getExpressions().size());
+        arguments.getExpression(0).visit(this);
+        arguments.getExpression(1).visit(this);
+        Parameter p = new Parameter(ClassHelper.OBJECT_TYPE,"_p");
+        String descriptor = helper.getMethodDescriptor(ClassHelper.VOID_TYPE, new Parameter[]{p,p});
+        mv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(callNode), "<init>", descriptor);
+    }
 
     private void visitSpecialConstructorCall(ConstructorCallExpression call) {
+        if (classNode.declaresInterface(ClassHelper.GENERATED_CLOSURE_Type.getName())) {
+            addGeneratedClosureConstructorCall(call);
+            return;
+        }
+        
         ClassNode callNode = classNode;
         if (call.isSuperCall()) callNode = callNode.getSuperClass();
         List constructors = sortConstructors(call, callNode);
         call.getArguments().visit(this);
-        // keep Objet[] on stack
+        // keep Object[] on stack
         mv.visitInsn(DUP);
         // to select the constructor we need also the number of
         // available constructors and the class we want to make
