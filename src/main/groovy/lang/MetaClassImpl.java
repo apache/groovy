@@ -80,16 +80,17 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private Reflector reflector;
     private boolean initialized;
     // we only need one of these that can be reused over and over.
-   private MetaProperty arrayLengthProperty = new MetaArrayLengthProperty();
+    private MetaProperty arrayLengthProperty = new MetaArrayLengthProperty();
     private final static MetaMethod AMBIGOUS_LISTENER_METHOD = new MetaMethod(null,null,new Class[]{},null,0);
     private static final Object[] EMPTY_ARGUMENTS = {};
     private List newGroovyMethodsList = new LinkedList();
     private static final Class[] METHOD_MISSING_ARGS = new Class[]{String.class, Object.class};
 
-    protected MetaClassImpl(final Class theClass) {
+    public MetaClassImpl(final Class theClass) {
        this.theClass = theClass;
        this.isGroovyObject = GroovyObject.class.isAssignableFrom(theClass);
        this.isMap = Map.class.isAssignableFrom(theClass);
+       this.registry = GroovySystem.getMetaClassRegistry();
    }
    
    public MetaClassImpl(MetaClassRegistry registry, final Class theClass) {
@@ -611,8 +612,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                case Closure.OWNER_ONLY:
                    if (method==null && owner!=closure) {
                        MetaClass ownerMetaClass = lookupObjectMetaClass(owner);
-                       method = ownerMetaClass.pickMethod(methodName,argClasses);
-                       if (method!=null) return ownerMetaClass.invokeMethod(owner,methodName,originalArguments);
+                       return ownerMetaClass.invokeMethod(owner,methodName,originalArguments);
                    } 
                break;
                case Closure.DELEGATE_FIRST:
@@ -702,12 +702,16 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
        }
    }
 
-    private MetaClass lookupObjectMetaClass(Object object) {
-        Class ownerClass = object.getClass();
-        if (object instanceof Class) ownerClass = (Class) object;
-        MetaClass metaClass = registry.getMetaClass(ownerClass);
-        return metaClass;
-    }
+   private MetaClass lookupObjectMetaClass(Object object) {
+       if (object instanceof GroovyObject) {
+           GroovyObject go = (GroovyObject) object;
+           return go.getMetaClass();
+       }
+       Class ownerClass = object.getClass();
+       if (ownerClass==Class.class) ownerClass = (Class) object;
+       MetaClass metaClass = registry.getMetaClass(ownerClass);
+       return metaClass;
+   }
 
     private Object invokeMethodOnGroovyObject(String methodName, Object[] originalArguments, Object owner) {
         GroovyObject go = (GroovyObject) owner;
@@ -1004,12 +1008,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
            setProperty(bean, key, value);
        }
    }
-   
+      
    /**
     * @return the given property's value on the object
     */
    public Object getProperty(Class sender, Object object, String name, boolean useSuper, boolean fromInsideClass) {
-       checkInitalised();
        
        //----------------------------------------------------------------------
        // handling of static
@@ -1019,6 +1022,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
            MetaClass mc = registry.getMetaClass((Class) object);
            return mc.getProperty(sender,object,name,useSuper,false);
        }
+
+       checkInitalised();
 
        //----------------------------------------------------------------------
        // turn getProperty on a Map to get on the Map itself
@@ -2203,9 +2208,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
    private boolean isValidReflectorMethod(MetaMethod method) {
        // We cannot use a reflector if the method is private, protected, or package accessible only.
-       if (!method.isPublic()) {
-           return false;
-       }
+       if (!method.isPublic()) return false;
+       if (method.getDeclaringClass().isInterface()) return true;
+       
        // lets see if this method is implemented on an interface
        List interfaceMethods = getInterfaceMethods();
        for (Iterator iter = interfaceMethods.iterator(); iter.hasNext();) {
