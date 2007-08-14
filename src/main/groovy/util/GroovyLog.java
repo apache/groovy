@@ -19,6 +19,12 @@ import groovy.lang.GroovyObjectSupport;
 
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
+//
+// FIXME: This class really isn't all that useful.  It would be *much* better if there
+//        was a simple log API in groovy to dynamically switch to the logging facade that
+//        is actually installed.
+//
+
 /**
  * Represents an arbitrary logging service. By default this outputs to
  * System.out though derivations of this class could log to Jakarta Commons Logging
@@ -51,6 +57,10 @@ public class GroovyLog extends GroovyObjectSupport {
     }
 
     public GroovyLog(String prefix) {
+        //
+        // FIXME: This kinda sucks as a default... shouldn't tack on any [ or : muck
+        //
+
         this.prefix = (prefix != null && prefix.length() > 0) ? "[" + prefix + ":" : "[";
     }
 
@@ -59,6 +69,12 @@ public class GroovyLog extends GroovyObjectSupport {
             args = DefaultGroovyMethods.join((Object[])args, ",");    
         }
 
+        //
+        // FIXME: This kinda sucks as an output format, should probably ucase name and then
+        //        warp prefix in [] and then output the args.  Basically what the SimpleLog
+        //        does in JCL.
+        //
+        
         System.out.println(prefix + name + "] " + args);
 
         return null;
