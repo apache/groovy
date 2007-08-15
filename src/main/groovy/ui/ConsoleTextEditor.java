@@ -44,8 +44,10 @@ import java.beans.PropertyChangeListener;
 import java.io.File;
 
 /**
+ * Component which provides a styled editor for the console.
  *
- * @author  hippy
+ * @version $Id$
+ * @author hippy
  */
 public class ConsoleTextEditor extends JScrollPane {
 
@@ -92,24 +94,17 @@ public class ConsoleTextEditor extends JScrollPane {
         doc.addDocumentListener(undoAction);
         doc.addDocumentListener(redoAction);
         
-        InputMap im =
-        	textEditor.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
-        KeyStroke ks = KeyStroke.getKeyStroke(KeyEvent.VK_Z,
-				  						      InputEvent.CTRL_MASK,
-				  						      false);
+        InputMap im = textEditor.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+        KeyStroke ks = KeyStroke.getKeyStroke(KeyEvent.VK_Z, InputEvent.CTRL_MASK, false);
         im.put(ks, StructuredSyntaxResources.UNDO);
         ActionMap am = textEditor.getActionMap();
         am.put(StructuredSyntaxResources.UNDO, undoAction);
 
-        ks = KeyStroke.getKeyStroke(KeyEvent.VK_Y,
-		  						    InputEvent.CTRL_MASK,
-		  						    false);
+        ks = KeyStroke.getKeyStroke(KeyEvent.VK_Y, InputEvent.CTRL_MASK, false);
         im.put(ks, StructuredSyntaxResources.REDO);
         am.put(StructuredSyntaxResources.REDO, redoAction);
 
-        ks = KeyStroke.getKeyStroke(KeyEvent.VK_P,
-		  						    InputEvent.CTRL_MASK,
-		  						    false);
+        ks = KeyStroke.getKeyStroke(KeyEvent.VK_P, InputEvent.CTRL_MASK, false);
         im.put(ks, StructuredSyntaxResources.PRINT);
         am.put(StructuredSyntaxResources.PRINT, printAction);
     }
@@ -123,9 +118,9 @@ public class ConsoleTextEditor extends JScrollPane {
     }
     
     public TextEditor getTextEditor() {
-		return textEditor;
-	}
-    
+        return textEditor;
+    }
+
     protected void initActions() {
         ActionMap map = getActionMap();
         
@@ -153,8 +148,7 @@ public class ConsoleTextEditor extends JScrollPane {
         }
     } // end ConsoleTextEditor.PrintAction
     
-    private class RedoAction extends UpdateCaretListener 
-                             implements PropertyChangeListener {
+    private class RedoAction extends UpdateCaretListener implements PropertyChangeListener {
 
         public RedoAction() {
             setEnabled(false);
@@ -172,8 +166,7 @@ public class ConsoleTextEditor extends JScrollPane {
         }
     } // end ConsoleTextEditor.RedoAction
     
-    private abstract class UpdateCaretListener extends AbstractAction
-        implements DocumentListener {
+    private abstract class UpdateCaretListener extends AbstractAction implements DocumentListener {
         
         protected int lastUpdate;
         
@@ -193,8 +186,7 @@ public class ConsoleTextEditor extends JScrollPane {
         }
     }
     
-    private class UndoAction extends UpdateCaretListener 
-                             implements PropertyChangeListener {
+    private class UndoAction extends UpdateCaretListener  implements PropertyChangeListener {
 
         public UndoAction() {
             setEnabled(false);

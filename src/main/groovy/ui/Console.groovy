@@ -42,6 +42,7 @@ import groovy.ui.text.FindReplaceUtility
  *
  * Allows user to interactively enter and execute Groovy.
  *
+ * @version $Id$
  * @author Danno Ferrin
  * @author Dierk Koenig, changed Layout, included Selection sensitivity, included ObjectBrowser
  * @author Alan Green more features: history, System.out capture, bind result to _

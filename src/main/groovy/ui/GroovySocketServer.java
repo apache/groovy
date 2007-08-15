@@ -30,9 +30,10 @@ import java.net.URL;
 
 /**
  * Simple server that executes supplied script against a socket
+ *
+ * @version $Id$
  * @author Jeremy Rayner
  */
-
 public class GroovySocketServer implements Runnable {
     private URL url;
     private GroovyShell groovy;
