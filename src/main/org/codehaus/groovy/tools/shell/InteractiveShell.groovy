@@ -62,8 +62,6 @@ class InteractiveShell
         // Register commands
         
         registry << new Command('help', '\\h', {
-            println "help"
-            
             registry.commands.each {
                 io.output.println(sprintf('%10s %s', it.name, it.description))
             }

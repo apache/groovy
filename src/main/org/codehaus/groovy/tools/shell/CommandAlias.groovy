@@ -39,4 +39,9 @@ class CommandAlias
     String getDescription() {
         return messages.format('info.alias_to', target)
     }
+    
+    //
+    // TODO: Would be really nice to have an execute here to handle the actual
+    //       redirect... but we don't have the registry context to do it :-(
+    //
 }
