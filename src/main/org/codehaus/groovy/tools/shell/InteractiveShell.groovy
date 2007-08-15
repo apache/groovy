@@ -92,8 +92,12 @@ class InteractiveShell
     }
     
     private void registerCommands() {
+        io.output.println('For information about Groovy, visit:') // TODO: i18n
+        io.output.println('    http://groovy.codehaus.org')
+        io.output.println()
+        
         registry << new Command('help', '\\h', {
-            io.output.println('Available commands:')
+            io.output.println('Available commands:') // TODO: i18n
             
             //
             // TODO: Figure out the max command name length dynamically
