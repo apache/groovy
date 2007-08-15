@@ -89,7 +89,6 @@ class Console implements CaretListener {
     Closure beforeExecution
     Closure afterExecution
     
-
     static void main(args) {
         def console = new Console()
         console.run()
@@ -164,14 +163,14 @@ class Console implements CaretListener {
                 id: 'undoAction',
                 name: 'Undo',
                 mnemonic: 'U',
- 				accelerator: shortcut('Z')
+                accelerator: shortcut('Z')
             )
             action(inputEditor.redoAction,
                 id: 'redoAction',
                 name: 'Redo',
                 closure: this.&redo,
                 mnemonic: 'R',
- 				accelerator: shortcut('shift Z') // is control-shift-Z or control-Y more common?
+                accelerator: shortcut('shift Z') // is control-shift-Z or control-Y more common?
             )
             action(FindReplaceUtility.FIND_ACTION,
                 id: 'findAction',
@@ -183,25 +182,25 @@ class Console implements CaretListener {
                 name: 'Cut',
                 closure: this.&cut,
                 mnemonic: 't',
- 				accelerator: shortcut('X')
+                accelerator: shortcut('X')
             )
             action(id: 'copyAction',
                 name: 'Copy',
                 closure: this.&copy,
                 mnemonic: 'C',
-				accelerator: shortcut('C')
+                accelerator: shortcut('C')
             )
             action(id: 'pasteAction',
                 name: 'Paste',
                 closure: this.&paste,
                 mnemonic: 'P',
- 				accelerator: shortcut('V')
+                accelerator: shortcut('V')
             )
-			action(id: 'selectAllAction',
+            action(id: 'selectAllAction',
                 name: 'Select All',
                 closure: this.&selectAll,
                 mnemonic: 'A',
- 				accelerator: shortcut('A')
+                accelerator: shortcut('A')
             )
             action(id: 'historyPrevAction',
                 name: 'Previous',
@@ -477,7 +476,6 @@ class Console implements CaretListener {
         textSelectionEnd = Math.max(e.dot,e.mark)
     }
 
-
     void clearOutput(EventObject evt = null) {
         outputArea.setText('')
     }
@@ -691,8 +689,6 @@ class Console implements CaretListener {
         }
     }
 
-
-    
     def selectFilename(name = "Open") {
         def fc = new JFileChooser()
         fc.fileSelectionMode = JFileChooser.FILES_ONLY
@@ -784,7 +780,6 @@ class Console implements CaretListener {
     void selectAll(EventObject evt = null) {
         invokeTextAction(evt, { source -> source.selectAll() })
     }
-
 }
 
 /** A single time when the user selected "run" */
