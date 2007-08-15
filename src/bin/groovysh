@@ -14,4 +14,13 @@
 DIRNAME=`dirname "$0"`
 . "$DIRNAME/startGroovy"
 
-startGroovy groovy.ui.InteractiveShell "$@"
+#
+# HACK: Temporary support to run the current or new shells
+#
+
+if [ "x$NEWSHELL" != "x" ]; then
+    startGroovy org.codehaus.groovy.tools.shell.InteractiveShell "$@"
+else
+    startGroovy groovy.ui.InteractiveShell "$@"
+fi
+
