@@ -65,7 +65,7 @@ import java.util.Map;
  */
 public class ClassNode extends AnnotatedNode implements Opcodes {
 
-	public static ClassNode[] EMPTY_ARRAY = new ClassNode[0];
+    public static ClassNode[] EMPTY_ARRAY = new ClassNode[0];
     
     public static ClassNode THIS = new ClassNode(Object.class);
     public static ClassNode SUPER = new ClassNode(Object.class);
@@ -334,7 +334,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         // No need to be extra carefull here for that.
         ClassNode parent = this.redirect();
         do {
-        	abstractNodes.add(parent);
+            abstractNodes.add(parent);
             ClassNode[] interfaces = parent.getInterfaces();
             for (int i = 0; i < interfaces.length; i++) {
                 abstractNodes.add(interfaces[i].redirect());
@@ -456,9 +456,9 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
                                     Statement getterBlock,
                                     Statement setterBlock) {
     	for (Iterator iter = getProperties().iterator(); iter.hasNext();) {
-			PropertyNode pn = (PropertyNode) iter.next();
-			if (pn.getName().equals(name)) return pn;
-		}
+            PropertyNode pn = (PropertyNode) iter.next();
+            if (pn.getName().equals(name)) return pn;
+        }
         PropertyNode node =
                 new PropertyNode(name, modifiers, type, redirect(), initialValueExpression, getterBlock, setterBlock);
         addProperty(node);
