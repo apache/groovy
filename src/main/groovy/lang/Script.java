@@ -31,9 +31,10 @@ import java.io.IOException;
  * @version $Revision$
  */
 public abstract class Script extends GroovyObjectSupport {
-    private Binding binding = new Binding();
+    private Binding binding;
 
     protected Script() {
+        this(new Binding());
     }
 
     protected Script(Binding binding) {
@@ -76,8 +77,8 @@ public abstract class Script extends GroovyObjectSupport {
         try {
             return super.invokeMethod(name, args);
         }
-                // if the method was not found in the current scope (the script's methods)
-                // let's try to see if there's a method closure with the same name in the binding
+        // if the method was not found in the current scope (the script's methods)
+        // let's try to see if there's a method closure with the same name in the binding
         catch (MissingMethodException mme) {
             try {
                 if (name.equals(mme.getMethod())) {
