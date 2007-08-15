@@ -43,6 +43,7 @@ import org.codehaus.groovy.runtime.InvokerInvocationException;
  * @version $Revision$
  */
 public class GroovyMain {
+
     // arguments to the script
     private List args;
 
@@ -191,11 +192,11 @@ public class GroovyMain {
             .withDescription("listen on a port and process inbound lines")
             .create('l'));
         options.addOption(
-                OptionBuilder.withArgName("splitPattern")
-                .hasOptionalArg()
-                .withDescription("automatically split current line (defaults to '\\s'")
-                .withLongOpt("autosplit")
-                .create('a'));
+            OptionBuilder.withArgName("splitPattern")
+            .hasOptionalArg()
+            .withDescription("automatically split current line (defaults to '\\s'")
+            .withLongOpt("autosplit")
+            .create('a'));
         return options;
     }
 
