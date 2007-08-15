@@ -305,8 +305,7 @@ class InteractiveShell
     //
 
     static void main(String[] args) {
-        def shell = new InteractiveShell()
-        int result = shell.run(args)
+        int result = new InteractiveShell().run(args)
 
         // Force the JVM to exit at this point, since shell could have created threads or
         // popped up Swing components that will cause the JVM to linger after we have been

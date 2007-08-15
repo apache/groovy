@@ -36,7 +36,7 @@ class Command
     final Closure function
     
     /** Provides the command instance with the registry, for aliasing support. */
-    protected CommandRegistry registry
+    CommandRegistry registry
     
     Command(final String name, final String shortcut, final Closure function) {
         assert name

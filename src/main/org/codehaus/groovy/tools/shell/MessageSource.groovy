@@ -55,7 +55,7 @@ class MessageSource
         return bundle.getString(code)
     }
 
-    String format(String code, Object... args) {
+    String format(String code, Object[] args) {
         assert args
         
         String pattern = getMessage(code)
