@@ -95,8 +95,12 @@ class InteractiveShell
         registry << new Command('help', '\\h', {
             io.output.println('Available commands:')
             
+            //
+            // TODO: Figure out the max command name length dynamically
+            //
+            
             registry.commands.each {
-                io.output.println(sprintf('%10s %s', it.name, it.description))
+                io.output.println(sprintf('%10s (%s) %s', it.name, it.shortcut, it.description))
             }
         })
         
