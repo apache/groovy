@@ -35,6 +35,7 @@ import javax.swing.text.*
 import javax.swing.event.*
 
 import org.codehaus.groovy.runtime.InvokerHelper
+import groovy.ui.text.FindReplaceUtility
 
 /**
  * Groovy Swing console.
@@ -59,7 +60,7 @@ class Console implements CaretListener {
     // UI
     SwingBuilder swing
     JFrame frame
-    JTextArea inputArea
+    JTextPane inputArea
     JTextPane outputArea
     JLabel statusLabel
     JDialog runWaitDialog
@@ -113,170 +114,250 @@ class Console implements CaretListener {
 
         swing = new SwingBuilder()
 
+        def inputEditor = new ConsoleTextEditor()
+
         swing.actions {
-            action(id:'newFileAction',
-                name:'New File', 
+            action(id: 'newFileAction',
+                name: 'New File',
                 closure: this.&fileNewFile, 
                 mnemonic: 'N',
-                accelerator: shortcut('Q')
+                accelerator: shortcut('N')
             )
-            action(id:'newWindowAction',
-                name:'New Window', 
+            action(id: 'newWindowAction',
+                name: 'New Window',
                 closure: this.&fileNewWindow, 
                 mnemonic: 'W',
                 accelerator: shortcut('shift N')
             )
-            action(id:'openAction',
-                name:'Open', 
+            action(id: 'openAction',
+                name: 'Open',
                 closure: this.&fileOpen, 
                 mnemonic: 'O', 
                 accelerator: shortcut('O')
             )
-            action(id:'saveAction',
-                name:'Save', 
-                closure: this.&fileSave,  
-                mnemonic: 'S', 
+            action(id: 'saveAction',
+                name: 'Save',
+                closure: this.&fileSave,
+                mnemonic: 'S',
                 accelerator: shortcut('S')
             )
-            action(id:'exitAction',
-                name:'Exit', 
+            action(id: 'saveAsAction',
+                name: 'Save As...',
+                closure: this.&fileSaveAs,  
+                mnemonic: 'A',
+            )
+            action(inputEditor.printAction,
+                id: 'printAction',
+                name: 'Print...',
+                mnemonic: 'P',
+                accelerator: shortcut('P'))
+            action(id: 'exitAction',
+                name: 'Exit',
                 closure: this.&exit, 
                 mnemonic: 'X', 
-                accelerator: 'alt F4'
+                // whether or not application exit should have an
+                // accellerator is debatable in usability circles
+                // at the very least a confirm dialog should dhow up
+                //accelerator: shortcut('Q')
             )
-            action(id:'historyPrevAction',
-                name:'Previous', 
+            action(inputEditor.undoAction,
+                id: 'undoAction',
+                name: 'Undo',
+                mnemonic: 'U',
+ 				accelerator: shortcut('Z')
+            )
+            action(inputEditor.redoAction,
+                id: 'redoAction',
+                name: 'Redo',
+                closure: this.&redo,
+                mnemonic: 'R',
+ 				accelerator: shortcut('shift Z') // is control-shift-Z or control-Y more common?
+            )
+            action(FindReplaceUtility.FIND_ACTION,
+                id: 'findAction',
+                name: 'Find/Replace...',
+                mnemonic: 'F',
+                accelerator: shortcut('F')
+            )
+            action(id: 'cutAction',
+                name: 'Cut',
+                closure: this.&cut,
+                mnemonic: 't',
+ 				accelerator: shortcut('X')
+            )
+            action(id: 'copyAction',
+                name: 'Copy',
+                closure: this.&copy,
+                mnemonic: 'C',
+				accelerator: shortcut('C')
+            )
+            action(id: 'pasteAction',
+                name: 'Paste',
+                closure: this.&paste,
+                mnemonic: 'P',
+ 				accelerator: shortcut('V')
+            )
+			action(id: 'selectAllAction',
+                name: 'Select All',
+                closure: this.&selectAll,
+                mnemonic: 'A',
+ 				accelerator: shortcut('A')
+            )
+            action(id: 'historyPrevAction',
+                name: 'Previous',
                 closure: this.&historyPrev, 
                 mnemonic: 'P', 
-                accelerator: shortcut('P')
+                accelerator: shortcut(KeyEvent.VK_COMMA)
             )
-            action(id:'historyNextAction', 
+            action(id: 'historyNextAction',
                 name: 'Next', 
                 closure: this.&historyNext, 
                 mnemonic: 'N', 
-                accelerator: shortcut('N')
+                accelerator: shortcut(KeyEvent.VK_PERIOD)
             )
-            action(id:'clearOutputAction',
-                name:'Clear Output', 
+            action(id: 'clearOutputAction',
+                name: 'Clear Output',
                 closure: this.&clearOutput, 
                 mnemonic: 'l', 
-                keyStroke: 'ctrl W',
                 accelerator: shortcut('W')
             )
-            action(id:'runAction',
-                name:'Run', 
+            action(id: 'runAction',
+                name: 'Run',
                 closure: this.&runScript, 
                 mnemonic: 'R', 
-                keyStroke: 'ctrl ENTER',
+                keyStroke: 'ctrl ENTER', // does this need to be shortcutted or explicitly ctrl?
                 accelerator: shortcut('R')
             )
-            action(id:'inspectLastAction',
-                name:'Inspect Last', 
+            action(id: 'inspectLastAction',
+                name: 'Inspect Last',
                 closure: this.&inspectLast, 
                 mnemonic: 'I', 
-                keyStroke: 'ctrl I',
                 accelerator: shortcut('I')
             )
-            action(id:'inspectVariablesAction',
-                name:'Inspect Variables', 
+            action(id: 'inspectVariablesAction',
+                name: 'Inspect Variables',
                 closure: this.&inspectVariables, 
                 mnemonic: 'V', 
-                keyStroke: 'ctrl J',
                 accelerator: shortcut('J')
             )
-            action(id:'captureStdOutAction',
-                name:'Capture Standard Output', 
+            action(id: 'captureStdOutAction',
+                name: 'Capture Standard Output',
                 closure: this.&captureStdOut, 
                 mnemonic: 'C'
             )
-            action(id:'largerFontAction',
-                name:'Larger Font', 
-                closure: this.&largerFont, 
+            action(id: 'largerFontAction',
+                name: 'Larger Font',
+                enabled: false,
+                closure: this.&largerFont,
                 mnemonic: 'L', 
-                keyStroke: 'alt shift L',
-                accelerator: 'alt shift L'
+                accelerator: shortcut('shift L')
             )
-            action(id:'smallerFontAction',
-                name:'Smaller Font', 
+            action(id: 'smallerFontAction',
+                name: 'Smaller Font',
+                enabled: false,
                 closure: this.&smallerFont, 
                 mnemonic: 'S', 
-                keyStroke: 'alt shift S',
-                accelerator: 'alt shift S'
+                accelerator: shortcut('shift S')
             )
-            action(id:'aboutAction',
-                name:'About', 
+            action(id: 'aboutAction',
+                name: 'About',
                 closure: this.&showAbout, 
                 mnemonic: 'A'
             )
-            action(id:'interruptAction',
+            action(id: 'interruptAction',
                 name: 'Interrupt', 
                 closure: this.&confirmRunInterrupt
             )
         }
 
         frame = swing.frame(
-            title:'GroovyConsole',
-            location:[100,100],
-            size:[500,400],
-            defaultCloseOperation:WindowConstants.DO_NOTHING_ON_CLOSE
+            title: 'GroovyConsole',
+            location: [100,100],
+            size: [500,400],
+            defaultCloseOperation: WindowConstants.DO_NOTHING_ON_CLOSE
         ) {
             menuBar {
-                menu(text:'File', mnemonic: 'F') {
+                menu(text: 'File', mnemonic: 'F') {
                     menuItem(newFileAction)
                     menuItem(newWindowAction)
                     menuItem(openAction)
                     separator()
                     menuItem(saveAction)
+                    menuItem(saveAsAction)
+                    separator()
+                    menuItem(printAction)
                     separator()
                     menuItem(exitAction)
                 }
-                menu(text:'Edit', mnemonic: 'E') {
-                    menuItem(historyNextAction)
-                    menuItem(historyPrevAction)
+
+                menu(text: 'Edit', mnemonic: 'E') {
+                    menuItem(undoAction)
+                    menuItem(redoAction)
                     separator()
-                    menuItem(clearOutputAction)
+                    menuItem(cutAction)
+                    menuItem(copyAction)
+                    menuItem(pasteAction)
+                    separator()
+                    //menuItem(findAction)
+                    //separator()
+                    menuItem(selectAllAction)
                 }
-                menu(text:'Actions', mnemonic: 'A') {
-                    menuItem(runAction)
-                    menuItem(inspectLastAction)
-                    menuItem(inspectVariablesAction)
-                    separator()
-                    checkBoxMenuItem(captureStdOutAction, selected: captureStdOut)
+
+                menu(text: 'View', mnemonic: 'V') {
+                    menuItem(clearOutputAction)
                     separator()
                     menuItem(largerFontAction)
                     menuItem(smallerFontAction)
+                    separator()
+                    checkBoxMenuItem(captureStdOutAction, selected: captureStdOut)
                 }
-                menu(text:'Help', mnemonic: 'H') {
+
+                menu(text: 'History', mnemonic: 'I') {
+                    menuItem(historyPrevAction)
+                    menuItem(historyNextAction)
+                }
+
+                menu(text: 'Script', mnemonic: 'S') {
+                    menuItem(runAction)
+                    separator()
+                    menuItem(inspectLastAction)
+                    menuItem(inspectVariablesAction)
+                }
+
+                menu(text: 'Help', mnemonic: 'H') {
                     menuItem(aboutAction)
                 }
             }
 
             borderLayout()
 
-            splitPane(id:'splitPane', resizeWeight:0.50F,
-                orientation:JSplitPane.VERTICAL_SPLIT, constraints: BorderLayout.CENTER)
+            splitPane(id: 'splitPane', resizeWeight: 0.50F,
+                orientation: JSplitPane.VERTICAL_SPLIT, constraints: BorderLayout.CENTER)
             {
+                widget(widget: inputEditor)
                 scrollPane {
-                    inputArea = textArea(id:'inputArea',
-                        margin: new Insets(3,3,3,3), 
-                        font: new Font('Monospaced', Font.PLAIN,12)
-                    ) { action(runAction) }
-                }
-                scrollPane {
-                    outputArea = textPane(id:'outputArea',
-                        editable:false, 
+                    textPane(id: 'outputArea',
+                        editable: false,
                         background: new Color(255,255,218)
                     )
-                    addStylesToDocument(outputArea)
                 }
             }
 
-            statusLabel = label(id:'status', 
+            label(id: 'status',
                 text: 'Welcome to the Groovy.', 
                 constraints: BorderLayout.SOUTH,
                 border: BorderFactory.createLoweredBevelBorder()
             )
         }   // end of frame
+
+        inputArea = inputEditor.textEditor
+        // attach ctrl-enter to input area
+        swing.widget(inputArea) {
+            action(runAction)
+        }
+        outputArea = swing.outputArea
+        addStylesToDocument(outputArea)
+        statusLabel = swing.status
 
         runWaitDialog = swing.dialog(title: 'Groovy executing', 
                 owner: frame, 
@@ -376,7 +457,7 @@ class Console implements CaretListener {
         }
     }
 
-    private static void beep() {
+    void beep() {
         Toolkit.defaultToolkit.beep()
     }
 
@@ -442,8 +523,17 @@ class Console implements CaretListener {
     // Save file - return false if user cancelled save
     boolean fileSave(EventObject evt = null) {
         if (scriptFile == null) {
-            scriptFile = selectFilename("Save");
+            return fileSaveAs(evt)
+        } else {
+            scriptFile.write(inputArea.text)
+            setDirty(false);
+            return true
         }
+    }
+
+    // Save file - return false if user cancelled save
+    boolean fileSaveAs(EventObject evt = null) {
+        scriptFile = selectFilename("Save");
         if (scriptFile != null) {
             scriptFile.write(inputArea.text)
             setDirty(false);
@@ -671,6 +761,30 @@ class Console implements CaretListener {
             frame.title = "GroovyConsole"
         }
     }
+
+    void invokeTextAction(evt, closure) {
+        def source = evt.getSource()
+        if (source != null) {
+            closure(inputArea)
+        }
+    }
+
+    void cut(EventObject evt = null) {
+        invokeTextAction(evt, { source -> source.cut() })
+    }
+
+    void copy(EventObject evt = null) {
+        invokeTextAction(evt, { source -> source.copy() })
+    }
+
+    void paste(EventObject evt = null) {
+        invokeTextAction(evt, { source -> source.paste() })
+    }
+
+    void selectAll(EventObject evt = null) {
+        invokeTextAction(evt, { source -> source.selectAll() })
+    }
+
 }
 
 /** A single time when the user selected "run" */
