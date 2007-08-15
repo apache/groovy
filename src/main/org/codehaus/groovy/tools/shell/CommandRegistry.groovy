@@ -30,6 +30,9 @@ class CommandRegistry
         assert command
 
         commands << command
+        
+        // Hookup context for alias commands
+        command.registry = this
     }
 
     def leftShift(Command command) {

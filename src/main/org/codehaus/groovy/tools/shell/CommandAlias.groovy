@@ -25,12 +25,14 @@ package org.codehaus.groovy.tools.shell
 class CommandAlias
     extends Command
 {
+    private static final Closure NOOP = {}
+    
     private final MessageSource messages = new MessageSource(this.class)
     
     final String target
     
-    CommandAlias(final String name, final String shortcut, final String target, final Closure function) {
-        super(name, shortcut, function)
+    CommandAlias(final String name, final String shortcut, final String target) {
+        super(name, shortcut, NOOP)
         assert target
         
         this.target = target
@@ -40,8 +42,10 @@ class CommandAlias
         return messages.format('info.alias_to', target)
     }
     
-    //
-    // TODO: Would be really nice to have an execute here to handle the actual
-    //       redirect... but we don't have the registry context to do it :-(
-    //
+    void execute(List args) {
+        def command = registry.find(target)
+        assert command
+        
+        command.execute(args)
+    }
 }

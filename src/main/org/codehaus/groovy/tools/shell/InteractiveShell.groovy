@@ -36,7 +36,9 @@ class InteractiveShell
     implements Runnable
 {
     private static final String NEWLINE = System.properties['line.separator']
-
+    
+    private static final String PROMPT_FORMAT = 'groovy:%03d> '
+    
     private final GroovyLog log = new GroovyLog(this.class)
     
     private final MessageSource messages = new MessageSource(this.class)
@@ -46,7 +48,7 @@ class InteractiveShell
     private final IO io
     
     private final ConsoleReader reader
-
+    
     private final CommandRegistry registry = new CommandRegistry()
 
     private final List buffer = []
@@ -59,35 +61,11 @@ class InteractiveShell
 
         this.io = io
         
-        // Register commands
-        
-        registry << new Command('help', '\\h', {
-            registry.commands.each {
-                io.output.println(sprintf('%10s %s', it.name, it.description))
-            }
-        })
-        
-        registry << new CommandAlias('?', '\\?', 'help', {
-            registry.find('help').execute()
-        })
-        
-        registry << new Command('reset', '\\r', {
-            buffer.clear()
-            
-            if (verbose) {
-                io.output.println('Buffer cleared')
-            }
-        })
+        registerCommands()
         
         // Initialize the JLine console input reader
         reader = new ConsoleReader(io.inputStream, io.output)
         
-        //
-        // TODO: Create dynamic prompt
-        //
-        
-        reader.defaultPrompt = 'groovy> '
-
         // Add some completors to fancy things up
         reader.addCompletor(new CommandNameCompletor(registry))
         
@@ -112,7 +90,27 @@ class InteractiveShell
     InteractiveShell() {
         this(new IO())
     }
-
+    
+    private void registerCommands() {
+        registry << new Command('help', '\\h', {
+            io.output.println('Available commands:')
+            
+            registry.commands.each {
+                io.output.println(sprintf('%10s %s', it.name, it.description))
+            }
+        })
+        
+        registry << new CommandAlias('?', '\\?', 'help')
+        
+        registry << new Command('reset', '\\r', {
+            buffer.clear()
+            
+            if (verbose) {
+                io.output.println('Buffer cleared')
+            }
+        })
+    }
+    
     int run(String[] args) {
         try {
             processCommandLine(args)
@@ -175,14 +173,19 @@ class InteractiveShell
         io.output.println(messages.format('startup_banner.0', InvokerHelper.version, System.properties['java.vm.version']))
         io.output.println(messages['startup_banner.1'])
     }
-
+    
+    private String getPrompt() {
+        return sprintf(PROMPT_FORMAT, buffer.size())
+    }
+    
     void run() {
         log.debug('Running')
 
         displayBanner()
 
         while (true) {
-            def line = reader.readLine()
+            def line = reader.readLine(prompt)
+            
             log.debug("Read line: $line")
 
             // Stop on null
