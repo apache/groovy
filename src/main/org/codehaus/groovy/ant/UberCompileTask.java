@@ -17,7 +17,11 @@
 package org.codehaus.groovy.ant;
 
 import org.apache.tools.ant.BuildException;
+import org.apache.tools.ant.Task;
 import org.apache.tools.ant.taskdefs.Javac;
+import org.apache.tools.ant.types.Path;
+import org.apache.tools.ant.types.Reference;
+import org.codehaus.groovy.control.CompilerConfiguration;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,15 +33,86 @@ import java.io.IOException;
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 public class UberCompileTask
-    extends CompileTaskSupport
+    extends Task
 {
     private final LoggingHelper log = new LoggingHelper(this);
 
+    protected Path src;
+
+    protected File destdir;
+
+    protected Path classpath;
+    
     private GenerateStubsTask genStubsTask;
 
     private GroovycTask groovycTask;
 
     private Javac javacTask;
+
+    public Path createSrc() {
+        if (src == null) {
+            src = new Path(getProject());
+        }
+        return src.createPath();
+    }
+
+    public void setSrcdir(final Path srcDir) {
+        if (src == null) {
+            src = srcDir;
+        }
+        else {
+            src.append(srcDir);
+        }
+    }
+
+    public Path getSrcdir() {
+        return src;
+    }
+
+    public void setDestdir(final File dir) {
+        assert dir != null;
+
+        this.destdir = dir;
+    }
+
+    public void setClasspath(final Path path) {
+        if (classpath == null) {
+            classpath = path;
+        }
+        else {
+            classpath.append(path);
+        }
+    }
+
+    public Path getClasspath() {
+        return classpath;
+    }
+
+    public Path createClasspath() {
+        if (classpath == null) {
+            classpath = new Path(getProject());
+        }
+
+        return classpath.createPath();
+    }
+
+    public void setClasspathRef(final Reference r) {
+        createClasspath().setRefid(r);
+    }
+
+    protected void validate() throws BuildException {
+        if (src == null) {
+            throw new BuildException("Missing attribute: srcdir (or one or more nested <src> elements).", getLocation());
+        }
+
+        if (destdir == null) {
+            throw new BuildException("Missing attribute: destdir", getLocation());
+        }
+
+        if (!destdir.exists()) {
+            throw new BuildException("Destination directory does not exist: " + destdir, getLocation());
+        }
+    }
 
     public GenerateStubsTask createGeneratestubs() {
         if (genStubsTask == null) {
@@ -68,7 +143,6 @@ public class UberCompileTask
 
         GenerateStubsTask genstubs = createGeneratestubs();
         genstubs.classpath = classpath;
-        genstubs.config = config;
         genstubs.src = src;
         if (genstubs.destdir == null) {
             genstubs.destdir = createTempDir();
@@ -84,7 +158,6 @@ public class UberCompileTask
 
         GroovycTask groovyc = createGroovyc();
         groovyc.classpath = classpath;
-        groovyc.config = config;
         groovyc.src = src;
         groovyc.destdir = destdir;
         
