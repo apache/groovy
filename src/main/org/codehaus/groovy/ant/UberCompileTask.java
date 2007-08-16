@@ -49,11 +49,11 @@ public class UberCompileTask
 
     protected Path classpath;
     
-    private GenerateStubsTask genStubsTask;
+    private GenStubsAdapter genStubsTask;
 
-    private GroovycTask groovycTask;
+    private GroovycAdapter groovycTask;
 
-    private AccessibleJavac javacTask;
+    private JavacAdapter javacTask;
 
     public Path createSrc() {
         if (src == null) {
@@ -120,25 +120,25 @@ public class UberCompileTask
         }
     }
 
-    public GenerateStubsTask createGeneratestubs() {
+    public GenStubsAdapter createGeneratestubs() {
         if (genStubsTask == null) {
-            genStubsTask = new GenerateStubsTask();
+            genStubsTask = new GenStubsAdapter();
             genStubsTask.setProject(getProject());
         }
         return genStubsTask;
     }
 
-    public GroovycTask createGroovyc() {
+    public GroovycAdapter createGroovyc() {
         if (groovycTask == null) {
-            groovycTask = new GroovycTask();
+            groovycTask = new GroovycAdapter();
             groovycTask.setProject(getProject());
         }
         return groovycTask;
     }
 
-    public AccessibleJavac createJavac() {
+    public JavacAdapter createJavac() {
         if (javacTask == null) {
-            javacTask = new AccessibleJavac();
+            javacTask = new JavacAdapter();
             javacTask.setProject(getProject());
         }
         return javacTask;
@@ -149,7 +149,7 @@ public class UberCompileTask
 
         FileSet fileset;
         
-        GenerateStubsTask genstubs = createGeneratestubs();
+        GenStubsAdapter genstubs = createGeneratestubs();
         genstubs.classpath = classpath;
         genstubs.src = src;
         if (genstubs.destdir == null) {
@@ -165,7 +165,7 @@ public class UberCompileTask
         // Append the stubs dir to the classpath for other tasks
         classpath.createPathElement().setLocation(genstubs.destdir);
 
-        AccessibleJavac javac = createJavac();
+        JavacAdapter javac = createJavac();
         javac.setSrcdir(src);
         javac.setDestdir(destdir);
         javac.setClasspath(classpath);
@@ -175,7 +175,7 @@ public class UberCompileTask
             genstubs.createInclude().setName("**/*.java");
         }
 
-        GroovycTask groovyc = createGroovyc();
+        GroovycAdapter groovyc = createGroovyc();
         groovyc.classpath = classpath;
         groovyc.src = src;
         groovyc.destdir = destdir;
@@ -206,17 +206,42 @@ public class UberCompileTask
     }
 
     //
-    // AccessibleJavac
+    // Nested task adapters
     //
+    
+    private class GenStubsAdapter
+        extends GenerateStubsTask
+    {
+        public FileSet getFileSet() {
+            return super.getImplicitFileSet();
+        }
 
-    /**
-     * Simple sub-class to allow access to the matching tasks fileset.
-     */
-    private static class AccessibleJavac
+        public String getTaskName() {
+            return UberCompileTask.this.getTaskName() + ":genstubs";
+        }
+    }
+
+    private class JavacAdapter
         extends Javac
     {
         public FileSet getFileSet() {
             return super.getImplicitFileSet();
-        }    
+        }
+
+        public String getTaskName() {
+            return UberCompileTask.this.getTaskName() + ":javac";
+        }
+    }
+
+    private class GroovycAdapter
+        extends GroovycTask
+    {
+        public FileSet getFileSet() {
+            return super.getImplicitFileSet();
+        }
+
+        public String getTaskName() {
+            return UberCompileTask.this.getTaskName() + ":groovyc";
+        }
     }
 }
