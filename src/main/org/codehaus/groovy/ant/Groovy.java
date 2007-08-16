@@ -53,8 +53,13 @@ import org.codehaus.groovy.tools.ErrorReporter;
  * <p>Statements can
  * either be read in from a text file using the <i>src</i> attribute or from
  * between the enclosing groovy tags.</p>
+ *
+ * @version $Id$
  */
-public class Groovy extends Task {
+public class Groovy extends Task
+{
+    private final LoggingHelper log = new LoggingHelper(this);
+
     /**
      * files to load
      */
@@ -182,7 +187,7 @@ public class Groovy extends Task {
      * Load the file and then execute it
      */
     public void execute() throws BuildException {
-        log("execute()", Project.MSG_VERBOSE);
+        log.debug("execute()");
 
         command = command.trim();
 
@@ -208,8 +213,8 @@ public class Groovy extends Task {
             PrintStream out = System.out;
             try {
                 if (output != null) {
-                    log("Opening PrintStream to output file " + output,
-                        Project.MSG_VERBOSE);
+                    log.verbose("Opening PrintStream to output file " + output);
+                    
                     out = new PrintStream(
                               new BufferedOutputStream(
                                   new FileOutputStream(output
@@ -240,7 +245,7 @@ public class Groovy extends Task {
             throw new BuildException(e, getLocation());
         }
 
-        log("statements executed successfully", Project.MSG_VERBOSE);
+        log.verbose("statements executed successfully");
     }
 
 
@@ -263,8 +268,8 @@ public class Groovy extends Task {
      */
     protected void runStatements(Reader reader, PrintStream out)
         throws IOException {
-        log("runStatements()", Project.MSG_VERBOSE);
-
+        log.debug("runStatements()");
+        
         StringBuffer txt = new StringBuffer();
         String line = "";
 
@@ -288,14 +293,14 @@ public class Groovy extends Task {
      * Exec the statement.
      */
     protected void execGroovy(final String txt, final PrintStream out) {
-        log("execGroovy()", Project.MSG_VERBOSE);
+        log.debug("execGroovy()");
 
         // Check and ignore empty statements
         if ("".equals(txt.trim())) {
             return;
         }
 
-        log("Groovy: " + txt, Project.MSG_VERBOSE);
+        log.verbose("Groovy: " + txt);
 
         //log(getClasspath().toString(),Project.MSG_VERBOSE);
         Object mavenPom = null;
@@ -365,7 +370,7 @@ public class Groovy extends Task {
      * print any results in the statement.
      */
     protected void printResults(PrintStream out) {
-        log("printResults()", Project.MSG_VERBOSE);
+        log.debug("printResults()");
         StringBuffer line = new StringBuffer();
         out.println(line);
         line = new StringBuffer();

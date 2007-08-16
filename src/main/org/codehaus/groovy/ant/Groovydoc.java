@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 package org.codehaus.groovy.ant;
+
 import java.io.File;
 import java.io.FilenameFilter;
 import java.util.ArrayList;
@@ -24,7 +25,6 @@ import java.util.StringTokenizer;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.DirectoryScanner;
-import org.apache.tools.ant.Project;
 import org.apache.tools.ant.Task;
 import org.apache.tools.ant.types.DirSet;
 import org.apache.tools.ant.types.Path;
@@ -33,7 +33,15 @@ import org.codehaus.groovy.tools.groovydoc.ClasspathResourceManager;
 import org.codehaus.groovy.tools.groovydoc.FileOutputTool;
 import org.codehaus.groovy.tools.groovydoc.GroovyDocTool;
 
-public class Groovydoc extends Task {
+/**
+ * Access to the GroovyDoc tool from Ant.
+ *
+ * @version $Id$
+ */
+public class Groovydoc extends Task
+{
+    private final LoggingHelper log = new LoggingHelper(this);
+    
     private Path sourcePath;
     private File destDir;
     private List packageNames;
@@ -170,8 +178,7 @@ public class Groovydoc extends Task {
                     ds.createPatternSet().addConfiguredPatternset(ps);
                     dirSets.add(ds);
                 } else {
-                    log("Skipping " + pathElements[i]
-                        + " since it is no directory.", Project.MSG_WARN);
+                    log.warn("Skipping " + pathElements[i] + " since it is no directory.");
                 }
             }
         }
@@ -180,7 +187,7 @@ public class Groovydoc extends Task {
         while (itr3.hasNext()) {
             DirSet ds = (DirSet) itr3.next();
             File baseDir = ds.getDir(getProject());
-            log("scanning " + baseDir + " for packages.", Project.MSG_DEBUG);
+            log.debug("scanning " + baseDir + " for packages.");
             DirectoryScanner dsc = ds.getDirectoryScanner(getProject());
             String[] dirs = dsc.getIncludedDirectories();
             boolean containsPackages = false;
@@ -207,11 +214,10 @@ public class Groovydoc extends Task {
                 
                 if (files.length > 0) {
                     if ("".equals(dirs[i])) {
-                        log(baseDir
+                        log.warn(baseDir
                             + " contains source files in the default package,"
                             + " you must specify them as source files"
-                            + " not packages.",
-                            Project.MSG_WARN);
+                            + " not packages.");
                     } else {
                         containsPackages = true;
                         String packageName =
@@ -228,8 +234,7 @@ public class Groovydoc extends Task {
                 // Path.list does it for us.
                 sp.createPathElement().setLocation(baseDir);
             } else {
-                log(baseDir + " doesn\'t contain any packages, dropping it.",
-                    Project.MSG_VERBOSE);
+                log.verbose(baseDir + " doesn\'t contain any packages, dropping it.");
             }
         }
     }
