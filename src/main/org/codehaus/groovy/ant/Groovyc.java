@@ -16,26 +16,8 @@
 package org.codehaus.groovy.ant;
 
 import groovy.lang.GroovyClassLoader;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.nio.charset.Charset;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.OptionBuilder;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
-import org.apache.commons.cli.PosixParser;
-import org.apache.tools.ant.AntClassLoader;
-import org.apache.tools.ant.BuildException;
-import org.apache.tools.ant.DirectoryScanner;
-import org.apache.tools.ant.Project;
+import org.apache.commons.cli.*;
+import org.apache.tools.ant.*;
 import org.apache.tools.ant.listener.AnsiColorLogger;
 import org.apache.tools.ant.taskdefs.MatchingTask;
 import org.apache.tools.ant.types.Path;
@@ -46,6 +28,16 @@ import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.tools.ErrorReporter;
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.nio.charset.Charset;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -70,7 +62,9 @@ import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit;
  * @author Hein Meling
  * @version $Revision$ 
  */
-public class Groovyc extends MatchingTask {
+public class Groovyc extends MatchingTask
+{
+    private final LoggingHelper log = new LoggingHelper(this);
 
     private Path src;
     private File destDir;
@@ -88,7 +82,10 @@ public class Groovyc extends MatchingTask {
     public static void main(String[] args) {
 
         Project project = new Project();
-        project.addBuildListener(new AnsiColorLogger());
+        DefaultLogger logger = new AnsiColorLogger();
+        logger.setMessageOutputLevel(Project.MSG_INFO);
+        project.addBuildListener(logger);
+        // project.init();
         
         Groovyc compiler = new Groovyc();
         compiler.setProject(project);
@@ -470,62 +467,56 @@ public class Groovyc extends MatchingTask {
     }
 
     protected void compile() {
+        if (compileList.length == 0) {
+            log.info("No sources to compile");
+            return;
+        }
 
-        if (compileList.length > 0) {
-            log(
-                "Compiling "
-                    + compileList.length
-                    + " source file"
-                    + (compileList.length == 1 ? "" : "s")
-                    + (destDir != null ? " to " + destDir : ""));
+        log.info("Compiling " + compileList.length +
+                " source file" + (compileList.length == 1 ? "" : "s") +
+                " to " + destDir);
 
-            if (listFiles) {
-                for (int i = 0; i < compileList.length; i++) {
-                    String filename = compileList[i].getAbsolutePath();
+        if (listFiles) {
+            for (int i = 0; i < compileList.length; i++) {
+                String filename = compileList[i].getAbsolutePath();
+                log.info("    " + filename);
+            }
+        }
 
-                    // TODO this logging does not seem to appear in the maven build??
-                    // COMMENT Hein: This is not ant's problem;
-                    // fix it in maven instead if you really need this from maven!
-                    log(filename);
-//                    System.out.println("compiling: " + filename);
-                }
+        try {
+            Path classpath = getClasspath();
+            if (classpath != null) {
+                configuration.setClasspath(classpath.toString());
+            }
+            configuration.setTargetDirectory(destDir);
+
+            if (encoding != null) {
+                configuration.setSourceEncoding(encoding);
             }
 
-            try {
-                Path classpath = getClasspath();
-                if (classpath != null) {
-                    configuration.setClasspath(classpath.toString());
-                }
-                configuration.setTargetDirectory(destDir);
-
-                if (encoding != null) {
-                    configuration.setSourceEncoding(encoding);
-                }
-
-                CompilationUnit unit;
-                if (jointCompilation) {
-                    unit = new JavaAwareCompilationUnit(configuration, buildClassLoaderFor());
-                } else {
-                    unit = new CompilationUnit(configuration, null, buildClassLoaderFor());
-                }
-
-                unit.addSources(compileList);
-                unit.compile();
+            CompilationUnit unit;
+            if (jointCompilation) {
+                unit = new JavaAwareCompilationUnit(configuration, buildClassLoaderFor());
+            } else {
+                unit = new CompilationUnit(configuration, null, buildClassLoaderFor());
             }
-            catch (Exception e) {
 
-                StringWriter writer = new StringWriter();
-                new ErrorReporter( e, false ).write( new PrintWriter(writer) );
-                String message = writer.toString();
+            unit.addSources(compileList);
+            unit.compile();
+        }
+        catch (Exception e) {
 
-                if (failOnError) {
-                    throw new BuildException(message, e, getLocation());
-                }
-                else {
-                    log(message, Project.MSG_ERR);
-                }
+            StringWriter writer = new StringWriter();
+            new ErrorReporter( e, false ).write( new PrintWriter(writer) );
+            String message = writer.toString();
 
+            if (failOnError) {
+                throw new BuildException(message, e, getLocation());
             }
+            else {
+                log(message, Project.MSG_ERR);
+            }
+
         }
     }
     
