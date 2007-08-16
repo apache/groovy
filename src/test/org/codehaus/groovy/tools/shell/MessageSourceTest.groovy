@@ -19,51 +19,32 @@
 
 package org.codehaus.groovy.tools.shell
 
-import java.util.ResourceBundle
-
-//
-// TODO: Move to groovy.util once new groovysh bits are cleaned up and integrated
-//
-
 /**
- * Message source backed up by a {@link java.util.ResourceBundle}.
+ * Unit tests for the {@link MessageSource} class.
  *
  * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
-class MessageSource
+class MessageSourceTest
+    extends GroovyTestCase
 {
-    private final ResourceBundle bundle
+    MessageSource messages
 
-    MessageSource(final String name) {
-        assert name
-
-        bundle = ResourceBundle.getBundle(name)
-    }
-
-    MessageSource(final Class type) {
-        this(type.name)
-    }
-
-    MessageSource(final Object obj) {
-        this(obj.class)
+    void setUp() {
+        messages = new MessageSource(this.class)
     }
     
-    String getMessage(final String code) {
-        assert code
-        
-        return bundle.getString(code)
-    }
+    void testLoadAndGetMessage() {
+        def a = messages['a']
+        assert '1' == a
 
-    String format(final String code, final Object[] args) {
-        assert args
-        
-        String pattern = getMessage(code)
+        def b = messages['b']
+        assert '2' == b
 
-        return sprintf(pattern, args)
-    }
+        def c = messages['c']
+        assert '3' == c
 
-    Object getProperty(final String name) {
-        return getMessage(name)
+        def f = messages.format('f', a, b, c)
+        assert '1 2 3' == f
     }
 }
