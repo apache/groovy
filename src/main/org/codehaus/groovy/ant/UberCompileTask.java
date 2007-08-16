@@ -106,20 +106,6 @@ public class UberCompileTask
         createClasspath().setRefid(r);
     }
 
-    protected void validate() throws BuildException {
-        if (src == null) {
-            throw new BuildException("Missing attribute: srcdir (or one or more nested <src> elements).", getLocation());
-        }
-
-        if (destdir == null) {
-            throw new BuildException("Missing attribute: destdir", getLocation());
-        }
-
-        if (!destdir.exists()) {
-            throw new BuildException("Destination directory does not exist: " + destdir, getLocation());
-        }
-    }
-
     public GenStubsAdapter createGeneratestubs() {
         if (genStubsTask == null) {
             genStubsTask = new GenStubsAdapter();
@@ -144,6 +130,20 @@ public class UberCompileTask
         return javacTask;
     }
 
+    protected void validate() throws BuildException {
+        if (src == null) {
+            throw new BuildException("Missing attribute: srcdir (or one or more nested <src> elements).", getLocation());
+        }
+
+        if (destdir == null) {
+            throw new BuildException("Missing attribute: destdir", getLocation());
+        }
+
+        if (!destdir.exists()) {
+            throw new BuildException("Destination directory does not exist: " + destdir, getLocation());
+        }
+    }
+    
     public void execute() throws BuildException {
         validate();
 
