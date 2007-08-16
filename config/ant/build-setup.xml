@@ -27,7 +27,7 @@ $Date: 2007-03-11 19:14:07 +1000 (Sun, 11 Mar 2007) $
     <property name="testSourceDirectory" value="${sourceDirectory}/test"/>
     <property name="toolsSourceDirectory" location="${sourceDirectory}/tools"/>
     <property name="examplesSourceDirectory" location="${sourceDirectory}/examples"/>
-
+    
     <property name="targetDirectory" value="target"/>
     <property name="installDirectory" value="${targetDirectory}/install"/>
     <property name="cruiseReportRootDirectory" value="${targetDirectory}/root"/>
@@ -36,12 +36,15 @@ $Date: 2007-03-11 19:14:07 +1000 (Sun, 11 Mar 2007) $
     <property name="mainClassesDirectory" value="${targetDirectory}/classes"/>
     <property name="testClassesDirectory" value="${targetDirectory}/test-classes"/>
     <property name="toolsClassesDirectory" value="${targetDirectory}/tools-classes"/>
+    <property name="mainStubsDirectory" value="${targetDirectory}/stubs"/>
+    <property name="testStubsDirectory" value="${targetDirectory}/test-stubs"/>
+    
     <property name="examplesClassesDirectory" value="${targetDirectory}/examples-classes"/>
     <property name="instrumentedClassesDirectory" value="${targetDirectory}/instrumented-classes"/>
     <property name="reportsDirectory" value="${targetDirectory}/reports"/>
     <property name="targetLibDirectory" value="${targetDirectory}/lib"/>
     <property name="targetDistDirectory" value="${targetDirectory}/dist"/>
-
+    
     <property name="antlrDirectory" value="${mainSourceDirectory}/org/codehaus/groovy/antlr"/>
     <property name="groovyParserDirectory" value="${antlrDirectory}/parser"/>
     <property name="javaParserDirectory" value="${antlrDirectory}/java"/>
