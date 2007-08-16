@@ -185,8 +185,6 @@ public class UberCompileTask
             genstubs.createInclude().setName("**/*.groovy");
         }
 
-        log.info("Compiling...");
-
         // Invoke each task in the right order
         genstubs.execute();
         javac.execute();
