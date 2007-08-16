@@ -148,6 +148,10 @@ public class UberCompileTask
             genstubs.destdir = createTempDir();
         }
 
+        //
+        // TODO: Make genstubs includes **/*.java,**/*.groovy by default
+        //
+        
         // Append the stubs dir to the classpath for other tasks
         classpath.createPathElement().setLocation(genstubs.destdir);
 
@@ -156,11 +160,19 @@ public class UberCompileTask
         javac.setDestdir(destdir);
         javac.setClasspath(classpath);
 
+        //
+        // TODO: Make javac includes **/*.java by default
+        //
+
         GroovycTask groovyc = createGroovyc();
         groovyc.classpath = classpath;
         groovyc.src = src;
         groovyc.destdir = destdir;
-        
+
+        //
+        // TODO: Make groovyc includes **/*.groovy by default
+        //
+
         log.info("Compiling...");
 
         // Invoke each task in the right order
