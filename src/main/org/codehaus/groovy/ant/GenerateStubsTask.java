@@ -20,11 +20,7 @@ import groovy.lang.GroovyClassLoader;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.DirectoryScanner;
-import org.apache.tools.ant.taskdefs.MatchingTask;
-import org.apache.tools.ant.types.Path;
-import org.apache.tools.ant.types.Reference;
 
-import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.Phases;
 import org.codehaus.groovy.tools.javac.JavaStubCompilationUnit;
 
@@ -37,93 +33,12 @@ import java.io.File;
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 public class GenerateStubsTask
-    extends MatchingTask
+    extends CompileTaskSupport
 {
-    private final LoggingHelper log = new LoggingHelper(this);
-
-    private Path src;
-    
-    private File destdir;
-
-    private Path classpath;
-
-    public Path createSrc() {
-        if (src == null) {
-            src = new Path(getProject());
-        }
-        return src.createPath();
-    }
-
-    public void setSrcdir(final Path srcDir) {
-        if (src == null) {
-            src = srcDir;
-        }
-        else {
-            src.append(srcDir);
-        }
-    }
-
-    public Path getSrcdir() {
-        return src;
-    }
-
-    public void setDestdir(final File dir) {
-        assert dir != null;
-        
-        this.destdir = dir;
-    }
-
-    public void setClasspath(final Path path) {
-        if (classpath == null) {
-            classpath = path;
-        }
-        else {
-            classpath.append(path);
-        }
-    }
-
-    public Path getClasspath() {
-        return classpath;
-    }
-
-    public Path createClasspath() {
-        if (classpath == null) {
-            classpath = new Path(getProject());
-        }
-
-        return classpath.createPath();
-    }
-
-    public void setClasspathRef(final Reference r) {
-        createClasspath().setRefid(r);
-    }
-
-    private void validate() throws BuildException {
-        if (src == null) {
-            throw new BuildException("Missing attribute: srcdir (or one or more nested <src> elements).", getLocation());
-        }
-
-        if (destdir == null) {
-            throw new BuildException("Missing attribute: destdir", getLocation());
-        }
-        
-        if (!destdir.exists()) {
-            throw new BuildException("Destination directory does not exist: " + destdir, getLocation());
-        }
-    }
-
     public void execute() throws BuildException {
         validate();
 
-        CompilerConfiguration config = new CompilerConfiguration();
-
-        ClassLoader parent = ClassLoader.getSystemClassLoader();
-        GroovyClassLoader gcl = new GroovyClassLoader(parent, config);
-
-        if (classpath != null) {
-            gcl.addClasspath(classpath.toString());
-        }
-
+        GroovyClassLoader gcl = createClassLoader();
         JavaStubCompilationUnit compilation = new JavaStubCompilationUnit(config, gcl, destdir);
 
         int count = 0;
