@@ -25,11 +25,8 @@ import org.apache.tools.ant.util.GlobPatternMapper;
 import org.apache.tools.ant.util.SourceFileScanner;
 
 import org.codehaus.groovy.control.CompilationUnit;
-import org.codehaus.groovy.tools.ErrorReporter;
 
 import java.io.File;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 
 /**
  * Compiles Groovy source files.
@@ -40,42 +37,6 @@ import java.io.StringWriter;
 public class GroovycTask
     extends CompileTaskSupport
 {
-    private final LoggingHelper log = new LoggingHelper(this);
-
-    protected boolean failOnError = true;
-
-    public void setFailonerror(boolean fail) {
-        failOnError = fail;
-    }
-
-    public void setProceed(boolean proceed) {
-        failOnError = !proceed;
-    }
-
-    public boolean getFailonerror() {
-        return failOnError;
-    }
-
-    public void execute() throws BuildException {
-        validate();
-
-        try {
-            compile();
-        }
-        catch (Exception e) {
-            StringWriter writer = new StringWriter();
-            new ErrorReporter(e, false).write(new PrintWriter(writer));
-            String message = writer.toString();
-
-            if (failOnError) {
-                throw new BuildException(message, e, getLocation());
-            }
-            else {
-                log.error(message);
-            }
-        }
-    }
-
     protected void compile() {
         Path path = getClasspath();
         if (path != null) {

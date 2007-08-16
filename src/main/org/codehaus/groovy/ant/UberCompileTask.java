@@ -62,12 +62,14 @@ public class UberCompileTask
         return src.createPath();
     }
 
-    public void setSrcdir(final Path srcDir) {
+    public void setSrcdir(final Path dir) {
+        assert dir != null;
+
         if (src == null) {
-            src = srcDir;
+            src = dir;
         }
         else {
-            src.append(srcDir);
+            src.append(dir);
         }
     }
 
@@ -82,6 +84,8 @@ public class UberCompileTask
     }
 
     public void setClasspath(final Path path) {
+        assert path != null;
+        
         if (classpath == null) {
             classpath = path;
         }
@@ -103,6 +107,8 @@ public class UberCompileTask
     }
 
     public void setClasspathRef(final Reference r) {
+        assert r != null;
+
         createClasspath().setRefid(r);
     }
 

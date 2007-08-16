@@ -27,7 +27,7 @@ import org.codehaus.groovy.tools.javac.JavaStubCompilationUnit;
 import java.io.File;
 
 /**
- * Ant task to generate Java stubs from Groovy sources.
+ * Generates Java stubs from Groovy sources.
  *
  * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
@@ -35,9 +35,7 @@ import java.io.File;
 public class GenerateStubsTask
     extends CompileTaskSupport
 {
-    public void execute() throws BuildException {
-        validate();
-
+    protected void compile() {
         GroovyClassLoader gcl = createClassLoader();
         JavaStubCompilationUnit compilation = new JavaStubCompilationUnit(config, gcl, destdir);
 

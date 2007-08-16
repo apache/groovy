@@ -24,8 +24,11 @@ import org.apache.tools.ant.types.Path;
 import org.apache.tools.ant.types.Reference;
 
 import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.tools.ErrorReporter;
 
 import java.io.File;
+import java.io.StringWriter;
+import java.io.PrintWriter;
 
 /**
  * Support for compilation related tasks.
@@ -46,6 +49,16 @@ public abstract class CompileTaskSupport
 
     protected CompilerConfiguration config = new CompilerConfiguration();
 
+    protected boolean failOnError = true;
+
+    public void setFailonerror(final boolean fail) {
+        failOnError = fail;
+    }
+
+    public boolean getFailonerror() {
+        return failOnError;
+    }
+
     public Path createSrc() {
         if (src == null) {
             src = new Path(getProject());
@@ -53,12 +66,14 @@ public abstract class CompileTaskSupport
         return src.createPath();
     }
 
-    public void setSrcdir(final Path srcDir) {
+    public void setSrcdir(final Path dir) {
+        assert dir != null;
+
         if (src == null) {
-            src = srcDir;
+            src = dir;
         }
         else {
-            src.append(srcDir);
+            src.append(dir);
         }
     }
 
@@ -73,6 +88,8 @@ public abstract class CompileTaskSupport
     }
 
     public void setClasspath(final Path path) {
+        assert path != null;
+
         if (classpath == null) {
             classpath = path;
         }
@@ -94,6 +111,8 @@ public abstract class CompileTaskSupport
     }
 
     public void setClasspathRef(final Reference r) {
+        assert r != null;
+        
         createClasspath().setRefid(r);
     }
 
@@ -126,4 +145,32 @@ public abstract class CompileTaskSupport
 
         return gcl;
     }
+
+    protected void handleException(final Exception e) throws BuildException {
+        assert e != null;
+        
+        StringWriter writer = new StringWriter();
+        new ErrorReporter(e, false).write(new PrintWriter(writer));
+        String message = writer.toString();
+
+        if (failOnError) {
+            throw new BuildException(message, e, getLocation());
+        }
+        else {
+            log.error(message);
+        }
+    }
+
+    public void execute() throws BuildException {
+        validate();
+
+        try {
+            compile();
+        }
+        catch (Exception e) {
+            handleException(e);
+        }
+    }
+
+    protected abstract void compile() throws Exception;
 }
