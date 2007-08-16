@@ -43,12 +43,12 @@ public class UberCompileTask
 {
     private final LoggingHelper log = new LoggingHelper(this);
 
-    protected Path src;
+    private Path src;
 
-    protected File destdir;
+    private File destdir;
 
-    protected Path classpath;
-    
+    private Path classpath;
+
     private GenStubsAdapter genStubsTask;
 
     private GroovycAdapter groovycTask;
