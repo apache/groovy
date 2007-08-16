@@ -154,7 +154,7 @@ class Console implements CaretListener {
             action(id: 'exitAction',
                 name: 'Exit',
                 closure: this.&exit, 
-                mnemonic: 'X', 
+                mnemonic: 'X',
                 // whether or not application exit should have an
                 // accellerator is debatable in usability circles
                 // at the very least a confirm dialog should dhow up
@@ -247,15 +247,13 @@ class Console implements CaretListener {
             )
             action(id: 'largerFontAction',
                 name: 'Larger Font',
-                enabled: false,
                 closure: this.&largerFont,
                 mnemonic: 'L', 
                 accelerator: shortcut('shift L')
             )
             action(id: 'smallerFontAction',
                 name: 'Smaller Font',
-                enabled: false,
-                closure: this.&smallerFont, 
+                closure: this.&smallerFont,
                 mnemonic: 'S', 
                 accelerator: shortcut('shift S')
             )

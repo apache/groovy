@@ -133,10 +133,6 @@ public class GroovyFilter extends StructuredSyntaxDocumentFilter {
     private void init() {
         StyleContext styleContext = StyleContext.getDefaultStyleContext();
         Style defaultStyle = styleContext.getStyle(StyleContext.DEFAULT_STYLE);
-        StyleConstants.setFontFamily(defaultStyle,
-        		                     StructuredSyntaxResources.EDITOR_FONT.getFamily());
-        StyleConstants.setFontSize(defaultStyle,
-        						   StructuredSyntaxResources.EDITOR_FONT.getSize());
         
         Style comment = styleContext.addStyle(COMMENT, defaultStyle);
         StyleConstants.setForeground(comment, COMMENT_COLOR);
