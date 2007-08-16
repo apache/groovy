@@ -17,16 +17,12 @@
 package org.codehaus.groovy.ant;
 
 import groovy.lang.GroovyClassLoader;
-
 import org.apache.tools.ant.BuildException;
-import org.apache.tools.ant.DirectoryScanner;
 import org.apache.tools.ant.taskdefs.MatchingTask;
+import org.apache.tools.ant.types.FileSet;
 import org.apache.tools.ant.types.Path;
 import org.apache.tools.ant.types.Reference;
-
 import org.codehaus.groovy.control.CompilerConfiguration;
-import org.codehaus.groovy.control.Phases;
-import org.codehaus.groovy.tools.javac.JavaStubCompilationUnit;
 
 import java.io.File;
 
@@ -48,6 +44,10 @@ public abstract class CompileTaskSupport
     protected Path classpath;
 
     protected CompilerConfiguration config = new CompilerConfiguration();
+
+    public FileSet getFileSet() {
+        return super.getImplicitFileSet();
+    }
 
     public Path createSrc() {
         if (src == null) {

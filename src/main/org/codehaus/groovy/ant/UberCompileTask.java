@@ -19,6 +19,7 @@ package org.codehaus.groovy.ant;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Task;
 import org.apache.tools.ant.taskdefs.Javac;
+import org.apache.tools.ant.types.FileSet;
 import org.apache.tools.ant.types.Path;
 import org.apache.tools.ant.types.Reference;
 
@@ -52,7 +53,7 @@ public class UberCompileTask
 
     private GroovycTask groovycTask;
 
-    private Javac javacTask;
+    private AccessibleJavac javacTask;
 
     public Path createSrc() {
         if (src == null) {
@@ -135,9 +136,9 @@ public class UberCompileTask
         return groovycTask;
     }
 
-    public Javac createJavac() {
+    public AccessibleJavac createJavac() {
         if (javacTask == null) {
-            javacTask = new Javac();
+            javacTask = new AccessibleJavac();
             javacTask.setProject(getProject());
         }
         return javacTask;
@@ -146,6 +147,8 @@ public class UberCompileTask
     public void execute() throws BuildException {
         validate();
 
+        FileSet fileset;
+        
         GenerateStubsTask genstubs = createGeneratestubs();
         genstubs.classpath = classpath;
         genstubs.src = src;
@@ -153,30 +156,34 @@ public class UberCompileTask
             genstubs.destdir = createTempDir();
         }
 
-        //
-        // TODO: Make genstubs includes **/*.java,**/*.groovy by default
-        //
-        
+        fileset = genstubs.getFileSet();
+        if (!fileset.hasPatterns()) {
+            genstubs.createInclude().setName("**/*.java");
+            genstubs.createInclude().setName("**/*.groovy");
+        }
+                
         // Append the stubs dir to the classpath for other tasks
         classpath.createPathElement().setLocation(genstubs.destdir);
 
-        Javac javac = createJavac();
+        AccessibleJavac javac = createJavac();
         javac.setSrcdir(src);
         javac.setDestdir(destdir);
         javac.setClasspath(classpath);
 
-        //
-        // TODO: Make javac includes **/*.java by default
-        //
+        fileset = javac.getFileSet();
+        if (!fileset.hasPatterns()) {
+            genstubs.createInclude().setName("**/*.java");
+        }
 
         GroovycTask groovyc = createGroovyc();
         groovyc.classpath = classpath;
         groovyc.src = src;
         groovyc.destdir = destdir;
 
-        //
-        // TODO: Make groovyc includes **/*.groovy by default
-        //
+        fileset = groovyc.getFileSet();
+        if (!fileset.hasPatterns()) {
+            genstubs.createInclude().setName("**/*.groovy");
+        }
 
         log.info("Compiling...");
 
@@ -196,5 +203,20 @@ public class UberCompileTask
         catch (IOException e) {
             throw new BuildException(e, getLocation());
         }
+    }
+
+    //
+    // AccessibleJavac
+    //
+
+    /**
+     * Simple sub-class to allow access to the matching tasks fileset.
+     */
+    private static class AccessibleJavac
+        extends Javac
+    {
+        public FileSet getFileSet() {
+            return super.getImplicitFileSet();
+        }    
     }
 }
