@@ -124,6 +124,57 @@ $Date$
         </java>
     </target>
 
+    <target name="ubercompile" depends="-init,ensureGrammars">
+        <!-- Bootstrap the uber compiler -->
+        
+        <mkdir dir="${mainClassesDirectory}"/>
+        
+        <javac destdir="${mainClassesDirectory}"
+               deprecation="on"
+               debug="yes"
+               source="1.4"
+               target="1.4"
+               fork="true"
+               includeantruntime="false">
+            <classpath refid="compilePath"/>
+            <src location="${mainSourceDirectory}"/>
+            <include name="org/codehaus/groovy/ant/UberCompileTask.java"/>
+        </javac>
+        
+        <taskdef name="ubercompile" classname="org.codehaus.groovy.ant.UberCompileTask">
+            <classpath>
+                <pathelement location="${mainClassesDirectory}"/>
+                <path refid="compilePath"/>
+            </classpath>
+        </taskdef>
+        
+        <!-- Uber-compile everything at once -->
+        
+        <mkdir dir="${mainStubsDirectory}"/>
+        
+        <ubercompile destdir="${mainClassesDirectory}">
+            <classpath>
+                <pathelement location="${mainClassesDirectory}"/>
+                <path refid="compilePath"/>
+            </classpath>
+            <src location="${mainSourceDirectory}"/>
+            
+            <generatestubs destdir="${mainStubsDirectory}">
+                <include name="**/*.java"/>
+                <include name="**/*.groovy"/>
+            </generatestubs>
+            
+            <javac includeantruntime="false" deprecation="on" debug="yes" source="1.4" target="1.4" fork="true">
+                <include name="**/*.java"/>
+            </javac>
+            
+            <groovyc>
+                <configuration debug="true" verbose="true"/>
+                <include name="**/*.groovy"/>
+            </groovyc>
+        </ubercompile>
+    </target>
+    
     <target name="compileTest" depends="compileMain" unless="_skipTests_"
             description="Compile the Java and Groovy code in the test source.">
         <mkdir dir="${testClassesDirectory}"/>
