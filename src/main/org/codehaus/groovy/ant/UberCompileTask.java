@@ -21,13 +21,18 @@ import org.apache.tools.ant.Task;
 import org.apache.tools.ant.taskdefs.Javac;
 import org.apache.tools.ant.types.Path;
 import org.apache.tools.ant.types.Reference;
-import org.codehaus.groovy.control.CompilerConfiguration;
 
 import java.io.File;
 import java.io.IOException;
 
 /**
  * Compiles Java and Groovy source files.
+ *
+ * This works by invoking the {@link GenerateStubsTask} task, then the
+ * {@link Javac} task and then the {@link GroovycTask}.  Each task can
+ * be configured by creating a nested element.  Common configuration
+ * such as the source dir and classpath is picked up from this tasks
+ * configuration.
  *
  * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
