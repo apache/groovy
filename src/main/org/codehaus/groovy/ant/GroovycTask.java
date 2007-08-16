@@ -79,7 +79,7 @@ public class GroovycTask
         }
 
         if (count > 0) {
-            log.info("Compiling " + count + " sources" + (count > 1 ? "s" : "") + " to " + destdir);
+            log.info("Compiling " + count + " source file" + (count > 1 ? "s" : "") + " to " + destdir);
 
             compilation.compile();
         }
