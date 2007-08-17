@@ -369,9 +369,9 @@ class SwingBuilderTest extends GroovyTestCase {
         def about = swing.action(accelerator:KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, InputEvent.CTRL_MASK))
         assert help.getValue(Action.ACCELERATOR_KEY).toString()
                              .indexOf(KeyEvent.getKeyText(KeyEvent.VK_F1)) > -1
-        def aboutStr = about.getValue(Action.ACCELERATOR_KEY).toString()
-        assert aboutStr.indexOf(KeyEvent.getKeyText(KeyEvent.VK_CONTROL)) > -1
-        assert aboutStr.indexOf(KeyEvent.getKeyText(KeyEvent.VK_SPACE)) > -1
+        def aboutKeyStroke = about.getValue(Action.ACCELERATOR_KEY)
+        assert aboutKeyStroke.keyCode == KeyEvent.VK_SPACE
+        assert(aboutKeyStroke.modifiers & InputEvent.CTRL_MASK) != 0
     }
 
     Action verifyAccel(Action action, int mustHave = 0) {
