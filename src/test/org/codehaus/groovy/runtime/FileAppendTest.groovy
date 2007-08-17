@@ -52,10 +52,7 @@ class FileAppendTest extends GroovyTestCase {
 	}
 	void tearDown() {
 		// we remove our temporary file
-		def deleted = false
-		while(deleted == false)
-			deleted = file.delete()
-		assert file.exists() == false
+		file.deleteOnExit()
 	}
 
 	void testAppendString(){
