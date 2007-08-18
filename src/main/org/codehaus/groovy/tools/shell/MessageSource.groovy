@@ -42,12 +42,17 @@ class MessageSource
         bundle = ResourceBundle.getBundle(name)
     }
 
+    //
+    // NOTE: Using getName() and getClass() here to avoid crazy IAE on
+    //       property access (which smells like a Groovy BUG).
+    //
+    
     MessageSource(final Class type) {
-        this(type.name)
+        this(type.getName())
     }
 
     MessageSource(final Object obj) {
-        this(obj.class)
+        this(obj.getClass())
     }
     
     String getMessage(final String code) {
@@ -69,7 +74,7 @@ class MessageSource
         return MessageFormat.format(pattern, args)
     }
     
-    Object getProperty(final String name) {
+    def getProperty(final String name) {
         return getMessage(name)
     }
 }
