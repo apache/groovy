@@ -109,8 +109,9 @@ class InteractiveShell
 
                 io.output.println(sprintf("%${maxlen}s (%s) %s", it.name, it.shortcut, it.description))
                 */
-                
-                io.output.println("$it.name\t($it.shortcut) $it.description")
+
+                def name = it.name.padRight(maxlen, ' ')
+                io.output.println("  ${name}  ($it.shortcut) $it.description")
             }
         })
         
