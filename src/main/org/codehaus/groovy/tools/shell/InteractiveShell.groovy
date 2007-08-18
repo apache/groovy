@@ -106,7 +106,12 @@ class InteractiveShell
             io.output.println('Available commands:') // TODO: i18n
             
             registry.commands.each {
+                /*
+                FIXME: This is only supported on Java 5
                 io.output.println(sprintf("%${maxlen}s (%s) %s", it.name, it.shortcut, it.description))
+                */
+                
+                io.output.println("$it.name\t($it.shortcut) $it.description")
             }
         })
         
