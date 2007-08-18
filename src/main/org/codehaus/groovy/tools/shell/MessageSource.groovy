@@ -20,6 +20,7 @@
 package org.codehaus.groovy.tools.shell
 
 import java.util.ResourceBundle
+import java.text.MessageFormat
 
 //
 // TODO: Move to groovy.util once new groovysh bits are cleaned up and integrated
@@ -59,10 +60,22 @@ class MessageSource
         assert args
         
         String pattern = getMessage(code)
+        
+        return MessageFormat.format(pattern, args)
+    }
+    
+    /*
+    FIXME: This is only supported on Java 5 :-(
+    
+    String format(final String code, final Object[] args) {
+        assert args
+        
+        String pattern = getMessage(code)
 
         return sprintf(pattern, args)
     }
-
+    */
+    
     Object getProperty(final String name) {
         return getMessage(name)
     }
