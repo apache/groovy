@@ -37,8 +37,6 @@ class InteractiveShell
 {
     private static final String NEWLINE = System.properties['line.separator']
     
-    private static final String PROMPT_FORMAT = 'groovy:%03d> '
-    
     private final GroovyLog log = new GroovyLog(this.class)
     
     private final MessageSource messages = new MessageSource(this.class)
@@ -108,6 +106,7 @@ class InteractiveShell
             registry.commands.each {
                 /*
                 FIXME: This is only supported on Java 5
+
                 io.output.println(sprintf("%${maxlen}s (%s) %s", it.name, it.shortcut, it.description))
                 */
                 
@@ -188,11 +187,24 @@ class InteractiveShell
         io.output.println(messages.format('startup_banner.0', InvokerHelper.version, System.properties['java.vm.version']))
         io.output.println(messages['startup_banner.1'])
     }
+
+    /*
+    FIXME: This is only supported on Java 5
     
+    private static final String PROMPT_PATTERN = 'groovy:%03d> '
+
     private String getPrompt() {
-        return sprintf(PROMPT_FORMAT, buffer.size())
+        return sprintf(PROMPT_PATTERN, buffer.size())
     }
-    
+    */
+
+    private String getPrompt() {
+        // Make a %03d-like string for the line number
+        def lineNum = buffer.size().toString()
+        lineNum = lineNum.padLeft(3, '0')
+        return "groovy:${lineNum}> "
+    }
+
     void run() {
         log.debug('Running')
 
