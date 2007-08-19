@@ -19,6 +19,6 @@ public class UberTestCaseGroovySourceCodehausPackages extends TestCase {
      * @return testsuite
      */
     public static Test suite() {
-        return AllTestSuite.suite("src/test", "org/codehaus/*/**/*Test.groovy");
+        return AllTestSuite.suite("src/test", "org/codehaus/**/*Test.groovy");
     }
 }
