@@ -216,10 +216,10 @@ class InteractiveShell
         log.debug('Finished')
     }
 
-    void execute(final String line) {
-        assert line
-
-        // Process builtin commands
+    /**
+     * Process built-in command execution
+     */
+    boolean executeCommand(final String line) {
         def args = line.trim().tokenize()
         def command = registry.find(args[0])
 
@@ -234,27 +234,35 @@ class InteractiveShell
             log.debug("Executing command: $command; w/args: $args")
 
             command.execute(args)
+
+            return true
         }
-        else {
-            // Append the line to the execution buffer
-            buffer << line
 
-            //
-            // FIXME: Only append to the buffer if the current + line parse completes
-            //
+        return false
+    }
 
-            def source = buffer.join(NEWLINE)
+    void execute(final String line) {
+        assert line
+
+        if (!executeCommand(line)) {
+            def current = []
+            current += buffer
+
+            // Append the line to the current buffer
+            current << line
+
+            def source = current.join(NEWLINE)
 
             // Attempt to parse the buffer
             if (parse(source, 1)) {
+                log.debug("Evaluating buffer...")
+                
                 if (verbose) {
-                    doDisplayCommand()
+                    displayBuffer(current)
                 }
 
                 // Execute the buffer contents
                 try {
-                    log.debug("Evaluating buffer...")
-
                     def script = shell.parse(source)
 
                     //
@@ -287,9 +295,20 @@ class InteractiveShell
                     buffer.clear()
                 }
             }
+            else {
+                // Save the current buffer
+                buffer = current
+            }
         }
     }
 
+    /**
+     * Execute a single line.
+     */
+    def leftShift(final String line) {
+        execute(line)
+    }
+    
     private boolean parse(final String source, final int tolerance) {
         assert source
 
@@ -313,6 +332,18 @@ class InteractiveShell
         }
 
         return false
+    }
+
+    private void displayBuffer(final List buffer) {
+        assert buffer
+
+        buffer.eachWithIndex { line, index ->
+            // Make a %03d-like string for the line number
+            def lineNum = (index + 1).toString()
+            lineNum = lineNum.padLeft(3, '0')
+
+            io.output.println("${lineNum}> $line")
+        }
     }
 
     //
@@ -356,13 +387,7 @@ class InteractiveShell
         // TODO: Add flag to show/omit line numbers
         //
 
-        buffer.eachWithIndex { line, index ->
-            // Make a %03d-like string for the line number
-            def lineNum = (index + 1).toString()
-            lineNum = lineNum.padLeft(3, '0')
-
-            io.output.println("${lineNum}> $line")
-        }
+        displayBuffer(buffer)
     }
 
     private void doVariablesCommand() {
