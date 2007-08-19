@@ -819,9 +819,7 @@ public class DefaultGroovyMethods {
      * @param closure the closure applied on each element found
      */
     public static void each(Object self, Closure closure) {
-        for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
-            closure.call(iter.next());
-        }
+        each(InvokerHelper.asIterator(self), closure);
     }
 
     /**
@@ -837,14 +835,8 @@ public class DefaultGroovyMethods {
         }
     }
 
-    /**
-     * Allows objects to be iterated through using a closure
-     *
-     * @param self    the collection over which we iterate
-     * @param closure the closure applied on each element of the collection
-     */
-    public static void each(Collection self, Closure closure) {
-        for (Iterator iter = self.iterator(); iter.hasNext();) {
+    private static void each(Iterator iter, Closure closure) {
+        while (iter.hasNext()) {
             closure.call(iter.next());
         }
     }
@@ -872,23 +864,36 @@ public class DefaultGroovyMethods {
      * @param closure a closure
      */
     public static void reverseEach(List self, Closure closure) {
-        List reversed = reverse(self);
-        for (Iterator iter = reversed.iterator(); iter.hasNext();) {
-            closure.call(iter.next());
-        }
+        each(reverse(self).iterator(), closure);
     }
 
     /**
-     * Iterates over every element of a collection, and check whether a predicate is valid for all elements.
+     * Iterates over the iterations of an object, and checks whether a predicate is valid for all elements.
      *
      * @param self    the object over which we iterate
      * @param closure the closure predicate used for matching
-     * @return true if every item in the collection matches the closure
-     *         predicate
+     * @return true if every iteration of the object matches the closure predicate
      */
     public static boolean every(Object self, Closure closure) {
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
             if (!DefaultTypeTransformation.castToBoolean(closure.call(iter.next()))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Iterates over the entries of a map, and checks whether a predicate is valid for all entries.
+     *
+     * @param self    the map over which we iterate
+     * @param closure the closure predicate used for matching
+     * @return true if every entry of the map matches the closure predicate
+     */
+    public static boolean every(Map self, Closure closure) {
+        for (Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
+            Map.Entry entry = (Map.Entry) iter.next();
+            if (!DefaultTypeTransformation.castToBoolean(callClosureForMapEntry(closure, entry))) {
                 return false;
             }
         }
@@ -913,11 +918,11 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Iterates over every element of a collection, and check whether a predicate is valid for at least one element
+     * Iterates over the iterations of an object, and checks whether a predicate is valid for at least one element
      *
      * @param self    the object over which we iterate
      * @param closure the closure predicate used for matching
-     * @return true if any item in the collection matches the closure predicate
+     * @return true   if any iteration for the object matches the closure predicate
      */
     public static boolean any(Object self, Closure closure) {
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
@@ -929,7 +934,24 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Iterates over every element of a collection, and check whether at least one element is true according to the Groovy Truth.
+     * Iterates over the entries of a map, and checks whether a predicate is valid for at least one entry
+     *
+     * @param self    the map over which we iterate
+     * @param closure the closure predicate used for matching
+     * @return true if any entry in the map matches the closure predicate
+     */
+    public static boolean any(Map self, Closure closure) {
+        for (Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
+            Map.Entry entry = (Map.Entry) iter.next();
+            if (DefaultTypeTransformation.castToBoolean(callClosureForMapEntry(closure, entry))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Iterates over the elements of a collection, and checks whether at least one element is true according to the Groovy Truth.
      * Equivalent to self.any({element -> element})
      *
      * @param self    the object over which we iterate
@@ -1172,6 +1194,40 @@ public class DefaultGroovyMethods {
             }
         }
         return answer;
+    }
+
+    /**
+     * Finds all combinations of items from a collection of collections
+     *
+     * @param self    a Collection of collections
+     * @return a List of the combinations found
+     */
+    public static List combinations(Collection self) {
+        List combinations = new ArrayList();
+        for (Iterator outer = self.iterator(); outer.hasNext();) {
+            Object rawListValue = outer.next();
+            List listValue = (List) DefaultTypeTransformation.castToType(rawListValue, List.class);
+            if (combinations.size() == 0) {
+                for (int i = 0; i < listValue.size(); i++) {
+                    List l = new ArrayList();
+                    l.add(listValue.get(i));
+                    combinations.add(l);
+                }
+            } else {
+                List savedCombinations = new ArrayList(combinations);
+                List newCombinations = new ArrayList();
+                for (Iterator inner = listValue.iterator(); inner.hasNext();) {
+                    Object value = inner.next();
+                    for (Iterator combos = savedCombinations.iterator(); combos.hasNext();) {
+                        List oldlist = new ArrayList((List) combos.next());
+                        oldlist.add(value);
+                        newCombinations.add(oldlist);
+                    }
+                }
+                combinations = newCombinations;
+            }
+        }
+        return combinations;
     }
 
     /**
