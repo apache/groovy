@@ -105,7 +105,7 @@ class InteractiveShell
         registry << new Command('display', '\\d', { doDisplayCommand() })
 
         registry << new Command('variables', '\\v', { doVariablesCommand() })
-        
+
         registry << new Command('clear', '\\c', { doClearCommand() })
 
         registry << new Command('inspect', '\\i', { doInspectCommand() })
@@ -248,9 +248,7 @@ class InteractiveShell
             // Attempt to parse the buffer
             if (parse(source, 1)) {
                 if (verbose) {
-                    buffer.each {
-                        io.output.println("> $it")
-                    }
+                    doDisplayCommand()
                 }
 
                 // Execute the buffer contents
@@ -355,11 +353,15 @@ class InteractiveShell
         }
 
         //
-        // TODO: Add flag to show line numbers
+        // TODO: Add flag to show/omit line numbers
         //
-        
-        buffer.each {
-            io.output.println(it)
+
+        buffer.eachWithIndex { line, index ->
+            // Make a %03d-like string for the line number
+            def lineNum = (index + 1).toString()
+            lineNum = lineNum.padLeft(3, '0')
+
+            io.output.println("${lineNum}> $line")
         }
     }
 
