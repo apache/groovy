@@ -13,22 +13,22 @@ hijk
 hello ${name}
         
 """
-        println s
         assert s != null
         assert s instanceof GString
-
         assert s.contains("i")
         assert s.contains("James")
+        def numlines = s.count('\n')
+        assert numlines == 8
     }
-    
+
     void testDollarEscaping() {
         def s = """
 hello \${name}
 """
-        println s
         assert s != null
         assert s.contains('$')
         def c = s.count('$')
         assert c == 1
+        assert s == '\nhello ${name}\n'
     }
 }
