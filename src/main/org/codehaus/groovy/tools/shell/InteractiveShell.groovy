@@ -24,6 +24,8 @@ import org.codehaus.groovy.control.CompilationFailedException
 
 import org.codehaus.groovy.tools.ErrorReporter
 
+import groovy.inspect.swingui.ObjectBrowser
+
 import jline.ConsoleReader
 
 /**
@@ -50,6 +52,8 @@ class InteractiveShell
     private final CommandRegistry registry = new CommandRegistry()
 
     private final List buffer = []
+
+    private Object lastResult
     
     boolean verbose
 
@@ -103,6 +107,8 @@ class InteractiveShell
         registry << new Command('variables', '\\v', { doVariablesCommand() })
         
         registry << new Command('clear', '\\c', { doClearCommand() })
+
+        registry << new Command('inspect', '\\i', { doInspectCommand() })
     }
     
     int run(final String[] args) {
@@ -257,8 +263,12 @@ class InteractiveShell
                     if (verbose) {
                         io.output.println("===> $result")
                     }
+
+                    lastResult = result
                 }
                 catch (Throwable t) {
+                    log.debug("Evaluation failed: $t", t)
+                    
                     // Unroll invoker exceptions
                     if (t instanceof InvokerInvocationException) {
                         t = t.cause
@@ -366,6 +376,19 @@ class InteractiveShell
         if (verbose) {
             io.output.println('Buffer cleared') //  TODO: i18n
         }
+    }
+
+    private void doInspectCommand() {
+        if (lastResult == null) {
+            io.output.println('Last result is null; nothing to inspect') // TODO: i18n
+            return
+        }
+
+        if (verbose) {
+            io.output.println("Launching object browser to inspect: $lastResult") // TODO: i18n
+        }
+        
+        ObjectBrowser.inspect(lastResult);
     }
 
     //
