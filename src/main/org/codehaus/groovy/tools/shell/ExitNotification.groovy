@@ -25,6 +25,7 @@ package org.codehaus.groovy.tools.shell
 class ExitNotification
     extends Error
 {
+    /** The exit code. */
     final int code
 
     ExitNotification(final int code) {

@@ -38,7 +38,7 @@ class CommandAlias
         return messages.format('info.alias_to', target)
     }
     
-    void execute(List args) {
+    void execute(final List args) {
         def command = registry.find(target)
         assert command
         

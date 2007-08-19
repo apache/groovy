@@ -58,7 +58,11 @@ class Command
         return messages["${name}.description"]
     }
     
-    void execute(List args) {
+    void execute(final List args) {
+        //
+        // TODO: Pass in command context ?
+        //
+        
         function.call(args)
     }
 }
