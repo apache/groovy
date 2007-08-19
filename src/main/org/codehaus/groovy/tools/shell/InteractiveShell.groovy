@@ -53,7 +53,7 @@ class InteractiveShell
     
     boolean verbose
 
-    InteractiveShell(ClassLoader classLoader, Binding binding, IO io) {
+    InteractiveShell(final ClassLoader classLoader, final Binding binding, final IO io) {
         assert binding
         assert io
 
@@ -77,11 +77,11 @@ class InteractiveShell
         log.debug('Initialized')
     }
 
-    InteractiveShell(Binding binding, IO io) {
+    InteractiveShell(final Binding binding, final IO io) {
         this(null, binding, io)
     }
 
-    InteractiveShell(IO io) {
+    InteractiveShell(final IO io) {
         this(new Binding(), io)
     }
     
@@ -98,16 +98,20 @@ class InteractiveShell
 
         registry << new CommandAlias('quit', '\\q', 'exit')
 
+        registry << new Command('display', '\\d', { doDisplayCommand() })
+
+        registry << new Command('variables', '\\v', { doVariablesCommand() })
+        
         registry << new Command('clear', '\\c', { doClearCommand() })
     }
     
-    int run(String[] args) {
+    int run(final String[] args) {
         try {
             processCommandLine(args)
             run()
         }
         catch (ExitNotification n) {
-            log.debug("Exiting w/code: $code")
+            log.debug("Exiting w/code: ${n.code}")
 
             return n.code
         }
@@ -124,11 +128,11 @@ class InteractiveShell
         return 0
     }
 
-    private void exit(int code) {
+    private void exit(final int code) {
         throw new ExitNotification(code)
     }
 
-    void processCommandLine(String[] args) {
+    void processCommandLine(final String[] args) {
         assert args != null
 
         log.debug("Processing command-line args: $args")
@@ -271,7 +275,7 @@ class InteractiveShell
         }
     }
 
-    private boolean parse(String source, int tolerance) {
+    private boolean parse(final String source, final int tolerance) {
         assert source
 
         def parser
@@ -327,24 +331,53 @@ class InteractiveShell
         exit(0)
     }
 
+    private void doDisplayCommand() {
+        if (buffer.isEmpty()) {
+            io.output.println('Buffer is empty') // TODO: i18n
+            return
+        }
+
+        //
+        // TODO: Add flag to show line numbers
+        //
+        
+        buffer.each {
+            io.output.println(it)
+        }
+    }
+
+    private void doVariablesCommand() {
+        def vars = shell.context.variables
+
+        if (vars.isEmpty()) {
+            io.output.println('No variables defined') // TODO: i18n
+            return
+        }
+        
+        io.output.println('Variables:') // TODO: i18n
+        vars.each { key, value ->
+            io.output.println("  $key = $value")
+        }
+    }
+
     private void doClearCommand() {
         buffer.clear()
 
         if (verbose) {
             io.output.println('Buffer cleared') //  TODO: i18n
         }
-
     }
+
     //
     // Command-line entry point
     //
 
     static void main(String[] args) {
-        int result = new InteractiveShell().run(args)
+        int code = new InteractiveShell().run(args)
 
         // Force the JVM to exit at this point, since shell could have created threads or
         // popped up Swing components that will cause the JVM to linger after we have been
         // asked to shutdown
-        System.exit(result)
+        System.exit(code)
     }
 }
