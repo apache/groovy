@@ -25,14 +25,10 @@ package org.codehaus.groovy.tools.shell
 class CommandAlias
     extends Command
 {
-    private static final Closure NOOP = {}
-    
-    private final MessageSource messages = new MessageSource(this.class)
-    
     final String target
     
     CommandAlias(final String name, final String shortcut, final String target) {
-        super(name, shortcut, NOOP)
+        super(name, shortcut)
         assert target
         
         this.target = target

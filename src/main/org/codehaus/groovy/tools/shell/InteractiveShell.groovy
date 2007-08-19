@@ -90,40 +90,15 @@ class InteractiveShell
     }
     
     private void registerCommands() {
-        io.output.println('For information about Groovy, visit:') // TODO: i18n
-        io.output.println('    http://groovy.codehaus.org')
-        io.output.println()
-        
-        registry << new Command('help', '\\h', {
-            // Figure out the max command name length dynamically
-            int maxlen = 0
-            registry.commands.each {
-                if (it.name.size() > maxlen) maxlen = it.name.size()
-            }
-            
-            io.output.println('Available commands:') // TODO: i18n
-            
-            registry.commands.each {
-                /*
-                FIXME: This is only supported on Java 5
-
-                io.output.println(sprintf("%${maxlen}s (%s) %s", it.name, it.shortcut, it.description))
-                */
-
-                def name = it.name.padRight(maxlen, ' ')
-                io.output.println("  ${name}  ($it.shortcut) $it.description")
-            }
-        })
+        registry << new Command('help', '\\h', { doHelpCommand() })
         
         registry << new CommandAlias('?', '\\?', 'help')
-        
-        registry << new Command('reset', '\\r', {
-            buffer.clear()
-            
-            if (verbose) {
-                io.output.println('Buffer cleared')
-            }
-        })
+
+        registry << new Command('exit', '\\e', { doExitCommand() })
+
+        registry << new CommandAlias('quit', '\\q', 'exit')
+
+        registry << new Command('clear', '\\c', { doClearCommand() })
     }
     
     int run(String[] args) {
@@ -189,20 +164,11 @@ class InteractiveShell
         io.output.println(messages['startup_banner.1'])
     }
 
-    /*
-    FIXME: This is only supported on Java 5
-    
-    private static final String PROMPT_PATTERN = 'groovy:%03d> '
-
-    private String getPrompt() {
-        return sprintf(PROMPT_PATTERN, buffer.size())
-    }
-    */
-
     private String getPrompt() {
         // Make a %03d-like string for the line number
         def lineNum = buffer.size().toString()
         lineNum = lineNum.padLeft(3, '0')
+
         return "groovy:${lineNum}> "
     }
 
@@ -226,71 +192,77 @@ class InteractiveShell
                 continue
             }
             
-            // Process builtin commands
-            def args = line.trim().tokenize()
-            def command = registry.find(args[0])
-
-            if (command) {
-                log.debug("Executing command: $command; w/args: $args")
-                command.execute(args)
-            }
-            else {
-                // Append the line to the execution buffer
-                buffer << line
-
-                //
-                // FIXME: Only append to the buffer if the current + line parse completes
-                //
-                
-                def source = buffer.join(NEWLINE)
-
-                // Attempt to parse the buffer
-                if (parse(source, 1)) {
-                    if (verbose) {
-                        buffer.each {
-                            io.output.println("> $it")
-                        }
-                    }
-
-                    // Execute the buffer contents
-                    try {
-                        log.debug("Evaluating buffer...")
-
-                        def script = shell.parse(source)
-                        def result = script.run()
-
-                        //
-                        // TODO: Post-exectuion hook?
-                        //
-                        
-                        log.debug("Evaluation result: $result")
-                        
-                        if (verbose) {
-                            io.output.println("===> $result")
-                        }
-                    }
-                    catch (Throwable t) {
-                        //
-                        // TODO: Failure hook?
-                        //
-                        
-                        // Unroll invoker exceptions
-                        if (t instanceof InvokerInvocationException) {
-                            t = t.cause
-                        }
-
-                        io.error.println(messages.format('info.error', t))
-                        t.printStackTrace(io.error)
-                    }
-                    finally {
-                        // Reset the buffer
-                        buffer.clear()
-                    }
-                }
-            }
+            execute(line)
         }
 
         log.debug('Finished')
+    }
+
+    void execute(final String line) {
+        assert line
+
+        // Process builtin commands
+        def args = line.trim().tokenize()
+        def command = registry.find(args[0])
+
+        if (command) {
+            if (args.size() == 1) {
+                args = []
+            }
+            else {
+                args = args[1..-1]
+            }
+
+            log.debug("Executing command: $command; w/args: $args")
+
+            command.execute(args)
+        }
+        else {
+            // Append the line to the execution buffer
+            buffer << line
+
+            //
+            // FIXME: Only append to the buffer if the current + line parse completes
+            //
+
+            def source = buffer.join(NEWLINE)
+
+            // Attempt to parse the buffer
+            if (parse(source, 1)) {
+                if (verbose) {
+                    buffer.each {
+                        io.output.println("> $it")
+                    }
+                }
+
+                // Execute the buffer contents
+                try {
+                    log.debug("Evaluating buffer...")
+
+                    def script = shell.parse(source)
+                    def result = script.run()
+
+                    log.debug("Evaluation result: $result")
+
+                    if (verbose) {
+                        io.output.println("===> $result")
+                    }
+                }
+                catch (Throwable t) {
+                    // Unroll invoker exceptions
+                    if (t instanceof InvokerInvocationException) {
+                        t = t.cause
+                    }
+
+                    io.error.println(messages.format('info.error', t))
+                    t.printStackTrace(io.error)
+                }
+                finally {
+                    // Reset the buffer
+                    buffer.clear()
+                }
+            }
+        }
     }
 
     private boolean parse(String source, int tolerance) {
@@ -318,6 +290,45 @@ class InteractiveShell
         return false
     }
 
+    //
+    // Commands
+    //
+
+    private void doHelpCommand() {
+        // Figure out the max command name length dynamically
+        int maxlen = 0
+        registry.commands.each {
+            if (it.name.size() > maxlen) maxlen = it.name.size()
+        }
+
+        io.output.println('For information about Groovy, visit:') // TODO: i18n
+        io.output.println('    http://groovy.codehaus.org')
+        io.output.println()
+
+        io.output.println('Available commands:') // TODO: i18n
+
+        registry.commands.each {
+            def name = it.name.padRight(maxlen, ' ')
+            io.output.println("  ${name}  ($it.shortcut) $it.description")
+        }
+    }
+
+    private void doExitCommand() {
+        if (verbose) {
+            io.output.println('Bye') // TODO: i18n
+        }
+        
+        exit(0)
+    }
+
+    private void doClearCommand() {
+        buffer.clear()
+
+        if (verbose) {
+            io.output.println('Buffer cleared') //  TODO: i18n
+        }
+
+    }
     //
     // Command-line entry point
     //

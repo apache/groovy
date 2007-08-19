@@ -24,7 +24,9 @@ package org.codehaus.groovy.tools.shell
  */
 class Command
 {
-    private final MessageSource messages = new MessageSource(this.class)
+    private static final Closure NOOP = {}
+
+    protected final MessageSource messages = new MessageSource(this.class)
     
     /** The name of the command. */
     final String name
@@ -47,7 +49,11 @@ class Command
         this.shortcut = shortcut
         this.function = function
     }
-    
+
+    protected Command(final String name, final String shortcut) {
+        this(name, shortcut, NOOP)
+    }
+
     String getDescription() {
         return messages["${name}.description"]
     }
