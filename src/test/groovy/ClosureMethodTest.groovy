@@ -114,8 +114,9 @@ class ClosureMethodTest extends GroovyTestCase {
         assert [1, 2, 3, 4].any {i-> return i < 5 }
         assert [1, 2, 3, 4].any {i-> i > 3 }
         assert [1, 2, 3, 4].any {i-> i > 5 } == false
-        assert [a:1, b:2, c:3].any { k,v -> k = 'c' }
-        assert ![a:1, b:2, c:3].any { k,v -> v = 4 }
+        assert [a:1, b:2, c:3].any { k,v -> k == 'c' }
+        def isThereAFourValue = [a:1, b:2, c:3].any{ k,v -> v == 4 }
+        assert !isThereAFourValue
     }
 
     void testJoin() {

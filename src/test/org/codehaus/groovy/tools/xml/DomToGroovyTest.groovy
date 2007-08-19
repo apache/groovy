@@ -20,11 +20,11 @@ public class DomToGroovyTest extends GroovyTestCase {
         "<project name='testProject'><target name='testTarget'><echo>message</echo><echo/></target></project>"
     private static final String TEST_XML_3 = '''<?xml version="1.0"?>
         <!-- this example demonstrates using markup to specify a rich user interface -->
-        <frame text="My Window" size="[300,300]">
-          <label text="Save changes" bounds="[10,10,290,30]"/>
+        <frame size="[300,300]" text="My Window">
+          <label bounds="[10,10,290,30]" text="Save changes"/>
           <panel bounds="[10,40,290,290]">
-            <button text="OK" action="save()"/>
-            <button text="Cancel" action="close()"/>
+            <button action="save()" text="OK"/>
+            <button action="close()" text="Cancel"/>
           </panel>
         </frame>'''
     private static final String TEST_XML_4 = '''
