@@ -490,8 +490,7 @@ public class InvokerHelper {
     
     protected static String format(Object arguments, boolean verbose) {
         if (arguments == null) {
-        final NullObject nullObject = NullObject.getNullObject();
-        
+            final NullObject nullObject = NullObject.getNullObject();
             return (String)nullObject.getMetaClass().invokeMethod(nullObject, "toString", EMPTY_ARGS);
         }
         else if (arguments.getClass().isArray()) {
