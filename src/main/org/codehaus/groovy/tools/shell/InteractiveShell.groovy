@@ -109,6 +109,8 @@ class InteractiveShell
         registry << new Command('clear', '\\c', { doClearCommand() })
 
         registry << new Command('inspect', '\\i', { doInspectCommand() })
+
+        registry << new Command('purge', '\\p', { doPurgeCommand() })
     }
     
     int run(final String[] args) {
@@ -256,6 +258,11 @@ class InteractiveShell
                     log.debug("Evaluating buffer...")
 
                     def script = shell.parse(source)
+
+                    //
+                    // TODO: Need smarter bits here to allow a simple class def w/o main() or run() muck...
+                    //
+                    
                     def result = script.run()
 
                     log.debug("Evaluation result: $result")
@@ -389,6 +396,14 @@ class InteractiveShell
         }
         
         ObjectBrowser.inspect(lastResult);
+    }
+
+    private void doPurgeCommand() {
+        shell.resetLoadedClasses()
+
+        if (verbose) {
+            io.output.println('Purged loaded classes') // TODO: i18n
+        }
     }
 
     //
