@@ -29,12 +29,11 @@ class RegExpGroupMatchTest extends GroovyTestCase {
     }
 
     void testThird() {
-        // Lets create a Matcher
+        // Let's create a Matcher
         def matcher = "cheesecheese" =~ /cheese/
         assert matcher instanceof Matcher
-
         def answer = matcher.replaceAll("edam")
-        println answer
+        assert answer == "edamedam"
     }
 
     void testFourth() {
