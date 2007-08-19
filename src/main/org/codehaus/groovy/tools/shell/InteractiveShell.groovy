@@ -106,6 +106,9 @@ class InteractiveShell
             processCommandLine(args)
             run()
         }
+        catch (ExitNotification n) {
+            return n.code
+        }
         catch (Throwable t) {
             io.error.println(messages.format('info.fatal', t))
             t.printStackTrace()
@@ -119,7 +122,8 @@ class InteractiveShell
     private void exit(int code) {
         log.debug("Exiting w/code: $code")
         io.flush()
-        System.exit(code)
+
+        throw new ExitNotification(code)
     }
 
     void processCommandLine(String[] args) {
