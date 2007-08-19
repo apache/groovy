@@ -107,6 +107,8 @@ class InteractiveShell
             run()
         }
         catch (ExitNotification n) {
+            log.debug("Exiting w/code: $code")
+
             return n.code
         }
         catch (Throwable t) {
@@ -115,14 +117,14 @@ class InteractiveShell
             
             return 1
         }
+        finally {
+            io.flush()
+        }
 
         return 0
     }
 
     private void exit(int code) {
-        log.debug("Exiting w/code: $code")
-        io.flush()
-
         throw new ExitNotification(code)
     }
 
