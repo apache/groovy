@@ -16,6 +16,8 @@
 
 package org.codehaus.groovy.tools.shell
 
+import java.net.MalformedURLException
+
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.InvokerInvocationException
 
@@ -112,12 +114,12 @@ class InteractiveShell
 
         registry << new Command('purge', '\\p', this.&doPurgeCommand)
 
-        //
-        // TODO: Add 'edit' command, which will pop up some Swing bits to allow the full buffer to be edited
-        //
+        registry << new Command('load', '\\l', this.&doLoadCommand)
+
+        registry << new CommandAlias('.', '\\.', 'load')
 
         //
-        // TODO: Add 'source' (or 'read') command to fill the buffer from a file/url
+        // TODO: Add 'edit' command, which will pop up some Swing bits to allow the full buffer to be edited
         //
 
         //
@@ -347,6 +349,16 @@ class InteractiveShell
             return new ParseStatus(ParseStatus.COMPLETE)
         }
         catch (CompilationFailedException e) {
+            log.debug("Error count: ${parser.errorCollector.errorCount}")
+            log.debug("Failed with unexpected EOF: ${parser.failedWithUnexpectedEOF()}")
+
+            //
+            // FIXME: Seems like failedWithUnexpectedEOF() is not always set as expected, as in:
+            //
+            // class a {               <--- is true here
+            //    def b() {            <--- is false here :-(
+            //
+
             // Report errors other than unexpected EOF
             if (parser.errorCollector.errorCount > 1 || !parser.failedWithUnexpectedEOF()) {
                 error = e
@@ -448,7 +460,7 @@ class InteractiveShell
     // Commands
     //
 
-    private void doHelpCommand(args) {
+    private void doHelpCommand(final List args) {
         // Figure out the max command name length dynamically
         int maxlen = 0
         registry.commands.each {
@@ -467,7 +479,7 @@ class InteractiveShell
         }
     }
 
-    private void doExitCommand(args) {
+    private void doExitCommand(final List args) {
         if (verbose) {
             io.output.println('Bye') // TODO: i18n
         }
@@ -475,7 +487,7 @@ class InteractiveShell
         exit(0)
     }
 
-    private void doDisplayCommand(args) {
+    private void doDisplayCommand(final List args) {
         if (buffer.isEmpty()) {
             io.output.println('Buffer is empty') // TODO: i18n
             return
@@ -484,7 +496,7 @@ class InteractiveShell
         displayBuffer(buffer, true)
     }
 
-    private void doVariablesCommand(args) {
+    private void doVariablesCommand(final List args) {
         def vars = shell.context.variables
 
         if (vars.isEmpty()) {
@@ -498,7 +510,7 @@ class InteractiveShell
         }
     }
 
-    private void doClearCommand(args) {
+    private void doClearCommand(final List args) {
         buffer.clear()
 
         if (verbose) {
@@ -506,7 +518,7 @@ class InteractiveShell
         }
     }
 
-    private void doInspectCommand(args) {
+    private void doInspectCommand(final List args) {
         if (lastResult == null) {
             io.output.println('Last result is null; nothing to inspect') // TODO: i18n
             return
@@ -519,7 +531,7 @@ class InteractiveShell
         ObjectBrowser.inspect(lastResult);
     }
 
-    private void doPurgeCommand(args) {
+    private void doPurgeCommand(final List args) {
         shell.resetLoadedClasses()
 
         if (verbose) {
@@ -527,6 +539,41 @@ class InteractiveShell
         }
     }
 
+    private void doLoadCommand(final List args) {
+        assert args != null
+
+        if (args.isEmpty()) {
+            io.error.println("Command 'load' requires one or more file/url arguments") // TODO: i18n
+            return
+        }
+
+        for (source in args) {
+            URL url
+
+            try {
+                url = new URL("$source")
+            }
+            catch (MalformedURLException e) {
+                def file = new File("$source")
+                
+                if (!file.exists()) {
+                    io.error.println("File not found: $file") // TODO: i18n
+                    return
+                }
+                
+                url = file.toURL()
+            }
+
+            if (verbose) {
+                io.output.println("Loading: $url")
+            }
+
+            url.eachLine {
+                this << it
+            }
+        }
+    }
+    
     //
     // Command-line entry point
     //
