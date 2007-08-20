@@ -512,6 +512,11 @@ class InteractiveShell
     }
 
     private void doPurgeImportsCommand(final List args) {
+        if (imports.isEmpty()) {
+            io.output.println("No custom imports have been defined") // TODO: i18n
+            return
+        }
+
         imports.clear()
         
         if (verbose) {
