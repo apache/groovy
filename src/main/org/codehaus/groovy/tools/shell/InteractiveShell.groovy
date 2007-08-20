@@ -94,23 +94,23 @@ class InteractiveShell
     }
     
     private void registerCommands() {
-        registry << new Command('help', '\\h', { doHelpCommand() })
+        registry << new Command('help', '\\h', this.&doHelpCommand)
         
         registry << new CommandAlias('?', '\\?', 'help')
 
-        registry << new Command('exit', '\\e', { doExitCommand() })
+        registry << new Command('exit', '\\e', this.&doExitCommand)
 
         registry << new CommandAlias('quit', '\\q', 'exit')
 
-        registry << new Command('display', '\\d', { doDisplayCommand() })
+        registry << new Command('display', '\\d', this.&doDisplayCommand)
 
-        registry << new Command('variables', '\\v', { doVariablesCommand() })
+        registry << new Command('variables', '\\v', this.&doVariablesCommand)
 
-        registry << new Command('clear', '\\c', { doClearCommand() })
+        registry << new Command('clear', '\\c', this.&doClearCommand)
 
-        registry << new Command('inspect', '\\i', { doInspectCommand() })
+        registry << new Command('inspect', '\\i', this.&doInspectCommand)
 
-        registry << new Command('purge', '\\p', { doPurgeCommand() })
+        registry << new Command('purge', '\\p', this.&doPurgeCommand)
 
         //
         // TODO: Add 'edit' command, which will pop up some Swing bits to allow the full buffer to be edited
@@ -448,7 +448,7 @@ class InteractiveShell
     // Commands
     //
 
-    private void doHelpCommand() {
+    private void doHelpCommand(args) {
         // Figure out the max command name length dynamically
         int maxlen = 0
         registry.commands.each {
@@ -467,7 +467,7 @@ class InteractiveShell
         }
     }
 
-    private void doExitCommand() {
+    private void doExitCommand(args) {
         if (verbose) {
             io.output.println('Bye') // TODO: i18n
         }
@@ -475,20 +475,16 @@ class InteractiveShell
         exit(0)
     }
 
-    private void doDisplayCommand() {
+    private void doDisplayCommand(args) {
         if (buffer.isEmpty()) {
             io.output.println('Buffer is empty') // TODO: i18n
             return
         }
 
-        //
-        // TODO: Add flag to show/omit line numbers
-        //
-
         displayBuffer(buffer, true)
     }
 
-    private void doVariablesCommand() {
+    private void doVariablesCommand(args) {
         def vars = shell.context.variables
 
         if (vars.isEmpty()) {
@@ -502,7 +498,7 @@ class InteractiveShell
         }
     }
 
-    private void doClearCommand() {
+    private void doClearCommand(args) {
         buffer.clear()
 
         if (verbose) {
@@ -510,7 +506,7 @@ class InteractiveShell
         }
     }
 
-    private void doInspectCommand() {
+    private void doInspectCommand(args) {
         if (lastResult == null) {
             io.output.println('Last result is null; nothing to inspect') // TODO: i18n
             return
@@ -523,7 +519,7 @@ class InteractiveShell
         ObjectBrowser.inspect(lastResult);
     }
 
-    private void doPurgeCommand() {
+    private void doPurgeCommand(args) {
         shell.resetLoadedClasses()
 
         if (verbose) {
