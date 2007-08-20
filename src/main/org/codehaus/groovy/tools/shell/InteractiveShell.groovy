@@ -405,9 +405,10 @@ class InteractiveShell
     private void doHelpCommand(final List args) {
         if (args.size() == 1) {
             // Display command help text
-            def command = registry.find(args[0])
+            def name = args[0]
+            def command = registry.find(name)
             if (!command) {
-                io.error.println("No such command: ${args[0]}") // TODO: i18n
+                io.error.println("No such command: ${name}") // TODO: i18n
                 return
             }
             io.output.println(command.help)
