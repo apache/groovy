@@ -53,6 +53,8 @@ class InteractiveShell
 
     private final BufferManager buffers = new BufferManager()
 
+    private final List imports = []
+    
     private Object lastResult
     
     boolean verbose
@@ -104,13 +106,19 @@ class InteractiveShell
 
         registry << new Command('display', '\\d', this.&doDisplayCommand)
 
+        registry << new Command('clear', '\\c', this.&doClearCommand)
+
         registry << new Command('variables', '\\v', this.&doVariablesCommand)
 
-        registry << new Command('clear', '\\c', this.&doClearCommand)
+        registry << new Command('import', '\\i', this.&doImportCommand)
+
+        registry << new Command('imports', '\\I', this.&doImportsCommand)
 
         registry << new Command('inspect', '\\i', this.&doInspectCommand)
 
         registry << new Command('purge', '\\p', this.&doPurgeCommand)
+
+        registry << new Command('purgeimports', '\\pi', this.&doPurgeImportsCommand)
 
         registry << new Command('load', '\\l', this.&doLoadCommand)
 
@@ -275,7 +283,7 @@ class InteractiveShell
     private ParseStatus parse(final List buffer, final int tolerance) {
         assert buffer
 
-        def source = buffer.join(NEWLINE)
+        def source = (imports + buffer).join(NEWLINE)
 
         log.debug("Parsing: $source")
 
@@ -334,7 +342,7 @@ class InteractiveShell
             displayBuffer(buffer, true)
         }
 
-        def source = buffer.join(NEWLINE)
+        def source = (imports + buffer).join(NEWLINE)
 
         try {
             def script = shell.parse(source)
@@ -463,6 +471,51 @@ class InteractiveShell
         io.output.println('Variables:') // TODO: i18n
         vars.each { key, value ->
             io.output.println("  $key = $value")
+        }
+    }
+
+    private void doImportCommand(final List args) {
+        assert args != null
+
+        if (args.isEmpty()) {
+            io.error.println("Command 'import' requires one or more arguments") // TODO: i18n
+            return
+        }
+
+        def buff = [ 'import ' + args.join(' ') ]
+        buff << 'def dummp = false'
+
+        try {
+            shell.parse(buff.join(NEWLINE))
+
+            log.debug("Adding import: ${buff[0]}")
+
+            imports << buff[0]
+        }
+        catch (CompilationFailedException e) {
+            def msg = "Invalid import definition: '${buff[0]}'; reason: $e.message" // TODO: i18n
+            log.debug(msg, e)
+            io.error.println(msg)
+        }
+    }
+
+    private void doImportsCommand(final List args) {
+        if (imports.isEmpty()) {
+            io.output.println("No custom imports have been defined") // TODO: i18n
+            return
+        }
+
+        io.output.println("Custom imports:") // TODO: i18n
+        imports.each {
+            io.output.println("  $it")
+        }
+    }
+
+    private void doPurgeImportsCommand(final List args) {
+        imports.clear()
+        
+        if (verbose) {
+            io.output.println("Custom imports purged") // TODO: i18n
         }
     }
 
