@@ -27,7 +27,7 @@ import jline.SimpleCompletor
 class CommandNameCompletor
     extends SimpleCompletor
 {
-    CommandNameCompletor(CommandRegistry registry) {
+    CommandNameCompletor(final CommandRegistry registry) {
         super(new String[0])
         assert registry != null
 
@@ -37,7 +37,7 @@ class CommandNameCompletor
         }
     }
     
-    def leftShift(String name) {
+    def leftShift(final String name) {
         assert name
         
         addCandidateString(name)

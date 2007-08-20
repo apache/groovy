@@ -26,20 +26,24 @@ class CommandRegistry
 {
     final List commands = []
     
-    void register(Command command) {
+    void register(final Command command) {
         assert command
 
+        //
+        // TODO: Make sure that the command name and shortcut are unique
+        //
+        
         commands << command
         
         // Hookup context for alias commands
         command.registry = this
     }
 
-    def leftShift(Command command) {
+    def leftShift(final Command command) {
         register(command)
     }
     
-    Command find(String name) {
+    Command find(final String name) {
         assert name
         
         for (c in commands) {
