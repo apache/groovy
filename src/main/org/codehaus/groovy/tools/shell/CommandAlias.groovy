@@ -33,19 +33,23 @@ class CommandAlias
         
         this.target = target
     }
-    
+
+    private Command findTarget() {
+        def command = registry.find(target)
+        assert command
+
+        return command
+    }
+
     String getDescription() {
         return messages.format('info.alias_to', target)
     }
 
     String getHelp() {
-        return registry.find(target).help
+        return findTarget().help
     }
 
     void execute(final List args) {
-        def command = registry.find(target)
-        assert command
-        
-        command.execute(args)
+        findTarget().execute(args)
     }
 }
