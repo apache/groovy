@@ -127,79 +127,11 @@ class InteractiveShell
         //
     }
     
-    int run(final String[] args) {
-        try {
-            processCommandLine(args)
-            run()
-        }
-        catch (ExitNotification n) {
-            log.debug("Exiting w/code: ${n.code}")
-
-            return n.code
-        }
-        catch (Throwable t) {
-            io.error.println(messages.format('info.fatal', t))
-            t.printStackTrace(io.error)
-            
-            return 1
-        }
-        finally {
-            io.flush()
-        }
-
-        return 0
-    }
-
     /**
      * Signal for the shell to exit.
      */
     private void exit(final int code) {
         throw new ExitNotification(code)
-    }
-
-    /**
-     * Process command-line arguments.
-     */
-    private void processCommandLine(final String[] args) {
-        assert args != null
-
-        log.debug("Processing command-line args: $args")
-        
-        def cli = new CliBuilder(usage : 'groovysh [options]', writer: io.output)
-        
-        cli.h(longOpt: 'help', messages['cli.option.help.description'])
-        cli.V(longOpt: 'version', messages['cli.option.version.description'])
-        cli.v(longOpt: 'verbose', messages['cli.option.verbose.description'])
-        cli.d(longOpt: 'debug', messages['cli.option.debug.description'])
-        
-        def options = cli.parse(args)
-        assert options
-
-        // Currently no arguments are allowed, so complain if there are any
-        def _args = options.arguments()
-        if (_args.size() != 0) {
-            cli.usage()
-            io.error.println(messages.format('cli.info.unexpected_args', _args.join(' ')))
-            exit(1)
-        }
-
-        if (options.h) {
-            cli.usage()
-            exit(0)
-        }
-
-        if (options.V) {
-            io.output.println(messages.format('cli.info.version', InvokerHelper.version))
-            exit(0)
-        }
-
-        if (options.v) {
-            verbose = true
-        }
-
-        if (options.d) {
-            ShellLog.debug = true
-        }
     }
 
     /**
@@ -575,8 +507,76 @@ class InteractiveShell
     }
     
     //
-    // Command-line entry point
+    // Command-line Support
     //
+
+    int run(final String[] args) {
+        try {
+            processCommandLine(args)
+            run()
+        }
+        catch (ExitNotification n) {
+            log.debug("Exiting w/code: ${n.code}")
+
+            return n.code
+        }
+        catch (Throwable t) {
+            io.error.println(messages.format('info.fatal', t))
+            t.printStackTrace(io.error)
+
+            return 1
+        }
+        finally {
+            io.flush()
+        }
+
+        return 0
+    }
+
+    /**
+     * Process command-line arguments.
+     */
+    private void processCommandLine(final String[] args) {
+        assert args != null
+
+        log.debug("Processing command-line args: $args")
+
+        def cli = new CliBuilder(usage : 'groovysh [options]', writer: io.output)
+
+        cli.h(longOpt: 'help', messages['cli.option.help.description'])
+        cli.V(longOpt: 'version', messages['cli.option.version.description'])
+        cli.v(longOpt: 'verbose', messages['cli.option.verbose.description'])
+        cli.d(longOpt: 'debug', messages['cli.option.debug.description'])
+
+        def options = cli.parse(args)
+        assert options
+
+        // Currently no arguments are allowed, so complain if there are any
+        def _args = options.arguments()
+        if (_args.size() != 0) {
+            cli.usage()
+            io.error.println(messages.format('cli.info.unexpected_args', _args.join(' ')))
+            exit(1)
+        }
+
+        if (options.h) {
+            cli.usage()
+            exit(0)
+        }
+
+        if (options.V) {
+            io.output.println(messages.format('cli.info.version', InvokerHelper.version))
+            exit(0)
+        }
+
+        if (options.v) {
+            verbose = true
+        }
+
+        if (options.d) {
+            ShellLog.debug = true
+        }
+    }
 
     static void main(String[] args) {
         int code = new InteractiveShell().run(args)
