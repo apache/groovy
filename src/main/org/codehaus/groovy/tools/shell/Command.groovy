@@ -58,6 +58,10 @@ class Command
         return messages["${name}.description"]
     }
 
+    //
+    // TODO: Add getUsage() to reduce help text, only need to add the arguments for the syntax
+    //
+
     String getHelp() {
         return messages["${name}.help"]
     }

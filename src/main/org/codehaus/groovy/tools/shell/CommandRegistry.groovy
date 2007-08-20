@@ -54,4 +54,8 @@ class CommandRegistry
         
         return null
     }
+
+    //
+    // TODO: Add property access ?
+    //
 }
