@@ -24,34 +24,22 @@ package org.codehaus.groovy.tools.shell
  */
 class IO
 {
-    /**
-     * Raw input stream.
-     */
+    /** Raw input stream. */
     final InputStream inputStream
 
-    /**
-     * Raw output stream.
-     */
+    /** Raw output stream. */
     final OutputStream outputStream
 
-    /**
-     * Raw error output stream.
-     */
+    /** Raw error output stream. */
     final OutputStream errorStream
 
-    /**
-     * Prefered input reader.
-     */
+    /** Prefered input reader. */
     final Reader input
 
-    /**
-     * Prefered output writer.
-     */
+    /** Prefered output writer. */
     final PrintWriter output
 
-    /**
-     * Prefered error output writer.
-     */
+    /** Prefered error output writer. */
     final PrintWriter error
 
     /**
@@ -71,6 +59,9 @@ class IO
         this.error = new PrintWriter(errorStream, true)
     }
 
+    /**
+     * Construct a new IO container using system streams.
+     */
     IO() {
         this(System.in, System.out, System.err)
     }
