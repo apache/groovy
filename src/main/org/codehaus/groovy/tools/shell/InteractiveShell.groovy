@@ -39,7 +39,7 @@ class InteractiveShell
 {
     private static final String NEWLINE = System.properties['line.separator']
     
-    private final GroovyLog log = new GroovyLog(this.class)
+    private final ShellLog log = new ShellLog(this.class)
     
     private final MessageSource messages = new MessageSource(this.class)
     
@@ -56,7 +56,7 @@ class InteractiveShell
     private Object lastResult
     
     boolean verbose
-
+    
     InteractiveShell(final ClassLoader classLoader, final Binding binding, final IO io) {
         assert binding
         assert io
@@ -111,6 +111,18 @@ class InteractiveShell
         registry << new Command('inspect', '\\i', { doInspectCommand() })
 
         registry << new Command('purge', '\\p', { doPurgeCommand() })
+
+        //
+        // TODO: Add 'edit' command, which will pop up some Swing bits to allow the full buffer to be edited
+        //
+
+        //
+        // TODO: Add 'source' (or 'read') command to fill the buffer from a file/url
+        //
+
+        //
+        // TODO: Add 'buffer' command to switch buffers, create new ones, list, etc (aka. console tabs)
+        //
     }
     
     int run(final String[] args) {
@@ -156,7 +168,8 @@ class InteractiveShell
         cli.h(longOpt: 'help', messages['cli.option.help.description'])
         cli.V(longOpt: 'version', messages['cli.option.version.description'])
         cli.v(longOpt: 'verbose', messages['cli.option.verbose.description'])
-
+        cli.d(longOpt: 'debug', messages['cli.option.debug.description'])
+        
         def options = cli.parse(args)
         assert options
 
@@ -180,6 +193,10 @@ class InteractiveShell
 
         if (options.v) {
             verbose = true
+        }
+
+        if (options.d) {
+            ShellLog.debug = true
         }
     }
 
@@ -246,6 +263,7 @@ class InteractiveShell
 
             switch (status.code) {
                 case ParseStatus.COMPLETE:
+                    // Evaluate the current buffer
                     evaluate(current)
                     buffer.clear()
                     break
