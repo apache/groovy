@@ -16,8 +16,6 @@
 
 package org.codehaus.groovy.tools.shell
 
-import java.net.MalformedURLException
-
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.InvokerInvocationException
 
@@ -53,7 +51,7 @@ class InteractiveShell
     
     private final CommandRegistry registry = new CommandRegistry()
 
-    private final List buffer = []
+    private final BufferManager buffers = new BufferManager()
 
     private Object lastResult
     
@@ -64,7 +62,7 @@ class InteractiveShell
         assert io
 
         this.io = io
-        
+
         registerCommands()
         
         // Initialize the JLine console input reader
@@ -120,13 +118,12 @@ class InteractiveShell
 
         registry << new Command('save', '\\s', this.&doSaveCommand)
 
+        registry << new Command('buffer', '\\b', this.&doBufferCommand)
+
+        registry << new CommandAlias('#', '\\#', 'buffer')
 
         //
         // TODO: Add 'edit' command, which will pop up some Swing bits to allow the full buffer to be edited
-        //
-
-        //
-        // TODO: Add 'buffer' command to switch buffers, create new ones, list, etc (aka. console tabs)
         //
     }
     
@@ -149,8 +146,14 @@ class InteractiveShell
      * Get the current prompt.
      */
     private String getPrompt() {
+        //
+        // TODO: Create a fancy ANSI-color prompt thingy?
+        //
+
+        def buffer = buffers.current()
         def lineNum = formatLineNumber(buffer.size())
-        return "groovy:${lineNum}> "
+
+        return "groovy:(${buffers.selected}):${lineNum}> "
     }
 
     /**
@@ -194,7 +197,7 @@ class InteractiveShell
 
         if (!executeCommand(line)) {
             def current = []
-            current += buffer
+            current += buffers.current()
 
             // Append the line to the current buffer
             current << line
@@ -206,12 +209,12 @@ class InteractiveShell
                 case ParseStatus.COMPLETE:
                     // Evaluate the current buffer
                     evaluate(current)
-                    buffer.clear()
+                    buffers.clearSelected()
                     break
 
                 case ParseStatus.INCOMPLETE:
                     // Save the current buffer so user can build up complex muli-line code blocks
-                    buffer = current
+                    buffers.updateSelected(current)
                     break
 
                 case ParseStatus.ERROR:
@@ -427,6 +430,8 @@ class InteractiveShell
     }
 
     private void doDisplayCommand(final List args) {
+        def buffer = buffers.current()
+
         if (buffer.isEmpty()) {
             io.output.println('Buffer is empty') // TODO: i18n
             return
@@ -450,7 +455,7 @@ class InteractiveShell
     }
 
     private void doClearCommand(final List args) {
-        buffer.clear()
+        def buffer = buffers.current().clear()
 
         if (verbose) {
             io.output.println('Buffer cleared') //  TODO: i18n
@@ -521,6 +526,8 @@ class InteractiveShell
             return
         }
 
+        def buffer = buffers.current()
+        
         if (buffer.isEmpty()) {
             io.output.println('Buffer is empty') // TODO: i18n
             return
@@ -529,7 +536,7 @@ class InteractiveShell
         def file = new File("${args[0]}")
 
         if (verbose) {
-            io.output.println("Saving current buffer to file: $file")
+            io.output.println("Saving current buffer to file: $file") // TODO: i18n
         }
 
         def dir = file.parentFile
@@ -541,7 +548,53 @@ class InteractiveShell
         
         file.write(buffer.join(NEWLINE))
     }
-    
+
+    private void doBufferCommand(final List args) {
+        if (args.size() == 0) {
+            io.output.println("Current selected buffer: ${buffers.selected}") // TODO: i18n
+            return
+        }
+
+        if (args.size() != 1) {
+            io.error.println("Command 'buffer' requires a single argument") // TODO: i18n
+            return
+        }
+
+        switch (args[0]) {
+            case '+':
+                // Create a new buffer
+                buffers.create(true)
+                break
+
+            case '-':
+                // Delete the current buffer
+                if (buffers.size() == 1) {
+                    io.error.println('Can not delete the last buffer') // TODO: i18n
+                }
+                else {
+                    buffers.deleteSelected()
+                }
+                break
+
+            case '?':
+                // Display information about the buffers
+                io.output.println("Total buffers: ${buffers.size()}")
+                break
+
+            default:
+                // Select a buffer
+                def i = Integer.parseInt(args[0])
+                
+                if (i < 0 || i >= buffers.size()) {
+                    io.error.println("Invalid buffer selection: $i") // TODO: i18n
+                }
+                else {
+                    buffers.select(i)
+                }
+                break
+        }
+    }
+
     //
     // Command-line Support
     //
