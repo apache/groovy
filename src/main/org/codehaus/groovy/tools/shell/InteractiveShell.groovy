@@ -140,7 +140,7 @@ class InteractiveShell
         throw new ExitNotification(code)
     }
 
-    void processCommandLine(final String[] args) {
+    private void processCommandLine(final String[] args) {
         assert args != null
 
         log.debug("Processing command-line args: $args")
@@ -183,10 +183,7 @@ class InteractiveShell
     }
 
     private String getPrompt() {
-        // Make a %03d-like string for the line number
-        def lineNum = buffer.size().toString()
-        lineNum = lineNum.padLeft(3, '0')
-
+        def lineNum = formatLineNumber(buffer.size())
         return "groovy:${lineNum}> "
     }
 
@@ -216,10 +213,106 @@ class InteractiveShell
         log.debug('Finished')
     }
 
+    void execute(final String line) {
+        assert line
+
+        if (!executeCommand(line)) {
+            def current = []
+            current += buffer
+
+            // Append the line to the current buffer
+            current << line
+
+            def source = current.join(NEWLINE)
+
+            // Attempt to parse the current buffer
+            def status = parse(source, 1)
+
+            switch (status.code) {
+                case ParseStatus.COMPLETE:
+                    log.debug("Evaluating buffer...")
+
+                    if (verbose) {
+                        displayBuffer(current, true)
+                    }
+
+                    evaluate(source)
+                    break
+
+                case ParseStatus.INCOMPLETE:
+                    // Save the current buffer
+                    buffer = current
+                    break
+
+                case ParseStatus.ERROR:
+                    if (status.cause instanceof CompilationFailedException) {
+                        io.error.println(messages.format('info.error', status.cause.message))
+                    }
+                    else {
+                        io.error.println(messages.format('info.error', status.cause))
+                        status.cause.printStackTrace(io.error)
+                    }
+                    break
+
+                default:
+                    // Should never happen
+                    throw new Error("Invalid parse status: $status.code")
+            }
+        }
+    }
+
     /**
-     * Process built-in command execution
+     * Execute a single line.
      */
-    boolean executeCommand(final String line) {
+    def leftShift(final String line) {
+        execute(line)
+    }
+
+    private void evaluate(final String source) {
+        assert source
+        
+        try {
+            def script = shell.parse(source)
+
+            log.debug("Compiled script: $script")
+            
+            //
+            // TODO: Need smarter bits here to allow a simple class def w/o main() or run() muck...
+            //
+
+            def result = script.run()
+
+            log.debug("Evaluation result: $result")
+
+            if (verbose) {
+                io.output.println("===> $result")
+            }
+
+            lastResult = result
+        }
+        catch (Throwable t) {
+            log.debug("Evaluation failed: $t", t)
+
+            // Unroll invoker exceptions
+            if (t instanceof InvokerInvocationException) {
+                t = t.cause
+            }
+
+            io.error.println(messages.format('info.error', t))
+            t.printStackTrace(io.error)
+        }
+        finally {
+            // Reset the buffer
+            buffer.clear()
+        }
+    }
+    
+    /**
+     * Process built-in command execution.
+     *
+     * @return True if the line was a command and it was executed.
+     */
+    private boolean executeCommand(final String line) {
         def args = line.trim().tokenize()
         def command = registry.find(args[0])
 
@@ -240,86 +333,22 @@ class InteractiveShell
 
         return false
     }
-
-    void execute(final String line) {
-        assert line
-
-        if (!executeCommand(line)) {
-            def current = []
-            current += buffer
-
-            // Append the line to the current buffer
-            current << line
-
-            def source = current.join(NEWLINE)
-
-            // Attempt to parse the buffer
-            if (parse(source, 1)) {
-                log.debug("Evaluating buffer...")
-                
-                if (verbose) {
-                    displayBuffer(current)
-                }
-
-                // Execute the buffer contents
-                try {
-                    def script = shell.parse(source)
-
-                    //
-                    // TODO: Need smarter bits here to allow a simple class def w/o main() or run() muck...
-                    //
-                    
-                    def result = script.run()
-
-                    log.debug("Evaluation result: $result")
-
-                    if (verbose) {
-                        io.output.println("===> $result")
-                    }
-
-                    lastResult = result
-                }
-                catch (Throwable t) {
-                    log.debug("Evaluation failed: $t", t)
-                    
-                    // Unroll invoker exceptions
-                    if (t instanceof InvokerInvocationException) {
-                        t = t.cause
-                    }
-
-                    io.error.println(messages.format('info.error', t))
-                    t.printStackTrace(io.error)
-                }
-                finally {
-                    // Reset the buffer
-                    buffer.clear()
-                }
-            }
-            else {
-                // Save the current buffer
-                buffer = current
-            }
-        }
-    }
-
-    /**
-     * Execute a single line.
-     */
-    def leftShift(final String line) {
-        execute(line)
-    }
     
-    private boolean parse(final String source, final int tolerance) {
+    private ParseStatus parse(final String source, final int tolerance) {
         assert source
 
         def parser
-        def error // FIXME: Need to find a better way to report this
+        Throwable error
+
+        log.debug("Parsing: $source")
 
         try {
             parser = SourceUnit.create('groovysh-script', source, tolerance)
             parser.parse()
-            
-            return true
+
+            log.debug('Parse complete')
+
+            return new ParseStatus(ParseStatus.COMPLETE)
         }
         catch (CompilationFailedException e) {
             // Report errors other than unexpected EOF
@@ -331,18 +360,39 @@ class InteractiveShell
             error = e
         }
 
-        return false
+        if (error) {
+            log.debug("Parse error: $error")
+
+            return new ParseStatus(error)
+        }
+        else {
+            log.debug('Parse incomplete')
+            
+            return new ParseStatus(ParseStatus.INCOMPLETE)
+        }
     }
 
-    private void displayBuffer(final List buffer) {
+    private String formatLineNumber(final int num) {
+        assert num >= 0
+        
+        // Make a %03d-like string for the line number
+        def lineNum = num.toString()
+        return lineNum.padLeft(3, '0')
+    }
+
+    private void displayBuffer(final List buffer, final boolean lineNumbers) {
         assert buffer
 
-        buffer.eachWithIndex { line, index ->
-            // Make a %03d-like string for the line number
-            def lineNum = (index + 1).toString()
-            lineNum = lineNum.padLeft(3, '0')
-
-            io.output.println("${lineNum}> $line")
+        if (lineNumbers) {
+            buffer.eachWithIndex { line, index ->
+                def lineNum = formatLineNumber(index + 1)
+                io.output.println("${lineNum}> $line")
+            }
+        }
+        else {
+            buffer.each { line ->
+                io.output.println("> $line")
+            }
         }
     }
 
@@ -387,7 +437,7 @@ class InteractiveShell
         // TODO: Add flag to show/omit line numbers
         //
 
-        displayBuffer(buffer)
+        displayBuffer(buffer, true)
     }
 
     private void doVariablesCommand() {
