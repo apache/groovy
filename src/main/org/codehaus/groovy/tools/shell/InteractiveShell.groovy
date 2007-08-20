@@ -118,6 +118,9 @@ class InteractiveShell
 
         registry << new CommandAlias('.', '\\.', 'load')
 
+        registry << new Command('save', '\\s', this.&doSaveCommand)
+
+
         //
         // TODO: Add 'edit' command, which will pop up some Swing bits to allow the full buffer to be edited
         //
@@ -157,6 +160,10 @@ class InteractiveShell
         log.debug('Running')
 
         displayBanner()
+
+        //
+        // TODO: Add support to load a ~/.groovy/groovysh.rc or something
+        //
 
         while (true) {
             def line = reader.readLine(prompt)
@@ -504,6 +511,35 @@ class InteractiveShell
                 this << it
             }
         }
+    }
+
+    private void doSaveCommand(final List args) {
+        assert args != null
+
+        if (args.size() != 1) {
+            io.error.println("Command 'save' requires a single file argument") // TODO: i18n
+            return
+        }
+
+        if (buffer.isEmpty()) {
+            io.output.println('Buffer is empty') // TODO: i18n
+            return
+        }
+
+        def file = new File("${args[0]}")
+
+        if (verbose) {
+            io.output.println("Saving current buffer to file: $file")
+        }
+
+        def dir = file.parentFile
+        if (dir && !dir.exists()) {
+            log.debug("Creating parent directory path: $dir")
+            
+            dir.mkdirs()
+        }
+        
+        file.write(buffer.join(NEWLINE))
     }
     
     //
