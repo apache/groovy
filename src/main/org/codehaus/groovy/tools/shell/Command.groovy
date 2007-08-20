@@ -57,7 +57,11 @@ class Command
     String getDescription() {
         return messages["${name}.description"]
     }
-    
+
+    String getHelp() {
+        return messages["${name}.help"]
+    }
+
     void execute(final List args) {
         //
         // TODO: Pass in command context ?

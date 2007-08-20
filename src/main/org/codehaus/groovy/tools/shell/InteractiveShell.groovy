@@ -403,21 +403,32 @@ class InteractiveShell
     //
 
     private void doHelpCommand(final List args) {
-        // Figure out the max command name length dynamically
-        int maxlen = 0
-        registry.commands.each {
-            if (it.name.size() > maxlen) maxlen = it.name.size()
+        if (args.size() == 1) {
+            // Display command help text
+            def command = registry.find(args[0])
+            if (!command) {
+                io.error.println("No such command: ${arg[0]}") // TODO: i18n
+                return
+            }
+            io.output.println(command.help)
         }
+        else {
+            // Figure out the max command name length dynamically
+            int maxlen = 0
+            registry.commands.each {
+                if (it.name.size() > maxlen) maxlen = it.name.size()
+            }
 
-        io.output.println('For information about Groovy, visit:') // TODO: i18n
-        io.output.println('    http://groovy.codehaus.org')
-        io.output.println()
+            io.output.println('For information about Groovy, visit:') // TODO: i18n
+            io.output.println('    http://groovy.codehaus.org')
+            io.output.println()
 
-        io.output.println('Available commands:') // TODO: i18n
+            io.output.println('Available commands:') // TODO: i18n
 
-        registry.commands.each {
-            def name = it.name.padRight(maxlen, ' ')
-            io.output.println("  ${name}  ($it.shortcut) $it.description")
+            registry.commands.each {
+                def name = it.name.padRight(maxlen, ' ')
+                io.output.println("  ${name}  ($it.shortcut) $it.description")
+            }
         }
     }
 
@@ -533,6 +544,10 @@ class InteractiveShell
             return
         }
 
+        //
+        // TODO: Support special '-' file to simply dump text to io.output
+        //
+        
         def file = new File("${args[0]}")
 
         if (verbose) {

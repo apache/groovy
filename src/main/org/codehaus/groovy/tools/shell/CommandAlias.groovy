@@ -37,7 +37,11 @@ class CommandAlias
     String getDescription() {
         return messages.format('info.alias_to', target)
     }
-    
+
+    String getHelp() {
+        return registry.find(target).help
+    }
+
     void execute(final List args) {
         def command = registry.find(target)
         assert command
