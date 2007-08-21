@@ -112,6 +112,8 @@ class InteractiveShell
 
         registry << new Command('variables', '\\v', this.&doVariablesCommand)
 
+        registry << new Command('classes', '\\C', this.&doClassesCommand)
+
         registry << new Command('import', '\\i', this.&doImportCommand)
 
         registry << new Command('imports', '\\I', this.&doImportsCommand)
@@ -487,6 +489,20 @@ class InteractiveShell
         }
     }
 
+    private void doClassesCommand(final List args) {
+        def classes = shell.classLoader.loadedClasses
+
+        if (classes.size() == 0) {
+            io.output.println("No classes have been loaded") // TODO: i18n
+            return
+        }
+
+        io.output.println('Classes:') // TODO: i18n
+        classes.each {
+            io.output.println("  $it")
+        }
+    }
+
     private void doImportCommand(final List args) {
         assert args != null
 
@@ -576,7 +592,12 @@ class InteractiveShell
     }
 
     private void doPurgeClassesCommand(final List args) {
-        shell.resetLoadedClasses()
+        if (shell.classLoader.loadedClasses.size() == 0) {
+            io.output.println("No classes have been loaded") // TODO: i18n
+            return
+        }
+
+        shell.classLoader.clearCache()
 
         if (verbose) {
             io.output.println('Loaded classes purged') // TODO: i18n
