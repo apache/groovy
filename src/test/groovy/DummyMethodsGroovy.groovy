@@ -8,9 +8,9 @@
  
 package groovy;
 
-public class DummyMethods {
+public class DummyMethodsGroovy {
     public static void main(String[] args) {
-        DummyMethods tmp = new DummyMethods();
+        DummyMethodsGroovy tmp = new DummyMethodsGroovy();
         String answer = tmp.foo("Hey", 1, 2);
         System.out.println("Answer: " + answer);
     }

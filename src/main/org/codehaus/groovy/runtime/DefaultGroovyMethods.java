@@ -2320,6 +2320,10 @@ public class DefaultGroovyMethods {
         return getAt(list, range);
     }
 
+    public static List getAt(Object[] array, EmptyRange range) {
+        return new ArrayList();
+    }
+
     public static List getAt(Object[] array, ObjectRange range) {
         List list = Arrays.asList(array);
         return getAt(list, range);

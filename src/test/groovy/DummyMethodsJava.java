@@ -7,7 +7,7 @@
  */
 package groovy;
 
-public class DummyMethods {
+public class DummyMethodsJava {
     public String foo(String a, float b, float c) {
         return "float args";
     }
