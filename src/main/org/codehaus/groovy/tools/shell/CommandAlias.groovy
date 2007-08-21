@@ -45,6 +45,10 @@ class CommandAlias
         return messages.format('info.alias_to', target)
     }
 
+    String getUsage() {
+        return findTarget().usage
+    }
+    
     String getHelp() {
         return findTarget().help
     }

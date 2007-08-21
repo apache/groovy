@@ -58,19 +58,15 @@ class Command
         return messages["${name}.description"]
     }
 
-    //
-    // TODO: Add getUsage() to reduce help text, only need to add the arguments for the syntax
-    //
+    String getUsage() {
+        return messages["${name}.usage"]
+    }
 
     String getHelp() {
         return messages["${name}.help"]
     }
 
     void execute(final List args) {
-        //
-        // TODO: Pass in command context ?
-        //
-        
         function.call(args)
     }
 }

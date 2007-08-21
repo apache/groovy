@@ -426,7 +426,11 @@ class InteractiveShell
                 io.error.println("No such command: $name") // TODO: i18n
                 return
             }
+
+            io.output.println("usage: $command.name $command.usage") // TODO: i18n
+            io.output.println()
             io.output.println(command.help)
+            io.output.println()
         }
         else {
             // Figure out the max command name and shortcut length dynamically
@@ -453,6 +457,7 @@ class InteractiveShell
                 
                 io.output.println("  ${name}  ($shortcut) $it.description")
             }
+            io.output.println()
         }
     }
 
