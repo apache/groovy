@@ -27,6 +27,8 @@ import org.codehaus.groovy.tools.ErrorReporter
 import groovy.inspect.swingui.ObjectBrowser
 
 import jline.ConsoleReader
+import jline.MultiCompletor
+import jline.FileNameCompletor
 
 /**
  * An interactive shell for evaluating Groovy code from the command-line (aka. groovysh).
@@ -63,24 +65,24 @@ class InteractiveShell
 
         this.io = io
 
-        registerCommands()
-        
-        // Initialize the JLine console input reader
-        reader = new ConsoleReader(io.inputStream, io.output)
-        
-        // Add some completors to fancy things up
-        reader.addCompletor(new CommandNameCompletor(registry))
-
-        //
-        // TODO: Add a new CommandArgumentCompletor, which will add completion for command arugments if any
-        //
-        
         if (classLoader != null) {
             shell = new GroovyShell(classLoader, binding)
         }
         else {
             shell = new GroovyShell(binding)
         }
+        
+        registerCommands()
+        
+        // Initialize the JLine console input reader
+        reader = new ConsoleReader(io.inputStream, io.output)
+        
+        // Add some completors to fancy things up
+        def completors = []
+        registry.commands().each {
+            completors << it.completor
+        }
+        reader.addCompletor(new MultiCompletor(completors))
 
         log.debug('Initialized')
     }
@@ -102,7 +104,7 @@ class InteractiveShell
         // TODO: Add CommandSeperator for better visual grouping
         //
         
-        registry << new Command('help', '\\h', this.&doHelpCommand)
+        registry << new Command('help', '\\h', this.&doHelpCommand, new HelpCommandCompletor(registry), null)
         
         registry << new CommandAlias('?', '\\?', 'help')
 
@@ -118,7 +120,7 @@ class InteractiveShell
 
         registry << new Command('classes', '\\C', this.&doClassesCommand)
 
-        registry << new Command('import', '\\i', this.&doImportCommand)
+        registry << new Command('import', '\\i', this.&doImportCommand, new ImportCommandCompletor(shell.classLoader), null)
 
         registry << new Command('imports', '\\I', this.&doImportsCommand)
 
@@ -130,13 +132,13 @@ class InteractiveShell
 
         registry << new Command('purgeimports', '\\pi', this.&doPurgeImportsCommand)
 
-        registry << new Command('load', '\\l', this.&doLoadCommand)
+        registry << new Command('load', '\\l', this.&doLoadCommand, new FileNameCompletor())
 
         registry << new CommandAlias('.', '\\.', 'load')
 
-        registry << new Command('save', '\\s', this.&doSaveCommand)
+        registry << new Command('save', '\\s', this.&doSaveCommand, new FileNameCompletor(), null)
 
-        registry << new Command('buffer', '\\b', this.&doBufferCommand)
+        registry << new Command('buffer', '\\b', this.&doBufferCommand, new BufferCommandCompletor(buffers))
 
         registry << new CommandAlias('#', '\\#', 'buffer')
 

@@ -16,30 +16,30 @@
 
 package org.codehaus.groovy.tools.shell
 
-import jline.SimpleCompletor
-
 /**
- * Completes input line from command names (or aliases) bound in the registry.
+ * Completor for the 'help' command.
  *
  * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
-class CommandNameCompletor
+class HelpCommandCompletor
     extends SimpleCompletor
 {
-    CommandNameCompletor(final CommandRegistry registry) {
-        super(new String[0])
-        assert registry != null
+    private final CommandRegistry registry
 
-        registry.commands.each {
-            this << it.name
-            this << it.shortcut
-        }
+    HelpCommandCompletor(final CommandRegistry registry) {
+        assert registry
+
+        this.registry = registry
     }
-    
-    def leftShift(final String name) {
-        assert name
+
+    SortedSet getCandidates() {
+        def set = new TreeSet()
+
+        registry.commands().each {
+            set << it
+        }
         
-        addCandidateString(name)
+        return set
     }
 }

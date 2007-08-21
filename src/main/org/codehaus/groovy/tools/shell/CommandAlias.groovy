@@ -16,6 +16,8 @@
 
 package org.codehaus.groovy.tools.shell
 
+import jline.Completor
+
 /**
  * Provides simple command aliasing.
  *
@@ -53,6 +55,10 @@ class CommandAlias
         return findTarget().help
     }
 
+    Completor getCompletor() {
+        return findTarget().completor
+    }
+    
     void execute(final List args) {
         findTarget().execute(args)
     }

@@ -17,6 +17,8 @@
 package org.codehaus.groovy.tools.shell
 
 import jline.Completor
+import jline.ArgumentCompletor
+import jline.NullCompletor
 
 /**
  * Command execution detail container.
@@ -42,10 +44,10 @@ class Command
     /** Provides the command instance with the registry, for aliasing support. */
     CommandRegistry registry
 
-    /** An optional completor for the arguments of this command. */
-    Completor argumentCompletor
+    /** The completor for this command. */
+    Completor completor
 
-    Command(final String name, final String shortcut, final Closure function) {
+    Command(final String name, final String shortcut, final Closure function, final Completor[] completors) {
         assert name
         assert shortcut
         assert function
@@ -53,12 +55,39 @@ class Command
         this.name = name
         this.shortcut = shortcut
         this.function = function
+        this.completor = createCompletor(completors)
+    }
+
+    Command(final String name, final String shortcut, final Closure function) {
+        this(name, shortcut, function, null)
     }
 
     protected Command(final String name, final String shortcut) {
-        this(name, shortcut, NOOP)
+        this(name, shortcut, NOOP, null)
     }
 
+    protected Completor createCompletor(final Completor[] completors) {
+        // Setup the completor(s) for the command
+        def list = []
+        list << new SimpleCompletor(name, shortcut)
+
+        if (completors) {
+            completors.each {
+                if (it) {
+                    list << it
+                }
+                else {
+                    list << new NullCompletor()
+                }
+            }
+        }
+        else {
+            list << new NullCompletor()
+        }
+
+        return new ArgumentCompletor(list)
+    }
+    
     String getDescription() {
         return messages["${name}.description"]
     }
