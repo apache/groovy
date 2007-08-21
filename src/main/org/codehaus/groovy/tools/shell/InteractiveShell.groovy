@@ -30,6 +30,8 @@ import jline.ConsoleReader
 import jline.MultiCompletor
 import jline.FileNameCompletor
 
+import org.codehaus.groovy.tools.shell.completor.*
+
 /**
  * An interactive shell for evaluating Groovy code from the command-line (aka. groovysh).
  *

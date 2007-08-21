@@ -14,32 +14,37 @@
  * limitations under the License.
  */
 
-package org.codehaus.groovy.tools.shell
+package org.codehaus.groovy.tools.shell.completor
+
+import org.codehaus.groovy.tools.shell.BufferManager
 
 /**
- * Completor for the 'help' command.
+ * Completor for the 'buffer' command.
  *
  * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
-class HelpCommandCompletor
+class BufferCommandCompletor
     extends SimpleCompletor
 {
-    private final CommandRegistry registry
+    private final BufferManager buffers
+    
+    BufferCommandCompletor(final BufferManager buffers) {
+        assert buffers
 
-    HelpCommandCompletor(final CommandRegistry registry) {
-        assert registry
-
-        this.registry = registry
+        this.buffers = buffers
     }
 
     SortedSet getCandidates() {
         def set = new TreeSet()
+        set << '+'
+        set << '-'
+        set << '?'
 
-        registry.commands().each {
-            set << it
+        for (i in 0..<buffers.size()) {
+            set << i.toString()
         }
-        
+
         return set
     }
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.codehaus.groovy.tools.shell
+package org.codehaus.groovy.tools.shell.completor
 
 /**
  * Support for simple completors.
@@ -36,7 +36,7 @@ class SimpleCompletor
     def leftShift(final String candidate) {
         assert candidate
         
-        super.addCandidateString(candidate)
+        addCandidateString(candidate)
     }
 
     //

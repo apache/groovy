@@ -14,37 +14,35 @@
  * limitations under the License.
  */
 
-package org.codehaus.groovy.tools.shell
+package org.codehaus.groovy.tools.shell.completor
+
+import org.codehaus.groovy.tools.shell.CommandRegistry
 
 /**
- * Provides completion for class names.
+ * Completor for the 'help' command.
  *
  * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
-class ClassNameCompletor
+class HelpCommandCompletor
     extends SimpleCompletor
 {
-    private final GroovyClassLoader classLoader
+    private final CommandRegistry registry
 
-    ClassNameCompletor(final GroovyClassLoader classLoader) {
-        assert classLoader
+    HelpCommandCompletor(final CommandRegistry registry) {
+        assert registry
 
-        this.classLoader = classLoader
-        
-        delimiter = '.'
+        this.registry = registry
     }
 
     SortedSet getCandidates() {
         def set = new TreeSet()
 
-        //
-        // TODO: Figure out what class names to include, for now just hack in some to test with
-        //
-
-        set << 'java.lang.System'
-        set << 'groovy.lang.GroovyObject'
-
+        registry.commands().each {
+            set << it.name
+            set << it.shortcut
+        }
+        
         return set
     }
 }

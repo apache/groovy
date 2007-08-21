@@ -14,35 +14,25 @@
  * limitations under the License.
  */
 
-package org.codehaus.groovy.tools.shell
+package org.codehaus.groovy.tools.shell.completor
+
+import jline.ArgumentCompletor
+import jline.NullCompletor
 
 /**
- * Completor for the 'buffer' command.
+ * Completor for the 'import' command.
  *
  * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
-class BufferCommandCompletor
-    extends SimpleCompletor
+class ImportCommandCompletor
+    extends ArgumentCompletor
 {
-    private final BufferManager buffers
-    
-    BufferCommandCompletor(final BufferManager buffers) {
-        assert buffers
-
-        this.buffers = buffers
-    }
-
-    SortedSet getCandidates() {
-        def set = new TreeSet()
-        set << '+'
-        set << '-'
-        set << '?'
-
-        for (i in 0..<buffers.size()) {
-            set << i.toString()
-        }
-
-        return set
+    ImportCommandCompletor(final GroovyClassLoader classLoader) {
+        super([
+            new ClassNameCompletor(classLoader),
+            new SimpleCompletor('as'),
+            new NullCompletor()
+        ])
     }
 }

@@ -14,25 +14,37 @@
  * limitations under the License.
  */
 
-package org.codehaus.groovy.tools.shell
-
-import jline.ArgumentCompletor
-import jline.NullCompletor
+package org.codehaus.groovy.tools.shell.completor
 
 /**
- * Completor for the 'import' command.
+ * Provides completion for class names.
  *
  * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
-class ImportCommandCompletor
-    extends ArgumentCompletor
+class ClassNameCompletor
+    extends SimpleCompletor
 {
-    ImportCommandCompletor(final GroovyClassLoader classLoader) {
-        super([
-            new ClassNameCompletor(classLoader),
-            new SimpleCompletor('as'),
-            new NullCompletor()
-        ])
+    private final GroovyClassLoader classLoader
+
+    ClassNameCompletor(final GroovyClassLoader classLoader) {
+        assert classLoader
+
+        this.classLoader = classLoader
+        
+        delimiter = '.'
+    }
+
+    SortedSet getCandidates() {
+        def set = new TreeSet()
+
+        //
+        // TODO: Figure out what class names to include, for now just hack in some to test with
+        //
+
+        set << 'java.lang.System'
+        set << 'groovy.lang.GroovyObject'
+
+        return set
     }
 }

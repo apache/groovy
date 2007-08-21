@@ -20,6 +20,8 @@ import jline.Completor
 import jline.ArgumentCompletor
 import jline.NullCompletor
 
+import org.codehaus.groovy.tools.shell.completor.SimpleCompletor
+
 /**
  * Command execution detail container.
  *
