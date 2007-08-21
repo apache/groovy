@@ -115,6 +115,10 @@ public class GroovyShell extends GroovyObjectSupport {
         return context;
     }
 
+    public GroovyClassLoader getClassLoader() {
+        return loader;
+    }
+
     public Object getProperty(String property) {
         Object answer = getVariable(property);
         if (answer == null) {
