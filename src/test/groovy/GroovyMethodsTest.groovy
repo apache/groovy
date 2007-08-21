@@ -84,6 +84,7 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert value == 3
         array[0] = 9
         assert array[0] == 9
+        assert array[0..<0] == []
     }
 
     void testToCharacterMethod() {
@@ -101,12 +102,19 @@ class GroovyMethodsTest extends GroovyTestCase {
         list = ['a', 'b', 'c']; list[4..5] = 'x'; assert list == ["a", "b", "c", null, "x"]
     }
 
+    void testGetAtRange() {
+        def list = ['a', 'b', 'c']
+        assert list[1..2] == ['b', 'c']
+        assert list[0..<0] == []
+    }
+
     void testCharSequenceGetAt() {
         def x = "matrix"
         assert x[0, 5..0] == 'mxirtam'
         assert x[3..0, 0..3] == 'rtammatr'
         assert x[2..-4, 3..-4, 3..-3] == 'trtr'
         assert x[-1..-3, -3..-1] == 'xirrix'
+        assert x[0..<0] == ''
     }
 
     void testListGrep() {

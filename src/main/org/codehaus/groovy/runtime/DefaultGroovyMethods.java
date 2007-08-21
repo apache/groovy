@@ -1753,6 +1753,17 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * Support the range subscript operator for CharSequence or StringBuffer with EmptyRange
+     *
+     * @param text  a CharSequence
+     * @param range an EmptyRange
+     * @return the subsequence CharSequence
+     */
+    public static CharSequence getAt(CharSequence text, EmptyRange range) {
+        return "";
+    }
+
+    /**
      * Support the range subscript operator for String with IntRange
      *
      * @param text  a String
@@ -1761,6 +1772,17 @@ public class DefaultGroovyMethods {
      */
     public static String getAt(String text, IntRange range) {
         return getAt(text, (Range) range);
+    }
+
+    /**
+     * Support the range subscript operator for String with EmptyRange
+     *
+     * @param text  a String
+     * @param range an EmptyRange
+     * @return the resulting String
+     */
+    public static String getAt(String text, EmptyRange range) {
+        return "";
     }
 
     /**
