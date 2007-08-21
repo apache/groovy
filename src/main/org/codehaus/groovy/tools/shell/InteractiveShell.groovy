@@ -55,8 +55,6 @@ class InteractiveShell
 
     private final List imports = []
     
-    private Object lastResult
-    
     boolean verbose
     
     InteractiveShell(final ClassLoader classLoader, final Binding binding, final IO io) {
@@ -367,7 +365,8 @@ class InteractiveShell
                 io.output.println("===> $result")
             }
 
-            lastResult = result
+            // Save the last result to the '_' variable
+            shell.context._ = result
         }
         catch (Throwable t) {
             log.debug("Evaluation failed: $t", t)
@@ -534,7 +533,9 @@ class InteractiveShell
     }
 
     private void doInspectCommand(final List args) {
-        if (lastResult == null) {
+        def lastResult = shell.context.variables['_']
+        
+        if (!lastResult) {
             io.output.println('Last result is null; nothing to inspect') // TODO: i18n
             return
         }
