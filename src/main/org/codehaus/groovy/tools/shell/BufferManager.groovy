@@ -65,6 +65,10 @@ class BufferManager
     int size() {
         return buffers.size()
     }
+
+    //
+    // Selected operators
+    //
     
     void deleteSelected() {
         delete(selected)

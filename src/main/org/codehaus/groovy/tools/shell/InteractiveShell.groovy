@@ -70,6 +70,10 @@ class InteractiveShell
         
         // Add some completors to fancy things up
         reader.addCompletor(new CommandNameCompletor(registry))
+
+        //
+        // TODO: Add a new CommandArgumentCompletor, which will add completion for command arugments if any
+        //
         
         if (classLoader != null) {
             shell = new GroovyShell(classLoader, binding)

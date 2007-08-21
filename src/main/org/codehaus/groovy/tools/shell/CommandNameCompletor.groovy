@@ -31,11 +31,6 @@ class CommandNameCompletor
         super(new String[0])
         assert registry != null
 
-        //
-        // TODO: See about adding custom completor muck for select commands
-        //       (like load and save which take files, or buffer which takes +|-|n
-        //
-        
         registry.commands.each {
             this << it.name
             this << it.shortcut

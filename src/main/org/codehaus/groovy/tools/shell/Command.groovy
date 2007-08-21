@@ -16,6 +16,8 @@
 
 package org.codehaus.groovy.tools.shell
 
+import jline.Completor
+
 /**
  * Command execution detail container.
  *
@@ -39,7 +41,10 @@ class Command
     
     /** Provides the command instance with the registry, for aliasing support. */
     CommandRegistry registry
-    
+
+    /** An optional completor for the arguments of this command. */
+    Completor argumentCompletor
+
     Command(final String name, final String shortcut, final Closure function) {
         assert name
         assert shortcut
