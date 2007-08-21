@@ -31,6 +31,8 @@ import jline.MultiCompletor
 import jline.FileNameCompletor
 
 import org.codehaus.groovy.tools.shell.completor.*
+import java.lang.reflect.Method
+import org.codehaus.groovy.runtime.MethodClosure
 
 /**
  * An interactive shell for evaluating Groovy code from the command-line (aka. groovysh).
@@ -358,16 +360,17 @@ class InteractiveShell
 
         def source = (imports + buffer).join(NEWLINE)
 
+        Class type
         try {
-            def script = shell.parse(source)
+            Script script = shell.parse(source)
+            type = script.getClass()
 
             log.debug("Compiled script: $script")
-            
-            //
-            // TODO: Need smarter bits here to allow a simple class def w/o main() or run() muck...
-            //
 
-            def result = script.run()
+            def result
+            if (isRunnableScript(type)) {
+                result = script.run()
+            }
 
             log.debug("Evaluation result: $result")
 
@@ -376,7 +379,15 @@ class InteractiveShell
             }
 
             // Save the last result to the '_' variable
-            shell.context._ = result
+            shell.context['_'] = result
+
+            // Keep only the methods that have been defined in the script
+            type.declaredMethods.each { Method m ->
+                if (!(m.name in [ 'main', 'run' ] || m.name.startsWith('super$') || m.name.startsWith('class$'))) {
+                    log.debug("Saving method definition: $m")
+                    shell.context["$m.name"] = new MethodClosure(type.newInstance(), m.name)
+                }
+            }
         }
         catch (Throwable t) {
             log.debug("Evaluation failed: $t", t)
@@ -389,6 +400,25 @@ class InteractiveShell
             io.error.println(messages.format('info.error', t))
             t.printStackTrace(io.error)
         }
+        finally {
+            // Remove the script class generated
+            shell.classLoader.classCache.remove(type?.name)
+
+            // Remove the inline closures from the cache as well
+            shell.classLoader.classCache.remove('$_run_closure')
+        }
+    }
+
+    private boolean isRunnableScript(final Class type) {
+        assert type
+
+        for (m in type.declaredMethods) {
+            if (m.name == 'main') {
+                return true
+            }
+        }
+
+        return false
     }
 
     /**
@@ -498,6 +528,14 @@ class InteractiveShell
         
         io.output.println('Variables:') // TODO: i18n
         vars.each { key, value ->
+            // Special handling for defined methods, just show the sig
+            if (value instanceof MethodClosure) {
+                //
+                // TODO: Would be nice to show the argument types it will accept...
+                //
+                value = "method ${value.method}()"
+            }
+            
             io.output.println("  $key = $value")
         }
     }
@@ -515,7 +553,7 @@ class InteractiveShell
             io.output.println("  $it")
         }
     }
-
+    
     private void doImportCommand(final List args) {
         assert args != null
 
