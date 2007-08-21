@@ -128,7 +128,7 @@ class InteractiveShell
 
         registry << new Command('imports', '\\I', this.&doImportsCommand)
 
-        registry << new Command('inspect', '\\n', this.&doInspectCommand)
+        registry << new Command('inspect', '\\n', this.&doInspectCommand, new InspectCommandCompletor(shell.context), null)
 
         registry << new Command('purgevariables', '\\pv', this.&doPurgeVariablesCommand)
 
@@ -605,18 +605,26 @@ class InteractiveShell
     }
 
     private void doInspectCommand(final List args) {
-        def lastResult = shell.context.variables['_']
-        
-        if (!lastResult) {
-            io.output.println('Last result is null; nothing to inspect') // TODO: i18n
+        assert args != null
+
+        def subject
+        if (args.size() == 1) {
+            subject = shell.context.variables[args[0]]
+        }
+        else {
+            subject = shell.context.variables['_']
+        }
+
+        if (!subject) {
+            io.output.println('Subject is null; nothing to inspect') // TODO: i18n
             return
         }
 
         if (verbose) {
-            io.output.println("Launching object browser to inspect: $lastResult") // TODO: i18n
+            io.output.println("Launching object browser to inspect: $subject") // TODO: i18n
         }
         
-        ObjectBrowser.inspect(lastResult);
+        ObjectBrowser.inspect(subject);
     }
 
     private void doPurgeVariablesCommand(final List args) {
