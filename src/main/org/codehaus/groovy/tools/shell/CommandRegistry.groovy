@@ -25,14 +25,20 @@ package org.codehaus.groovy.tools.shell
 class CommandRegistry
 {
     final List commands = []
+
+    private final Map nameMap = [:]
     
     void register(final Command command) {
         assert command
 
-        //
-        // TODO: Make sure that the command name and shortcut are unique
-        //
+        // Make sure that the command name and shortcut are unique
+        assert !nameMap.containsKey(command.name) : "Duplicate comamnd name: $command.name"
+        nameMap[command.name] = command
         
+        assert !nameMap.containsKey(command.shortcut) : "Duplicate command shortcut: $command.shortcut"
+        nameMap[command.shortcut] = command
+
+        // Hold on to the command in order
         commands << command
         
         // Hookup context for alias commands
@@ -55,7 +61,11 @@ class CommandRegistry
         return null
     }
 
-    //
-    // TODO: Add property access ?
-    //
+    List commands() {
+        return commands
+    }
+    
+    def getProperty(final String name) {
+        return find(name)
+    }
 }

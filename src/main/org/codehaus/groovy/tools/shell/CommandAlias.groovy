@@ -35,7 +35,7 @@ class CommandAlias
     }
 
     private Command findTarget() {
-        def command = registry.find(target)
+        def command = registry[target]
         assert command
 
         return command

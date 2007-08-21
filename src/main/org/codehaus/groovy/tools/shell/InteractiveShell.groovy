@@ -118,7 +118,7 @@ class InteractiveShell
 
         registry << new Command('imports', '\\I', this.&doImportsCommand)
 
-        registry << new Command('inspect', '\\i', this.&doInspectCommand)
+        registry << new Command('inspect', '\\n', this.&doInspectCommand)
 
         registry << new Command('purgevariables', '\\pv', this.&doPurgeVariablesCommand)
 
@@ -421,9 +421,9 @@ class InteractiveShell
         if (args.size() == 1) {
             // Display command help text
             def name = args[0]
-            def command = registry.find(name)
+            def command = registry[name]
             if (!command) {
-                io.error.println("No such command: ${name}") // TODO: i18n
+                io.error.println("No such command: $name") // TODO: i18n
                 return
             }
             io.output.println(command.help)
@@ -432,7 +432,7 @@ class InteractiveShell
             // Figure out the max command name and shortcut length dynamically
             int maxName = 0
             int maxShortcut
-            registry.commands.each {
+            registry.commands().each {
                 if (it.name.size() > maxName) maxName = it.name.size()
                 if (it.shortcut.size() > maxShortcut) maxShortcut = it.shortcut.size()
             }
@@ -443,7 +443,7 @@ class InteractiveShell
 
             io.output.println('Available commands:') // TODO: i18n
 
-            registry.commands.each {
+            registry.commands().each {
                 def name = it.name.padRight(maxName, ' ')
                 def shortcut = it.shortcut.padRight(maxShortcut, ' ')
 
