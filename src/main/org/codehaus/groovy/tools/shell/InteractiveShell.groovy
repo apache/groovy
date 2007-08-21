@@ -527,8 +527,9 @@ class InteractiveShell
         def buff = [ 'import ' + args.join(' ') ]
         buff << 'def dummp = false'
 
+        def type
         try {
-            shell.parse(buff.join(NEWLINE))
+            type = shell.classLoader.parseClass(buff.join(NEWLINE))
 
             log.debug("Adding import: ${buff[0]}")
 
@@ -538,6 +539,10 @@ class InteractiveShell
             def msg = "Invalid import definition: '${buff[0]}'; reason: $e.message" // TODO: i18n
             log.debug(msg, e)
             io.error.println(msg)
+        }
+        finally {
+            // Remove the class generated while testing the import syntax
+            shell.classLoader.classCache.remove(type?.name)
         }
     }
 
