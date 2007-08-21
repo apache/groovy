@@ -42,7 +42,7 @@ class InteractiveShell
     private final ShellLog log = new ShellLog(this.class)
     
     private final MessageSource messages = new MessageSource(this.class)
-    
+
     private final GroovyShell shell
 
     private final IO io
@@ -96,6 +96,10 @@ class InteractiveShell
     }
     
     private void registerCommands() {
+        //
+        // TODO: Add CommandSeperator for better visual grouping
+        //
+        
         registry << new Command('help', '\\h', this.&doHelpCommand)
         
         registry << new CommandAlias('?', '\\?', 'help')
@@ -116,7 +120,9 @@ class InteractiveShell
 
         registry << new Command('inspect', '\\i', this.&doInspectCommand)
 
-        registry << new Command('purge', '\\p', this.&doPurgeCommand)
+        registry << new Command('purgevariables', '\\pv', this.&doPurgeVariablesCommand)
+
+        registry << new Command('purgeclasses', '\\pc', this.&doPurgeClassesCommand)
 
         registry << new Command('purgeimports', '\\pi', this.&doPurgeImportsCommand)
 
@@ -422,10 +428,12 @@ class InteractiveShell
             io.output.println(command.help)
         }
         else {
-            // Figure out the max command name length dynamically
-            int maxlen = 0
+            // Figure out the max command name and shortcut length dynamically
+            int maxName = 0
+            int maxShortcut
             registry.commands.each {
-                if (it.name.size() > maxlen) maxlen = it.name.size()
+                if (it.name.size() > maxName) maxName = it.name.size()
+                if (it.shortcut.size() > maxShortcut) maxShortcut = it.shortcut.size()
             }
 
             io.output.println('For information about Groovy, visit:') // TODO: i18n
@@ -435,8 +443,14 @@ class InteractiveShell
             io.output.println('Available commands:') // TODO: i18n
 
             registry.commands.each {
-                def name = it.name.padRight(maxlen, ' ')
-                io.output.println("  ${name}  ($it.shortcut) $it.description")
+                def name = it.name.padRight(maxName, ' ')
+                def shortcut = it.shortcut.padRight(maxShortcut, ' ')
+
+                //
+                // TODO: Wrap description if needed
+                //
+                
+                io.output.println("  ${name}  ($shortcut) $it.description")
             }
         }
     }
@@ -511,19 +525,6 @@ class InteractiveShell
         }
     }
 
-    private void doPurgeImportsCommand(final List args) {
-        if (imports.isEmpty()) {
-            io.output.println("No custom imports have been defined") // TODO: i18n
-            return
-        }
-
-        imports.clear()
-        
-        if (verbose) {
-            io.output.println("Custom imports purged") // TODO: i18n
-        }
-    }
-
     private void doClearCommand(final List args) {
         def buffer = buffers.current().clear()
 
@@ -545,11 +546,39 @@ class InteractiveShell
         ObjectBrowser.inspect(lastResult);
     }
 
-    private void doPurgeCommand(final List args) {
+    private void doPurgeVariablesCommand(final List args) {
+        def vars = shell.context.variables
+
+        if (vars.isEmpty()) {
+            io.output.println('No variables defined') // TODO: i18n
+            return
+        }
+
+       vars.clear()
+
+       if (verbose) {
+           io.output.println("Custom variables purged")
+       }
+    }
+
+    private void doPurgeImportsCommand(final List args) {
+        if (imports.isEmpty()) {
+            io.output.println("No custom imports have been defined") // TODO: i18n
+            return
+        }
+
+        imports.clear()
+
+        if (verbose) {
+            io.output.println("Custom imports purged") // TODO: i18n
+        }
+    }
+
+    private void doPurgeClassesCommand(final List args) {
         shell.resetLoadedClasses()
 
         if (verbose) {
-            io.output.println('Purged loaded classes') // TODO: i18n
+            io.output.println('Loaded classes purged') // TODO: i18n
         }
     }
 
