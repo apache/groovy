@@ -53,6 +53,9 @@ class Groovysh
     Groovysh(final ClassLoader classLoader, final Binding binding, final IO io) {
         super(io)
         
+        // For sanity, hook up the logging stream to the output we are given
+        ShellLog.out = io.outputStream
+        
         assert classLoader
         assert binding
         
