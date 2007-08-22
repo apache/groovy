@@ -14,7 +14,14 @@
  * limitations under the License.
  */
 
-package org.codehaus.groovy.tools.shell
+package org.codehaus.groovy.tools.shell;
+
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.Reader;
+import java.io.PrintWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
 
 /**
  * Container for input/output handles.
@@ -22,70 +29,69 @@ package org.codehaus.groovy.tools.shell
  * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
-class IO
+public class IO
 {
     /** Raw input stream. */
-    final InputStream inputStream
+    public final InputStream inputStream;
 
     /** Raw output stream. */
-    final OutputStream outputStream
+    public final OutputStream outputStream;
 
     /** Raw error output stream. */
-    final OutputStream errorStream
+    public final OutputStream errorStream;
 
     /** Prefered input reader. */
-    final Reader input
+    public final Reader input;
 
     /** Prefered output writer. */
-    final PrintWriter output
+    public final PrintWriter output;
 
     /** Prefered error output writer. */
-    final PrintWriter error
+    public final PrintWriter error;
 
     /** Flag to indicate that verbose output is expected. */
-    boolean verbose
+    public boolean verbose;
 
     /** Flag to indicate that quiet output is expected. */
-    boolean quiet
+    public boolean quiet;
     
     /**
      * Construct a new IO container.
      */
-    IO(final InputStream inputStream, final OutputStream outputStream, final OutputStream errorStream) {
-        assert inputStream
-        assert outputStream
-        assert errorStream
+    public IO(final InputStream inputStream, final OutputStream outputStream, final OutputStream errorStream) {
+        assert inputStream != null;
+        assert outputStream != null;
+        assert errorStream != null;
 
-        this.inputStream = inputStream
-        this.outputStream = outputStream
-        this.errorStream = errorStream
-
-        this.input = new InputStreamReader(inputStream)
-        this.output = new PrintWriter(outputStream, true)
-        this.error = new PrintWriter(errorStream, true)
+        this.inputStream = inputStream;
+        this.outputStream = outputStream;
+        this.errorStream = errorStream;
+        this.input = new InputStreamReader(inputStream);
+        this.output = new PrintWriter(outputStream, true);
+        this.error = new PrintWriter(errorStream, true);
     }
 
     /**
      * Construct a new IO container using system streams.
      */
-    IO() {
-        this(System.in, System.out, System.err)
+    public IO() {
+        this(System.in, System.out, System.err);
     }
 
     /**
      * Flush both output streams.
      */
-    void flush() {
-        output.flush()
-        error.flush()
+    public void flush() throws IOException {
+        output.flush();
+        error.flush();
     }
 
     /**
      * Close all streams.
      */
-    void close() {
-        input.close()
-        output.close()
-        error.close()
+    public void close() throws IOException {
+        input.close();
+        output.close();
+        error.close();
     }
 }
