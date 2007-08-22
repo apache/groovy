@@ -42,7 +42,7 @@ class LoadCommand
         assert args != null
         
         if (args.isEmpty()) {
-            io.error.println("Command 'load' requires one or more file/url arguments") // TODO: i18n
+            io.err.println("Command 'load' requires one or more file/url arguments") // TODO: i18n
             return
         }
 
@@ -56,7 +56,7 @@ class LoadCommand
                 def file = new File("$source")
                 
                 if (!file.exists()) {
-                    io.error.println("File not found: $file") // TODO: i18n
+                    io.err.println("File not found: $file") // TODO: i18n
                     return
                 }
                 
@@ -64,7 +64,7 @@ class LoadCommand
             }
 
             if (io.verbose) {
-                io.output.println("Loading: $url")
+                io.out.println("Loading: $url")
             }
 
             url.eachLine {

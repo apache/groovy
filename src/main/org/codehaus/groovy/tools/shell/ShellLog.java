@@ -16,7 +16,7 @@
 
 package org.codehaus.groovy.tools.shell;
 
-import java.io.PrintStream;
+import java.io.PrintWriter;
 
 import groovy.lang.GroovyObjectSupport;
 
@@ -33,7 +33,7 @@ public class ShellLog
 {
     public static boolean debug = false;
     
-    public static PrintStream out = System.out;
+    public static PrintWriter out;
     
     public final String name;
     
@@ -58,6 +58,10 @@ public class ShellLog
         if (debug) {
             if (args != null && args.getClass().isArray()) {
                 args = DefaultGroovyMethods.join((Object[])args, ",");
+            }
+            
+            if (out == null) {
+                out = new PrintWriter(System.out, true);
             }
             
             out.println(name.toUpperCase() + " [" + this.name + "] " + args);

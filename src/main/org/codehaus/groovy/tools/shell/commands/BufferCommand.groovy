@@ -49,12 +49,12 @@ class BufferCommand
         assert args != null
 
         if (args.size() == 0) {
-            io.output.println("Current selected buffer: ${buffers.selected}") // TODO: i18n
+            io.out.println("Current selected buffer: ${buffers.selected}") // TODO: i18n
             return
         }
 
         if (args.size() != 1) {
-            io.error.println("Command 'buffer' requires a single argument") // TODO: i18n
+            io.err.println("Command 'buffer' requires a single argument") // TODO: i18n
             return
         }
         
@@ -67,7 +67,7 @@ class BufferCommand
             case '-':
                 // Delete the current buffer
                 if (buffers.size() == 1) {
-                    io.error.println('Can not delete the last buffer') // TODO: i18n
+                    io.err.println('Can not delete the last buffer') // TODO: i18n
                 }
                 else {
                     buffers.deleteSelected()
@@ -76,7 +76,7 @@ class BufferCommand
 
             case '?':
                 // Display information about the buffers
-                io.output.println("Total buffers: ${buffers.size()}")
+                io.out.println("Total buffers: ${buffers.size()}")
                 break
 
             default:
@@ -84,7 +84,7 @@ class BufferCommand
                 def i = Integer.parseInt(args[0])
                 
                 if (i < 0 || i >= buffers.size()) {
-                    io.error.println("Invalid buffer selection: $i") // TODO: i18n
+                    io.err.println("Invalid buffer selection: $i") // TODO: i18n
                 }
                 else {
                     buffers.select(i)

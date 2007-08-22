@@ -36,14 +36,14 @@ class HistoryCommand
         assert args != null
         
         if (args.size() > 0) {
-            io.error.println(messages.format('error.unexpected_args', args.join(' ')))
+            io.err.println(messages.format('error.unexpected_args', args.join(' ')))
             return
         }
         
         def reader = shell.runner?.reader
         
         if (!reader) {
-            io.error.println("Shell does not appear to be interactive; can not query history")
+            io.err.println("Shell does not appear to be interactive; can not query history")
             return
         }
         
@@ -52,7 +52,7 @@ class HistoryCommand
         //
         
         reader.history.historyList.eachWithIndex { item, idx ->
-            io.output.println("  $idx  $item")
+            io.out.println("  $idx  $item")
         }
     }
 }

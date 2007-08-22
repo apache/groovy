@@ -36,19 +36,19 @@ class PurgeImportsCommand
         assert args != null
 
         if (args.size() > 0) {
-            io.error.println(messages.format('error.unexpected_args', args.join(' ')))
+            io.err.println(messages.format('error.unexpected_args', args.join(' ')))
             return
         }
         
         if (imports.isEmpty()) {
-            io.output.println("No custom imports have been defined") // TODO: i18n
+            io.out.println("No custom imports have been defined") // TODO: i18n
             return
         }
 
         imports.clear()
 
         if (io.verbose) {
-            io.output.println("Custom imports purged") // TODO: i18n
+            io.out.println("Custom imports purged") // TODO: i18n
         }
     }
 }

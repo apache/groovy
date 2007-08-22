@@ -43,7 +43,7 @@ class HelpCommand
         assert args != null
 
         if (args.size() > 1) {
-            io.error.println(messages.format('error.unexpected_args', args.join(' ')))
+            io.err.println(messages.format('error.unexpected_args', args.join(' ')))
             return
         }
         
@@ -60,15 +60,15 @@ class HelpCommand
         
         Command command = registry[name]
         if (!command) {
-            io.error.println("No such command: $name") // TODO: i18n
+            io.err.println("No such command: $name") // TODO: i18n
             return
         }
         
-        io.output.println()
-        io.output.println("usage: $command.name $command.usage") // TODO: i18n
-        io.output.println()
-        io.output.println(command.help)
-        io.output.println()
+        io.out.println()
+        io.out.println("usage: $command.name $command.usage") // TODO: i18n
+        io.out.println()
+        io.out.println(command.help)
+        io.out.println()
     }
 
     private void list() {
@@ -81,13 +81,13 @@ class HelpCommand
             if (it.shortcut.size() > maxShortcut) maxShortcut = it.shortcut.size()
         }
         
-        io.output.println()
-        io.output.println('For information about Groovy, visit:') // TODO: i18n
-        io.output.println('    http://groovy.codehaus.org')
-        io.output.println()
+        io.out.println()
+        io.out.println('For information about Groovy, visit:') // TODO: i18n
+        io.out.println('    http://groovy.codehaus.org')
+        io.out.println()
 
         // List the commands we know about
-        io.output.println('Available commands:') // TODO: i18n
+        io.out.println('Available commands:') // TODO: i18n
 
         registry.commands().each {
             def n = it.name.padRight(maxName, ' ')
@@ -97,13 +97,13 @@ class HelpCommand
             // TODO: Wrap description if needed
             //
 
-            io.output.println("  $n  ($s) $it.description")
+            io.out.println("  $n  ($s) $it.description")
         }
-        io.output.println()
+        io.out.println()
         
-        io.output.println('For help on a specific command type:') // TODO: i18n
-        io.output.println('    help <command>')
-        io.output.println()
+        io.out.println('For help on a specific command type:') // TODO: i18n
+        io.out.println('    help <command>')
+        io.out.println()
     }
 }
 

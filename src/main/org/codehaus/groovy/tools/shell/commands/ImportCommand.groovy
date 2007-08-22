@@ -47,7 +47,7 @@ class ImportCommand
         assert args != null
 
         if (args.isEmpty()) {
-            io.error.println("Command 'import' requires one or more arguments") // TODO: i18n
+            io.err.println("Command 'import' requires one or more arguments") // TODO: i18n
             return
         }
 
@@ -65,7 +65,7 @@ class ImportCommand
         catch (CompilationFailedException e) {
             def msg = "Invalid import definition: '${buff[0]}'; reason: $e.message" // TODO: i18n
             log.debug(msg, e)
-            io.error.println(msg)
+            io.err.println(msg)
         }
         finally {
             // Remove the class generated while testing the import syntax

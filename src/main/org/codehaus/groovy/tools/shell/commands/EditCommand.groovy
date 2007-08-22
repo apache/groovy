@@ -37,7 +37,7 @@ class EditCommand
         assert args != null
 
         if (args.size() > 0) {
-            io.error.println(messages.format('error.unexpected_args', args.join(' ')))
+            io.err.println(messages.format('error.unexpected_args', args.join(' ')))
             return
         }
         
@@ -47,7 +47,7 @@ class EditCommand
             // TODO: Maybe popup a Swing editor here?  Or look for other env vars?  Or use notepad on winblows?
             //
             
-            io.error.println("Unable to determine which editor to use; check \$EDITOR") // TODO: i18n
+            io.err.println("Unable to determine which editor to use; check \$EDITOR") // TODO: i18n
             return
         }
         

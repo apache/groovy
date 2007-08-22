@@ -36,14 +36,14 @@ class ClearCommand
         assert args != null
 
         if (args.size() > 0) {
-            io.error.println(messages.format('error.unexpected_args', args.join(' ')))
+            io.err.println(messages.format('error.unexpected_args', args.join(' ')))
             return
         }
         
         buffer.clear()
 
         if (io.verbose) {
-            io.output.println('Buffer cleared') //  TODO: i18n
+            io.out.println('Buffer cleared') //  TODO: i18n
         }
     }
 }

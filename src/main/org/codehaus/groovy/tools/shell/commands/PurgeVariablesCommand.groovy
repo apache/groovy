@@ -36,19 +36,19 @@ class PurgeVariablesCommand
         assert args != null
 
         if (args.size() > 0) {
-            io.error.println(messages.format('error.unexpected_args', args.join(' ')))
+            io.err.println(messages.format('error.unexpected_args', args.join(' ')))
             return
         }
         
         if (variables.isEmpty()) {
-            io.output.println('No variables defined') // TODO: i18n
+            io.out.println('No variables defined') // TODO: i18n
             return
         }
 
         variables.clear()
 
         if (io.verbose) {
-            io.output.println("Custom variables purged")
+            io.out.println("Custom variables purged")
         }
     }
 }

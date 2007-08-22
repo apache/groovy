@@ -43,7 +43,7 @@ class InteractiveShellRunner
         
         this.shell = shell
         
-        this.reader = new ConsoleReader(shell.io.inputStream, shell.io.output)
+        this.reader = new ConsoleReader(shell.io.inputStream, shell.io.out)
         
         init()
     }

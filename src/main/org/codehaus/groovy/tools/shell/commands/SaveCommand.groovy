@@ -42,23 +42,23 @@ class SaveCommand
         assert args != null
         
         if (args.size() != 1) {
-            io.error.println("Command 'save' requires a single file argument") // TODO: i18n
+            io.err.println("Command 'save' requires a single file argument") // TODO: i18n
             return
         }
 
         if (buffer.isEmpty()) {
-            io.output.println('Buffer is empty') // TODO: i18n
+            io.out.println('Buffer is empty') // TODO: i18n
             return
         }
 
         //
-        // TODO: Support special '-' file to simply dump text to io.output
+        // TODO: Support special '-' file to simply dump text to io.out
         //
         
         def file = new File("${args[0]}")
 
         if (io.verbose) {
-            io.output.println("Saving current buffer to file: $file") // TODO: i18n
+            io.out.println("Saving current buffer to file: $file") // TODO: i18n
         }
 
         def dir = file.parentFile

@@ -38,16 +38,16 @@ class VariablesCommand
         assert args != null
 
         if (args.size() > 0) {
-            io.error.println(messages.format('error.unexpected_args', args.join(' ')))
+            io.err.println(messages.format('error.unexpected_args', args.join(' ')))
             return
         }
         
         if (variables.isEmpty()) {
-            io.output.println('No variables defined') // TODO: i18n
+            io.out.println('No variables defined') // TODO: i18n
             return
         }
         
-        io.output.println('Variables:') // TODO: i18n
+        io.out.println('Variables:') // TODO: i18n
         variables.each { key, value ->
             // Special handling for defined methods, just show the sig
             if (value instanceof MethodClosure) {
@@ -57,7 +57,7 @@ class VariablesCommand
                 value = "method ${value.method}()"
             }
             
-            io.output.println("  $key = $value")
+            io.out.println("  $key = $value")
         }
     }
 }

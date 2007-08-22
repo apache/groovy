@@ -41,13 +41,13 @@ public class IO
     public final OutputStream errorStream;
 
     /** Prefered input reader. */
-    public final Reader input;
+    public final Reader in;
 
     /** Prefered output writer. */
-    public final PrintWriter output;
+    public final PrintWriter out;
 
     /** Prefered error output writer. */
-    public final PrintWriter error;
+    public final PrintWriter err;
 
     /** Flag to indicate that verbose output is expected. */
     public boolean verbose;
@@ -66,9 +66,10 @@ public class IO
         this.inputStream = inputStream;
         this.outputStream = outputStream;
         this.errorStream = errorStream;
-        this.input = new InputStreamReader(inputStream);
-        this.output = new PrintWriter(outputStream, true);
-        this.error = new PrintWriter(errorStream, true);
+        
+        this.in = new InputStreamReader(inputStream);
+        this.out = new PrintWriter(outputStream, true);
+        this.err = new PrintWriter(errorStream, true);
     }
 
     /**
@@ -82,16 +83,16 @@ public class IO
      * Flush both output streams.
      */
     public void flush() throws IOException {
-        output.flush();
-        error.flush();
+        out.flush();
+        err.flush();
     }
 
     /**
      * Close all streams.
      */
     public void close() throws IOException {
-        input.close();
-        output.close();
-        error.close();
+        in.close();
+        out.close();
+        err.close();
     }
 }

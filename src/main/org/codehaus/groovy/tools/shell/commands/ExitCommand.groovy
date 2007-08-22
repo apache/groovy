@@ -41,12 +41,12 @@ class ExitCommand
         //
         
         if (args.size() > 0) {
-            io.error.println(messages.format('error.unexpected_args', args.join(' ')))
+            io.err.println(messages.format('error.unexpected_args', args.join(' ')))
             return
         }
         
         if (io.verbose) {
-            io.output.println(messages['info.bye'])
+            io.out.println(messages['info.bye'])
         }
         
         throw new ExitNotification(0)

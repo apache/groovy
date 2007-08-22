@@ -43,7 +43,7 @@ class InspectCommand
         assert args != null
         
         if (args.size() > 1) {
-            io.error.println(messages.format('error.unexpected_args', args.join(' ')))
+            io.err.println(messages.format('error.unexpected_args', args.join(' ')))
             return
         }
         
@@ -57,12 +57,12 @@ class InspectCommand
         }
 
         if (!subject) {
-            io.output.println('Subject is null; nothing to inspect') // TODO: i18n
+            io.out.println('Subject is null; nothing to inspect') // TODO: i18n
             return
         }
 
         if (io.verbose) {
-            io.output.println("Launching object browser to inspect: $subject") // TODO: i18n
+            io.out.println("Launching object browser to inspect: $subject") // TODO: i18n
         }
         
         ObjectBrowser.inspect(subject)

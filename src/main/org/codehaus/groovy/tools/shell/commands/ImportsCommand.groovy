@@ -36,18 +36,18 @@ class ImportsCommand
         assert args != null
 
         if (args.size() > 0) {
-            io.error.println(messages.format('error.unexpected_args', args.join(' ')))
+            io.err.println(messages.format('error.unexpected_args', args.join(' ')))
             return
         }
         
         if (imports.isEmpty()) {
-            io.output.println("No custom imports have been defined") // TODO: i18n
+            io.out.println("No custom imports have been defined") // TODO: i18n
             return
         }
 
-        io.output.println("Custom imports:") // TODO: i18n
+        io.out.println("Custom imports:") // TODO: i18n
         imports.each {
-            io.output.println("  $it")
+            io.out.println("  $it")
         }
     }
 }

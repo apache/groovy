@@ -36,12 +36,12 @@ class DisplayCommand
         assert args != null
 
         if (args.size() > 0) {
-            io.error.println(messages.format('error.unexpected_args', args.join(' ')))
+            io.err.println(messages.format('error.unexpected_args', args.join(' ')))
             return
         }
         
         if (buffer.isEmpty()) {
-            io.output.println('Buffer is empty') // TODO: i18n
+            io.out.println('Buffer is empty') // TODO: i18n
             return
         }
 

@@ -54,7 +54,7 @@ class Groovysh
         super(io)
         
         // For sanity, hook up the logging stream to the output we are given
-        ShellLog.out = io.outputStream
+        ShellLog.out = io.out
         
         assert classLoader
         assert binding
@@ -203,11 +203,11 @@ class Groovysh
             case ParseStatus.ERROR:
                 // Show a simple compilation error, otherwise dump the full details
                 if (status.cause instanceof CompilationFailedException) {
-                    io.error.println(messages.format('info.error', status.cause.message))
+                    io.err.println(messages.format('info.error', status.cause.message))
                 }
                 else {
-                    io.error.println(messages.format('info.error', status.cause))
-                    status.cause.printStackTrace(io.error)
+                    io.err.println(messages.format('info.error', status.cause))
+                    status.cause.printStackTrace(io.err)
                 }
                 break
 
@@ -311,7 +311,7 @@ class Groovysh
             log.debug("Evaluation result: $result")
 
             if (io.verbose) {
-                io.output.println("===> $result")
+                io.out.println("===> $result")
             }
 
             // Save the last result to the '_' variable
@@ -333,8 +333,8 @@ class Groovysh
                 t = t.cause
             }
 
-            io.error.println(messages.format('info.error', t))
-            t.printStackTrace(io.error)
+            io.err.println(messages.format('info.error', t))
+            t.printStackTrace(io.err)
         }
         finally {
             def cache = interp.classLoader.classCache
@@ -380,7 +380,7 @@ class Groovysh
 
         buffer.eachWithIndex { line, index ->
             def lineNum = formatLineNumber(index + 1)
-            io.output.println("${lineNum}> $line")
+            io.out.println("${lineNum}> $line")
         }
     }
 
@@ -394,8 +394,8 @@ class Groovysh
             processCommandLine(args)
             
             // Display the welcome banner
-            io.output.println(messages.format('startup_banner.0', InvokerHelper.version, System.properties['java.vm.version']))
-            io.output.println(messages['startup_banner.1'])
+            io.out.println(messages.format('startup_banner.0', InvokerHelper.version, System.properties['java.vm.version']))
+            io.out.println(messages['startup_banner.1'])
             
             // Start the interactive shell runner
             runner.run()
@@ -406,8 +406,8 @@ class Groovysh
             return n.code
         }
         catch (Throwable t) {
-            io.error.println(messages.format('info.fatal', t))
-            t.printStackTrace(io.error)
+            io.err.println(messages.format('info.fatal', t))
+            t.printStackTrace(io.err)
 
             return 1
         }
@@ -426,7 +426,7 @@ class Groovysh
 
         log.debug("Processing command-line args: $args")
 
-        def cli = new CliBuilder(usage : 'groovysh [options]', writer: io.output)
+        def cli = new CliBuilder(usage : 'groovysh [options]', writer: io.out)
 
         cli.h(longOpt: 'help', messages['cli.option.help.description'])
         cli.V(longOpt: 'version', messages['cli.option.version.description'])
@@ -444,7 +444,7 @@ class Groovysh
         def _args = options.arguments()
         if (_args.size() != 0) {
             cli.usage()
-            io.error.println(messages.format('cli.info.unexpected_args', _args.join(' ')))
+            io.err.println(messages.format('cli.info.unexpected_args', _args.join(' ')))
             throw new ExitNotification(1)
         }
 
@@ -454,7 +454,7 @@ class Groovysh
         }
 
         if (options.V) {
-            io.output.println(messages.format('cli.info.version', InvokerHelper.version))
+            io.out.println(messages.format('cli.info.version', InvokerHelper.version))
             throw new ExitNotification(0)
         }
 
