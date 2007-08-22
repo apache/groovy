@@ -23,21 +23,31 @@ package org.codehaus.groovy.tools.shell
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class ShellLog
-    extends GroovyLog
 {
     static boolean debug = false
     
+    String name
+    
     ShellLog(final Class type) {
-        super(type)
+        this(type.name)
     }
 
     ShellLog(final Class type, final String suffix) {
-        super("${type.name}.$suffix".toString()) // HACK: Must toString() or get a CCE for GStringImpl :-(
+        this("${type.name}.$suffix".toString()) // HACK: Must toString() or get a CCE for GStringImpl :-(
     }
-
-    def invokeMethod(final String name, final Object args) {
+    
+    ShellLog(final String name) {
+        assert name
+        
+        this.name = name
+    }
+    
+    def invokeMethod(final String level, final Object args) {
+        assert level
+        assert args
+        
         if (debug) {
-            return super.invokeMethod(name, args)
+            System.out.println("${level.toUpperCase()} [$name] ${args.join(',')}")
         }
     }
 }
