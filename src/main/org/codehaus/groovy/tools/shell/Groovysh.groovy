@@ -20,8 +20,6 @@ import java.lang.reflect.Method
 
 import groovy.text.MessageSource
 
-import jline.ANSIBuffer
-
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.InvokerInvocationException
 import org.codehaus.groovy.runtime.MethodClosure
@@ -135,28 +133,20 @@ class Groovysh
         //
     }
     
+    private final AnsiBuffer promptBuffer = new AnsiBuffer()
+    
     protected String renderPrompt() {
-        //
-        // TODO: Figure out a more elegant way to expose color muck to everything, maybe via IO or something?
-        //
-        
-        def buff = new ANSIBuffer()
-        
-        buff.ansiEnabled = runner.reader.terminal.isANSISupported()
-            
-        buff.bold('groovy:')
-        
-        buff.append("(${buffers.selected})")
-        
-        buff.bold(':')
+        promptBuffer.clear()
         
         def lineNum = formatLineNumber(buffers.current().size())
         
-        buff.append("${lineNum}")
+        promptBuffer.bold << 'groovy:' << "(${buffers.selected})"
         
-        buff.bold('> ')
+        promptBuffer.bold << ':' << "${lineNum}"
         
-        return buff.toString()
+        promptBuffer.bold << '> '
+        
+        return promptBuffer.toString()
     }
     
     /**
