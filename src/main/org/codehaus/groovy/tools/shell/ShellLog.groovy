@@ -26,7 +26,9 @@ class ShellLog
 {
     static boolean debug = false
     
-    String name
+    static PrintStream out = System.out
+    
+    final String name
     
     ShellLog(final Class type) {
         this(type.name)
@@ -42,12 +44,12 @@ class ShellLog
         this.name = name
     }
     
-    def invokeMethod(final String level, final Object args) {
-        assert level
+    def invokeMethod(final String name, final Object args) {
+        assert name
         assert args
         
         if (debug) {
-            System.out.println("${level.toUpperCase()} [$name] ${args.join(',')}")
+            out.println("${name.toUpperCase()} [${this.name}] ${args.join(',')}")
         }
     }
 }
