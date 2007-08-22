@@ -66,12 +66,13 @@ public class Groovyc extends MatchingTask
 {
     private final LoggingHelper log = new LoggingHelper(this);
 
-    private Path src;
-    private File destDir;
+
     private Path compileClasspath;
     private Path compileSourcepath;
     private String encoding;
-    
+
+    protected File destDir;
+    protected Path src;    
     protected CompilerConfiguration configuration = new CompilerConfiguration();
     protected boolean failOnError = true;
     protected boolean listFiles = false;
