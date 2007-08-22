@@ -16,9 +16,9 @@
 
 package org.codehaus.groovy.tools.shell
 
-import groovy.text.MessageSource
-
 import java.lang.reflect.Method
+
+import groovy.text.MessageSource
 
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.InvokerInvocationException
@@ -162,14 +162,14 @@ class Groovysh
     Object execute(final String line) {
         assert line != null
         
-        // Ignore empty lines
-        if (line.trim().size() == 0) {
-            return null
-        }
-        
         // First try normal command execution
         if (isExecutable(line)) {
             return super.execute(line)
+        }
+        
+        // Ignore empty lines
+        if (line.trim().size() == 0) {
+            return null
         }
         
         def result
