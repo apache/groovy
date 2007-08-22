@@ -34,6 +34,10 @@ import java.text.MessageFormat
  */
 class MessageSource
 {
+    //
+    // TODO: Allow merging bundles?
+    //
+    
     private final ResourceBundle bundle
 
     MessageSource(final String name) {

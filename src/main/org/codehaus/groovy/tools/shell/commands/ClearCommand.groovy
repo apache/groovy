@@ -14,35 +14,35 @@
  * limitations under the License.
  */
 
-package org.codehaus.groovy.tools.shell.completor
+package org.codehaus.groovy.tools.shell.commands
 
-import org.codehaus.groovy.tools.shell.CommandRegistry
+import org.codehaus.groovy.tools.shell.InteractiveShell
 
 /**
- * Completor for the 'help' command.
+ * The 'clear' command.
  *
  * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
-class HelpCommandCompletor
-    extends SimpleCompletor
+class ClearCommand
+    extends CommandSupport
 {
-    private final CommandRegistry registry
-
-    HelpCommandCompletor(final CommandRegistry registry) {
-        assert registry
-
-        this.registry = registry
+    ClearCommand(final InteractiveShell shell) {
+        super(shell, 'clear', '\\c')
     }
 
-    SortedSet getCandidates() {
-        def set = new TreeSet()
+    void execute(final List args) {
+        assert args != null
 
-        registry.commands().each {
-            set << it.name
-            set << it.shortcut
+        if (args.size() > 0) {
+            io.error.println("Unexpected arguments: $args") // TODO: i18n
+            return
         }
         
-        return set
+        def buffer = shell.buffers.current().clear()
+
+        if (shell.verbose) {
+            io.output.println('Buffer cleared') //  TODO: i18n
+        }
     }
 }

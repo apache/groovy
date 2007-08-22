@@ -1,0 +1,74 @@
+/*
+ * Copyright 2003-2007 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.codehaus.groovy.tools.shell.commands
+
+import jline.FileNameCompletor
+
+import org.codehaus.groovy.tools.shell.InteractiveShell
+
+/**
+ * The 'load' command.
+ *
+ * @version $Id$
+ * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
+ */
+class LoadCommand
+    extends CommandSupport
+{
+    LoadCommand(final InteractiveShell shell) {
+        super(shell, 'load', '\\l')
+    }
+
+    protected List createCompletors() {
+        return [ new FileNameCompletor() ]
+    }
+
+    void execute(final List args) {
+        assert args != null
+        
+        if (args.isEmpty()) {
+            io.error.println("Command 'load' requires one or more file/url arguments") // TODO: i18n
+            return
+        }
+
+        for (source in args) {
+            URL url
+
+            try {
+                url = new URL("$source")
+            }
+            catch (MalformedURLException e) {
+                def file = new File("$source")
+                
+                if (!file.exists()) {
+                    io.error.println("File not found: $file") // TODO: i18n
+                    return
+                }
+                
+                url = file.toURL()
+            }
+
+            if (verbose) {
+                io.output.println("Loading: $url")
+            }
+
+            url.eachLine {
+                this << it
+            }
+        }
+    }
+}

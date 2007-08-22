@@ -14,32 +14,37 @@
  * limitations under the License.
  */
 
-package org.codehaus.groovy.tools.shell.completor
+package org.codehaus.groovy.tools.shell.commands
+
+import org.codehaus.groovy.tools.shell.InteractiveShell
 
 /**
- * Completor for the 'inspect' command.
+ * The 'display' command.
  *
  * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
-class InspectCommandCompletor
-    extends SimpleCompletor
+class DisplayCommand
+    extends CommandSupport
 {
-    private final Binding binding
-    
-    InspectCommandCompletor(final Binding binding) {
-        assert binding
-
-        this.binding = binding
+    DisplayCommand(final InteractiveShell shell) {
+        super(shell, 'display', '\\d')
     }
 
-    SortedSet getCandidates() {
-        def set = new TreeSet()
+    void execute(final List args) {
+        assert args != null
 
-        binding.variables.keySet().each {
-            set << it
+        if (args.size() > 0) {
+            io.error.println("Unexpected arguments: $args") // TODO: i18n
+            return
+        }
+        def buffer = shell.buffers.current()
+
+        if (buffer.isEmpty()) {
+            io.output.println('Buffer is empty') // TODO: i18n
+            return
         }
 
-        return set
+        shell.displayBuffer(buffer, true)
     }
 }

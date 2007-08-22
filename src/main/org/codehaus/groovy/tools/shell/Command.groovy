@@ -17,92 +17,26 @@
 package org.codehaus.groovy.tools.shell
 
 import jline.Completor
-import jline.ArgumentCompletor
-import jline.NullCompletor
-
-import org.codehaus.groovy.tools.shell.completor.SimpleCompletor
 
 /**
- * Command execution detail container.
+ * Provides the interface required for command extentions.
  *
  * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
-class Command
+interface Command
 {
-    private static final Closure NOOP = {}
+    String getName()
 
-    protected final MessageSource messages = new MessageSource(this.class)
-    
-    /** The name of the command. */
-    final String name
-    
-    /** The shortcut switch */
-    final String shortcut
-    
-    /** The code to be executed. */
-    final Closure function
-    
-    /** Provides the command instance with the registry, for aliasing support. */
-    CommandRegistry registry
+    String getShortcut()
 
-    /** The completor for this command. */
-    Completor completor
+    Completor getCompletor()
 
-    Command(final String name, final String shortcut, final Closure function, final Completor[] completors) {
-        assert name
-        assert shortcut
-        assert function
-        
-        this.name = name
-        this.shortcut = shortcut
-        this.function = function
-        this.completor = createCompletor(completors)
-    }
+    String getDescription()
 
-    Command(final String name, final String shortcut, final Closure function) {
-        this(name, shortcut, function, null)
-    }
+    String getUsage()
 
-    protected Command(final String name, final String shortcut) {
-        this(name, shortcut, NOOP, null)
-    }
+    String getHelp()
 
-    protected Completor createCompletor(final Completor[] completors) {
-        // Setup the completor(s) for the command
-        def list = []
-        list << new SimpleCompletor(name, shortcut)
-
-        if (completors) {
-            completors.each {
-                if (it) {
-                    list << it
-                }
-                else {
-                    list << new NullCompletor()
-                }
-            }
-        }
-        else {
-            list << new NullCompletor()
-        }
-
-        return new ArgumentCompletor(list)
-    }
-    
-    String getDescription() {
-        return messages["${name}.description"]
-    }
-
-    String getUsage() {
-        return messages["${name}.usage"]
-    }
-
-    String getHelp() {
-        return messages["${name}.help"]
-    }
-
-    void execute(final List args) {
-        function.call(args)
-    }
+    void execute(List args)
 }

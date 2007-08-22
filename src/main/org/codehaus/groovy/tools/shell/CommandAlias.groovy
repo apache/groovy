@@ -18,6 +18,8 @@ package org.codehaus.groovy.tools.shell
 
 import jline.Completor
 
+import org.codehaus.groovy.tools.shell.commands.CommandSupport
+
 /**
  * Provides simple command aliasing.
  *
@@ -25,41 +27,42 @@ import jline.Completor
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class CommandAlias
-    extends Command
+    extends CommandSupport
 {
-    final String target
+    final String targetName
     
-    CommandAlias(final String name, final String shortcut, final String target) {
-        super(name, shortcut)
+    CommandAlias(final InteractiveShell shell, final String name, final String shortcut, final String target) {
+        super(shell, name, shortcut)
         assert target
-        
-        this.target = target
+
+        this.targetName = target
     }
-
-    private Command findTarget() {
-        def command = registry[target]
-        assert command
-
+    
+    Command getTarget() {
+        def command = registry[targetName]
+        
+        assert command != null
+        
         return command
     }
 
     String getDescription() {
-        return messages.format('info.alias_to', target)
+        return messages.format('info.alias_to', targetName)
     }
 
     String getUsage() {
-        return findTarget().usage
+        return target.usage
     }
     
     String getHelp() {
-        return findTarget().help
+        return target.help
     }
 
     Completor getCompletor() {
-        return findTarget().completor
+        return target.completor
     }
     
     void execute(final List args) {
-        findTarget().execute(args)
+        target.execute(args)
     }
 }

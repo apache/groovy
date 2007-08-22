@@ -31,6 +31,10 @@ class ShellLog
         super(type)
     }
 
+    ShellLog(final Class type, final String suffix) {
+        super("${type.name}.$suffix".toString()) // HACK: Must toString() or get a CCE for GStringImpl :-(
+    }
+
     def invokeMethod(final String name, final Object args) {
         if (debug) {
             return super.invokeMethod(name, args)

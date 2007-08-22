@@ -14,37 +14,35 @@
  * limitations under the License.
  */
 
-package org.codehaus.groovy.tools.shell.completor
+package org.codehaus.groovy.tools.shell.commands
 
-import org.codehaus.groovy.tools.shell.BufferManager
+import org.codehaus.groovy.tools.shell.InteractiveShell
 
 /**
- * Completor for the 'buffer' command.
+ * The 'exit' command.
  *
  * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
-class BufferCommandCompletor
-    extends SimpleCompletor
+class ExitCommand
+    extends CommandSupport
 {
-    private final BufferManager buffers
-    
-    BufferCommandCompletor(final BufferManager buffers) {
-        assert buffers
-
-        this.buffers = buffers
+    ExitCommand(final InteractiveShell shell) {
+        super(shell, 'exit', '\\e')
     }
 
-    SortedSet getCandidates() {
-        def set = new TreeSet()
-        set << '+'
-        set << '-'
-        set << '?'
+    void execute(final List args) {
+        assert args != null
 
-        for (i in 0..<buffers.size()) {
-            set << i.toString()
+        if (args.size() > 0) {
+            io.error.println("Unexpected arguments: $args") // TODO: i18n
+            return
         }
-
-        return set
+        
+        if (shell.verbose) {
+            io.output.println('Bye') // TODO: i18n
+        }
+        
+        shell.exit(0)
     }
 }
