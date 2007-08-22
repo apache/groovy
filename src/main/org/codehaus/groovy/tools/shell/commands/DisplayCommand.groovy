@@ -49,6 +49,6 @@ class DisplayCommand
             return
         }
 
-        shell.displayBuffer(buffer, true)
+        shell.displayBuffer(buffer)
     }
 }

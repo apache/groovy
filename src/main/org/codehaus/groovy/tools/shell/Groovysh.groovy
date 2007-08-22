@@ -341,7 +341,7 @@ class Groovysh
         log.debug("Evaluating buffer...")
 
         if (io.verbose) {
-            displayBuffer(buffer, true)
+            displayBuffer(buffer)
         }
 
         def source = (imports + buffer).join(NEWLINE)
@@ -387,11 +387,13 @@ class Groovysh
             t.printStackTrace(io.error)
         }
         finally {
+            def cache = shell.classLoader.classCache
+            
             // Remove the script class generated
-            shell.classLoader.classCache.remove(type?.name)
+            cache.remove(type?.name)
 
             // Remove the inline closures from the cache as well
-            shell.classLoader.classCache.remove('$_run_closure')
+            cache.remove('$_run_closure')
         }
         
         return result
@@ -423,19 +425,12 @@ class Groovysh
     /**
      * Display the given buffer.
      */
-    private void displayBuffer(final List buffer, final boolean lineNumbers) {
+    private void displayBuffer(final List buffer) {
         assert buffer
 
-        if (lineNumbers) {
-            buffer.eachWithIndex { line, index ->
-                def lineNum = formatLineNumber(index + 1)
-                io.output.println("${lineNum}> $line")
-            }
-        }
-        else {
-            buffer.each { line ->
-                io.output.println("> $line")
-            }
+        buffer.eachWithIndex { line, index ->
+            def lineNum = formatLineNumber(index + 1)
+            io.output.println("${lineNum}> $line")
         }
     }
 
