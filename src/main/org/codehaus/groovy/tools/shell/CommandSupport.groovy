@@ -14,20 +14,13 @@
  * limitations under the License.
  */
 
-package org.codehaus.groovy.tools.shell.commands
-
-import org.codehaus.groovy.tools.shell.MessageSource
-import org.codehaus.groovy.tools.shell.Command;
-import org.codehaus.groovy.tools.shell.InteractiveShell
-import org.codehaus.groovy.tools.shell.CommandRegistry
-import org.codehaus.groovy.tools.shell.IO
-import org.codehaus.groovy.tools.shell.ShellLog
-
-import org.codehaus.groovy.tools.shell.completor.SimpleCompletor
+package org.codehaus.groovy.tools.shell
 
 import jline.Completor
 import jline.NullCompletor
 import jline.ArgumentCompletor
+
+import org.codehaus.groovy.tools.shell.completor.SimpleCompletor
 
 /**
  * Support for {@link Command} instances.

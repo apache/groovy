@@ -16,8 +16,7 @@
 
 package org.codehaus.groovy.tools.shell.commands
 
-import jline.Completor
-
+import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.Command
 import org.codehaus.groovy.tools.shell.InteractiveShell
 import org.codehaus.groovy.tools.shell.CommandRegistry

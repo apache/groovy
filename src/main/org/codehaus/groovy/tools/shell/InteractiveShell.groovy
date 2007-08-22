@@ -16,23 +16,20 @@
 
 package org.codehaus.groovy.tools.shell
 
+import java.lang.reflect.Method
+
+import jline.ConsoleReader
+import jline.MultiCompletor
+
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.InvokerInvocationException
+import org.codehaus.groovy.runtime.MethodClosure
 
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.control.CompilationFailedException
 
 import org.codehaus.groovy.tools.ErrorReporter
 
-import groovy.inspect.swingui.ObjectBrowser
-
-import jline.ConsoleReader
-import jline.MultiCompletor
-import jline.FileNameCompletor
-
-import org.codehaus.groovy.tools.shell.completor.*
-import java.lang.reflect.Method
-import org.codehaus.groovy.runtime.MethodClosure
 import org.codehaus.groovy.tools.shell.commands.*
 
 /**
@@ -109,6 +106,10 @@ class InteractiveShell
         // TODO: Add CommandSeperator for better visual grouping
         //
 
+        //
+        // TODO: Add properties-based (or simple xml) loading of commands & aliases ?
+        //
+        
         registry << new HelpCommand(this)
 
         registry << new CommandAlias(this, '?', '\\?', 'help')

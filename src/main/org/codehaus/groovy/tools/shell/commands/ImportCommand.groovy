@@ -16,12 +16,12 @@
 
 package org.codehaus.groovy.tools.shell.commands
 
-import jline.Completor
 import jline.ArgumentCompletor
 import jline.NullCompletor
 
 import org.codehaus.groovy.control.CompilationFailedException
 
+import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.InteractiveShell
 import org.codehaus.groovy.tools.shell.completor.SimpleCompletor
 import org.codehaus.groovy.tools.shell.completor.ClassNameCompletor

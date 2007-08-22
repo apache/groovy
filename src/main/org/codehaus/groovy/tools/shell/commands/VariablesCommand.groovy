@@ -18,6 +18,7 @@ package org.codehaus.groovy.tools.shell.commands
 
 import org.codehaus.groovy.runtime.MethodClosure
 
+import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.InteractiveShell
 
 /**

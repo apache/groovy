@@ -18,8 +18,6 @@ package org.codehaus.groovy.tools.shell
 
 import jline.Completor
 
-import org.codehaus.groovy.tools.shell.commands.CommandSupport
-
 /**
  * Provides simple command aliasing.
  *

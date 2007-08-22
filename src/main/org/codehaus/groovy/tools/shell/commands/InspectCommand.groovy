@@ -16,10 +16,9 @@
 
 package org.codehaus.groovy.tools.shell.commands
 
-import jline.Completor
-
 import groovy.inspect.swingui.ObjectBrowser
 
+import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.InteractiveShell
 import org.codehaus.groovy.tools.shell.completor.SimpleCompletor
 
