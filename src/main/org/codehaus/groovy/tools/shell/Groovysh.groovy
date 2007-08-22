@@ -140,6 +140,10 @@ class Groovysh
         registry << new BufferCommand(this)
 
         alias('#', '\\#', 'buffer')
+        
+        //
+        // TODO: Add a command to record buffer activity
+        //
     }
     
     protected String renderPrompt() {
