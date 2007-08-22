@@ -37,7 +37,7 @@ abstract class CommandSupport
     protected final ShellLog log
 
     /** i18n message source for the command. */
-    protected final MessageSource messages = new MessageSource(this.class)
+    protected final MessageSource messages = new MessageSource(this.class, CommandSupport.class)
 
     /** The name of the command. */
     final String name
