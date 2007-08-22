@@ -43,7 +43,7 @@ class HelpCommand
         assert args != null
 
         if (args.size() > 1) {
-            io.error.println("Unexpected arguments: $args") // TODO: i18n
+            io.error.println("Unexpected arguments: ${args.join(' ')}") // TODO: i18n
             return
         }
         
