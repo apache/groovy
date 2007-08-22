@@ -28,12 +28,6 @@ import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.control.CompilationFailedException
 
 import org.codehaus.groovy.tools.shell.commands.*
-import org.codehaus.groovy.control.messages.SyntaxErrorMessage
-import antlr.NoViableAltException
-import antlr.NoViableAltForCharException
-import antlr.MismatchedTokenException
-import org.codehaus.groovy.control.messages.Message
-import antlr.CharScanner
 
 /**
  * An interactive shell for evaluating Groovy code from the command-line (aka. groovysh).
@@ -166,7 +160,12 @@ class Groovysh
      * Execute a single line, where the line may be a command or Groovy code (complete or incomplete).
      */
     Object execute(final String line) {
-        assert line
+        assert line != null
+        
+        // Ignore empty lines
+        if (line.trim().size() == 0) {
+            return null
+        }
         
         // First try normal command execution
         if (isExecutable(line)) {
@@ -216,70 +215,6 @@ class Groovysh
         return result
     }
 
-    //
-    // FIXME: Seems like failedWithUnexpectedEOF() is not always set as expected, as in:
-    //
-    // class a {               <--- is true here
-    //    def b() {            <--- is false here :-(
-    //
-
-    // Report errors other than unexpected EOF
-
-    private boolean isSyntaxError(final SourceUnit parser) {
-        assert parser
-
-        log.debug("Checking syntax...")
-
-        log.debug("Error count: ${parser.errorCollector.errorCount}")
-
-        parser.errorCollector.errors.each {
-            log.debug("    $it")
-        }
-        
-        if (!parser.errorCollector.hasErrors()) {
-            return false
-        }
-
-        if (parser.errorCollector.errorCount > 1) {
-            return true
-        }
-
-        def last = parser.errorCollector.lastError
-        def cause
-
-        log.debug("Last error: $last")
-        
-        if (last instanceof SyntaxErrorMessage) {
-            cause = last.cause.cause
-
-            log.debug("Syntax error: $cause")
-        }
-
-        log.debug("Cause type: ${cause.class.name}")
-        
-        if (cause) {
-            if (cause instanceof NoViableAltException) {
-                return !isEofToken(cause.token)
-            }
-            else if (cause instanceof NoViableAltForCharException) {
-                char badChar = cause.foundChar
-
-                return !(badChar == CharScanner.EOF_CHAR)
-            }
-            else if (cause instanceof MismatchedTokenException) {
-                return !isEofToken(cause.token)
-            }
-        }
-        
-        return true
-    }
-
-    protected boolean isEofToken(final antlr.Token token) {
-        log.debug("Checking if token is EOF: $token; type: $token.type")
-      
-        return token.type == antlr.Token.EOF_TYPE
-    }
-
     /**
      * Attempt to parse the given buffer.
      */
@@ -302,10 +237,21 @@ class Groovysh
             return new ParseStatus(ParseStatus.COMPLETE)
         }
         catch (CompilationFailedException e) {
-            if (isSyntaxError(parser)) {
+            //
+            // FIXME: Seems like failedWithUnexpectedEOF() is not always set as expected, as in:
+            //
+            // class a {               <--- is true here
+            //    def b() {            <--- is false here :-(
+            //
+            
+            if (parser.errorCollector.errorCount > 1 || !parser.failedWithUnexpectedEOF()) {
                 //
                 // HACK: Super insane hack... if we detect a syntax error, but the last line of the
                 //       buffer ends with a '{', then ignore... and pretend its okay, cause it might be...
+                //
+                //       This seems to get around the problem with things like:
+                //
+                //       class a { def b() {
                 //
                 
                 if (buffer[-1].trim().endsWith('{')) {
