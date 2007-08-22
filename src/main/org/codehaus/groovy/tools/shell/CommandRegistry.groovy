@@ -38,7 +38,7 @@ class CommandRegistry
         names << command.name
         
         assert !names.contains(command.shortcut) : "Duplicate command shortcut: $command.shortcut"
-        names << command.name
+        names << command.shortcut
 
         // Hold on to the command in order
         commands << command
