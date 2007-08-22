@@ -101,7 +101,7 @@ class HelpCommand
         io.output.println()
         
         io.output.println('For help on a specific command type:') // TODO: i18n
-        io.output.println'    help <command>')
+        io.output.println('    help <command>')
         io.output.println()
     }
 }
