@@ -16,6 +16,8 @@
 
 package org.codehaus.groovy.tools.shell
 
+import groovy.text.MessageSource
+
 import jline.Completor
 import jline.NullCompletor
 import jline.ArgumentCompletor

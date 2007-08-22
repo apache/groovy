@@ -29,6 +29,8 @@ import java.text.MessageFormat;
 /**
  * Message source backed up by a {@link java.util.ResourceBundle}.
  *
+ * @deprecated Use {@link groovy.text.MessageSource} instead.
+ * 
  * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */

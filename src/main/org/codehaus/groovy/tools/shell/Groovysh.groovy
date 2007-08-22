@@ -16,6 +16,8 @@
 
 package org.codehaus.groovy.tools.shell
 
+import groovy.text.MessageSource
+
 import java.lang.reflect.Method
 
 import org.codehaus.groovy.runtime.InvokerHelper
@@ -301,7 +303,17 @@ class Groovysh
         }
         catch (CompilationFailedException e) {
             if (isSyntaxError(parser)) {
-                error = e
+                //
+                // HACK: Super insane hack... if we detect a syntax error, but the last line of the
+                //       buffer ends with a '{', then ignore... and pretend its okay, cause it might be...
+                //
+                
+                if (buffer[-1].trim().endsWith('{')) {
+                    // ignore, this blows
+                }
+                else {
+                    error = e
+                }
             }
         }
         catch (Exception e) {

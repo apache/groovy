@@ -17,17 +17,13 @@
  * under the License.
  */
 
-package org.codehaus.groovy.tools.shell
+package groovy.text
 
 import java.util.ResourceBundle
 import java.text.MessageFormat
 
-//
-// TODO: Move to groovy.util once new groovysh bits are cleaned up and integrated
-//
-
 /**
- * Message source backed up by a {@link java.util.ResourceBundle}.
+ * Message source backed up by a {@link java.util.ResourceBundle} for simple i18n support.
  *
  * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
@@ -59,12 +55,20 @@ class MessageSource
         this(obj.getClass())
     }
     
+    /**
+     * Get a vanilla message from the resource bundle using the given code.
+     */
     String getMessage(final String code) {
         assert code
         
         return bundle.getString(code)
     }
 
+    /**
+     * Format a message (based on {@link MessageFormat} using the message
+     * from the resource bunding using the given code as a pattern and the
+     * given objects as arguments.
+     */
     String format(final String code, final Object[] args) {
         assert args
         
@@ -73,6 +77,9 @@ class MessageSource
         return MessageFormat.format(pattern, args)
     }
     
+    /**
+     * @see #getMessage(String)
+     */
     def getProperty(final String name) {
         return getMessage(name)
     }
