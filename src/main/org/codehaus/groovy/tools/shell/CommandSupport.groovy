@@ -61,10 +61,13 @@ abstract class CommandSupport
         
         this.log = new ShellLog(this.class, name)
         this.shell = shell
-        this.registry = shell.registry
         this.io = shell.io
         this.name = name
         this.shortcut = shortcut
+        
+        //
+        // NOTE: Registry will be added once registered.
+        //
     }
 
     String getDescription() {

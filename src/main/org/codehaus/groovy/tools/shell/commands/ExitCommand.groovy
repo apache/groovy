@@ -30,7 +30,7 @@ class ExitCommand
     extends CommandSupport
 {
     ExitCommand(final Shell shell) {
-        super(shell, 'exit', '\\e')
+        super(shell, 'exit', '\\x')
     }
 
     Object execute(final List args) {

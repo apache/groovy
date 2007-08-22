@@ -102,6 +102,8 @@ class Groovysh
         //
         // TODO: Rename to display-buffer, display-variables, display-classes, display-imports?
         //
+        //       or one display command with args [buffer|variables|classes|imports]
+        //
         
         registry << new DisplayCommand(this)
         
@@ -117,11 +119,17 @@ class Groovysh
         
         registry << new InspectCommand(this)
         
+        //
+        // TODO: Create one purge command with args [variables|classes|imports|all] ?
+        //
+        
         registry << new PurgeVariablesCommand(this)
         
         registry << new PurgeClassesCommand(this)
         
         registry << new PurgeImportsCommand(this)
+        
+        registry << new EditCommand(this)
         
         registry << new LoadCommand(this)
 
@@ -132,10 +140,6 @@ class Groovysh
         registry << new BufferCommand(this)
 
         alias('#', '\\#', 'buffer')
-        
-        //
-        // TODO: Add 'edit' command, which will pop up some Swing bits to allow the full buffer to be edited
-        //
     }
     
     protected String renderPrompt() {
