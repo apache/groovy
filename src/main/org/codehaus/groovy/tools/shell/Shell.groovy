@@ -91,4 +91,8 @@ class Shell
     def leftShift(final Command command) {
         registry << command
     }
+
+    void alias(final String name, final String shortcut, final String target) {
+        this << new CommandAlias(this, name, shortcut, target)
+    }
 }
