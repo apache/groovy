@@ -136,15 +136,23 @@ class Groovysh
     }
     
     protected String renderPrompt() {
+        //
+        // TODO: Figure out a more elegant way to expose color muck to everything, maybe via IO or something?
+        //
+        
         def buff = new ANSIBuffer()
         
         buff.ansiEnabled = runner.reader.terminal.isANSISupported()
             
         buff.bold('groovy:')
         
+        buff.append("(${buffers.selected})")
+        
+        buff.bold(':')
+        
         def lineNum = formatLineNumber(buffers.current().size())
         
-        buff.append("(${buffers.selected}):${lineNum}")
+        buff.append("${lineNum}")
         
         buff.bold('> ')
         
