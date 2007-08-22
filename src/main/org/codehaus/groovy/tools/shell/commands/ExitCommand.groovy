@@ -34,15 +34,11 @@ class ExitCommand
     }
 
     Object execute(final List args) {
-        assert args != null
+        assertNoArguments(args)
         
         //
         // TODO: Maybe support a single arg for the code?
         //
-        
-        if (args.size() > 0) {
-            fail(messages.format('error.unexpected_args', args.join(' ')))
-        }
         
         if (io.verbose) {
             io.out.println(messages['info.bye'])

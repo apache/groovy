@@ -33,11 +33,7 @@ class ClearCommand
     }
     
     Object execute(final List args) {
-        assert args != null
-
-        if (args.size() > 0) {
-            fail(messages.format('error.unexpected_args', args.join(' ')))
-        }
+        assertNoArguments(args)
         
         buffer.clear()
 

@@ -35,11 +35,7 @@ class VariablesCommand
     }
     
     Object execute(final List args) {
-        assert args != null
-
-        if (args.size() > 0) {
-            fail(messages.format('error.unexpected_args', args.join(' ')))
-        }
+        assertNoArguments(args)
         
         if (variables.isEmpty()) {
             io.out.println('No variables defined') // TODO: i18n

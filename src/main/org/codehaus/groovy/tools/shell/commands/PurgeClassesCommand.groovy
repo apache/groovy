@@ -33,11 +33,7 @@ class PurgeClassesCommand
     }
 
     Object execute(final List args) {
-        assert args != null
-
-        if (args.size() > 0) {
-            fail(messages.format('error.unexpected_args', args.join(' ')))
-        }
+        assertNoArguments(args)
         
         if (classLoader.loadedClasses.size() == 0) {
             io.out.println("No classes have been loaded") // TODO: i18n

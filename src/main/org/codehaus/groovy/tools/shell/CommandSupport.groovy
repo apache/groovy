@@ -120,6 +120,14 @@ abstract class CommandSupport
         throw new CommandException(this, msg)
     }
     
+    protected void assertNoArguments(final List args) {
+        assert args != null
+        
+        if (args.size() > 0) {
+            fail(messages.format('error.unexpected_args', args.join(' ')))
+        }
+    }
+    
     //
     // Shell access helpers
     //

@@ -33,11 +33,7 @@ class ImportsCommand
     }
     
     Object execute(final List args) {
-        assert args != null
-
-        if (args.size() > 0) {
-            fail(messages.format('error.unexpected_args', args.join(' ')))
-        }
+        assertNoArguments(args)
         
         if (imports.isEmpty()) {
             io.out.println("No custom imports have been defined") // TODO: i18n
