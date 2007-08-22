@@ -33,7 +33,23 @@ class AnsiBuffer
 {
     static final boolean ANSI_ENABLED = Terminal.getTerminal().isANSISupported()
     
+    static final Map CODES = [
+        red:            ANSI.FG_RED,
+        blue:           ANSI.FG_BLUE,
+        green:          ANSI.FG_GREEN,
+        black:          ANSI.FG_BLACK,
+        yellow:         ANSI.FG_YELLOW,
+        magenta:        ANSI.FG_MAGENTA,
+        cyan:           ANSI.FG_CYAN,
+        bold:           ANSI.BOLD,
+        underscore:     ANSI.UNDERSCORE,
+        blink:          ANSI.BLINK,
+        reverse:        ANSI.REVERSE,
+    ]
+    
     private final StringBuffer buffer = new StringBuffer()
+    
+    private final AnsiBufferSelector selector = new AnsiBufferSelector(buffer: this)
     
     boolean ansiEnabled = ANSI_ENABLED
     
@@ -74,59 +90,26 @@ class AnsiBuffer
         return this
     }
     
-    //
-    // TODO: Could probably map these, then use invokeMethod to simplify this code...
-    //
-    
-    AnsiBuffer red(final String text) {
-        return attrib(text, ANSI.FG_RED)
+    def invokeMethod(String name, Object args) {
+        def code = CODES[name]
+        
+        if (code) {
+            name = 'attrib'
+            
+            if (args != null && args.class.array) {
+                args << code
+            }
+            else {
+                args = [ args, code ]
+            }
+        }
+        
+        return metaClass.invokeMethod(this, name, args)
     }
-
-    AnsiBuffer blue(final String text) {
-        return attrib(text, ANSI.FG_BLUE)
-    }
-
-    AnsiBuffer green(final String text) {
-        return attrib(text, ANSI.FG_GREEN)
-    }
-
-    AnsiBuffer black(final String text) {
-        return attrib(text, ANSI.FG_BLACK)
-    }
-
-    AnsiBuffer yellow(final String text) {
-        return attrib(text, ANSI.FG_YELLOW)
-    }
-
-    AnsiBuffer magenta(final String text) {
-        return attrib(text, ANSI.FG_MAGENTA)
-    }
-
-    AnsiBuffer cyan(final String text) {
-        return attrib(text, ANSI.FG_CYAN)
-    }
-
-    AnsiBuffer bold(final String text) {
-        return attrib(text, ANSI.BOLD)
-    }
-
-    AnsiBuffer underscore(final String text) {
-        return attrib(text, ANSI.UNDERSCORE)
-    }
-
-    AnsiBuffer blink(final String text) {
-        return attrib(text, ANSI.BLINK)
-    }
-
-    AnsiBuffer reverse(final String text) {
-        return attrib(text, ANSI.REVERSE)
-    }
-    
-    private AnsiBufferSelector selector = new AnsiBufferSelector(buffer: this)
     
     def getProperty(final String name) {
         // Is there a better way to handle this muck?
-        if (name in [ 'selected', 'ansiEnabled' ]) {
+        if (name in [ 'selector', 'ansiEnabled' ]) {
             return super.getProperty(name)
         }
         

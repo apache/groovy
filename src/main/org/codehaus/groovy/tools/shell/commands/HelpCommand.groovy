@@ -20,6 +20,7 @@ import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.Command
 import org.codehaus.groovy.tools.shell.Shell
 import org.codehaus.groovy.tools.shell.CommandRegistry
+import org.codehaus.groovy.tools.shell.AnsiBuffer
 import org.codehaus.groovy.tools.shell.completor.SimpleCompletor
 
 /**
@@ -31,6 +32,8 @@ import org.codehaus.groovy.tools.shell.completor.SimpleCompletor
 class HelpCommand
     extends CommandSupport
 {
+    private AnsiBuffer ansiBuffer = new AnsiBuffer()
+    
     HelpCommand(final Shell shell) {
         super(shell, 'help', '\\h')
     }
@@ -94,9 +97,16 @@ class HelpCommand
             //
             // TODO: Wrap description if needed
             //
-
-            io.out.println("  $n  ($s) $it.description")
+            
+            ansiBuffer.clear()
+            ansiBuffer << '  '
+            ansiBuffer.bold << n
+            ansiBuffer << '  '
+            ansiBuffer << "($s) $it.description"
+            
+            io.out.println(ansiBuffer)
         }
+        
         io.out.println()
         
         io.out.println('For help on a specific command type:') // TODO: i18n
