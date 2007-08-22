@@ -183,7 +183,7 @@ $Date$
         -->
 
         <echo message="Groovyc of test code."/>
-        <java classname="org.codehaus.groovy.ant.Groovyc" fork="true" maxmemory="128M">
+        <java classname="org.codehaus.groovy.ant.Groovyc" fork="true" maxmemory="128M" failonerror="true">
             <classpath>
                 <pathelement path="${mainClassesDirectory}"/>
                 <pathelement path="${testClassesDirectory}"/>
