@@ -33,6 +33,8 @@ import org.codehaus.groovy.tools.shell.completor.SimpleCompletor
 abstract class CommandSupport
     implements Command
 {
+    private static final String NEWLINE = System.properties['line.separator']
+    
     /** Instance logger for the command, initialized late to include the command name. */
     protected final ShellLog log
 
@@ -131,10 +133,14 @@ abstract class CommandSupport
     }
     
     protected Binding getBinding() {
-        return shell.shell.context
+        return shell.interp.context
     }
     
     protected Map getVariables() {
         return binding.variables
+    }
+    
+    protected GroovyClassLoader getClassLoader() {
+        return shell.interp.classLoader
     }
 }

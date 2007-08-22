@@ -38,7 +38,11 @@ class ImportCommand
     ImportCommand(final Shell shell) {
         super(shell, 'import', '\\i')
     }
-
+    
+    protected List createCompletors() {
+        return [ new ImportCommandCompletor(shell.interp.classLoader), null ]
+    }
+    
     Object execute(final List args) {
         assert args != null
 
@@ -50,11 +54,9 @@ class ImportCommand
         def buff = [ 'import ' + args.join(' ') ]
         buff << 'def dummp = false'
         
-        def cl = shell.shell.classLoader
-        
         def type
         try {
-            type = cl.parseClass(buff.join(shell.NEWLINE))
+            type = classLoader.parseClass(buff.join(NEWLINE))
 
             log.debug("Adding import: ${buff[0]}")
 
@@ -67,12 +69,8 @@ class ImportCommand
         }
         finally {
             // Remove the class generated while testing the import syntax
-            cl.classCache.remove(type?.name)
+            classLoader.classCache.remove(type?.name)
         }
-    }
-    
-    protected List createCompletors() {
-        return [ new ImportCommandCompletor(shell.shell.classLoader), null ]
     }
 }
 

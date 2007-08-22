@@ -40,12 +40,12 @@ class PurgeClassesCommand
             return
         }
         
-        if (shell.shell.classLoader.loadedClasses.size() == 0) {
+        if (classLoader.loadedClasses.size() == 0) {
             io.output.println("No classes have been loaded") // TODO: i18n
             return
         }
 
-        shell.shell.classLoader.clearCache()
+        classLoader.clearCache()
 
         if (io.verbose) {
             io.output.println('Loaded classes purged') // TODO: i18n

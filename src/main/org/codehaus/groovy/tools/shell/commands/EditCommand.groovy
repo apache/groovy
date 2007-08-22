@@ -56,7 +56,7 @@ class EditCommand
         
         try {
             // Write the current buffer to a tmp file
-            file.write(buffer.join(shell.NEWLINE))
+            file.write(buffer.join(NEWLINE))
             
             // Try to launch the editor
             def cmd = "$editor $file"

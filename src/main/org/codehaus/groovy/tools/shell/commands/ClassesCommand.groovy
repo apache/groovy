@@ -32,10 +32,6 @@ class ClassesCommand
         super(shell, 'classes', '\\C')
     }
     
-    private List getClasses() {
-        return shell.shell.classLoader.loadedClasses
-    }
-    
     Object execute(final List args) {
         assert args != null
 
@@ -43,6 +39,8 @@ class ClassesCommand
             io.error.println(messages.format('error.unexpected_args', args.join(' ')))
             return
         }
+        
+        def classes = classLoader.loadedClasses
         
         if (classes.size() == 0) {
             io.output.println("No classes have been loaded") // TODO: i18n

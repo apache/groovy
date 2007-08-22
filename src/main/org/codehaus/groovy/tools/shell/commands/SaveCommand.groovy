@@ -68,6 +68,6 @@ class SaveCommand
             dir.mkdirs()
         }
         
-        file.write(buffer.join(shell.NEWLINE))
+        file.write(buffer.join(NEWLINE))
     }
 }

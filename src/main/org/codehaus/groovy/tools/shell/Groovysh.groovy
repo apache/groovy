@@ -44,7 +44,7 @@ class Groovysh
     
     private final InteractiveShellRunner runner
     
-    private final GroovyShell shell
+    private final GroovyShell interp
     
     private final BufferManager buffers = new BufferManager()
 
@@ -56,7 +56,7 @@ class Groovysh
         assert classLoader
         assert binding
         
-        shell = new GroovyShell(classLoader, binding)
+        interp = new GroovyShell(classLoader, binding)
         
         //
         // NOTE: Command registration must be done after the shell is initialized and before the runner is created
@@ -296,7 +296,7 @@ class Groovysh
         
         Class type
         try {
-            Script script = shell.parse(source)
+            Script script = interp.parse(source)
             type = script.getClass()
 
             log.debug("Compiled script: $script")
@@ -312,13 +312,13 @@ class Groovysh
             }
 
             // Save the last result to the '_' variable
-            shell.context['_'] = result
+            interp.context['_'] = result
 
             // Keep only the methods that have been defined in the script
             type.declaredMethods.each { Method m ->
                 if (!(m.name in [ 'main', 'run' ] || m.name.startsWith('super$') || m.name.startsWith('class$'))) {
                     log.debug("Saving method definition: $m")
-                    shell.context["$m.name"] = new MethodClosure(type.newInstance(), m.name)
+                    interp.context["$m.name"] = new MethodClosure(type.newInstance(), m.name)
                 }
             }
         }
@@ -334,7 +334,7 @@ class Groovysh
             t.printStackTrace(io.error)
         }
         finally {
-            def cache = shell.classLoader.classCache
+            def cache = interp.classLoader.classCache
             
             // Remove the script class generated
             cache.remove(type?.name)
