@@ -38,7 +38,7 @@ class VariablesCommand
         assert args != null
 
         if (args.size() > 0) {
-            io.error.println("Unexpected arguments: ${args.join(' ')}") // TODO: i18n
+            io.error.println(messages.format('error.unexpected_args', args.join(' ')))
             return
         }
         
