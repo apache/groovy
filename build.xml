@@ -95,7 +95,7 @@ $Date$
        </fail>
     </target>
 
-    <target name="compileMain" depends="-init,ensureGrammars"
+    <target name="compileMain" depends="-init,-includeResources,ensureGrammars"
             description="Compile the Java and Groovy code in the main source.">
         <mkdir dir="${mainClassesDirectory}"/>
         <mkdir dir="${toolsClassesDirectory}"/>
@@ -124,7 +124,7 @@ $Date$
         </java>
     </target>
 
-    <target name="ubercompile:bootstrap" depends="-init,ensureGrammars">
+    <target name="ubercompile:bootstrap" depends="-init,-includeResources,ensureGrammars">
         <mkdir dir="${mainClassesDirectory}"/>
         
         <javac destdir="${mainClassesDirectory}"
@@ -319,7 +319,7 @@ $Date$
     </target>
 
     <target name="-actuallyCreateJars"
-            depends="-makeManifest,-includeResources,-initializeJars,-createBaseJar,-createEmbeddableJar"
+            depends="-makeManifest,-initializeJars,-createBaseJar,-createEmbeddableJar"
             unless="testFailed"/>
 
     <target name="-makeManifest">
