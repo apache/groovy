@@ -70,11 +70,6 @@ class MessageSource
         
         String pattern = getMessage(code)
         
-        /*
-        FIXME: This is only supported on Java 5 :-(
-        return sprintf(pattern, args)
-        */
-        
         return MessageFormat.format(pattern, args)
     }
     
