@@ -36,20 +36,19 @@ class ClassesCommand
         assert args != null
 
         if (args.size() > 0) {
-            io.err.println(messages.format('error.unexpected_args', args.join(' ')))
-            return
+            fail(messages.format('error.unexpected_args', args.join(' ')))
         }
         
         def classes = classLoader.loadedClasses
         
         if (classes.size() == 0) {
             io.out.println("No classes have been loaded") // TODO: i18n
-            return
         }
-
-        io.out.println('Classes:') // TODO: i18n
-        classes.each {
-            io.out.println("  $it")
+        else {
+            io.out.println('Classes:') // TODO: i18n
+            classes.each {
+                io.out.println("  $it")
+            }
         }
     }
 }

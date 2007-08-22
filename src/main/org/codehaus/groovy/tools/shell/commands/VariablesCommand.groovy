@@ -38,26 +38,25 @@ class VariablesCommand
         assert args != null
 
         if (args.size() > 0) {
-            io.err.println(messages.format('error.unexpected_args', args.join(' ')))
-            return
+            fail(messages.format('error.unexpected_args', args.join(' ')))
         }
         
         if (variables.isEmpty()) {
             io.out.println('No variables defined') // TODO: i18n
-            return
         }
-        
-        io.out.println('Variables:') // TODO: i18n
-        variables.each { key, value ->
-            // Special handling for defined methods, just show the sig
-            if (value instanceof MethodClosure) {
-                //
-                // TODO: Would be nice to show the argument types it will accept...
-                //
-                value = "method ${value.method}()"
+        else {
+            io.out.println('Variables:') // TODO: i18n
+            variables.each { key, value ->
+                // Special handling for defined methods, just show the sig
+                if (value instanceof MethodClosure) {
+                    //
+                    // TODO: Would be nice to show the argument types it will accept...
+                    //
+                    value = "method ${value.method}()"
+                }
+                
+                io.out.println("  $key = $value")
             }
-            
-            io.out.println("  $key = $value")
         }
     }
 }

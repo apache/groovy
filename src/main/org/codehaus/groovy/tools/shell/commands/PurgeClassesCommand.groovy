@@ -36,19 +36,18 @@ class PurgeClassesCommand
         assert args != null
 
         if (args.size() > 0) {
-            io.err.println(messages.format('error.unexpected_args', args.join(' ')))
-            return
+            fail(messages.format('error.unexpected_args', args.join(' ')))
         }
         
         if (classLoader.loadedClasses.size() == 0) {
             io.out.println("No classes have been loaded") // TODO: i18n
-            return
         }
-
-        classLoader.clearCache()
-
-        if (io.verbose) {
-            io.out.println('Loaded classes purged') // TODO: i18n
+        else {
+            classLoader.clearCache()
+            
+            if (io.verbose) {
+                io.out.println('Loaded classes purged') // TODO: i18n
+            }
         }
     }
 }

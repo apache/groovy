@@ -37,8 +37,7 @@ class EditCommand
         assert args != null
 
         if (args.size() > 0) {
-            io.err.println(messages.format('error.unexpected_args', args.join(' ')))
-            return
+            fail(messages.format('error.unexpected_args', args.join(' ')))
         }
         
         def editor = System.getenv('EDITOR')
@@ -47,8 +46,7 @@ class EditCommand
             // TODO: Maybe popup a Swing editor here?  Or look for other env vars?  Or use notepad on winblows?
             //
             
-            io.err.println("Unable to determine which editor to use; check \$EDITOR") // TODO: i18n
-            return
+            fail("Unable to determine which editor to use; check \$EDITOR") // TODO: i18n
         }
         
         def file = File.createTempFile('groovysh-buffer', '.groovy')

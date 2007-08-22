@@ -36,8 +36,7 @@ class ClearCommand
         assert args != null
 
         if (args.size() > 0) {
-            io.err.println(messages.format('error.unexpected_args', args.join(' ')))
-            return
+            fail(messages.format('error.unexpected_args', args.join(' ')))
         }
         
         buffer.clear()

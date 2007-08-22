@@ -116,6 +116,10 @@ abstract class CommandSupport
         return new ArgumentCompletor(list)
     }
     
+    protected void fail(final String msg) {
+        throw new CommandException(this, msg)
+    }
+    
     //
     // Shell access helpers
     //

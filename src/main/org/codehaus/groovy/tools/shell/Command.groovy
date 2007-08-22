@@ -40,3 +40,23 @@ interface Command
 
     Object execute(List args)
 }
+
+/**
+ * Thrown to indicate a problem with command execution.
+ *
+ * @version $Id$
+ * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
+ */
+class CommandException
+    extends Exception
+{
+    final Command command
+    
+    CommandException(final Command command, final String msg) {
+        super(msg)
+        
+        assert command
+        
+        this.command = command
+    }
+}

@@ -42,8 +42,7 @@ class SaveCommand
         assert args != null
         
         if (args.size() != 1) {
-            io.err.println("Command 'save' requires a single file argument") // TODO: i18n
-            return
+            fail("Command 'save' requires a single file argument") // TODO: i18n
         }
 
         if (buffer.isEmpty()) {

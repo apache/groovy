@@ -43,8 +43,7 @@ class HelpCommand
         assert args != null
 
         if (args.size() > 1) {
-            io.err.println(messages.format('error.unexpected_args', args.join(' ')))
-            return
+            fail(messages.format('error.unexpected_args', args.join(' ')))
         }
         
         if (args.size() == 1) {
@@ -60,8 +59,7 @@ class HelpCommand
         
         Command command = registry[name]
         if (!command) {
-            io.err.println("No such command: $name") // TODO: i18n
-            return
+            fail("No such command: $name") // TODO: i18n
         }
         
         io.out.println()

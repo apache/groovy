@@ -54,8 +54,7 @@ class BufferCommand
         }
 
         if (args.size() != 1) {
-            io.err.println("Command 'buffer' requires a single argument") // TODO: i18n
-            return
+            fail("Command 'buffer' requires a single argument") // TODO: i18n
         }
         
         switch (args[0]) {
@@ -67,7 +66,7 @@ class BufferCommand
             case '-':
                 // Delete the current buffer
                 if (buffers.size() == 1) {
-                    io.err.println('Can not delete the last buffer') // TODO: i18n
+                    fail('Can not delete the last buffer') // TODO: i18n
                 }
                 else {
                     buffers.deleteSelected()
@@ -84,7 +83,7 @@ class BufferCommand
                 def i = Integer.parseInt(args[0])
                 
                 if (i < 0 || i >= buffers.size()) {
-                    io.err.println("Invalid buffer selection: $i") // TODO: i18n
+                    fail("Invalid buffer selection: $i") // TODO: i18n
                 }
                 else {
                     buffers.select(i)

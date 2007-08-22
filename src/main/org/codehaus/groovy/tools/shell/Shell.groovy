@@ -76,9 +76,16 @@ class Shell
             
             log.debug("Executing command($command.name): $command; w/args: $args")
             
-            result = command.execute(args)
-            
-            log.debug("Result: $result")
+            try {
+                result = command.execute(args)
+                
+                log.debug("Result: $result")
+            }
+            catch (CommandException e) {
+                log.debug("Error: $e")
+                
+                io.err.println(e.message)
+            }
         }
         
         return result

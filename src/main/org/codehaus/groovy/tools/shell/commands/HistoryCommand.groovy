@@ -36,15 +36,13 @@ class HistoryCommand
         assert args != null
         
         if (args.size() > 0) {
-            io.err.println(messages.format('error.unexpected_args', args.join(' ')))
-            return
+            fail(messages.format('error.unexpected_args', args.join(' ')))
         }
         
         def reader = shell.runner?.reader
         
         if (!reader) {
-            io.err.println("Shell does not appear to be interactive; can not query history")
-            return
+            fail("Shell does not appear to be interactive; can not query history")
         }
         
         //
