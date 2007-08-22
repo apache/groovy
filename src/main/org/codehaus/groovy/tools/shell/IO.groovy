@@ -42,6 +42,12 @@ class IO
     /** Prefered error output writer. */
     final PrintWriter error
 
+    /** Flag to indicate that verbose output is expected. */
+    boolean verbose
+
+    /** Flag to indicate that quiet output is expected. */
+    boolean quiet
+    
     /**
      * Construct a new IO container.
      */
