@@ -38,25 +38,44 @@ public class MessageSource
 {
     private final ResourceBundle[] bundles;
     
-    //
-    // TODO: Re-add the String and Object? constructor helpers
-    //
-    
-    public MessageSource(final Class type) {
-        this(new Class[] { type });
+    public MessageSource(final String[] names) {
+        assert names != null;
+        assert names.length != 0;
+        
+        bundles = new ResourceBundle[names.length];
+        
+        for (int i=0; i<names.length; i++) {
+            assert names[i] != null;
+            
+            bundles[i] = ResourceBundle.getBundle(names[i]);
+        }
     }
     
-    public MessageSource(final Class[] types) {
+    public MessageSource(final String name) {
+        this(new String[] { name });
+    }
+    
+    private static String[] classNames(final Class[] types) {
         assert types != null;
         assert types.length != 0;
         
-        bundles = new ResourceBundle[types.length];
+        String[] names = new String[types.length];
         
         for (int i=0; i<types.length; i++) {
             assert types[i] != null;
             
-            bundles[i] = ResourceBundle.getBundle(types[i].getName());
+            names[i] = types[i].getName();
         }
+        
+        return names;
+    }
+    
+    public MessageSource(final Class[] types) {
+        this(classNames(types));
+    }
+    
+    public MessageSource(final Class type) {
+        this(new String[] { type.getName() });
     }
     
     /**
@@ -86,7 +105,7 @@ public class MessageSource
         
         throw error;
     }
-
+    
     /**
      * Format a message (based on {@link MessageFormat} using the message
      * from the resource bundles using the given code as a pattern and the
@@ -105,5 +124,29 @@ public class MessageSource
      */
     public Object getProperty(final String name) {
         return getMessage(name);
+    }
+    
+    /**
+     * @see #format(String,Object[])
+     * @deprecated
+     */
+    public String getMessage(final String code, final Object[] args) {
+        return format(code, args);
+    }
+    
+    /**
+     * @see #format(String,Object[])
+     * @deprecated
+     */
+    public String getMessage(final String code, final Object arg1) {
+        return format(code, new Object[] { arg1 });
+    }
+    
+    /**
+     * @see #format(String,Object[])
+     * @deprecated
+     */
+    public String getMessage(final String code, final Object arg1, final Object arg2) {
+        return format(code, new Object[] { arg1, arg2 });
     }
 }
