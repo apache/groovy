@@ -27,11 +27,11 @@ abstract class CommandTestSupport
 {
     Shell shell
     
-    protected void setUp() {
+    void setUp() {
         shell = new Shell()
     }
     
-    protected void tearDown() {
+    void tearDown() {
         shell = null
     }
 }

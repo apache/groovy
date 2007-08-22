@@ -26,6 +26,12 @@ import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.control.CompilationFailedException
 
 import org.codehaus.groovy.tools.shell.commands.*
+import org.codehaus.groovy.control.messages.SyntaxErrorMessage
+import antlr.NoViableAltException
+import antlr.NoViableAltForCharException
+import antlr.MismatchedTokenException
+import org.codehaus.groovy.control.messages.Message
+import antlr.CharScanner
 
 /**
  * An interactive shell for evaluating Groovy code from the command-line (aka. groovysh).
@@ -93,11 +99,11 @@ class Groovysh
         
         registry << new HelpCommand(this)
 
-        registry << new CommandAlias(this, '?', '\\?', 'help')
+        alias('?', '\\?', 'help')
 
         registry << new ExitCommand(this)
 
-        registry << new CommandAlias(this, 'quit', '\\q', 'exit')
+        alias('quit', '\\q', 'exit')
 
         //
         // TODO: Rename to display-buffer, display-variables, display-classes, display-imports?
@@ -125,13 +131,13 @@ class Groovysh
         
         registry << new LoadCommand(this)
 
-        registry << new CommandAlias(this, '.', '\\.', 'load')
+        alias('.', '\\.', 'load')
 
         registry << new SaveCommand(this)
 
         registry << new BufferCommand(this)
 
-        registry << new CommandAlias(this, '#', '\\#', 'buffer')
+        alias('#', '\\#', 'buffer')
         
         //
         // TODO: Add 'edit' command, which will pop up some Swing bits to allow the full buffer to be edited
@@ -199,17 +205,81 @@ class Groovysh
         }
     }
 
+    //
+    // FIXME: Seems like failedWithUnexpectedEOF() is not always set as expected, as in:
+    //
+    // class a {               <--- is true here
+    //    def b() {            <--- is false here :-(
+    //
+
+    // Report errors other than unexpected EOF
+
+    private boolean isSyntaxError(final SourceUnit parser) {
+        assert parser
+
+        log.debug("Checking syntax...")
+
+        log.debug("Error count: ${parser.errorCollector.errorCount}")
+
+        parser.errorCollector.errors.each {
+            log.debug("    $it")
+        }
+        
+        if (!parser.errorCollector.hasErrors()) {
+            return false
+        }
+
+        if (parser.errorCollector.errorCount > 1) {
+            return true
+        }
+
+        def last = parser.errorCollector.lastError
+        def cause
+
+        log.debug("Last error: $last")
+        
+        if (last instanceof SyntaxErrorMessage) {
+            cause = last.cause.cause
+
+            log.debug("Syntax error: $cause")
+        }
+
+        log.debug("Cause type: ${cause.class.name}")
+        
+        if (cause) {
+            if (cause instanceof NoViableAltException) {
+                return !isEofToken(cause.token)
+            }
+            else if (cause instanceof NoViableAltForCharException) {
+                char badChar = cause.foundChar
+
+                return !(badChar == CharScanner.EOF_CHAR)
+            }
+            else if (cause instanceof MismatchedTokenException) {
+                return !isEofToken(cause.token)
+            }
+        }
+        
+        return true
+    }
+
+    protected boolean isEofToken(final antlr.Token token) {
+        log.debug("Checking if token is EOF: $token; type: $token.type")
+      
+        return token.type == antlr.Token.EOF_TYPE
+    }
+
     /**
      * Attempt to parse the given buffer.
      */
     private ParseStatus parse(final List buffer, final int tolerance) {
         assert buffer
 
-        def source = (imports + buffer).join(NEWLINE)
+        String source = (imports + buffer).join(NEWLINE)
 
         log.debug("Parsing: $source")
 
-        def parser
+        SourceUnit parser
         Throwable error
 
         try {
@@ -221,15 +291,7 @@ class Groovysh
             return new ParseStatus(ParseStatus.COMPLETE)
         }
         catch (CompilationFailedException e) {
-            //
-            // FIXME: Seems like failedWithUnexpectedEOF() is not always set as expected, as in:
-            //
-            // class a {               <--- is true here
-            //    def b() {            <--- is false here :-(
-            //
-
-            // Report errors other than unexpected EOF
-            if (parser.errorCollector.errorCount > 1 || !parser.failedWithUnexpectedEOF()) {
+            if (isSyntaxError(parser)) {
                 error = e
             }
         }
@@ -402,6 +464,10 @@ class Groovysh
         cli.V(longOpt: 'version', messages['cli.option.version.description'])
         cli.v(longOpt: 'verbose', messages['cli.option.verbose.description'])
         cli.d(longOpt: 'debug', messages['cli.option.debug.description'])
+        
+        //
+        // TODO: Add --quiet
+        //
 
         def options = cli.parse(args)
         assert options

@@ -17,40 +17,37 @@
 package org.codehaus.groovy.tools.shell.commands
 
 import org.codehaus.groovy.tools.shell.CommandTestSupport
-import org.codehaus.groovy.tools.shell.ExitNotification
 
 /**
- * Unit tests for the {@link ExitCommand} class.
+ * Unit tests for the {@link HelpCommand} class.
  *
  * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
-class ExitCommandTest
+class HelpCommandTest
     extends CommandTestSupport
 {
     void setUp() {
         super.setUp()
         
+        shell << new HelpCommand(shell)
         shell << new ExitCommand(shell)
     }
     
-    void testWithNoArgs() {
-        try {
-            shell << 'exit'
-            fail()
-        }
-        catch (ExitNotification e) {
-            // expected
-        }
+    void testList() {
+        shell << 'help'
+    }
+    
+    void testCommandHelp() {
+        shell << 'help exit'
     }
     
     /*
     FIXME: Errors don't currently throw anything, just io.error.println()'s...
     
-    void testWithArgs() {
+    void testCommandHelpInvalidCommand() {
         try {
-            shell << 'exit foo'
-            fail()
+            shell << 'help no-such-command'
         }
         catch (Exception e) {
             // expected
