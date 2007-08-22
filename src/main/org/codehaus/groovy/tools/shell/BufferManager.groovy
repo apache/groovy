@@ -35,7 +35,7 @@ class BufferManager
     List current() {
         assert !buffers.isEmpty()
         
-        return buffers[selected]    
+        return buffers[selected]
     }
 
     void select(final int index) {
