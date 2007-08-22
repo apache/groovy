@@ -17,7 +17,7 @@
 package org.codehaus.groovy.tools.shell.commands
 
 import org.codehaus.groovy.tools.shell.CommandSupport
-import org.codehaus.groovy.tools.shell.InteractiveShell
+import org.codehaus.groovy.tools.shell.Shell
 
 /**
  * The 'display' command.
@@ -28,11 +28,11 @@ import org.codehaus.groovy.tools.shell.InteractiveShell
 class DisplayCommand
     extends CommandSupport
 {
-    DisplayCommand(final InteractiveShell shell) {
+    DisplayCommand(final Shell shell) {
         super(shell, 'display', '\\d')
     }
 
-    void execute(final List args) {
+    Object execute(final List args) {
         assert args != null
 
         if (args.size() > 0) {

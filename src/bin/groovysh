@@ -19,7 +19,7 @@ DIRNAME=`dirname "$0"`
 #
 
 if [ "x$NEWSHELL" != "x" ]; then
-    startGroovy org.codehaus.groovy.tools.shell.InteractiveShell "$@"
+    startGroovy org.codehaus.groovy.tools.shell.Groovysh "$@"
 else
     startGroovy groovy.ui.InteractiveShell "$@"
 fi

@@ -23,7 +23,7 @@ import jline.NullCompletor
 import org.codehaus.groovy.control.CompilationFailedException
 
 import org.codehaus.groovy.tools.shell.CommandSupport
-import org.codehaus.groovy.tools.shell.InteractiveShell
+import org.codehaus.groovy.tools.shell.Shell
 import org.codehaus.groovy.tools.shell.BufferManager
 
 import org.codehaus.groovy.tools.shell.completor.SimpleCompletor
@@ -37,7 +37,7 @@ import org.codehaus.groovy.tools.shell.completor.SimpleCompletor
 class BufferCommand
     extends CommandSupport
 {
-    BufferCommand(final InteractiveShell shell) {
+    BufferCommand(final Shell shell) {
         super(shell, 'buffer', '\\b')
     }
 
@@ -45,7 +45,7 @@ class BufferCommand
         return [ new BufferCommandCompletor(shell.buffers), null ]
     }
     
-    void execute(final List args) {
+    Object execute(final List args) {
         assert args != null
 
         if (args.size() == 0) {

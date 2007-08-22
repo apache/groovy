@@ -29,8 +29,9 @@ class CommandAlias
 {
     final String targetName
     
-    CommandAlias(final InteractiveShell shell, final String name, final String shortcut, final String target) {
+    CommandAlias(final Shell shell, final String name, final String shortcut, final String target) {
         super(shell, name, shortcut)
+        
         assert target
 
         this.targetName = target
@@ -60,7 +61,7 @@ class CommandAlias
         return target.completor
     }
     
-    void execute(final List args) {
+    Object execute(final List args) {
         target.execute(args)
     }
 }

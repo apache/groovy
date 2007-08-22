@@ -16,40 +16,27 @@
 
 package org.codehaus.groovy.tools.shell.commands
 
-import org.codehaus.groovy.tools.shell.CommandSupport
-import org.codehaus.groovy.tools.shell.Shell
+import org.codehaus.groovy.tools.shell.CommandTestSupport
+import org.codehaus.groovy.tools.shell.ExitNotification
 
 /**
- * The 'classes' command.
+ * Unit tests for the {@link ExitCommand} class.
  *
  * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
-class ClassesCommand
-    extends CommandSupport
+class ExitCommandTest
+    extends CommandTestSupport
 {
-    ClassesCommand(final Shell shell) {
-        super(shell, 'classes', '\\C')
-    }
-
-    Object execute(final List args) {
-        assert args != null
-
-        if (args.size() > 0) {
-            io.error.println("Unexpected arguments: $args") // TODO: i18n
-            return
-        }
+    void testWithNoArgs() {
+        shell << new ExitCommand(shell)
         
-        def classes = shell.shell.classLoader.loadedClasses
-
-        if (classes.size() == 0) {
-            io.output.println("No classes have been loaded") // TODO: i18n
-            return
+        try {
+            shell << 'exit'
+            fail()
         }
-
-        io.output.println('Classes:') // TODO: i18n
-        classes.each {
-            io.output.println("  $it")
+        catch (ExitNotification e) {
+            // expected
         }
     }
 }

@@ -22,7 +22,7 @@ import jline.NullCompletor
 import org.codehaus.groovy.control.CompilationFailedException
 
 import org.codehaus.groovy.tools.shell.CommandSupport
-import org.codehaus.groovy.tools.shell.InteractiveShell
+import org.codehaus.groovy.tools.shell.Shell
 import org.codehaus.groovy.tools.shell.completor.SimpleCompletor
 import org.codehaus.groovy.tools.shell.completor.ClassNameCompletor
 
@@ -35,11 +35,11 @@ import org.codehaus.groovy.tools.shell.completor.ClassNameCompletor
 class ImportCommand
     extends CommandSupport
 {
-    ImportCommand(final InteractiveShell shell) {
+    ImportCommand(final Shell shell) {
         super(shell, 'import', '\\i')
     }
 
-    void execute(final List args) {
+    Object execute(final List args) {
         assert args != null
 
         if (args.isEmpty()) {

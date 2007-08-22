@@ -17,7 +17,7 @@
 package org.codehaus.groovy.tools.shell.commands
 
 import org.codehaus.groovy.tools.shell.CommandSupport
-import org.codehaus.groovy.tools.shell.InteractiveShell
+import org.codehaus.groovy.tools.shell.Shell
 
 /**
  * The 'purgevariables' command.
@@ -28,11 +28,11 @@ import org.codehaus.groovy.tools.shell.InteractiveShell
 class PurgeVariablesCommand
     extends CommandSupport
 {
-    PurgeVariablesCommand(final InteractiveShell shell) {
+    PurgeVariablesCommand(final Shell shell) {
         super(shell, 'purgevariables', '\\pv')
     }
 
-    void execute(final List args) {
+    Object execute(final List args) {
         assert args != null
 
         if (args.size() > 0) {
@@ -49,7 +49,7 @@ class PurgeVariablesCommand
 
         vars.clear()
 
-        if (shell.verbose) {
+        if (io.verbose) {
             io.output.println("Custom variables purged")
         }
     }

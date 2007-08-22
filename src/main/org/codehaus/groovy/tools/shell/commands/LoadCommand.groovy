@@ -19,7 +19,7 @@ package org.codehaus.groovy.tools.shell.commands
 import jline.FileNameCompletor
 
 import org.codehaus.groovy.tools.shell.CommandSupport
-import org.codehaus.groovy.tools.shell.InteractiveShell
+import org.codehaus.groovy.tools.shell.Shell
 
 /**
  * The 'load' command.
@@ -30,7 +30,7 @@ import org.codehaus.groovy.tools.shell.InteractiveShell
 class LoadCommand
     extends CommandSupport
 {
-    LoadCommand(final InteractiveShell shell) {
+    LoadCommand(final Shell shell) {
         super(shell, 'load', '\\l')
     }
 
@@ -38,7 +38,7 @@ class LoadCommand
         return [ new FileNameCompletor() ]
     }
 
-    void execute(final List args) {
+    Object execute(final List args) {
         assert args != null
         
         if (args.isEmpty()) {
@@ -63,7 +63,7 @@ class LoadCommand
                 url = file.toURL()
             }
 
-            if (verbose) {
+            if (io.verbose) {
                 io.output.println("Loading: $url")
             }
 

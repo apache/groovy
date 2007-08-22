@@ -17,7 +17,8 @@
 package org.codehaus.groovy.tools.shell.commands
 
 import org.codehaus.groovy.tools.shell.CommandSupport
-import org.codehaus.groovy.tools.shell.InteractiveShell
+import org.codehaus.groovy.tools.shell.Shell
+import org.codehaus.groovy.tools.shell.ExitNotification
 
 /**
  * The 'exit' command.
@@ -28,22 +29,26 @@ import org.codehaus.groovy.tools.shell.InteractiveShell
 class ExitCommand
     extends CommandSupport
 {
-    ExitCommand(final InteractiveShell shell) {
+    ExitCommand(final Shell shell) {
         super(shell, 'exit', '\\e')
     }
 
-    void execute(final List args) {
+    Object execute(final List args) {
         assert args != null
-
+        
+        //
+        // TODO: Maybe support a single arg for the code?
+        //
+        
         if (args.size() > 0) {
             io.error.println("Unexpected arguments: $args") // TODO: i18n
             return
         }
         
-        if (shell.verbose) {
+        if (io.verbose) {
             io.output.println('Bye') // TODO: i18n
         }
         
-        shell.exit(0)
+        throw new ExitNotification(0)
     }
 }

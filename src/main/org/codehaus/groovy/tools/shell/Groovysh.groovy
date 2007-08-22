@@ -18,17 +18,12 @@ package org.codehaus.groovy.tools.shell
 
 import java.lang.reflect.Method
 
-import jline.ConsoleReader
-import jline.MultiCompletor
-
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.InvokerInvocationException
 import org.codehaus.groovy.runtime.MethodClosure
 
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.control.CompilationFailedException
-
-import org.codehaus.groovy.tools.ErrorReporter
 
 import org.codehaus.groovy.tools.shell.commands.*
 
@@ -38,34 +33,25 @@ import org.codehaus.groovy.tools.shell.commands.*
  * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
-class InteractiveShell
-    implements Runnable
+class Groovysh
+    extends Shell
 {
     private static final String NEWLINE = System.properties['line.separator']
     
-    private final ShellLog log = new ShellLog(this.class)
-    
     private final MessageSource messages = new MessageSource(this.class)
-
+    
+    private final InteractiveShellRunner runner
+    
     private final GroovyShell shell
-
-    private final IO io
     
-    private final ConsoleReader reader
-    
-    private final CommandRegistry registry = new CommandRegistry()
-
     private final BufferManager buffers = new BufferManager()
 
     private final List imports = []
     
-    boolean verbose
-    
-    InteractiveShell(final ClassLoader classLoader, final Binding binding, final IO io) {
+    Groovysh(final ClassLoader classLoader, final Binding binding, final IO io) {
+        super(io)
+        
         assert binding
-        assert io
-
-        this.io = io
 
         if (classLoader != null) {
             shell = new GroovyShell(classLoader, binding)
@@ -74,34 +60,29 @@ class InteractiveShell
             shell = new GroovyShell(binding)
         }
         
-        registerCommands()
-
-        // Initialize the JLine console input reader
-        reader = new ConsoleReader(io.inputStream, io.output)
+        //
+        // NOTE: Command registration must be done after the shell is initialized and before the runner is created
+        //
         
-        // Add some completors to fancy things up
-        def completors = []
-        registry.commands().each {
-            completors << it.completor
-        }
-        reader.addCompletor(new MultiCompletor(completors))
-
-        log.debug('Initialized')
+        registerCommands()
+        
+        runner = new InteractiveShellRunner(this)
+        runner.prompt = this.&renderPrompt
     }
 
-    InteractiveShell(final Binding binding, final IO io) {
+    Groovysh(final Binding binding, final IO io) {
         this(null, binding, io)
     }
 
-    InteractiveShell(final IO io) {
+    Groovysh(final IO io) {
         this(new Binding(), io)
     }
     
-    InteractiveShell() {
+    Groovysh() {
         this(new IO())
     }
     
-    private void registerCommands() {
+    protected void registerCommands() {
         //
         // TODO: Add CommandSeperator for better visual grouping
         //
@@ -118,6 +99,10 @@ class InteractiveShell
 
         registry << new CommandAlias(this, 'quit', '\\q', 'exit')
 
+        //
+        // TODO: Rename to display-buffer, display-variables, display-classes, display-imports?
+        //
+        
         registry << new DisplayCommand(this)
         
         registry << new ClearCommand(this)
@@ -153,25 +138,7 @@ class InteractiveShell
         //
     }
     
-    /**
-     * Signal for the shell to exit.
-     */
-    private void exit(final int code) {
-        throw new ExitNotification(code)
-    }
-
-    /**
-     * Display the weclome banner.
-     */
-    private void displayBanner() {
-        io.output.println(messages.format('startup_banner.0', InvokerHelper.version, System.properties['java.vm.version']))
-        io.output.println(messages['startup_banner.1'])
-    }
-
-    /**
-     * Get the current prompt.
-     */
-    private String getPrompt() {
+    protected String renderPrompt() {
         //
         // TODO: Create a fancy ANSI-color prompt thingy?
         //
@@ -183,116 +150,53 @@ class InteractiveShell
     }
 
     /**
-     * Run the main interactive shell loop.
-     */
-    void run() {
-        log.debug('Running')
-
-        displayBanner()
-
-        //
-        // TODO: Add support to load a ~/.groovy/groovysh.rc or something
-        //
-
-        while (true) {
-            def line = reader.readLine(prompt)
-            
-            log.debug("Read line: $line")
-
-            // Stop on null
-            if (line == null) {
-                break
-            }
-
-            // Ingore empty lines
-            if (line.trim().size() == 0) {
-                continue
-            }
-            
-            execute(line)
-        }
-
-        log.debug('Finished')
-    }
-
-    /**
      * Execute a single line, where the line may be a command or Groovy code (complete or incomplete).
      */
-    void execute(final String line) {
+    Object execute(final String line) {
         assert line
-
-        if (!executeCommand(line)) {
-            def current = []
-            current += buffers.current()
-
-            // Append the line to the current buffer
-            current << line
-
-            // Attempt to parse the current buffer
-            def status = parse(current, 1)
-
-            switch (status.code) {
-                case ParseStatus.COMPLETE:
-                    // Evaluate the current buffer
-                    evaluate(current)
-                    buffers.clearSelected()
-                    break
-
-                case ParseStatus.INCOMPLETE:
-                    // Save the current buffer so user can build up complex muli-line code blocks
-                    buffers.updateSelected(current)
-                    break
-
-                case ParseStatus.ERROR:
-                    // Show a simple compilation error, otherwise dump the full details
-                    if (status.cause instanceof CompilationFailedException) {
-                        io.error.println(messages.format('info.error', status.cause.message))
-                    }
-                    else {
-                        io.error.println(messages.format('info.error', status.cause))
-                        status.cause.printStackTrace(io.error)
-                    }
-                    break
-
-                default:
-                    // Should never happen
-                    throw new Error("Invalid parse status: $status.code")
-            }
+        
+        // First try normal command execution
+        if (isExecutable(line)) {
+            return super.execute(line)
         }
-    }
+        
+        // Otherwise treat the line as Groovy
+        def current = []
+        current += buffers.current()
 
-    /**
-     * @see #execute(String)
-     */
-    def leftShift(final String line) {
-        execute(line)
-    }
+        // Append the line to the current buffer
+        current << line
 
-    /**
-     * Process built-in command execution.
-     *
-     * @return True if the line was a command and it was executed.
-     */
-    private boolean executeCommand(final String line) {
-        def args = line.trim().tokenize()
-        def command = registry.find(args[0])
+        // Attempt to parse the current buffer
+        def status = parse(current, 1)
 
-        if (command) {
-            if (args.size() == 1) {
-                args = []
-            }
-            else {
-                args = args[1..-1]
-            }
+        switch (status.code) {
+            case ParseStatus.COMPLETE:
+                // Evaluate the current buffer
+                evaluate(current)
+                buffers.clearSelected()
+                break
 
-            log.debug("Executing command: $command; w/args: $args")
+            case ParseStatus.INCOMPLETE:
+                // Save the current buffer so user can build up complex muli-line code blocks
+                buffers.updateSelected(current)
+                break
 
-            command.execute(args)
+            case ParseStatus.ERROR:
+                // Show a simple compilation error, otherwise dump the full details
+                if (status.cause instanceof CompilationFailedException) {
+                    io.error.println(messages.format('info.error', status.cause.message))
+                }
+                else {
+                    io.error.println(messages.format('info.error', status.cause))
+                    status.cause.printStackTrace(io.error)
+                }
+                break
 
-            return true
+            default:
+                // Should never happen
+                throw new Error("Invalid parse status: $status.code")
         }
-
-        return false
     }
 
     /**
@@ -317,9 +221,6 @@ class InteractiveShell
             return new ParseStatus(ParseStatus.COMPLETE)
         }
         catch (CompilationFailedException e) {
-            log.debug("Error count: ${parser.errorCollector.errorCount}")
-            log.debug("Failed with unexpected EOF: ${parser.failedWithUnexpectedEOF()}")
-
             //
             // FIXME: Seems like failedWithUnexpectedEOF() is not always set as expected, as in:
             //
@@ -356,7 +257,7 @@ class InteractiveShell
 
         log.debug("Evaluating buffer...")
 
-        if (verbose) {
+        if (io.verbose) {
             displayBuffer(buffer, true)
         }
 
@@ -376,7 +277,7 @@ class InteractiveShell
 
             log.debug("Evaluation result: $result")
 
-            if (verbose) {
+            if (io.verbose) {
                 io.output.println("===> $result")
             }
 
@@ -459,8 +360,15 @@ class InteractiveShell
 
     int run(final String[] args) {
         try {
+            // Configure from command-line
             processCommandLine(args)
-            run()
+            
+            // Display the welcome banner
+            io.output.println(messages.format('startup_banner.0', InvokerHelper.version, System.properties['java.vm.version']))
+            io.output.println(messages['startup_banner.1'])
+            
+            // Start the interactive shell runner
+            runner.run()
         }
         catch (ExitNotification n) {
             log.debug("Exiting w/code: ${n.code}")
@@ -503,21 +411,21 @@ class InteractiveShell
         if (_args.size() != 0) {
             cli.usage()
             io.error.println(messages.format('cli.info.unexpected_args', _args.join(' ')))
-            exit(1)
+            throw new ExitNotification(1)
         }
 
         if (options.h) {
             cli.usage()
-            exit(0)
+            throw new ExitNotification(0)
         }
 
         if (options.V) {
             io.output.println(messages.format('cli.info.version', InvokerHelper.version))
-            exit(0)
+            throw new ExitNotification(0)
         }
 
         if (options.v) {
-            verbose = true
+            io.verbose = true
         }
 
         if (options.d) {
@@ -526,7 +434,7 @@ class InteractiveShell
     }
 
     static void main(String[] args) {
-        int code = new InteractiveShell().run(args)
+        int code = new Groovysh().run(args)
 
         // Force the JVM to exit at this point, since shell could have created threads or
         // popped up Swing components that will cause the JVM to linger after we have been

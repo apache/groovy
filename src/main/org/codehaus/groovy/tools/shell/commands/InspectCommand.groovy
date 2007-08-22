@@ -19,7 +19,7 @@ package org.codehaus.groovy.tools.shell.commands
 import groovy.inspect.swingui.ObjectBrowser
 
 import org.codehaus.groovy.tools.shell.CommandSupport
-import org.codehaus.groovy.tools.shell.InteractiveShell
+import org.codehaus.groovy.tools.shell.Shell
 import org.codehaus.groovy.tools.shell.completor.SimpleCompletor
 
 /**
@@ -31,7 +31,7 @@ import org.codehaus.groovy.tools.shell.completor.SimpleCompletor
 class InspectCommand
     extends CommandSupport
 {
-    InspectCommand(final InteractiveShell shell) {
+    InspectCommand(final Shell shell) {
         super(shell, 'inspect', '\\n')
     }
     
@@ -39,7 +39,7 @@ class InspectCommand
         return [ new InspectCommandCompletor(shell.shell.context), null ]
     }
 
-    void execute(final List args) {
+    Object execute(final List args) {
         assert args != null
         
         if (args.size() > 1) {
@@ -60,7 +60,7 @@ class InspectCommand
             return
         }
 
-        if (verbose) {
+        if (io.verbose) {
             io.output.println("Launching object browser to inspect: $subject") // TODO: i18n
         }
         

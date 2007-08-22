@@ -18,7 +18,7 @@ package org.codehaus.groovy.tools.shell.commands
 
 import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.Command
-import org.codehaus.groovy.tools.shell.InteractiveShell
+import org.codehaus.groovy.tools.shell.Shell
 import org.codehaus.groovy.tools.shell.CommandRegistry
 import org.codehaus.groovy.tools.shell.completor.SimpleCompletor
 
@@ -31,7 +31,7 @@ import org.codehaus.groovy.tools.shell.completor.SimpleCompletor
 class HelpCommand
     extends CommandSupport
 {
-    HelpCommand(final InteractiveShell shell) {
+    HelpCommand(final Shell shell) {
         super(shell, 'help', '\\h')
     }
 
@@ -39,7 +39,7 @@ class HelpCommand
         return [ new HelpCommandCompletor(registry), null ]
     }
 
-    void execute(final List args) {
+    Object execute(final List args) {
         assert args != null
 
         if (args.size() > 1) {

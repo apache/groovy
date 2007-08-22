@@ -17,7 +17,7 @@
 package org.codehaus.groovy.tools.shell.commands
 
 import org.codehaus.groovy.tools.shell.CommandSupport
-import org.codehaus.groovy.tools.shell.InteractiveShell
+import org.codehaus.groovy.tools.shell.Shell
 
 /**
  * The 'purgeclasses' command.
@@ -28,11 +28,11 @@ import org.codehaus.groovy.tools.shell.InteractiveShell
 class PurgeClassesCommand
     extends CommandSupport
 {
-    PurgeClassesCommand(final InteractiveShell shell) {
+    PurgeClassesCommand(final Shell shell) {
         super(shell, 'purgeclasses', '\\pc')
     }
 
-    void execute(final List args) {
+    Object execute(final List args) {
         assert args != null
 
         if (args.size() > 0) {
@@ -47,8 +47,8 @@ class PurgeClassesCommand
 
         shell.shell.classLoader.clearCache()
 
-        if (verbose) {
+        if (io.verbose) {
             io.output.println('Loaded classes purged') // TODO: i18n
         }
-    }                             
+    }
 }

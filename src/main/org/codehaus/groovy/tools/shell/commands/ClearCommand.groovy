@@ -17,7 +17,7 @@
 package org.codehaus.groovy.tools.shell.commands
 
 import org.codehaus.groovy.tools.shell.CommandSupport
-import org.codehaus.groovy.tools.shell.InteractiveShell
+import org.codehaus.groovy.tools.shell.Shell
 
 /**
  * The 'clear' command.
@@ -28,11 +28,11 @@ import org.codehaus.groovy.tools.shell.InteractiveShell
 class ClearCommand
     extends CommandSupport
 {
-    ClearCommand(final InteractiveShell shell) {
+    ClearCommand(final Shell shell) {
         super(shell, 'clear', '\\c')
     }
 
-    void execute(final List args) {
+    Object execute(final List args) {
         assert args != null
 
         if (args.size() > 0) {
@@ -42,7 +42,7 @@ class ClearCommand
         
         def buffer = shell.buffers.current().clear()
 
-        if (shell.verbose) {
+        if (io.verbose) {
             io.output.println('Buffer cleared') //  TODO: i18n
         }
     }

@@ -19,7 +19,7 @@ package org.codehaus.groovy.tools.shell.commands
 import jline.FileNameCompletor
 
 import org.codehaus.groovy.tools.shell.CommandSupport
-import org.codehaus.groovy.tools.shell.InteractiveShell
+import org.codehaus.groovy.tools.shell.Shell
 
 /**
  * The 'save' command.
@@ -30,7 +30,7 @@ import org.codehaus.groovy.tools.shell.InteractiveShell
 class SaveCommand
     extends CommandSupport
 {
-    SaveCommand(final InteractiveShell shell) {
+    SaveCommand(final Shell shell) {
         super(shell, 'save', '\\s')
     }
 
@@ -38,7 +38,7 @@ class SaveCommand
         return [ new FileNameCompletor(), null ]
     }
 
-    void execute(final List args) {
+    Object execute(final List args) {
         assert args != null
         
         if (args.size() != 1) {
@@ -59,7 +59,7 @@ class SaveCommand
         
         def file = new File("${args[0]}")
 
-        if (shell.verbose) {
+        if (io.verbose) {
             io.output.println("Saving current buffer to file: $file") // TODO: i18n
         }
 

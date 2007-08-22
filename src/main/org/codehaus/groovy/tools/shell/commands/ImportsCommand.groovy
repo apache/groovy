@@ -17,7 +17,7 @@
 package org.codehaus.groovy.tools.shell.commands
 
 import org.codehaus.groovy.tools.shell.CommandSupport
-import org.codehaus.groovy.tools.shell.InteractiveShell
+import org.codehaus.groovy.tools.shell.Shell
 
 /**
  * The 'imports' command.
@@ -28,11 +28,11 @@ import org.codehaus.groovy.tools.shell.InteractiveShell
 class ImportsCommand
     extends CommandSupport
 {
-    ImportsCommand(final InteractiveShell shell) {
+    ImportsCommand(final Shell shell) {
         super(shell, 'imports', '\\I')
     }
 
-    void execute(final List args) {
+    Object execute(final List args) {
         assert args != null
 
         if (args.size() > 0) {

@@ -44,7 +44,7 @@ abstract class CommandSupport
     final String shortcut
 
     /** The owning shell. */
-    protected final InteractiveShell shell
+    protected final Shell shell
 
     /** Provides the command instance with the registry, for aliasing support. */
     protected final CommandRegistry registry
@@ -52,7 +52,7 @@ abstract class CommandSupport
     /** The I/O container for the command to spit stuff out. */
     protected final IO io
 
-    protected CommandSupport(final InteractiveShell shell, final String name, final String shortcut) {
+    protected CommandSupport(final Shell shell, final String name, final String shortcut) {
         assert shell
         assert name
         assert shortcut

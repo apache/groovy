@@ -16,7 +16,7 @@ rem
 rem HACK: Temporary support to run the current or new shells
 rem 
 
-CLASSNAME=org.codehaus.groovy.tools.shell.InteractiveShell
+CLASSNAME=org.codehaus.groovy.tools.shell.Groovysh
 if "%NEWSHELL%" == "" set CLASSNAME=groovy.ui.InteractiveShell
 
 "%DIRNAME%\startGroovy.bat" "%DIRNAME%" %CLASSNAME% %*

@@ -16,27 +16,22 @@
 
 package org.codehaus.groovy.tools.shell
 
-import jline.Completor
-
 /**
- * Provides the interface required for command extentions.
+ * Support for testing {@link Command} instances.
  *
  * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
-interface Command
+abstract class CommandTestSupport
+    extends GroovyTestCase
 {
-    String getName()
-
-    String getShortcut()
-
-    Completor getCompletor()
-
-    String getDescription()
-
-    String getUsage()
-
-    String getHelp()
-
-    Object execute(List args)
+    Shell shell
+    
+    protected void setUp() {
+        shell = new Shell()
+    }
+    
+    protected void tearDown() {
+        shell = null
+    }
 }

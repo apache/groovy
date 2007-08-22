@@ -17,7 +17,7 @@
 package org.codehaus.groovy.tools.shell.commands
 
 import org.codehaus.groovy.tools.shell.CommandSupport
-import org.codehaus.groovy.tools.shell.InteractiveShell
+import org.codehaus.groovy.tools.shell.Shell
 
 /**
  * The 'purgeimports' command.
@@ -28,11 +28,11 @@ import org.codehaus.groovy.tools.shell.InteractiveShell
 class PurgeImportsCommand
     extends CommandSupport
 {
-    PurgeImportsCommand(final InteractiveShell shell) {
+    PurgeImportsCommand(final Shell shell) {
         super(shell, 'purgeimports', '\\pi')
     }
 
-    void execute(final List args) {
+    Object execute(final List args) {
         assert args != null
 
         if (args.size() > 0) {
@@ -47,7 +47,7 @@ class PurgeImportsCommand
 
         shell.imports.clear()
 
-        if (verbose) {
+        if (io.verbose) {
             io.output.println("Custom imports purged") // TODO: i18n
         }
     }

@@ -19,7 +19,7 @@ package org.codehaus.groovy.tools.shell.commands
 import org.codehaus.groovy.runtime.MethodClosure
 
 import org.codehaus.groovy.tools.shell.CommandSupport
-import org.codehaus.groovy.tools.shell.InteractiveShell
+import org.codehaus.groovy.tools.shell.Shell
 
 /**
  * The 'variables' command.
@@ -30,11 +30,11 @@ import org.codehaus.groovy.tools.shell.InteractiveShell
 class VariablesCommand
     extends CommandSupport
 {
-    VariablesCommand(final InteractiveShell shell) {
+    VariablesCommand(final Shell shell) {
         super(shell, 'variables', '\\v')
     }
 
-    void execute(final List args) {
+    Object execute(final List args) {
         assert args != null
 
         if (args.size() > 0) {
