@@ -122,15 +122,7 @@ class Groovysh
         
         registry << new InspectCommand(this)
         
-        //
-        // TODO: Create one purge command with args [variables|classes|imports|all] ?
-        //
-        
-        registry << new PurgeVariablesCommand(this)
-        
-        registry << new PurgeClassesCommand(this)
-        
-        registry << new PurgeImportsCommand(this)
+        registry << new PurgeCommand(this)
         
         registry << new EditCommand(this)
         

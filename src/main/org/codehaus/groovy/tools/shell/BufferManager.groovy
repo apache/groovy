@@ -29,6 +29,12 @@ class BufferManager
     int selected
 
     BufferManager() {
+        reset()
+    }
+    
+    void reset() {
+        buffers.clear()
+        
         create(true)
     }
     
@@ -37,7 +43,7 @@ class BufferManager
         
         return buffers[selected]
     }
-
+    
     void select(final int index) {
         assert index >= 0 && index < buffers.size()
         
