@@ -100,29 +100,19 @@ class Groovysh
 
         alias('quit', '\\q', 'exit')
         
-        registry << new HistoryCommand(this)
-        
-        //
-        // TODO: Rename to display-buffer, display-variables, display-classes, display-imports?
-        //
-        //       or one display command with args [buffer|variables|classes|imports]
-        //
+        registry << new ImportCommand(this)
         
         registry << new DisplayCommand(this)
         
         registry << new ClearCommand(this)
-
-        registry << new VariablesCommand(this)
         
-        registry << new ClassesCommand(this)
-        
-        registry << new ImportCommand(this)
-        
-        registry << new ImportsCommand(this)
+        registry << new ShowCommand(this)
         
         registry << new InspectCommand(this)
         
         registry << new PurgeCommand(this)
+        
+        registry << new HistoryCommand(this)
         
         registry << new EditCommand(this)
         

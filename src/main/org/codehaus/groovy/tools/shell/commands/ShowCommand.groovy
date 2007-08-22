@@ -16,24 +16,26 @@
 
 package org.codehaus.groovy.tools.shell.commands
 
+import org.codehaus.groovy.runtime.MethodClosure
+
 import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.Shell
 
 import org.codehaus.groovy.tools.shell.completor.SimpleCompletor
 
 /**
- * The 'purge' command.
+ * The 'show' command.
  *
  * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
-class PurgeCommand
+class ShowCommand
     extends CommandSupport
 {
-    private static final List TYPES = [ 'variables', 'classes', 'imports', 'buffers' ]
+    private static final List TYPES = [ 'variables', 'classes', 'imports' ]
     
-    PurgeCommand(final Shell shell) {
-        super(shell, 'purge', '\\p')
+    ShowCommand(final Shell shell) {
+        super(shell, 'show', '\\S')
     }
     
     protected List createCompletors() {
@@ -49,15 +51,15 @@ class PurgeCommand
         assert args != null
         
         if (args.size() != 1) {
-            fail("Command 'purge' requires an argument") // TODO: i18n
+            fail("Command 'show' requires an argument") // TODO: i18n
         }
         
         args.each {
-            purge(it)
+            show(it)
         }
     }
     
-    private void purge(final String type) {
+    private void show(final String type) {
         assert type
         
         switch (type) {
@@ -66,23 +68,31 @@ class PurgeCommand
                     io.out.println('No variables defined') // TODO: i18n
                 }
                 else {
-                    variables.clear()
-                    
-                    if (io.verbose) {
-                        io.out.println("Custom variables purged") // TODO: i18n
+                    io.out.println('Variables:') // TODO: i18n
+                    variables.each { key, value ->
+                        // Special handling for defined methods, just show the sig
+                        if (value instanceof MethodClosure) {
+                            //
+                            // TODO: Would be nice to show the argument types it will accept...
+                            //
+                            value = "method ${value.method}()"
+                        }
+                        
+                        io.out.println("  $key = $value")
                     }
                 }
                 break
                 
             case 'classes':
-                if (classLoader.loadedClasses.size() == 0) {
+                def classes = classLoader.loadedClasses
+                
+                if (classes.size() == 0) {
                     io.out.println("No classes have been loaded") // TODO: i18n
                 }
                 else {
-                    classLoader.clearCache()
-                    
-                    if (io.verbose) {
-                        io.out.println('Loaded classes purged') // TODO: i18n
+                    io.out.println('Classes:') // TODO: i18n
+                    classes.each {
+                        io.out.println("  $it")
                     }
                 }
                 break
@@ -92,28 +102,19 @@ class PurgeCommand
                     io.out.println("No custom imports have been defined") // TODO: i18n
                 }
                 else {
-                    imports.clear()
-                    
-                    if (io.verbose) {
-                        io.out.println("Custom imports purged") // TODO: i18n
+                    io.out.println("Custom imports:") // TODO: i18n
+                    imports.each {
+                        io.out.println("  $it")
                     }
-                }
-                break
-                
-            case 'buffers':
-                buffers.reset()
-                
-                if (io.verbose) {
-                    io.out.println('All buffers purged') // TODO: i18n
                 }
                 break
             
             case 'all':
-                TYPES.each { purge(it) }
+                TYPES.each { show(it) }
                 break
                 
             default:
-                fail("Unknown purge type: $type") // TODO: i18n
+                fail("Unknown show type: $type") // TODO: i18n
         }
     }
 }
