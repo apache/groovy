@@ -53,19 +53,10 @@ class Groovysh
     Groovysh(final ClassLoader classLoader, final Binding binding, final IO io) {
         super(io)
         
+        assert classLoader
         assert binding
         
-        //
-        // FIXME: Probably use the TCL if this puppy is null?  Or really don't allow null here
-        //        and use TCL below in helper constructor.
-        //
-        
-        if (classLoader != null) {
-            shell = new GroovyShell(classLoader, binding)
-        }
-        else {
-            shell = new GroovyShell(binding)
-        }
+        shell = new GroovyShell(classLoader, binding)
         
         //
         // NOTE: Command registration must be done after the shell is initialized and before the runner is created
@@ -78,7 +69,7 @@ class Groovysh
     }
 
     Groovysh(final Binding binding, final IO io) {
-        this(null, binding, io)
+        this(Thread.currentThread().contextClassLoader, binding, io)
     }
 
     Groovysh(final IO io) {
@@ -105,7 +96,9 @@ class Groovysh
         registry << new ExitCommand(this)
 
         alias('quit', '\\q', 'exit')
-
+        
+        registry << new HistoryCommand(this)
+        
         //
         // TODO: Rename to display-buffer, display-variables, display-classes, display-imports?
         //
