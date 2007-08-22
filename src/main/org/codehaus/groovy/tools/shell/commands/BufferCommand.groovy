@@ -79,8 +79,15 @@ class BufferCommand
                 break
 
             default:
-                // Select a buffer
-                def i = Integer.parseInt(args[0])
+                // Select a buffer by index
+                def i
+                
+                try {
+                    i = Integer.parseInt(args[0])
+                }
+                catch (NumberFormatException e) {
+                    fail("Invalid buffer selection: $i; cause: $e") // TODO: i18n
+                }
                 
                 if (i < 0 || i >= buffers.size()) {
                     fail("Invalid buffer selection: $i") // TODO: i18n
