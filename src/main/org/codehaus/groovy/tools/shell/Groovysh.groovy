@@ -112,8 +112,6 @@ class Groovysh
         
         registry << new PurgeCommand(this)
         
-        registry << new HistoryCommand(this)
-        
         registry << new EditCommand(this)
         
         registry << new LoadCommand(this)
@@ -125,6 +123,10 @@ class Groovysh
         registry << new BufferCommand(this)
 
         alias('#', '\\#', 'buffer')
+        
+        registry << new HistoryCommand(this)
+        
+        registry << new AliasCommand(this)
         
         //
         // TODO: Add a command to record buffer activity

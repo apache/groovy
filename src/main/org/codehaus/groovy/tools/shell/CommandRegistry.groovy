@@ -30,7 +30,7 @@ class CommandRegistry
     /** A set of all of the command names and shortcuts to ensure they are unique. */
     private final Set names = new TreeSet()
     
-    void register(final Command command) {
+    Command register(final Command command) {
         assert command
 
         // Make sure that the command name and shortcut are unique
@@ -45,10 +45,12 @@ class CommandRegistry
         
         // Hookup context for alias commands
         command.registry = this
+        
+        return command
     }
 
     def leftShift(final Command command) {
-        register(command)
+        return register(command)
     }
     
     Command find(final String name) {
