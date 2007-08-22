@@ -34,10 +34,6 @@ class SaveCommand
         super(shell, 'save', '\\s')
     }
 
-    private List getBuffer() {
-        return shell.buffers.current()
-    }
-    
     protected List createCompletors() {
         return [ new FileNameCompletor(), null ]
     }

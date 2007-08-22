@@ -41,10 +41,6 @@ class BufferCommand
         super(shell, 'buffer', '\\b')
     }
     
-    private BufferManager getBuffers() {
-        return shell.buffers
-    }
-    
     protected List createCompletors() {
         return [ new BufferCommandCompletor(buffers), null ]
     }

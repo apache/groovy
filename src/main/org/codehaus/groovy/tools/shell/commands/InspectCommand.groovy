@@ -35,10 +35,6 @@ class InspectCommand
         super(shell, 'inspect', '\\n')
     }
     
-    private Binding getBinding() {
-        return shell.shell.context
-    }
-    
     protected List createCompletors() {
         return [ new InspectCommandCompletor(binding), null ]
     }

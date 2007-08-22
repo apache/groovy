@@ -33,14 +33,6 @@ class EditCommand
         super(shell, 'edit', '\\e')
     }
     
-    private BufferManager getBuffers() {
-        return shell.buffers
-    }
-    
-    private List getBuffer() {
-        return buffers.current()
-    }
-    
     Object execute(final List args) {
         assert args != null
 

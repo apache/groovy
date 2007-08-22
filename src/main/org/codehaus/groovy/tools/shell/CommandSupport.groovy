@@ -113,4 +113,28 @@ abstract class CommandSupport
 
         return new ArgumentCompletor(list)
     }
+    
+    //
+    // Shell access helpers
+    //
+    
+    protected BufferManager getBuffers() {
+        return shell.buffers
+    }
+    
+    protected List getBuffer() {
+        return buffers.current()
+    }
+    
+    protected List getImports() {
+        return shell.imports
+    }
+    
+    protected Binding getBinding() {
+        return shell.shell.context
+    }
+    
+    protected Map getVariables() {
+        return binding.variables
+    }
 }

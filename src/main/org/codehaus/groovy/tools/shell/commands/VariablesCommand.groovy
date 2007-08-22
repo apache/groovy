@@ -34,10 +34,6 @@ class VariablesCommand
         super(shell, 'variables', '\\v')
     }
     
-    private Map getVariables() {
-        return shell.shell.context.variables
-    }
-    
     Object execute(final List args) {
         assert args != null
 

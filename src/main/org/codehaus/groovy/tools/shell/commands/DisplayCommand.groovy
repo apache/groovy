@@ -32,10 +32,6 @@ class DisplayCommand
         super(shell, 'display', '\\d')
     }
 
-    private List getBuffer() {
-        return shell.buffers.current()
-    }
-    
     Object execute(final List args) {
         assert args != null
 

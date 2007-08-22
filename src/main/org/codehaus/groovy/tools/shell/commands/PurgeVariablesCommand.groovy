@@ -32,10 +32,6 @@ class PurgeVariablesCommand
         super(shell, 'purgevariables', '\\pv')
     }
 
-    private Map getVariables() {
-        return shell.shell.context.variables
-    }
-    
     Object execute(final List args) {
         assert args != null
 

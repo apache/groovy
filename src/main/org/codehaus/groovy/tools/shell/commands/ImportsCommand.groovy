@@ -32,10 +32,6 @@ class ImportsCommand
         super(shell, 'imports', '\\I')
     }
     
-    private List getImports() {
-        return shell.imports
-    }
-    
     Object execute(final List args) {
         assert args != null
 

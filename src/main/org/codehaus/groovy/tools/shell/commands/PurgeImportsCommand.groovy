@@ -32,10 +32,6 @@ class PurgeImportsCommand
         super(shell, 'purgeimports', '\\pi')
     }
     
-    private List getImports() {
-        return shell.imports
-    }
-    
     Object execute(final List args) {
         assert args != null
 

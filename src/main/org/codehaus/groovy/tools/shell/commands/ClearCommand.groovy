@@ -32,10 +32,6 @@ class ClearCommand
         super(shell, 'clear', '\\c')
     }
     
-    private List getBuffer() {
-        return shell.buffers.current()
-    }
-    
     Object execute(final List args) {
         assert args != null
 

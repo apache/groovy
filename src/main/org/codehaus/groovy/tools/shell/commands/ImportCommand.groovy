@@ -49,14 +49,16 @@ class ImportCommand
 
         def buff = [ 'import ' + args.join(' ') ]
         buff << 'def dummp = false'
-
+        
+        def cl = shell.shell.classLoader
+        
         def type
         try {
-            type = shell.shell.classLoader.parseClass(buff.join(shell.NEWLINE))
+            type = cl.parseClass(buff.join(shell.NEWLINE))
 
             log.debug("Adding import: ${buff[0]}")
 
-            shell.imports << buff[0]
+            imports << buff[0]
         }
         catch (CompilationFailedException e) {
             def msg = "Invalid import definition: '${buff[0]}'; reason: $e.message" // TODO: i18n
@@ -65,7 +67,7 @@ class ImportCommand
         }
         finally {
             // Remove the class generated while testing the import syntax
-            shell.shell.classLoader.classCache.remove(type?.name)
+            cl.classCache.remove(type?.name)
         }
     }
     
