@@ -36,19 +36,15 @@ import groovy.lang.GroovyObjectSupport;
 public class MessageSource
     extends GroovyObjectSupport
 {
-    private final ResourceBundle[] bundles;
+    private final String[] bundleNames;
+    
+    private ResourceBundle[] cachedBundles;
     
     public MessageSource(final String[] names) {
         assert names != null;
         assert names.length != 0;
         
-        bundles = new ResourceBundle[names.length];
-        
-        for (int i=0; i<names.length; i++) {
-            assert names[i] != null;
-            
-            bundles[i] = ResourceBundle.getBundle(names[i]);
-        }
+        this.bundleNames = names;
     }
     
     public MessageSource(final String name) {
@@ -78,6 +74,25 @@ public class MessageSource
         this(new String[] { type.getName() });
     }
     
+    private ResourceBundle[] createBundles() {
+        ResourceBundle[] bundles = new ResourceBundle[bundleNames.length];
+        
+        for (int i=0; i<bundleNames.length; i++) {
+            assert bundleNames[i] != null;
+            
+            bundles[i] = ResourceBundle.getBundle(bundleNames[i]);
+        }
+        
+        return bundles;
+    }
+    
+    private ResourceBundle[] getBundles() {
+        if (cachedBundles == null) {
+            cachedBundles = createBundles();
+        }
+        return cachedBundles;
+    }
+    
     /**
      * Get a raw message from the resource bundles using the given code.
      */
@@ -85,6 +100,8 @@ public class MessageSource
         assert code != null;
         
         MissingResourceException error = null;
+        
+        ResourceBundle[] bundles = getBundles();
         
         for (int i=0; i<bundles.length; i++) {
             try {
