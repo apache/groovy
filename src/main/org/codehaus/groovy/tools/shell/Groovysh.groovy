@@ -85,7 +85,7 @@ class Groovysh
     
     protected void registerCommands() {
         //
-        // TODO: Add CommandSeperator for better visual grouping
+        // TODO: Add CommandSeperator for better visual grouping ?
         //
 
         //
@@ -129,7 +129,7 @@ class Groovysh
         registry << new AliasCommand(this)
         
         //
-        // TODO: Add a command to record buffer activity
+        // TODO: Add a command to record buffer activity, maybe just add more function to the 'buffer' command instead...
         //
     }
     
