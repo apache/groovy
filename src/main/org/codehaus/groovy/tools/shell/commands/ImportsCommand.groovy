@@ -31,7 +31,11 @@ class ImportsCommand
     ImportsCommand(final Shell shell) {
         super(shell, 'imports', '\\I')
     }
-
+    
+    private List getImports() {
+        return shell.imports
+    }
+    
     Object execute(final List args) {
         assert args != null
 
@@ -40,13 +44,13 @@ class ImportsCommand
             return
         }
         
-        if (shell.imports.isEmpty()) {
+        if (imports.isEmpty()) {
             io.output.println("No custom imports have been defined") // TODO: i18n
             return
         }
 
         io.output.println("Custom imports:") // TODO: i18n
-        shell.imports.each {
+        imports.each {
             io.output.println("  $it")
         }
     }

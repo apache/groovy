@@ -40,9 +40,13 @@ class BufferCommand
     BufferCommand(final Shell shell) {
         super(shell, 'buffer', '\\b')
     }
-
+    
+    private BufferManager getBuffers() {
+        return shell.buffers
+    }
+    
     protected List createCompletors() {
-        return [ new BufferCommandCompletor(shell.buffers), null ]
+        return [ new BufferCommandCompletor(buffers), null ]
     }
     
     Object execute(final List args) {
@@ -57,8 +61,6 @@ class BufferCommand
             io.error.println("Command 'buffer' requires a single argument") // TODO: i18n
             return
         }
-        
-        def buffers = shell.buffers
         
         switch (args[0]) {
             case '+':

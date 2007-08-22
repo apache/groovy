@@ -68,7 +68,7 @@ class LoadCommand
             }
 
             url.eachLine {
-                this << it
+                shell << it
             }
         }
     }

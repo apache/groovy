@@ -32,6 +32,10 @@ class PurgeVariablesCommand
         super(shell, 'purgevariables', '\\pv')
     }
 
+    private Map getVariables() {
+        return shell.shell.context.variables
+    }
+    
     Object execute(final List args) {
         assert args != null
 
@@ -40,14 +44,12 @@ class PurgeVariablesCommand
             return
         }
         
-        def vars = shell.shell.context.variables
-
-        if (vars.isEmpty()) {
+        if (variables.isEmpty()) {
             io.output.println('No variables defined') // TODO: i18n
             return
         }
 
-        vars.clear()
+        variables.clear()
 
         if (io.verbose) {
             io.output.println("Custom variables purged")

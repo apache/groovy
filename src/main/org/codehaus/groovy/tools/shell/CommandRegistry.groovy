@@ -24,19 +24,21 @@ package org.codehaus.groovy.tools.shell
  */
 class CommandRegistry
 {
+    /** A list of all of the registered commands. */
     final List commands = []
 
-    private final Map nameMap = [:]
+    /** A set of all of the command names and shortcuts to ensure they are unique. */
+    private final Set names = new TreeSet()
     
     void register(final Command command) {
         assert command
 
         // Make sure that the command name and shortcut are unique
-        assert !nameMap.containsKey(command.name) : "Duplicate comamnd name: $command.name"
-        nameMap[command.name] = command
+        assert !names.contains(command.name) : "Duplicate comamnd name: $command.name"
+        names << command.name
         
-        assert !nameMap.containsKey(command.shortcut) : "Duplicate command shortcut: $command.shortcut"
-        nameMap[command.shortcut] = command
+        assert !names.contains(command.shortcut) : "Duplicate command shortcut: $command.shortcut"
+        names << command.name
 
         // Hold on to the command in order
         commands << command

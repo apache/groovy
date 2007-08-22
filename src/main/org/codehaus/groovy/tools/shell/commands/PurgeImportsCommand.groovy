@@ -31,7 +31,11 @@ class PurgeImportsCommand
     PurgeImportsCommand(final Shell shell) {
         super(shell, 'purgeimports', '\\pi')
     }
-
+    
+    private List getImports() {
+        return shell.imports
+    }
+    
     Object execute(final List args) {
         assert args != null
 
@@ -40,12 +44,12 @@ class PurgeImportsCommand
             return
         }
         
-        if (shell.imports.isEmpty()) {
+        if (imports.isEmpty()) {
             io.output.println("No custom imports have been defined") // TODO: i18n
             return
         }
 
-        shell.imports.clear()
+        imports.clear()
 
         if (io.verbose) {
             io.output.println("Custom imports purged") // TODO: i18n

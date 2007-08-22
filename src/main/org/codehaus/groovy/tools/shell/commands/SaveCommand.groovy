@@ -34,6 +34,10 @@ class SaveCommand
         super(shell, 'save', '\\s')
     }
 
+    private List getBuffer() {
+        return shell.buffers.current()
+    }
+    
     protected List createCompletors() {
         return [ new FileNameCompletor(), null ]
     }
@@ -46,8 +50,6 @@ class SaveCommand
             return
         }
 
-        def buffer = shell.buffers.current()
-        
         if (buffer.isEmpty()) {
             io.output.println('Buffer is empty') // TODO: i18n
             return

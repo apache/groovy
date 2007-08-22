@@ -32,6 +32,10 @@ class DisplayCommand
         super(shell, 'display', '\\d')
     }
 
+    private List getBuffer() {
+        return shell.buffers.current()
+    }
+    
     Object execute(final List args) {
         assert args != null
 
@@ -39,8 +43,7 @@ class DisplayCommand
             io.error.println("Unexpected arguments: $args") // TODO: i18n
             return
         }
-        def buffer = shell.buffers.current()
-
+        
         if (buffer.isEmpty()) {
             io.output.println('Buffer is empty') // TODO: i18n
             return

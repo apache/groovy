@@ -35,8 +35,12 @@ class InspectCommand
         super(shell, 'inspect', '\\n')
     }
     
+    private Binding getBinding() {
+        return shell.shell.context
+    }
+    
     protected List createCompletors() {
-        return [ new InspectCommandCompletor(shell.shell.context), null ]
+        return [ new InspectCommandCompletor(binding), null ]
     }
 
     Object execute(final List args) {
@@ -48,11 +52,12 @@ class InspectCommand
         }
         
         def subject
+        
         if (args.size() == 1) {
-            subject = shell.shell.context.variables[args[0]]
+            return binding.variables[args[0]]
         }
         else {
-            subject = shell.shell.context.variables['_']
+            return binding.variables['_']
         }
 
         if (!subject) {

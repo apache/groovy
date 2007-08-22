@@ -58,7 +58,12 @@ class Groovysh
         super(io)
         
         assert binding
-
+        
+        //
+        // FIXME: Probably use the TCL if this puppy is null?  Or really don't allow null here
+        //        and use TCL below in helper constructor.
+        //
+        
         if (classLoader != null) {
             shell = new GroovyShell(classLoader, binding)
         }
@@ -166,6 +171,8 @@ class Groovysh
             return super.execute(line)
         }
         
+        def result
+        
         // Otherwise treat the line as Groovy
         def current = []
         current += buffers.current()
@@ -179,7 +186,7 @@ class Groovysh
         switch (status.code) {
             case ParseStatus.COMPLETE:
                 // Evaluate the current buffer
-                evaluate(current)
+                result = evaluate(current)
                 buffers.clearSelected()
                 break
 
@@ -203,6 +210,8 @@ class Groovysh
                 // Should never happen
                 throw new Error("Invalid parse status: $status.code")
         }
+        
+        return result
     }
 
     //
@@ -314,9 +323,9 @@ class Groovysh
     /**
      * Evaluate the given buffer.  The buffer is assumed to be complete.
      */
-    private void evaluate(final List buffer) {
+    private Object evaluate(final List buffer) {
         assert buffer
-
+        
         log.debug("Evaluating buffer...")
 
         if (io.verbose) {
@@ -324,7 +333,8 @@ class Groovysh
         }
 
         def source = (imports + buffer).join(NEWLINE)
-
+        def result
+        
         Class type
         try {
             Script script = shell.parse(source)
@@ -332,7 +342,6 @@ class Groovysh
 
             log.debug("Compiled script: $script")
 
-            def result
             if (isRunnableScript(type)) {
                 result = script.run()
             }
@@ -372,6 +381,8 @@ class Groovysh
             // Remove the inline closures from the cache as well
             shell.classLoader.classCache.remove('$_run_closure')
         }
+        
+        return result
     }
 
     private boolean isRunnableScript(final Class type) {

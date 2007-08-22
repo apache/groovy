@@ -33,7 +33,11 @@ class VariablesCommand
     VariablesCommand(final Shell shell) {
         super(shell, 'variables', '\\v')
     }
-
+    
+    private Map getVariables() {
+        return shell.shell.context.variables
+    }
+    
     Object execute(final List args) {
         assert args != null
 
@@ -42,15 +46,13 @@ class VariablesCommand
             return
         }
         
-        def vars = shell.shell.context.variables
-
-        if (vars.isEmpty()) {
+        if (variables.isEmpty()) {
             io.output.println('No variables defined') // TODO: i18n
             return
         }
         
         io.output.println('Variables:') // TODO: i18n
-        vars.each { key, value ->
+        variables.each { key, value ->
             // Special handling for defined methods, just show the sig
             if (value instanceof MethodClosure) {
                 //

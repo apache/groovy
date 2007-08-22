@@ -31,7 +31,11 @@ class ClassesCommand
     ClassesCommand(final Shell shell) {
         super(shell, 'classes', '\\C')
     }
-
+    
+    private List getClasses() {
+        return shell.shell.classLoader.loadedClasses
+    }
+    
     Object execute(final List args) {
         assert args != null
 
@@ -40,8 +44,6 @@ class ClassesCommand
             return
         }
         
-        def classes = shell.shell.classLoader.loadedClasses
-
         if (classes.size() == 0) {
             io.output.println("No classes have been loaded") // TODO: i18n
             return

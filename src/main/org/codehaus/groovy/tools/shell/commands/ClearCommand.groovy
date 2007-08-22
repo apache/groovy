@@ -31,7 +31,11 @@ class ClearCommand
     ClearCommand(final Shell shell) {
         super(shell, 'clear', '\\c')
     }
-
+    
+    private List getBuffer() {
+        return shell.buffers.current()
+    }
+    
     Object execute(final List args) {
         assert args != null
 
@@ -40,7 +44,7 @@ class ClearCommand
             return
         }
         
-        def buffer = shell.buffers.current().clear()
+        buffer.clear()
 
         if (io.verbose) {
             io.output.println('Buffer cleared') //  TODO: i18n
