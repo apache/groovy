@@ -20,6 +20,8 @@ import java.lang.reflect.Method
 
 import groovy.text.MessageSource
 
+import jline.ANSIBuffer
+
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.InvokerInvocationException
 import org.codehaus.groovy.runtime.MethodClosure
@@ -134,16 +136,21 @@ class Groovysh
     }
     
     protected String renderPrompt() {
-        //
-        // TODO: Create a fancy ANSI-color prompt thingy?
-        //
-
-        def buffer = buffers.current()
-        def lineNum = formatLineNumber(buffer.size())
-
-        return "groovy:(${buffers.selected}):${lineNum}> "
+        def buff = new ANSIBuffer()
+        
+        buff.ansiEnabled = runner.reader.terminal.isANSISupported()
+            
+        buff.bold('groovy:')
+        
+        def lineNum = formatLineNumber(buffers.current().size())
+        
+        buff.append("(${buffers.selected}):${lineNum}")
+        
+        buff.bold('> ')
+        
+        return buff.toString()
     }
-
+    
     /**
      * Execute a single line, where the line may be a command or Groovy code (complete or incomplete).
      */
@@ -420,7 +427,11 @@ class Groovysh
         //
         // TODO: Add --quiet
         //
-
+        
+        //
+        // TODO: Add --nocolor
+        //
+        
         def options = cli.parse(args)
         assert options
 
