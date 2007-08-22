@@ -63,7 +63,8 @@ class HelpCommand
             io.error.println("No such command: $name") // TODO: i18n
             return
         }
-
+        
+        io.output.println()
         io.output.println("usage: $command.name $command.usage") // TODO: i18n
         io.output.println()
         io.output.println(command.help)
@@ -79,7 +80,8 @@ class HelpCommand
             if (it.name.size() > maxName) maxName = it.name.size()
             if (it.shortcut.size() > maxShortcut) maxShortcut = it.shortcut.size()
         }
-
+        
+        io.output.println()
         io.output.println('For information about Groovy, visit:') // TODO: i18n
         io.output.println('    http://groovy.codehaus.org')
         io.output.println()
