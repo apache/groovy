@@ -51,11 +51,9 @@ class ShowCommand
         return [ c, null ]
     }
     
-    Object execute(final List args) {
-        assert args != null
-        
-        if (args.size() != 1) {
-            fail("Command 'show' requires an argument") // TODO: i18n
+    Object execute(List args) {
+        if (!args) {
+            args = [ 'all' ]
         }
         
         args.each {
