@@ -464,6 +464,17 @@ class Groovysh
             }
         }
         
+        //
+        // HACK: Quickly check args for --C or --nocolor early too :-(
+        //
+        
+        for (arg in args) {
+            if (arg in [ '-C', '--nocolor' ]) {
+                ANSI.ENABLED = false
+                break
+            }
+        }
+        
         int code = new Groovysh().run(args)
 
         // Force the JVM to exit at this point, since shell could have created threads or

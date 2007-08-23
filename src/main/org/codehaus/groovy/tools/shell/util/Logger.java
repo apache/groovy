@@ -18,6 +18,8 @@ package org.codehaus.groovy.tools.shell.util;
 
 import org.codehaus.groovy.tools.shell.IO;
 
+import org.codehaus.groovy.tools.shell.util.AnsiUtils;
+
 /**
  * Provides a very, very basic logging API.
  *
@@ -48,7 +50,7 @@ public final class Logger
         // TODO: Toss in some ANSI!
         //
         
-        io.out.print(level);
+        io.out.print(AnsiUtils.render(" @|bold " + level + "|"));
         io.out.print(" [");
         io.out.print(name);
         io.out.print("] ");
