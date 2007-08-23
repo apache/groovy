@@ -293,7 +293,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
                         invokeOnOwner    = owner!=closure    && (owner instanceof GroovyObject);
                     }
             }
-            if (method == null) {
+            if (method == null && (invokeOnOwner || invokeOnDelegate)) {
                 try {
                     if (ownerFirst) {
                         return invokeOnDelegationObjects(invokeOnOwner, owner, invokeOnDelegate, delegate, methodName, arguments);
@@ -323,7 +323,8 @@ public final class ClosureMetaClass extends MetaClassImpl {
             }
         }
 
-        throw last;
+        if (last!=null) throw last;
+        throw new MissingMethodException(methodName, theClass, arguments, false);
     }
     
     private Object invokeOnDelegationObjects(
