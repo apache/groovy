@@ -28,7 +28,8 @@ import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.control.CompilationFailedException
 
 import org.codehaus.groovy.tools.shell.util.Logger
-import org.codehaus.groovy.tools.shell.util.AnsiUtils as ANSI
+import org.codehaus.groovy.tools.shell.util.AnsiUtils
+import org.codehaus.groovy.tools.shell.util.AnsiString
 import org.codehaus.groovy.tools.shell.util.XmlCommandRegistrar as CommandRegistrar
 
 /**
@@ -95,10 +96,16 @@ class Groovysh
     
     private void setLastResult(final Object obj) {
         if (io.verbose) {
-            io.out.println(ANSI.render("@|bold ===>| $obj"))
+            io.out.println("@|bold ===>| $obj")
         }
 
         interp.context['_'] = obj
+    }
+    
+    File getUserStateDirectory() {
+        def userHome = new File(System.properties['user.home'])
+        def dir = new File(userHome, '.groovy')
+        return dir.canonicalFile
     }
     
     private Object getLastResult() {
@@ -108,7 +115,7 @@ class Groovysh
     private String renderPrompt() {
         def lineNum = formatLineNumber(buffers.current().size())
         
-        return ANSI.render("@|bold groovy:|(${buffers.selected})@|bold :|${lineNum}@|bold >| ")
+        return AnsiString.render("@|bold groovy:|(${buffers.selected})@|bold :|${lineNum}@|bold >| ")
     }
     
     /**
@@ -331,7 +338,7 @@ class Groovysh
         buffer.eachWithIndex { line, index ->
             def lineNum = formatLineNumber(index + 1)
             
-            io.out.println(ANSI.render(" ${lineNum}@|bold >| $line"))
+            io.out.println(" ${lineNum}@|bold >| $line")
         }
     }
 
@@ -349,25 +356,29 @@ class Groovysh
             // Add a hook to display some status when shutting down...
             addShutdownHook({
                 if (code == null) {
+                    //
+                    // FIXME: We need to configure JLine to catch CTRL-C for us... if that is possible
+                    //
+                    
                     // Give the user a warning when the JVM shutdown abnormally, normal shutdown
                     // will set an exit code through the proper channels
                     
                     io.err.println()
-                    io.err.println(ANSI.render('@|red WARNING:| Abnormal JVM shutdown detected'))
+                    io.err.println('@|red WARNING:| Abnormal JVM shutdown detected')
                     
                     io.flush()
                 }
             })
             
             // Display the welcome banner
-            io.out.println(ANSI.render(messages.format('startup_banner.0', InvokerHelper.version, System.properties['java.vm.version'])))
-            io.out.println(ANSI.render(messages['startup_banner.1']))
+            io.out.println(messages.format('startup_banner.0', InvokerHelper.version, System.properties['java.vm.version']))
+            io.out.println(messages['startup_banner.1'])
             io.out.println('-' * (runner.reader.terminal.terminalWidth - 1)) // TODO: Check what the value is when its an unsupported terminal
             
             // Optionally load a user-specific rc file
-            def userHome = new File(System.properties['user.home'])
-            def file = new File(userHome, '.groovy/groovysh_rc')
+            def file = new File(userStateDirectory, 'groovysh_rc')
             if (file.exists()) {
+                log.debug("Loading user-specific rc file: $file")
                 execute("load ${file.toURL()}")
             }
             
@@ -453,7 +464,7 @@ class Groovysh
         }
         
         if (options.C) {
-            ANSI.ENABLED = false
+            AnsiUtils.ENABLED = false
         }
     }
 
@@ -475,7 +486,7 @@ class Groovysh
         
         for (arg in args) {
             if (arg in [ '-C', '--nocolor' ]) {
-                ANSI.ENABLED = false
+                AnsiUtils.ENABLED = false
                 break
             }
         }

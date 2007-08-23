@@ -23,6 +23,8 @@ import java.io.PrintWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
+import org.codehaus.groovy.tools.shell.util.AnsiPrintWriter;
+
 /**
  * Container for input/output handles.
  *
@@ -68,8 +70,8 @@ public class IO
         this.errorStream = errorStream;
         
         this.in = new InputStreamReader(inputStream);
-        this.out = new PrintWriter(outputStream, true);
-        this.err = new PrintWriter(errorStream, true);
+        this.out = new AnsiPrintWriter(outputStream, true);
+        this.err = new AnsiPrintWriter(errorStream, true);
     }
 
     /**

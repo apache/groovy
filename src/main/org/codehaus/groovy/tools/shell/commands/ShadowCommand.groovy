@@ -19,8 +19,6 @@ package org.codehaus.groovy.tools.shell.commands
 import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.Shell
 
-import org.codehaus.groovy.tools.shell.util.AnsiUtils as ANSI
-
 /**
  * The 'shadow' command.
  *
@@ -64,7 +62,7 @@ class ShadowCommand
             func = this."do_${name}"
         }
         catch (MissingPropertyException e) {
-            io.err.println(ANSI.render("@|red ERROR:| $e"))
+            io.err.println("@|red ERROR:| $e")
             fail('oooops')
         }
         

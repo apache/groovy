@@ -16,8 +16,6 @@
 
 package org.codehaus.groovy.tools.shell
 
-import org.codehaus.groovy.tools.shell.util.AnsiUtils as ANSI
-
 /**
  * Provides simple command aliasing.
  *
@@ -50,7 +48,7 @@ class CommandAlias
     }
     
     String getDescription() {
-        return ANSI.render(messages.format('info.alias_to', targetName))
+        return messages.format('info.alias_to', targetName)
     }
 
     String getUsage() {

@@ -22,8 +22,6 @@ import org.codehaus.groovy.tools.shell.Shell
 import org.codehaus.groovy.tools.shell.CommandRegistry
 import org.codehaus.groovy.tools.shell.util.SimpleCompletor
 
-import org.codehaus.groovy.tools.shell.util.AnsiUtils as ANSI
-
 /**
  * The 'help' command.
  *
@@ -96,8 +94,8 @@ class HelpCommand
         }
         
         io.out.println()
-        io.out.println(ANSI.render('For information about @|green Groovy|, visit:')) // TODO: i18n
-        io.out.println(ANSI.render('    @|cyan http://groovy.codehaus.org|'))
+        io.out.println('For information about @|green Groovy|, visit:') // TODO: i18n
+        io.out.println('    @|cyan http://groovy.codehaus.org|')
         io.out.println()
 
         // List the commands we know about
@@ -117,7 +115,7 @@ class HelpCommand
             
             def d = command.description
             
-            io.out.println(ANSI.render("  @|bold ${n}|  (@|bold ${s}|) $d"))
+            io.out.println("  @|bold ${n}|  (@|bold ${s}|) $d")
         }
         
         io.out.println()

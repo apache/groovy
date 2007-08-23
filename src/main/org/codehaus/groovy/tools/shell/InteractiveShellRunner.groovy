@@ -21,7 +21,7 @@ import jline.MultiCompletor
 import jline.History
 
 /**
- * Support for running a {@link Shell} interactivly.
+ * Support for running a {@link Shell} interactivly using the JLine library.
  *
  * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
@@ -39,15 +39,22 @@ class InteractiveShellRunner
         
         this.prompt = prompt
         
-        this.reader = new ConsoleReader(shell.io.inputStream, shell.io.out)
+        //
+        // NOTE: By pass shell.io.out, its now doing fancy ANSI stuffs...
+        //
+        
+        this.reader = new ConsoleReader(shell.io.inputStream, new PrintWriter(shell.io.outputStream))
         
         // Setup the history file if we can
-        def userHome = new File(System.properties['user.home'])
-        def file = new File(userHome, '.groovy/groovysh_history')
+        def file = new File(shell.userStateDirectory, 'groovysh_history')
         if (file.parentFile.exists()) {
             log.debug("Using history file: $file")
             reader.history.historyFile = file
         }
+        
+        //
+        // TODO: Maybe hook up a reader.debug PrintWriter to help see what its doing?
+        //
         
         // Setup the completors
         def completors = []
