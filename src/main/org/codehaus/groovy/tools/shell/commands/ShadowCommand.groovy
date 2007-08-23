@@ -31,13 +31,9 @@ class ShadowCommand
     ShadowCommand(final Shell shell) {
         super(shell, 'shadow', '\\&')
         
+        this.hidden = true
+        
         this.functions = [ 'debug', 'verbose', 'this' ]
-        
-        //
-        // NOTE: For now don't hid this guy
-        //
-        
-        // this.hidden = true
     }
     
     def do_debug = {
