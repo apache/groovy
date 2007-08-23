@@ -48,8 +48,8 @@ class PurgeCommand
     Object execute(final List args) {
         assert args != null
         
-        if (args.size() != 1) {
-            fail("Command 'purge' requires an argument") // TODO: i18n
+        if (args.size() == 0) {
+            fail("Command '$name' requires at least one argument") // TODO: i18n
         }
         
         args.each {
