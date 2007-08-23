@@ -39,6 +39,7 @@ class DOMCategoryTest extends GroovyTestCase {
         use(DOMCategory) {
             GpathSyntaxTestSupport.checkChildren(getRoot)
             GpathSyntaxTestSupport.checkParent(getRoot)
+            GpathSyntaxTestSupport.checkNestedSizeExpressions(getRoot)
         }
     }
 

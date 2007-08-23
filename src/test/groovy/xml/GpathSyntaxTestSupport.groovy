@@ -17,6 +17,15 @@ class GpathSyntaxTestSupport {
 </characters>
 '''
 
+    private static def nestedXml = '''
+<root>
+    <a><z/><z/><y/></a>
+    <b><z/></b>
+    <c><x/></c>
+    <d></d>
+</root>
+'''
+
     static void checkElement(Closure getRoot) {
         def root = getRoot(sampleXml)
         assert root != null
@@ -61,6 +70,18 @@ class GpathSyntaxTestSupport {
         // lets find what Wallace likes in 1 query
         def answer = root.character.find { it['@id'] == '1' }.likes[0].text()
         assert answer == "cheese"
+    }
+
+    static void checkNestedSizeExpressions(Closure getRoot) {
+        def root = getRoot(nestedXml)
+        assert root.'*'.size() == 4, "Expected size 4 but was ${root.'*'.size()}"
+        assert root.'a'.'z'.size() == 2
+        assert root.'*'.'*'.size() == 5
+        assert root.a.'*'.size() == 3
+        assert root.'*'.z.size() == 3
+        assert root.'*'.'*'.collect{it.name()} == ["z", "z", "y", "z", "x"]
+        assert root.a.'*'.collect{it.name()} == ["z", "z", "y"]
+        assert root.'*'.findAll{ it.z.size() > 0 }.collect{it.name()} == ["a", "b"]
     }
 
     static void checkElementTypes(Closure getRoot) {

@@ -36,19 +36,17 @@ public class FilteredNodeChildren extends NodeChildren {
 
     public Iterator iterator() {
         return new Iterator() {
-        final Iterator iter = FilteredNodeChildren.this.parent.iterator();
-        Object next = null;
+            final Iterator iter = FilteredNodeChildren.this.parent.iterator();
+            Object next = null;
 
             public boolean hasNext() {
                 while (this.iter.hasNext()) {
-                final Object childNode = this.iter.next();
-                
+                    final Object childNode = this.iter.next();
                     if (closureYieldsTrueForNode(childNode)) {
                         this.next = childNode;
                         return true;
                     }
                 }
-                
                 return false;
             }
 
@@ -66,8 +64,7 @@ public class FilteredNodeChildren extends NodeChildren {
         return new NodeIterator(this.parent.nodeIterator()) {
             protected Object getNextNode(final Iterator iter) {
                 while (iter.hasNext()) {
-                final Object node = iter.next();
-                
+                    final Object node = iter.next();
                     if (closureYieldsTrueForNode(new NodeChild((Node) node, FilteredNodeChildren.this.parent, FilteredNodeChildren.this.namespaceTagHints))) {
                         return node;
                     }
@@ -80,5 +77,4 @@ public class FilteredNodeChildren extends NodeChildren {
     private boolean closureYieldsTrueForNode(Object childNode) {
         return DefaultTypeTransformation.castToBoolean(FilteredNodeChildren.this.closure.call(new Object[]{childNode}));
     }
-
 }

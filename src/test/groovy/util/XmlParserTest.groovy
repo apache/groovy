@@ -31,6 +31,7 @@ class XmlParserTest extends GroovyTestCase {
     void testNavigation() {
         GpathSyntaxTestSupport.checkChildren(getRoot)
         GpathSyntaxTestSupport.checkParent(getRoot)
+        GpathSyntaxTestSupport.checkNestedSizeExpressions(getRoot)
     }
 
     void testTraversal() {
