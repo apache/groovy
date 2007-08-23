@@ -18,6 +18,7 @@ package org.codehaus.groovy.tools.shell
 
 import jline.ConsoleReader
 import jline.MultiCompletor
+import jline.History
 
 /**
  * Support for running a {@link Shell} interactivly.
@@ -40,6 +41,15 @@ class InteractiveShellRunner
         
         this.reader = new ConsoleReader(shell.io.inputStream, shell.io.out)
         
+        // Setup the history file if we can
+        def userHome = new File(System.properties['user.home'])
+        def file = new File(userHome, '.groovy/groovysh_history')
+        if (file.parentFile.exists()) {
+            log.debug("Using history file: $file")
+            reader.history.historyFile = file
+        }
+        
+        // Setup the completors
         def completors = []
         
         //

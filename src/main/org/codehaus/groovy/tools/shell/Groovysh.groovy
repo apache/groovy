@@ -366,7 +366,7 @@ class Groovysh
             
             // Optionally load a user-specific rc file
             def userHome = new File(System.properties['user.home'])
-            def file = new File(userHome, '.groovy/groovyshrc')
+            def file = new File(userHome, '.groovy/groovysh_rc')
             if (file.exists()) {
                 execute("load ${file.toURL()}")
             }
