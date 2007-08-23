@@ -118,6 +118,10 @@ class Groovysh
         return AnsiString.render("@|bold groovy:|(${buffers.selected})@|bold :|${lineNum}@|bold >| ")
     }
     
+    protected Object executeCommand(final String line) {
+        return super.execute(line)
+    }
+    
     /**
      * Execute a single line, where the line may be a command or Groovy code (complete or incomplete).
      */
@@ -129,9 +133,11 @@ class Groovysh
             return null
         }
         
+        def result
+        
         // First try normal command execution
         if (isExecutable(line)) {
-            def result = super.execute(line)
+            result = executeCommand(line)
             
             // For commands, only set the last result when its non-null/true
             if (result) {
@@ -140,8 +146,6 @@ class Groovysh
             
             return result
         }
-        
-        def result
         
         // Otherwise treat the line as Groovy
         def current = []

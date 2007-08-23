@@ -68,10 +68,6 @@ class AliasCommand
     }
 }
 
-//
-// FIXME: This will cause 2 ===> result lines to pop up from the nesting... :-(
-//
-
 class AliasTargetProxyCommand
     extends CommandSupport
 {
@@ -104,6 +100,6 @@ class AliasTargetProxyCommand
         
         log.debug("Executing with args: $args")
         
-        return shell.execute(args.join(' '))
+        return shell.executeCommand(args.join(' '))
     }
 }
