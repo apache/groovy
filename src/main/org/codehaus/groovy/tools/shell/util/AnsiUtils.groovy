@@ -54,38 +54,8 @@ class AnsiUtils
         CODES = map
     }
     
-    //
-    // NOTE: Snagged from commons-lang to test this hack out....
-    //
-    
-    private static final String OS_NAME = System.getProperty("os.name")
-
-    private static final String OS_NAME_WINDOWS_PREFIX = "Windows"
-
-    private static final boolean IS_OS_WINDOWS = getOSMatches(OS_NAME_WINDOWS_PREFIX);
-
-    private static boolean getOSMatches(String osNamePrefix) {
-        if (OS_NAME == null) {
-            return false;
-        }
-        return OS_NAME.startsWith(osNamePrefix);
-    }
-    
     private static boolean detect() {
-        boolean detected = Terminal.terminal.isANSISupported()
-        
-        if (!detected && IS_OS_WINDOWS) {
-            def path = System.getenv('PATH')
-            
-            if (path.indexOf('/bin')) {
-                
-                System.err.println("HACK: Looks like this might by Cygwin; so enable ANSI");
-                
-                detected = true
-            }
-        }
-        
-        return detected
+        return Terminal.terminal.isANSISupported()
     }
     
     static final boolean DETECTED = detect()
