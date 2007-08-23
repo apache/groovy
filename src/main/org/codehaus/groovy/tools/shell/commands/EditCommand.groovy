@@ -65,18 +65,10 @@ class EditCommand
             log.debug("Waiting for process: $p")
             p.waitFor()
             
-            // Load the updated file into a tmp buffer
-            def tmp = []
+            // Load the new lines...
             file.eachLine {
-                tmp << it
+                shell << it
             }
-            
-            // And then update the currently selected buffer
-            buffers.updateSelected(tmp)
-            
-            //
-            // FIXME: This won't actually execute anything...
-            //
         }
         finally {
             file.delete()
