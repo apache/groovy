@@ -362,9 +362,14 @@ class Groovysh
             // Display the welcome banner
             io.out.println(ANSI.render(messages.format('startup_banner.0', InvokerHelper.version, System.properties['java.vm.version'])))
             io.out.println(ANSI.render(messages['startup_banner.1']))
+            io.out.println('-' * (runner.reader.terminal.terminalWidth - 1)) // TODO: Check what the value is when its an unsupported terminal
             
-            // TODO: Check what the value is when its an unsupported terminal
-            io.out.println('-' * (runner.reader.terminal.terminalWidth - 1))
+            // Optionally load a user-specific rc file
+            def userHome = new File(System.properties['user.home'])
+            def file = new File(userHome, '.groovy/groovyshrc')
+            if (file.exists()) {
+                execute("load ${file.toURL()}")
+            }
             
             // Start the interactive shell runner
             runner.run()
