@@ -20,7 +20,7 @@ import groovy.inspect.swingui.ObjectBrowser
 
 import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.Shell
-import org.codehaus.groovy.tools.shell.completor.SimpleCompletor
+import org.codehaus.groovy.tools.shell.util.SimpleCompletor
 
 /**
  * The 'inspect' command.
@@ -36,7 +36,10 @@ class InspectCommand
     }
     
     protected List createCompletors() {
-        return [ new InspectCommandCompletor(binding), null ]
+        return [
+            new InspectCommandCompletor(binding),
+            null
+        ]
     }
 
     Object execute(final List args) {

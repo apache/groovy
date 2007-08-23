@@ -16,6 +16,8 @@
 
 package org.codehaus.groovy.tools.shell
 
+import org.codehaus.groovy.tools.shell.util.Logger
+
 /**
  * A registry of shell {@link Command} instances which may be executed.
  *
@@ -24,6 +26,12 @@ package org.codehaus.groovy.tools.shell
  */
 class CommandRegistry
 {
+    protected final Logger log = Logger.create(CommandRegistry.class)
+    
+    //
+    // TODO: Hook up support so one can for (command in registry) { }
+    //
+    
     /** A list of all of the registered commands. */
     final List commands = []
 
@@ -45,6 +53,13 @@ class CommandRegistry
         
         // Hookup context for alias commands
         command.registry = this
+
+        // Add any standard aliases for the command if any
+        command.aliases?.each { this << it }
+        
+        if (log.debugEnabled) {
+            log.debug("Registered command: $command.name")
+        }
         
         return command
     }
@@ -64,12 +79,29 @@ class CommandRegistry
         
         return null
     }
-
+    
+    void remove(final Command command) {
+        assert command
+        
+        commands.remove(command)
+        
+        names.remove(command.name)
+        names.remove(command.shortcut)
+        
+        if (log.debugEnabled) {
+            log.debug("Removed command: $command.name")
+        }
+    }
+    
     List commands() {
         return commands
     }
     
     def getProperty(final String name) {
         return find(name)
+    }
+    
+    Iterator iterator() {
+        return commands().iterator()
     }
 }

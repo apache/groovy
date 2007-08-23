@@ -23,8 +23,8 @@ import org.codehaus.groovy.control.CompilationFailedException
 
 import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.Shell
-import org.codehaus.groovy.tools.shell.completor.SimpleCompletor
-import org.codehaus.groovy.tools.shell.completor.ClassNameCompletor
+import org.codehaus.groovy.tools.shell.util.SimpleCompletor
+import org.codehaus.groovy.tools.shell.util.ClassNameCompletor
 
 /**
  * The 'import' command.
@@ -40,7 +40,10 @@ class ImportCommand
     }
     
     protected List createCompletors() {
-        return [ new ImportCommandCompletor(shell.interp.classLoader), null ]
+        return [
+            new ImportCommandCompletor(shell.interp.classLoader),
+            null
+        ]
     }
     
     Object execute(final List args) {

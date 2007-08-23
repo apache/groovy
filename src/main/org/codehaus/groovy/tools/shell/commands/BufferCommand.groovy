@@ -26,7 +26,7 @@ import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.Shell
 import org.codehaus.groovy.tools.shell.BufferManager
 
-import org.codehaus.groovy.tools.shell.completor.SimpleCompletor
+import org.codehaus.groovy.tools.shell.util.SimpleCompletor
 
 /**
  * The 'buffer' command.
@@ -39,10 +39,15 @@ class BufferCommand
 {
     BufferCommand(final Shell shell) {
         super(shell, 'buffer', '\\b')
+
+        alias('#', '\\#')
     }
     
     protected List createCompletors() {
-        return [ new BufferCommandCompletor(buffers), null ]
+        return [
+            new BufferCommandCompletor(buffers),
+            null
+        ]
     }
     
     Object execute(final List args) {

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.codehaus.groovy.tools.shell.completor;
+package org.codehaus.groovy.tools.shell.util;
 
 import java.util.List;
 import java.util.Iterator;

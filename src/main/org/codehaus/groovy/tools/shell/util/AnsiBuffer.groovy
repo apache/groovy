@@ -14,55 +14,35 @@
  * limitations under the License.
  */
 
-package org.codehaus.groovy.tools.shell
+package org.codehaus.groovy.tools.shell.util
 
-//
-// Based roughly on jline.ANSIBuffer
-//
-
-import jline.Terminal
-import jline.ANSIBuffer.ANSICodes as ANSI
+import org.codehaus.groovy.tools.shell.util.AnsiUtils as ANSI
 
 /**
- * Provides support for rendering ANSI escape muck.
+ * Provides simplified access to creating string with ANSI escape-codes embedded.
  *
  * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class AnsiBuffer
 {
-    static final boolean ANSI_ENABLED = Terminal.getTerminal().isANSISupported()
-    
-    static final Map CODES = [
-        red:            ANSI.FG_RED,
-        blue:           ANSI.FG_BLUE,
-        green:          ANSI.FG_GREEN,
-        black:          ANSI.FG_BLACK,
-        yellow:         ANSI.FG_YELLOW,
-        magenta:        ANSI.FG_MAGENTA,
-        cyan:           ANSI.FG_CYAN,
-        bold:           ANSI.BOLD,
-        underscore:     ANSI.UNDERSCORE,
-        blink:          ANSI.BLINK,
-        reverse:        ANSI.REVERSE,
-    ]
-    
     private final StringBuffer buffer = new StringBuffer()
     
     private final AnsiBufferSelector selector = new AnsiBufferSelector(buffer: this)
     
-    boolean ansiEnabled = ANSI_ENABLED
-    
-    void setAnsiEnabled(boolean flag) {
-        if (buffer.size() != 0) {
-            throw new IllegalStateException('Buffer is not empty; can not toggle ANSI state')
-        }
-        
-        ansiEnabled = flag
-    }
+    boolean autoClear = true
     
     String toString() {
-        return buffer.toString()
+        if (autoClear) {
+            String str = buffer
+            
+            clear()
+            
+            return str
+        }
+        else {
+            return buffer
+        }
     }
     
     void clear() {
@@ -70,18 +50,28 @@ class AnsiBuffer
     }
     
     AnsiBuffer append(final String text) {
+        assert text != null
+        
         buffer << text
-
+        
         return this
+    }
+    
+    AnsiBuffer append(final Object obj) {
+        return append(String.valueOf(obj))
     }
     
     def leftShift(final String text) {
         return append(text)
     }
     
+    def leftShift(final Object obj) {
+        return append(String.valueOf(obj))
+    }
+    
     AnsiBuffer attrib(final String text, final int code) {
-        if (ansiEnabled) {
-            buffer << ANSI.attrib(code) << text << ANSI.attrib(ANSI.OFF)
+        if (ANSI.ENABLED) {
+            buffer << ANSI.attrib(code) << text << ANSI.attrib(ANSI.CODES.off)
         }
         else {
             buffer << text
@@ -91,7 +81,9 @@ class AnsiBuffer
     }
     
     def invokeMethod(String name, Object args) {
-        def code = CODES[name]
+        assert name
+        
+        def code = ANSI.CODES[name]
         
         if (code) {
             name = 'attrib'
@@ -108,11 +100,6 @@ class AnsiBuffer
     }
     
     def getProperty(final String name) {
-        // Is there a better way to handle this muck?
-        if (name in [ 'selector', 'ansiEnabled' ]) {
-            return super.getProperty(name)
-        }
-        
         return selector.select(name)
     }
 }
@@ -124,6 +111,8 @@ class AnsiBufferSelector
     String selected
     
     def leftShift(final String text) {
+        assert selected
+        
         return buffer.invokeMethod(selected, text)
     }
     

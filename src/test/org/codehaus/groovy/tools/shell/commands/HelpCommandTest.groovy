@@ -42,9 +42,6 @@ class HelpCommandTest
         shell << 'help exit'
     }
     
-    /*
-    FIXME: Errors don't currently throw anything, just io.error.println()'s...
-    
     void testCommandHelpInvalidCommand() {
         try {
             shell << 'help no-such-command'
@@ -53,5 +50,4 @@ class HelpCommandTest
             // expected
         }
     }
-    */
 }

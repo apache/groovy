@@ -18,7 +18,6 @@ package org.codehaus.groovy.tools.shell.commands
 
 import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.Shell
-import org.codehaus.groovy.tools.shell.BufferManager
 
 /**
  * The 'edit' command.
@@ -33,10 +32,9 @@ class EditCommand
         super(shell, 'edit', '\\e')
     }
     
-    Object execute(final List args) {
-        assertNoArguments(args)
-        
+    private String getEditorCommand() {
         def editor = System.getenv('EDITOR')
+        
         if (!editor) {
             //
             // TODO: Maybe popup a Swing editor here?  Or look for other env vars?  Or use notepad on winblows?
@@ -44,6 +42,12 @@ class EditCommand
             
             fail("Unable to determine which editor to use; check \$EDITOR") // TODO: i18n
         }
+        
+        return editor
+    }
+    
+    Object execute(final List args) {
+        assertNoArguments(args)
         
         def file = File.createTempFile('groovysh-buffer', '.groovy')
         file.deleteOnExit()
@@ -53,7 +57,7 @@ class EditCommand
             file.write(buffer.join(NEWLINE))
             
             // Try to launch the editor
-            def cmd = "$editor $file"
+            def cmd = "$editorCommand $file"
             log.debug("Executing: $cmd")
             def p = cmd.execute()
             
@@ -69,6 +73,10 @@ class EditCommand
             
             // And then update the currently selected buffer
             buffers.updateSelected(tmp)
+            
+            //
+            // FIXME: This won't actually execute anything...
+            //
         }
         finally {
             file.delete()

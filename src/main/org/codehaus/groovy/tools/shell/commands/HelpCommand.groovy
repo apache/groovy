@@ -20,8 +20,9 @@ import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.Command
 import org.codehaus.groovy.tools.shell.Shell
 import org.codehaus.groovy.tools.shell.CommandRegistry
-import org.codehaus.groovy.tools.shell.AnsiBuffer
-import org.codehaus.groovy.tools.shell.completor.SimpleCompletor
+import org.codehaus.groovy.tools.shell.util.SimpleCompletor
+
+import org.codehaus.groovy.tools.shell.util.AnsiUtils as ANSI
 
 /**
  * The 'help' command.
@@ -32,14 +33,17 @@ import org.codehaus.groovy.tools.shell.completor.SimpleCompletor
 class HelpCommand
     extends CommandSupport
 {
-    private AnsiBuffer ansiBuffer = new AnsiBuffer()
-    
     HelpCommand(final Shell shell) {
         super(shell, 'help', '\\h')
+
+        alias('?', '\\?')
     }
 
     protected List createCompletors() {
-        return [ new HelpCommandCompletor(registry), null ]
+        return [
+            new HelpCommandCompletor(registry),
+            null
+        ]
     }
 
     Object execute(final List args) {
@@ -77,38 +81,46 @@ class HelpCommand
         int maxName = 0
         int maxShortcut
         
-        registry.commands().each {
-            if (it.name.size() > maxName) maxName = it.name.size()
-            if (it.shortcut.size() > maxShortcut) maxShortcut = it.shortcut.size()
+        for (command in registry) {
+            if (command.hidden) {
+                continue
+            }
+            
+            if (command.name.size() > maxName) {
+                maxName = command.name.size()
+            }
+            
+            if (command.shortcut.size() > maxShortcut) {
+                maxShortcut = command.shortcut.size()
+            }
         }
         
         io.out.println()
-        io.out.println('For information about Groovy, visit:') // TODO: i18n
-        io.out.println('    http://groovy.codehaus.org')
+        io.out.println(ANSI.render('For information about @|green Groovy|, visit:')) // TODO: i18n
+        io.out.println(ANSI.render('    @|cyan http://groovy.codehaus.org|'))
         io.out.println()
 
         // List the commands we know about
         io.out.println('Available commands:') // TODO: i18n
 
-        registry.commands().each {
-            def n = it.name.padRight(maxName, ' ')
-            def s = it.shortcut.padRight(maxShortcut, ' ')
-
+        for (command in registry) {
+            if (command.hidden) {
+                continue
+            }
+            
+            def n = command.name.padRight(maxName, ' ')
+            def s = command.shortcut.padRight(maxShortcut, ' ')
+            
             //
             // TODO: Wrap description if needed
             //
             
-            ansiBuffer.clear()
-            ansiBuffer << '  '
-            ansiBuffer.bold << n
-            ansiBuffer << '  '
-            ansiBuffer << "($s) $it.description"
+            def d = command.description
             
-            io.out.println(ansiBuffer)
+            io.out.println(ANSI.render("  @|bold ${n}|  (@|bold ${s}|) $d"))
         }
         
         io.out.println()
-        
         io.out.println('For help on a specific command type:') // TODO: i18n
         io.out.println('    help <command>')
         io.out.println()
@@ -135,9 +147,13 @@ class HelpCommandCompletor
     SortedSet getCandidates() {
         def set = new TreeSet()
 
-        registry.commands().each {
-            set << it.name
-            set << it.shortcut
+        for (command in registry) {
+            if (command.hidden) {
+                continue
+            }
+            
+            set << command.name
+            set << command.shortcut
         }
 
         return set

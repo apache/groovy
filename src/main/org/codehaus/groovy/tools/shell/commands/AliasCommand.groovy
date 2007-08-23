@@ -42,14 +42,22 @@ class AliasCommand
         String name = args[0]
         List target = args[1..-1]
         
-        //
-        // TODO: Balk if already exists (or replace?) but if not an alias, then complain
-        //
+        def cmd = registry[name]
+        if (cmd) {
+            if (cmd instanceof AliasTargetProxyCommand) {
+                log.debug("Rebinding alias: $name")
+                
+                registry.remove(cmd)
+            }
+            else {
+                fail("Can not rebind non-user aliased command: ${cmd.name}") // TODO: i18n
+            }
+        }
         
         log.debug("Creating alias '$name' to: $target")
         
         // Register the command
-        def cmd = registry << new AliasTargetProxyCommand(shell, name, target)
+        cmd = registry << new AliasTargetProxyCommand(shell, name, target)
         
         // Add a completor if we can
         def reader = shell.runner?.reader
@@ -68,7 +76,7 @@ class AliasTargetProxyCommand
     final List args
     
     AliasTargetProxyCommand(final Shell shell, final String name, final List args) {
-        super(shell, name, "\\a${counter++}".toString()) // HACK: Must toString() here
+        super(shell, name, '\\a' + counter++)
         
         assert args
         

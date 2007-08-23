@@ -16,6 +16,8 @@
 
 package org.codehaus.groovy.tools.shell
 
+import org.codehaus.groovy.tools.shell.util.Logger
+
 /**
  * Manages the shells buffers.
  *
@@ -24,6 +26,8 @@ package org.codehaus.groovy.tools.shell
  */
 class BufferManager
 {
+    protected final Logger log = Logger.create(this.class)
+    
     final List buffers = []
 
     int selected
@@ -36,6 +40,8 @@ class BufferManager
         buffers.clear()
         
         create(true)
+        
+        log.debug('Buffers reset')
     }
     
     List current() {
@@ -58,7 +64,11 @@ class BufferManager
         if (select) {
             select(i)
         }
-
+        
+        if (log.debugEnabled) {
+            log.debug("Created new buffer with index: $i")
+        }
+        
         return i
     }
 
@@ -66,6 +76,10 @@ class BufferManager
         assert index >= 0 && index < buffers.size()
 
         buffers.remove(index)
+        
+        if (log.debugEnabled) {
+            log.debug("Deleted buffer with index: $index")
+        }
     }
 
     int size() {

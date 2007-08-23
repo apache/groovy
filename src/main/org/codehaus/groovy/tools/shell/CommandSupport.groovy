@@ -22,7 +22,8 @@ import jline.Completor
 import jline.NullCompletor
 import jline.ArgumentCompletor
 
-import org.codehaus.groovy.tools.shell.completor.SimpleCompletor
+import org.codehaus.groovy.tools.shell.util.Logger
+import org.codehaus.groovy.tools.shell.util.SimpleCompletor
 
 /**
  * Support for {@link Command} instances.
@@ -33,10 +34,10 @@ import org.codehaus.groovy.tools.shell.completor.SimpleCompletor
 abstract class CommandSupport
     implements Command
 {
-    private static final String NEWLINE = System.properties['line.separator']
+    protected static final String NEWLINE = System.properties['line.separator']
     
     /** Instance logger for the command, initialized late to include the command name. */
-    protected final ShellLog log
+    protected final Logger log
 
     /** i18n message source for the command. */
     protected final MessageSource messages = new MessageSource(this.class, CommandSupport.class)
@@ -46,7 +47,7 @@ abstract class CommandSupport
 
     /** The shortcut switch */
     final String shortcut
-
+    
     /** The owning shell. */
     protected final Shell shell
 
@@ -55,13 +56,19 @@ abstract class CommandSupport
 
     /** The I/O container for the command to spit stuff out. */
     protected final IO io
-
+    
+    /** Standard aliases for the command. */
+    final List<CommandAlias> aliases = []
+    
+    /** Flag to indicate if the command should be hidden or not. */
+    boolean hidden = false
+    
     protected CommandSupport(final Shell shell, final String name, final String shortcut) {
         assert shell
         assert name
         assert shortcut
         
-        this.log = new ShellLog(this.class, name)
+        this.log = Logger.create(this.class, name)
         this.shell = shell
         this.io = shell.io
         this.name = name
@@ -95,10 +102,14 @@ abstract class CommandSupport
      * Setup the completor for the command.
      */
     Completor getCompletor() {
-        def list = []
-        list << new SimpleCompletor(name, shortcut)
+        if (hidden) {
+            return null
+        }
+        
+        def list = [ new SimpleCompletor(name, shortcut) ]
 
         def completors = createCompletors()
+        
         if (completors) {
             completors.each {
                 if (it) {
@@ -116,6 +127,14 @@ abstract class CommandSupport
         return new ArgumentCompletor(list)
     }
     
+    //
+    // Helpers
+    //
+
+    protected void alias(final String name, final String shortcut) {
+        aliases << new CommandAlias(shell, name, shortcut, this.name)
+    }
+
     protected void fail(final String msg) {
         throw new CommandException(this, msg)
     }

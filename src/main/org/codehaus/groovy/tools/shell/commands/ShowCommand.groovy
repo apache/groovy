@@ -21,7 +21,7 @@ import org.codehaus.groovy.runtime.MethodClosure
 import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.Shell
 
-import org.codehaus.groovy.tools.shell.completor.SimpleCompletor
+import org.codehaus.groovy.tools.shell.util.SimpleCompletor
 
 /**
  * The 'show' command.
@@ -32,6 +32,10 @@ import org.codehaus.groovy.tools.shell.completor.SimpleCompletor
 class ShowCommand
     extends CommandSupport
 {
+    //
+    // TODO: Create helper class to handle commands which have sub-context like show and purge
+    //
+    
     private static final List TYPES = [ 'variables', 'classes', 'imports' ]
     
     ShowCommand(final Shell shell) {
@@ -69,6 +73,7 @@ class ShowCommand
                 }
                 else {
                     io.out.println('Variables:') // TODO: i18n
+                    
                     variables.each { key, value ->
                         // Special handling for defined methods, just show the sig
                         if (value instanceof MethodClosure) {
@@ -91,6 +96,7 @@ class ShowCommand
                 }
                 else {
                     io.out.println('Classes:') // TODO: i18n
+                    
                     classes.each {
                         io.out.println("  $it")
                     }
@@ -103,6 +109,7 @@ class ShowCommand
                 }
                 else {
                     io.out.println("Custom imports:") // TODO: i18n
+                    
                     imports.each {
                         io.out.println("  $it")
                     }

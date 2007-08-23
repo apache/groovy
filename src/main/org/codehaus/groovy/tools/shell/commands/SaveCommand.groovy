@@ -35,7 +35,10 @@ class SaveCommand
     }
 
     protected List createCompletors() {
-        return [ new FileNameCompletor(), null ]
+        return [
+            new FileNameCompletor(),
+            null
+        ]
     }
 
     Object execute(final List args) {

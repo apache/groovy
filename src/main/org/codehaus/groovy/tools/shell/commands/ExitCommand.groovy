@@ -31,6 +31,8 @@ class ExitCommand
 {
     ExitCommand(final Shell shell) {
         super(shell, 'exit', '\\x')
+
+        alias('quit', '\\q')
     }
 
     Object execute(final List args) {

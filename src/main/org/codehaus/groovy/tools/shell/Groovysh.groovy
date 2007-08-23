@@ -27,7 +27,9 @@ import org.codehaus.groovy.runtime.MethodClosure
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.control.CompilationFailedException
 
-import org.codehaus.groovy.tools.shell.commands.*
+import org.codehaus.groovy.tools.shell.util.Logger
+import org.codehaus.groovy.tools.shell.util.AnsiUtils as ANSI
+import org.codehaus.groovy.tools.shell.util.XmlCommandRegistrar as CommandRegistrar
 
 /**
  * An interactive shell for evaluating Groovy code from the command-line (aka. groovysh).
@@ -53,8 +55,13 @@ class Groovysh
     Groovysh(final ClassLoader classLoader, final Binding binding, final IO io) {
         super(io)
         
-        // For sanity, hook up the logging stream to the output we are given
-        ShellLog.out = io.out
+        Logger.io = io
+        
+        //
+        // FIXME: This stuff gets run before the logging config from the command-line can get used, so we loose them...
+        //
+        //        See HACK in main() below...
+        //
         
         assert classLoader
         assert binding
@@ -65,10 +72,13 @@ class Groovysh
         // NOTE: Command registration must be done after the shell is initialized and before the runner is created
         //
         
-        registerCommands()
+        def registrar = new CommandRegistrar(this, classLoader)
+        registrar.register(getClass().getResource('commands.xml'))
         
-        runner = new InteractiveShellRunner(this)
-        runner.prompt = this.&renderPrompt
+        Closure prompt = this.&renderPrompt
+        runner = new InteractiveShellRunner(this, prompt)
+        
+        log.debug('Initialized')
     }
 
     Groovysh(final Binding binding, final IO io) {
@@ -83,70 +93,22 @@ class Groovysh
         this(new IO())
     }
     
-    protected void registerCommands() {
-        //
-        // TODO: Add CommandSeperator for better visual grouping ?
-        //
+    private void setLastResult(final Object obj) {
+        if (io.verbose) {
+            io.out.println(ANSI.render("@|bold ===>| $obj"))
+        }
 
-        //
-        // TODO: Add properties-based (or simple xml) loading of commands & aliases ?
-        //
-        
-        registry << new HelpCommand(this)
-
-        alias('?', '\\?', 'help')
-
-        registry << new ExitCommand(this)
-
-        alias('quit', '\\q', 'exit')
-        
-        registry << new ImportCommand(this)
-        
-        registry << new DisplayCommand(this)
-        
-        registry << new ClearCommand(this)
-        
-        registry << new ShowCommand(this)
-        
-        registry << new InspectCommand(this)
-        
-        registry << new PurgeCommand(this)
-        
-        registry << new EditCommand(this)
-        
-        registry << new LoadCommand(this)
-
-        alias('.', '\\.', 'load')
-
-        registry << new SaveCommand(this)
-
-        registry << new BufferCommand(this)
-
-        alias('#', '\\#', 'buffer')
-        
-        registry << new HistoryCommand(this)
-        
-        registry << new AliasCommand(this)
-        
-        //
-        // TODO: Add a command to record buffer activity, maybe just add more function to the 'buffer' command instead...
-        //
+        interp.context['_'] = obj
     }
     
-    private final AnsiBuffer promptBuffer = new AnsiBuffer()
+    private Object getLastResult() {
+        return interp.context['_']
+    }
     
-    protected String renderPrompt() {
-        promptBuffer.clear()
-        
+    private String renderPrompt() {
         def lineNum = formatLineNumber(buffers.current().size())
         
-        promptBuffer.bold << 'groovy:' << "(${buffers.selected})"
-        
-        promptBuffer.bold << ':' << "${lineNum}"
-        
-        promptBuffer.bold << '> '
-        
-        return promptBuffer.toString()
+        return ANSI.render("@|bold groovy:|(${buffers.selected})@|bold :|${lineNum}@|bold >| ")
     }
     
     /**
@@ -155,14 +117,21 @@ class Groovysh
     Object execute(final String line) {
         assert line != null
         
-        // First try normal command execution
-        if (isExecutable(line)) {
-            return super.execute(line)
-        }
-        
         // Ignore empty lines
         if (line.trim().size() == 0) {
             return null
+        }
+        
+        // First try normal command execution
+        if (isExecutable(line)) {
+            def result = super.execute(line)
+            
+            // For commands, only set the last result when its non-null/true
+            if (result) {
+                lastResult = result
+            }
+            
+            return result
         }
         
         def result
@@ -205,9 +174,9 @@ class Groovysh
                 throw new Error("Invalid parse status: $status.code")
         }
         
-        return result
+        return (lastResult = result)
     }
-
+    
     /**
      * Attempt to parse the given buffer.
      */
@@ -255,7 +224,7 @@ class Groovysh
                 }
             }
         }
-        catch (Exception e) {
+        catch (Throwable e) {
             error = e
         }
 
@@ -299,18 +268,11 @@ class Groovysh
 
             log.debug("Evaluation result: $result")
 
-            if (io.verbose) {
-                io.out.println("===> $result")
-            }
-
-            // Save the last result to the '_' variable
-            interp.context['_'] = result
-
             // Keep only the methods that have been defined in the script
             type.declaredMethods.each { Method m ->
                 if (!(m.name in [ 'main', 'run' ] || m.name.startsWith('super$') || m.name.startsWith('class$'))) {
                     log.debug("Saving method definition: $m")
-                    interp.context["$m.name"] = new MethodClosure(type.newInstance(), m.name)
+                    interp.context["${m.name}"] = new MethodClosure(type.newInstance(), m.name)
                 }
             }
         }
@@ -357,10 +319,9 @@ class Groovysh
         assert num >= 0
         
         // Make a %03d-like string for the line number
-        def lineNum = num.toString()
-        return lineNum.padLeft(3, '0')
+        return num.toString().padLeft(3, '0')
     }
-
+    
     /**
      * Display the given buffer.
      */
@@ -369,7 +330,8 @@ class Groovysh
 
         buffer.eachWithIndex { line, index ->
             def lineNum = formatLineNumber(index + 1)
-            io.out.println("${lineNum}> $line")
+            
+            io.out.println(ANSI.render(" ${lineNum}@|bold >| $line"))
         }
     }
 
@@ -378,33 +340,55 @@ class Groovysh
     //
 
     int run(final String[] args) {
+        def code
+        
         try {
             // Configure from command-line
             processCommandLine(args)
             
+            // Add a hook to display some status when shutting down...
+            addShutdownHook({
+                if (code == null) {
+                    // Give the user a warning when the JVM shutdown abnormally, normal shutdown
+                    // will set an exit code through the proper channels
+                    
+                    io.err.println()
+                    io.err.println(ANSI.render('@|red WARNING:| Abnormal JVM shutdown detected'))
+                    
+                    io.flush()
+                }
+            })
+            
             // Display the welcome banner
-            io.out.println(messages.format('startup_banner.0', InvokerHelper.version, System.properties['java.vm.version']))
-            io.out.println(messages['startup_banner.1'])
+            io.out.println(ANSI.render(messages.format('startup_banner.0', InvokerHelper.version, System.properties['java.vm.version'])))
+            io.out.println(ANSI.render(messages['startup_banner.1']))
+            
+            // TODO: Check what the value is when its an unsupported terminal
+            io.out.println('-' * (runner.reader.terminal.terminalWidth - 1))
             
             // Start the interactive shell runner
             runner.run()
+            
+            code = 0
         }
         catch (ExitNotification n) {
             log.debug("Exiting w/code: ${n.code}")
-
-            return n.code
+            
+            code = n.code
         }
         catch (Throwable t) {
             io.err.println(messages.format('info.fatal', t))
             t.printStackTrace(io.err)
-
-            return 1
+            
+            code = 1
         }
         finally {
             io.flush()
         }
-
-        return 0
+        
+        assert code != null
+        
+        return code
     }
 
     /**
@@ -421,33 +405,34 @@ class Groovysh
         cli.V(longOpt: 'version', messages['cli.option.version.description'])
         cli.v(longOpt: 'verbose', messages['cli.option.verbose.description'])
         cli.d(longOpt: 'debug', messages['cli.option.debug.description'])
+        cli.C(longOpt: 'nocolor', messages['cli.option.nocolor.description'])
         
         //
         // TODO: Add --quiet
-        //
-        
-        //
-        // TODO: Add --nocolor
         //
         
         def options = cli.parse(args)
         assert options
 
         // Currently no arguments are allowed, so complain if there are any
-        def _args = options.arguments()
-        if (_args.size() != 0) {
+        def additional = options.arguments()
+        if (additional.size() != 0) {
             cli.usage()
-            io.err.println(messages.format('cli.info.unexpected_args', _args.join(' ')))
+            
+            io.err.println(messages.format('cli.info.unexpected_args', additional.join(' ')))
+            
             throw new ExitNotification(1)
         }
 
         if (options.h) {
             cli.usage()
+            
             throw new ExitNotification(0)
         }
 
         if (options.V) {
             io.out.println(messages.format('cli.info.version', InvokerHelper.version))
+            
             throw new ExitNotification(0)
         }
 
@@ -456,16 +441,69 @@ class Groovysh
         }
 
         if (options.d) {
-            ShellLog.debug = true
+            Logger.debug = true
+            
+            // debug implies verbose
+            io.verbose = true
+        }
+        
+        if (options.C) {
+            ANSI.ENABLED = false
         }
     }
 
     static void main(String[] args) {
+        //
+        // HACK: Quickly check args for -d or --debug, need a better way, but for now this will have to do
+        //
+        
+        for (arg in args) {
+            if (arg in [ '-d', '--debug' ]) {
+                Logger.debug = true
+                break
+            }
+        }
+        
         int code = new Groovysh().run(args)
 
         // Force the JVM to exit at this point, since shell could have created threads or
         // popped up Swing components that will cause the JVM to linger after we have been
         // asked to shutdown
+        
         System.exit(code)
+    }
+}
+
+/**
+ * Container for parse status details.
+ *
+ * @version $Id$
+ * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
+ */
+class ParseStatus
+{
+    static final int COMPLETE = 0
+
+    static final int INCOMPLETE = 1
+
+    static final int ERROR = 2
+
+    final int code
+
+    final Throwable cause
+
+    ParseStatus(final int code, final Throwable cause) {
+        assert code in [ COMPLETE, INCOMPLETE, ERROR ]
+
+        this.code = code
+        this.cause = cause
+    }
+
+    ParseStatus(final int code) {
+        this(code, null)
+    }
+
+    ParseStatus(final Throwable cause) {
+        this(ERROR, cause)
     }
 }

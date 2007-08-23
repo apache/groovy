@@ -26,33 +26,30 @@ import jline.MultiCompletor
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class InteractiveShellRunner
+    extends ShellRunner
     implements Runnable
 {
-    protected final ShellLog log = new ShellLog(this.class)
-    
-    final Shell shell
-    
     final ConsoleReader reader
     
-    Closure prompt = { '> ' }
+    final Closure prompt
     
-    boolean breakOnNull = true
-    
-    InteractiveShellRunner(final Shell shell) {
-        assert shell
+    InteractiveShellRunner(final Shell shell, final Closure prompt) {
+        super(shell)
         
-        this.shell = shell
+        this.prompt = prompt
         
         this.reader = new ConsoleReader(shell.io.inputStream, shell.io.out)
         
-        init()
-    }
-    
-    protected void init() {
         def completors = []
         
-        shell.registry.commands().each {
-            def tmp = it.completor
+        //
+        // TODO: See if we want to add any more language specific completions, like for println for example?
+        //
+        //       Probably want to have the Groovysh instance install them
+        //
+        
+        for (command in shell.registry) {
+            def tmp = command.completor
             
             if (tmp) {
                 completors << tmp
@@ -63,31 +60,7 @@ class InteractiveShellRunner
     }
     
     protected String readLine() {
-        return reader.readLine(prompt())
-    }
-    
-    void run() {
-        log.debug('Running')
-        
-        while (true) {
-            def line = readLine()
-            
-            log.debug("Read line: $line")
-            
-            // Stop on null (maybe)
-            if (line == null && breakOnNull) {
-                break
-            }
-            
-            // Ingore empty lines
-            if (line.trim().size() == 0) {
-                continue
-            }
-            
-            shell << line
-        }
-        
-        log.debug('Finished')
+        return reader.readLine(prompt.call())
     }
 }
 

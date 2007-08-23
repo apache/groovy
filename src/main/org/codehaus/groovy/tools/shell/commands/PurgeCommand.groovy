@@ -19,7 +19,7 @@ package org.codehaus.groovy.tools.shell.commands
 import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.Shell
 
-import org.codehaus.groovy.tools.shell.completor.SimpleCompletor
+import org.codehaus.groovy.tools.shell.util.SimpleCompletor
 
 /**
  * The 'purge' command.

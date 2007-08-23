@@ -38,7 +38,11 @@ interface Command
 
     String getHelp()
 
+    List<CommandAlias> getAliases()
+
     Object execute(List args)
+    
+    boolean getHidden()
 }
 
 /**

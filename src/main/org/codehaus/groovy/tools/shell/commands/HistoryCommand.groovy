@@ -31,22 +31,24 @@ class HistoryCommand
     HistoryCommand(final Shell shell) {
         super(shell, 'history', '\\H')
     }
-
+    
     Object execute(final List args) {
         assertNoArguments(args)
         
         def reader = shell.runner?.reader
         
         if (!reader) {
-            fail("Shell does not appear to be interactive; can not query history")
+            fail("Shell does not appear to be interactive; Can not query history")
         }
         
         //
-        // TODO: Add support to fetch er something?
+        // TODO: Add support to fetch, clear, load, etc.  Really need to pre-load the history too...
         //
         
         reader.history.historyList.eachWithIndex { item, idx ->
-            io.out.println("  $idx  $item")
+            idx = idx.toString().padLeft(3, ' ')
+            
+            io.out.println(" $idx  $item")
         }
     }
 }

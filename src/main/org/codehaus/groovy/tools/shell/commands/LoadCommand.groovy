@@ -32,6 +32,8 @@ class LoadCommand
 {
     LoadCommand(final Shell shell) {
         super(shell, 'load', '\\l')
+
+        alias('.', '\\.')
     }
 
     protected List createCompletors() {
@@ -41,13 +43,15 @@ class LoadCommand
     Object execute(final List args) {
         assert args != null
         
-        if (args.isEmpty()) {
-            return
+        if (args.size() == 0) {
+            fail("Command 'load' requires at least one argument") // TODO: i18n
         }
 
         for (source in args) {
             URL url
-
+            
+            log.debug("Attempting to load: $url")
+            
             try {
                 url = new URL("$source")
             }

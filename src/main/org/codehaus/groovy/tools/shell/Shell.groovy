@@ -16,6 +16,8 @@
 
 package org.codehaus.groovy.tools.shell
 
+import org.codehaus.groovy.tools.shell.util.Logger
+
 /**
  * A simple shell for invoking commands from a command-line.
  *
@@ -24,7 +26,7 @@ package org.codehaus.groovy.tools.shell
  */
 class Shell
 {
-    protected final ShellLog log = new ShellLog(this.class)
+    protected final Logger log = Logger.create(this.class)
 
     final CommandRegistry registry = new CommandRegistry()
 
@@ -40,10 +42,17 @@ class Shell
         this(new IO())
     }
     
+    protected List parseLine(final String line) {
+        assert line != null
+        
+        return line.trim().tokenize()
+    }
+    
     Command findCommand(final String line) {
         assert line
         
-        def args = line.trim().tokenize()
+        def args = parseLine(line)
+        
         assert args.size() > 0
         
         def name = args[0]
@@ -65,7 +74,7 @@ class Shell
         def result = null
         
         if (command) {
-            def args = line.trim().tokenize()
+            def args = parseLine(line)
             
             if (args.size() == 1) {
                 args = []
@@ -84,6 +93,10 @@ class Shell
             catch (CommandException e) {
                 log.debug("Error: $e")
                 
+                //
+                // TODO: Add hook to easily augment this
+                //
+                
                 io.err.println(e.message)
             }
         }
@@ -96,10 +109,6 @@ class Shell
     }
     
     def leftShift(final Command command) {
-        registry << command
-    }
-
-    void alias(final String name, final String shortcut, final String target) {
-        this << new CommandAlias(this, name, shortcut, target)
+        return registry << command
     }
 }
