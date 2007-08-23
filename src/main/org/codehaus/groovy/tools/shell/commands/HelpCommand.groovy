@@ -68,7 +68,7 @@ class HelpCommand
         }
         
         io.out.println()
-        io.out.println("usage: $command.name $command.usage") // TODO: i18n
+        io.out.println("usage: @|bold ${command.name}| $command.usage") // TODO: i18n
         io.out.println()
         io.out.println(command.help)
         io.out.println()

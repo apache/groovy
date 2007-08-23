@@ -18,10 +18,8 @@ package org.codehaus.groovy.tools.shell.commands
 
 import org.codehaus.groovy.runtime.MethodClosure
 
-import org.codehaus.groovy.tools.shell.CommandSupport
+import org.codehaus.groovy.tools.shell.ComplexCommandSupport
 import org.codehaus.groovy.tools.shell.Shell
-
-import org.codehaus.groovy.tools.shell.util.SimpleCompletor
 
 /**
  * The 'show' command.
@@ -30,96 +28,60 @@ import org.codehaus.groovy.tools.shell.util.SimpleCompletor
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class ShowCommand
-    extends CommandSupport
+    extends ComplexCommandSupport
 {
-    //
-    // TODO: Create helper class to handle commands which have sub-context like show and purge
-    //
-    
-    private static final List TYPES = [ 'variables', 'classes', 'imports' ]
-    
     ShowCommand(final Shell shell) {
         super(shell, 'show', '\\S')
+        
+        this.functions = [ 'variables', 'classes', 'imports', 'all' ]
     }
     
-    protected List createCompletors() {
-        def c = new SimpleCompletor()
-        
-        TYPES.each { c.add(it) }
-        c.add('all')
-        
-        return [ c, null ]
-    }
-    
-    Object execute(List args) {
-        if (!args) {
-            args = [ 'all' ]
+    def do_variables = {
+        if (variables.isEmpty()) {
+            io.out.println('No variables defined') // TODO: i18n
         }
-        
-        args.each {
-            show(it)
+        else {
+            io.out.println('Variables:') // TODO: i18n
+            
+            variables.each { key, value ->
+                // Special handling for defined methods, just show the sig
+                if (value instanceof MethodClosure) {
+                    //
+                    // TODO: Would be nice to show the argument types it will accept...
+                    //
+                    value = "method ${value.method}()"
+                }
+                
+                io.out.println("  $key = $value")
+            }
         }
     }
     
-    private void show(final String type) {
-        assert type
+    def do_classes = {
+        def classes = classLoader.loadedClasses
         
-        switch (type) {
-            case 'variables':
-                if (variables.isEmpty()) {
-                    io.out.println('No variables defined') // TODO: i18n
-                }
-                else {
-                    io.out.println('Variables:') // TODO: i18n
-                    
-                    variables.each { key, value ->
-                        // Special handling for defined methods, just show the sig
-                        if (value instanceof MethodClosure) {
-                            //
-                            // TODO: Would be nice to show the argument types it will accept...
-                            //
-                            value = "method ${value.method}()"
-                        }
-                        
-                        io.out.println("  $key = $value")
-                    }
-                }
-                break
-                
-            case 'classes':
-                def classes = classLoader.loadedClasses
-                
-                if (classes.size() == 0) {
-                    io.out.println("No classes have been loaded") // TODO: i18n
-                }
-                else {
-                    io.out.println('Classes:') // TODO: i18n
-                    
-                    classes.each {
-                        io.out.println("  $it")
-                    }
-                }
-                break
+        if (classes.size() == 0) {
+            io.out.println("No classes have been loaded") // TODO: i18n
+        }
+        else {
+            io.out.println('Classes:') // TODO: i18n
             
-            case 'imports':
-                if (imports.isEmpty()) {
-                    io.out.println("No custom imports have been defined") // TODO: i18n
-                }
-                else {
-                    io.out.println("Custom imports:") // TODO: i18n
-                    
-                    imports.each {
-                        io.out.println("  $it")
-                    }
-                }
-                break
+            classes.each {
+                io.out.println("  $it")
+            }
+        }
+    }
+    
+    def do_imports = {
+        if (imports.isEmpty()) {
+            io.out.println("No custom imports have been defined") // TODO: i18n
+        }
+        else {
+            io.out.println("Custom imports:") // TODO: i18n
             
-            case 'all':
-                TYPES.each { show(it) }
-                break
-                
-            default:
-                fail("Unknown show type: $type") // TODO: i18n
+            imports.each {
+                io.out.println("  $it")
+            }
         }
     }
 }

@@ -45,6 +45,8 @@ class InspectCommand
     Object execute(final List args) {
         assert args != null
         
+        log.debug("Inspecting w/args: $args")
+        
         if (args.size() > 1) {
             fail(messages.format('error.unexpected_args', args.join(' ')))
         }
@@ -52,10 +54,10 @@ class InspectCommand
         def subject
         
         if (args.size() == 1) {
-            return binding.variables[args[0]]
+            subject = binding.variables[args[0]]
         }
         else {
-            return binding.variables['_']
+            subject = binding.variables['_']
         }
 
         if (!subject) {

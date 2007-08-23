@@ -16,7 +16,7 @@
 
 package org.codehaus.groovy.tools.shell.commands
 
-import org.codehaus.groovy.tools.shell.CommandSupport
+import org.codehaus.groovy.tools.shell.ComplexCommandSupport
 import org.codehaus.groovy.tools.shell.Shell
 
 /**
@@ -26,11 +26,13 @@ import org.codehaus.groovy.tools.shell.Shell
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class ShadowCommand
-    extends CommandSupport
+    extends ComplexCommandSupport
 {
     ShadowCommand(final Shell shell) {
         super(shell, 'shadow', '\\&')
-
+        
+        this.functions = [ 'debug', 'verbose', 'this' ]
+        
         //
         // NOTE: For now don't hid this guy
         //
@@ -41,38 +43,21 @@ class ShadowCommand
     def do_debug = {
         def flag = !log.debug
         
-        io.out.println("Toggling logging DEBUG to: $flag")
+        io.out.println("Toggling logging debug to: $flag")
         
         log.debug = flag
     }
     
-    def do_this = {
-        return this
+    def do_verbose = {
+        def flag = !io.verbose
+        
+        io.out.println("Toggling logging verbose to: $flag")
+        
+        io.verbose = flag
     }
     
-    Object execute(List args) {
-        assert args != null
-        
-        def name = args[0]
-        args.reverse().pop()
-        
-        def func
-        
-        try {
-            func = this."do_${name}"
-        }
-        catch (MissingPropertyException e) {
-            io.err.println("@|red ERROR:| $e")
-            fail('oooops')
-        }
-        
-        log.debug("Invoking shadow function '$name' w/args: $args")
-        
-        def result = func.call(args)
-        
-        log.debug("Result: $result")
-        
-        return result
+    def do_this = {
+        return this
     }
 }
 

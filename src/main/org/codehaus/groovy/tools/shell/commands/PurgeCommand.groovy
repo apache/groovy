@@ -16,10 +16,8 @@
 
 package org.codehaus.groovy.tools.shell.commands
 
-import org.codehaus.groovy.tools.shell.CommandSupport
+import org.codehaus.groovy.tools.shell.ComplexCommandSupport
 import org.codehaus.groovy.tools.shell.Shell
-
-import org.codehaus.groovy.tools.shell.util.SimpleCompletor
 
 /**
  * The 'purge' command.
@@ -28,92 +26,58 @@ import org.codehaus.groovy.tools.shell.util.SimpleCompletor
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class PurgeCommand
-    extends CommandSupport
+    extends ComplexCommandSupport
 {
-    private static final List TYPES = [ 'variables', 'classes', 'imports', 'buffers' ]
-    
     PurgeCommand(final Shell shell) {
         super(shell, 'purge', '\\p')
+        
+        this.functions = [ 'variables', 'classes', 'imports', 'buffers', 'all' ]
     }
     
-    protected List createCompletors() {
-        def c = new SimpleCompletor()
-        
-        TYPES.each { c.add(it) }
-        c.add('all')
-        
-        return [ c, null ]
-    }
-    
-    Object execute(final List args) {
-        assert args != null
-        
-        if (args.size() == 0) {
-            fail("Command '$name' requires at least one argument") // TODO: i18n
+    def do_variables = {
+        if (variables.isEmpty()) {
+            io.out.println('No variables defined') // TODO: i18n
         }
-        
-        args.each {
-            purge(it)
+        else {
+            variables.clear()
+            
+            if (io.verbose) {
+                io.out.println("Custom variables purged") // TODO: i18n
+            }
         }
     }
     
-    private void purge(final String type) {
-        assert type
+    def do_classes = {
+        if (classLoader.loadedClasses.size() == 0) {
+            io.out.println("No classes have been loaded") // TODO: i18n
+        }
+        else {
+            classLoader.clearCache()
+            
+            if (io.verbose) {
+                io.out.println('Loaded classes purged') // TODO: i18n
+            }
+        }
+    }
+    
+    def do_imports = {
+        if (imports.isEmpty()) {
+            io.out.println("No custom imports have been defined") // TODO: i18n
+        }
+        else {
+            imports.clear()
+            
+            if (io.verbose) {
+                io.out.println("Custom imports purged") // TODO: i18n
+            }
+        }
+    }
+    
+    def do_buffers = {
+        buffers.reset()
         
-        switch (type) {
-            case 'variables':
-                if (variables.isEmpty()) {
-                    io.out.println('No variables defined') // TODO: i18n
-                }
-                else {
-                    variables.clear()
-                    
-                    if (io.verbose) {
-                        io.out.println("Custom variables purged") // TODO: i18n
-                    }
-                }
-                break
-                
-            case 'classes':
-                if (classLoader.loadedClasses.size() == 0) {
-                    io.out.println("No classes have been loaded") // TODO: i18n
-                }
-                else {
-                    classLoader.clearCache()
-                    
-                    if (io.verbose) {
-                        io.out.println('Loaded classes purged') // TODO: i18n
-                    }
-                }
-                break
-            
-            case 'imports':
-                if (imports.isEmpty()) {
-                    io.out.println("No custom imports have been defined") // TODO: i18n
-                }
-                else {
-                    imports.clear()
-                    
-                    if (io.verbose) {
-                        io.out.println("Custom imports purged") // TODO: i18n
-                    }
-                }
-                break
-                
-            case 'buffers':
-                buffers.reset()
-                
-                if (io.verbose) {
-                    io.out.println('All buffers purged') // TODO: i18n
-                }
-                break
-            
-            case 'all':
-                TYPES.each { purge(it) }
-                break
-                
-            default:
-                fail("Unknown purge type: $type") // TODO: i18n
+        if (io.verbose) {
+            io.out.println('All buffers purged') // TODO: i18n
         }
     }
 }
