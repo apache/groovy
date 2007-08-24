@@ -66,11 +66,17 @@ class InteractiveShellRunner
     }
     
     void setHistoryFile(final File file) {
-        if (file.parentFile.exists()) {
-            log.debug("Using history file: $file")
+        def dir = file.parentFile
+        
+        if (!dir.exists()) {
+            dir.mkdirs()
             
-            reader.history.historyFile = file
+            log.debug("Created base directory for history file: $dir")
         }
+        
+        log.debug("Using history file: $file")
+        
+        reader.history.historyFile = file
     }
     
     protected String readLine() {
