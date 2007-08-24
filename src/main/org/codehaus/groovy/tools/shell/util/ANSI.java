@@ -16,16 +16,20 @@
 
 package org.codehaus.groovy.tools.shell.util;
 
-import jline.ANSIBuffer.ANSICodes;
-import jline.Terminal;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.Writer;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
+
 import java.util.HashMap;
 import java.util.Map;
+
+import groovy.text.MessageSource;
+
+import jline.ANSIBuffer.ANSICodes;
+import jline.Terminal;
 
 /**
  * Provides support for using ANSI color escape codes.
@@ -359,16 +363,49 @@ public class ANSI
             super(out, autoFlush);
         }
 
-        private String render(final String text) {
-            if (Renderer.test(text)) {
-                return renderer.render(text);
+        public void write(final String s) {
+            if (Renderer.test(s)) {
+                super.write(renderer.render(s));
             }
+            else {
+                super.write(s);
+            }
+        }
+    }
 
-            return text;
+    //
+    // RenderMessageSource
+    //
+
+    public static class RenderMessageSource
+        extends MessageSource
+    {
+        private final Renderer renderer = new Renderer();
+
+        public RenderMessageSource(final String[] names) {
+            super(names);
         }
 
-        public void write(final String s) {
-            super.write(render(s));
+        public RenderMessageSource(final String name) {
+            super(name);
+        }
+
+        public RenderMessageSource(final Class[] types) {
+            super(types);
+        }
+
+        public RenderMessageSource(final Class type) {
+            super(type);
+        }
+
+        public String getMessage(final String code) {
+            final String msg = super.getMessage(code);
+
+            if (Renderer.test(msg)) {
+                return renderer.render(msg);
+            }
+
+            return msg;
         }
     }
 }
