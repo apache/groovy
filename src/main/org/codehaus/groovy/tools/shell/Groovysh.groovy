@@ -377,7 +377,18 @@ class Groovysh
     
     int run(final String[] args) {
         def term = Terminal.terminal
-        log.debug("Using terminal: $term")
+        
+        if (log.debug) {
+            log.debug("Terminal ($term)")
+            log.debug("    Supported:  $term.supported")
+            log.debug("    ECHO:       $term.echo (enabled: $term.echoEnabled)")
+            log.debug("    H x W:      $term.terminalHeight x $term.terminalWidth")
+            log.debug("    ANSI:       ${term.isANSISupported()}")
+            
+            if (term instanceof jline.WindowsTerminal) {
+                log.debug("    Direct:     ${term.directConsole}")
+            }
+        }
         
         def code
         
