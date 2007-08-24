@@ -55,7 +55,14 @@ class AnsiUtils
     }
     
     private static boolean detect() {
-        return Terminal.terminal.isANSISupported()
+        boolean enabled = Terminal.terminal.isANSISupported()
+        
+        if (!enabled) {
+            def force = System.getProperty("${this.class.name}.force", 'false')
+            enabled = Boolean.parseBoolean(force)
+        }
+        
+        return enabled
     }
     
     static final boolean DETECTED = detect()

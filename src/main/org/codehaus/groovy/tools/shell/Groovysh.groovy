@@ -27,6 +27,7 @@ import org.codehaus.groovy.runtime.MethodClosure
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.control.CompilationFailedException
 
+import org.codehaus.groovy.tools.shell.util.HelpFormatter
 import org.codehaus.groovy.tools.shell.util.Logger
 import org.codehaus.groovy.tools.shell.util.AnsiUtils
 import org.codehaus.groovy.tools.shell.util.AnsiString
@@ -419,13 +420,13 @@ class Groovysh
 
         log.debug("Processing command-line args: $args")
 
-        def cli = new CliBuilder(usage : 'groovysh [options]', writer: io.out)
+        def cli = new CliBuilder(usage : 'groovysh [options]', formatter: new HelpFormatter(), writer: io.out)
 
         cli.h(longOpt: 'help', messages['cli.option.help.description'])
         cli.V(longOpt: 'version', messages['cli.option.version.description'])
         cli.v(longOpt: 'verbose', messages['cli.option.verbose.description'])
         cli.d(longOpt: 'debug', messages['cli.option.debug.description'])
-        cli.C(longOpt: 'nocolor', messages['cli.option.nocolor.description'])
+        cli.C(longOpt: 'color', args: 1, argName: 'FLAG', optionalArg: true, messages['cli.option.color.description'])
         
         //
         // TODO: Add --quiet
@@ -463,37 +464,43 @@ class Groovysh
         if (options.d) {
             Logger.debug = true
             
-            // debug implies verbose
+            // --debug implies verbose
             io.verbose = true
         }
         
-        if (options.C) {
-            AnsiUtils.ENABLED = false
-        }
+        // NOTE: --color handled below, so don't do it again here, but its defined above for --help
     }
 
     static void main(String[] args) {
         //
-        // HACK: Quickly check args for -d or --debug, need a better way, but for now this will have to do
+        // HACK: Need to process the --debug and --color flags here to properly configure things... :-(
         //
         
-        for (arg in args) {
-            if (arg in [ '-d', '--debug' ]) {
-                Logger.debug = true
-                break
+        try {
+            def cli = new CliBuilder()
+            cli.d(longOpt: 'debug', '')
+            cli.C(longOpt: 'color', args: 1, optionalArg: true, '')
+            
+            def cl = cli.parser.parse(cli.options, args, true)
+            
+            Logger.debug = cl.hasOption('d')
+            
+            if (cl.hasOption('C')) {
+                def value = cl.getOptionValue('C')
+                
+                if (value == null) {
+                    value = true // --color is the same as --color=true
+                }
+                else {
+                    value = Boolean.parseBoolean(value)
+                }
+                
+                AnsiUtils.ENABLED = value
             }
         }
+        catch (Throwable ignore) {}
         
-        //
-        // HACK: Quickly check args for --C or --nocolor early too :-(
-        //
-        
-        for (arg in args) {
-            if (arg in [ '-C', '--nocolor' ]) {
-                AnsiUtils.ENABLED = false
-                break
-            }
-        }
+        // Boot up the shell... :-)
         
         int code = new Groovysh().run(args)
 
