@@ -56,14 +56,6 @@ class Groovysh
     Groovysh(final ClassLoader classLoader, final Binding binding, final IO io) {
         super(io)
         
-        Logger.io = io
-        
-        //
-        // FIXME: This stuff gets run before the logging config from the command-line can get used, so we loose them...
-        //
-        //        See HACK in main() below...
-        //
-        
         assert classLoader
         assert binding
         
@@ -274,8 +266,8 @@ class Groovysh
             type = script.getClass()
 
             log.debug("Compiled script: $script")
-
-            if (isRunnableScript(type)) {
+            
+            if (type.declaredMethods.any { it.name == 'main' }) {
                 result = script.run()
             }
 
@@ -311,18 +303,6 @@ class Groovysh
         }
         
         return result
-    }
-
-    private boolean isRunnableScript(final Class type) {
-        assert type
-
-        for (m in type.declaredMethods) {
-            if (m.name == 'main') {
-                return true
-            }
-        }
-
-        return false
     }
 
     /**
@@ -474,6 +454,13 @@ class Groovysh
 
     static void main(String[] args) {
         //
+        // HACK: Setup the logging muck to use the proper bits...
+        //
+        
+        def io = new IO()
+        Logger.io = io
+        
+        //
         // HACK: Need to process the --debug and --color flags here to properly configure things... :-(
         //
         
@@ -503,7 +490,7 @@ class Groovysh
         
         // Boot up the shell... :-)
         
-        int code = new Groovysh().run(args)
+        int code = new Groovysh(io).run(args)
 
         // Force the JVM to exit at this point, since shell could have created threads or
         // popped up Swing components that will cause the JVM to linger after we have been
