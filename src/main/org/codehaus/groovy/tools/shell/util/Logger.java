@@ -71,7 +71,13 @@ public final class Logger
     
     public void debug(final Object msg) throws Exception {
         if (debug) {
-            log(DEBUG, msg, null);
+            if (msg instanceof Throwable) {
+                Throwable cause = (Throwable) msg;
+                log(DEBUG, cause.getMessage(), cause);
+            }
+            else {
+                log(DEBUG, msg, null);
+            }
         }
     }
     

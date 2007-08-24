@@ -164,8 +164,7 @@ class Groovysh
                     io.err.println(messages.format('info.error', status.cause.message))
                 }
                 else {
-                    io.err.println(messages.format('info.error', status.cause))
-                    status.cause.printStackTrace(io.err)
+                    displayError(status.cause)
                 }
                 break
 
@@ -276,17 +275,16 @@ class Groovysh
                 }
             }
         }
+        /*
         catch (Throwable t) {
-            log.debug("Evaluation failed: $t", t)
-
             // Unroll invoker exceptions
             if (t instanceof InvokerInvocationException) {
                 t = t.cause
             }
-
-            io.err.println(messages.format('info.error', t))
-            t.printStackTrace(io.err)
+            
+            throw t
         }
+        */
         finally {
             def cache = interp.classLoader.classCache
             
@@ -335,6 +333,45 @@ class Groovysh
         }
     }
     
+    private void displayError(final Throwable cause) {
+        assert cause != null
+        
+        io.err.println("@|bold,red ERROR| ${cause.class.name}: @|bold,red ${cause.message}|")
+        
+        if (log.debug) {
+            // If we have debug enabled then skip the fancy bits below
+            log.debug(cause)
+        }
+        else if (io.verbose) {
+            def trace = cause.stackTrace
+            def buff = new StringBuffer()
+            
+            for (e in trace) {
+                buff << "        @|bold at| ${e.className}.${e.methodName} (@|bold "
+                
+                buff << (e.nativeMethod ? 'Native Method' : 
+                            (e.fileName != null && e.lineNumber != -1 ? "${e.fileName}:${e.lineNumber}" :
+                                (e.fileName != null ? e.fileName : 'Unknown Source')))
+                
+                buff << '|)'
+                
+                io.err.println(buff)
+                
+                buff.setLength(0) // Reset the buffer
+                
+                //
+                // FIXME: Need to make sure this doesn't eat up other muck...
+                //
+                
+                // Stop the trace once we find ourself
+                if (e.className == this.class.name && e.methodName == 'evaluate') {
+                    io.err.println('        @|bold ...|')
+                    break
+                }
+            }
+        }
+    }
+    
     int run(final String[] args) {
         def code
         
@@ -357,8 +394,13 @@ class Groovysh
                 
                 // Setup the interactive runner
                 runner = new InteractiveShellRunner(this, this.&renderPrompt as Closure)
+                
+                // Setup the history
                 runner.history = history = new History()
                 runner.historyFile = new File(userStateDirectory, 'groovysh.history')
+                
+                // Setup the error handler
+                runner.errorHandler = this.&displayError
                 
                 //
                 // TODO: See if we want to add any more language specific completions, like for println for example?

@@ -31,22 +31,26 @@ abstract class ShellRunner
     
     final Shell shell
     
-    final IO io
+    boolean running = false
     
     boolean breakOnNull = true
+    
+    Closure errorHandler = { e ->
+        log.debug(e)
+        
+        running = false
+    }
     
     ShellRunner(final Shell shell) {
         assert shell
         
         this.shell = shell
-        
-        this.io = shell.io
     }
     
     void run() {
         log.debug('Running')
         
-        def running = true
+        running = true
         
         while (running) {
             try {
@@ -56,19 +60,11 @@ abstract class ShellRunner
                 throw n
             }
             catch (Throwable t) {
-                //
-                // FIXME: Should not be debug here... ?
-                //
+                log.debug("Work failed: $t")
                 
-                log.debug("Work failed: $t", t)
-                
-                //
-                // TODO: Need to deal with this better...
-                //
-                
-                io.err.println("ERROR: $t")
-                
-                // t.printStackTrace(io.err)
+                if (errorHandler) {
+                    errorHandler.call(t)
+                }
             }
         }
         

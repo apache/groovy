@@ -91,13 +91,9 @@ class Shell
                 log.debug("Result: $result")
             }
             catch (CommandException e) {
-                log.debug("Error: $e")
+                log.debug("$e", e.cause)
                 
-                //
-                // TODO: Add hook to easily augment this
-                //
-                
-                io.err.println(e.message)
+                io.err.println("@|bold,red ERROR:| $e.message")
             }
         }
         
