@@ -27,10 +27,9 @@ import org.codehaus.groovy.runtime.MethodClosure
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.control.CompilationFailedException
 
+import org.codehaus.groovy.tools.shell.util.ANSI
 import org.codehaus.groovy.tools.shell.util.HelpFormatter
 import org.codehaus.groovy.tools.shell.util.Logger
-import org.codehaus.groovy.tools.shell.util.AnsiUtils
-import org.codehaus.groovy.tools.shell.util.AnsiString
 import org.codehaus.groovy.tools.shell.util.XmlCommandRegistrar as CommandRegistrar
 
 /**
@@ -113,10 +112,12 @@ class Groovysh
         return interp.context['_']
     }
     
+    private ANSI.Renderer prompt = new ANSI.Renderer()
+    
     private String renderPrompt() {
         def lineNum = formatLineNumber(buffers.current().size())
         
-        return AnsiString.render("@|bold groovy:|(${buffers.selected})@|bold :|${lineNum}@|bold >| ")
+        return prompt.render("@|bold groovy:|(${buffers.selected})@|bold :|${lineNum}@|bold >| ")
     }
     
     protected Object executeCommand(final String line) {
@@ -359,7 +360,7 @@ class Groovysh
             processCommandLine(args)
             
             // Add a hook to display some status when shutting down...
-            addShutdownHook({
+            addShutdownHook {
                 if (code == null) {
                     //
                     // FIXME: We need to configure JLine to catch CTRL-C for us... if that is possible
@@ -373,7 +374,7 @@ class Groovysh
                     
                     io.flush()
                 }
-            })
+            }
             
             // Display the welcome banner
             io.out.println(messages.format('startup_banner.0', InvokerHelper.version, System.properties['java.vm.version']))
@@ -492,13 +493,13 @@ class Groovysh
                     value = true // --color is the same as --color=true
                 }
                 else {
-                    value = Boolean.parseBoolean(value)
+                    value = Boolean.valueOf(value).booleanValue(); // For JDK 1.4 compat
                 }
                 
-                AnsiUtils.ENABLED = value
+                ANSI.enabled = value;
             }
         }
-        catch (Throwable ignore) {}
+        catch (org.apache.commons.cli.ParseException ignore) {}
         
         // Boot up the shell... :-)
         
