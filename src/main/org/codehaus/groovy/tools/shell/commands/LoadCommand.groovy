@@ -62,7 +62,7 @@ class LoadCommand
                     fail("File not found: $file") // TODO: i18n
                 }
                 
-                url = file.toURL()
+                url = file.toURI().toURL()
             }
 
             if (io.verbose) {
