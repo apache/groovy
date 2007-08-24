@@ -57,10 +57,15 @@ class AnsiUtils
     private static boolean detect() {
         boolean enabled = Terminal.terminal.isANSISupported()
         
+        /*
+        FIXME: Urg!!! Groovy is really being annoying sometimes... this.class.name
+               in this context causes Java to puke up IncompatibleClassChangeErrors from getGroovyObjectProperty()
+        
         if (!enabled) {
             def force = System.getProperty("${this.class.name}.force", 'false')
             enabled = Boolean.parseBoolean(force)
         }
+        */
         
         return enabled
     }
