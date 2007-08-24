@@ -70,6 +70,12 @@ public class IO
         this.errorStream = errorStream;
         
         this.in = new InputStreamReader(inputStream);
+
+        //
+        // TODO: Once all user output is in i18n, then it would be more efficent to have the MessageSource
+        //       be ANSI-aware instead of this...
+        //
+        
         this.out = new RenderWriter(outputStream, true);
         this.err = new RenderWriter(errorStream, true);
     }

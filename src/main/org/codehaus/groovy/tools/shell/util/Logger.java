@@ -44,7 +44,7 @@ public final class Logger
             io = new IO();
         }
         
-        io.out.print("@|bold " + level + "|");
+        io.out.print(ANSI.Renderer.encode(level, ANSI.Code.BOLD));
         io.out.print(" [");
         io.out.print(name);
         io.out.print("] ");

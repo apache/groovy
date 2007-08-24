@@ -95,7 +95,7 @@ class HelpCommand
         
         io.out.println()
         io.out.println('For information about @|green Groovy|, visit:') // TODO: i18n
-        io.out.println('    @|cyan http://groovy.codehaus.org|')
+        io.out.println('    @|cyan http://groovy.codehaus.org| ') // FIXME: parsing freaks out if end tok is at the last char...
         io.out.println()
 
         // List the commands we know about

@@ -23,6 +23,7 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -59,90 +60,114 @@ public class ANSI
     public static boolean enabled = DETECTED;
 
     //
-    // Codes
+    // Code
     //
 
-    public static interface Codes
+    public static class Code
     {
         //
         // NOTE: Some fields duplicated from jline.ANSIBuffer.ANSICodes to change access modifiers
         //
         
-        int OFF = 0;
-        int BOLD = 1;
-        int UNDERSCORE = 4;
-        int BLINK = 5;
-        int REVERSE = 7;
-        int CONCEALED = 8;
+        public static final int OFF = 0;
+        public static final int BOLD = 1;
+        public static final int UNDERSCORE = 4;
+        public static final int BLINK = 5;
+        public static final int REVERSE = 7;
+        public static final int CONCEALED = 8;
         
-        int FG_BLACK = 30;
-        int FG_RED = 31;
-        int FG_GREEN = 32;
-        int FG_YELLOW = 33;
-        int FG_BLUE = 34;
-        int FG_MAGENTA = 35;
-        int FG_CYAN = 36;
-        int FG_WHITE = 37;
+        public static final int FG_BLACK = 30;
+        public static final int FG_RED = 31;
+        public static final int FG_GREEN = 32;
+        public static final int FG_YELLOW = 33;
+        public static final int FG_BLUE = 34;
+        public static final int FG_MAGENTA = 35;
+        public static final int FG_CYAN = 36;
+        public static final int FG_WHITE = 37;
 
-        int BLACK = FG_BLACK;
-        int RED = FG_RED;
-        int GREEN = FG_GREEN;
-        int YELLOW = FG_YELLOW;
-        int BLUE = FG_BLUE;
-        int MAGENTA = FG_MAGENTA;
-        int CYAN = FG_CYAN;
-        int WHITE = FG_WHITE;
+        public static final int BLACK = FG_BLACK;
+        public static final int RED = FG_RED;
+        public static final int GREEN = FG_GREEN;
+        public static final int YELLOW = FG_YELLOW;
+        public static final int BLUE = FG_BLUE;
+        public static final int MAGENTA = FG_MAGENTA;
+        public static final int CYAN = FG_CYAN;
+        public static final int WHITE = FG_WHITE;
         
-        int BG_BLACK = 40;
-        int BG_RED = 41;
-        int BG_GREEN = 42;
-        int BG_YELLOW = 43;
-        int BG_BLUE = 44;
-        int BG_MAGENTA = 45;
-        int BG_CYAN = 46;
-        int BG_WHITE = 47;
-    }
+        public static final int BG_BLACK = 40;
+        public static final int BG_RED = 41;
+        public static final int BG_GREEN = 42;
+        public static final int BG_YELLOW = 43;
+        public static final int BG_BLUE = 44;
+        public static final int BG_MAGENTA = 45;
+        public static final int BG_CYAN = 46;
+        public static final int BG_WHITE = 47;
 
-    /** A map of the field name to the field values for fast lookups. */
-    private static final Map CODE_NAMES;
+        /** A map of code names to values. */
+        private static final Map NAMES_TO_CODES;
 
-    static {
-        // Initialize the map of ANSI code name to number values
-        
-        Field[] fields = Codes.class.getDeclaredFields();
-        Map map = new HashMap();
+        /** A map of codes to name. */
+        private static final Map CODES_TO_NAMES;
 
-        try {
-            for (int i=0; i<fields.length; i++) {
-                String name = fields[i].getName();
-                Number value = (Number) fields[i].get(Codes.class);
-                map.put(name, value);
+        static {
+            Field[] fields = Code.class.getDeclaredFields();
+            Map names = new HashMap(fields.length);
+            Map codes = new HashMap(fields.length);
+
+            try {
+                for (int i=0; i<fields.length; i++) {
+                    // Skip anything non-public, all public fields are codes
+                    int mods = fields[i].getModifiers();
+                    if (!Modifier.isPublic(mods)) {
+                        continue;
+                    }
+                    
+                    String name = fields[i].getName();
+                    Number code = (Number) fields[i].get(Code.class);
+                    
+                    names.put(name, code);
+                    codes.put(code, name);
+                }
             }
-        }
-        catch (IllegalAccessException e) {
-            // This should never happen
-            throw new Error(e);
-        }
+            catch (IllegalAccessException e) {
+                // This should never happen
+                throw new Error(e);
+            }
 
-        CODE_NAMES = map;
-    }
-
-    /**
-     * Returns the ANSI code for the given symbolic name.  Supported symbolic names are all defined as
-     * fields in {@link Codes} where the case is not significant.
-     */
-    public static int codeFor(final String name) {
-        assert name != null;
-
-        // All names in the map are upper-case
-        String tmp = name.toUpperCase();
-        Number code = (Number) CODE_NAMES.get(tmp);
-        
-        if (code == null) {
-            throw new IllegalArgumentException("Invalid ANSI code name: " + name);
+            NAMES_TO_CODES = names;
+            CODES_TO_NAMES = codes;
         }
 
-        return code.intValue();
+        /**
+         * Returns the ANSI code for the given symbolic name.  Supported symbolic names are all defined as
+         * fields in {@link org.codehaus.groovy.tools.shell.util.ANSI.Code} where the case is not significant.
+         */
+        public static int forName(final String name) throws IllegalArgumentException {
+            assert name != null;
+
+            // All names in the map are upper-case
+            String tmp = name.toUpperCase();
+            Number code = (Number) NAMES_TO_CODES.get(tmp);
+
+            if (code == null) {
+                throw new IllegalArgumentException("Invalid ANSI code name: " + name);
+            }
+
+            return code.intValue();
+        }
+
+        /**
+         * Returns the symbolic name for the given ANSI code.
+         */
+        public static String name(final int code) throws IllegalArgumentException {
+            String name = (String) CODES_TO_NAMES.get(new Integer(code));
+
+            if (name == null) {
+                throw new IllegalArgumentException("Invalid ANSI code: " + code);
+            }
+
+            return name;
+        }
     }
 
     //
@@ -194,7 +219,7 @@ public class ANSI
             assert text != null;
 
             if (enabled) {
-                buff.append(ANSICodes.attrib(code)).append(text).append(ANSICodes.attrib(Codes.OFF));
+                buff.append(ANSICodes.attrib(code)).append(text).append(ANSICodes.attrib(Code.OFF));
             }
             else {
                 buff.append(text);
@@ -204,7 +229,7 @@ public class ANSI
         }
 
         public Buffer attrib(final String text, final String codeName) {
-            return attrib(text, codeFor(codeName));
+            return attrib(text, Code.forName(codeName));
         }
     }
 
@@ -270,13 +295,13 @@ public class ANSI
             String text = input.substring(i + 1, input.length());
 
             for (int j=0; j<codes.length; j++) {
-                int code = codeFor(codes[j]);
+                int code = Code.forName(codes[j]);
                 buff.attrib(code);
             }
 
             buff.append(text);
 
-            buff.attrib(Codes.OFF);
+            buff.attrib(Code.OFF);
         }
 
         //
@@ -297,6 +322,15 @@ public class ANSI
 
         public static boolean test(final String text) {
             return text != null && text.indexOf(BEGIN_TOKEN) >= 0;
+        }
+
+        public static String encode(final String text, final int code) {
+            return new StringBuffer(BEGIN_TOKEN).
+                    append(Code.name(code)).
+                    append(CODE_TEXT_SEPARATOR).
+                    append(text).
+                    append(END_TOKEN).
+                    toString();
         }
     }
 
@@ -325,16 +359,16 @@ public class ANSI
             super(out, autoFlush);
         }
 
-        private String render(String text) {
+        private String render(final String text) {
             if (Renderer.test(text)) {
-                text = renderer.render(text);
+                return renderer.render(text);
             }
 
             return text;
         }
 
-        public void write(final String text) {
-            super.write(render(text));
+        public void write(final String s) {
+            super.write(render(s));
         }
     }
 }
