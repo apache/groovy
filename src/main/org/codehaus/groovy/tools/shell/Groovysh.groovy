@@ -20,6 +20,7 @@ import java.lang.reflect.Method
 
 import groovy.text.MessageSource
 
+import jline.Terminal
 import jline.History
 
 import org.codehaus.groovy.runtime.InvokerHelper
@@ -375,6 +376,9 @@ class Groovysh
     }
     
     int run(final String[] args) {
+        def term = Terminal.terminal
+        log.debug("Using terminal: $term")
+        
         def code
         
         try {
@@ -403,9 +407,16 @@ class Groovysh
                 
                 // Display the welcome banner
                 if (!io.quiet) {
+                    def width = term.terminalWidth
+                    
+                    // If we can't tell, or have something bogus then use a reasonable default
+                    if (width < 1) {
+                        width = 80
+                    }
+                    
                     io.out.println(messages.format('startup_banner.0', InvokerHelper.version, System.properties['java.vm.version']))
                     io.out.println(messages['startup_banner.1'])
-                    io.out.println('-' * (runner.reader.terminal.terminalWidth - 1)) // TODO: Check what the value is when its an unsupported terminal
+                    io.out.println('-' * (width - 1))
                 }
                 
                 // And let 'er rip... :-)
