@@ -63,4 +63,12 @@ class CommandException
         
         this.command = command
     }
+    
+    CommandException(final Command command, final String msg, final Throwable cause) {
+        super(msg, cause)
+        
+        assert command
+        
+        this.command = command
+    }
 }

@@ -29,6 +29,8 @@ abstract class ComplexCommandSupport
 {
     protected List<String> functions
     
+    protected String defaultFunction
+    
     ComplexCommandSupport(final Shell shell, final String name, final String shortcut) {
         super(shell, name, shortcut)
     }
@@ -45,7 +47,12 @@ abstract class ComplexCommandSupport
         assert args != null
         
         if (args.size() == 0) {
-            fail("Command '$name' requires at least one argument") // TODO: i18n
+            if (defaultFunction) {
+                args = [ defaultFunction ]
+            }
+            else {
+                fail("Command '$name' requires at least one argument")
+            }
         }
         
         return executeFunction(args)
@@ -56,7 +63,14 @@ abstract class ComplexCommandSupport
         
         assert functions
         
-        def fname = args.reverse().pop()
+        def fname = args[0]
+        
+        if (args.size() > 1) {
+            args = args[1..-1]
+        }
+        else {
+            args = []
+        }
         
         if (fname in functions) {
             def func = loadFunction(fname)

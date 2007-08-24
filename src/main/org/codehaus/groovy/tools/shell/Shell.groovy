@@ -104,11 +104,16 @@ class Shell
         return result
     }
     
+    Command register(final Command command) {
+        return registry << command
+    }
+    
     def leftShift(final String line) {
         return execute(line)
     }
     
+    
     def leftShift(final Command command) {
-        return registry << command
+        return register(command)
     }
 }

@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Iterator;
 import java.util.SortedSet;
 
+import groovy.lang.Closure;
+
 /**
  * Support for simple completors.
  *
@@ -37,10 +39,44 @@ public class SimpleCompletor
         this(new String[0]);
     }
     
+    public SimpleCompletor(final Closure loader) {
+        this();
+        
+        assert loader != null;
+        
+        Object obj = loader.call();
+        
+        List list = null;
+        
+        if (obj instanceof List) {
+            list = (List)obj;
+        }
+        
+        //
+        // TODO: Maybe handle arrays too?
+        //
+        
+        if (list == null) {
+            throw new IllegalStateException("The loader closure did not return a list of candicates; found: " + obj);
+        }
+
+        Iterator iter = list.iterator();
+
+        while (iter.hasNext()) {
+            add(String.valueOf(iter.next()));
+        }
+    }
+
     public void add(final String candidate) {
         addCandidateString(candidate);
     }
-    
+
+    public Object leftShift(final String s) {
+        add(s);
+        
+        return null;
+    }
+
     //
     // NOTE: Duplicated (and augumented) from JLine sources to make it call getCandidates() to make the list more dynamic
     //

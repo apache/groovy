@@ -20,6 +20,8 @@ import java.lang.reflect.Method
 
 import groovy.text.MessageSource
 
+import jline.History
+
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.InvokerInvocationException
 import org.codehaus.groovy.runtime.MethodClosure
@@ -43,15 +45,17 @@ class Groovysh
 {
     private static final String NEWLINE = System.properties['line.separator']
     
-    private final MessageSource messages = new MessageSource(this.class)
-    
-    private final InteractiveShellRunner runner
+    private static final MessageSource messages = new MessageSource(Groovysh.class)
     
     private final GroovyShell interp
     
     private final BufferManager buffers = new BufferManager()
 
     private final List imports = []
+    
+    private InteractiveShellRunner runner
+    
+    private History history
     
     Groovysh(final ClassLoader classLoader, final Binding binding, final IO io) {
         super(io)
@@ -61,17 +65,8 @@ class Groovysh
         
         interp = new GroovyShell(classLoader, binding)
         
-        //
-        // NOTE: Command registration must be done after the shell is initialized and before the runner is created
-        //
-        
         def registrar = new CommandRegistrar(this, classLoader)
         registrar.register(getClass().getResource('commands.xml'))
-        
-        Closure prompt = this.&renderPrompt
-        runner = new InteractiveShellRunner(this, prompt)
-        
-        log.debug('Initialized')
     }
 
     Groovysh(final Binding binding, final IO io) {
@@ -327,39 +322,24 @@ class Groovysh
             io.out.println(" ${lineNum}@|bold >| $line")
         }
     }
-
-    //
-    // Command-line Support
-    //
-
+    
+    private void loadUserScript(final String filename) {
+        assert filename
+        
+        def file = new File(userStateDirectory, filename)
+        
+        if (file.exists()) {
+            log.debug("Loading user-script: $file")
+            
+            execute("load ${file.toURL()}")
+        }
+    }
+    
     int run(final String[] args) {
         def code
         
         try {
-            // Configure from command-line
-            processCommandLine(args)
-            
-            // Add a hook to display some status when shutting down...
-            addShutdownHook {
-                if (code == null) {
-                    //
-                    // FIXME: We need to configure JLine to catch CTRL-C for us... if that is possible
-                    //
-                    
-                    // Give the user a warning when the JVM shutdown abnormally, normal shutdown
-                    // will set an exit code through the proper channels
-                    
-                    io.err.println()
-                    io.err.println('@|red WARNING:| Abnormal JVM shutdown detected')
-                    
-                    io.flush()
-                }
-            }
-            
-            // Display the welcome banner
-            io.out.println(messages.format('startup_banner.0', InvokerHelper.version, System.properties['java.vm.version']))
-            io.out.println(messages['startup_banner.1'])
-            io.out.println('-' * (runner.reader.terminal.terminalWidth - 1)) // TODO: Check what the value is when its an unsupported terminal
+            loadUserScript('groovysh.profile')
             
             // Optionally load a user-specific rc file
             def file = new File(userStateDirectory, 'groovysh_rc')
@@ -368,8 +348,32 @@ class Groovysh
                 execute("load ${file.toURL()}")
             }
             
-            // Start the interactive shell runner
-            runner.run()
+            if (args != null && args.length > 0) {
+                // Run the given commands
+                execute(args.join(' '))
+            }
+            else {
+                loadUserScript('groovysh.rc')
+                
+                // Setup the interactive runner
+                runner = new InteractiveShellRunner(this, this.&renderPrompt as Closure)
+                runner.history = history = new History()
+                runner.historyFile = new File(userStateDirectory, 'groovysh.history')
+                
+                //
+                // TODO: See if we want to add any more language specific completions, like for println for example?
+                //
+                
+                // Display the welcome banner
+                if (!io.quiet) {
+                    io.out.println(messages.format('startup_banner.0', InvokerHelper.version, System.properties['java.vm.version']))
+                    io.out.println(messages['startup_banner.1'])
+                    io.out.println('-' * (runner.reader.terminal.terminalWidth - 1)) // TODO: Check what the value is when its an unsupported terminal
+                }
+                
+                // And let 'er rip... :-)
+                runner.run()
+            }
             
             code = 0
         }
@@ -384,113 +388,87 @@ class Groovysh
             
             code = 1
         }
-        finally {
-            io.flush()
-        }
         
-        assert code != null
+        assert code != null // This should never happen
         
         return code
     }
 
-    /**
-     * Process command-line arguments.
-     */
-    private void processCommandLine(final String[] args) {
-        assert args != null
-
-        log.debug("Processing command-line args: $args")
-
-        def cli = new CliBuilder(usage : 'groovysh [options]', formatter: new HelpFormatter(), writer: io.out)
+    static void main(final String[] args) {
+        def io = new IO()
+        Logger.io = io
+        
+        def cli = new CliBuilder(usage : 'groovysh [options] [...]', formatter: new HelpFormatter(), writer: io.out)
 
         cli.h(longOpt: 'help', messages['cli.option.help.description'])
         cli.V(longOpt: 'version', messages['cli.option.version.description'])
         cli.v(longOpt: 'verbose', messages['cli.option.verbose.description'])
+        cli.q(longOpt: 'quiet', messages['cli.option.quiet.description'])
         cli.d(longOpt: 'debug', messages['cli.option.debug.description'])
         cli.C(longOpt: 'color', args: 1, argName: 'FLAG', optionalArg: true, messages['cli.option.color.description'])
         
-        //
-        // TODO: Add --quiet
-        //
-        
         def options = cli.parse(args)
-        assert options
-
-        // Currently no arguments are allowed, so complain if there are any
-        def additional = options.arguments()
-        if (additional.size() != 0) {
-            cli.usage()
-            
-            io.err.println(messages.format('cli.info.unexpected_args', additional.join(' ')))
-            
-            throw new ExitNotification(1)
-        }
 
         if (options.h) {
             cli.usage()
-            
-            throw new ExitNotification(0)
+            System.exit(0)
         }
 
         if (options.V) {
             io.out.println(messages.format('cli.info.version', InvokerHelper.version))
-            
-            throw new ExitNotification(0)
+            System.exit(0)
         }
-
+        
         if (options.v) {
             io.verbose = true
         }
 
         if (options.d) {
             Logger.debug = true
-            
-            // --debug implies verbose
-            io.verbose = true
+            io.verbose = true // --debug implies --verbose
         }
         
-        // NOTE: --color handled below, so don't do it again here, but its defined above for --help
-    }
-
-    static void main(String[] args) {
-        //
-        // HACK: Setup the logging muck to use the proper bits...
-        //
+        if (options.q) {
+            io.quiet = true
+            io.verbose = false // --quiet implies !--verbose
+            Logger.debug = false // --quiet implies !--debug
+        }
         
-        def io = new IO()
-        Logger.io = io
-        
-        //
-        // HACK: Need to process the --debug and --color flags here to properly configure things... :-(
-        //
-        
-        try {
-            def cli = new CliBuilder()
-            cli.d(longOpt: 'debug', '')
-            cli.C(longOpt: 'color', args: 1, optionalArg: true, '')
+        if (options.hasOption('C')) {
+            def value = options.getOptionValue('C')
             
-            def cl = cli.parser.parse(cli.options, args, true)
-            
-            Logger.debug = cl.hasOption('d')
-            
-            if (cl.hasOption('C')) {
-                def value = cl.getOptionValue('C')
-                
-                if (value == null) {
-                    value = true // --color is the same as --color=true
-                }
-                else {
-                    value = Boolean.valueOf(value).booleanValue(); // For JDK 1.4 compat
-                }
-                
-                ANSI.enabled = value;
+            if (value == null) {
+                value = true // --color is the same as --color=true
             }
+            else {
+                value = Boolean.valueOf(value).booleanValue(); // For JDK 1.4 compat
+            }
+            
+            ANSI.enabled = value;
         }
-        catch (org.apache.commons.cli.ParseException ignore) {}
+        
+        def code
+        
+        // Add a hook to display some status when shutting down...
+        addShutdownHook {
+            //
+            // FIXME: We need to configure JLine to catch CTRL-C for us... if that is possible
+            //
+            
+            if (code == null) {
+                // Give the user a warning when the JVM shutdown abnormally, normal shutdown
+                // will set an exit code through the proper channels
+                
+                io.err.println()
+                io.err.println('@|red WARNING:| Abnormal JVM shutdown detected')
+            }
+            
+            io.flush()
+        }
         
         // Boot up the shell... :-)
         
-        int code = new Groovysh(io).run(args)
+        code = new Groovysh(io).run(options.arguments() as String[])
 
         // Force the JVM to exit at this point, since shell could have created threads or
         // popped up Swing components that will cause the JVM to linger after we have been

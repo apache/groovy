@@ -19,6 +19,10 @@ package org.codehaus.groovy.tools.shell
 import jline.ConsoleReader
 import jline.MultiCompletor
 import jline.History
+import jline.Completor
+import jline.MultiCompletor
+
+import org.codehaus.groovy.tools.shell.util.Logger
 
 /**
  * Support for running a {@link Shell} interactivly using the JLine library.
@@ -34,46 +38,39 @@ class InteractiveShellRunner
     
     final Closure prompt
     
+    final CommandsMultiCompletor completor
+    
     InteractiveShellRunner(final Shell shell, final Closure prompt) {
         super(shell)
         
         this.prompt = prompt
         
-        //
-        // NOTE: By pass shell.io.out, its now doing fancy ANSI stuffs...
-        //
-        
         this.reader = new ConsoleReader(shell.io.inputStream, new PrintWriter(shell.io.outputStream))
         
-        // Setup the history file if we can
-        def file = new File(shell.userStateDirectory, 'groovysh_history')
+        this.completor = new CommandsMultiCompletor()
+        
+        reader.addCompletor(completor)
+    }
+    
+    void run() {
+        for (command in shell.registry) {
+            completor << command
+        }
+        
+        // And then actually run
+        super.run()
+    }
+    
+    void setHistory(final History history) {
+        reader.history = history
+    }
+    
+    void setHistoryFile(final File file) {
         if (file.parentFile.exists()) {
             log.debug("Using history file: $file")
+            
             reader.history.historyFile = file
         }
-        
-        //
-        // TODO: Maybe hook up a reader.debug PrintWriter to help see what its doing?
-        //
-        
-        // Setup the completors
-        def completors = []
-        
-        //
-        // TODO: See if we want to add any more language specific completions, like for println for example?
-        //
-        //       Probably want to have the Groovysh instance install them
-        //
-        
-        for (command in shell.registry) {
-            def tmp = command.completor
-            
-            if (tmp) {
-                completors << tmp
-            }
-        }
-        
-        reader.addCompletor(new MultiCompletor(completors))
     }
     
     protected String readLine() {
@@ -81,3 +78,55 @@ class InteractiveShellRunner
     }
 }
 
+/**
+ * Completor for interactive shells.
+ *
+ * @version $Id$
+ * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
+ */
+class CommandsMultiCompletor
+    extends MultiCompletor
+{
+    protected final Logger log = Logger.create(this.class)
+    
+    List<Completor> list = []
+    
+    private boolean dirty = false
+    
+    def leftShift(final Command command) {
+        assert command
+        
+        //
+        // FIXME: Need to handle completor removal when things like aliases are rebound
+        //
+        
+        def c = command.completor
+        
+        if (c) {
+            list << c
+            
+            log.debug("Added completor[${list.size()}] for command: $command.name")
+            
+            dirty = true
+        }
+    }
+    
+    public int complete(final String buffer, final int pos, final List cand) {
+        assert buffer != null
+        
+        //
+        // FIXME: This is a bit of a hack, I'm too lazy to rewrite a more efficent 
+        //        completor impl that is more dynamic than the jline.MultiCompletor version
+        //        so just re-use it and reset the list as needed
+        //
+        
+        if (dirty) {
+            log.debug("Resetting the completor list")
+            
+            completors = list as Completor[]
+            dirty = false
+        }
+        
+        return super.complete(buffer, pos, cand)
+    }
+}

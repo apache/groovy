@@ -16,8 +16,10 @@
 
 package org.codehaus.groovy.tools.shell.commands
 
-import org.codehaus.groovy.tools.shell.CommandSupport
+import org.codehaus.groovy.tools.shell.ComplexCommandSupport
 import org.codehaus.groovy.tools.shell.Shell
+
+import org.codehaus.groovy.tools.shell.util.SimpleCompletor
 
 /**
  * The 'history' command.
@@ -26,29 +28,83 @@ import org.codehaus.groovy.tools.shell.Shell
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class HistoryCommand
-    extends CommandSupport
+    extends ComplexCommandSupport
 {
     HistoryCommand(final Shell shell) {
         super(shell, 'history', '\\H')
+        
+        this.functions = [ 'show', 'clear', 'flush', 'recall' ]
+        
+        this.defaultFunction = 'show'
     }
     
-    Object execute(final List args) {
-        assertNoArguments(args)
+    protected List createCompletors() {
+        def loader = {
+            def list = []
+            
+            functions.each { list << it }
+            
+            return list
+        }
         
-        def reader = shell.runner?.reader
-        
-        if (!reader) {
+        return [
+            new SimpleCompletor(loader),
+            null
+        ]
+    }
+    
+    Object execute(List args) {
+        if (!history) {
             fail("Shell does not appear to be interactive; Can not query history")
         }
         
-        //
-        // TODO: Add support to fetch, clear, load, etc.  Really need to pre-load the history too...
-        //
-        
-        reader.history.historyList.eachWithIndex { item, idx ->
-            idx = idx.toString().padLeft(3, ' ')
+        return super.execute(args)
+    }
+    
+    def do_show = {
+        history.historyList.eachWithIndex { item, i ->
+            i = i.toString().padLeft(3, ' ')
             
-            io.out.println(" $idx  $item")
+            io.out.println(" @|bold $i|  $item")
         }
+    }
+    
+    def do_clear = {
+        history.clear()
+        
+        if (io.verbose) {
+            io.out.println('History cleared')
+        }
+    }
+    
+    def do_flush = {
+        history.flushBuffer()
+        
+        if (io.verbose) {
+            io.out.println('History flushed')
+        }
+    }
+    
+    def do_recall = { args ->
+        def line
+        
+        if (args.size() != 1) {
+            fail("History recall requires a single history identifer")
+        }
+        
+        def id = args[0]
+        
+        try {
+            id = Integer.parseInt(id)
+            
+            line = history.historyList[id]
+        }
+        catch (Exception e) {
+            fail("Invalid history identifier: $id", e)
+        }
+        
+        log.debug("Recalling history item #$id: $line")
+        
+        return shell.execute(line)
     }
 }

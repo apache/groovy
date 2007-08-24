@@ -42,28 +42,31 @@ class AliasCommand
         String name = args[0]
         List target = args[1..-1]
         
-        def cmd = registry[name]
-        if (cmd) {
-            if (cmd instanceof AliasTargetProxyCommand) {
+        def command = registry[name]
+        
+        if (command) {
+            if (command instanceof AliasTargetProxyCommand) {
                 log.debug("Rebinding alias: $name")
                 
-                registry.remove(cmd)
+                registry.remove(command)
             }
             else {
-                fail("Can not rebind non-user aliased command: ${cmd.name}") // TODO: i18n
+                fail("Can not rebind non-user aliased command: ${command.name}") // TODO: i18n
             }
         }
         
         log.debug("Creating alias '$name' to: $target")
         
         // Register the command
-        cmd = registry << new AliasTargetProxyCommand(shell, name, target)
+        command = shell << new AliasTargetProxyCommand(shell, name, target)
         
-        // Add a completor if we can
-        def reader = shell.runner?.reader
+        //
+        // TODO: Should this be here... or should this be in the Shell's impl?
+        //
         
-        if (reader) {
-            reader.addCompletor(cmd.completor)
+        // Try to install the completor
+        if (shell.runner) {
+            shell.runner.completor << command
         }
     }
 }
@@ -99,6 +102,10 @@ class AliasTargetProxyCommand
         args = this.args + args
         
         log.debug("Executing with args: $args")
+        
+        //
+        // FIXME: Should go back through shell.execute() to allow aliases to groovy snips too
+        //
         
         return shell.executeCommand(args.join(' '))
     }

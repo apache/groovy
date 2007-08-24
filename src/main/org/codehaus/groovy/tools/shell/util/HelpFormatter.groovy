@@ -91,7 +91,7 @@ class HelpFormatter
         
         // And then render each option's prefix with its description
         opts.eachWithIndex { option, i ->
-            def buff = new StringBuffer(prefixes[i])
+            def buff = new StringBuffer(prefixes[i].toString())
             
             if (buff.size() < maxPrefix) {
                 buff << ' ' * (maxPrefix - buff.size())

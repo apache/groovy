@@ -21,6 +21,7 @@ import groovy.text.MessageSource
 import jline.Completor
 import jline.NullCompletor
 import jline.ArgumentCompletor
+import jline.History
 
 import org.codehaus.groovy.tools.shell.util.Logger
 import org.codehaus.groovy.tools.shell.util.SimpleCompletor
@@ -139,6 +140,10 @@ abstract class CommandSupport
         throw new CommandException(this, msg)
     }
     
+    protected void fail(final String msg, final Throwable cause) {
+        throw new CommandException(this, msg, cause)
+    }
+    
     protected void assertNoArguments(final List args) {
         assert args != null
         
@@ -169,6 +174,10 @@ abstract class CommandSupport
     
     protected Map getVariables() {
         return binding.variables
+    }
+    
+    protected History getHistory() {
+        return shell.history
     }
     
     protected GroovyClassLoader getClassLoader() {
