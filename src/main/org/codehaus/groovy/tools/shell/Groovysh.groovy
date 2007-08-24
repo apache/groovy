@@ -33,7 +33,7 @@ import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.tools.shell.util.ANSI
 import org.codehaus.groovy.tools.shell.util.HelpFormatter
 import org.codehaus.groovy.tools.shell.util.Logger
-import org.codehaus.groovy.tools.shell.util.XmlCommandRegistrar as CommandRegistrar
+import org.codehaus.groovy.tools.shell.util.XmlCommandRegistrar
 
 /**
  * An interactive shell for evaluating Groovy code from the command-line (aka. groovysh).
@@ -66,7 +66,7 @@ class Groovysh
         
         interp = new GroovyShell(classLoader, binding)
         
-        def registrar = new CommandRegistrar(this, classLoader)
+        def registrar = new XmlCommandRegistrar(this, classLoader)
         registrar.register(getClass().getResource('commands.xml'))
     }
 
