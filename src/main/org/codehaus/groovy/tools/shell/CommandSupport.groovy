@@ -51,11 +51,11 @@ abstract class CommandSupport
     /** The owning shell. */
     protected final Shell shell
 
-    /** Provides the command instance with the registry, for aliasing support. */
-    protected final CommandRegistry registry
-
     /** The I/O container for the command to spit stuff out. */
     protected final IO io
+
+    /** Provides the command instance with the registry, for aliasing support. */
+    protected CommandRegistry registry
     
     /** Standard aliases for the command. */
     final List<CommandAlias> aliases = []
