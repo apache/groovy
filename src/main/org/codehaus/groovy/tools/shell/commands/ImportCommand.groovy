@@ -59,9 +59,16 @@ class ImportCommand
         def type
         try {
             type = classLoader.parseClass(buff.join(NEWLINE))
-
+            
+            // No need to keep duplicates, but order may be important so remove the previous def, since
+            // the last defined import will win anyways
+            
+            if (imports.remove(buff[0])) {
+                log.debug("Removed duplicate import from list")
+            }
+            
             log.debug("Adding import: ${buff[0]}")
-
+            
             imports << buff[0]
         }
         catch (CompilationFailedException e) {
