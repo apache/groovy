@@ -190,7 +190,7 @@ class Groovysh
         Throwable error
 
         try {
-            parser = SourceUnit.create('groovysh-script', source, tolerance)
+            parser = SourceUnit.create('groovysh_parse', source, tolerance)
             parser.parse()
 
             log.debug('Parse complete')
@@ -239,6 +239,8 @@ class Groovysh
         }
     }
 
+    private static final String EVAL_SCRIPT_FILENAME = 'groovysh_evaluate'
+
     /**
      * Evaluate the given buffer.  The buffer is assumed to be complete.
      */
@@ -256,11 +258,11 @@ class Groovysh
         
         Class type
         try {
-            Script script = interp.parse(source)
+            Script script = interp.parse(source, EVAL_SCRIPT_FILENAME)
             type = script.getClass()
 
             log.debug("Compiled script: $script")
-            
+
             if (type.declaredMethods.any { it.name == 'main' }) {
                 result = script.run()
             }
@@ -281,7 +283,7 @@ class Groovysh
             if (t instanceof InvokerInvocationException) {
                 t = t.cause
             }
-            
+
             throw t
         }
         */
@@ -363,8 +365,8 @@ class Groovysh
                 // FIXME: Need to make sure this doesn't eat up other muck...
                 //
                 
-                // Stop the trace once we find ourself
-                if (e.className == this.class.name && e.methodName == 'evaluate') {
+                // Stop the trace once we find the root of the evaluated script
+                if (e.className == EVAL_SCRIPT_FILENAME && e.methodName == 'run') {
                     io.err.println('        @|bold ...|')
                     break
                 }
