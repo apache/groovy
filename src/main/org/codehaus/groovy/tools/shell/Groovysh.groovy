@@ -378,13 +378,6 @@ class Groovysh
         try {
             loadUserScript('groovysh.profile')
             
-            // Optionally load a user-specific rc file
-            def file = new File(userStateDirectory, 'groovysh_rc')
-            if (file.exists()) {
-                log.debug("Loading user-specific rc file: $file")
-                execute("load ${file.toURL()}")
-            }
-            
             if (args != null && args.length > 0) {
                 // Run the given commands
                 execute(args.join(' '))
