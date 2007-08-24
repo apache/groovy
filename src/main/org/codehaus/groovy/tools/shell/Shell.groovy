@@ -51,6 +51,19 @@ class Shell
     Command findCommand(final String line) {
         assert line
         
+        //
+        // TODO: Introduce something like 'boolean Command.accepts(String)' to ask
+        //       commands if they can take the line?
+        //
+        //       Would like to get '!66' to invoke the 'history recall' bits, but currently has
+        //       to be '! 66' for it to work with an alias like:
+        //
+        //           alias ! history recall
+        //
+        //       Or maybe allow commands to register specific syntax hacks into the registry?
+        //       then ask the registry for the command for a given line?
+        //
+        
         def args = parseLine(line)
         
         assert args.size() > 0
