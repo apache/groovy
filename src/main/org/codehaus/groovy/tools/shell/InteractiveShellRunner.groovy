@@ -56,7 +56,10 @@ class InteractiveShellRunner
         for (command in shell.registry) {
             completor << command
         }
-        
+
+        // Force things to become clean
+        completor.refresh()
+
         // And then actually run
         super.run()
     }
@@ -116,21 +119,25 @@ class CommandsMultiCompletor
             dirty = true
         }
     }
-    
-    public int complete(final String buffer, final int pos, final List cand) {
+
+    void refresh() {
+        log.debug("Refreshing the completor list")
+
+        completors = list as Completor[]
+        dirty = false
+    }
+
+    int complete(final String buffer, final int pos, final List cand) {
         assert buffer != null
         
         //
-        // FIXME: This is a bit of a hack, I'm too lazy to rewrite a more efficent 
+        // FIXME: This is a bit of a hack, I'm too lazy to rewrite a more efficent
         //        completor impl that is more dynamic than the jline.MultiCompletor version
         //        so just re-use it and reset the list as needed
         //
-        
+
         if (dirty) {
-            log.debug("Resetting the completor list")
-            
-            completors = list as Completor[]
-            dirty = false
+            refresh()
         }
         
         return super.complete(buffer, pos, cand)
