@@ -215,6 +215,7 @@ class WriterAppendTest extends GroovyTestCase {
 		
 		def fileIS = new FileInputStream(file)
 		fileIS.read(buf)
+		fileIS.close()
 		if (expected != new String(buf, charSet))
 		    println "EX: " + expected + "------" + new String(buf, charSet) + "\n----"
 		return expected == new String(buf, charSet)
