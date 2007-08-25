@@ -332,7 +332,7 @@ class Groovysh
         if (file.exists()) {
             log.debug("Loading user-script: $file")
             
-            execute("load ${file.toURI()}")
+            execute("load ${file.toURI().toURL()}")
         }
     }
     
