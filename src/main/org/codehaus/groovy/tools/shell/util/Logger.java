@@ -36,20 +36,38 @@ public final class Logger
         this.name = name;
     }
     
-    private void log(final String level, final Object msg, final Throwable cause) throws Exception {
+    private void log(final String level, Object msg, Throwable cause) throws Exception {
         assert level != null;
         assert msg != null;
         
         if (io == null) {
             io = new IO();
         }
+
+        // Allow the msg to be a Throwable, and handle it properly if no cause is given
+        if (cause == null) {
+            if (msg instanceof Throwable) {
+                cause = (Throwable) msg;
+                msg = cause.getMessage();
+            }
+        }
+
+        StringBuffer buff = new StringBuffer();
+
+        int color = ANSI.Code.BOLD;
+        if (WARN.equals(level) || ERROR.equals(level)) {
+            color = ANSI.Code.RED;
+        }
+
+        buff.append(ANSI.Renderer.encode(level, color));
         
-        io.out.print(ANSI.Renderer.encode(level, ANSI.Code.BOLD));
-        io.out.print(" [");
-        io.out.print(name);
-        io.out.print("] ");
-        io.out.println(msg);
-        
+        buff.append(" [");
+        buff.append(name);
+        buff.append("] ");
+        buff.append(msg);
+
+        io.out.println(buff);
+
         if (cause != null) {
             cause.printStackTrace(io.out);
         }
@@ -71,13 +89,7 @@ public final class Logger
     
     public void debug(final Object msg) throws Exception {
         if (debug) {
-            if (msg instanceof Throwable) {
-                Throwable cause = (Throwable) msg;
-                log(DEBUG, cause.getMessage(), cause);
-            }
-            else {
-                log(DEBUG, msg, null);
-            }
+            log(DEBUG, msg, null);
         }
     }
     
@@ -86,7 +98,27 @@ public final class Logger
             log(DEBUG, msg, cause);
         }
     }
+
+    private static final String WARN = "WARN";
+
+    public void warn(final Object msg) throws Exception {
+        log(WARN, msg, null);
+    }
+
+    public void warn(final Object msg, final Throwable cause) throws Exception {
+        log(WARN, msg, cause);
+    }
     
+    private static final String ERROR = "ERROR";
+
+    public void error(final Object msg) throws Exception {
+        log(ERROR, msg, null);
+    }
+
+    public void error(final Object msg, final Throwable cause) throws Exception {
+        log(ERROR, msg, cause);
+    }
+
     //
     // Factory access
     //
