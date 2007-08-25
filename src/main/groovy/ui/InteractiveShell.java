@@ -146,7 +146,7 @@ public class InteractiveShell
 
         // Puke if there were arguments, we don't support any right now
         if (_args.length != 0) {
-            System.err.println(MESSAGES.getMessage("cli.info.unexpected_args", DefaultGroovyMethods.join(_args, " ")));
+            System.err.println(MESSAGES.format("cli.info.unexpected_args", new Object[] { DefaultGroovyMethods.join(_args, " ") }));
             System.exit(1);
         }
 
@@ -170,7 +170,7 @@ public class InteractiveShell
         }
 
         if (line.hasOption('V')) {
-            writer.println(MESSAGES.getMessage("cli.info.version", InvokerHelper.getVersion()));
+            writer.println(MESSAGES.format("cli.info.version", new Object[] { InvokerHelper.getVersion() }));
             writer.flush();
             System.exit(0);
         }
@@ -265,7 +265,7 @@ public class InteractiveShell
      */
     public void run() {
         // Display the startup banner
-        out.println(MESSAGES.getMessage("startup_banner.0", InvokerHelper.getVersion(), System.getProperty("java.vm.version")));
+        out.println(MESSAGES.format("startup_banner.0", new Object[] { InvokerHelper.getVersion(), System.getProperty("java.vm.version") }));
         out.println(MESSAGES.getMessage("startup_banner.1"));
 
         while (true) {

@@ -142,28 +142,4 @@ public class MessageSource
     public Object getProperty(final String name) {
         return getMessage(name);
     }
-    
-    /**
-     * @see #format(String,Object[])
-     * @deprecated
-     */
-    public String getMessage(final String code, final Object[] args) {
-        return format(code, args);
-    }
-    
-    /**
-     * @see #format(String,Object[])
-     * @deprecated
-     */
-    public String getMessage(final String code, final Object arg1) {
-        return format(code, new Object[] { arg1 });
-    }
-    
-    /**
-     * @see #format(String,Object[])
-     * @deprecated
-     */
-    public String getMessage(final String code, final Object arg1, final Object arg2) {
-        return format(code, new Object[] { arg1, arg2 });
-    }
 }
