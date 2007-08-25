@@ -126,6 +126,9 @@ public class LoaderConfiguration {
             String propertyKey = str.substring(propertyIndexStart+2,propertyIndexEnd);
             String propertyValue = System.getProperty(propertyKey);
             // assume properties contain paths
+			if(propertyValue == null) {
+				throw new IllegalArgumentException("Variable $"+propertyKey+" in groovy-starter.conf references a non-existent System property! Try passing the property to the VM using -D"+propertyKey+"=myValue");
+			}
             propertyValue = getSlashyPath(propertyValue);
             result+=propertyValue;
             
