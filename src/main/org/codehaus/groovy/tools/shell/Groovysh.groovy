@@ -330,9 +330,16 @@ class Groovysh
         def file = new File(userStateDirectory, filename)
         
         if (file.exists()) {
-            log.debug("Loading user-script: $file")
+            def command = registry['load']
             
-            execute("load ${file.toURI().toURL()}")
+            if (command) {
+                log.debug("Loading user-script: $file")
+                
+                command.load(file.toURI().toURL())
+            }
+            else {
+                log.error("Unable to load user-script, missing 'load' command")
+            }
         }
     }
     

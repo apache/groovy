@@ -65,13 +65,19 @@ class LoadCommand
                 url = file.toURI().toURL()
             }
 
-            if (io.verbose) {
-                io.out.println("Loading: $url")
-            }
+            load(url)
+        }
+    }
 
-            url.eachLine {
-                shell << it
-            }
+    void load(final URL url) {
+        assert url != null
+
+        if (io.verbose) {
+            io.out.println("Loading: $url")
+        }
+
+        url.eachLine {
+            shell << it
         }
     }
 }
