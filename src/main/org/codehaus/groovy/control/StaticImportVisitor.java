@@ -115,11 +115,11 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         if (exp==null) return null;
         if (exp instanceof VariableExpression) {
             return transformVariableExpression((VariableExpression) exp);
-        } else if (exp instanceof MethodCallExpression) {
-            return transformMethodCallExpression((MethodCallExpression)exp);
-        } else {
-            return exp.transformExpression(this);
         }
+        if (exp instanceof MethodCallExpression) {
+            return transformMethodCallExpression((MethodCallExpression)exp);
+        }
+        return exp.transformExpression(this);
     }
 
     protected Expression transformVariableExpression(VariableExpression ve) {
@@ -138,6 +138,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         if (mce.isImplicitThis()) {
             Expression ret = findStaticMethodImportFromModule(method, args);
             if (ret != null) return ret;
+            return new MethodCallExpression(mce.getObjectExpression(), method, args);
         }
         return mce;
     }
