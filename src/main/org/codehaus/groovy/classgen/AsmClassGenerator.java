@@ -1384,7 +1384,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
         mv.visitTypeInsn(NEW, innerClassinternalName);
         mv.visitInsn(DUP);
-        if (isStaticMethod() || classNode.isStaticClass()) {
+        if (isStaticMethod() && !classNode.declaresInterface(ClassHelper.GENERATED_CLOSURE_Type.getName())) {
             visitClassExpression(new ClassExpression(classNode));
             visitClassExpression(new ClassExpression(getOutermostClass()));
         } else {
