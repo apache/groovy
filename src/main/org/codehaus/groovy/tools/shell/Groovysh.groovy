@@ -477,6 +477,7 @@ class Groovysh
         cli.q(longOpt: 'quiet', messages['cli.option.quiet.description'])
         cli.d(longOpt: 'debug', messages['cli.option.debug.description'])
         cli.C(longOpt: 'color', args: 1, argName: 'FLAG', optionalArg: true, messages['cli.option.color.description'])
+        cli.D(longOpt: 'define', args: 1, argName: 'NAME=VALUE', messages['cli.option.color.define'])
         
         def options = cli.parse(args)
 
@@ -489,7 +490,28 @@ class Groovysh
             io.out.println(messages.format('cli.info.version', InvokerHelper.version))
             System.exit(0)
         }
-        
+
+        if (options.hasOption('D')) {
+            def values = options.getOptionValues('D')
+
+            values.each {
+                def name
+                def value
+
+                if (it.indexOf('=') > 0) {
+                    def tmp = it.split('=', 2)
+                    name = tmp[0]
+                    value = tmp[1]
+                }
+                else {
+                    name = it
+                    value = true
+                }
+
+                System.setProperty(name, value)
+            }
+        }
+
         if (options.v) {
             io.verbose = true
         }
@@ -504,7 +526,7 @@ class Groovysh
             io.verbose = false // --quiet implies !--verbose
             Logger.debug = false // --quiet implies !--debug
         }
-        
+
         if (options.hasOption('C')) {
             def value = options.getOptionValue('C')
             
