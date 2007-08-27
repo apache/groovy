@@ -122,7 +122,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         }
     }
 
-    public MetaClass getMetaClass(final Class theClass) {
+    public MetaClass getMetaClass(Class theClass) {
         MetaClass answer=null;
         if (constantMetaClassCount!=0) answer = (MetaClass) constantMetaClasses.get(theClass);
         if (answer!=null) return answer;
@@ -130,15 +130,8 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         synchronized (theClass) {
             answer = (MetaClass) weakMetaClasses.get(theClass);
             if (answer!=null) return answer;
-            answer = (MetaClass) AccessController.doPrivileged( new PrivilegedAction()
-            {
-              public Object run()
-              {
-                MetaClass answer = getMetaClassFor(theClass);
+            answer = getMetaClassFor(theClass);
                 answer.initialize();
-                return answer;
-              }
-            });
             weakMetaClasses.put(theClass, answer);
             return answer;
         }
@@ -245,13 +238,15 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         }
     }
 
-  /**
-   * should be called inside PrivelegedAction
-   */
     public synchronized Reflector loadReflector(final Class theClass, List methods) {
         final String name = getReflectorName(theClass);
+        ClassLoader loader = (ClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
+            public Object run() {
         ClassLoader loader = theClass.getClassLoader();
         if (loader == null) loader = this.getClass().getClassLoader();
+                return loader;
+            }
+        });
         final ReflectorLoader rloader = getReflectorLoader(loader);
         Class ref = rloader.getLoadedClass(name);
         if (ref == null) {
@@ -262,7 +257,11 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
             ClassWriter cw = new ClassWriter(true);
             generator.generate(cw, name);
             final byte[] bytecode = cw.toByteArray();
-            ref = rloader.defineClass(name, bytecode, getClass().getProtectionDomain());
+            ref = (Class) AccessController.doPrivileged(new PrivilegedAction() {
+                public Object run() {
+                    return rloader.defineClass(name, bytecode, getClass().getProtectionDomain());
+        }
+            });
         }
         try {
           return (Reflector) ref.getDeclaredFields()[0].get(null);
@@ -297,5 +296,4 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     public List getStaticMethods() {
         return staticMethods;
     }
-
 }
