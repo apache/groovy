@@ -370,7 +370,7 @@ public class InvokerHelper {
             throw new AssertionError("Expression: " + expression);
         }
         else {
-            throw new AssertionError("" + message + ". Expression: " + expression);
+            throw new AssertionError(String.valueOf(message) + ". Expression: " + expression);
         }
     }
 

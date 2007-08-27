@@ -16,17 +16,15 @@
 
 package groovy.lang;
 
+import org.codehaus.groovy.runtime.*;
+import org.codehaus.groovy.reflection.ParameterTypes;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.logging.Logger;
-
-import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.runtime.InvokerInvocationException;
-import org.codehaus.groovy.runtime.Reflector;
-import org.codehaus.groovy.runtime.MetaClassHelper;
 
 /**
  * Represents a Method on a Java object a little like {@link java.lang.reflect.Method}
@@ -43,34 +41,35 @@ public class MetaMethod implements Cloneable {
     private Class callClass;
     private Class declaringClass;
     private Class interfaceClass;
-    private Class[] parameterTypes;
     private Class returnType;
     private int modifiers;
     private Reflector reflector;
     private int methodIndex;
     private Method method;
 
+    protected ParameterTypes paramTypes;
+
     public MetaMethod(String name, Class declaringClass, Class[] parameterTypes, Class returnType, int modifiers) {
         this.name = name;
         this.callClass = declaringClass;
         this.declaringClass = declaringClass;
-        this.parameterTypes = parameterTypes;
         this.returnType = returnType;
         this.modifiers = modifiers;
+        paramTypes = new ParameterTypes(parameterTypes);
     }
 
-    public MetaMethod(Method method) {
+    public MetaMethod(Method method, Class[] parameterTypes) {
         this(
             method.getName(),
             method.getDeclaringClass(),
-            method.getParameterTypes(),
+            parameterTypes,
             method.getReturnType(),
             method.getModifiers());
         this.method = method;
     }
 
     public MetaMethod(MetaMethod metaMethod) {
-        this(metaMethod.method);
+        this(metaMethod.method, metaMethod.getParameterTypes());
     }
 
     /**
@@ -136,10 +135,6 @@ public class MetaMethod implements Cloneable {
         return name;
     }
 
-    public Class[] getParameterTypes() {
-        return parameterTypes;
-    }
-
     public Class getReturnType() {
         return returnType;
     }
@@ -156,7 +151,7 @@ public class MetaMethod implements Cloneable {
         return name.equals(method.getName())
             && modifiers == method.getModifiers()
             && returnType.equals(method.getReturnType())
-            && equal(parameterTypes, method.getParameterTypes());
+            && equal(getParameterTypes(), method.getParameterTypes());
     }
 
     protected boolean equal(Class[] a, Class[] b) {
@@ -176,7 +171,7 @@ public class MetaMethod implements Cloneable {
             + "[name: "
             + name
             + " params: "
-            + InvokerHelper.toString(parameterTypes)
+            + InvokerHelper.toString(getParameterTypes())
             + " returns: "
             + returnType
             + " owner: "
@@ -217,7 +212,7 @@ public class MetaMethod implements Cloneable {
         return name.equals(method.getName())
             && compatibleModifiers(modifiers, method.getModifiers())
             && returnType.equals(method.getReturnType())
-            && equal(parameterTypes, method.getParameterTypes());
+            && equal(getParameterTypes(), method.getParameterTypes());
     }
 
     protected boolean compatibleModifiers(int modifiersA, int modifiersB) {
@@ -239,5 +234,17 @@ public class MetaMethod implements Cloneable {
     
     public Class getDeclaringClass() {
         return declaringClass;
+    }
+
+    public final Class [] getParameterTypes() {
+      return paramTypes.getParameterTypes();
+    }
+
+    public final ParameterTypes getParamTypes() {
+      return paramTypes;
+    }
+
+    public final boolean isArray (int index) {
+      return paramTypes.isArray(index);
     }
 }

@@ -1207,7 +1207,7 @@ public class DefaultGroovyMethods {
         for (Iterator outer = self.iterator(); outer.hasNext();) {
             Object rawListValue = outer.next();
             List listValue = (List) DefaultTypeTransformation.castToType(rawListValue, List.class);
-            if (combinations.size() == 0) {
+            if (combinations.isEmpty()) {
                 for (int i = 0; i < listValue.size(); i++) {
                     List l = new ArrayList();
                     l.add(listValue.get(i));
@@ -2450,7 +2450,7 @@ public class DefaultGroovyMethods {
         sublist.clear();
         if (value instanceof Collection) {
             Collection col = (Collection) value;
-            if (col.size() == 0) return;
+            if (col.isEmpty()) return;
             sublist.addAll(col);
         } else {
             sublist.add(value);
@@ -2476,7 +2476,7 @@ public class DefaultGroovyMethods {
         sublist.clear();
         if (value instanceof Collection) {
             Collection col = (Collection) value;
-            if (col.size() == 0) return;
+            if (col.isEmpty()) return;
             sublist.addAll(col);
         } else {
             sublist.add(value);
@@ -2979,7 +2979,7 @@ public class DefaultGroovyMethods {
      * @return a List as an intersection of both collections
      */
     public static List intersect(Collection left, Collection right) {
-        if (left.size() == 0)
+        if (left.isEmpty())
             return new ArrayList();
 
         // TODO optimise if same type?
@@ -3007,7 +3007,7 @@ public class DefaultGroovyMethods {
      */
     public static boolean disjoint(Collection left, Collection right) {
 
-        if (left.size() == 0 || right.size() == 0)
+        if (left.isEmpty() || right.isEmpty())
             return true;
 
         Collection pickFrom = new TreeSet(new NumberAwareComparator());
@@ -3032,8 +3032,8 @@ public class DefaultGroovyMethods {
                 return 1;
             }
             if (o1 instanceof Number && o2 instanceof Number) {
-                BigDecimal x1 = new BigDecimal("" + o1);
-                BigDecimal x2 = new BigDecimal("" + o2);
+                BigDecimal x1 = new BigDecimal(String.valueOf(o1));
+                BigDecimal x2 = new BigDecimal(String.valueOf(o2));
                 return x1.compareTo(x2);
             }
             if (o1.getClass() == o2.getClass() && o1 instanceof Comparable) {

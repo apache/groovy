@@ -16,6 +16,7 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.MetaMethod;
+import org.codehaus.groovy.reflection.ParameterTypes;
 
 /**
  * A MetaMethod implementation where the underlying method is really a static
@@ -32,7 +33,7 @@ public class NewStaticMetaMethod extends MetaMethod {
     private static final Class[] EMPTY_TYPE_ARRAY = {};
     
     private MetaMethod metaMethod;
-    private Class[] logicalParameterTypes;
+    private Class[] bytecodeParameterTypes;
     
     public NewStaticMetaMethod(MetaMethod metaMethod) {
         super(metaMethod);
@@ -47,14 +48,16 @@ public class NewStaticMetaMethod extends MetaMethod {
     }
     
     private void init() {
-        Class[] realParameterTypes = metaMethod.getParameterTypes();
-        int size = realParameterTypes!=null ? realParameterTypes.length : 0;
+        bytecodeParameterTypes = metaMethod.getParameterTypes();
+        int size = bytecodeParameterTypes !=null ? bytecodeParameterTypes.length : 0;
+        Class[] logicalParameterTypes;
         if (size <= 1) {
             logicalParameterTypes = EMPTY_TYPE_ARRAY;
         } else {
             logicalParameterTypes = new Class[--size];
-            System.arraycopy(realParameterTypes, 1, logicalParameterTypes, 0, size);
+            System.arraycopy(bytecodeParameterTypes, 1, logicalParameterTypes, 0, size);
         }
+        paramTypes = new ParameterTypes(logicalParameterTypes);
     }
 
     public Class getDeclaringClass() {
@@ -69,12 +72,8 @@ public class NewStaticMetaMethod extends MetaMethod {
         return super.getModifiers();
     }
 
-    public Class[] getParameterTypes() {
-        return logicalParameterTypes;
-    }
-
     public Class[] getBytecodeParameterTypes() {
-        return super.getParameterTypes();
+        return bytecodeParameterTypes;
     }
 
     public Object invoke(Object object, Object[] arguments) {

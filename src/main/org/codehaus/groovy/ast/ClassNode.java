@@ -353,7 +353,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
                 result.add(method);
             }
         }
-        if (result.size() == 0) {
+        if (result.isEmpty()) {
             return null;
         }
         else {

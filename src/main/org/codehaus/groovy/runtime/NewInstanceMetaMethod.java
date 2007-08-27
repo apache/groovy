@@ -19,6 +19,8 @@ import groovy.lang.MetaMethod;
 
 import java.lang.reflect.Modifier;
 
+import org.codehaus.groovy.reflection.ParameterTypes;
+
 /**
  * A MetaMethod implementation where the underlying method is really a static
  * helper method on some class but it appears to be an instance method on a class.
@@ -34,7 +36,7 @@ public class NewInstanceMetaMethod extends MetaMethod {
     private static final Class[] EMPTY_TYPE_ARRAY = {};
     
     private MetaMethod metaMethod;
-    private Class[] logicalParameterTypes;
+    private Class[] bytecodeParameterTypes ;
 
     
     public NewInstanceMetaMethod(MetaMethod metaMethod) {
@@ -50,14 +52,16 @@ public class NewInstanceMetaMethod extends MetaMethod {
     }
     
     private void init() {
-        Class[] realParameterTypes = metaMethod.getParameterTypes();
-        int size = realParameterTypes!=null ? realParameterTypes.length : 0;
+        bytecodeParameterTypes = metaMethod.getParameterTypes();
+        int size = bytecodeParameterTypes !=null ? bytecodeParameterTypes.length : 0;
+        Class[] logicalParameterTypes;
         if (size <= 1) {
             logicalParameterTypes = EMPTY_TYPE_ARRAY;
         } else {
             logicalParameterTypes = new Class[--size];
-            System.arraycopy(realParameterTypes, 1, logicalParameterTypes, 0, size);
+            System.arraycopy(bytecodeParameterTypes, 1, logicalParameterTypes, 0, size);
         }
+        paramTypes = new ParameterTypes(logicalParameterTypes);
     }
     
     public Class getDeclaringClass() {
@@ -73,12 +77,8 @@ public class NewInstanceMetaMethod extends MetaMethod {
         return super.getModifiers() ^ Modifier.STATIC;
     }
 
-    public Class[] getParameterTypes() {
-        return logicalParameterTypes;
-    }
-
     public Class[] getBytecodeParameterTypes() {
-        return super.getParameterTypes();
+        return bytecodeParameterTypes;
     }
 
     public Object invoke(Object object, Object[] arguments)  {

@@ -75,11 +75,21 @@ public class MethodCallExpression extends Expression {
         return arguments;
     }
 
+    public void setArguments(Expression arguments)
+    {
+      this.arguments = arguments;
+    }
+
     public Expression getMethod() {
         return method;
     }
-    
-    /**
+
+    public void setMethod(Expression method)
+    {
+      this.method = method;
+    }
+
+  /**
      * This method returns the method name as String if it is no dynamic
      * calculated method name, but a constant.
      */
@@ -87,6 +97,11 @@ public class MethodCallExpression extends Expression {
         if (! (method instanceof ConstantExpression)) return null;
         ConstantExpression constant = (ConstantExpression) method;
         return constant.getText();
+    }
+
+    public void setObjectExpression(Expression objectExpression)
+    {
+      this.objectExpression = objectExpression;
     }
 
     public Expression getObjectExpression() {
@@ -141,7 +156,7 @@ public class MethodCallExpression extends Expression {
             + "]";
     }
 
-    public void setMethod(MetaMethod mmeth) {
+    public void setMetaMethod(MetaMethod mmeth) {
         this.metaMethod = mmeth;
         super.setType(ClassHelper.make(mmeth.getReturnType()));
     }

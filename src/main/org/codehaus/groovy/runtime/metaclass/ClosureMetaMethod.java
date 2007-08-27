@@ -18,6 +18,7 @@ package org.codehaus.groovy.runtime.metaclass;
 import groovy.lang.Closure;
 import groovy.lang.ClosureInvokingMethod;
 import org.codehaus.groovy.runtime.NewInstanceMetaMethod;
+import org.codehaus.groovy.reflection.ParameterTypes;
 
 import java.lang.reflect.Modifier;
 
@@ -32,7 +33,6 @@ import java.lang.reflect.Modifier;
 public class ClosureMetaMethod extends NewInstanceMetaMethod implements ClosureInvokingMethod {
 
 	private Closure callable;
-	private Class[] paramTypes;
 	private Class declaringClass;
 
 	public ClosureMetaMethod(String name, Closure c) {
@@ -47,10 +47,11 @@ public class ClosureMetaMethod extends NewInstanceMetaMethod implements ClosureI
      */
     public ClosureMetaMethod(String name, Class declaringClass,Closure c) {
 		super(name, declaringClass, c.getParameterTypes() == null ? new Class[0] : c.getParameterTypes(), Object.class,Modifier.PUBLIC);
-		paramTypes = c.getParameterTypes();
-		if(paramTypes == null) {
-			paramTypes = new Class[0];
+        Class[] pt = c.getParameterTypes();
+		if(pt == null) {
+			pt = new Class[0];
 		}
+        paramTypes = new ParameterTypes(pt);
 		this.callable = c;
 
 		this.declaringClass = declaringClass;
@@ -74,14 +75,7 @@ public class ClosureMetaMethod extends NewInstanceMetaMethod implements ClosureI
 		return cloned.call(arguments);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.codehaus.groovy.runtime.NewInstanceMetaMethod#getParameterTypes()
-	 */
-	public Class[] getParameterTypes() {
-		return paramTypes;
-	}
-
-    /**
+  /**
      * Retrieves the closure that is invoked by this MetaMethod
      *
      * @return The closure

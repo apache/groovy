@@ -56,25 +56,25 @@ public abstract class MethodKey {
         if (this == that) {
             return true;
         }
-        else if (hashCode() == that.hashCode() && that instanceof MethodKey) {
+        else if (that instanceof MethodKey) {
             return equals((MethodKey) that);
         }
         return false;
     }
 
     public boolean equals(MethodKey that) {
-        int size = getParameterCount();
-        if (sender!=that.sender) return false;
-        if (isCallToSuper!=that.isCallToSuper) return false;
-        if (name.equals(that.name) && size == that.getParameterCount()) {
-            for (int i = 0; i < size; i++) {
-                if (!getParameterType(i).equals(that.getParameterType(i))) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        return false;
+      int size;
+      if (sender!=that.sender) return false;
+      if (isCallToSuper!=that.isCallToSuper) return false;
+      if (!name.equals(that.name)) return false;
+      if ((size = getParameterCount()) != that.getParameterCount()) return false;
+      
+      for (int i = 0; i < size; i++) {
+          if (getParameterType(i) != that.getParameterType(i)) {
+              return false;
+          }
+      }
+      return true;
     }
 
     public int hashCode() {

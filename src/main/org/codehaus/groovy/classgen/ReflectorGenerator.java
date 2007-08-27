@@ -16,11 +16,9 @@
 package org.codehaus.groovy.classgen;
 
 import groovy.lang.MetaMethod;
-import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.Label;
-import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -36,6 +34,16 @@ public class ReflectorGenerator implements Opcodes {
     private BytecodeHelper helper = new BytecodeHelper(null);
     private String classInternalName;
 
+    private static ArrayList m_names = new ArrayList();
+
+    private static String get_m_name (int i) {
+      while (i >= m_names.size()) {
+        m_names.add("m" + m_names.size());
+      }
+
+      return (String) m_names.get(i);
+    }
+
     public ReflectorGenerator(List methods) {
         this.methods = methods;
     }
@@ -46,11 +54,21 @@ public class ReflectorGenerator implements Opcodes {
         classInternalName = BytecodeHelper.getClassInternalName(className);
         cv.visit(ClassGenerator.asmJDKVersion, ACC_PUBLIC + ACC_SUPER, classInternalName, (String) null, "org/codehaus/groovy/runtime/Reflector", null);
 
-        MethodVisitor mv = cv.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
-        mv.visitVarInsn(ALOAD, 0);
-        mv.visitMethodInsn(INVOKESPECIAL, "org/codehaus/groovy/runtime/Reflector", "<init>", "()V");
-        mv.visitInsn(RETURN);
-        mv.visitMaxs(1, 1);
+        cv.visitField(ACC_PUBLIC + ACC_STATIC, "accessor", "Ljava/lang/Object;", null, null);
+
+        MethodVisitor mvInit = cv.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+        mvInit.visitVarInsn(ALOAD, 0);
+        mvInit.visitMethodInsn(INVOKESPECIAL, "org/codehaus/groovy/runtime/Reflector", "<init>", "()V");
+        mvInit.visitInsn(RETURN);
+        mvInit.visitMaxs(1, 1);
+
+        MethodVisitor mvClinit = cv.visitMethod(ACC_STATIC, "<clinit>", "()V", null, null);
+        mvClinit.visitTypeInsn(NEW, classInternalName);
+        mvClinit.visitInsn(DUP);
+        mvClinit.visitMethodInsn(INVOKESPECIAL, classInternalName, "<init>", "()V");
+        mvClinit.visitFieldInsn(PUTSTATIC, classInternalName, "accessor", "Ljava/lang/Object;");
+        mvClinit.visitInsn(RETURN);
+        mvClinit.visitMaxs(1, 1);
 
         generateInvokeMethod();
 
@@ -97,7 +115,7 @@ public class ReflectorGenerator implements Opcodes {
             mv.visitMethodInsn(
                     INVOKESPECIAL,
                     classInternalName,
-                    "m" + i,
+                    get_m_name(i),
                     "(Lgroovy/lang/MetaMethod;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
             mv.visitInsn(ARETURN);
         }
@@ -118,7 +136,7 @@ public class ReflectorGenerator implements Opcodes {
         for (int i = 0; i < methodCount; i++) {
             mv = cv.visitMethod(
                     ACC_PRIVATE,
-                    "m" + i,
+                    get_m_name(i),
                     "(Lgroovy/lang/MetaMethod;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;",
                     null,
                     null);

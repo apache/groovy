@@ -164,7 +164,7 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
         if (code == null) return null;
         if (code instanceof BlockStatement) {
             List list = ((BlockStatement) code).getStatements();
-            if (list.size()>0) return (Statement) list.get(0);
+            if (!list.isEmpty()) return (Statement) list.get(0);
             return null;
         }
         return code;

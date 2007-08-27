@@ -16,6 +16,7 @@
 package org.codehaus.groovy.runtime.metaclass;
 
 import groovy.lang.MetaMethod;
+import org.codehaus.groovy.reflection.CachedMethod;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -28,10 +29,15 @@ public class ReflectionMetaMethod extends MetaMethod {
     private Method method;
     boolean alreadySetAccessible;
 
-    public ReflectionMetaMethod(Method method) {
-        super(method);
-        this.method = method;
+    public ReflectionMetaMethod(CachedMethod method) {
+        super(method.method, method.getParameterTypes());
+        this.method = method.method;
     }
+
+  public ReflectionMetaMethod(Method method, Class [] pt) {
+      super(method, pt);
+      this.method = method;
+  }
 
     public Object invoke(Object object, Object[] arguments) {
     	if ( !alreadySetAccessible ) {

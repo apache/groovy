@@ -16,29 +16,20 @@
 
 package org.codehaus.groovy.runtime;
 
-import groovy.lang.Closure;
-import groovy.lang.GString;
-import groovy.lang.GroovyRuntimeException;
-import groovy.lang.MetaMethod;
+import groovy.lang.*;
+import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.reflection.ReflectionCache;
+import org.codehaus.groovy.reflection.ParameterTypes;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
+import org.codehaus.groovy.runtime.wrappers.Wrapper;
 
-import java.lang.reflect.Array;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import java.lang.reflect.*;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.runtime.InvokerInvocationException;
-import org.codehaus.groovy.runtime.MethodClosure;
-import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
-import org.codehaus.groovy.runtime.wrappers.Wrapper;
 
 /**
  * @author John Wilson
@@ -203,38 +194,8 @@ public class MetaClassHelper {
         }
         return objArray;
     }
-    
-    protected static Class autoboxType(Class type) {
-        if (type.isPrimitive()) {
-            if (type == int.class) {
-                return Integer.class;
-            }
-            else if (type == double.class) {
-                return Double.class;
-            }
-            else if (type == long.class) {
-                return Long.class;
-            }
-            else if (type == boolean.class) {
-                return Boolean.class;
-            }
-            else if (type == float.class) {
-                return Float.class;
-            }
-            else if (type == char.class) {
-                return Character.class;
-            }
-            else if (type == byte.class) {
-                return Byte.class;
-            }
-            else if (type == short.class) {
-                return Short.class;
-            }
-        }
-        return type;
-    }
-    
-    private static Class[] primitives = {
+
+  private static Class[] primitives = {
         byte.class, Byte.class, short.class, Short.class, 
         int.class, Integer.class, long.class, Long.class, 
         BigInteger.class, float.class, Float.class, 
@@ -308,7 +269,7 @@ public class MetaClassHelper {
                 
                 // add one to dist to be sure interfaces are prefered
                 objectDistance += primitives.length+1;
-                Class clazz = autoboxType(arguments[i]);
+                Class clazz = ReflectionCache.autoboxType(arguments[i]);
                 while (clazz!=null) {
                     if (clazz==parameters[i]) break;
                     if (clazz==GString.class && parameters[i]==String.class) {
@@ -353,11 +314,12 @@ public class MetaClassHelper {
         Object vargsMethod = null;
         for (Iterator iter = methods.iterator(); iter.hasNext();) {
             Object method = iter.next();
-            Class[] paramTypes = getParameterTypes(method);
+          final ParameterTypes pt = getParameterTypes(method);
+          Class[] paramTypes = pt.getParameterTypes();
             int paramLength = paramTypes.length;
             if (paramLength == 0) {
                 return method;
-            } else if (paramLength==1 && isVargsMethod(paramTypes,EMPTY_ARRAY)) {
+            } else if (paramLength==1 && isVargsMethod(pt,EMPTY_ARRAY)) {
                 vargsMethod = method;
             }
         }
@@ -376,7 +338,8 @@ public class MetaClassHelper {
         Object answer = null;
         for (Iterator iter = methods.iterator(); iter.hasNext();) {
             Object method = iter.next();
-            Class[] paramTypes = getParameterTypes(method);
+          final ParameterTypes pt = getParameterTypes(method);
+          Class[] paramTypes = pt.getParameterTypes();
             int paramLength = paramTypes.length;
             if (paramLength==0 || paramLength > 2) continue;
 
@@ -384,7 +347,7 @@ public class MetaClassHelper {
             if (theType.isPrimitive()) continue;
             
             if (paramLength==2) {
-                if (!isVargsMethod(paramTypes, ARRAY_WITH_NULL)) continue;
+                if (!isVargsMethod(pt, ARRAY_WITH_NULL)) continue;
                 if (closestClass == theType) {
                     if (closestVargsClass == null) continue;
                     Class newVargsClass = paramTypes[1];
@@ -558,7 +521,7 @@ public class MetaClassHelper {
         if (log.isLoggable(Level.FINER)){
             logMethodCall(constructor.getDeclaringClass(), constructor.getName(), argumentArray);
         }
-        argumentArray = coerceArgumentsToClasses(argumentArray,constructor.getParameterTypes());
+        argumentArray = coerceArgumentsToClasses(argumentArray,new ParameterTypes(constructor.getParameterTypes()));
         try {
             return constructor.newInstance(argumentArray);
         } catch (InvocationTargetException e) {
@@ -583,16 +546,17 @@ public class MetaClassHelper {
                 setReason?e:null);
     }
 
-    public static Object[] coerceArgumentsToClasses(Object[] argumentArray, Class[] paramTypes) {
-        // correct argumentArray's length
+    public static Object[] coerceArgumentsToClasses(Object[] argumentArray, ParameterTypes pt) {
+      Class paramTypes [] = pt.getParameterTypes();
+      // correct argumentArray's length
         if (argumentArray == null) {
             argumentArray = EMPTY_ARRAY;
         } else if (paramTypes.length == 1 && argumentArray.length == 0) {
-            if (isVargsMethod(paramTypes,argumentArray))
+            if (isVargsMethod(pt,argumentArray))
                 argumentArray = new Object[]{Array.newInstance(paramTypes[0].getComponentType(),0)};
             else
                 argumentArray = ARRAY_WITH_NULL;
-        } else if (isVargsMethod(paramTypes,argumentArray)) {
+        } else if (isVargsMethod(pt,argumentArray)) {
             argumentArray = fitToVargs(argumentArray, paramTypes);
         }
         
@@ -601,7 +565,7 @@ public class MetaClassHelper {
             Object argument = argumentArray[i];
             if (argument==null) continue;
             Class parameterType = paramTypes[i];
-            if (parameterType.isInstance(argument)) continue;
+            if (ReflectionCache.isAssignableFrom(parameterType,argument.getClass())) continue;
             
             argument = coerceGString(argument,parameterType);
             argument = coerceNumber(argument,parameterType);
@@ -654,7 +618,7 @@ public class MetaClassHelper {
      * @param paramTypes the types of the paramters the method takes
      */
     private static Object[] fitToVargs(Object[] argumentArray, Class[] paramTypes) {
-    	Class vargsClass = autoboxType(paramTypes[paramTypes.length-1].getComponentType());
+    	Class vargsClass = ReflectionCache.autoboxType(paramTypes[paramTypes.length-1].getComponentType());
     	
         if (argumentArray.length == paramTypes.length-1) {
             // the vargs argument is missing, so fill it with an empty array
@@ -709,7 +673,7 @@ public class MetaClassHelper {
     
     public static Object doMethodInvoke(Object object, MetaMethod method, Object[] argumentArray) {
         Class[] paramTypes = method.getParameterTypes();
-        argumentArray = coerceArgumentsToClasses(argumentArray,paramTypes);
+        argumentArray = coerceArgumentsToClasses(argumentArray,method.getParamTypes() );
         try {
             return method.invoke(object, argumentArray);
         } catch (IllegalArgumentException e) {
@@ -745,26 +709,25 @@ public class MetaClassHelper {
         return new MethodClosure(object, methodName);
     }
     
-    public static Class[] getParameterTypes(Object methodOrConstructor) {
+    public static ParameterTypes getParameterTypes(Object methodOrConstructor) {
         if (methodOrConstructor instanceof MetaMethod) {
-            MetaMethod method = (MetaMethod) methodOrConstructor;
-            return method.getParameterTypes();
+          return ((MetaMethod) methodOrConstructor).getParamTypes();
         }
         if (methodOrConstructor instanceof Method) {
             Method method = (Method) methodOrConstructor;
-            return method.getParameterTypes();
+            return new ParameterTypes(method.getParameterTypes());
         }
         if (methodOrConstructor instanceof Constructor) {
             Constructor constructor = (Constructor) methodOrConstructor;
-            return constructor.getParameterTypes();
+            return new ParameterTypes(constructor.getParameterTypes());
         }
         throw new IllegalArgumentException("Must be a Method or Constructor");
     }
    
     public static boolean isAssignableFrom(Class classToTransformTo, Class classToTransformFrom) {
         if (classToTransformFrom==null) return true;
-        classToTransformTo = autoboxType(classToTransformTo);
-        classToTransformFrom = autoboxType(classToTransformFrom);
+        classToTransformTo = ReflectionCache.autoboxType(classToTransformTo);
+        classToTransformFrom = ReflectionCache.autoboxType(classToTransformFrom);
         
         if (classToTransformTo == classToTransformFrom) {
         	return true;
@@ -834,7 +797,7 @@ public class MetaClassHelper {
             }
         }
 
-        return classToTransformTo.isAssignableFrom(classToTransformFrom);
+        return ReflectionCache.isAssignableFrom(classToTransformTo,classToTransformFrom);
     }
     
     public static boolean isGenericSetMethod(MetaMethod method) {
@@ -850,15 +813,16 @@ public class MetaClassHelper {
         return false;
     }
     
-    public static boolean isValidMethod(Class[] paramTypes, Class[] arguments, boolean includeCoerce) {
+    public static boolean isValidMethod(ParameterTypes pt, Class[] arguments, boolean includeCoerce) {
         if (arguments == null) {
             return true;
         }
         int size = arguments.length;
-        
-        if (   (size>=paramTypes.length || size==paramTypes.length-1)
+
+      Class[] paramTypes = pt.getParameterTypes();
+      if (   (size>=paramTypes.length || size==paramTypes.length-1)
                 && paramTypes.length>0
-                && paramTypes[paramTypes.length-1].isArray())
+                && pt.isArray(paramTypes.length-1))
         {
             // first check normal number of parameters
             for (int i = 0; i < paramTypes.length-1; i++) {
@@ -887,19 +851,19 @@ public class MetaClassHelper {
     }
     
     public static boolean isValidMethod(Object method, Class[] arguments, boolean includeCoerce) {
-        Class[] paramTypes = getParameterTypes(method);
-        return isValidMethod(paramTypes, arguments, includeCoerce);
+      return isValidMethod(getParameterTypes(method), arguments, includeCoerce);
     }
     
-    public static boolean isVargsMethod(Class[] paramTypes, Object[] arguments) {
+    public static boolean isVargsMethod(ParameterTypes pt, Object[] arguments) {
+        Class paramTypes [] = pt.getParameterTypes();
         if (paramTypes.length==0) return false;
-        if (!paramTypes[paramTypes.length-1].isArray()) return false;
+        if (!pt.isArray(paramTypes.length-1)) return false;
         // -1 because the varg part is optional
         if (paramTypes.length-1==arguments.length) return true;
         if (paramTypes.length-1>arguments.length) return false;
         if (arguments.length>paramTypes.length) return true;
         
-        // only case left is arguments.length==paramTypes.length
+        // only case left is arguments.length==parameterTypes.length
         Object last = arguments[arguments.length-1];
         if (last==null) return true;
         Class clazz = last.getClass();

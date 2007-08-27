@@ -18,6 +18,7 @@ package org.codehaus.groovy.runtime.metaclass;
 import groovy.lang.Closure;
 import groovy.lang.ClosureInvokingMethod;
 import org.codehaus.groovy.runtime.NewStaticMetaMethod;
+import org.codehaus.groovy.reflection.ParameterTypes;
 
 import java.lang.reflect.Modifier;
 
@@ -31,7 +32,6 @@ import java.lang.reflect.Modifier;
 public class ClosureStaticMetaMethod extends NewStaticMetaMethod implements ClosureInvokingMethod {
 
 	private Closure callable;
-	private Class[] paramTypes;
 	private Class declaringClass;
 
     /**
@@ -42,11 +42,12 @@ public class ClosureStaticMetaMethod extends NewStaticMetaMethod implements Clos
      */
     public ClosureStaticMetaMethod(String name, Class declaringClass, Closure c) {
 		super(name, declaringClass, c.getParameterTypes(), Object.class, Modifier.PUBLIC);
-		paramTypes = c.getParameterTypes();
-		if(paramTypes == null) {
-			paramTypes = new Class[0];
+		Class [] pt  = c.getParameterTypes();
+		if(pt == null) {
+			pt = new Class[0];
 		}
-		this.callable = c;
+        paramTypes = new ParameterTypes(pt);
+        this.callable = c;
 		this.declaringClass = declaringClass;
 
 	}
@@ -60,14 +61,7 @@ public class ClosureStaticMetaMethod extends NewStaticMetaMethod implements Clos
 		return cloned.call(arguments);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.codehaus.groovy.runtime.NewInstanceMetaMethod#getParameterTypes()
-	 */
-	public Class[] getParameterTypes() {
-		return paramTypes;
-	}
-
-	/* (non-Javadoc)
+    /* (non-Javadoc)
 	 * @see org.codehaus.groovy.runtime.NewStaticMetaMethod#getDeclaringClass()
 	 */
 	public Class getDeclaringClass() {
@@ -82,7 +76,4 @@ public class ClosureStaticMetaMethod extends NewStaticMetaMethod implements Clos
     public Closure getClosure() {
 		return this.callable;
 	}
-
-
-
 }

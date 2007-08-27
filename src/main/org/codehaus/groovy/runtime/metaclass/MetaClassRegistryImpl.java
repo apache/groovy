@@ -18,6 +18,7 @@ package org.codehaus.groovy.runtime.metaclass;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaClassRegistry;
+import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.classgen.ReflectorGenerator;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
@@ -112,9 +113,9 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
                 Class[] paramTypes = method.getParameterTypes();
                 if (paramTypes.length > 0) {
                     if (useInstanceMethods) {
-                        instanceMethods.add(method);
+                        instanceMethods.add(CachedMethod.find(method));
                     } else {
-                        staticMethods.add(method);
+                        staticMethods.add(CachedMethod.find(method));
                     }
                 }
             }
@@ -237,15 +238,13 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         }
     }
 
+  /**
+   * should be called inside PrivelegedAction
+   */
     public synchronized Reflector loadReflector(final Class theClass, List methods) {
         final String name = getReflectorName(theClass);
-        ClassLoader loader = (ClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
-            public Object run() {
-                ClassLoader loader = theClass.getClassLoader();
-                if (loader == null) loader = this.getClass().getClassLoader();
-                return loader;
-            }
-        });
+        ClassLoader loader = theClass.getClassLoader();
+        if (loader == null) loader = this.getClass().getClassLoader();
         final ReflectorLoader rloader = getReflectorLoader(loader);
         Class ref = rloader.getLoadedClass(name);
         if (ref == null) {
@@ -256,19 +255,15 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
             ClassWriter cw = new ClassWriter(true);
             generator.generate(cw, name);
             final byte[] bytecode = cw.toByteArray();
-            ref = (Class) AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
-                    return rloader.defineClass(name, bytecode, getClass().getProtectionDomain());
-                }
-            }); 
+            ref = rloader.defineClass(name, bytecode, getClass().getProtectionDomain());
         }
         try {
-            return (Reflector) ref.newInstance();
+          return (Reflector) ref.getDeclaredFields()[0].get(null);
         } catch (Exception e) {
             throw new GroovyRuntimeException("Could not generate and load the reflector for class: " + name + ". Reason: " + e, e);
-        }
     }
-    
+    }
+
     private String getReflectorName(Class theClass) {
         String className = theClass.getName();
         String packagePrefix = "gjdk.";
@@ -295,4 +290,5 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     public List getStaticMethods() {
         return staticMethods;
     }
+
 }

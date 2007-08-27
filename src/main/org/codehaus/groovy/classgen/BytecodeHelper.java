@@ -17,6 +17,7 @@ package org.codehaus.groovy.classgen;
 
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
+import org.codehaus.groovy.reflection.ReflectionCache;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -87,7 +88,7 @@ public class BytecodeHelper implements Opcodes {
      * Generates the bytecode to autobox the current value on the stack
      */
     public void box(Class type) {
-        if (type.isPrimitive() && type != void.class) {
+        if (ReflectionCache.getCachedClass(type).isPrimitive && type != void.class) {
             String returnString = "(" + getTypeDescription(type) + ")Ljava/lang/Object;";
             mv.visitMethodInsn(INVOKESTATIC, getClassInternalName(DefaultTypeTransformation.class.getName()), "box", returnString);
         }

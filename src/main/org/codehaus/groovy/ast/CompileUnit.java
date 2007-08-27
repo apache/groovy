@@ -166,7 +166,7 @@ public class CompileUnit {
     }
 
     public boolean hasClassNodeToCompile(){
-        return classesToCompile.size()!=0;
+        return !classesToCompile.isEmpty();
     }
     
     public Iterator iterateClassNodeToCompile(){

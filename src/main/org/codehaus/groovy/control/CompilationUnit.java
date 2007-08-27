@@ -607,7 +607,7 @@ public class CompilationUnit extends ProcessingUnit {
                     .append (name)
                     .append (" in ")
                     .append (su.getName());
-                    if (classesInSourceUnit.size()==0) {
+                    if (classesInSourceUnit.isEmpty()) {
                         message.append(", but the file seems not to contain any classes");
                     } else {
                         message.append(", but the file contains the classes: ");

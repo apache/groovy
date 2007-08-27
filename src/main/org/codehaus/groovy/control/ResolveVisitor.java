@@ -16,19 +16,26 @@
 package org.codehaus.groovy.control;
 
 import groovy.lang.GroovyClassLoader;
+import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.stmt.*;
+import org.codehaus.groovy.classgen.Verifier;
+import org.codehaus.groovy.control.messages.ExceptionMessage;
+import org.codehaus.groovy.syntax.Types;
+import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.stmt.*;
+import org.codehaus.groovy.classgen.Verifier;
+import org.codehaus.groovy.control.messages.ExceptionMessage;
+import org.codehaus.groovy.syntax.Types;
 
-import java.io.IOException;
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Field;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.net.URL;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.net.URLConnection;
-
+import java.util.*;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -81,7 +88,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private boolean isTopLevelProperty = true;
     private boolean inPropertyExpression = false;
     private boolean inClosure = false;
-    
+
     private Map genericParameterNames = new HashMap();
 
     public ResolveVisitor(CompilationUnit cu) {
@@ -92,15 +99,15 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         this.source = source;
         visitClass(node);
     }
-    
+
     protected void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {
         VariableScope oldScope = currentScope;
         currentScope = node.getVariableScope();
         Map oldPNames = genericParameterNames;
         genericParameterNames = new HashMap(genericParameterNames);
-        
+
         resolveGenericsHeader(node.getGenericsTypes());
-        
+
         Parameter[] paras = node.getParameters();
         for (int i=0; i<paras.length; i++) {
             Parameter p = paras[i];
@@ -114,9 +121,9 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             resolveOrFail(t,node);
         }
         resolveOrFail(node.getReturnType(),node);
-        
+
         super.visitConstructorOrMethod(node,isConstructor);
-        
+
         genericParameterNames = oldPNames;
         currentScope = oldScope;
     }
@@ -167,7 +174,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
         // test if vanilla name is current class name
         if (currentClass==type) return true;
-        
+
         if (genericParameterNames.get(type.getName())!=null) {
             GenericsType gt = (GenericsType) genericParameterNames.get(type.getName());
             type.setRedirect(gt.getType());
@@ -175,7 +182,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             type.setGenericsPlaceHolder(true);
             return true;
         }
-        
+
         if (currentClass.getNameWithoutPackage().equals(type.getName())) {
             type.setRedirect(currentClass);
             return true;
@@ -664,9 +671,9 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             }
         }
         Expression right = transform(be.getRightExpression());
-        Expression ret = new BinaryExpression(left,be.getOperation(),right);
-        ret.setSourcePosition(be);
-        return ret;
+        be.setLeftExpression(left);
+        be.setRightExpression(right);
+        return be;
     }
 
     protected Expression transformClosureExpression(ClosureExpression ce) {
@@ -681,11 +688,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         }
         Statement code = ce.getCode();
         if (code!=null) code.visit(this);
-    	ClosureExpression newCe= new ClosureExpression(paras,code);
-        newCe.setVariableScope(ce.getVariableScope());
-        newCe.setSourcePosition(ce);
         inClosure = oldInClosure;
-        return newCe;
+        return ce;
     }
 
     protected Expression transformConstructorCallExpression(ConstructorCallExpression cce){
@@ -750,14 +754,14 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 member.setValue(transform(memberValue));
             }
         }
-    }    
-    
+    }
+
     public void visitClass(ClassNode node) {
         ClassNode oldNode = currentClass;
         currentClass = node;
 
         resolveGenericsHeader(node.getGenericsTypes());
-        
+
         ModuleNode module = node.getModule();
         if (!module.hasImportsResolved()) {
            List l = module.getImports();
@@ -771,35 +775,35 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
            for (Iterator iter = importPackages.values().iterator(); iter.hasNext();) {
                ClassNode type = (ClassNode) iter.next();
                if (resolve(type,false,false,true)) continue;
-               addError("unable to resolve class "+type.getName(),type);               
+               addError("unable to resolve class "+type.getName(),type);
            }
            for (Iterator iter = module.getStaticImportAliases().values().iterator(); iter.hasNext();) {
                ClassNode type = (ClassNode) iter.next();
                if (resolve(type,true,true,true)) continue;
-               addError("unable to resolve class "+type.getName(),type);               
+               addError("unable to resolve class "+type.getName(),type);
            }
            for (Iterator iter = module.getStaticImportClasses().values().iterator(); iter.hasNext();) {
                ClassNode type = (ClassNode) iter.next();
                if (resolve(type,true,true,true)) continue;
-               addError("unable to resolve class "+type.getName(),type);               
+               addError("unable to resolve class "+type.getName(),type);
            }
            module.setImportsResolved(true);
         }
 
         ClassNode sn = node.getUnresolvedSuperClass();
         if (sn!=null) resolveOrFail(sn,node,true);
-        
+
         ClassNode[] interfaces = node.getInterfaces();
         for (int i=0; i<interfaces.length; i++) {
             resolveOrFail(interfaces[i],node,true);
-            
+
         }
-        
+
         super.visitClass(node);
-        
+
         currentClass = oldNode;
     }
-    
+
     public void visitCatchStatement(CatchStatement cs) {
         resolveOrFail(cs.getExceptionType(),cs);
         if (cs.getExceptionType()==ClassHelper.DYNAMIC_TYPE) {
@@ -807,7 +811,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         }
         super.visitCatchStatement(cs);
     }
-    
+
     public void visitForLoop(ForStatement forLoop) {
         resolveOrFail(forLoop.getVariableType(),forLoop);
         super.visitForLoop(forLoop);

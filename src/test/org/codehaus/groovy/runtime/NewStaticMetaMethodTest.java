@@ -94,6 +94,6 @@ public class NewStaticMetaMethodTest extends TestCase {
     }
 
     protected NewInstanceMetaMethod createNewMetaMethod(Method method) {
-        return new NewInstanceMetaMethod(new ReflectionMetaMethod(method));
+        return new NewInstanceMetaMethod(new ReflectionMetaMethod(method, method.getParameterTypes()));
     }
 }

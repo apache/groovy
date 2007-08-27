@@ -17,6 +17,8 @@ package org.codehaus.groovy.runtime.typehandling;
 
 import groovy.lang.GString;
 import groovy.lang.GroovyRuntimeException;
+import org.codehaus.groovy.reflection.ReflectionCache;
+import org.codehaus.groovy.runtime.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,13 +28,6 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.regex.Matcher;
-
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
-import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.runtime.InvokerInvocationException;
-import org.codehaus.groovy.runtime.IteratorClosureAdapter;
-import org.codehaus.groovy.runtime.MethodClosure;
-import org.codehaus.groovy.runtime.RegexSupport;
 
 public class DefaultTypeTransformation {
     
@@ -200,11 +195,11 @@ public class DefaultTypeTransformation {
         if (type == object.getClass()) return object;
         // TODO we should move these methods to groovy method, like g$asType() so that
         // we can use operator overloading to customize on a per-type basis
-        if (type.isArray()) {
+        if (ReflectionCache.isArray(type)) {
             return asArray(object, type);
 
         }
-        if (type.isInstance(object)) {
+        if (ReflectionCache.isAssignableFrom(type,object.getClass())) {
             return object;
         }
         if (Collection.class.isAssignableFrom(type)) {

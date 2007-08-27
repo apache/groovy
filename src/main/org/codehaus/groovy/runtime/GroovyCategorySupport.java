@@ -50,7 +50,7 @@ public class GroovyCategorySupport {
                 }
             }
         }
-        if (methodList.size() == 0) return null;
+        if (methodList.isEmpty()) return null;
         return methodList;
     }
 
@@ -76,7 +76,7 @@ public class GroovyCategorySupport {
                 }
             }
         }
-        if (methodList.size() == 0) return null;
+        if (methodList.isEmpty()) return null;
         return methodList;
     }
 
@@ -174,7 +174,7 @@ public class GroovyCategorySupport {
                     Class metaClass = paramTypes[0];
                     Map metaMethodsMap = getMetaMethods(properties, metaClass);
                     List methodList = getMethodList(metaMethodsMap, method.getName());
-                    MetaMethod mmethod = new CategoryMethod(new MetaMethod(method), metaClass);
+                    MetaMethod mmethod = new CategoryMethod(new MetaMethod(method, paramTypes), metaClass);
                     methodList.add(mmethod);
                     Collections.sort(methodList);
                 }

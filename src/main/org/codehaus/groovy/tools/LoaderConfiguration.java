@@ -251,7 +251,7 @@ public class LoaderConfiguration {
      * This can be used to construct a @see java.net.URLClassLoader
      */
     public URL[] getClassPathUrls() {
-        return (URL[]) classPath.toArray(new URL[]{});
+        return (URL[]) classPath.toArray(new URL[classPath.size()]);
     }
     
     /**
