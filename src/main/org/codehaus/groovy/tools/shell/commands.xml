@@ -46,6 +46,8 @@
     
     <command>org.codehaus.groovy.tools.shell.commands.AliasCommand</command>
     
+    <command>org.codehaus.groovy.tools.shell.commands.SetCommand</command>
+    
     <command>org.codehaus.groovy.tools.shell.commands.ShadowCommand</command>
 </commands>
 

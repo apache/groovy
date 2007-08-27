@@ -18,6 +18,8 @@ package org.codehaus.groovy.tools.shell
 
 import java.lang.reflect.Method
 
+import java.util.prefs.Preferences
+
 import jline.Terminal
 import jline.History
 
@@ -46,6 +48,8 @@ class Groovysh
     private static final String NEWLINE = System.properties['line.separator']
     
     private static final MessageSource messages = new MessageSource(Groovysh.class)
+    
+    private final Preferences prefs = Preferences.userNodeForPackage(Groovysh.class)
     
     private final GroovyShell interp
     
@@ -82,7 +86,9 @@ class Groovysh
     }
     
     private void setLastResult(final Object obj) {
-        if (io.verbose) {
+        boolean showLastResult = io.verbose || prefs.getBoolean('show-last-result', false)
+        
+        if (showLastResult) {
             io.out.println("@|bold ===>| $obj")
         }
 

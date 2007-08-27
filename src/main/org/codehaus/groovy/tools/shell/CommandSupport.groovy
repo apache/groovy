@@ -16,6 +16,8 @@
 
 package org.codehaus.groovy.tools.shell
 
+import java.util.prefs.Preferences
+
 import jline.Completor
 import jline.NullCompletor
 import jline.ArgumentCompletor
@@ -181,5 +183,9 @@ abstract class CommandSupport
     
     protected GroovyClassLoader getClassLoader() {
         return shell.interp.classLoader
+    }
+    
+    protected Preferences getPreferences() {
+        return shell.prefs
     }
 }
