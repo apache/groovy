@@ -18,6 +18,8 @@ package groovy.swing;
 import groovy.lang.Closure;
 import groovy.lang.GroovyRuntimeException;
 import groovy.model.DefaultTableModel;
+import org.codehaus.groovy.binding.FullBinding;
+import org.codehaus.groovy.binding.PropertyTargetBinding;
 import groovy.swing.factory.*;
 import groovy.swing.impl.ComponentFacade;
 import groovy.swing.impl.ContainerFacade;
@@ -272,7 +274,19 @@ public class SwingBuilder extends BuilderSupport {
             Map.Entry entry = (Map.Entry) iter.next();
             String property = entry.getKey().toString();
             Object value = entry.getValue();
-            InvokerHelper.setProperty(widget, property, value);
+            if (value instanceof FullBinding) {
+                FullBinding fb = (FullBinding) value;
+                PropertyTargetBinding ptb = new PropertyTargetBinding(widget, property);
+                fb.setTargetBinding(ptb);
+                fb.bind();
+                try {
+                    fb.forceUpdate();
+                } catch (Exception e) {
+                    // just eat it?
+                }
+            } else {
+                InvokerHelper.setProperty(widget, property, value);
+            }
         }
     }
 
@@ -295,6 +309,7 @@ public class SwingBuilder extends BuilderSupport {
         registerFactory("actions", new CollectionFactory());
         registerBeanFactory("buttonGroup", ButtonGroup.class);
         registerFactory("map", new MapFactory());
+        registerFactory("bind", new BindFactory());
 
         // ulimate pass through types
         registerFactory("widget", new WidgetFactory()); //TODO prohibit child content somehow
