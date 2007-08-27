@@ -79,6 +79,10 @@ public class BindFactory implements Factory {
             throw new RuntimeException(name + " does not have suffient properties to initialize");
         }
 
+        if (target != null) {
+            fb.bind();
+            fb.forceUpdate();
+        }
         return fb;
     }
 }
