@@ -16,13 +16,12 @@
 
 package org.codehaus.groovy.tools.shell
 
-import groovy.text.MessageSource
-
 import jline.Completor
 import jline.NullCompletor
 import jline.ArgumentCompletor
 import jline.History
 
+import org.codehaus.groovy.tools.shell.util.MessageSource
 import org.codehaus.groovy.tools.shell.util.Logger
 import org.codehaus.groovy.tools.shell.util.SimpleCompletor
 

@@ -26,8 +26,6 @@ import java.io.Writer;
 import java.util.HashMap;
 import java.util.Map;
 
-import groovy.text.MessageSource;
-
 import jline.ANSIBuffer.ANSICodes;
 import jline.Terminal;
 

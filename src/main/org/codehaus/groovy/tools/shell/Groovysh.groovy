@@ -18,8 +18,6 @@ package org.codehaus.groovy.tools.shell
 
 import java.lang.reflect.Method
 
-import groovy.text.MessageSource
-
 import jline.Terminal
 import jline.History
 
@@ -30,6 +28,7 @@ import org.codehaus.groovy.runtime.MethodClosure
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.control.CompilationFailedException
 
+import org.codehaus.groovy.tools.shell.util.MessageSource
 import org.codehaus.groovy.tools.shell.util.ANSI
 import org.codehaus.groovy.tools.shell.util.HelpFormatter
 import org.codehaus.groovy.tools.shell.util.Logger

@@ -19,7 +19,7 @@ package groovy.ui;
 import groovy.lang.Binding;
 import groovy.lang.Closure;
 import groovy.lang.GroovyShell;
-import groovy.text.MessageSource;
+import org.codehaus.groovy.tools.shell.util.MessageSource;
 
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.SourceUnit;

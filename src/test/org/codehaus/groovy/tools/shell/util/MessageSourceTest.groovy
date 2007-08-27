@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package groovy.text
+package org.codehaus.groovy.tools.shell.util
 
 /**
  * Unit tests for the {@link MessageSource} class.
