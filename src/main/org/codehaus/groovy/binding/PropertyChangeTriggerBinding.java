@@ -51,7 +51,7 @@ public class PropertyChangeTriggerBinding implements TriggerBinding {
 
         public void propertyChange(PropertyChangeEvent event) {
             if ((event == null) || event.getPropertyName().equals(propertyName)) {
-                target.updateTargetValue(source);
+                target.updateTargetValue(source.getSourceValueClosure().call());
             } 
         }
 
