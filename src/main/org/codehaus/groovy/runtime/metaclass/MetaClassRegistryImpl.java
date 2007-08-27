@@ -122,7 +122,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         }
     }
 
-    public MetaClass getMetaClass(Class theClass) {
+    public MetaClass getMetaClass(final Class theClass) {
         MetaClass answer=null;
         if (constantMetaClassCount!=0) answer = (MetaClass) constantMetaClasses.get(theClass);
         if (answer!=null) return answer;
@@ -130,8 +130,15 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         synchronized (theClass) {
             answer = (MetaClass) weakMetaClasses.get(theClass);
             if (answer!=null) return answer;
-            answer = getMetaClassFor(theClass);
-            answer.initialize();
+            answer = (MetaClass) AccessController.doPrivileged( new PrivilegedAction()
+            {
+              public Object run()
+              {
+                MetaClass answer = getMetaClassFor(theClass);
+                answer.initialize();
+                return answer;
+              }
+            });
             weakMetaClasses.put(theClass, answer);
             return answer;
         }
