@@ -295,9 +295,18 @@
             <name>Jason Dillon</name>
             <id>user57</id>
             <email>jason@planet57.com</email>
+            <organization></organization>
             <roles>
                 <role>Developer</role>
-                <role>Avid Crack Smoker</role>
+            </roles>
+        </developer>
+        <developer>
+            <name>Danno Ferrin</name>
+            <id>shemnon</id>
+            <email></email>
+            <organization></organization>
+            <roles>
+                <role>Developer</role>
             </roles>
         </developer>
     </developers>
@@ -389,6 +398,10 @@
         </contributor>
         <contributor>
             <name>Edwin Tellman</name>
+            <email></email>
+        </contributor>
+        <contributor>
+            <name>Evan A Slatis</name>
             <email></email>
         </contributor>
     </contributors>
