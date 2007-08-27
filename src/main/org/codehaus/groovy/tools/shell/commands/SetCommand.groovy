@@ -16,8 +16,6 @@
 
 package org.codehaus.groovy.tools.shell.commands
 
-import java.util.prefs.Preferences
-
 import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.Shell
 
@@ -37,10 +35,8 @@ class SetCommand
     Object execute(final List args) {
         assert args != null
         
-        def prefs = Preferences.userNodeForPackage(Shell.class)
-        
         if (args.size() == 0) {
-            def keys = prefs.keys()
+            def keys = preferences.keys()
             
             if (keys.size() == 0) {
                 io.out.println('No preferences are currently set')
@@ -49,20 +45,29 @@ class SetCommand
             else {
                 io.out.println('Preferences:')
                 keys.each {
-                    println("    $it=${prefs.get(it, null)}")
+                    def value = preferences.get(it, null)
+                    println("    $it=$value")
                 }
             }
+            return
         }
-        else if (args.size() != 2) {
-            fail("Command '$name' requires arguments: <name> <value>")
+        
+        if (args.size() > 2) {
+            fail("Command '$name' requires arguments: <name> [<value>]")
+        }
+        
+        def name = args[0]
+        def value
+        
+        if (args.size() == 1) {
+            value = true
         }
         else {
-            def name = args[0]
-            def value = args[1]
-            
-            log.debug("Setting preference: $name=$value")
-            
-            prefs.put(name, value)
+            value = args[1]
         }
+        
+        log.debug("Setting preference: $name=$value")
+        
+        preferences.put(name, String.valueOf(value))
     }
 }
