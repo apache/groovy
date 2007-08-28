@@ -15,15 +15,13 @@
  */
 package org.codehaus.groovy.binding;
 
-import groovy.lang.Closure;
-
 /**
  * @author <a href="mailto:shemnon@yahoo.com">Danno Ferrin</a>
- * @version $Revision: 7046 $
+ * @version $Revision$
  * @since Groovy 1.1
  */
 public interface SourceBinding {
 
-    Closure getSourceValueClosure();
+    Object getSourceValue();
 
 }

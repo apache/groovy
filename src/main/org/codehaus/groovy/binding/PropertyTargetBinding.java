@@ -19,7 +19,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
  * @author <a href="mailto:shemnon@yahoo.com">Danno Ferrin</a>
- * @version $Revision: 7046 $
+ * @version $Revision$
  * @since Groovy 1.1
  */
 public class PropertyTargetBinding implements TargetBinding {

@@ -27,7 +27,7 @@ import java.io.PrintStream;
  *
  * @version $Id$
  */
-class SystemOutputInterceptor extends FilterOutputStream {
+public class SystemOutputInterceptor extends FilterOutputStream {
 
     private Closure callback;
 

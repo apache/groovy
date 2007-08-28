@@ -15,9 +15,11 @@
  */
 package org.codehaus.groovy.binding;
 
+import groovy.lang.Closure;
+
 /**
  * @author <a href="mailto:shemnon@yahoo.com">Danno Ferrin</a>
- * @version $Revision: 7046 $
+ * @version $Revision$
  * @since Groovy 1.1
  */
 public interface FullBinding {
@@ -37,4 +39,11 @@ public interface FullBinding {
 
     public void setTargetBinding(TargetBinding target);
 
+    public void setValidator(Closure validator);
+
+    public Closure getValidator();
+
+    public void setConverter(Closure converter);
+
+    public Closure getConverter();
 }

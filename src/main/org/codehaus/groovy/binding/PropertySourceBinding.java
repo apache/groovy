@@ -15,28 +15,26 @@
  */
 package org.codehaus.groovy.binding;
 
-import groovy.lang.Closure;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
  * @author <a href="mailto:shemnon@yahoo.com">Danno Ferrin</a>
- * @version $Revision: 7046 $
+ * @version $Revision$
  * @since Groovy 1.1
  */
-public class PropertySourceBinding extends Closure implements SourceBinding {
+public class PropertySourceBinding implements SourceBinding {
 
     Object sourceBean;
     String propertyName;
 
-    public PropertySourceBinding(Object owner, Object sourceBean, String propertyName) {
-        super(owner);
+    public PropertySourceBinding(Object sourceBean, String propertyName) {
         this.sourceBean = sourceBean;
         this.propertyName = propertyName;
     }
 
 
-    public Closure getSourceValueClosure() {
-        return this;
+    public Object getSourceValue() {
+        return InvokerHelper.getPropertySafe(sourceBean, propertyName);
     }
 
     public Object getSourceBean() {
@@ -55,8 +53,4 @@ public class PropertySourceBinding extends Closure implements SourceBinding {
         this.propertyName = propertyName;
     }
 
-
-    public Object doCall() {
-        return InvokerHelper.getPropertySafe(sourceBean, propertyName);
-    }
 }

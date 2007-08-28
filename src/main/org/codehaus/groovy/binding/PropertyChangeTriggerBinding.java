@@ -23,7 +23,7 @@ import java.beans.PropertyChangeListener;
 
 /**
  * @author <a href="mailto:shemnon@yahoo.com">Danno Ferrin</a>
- * @version $Revision: 7046 $
+ * @version $Revision$
  * @since Groovy 1.1
  */
 public class PropertyChangeTriggerBinding implements TriggerBinding {
@@ -40,18 +40,16 @@ public class PropertyChangeTriggerBinding implements TriggerBinding {
         return new PropertyListener(source, target);
     }
 
-    class PropertyListener implements PropertyChangeListener, FullBinding {
-        SourceBinding source;
-        TargetBinding target;
+    class PropertyListener extends AbstractFullBinding implements PropertyChangeListener {
 
         PropertyListener(SourceBinding source, TargetBinding target) {
-            this.source = source;
-            this.target = target;
+            setSourceBinding(source);
+            setTargetBinding(target);
         }
 
         public void propertyChange(PropertyChangeEvent event) {
-            if ((event == null) || event.getPropertyName().equals(propertyName)) {
-                target.updateTargetValue(source.getSourceValueClosure().call());
+            if (event.getPropertyName().equals(propertyName)) {
+                forceUpdate();
             } 
         }
 
@@ -59,8 +57,11 @@ public class PropertyChangeTriggerBinding implements TriggerBinding {
             try {
                 InvokerHelper.invokeMethodSafe(bean, "addPropretyChangeListener", new Object[] {propertyName, this});
             } catch (MissingMethodException mme) {
-                InvokerHelper.invokeMethodSafe(bean, "addPropertyChangeListener", new Object[] {this});
-                //don't catch this MissingMethodException, we will throw it out in this case
+                try {
+                    InvokerHelper.invokeMethodSafe(bean, "addPropertyChangeListener", new Object[] {this});
+                } catch (MissingMethodException mme2) {
+                    throw new RuntimeException("Properties in beans of type" + bean.getClass().getName() + " are not observable in any capacity (no PropertyChangeListener support).");
+                }
             }
         }
 
@@ -74,7 +75,6 @@ public class PropertyChangeTriggerBinding implements TriggerBinding {
                 } catch (MissingMethodException mme2) {
                     mme2.printStackTrace();
                 }
-                //don't catch this MissingMethodException, we will throw it out in this case
             }
         }
 
@@ -83,24 +83,5 @@ public class PropertyChangeTriggerBinding implements TriggerBinding {
             bind();
         }
 
-        public void forceUpdate() {
-            propertyChange(null);
-        }
-
-        public SourceBinding getSourceBinding() {
-            return source;
-        }
-
-        public void setSourceBinding(SourceBinding source) {
-            this.source = source;
-        }
-
-        public TargetBinding getTargetBinding() {
-            return target;
-        }
-
-        public void setTargetBinding(TargetBinding target) {
-            this.target = target;
-        }
     }
 }

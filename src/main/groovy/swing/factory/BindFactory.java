@@ -17,22 +17,67 @@ package groovy.swing.factory;
 
 import groovy.lang.Closure;
 import groovy.swing.SwingBuilder;
+import groovy.swing.binding.AbstractButtonProperties;
+import groovy.swing.binding.JSliderProperties;
+import groovy.swing.binding.JTextComponentProperties;
 import org.codehaus.groovy.binding.ClosureSourceBinding;
 import org.codehaus.groovy.binding.EventTriggerBinding;
 import org.codehaus.groovy.binding.FullBinding;
 import org.codehaus.groovy.binding.PropertyChangeTriggerBinding;
 import org.codehaus.groovy.binding.PropertySourceBinding;
-import org.codehaus.groovy.binding.TargetBinding;
 import org.codehaus.groovy.binding.PropertyTargetBinding;
+import org.codehaus.groovy.binding.TargetBinding;
+import org.codehaus.groovy.binding.TriggerBinding;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
  * @author <a href="mailto:shemnon@yahoo.com">Danno Ferrin</a>
- * @version $Revision: 7046 $
+ * @version $Revision$
  * @since Groovy 1.1
  */
 public class BindFactory implements Factory {
+
+    Map/*<String, TriggerBinding*/ syntheticBindings;
+
+    public BindFactory() {
+        syntheticBindings = new HashMap();
+
+        // covers JTextField.text
+        // covers JTextPane.text
+        // covers JTextArea.text
+        // covers JEditorPane.text
+        syntheticBindings.putAll(JTextComponentProperties.getSyntheticProperties());
+
+        // covers JCheckBox.selected
+        // covers JChecBoxMenuItem.selected
+        // covers JRadioButton.selected
+        // covers JRadioButtonMenuItem.selected
+        // covers JToggleButton.selected
+        syntheticBindings.putAll(AbstractButtonProperties.getSyntheticProperties());
+
+        // JSlider.value
+        syntheticBindings.putAll(JSliderProperties.getSyntheticProperties());
+
+        // JComboBox.elements
+        // JComboBox.selectedElement
+        //syntheticBindings.putAll(JComboBoxProperties.getSyntheticProperties());
+
+        // JList.elements
+        // JList.selectedElement
+        // JList.selectedElements
+        //syntheticBindings.putAll(JListProperties.getSyntheticProperties());
+
+        // other properties handled in JSR-295
+        // JTable.elements
+        // JTable.selectedElement
+        // JTable.selectedElements
+        // JTree.root
+        // JTree.selectedElement
+        // JTree.selectedElements
+
+    }
 
     /**
      * Accepted Properties...
@@ -65,10 +110,22 @@ public class BindFactory implements Factory {
         FullBinding fb;
 
         if (properties.containsKey("sourceProperty")) {
+            // first check for synthetic properties
             String property = (String) properties.remove("sourceProperty");
-            PropertySourceBinding psb = new PropertySourceBinding(this, source, property);
-            PropertyChangeTriggerBinding pctb = new PropertyChangeTriggerBinding(source, property);
-            fb = pctb.createBinding(psb, tb);
+            PropertySourceBinding psb = new PropertySourceBinding(source, property);
+
+            TriggerBinding trigger = null;
+            Class currentClass = source.getClass();
+            while ((trigger == null) && (currentClass != null)) {
+                // should we check interfaces as well?  if so at what level?
+                trigger = (TriggerBinding) syntheticBindings.get(currentClass.getName() + "#" + property);
+                currentClass = currentClass.getSuperclass();
+            }
+            if (trigger == null) {
+                //TODO inspect the bean info and throw an error if the property is not obserbable
+                trigger = new PropertyChangeTriggerBinding(source, property);
+            }
+            fb = trigger.createBinding(psb, tb);
         } else if (properties.containsKey("sourceEvent") && properties.containsKey("sourceValue")) {
             Closure queryValue = (Closure) properties.remove("sourceValue");
             ClosureSourceBinding psb = new ClosureSourceBinding(queryValue);

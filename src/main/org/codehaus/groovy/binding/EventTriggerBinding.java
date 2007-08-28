@@ -20,7 +20,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
  * @author <a href="mailto:shemnon@yahoo.com">Danno Ferrin</a>
- * @version $Revision: 7046 $
+ * @version $Revision$
  * @since Groovy 1.1
  */
 public class EventTriggerBinding implements TriggerBinding {
@@ -53,19 +53,16 @@ public class EventTriggerBinding implements TriggerBinding {
         this.eventName = eventName;
     }
 
-    private class EventTriggerFullBinding implements FullBinding {
-
-        SourceBinding source;
-        TargetBinding target;
+    private class EventTriggerFullBinding extends AbstractFullBinding {
 
         Closure handler;
 
         public EventTriggerFullBinding(SourceBinding sourceBinding, TargetBinding targetBinding) {
-            source = sourceBinding;
-            target = targetBinding;
+            setSourceBinding(sourceBinding);
+            setTargetBinding(targetBinding);
             handler = new Closure(triggerBean) {
                 public Object call(Object[] params) {
-                    target.updateTargetValue(source.getSourceValueClosure().call(params));
+                    forceUpdate();
                     return null;
                 }
             };
@@ -81,26 +78,6 @@ public class EventTriggerBinding implements TriggerBinding {
 
         public void rebind() {
             throw new UnsupportedOperationException();
-        }
-
-        public void forceUpdate() {
-            handler.call();
-        }
-
-        public SourceBinding getSourceBinding() {
-            return source;
-        }
-
-        public TargetBinding getTargetBinding() {
-            return target;
-        }
-
-        public void setSourceBinding(SourceBinding source) {
-            this.source = source;
-        }
-
-        public void setTargetBinding(TargetBinding target) {
-            this.target = target;
         }
     }
 }

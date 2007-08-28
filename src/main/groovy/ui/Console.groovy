@@ -56,7 +56,7 @@ class Console implements CaretListener {
     int maxHistory = 10
 
     // Maximum number of characters to show on console at any time
-    int maxOutputChars = 10000
+    int maxOutputChars = 20000
 
     // UI
     SwingBuilder swing
@@ -154,12 +154,12 @@ class Console implements CaretListener {
             action(id: 'exitAction',
                 name: 'Exit',
                 closure: this.&exit, 
-                mnemonic: 'X',
-                // whether or not application exit should have an
-                // accellerator is debatable in usability circles
-                // at the very least a confirm dialog should dhow up
-                //accelerator: shortcut('Q')
+                mnemonic: 'X'
             )
+            // whether or not application exit should have an
+            // accellerator is debatable in usability circles
+            // at the very least a confirm dialog should dhow up
+            //accelerator: shortcut('Q')
             action(inputEditor.undoAction,
                 id: 'undoAction',
                 name: 'Undo',
