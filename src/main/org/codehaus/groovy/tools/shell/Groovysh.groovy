@@ -477,8 +477,9 @@ class Groovysh
         cli.q(longOpt: 'quiet', messages['cli.option.quiet.description'])
         cli.d(longOpt: 'debug', messages['cli.option.debug.description'])
         cli.C(longOpt: 'color', args: 1, argName: 'FLAG', optionalArg: true, messages['cli.option.color.description'])
-        cli.D(longOpt: 'define', args: 1, argName: 'NAME=VALUE', messages['cli.option.color.define'])
-        
+        cli.D(longOpt: 'define', args: 1, argName: 'NAME=VALUE', messages['cli.option.define.description'])
+        cli.T(longOpt: 'terminal', args: 1, argName: 'TYPE', messages['cli.option.terminal.description'])
+
         def options = cli.parse(args)
 
         if (options.h) {
@@ -489,6 +490,32 @@ class Groovysh
         if (options.V) {
             io.out.println(messages.format('cli.info.version', InvokerHelper.version))
             System.exit(0)
+        }
+
+        if (options.hasOption('T')) {
+            def type = options.getOptionValue('T')
+            switch (type) {
+                case 'unix':
+                    type = jline.UnixTerminal.class.name
+                    break
+
+                case 'win':
+                case 'windows':
+                    type = jline.WindowsTerminal.class.name
+                    break
+
+                case 'false':
+                case 'off':
+                case 'none':
+                    type = jline.UnsupportedTerminal.class.name
+            }
+
+            System.setProperty('jline.terminal', type)
+
+            //
+            // HACK: Disable ANSI, for some reason UnsupportedTerminal reports ANSI as enabled, when it shouldn't
+            //
+            ANSI.enabled = false
         }
 
         if (options.hasOption('D')) {
@@ -507,7 +534,7 @@ class Groovysh
                     name = it
                     value = true
                 }
-
+                
                 System.setProperty(name, value)
             }
         }
@@ -536,8 +563,8 @@ class Groovysh
             else {
                 value = Boolean.valueOf(value).booleanValue(); // For JDK 1.4 compat
             }
-            
-            ANSI.enabled = value;
+
+            ANSI.enabled = value
         }
         
         def code
