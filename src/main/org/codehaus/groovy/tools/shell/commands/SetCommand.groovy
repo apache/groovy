@@ -19,6 +19,8 @@ package org.codehaus.groovy.tools.shell.commands
 import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.Shell
 
+import org.codehaus.groovy.tools.shell.util.SimpleCompletor
+
 /**
  * The 'set' command.
  *
@@ -31,7 +33,24 @@ class SetCommand
     SetCommand(final Shell shell) {
         super(shell, 'set', '\\=')
     }
-    
+
+    protected List createCompletors() {
+        def loader = {
+            def list = []
+
+            def keys = preferences.keys()
+
+            keys.each { list << it }
+
+            return list
+        }
+
+        return [
+            new SimpleCompletor(loader),
+            null
+        ]
+    }
+
     Object execute(final List args) {
         assert args != null
         
