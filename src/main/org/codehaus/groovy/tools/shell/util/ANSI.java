@@ -55,11 +55,23 @@ public class ANSI
         return enabled;
     }
 
-    /** The detected ANSI support for the current system. */
-    public static final boolean DETECTED = detect();
+    public static boolean isDetected() {
+        return detect();
+    }
 
-    /** Flag to enable or disable ANSI support at runtime. */
-    public static boolean enabled = DETECTED;
+    private static Boolean enabled;
+
+    public static void setEnabled(final boolean flag) {
+        enabled = Boolean.valueOf(flag);
+    }
+
+    public static boolean isEnabled() {
+        if (enabled == null) {
+            enabled = Boolean.valueOf(isDetected());
+        }
+        
+        return enabled.booleanValue();
+    }
 
     //
     // Code
@@ -210,7 +222,7 @@ public class ANSI
         }
 
         public Buffer attrib(final int code) {
-            if (enabled) {
+            if (isEnabled()) {
                 buff.append(ANSICodes.attrib(code));
             }
 
@@ -220,7 +232,7 @@ public class ANSI
         public Buffer attrib(final String text, final int code) {
             assert text != null;
 
-            if (enabled) {
+            if (isEnabled()) {
                 buff.append(ANSICodes.attrib(code)).append(text).append(ANSICodes.attrib(Code.OFF));
             }
             else {
