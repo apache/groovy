@@ -16,12 +16,16 @@
 
 package org.codehaus.groovy.tools.shell;
 
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.Reader;
-import java.io.PrintWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.Reader;
+
+import java.util.prefs.PreferenceChangeEvent;
+import java.util.prefs.PreferenceChangeListener;
+import java.util.prefs.Preferences;
 
 import org.codehaus.groovy.tools.shell.util.ANSI.RenderWriter;
 
@@ -56,7 +60,7 @@ public class IO
 
     /** Flag to indicate that quiet output is expected. */
     public boolean quiet;
-    
+
     /**
      * Construct a new IO container.
      */
@@ -78,6 +82,33 @@ public class IO
         
         this.out = new RenderWriter(outputStream, true);
         this.err = new RenderWriter(errorStream, true);
+
+
+        //
+        // HACK: Hack in some ugly-ass-preferences muck for now... until we can think of a better solution
+        //
+
+        Preferences prefs = Preferences.userNodeForPackage(Groovysh.class);
+
+        verbose = prefs.getBoolean("verbose", false);
+
+        prefs.addPreferenceChangeListener(new PreferenceChangeListener() {
+            public void preferenceChange(final PreferenceChangeEvent event) {
+                if (event.getKey().equals("verbose")) {
+                    verbose = event.getNode().getBoolean("verbose", false);
+                }
+            }
+        });
+
+        quiet = prefs.getBoolean("quiet", false);
+
+        prefs.addPreferenceChangeListener(new PreferenceChangeListener() {
+            public void preferenceChange(final PreferenceChangeEvent event) {
+                if (event.getKey().equals("quiet")) {
+                    verbose = event.getNode().getBoolean("quiet", false);
+                }
+            }
+        });
     }
 
     /**
