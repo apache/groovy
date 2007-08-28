@@ -53,14 +53,16 @@ public final class Logger
         }
 
         StringBuffer buff = new StringBuffer();
-
+        
+        /*
         int color = ANSI.Code.BOLD;
         if (WARN.equals(level) || ERROR.equals(level)) {
             color = ANSI.Code.RED;
         }
 
         buff.append(ANSI.Renderer.encode(level, color));
-        
+        */
+        buff.append(level);
         buff.append(" [");
         buff.append(name);
         buff.append("] ");
