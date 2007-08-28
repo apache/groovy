@@ -36,11 +36,15 @@ class HelpFormatter
     extends org.apache.commons.cli.HelpFormatter
 {
     HelpFormatter() {
-        defaultWidth = Terminal.terminal.terminalWidth - 1
         defaultLeftPad = 2
         defaultDescPad = 4
     }
-    
+
+    // Detect the terminal width late
+    public int getDefaultWidth() {
+        return Terminal.terminal.terminalWidth - 1
+    }
+
     protected StringBuffer renderOptions(final StringBuffer sb, final int width, final Options options, final int leftPad, final int descPad) {
         assert sb != null
         assert options
