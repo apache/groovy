@@ -310,6 +310,7 @@ public class SwingBuilder extends BuilderSupport {
         registerBeanFactory("buttonGroup", ButtonGroup.class);
         registerFactory("map", new MapFactory());
         registerFactory("bind", new BindFactory());
+        registerFactory("animate", new AnimateFactory());
 
         // ulimate pass through types
         registerFactory("widget", new WidgetFactory()); //TODO prohibit child content somehow

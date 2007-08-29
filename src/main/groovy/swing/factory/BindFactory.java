@@ -69,6 +69,9 @@ public class BindFactory implements Factory {
         // JList.selectedElements
         //syntheticBindings.putAll(JListProperties.getSyntheticProperties());
 
+        // JSpinner.value
+        //syntheticBindings.putAll(JSpinnerProperties.getSyntheticProperties());
+
         // other properties handled in JSR-295
         // JTable.elements
         // JTable.selectedElement

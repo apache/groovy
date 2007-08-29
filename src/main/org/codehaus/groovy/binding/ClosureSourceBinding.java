@@ -25,9 +25,15 @@ import groovy.lang.Closure;
 public class ClosureSourceBinding implements SourceBinding {
 
     Closure closure;
+    Object[] arguments;
 
     public ClosureSourceBinding(Closure closure) {
+        this(closure, new Object[0]);
+    }
+
+    public ClosureSourceBinding(Closure closure, Object[] arguments) { //TODO in Groovy 2.0 use varargs?
         this.closure = closure;
+        this.arguments = arguments;
     }
 
     public Closure getClosure() {
@@ -39,6 +45,14 @@ public class ClosureSourceBinding implements SourceBinding {
     }
 
     public Object getSourceValue() {
-        return closure.call();
+        return closure.call(arguments);
+    }
+
+    public void setClosureArguments(Object[] arguments) {
+        this.arguments = arguments;
+    }
+
+    public void setClosureArgument(Object argument) {
+        this.arguments = new Object[] {argument};
     }
 }
