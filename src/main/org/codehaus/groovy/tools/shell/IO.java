@@ -88,7 +88,7 @@ public class IO
         // HACK: Hack in some ugly-ass-preferences muck for now... until we can think of a better solution
         //
 
-        Preferences prefs = Preferences.userNodeForPackage(Groovysh.class);
+        Preferences prefs = Preferences.userRoot().node("/org/codehaus/groovy/tools/shell");
 
         verbose = prefs.getBoolean("verbose", false);
 

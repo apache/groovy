@@ -16,7 +16,6 @@
 
 package org.codehaus.groovy.tools.shell.util;
 
-import org.codehaus.groovy.tools.shell.Groovysh;
 import org.codehaus.groovy.tools.shell.IO;
 
 import java.util.prefs.PreferenceChangeListener;
@@ -93,7 +92,7 @@ public final class Logger
         // HACK: For now put in some ugly preferences API muck until we can find a more elegant solution
         //
         
-        Preferences prefs = Preferences.userNodeForPackage(Groovysh.class);
+        Preferences prefs = Preferences.userRoot().node("/org/codehaus/groovy/tools/shell");
 
         debug = prefs.getBoolean("debug", false);
 
