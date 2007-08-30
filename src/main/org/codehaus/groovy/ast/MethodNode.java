@@ -144,6 +144,14 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
         return (modifiers & ACC_STATIC) != 0;
     }
 
+    public boolean isPublic() {
+        return (modifiers & ACC_PUBLIC) != 0;
+    }
+
+    public boolean isProtected() {
+        return (modifiers & ACC_PROTECTED) != 0;
+    }
+
     public boolean hasDefaultValue() {
         return this.hasDefaultValue;
     }
