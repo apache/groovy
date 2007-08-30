@@ -168,9 +168,6 @@ public class UberCompileTask
             genstubs.createInclude().setName("**/*.groovy");
         }
                 
-        // Append the stubs dir to the classpath for other tasks
-        classpath.createPathElement().setLocation(genstubs.destdir);
-
         JavacAdapter javac = createJavac();
         javac.setSrcdir(src);
         javac.setDestdir(destdir);
@@ -178,8 +175,11 @@ public class UberCompileTask
 
         fileset = javac.getFileSet();
         if (!fileset.hasPatterns()) {
-            genstubs.createInclude().setName("**/*.java");
+            javac.createInclude().setName("**/*.java");
         }
+
+        // Include the stubs in the Javac compilation
+        javac.createSrc().createPathElement().setLocation(genstubs.destdir);
 
         GroovycAdapter groovyc = createGroovyc();
         groovyc.classpath = classpath;
@@ -188,7 +188,7 @@ public class UberCompileTask
 
         fileset = groovyc.getFileSet();
         if (!fileset.hasPatterns()) {
-            genstubs.createInclude().setName("**/*.groovy");
+            groovyc.createInclude().setName("**/*.groovy");
         }
 
         // Invoke each task in the right order
