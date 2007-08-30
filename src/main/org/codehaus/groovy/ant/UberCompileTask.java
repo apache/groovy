@@ -186,6 +186,11 @@ public class UberCompileTask
         groovyc.src = src;
         groovyc.destdir = destdir;
 
+        //
+        // HACK: For now force all classes to compile, so we pick up stub changes
+        //
+        groovyc.force = true;
+        
         fileset = groovyc.getFileSet();
         if (!fileset.hasPatterns()) {
             groovyc.createInclude().setName("**/*.groovy");
