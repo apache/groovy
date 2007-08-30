@@ -33,9 +33,12 @@ $Date$
     <import file="config/ant/build-cobertura.xml"/>
 
     <condition property="_skipTests_">
-        <istrue value="${skipTests}"/>
+        <or>
+            <equals arg1="${test}" arg2="false"/>
+            <istrue value="${skipTests}"/>
+        </or>
     </condition>
-
+    
     <condition property="_skipExamples_">
         <istrue value="${skipExamples}"/>
     </condition>
@@ -252,7 +255,7 @@ $Date$
     <condition property="_testOne_">
         <and>
             <not>
-                <istrue value="${skipTests}"/>
+                <istrue value="${_skipTests_}"/>
             </not>
             <isset property="testCase"/>
         </and>
@@ -279,7 +282,7 @@ $Date$
     <condition property="_testAll_">
         <and>
             <not>
-                <istrue value="${skipTests}"/>
+                <istrue value="${_skipTests_}"/>
             </not>
             <not>
                 <isset property="_testOne_"/>
