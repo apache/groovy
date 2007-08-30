@@ -32,13 +32,13 @@ $Date$
     <import file="config/ant/build-checkstyle.xml"/>
     <import file="config/ant/build-cobertura.xml"/>
 
-  <condition property="_skipTests_">
-    <istrue value="${skipTests}"/>
-  </condition>
+    <condition property="_skipTests_">
+        <istrue value="${skipTests}"/>
+    </condition>
 
-  <condition property="_skipExamples_">
-    <istrue value="${skipExamples}"/>
-  </condition>
+    <condition property="_skipExamples_">
+        <istrue value="${skipExamples}"/>
+    </condition>
 
     <target name="-initCoverage">
         <condition property="_forceCoverage_">
