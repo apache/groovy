@@ -123,7 +123,16 @@ public class JavaStubCompilationUnit
             assert outputDirectory != null;
 
             outputDirectory.mkdirs();
-            generator = new JavaStubGenerator(null, outputDirectory);
+
+            boolean java5 = false;
+            String target = JavaStubCompilationUnit.this.getConfiguration().getTargetBytecode();
+            
+            // Enable java5 mode if the configuration lets us
+            if (target != null && target.trim().equals("1.5")) {
+                java5 = true;
+            }
+
+            generator = new JavaStubGenerator(null, outputDirectory, java5);
         }
 
         public void call(final SourceUnit source, final GeneratorContext context, final ClassNode node) throws CompilationFailedException {

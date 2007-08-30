@@ -179,7 +179,10 @@ $Date$
             </classpath>
             <src location="${mainSourceDirectory}"/>
             
-            <generatestubs destdir="${mainStubsDirectory}"/>
+            <generatestubs destdir="${mainStubsDirectory}">
+                <configuration targetBytecode="1.4"/>
+            </generatestubs>
+            
             <javac includeantruntime="false" deprecation="on" debug="yes" source="1.4" target="1.4" fork="true"/>
             <groovyc>
                 <configuration debug="true" verbose="true"/>
