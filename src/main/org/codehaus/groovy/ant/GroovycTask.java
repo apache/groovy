@@ -37,6 +37,12 @@ import java.io.File;
 public class GroovycTask
     extends CompileTaskSupport
 {
+    private boolean force;
+
+    public void setForce(final boolean flag) {
+        this.force = flag;
+    }
+
     protected void compile() {
         Path path = getClasspath();
         if (path != null) {
@@ -65,16 +71,29 @@ public class GroovycTask
             DirectoryScanner scanner = getDirectoryScanner(basedir);
             String[] includes = scanner.getIncludedFiles();
 
-            log.debug("Including files from: " + basedir);
+            if (force) {
+                log.debug("Forcefully including all files from: " + basedir);
 
-            SourceFileScanner sourceScanner = new SourceFileScanner(this);
-            File[] files = sourceScanner.restrictAsFiles(includes, basedir, destdir, mapper);
+                for (int j=0; j < includes.length; j++) {
+                    File file = new File(basedir, includes[j]);
+                    log.debug("    "  + file);
 
-            for (int j=0; j < files.length; j++) {
-                log.debug("    "  + files[j]);
-                
-                compilation.addSource(files[j]);
-                count++;
+                    compilation.addSource(file);
+                    count++;
+                }
+            }
+            else {
+                log.debug("Including changed files from: " + basedir);
+
+                SourceFileScanner sourceScanner = new SourceFileScanner(this);
+                File[] files = sourceScanner.restrictAsFiles(includes, basedir, destdir, mapper);
+
+                for (int j=0; j < files.length; j++) {
+                    log.debug("    "  + files[j]);
+
+                    compilation.addSource(files[j]);
+                    count++;
+                }
             }
         }
 
