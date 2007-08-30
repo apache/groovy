@@ -144,10 +144,21 @@ $Date$
             <src location="${mainSourceDirectory}"/>
             
             <!--
-            TODO: Include more of the sources we need for this to work, so we pick up changes to them
-                  incrementally, w/o having to nuke everything first.
+            NOTE: This list includes *most* of the classes which are required for the ubercompile
+                  bits to work, adding them here to allow for more incremental compilation when
+                  required support classes change.
             -->
-            <include name="org/codehaus/groovy/ant/UberCompileTask.java"/>
+            
+            <include name="groovy/lang/**/*.java"/>
+            <include name="org/codehaus/groovy/ant/**/*.java"/>
+            <include name="org/codehaus/groovy/antlr/**/*.java"/>
+            <include name="org/codehaus/groovy/ast/**/*.java"/>
+            <include name="org/codehaus/groovy/classgen/**/*.java"/>
+            <include name="org/codehaus/groovy/control/**/*.java"/>
+            <include name="org/codehaus/groovy/reflection/**/*.java"/>
+            <include name="org/codehaus/groovy/runtime/**/*.java"/>
+            <include name="org/codehaus/groovy/syntax/**/*.java"/>
+            <include name="org/codehaus/groovy/tools/javac/**/*.java"/>
         </javac>
         
         <taskdef name="ubercompile" classname="org.codehaus.groovy.ant.UberCompileTask">
