@@ -315,18 +315,36 @@ public class JavaStubGenerator {
             out.print("null");
     }
 
+    private void printType(ClassNode type, PrintWriter out) {
+        //
+        // TODO: Add generic support
+        //
+        
+        if (type.isArray()) {
+            out.print(type.getComponentType().getName());
+            out.print("[]");
+        }
+        else {
+            out.print(type.getName());
+        }
+    }
     private void printParams(MethodNode methodNode, PrintWriter out) {
         out.print("(");
         Parameter[] parameters = methodNode.getParameters();
+
         if (parameters != null && parameters.length != 0) {
-            for (int i = 0; i != parameters.length - 1; ++i) {
-                out.print(parameters[i].getType().getName() + " "
-                        + parameters[i].getName());
-                out.print(", ");
+            for (int i = 0; i != parameters.length; ++i) {
+                printType(parameters[i].getType(), out);
+                
+                out.print(" ");
+                out.print(parameters[i].getName());
+
+                if (i + 1 < parameters.length) {
+                    out.print(", ");
+                }
             }
-            out.print(parameters[parameters.length - 1].getType().getName()
-                    + " " + parameters[parameters.length - 1].getName());
         }
+        
         out.print(")");
     }
 
