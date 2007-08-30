@@ -37,7 +37,7 @@ import java.io.File;
 public class GroovycTask
     extends CompileTaskSupport
 {
-    private boolean force;
+    protected boolean force;
 
     public void setForce(final boolean flag) {
         this.force = flag;
