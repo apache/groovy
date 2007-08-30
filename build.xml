@@ -22,7 +22,7 @@ $Date$
 -->
 
 <project name="Groovy" default="createJars" basedir=".">
-
+    
     <property file="local.build.properties"/>
     <property file="build.properties"/>
     <property name="ant.requiredVersion" value="1.7"/>
@@ -95,8 +95,11 @@ $Date$
        </fail>
     </target>
 
-    <target name="compileMain" depends="-init,-includeResources,ensureGrammars"
+    <target name="compileMain" depends="ubercompile,stagedcompile"
             description="Compile the Java and Groovy code in the main source.">
+    </target>
+    
+    <target name="stagedcompile" depends="-init,-includeResources,ensureGrammars" unless="uber">
         <mkdir dir="${mainClassesDirectory}"/>
         <mkdir dir="${toolsClassesDirectory}"/>
         <javac srcdir="${mainSourceDirectory}" includeantruntime="false" destdir="${mainClassesDirectory}"
@@ -124,7 +127,7 @@ $Date$
         </java>
     </target>
 
-    <target name="ubercompile:bootstrap" depends="-init,-includeResources,ensureGrammars">
+    <target name="ubercompile:bootstrap" depends="-init,-includeResources,ensureGrammars" if="uber">
         <mkdir dir="${mainClassesDirectory}"/>
         
         <javac destdir="${mainClassesDirectory}"
@@ -136,6 +139,11 @@ $Date$
                includeantruntime="false">
             <classpath refid="compilePath"/>
             <src location="${mainSourceDirectory}"/>
+            
+            <!--
+            TODO: Include more of the sources we need for this to work, so we pick up changes to them
+                  incrementally, w/o having to nuke everything first.
+            -->
             <include name="org/codehaus/groovy/ant/UberCompileTask.java"/>
         </javac>
         
@@ -147,7 +155,7 @@ $Date$
         </taskdef>
     </target>
     
-    <target name="ubercompile" depends="ubercompile:bootstrap">
+    <target name="ubercompile" depends="ubercompile:bootstrap" if="uber">
         <mkdir dir="${mainStubsDirectory}"/>
         
         <ubercompile destdir="${mainClassesDirectory}">
