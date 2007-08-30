@@ -16,7 +16,29 @@
 
 package org.codehaus.groovy.tools.javac;
 
-import org.codehaus.groovy.ast.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+
+import groovy.lang.GroovyObjectSupport;
+import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ConstructorNode;
+import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.GenericsType;
+import org.codehaus.groovy.ast.ImportNode;
+import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.ModuleNode;
+import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
@@ -27,19 +49,26 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.ResolveVisitor;
 import org.objectweb.asm.Opcodes;
 
-import groovy.lang.GroovyObjectSupport;
+public class JavaStubGenerator
+{
+    private JavaAwareCompilationUnit cu;
 
-import java.io.*;
-import java.util.*;
-
-public class JavaStubGenerator {
+    private boolean java5 = false;
+    
     private File outputPath;
+
     private ArrayList toCompile = new ArrayList();
 
     private ResolveVisitor resolver;
 
-    public JavaStubGenerator(JavaAwareCompilationUnit cu, File outputPath) {
+    public JavaStubGenerator(JavaAwareCompilationUnit cu, File outputPath, boolean java5) {
+        this.cu = cu;
         this.outputPath = outputPath;
+        this.java5 = java5;
+    }
+
+    public JavaStubGenerator(JavaAwareCompilationUnit cu, File outputPath) {
+        this(cu, outputPath, false);
     }
     
     private void mkdirs(File parent, String relativeFile) {
@@ -50,6 +79,11 @@ public class JavaStubGenerator {
     }
     
     public void generateClass(ClassNode classNode) throws FileNotFoundException {
+        // Only attempt to render our self if our super-class is resolved, else wait for it
+        if (!classNode.getSuperClass().isResolved()) {
+            return;
+        }
+
         String fileName = classNode.getName().replace('.', '/');
         mkdirs(outputPath,fileName);
         toCompile.add(fileName);
@@ -158,8 +192,7 @@ public class JavaStubGenerator {
         String getterName = "get" + name;
 
         boolean skipGetter = false;
-        List getterCandidates = propNode.getField().getOwner().getMethods(
-                getterName);
+        List getterCandidates = propNode.getField().getOwner().getMethods(getterName);
         if (getterCandidates != null)
             for (Iterator it = getterCandidates.iterator(); it.hasNext();) {
                 MethodNode method = (MethodNode) it.next();
@@ -170,17 +203,21 @@ public class JavaStubGenerator {
 
         if (!skipGetter) {
             printModifiers(out, propNode.getModifiers());
-            out.print(propNode.getType().getName() + " " + getterName
-                    + " () { ");
+
+            printType(propNode.getType(), out);
+            out.print(" ");
+            out.print(getterName);
+            out.print("() { ");
+
             printReturn(out, propNode.getType());
+
             out.println(" }");
         }
 
         String setterName = "set" + name;
 
         boolean skipSetter = false;
-        List setterCandidates = propNode.getField().getOwner().getMethods(
-                setterName);
+        List setterCandidates = propNode.getField().getOwner().getMethods( setterName);
         if (setterCandidates != null)
             for (Iterator it = setterCandidates.iterator(); it.hasNext();) {
                 MethodNode method = (MethodNode) it.next();
@@ -191,15 +228,22 @@ public class JavaStubGenerator {
 
         if (!skipSetter) {
             printModifiers(out, propNode.getModifiers());
-            out.println("void " + setterName + "( "
-                    + propNode.getType().getName() + " value) {}");
+            out.print("void ");
+            out.print(setterName);
+            out.print("(");
+            printType(propNode.getType(), out);
+            out.println(" value) {}");
         }
     }
 
     private void genField(FieldNode fieldNode, PrintWriter out) {
         printModifiers(out, fieldNode.getModifiers());
-        out.println(fieldNode.getType().getName() + " "
-                + fieldNode.getName() + ";");
+
+        printType(fieldNode.getType(), out);
+
+        out.print(" ");
+        out.print(fieldNode.getName());
+        out.println(";");
     }
 
     private ConstructorCallExpression getConstructorCallExpression(
@@ -226,58 +270,138 @@ public class JavaStubGenerator {
 
     private void genConstructor(ConstructorNode constructorNode, PrintWriter out) {
         // printModifiers(out, constructorNode.getModifiers());
+
         out.print("public "); // temporary hack
         out.print(constructorNode.getDeclaringClass().getNameWithoutPackage());
 
         printParams(constructorNode, out);
 
         ConstructorCallExpression constrCall = getConstructorCallExpression(constructorNode);
-        if (constrCall == null || !constrCall.isSpecialCall())
+        if (constrCall == null || !constrCall.isSpecialCall()) {
             out.println(" {}");
+        }
         else {
             out.println(" {");
-            if (constrCall.isSuperCall())
-                out.print("super(");
-            else
-                out.print("this(");
 
-            genSpecialContructorArgs(out, constrCall);
+            genSpecialContructorArgs(out, constructorNode, constrCall);
 
-            out.println(");");
             out.println("}");
         }
     }
 
-    private void genSpecialContructorArgs(PrintWriter out,
-            ConstructorCallExpression constrCall) {
+    private ConstructorNode selectAccessibleConstructorFromSuper(ConstructorNode node) {
+        assert node != null;
+
+        ClassNode type = node.getDeclaringClass();
+        ClassNode superType = type.getSuperClass();
+
+        for (Iterator iter = superType.getDeclaredConstructors().iterator(); iter.hasNext();) {
+            ConstructorNode c = (ConstructorNode)iter.next();
+
+            // Only look at things we can actually call
+            if (c.isPublic() || c.isProtected()) {
+                return c;
+            }
+        }
+
+        if (!superType.isResolved()) {
+            throw new Error("Super-class (" + superType.getName() + ")should have been resolved already for type: " + type.getName());
+        }
+
+        Constructor[] constructors = superType.getTypeClass().getDeclaredConstructors();
+
+        for (int i=0; i<constructors.length; i++) {
+            int mod = constructors[i].getModifiers();
+
+            // Only look at things we can actualy call
+            if (Modifier.isPublic(mod) || Modifier.isProtected(mod)) {
+                Class[] types = constructors[i].getParameterTypes();
+                Parameter[] params = new Parameter[types.length];
+                for (int j=0; j<types.length; j++) {
+                    ClassNode ptype = new ClassNode(types[i]);
+                    params[j] = new Parameter(ptype, types[i].getName());
+                }
+
+                return new ConstructorNode(mod, params, null, null);
+            }
+        }
+        
+        return null;
+    }
+
+    private void genSpecialContructorArgs(PrintWriter out, ConstructorNode node, ConstructorCallExpression constrCall) {
+        // Select a constructor from our class, or super-class which is legal to call,
+        // then write out an invoke w/nulls using casts to avoid abigous crapo
+
+        ConstructorNode c = selectAccessibleConstructorFromSuper(node);
+        if (c != null) {
+            out.print("super(");
+
+            Parameter[] params = c.getParameters();
+            for (int i=0; i<params.length; i++) {
+                out.print("(");
+                printType(params[i].getType(), out);
+                out.print(")");
+                out.print("null");
+
+                if (i + 1 < params.length) {
+                    out.print(", ");
+                }
+            }
+            
+            out.println(");");
+            return;
+        }
+
+        // Otherwise try the older method based on the constructor's call expression
         Expression arguments = constrCall.getArguments();
+
+        if (constrCall.isSuperCall()) {
+            out.print("super(");
+        }
+        else {
+            out.print("this(");
+        }
+
+        // Else try to render some arguments
         if (arguments instanceof ArgumentListExpression) {
             ArgumentListExpression argumentListExpression = (ArgumentListExpression) arguments;
             List args = argumentListExpression.getExpressions();
+
             for (Iterator it = args.iterator(); it.hasNext();) {
                 Expression arg = (Expression) it.next();
+
                 if (arg instanceof ConstantExpression) {
-                    ConstantExpression constantExpression = (ConstantExpression) arg;
-                    Object o = constantExpression.getValue();
-                    if (o instanceof String)
-                        out.print("null");
-                    else
-                        out.print(constantExpression.getText());
-                } else {
+                    ConstantExpression expression = (ConstantExpression) arg;
+                    Object o = expression.getValue();
+
+                    if (o instanceof String) {
+                        out.print("(String)null");
+                    }
+                    else {
+                        out.print(expression.getText());
+                    }
+                }
+                else {
                     printDefaultValue(out, arg.getType().getName());
                 }
 
-                if (arg != args.get(args.size() - 1))
+                if (arg != args.get(args.size() - 1)) {
                     out.print(", ");
+                }
             }
         }
+
+        out.println(");");
     }
 
     private void genMethod(MethodNode methodNode, PrintWriter out) {
         if (!methodNode.getDeclaringClass().isInterface())
             printModifiers(out, methodNode.getModifiers());
-        out.print(methodNode.getReturnType().getName() + " "
-                + methodNode.getName());
+
+        printType(methodNode.getReturnType(), out);
+        out.print(" ");
+        out.print(methodNode.getName());
 
         printParams(methodNode, out);
 
@@ -304,23 +428,52 @@ public class JavaStubGenerator {
     }
 
     private void printDefaultValue(PrintWriter out, String retName) {
-        if (retName.equals("int") || retName.equals("byte")
-                || retName.equals("short") || retName.equals("long")
-                || retName.equals("float") || retName.equals("double")
-                || retName.equals("char"))
+        if (retName.equals("int")
+            || retName.equals("byte")
+            || retName.equals("short")
+            || retName.equals("long")
+            || retName.equals("float")
+            || retName.equals("double")
+            || retName.equals("char"))
+        {
+            //
+            // NOTE: Always cast to avoid any abigous muck
+            //
+            
+            out.print("(");
+            out.print(retName);
+            out.print(")");
+            
             out.print("0");
-        else if (retName.equals("boolean"))
+        }
+        else if (retName.equals("boolean")) {
             out.print("false");
-        else
+        }
+        else {
             out.print("null");
+        }
     }
 
     private void printType(ClassNode type, PrintWriter out) {
         //
-        // TODO: Add generic support
+        // NOTE: Only render generics for type if we are allowed to use Java5 stuff
         //
-        
-        if (type.isArray()) {
+        if (java5 && type.isUsingGenerics()) {
+            GenericsType[] types = type.getGenericsTypes();
+
+            out.print(type.getName());
+            out.print("<");
+            
+            for (int i = 0; i < types.length; i++) {
+                if (i != 0) {
+                    out.print(", ");
+                }
+                out.print(types[i]);
+            }
+            
+            out.print(">");
+        }
+        else if (type.isArray()) {
             out.print(type.getComponentType().getName());
             out.print("[]");
         }
@@ -371,9 +524,15 @@ public class JavaStubGenerator {
     private void genImports(ClassNode classNode, PrintWriter out) {
         HashSet imports = new HashSet();
 
+        //
+        // HACK: Add the default imports... since things like Closure and GroovyObject seem to parse out w/o fully qualified classnames.
+        //
+        for (int i=0; i<ResolveVisitor.DEFAULT_IMPORTS.length; i++) {
+            imports.add(ResolveVisitor.DEFAULT_IMPORTS[i]);
+        }
+        
         ModuleNode moduleNode = classNode.getModule();
-        for (Iterator it = moduleNode.getImportPackages().iterator(); it
-                .hasNext();) {
+        for (Iterator it = moduleNode.getImportPackages().iterator(); it.hasNext();) {
             imports.add(it.next());
         }
 
@@ -387,7 +546,9 @@ public class JavaStubGenerator {
 
         for (Iterator it = imports.iterator(); it.hasNext();) {
             String imp = (String) it.next();
-            out.println("import " + imp + "*;");
+            out.print("import ");
+            out.print(imp);
+            out.println("*;");
         }
         out.println();
     }
