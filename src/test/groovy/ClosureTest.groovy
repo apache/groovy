@@ -120,6 +120,23 @@ class ClosureTest extends GroovyTestCase {
         ['a','b','c','d'].eachWithIndex { item, index -> str += item; sum += index }
         assert str == 'abcd' && sum == 6
     }
+
+    /**
+    * Test access to Closure's properties
+    * cf GROOVY-2089
+    */
+    void testProperties() {
+        def c = { println it }
+
+        assert 1 == c.getMaximumNumberOfParameters()
+        assert 1 == c.maximumNumberOfParameters
+        shouldFail {
+            assert 1 == c.getMaximumNumberOfParameters // worked in Groovy 1.0 but is wrong
+        }
+        
+        assert 0 == c.getDirective()
+        assert 0 == c.directive
+    }
 }
 
 public class TinyAgent {

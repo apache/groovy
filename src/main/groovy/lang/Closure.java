@@ -158,12 +158,12 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
         return thisObject;
     }
 
-    public Object getProperty(String property) {
+    public Object getProperty(final String property) {
         if ("delegate".equals(property)) {
             return getDelegate();
         } else if ("owner".equals(property)) {
             return getOwner();
-        } else if ("getMaximumNumberOfParameters".equals(property)) {
+        } else if ("maximumNumberOfParameters".equals(property)) {
             return new Integer(getMaximumNumberOfParameters());
         } else if ("parameterTypes".equals(property)) {
             return getParameterTypes();
@@ -171,6 +171,8 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
             return getMetaClass();
         } else if ("class".equals(property)) {
             return getClass();
+        } else if ("directive".equals(property)) {
+            return new Integer(getDirective());
         } else {
             switch(resolveStrategy) {
                 case DELEGATE_FIRST:
