@@ -153,18 +153,18 @@ class Groovysh
         def status = parse(current, 1)
 
         switch (status.code) {
-            case ParseStatus.COMPLETE:
+            case ParseCode.COMPLETE:
                 // Evaluate the current buffer
                 result = evaluate(current)
                 buffers.clearSelected()
                 break
 
-            case ParseStatus.INCOMPLETE:
+            case ParseCode.INCOMPLETE:
                 // Save the current buffer so user can build up complex muli-line code blocks
                 buffers.updateSelected(current)
                 break
 
-            case ParseStatus.ERROR:
+            case ParseCode.ERROR:
                 // Show a simple compilation error, otherwise dump the full details
                 if (status.cause instanceof CompilationFailedException) {
                     io.err.println(messages.format('info.error', status.cause.message))
@@ -201,7 +201,7 @@ class Groovysh
 
             log.debug('Parse complete')
 
-            return new ParseStatus(ParseStatus.COMPLETE)
+            return new ParseStatus(ParseCode.COMPLETE)
         }
         catch (CompilationFailedException e) {
             //
@@ -241,7 +241,7 @@ class Groovysh
         else {
             log.debug('Parse incomplete')
 
-            return new ParseStatus(ParseStatus.INCOMPLETE)
+            return new ParseStatus(ParseCode.INCOMPLETE)
         }
     }
 
@@ -598,6 +598,17 @@ class Groovysh
     }
 }
 
+//
+// FIXME: We have to have the { on the same line right now for this to work...
+//
+
+enum ParseCode {
+    COMPLETE,
+    INCOMPLETE,
+    ERROR
+    ;
+}
+
 /**
  * Container for parse status details.
  *
@@ -606,28 +617,20 @@ class Groovysh
  */
 class ParseStatus
 {
-    static final int COMPLETE = 0
-
-    static final int INCOMPLETE = 1
-
-    static final int ERROR = 2
-
-    final int code
+    final ParseCode code
 
     final Throwable cause
 
-    ParseStatus(final int code, final Throwable cause) {
-        assert code in [ COMPLETE, INCOMPLETE, ERROR ]
-
+    ParseStatus(final ParseCode code, final Throwable cause) {
         this.code = code
         this.cause = cause
     }
 
-    ParseStatus(final int code) {
+    ParseStatus(final ParseCode code) {
         this(code, null)
     }
 
     ParseStatus(final Throwable cause) {
-        this(ERROR, cause)
+        this(ParseCode.ERROR, cause)
     }
 }
