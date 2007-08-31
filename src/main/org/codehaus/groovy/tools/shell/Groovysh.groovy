@@ -598,6 +598,7 @@ class Groovysh
     }
 }
 
+/*
 //
 // FIXME: We have to have the { on the same line right now for this to work...
 //
@@ -607,6 +608,23 @@ enum ParseCode {
     INCOMPLETE,
     ERROR
     ;
+}
+*/
+
+//
+// FIXME: This new enum stuff only works on Java 5 :-(
+//
+
+class ParseCode {
+    static final ParseCode COMPLETE = new ParseCode(code: 0)
+    static final ParseCode INCOMPLETE = new ParseCode(code: 1)
+    static final ParseCode ERROR = new ParseCode(code: 2)
+
+    int code
+
+    String toString() {
+        return code
+    }
 }
 
 /**
