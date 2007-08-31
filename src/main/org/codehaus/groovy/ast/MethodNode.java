@@ -45,23 +45,12 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
     public MethodNode(String name, int modifiers, ClassNode returnType, Parameter[] parameters, ClassNode[] exceptions, Statement code) {
         this.name = name;
         this.modifiers = modifiers;
-        this.parameters = parameters;
         this.code = code;
         this.returnType = returnType;
         if (returnType==null) this.returnType = ClassHelper.OBJECT_TYPE; 
-
-        variableScope = new VariableScope();
-        if (parameters != null && parameters.length > 0) {
-            for (int i = 0; i < parameters.length; i++) {
-                Parameter para = parameters[i];
-                if (para.hasInitialExpression()) {
-                    this.hasDefaultValue = true;
-                }
-                para.setInStaticContext(isStatic());
-                variableScope.getDeclaredVariables().put(para.getName(),para);
-            }
-        }
-        variableScope.setInStaticContext(isStatic());
+        VariableScope scope = new VariableScope();
+        setVariableScope(scope);
+        setParameters(parameters);
         
         this.exceptions = exceptions;
     }
@@ -120,6 +109,22 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
         return parameters;
     }
 
+    public void setParameters(Parameter[] parameters) {
+        VariableScope scope = new VariableScope();
+        this.parameters = parameters;
+        if (parameters != null && parameters.length > 0) {
+            for (int i = 0; i < parameters.length; i++) {
+                Parameter para = parameters[i];
+                if (para.hasInitialExpression()) {
+                    this.hasDefaultValue = true;
+                }
+                para.setInStaticContext(isStatic());
+                scope.getDeclaredVariables().put(para.getName(),para);
+            }
+        }
+        setVariableScope(scope);
+    }
+    
     public ClassNode getReturnType() {
         return returnType;
     }
@@ -130,6 +135,7 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
 
     public void setVariableScope(VariableScope variableScope) {
         this.variableScope = variableScope;
+        variableScope.setInStaticContext(isStatic());
     }
 
     public boolean isDynamicReturnType() {
@@ -170,12 +176,16 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
     
     public Statement getFirstStatement(){
         if (code == null) return null;
-        if (code instanceof BlockStatement) {
-            List list = ((BlockStatement) code).getStatements();
-            if (!list.isEmpty()) return (Statement) list.get(0);
-            return null;
+        Statement first = code;
+        while (first instanceof BlockStatement) {
+            List list = ((BlockStatement) first).getStatements();
+            if (list.isEmpty()) {
+                first=null;
+            } else {
+                first = (Statement) list.get(0);
+            }
         }
-        return code;
+        return first;
     }
     
     public GenericsType[] getGenericsTypes() {

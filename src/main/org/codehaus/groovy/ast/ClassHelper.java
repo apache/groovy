@@ -41,28 +41,7 @@ import org.objectweb.asm.Opcodes;
  * @author Jochen Theodorou
  */
 public class ClassHelper {
-    
 
-    private static String[] names = new String[] {
-        boolean.class.getName(),    char.class.getName(), 
-        byte.class.getName(),       short.class.getName(),
-        int.class.getName(),        long.class.getName(),
-        double.class.getName(),     float.class.getName(),
-        Object.class.getName(),     Void.TYPE.getName(),
-        Closure.class.getName(),    GString.class.getName(),
-        List.class.getName(),       Map.class.getName(),
-        Range.class.getName(),      Pattern.class.getName(),
-        Script.class.getName(),     String.class.getName(),
-        Boolean.class.getName(),    Character.class.getName(),
-        Byte.class.getName(),       Short.class.getName(),
-        Integer.class.getName(),    Long.class.getName(),
-        Double.class.getName(),     Float.class.getName(),
-        BigDecimal.class.getName(), BigInteger.class.getName(),
-        Void.class.getName(),       Reference.class.getName(),
-        Class.class.getName(),      MetaClass.class.getName(),
-        GeneratedClosure.class.getName(),
-    };
-    
     private static Class[] classes = new Class[] {
         Object.class, Boolean.TYPE, Character.TYPE, Byte.TYPE, Short.TYPE,
         Integer.TYPE, Long.TYPE, Double.TYPE, Float.TYPE, Void.TYPE,
@@ -70,7 +49,7 @@ public class ClassHelper {
         Pattern.class, Script.class, String.class,  Boolean.class, 
         Character.class, Byte.class, Short.class, Integer.class, Long.class,
         Double.class, Float.class, BigDecimal.class, BigInteger.class, Void.class,
-        Reference.class, Class.class, MetaClass.class, GeneratedClosure.class,
+        Reference.class, Class.class, MetaClass.class,     
     };
     
     public static final ClassNode 
@@ -94,9 +73,12 @@ public class ClassHelper {
         void_WRAPPER_TYPE = new ClassNode(Void.class),   
         
         CLASS_Type = new ClassNode(Class.class),        METACLASS_TYPE = new ClassNode(MetaClass.class),
-        GENERATED_CLOSURE_Type = new ClassNode(GeneratedClosure.class);
+        GENERATED_CLOSURE_Type = new ClassNode(GeneratedClosure.class),
+        Enum_Type = new ClassNode("java.lang.Enum",0,OBJECT_TYPE);
         
-        
+    static {
+        Enum_Type.isPrimaryNode = false;
+    }
     
     private static ClassNode[] types = new ClassNode[] {
         OBJECT_TYPE,
@@ -108,7 +90,7 @@ public class ClassHelper {
         Byte_TYPE, Short_TYPE, Integer_TYPE, Long_TYPE,
         Double_TYPE, Float_TYPE, BigDecimal_TYPE, BigInteger_TYPE, 
         void_WRAPPER_TYPE, REFERENCE_TYPE, CLASS_Type, METACLASS_TYPE,
-        GENERATED_CLOSURE_Type,
+        GENERATED_CLOSURE_Type, Enum_Type
     };
 
     
@@ -263,6 +245,14 @@ public class ClassHelper {
 
     public static ClassNode makeReference() {
         return make(Reference.class);
+    }
+
+    public static boolean isUnresolvedEnum(ClassNode node) {
+        if (Enum_Type.isResolved()) return false;
+        if (node.isResolved()) return false;
+        ClassNode superClass = node.getSuperClass();
+        if (superClass==null) return false;
+        return superClass.redirect()==Enum_Type;
     }
 
 }

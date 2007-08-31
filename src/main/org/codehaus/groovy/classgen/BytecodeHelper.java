@@ -172,7 +172,7 @@ public class BytecodeHelper implements Opcodes {
      * eg.: String[]: classname: [Ljava.lang.String;
      * Object:   classname: java.lang.Object
      * int[] :   classname: [I
-     * unlike getTypeDescription '.' is not replaces by '/'.
+     * unlike getTypeDescription '.' is not replaced by '/'.
      * it seems that makes problems for
      * the class loading if '.' is replaced by '/'
      *
@@ -281,7 +281,7 @@ public class BytecodeHelper implements Opcodes {
         }
     }
 
-    protected void pushConstant(int value) {
+    public void pushConstant(int value) {
         switch (value) {
             case 0:
                 mv.visitInsn(ICONST_0);

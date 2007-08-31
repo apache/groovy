@@ -61,7 +61,9 @@ public class VerifierCodeVisitor extends CodeVisitorSupport implements Opcodes {
     }
 
     public void visitFieldExpression(FieldExpression expression) {
-        assertValidIdentifier(expression.getFieldName(), "field name", expression);
+        if (!expression.getField().isSynthetic()) {
+            assertValidIdentifier(expression.getFieldName(), "field name", expression);
+        }
         super.visitFieldExpression(expression);
     }
 

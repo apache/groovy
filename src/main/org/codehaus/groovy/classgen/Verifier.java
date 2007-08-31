@@ -58,7 +58,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
      */
     public void visitClass(ClassNode node) {
         this.classNode = node;
-                
+        
         if ((classNode.getModifiers() & Opcodes.ACC_INTERFACE) >0) {
             //interfaces have no construcotrs, but this code expects one, 
             //so create a dummy and don't add it to the class node

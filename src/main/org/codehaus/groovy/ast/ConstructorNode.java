@@ -17,6 +17,8 @@ package org.codehaus.groovy.ast;
 
 import java.util.Map;
 
+import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
+import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.stmt.*;
 
 
@@ -41,6 +43,16 @@ public class ConstructorNode extends MethodNode {
             declares.put(parameters[i].getName(),parameters[i]);
         }
         this.setVariableScope(scope);
+    }
+    
+    public boolean firstStatementIsSpecialConstructorCall() {
+        Statement code = getFirstStatement();
+        if (code == null || !(code instanceof ExpressionStatement)) return false;
+
+        Expression expression = ((ExpressionStatement) code).getExpression();
+        if (!(expression instanceof ConstructorCallExpression)) return false;
+        ConstructorCallExpression cce = (ConstructorCallExpression) expression;
+        return cce.isSpecialCall();
     }
 
 }

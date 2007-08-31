@@ -245,7 +245,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * @see org.objectweb.asm.Opcodes
      */
     public ClassNode(String name, int modifiers, ClassNode superClass) {
-        this(name, modifiers, superClass, ClassHelper.EMPTY_TYPE_ARRAY, MixinNode.EMPTY_ARRAY);
+        this(name, modifiers, superClass, EMPTY_ARRAY, MixinNode.EMPTY_ARRAY);
     }
 
     /**

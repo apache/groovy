@@ -204,6 +204,10 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 case METHOD_DEF:
                     methodDef(node);
                     break;
+                    
+                case ENUM_DEF:
+                    enumDef(node);
+                    break;
 
                 default:
                     {
@@ -388,10 +392,58 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                     objectInit(node);
                     break;
                     
+                case ENUM_DEF:
+                    enumDef(node);
+                    break;      
+                    
+                case ENUM_CONSTANT_DEF:
+                    enumConstantDef(node);
+                    break;
+                    
                 default:
                     unknownAST(node);
             }
         }
+    }
+    
+    protected void enumDef(AST enumNode) {
+        assertNodeType(ENUM_DEF, enumNode);
+        List annotations = new ArrayList();
+        
+        AST node = enumNode.getFirstChild();
+        int modifiers = Opcodes.ACC_PUBLIC;
+        if (isType(MODIFIERS, node)) {
+            modifiers = modifiers(node,annotations,modifiers);
+            node = node.getNextSibling();
+        }
+        
+        String name = identifier(node);
+        node = node.getNextSibling();
+       
+        ClassNode[] interfaces = interfaces(node);
+        node = node.getNextSibling();
+        
+        ClassNode enumClass = EnumHelper.makeEnumNode(dot(getPackageName(),name),modifiers,interfaces,classNode);
+        ClassNode oldNode = classNode;
+        classNode = enumClass;
+        assertNodeType(OBJBLOCK, node);
+        objectBlock(node);
+        classNode = oldNode;
+        
+        output.addClass(enumClass);
+    }
+    
+    protected void enumConstantDef(AST node) {
+        assertNodeType(ENUM_CONSTANT_DEF, node);
+        AST element = node.getFirstChild();
+        if (isType(ANNOTATIONS,element)) {
+            element = element.getNextSibling();
+        }
+        String identifier = identifier(element);
+        Expression init = null;
+        element = element.getNextSibling();
+        if (element!=null) init = expression(element);
+        EnumHelper.addEnumConstant(classNode, identifier, init);
     }
     
     protected void throwsList(AST node,List list) {

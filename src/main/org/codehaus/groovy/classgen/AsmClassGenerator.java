@@ -429,7 +429,8 @@ public class AsmClassGenerator extends ClassGenerator {
         helper = new BytecodeHelper(mv);
         if (!node.isAbstract()) {
             Statement code = node.getCode();
-            if (isConstructor && (code == null || !firstStatementIsSpecialConstructorCall(node))) {
+            
+            if (isConstructor && (code == null || !((ConstructorNode) node).firstStatementIsSpecialConstructorCall())) {
                 // invokes the super class constructor
                 mv.visitVarInsn(ALOAD, 0);
                 mv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(classNode.getSuperClass()), "<init>", "()V");
@@ -460,16 +461,6 @@ public class AsmClassGenerator extends ClassGenerator {
             mv.visitMaxs(0, 0);
         }
         mv.visitEnd();
-    }
-
-    private boolean firstStatementIsSpecialConstructorCall(MethodNode node) {
-        Statement code = node.getFirstStatement();
-        if (code == null || !(code instanceof ExpressionStatement)) return false;
-
-        Expression expression = ((ExpressionStatement) code).getExpression();
-        if (!(expression instanceof ConstructorCallExpression)) return false;
-        ConstructorCallExpression cce = (ConstructorCallExpression) expression;
-        return cce.isSpecialCall();
     }
 
     public void visitConstructor(ConstructorNode node) {
@@ -1785,7 +1776,11 @@ public class AsmClassGenerator extends ClassGenerator {
         // the int for our table, so swap it
         mv.visitInsn(SWAP);
         //load "this"
-        mv.visitVarInsn(ALOAD, 0);
+        if (constructorNode!=null) {
+            mv.visitVarInsn(ALOAD, 0);
+        } else {
+            mv.visitTypeInsn(NEW, BytecodeHelper.getClassInternalName(callNode));
+        }
         mv.visitInsn(SWAP);
         //prepare switch with >>8        
         mv.visitIntInsn(BIPUSH, 8);
@@ -1805,13 +1800,27 @@ public class AsmClassGenerator extends ClassGenerator {
             // to keep the stack height, we need to leave
             // one Object[] on the stack as last element. At the 
             // same time, we need the Object[] on top of the stack
-            // to extract the parameters. So a SWAP will exchange 
-            // "this" and Object[], a DUP_X1 will then copy the Object[]
-            /// to the last place in the stack: 
-            //     Object[],this -SWAP-> this,Object[]
-            //     this,Object[] -DUP_X1-> Object[],this,Object[] 
-            mv.visitInsn(SWAP);
-            mv.visitInsn(DUP_X1);
+            // to extract the parameters. 
+            if (constructorNode!=null) {
+                // in this case we need one "this", so a SWAP will exchange 
+                // "this" and Object[], a DUP_X1 will then copy the Object[]
+                /// to the last place in the stack: 
+                //     Object[],this -SWAP-> this,Object[]
+                //     this,Object[] -DUP_X1-> Object[],this,Object[] 
+                mv.visitInsn(SWAP);
+                mv.visitInsn(DUP_X1);
+            } else {
+                // in this case we need two "this" in between and the Object[]
+                // at the bottom of the stack as well as on top for our invokeSpecial            
+                // So we do DUP_X1, DUP2_X1, POP 
+                //     Object[],this -DUP_X1-> this,Object[],this
+                //     this,Object[],this -DUP2_X1-> Object[],this,this,Object[],this
+                //     Object[],this,this,Object[],this -POP->  Object[],this,this,Object[]
+                mv.visitInsn(DUP_X1);
+                mv.visitInsn(DUP2_X1);
+                mv.visitInsn(POP);
+            }
+            
 
             ConstructorNode cn = (ConstructorNode) constructors.get(i);
             String descriptor = helper.getMethodDescriptor(ClassHelper.VOID_TYPE, cn.getParameters());
@@ -2599,7 +2608,7 @@ public class AsmClassGenerator extends ClassGenerator {
         final Label tableEnd = new Label();
         final Label[] labels = new Label[size];
         instructions.add(new BytecodeInstruction() {
-            void visit(MethodVisitor mv) {
+            public void visit(MethodVisitor mv) {
                 mv.visitVarInsn(ILOAD, 1);
                 mv.visitTableSwitchInsn(0, size - 1, dflt, labels);
             }
@@ -2612,7 +2621,7 @@ public class AsmClassGenerator extends ClassGenerator {
             final boolean isStatement = expr instanceof Statement;
             labels[i] = label;
             instructions.add(new BytecodeInstruction() {
-                void visit(MethodVisitor mv) {
+                public void visit(MethodVisitor mv) {
                     mv.visitLabel(label);
                     // expressions will leave a value on stack, statements not
                     // so expressions need to pop the alibi null
@@ -2621,7 +2630,7 @@ public class AsmClassGenerator extends ClassGenerator {
             });
             instructions.add(expr);
             instructions.add(new BytecodeInstruction() {
-                void visit(MethodVisitor mv) {
+                public void visit(MethodVisitor mv) {
                     mv.visitJumpInsn(GOTO, tableEnd);
                 }
             });
@@ -2630,7 +2639,7 @@ public class AsmClassGenerator extends ClassGenerator {
         // default case
         {
             instructions.add(new BytecodeInstruction() {
-                void visit(MethodVisitor mv) {
+                public void visit(MethodVisitor mv) {
                     mv.visitLabel(dflt);
                 }
             });
@@ -2642,7 +2651,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
         // return
         instructions.add(new BytecodeInstruction() {
-            void visit(MethodVisitor mv) {
+            public void visit(MethodVisitor mv) {
                 mv.visitLabel(tableEnd);
                 mv.visitInsn(ARETURN);
             }

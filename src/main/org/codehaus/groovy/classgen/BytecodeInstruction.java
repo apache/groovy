@@ -26,5 +26,5 @@ import org.objectweb.asm.MethodVisitor;
  * @author Jochen Theodorou
  */
 public abstract class BytecodeInstruction {
-    abstract void visit(MethodVisitor mv);
+    public abstract void visit(MethodVisitor mv);
 }

@@ -33,6 +33,7 @@ import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.ClassCompletionVerifier;
 import org.codehaus.groovy.classgen.ClassGenerator;
+import org.codehaus.groovy.classgen.EnumVisitor;
 import org.codehaus.groovy.classgen.ExtendedVerifier;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.classgen.VariableScopeVisitor;
@@ -149,6 +150,13 @@ public class CompilationUnit extends ProcessingUnit {
             }
         }, Phases.PARSING);
         addPhaseOperation(convert,      Phases.CONVERSION);
+        addPhaseOperation(new PrimaryClassNodeOperation() {
+            public void call(SourceUnit source, GeneratorContext context,
+                    ClassNode classNode) throws CompilationFailedException {
+                EnumVisitor ev = new EnumVisitor(CompilationUnit.this,source);
+                ev.visitClass(classNode);
+            }
+        }, Phases.CONVERSION);        
         addPhaseOperation(resolve,      Phases.SEMANTIC_ANALYSIS);
         addPhaseOperation(staticImport, Phases.SEMANTIC_ANALYSIS);
         addPhaseOperation(compileCompleteCheck, Phases.CANONICALIZATION);
