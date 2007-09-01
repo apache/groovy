@@ -436,14 +436,13 @@
             <artifactId>commons-cli</artifactId>
             <version>1.0</version>
             <scope>compile</scope>
-        </dependency>
-        <!-- more up-to-date dependency for commons-cli 1.0,
-             may be able to remove if we move beyond cli 1.0 -->
-        <dependency>
-            <groupId>commons-lang</groupId>
-            <artifactId>commons-lang</artifactId>
-            <version>2.3</version>
-            <scope>runtime</scope>
+            <exclusions>
+                <!-- not needed by our usage of commons cli -->
+                <exclusion>
+                    <groupId>commons-lang</groupId>
+                    <artifactId>commons-lang</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- only used for Ant tasks & scripting tools -->
