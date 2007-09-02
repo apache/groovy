@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.codehaus.groovy.tools;
 
 import java.io.File;
@@ -29,8 +30,16 @@ import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ConfigurationException;
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit;
+import org.codehaus.groovy.runtime.InvokerHelper;
 
-public class FileSystemCompiler  
+/**
+ * Command-line compiler (aka. <tt>groovyc</tt>).
+ * 
+ * @version $Id$
+ *
+ * @noinspection AccessStaticViaInstance
+ */
+public class FileSystemCompiler
 {
     private CompilationUnit unit;
 
@@ -59,14 +68,14 @@ public class FileSystemCompiler
 
     public static void displayHelp(final Options options)
     {
-      final HelpFormatter formatter = new HelpFormatter ( ) ;
-      //formatter.printHelp ( formatter.getWidth ( ) , "groovyc <options> <source-files>" , "where possible options are:" , options , "" ) ;
-      formatter.printHelp ( formatter.defaultWidth , "groovyc <options> <source-files>" , "where possible options are:" , options , "" ) ;
+        final HelpFormatter formatter = new HelpFormatter ( ) ;
+        formatter.printHelp ( formatter.getWidth ( ) , "groovyc [options] <source-files>" , "options:", options , "" ) ;
     }
 
     public static void displayVersion() 
     {
-        System.err.println("Groovy compiler version 1.1-beta-3-SNAPSHOT");
+        String version = InvokerHelper.getVersion();
+        System.err.println("Groovy compiler version " + version);
         System.err.println("Copyright 2003-2007 The Codehaus. http://groovy.codehaus.org/");
         System.err.println("");
     }
@@ -104,7 +113,7 @@ public class FileSystemCompiler
     public static void main( String[] args )
     {
         boolean displayStackTraceOnError = false;
-        boolean jointCompilation = false;
+        boolean jointCompilation;
         
         try
         {
@@ -131,7 +140,7 @@ public class FileSystemCompiler
                     .withDescription("")
                     .create( "J" ));
             options.addOption(
-                    OptionBuilder.withArgName( "property=value" )
+                    OptionBuilder.withArgName( "flag" )
                     .hasArg()
                     .withDescription("")
                     .create( "F" ));
@@ -149,6 +158,7 @@ public class FileSystemCompiler
             if( cli.hasOption('v') ) 
             {
                 displayVersion();
+                return;
             }
     
             
@@ -217,8 +227,6 @@ public class FileSystemCompiler
             new ErrorReporter( e, displayStackTraceOnError ).write( System.err );
         }
     }
-    
-
 
     private static File createTempDir() throws IOException {
         File tempFile = File.createTempFile("generated-", "java-source");
@@ -226,6 +234,4 @@ public class FileSystemCompiler
         tempFile.mkdirs();
         return tempFile;
     }
-    
-    
 }
