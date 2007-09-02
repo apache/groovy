@@ -128,7 +128,7 @@ public class GroovyMain {
             pw,
             80,
             "groovy [options] [args]",
-            null, // header
+            "options:",
             options,
             2,
             4,
@@ -163,7 +163,7 @@ public class GroovyMain {
             OptionBuilder.withLongOpt("define").
                 withDescription("define a system property").
                 hasArg(true).
-                withArgName("key=value").
+                withArgName("name=value").
                 create('D')
         );
         options.addOption(
@@ -483,16 +483,7 @@ public class GroovyMain {
             }
         }
     }
-
-    private static ClassLoader getLoader(ClassLoader cl) {
-        if (cl!=null) return cl;
-        cl = Thread.currentThread().getContextClassLoader();
-        if (cl!=null) return cl;
-        cl = GroovyMain.class.getClassLoader();
-        if (cl!=null) return cl;
-        return null;
-    }
-
+    
     /**
      * Process the standard, single script with args.
      */
