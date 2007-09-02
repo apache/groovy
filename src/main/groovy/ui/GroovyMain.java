@@ -123,8 +123,18 @@ public class GroovyMain {
     private static void printHelp(PrintStream out, Options options) {
         HelpFormatter formatter = new HelpFormatter();
         PrintWriter pw = new PrintWriter(out);
-        //formatter.printHelp( pw, formatter.getWidth(), "groovy", null, options, formatter.getLeftPadding(), formatter.getDescPadding(), null, false);
-        formatter.printHelp( pw, formatter.defaultWidth, "groovy", null, options, formatter.defaultLeftPad, formatter.defaultDescPad, null, false);
+
+        formatter.printHelp(
+            pw,
+            80,
+            "groovy [options] [args]",
+            null, // header
+            options,
+            2,
+            4,
+            null, // footer
+            false);
+       
         pw.flush();
     }
 
@@ -149,6 +159,13 @@ public class GroovyMain {
     private static synchronized Options buildOptions() {
         Options options = new Options();
 
+        options.addOption(
+            OptionBuilder.withLongOpt("define").
+                withDescription("define a system property").
+                hasArg(true).
+                withArgName("key=value").
+                create('D')
+        );
         options.addOption(
             OptionBuilder.hasArg(false)
             .withDescription("usage information")
@@ -196,10 +213,30 @@ public class GroovyMain {
         options.addOption(
             OptionBuilder.withArgName("splitPattern")
             .hasOptionalArg()
-            .withDescription("automatically split current line (defaults to '\\s'")
+            .withDescription("automatically split current line (defaults to '\\s')")
             .withLongOpt("autosplit")
             .create('a'));
+
         return options;
+    }
+
+    private static void setSystemPropertyFrom(final String nameValue) {
+        assert nameValue != null;
+
+        String name, value;
+        int i = nameValue.indexOf("=");
+
+        if (i == -1) {
+            name = nameValue;
+            value = Boolean.TRUE.toString();
+        }
+        else {
+            name = nameValue.substring(0, i);
+            value = nameValue.substring(i + 1, nameValue.length());
+        }
+        name = name.trim();
+
+        System.setProperty(name, value);
     }
 
     /**
@@ -212,6 +249,14 @@ public class GroovyMain {
         GroovyMain main = new GroovyMain();
 
         List args = line.getArgList();
+        
+        if (line.hasOption('D')) {
+            String[] values = line.getOptionValues('D');
+
+            for (int i=0; i<values.length; i++) {
+                setSystemPropertyFrom(values[i]);
+            }
+        }
 
         // add the ability to parse scripts with a specified encoding
         main.conf.setSourceEncoding(line.getOptionValue('c',main.conf.getSourceEncoding()));
@@ -422,12 +467,15 @@ public class GroovyMain {
         s.setProperty(lineCountName, BigInteger.ZERO);
         String autoSplitName = "split";
         s.setProperty("out", pw);
+
         while ((line = reader.readLine()) != null) {
             s.setProperty("line", line);
-            s.setProperty(lineCountName,
-                    ((BigInteger)s.getProperty(lineCountName)).add(BigInteger.ONE));
-            if(autoSplit)
+            s.setProperty(lineCountName, ((BigInteger)s.getProperty(lineCountName)).add(BigInteger.ONE));
+
+            if(autoSplit) {
                 s.setProperty(autoSplitName, line.split(splitPattern));
+            }
+
             Object o = s.run();
 
             if (autoOutput && o != null) {
@@ -451,9 +499,11 @@ public class GroovyMain {
     private void processOnce() throws CompilationFailedException, IOException {
         GroovyShell groovy = new GroovyShell(conf);
 
-        if (isScriptFile)
+        if (isScriptFile) {
             groovy.run(huntForTheScriptFile(script), args);
-        else
+        }
+        else {
             groovy.run(script, "script_from_command_line", args);
+        }
     }
 }
