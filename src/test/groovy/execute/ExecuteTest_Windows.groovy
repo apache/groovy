@@ -25,7 +25,12 @@ class ExecuteTest_Windows extends GroovyTestCase {
     def process = "cmd.exe /c date.exe /t".execute()
     process.waitFor()
     def theDate = process.in.text.trim()
-    assert theDate.size() > 9, "Expected '$theDate' to be at least 9 chars long" 
+    def minLen = 8
+      // dk: the length depends on the locale settings and usually contains two digits for
+      //     each day/month/year where the separation char may differ. This test may fail for
+      //     locales with even shorter date representations. As soon as this happens, please
+      //     adapt the minLen value.
+    assert theDate.size() >= minLen, "Expected '$theDate' to be at least $minLen chars long"
   }
 
   void testEchoOneArray() {
