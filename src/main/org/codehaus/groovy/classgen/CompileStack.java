@@ -117,30 +117,30 @@ public class CompileStack implements Opcodes {
     private String className;
 	
     private class StateStackElement {
-        VariableScope _scope;
-        Label _continueLabel;
-        Label _breakLabel;
-        Label _finallyLabel;
-        int _lastVariableIndex;
-        int _nextVariableIndex;
-        HashMap _stackVariables;
-        LinkedList _temporaryVariables = new LinkedList();
-        LinkedList _usedVariables = new LinkedList();
-        HashMap _superBlockNamedLabels;
-        HashMap _currentBlockNamedLabels;
-        LinkedList _finallyBlocks;
+        VariableScope scope;
+        Label continueLabel;
+        Label breakLabel;
+        Label finallyLabel;
+        int lastVariableIndex;
+        int nextVariableIndex;
+        HashMap stackVariables;
+        LinkedList temporaryVariables = new LinkedList();
+        LinkedList usedVariables = new LinkedList();
+        HashMap superBlockNamedLabels;
+        HashMap currentBlockNamedLabels;
+        LinkedList finallyBlocks;
         
         StateStackElement() {
-            _scope = CompileStack.this.scope;
-            _continueLabel = CompileStack.this.continueLabel;
-            _breakLabel = CompileStack.this.breakLabel;
-            _lastVariableIndex = CompileStack.this.currentVariableIndex;
-            _stackVariables = CompileStack.this.stackVariables;
-            _temporaryVariables = CompileStack.this.temporaryVariables;
-            _nextVariableIndex = nextVariableIndex;
-            _superBlockNamedLabels = superBlockNamedLabels;
-            _currentBlockNamedLabels = currentBlockNamedLabels;
-            _finallyBlocks = finallyBlocks;
+            scope = CompileStack.this.scope;
+            continueLabel = CompileStack.this.continueLabel;
+            breakLabel = CompileStack.this.breakLabel;
+            lastVariableIndex = CompileStack.this.currentVariableIndex;
+            stackVariables = CompileStack.this.stackVariables;
+            temporaryVariables = CompileStack.this.temporaryVariables;
+            nextVariableIndex = CompileStack.this.nextVariableIndex;
+            superBlockNamedLabels = CompileStack.this.superBlockNamedLabels;
+            currentBlockNamedLabels = CompileStack.this.currentBlockNamedLabels;
+            finallyBlocks = CompileStack.this.finallyBlocks;
         }
     }
     
@@ -155,13 +155,13 @@ public class CompileStack implements Opcodes {
              throw new GroovyBugError("Tried to do a pop on the compile stack without push.");
         }
         StateStackElement element = (StateStackElement) stateStack.removeLast();
-        scope = element._scope;
-        continueLabel = element._continueLabel;
-        breakLabel = element._breakLabel;
-        currentVariableIndex = element._lastVariableIndex;
-        stackVariables = element._stackVariables;
-        nextVariableIndex = element._nextVariableIndex;
-        finallyBlocks = element._finallyBlocks;
+        scope = element.scope;
+        continueLabel = element.continueLabel;
+        breakLabel = element.breakLabel;
+        currentVariableIndex = element.lastVariableIndex;
+        stackVariables = element.stackVariables;
+        nextVariableIndex = element.nextVariableIndex;
+        finallyBlocks = element.finallyBlocks;
     }
     
     public Label getContinueLabel() {
@@ -505,7 +505,8 @@ public class CompileStack implements Opcodes {
     }
 
     /**
-     * Returns true if a varibale is already defined
+     * @param name the name of the variable of interest
+     * @return true if a variable is already defined
      */
     public boolean containsVariable(String name) {
         return stackVariables.containsKey(name);
@@ -569,12 +570,12 @@ public class CompileStack implements Opcodes {
         StateStackElement result = null;
         for (ListIterator iter = stateStack.listIterator(stateStack.size()); iter.hasPrevious();) {
             StateStackElement element = (StateStackElement) iter.previous();
-            if (!element._currentBlockNamedLabels.values().contains(label)) {
-                if (isBreakLabel && element._breakLabel != label) {
+            if (!element.currentBlockNamedLabels.values().contains(label)) {
+                if (isBreakLabel && element.breakLabel != label) {
                     result = element;
                     break;
                 }
-                if (!isBreakLabel && element._continueLabel != label) {
+                if (!isBreakLabel && element.continueLabel != label) {
                     result = element;
                     break;
                 }
@@ -586,7 +587,7 @@ public class CompileStack implements Opcodes {
             // all Blocks do know the label, so use all finally blocks
             blocksToRemove = Collections.EMPTY_LIST;
         } else {
-            blocksToRemove = result._finallyBlocks;
+            blocksToRemove = result.finallyBlocks;
         }
         
         ArrayList blocks = new ArrayList(finallyBlocks);
