@@ -151,14 +151,8 @@ class CliBuilderTest extends GroovyTestCase {
     def cli = new CliBuilder ( writer : printWriter )
     cli.x ( required : true , 'message' )
     def options = cli.parse ( [ ] )
-    /*
-     *  Error messages are slightly different between 1.0 and 1.1.
-     *
+    
     assertEquals ( '''error: Missing required option: x
-usage: groovy
- -x   message''',  stringWriter.toString ( ).tokenize ( '\r\n' ).join ( '\n' ) )
-    */
-    assertEquals ( '''error: -x
 usage: groovy
  -x   message''',  stringWriter.toString ( ).tokenize ( '\r\n' ).join ( '\n' ) )
     }
@@ -168,63 +162,21 @@ usage: groovy
     def anOption = OptionBuilder.withLongOpt ( 'anOption' ).hasArg ( ).withDescription ( 'An option.' ).create ( )
     cli.options.addOption ( anOption )
     def options = cli.parse ( [ '-v' , '--anOption' , 'something' ] )
-    /*
-     *  The behaviour here depends ont whether stopAtNonOption is true or false in the call to parser.parse
-     *  in CliBuilder.parse.  Currently this is true, so parse simply terminates.  Any options after the
-     *  unrecognized one are unprocessed.
-     *
-    assertEquals ( '''error: -v
-usage: groovy
- --anOption   message''',  stringWriter.toString ( ).tokenize ( '\r\n' ).join ( '\n' ) )
-    */
-    assertEquals ( '''''', stringWriter.toString ( ).tokenize ( '\r\n' ).join ( '\n' ) )
-    assert ! options.v
-    /*
-     *  In 1.1, when run individually using testOne groovy.util.CliBuilderTest, but not when run using testAll or
-     *  testOne UberTestCaseGroovySourceSubPackages, the <arg> is missing and this test fails.  What is it
-     *  about this way of running things that means the above Commons CLI calls fail to work as they should?
-     *  This is WORRYING.
-     *
-     *  TODO: fixme
-     *
-    assertEquals ( '''usage: groovy
-    --anOption <arg>   An option.''' , stringWriter.toString ( ).tokenize ( '\r\n' ).join ( '\n' ) )
-    *
-    *  1.0 gets it wrong always :-(
-    */
-    /*
-    assertEquals ( '''usage: groovy
-    --anOption    An option.''' , stringWriter.toString ( ).tokenize ( '\r\n' ).join ( '\n' ) )
-    */
-    /*
-     *  For some reason, no matter how this test is run, anOption is not a recognized option.  This is the
-     *  extant behaviour and not what should happen, i.e. this is a bug to be investigated and fixed.  This
-     *  is a bug for 1.1, 1.0 just always gets it wrong anyway.
-     *
-     *  TODO:  Fixme
-     *
-    assertEquals ( 'something' , options.getOptionValue ( 'anOption' ) )
-    assertEquals ( 'something' , options.anOption )
-    */
-    assertEquals ( null , options.getOptionValue ( 'anOption' ) )
-    assertEquals ( false , options.anOption )
+    
+    assert options.getOptionValue ( 'anOption' ) == null
+    assert false == options.anOption
   }
+  
   void testLongOptsOnly_PosixParser ( ) {
     def cli = new CliBuilder ( writer : printWriter , parser : new PosixParser ( ) )
     def anOption = OptionBuilder.withLongOpt ( 'anOption' ).hasArg ( ).withDescription ( 'An option.' ).create ( )
     cli.options.addOption ( anOption )
     def options = cli.parse ( [ '-v' , '--anOption' , 'something' ] )
     cli.usage ( )
-    /*
-     *  1.0 gets this totally wrong.
-     *
-    assertEquals ( '''usage: groovy
-    --anOption <arg>   An option.''' , stringWriter.toString ( ).tokenize ( '\r\n' ).join ( '\n' ) )
-    */
-    assertEquals ( '''usage: groovy
-    --anOption    An option.''' , stringWriter.toString ( ).tokenize ( '\r\n' ).join ( '\n' ) )
-    assertEquals ( 'something' , options.getOptionValue ( 'anOption' ) )
-    assertEquals ( 'something' , options.anOption )
+    
+    assert 'something' == options.getOptionValue ( 'anOption' )
+    assert 'something' == options.anOption
+    
     assert ! options.v
   }
 
@@ -235,17 +187,9 @@ usage: groovy
     cli.v ( longOpt : 'verbose' , 'verbose mode' )
     def options = cli.parse ( [ '-v' , '--anOption' , 'something' ] )
     cli.usage ( )
-    /*
-     *  1.0 gets this totally wrong.
-     *
-    assertEquals ( '''usage: groovy
-    --anOption <arg>   An option.
- -v,--verbose          verbose mode''' , stringWriter.toString ( ).tokenize ( '\r\n' ).join ( '\n' ) )
-    */
-    assertEquals ( '''usage: groovy
-    --anOption    An option.
- -v,--verbose     verbose mode''' , stringWriter.toString ( ).tokenize ( '\r\n' ).join ( '\n' ) )
-     assert options.v
+    
+    assert options.v
+    
     return options
   }
 
