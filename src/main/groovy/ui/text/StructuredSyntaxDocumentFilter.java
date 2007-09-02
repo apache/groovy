@@ -84,6 +84,7 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
     
     /**
      * Creates a new instance of StructuredSyntaxDocumentFilter
+     * @param document the styled document to parse
      */
     public StructuredSyntaxDocumentFilter(DefaultStyledDocument document) {
         this.styledDocument = document;
@@ -162,8 +163,8 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
      *
      * @param fb
      * @param offset
-     * @param string
-     * @param set
+     * @param text
+     * @param attrs
      * @throws BadLocationException
      */    
     public void insertString(DocumentFilter.FilterBypass fb, int offset,
@@ -183,9 +184,9 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
      * position.  Called by the filter after it has updated the text. 
      *
      * @param offset
+     * @param length
      * @throws BadLocationException
-     * @return
-     */   
+     */
     protected void parseDocument(int offset, int length) throws BadLocationException {
         // intialize the segment with the complete document so the segment doesn't
         // have an underlying gap in the buffer
@@ -305,7 +306,7 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
          */
         LexerNode(boolean isParent) {
             StyleContext sc = StyleContext.getDefaultStyleContext();
-            defaultStyle = (Style)sc.getStyle(StyleContext.DEFAULT_STYLE);
+            defaultStyle = sc.getStyle(StyleContext.DEFAULT_STYLE);
         }
     
         private String buildRegexp(String[] regexps) {
@@ -348,14 +349,14 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
         }
         
         /**
-         * @return
+         * @return true if initialised
          */        
         public boolean isInitialized() {
             return initialized;
         }
 
         /**
-         * @param text
+         * @param buffer
          * @param offset
          * @param length
          * @throws BadLocationException
@@ -446,8 +447,7 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
          * @param node
          */        
         public void putChild(String regexp, LexerNode node) {
-            Style style = (Style)styleMap.get(regexp);
-            node.defaultStyle = style;
+            node.defaultStyle = (Style)styleMap.get(regexp);
             
             // have to compile regexp first so that it will match
             children.put(Pattern.compile(regexp).pattern(), node);

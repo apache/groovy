@@ -94,7 +94,7 @@ public class BindFactory implements Factory {
      * @param name
      * @param value
      * @param properties
-     * @return
+     * @return the newly created instance
      * @throws InstantiationException
      * @throws IllegalAccessException
      */

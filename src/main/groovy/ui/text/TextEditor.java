@@ -230,9 +230,7 @@ public class TextEditor extends JTextPane implements Pageable, Printable {
         FindReplaceUtility.registerTextComponent(this);
     }
 
-    /**
-     * @return
-     */    
+    /** {@inheritDoc} */
     public int getNumberOfPages() { 
         StyledDocument doc = (StyledDocument)getDocument();
         
@@ -244,31 +242,17 @@ public class TextEditor extends JTextPane implements Pageable, Printable {
         return numPages;
     }
     
-    /**
-     * @param param
-     * @throws IndexOutOfBoundsException
-     * @return
-     */    
+    /** {@inheritDoc} */
     public PageFormat getPageFormat(int param) throws IndexOutOfBoundsException {
         return PAGE_FORMAT;
     }
     
-    /**
-     * @param param
-     * @throws IndexOutOfBoundsException
-     * @return
-     */    
+    /** {@inheritDoc} */
     public Printable getPrintable(int param) throws IndexOutOfBoundsException {
         return this;
     }
     
-    /**
-     * @param graphics
-     * @param pageFormat
-     * @param page
-     * @throws PrinterException
-     * @return
-     */    
+    /** {@inheritDoc} */
     public int print(Graphics graphics, PageFormat pageFormat, int page)
         throws PrinterException {
         if (page < numPages) {
@@ -332,9 +316,7 @@ public class TextEditor extends JTextPane implements Pageable, Printable {
         return Printable.NO_SUCH_PAGE;
     }
     
-    /**
-     * @return
-     */    
+    /** {@inheritDoc} */
     public boolean getScrollableTracksViewportWidth(){
         boolean bool = super.getScrollableTracksViewportWidth();
         if (unwrapped) {
@@ -348,42 +330,23 @@ public class TextEditor extends JTextPane implements Pageable, Printable {
         return bool;
     }
     
-    /**
-     * @return
-     */    
     public boolean isMultiLineTabbed() {
         return multiLineTab;
     }
     
-    /*
-     *	Return the overtype/insert mode
-     */
-    /**
-     * @return
-     */    
     public static boolean isOvertypeMode() {
         return isOvertypeMode;
     }
     
-    /**
-     * @return
-     */    
     public boolean isTabsAsSpaces() {
         return tabsAsSpaces;
     }
     
-    /**
-     * @return
-     */    
     public boolean isUnwrapped() {
         return unwrapped;
     }
     
-    /**
-     * Override method from JComponent.
-     *
-     * @param e
-     */
+    /** {@inheritDoc} */
     protected void processKeyEvent(KeyEvent e)
     {
         super.processKeyEvent(e);
@@ -394,19 +357,15 @@ public class TextEditor extends JTextPane implements Pageable, Printable {
             setOvertypeMode(!isOvertypeMode());
         }
     }
-    
+
+    /** {@inheritDoc} */
     public void removeNotify() {
         super.removeNotify();
         removeMouseListener(mouseAdapter);
-        
         FindReplaceUtility.unregisterTextComponent(this);
     }
-    
-    /**  
-     * Override method from JComponent.
-     *
-     * @param text
-     */
+
+    /** {@inheritDoc} */
     public void replaceSelection(String text) {
         //  Implement overtype mode by selecting the character at the current
         //  caret position
@@ -421,12 +380,7 @@ public class TextEditor extends JTextPane implements Pageable, Printable {
         super.replaceSelection(text);
     }
 
-    /**
-     * @param x
-     * @param y
-     * @param width
-     * @param height
-     */    
+    /** {@inheritDoc} */
     public void setBounds(int x, int y, int width, int height) {
         if (unwrapped) {
             Dimension size = this.getPreferredSize();

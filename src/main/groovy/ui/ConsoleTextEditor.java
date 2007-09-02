@@ -109,9 +109,6 @@ public class ConsoleTextEditor extends JScrollPane {
         am.put(StructuredSyntaxResources.PRINT, printAction);
     }
     
-    /**
-     * @return
-     */    
     public boolean clipBoardAvailable() {
         Transferable t = StructuredSyntaxResources.SYSTEM_CLIPBOARD.getContents(this);
         return t.isDataFlavorSupported(DataFlavor.stringFlavor);

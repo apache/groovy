@@ -552,8 +552,9 @@ $Date$
             <fileset dir="${mainSourceDirectory}" includes="**/*.java"/>
             <link href="http://java.sun.com/j2se/1.4.2/docs/api"/>
             <link href="http://www.dpml.net/api/ant/1.7.0"/>
-            <link href="http://www.junit.org/junit/javadoc/3.8.1"/>
+            <link href="http://junit.sourceforge.net/junit3.8.1/javadoc/"/>
             <link href="http://java.sun.com/j2ee/1.4/docs/api"/>
+            <link href="http://www.antlr2.org/javadoc"/>
         </javadoc>
         <taskdef name="groovydoc" classname="org.codehaus.groovy.ant.Groovydoc">
             <classpath>

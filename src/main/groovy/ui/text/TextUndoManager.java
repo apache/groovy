@@ -57,18 +57,14 @@ public class TextUndoManager extends UndoManager {
         propChangeSupport.addPropertyChangeListener(pcl);
     }
     
-    /* (non-Javadoc)
-     * @see javax.swing.undo.CompoundEdit#die()
-     */
+    /** {@inheritDoc} */
     public void die() {
         boolean undoable = canUndo();
         super.die();
         firePropertyChangeEvent(UndoManager.UndoName, undoable, canUndo());
     }
     
-    /* (non-Javadoc)
-     * @see javax.swing.undo.UndoManager#discardAllEdits()
-     */
+    /** {@inheritDoc} */
     public void discardAllEdits() {
         boolean undoable = canUndo();
         boolean redoable = canRedo();
@@ -92,16 +88,11 @@ public class TextUndoManager extends UndoManager {
         propChangeSupport.firePropertyChange(name, oldValue, newValue);
     }
     
-    /**
-     * @return
-     */
     public boolean hasChanged() {
         return modificationMarker != editToBeUndone();
     }
     
-    /* (non-Javadoc)
-     * @see javax.swing.undo.UndoManager#redo()
-     */
+    /** {@inheritDoc} */
     public void redo() throws javax.swing.undo.CannotRedoException {
         compoundEdit.end();
         
@@ -117,9 +108,7 @@ public class TextUndoManager extends UndoManager {
         firePropertyChangeEvent(UndoManager.UndoName, undoable, canUndo());
     }
     
-    /* (non-Javadoc)
-     * @see javax.swing.undo.UndoManager#redoTo(javax.swing.undo.UndoableEdit)
-     */
+    /** {@inheritDoc} */
     protected void redoTo(UndoableEdit edit) {
         compoundEdit.end();
         
@@ -143,9 +132,6 @@ public class TextUndoManager extends UndoManager {
         propChangeSupport.removePropertyChangeListener(pcl);
     }
     
-    /**
-     * 
-     */
     public void reset() {
         boolean changed = modificationMarker != editToBeUndone();
         if (changed) {
@@ -153,9 +139,7 @@ public class TextUndoManager extends UndoManager {
         }
     }
     
-    /* (non-Javadoc)
-     * @see javax.swing.undo.UndoManager#trimEdits(int, int)
-     */
+    /** {@inheritDoc} */
     protected void trimEdits(int from, int to) {
         boolean undoable = canUndo();
         boolean redoable = canRedo();
@@ -167,9 +151,7 @@ public class TextUndoManager extends UndoManager {
         firePropertyChangeEvent(UndoManager.RedoName, redoable, canRedo());
     }
 
-    /* (non-Javadoc)
-     * @see javax.swing.undo.UndoManager#undo()
-     */
+    /** {@inheritDoc} */
     public void undo() throws javax.swing.undo.CannotUndoException {
         compoundEdit.end();
         
@@ -188,9 +170,7 @@ public class TextUndoManager extends UndoManager {
         firePropertyChangeEvent(UndoManager.RedoName, redoable, canRedo());
     }
 
-    /* (non-Javadoc)
-     * @see javax.swing.undo.UndoManager#undoableEditHappened(javax.swing.event.UndoableEditEvent)
-     */
+    /** {@inheritDoc} */
     public void undoableEditHappened(UndoableEditEvent uee) {
         UndoableEdit edit = uee.getEdit();
         boolean undoable = canUndo();
@@ -234,23 +214,16 @@ public class TextUndoManager extends UndoManager {
             return result;
         }
 
-        /* (non-Javadoc)
-         * @see javax.swing.undo.CompoundEdit#canUndo()
-         */
+        /** {@inheritDoc} */
         public boolean canUndo() {
             return edits.size() > 0;
         }
         
-        /**
-         * @return
-         */
         protected long editedTime() {
             return editedTime;
         }
         
-        /* (non-Javadoc)
-         * @see javax.swing.undo.CompoundEdit#isInProgress()
-         */
+        /** {@inheritDoc} */
         public boolean isInProgress() {
             return false;
         }

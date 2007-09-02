@@ -193,7 +193,7 @@ public interface MetaClass extends MetaObjectProtocol {
       * @param numberOfConstructors The number of constructors
       * @param arguments The arguments
       *
-      * @return
+      * @return selected index
       */
      int selectConstructorAndTransformArguments(int numberOfConstructors, Object[] arguments);
 

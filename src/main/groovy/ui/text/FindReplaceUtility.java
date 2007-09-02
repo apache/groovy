@@ -119,7 +119,8 @@ public class FindReplaceUtility {
     static {
         findReplaceDialog.setResizable(false);
         findReplaceDialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-        KeyStroke keyStroke = KeyStroke.getKeyStroke("enter");
+        // is next line needed at all?
+        /* KeyStroke keyStroke = */ KeyStroke.getKeyStroke("enter");
         KeyAdapter keyAdapter = new KeyAdapter() {            
             public void keyTyped(KeyEvent ke) {
                 if (ke.getKeyChar() == KeyEvent.VK_ENTER) {
@@ -218,31 +219,31 @@ public class FindReplaceUtility {
     }
     
     /**
-     * @return
+     * @return the last action
      */    
     public static String getLastAction() {
         return lastAction;
     }
     
     /**
-     * @return
+     * @return the replacement count
      */    
     public static int getReplacementCount() {
         return findReplaceCount;
     }
     
     /**
-     * @return
+     * @return the search text
      */    
     public static String getSearchText() {
         return (String)findField.getSelectedItem();
     }
     
     /**
-     * @param te
+     * @param textComponent the text component to listen to
      */    
-    public static void registerTextComponent(JTextComponent te) {
-        te.addFocusListener(textFocusListener);
+    public static void registerTextComponent(JTextComponent textComponent) {
+        textComponent.addFocusListener(textFocusListener);
     }
     
     public static void removeTextListener(TextListener tl) {
@@ -253,8 +254,9 @@ public class FindReplaceUtility {
      * Find and select the next searchable matching text.
      *
      * @param reverse look forwards or backwards
+     * @param pos the starting index to start finding from
      * @return the location of the next selected, or -1 if not found
-     */        
+     */
     private static int findNext(boolean reverse, int pos) {
         boolean backwards = isBackwardsCBox.isSelected();
         backwards = backwards ? !reverse : reverse;
@@ -289,8 +291,7 @@ public class FindReplaceUtility {
             
             boolean found = false;
             while (!found && (backwards ? pos > end : pos < end)) {
-                found = !matchCaseCBox.isSelected() ?
-                    segment.array[pos] == oppFirst : false;
+                found = !matchCaseCBox.isSelected() && segment.array[pos] == oppFirst;
                 found = found ? found : segment.array[pos] == first;
                 
                 if (found) {
@@ -324,7 +325,7 @@ public class FindReplaceUtility {
     }
     
     private static void setListStrings() {
-        Object findObject = (String)findField.getSelectedItem();
+        Object findObject = findField.getSelectedItem();
         Object replaceObject = replaceField.isShowing() ? 
             (String)replaceField.getSelectedItem() : "";
             
@@ -361,7 +362,7 @@ public class FindReplaceUtility {
     }
     
     /**
-     * @param isReplace
+     * @param isReplace show a replace dialog rather than a find dialog if true
      */    
     public static void showDialog(boolean isReplace) {
         String title = isReplace ? REPLACE_ACTION_COMMAND : FIND_ACTION_COMMAND;
@@ -406,10 +407,10 @@ public class FindReplaceUtility {
     }
     
     /**
-     * @param te
-     */    
-    public static void unregisterTextComponent(JTextComponent te) {
-        te.removeFocusListener(textFocusListener);
+     * @param textComponent the text component to stop listening to
+     */
+    public static void unregisterTextComponent(JTextComponent textComponent) {
+        textComponent.removeFocusListener(textFocusListener);
     }
     
     private static class FindAction extends AbstractAction {
