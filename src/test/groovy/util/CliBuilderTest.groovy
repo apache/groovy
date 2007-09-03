@@ -151,8 +151,12 @@ class CliBuilderTest extends GroovyTestCase {
     def cli = new CliBuilder ( writer : printWriter )
     cli.x ( required : true , 'message' )
     def options = cli.parse ( [ ] )
-    
-    assertEquals ( '''error: Missing required option: x
+
+    //
+    // FIXME: This test is very fragile and is bound to fail on different locales and versions of commons-cli... :-(
+    //
+      
+    assertEquals ( '''error: -x
 usage: groovy
  -x   message''',  stringWriter.toString ( ).tokenize ( '\r\n' ).join ( '\n' ) )
     }
