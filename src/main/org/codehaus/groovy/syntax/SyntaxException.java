@@ -26,10 +26,10 @@ import org.codehaus.groovy.GroovyException;
 public class SyntaxException extends GroovyException {
 
     /** Line upon which the error occurred. */
-    private int line;
+    private final int line;
 
     /** Column upon which the error occurred. */
-    private int column;
+    private final int column;
 
     private String sourceLocator;
 
@@ -86,7 +86,6 @@ public class SyntaxException extends GroovyException {
     }
 
     public String getMessage() {
-        String msg = super.getMessage() + " @ line " + line + ", column " + column + ".";
-        return msg;
+        return super.getMessage() + " @ line " + line + ", column " + column + ".";
     }
 }

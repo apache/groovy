@@ -17,8 +17,8 @@
 package org.codehaus.groovy.syntax;
 
 public class TokenMismatchException extends TokenException {
-    private Token unexpectedToken;
-    private int expectedType;
+    private final Token unexpectedToken;
+    private final int expectedType;
 
     public TokenMismatchException(Token token, int expectedType) {
         super("Expected token: " + expectedType + " but found: " + token, token);

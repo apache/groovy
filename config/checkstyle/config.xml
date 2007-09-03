@@ -18,8 +18,8 @@
 -->
 
 <module name="Checker">
-    <!-- basedir is the absolute path to sources, set in ant's build.xml -->
-    <property name="basedir" value="${mainSourceDirectory}"/>
+    <!-- checkstyle.basedir is the absolute path to sources, set in ant's build.xml -->
+    <property name="basedir" value="${checkstyle.basedir}"/>
     <property name="localeCountry" value="en"/>
     <property name="localeLanguage" value="en"/>
 

@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.codehaus.groovy.control.messages;
 
 import java.io.PrintWriter;
@@ -21,7 +20,6 @@ import java.io.PrintWriter;
 import org.codehaus.groovy.control.Janitor;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.SyntaxException;
-
 
 /**
  * A class for error messages produced by the parser system.
@@ -31,7 +29,7 @@ import org.codehaus.groovy.syntax.SyntaxException;
  */
 
 public class SyntaxErrorMessage extends Message {
-    protected SyntaxException cause = null;
+    protected SyntaxException cause;
     protected SourceUnit source;
     
     public SyntaxErrorMessage(SyntaxException cause, SourceUnit source) {
@@ -40,7 +38,6 @@ public class SyntaxErrorMessage extends Message {
         cause.setSourceLocator(source.getName());
     }
 
-
     /**
      * Returns the underlying SyntaxException.
      */
@@ -48,7 +45,6 @@ public class SyntaxErrorMessage extends Message {
     public SyntaxException getCause() {
         return this.cause;
     }
-
 
     /**
      * Writes out a nicely formatted summary of the syntax error.
@@ -68,8 +64,4 @@ public class SyntaxErrorMessage extends Message {
         }
     }
 
-
 }
-
-
-

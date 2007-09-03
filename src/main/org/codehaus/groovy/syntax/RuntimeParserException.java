@@ -37,21 +37,5 @@ public class RuntimeParserException extends GroovyRuntimeException {
     public void throwParserException() throws SyntaxException {
         throw new SyntaxException(getMessage(), getNode().getLineNumber(), getNode().getColumnNumber());
     }
-    
-    /*
-    private Token token;
 
-    public RuntimeParserException(String message, Token token) {
-        super(message);
-        this.token = token;
-    }
-
-    public Token getToken() {
-        return token;
-    }
-
-    public void throwParserException() throws SyntaxException {
-        throw new TokenException(getMessage(), token);
-    }
-    */
 }

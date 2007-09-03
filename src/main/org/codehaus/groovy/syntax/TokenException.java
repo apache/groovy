@@ -18,8 +18,6 @@ package org.codehaus.groovy.syntax;
 
 
 public class TokenException extends SyntaxException {
-    private Token token;
-
     public TokenException(String message, Token token) {
         super(
             (token == null)
@@ -35,9 +33,6 @@ public class TokenException extends SyntaxException {
 
     public int getEndColumn() {
         int length = 1;
-        if (token != null) { 
-            length = token.getText().length();
-        }
         return getStartColumn() + length;
     }
 

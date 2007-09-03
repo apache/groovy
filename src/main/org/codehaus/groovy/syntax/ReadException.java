@@ -25,7 +25,7 @@ import java.io.IOException;
  */
 
 public class ReadException extends GroovyException {
-    private IOException cause = null;
+    private final IOException cause;
 
     public ReadException(IOException cause) {
         super();
