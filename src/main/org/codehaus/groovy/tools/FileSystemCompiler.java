@@ -69,7 +69,7 @@ public class FileSystemCompiler
     public static void displayHelp(final Options options)
     {
         final HelpFormatter formatter = new HelpFormatter ( ) ;
-        formatter.printHelp ( formatter.getWidth ( ) , "groovyc [options] <source-files>" , "options:", options , "" ) ;
+        formatter.printHelp ( 80 , "groovyc [options] <source-files>" , "options:", options , "" ) ;
     }
 
     public static void displayVersion() 
