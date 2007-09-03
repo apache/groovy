@@ -837,7 +837,7 @@ modifier
     ;
 
 annotation!  {Token first = LT(1);}
-    :   AT! i:identifier ( LPAREN! ( args:annotationArguments )? RPAREN! )?
+    :   AT! i:identifier nls! ( LPAREN! ( args:annotationArguments )? RPAREN! )?
         {#annotation = #(create(ANNOTATION,"ANNOTATION",first,LT(1)), i, args);}
     ;
 
@@ -940,8 +940,10 @@ interfaceDefinition![AST modifiers]  {Token first = LT(1);}
 enumDefinition![AST modifiers]  {Token first = LT(1); AST prevCurrentClass = currentClass;}
     :   "enum" IDENT
     		{ currentClass = #IDENT; }
+    	nls!
         // it might implement some interfaces...
         ic:implementsClause
+        nls!
         // now parse the body of the enum
         eb:enumBlock
         {#enumDefinition = #(create(ENUM_DEF,"ENUM_DEF",first,LT(1)),

@@ -1,10 +1,5 @@
 package org.codehaus.groovy.antlr;
 
-import groovy.util.GroovyTestCase;
-import org.codehaus.groovy.antlr.parser.GroovyLexer;
-import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
-
-import java.io.Reader;
 import java.io.StringReader;
 
 
@@ -13,19 +8,53 @@ import java.io.StringReader;
  *
  * @author <a href='mailto:the[dot]mindstorm[at]gmail[dot]com'>Alex Popescu</a>
  */
-public class EnumSourceParsingTest extends GroovyTestCase {
+public class EnumSourceParsingTest extends SourceParserTest {
     public void testParseEnumConstants() {
         StringReader reader = new StringReader(
                 "enum One {\n"
                         + "  ONE, TWO, THREE\n"
                         + "}");
-        parse(reader);
+        parse("testParseEnumConstants", reader);
     }
 
+    public void testParseEnumMultiLine() {
+      StringReader reader = new StringReader(
+          "enum ParseCode\n" +
+          "{\n" +
+          "    COMPLETE,\n" +
+          "    INCOMPLETE,\n" +
+          "    ERROR\n" +
+          "}");
+      parse("testParseEnumMultiLine", reader);
+    }
+    
+    public void testParseEnumImplementsMultiLine() {
+        StringReader reader = new StringReader(
+            "enum ParseCode implements I\n" +
+            "{\n" +
+            "    COMPLETE,\n" +
+            "    INCOMPLETE,\n" +
+            "    ERROR\n" +
+            "}");
+        parse("testParseEnumImplementsMultiLine", reader);
+    }
+    
+    public void testParseEnumImplementsMultiLine2() {
+        StringReader reader = new StringReader(
+            "enum ParseCode\n" +
+            "implements I\n" +
+            "{\n" +
+            "    COMPLETE,\n" +
+            "    INCOMPLETE,\n" +
+            "    ERROR\n" +
+            "}");
+        parse("testParseEnumImplementsMultiLine2", reader);
+    }
+    
     public void testParseEnumConstantsOneLiner() {
         StringReader reader = new StringReader(
                 "enum One { ONE, TWO, THREE }");
-        parse(reader);
+        parse("testParseEnumConstantsOneLiner", reader);
     }
 
     public void testParseEnumImplements() {
@@ -33,7 +62,7 @@ public class EnumSourceParsingTest extends GroovyTestCase {
                 "enum Two implements I1 {\n"
                         + "ONE, TWO, THREE\n"
                         + "}");
-        parse(reader);
+        parse("testParseEnumImplements", reader);
     }
 
     public void testParseEnumWithValues() {
@@ -45,7 +74,7 @@ public class EnumSourceParsingTest extends GroovyTestCase {
                         + "    }\n\n"
                         + "    private final int value"
                         + "}");
-        parse(reader);
+        parse("testParseEnumWithValues", reader);
 
         reader = new StringReader(
                 "enum Three1 {\n"
@@ -55,6 +84,7 @@ public class EnumSourceParsingTest extends GroovyTestCase {
                         + "    }\n\n"
                         + "    private final int value"
                         + "}");
+        parse("testParseEnumWithValues2", reader);
     }
 
     public void testParseEnumWithMethodDefinitions() {
@@ -65,7 +95,7 @@ public class EnumSourceParsingTest extends GroovyTestCase {
                         + "    public m2(args) { }\n"
                         + "    int m3(String arg) { }\n"
                         + "}");
-        parse(reader);
+        parse("testParseEnumWithMethodDefinitions", reader);
     }
 
     public void testParseCompleteEnum() {
@@ -76,24 +106,6 @@ public class EnumSourceParsingTest extends GroovyTestCase {
                         + "        double eval(int v) { return (double) v + 1 }\n"
                         + "    }, THREE\n"
                         + "}");
-        parse(reader);
-    }
-
-    private void parse(Reader reader) {
-        SourceBuffer sourceBuffer = new SourceBuffer();
-        UnicodeEscapingReader unicodeReader = new UnicodeEscapingReader(reader, sourceBuffer);
-        GroovyLexer lexer = new GroovyLexer(unicodeReader);
-        unicodeReader.setLexer(lexer);
-        GroovyRecognizer parser = GroovyRecognizer.make(lexer);
-        parser.setSourceBuffer(sourceBuffer);
-        parser.setFilename("EnumTestScript");
-
-        // start parsing at the compilationUnit rule
-        try {
-            parser.compilationUnit();
-        }
-        catch (Exception ex) {
-            fail(ex.getMessage());
-        }
+        parse("testParseCompleteEnum", reader);
     }
 }
