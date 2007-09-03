@@ -17,7 +17,7 @@ package groovy.swing.binding;
 
 import org.codehaus.groovy.binding.AbstractFullBinding;
 import org.codehaus.groovy.binding.FullBinding;
-import org.codehaus.groovy.binding.PropertySourceBinding;
+import org.codehaus.groovy.binding.PropertyBinding;
 import org.codehaus.groovy.binding.SourceBinding;
 import org.codehaus.groovy.binding.TargetBinding;
 import org.codehaus.groovy.binding.TriggerBinding;
@@ -42,7 +42,7 @@ public class AbstractButtonProperties {
         result.put(AbstractButton.class.getName() + "#selected",
             new TriggerBinding() {
                 public FullBinding createBinding(SourceBinding source, TargetBinding target) {
-                    return new AbstractButtonSelectedBinding((PropertySourceBinding) source, target);
+                    return new AbstractButtonSelectedBinding((PropertyBinding) source, target);
                 }
             });
         return result;
@@ -53,7 +53,7 @@ public class AbstractButtonProperties {
 class AbstractButtonSelectedBinding extends AbstractFullBinding implements PropertyChangeListener, ItemListener {
     boolean bound;
 
-    public AbstractButtonSelectedBinding(PropertySourceBinding source, TargetBinding target) {
+    public AbstractButtonSelectedBinding(PropertyBinding source, TargetBinding target) {
         bound = false;
         setSourceBinding(source);
         setTargetBinding(target);
@@ -61,7 +61,7 @@ class AbstractButtonSelectedBinding extends AbstractFullBinding implements Prope
 
     public synchronized void bind() {
         if (!bound) {
-            AbstractButton ab = (AbstractButton) ((PropertySourceBinding) sourceBinding).getSourceBean();
+            AbstractButton ab = (AbstractButton) ((PropertyBinding) sourceBinding).getBean();
             try {
                 ab.addPropertyChangeListener("model", this);
                 ab.getModel().addItemListener(this);
@@ -82,7 +82,7 @@ class AbstractButtonSelectedBinding extends AbstractFullBinding implements Prope
         if (bound) {
             bound = false;
             // fail dirty, no checks
-            AbstractButton ab = (AbstractButton) ((PropertySourceBinding)sourceBinding).getSourceBean();
+            AbstractButton ab = (AbstractButton) ((PropertyBinding)sourceBinding).getBean();
             ab.removePropertyChangeListener("model", this);
             ab.getModel().removeItemListener(this);
         }
@@ -97,14 +97,14 @@ class AbstractButtonSelectedBinding extends AbstractFullBinding implements Prope
         if (bound) {
             throw new IllegalStateException("Cannot change source while binding is bound");
         }
-        if (!(source instanceof PropertySourceBinding)) {
+        if (!(source instanceof PropertyBinding)) {
             throw new IllegalArgumentException("Only PropertySourceBindings are accepted");
         }
 
-        if (!"selected".equals(((PropertySourceBinding)source).getPropertyName())) {
+        if (!"selected".equals(((PropertyBinding)source).getPropertyName())) {
             throw new IllegalArgumentException("PropertyName must be 'selected'");
         }
-        if (!(((PropertySourceBinding)source).getSourceBean() instanceof AbstractButton)) {
+        if (!(((PropertyBinding)source).getBean() instanceof AbstractButton)) {
             throw new IllegalArgumentException("SourceBean must be an AbstractButton");
         }
         super.setSourceBinding(source);
@@ -118,12 +118,12 @@ class AbstractButtonSelectedBinding extends AbstractFullBinding implements Prope
     }
 
     public void propertyChange(PropertyChangeEvent event) {
-        forceUpdate();
+        update();
         ((ButtonModel)event.getOldValue()).removeItemListener(this);
         ((ButtonModel)event.getNewValue()).addItemListener(this);
     }
 
     public void itemStateChanged(ItemEvent e) {
-        forceUpdate();
+        update();
     }
 }

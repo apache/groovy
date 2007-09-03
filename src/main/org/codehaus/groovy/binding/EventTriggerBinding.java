@@ -62,7 +62,7 @@ public class EventTriggerBinding implements TriggerBinding {
             setTargetBinding(targetBinding);
             handler = new Closure(triggerBean) {
                 public Object call(Object[] params) {
-                    forceUpdate();
+                    update();
                     return null;
                 }
             };

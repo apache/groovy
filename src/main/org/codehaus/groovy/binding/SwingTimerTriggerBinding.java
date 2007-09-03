@@ -56,7 +56,6 @@ class SwingTimerFullBinding extends AbstractFullBinding implements ActionListene
         timer = new Timer(interval, this);
         timer.setInitialDelay(0);
         timer.setRepeats(true);
-        timer.start();
         this.duration = duration;
     }
 
@@ -106,7 +105,7 @@ class SwingTimerFullBinding extends AbstractFullBinding implements ActionListene
             //in Groovy2.0 use valueOf
         } 
 
-        forceUpdate();
+        update();
     }
 
     public long getDuration() {

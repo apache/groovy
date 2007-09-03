@@ -15,14 +15,14 @@
  */
 package groovy.swing.binding;
 
+import org.codehaus.groovy.binding.AbstractFullBinding;
 import org.codehaus.groovy.binding.FullBinding;
-import org.codehaus.groovy.binding.PropertySourceBinding;
+import org.codehaus.groovy.binding.PropertyBinding;
 import org.codehaus.groovy.binding.SourceBinding;
 import org.codehaus.groovy.binding.TargetBinding;
 import org.codehaus.groovy.binding.TriggerBinding;
-import org.codehaus.groovy.binding.AbstractFullBinding;
 
-import javax.swing.ButtonModel;
+import javax.swing.BoundedRangeModel;
 import javax.swing.JSlider;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -42,7 +42,7 @@ public class JSliderProperties {
         result.put(JSlider.class.getName() + "#value",
                 new TriggerBinding() {
                     public FullBinding createBinding(SourceBinding source, TargetBinding target) {
-                        return new JSliderValueBinding((PropertySourceBinding) source, target);
+                        return new JSliderValueBinding((PropertyBinding) source, target);
                     }
                 });
         return result;
@@ -53,7 +53,7 @@ public class JSliderProperties {
 class JSliderValueBinding extends AbstractFullBinding implements PropertyChangeListener, ChangeListener {
     boolean bound;
 
-    public JSliderValueBinding(PropertySourceBinding source, TargetBinding target) {
+    public JSliderValueBinding(PropertyBinding source, TargetBinding target) {
         bound = false;
         setSourceBinding(source);
         setTargetBinding(target);
@@ -61,7 +61,7 @@ class JSliderValueBinding extends AbstractFullBinding implements PropertyChangeL
 
     public synchronized void bind() {
         if (!bound) {
-            JSlider slider = (JSlider) ((PropertySourceBinding)sourceBinding).getSourceBean();
+            JSlider slider = (JSlider) ((PropertyBinding)sourceBinding).getBean();
             try {
                 slider.addPropertyChangeListener("model", this);
                 slider.getModel().addChangeListener(this);
@@ -82,7 +82,7 @@ class JSliderValueBinding extends AbstractFullBinding implements PropertyChangeL
         if (bound) {
             bound = false;
             // fail dirty, no checks
-            JSlider slider = (JSlider) ((PropertySourceBinding)sourceBinding).getSourceBean();
+            JSlider slider = (JSlider) ((PropertyBinding)sourceBinding).getBean();
             slider.removePropertyChangeListener("model", this);
             slider.getModel().removeChangeListener(this);
         }
@@ -97,14 +97,14 @@ class JSliderValueBinding extends AbstractFullBinding implements PropertyChangeL
         if (bound) {
             throw new IllegalStateException("Cannot change source while binding is bound");
         }
-        if (!(source instanceof PropertySourceBinding)) {
+        if (!(source instanceof PropertyBinding)) {
             throw new IllegalArgumentException("Only PropertySourceBindings are accepted");
         }
 
-        if (!"value".equals(((PropertySourceBinding) source).getPropertyName())) {
+        if (!"value".equals(((PropertyBinding) source).getPropertyName())) {
             throw new IllegalArgumentException("PropertyName must be 'value'");
         }
-        if (!(((PropertySourceBinding) source).getSourceBean() instanceof JSlider)) {
+        if (!(((PropertyBinding) source).getBean() instanceof JSlider)) {
             throw new IllegalArgumentException("SourceBean must be an JSlider");
         }
         super.setSourceBinding(source);
@@ -118,12 +118,12 @@ class JSliderValueBinding extends AbstractFullBinding implements PropertyChangeL
     }
 
     public void propertyChange(PropertyChangeEvent event) {
-        forceUpdate();
-        ((ButtonModel) event.getOldValue()).removeChangeListener(this);
-        ((ButtonModel) event.getNewValue()).addChangeListener(this);
+        update();
+        ((BoundedRangeModel) event.getOldValue()).removeChangeListener(this);
+        ((BoundedRangeModel) event.getNewValue()).addChangeListener(this);
     }
 
     public void stateChanged(ChangeEvent e) {
-        forceUpdate();
+        update();
     }
 }

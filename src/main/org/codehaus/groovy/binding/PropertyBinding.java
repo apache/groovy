@@ -15,47 +15,58 @@
  */
 package org.codehaus.groovy.binding;
 
-import groovy.lang.MissingMethodException;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
-import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeEvent;
+
+import groovy.lang.MissingMethodException;
+
 
 /**
  * @author <a href="mailto:shemnon@yahoo.com">Danno Ferrin</a>
  * @version $Revision$
  * @since Groovy 1.1
  */
-public class PropertyChangeTriggerBinding implements TriggerBinding {
+public class PropertyBinding implements SourceBinding, TargetBinding, TriggerBinding {
 
     Object bean;
     String propertyName;
 
-    public PropertyChangeTriggerBinding(Object bean, String propertyName) {
+    public PropertyBinding(Object bean, String propertyName) {
         this.bean = bean;
         this.propertyName = propertyName;
     }
 
-    public FullBinding createBinding(SourceBinding source, TargetBinding target) {
-        return new PropertyListener(source, target);
+    public void updateTargetValue(Object newValue) {
+        InvokerHelper.setProperty(bean, propertyName, newValue);
     }
 
-    class PropertyListener extends AbstractFullBinding implements PropertyChangeListener {
+    public Object getSourceValue() {
+        return InvokerHelper.getPropertySafe(bean, propertyName);
+    }
 
-        PropertyListener(SourceBinding source, TargetBinding target) {
+    public FullBinding createBinding(SourceBinding source, TargetBinding target) {
+        return new PropertyFullBinding
+                (source, target);
+    }
+
+    class PropertyFullBinding extends AbstractFullBinding implements PropertyChangeListener {
+
+        PropertyFullBinding(SourceBinding source, TargetBinding target) {
             setSourceBinding(source);
             setTargetBinding(target);
         }
 
         public void propertyChange(PropertyChangeEvent event) {
             if (event.getPropertyName().equals(propertyName)) {
-                forceUpdate();
-            } 
+                update();
+            }
         }
 
         public void bind() {
             try {
-                InvokerHelper.invokeMethodSafe(bean, "addPropretyChangeListener", new Object[] {propertyName, this});
+                InvokerHelper.invokeMethodSafe(bean, "addPropertyChangeListener", new Object[] {propertyName, this});
             } catch (MissingMethodException mme) {
                 try {
                     InvokerHelper.invokeMethodSafe(bean, "addPropertyChangeListener", new Object[] {this});
@@ -84,4 +95,22 @@ public class PropertyChangeTriggerBinding implements TriggerBinding {
         }
 
     }
+
+    public Object getBean() {
+        return bean;
+    }
+
+    public void setBean(Object bean) {
+        this.bean = bean;
+    }
+
+    public String getPropertyName() {
+        return propertyName;
+    }
+
+    public void setPropertyName(String propertyName) {
+        this.propertyName = propertyName;
+    }
+
+
 }

@@ -19,7 +19,7 @@ import groovy.lang.Closure;
 import groovy.lang.GroovyRuntimeException;
 import groovy.model.DefaultTableModel;
 import org.codehaus.groovy.binding.FullBinding;
-import org.codehaus.groovy.binding.PropertyTargetBinding;
+import org.codehaus.groovy.binding.PropertyBinding;
 import groovy.swing.factory.*;
 import groovy.swing.impl.ComponentFacade;
 import groovy.swing.impl.ContainerFacade;
@@ -276,11 +276,11 @@ public class SwingBuilder extends BuilderSupport {
             Object value = entry.getValue();
             if (value instanceof FullBinding) {
                 FullBinding fb = (FullBinding) value;
-                PropertyTargetBinding ptb = new PropertyTargetBinding(widget, property);
+                PropertyBinding ptb = new PropertyBinding(widget, property);
                 fb.setTargetBinding(ptb);
                 fb.bind();
                 try {
-                    fb.forceUpdate();
+                    fb.update();
                 } catch (Exception e) {
                     // just eat it?
                 }

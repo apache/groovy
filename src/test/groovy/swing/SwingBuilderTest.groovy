@@ -673,7 +673,8 @@ class SwingBuilderTest extends GroovyTestCase {
             }
         }
 
-        def noValueItems = [ // elements that take no value argument
+        // elements that take no value argument
+        def noValueItems = [
             "actions",
             "boxLayout",
             "comboBox",
@@ -700,7 +701,8 @@ class SwingBuilderTest extends GroovyTestCase {
 	    }
         }
 
-        def selfItems = [ // elements that only take their own type as a value argument
+         // elements that only take their own type as a value argument
+        def selfItems = [
             "action",
             "borderLayout",
             "boundedRangeModel",
@@ -764,7 +766,8 @@ class SwingBuilderTest extends GroovyTestCase {
 	    }
         }
 
-        def textItems = [ // elements take their own type as a value argument or a stringa s a text property
+         // elements take their own type as a value argument or a stringa s a text property
+        def textItems = [
             "editorPane",
             "label",
             "passwordField",
@@ -819,4 +822,196 @@ class SwingBuilderTest extends GroovyTestCase {
         swing.edt() { swing.edt() { pass = SwingUtilities.isEventDispatchThread() } }
         assert pass
     }
+
+    public void testSliderValueBinding() {
+        if (isHeadless()) return
+        SwingBuilder swing = new SwingBuilder()
+
+        swing.actions() {
+            slider(id:'sl')
+            textField(id:'txt', text:bind(source:sl, sourceProperty:'value', id:'binding'))
+            slider(id:'slReverse', value:bind(source:sl, sourceProperty:'value', id:'bindingReverse'))
+            // need to use a second slider for reverse test, because string->int autobox, not so happy
+        }
+
+        swing.sl.value = 10
+        assert swing.txt.text == '10'
+        swing.sl.value = 95
+        assert swing.txt.text == '95'
+
+        swing.binding.rebind()
+        swing.sl.value = 42
+        assert swing.txt.text == '42'
+        swing.binding.unbind()
+        swing.sl.value = 13
+        assert swing.txt.text == '42'
+        swing.binding.bind()
+        assert swing.txt.text == '42'
+        swing.binding.update()
+        assert swing.txt.text == '13'
+
+        swing.sl.model = new DefaultBoundedRangeModel(30, 1, 20, 40)
+        assert swing.txt.text == '30'
+
+        // first make sure we've been fireing
+        assert swing.slReverse.value == 13
+        swing.slReverse.value = 7
+        swing.bindingReverse.reverseUpdate()
+        assert swing.sl.value == 7
+    }
+
+    public void testTextFieldTextBinding() {
+        if (isHeadless()) return
+        SwingBuilder swing = new SwingBuilder()
+
+        swing.actions() {
+            textField('Bind', id:'txts')
+            textField(id:'txt', text:bind(source:txts, sourceProperty:'text', id:'binding'))
+        }
+
+        assert swing.txt.text == 'Bind'
+        swing.txts.text = 'Text'
+        assert swing.txt.text == 'Text'
+        swing.txts.text = 'Easily'
+        assert swing.txt.text == 'Easily'
+
+        swing.binding.rebind()
+        swing.txts.text = 'With'
+        assert swing.txt.text == 'With'
+        swing.binding.unbind()
+        swing.txts.text = 'bind()'
+        assert swing.txt.text == 'With'
+        swing.binding.bind()
+        assert swing.txt.text == 'With'
+        swing.binding.update()
+        assert swing.txt.text == 'bind()'
+
+        swing.txt.text = 'reversal'
+        swing.binding.reverseUpdate()
+        assert swing.txts.text == 'reversal'
+
+        PlainDocument doc = new PlainDocument()
+        doc.insertString(0, '{}', null)
+        swing.txts.document = doc
+        assert swing.txt.text == '{}'
+    }
+
+    public void testCheckboxSelectedBinding() {
+        if (isHeadless()) return
+        SwingBuilder swing = new SwingBuilder()
+
+        swing.actions() {
+            checkBox(id:'cb')
+            textField(id:'txt', enabled:bind(source:cb, sourceProperty:'selected', id:'binding'))
+        }
+
+        assert swing.txt.enabled == swing.cb.selected
+        swing.cb.selected = !swing.cb.selected
+        assert swing.txt.enabled == swing.cb.selected
+        swing.cb.selected = !swing.cb.selected
+        assert swing.txt.enabled == swing.cb.selected
+
+        swing.binding.rebind()
+        swing.cb.selected = !swing.cb.selected
+        assert swing.txt.enabled == swing.cb.selected
+        swing.binding.unbind()
+        swing.cb.selected = !swing.cb.selected
+        assert swing.txt.enabled != swing.cb.selected
+        swing.binding.bind()
+        assert swing.txt.enabled != swing.cb.selected
+        swing.binding.update()
+        assert swing.txt.enabled == swing.cb.selected
+
+        DefaultButtonModel md = new DefaultButtonModel()
+        md.enabled = !swing.txt.enabled
+        swing.cb.model = md
+        assert swing.txt.enabled == swing.cb.selected
+
+        swing.txt.enabled = !swing.txt.enabled
+        swing.binding.reverseUpdate()
+        assert swing.txt.enabled == swing.cb.selected
+
+    }
+
+    public void testEventBinding() {
+        if (isHeadless()) return
+        SwingBuilder swing = new SwingBuilder()
+
+        swing.actions() {
+            button('Button!', id:'b')
+            textField(id:'txt', text:bind(source:b, sourceEvent:'actionPerformed', sourceValue:{b.text}))
+        }
+
+        assert swing.txt.text == 'Button!'
+        swing.b.text = 'Pressed!'
+        // not pressed yet...
+        assert swing.txt.text == 'Button!'
+        swing.b.doClick()
+        //ok, now it's pressed
+        assert swing.txt.text == 'Pressed!'
+    }
+
+    public void testPropertyBinding() {
+        if (isHeadless()) return
+        SwingBuilder swing = new SwingBuilder()
+
+        swing.actions() {
+            checkBox('Button!', id:'cb')
+            textField(id:'txt', enabled:bind(source:cb, sourceProperty:'enabled', id:'binding'))
+        }
+        assert swing.txt.enabled == swing.cb.enabled
+        swing.cb.enabled = !swing.cb.enabled
+        assert swing.txt.enabled == swing.cb.enabled
+        swing.cb.enabled = !swing.cb.enabled
+        assert swing.txt.enabled == swing.cb.enabled
+
+        swing.binding.rebind()
+        swing.cb.enabled = !swing.cb.enabled
+        assert swing.txt.enabled == swing.cb.enabled
+        swing.binding.unbind()
+        swing.cb.enabled = !swing.cb.enabled
+        assert swing.txt.enabled != swing.cb.enabled
+        swing.binding.bind()
+        assert swing.txt.enabled != swing.cb.enabled
+        swing.binding.update()
+        assert swing.txt.enabled == swing.cb.enabled
+
+        swing.txt.enabled = !swing.txt.enabled
+        swing.binding.reverseUpdate()
+        assert swing.txt.enabled == swing.cb.enabled
+
+        DefaultButtonModel md = new DefaultButtonModel()
+        md.enabled = !swing.txt.enabled
+        swing.cb.model = md
+        assert swing.txt.enabled == swing.cb.enabled
+    }
+
+
+    public void testAnimate() {
+        SwingBuilder swing = new SwingBuilder()
+
+        int result = 0
+        swing.actions() {
+            spinner(id:'spin', value:animate(0..10, duration: 100, id:'anime', interval: 5), stateChanged: {result += spin.value})
+        }
+
+        sleep(150)
+        assert swing.spin.value > 0
+        assert result > 0
+
+        result = 0
+        swing.spin.value = 0
+        swing.anime.rebind()
+        sleep(150)
+        assert swing.spin.value > 0
+        assert result > 0
+
+        result = 0
+        swing.spin.value = 0
+        swing.anime.bind()
+        swing.anime.unbind()
+        assert swing.spin.value < 2
+        assert result < 2
+    }
+    
 }

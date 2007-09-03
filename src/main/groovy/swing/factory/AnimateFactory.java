@@ -18,6 +18,7 @@ package groovy.swing.factory;
 import groovy.lang.Closure;
 import groovy.swing.SwingBuilder;
 import org.codehaus.groovy.binding.ClosureSourceBinding;
+import org.codehaus.groovy.binding.FullBinding;
 import org.codehaus.groovy.binding.SwingTimerTriggerBinding;
 
 import java.util.List;
@@ -43,18 +44,28 @@ public class AnimateFactory implements Factory {
 
 
 
+        FullBinding fb  = null;
         if (value instanceof List) {
             //if (((List)value).size() > 2) {
             //    return createInterpolateAnimation(builder, ((List)value).get(0), ((List)value).get(1), properties);
             //} else {
-                return createListAnimation(builder, (List) value, properties);
+                fb = createListAnimation(builder, (List) value, properties);
             //}
-        } else {
-            return null;
         }
+        if (fb != null) {
+            // unless start:false, bind the animation
+            Object o = properties.remove("start");
+            if (o == null
+                || ((o instanceof Boolean) && ((Boolean)o).booleanValue())
+                || ((o instanceof String) && Boolean.valueOf((String)o).booleanValue()))
+            {
+                fb.bind();
+            }
+        }
+        return fb;
     }
 
-    private Object createListAnimation(SwingBuilder builder, final List animateRange, Map properties) {
+    private FullBinding createListAnimation(SwingBuilder builder, final List animateRange, Map properties) {
         Number duration = (Number) properties.get("duration");
         Number interval = (Number) properties.get("interval");
 

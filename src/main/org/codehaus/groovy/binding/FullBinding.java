@@ -29,7 +29,9 @@ public interface FullBinding {
 
     public void rebind();
 
-    public void forceUpdate();
+    public void update();
+
+    public void reverseUpdate();
 
     public SourceBinding getSourceBinding();
 
@@ -46,4 +48,8 @@ public interface FullBinding {
     public void setConverter(Closure converter);
 
     public Closure getConverter();
+
+    public void setReverseConverter(Closure reverseConverter);
+
+    public Closure getReverseConverter();
 }

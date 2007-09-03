@@ -16,7 +16,7 @@
 package groovy.swing.binding;
 
 import org.codehaus.groovy.binding.FullBinding;
-import org.codehaus.groovy.binding.PropertySourceBinding;
+import org.codehaus.groovy.binding.PropertyBinding;
 import org.codehaus.groovy.binding.SourceBinding;
 import org.codehaus.groovy.binding.TargetBinding;
 import org.codehaus.groovy.binding.TriggerBinding;
@@ -44,7 +44,7 @@ public class JTextComponentProperties {
         result.put(JTextComponent.class.getName() + "#text",
             new TriggerBinding() {
                 public FullBinding createBinding(SourceBinding source, TargetBinding target) {
-                    return new JTextComponentTextBinding((PropertySourceBinding) source, target);
+                    return new JTextComponentTextBinding((PropertyBinding) source, target);
                 }
             });
         return result;
@@ -55,7 +55,7 @@ public class JTextComponentProperties {
 class JTextComponentTextBinding extends AbstractFullBinding implements PropertyChangeListener, DocumentListener {
     boolean bound;
 
-    public JTextComponentTextBinding(PropertySourceBinding source, TargetBinding target) {
+    public JTextComponentTextBinding(PropertyBinding source, TargetBinding target) {
         bound = false;
         setSourceBinding(source);
         setTargetBinding(target);
@@ -63,7 +63,7 @@ class JTextComponentTextBinding extends AbstractFullBinding implements PropertyC
 
     public synchronized void bind() {
         if (!bound) {
-            JTextComponent tc = (JTextComponent) ((PropertySourceBinding)sourceBinding).getSourceBean();
+            JTextComponent tc = (JTextComponent) ((PropertyBinding)sourceBinding).getBean();
             try {
                 tc.addPropertyChangeListener("document", this);
                 tc.getDocument().addDocumentListener(this);
@@ -84,7 +84,7 @@ class JTextComponentTextBinding extends AbstractFullBinding implements PropertyC
         if (bound) {
             bound = false;
             // fail dirty, no checks
-            JTextComponent tc = (JTextComponent) ((PropertySourceBinding)sourceBinding).getSourceBean();
+            JTextComponent tc = (JTextComponent) ((PropertyBinding)sourceBinding).getBean();
             tc.removePropertyChangeListener("document", this);
             tc.getDocument().removeDocumentListener(this);
         }
@@ -99,14 +99,14 @@ class JTextComponentTextBinding extends AbstractFullBinding implements PropertyC
         if (bound) {
             throw new IllegalStateException("Cannot change source while binding is bound");
         }
-        if (!(source instanceof PropertySourceBinding)) {
-            throw new IllegalArgumentException("Only PropertySourceBindings are accepted");
+        if (!(source instanceof PropertyBinding)) {
+            throw new IllegalArgumentException("Only PropertyBindings are accepted");
         }
 
-        if (!"text".equals(((PropertySourceBinding)source).getPropertyName())) {
+        if (!"text".equals(((PropertyBinding)source).getPropertyName())) {
             throw new IllegalArgumentException("PropertyName must be 'text'");
         }
-        if (!(((PropertySourceBinding)source).getSourceBean() instanceof JTextComponent)) {
+        if (!(((PropertyBinding)source).getBean() instanceof JTextComponent)) {
             throw new IllegalArgumentException("SourceBean must be a TextComponent");
         }
         super.setSourceBinding(source);
@@ -120,21 +120,21 @@ class JTextComponentTextBinding extends AbstractFullBinding implements PropertyC
     }
 
     public void propertyChange(PropertyChangeEvent event) {
-        forceUpdate();
+        update();
         ((Document)event.getOldValue()).removeDocumentListener(this);
         ((Document)event.getNewValue()).addDocumentListener(this);
     }
 
     public void changedUpdate(DocumentEvent event) {
-        forceUpdate();
+        update();
     }
 
     public void insertUpdate(DocumentEvent event) {
-        forceUpdate();
+        update();
     }
 
     public void removeUpdate(DocumentEvent event) {
-        forceUpdate();
+        update();
     }
 
 }

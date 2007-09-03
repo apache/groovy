@@ -28,6 +28,7 @@ public abstract class AbstractFullBinding  implements FullBinding {
     protected TargetBinding targetBinding;
     protected Closure validator;
     protected Closure converter;
+    protected Closure reverseConverter;
 
     private void fireBinding() {
         if ((sourceBinding == null) || (targetBinding == null)) {
@@ -50,10 +51,24 @@ public abstract class AbstractFullBinding  implements FullBinding {
         targetBinding.updateTargetValue(result);
     }
 
-    public void forceUpdate() {
+    public void update() {
         fireBinding();
     }
 
+    private void fireReverseBinding() {
+        if (!(sourceBinding instanceof TargetBinding) || !(targetBinding instanceof SourceBinding)) {
+            throw new RuntimeException("Binding Instance is not reversable");
+        }
+        Object result = ((SourceBinding)targetBinding).getSourceValue();
+        if (getReverseConverter() != null) {
+            result = getReverseConverter().call(result);
+        }
+        ((TargetBinding)sourceBinding).updateTargetValue(result);
+    }
+
+    public void reverseUpdate() {
+        fireReverseBinding();
+    }
 
     public SourceBinding getSourceBinding() {
         return sourceBinding;
@@ -85,5 +100,13 @@ public abstract class AbstractFullBinding  implements FullBinding {
 
     public void setConverter(Closure converter) {
         this.converter = converter;
+    }
+
+    public Closure getReverseConverter() {
+        return reverseConverter;
+    }
+
+    public void setReverseConverter(Closure reverseConverter) {
+        this.reverseConverter = reverseConverter;
     }
 }
