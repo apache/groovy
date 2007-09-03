@@ -854,10 +854,10 @@ class SwingBuilderTest extends GroovyTestCase {
         assert swing.txt.text == '30'
 
         // first make sure we've been fireing
-        assert swing.slReverse.value == 13
-        swing.slReverse.value = 7
+        assert swing.slReverse.value == 30
+        swing.slReverse.value = 21
         swing.bindingReverse.reverseUpdate()
-        assert swing.sl.value == 7
+        assert swing.sl.value == 21
     }
 
     public void testTextFieldTextBinding() {
