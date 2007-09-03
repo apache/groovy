@@ -36,8 +36,6 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  * Command-line compiler (aka. <tt>groovyc</tt>).
  * 
  * @version $Id$
- *
- * @noinspection AccessStaticViaInstance
  */
 public class FileSystemCompiler
 {

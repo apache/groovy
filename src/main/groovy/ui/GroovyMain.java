@@ -41,8 +41,6 @@ import org.codehaus.groovy.runtime.InvokerInvocationException;
  * @author Jeremy Rayner
  * @author Yuri Schimke
  * @version $Revision$
- * 
- * @noinspection AccessStaticViaInstance
  */
 public class GroovyMain {
 
