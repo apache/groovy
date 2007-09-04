@@ -40,7 +40,7 @@ public class MetaClassHelper {
     public static final Object[] EMPTY_ARRAY = {};
     public static final Class[] EMPTY_TYPE_ARRAY = {};
     protected static final Object[] ARRAY_WITH_NULL = {null};
-    protected static final Logger log = Logger.getLogger(MetaClassHelper.class.getName());
+    protected static final Logger LOG = Logger.getLogger(MetaClassHelper.class.getName());
     private static final int MAX_ARG_LEN = 12;
 
     public static boolean accessibleToConstructor(final Class at, final Constructor constructor) {
@@ -50,14 +50,9 @@ public class MetaClassHelper {
         } else if (Modifier.isPrivate(constructor.getModifiers())) {
             accessible = at.getName().equals(constructor.getName());
         } else if (Modifier.isProtected(constructor.getModifiers())) {
-            if (at.getPackage() == null && constructor.getDeclaringClass().getPackage() == null) {
-                accessible = true;
-            } else if (at.getPackage() == null && constructor.getDeclaringClass().getPackage() != null) {
-                accessible = false;
-            } else if (at.getPackage() != null && constructor.getDeclaringClass().getPackage() == null) {
-                accessible = false;
-            } else if (at.getPackage().equals(constructor.getDeclaringClass().getPackage())) {
-                accessible = true;
+            Boolean isAccessible = checkCompatiblePackages(at, constructor);
+            if (isAccessible != null) {
+                accessible = isAccessible.booleanValue();
             } else {
                 boolean flag = false;
                 Class clazz = at;
@@ -74,17 +69,28 @@ public class MetaClassHelper {
                 accessible = flag;
             }
         } else {
-            if (at.getPackage() == null && constructor.getDeclaringClass().getPackage() == null) {
-                accessible = true;
-            } else if (at.getPackage() == null && constructor.getDeclaringClass().getPackage() != null) {
-                accessible = false;
-            } else if (at.getPackage() != null && constructor.getDeclaringClass().getPackage() == null) {
-                accessible = false;
-            } else if (at.getPackage().equals(constructor.getDeclaringClass().getPackage())) {
-                accessible = true;
+            Boolean isAccessible = checkCompatiblePackages(at, constructor);
+            if (isAccessible != null) {
+                accessible = isAccessible.booleanValue();
             }
         }
         return accessible;
+    }
+
+    private static Boolean checkCompatiblePackages(Class at, Constructor constructor) {
+        if (at.getPackage() == null && constructor.getDeclaringClass().getPackage() == null) {
+            return Boolean.TRUE;
+        }
+        if (at.getPackage() == null && constructor.getDeclaringClass().getPackage() != null) {
+            return Boolean.FALSE;
+        }
+        if (at.getPackage() != null && constructor.getDeclaringClass().getPackage() == null) {
+            return Boolean.FALSE;
+        }
+        if (at.getPackage().equals(constructor.getDeclaringClass().getPackage())) {
+            return Boolean.TRUE;
+        }
+        return null;
     }
 
     public static Object[] asWrapperArray(Object parameters, Class componentType) {
@@ -144,8 +150,9 @@ public class MetaClassHelper {
 
 
     /**
-     * @param list
-     * @param parameterType
+     * @param list the original list
+     * @param parameterType the resulting array type
+     * @return the constructed array
      */
     public static Object asPrimitiveArray(List list, Class parameterType) {
         Class arrayType = parameterType.getComponentType();
@@ -177,14 +184,14 @@ public class MetaClassHelper {
         return objArray;
     }
 
-    private static Class[] primitives = {
+    private static final Class[] PRIMITIVES = {
             byte.class, Byte.class, short.class, Short.class,
             int.class, Integer.class, long.class, Long.class,
             BigInteger.class, float.class, Float.class,
             double.class, Double.class, BigDecimal.class,
             Number.class, Object.class
     };
-    private static int[][] primitiveDistanceTable = {
+    private static final int[][] PRIMITIVE_DISTANCE_TABLE = {
             //              byte    Byte    short   Short   int     Integer     long    Long    BigInteger  float   Float   double  Double  BigDecimal, Number, Object
             /* byte*/{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,},
             /*Byte*/{1, 0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,},
@@ -205,8 +212,8 @@ public class MetaClassHelper {
     };
 
     private static int getPrimitiveIndex(Class c) {
-        for (byte i = 0; i < primitives.length; i++) {
-            if (primitives[i] == c) return i;
+        for (byte i = 0; i < PRIMITIVES.length; i++) {
+            if (PRIMITIVES[i] == c) return i;
         }
         return -1;
     }
@@ -217,7 +224,7 @@ public class MetaClassHelper {
         int fromIndex = getPrimitiveIndex(from);
         int toIndex = getPrimitiveIndex(to);
         if (fromIndex == -1 || toIndex == -1) return -1;
-        return primitiveDistanceTable[toIndex][fromIndex];
+        return PRIMITIVE_DISTANCE_TABLE[toIndex][fromIndex];
     }
 
     private static int getMaximumInterfaceDistance(Class c, Class interfaceClass) {
@@ -237,7 +244,7 @@ public class MetaClassHelper {
             if (parameters[i] == arguments[i]) continue;
 
             if (parameters[i].isInterface()) {
-                objectDistance += primitives.length;
+                objectDistance += PRIMITIVES.length;
                 interfaceDistance += getMaximumInterfaceDistance(arguments[i], parameters[i]);
                 continue;
             }
@@ -250,7 +257,7 @@ public class MetaClassHelper {
                 }
 
                 // add one to dist to be sure interfaces are prefered
-                objectDistance += primitives.length + 1;
+                objectDistance += PRIMITIVES.length + 1;
                 Class clazz = ReflectionCache.autoboxType(arguments[i]);
                 while (clazz != null) {
                     if (clazz == parameters[i]) break;
@@ -499,7 +506,7 @@ public class MetaClassHelper {
     }
 
     public static Object doConstructorInvoke(Constructor constructor, Object[] argumentArray) {
-        if (log.isLoggable(Level.FINER)) {
+        if (LOG.isLoggable(Level.FINER)) {
             logMethodCall(constructor.getDeclaringClass(), constructor.getName(), argumentArray);
         }
         argumentArray = coerceArgumentsToClasses(argumentArray, new ParameterTypes(constructor.getParameterTypes()));

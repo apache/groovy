@@ -19,8 +19,7 @@
 
 <module name="Checker">
     <!-- checkstyle.basedir is the absolute path to sources, set in ant's build.xml -->
-    <!--<property name="basedir" value="${checkstyle.basedir}"/>-->
-    <property name="basedir" value="C:/Downloads/groovy.codehaus.org/svntrunk-groovy/groovy-core/src/main"/>
+    <property name="basedir" value="${checkstyle.basedir}"/>
     <property name="localeCountry" value="en"/>
     <property name="localeLanguage" value="en"/>
 
@@ -154,13 +153,9 @@
         <!--<module name="ArrayTypeStyle"/>-->
     </module>
     <module name="PackageHtml"/>
-<!--
     <module name="au.com.redhillconsulting.simian.SimianCheck">
         <property name="threshold" value="8"/>
--->
         <!-- remove language once Simian understands Groovy -->
-<!--
         <property name="language" value="java"/>
     </module>
--->
 </module>

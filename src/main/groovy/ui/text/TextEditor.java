@@ -228,8 +228,7 @@ public class TextEditor extends JTextPane implements Pageable, Printable {
         FindReplaceUtility.registerTextComponent(this);
     }
 
-    /** {@inheritDoc} */
-    public int getNumberOfPages() { 
+    public int getNumberOfPages() {
         StyledDocument doc = (StyledDocument)getDocument();
         
         Paper paper = PAGE_FORMAT.getPaper();
@@ -240,17 +239,14 @@ public class TextEditor extends JTextPane implements Pageable, Printable {
         return numPages;
     }
     
-    /** {@inheritDoc} */
-    public PageFormat getPageFormat(int param) throws IndexOutOfBoundsException {
+    public PageFormat getPageFormat(int pageIndex) throws IndexOutOfBoundsException {
         return PAGE_FORMAT;
     }
     
-    /** {@inheritDoc} */
     public Printable getPrintable(int param) throws IndexOutOfBoundsException {
         return this;
     }
     
-    /** {@inheritDoc} */
     public int print(Graphics graphics, PageFormat pageFormat, int page)
         throws PrinterException {
         if (page < numPages) {
@@ -314,7 +310,6 @@ public class TextEditor extends JTextPane implements Pageable, Printable {
         return Printable.NO_SUCH_PAGE;
     }
     
-    /** {@inheritDoc} */
     public boolean getScrollableTracksViewportWidth(){
         boolean bool = super.getScrollableTracksViewportWidth();
         if (unwrapped) {
@@ -344,7 +339,6 @@ public class TextEditor extends JTextPane implements Pageable, Printable {
         return unwrapped;
     }
     
-    /** {@inheritDoc} */
     protected void processKeyEvent(KeyEvent e)
     {
         super.processKeyEvent(e);
@@ -356,14 +350,12 @@ public class TextEditor extends JTextPane implements Pageable, Printable {
         }
     }
 
-    /** {@inheritDoc} */
     public void removeNotify() {
         super.removeNotify();
         removeMouseListener(mouseAdapter);
         FindReplaceUtility.unregisterTextComponent(this);
     }
 
-    /** {@inheritDoc} */
     public void replaceSelection(String text) {
         //  Implement overtype mode by selecting the character at the current
         //  caret position
@@ -378,7 +370,6 @@ public class TextEditor extends JTextPane implements Pageable, Printable {
         super.replaceSelection(text);
     }
 
-    /** {@inheritDoc} */
     public void setBounds(int x, int y, int width, int height) {
         if (unwrapped) {
             Dimension size = this.getPreferredSize();

@@ -33,7 +33,7 @@ import java.io.Serializable;
 public class QName implements Serializable {
 
     /** comment/shared empty string */
-    private static final String emptyString = "".intern();
+    private static final String EMPTY_STRING = "".intern();
 
     /** Field namespaceURI */
     private String namespaceURI;
@@ -50,7 +50,7 @@ public class QName implements Serializable {
      * @param localPart Local part of the QName
      */
     public QName(String localPart) {
-        this(emptyString, localPart, emptyString);
+        this(EMPTY_STRING, localPart, EMPTY_STRING);
     }
 
     /**
@@ -60,7 +60,7 @@ public class QName implements Serializable {
      * @param localPart Local part of the QName.
      */
     public QName(String namespaceURI, String localPart) {
-        this(namespaceURI, localPart, emptyString);
+        this(namespaceURI, localPart, EMPTY_STRING);
     }
 
     /**
@@ -72,7 +72,7 @@ public class QName implements Serializable {
      */
     public QName(String namespaceURI, String localPart, String prefix) {
         this.namespaceURI = (namespaceURI == null)
-                ? emptyString
+                ? EMPTY_STRING
                 : namespaceURI.intern();
         if (localPart == null) {
             throw new IllegalArgumentException("invalid QName local part");
@@ -121,7 +121,7 @@ public class QName implements Serializable {
      */
     public String getQualifiedName() {
 
-        return ((prefix.equals(emptyString))
+        return ((prefix.equals(EMPTY_STRING))
                 ? localPart
                 : prefix + ':' + localPart);
     }
@@ -133,7 +133,7 @@ public class QName implements Serializable {
      */
     public String toString() {
 
-        return ((namespaceURI.equals(emptyString))
+        return ((namespaceURI.equals(EMPTY_STRING))
                 ? localPart
                 : '{' + namespaceURI + '}' + localPart);
     }

@@ -20,75 +20,76 @@ import java.net.URLClassLoader;
 
 /**
  * This ClassLoader should be used as root of class loaders. Any
- * RootLoader does have it's own classpath. When searching for a 
- * class or resource this classpath will be used. Parent 
- * Classloaders are ignored first. If a class or resource 
+ * RootLoader does have it's own classpath. When searching for a
+ * class or resource this classpath will be used. Parent
+ * Classloaders are ignored first. If a class or resource
  * can't be found in the classpath of the RootLoader, then parent is
  * checked.
- * 
- * <b>Note:</b> this is very against the normal behavior of 
- * classloaders. Normal is to frist check parent and then look in
- * the ressources you gave this classloader.
- * 
+ * <p/>
+ * <b>Note:</b> this is very against the normal behavior of
+ * classloaders. Normal is to first check parent and then look in
+ * the resources you gave this classloader.
+ * <p/>
  * It's possible to add urls to the classpath at runtime through
  * @see #addURL(URL)
- * 
- * <b>Why using RootLoader?</b>
- * If you have to load classes with multiple classloaders and a
- * classloader does know a class which depends on a class only 
- * a child of this loader does know, then you won't be able to 
- * load the class. To load the class the child is not allowed 
- * to redirect it's search for the class to the parent first.
- * That way the child can load the class. If the child does not
- * have all classes to do this, this fails of course.
- *  
- * For example:
- *  
- *  <pre>
- *  parentLoader   (has classpath: a.jar;c.jar)
- *      |
- *      |
- *  childLoader    (has classpath: a.jar;b.jar;c.jar)
- *  </pre>
- *  
- *  class C (from c.jar) extends B (from b.jar)
- *  
- *  childLoader.find("C")
- *  --> parentLoader does know C.class, try to load it
- *  --> to load C.class it has to load B.class
- *  --> parentLoader is unable to find B.class in a.jar or c.jar
- *  --> NoClassDefFoundException!
- *  
- *  if childLoader had tried to load the class by itself, there
- *  would be no problem. Changing childLoader to be a RootLoader 
- *  instance will solve that problem.
- *   
+ *      <p/>
+ *      <b>Why using RootLoader?</b>
+ *      If you have to load classes with multiple classloaders and a
+ *      classloader does know a class which depends on a class only
+ *      a child of this loader does know, then you won't be able to
+ *      load the class. To load the class the child is not allowed
+ *      to redirect it's search for the class to the parent first.
+ *      That way the child can load the class. If the child does not
+ *      have all classes to do this, this fails of course.
+ *      <p/>
+ *      For example:
+ *      <p/>
+ *      <pre>
+ *       parentLoader   (has classpath: a.jar;c.jar)
+ *           |
+ *           |
+ *       childLoader    (has classpath: a.jar;b.jar;c.jar)
+ *       </pre>
+ *      <p/>
+ *      class C (from c.jar) extends B (from b.jar)
+ *      <p/>
+ *      childLoader.find("C")
+ *      --> parentLoader does know C.class, try to load it
+ *      --> to load C.class it has to load B.class
+ *      --> parentLoader is unable to find B.class in a.jar or c.jar
+ *      --> NoClassDefFoundException!
+ *      <p/>
+ *      if childLoader had tried to load the class by itself, there
+ *      would be no problem. Changing childLoader to be a RootLoader
+ *      instance will solve that problem.
+ *
  * @author Jochen Theodorou
  */
 public class RootLoader extends URLClassLoader {
 
     /**
      * constructs a new RootLoader without classpath
+     *
      * @param parent the parent Loader
-     */   
+     */
     private RootLoader(ClassLoader parent) {
-        this(new URL[0],parent);
+        this(new URL[0], parent);
     }
-    
+
     /**
      * constructs a new RootLoader with a parent loader and an
      * array of URLs as classpath
      */
     public RootLoader(URL[] urls, ClassLoader parent) {
-        super(urls,parent);
+        super(urls, parent);
     }
-    
-    private static ClassLoader chooseParent(){
-      ClassLoader cl = RootLoader.class.getClassLoader();
-      if (cl!=null) return cl;
-      return ClassLoader.getSystemClassLoader();
+
+    private static ClassLoader chooseParent() {
+        ClassLoader cl = RootLoader.class.getClassLoader();
+        if (cl != null) return cl;
+        return ClassLoader.getSystemClassLoader();
     }
-    
+
     /**
      * constructs a new RootLoader with a @see LoaderConfiguration
      * object which holds the classpath
@@ -97,7 +98,7 @@ public class RootLoader extends URLClassLoader {
         this(chooseParent());
         Thread.currentThread().setContextClassLoader(this);
         URL[] urls = lc.getClassPathUrls();
-        for (int i=0; i<urls.length; i++) {
+        for (int i = 0; i < urls.length; i++) {
             addURL(urls[i]);
         }
     }
@@ -107,38 +108,40 @@ public class RootLoader extends URLClassLoader {
      */
     protected Class loadClass(final String name, boolean resolve) throws ClassNotFoundException {
         Class c = this.findLoadedClass(name);
-        if (c!=null) return c;
-     
+        if (c != null) return c;
+
         try {
             c = oldFindClass(name);
-        } catch (ClassNotFoundException cnfe) {}
-        if (c==null) c= super.loadClass(name,resolve);
+        } catch (ClassNotFoundException cnfe) {
+            // IGNORE
+        }
+        if (c == null) c = super.loadClass(name, resolve);
 
         if (resolve) resolveClass(c);
-        
+
         return c;
     }
-        
+
     /**
      * returns the URL of a resource, or null if it is not found
      */
     public URL getResource(String name) {
         URL url = findResource(name);
-        if (url==null) url=super.getResource(name);
+        if (url == null) url = super.getResource(name);
         return url;
-    } 
- 
+    }
+
     /**
      * adds an url to the classpath of this classloader
      */
     public void addURL(URL url) {
         super.addURL(url);
     }
-    
+
     private Class oldFindClass(String name) throws ClassNotFoundException {
         return super.findClass(name);
     }
-    
+
     protected Class findClass(String name) throws ClassNotFoundException {
         throw new ClassNotFoundException(name);
     }

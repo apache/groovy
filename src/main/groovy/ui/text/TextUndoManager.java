@@ -52,14 +52,12 @@ public class TextUndoManager extends UndoManager {
         propChangeSupport.addPropertyChangeListener(pcl);
     }
     
-    /** {@inheritDoc} */
     public void die() {
         boolean undoable = canUndo();
         super.die();
         firePropertyChangeEvent(UndoManager.UndoName, undoable, canUndo());
     }
     
-    /** {@inheritDoc} */
     public void discardAllEdits() {
         boolean undoable = canUndo();
         boolean redoable = canRedo();
@@ -82,7 +80,6 @@ public class TextUndoManager extends UndoManager {
         return modificationMarker != editToBeUndone();
     }
     
-    /** {@inheritDoc} */
     public void redo() throws javax.swing.undo.CannotRedoException {
         compoundEdit.end();
         
@@ -98,7 +95,6 @@ public class TextUndoManager extends UndoManager {
         firePropertyChangeEvent(UndoManager.UndoName, undoable, canUndo());
     }
     
-    /** {@inheritDoc} */
     protected void redoTo(UndoableEdit edit) {
         compoundEdit.end();
         
@@ -126,7 +122,6 @@ public class TextUndoManager extends UndoManager {
         }
     }
     
-    /** {@inheritDoc} */
     protected void trimEdits(int from, int to) {
         boolean undoable = canUndo();
         boolean redoable = canRedo();
@@ -138,7 +133,6 @@ public class TextUndoManager extends UndoManager {
         firePropertyChangeEvent(UndoManager.RedoName, redoable, canRedo());
     }
 
-    /** {@inheritDoc} */
     public void undo() throws javax.swing.undo.CannotUndoException {
         compoundEdit.end();
         
@@ -157,7 +151,6 @@ public class TextUndoManager extends UndoManager {
         firePropertyChangeEvent(UndoManager.RedoName, redoable, canRedo());
     }
 
-    /** {@inheritDoc} */
     public void undoableEditHappened(UndoableEditEvent uee) {
         UndoableEdit edit = uee.getEdit();
         boolean undoable = canUndo();
@@ -186,9 +179,6 @@ public class TextUndoManager extends UndoManager {
         
         private long editedTime;
         
-        /* (non-Javadoc)
-         * @see javax.swing.undo.CompoundEdit#addEdit(javax.swing.undo.UndoableEdit)
-         */
         public boolean addEdit(UndoableEdit edit) {
             boolean result = super.addEdit(edit);
             if (result && editedTime == 0) {
@@ -197,7 +187,6 @@ public class TextUndoManager extends UndoManager {
             return result;
         }
 
-        /** {@inheritDoc} */
         public boolean canUndo() {
             return edits.size() > 0;
         }
@@ -206,7 +195,6 @@ public class TextUndoManager extends UndoManager {
             return editedTime;
         }
         
-        /** {@inheritDoc} */
         public boolean isInProgress() {
             return false;
         }
