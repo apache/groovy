@@ -25,7 +25,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * reaplce with a null value.
  *   
  * @author Jochen Theodorou
- * @see EmptyStatement
+ * @see org.codehaus.groovy.ast.stmt.EmptyStatement
  */
 public class EmptyExpression extends Expression {
     public static final EmptyExpression INSTANCE = new EmptyExpression();
