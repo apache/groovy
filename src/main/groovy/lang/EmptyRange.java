@@ -56,7 +56,7 @@ public class EmptyRange extends AbstractList implements Range {
     }
 
     /**
-     * Returns <code>false</code>
+     * Never true for an empty range.
      * 
      * @return <code>false</code>
      */
@@ -65,7 +65,9 @@ public class EmptyRange extends AbstractList implements Range {
     }
 
     /**
-     * {@inheritDoc}
+     * Never true for an empty range.
+     *
+     * @return <code>false</code>
      */
     public boolean containsWithinBounds(Object o) {
         return false;
@@ -88,7 +90,7 @@ public class EmptyRange extends AbstractList implements Range {
     }
 
     /**
-     * Returns 0
+     * Always 0 for an empty range.
      * 
      * @return 0
      */
@@ -97,7 +99,7 @@ public class EmptyRange extends AbstractList implements Range {
     }
 
     /**
-     * Throws <code>IndexOutOfBoundsException</code>.
+     * Always throws <code>IndexOutOfBoundsException</code> for an empty range.
      * 
      * @throws IndexOutOfBoundsException always
      */
@@ -106,6 +108,8 @@ public class EmptyRange extends AbstractList implements Range {
     }
 
     /**
+     * Always throws <code>UnsupportedOperationException</code> for an empty range.
+     *
      * @throws UnsupportedOperationException always
      */
     public boolean add(Object o) {
@@ -113,27 +117,35 @@ public class EmptyRange extends AbstractList implements Range {
     }
 
     /**
+     * Always throws <code>UnsupportedOperationException</code> for an empty range.
+     *
      * @throws UnsupportedOperationException
      */
     public boolean addAll(int index, Collection c) {
         throw new UnsupportedOperationException("cannot add to Empty Ranges");
     }
 
-     /**
+    /**
+     * Always throws <code>UnsupportedOperationException</code> for an empty range.
+     *
      * @throws UnsupportedOperationException
      */
     public boolean addAll(Collection c) {
         throw new UnsupportedOperationException("cannot add to Empty Ranges");
     }
     
-    /** 
+    /**
+     * Always throws <code>UnsupportedOperationException</code> for an empty range.
+     *
      * @throws UnsupportedOperationException
      */
     public boolean remove(Object o) {
         throw new UnsupportedOperationException("cannot remove from Empty Ranges");
     }
 
-    /** 
+    /**
+     * Always throws <code>UnsupportedOperationException</code> for an empty range.
+     *
      * @throws UnsupportedOperationException
      */
     public Object remove(int index) {
@@ -141,6 +153,8 @@ public class EmptyRange extends AbstractList implements Range {
     }
 
     /**
+     * Always throws <code>UnsupportedOperationException</code> for an empty range.
+     *
      * @throws UnsupportedOperationException
      */
     public boolean removeAll(Collection c) {
@@ -148,6 +162,8 @@ public class EmptyRange extends AbstractList implements Range {
     }
 
     /**
+     * Always throws <code>UnsupportedOperationException</code> for an empty range.
+     *
      * @throws UnsupportedOperationException
      */
     public boolean retainAll(Collection c) {
@@ -155,6 +171,8 @@ public class EmptyRange extends AbstractList implements Range {
     }
 
      /**
+      * Always throws <code>UnsupportedOperationException</code> for an empty range.
+      *
      * @throws UnsupportedOperationException
      */
     public Object set(int index, Object element) {
@@ -162,13 +180,13 @@ public class EmptyRange extends AbstractList implements Range {
     }
 
     /**
-     * {@inheritDoc}
+     * Always does nothing for an empty range.
      */
     public void step(int step, Closure closure) {
     }
 
     /**
-     * {@inheritDoc}
+     * Always returns an empty list for an empty range.
      */
     public List step(int step) {
         return new ArrayList();
