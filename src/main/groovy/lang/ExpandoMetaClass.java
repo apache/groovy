@@ -1025,14 +1025,14 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     }
 
 	private String convertPropertyName(String prop) {
-		if(Character.isUpperCase(prop.charAt(0)) && Character.isUpperCase(prop.charAt(1))) {
+		if(Character.isUpperCase(prop.charAt(0)) && (prop.length() > 1 && Character.isUpperCase(prop.charAt(1)))) {
 			return prop;
 		}
 		else if(Character.isDigit(prop.charAt(0))) {
 			return prop;
 		}
 		else {
-			return Character.toLowerCase(prop.charAt(0)) + prop.substring(1);
+			return Character.toLowerCase(prop.charAt(0)) + (prop.length() > 1 ? prop.substring(1) : "");
 		}
 	}
 
