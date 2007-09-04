@@ -81,7 +81,7 @@ public class GroovyCategorySupport {
     }
 
     private static class CategoryMethod extends NewInstanceMetaMethod implements Comparable {
-        private Class metaClass;
+        private final Class metaClass;
 
         public CategoryMethod(MetaMethod metaMethod, Class metaClass) {
             super(metaMethod);
@@ -182,7 +182,7 @@ public class GroovyCategorySupport {
         }
     }
 
-    private static ThreadLocal local = new ThreadLocal() {
+    private static final ThreadLocal local = new ThreadLocal() {
         protected Object initialValue() {
         		List stack = new ArrayList();
         		stack.add(Collections.EMPTY_MAP);

@@ -30,7 +30,7 @@ import org.codehaus.groovy.control.CompilerConfiguration;
  */
 
 public class StringReaderSource extends AbstractReaderSource {
-    private String string;  // The String from which we produce Readers.
+    private final String string;  // The String from which we produce Readers.
 
    /**
     * Creates the ReaderSource from a File descriptor.

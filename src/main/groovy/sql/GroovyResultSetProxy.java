@@ -89,7 +89,9 @@ public final class GroovyResultSetProxy implements InvocationHandler {
         if (method.getDeclaringClass()!=Object.class) {
             try {
                 return InvokerHelper.invokeMethod(extension,method.getName(),args);
-            } catch (MissingMethodException mme) {}
+            } catch (MissingMethodException mme) {
+                // IGNORE
+            }
         }
         
         try {

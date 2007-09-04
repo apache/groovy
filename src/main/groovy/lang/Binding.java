@@ -27,7 +27,7 @@ import java.util.Map;
  * @version $Revision$
  */
 public class Binding extends GroovyObjectSupport {
-    private Map variables;
+    private final Map variables;
     
     public Binding() {
         variables = new HashMap();

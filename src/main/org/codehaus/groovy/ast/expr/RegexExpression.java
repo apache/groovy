@@ -27,7 +27,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  */
 public class RegexExpression extends Expression {
     
-    private Expression string;
+    private final Expression string;
     
     public RegexExpression(Expression string) {
         this.string = string;

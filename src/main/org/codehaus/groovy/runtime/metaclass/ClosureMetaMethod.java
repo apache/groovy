@@ -32,7 +32,7 @@ import java.lang.reflect.Modifier;
  */
 public class ClosureMetaMethod extends NewInstanceMetaMethod implements ClosureInvokingMethod {
 
-	private Closure callable;
+	private final Closure callable;
 	private Class declaringClass;
 
 	public ClosureMetaMethod(String name, Closure c) {

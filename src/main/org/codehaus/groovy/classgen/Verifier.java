@@ -375,7 +375,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     //-------------------------------------------------------------------------
     
     private interface DefaultArgsAction {
-        public void call(ArgumentListExpression arguments, Parameter[] newParams, MethodNode method);
+        void call(ArgumentListExpression arguments, Parameter[] newParams, MethodNode method);
     }
     
     /**

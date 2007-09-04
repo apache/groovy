@@ -60,33 +60,33 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private static final String CLOSURE_CURRY_METHOD = "curry";
     private static final String METHOD_MISSING = "methodMissing";
 
-    protected static final Logger log = Logger.getLogger(MetaClass.class.getName());
+    protected static final Logger LOG = Logger.getLogger(MetaClass.class.getName());
     protected final Class theClass;
     protected MetaClassRegistry registry;
-    protected boolean isGroovyObject;
-    protected boolean isMap;
+    protected final boolean isGroovyObject;
+    protected final boolean isMap;
     private ClassNode classNode;
-    private Map classMethodIndex = new HashMap();
+    private final Map classMethodIndex = new HashMap();
     private Map classMethodIndexForSuper;
-    private Map classStaticMethodIndex = new HashMap();
-    private Map classPropertyIndex = new HashMap();
+    private final Map classStaticMethodIndex = new HashMap();
+    private final Map classPropertyIndex = new HashMap();
     private Map classPropertyIndexForSuper = new HashMap();
-    private Map staticPropertyIndex = new HashMap();
-    private Map listeners = new HashMap();
-    private Map methodCache = new ConcurrentReaderHashMap();
-    private Map staticMethodCache = new ConcurrentReaderHashMap();
+    private final Map staticPropertyIndex = new HashMap();
+    private final Map listeners = new HashMap();
+    private final Map methodCache = new ConcurrentReaderHashMap();
+    private final Map staticMethodCache = new ConcurrentReaderHashMap();
     private MetaMethod genericGetMethod;
     private MetaMethod genericSetMethod;
     private List constructors;
-    private List allMethods = new ArrayList();
+    private final List allMethods = new ArrayList();
     private List interfaceMethods;
     private Reflector reflector;
     private boolean initialized;
     // we only need one of these that can be reused over and over.
-    private MetaProperty arrayLengthProperty = new MetaArrayLengthProperty();
-    private final static MetaMethod AMBIGOUS_LISTENER_METHOD = new MetaMethod(null,null,new Class[]{},null,0);
+    private final MetaProperty arrayLengthProperty = new MetaArrayLengthProperty();
+    private static final MetaMethod AMBIGOUS_LISTENER_METHOD = new MetaMethod(null,null,new Class[]{},null,0);
     private static final Object[] EMPTY_ARGUMENTS = {};
-    private List newGroovyMethodsList = new LinkedList();
+    private final List newGroovyMethodsList = new LinkedList();
     private static final Class[] METHOD_MISSING_ARGS = new Class[]{String.class, Object.class};
 
     public MetaClassImpl(final Class theClass) {
@@ -541,7 +541,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
        if (object == null) {
            throw new NullPointerException("Cannot invoke method: " + methodName + " on null object");
        }              
-       if (log.isLoggable(Level.FINER)){
+       if (LOG.isLoggable(Level.FINER)){
            MetaClassHelper.logMethodCall(object, methodName, originalArguments);
        }
        final Object[] arguments = originalArguments == null ? EMPTY_ARGUMENTS : originalArguments;
@@ -806,7 +806,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
    public Object invokeStaticMethod(Object object, String methodName, Object[] arguments) {
        checkInitalised();
-       if (log.isLoggable(Level.FINER)){
+       if (LOG.isLoggable(Level.FINER)){
            MetaClassHelper.logMethodCall(object, methodName, arguments);
        }
        
@@ -1360,7 +1360,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private void copyClassPropertyIndexForSuper() {
        for (Iterator iter = classPropertyIndex.entrySet().iterator(); iter.hasNext();) {
            Map.Entry entry = (Map.Entry) iter.next();
-           HashMap newVal = new HashMap((Map)entry.getValue());
+           Map newVal = new HashMap((Map)entry.getValue());
            classPropertyIndexForSuper.put(entry.getKey(),newVal);
        }
    }
@@ -2023,7 +2023,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
    
    private static Object doConstructorInvoke(final Class at, Constructor constructor, Object[] argumentArray, boolean setAccessible) {
-       if (log.isLoggable(Level.FINER)) {
+       if (LOG.isLoggable(Level.FINER)) {
            MetaClassHelper.logMethodCall(constructor.getDeclaringClass(), constructor.getName(), argumentArray);
        }
 

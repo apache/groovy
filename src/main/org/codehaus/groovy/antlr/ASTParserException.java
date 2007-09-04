@@ -24,7 +24,7 @@ import org.codehaus.groovy.syntax.ParserException;
  * @version $Revision$
  */
 public class ASTParserException extends ParserException {
-    private AST ast;
+    private final AST ast;
 
     public ASTParserException(ASTRuntimeException e) {
         super(e.getMessage(), e, e.getLine(), e.getColumn());

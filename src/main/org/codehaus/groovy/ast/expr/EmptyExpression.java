@@ -17,7 +17,6 @@
 package org.codehaus.groovy.ast.expr;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.ast.stmt.EmptyStatement;
 
 /**
  * This class is a place holder for an empty expression. 
@@ -29,7 +28,7 @@ import org.codehaus.groovy.ast.stmt.EmptyStatement;
  * @see EmptyStatement
  */
 public class EmptyExpression extends Expression {
-    public final static EmptyExpression INSTANCE = new EmptyExpression();
+    public static final EmptyExpression INSTANCE = new EmptyExpression();
 
     public Expression transformExpression(ExpressionTransformer transformer) {
         return this;

@@ -80,9 +80,9 @@ public class CompileStack implements Opcodes {
     // index for the next variable on stack
     private int nextVariableIndex = 1;
     // currently temporary variables in use
-    private LinkedList temporaryVariables = new LinkedList();
+    private final LinkedList temporaryVariables = new LinkedList();
     // overall used variables for a method/constructor
-    private LinkedList usedVariables = new LinkedList();
+    private final LinkedList usedVariables = new LinkedList();
     // map containing named labels of parenting blocks
     private HashMap superBlockNamedLabels = new HashMap();
     // map containing named labels of current block
@@ -92,7 +92,7 @@ public class CompileStack implements Opcodes {
     // must be called for break/continue/return
     private LinkedList finallyBlocks = new LinkedList();
     // a list of blocks already visiting. 
-    private List visitedBlocks = new LinkedList();
+    private final List visitedBlocks = new LinkedList();
     
     private Label thisStartLabel, thisEndLabel;
 
@@ -103,32 +103,32 @@ public class CompileStack implements Opcodes {
     private BytecodeHelper helper;
     
     // helper to handle different stack based variables    
-    private LinkedList stateStack = new LinkedList();
+    private final LinkedList stateStack = new LinkedList();
     
     // defines the first variable index useable after
     // all parameters of a method 
     private int localVariableOffset;
     // this is used to store the goals for a "break foo" call
     // in a loop where foo is a label.
-	private HashMap namedLoopBreakLabel = new HashMap();
+	private final HashMap namedLoopBreakLabel = new HashMap();
 	//this is used to store the goals for a "continue foo" call
     // in a loop where foo is a label.
-	private HashMap namedLoopContinueLabel = new HashMap();
+	private final HashMap namedLoopContinueLabel = new HashMap();
     private String className;
 	
     private class StateStackElement {
-        VariableScope scope;
-        Label continueLabel;
-        Label breakLabel;
+        final VariableScope scope;
+        final Label continueLabel;
+        final Label breakLabel;
         Label finallyLabel;
-        int lastVariableIndex;
-        int nextVariableIndex;
-        HashMap stackVariables;
+        final int lastVariableIndex;
+        final int nextVariableIndex;
+        final HashMap stackVariables;
         LinkedList temporaryVariables = new LinkedList();
         LinkedList usedVariables = new LinkedList();
-        HashMap superBlockNamedLabels;
-        HashMap currentBlockNamedLabels;
-        LinkedList finallyBlocks;
+        final HashMap superBlockNamedLabels;
+        final HashMap currentBlockNamedLabels;
+        final LinkedList finallyBlocks;
         
         StateStackElement() {
             scope = CompileStack.this.scope;

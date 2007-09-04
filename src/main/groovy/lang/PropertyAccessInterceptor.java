@@ -33,7 +33,7 @@ public interface PropertyAccessInterceptor extends Interceptor  {
 	 *
 	 * @return A value supplied by the interceptor
 	 */
-	public Object beforeGet(Object object, String property);
+	Object beforeGet(Object object, String property);
 
 	/**
 	 * Intercepts a setXXX call
@@ -43,6 +43,6 @@ public interface PropertyAccessInterceptor extends Interceptor  {
 	 * @param newValue The new value
 	 *
 	 */
-	public void beforeSet(Object object, String property, Object newValue);
+	void beforeSet(Object object, String property, Object newValue);
 
 }

@@ -71,7 +71,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     public static ClassNode SUPER = new ClassNode(Object.class);
     
     private String name;
-    private int modifiers;
+    private final int modifiers;
     private ClassNode[] interfaces;
     private MixinNode[] mixins;
     private List constructors = new ArrayList();

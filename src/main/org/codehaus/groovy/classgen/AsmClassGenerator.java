@@ -46,7 +46,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
 //    private Logger log = Logger.getLogger(getClass().getName());
 
-    private ClassVisitor cv;
+    private final ClassVisitor cv;
     private MethodVisitor mv;
     private GeneratorContext context;
 

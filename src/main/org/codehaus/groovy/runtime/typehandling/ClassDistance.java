@@ -29,7 +29,7 @@ import java.util.WeakHashMap;
  * will keep a weak cache and recalculate the distances on demand.
  */
 public class ClassDistance {
-    private static WeakHashMap classDistances;
+    private static final WeakHashMap CLASS_DISTANCES;
     
     private static class Entry {
         
@@ -50,7 +50,7 @@ public class ClassDistance {
     }
     
     static {
-        classDistances = new WeakHashMap();
+        CLASS_DISTANCES = new WeakHashMap();
         initialPopulate();
     }
     
@@ -61,22 +61,22 @@ public class ClassDistance {
         
         LinearEntry object = new LinearEntry();
         object.entries = new Class[]{Object.class};
-        classDistances.put(Object.class,object);
+        CLASS_DISTANCES.put(Object.class,object);
         
         LinearEntry number = new LinearEntry();
         number.concat(new Class[]{Number.class,Serializable.class},object);
-        classDistances.put(Number.class,number);
+        CLASS_DISTANCES.put(Number.class,number);
 
         LinearEntry compareableNumber = new LinearEntry();
         compareableNumber.concat(Comparable.class,number);
         
         LinearEntry binteger = new LinearEntry();
         binteger.concat(new Class[]{BigInteger.class, BigDecimal.class}, compareableNumber);
-        classDistances.put(BigInteger.class,object);
+        CLASS_DISTANCES.put(BigInteger.class,object);
         
         LinearEntry bdec = new LinearEntry();
         binteger.concat(new Class[]{BigDecimal.class, BigInteger.class}, compareableNumber);
-        classDistances.put(BigDecimal.class,object);
+        CLASS_DISTANCES.put(BigDecimal.class,object);
         
         
         
@@ -89,7 +89,7 @@ public class ClassDistance {
                 float.class, Float.class,  double.class, Double.class, 
                 BigDecimal.class,
                 Number.class,Object.class};
-        classDistances.put(byte.class,start);
+        CLASS_DISTANCES.put(byte.class,start);
         
         // short:
         start = new LinearEntry();
@@ -100,7 +100,7 @@ public class ClassDistance {
                 float.class, Float.class,  double.class, Double.class, 
                 BigDecimal.class,
                 Number.class,Object.class};
-        classDistances.put(short.class,start);
+        CLASS_DISTANCES.put(short.class,start);
         
         // int:
         start = new LinearEntry();
@@ -110,7 +110,7 @@ public class ClassDistance {
                 float.class, Float.class,  double.class, Double.class, 
                 BigDecimal.class,
                 Number.class,Object.class};
-        classDistances.put(int.class,start);
+        CLASS_DISTANCES.put(int.class,start);
         
         // long:
         start = new LinearEntry();
@@ -120,7 +120,7 @@ public class ClassDistance {
                 float.class, Float.class,  double.class, Double.class, 
                 BigDecimal.class,
                 Number.class,Object.class};
-        classDistances.put(long.class,start);
+        CLASS_DISTANCES.put(long.class,start);
         
         // Biginteger:
         start = new LinearEntry();
@@ -129,7 +129,7 @@ public class ClassDistance {
                 float.class, Float.class,  double.class, Double.class, 
                 BigDecimal.class,
                 Number.class,Object.class};
-        classDistances.put(long.class,start);
+        CLASS_DISTANCES.put(long.class,start);
         
         // float:
         start = new LinearEntry();
@@ -140,7 +140,7 @@ public class ClassDistance {
                 float.class, Float.class,  double.class, Double.class, 
                 BigDecimal.class,
                 Number.class,Object.class};
-        classDistances.put(float.class,start);
+        CLASS_DISTANCES.put(float.class,start);
         
         // double:
         start = new LinearEntry();
@@ -148,12 +148,12 @@ public class ClassDistance {
                 double.class,
                 Double.class, BigDecimal.class,
                 Number.class,Object.class};
-        classDistances.put(double.class,start);
+        CLASS_DISTANCES.put(double.class,start);
 
     }
     
-    private synchronized static void popultate(Class clazz) {
-        if (classDistances.get(clazz) != null) return;
+    private static synchronized void popultate(Class clazz) {
+        if (CLASS_DISTANCES.get(clazz) != null) return;
         
     }
     

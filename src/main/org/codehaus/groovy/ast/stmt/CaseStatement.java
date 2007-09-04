@@ -27,7 +27,7 @@ import org.codehaus.groovy.ast.expr.Expression;
  */
 public class CaseStatement extends Statement {
 
-    private Statement code;
+    private final Statement code;
     private Expression expression;
     
     public CaseStatement(Expression expression, Statement code) {

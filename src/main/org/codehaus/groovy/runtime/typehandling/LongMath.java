@@ -22,7 +22,7 @@ package org.codehaus.groovy.runtime.typehandling;
  */
 public class LongMath extends NumberMath {
 
-	protected static LongMath instance = new LongMath();
+	public static final LongMath INSTANCE = new LongMath();
 
 	private LongMath() {}
 					
@@ -43,7 +43,7 @@ public class LongMath extends NumberMath {
 	}
 
 	protected Number divideImpl(Number left, Number right) {
-		return BigDecimalMath.instance.divideImpl(left, right);
+		return BigDecimalMath.INSTANCE.divideImpl(left, right);
 	}
 	
 	protected int compareToImpl(Number left, Number right) {

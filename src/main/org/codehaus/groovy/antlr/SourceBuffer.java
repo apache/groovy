@@ -26,7 +26,7 @@ import java.util.ArrayList;
  * @version $Revision$
  */
 public class SourceBuffer {
-    private List lines;
+    private final List lines;
     private StringBuffer current;
 
     public SourceBuffer() {

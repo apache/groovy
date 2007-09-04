@@ -26,7 +26,7 @@ import com.mockobjects.constraint.Constraint;
  * @version $Revision$
  */
 public class ClosureConstraintMatcher implements Constraint {
-    private Closure closure;
+    private final Closure closure;
     private String message = "closure";
 
     public ClosureConstraintMatcher(Closure closure) {

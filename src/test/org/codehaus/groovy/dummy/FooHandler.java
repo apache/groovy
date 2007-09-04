@@ -7,5 +7,5 @@ import java.io.Reader;
  * @version $Revision$
  */
 public interface FooHandler {
-    public void handle(Reader reader);
+    void handle(Reader reader);
 }

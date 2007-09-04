@@ -30,13 +30,13 @@ import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
  */
 
 public class SourcePrinter extends VisitorAdapter {
-    private String[] tokenNames;
+    private final String[] tokenNames;
     private int tabLevel;
     private int lastLinePrinted;
-    private boolean newLines;
-    protected PrintStream out;
+    private final boolean newLines;
+    protected final PrintStream out;
     private String className;
-    private Stack stack;
+    private final Stack stack;
     private int stringConstructorCounter;
 
     /**

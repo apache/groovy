@@ -35,11 +35,11 @@ import java.util.*;
  * @version $Revision$
  */
 public class GroovyMBean extends GroovyObjectSupport {
-    private MBeanServerConnection server;
-    private ObjectName name;
+    private final MBeanServerConnection server;
+    private final ObjectName name;
     private MBeanInfo beanInfo;
-    private boolean ignoreErrors;
-    private Map operations = new HashMap();
+    private final boolean ignoreErrors;
+    private final Map operations = new HashMap();
 
     public GroovyMBean(MBeanServerConnection server, String objectName) throws JMException, IOException {
         this(server, objectName, false);

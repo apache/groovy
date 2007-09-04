@@ -23,7 +23,7 @@ package org.codehaus.groovy.runtime.typehandling;
  */
 public class BigIntegerMath extends NumberMath {
 
-	protected static BigIntegerMath instance = new BigIntegerMath();
+	public static final BigIntegerMath INSTANCE = new BigIntegerMath();
 	
 	private BigIntegerMath() {}
 
@@ -43,7 +43,7 @@ public class BigIntegerMath extends NumberMath {
 	}
 
 	protected Number divideImpl(Number left, Number right) {
-		return BigDecimalMath.instance.divideImpl(left, right);
+		return BigDecimalMath.INSTANCE.divideImpl(left, right);
 	}
 	
 	protected int compareToImpl(Number left, Number right) {

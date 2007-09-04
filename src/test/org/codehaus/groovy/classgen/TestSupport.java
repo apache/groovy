@@ -81,15 +81,15 @@ public class TestSupport extends GroovyTestCase implements Opcodes {
     protected static boolean DUMP_CLASS = false;
 
     // ClassLoader parentLoader = Thread.currentThread().getContextClassLoader();
-    ClassLoader parentLoader = getClass().getClassLoader();
-    protected GroovyClassLoader loader =
+    final ClassLoader parentLoader = getClass().getClassLoader();
+    protected final GroovyClassLoader loader =
             (GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
                 public Object run() {
                     return new GroovyClassLoader(parentLoader);
                 }
             });
-    CompileUnit unit = new CompileUnit(loader, new CompilerConfiguration());
-    ModuleNode module = new ModuleNode(unit);
+    final CompileUnit unit = new CompileUnit(loader, new CompilerConfiguration());
+    final ModuleNode module = new ModuleNode(unit);
 
     protected Class loadClass(ClassNode classNode) {
         classNode.setModule(module);

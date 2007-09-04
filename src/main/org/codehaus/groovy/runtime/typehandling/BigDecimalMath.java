@@ -29,7 +29,7 @@ public class BigDecimalMath extends NumberMath {
 	//for typical user math.
 	public static final int MAX_DIVISION_SCALE = 10;
 	
-	protected static BigDecimalMath instance = new BigDecimalMath();
+	public static final BigDecimalMath INSTANCE = new BigDecimalMath();
 	
 	private BigDecimalMath() {}
 

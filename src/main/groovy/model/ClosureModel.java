@@ -28,10 +28,10 @@ import groovy.lang.Closure;
  */
 public class ClosureModel implements ValueModel, NestedValueModel {
 
-    private ValueModel sourceModel;
-    private Closure readClosure;
-    private Closure writeClosure;
-    private Class type;
+    private final ValueModel sourceModel;
+    private final Closure readClosure;
+    private final Closure writeClosure;
+    private final Class type;
 
     public ClosureModel(ValueModel sourceModel, Closure readClosure) {
         this(sourceModel, readClosure, null);

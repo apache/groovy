@@ -24,7 +24,7 @@ package org.codehaus.groovy.runtime;
  */
 public class DefaultMethodKey extends MethodKey{
 
-    private Class[] parameterTypes;
+    private final Class[] parameterTypes;
 
     public DefaultMethodKey(Class sender, String name, Class[] parameterTypes, boolean isCallToSuper) {
         super(sender, name,isCallToSuper);

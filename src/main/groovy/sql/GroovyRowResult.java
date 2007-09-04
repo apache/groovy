@@ -30,7 +30,7 @@ import java.util.*;
  */
 public class GroovyRowResult extends GroovyObjectSupport implements Map {
 
-    private LinkedHashMap result;
+    private final LinkedHashMap result;
 
     public GroovyRowResult(LinkedHashMap result) {
         this.result = result;

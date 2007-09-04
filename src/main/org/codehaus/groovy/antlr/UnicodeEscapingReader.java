@@ -33,11 +33,11 @@ import antlr.CharScanner;
  */
 public class UnicodeEscapingReader extends Reader {
 
-    private Reader reader;
+    private final Reader reader;
     private CharScanner lexer;
     private boolean hasNextChar = false;
     private int nextChar;
-    private SourceBuffer sourceBuffer;
+    private final SourceBuffer sourceBuffer;
 
     /**
      * Constructor.

@@ -28,7 +28,7 @@ import org.codehaus.groovy.groovydoc.GroovyPackageDoc;
 
 public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPackageDoc {
 	private static final char FS = '/';
-	Map classDocs;
+	final Map classDocs;
 	public SimpleGroovyPackageDoc(String name) {
 		super(name);
 		classDocs = new HashMap();

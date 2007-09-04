@@ -142,11 +142,11 @@ public class InteractiveShell
         
         CommandLineParser parser = new PosixParser();
         CommandLine line = parser.parse(options, args, true);
-        String[] _args = line.getArgs();
+        String[] lineargs = line.getArgs();
 
         // Puke if there were arguments, we don't support any right now
-        if (_args.length != 0) {
-            System.err.println(MESSAGES.format("cli.info.unexpected_args", new Object[] { DefaultGroovyMethods.join(_args, " ") }));
+        if (lineargs.length != 0) {
+            System.err.println(MESSAGES.format("cli.info.unexpected_args", new Object[] { DefaultGroovyMethods.join(lineargs, " ") }));
             System.exit(1);
         }
 

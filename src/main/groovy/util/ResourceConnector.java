@@ -30,5 +30,5 @@ public interface ResourceConnector {
      * @param name
      * @throws ResourceException
      */
-    public URLConnection getResourceConnection(String name) throws ResourceException;
+    URLConnection getResourceConnection(String name) throws ResourceException;
 }

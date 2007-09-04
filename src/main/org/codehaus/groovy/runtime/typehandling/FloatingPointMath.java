@@ -23,7 +23,7 @@ package org.codehaus.groovy.runtime.typehandling;
  */
 public class FloatingPointMath extends NumberMath {
 
-	protected static FloatingPointMath instance = new FloatingPointMath();
+	public static final FloatingPointMath INSTANCE = new FloatingPointMath();
 	
 	private FloatingPointMath() {}
 				

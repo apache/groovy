@@ -27,5 +27,5 @@ public interface ExpressionTransformer {
     /** 
      * Transforms the given expression into another expression
      */
-    public Expression transform(Expression expression);
+    Expression transform(Expression expression);
 }

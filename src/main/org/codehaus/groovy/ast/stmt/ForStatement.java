@@ -29,7 +29,7 @@ import org.codehaus.groovy.ast.expr.Expression;
  * @version $Revision$
  */
 public class ForStatement extends Statement {
-    public final static Parameter FOR_LOOP_DUMMY = new Parameter(ClassHelper.OBJECT_TYPE,"forLoopDummyParameter");
+    public static final Parameter FOR_LOOP_DUMMY = new Parameter(ClassHelper.OBJECT_TYPE,"forLoopDummyParameter");
 
     private Parameter variable;
     private Expression collectionExpression;

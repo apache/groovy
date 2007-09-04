@@ -23,8 +23,8 @@ package org.codehaus.groovy.ast;
  * @see ClassNode
  */
 public class GenericsType extends ASTNode {
-    private ClassNode[] upperBounds;
-    private ClassNode lowerBound;
+    private final ClassNode[] upperBounds;
+    private final ClassNode lowerBound;
     private ClassNode type;
     private String name;
     private boolean placeholder;

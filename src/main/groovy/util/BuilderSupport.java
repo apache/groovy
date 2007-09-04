@@ -35,7 +35,7 @@ public abstract class BuilderSupport extends GroovyObjectSupport {
 
     private Object current;
     private Closure nameMappingClosure;
-    private BuilderSupport proxyBuilder;
+    private final BuilderSupport proxyBuilder;
 
     public BuilderSupport() {
         this.proxyBuilder = this;

@@ -17,9 +17,6 @@
 package org.codehaus.groovy.syntax;
 
 import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.syntax.Token;
-import org.codehaus.groovy.syntax.Types;
-import org.codehaus.groovy.syntax.Reduction;
 
 import java.io.StringWriter;
 import java.io.PrintWriter;

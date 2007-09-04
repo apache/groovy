@@ -23,10 +23,10 @@ package org.codehaus.groovy.ast;
  */
 public interface GroovyClassVisitor {
 
-    public void visitClass(ClassNode node);
-    public void visitConstructor(ConstructorNode node);
-    public void visitMethod(MethodNode node);
-    public void visitField(FieldNode node);
-    public void visitProperty(PropertyNode node);
+    void visitClass(ClassNode node);
+    void visitConstructor(ConstructorNode node);
+    void visitMethod(MethodNode node);
+    void visitField(FieldNode node);
+    void visitProperty(PropertyNode node);
 
 }

@@ -59,7 +59,7 @@ public class ASTHelper {
     private static String NOT_RESOLVED = new String();
 
     /** temporarily store the class names that the current modulenode contains */
-    private List newClasses = new ArrayList();
+    private final List newClasses = new ArrayList();
 
     public ASTHelper(SourceUnit controller, ClassLoader classLoader) {
         this();

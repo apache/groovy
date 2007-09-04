@@ -37,13 +37,13 @@ import org.objectweb.asm.Opcodes;
 public class EnumVisitor extends ClassCodeVisitorSupport{
 
     // some constants for modifiers
-    private static int FS = Opcodes.ACC_FINAL | Opcodes.ACC_STATIC;
-    private static int PS = Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC;    
-    private static int PUBLIC_FS = Opcodes.ACC_PUBLIC | FS; 
-    private static int PRIVATE_FS = Opcodes.ACC_PRIVATE | FS;
+    private static final int FS = Opcodes.ACC_FINAL | Opcodes.ACC_STATIC;
+    private static final int PS = Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC;
+    private static final int PUBLIC_FS = Opcodes.ACC_PUBLIC | FS;
+    private static final int PRIVATE_FS = Opcodes.ACC_PRIVATE | FS;
     
-    private CompilationUnit compilationUnit;
-    private SourceUnit sourceUnit;
+    private final CompilationUnit compilationUnit;
+    private final SourceUnit sourceUnit;
     
     
     public EnumVisitor(CompilationUnit cu, SourceUnit su) {

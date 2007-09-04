@@ -27,7 +27,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  */
 public class FieldExpression extends Expression {
 
-    private FieldNode field;
+    private final FieldNode field;
     
     public FieldExpression(FieldNode field) {
         this.field = field;

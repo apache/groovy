@@ -20,19 +20,16 @@ import java.util.regex.Matcher;
 /**
  * Created by IntelliJ IDEA.
  * User: sam
- * Date: May 17, 2004
- * Time: 9:04:28 PM
- * To change this template use File | Settings | File Templates.
  */
 public class RegexSupport {
 
-    private static ThreadLocal currentMatcher = new ThreadLocal();
+    private static final ThreadLocal CURRENT_MATCHER = new ThreadLocal();
 
     public static Matcher getLastMatcher() {
-        return (Matcher) currentMatcher.get();
+        return (Matcher) CURRENT_MATCHER.get();
     }
 
     public static void setLastMatcher(Matcher matcher) {
-        currentMatcher.set(matcher);
+        CURRENT_MATCHER.set(matcher);
     }
 }

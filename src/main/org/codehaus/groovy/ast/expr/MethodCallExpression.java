@@ -35,7 +35,7 @@ public class MethodCallExpression extends Expression {
     private boolean safe = false;
     private boolean implicitThis;
     
-    public static Expression NO_ARGUMENTS = new TupleExpression();
+    public static final Expression NO_ARGUMENTS = new TupleExpression();
 
     public MetaMethod getMetaMethod() {
         return metaMethod;

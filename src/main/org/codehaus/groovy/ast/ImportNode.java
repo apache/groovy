@@ -26,8 +26,8 @@ import org.objectweb.asm.Opcodes;
  */
 public class ImportNode extends AnnotatedNode implements Opcodes {
 
-    private ClassNode type;
-    private String alias;
+    private final ClassNode type;
+    private final String alias;
     
     public ImportNode(ClassNode type, String alias) {
         this.type = type;

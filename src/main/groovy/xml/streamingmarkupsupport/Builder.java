@@ -57,9 +57,9 @@ public abstract class Builder extends GroovyObjectSupport {
 		return newMethodMap;
 	}
 	
-	abstract public Object bind(Closure root);
+	public abstract Object bind(Closure root);
 	
-	protected static abstract class Built extends GroovyObjectSupport {
+	protected abstract static class Built extends GroovyObjectSupport {
 	protected final Closure root;
 	protected final Map namespaceSpecificTags = new HashMap();
 		

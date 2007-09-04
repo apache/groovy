@@ -15,7 +15,6 @@
  */
 package org.codehaus.groovy.runtime.typehandling;
 
-
 /**
  * Integer NumberMath operations
  * 
@@ -23,7 +22,7 @@ package org.codehaus.groovy.runtime.typehandling;
  */
 public class IntegerMath extends NumberMath {
 
-	protected static IntegerMath instance = new IntegerMath();
+	public static final IntegerMath INSTANCE = new IntegerMath();
 
 	private IntegerMath() {}
 					
@@ -44,7 +43,7 @@ public class IntegerMath extends NumberMath {
 	}
 
 	protected Number divideImpl(Number left, Number right) {
-		return BigDecimalMath.instance.divideImpl(left, right);
+		return BigDecimalMath.INSTANCE.divideImpl(left, right);
 	}
 	
 	protected int compareToImpl(Number left, Number right) {

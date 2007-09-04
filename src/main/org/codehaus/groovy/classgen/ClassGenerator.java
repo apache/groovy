@@ -54,7 +54,7 @@ public abstract class ClassGenerator extends ClassCodeVisitorSupport implements 
      * version 1.5 these are in Constants.  The CVS (as at 2004.12.12) and presumably in version 2.0,
      * the interface Constants is replaced by Opcodes.</p>
      */
-    public final static int asmJDKVersion = V1_3;
+    public static final int asmJDKVersion = V1_3;
     //  We can use V1_3 and not org.objectweb.asm.Opcodes.V1_3 because this abstract class
     //  implements org.objectweb.asm.Opcodes so all its constants are available directly.
 

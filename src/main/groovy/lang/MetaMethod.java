@@ -24,7 +24,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.logging.Logger;
 
 /**
  * Represents a Method on a Java object a little like {@link java.lang.reflect.Method}
@@ -34,8 +33,6 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class MetaMethod implements Cloneable {
-
-    private static final Logger log = Logger.getLogger(MetaMethod.class.getName());
 
     private String name;
     private Class callClass;
@@ -75,7 +72,7 @@ public class MetaMethod implements Cloneable {
     /**
      * Checks that the given parameters are valid to call this method
      * 
-     * @param arguments
+     * @param arguments the arguments to check
      * @throws IllegalArgumentException if the parameters are not valid
      */
     public void checkParameters(Class[] arguments) {
@@ -205,6 +202,7 @@ public class MetaMethod implements Cloneable {
     }
 
     /**
+     * @param method the method to compare against
      * @return true if the given method has the same name, parameters, return type
      * and modifiers but may be defined on another type
      */

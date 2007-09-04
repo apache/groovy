@@ -143,16 +143,21 @@ public class CompilerConfiguration {
         String encoding = null;
         try {
             encoding = System.getProperty("file.encoding", "US-ASCII");
-        } catch (Exception e) {}
+        } catch (Exception e) {
+            // IGNORE
+        }
         try {
             encoding = System.getProperty("groovy.source.encoding", encoding);
-        } catch (Exception e) {}
+        } catch (Exception e) {
+            // IGNORE
+        }
         setSourceEncoding(encoding);
 
         try {
             setOutput(new PrintWriter(System.err));
         }
         catch (Exception e) {
+            // IGNORE
         }
         /*try {
             setClasspath(System.getProperty("java.class.path"));
@@ -167,6 +172,7 @@ public class CompilerConfiguration {
             }
         }
         catch (Exception e) {
+            // IGNORE
         }
     }
 
@@ -181,7 +187,6 @@ public class CompilerConfiguration {
 
         String text = null;
         int numeric = 0;
-
 
         //
         // Warning level
@@ -210,7 +215,6 @@ public class CompilerConfiguration {
         }
 
         setWarningLevel(numeric);
-
 
         //
         // Source file encoding
@@ -591,12 +595,13 @@ public class CompilerConfiguration {
         return this.targetBytecode;
     }
     
-    private static final String getVMVersion() {
+    private static String getVMVersion() {
         try {
             Class.forName(JDK5_CLASSNAME_CHECK);
             return POST_JDK5;
         }
-        catch(Exception _ex) {
+        catch(Exception ex) {
+            // IGNORE
         }
         
         return PRE_JDK5;

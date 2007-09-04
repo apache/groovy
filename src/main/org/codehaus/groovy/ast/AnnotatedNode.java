@@ -28,7 +28,7 @@ import java.util.Map;
  * @version $Revision$
  */
 public class AnnotatedNode extends ASTNode {
-    private Map annotations = new HashMap();
+    private final Map annotations = new HashMap();
     private Map annotationClasses = new HashMap();
     private boolean synthetic;
     ClassNode declaringClass;

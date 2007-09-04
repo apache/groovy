@@ -42,7 +42,7 @@ import org.objectweb.asm.Opcodes;
  */
 public class ClassHelper {
 
-    private static Class[] classes = new Class[] {
+    private static final Class[] classes = new Class[] {
         Object.class, Boolean.TYPE, Character.TYPE, Byte.TYPE, Short.TYPE,
         Integer.TYPE, Long.TYPE, Double.TYPE, Float.TYPE, Void.TYPE,
         Closure.class, GString.class, List.class, Map.class, Range.class,

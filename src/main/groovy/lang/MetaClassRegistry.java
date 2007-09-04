@@ -75,7 +75,7 @@ public interface MetaClassRegistry {
      * WARNING: experimental code, likely to change soon
      * @author Jochen Theodorou
      */
-    public static class MetaClassCreationHandle {
+    class MetaClassCreationHandle {
         public MetaClass create(Class theClass, MetaClassRegistry registry) {
 	       try {
 	           final Class customMetaClass = Class.forName("groovy.runtime.metaclass." + theClass.getName() + "MetaClass");

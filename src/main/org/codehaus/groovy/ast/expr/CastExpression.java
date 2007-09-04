@@ -26,7 +26,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  */
 public class CastExpression extends Expression {
     
-    private Expression expression;
+    private final Expression expression;
     private boolean ignoreAutoboxing=false;
     private boolean coerce = false;
 

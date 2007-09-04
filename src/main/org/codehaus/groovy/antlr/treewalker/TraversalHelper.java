@@ -33,7 +33,7 @@ import antlr.collections.AST;
 
 public abstract class TraversalHelper implements AntlrASTProcessor {
     protected List unvisitedNodes;
-    private Visitor v;
+    private final Visitor v;
 
     public TraversalHelper(Visitor visitor) {
         this.unvisitedNodes = new ArrayList();

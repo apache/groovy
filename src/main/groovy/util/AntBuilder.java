@@ -46,9 +46,9 @@ import groovy.xml.QName;
  */
 public class AntBuilder extends BuilderSupport {
 
-    private static final Class[] addTaskParamTypes = { String.class };
+    private static final Class[] ADD_TASK_PARAM_TYPES = { String.class };
 
-    private Logger log = Logger.getLogger(getClass().getName());
+    private final Logger log = Logger.getLogger(getClass().getName());
     private Project project;
     private final AntXMLContext antXmlContext;
     private final ProjectHelper2.ElementHandler antElementHandler = new ProjectHelper2.ElementHandler();
@@ -195,7 +195,9 @@ public class AntBuilder extends BuilderSupport {
     
     /**
      * Builds an {@link Attributes} from a {@link Map}
+     * 
      * @param attributes the attributes to wrap
+     * @return the wrapped attributes
      */
     protected static Attributes buildAttributes(final Map attributes) {
     	final AttributesImpl attr = new AttributesImpl();

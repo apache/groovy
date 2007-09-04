@@ -27,7 +27,7 @@ import java.beans.PropertyChangeSupport;
  */
 public class ValueHolder implements ValueModel {
     private Object value;
-    private Class type;
+    private final Class type;
     private PropertyChangeSupport propertyChangeSupport;
     private boolean editable = true;
 

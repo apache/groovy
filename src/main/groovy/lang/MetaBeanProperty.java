@@ -15,11 +15,6 @@
  */
 package groovy.lang;
 
-import groovy.lang.GroovyRuntimeException;
-import groovy.lang.MetaFieldProperty;
-import groovy.lang.MetaMethod;
-import groovy.lang.MetaProperty;
-
 import java.lang.reflect.Modifier;
 
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
@@ -37,7 +32,7 @@ public class MetaBeanProperty extends MetaProperty {
     private MetaMethod getter;
     private MetaMethod setter;
     private MetaFieldProperty field;
-    
+
     public MetaBeanProperty(String name, Class type, MetaMethod getter, MetaMethod setter) {
         super(name, type);
         this.getter = getter;
@@ -71,7 +66,7 @@ public class MetaBeanProperty extends MetaProperty {
             throw new GroovyRuntimeException("Cannot set read-only property: " + name);
         }
         newValue = DefaultTypeTransformation.castToType(newValue, getType());
-        setter.invoke(object, new Object[] { newValue });
+        setter.invoke(object, new Object[]{newValue});
     }
 
     /**
@@ -101,25 +96,25 @@ public class MetaBeanProperty extends MetaProperty {
     void setSetter(MetaMethod setter) {
         this.setter = setter;
     }
-    
+
     public int getModifiers() {
-        if (setter!=null && getter==null) return setter.getModifiers();
-        if (getter!=null && setter==null) return getter.getModifiers();
+        if (setter != null && getter == null) return setter.getModifiers();
+        if (getter != null && setter == null) return getter.getModifiers();
         int modifiers = getter.getModifiers() | setter.getModifiers();
         int visibility = 0;
         if (Modifier.isPublic(modifiers)) visibility = Modifier.PUBLIC;
         if (Modifier.isProtected(modifiers)) visibility = Modifier.PROTECTED;
         if (Modifier.isPrivate(modifiers)) visibility = Modifier.PRIVATE;
         int states = getter.getModifiers() & setter.getModifiers();
-        states &= ~(Modifier.PUBLIC|Modifier.PROTECTED|Modifier.PRIVATE);
+        states &= ~(Modifier.PUBLIC | Modifier.PROTECTED | Modifier.PRIVATE);
         states |= visibility;
-        return states;       
+        return states;
     }
-    
+
     public void setField(MetaFieldProperty f) {
         this.field = f;
     }
-    
+
     public MetaFieldProperty getField() {
         return field;
     }

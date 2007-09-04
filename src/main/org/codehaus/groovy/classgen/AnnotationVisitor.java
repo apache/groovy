@@ -45,10 +45,10 @@ import org.codehaus.groovy.syntax.SyntaxException;
  * @author <a href='mailto:the[dot]mindstorm[at]gmail[dot]com'>Alex Popescu</a>
  */
 public class AnnotationVisitor {
-    final private static Class[] EMPTY_ARG_TYPES = new Class[0];
-    final private static Object[] EMPTY_ARGS = new Object[0];
+    private static final Class[] EMPTY_ARG_TYPES = new Class[0];
+    private static final Object[] EMPTY_ARGS = new Object[0];
     
-    private Class annotationRootClass;
+    private final Class annotationRootClass;
     private SourceUnit source;
     private ErrorCollector errorCollector;
     

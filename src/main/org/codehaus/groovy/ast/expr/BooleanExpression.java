@@ -25,7 +25,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * @version $Revision$
  */
 public class BooleanExpression extends Expression {
-    private Expression expression;
+    private final Expression expression;
 
     public BooleanExpression(Expression expression) {
         this.expression = expression;

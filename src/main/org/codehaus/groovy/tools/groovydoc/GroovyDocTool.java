@@ -52,8 +52,8 @@ public class GroovyDocTool {
 		writer.writeClasses(rootDoc, destdir);
 	}
 	
-	private GroovyRootDocBuilder rootDocBuilder;
-	private GroovyDocTemplateEngine templateEngine;
+	private final GroovyRootDocBuilder rootDocBuilder;
+	private final GroovyDocTemplateEngine templateEngine;
 
 	String getPath(String filename) {
 		String path = new File(filename).getParent();

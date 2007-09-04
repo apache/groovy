@@ -28,8 +28,8 @@ import java.util.List;
  */
 public class TableLayoutRow implements Startable {
 
-    private TableLayout parent;
-    private List cells = new ArrayList();
+    private final TableLayout parent;
+    private final List cells = new ArrayList();
     private int rowIndex;
     
     public TableLayoutRow(TableLayout tableLayoutTag) {

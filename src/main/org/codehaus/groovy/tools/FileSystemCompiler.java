@@ -39,7 +39,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  */
 public class FileSystemCompiler
 {
-    private CompilationUnit unit;
+    private final CompilationUnit unit;
 
     public FileSystemCompiler( CompilerConfiguration configuration) throws ConfigurationException {
         if (configuration.getJointCompilationOptions()!=null) {

@@ -29,7 +29,7 @@ import org.objectweb.asm.Opcodes;
  */
 public class MethodNode extends AnnotatedNode implements Opcodes {
 
-    private String name;
+    private final String name;
     private int modifiers;
     private ClassNode returnType;
     private Parameter[] parameters;
@@ -37,7 +37,7 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
     private Statement code;
     private boolean dynamicReturnType;
     private VariableScope variableScope;
-    private ClassNode[] exceptions;
+    private final ClassNode[] exceptions;
     
     // type spec for generics
     private GenericsType[] genericsTypes=null;

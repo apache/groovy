@@ -19,17 +19,16 @@ package org.codehaus.groovy.syntax;
 import groovy.lang.GroovyRuntimeException;
 
 import org.codehaus.groovy.ast.ASTNode;
-import org.codehaus.groovy.syntax.SyntaxException;
 
-/** 
- * A helper class to allow parser exceptions to be thrown anywhere in the code. 
+/**
+ * A helper class to allow parser exceptions to be thrown anywhere in the code.
  * Should be replaced when no longer required.
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
- */ 
+ */
 public class RuntimeParserException extends GroovyRuntimeException {
-    
+
     public RuntimeParserException(String message, ASTNode node) {
         super(message + ".\nNode: " + node.getClass().getName(), node);
     }

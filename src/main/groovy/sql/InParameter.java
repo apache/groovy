@@ -17,19 +17,21 @@
 package groovy.sql;
 
 /**
- * @author rfuller
- *
  * A typed parameter to pass to a query
+ *
+ * @author rfuller
  */
 public interface InParameter {
 
-	/**
-	 * The JDBC data type.
-	 */
-	public int getType();
+    /**
+     * The JDBC data type.
+     * @return the type
+     */
+    int getType();
 
-	/**
-	 * The object holding the data value.
-	 */
-	public Object getValue();
+    /**
+     * The object holding the data value.
+     * @return the value
+     */
+    Object getValue();
 }

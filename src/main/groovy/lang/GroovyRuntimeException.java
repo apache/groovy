@@ -27,10 +27,11 @@ import org.codehaus.groovy.ast.ModuleNode;
 public class GroovyRuntimeException extends RuntimeException {
 
     private ModuleNode module;
-    private ASTNode node;
+    private final ASTNode node;
 
     public GroovyRuntimeException(String message) {
         super(message);
+        this.node = null;
     }
 
     public GroovyRuntimeException(String message, ASTNode node) {
@@ -40,6 +41,7 @@ public class GroovyRuntimeException extends RuntimeException {
 
     public GroovyRuntimeException(String message, Throwable cause) {
         super(message, cause);
+        this.node = null;
     }
 
     public void setModule(ModuleNode module) {

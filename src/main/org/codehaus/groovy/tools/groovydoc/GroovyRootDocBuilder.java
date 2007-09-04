@@ -49,9 +49,9 @@ import antlr.collections.AST;
  *  provide links to other html files (e.g. return type of a method)
  */
 public class GroovyRootDocBuilder {
-	private GroovyDocTool tool;
-	private String sourcepath;
-	private SimpleGroovyRootDoc rootDoc;
+	private final GroovyDocTool tool;
+	private final String sourcepath;
+	private final SimpleGroovyRootDoc rootDoc;
 	private static final char FS = '/';
 
 	

@@ -53,7 +53,7 @@ public class CharsetToolkit {
     private Charset defaultCharset;
     private Charset charset;
     private boolean enforce8Bit = true;
-    private File file;
+    private final File file;
 
     /**
      * Constructor of the <code>CharsetToolkit</code> utility class.
@@ -80,7 +80,9 @@ public class CharsetToolkit {
                 this.buffer = bytes;
             }
         } finally {
-            try {input.close();} catch (IOException e){}
+            try {input.close();} catch (IOException e){
+                // IGNORE
+            }
         }
     }
 

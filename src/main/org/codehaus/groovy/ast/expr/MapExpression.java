@@ -28,7 +28,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * @version $Revision$
  */
 public class MapExpression extends Expression {
-    private List mapEntryExpressions;
+    private final List mapEntryExpressions;
 
     public MapExpression() {
         this(new ArrayList());

@@ -30,7 +30,7 @@ import java.util.Iterator;
 
 public class Janitor implements HasCleanup
 {
-    private HashSet pending = new HashSet();   // All objects pending cleanup
+    private final HashSet pending = new HashSet();   // All objects pending cleanup
     
     public void register( HasCleanup object )
     {

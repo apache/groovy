@@ -28,33 +28,33 @@ public interface Variable {
     /**
      * the type of the variable
      */
-    public ClassNode getType();
+    ClassNode getType();
     
     /**
      * the name of the variable
      */
-    public String getName();
+    String getName();
     
     /**
      * expression used to initialize the variable or null of there
      * is no initialization.
      */
-    public Expression getInitialExpression();
+    Expression getInitialExpression();
     
     /**
      * returns true if there is an initialization expression
      */
-    public boolean hasInitialExpression();
+    boolean hasInitialExpression();
     
     /**
      * returns true if this variable is used in a static context.
      * A static context is any static initializer block, when this variable
      * is declared as static or when this variable is used in a static method 
      */
-    public boolean isInStaticContext();
+    boolean isInStaticContext();
 
-    public boolean isDynamicTyped();
-    public boolean isClosureSharedVariable();
-    public void setClosureSharedVariable(boolean inClosure);
+    boolean isDynamicTyped();
+    boolean isClosureSharedVariable();
+    void setClosureSharedVariable(boolean inClosure);
     
 }

@@ -192,7 +192,7 @@ public class ANSI
     {
         private final StringBuffer buff = new StringBuffer();
 
-        public boolean autoClear = true;
+        public final boolean autoClear = true;
 
         public String toString() {
             try {

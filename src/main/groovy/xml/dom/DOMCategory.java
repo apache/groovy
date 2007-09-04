@@ -293,7 +293,7 @@ public class DOMCategory {
         }
     }
 
-    private static class NodeListsHolder implements NodeList {
+    private static final class NodeListsHolder implements NodeList {
         private List nodeLists;
 
         private NodeListsHolder(List nodeLists) {
@@ -326,7 +326,7 @@ public class DOMCategory {
         }
     }
 
-    private static class NodesHolder implements NodeList {
+    private static final class NodesHolder implements NodeList {
         private List nodes;
 
         private NodesHolder(List nodes) {

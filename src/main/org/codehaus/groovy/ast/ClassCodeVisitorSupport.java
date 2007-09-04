@@ -120,7 +120,7 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
         );
     }
     
-    abstract protected SourceUnit getSourceUnit();
+    protected abstract SourceUnit getSourceUnit();
     
     protected void visitStatement(Statement statement) {}
     

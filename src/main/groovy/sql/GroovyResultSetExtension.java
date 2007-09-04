@@ -41,7 +41,7 @@ import java.util.Map;
 public class GroovyResultSetExtension {
 
     private boolean updated;
-    private ResultSet _resultSet;
+    private final ResultSet resultSet;
     
     /**
      * Gets the current result set.
@@ -49,7 +49,7 @@ public class GroovyResultSetExtension {
      * @throws SQLException if the result set can not be returned
      */
     protected ResultSet getResultSet() throws SQLException{
-        return _resultSet;
+        return resultSet;
     }
     
     /**
@@ -59,7 +59,7 @@ public class GroovyResultSetExtension {
      */
     public GroovyResultSetExtension(ResultSet set) {
         updated = false;
-        _resultSet = set;
+        resultSet = set;
     }
 
     /**

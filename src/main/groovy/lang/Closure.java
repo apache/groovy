@@ -93,7 +93,7 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
     private int resolveStrategy = OWNER_FIRST;
 
 
-    private int directive = 0;
+    private int directive;
     public static final int DONE = 1, SKIP = 2;
 
     public Closure(Object owner, Object thisObject) {

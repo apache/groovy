@@ -22,14 +22,13 @@ import java.util.Map;
 import groovy.lang.Closure;
 import groovy.lang.GroovyObject;
 
-
 /**
  * Represents an extent of objects
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author <a href="mailto:ivan_ganza@yahoo.com">Ivan Ganza</a>
- * @version $Revision$
  * @author Chris Stevenson
+ * @version $Revision$
  */
 public interface GroovyResultSet extends GroovyObject, ResultSet {
     /**
@@ -37,30 +36,35 @@ public interface GroovyResultSet extends GroovyObject, ResultSet {
      * starting at zero. Negative indices are supported, they will count from the last column backwards.
      *
      * @param index is the number of the column to look at starting at 1
+     * @throws SQLException if a database error occurs
+     * @return the object for this index in the current result set
      */
-    public Object getAt(int index) throws SQLException;
-    
+    Object getAt(int index) throws SQLException;
+
     /**
      * Supports integer based subscript operators for updating the values of numbered columns
      * starting at zero. Negative indices are supported, they will count from the last column backwards.
      *
      * @param index is the number of the column to look at starting at 1
+     * @param newValue the new value for this index
+     * @throws SQLException if a database error occurs
      */
-    public void putAt(int index, Object newValue) throws SQLException;
+    void putAt(int index, Object newValue) throws SQLException;
 
     /**
      * Adds a new row to this result set
      *
-     * @param values
+     * @param values teh new values to add
+     * @throws SQLException if a database error occurs
      */
-    public void add(Map values) throws SQLException;
+    void add(Map values) throws SQLException;
 
     /**
      * Call the closure once for each row in the result set.
      *
-     * @param closure
-     * @throws SQLException
+     * @param closure the closure to call for each row
+     * @throws SQLException if a database error occurs
      */
-    public void eachRow(Closure closure) throws SQLException;
-    
+    void eachRow(Closure closure) throws SQLException;
+
 }

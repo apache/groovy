@@ -38,7 +38,7 @@ import java.util.WeakHashMap;
  */
 public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
 	private static final Class[] ZERO_ARGUMENT_LIST = new Class[0];
-	private static final ThreadLocal propertyInstanceHolder = new InheritableThreadLocal();
+	private static final ThreadLocal PROPERTY_INSTANCE_HOLDER = new InheritableThreadLocal();
 
 	private Class declaringClass;
 	private ThreadBoundGetter getter;
@@ -124,10 +124,10 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
 	}
 
 	private static Map getThreadBoundPropertMap() {
-		Map propertyMap = (Map)propertyInstanceHolder.get();
+		Map propertyMap = (Map) PROPERTY_INSTANCE_HOLDER.get();
 		if(propertyMap == null) {
 			propertyMap = new WeakHashMap();
-			propertyInstanceHolder.set(propertyMap);
+			PROPERTY_INSTANCE_HOLDER.set(propertyMap);
 		}
 		return propertyMap;
 	}

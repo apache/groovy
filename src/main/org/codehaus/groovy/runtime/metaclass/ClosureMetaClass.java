@@ -54,7 +54,7 @@ import java.util.logging.Level;
 public final class ClosureMetaClass extends MetaClassImpl {
     private boolean initialized;
     private Reflector reflector;
-    private List closureMethods = new ArrayList(3);
+    private final List closureMethods = new ArrayList(3);
     private Map attributes = new HashMap();
     private MethodChooser chooser;
     private volatile boolean attributeInitDone = false;
@@ -71,7 +71,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
         CLOSURE_METACLASS.initialize();        
     }
 
-    private synchronized static MetaClass getStaticMetaClass() {
+    private static synchronized MetaClass getStaticMetaClass() {
         if (CLASS_METACLASS==null) {
             CLASS_METACLASS = new MetaClassImpl(Class.class);
             CLASS_METACLASS.initialize();
@@ -80,12 +80,12 @@ public final class ClosureMetaClass extends MetaClassImpl {
     }
     
     private static interface MethodChooser{
-        public Object chooseMethod(Class[] arguments, boolean coerce);
+        Object chooseMethod(Class[] arguments, boolean coerce);
     }
     
     private static class StandardClosureChooser implements MethodChooser {
-        final private MetaMethod doCall0;
-        final private MetaMethod doCall1;
+        private final MetaMethod doCall0;
+        private final MetaMethod doCall1;
         StandardClosureChooser(MetaMethod m0, MetaMethod m1){
             doCall0 = m0; doCall1 = m1;
         }
@@ -97,7 +97,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
     }
     
     private static class NormalMethodChooser implements MethodChooser {
-        final private List methods;
+        private final List methods;
         final Class theClass;
         NormalMethodChooser(Class theClass, List methods) {
             this.theClass = theClass;
@@ -205,7 +205,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
         if (object == null) {
             throw new NullPointerException("Cannot invoke method: " + methodName + " on null object");
         }              
-        if (log.isLoggable(Level.FINER)){
+        if (LOG.isLoggable(Level.FINER)){
             MetaClassHelper.logMethodCall(object, methodName, originalArguments);
         }
         

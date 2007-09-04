@@ -38,7 +38,7 @@ import org.codehaus.groovy.syntax.SyntaxException;
  */
 public class CompileUnit {
 
-    private List modules = new ArrayList();
+    private final List modules = new ArrayList();
     private Map classes = new HashMap();
     private CompilerConfiguration config;
     private GroovyClassLoader classLoader;

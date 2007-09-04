@@ -24,7 +24,7 @@ import java.util.*;
  */
 public class BenchmarkInterceptor implements Interceptor {
 
-    protected Map calls = new HashMap(); // keys to list of invokation times and before and after
+    protected Map calls = new HashMap(); // keys to list of invocation times and before and after
 
 
     public Map getCalls() {
@@ -58,7 +58,7 @@ public class BenchmarkInterceptor implements Interceptor {
         for (Iterator iter = calls.keySet().iterator(); iter.hasNext();) {
             Object[] line = new Object[3];
             result.add(line);
-            line[0] = (String) iter.next();
+            line[0] = iter.next();
             List times = (List) calls.get(line[0]);
             line[1] = new Integer(times.size() / 2);
             int accTime = 0;

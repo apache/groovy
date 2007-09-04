@@ -29,9 +29,9 @@ import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
  */
 
 public class NodeAsHTMLPrinter extends VisitorAdapter {
-    private String[] tokenNames;
-    private PrintStream out;
-    private Stack stack;
+    private final String[] tokenNames;
+    private final PrintStream out;
+    private final Stack stack;
 
     /**
      * A visitor that prints a html tags, for each node, to the supplied PrintStream.

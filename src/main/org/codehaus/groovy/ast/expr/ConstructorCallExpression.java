@@ -27,7 +27,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  */
 public class ConstructorCallExpression extends Expression {
 
-    private Expression arguments;
+    private final Expression arguments;
 
     public ConstructorCallExpression(ClassNode type, Expression arguments) {
         super.setType(type);

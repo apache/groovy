@@ -78,9 +78,9 @@ public class GroovyClassLoader extends URLClassLoader {
     /**
      * this cache contains the loaded classes or PARSING, if the class is currently parsed 
      */
-    protected Map classCache = new HashMap();
-    protected Map sourceCache = new HashMap();
-    private CompilerConfiguration config;
+    protected final Map classCache = new HashMap();
+    protected final Map sourceCache = new HashMap();
+    private final CompilerConfiguration config;
     private Boolean recompile;
     // use 1000000 as offset to avoid conflicts with names form the GroovyShell 
     private static int scriptNameCounter = 1000000;
@@ -334,7 +334,7 @@ public class GroovyClassLoader extends URLClassLoader {
     }
     
     public static class InnerLoader extends GroovyClassLoader{
-        private GroovyClassLoader delegate;
+        private final GroovyClassLoader delegate;
     	public InnerLoader(GroovyClassLoader delegate) {
     		super(delegate);
             this.delegate = delegate;
@@ -414,10 +414,10 @@ public class GroovyClassLoader extends URLClassLoader {
 
     public static class ClassCollector extends CompilationUnit.ClassgenCallback {
         private Class generatedClass;
-        private GroovyClassLoader cl;
-        private SourceUnit su;
-        private CompilationUnit unit;
-        private Collection loadedClasses;
+        private final GroovyClassLoader cl;
+        private final SourceUnit su;
+        private final CompilationUnit unit;
+        private final Collection loadedClasses;
 
         protected ClassCollector(InnerLoader cl, CompilationUnit unit, SourceUnit su) {
             this.cl = cl;

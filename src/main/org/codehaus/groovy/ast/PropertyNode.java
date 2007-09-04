@@ -27,10 +27,10 @@ import org.objectweb.asm.Opcodes;
  */
 public class PropertyNode extends AnnotatedNode implements Opcodes,Variable {
 
-    private FieldNode field;
-    private Statement getterBlock;
-    private Statement setterBlock;
-    private int modifiers;
+    private final FieldNode field;
+    private final Statement getterBlock;
+    private final Statement setterBlock;
+    private final int modifiers;
     private boolean closureShare = false;
 
     public PropertyNode(

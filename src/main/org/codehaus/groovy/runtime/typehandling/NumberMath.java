@@ -43,7 +43,7 @@ import java.math.BigInteger;
  * 
  * @author Steve Goetze
  */
-public abstract class NumberMath extends Object {
+public abstract class NumberMath {
 		
 	public static Number abs(Number number) {
 		return getMath(number).absImpl(number);
@@ -178,35 +178,35 @@ public abstract class NumberMath extends Object {
 	 */
 	private static NumberMath getMath(Number left, Number right) {
 		if (isFloatingPoint(left) || isFloatingPoint(right)) {
-			return FloatingPointMath.instance;
+			return FloatingPointMath.INSTANCE;
 		}
 		else if (isBigDecimal(left) || isBigDecimal(right)) {
-			return BigDecimalMath.instance;
+			return BigDecimalMath.INSTANCE;
 		}
 		else if (isBigInteger(left) || isBigInteger(right)) {
-			return BigIntegerMath.instance;
+			return BigIntegerMath.INSTANCE;
 		}
 		else if (isLong(left) || isLong(right)){
-			return LongMath.instance;
+			return LongMath.INSTANCE;
 		}
-		return IntegerMath.instance;
+		return IntegerMath.INSTANCE;
 	}
 
 	private static NumberMath getMath(Number number) {
 		if (isInteger(number)) {
-			return IntegerMath.instance;
+			return IntegerMath.INSTANCE;
 		}
 		else if (isLong(number)) {
-			return LongMath.instance;
+			return LongMath.INSTANCE;
 		}
 		else if (isFloatingPoint(number)) {
-			return FloatingPointMath.instance;
+			return FloatingPointMath.INSTANCE;
 		}			
 		else if (isBigDecimal(number)) {
-			return BigDecimalMath.instance;
+			return BigDecimalMath.INSTANCE;
 		}
 		else if (isBigInteger(number)) {
-			return BigIntegerMath.instance;
+			return BigIntegerMath.INSTANCE;
 		}
 		else {
 			throw new IllegalArgumentException("An unexpected Number subclass was supplied.");

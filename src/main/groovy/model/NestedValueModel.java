@@ -23,5 +23,5 @@ package groovy.model;
  * @version $Revision$
  */
 public interface NestedValueModel {
-    public ValueModel getSourceModel();
+    ValueModel getSourceModel();
 }

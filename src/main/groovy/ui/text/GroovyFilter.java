@@ -45,7 +45,7 @@ import javax.swing.text.StyleContext;
 public class GroovyFilter extends StructuredSyntaxDocumentFilter {
     
     // java tab policy action
-    private static final Action AutoTabAction = new AutoTabAction();
+    private static final Action AUTO_TAB_ACTION = new AutoTabAction();
     
     // Style names
     public static final String COMMENT = "comment";
@@ -181,7 +181,7 @@ public class GroovyFilter extends StructuredSyntaxDocumentFilter {
     }
     
     public static void installAutoTabAction(JTextComponent tComp) {
-        tComp.getActionMap().put("GroovyFilter-autoTab", AutoTabAction);
+        tComp.getActionMap().put("GroovyFilter-autoTab", AUTO_TAB_ACTION);
         KeyStroke keyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0, false);
         tComp.getInputMap().put(keyStroke, "GroovyFilter-autoTab");
     }
@@ -189,8 +189,8 @@ public class GroovyFilter extends StructuredSyntaxDocumentFilter {
     private static class AutoTabAction extends AbstractAction {
         
         private StyledDocument doc;
-        private Segment segment = new Segment();
-        private StringBuffer buffer = new StringBuffer();
+        private final Segment segment = new Segment();
+        private final StringBuffer buffer = new StringBuffer();
         
         public void actionPerformed(ActionEvent ae) {
             JTextComponent tComp = (JTextComponent)ae.getSource();

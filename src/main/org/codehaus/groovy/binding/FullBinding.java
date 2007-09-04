@@ -23,33 +23,33 @@ import groovy.lang.Closure;
  * @since Groovy 1.1
  */
 public interface FullBinding {
-    public void bind();
+    void bind();
 
-    public void unbind();
+    void unbind();
 
-    public void rebind();
+    void rebind();
 
-    public void update();
+    void update();
 
-    public void reverseUpdate();
+    void reverseUpdate();
 
-    public SourceBinding getSourceBinding();
+    SourceBinding getSourceBinding();
 
-    public TargetBinding getTargetBinding();
+    TargetBinding getTargetBinding();
 
-    public void setSourceBinding(SourceBinding source);
+    void setSourceBinding(SourceBinding source);
 
-    public void setTargetBinding(TargetBinding target);
+    void setTargetBinding(TargetBinding target);
 
-    public void setValidator(Closure validator);
+    void setValidator(Closure validator);
 
-    public Closure getValidator();
+    Closure getValidator();
 
-    public void setConverter(Closure converter);
+    void setConverter(Closure converter);
 
-    public Closure getConverter();
+    Closure getConverter();
 
-    public void setReverseConverter(Closure reverseConverter);
+    void setReverseConverter(Closure reverseConverter);
 
-    public Closure getReverseConverter();
+    Closure getReverseConverter();
 }

@@ -35,8 +35,8 @@ import org.codehaus.groovy.syntax.Types;
  */
 public class SqlWhereVisitor extends CodeVisitorSupport {
 
-    private StringBuffer buffer = new StringBuffer();
-    private List parameters = new ArrayList();
+    private final StringBuffer buffer = new StringBuffer();
+    private final List parameters = new ArrayList();
 
     public String getWhere() {
         return buffer.toString();

@@ -31,7 +31,7 @@ public class BinaryExpression extends Expression {
     
     private Expression leftExpression;
     private Expression rightExpression;
-    private Token operation;
+    private final Token operation;
     
     public BinaryExpression(Expression leftExpression,
                             Token operation,

@@ -61,17 +61,17 @@ public class AllTestSuite extends TestSuite {
      */
     public static final String SYSPROP_TEST_PATTERN = "groovy.test.pattern";
 
-    private static Logger LOG = Logger.getLogger(AllTestSuite.class.getName());
-    private static ClassLoader JAVA_LOADER = AllTestSuite.class.getClassLoader();
-    private static GroovyClassLoader GROOVY_LOADER = new GroovyClassLoader(JAVA_LOADER);
+    private static final Logger LOG = Logger.getLogger(AllTestSuite.class.getName());
+    private static final ClassLoader JAVA_LOADER = AllTestSuite.class.getClassLoader();
+    private static final GroovyClassLoader GROOVY_LOADER = new GroovyClassLoader(JAVA_LOADER);
 
     private static final String[] EMPTY_ARGS = new String[]{};
-    private static IFileNameFinder FINDER = null;
+    private static IFileNameFinder finder = null;
 
     static { // this is only needed since the Groovy Build compiles *.groovy files after *.java files
         try {
             Class finderClass = Class.forName("groovy.util.FileNameFinder");
-            FINDER = (IFileNameFinder) finderClass.newInstance();
+            finder = (IFileNameFinder) finderClass.newInstance();
         } catch (Exception e) {
             throw new RuntimeException("Cannot find and instantiate class FileNameFinder", e);
         }
@@ -87,7 +87,7 @@ public class AllTestSuite extends TestSuite {
         AllTestSuite suite = new AllTestSuite();
         String fileName = "";
         try {
-            Collection filenames = FINDER.getFileNames(basedir, pattern);
+            Collection filenames = finder.getFileNames(basedir, pattern);
             for (Iterator iter = filenames.iterator(); iter.hasNext();) {
                 fileName = (String) iter.next();
                 LOG.finest("trying to load "+ fileName);

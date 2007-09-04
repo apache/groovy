@@ -2,5 +2,5 @@ package groovy;
 
 public interface DummyInterface {
 
-    public void methodWithArrayParam(String[] args);
+    void methodWithArrayParam(String[] args);
 }

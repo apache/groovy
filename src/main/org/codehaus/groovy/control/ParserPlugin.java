@@ -28,7 +28,7 @@ import java.io.Reader;
  */
 public interface ParserPlugin {
 
-    public Reduction parseCST(SourceUnit sourceUnit, Reader reader) throws CompilationFailedException;
+    Reduction parseCST(SourceUnit sourceUnit, Reader reader) throws CompilationFailedException;
 
-    public ModuleNode buildAST(SourceUnit sourceUnit, ClassLoader classLoader, Reduction cst) throws ParserException;
+    ModuleNode buildAST(SourceUnit sourceUnit, ClassLoader classLoader, Reduction cst) throws ParserException;
 }

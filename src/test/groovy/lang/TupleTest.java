@@ -55,8 +55,8 @@ import java.util.List;
  */
 public class TupleTest extends TestCase {
 
-    Object[] data = {"a", "b", "c"};
-    Tuple t = new Tuple(data);
+    final Object[] data = {"a", "b", "c"};
+    final Tuple t = new Tuple(data);
 
     public void testSize() {
         assertEquals("Size of " + t, 3, t.size());

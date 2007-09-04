@@ -28,8 +28,8 @@ import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
  */
 
 public class MindMapPrinter extends VisitorAdapter {
-    private String[] tokenNames;
-    private PrintStream out;
+    private final String[] tokenNames;
+    private final PrintStream out;
     private int depth;
 
     /**

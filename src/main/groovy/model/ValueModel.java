@@ -22,8 +22,8 @@ package groovy.model;
  * @version $Revision$
  */
 public interface ValueModel {
-    public Object getValue();
-    public void setValue(Object value);
-    public Class getType();
-    public boolean isEditable();
+    Object getValue();
+    void setValue(Object value);
+    Class getType();
+    boolean isEditable();
 }

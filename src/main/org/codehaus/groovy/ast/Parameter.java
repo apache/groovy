@@ -31,7 +31,7 @@ public class Parameter extends AnnotatedNode implements Variable {
     };
 
     private ClassNode type;
-    private String name;
+    private final String name;
     private boolean dynamicTyped;
     private Expression defaultValue;
     private boolean hasDefaultValue;

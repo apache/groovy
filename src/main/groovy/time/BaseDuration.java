@@ -90,7 +90,7 @@ public abstract class BaseDuration {
     
     public abstract From getFrom();
 
-    public static abstract class From {
+    public abstract static class From {
         public abstract Date getNow();
         
         public Date getToday() {

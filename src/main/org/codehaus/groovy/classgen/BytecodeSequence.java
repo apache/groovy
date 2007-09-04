@@ -33,7 +33,7 @@ import org.codehaus.groovy.ast.stmt.Statement;
  */
 
 public class BytecodeSequence extends Statement {
-    private List instructions;
+    private final List instructions;
     public BytecodeSequence(List instructions) {
         this.instructions = instructions;
     }

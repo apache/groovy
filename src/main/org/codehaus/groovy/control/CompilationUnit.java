@@ -382,7 +382,7 @@ public class CompilationUnit extends ProcessingUnit {
      * for each primary and inner class.  Use setClassgenCallback() before
      * running compile() to set your callback.
      */
-    public static abstract class ClassgenCallback {
+    public abstract static class ClassgenCallback {
         public abstract void call(ClassVisitor writer, ClassNode node) throws CompilationFailedException;
     }
 
@@ -402,7 +402,7 @@ public class CompilationUnit extends ProcessingUnit {
      * ProcessingUnit and a phase indicator.  Use setProgressCallback()
      * before running compile() to set your callback.
      */
-    public static abstract class ProgressCallback {
+    public abstract static class ProgressCallback {
 
         public abstract void call(ProcessingUnit context, int phase) throws CompilationFailedException;
     }
@@ -525,7 +525,7 @@ public class CompilationUnit extends ProcessingUnit {
     /**
      * Resolves all types
      */
-    private SourceUnitOperation resolve = new SourceUnitOperation() {
+    private final SourceUnitOperation resolve = new SourceUnitOperation() {
         public void call(SourceUnit source) throws CompilationFailedException {
             List classes = source.ast.getClasses();
             for (Iterator it = classes.iterator(); it.hasNext();) {
@@ -764,7 +764,7 @@ public class CompilationUnit extends ProcessingUnit {
     /**
      * An callback interface for use in the applyToSourceUnits loop driver.
      */
-    public static abstract class SourceUnitOperation {
+    public abstract static class SourceUnitOperation {
         public abstract void call(SourceUnit source) throws CompilationFailedException;
     }
   
@@ -808,14 +808,14 @@ public class CompilationUnit extends ProcessingUnit {
     /**
      * An callback interface for use in the applyToSourceUnits loop driver.
      */
-    public static abstract class PrimaryClassNodeOperation {
+    public abstract static class PrimaryClassNodeOperation {
         public abstract void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException;
         public boolean needSortedInput(){
             return false;
         }
     }
 
-    public static abstract class GroovyClassOperation {
+    public abstract static class GroovyClassOperation {
         public abstract void call(GroovyClass gclass) throws CompilationFailedException;
     }
 

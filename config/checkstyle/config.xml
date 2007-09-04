@@ -19,7 +19,8 @@
 
 <module name="Checker">
     <!-- checkstyle.basedir is the absolute path to sources, set in ant's build.xml -->
-    <property name="basedir" value="${checkstyle.basedir}"/>
+    <!--<property name="basedir" value="${checkstyle.basedir}"/>-->
+    <property name="basedir" value="C:/Downloads/groovy.codehaus.org/svntrunk-groovy/groovy-core/src/main"/>
     <property name="localeCountry" value="en"/>
     <property name="localeLanguage" value="en"/>
 
@@ -41,7 +42,11 @@
         <module name="EqualsHashCode"/>
 
         <!-- Item 12 - Make all fields private -->
-        <module name="VisibilityModifier"/>
+        <module name="VisibilityModifier">
+            <!-- TODO: add one or both of these back in? -->
+            <property name="protectedAllowed" value="true"/>
+            <property name="packageAllowed" value="true"/>
+        </module>
 
         <!-- Item 15 - Design and document for inheritance or else prohibit it -->
         <!-- the module actually implements a very strict rule, it would be
@@ -81,7 +86,7 @@
 
         <!-- Item 38 - Adhere to generally accepted naming conventions -->
         <module name="PackageName">
-            <property name="format" value="^[a-z]+(\.[a-z][a-z0-9]{1,15})*$"/>
+            <property name="format" value="^[a-z]+(\.[a-z][a-z0-9]{1,22})*$"/>
         </module>
         <module name="TypeName"/>
         <module name="ConstantName"/>
@@ -122,13 +127,15 @@
         <module name="CyclomaticComplexity">
             <property name="max" value="14"/>
         </module>
-        <module name="ExplicitInitialization"/>
+        <!-- TODO: turn this back on? -->
+        <!--<module name="ExplicitInitialization"/>-->
         <!-- turned off - instead, keep methods short and make
              parameters final in cases where confusion is possible -->
         <!--<module name="ParameterAssignment"/>-->
         <module name="IllegalType">
             <property name="format" value="^$"/>
             <!-- otherwise default of '*Abstract' is illegal -->
+            <property name="illegalClassNames" value="java.util.GregorianCalendar, java.util.Hashtable, java.util.HashSet, java.util.HashMap, java.util.ArrayList, java.util.LinkedHashMap, java.util.LinkedHashSet, java.util.TreeSet, java.util.TreeMap, java.util.Vector"/>
         </module>
         <module name="UpperEll"/>
         <!-- off for now - to allow parenteses which add clarity -->
@@ -147,9 +154,13 @@
         <!--<module name="ArrayTypeStyle"/>-->
     </module>
     <module name="PackageHtml"/>
+<!--
     <module name="au.com.redhillconsulting.simian.SimianCheck">
         <property name="threshold" value="8"/>
+-->
         <!-- remove language once Simian understands Groovy -->
+<!--
         <property name="language" value="java"/>
     </module>
+-->
 </module>

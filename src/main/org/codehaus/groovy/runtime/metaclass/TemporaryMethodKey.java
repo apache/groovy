@@ -28,7 +28,7 @@ import org.codehaus.groovy.runtime.MetaClassHelper;
  */
 public class TemporaryMethodKey extends MethodKey {
 
-    private Object[] parameterValues;
+    private final Object[] parameterValues;
 
     public TemporaryMethodKey(Class sender, String name, Object[] parameterValues, boolean isCallToSuper) {
         super(sender, name, isCallToSuper);

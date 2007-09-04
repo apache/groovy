@@ -25,7 +25,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  */
 public class SpreadExpression extends Expression {
 
-    private Expression expression;
+    private final Expression expression;
 	
     public SpreadExpression(Expression expression) {
         this.expression = expression;

@@ -38,10 +38,10 @@ import org.codehaus.groovy.runtime.Reflector;
  */
 public class ReflectorLoader extends ClassLoader {
     private boolean inDefine = false;
-    private HashMap loadedClasses = new HashMap();
-    private ClassLoader delegatationLoader; 
+    private final HashMap loadedClasses = new HashMap();
+    private final ClassLoader delegatationLoader;
 
-    private static String REFLECTOR = Reflector.class.getName();
+    private static final String REFLECTOR = Reflector.class.getName();
     
     /**
      * Tries to find a Groovy class.

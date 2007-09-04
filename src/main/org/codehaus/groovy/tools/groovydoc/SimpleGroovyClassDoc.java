@@ -23,9 +23,9 @@ import java.util.StringTokenizer;
 import org.codehaus.groovy.groovydoc.*;
 
 public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implements GroovyClassDoc {
-	private List constructors;
-	private List fields;
-	private List methods;
+	private final List constructors;
+	private final List fields;
+	private final List methods;
 	private String fullPathName;
 
 	private String superClassName;

@@ -23,7 +23,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  */
 public class NegationExpression extends Expression {
 
-	private Expression expression;
+	private final Expression expression;
 	
 	public NegationExpression(Expression expression) {
 		this.expression = expression;

@@ -51,7 +51,7 @@ public class GroovyTestSuite extends TestSuite {
 
     protected static String file = null;
 
-    protected GroovyClassLoader loader = new GroovyClassLoader(GroovyTestSuite.class.getClassLoader());
+    protected final GroovyClassLoader loader = new GroovyClassLoader(GroovyTestSuite.class.getClassLoader());
 
     public static void main(String[] args) {
         if (args.length > 0) {

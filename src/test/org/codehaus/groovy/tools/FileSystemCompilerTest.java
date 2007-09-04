@@ -62,7 +62,7 @@ import java.util.Map;
 public class FileSystemCompilerTest extends GroovyTestCase {
 
     FileSystemCompiler compiler = null;
-    boolean dumpClass = true;
+    final boolean dumpClass = true;
 
     public void testMethodCall() throws Exception {
         //runTest("ClosureMethodTest.groovy");

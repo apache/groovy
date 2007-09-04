@@ -21,7 +21,7 @@ public class MethodCallerMultiAdapter {
     private MethodCaller[] methods;
     boolean skipSpreadSafeAndSafe;
     
-    public final static int maxArgs = 0;
+    public static final int maxArgs = 0;
     
     public static MethodCallerMultiAdapter newStatic(Class theClass, String baseName, boolean createNArgs, boolean skipSpreadSafeAndSafe) {
         MethodCallerMultiAdapter mcma = new MethodCallerMultiAdapter();

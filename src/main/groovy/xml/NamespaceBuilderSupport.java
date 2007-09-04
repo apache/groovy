@@ -28,9 +28,9 @@ import groovy.util.BuilderSupport;
  */
 public class NamespaceBuilderSupport extends BuilderSupport {
 
-    private Object builder;
-    private String uri;
-    private String prefix;
+    private final Object builder;
+    private final String uri;
+    private final String prefix;
 
     public NamespaceBuilderSupport(BuilderSupport builder, String uri) {
         this(builder, uri, "");

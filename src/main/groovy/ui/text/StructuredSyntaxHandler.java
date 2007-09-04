@@ -73,7 +73,7 @@ public class StructuredSyntaxHandler extends DefaultHandler {
     private StructuredSyntaxDocumentFilter.LexerNode currentNode;
     private StructuredSyntaxDocumentFilter.LexerNode parentNode;
     
-    private StructuredSyntaxDocumentFilter filter;
+    private final StructuredSyntaxDocumentFilter filter;
     
     private Font font;
 

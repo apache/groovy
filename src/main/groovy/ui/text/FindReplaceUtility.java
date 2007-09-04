@@ -69,33 +69,33 @@ public class FindReplaceUtility {
     
     public static final Action FIND_ACTION = new FindAction();
     
-    private static JDialog findReplaceDialog = new JDialog();
+    private static final JDialog findReplaceDialog = new JDialog();
         
-    private static JPanel textFieldPanel = new JPanel(new GridLayout(2, 1));
+    private static final JPanel textFieldPanel = new JPanel(new GridLayout(2, 1));
         
-    private static JPanel entryPanel = new JPanel();
+    private static final JPanel entryPanel = new JPanel();
     
-    private static JPanel findPanel = new JPanel();
-    private static JLabel findLabel = new JLabel("Find What:    ");
-    private static JComboBox findField = new JComboBox();
+    private static final JPanel findPanel = new JPanel();
+    private static final JLabel findLabel = new JLabel("Find What:    ");
+    private static final JComboBox findField = new JComboBox();
     
-    private static JPanel replacePanel = new JPanel();
-    private static JLabel replaceLabel = new JLabel("Replace With:");
-    private static JComboBox replaceField = new JComboBox();
+    private static final JPanel replacePanel = new JPanel();
+    private static final JLabel replaceLabel = new JLabel("Replace With:");
+    private static final JComboBox replaceField = new JComboBox();
 
-    private static JPanel buttonPanel = new JPanel();
-    private static JButton findButton = new JButton();
-    private static JButton replaceButton = new JButton();
-    private static JButton replaceAllButton = new JButton();
-    private static JButton closeButton = new JButton();
+    private static final JPanel buttonPanel = new JPanel();
+    private static final JButton findButton = new JButton();
+    private static final JButton replaceButton = new JButton();
+    private static final JButton replaceAllButton = new JButton();
+    private static final JButton closeButton = new JButton();
     
-    private static Action closeAction = new CloseAction();
-    private static Action replaceAction = new ReplaceAction();
+    private static final Action closeAction = new CloseAction();
+    private static final Action replaceAction = new ReplaceAction();
 
-    private static JPanel checkBoxPanel = new JPanel(new GridLayout(3, 1));
-    private static JCheckBox matchCaseCBox = new JCheckBox("Match Case      ");
-    private static JCheckBox isBackwardsCBox = new JCheckBox("Search Backwards");
-    private static JCheckBox wrapSearchCBox = new JCheckBox("Wrap Search     ");
+    private static final JPanel checkBoxPanel = new JPanel(new GridLayout(3, 1));
+    private static final JCheckBox matchCaseCBox = new JCheckBox("Match Case      ");
+    private static final JCheckBox isBackwardsCBox = new JCheckBox("Search Backwards");
+    private static final JCheckBox wrapSearchCBox = new JCheckBox("Wrap Search     ");
     
     private static JTextComponent textComponent;
     private static AttributeSet attributeSet;
@@ -103,12 +103,12 @@ public class FindReplaceUtility {
     private static int findReplaceCount;
     private static String lastAction;
     
-    private static EventListenerList eventListenerList = new EventListenerList();
+    private static final EventListenerList eventListenerList = new EventListenerList();
     
     // the document segment
-    private static Segment segment = new Segment();
+    private static final Segment segment = new Segment();
  
-    private static FocusAdapter textFocusListener = new FocusAdapter() {
+    private static final FocusAdapter textFocusListener = new FocusAdapter() {
         public void focusGained(FocusEvent fe) {
             textComponent = (JTextComponent)fe.getSource();
             attributeSet =

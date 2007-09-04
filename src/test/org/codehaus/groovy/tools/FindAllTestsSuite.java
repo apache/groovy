@@ -67,7 +67,7 @@ import java.util.List;
  */
 public class FindAllTestsSuite extends TestSuite {
 
-    protected static String testDirectory = "target/test-classes";
+    protected static final String testDirectory = "target/test-classes";
 
     public static void main(String[] args) {
         TestRunner.run(suite());

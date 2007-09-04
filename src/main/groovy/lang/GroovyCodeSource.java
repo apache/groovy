@@ -51,7 +51,7 @@ public class GroovyCodeSource {
 	private InputStream inputStream;
 	/** The certificates used to sign the items from the codesource */
 	Certificate[] certs;
-    private boolean cachable = false;
+    private boolean cachable;
     
 	private File file;
 	
@@ -142,7 +142,9 @@ public class GroovyCodeSource {
         else {
             try {
                 if (file!=null) return new FileInputStream(file);
-            } catch (FileNotFoundException fnfe) {}
+            } catch (FileNotFoundException fnfe) {
+                // IGNORE
+            }
             return inputStream;            
         }
 	}

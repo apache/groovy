@@ -17,7 +17,6 @@
 package org.codehaus.groovy.syntax;
 
 import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.syntax.Token;
 
 import java.util.List;
 import java.util.ArrayList;

@@ -46,19 +46,19 @@
 package groovy.util;
 
 public interface DummyMBean {
-    public void start();
+    void start();
 
-    public void stop();
+    void stop();
 
-    public String getLocation();
+    String getLocation();
 
-    public void setLocation(String location);
+    void setLocation(String location);
 
-    public String getName();
+    String getName();
 
-    public void setName(String name);
+    void setName(String name);
 
-    public int getSize();
+    int getSize();
 
-    public void setSize(int size);
+    void setSize(int size);
 }

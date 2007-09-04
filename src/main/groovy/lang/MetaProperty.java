@@ -25,7 +25,7 @@ import java.lang.reflect.Modifier;
  */
 public abstract class MetaProperty {
 
-    protected String name;
+    protected final String name;
     protected Class type;
 
     public MetaProperty(String name, Class type) {

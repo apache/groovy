@@ -31,7 +31,7 @@ import java.lang.reflect.Modifier;
  */
 public class ClosureStaticMetaMethod extends NewStaticMetaMethod implements ClosureInvokingMethod {
 
-	private Closure callable;
+	private final Closure callable;
 	private Class declaringClass;
 
     /**

@@ -115,7 +115,7 @@ public class MemoryAwareConcurrentReadMap {
      * The default initial number of table slots for this table (32).
      * Used when not otherwise specified in constructor.
      **/
-    public static int DEFAULT_INITIAL_CAPACITY = 32; 
+    public static final int DEFAULT_INITIAL_CAPACITY = 32; 
 
 
     /**
@@ -673,7 +673,7 @@ public class MemoryAwareConcurrentReadMap {
     
     // constant for DummyRef, no need to keep more than one
     // it is not critical if more than one is created here
-    private final static Reference DUMMY_REF = new DummyRef(); 
+    private static final Reference DUMMY_REF = new DummyRef();
     
     /**
      * A SoftReference representing a key or value of the map. The
