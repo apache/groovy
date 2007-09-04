@@ -1,7 +1,5 @@
 /*
- * StructuredTextUndoManager.java
- *
- * Copyright (c) 2004, 2007 Evan A Slatis
+ * Copyright 2003-2007 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +29,7 @@ import javax.swing.undo.UndoableEdit;
  * and then create actions to call undo/redo as needed (checking can undo/redo
  * first, of course).
  *
- * @author  hippy
+ * @author Evan "Hippy" Slatis
  */
 public class TextUndoManager extends UndoManager {
 	
@@ -50,9 +48,6 @@ public class TextUndoManager extends UndoManager {
     public TextUndoManager() {
     }
     
-    /**
-     * @param pcl
-     */
     public void addPropertyChangeListener(PropertyChangeListener pcl) {
         propChangeSupport.addPropertyChangeListener(pcl);
     }
@@ -77,11 +72,6 @@ public class TextUndoManager extends UndoManager {
         firePropertyChangeEvent(UndoManager.UndoName, redoable, canRedo());
     }
     
-    /**
-     * @param name
-     * @param oldValue
-     * @param newValue
-     */
     protected void firePropertyChangeEvent(String name,
                                            boolean oldValue,
                                            boolean newValue) {
@@ -125,9 +115,6 @@ public class TextUndoManager extends UndoManager {
         
     }
     
-    /**
-     * @param pcl
-     */
     public void removePropertyChangeListener(PropertyChangeListener pcl) {
         propChangeSupport.removePropertyChangeListener(pcl);
     }
@@ -195,10 +182,6 @@ public class TextUndoManager extends UndoManager {
 
     }
     
-    /**
-     * @author Hippy
-     *
-     */
     private class StructuredEdit extends CompoundEdit {
         
         private long editedTime;

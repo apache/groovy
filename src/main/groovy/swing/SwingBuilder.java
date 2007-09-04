@@ -44,7 +44,7 @@ import java.util.logging.Logger;
  */
 public class SwingBuilder extends BuilderSupport {
 
-    private static final Logger log = Logger.getLogger(SwingBuilder.class.getName());
+    private static final Logger LOG = Logger.getLogger(SwingBuilder.class.getName());
     private Map factories = new HashMap();
     private Object constraints;
     private Map widgets = new HashMap();
@@ -222,20 +222,20 @@ public class SwingBuilder extends BuilderSupport {
         Object widget;
         Factory factory = (Factory) factories.get(name);
         if (factory == null) {
-            log.log(Level.WARNING, "Could not find match for name: " + name);
+            LOG.log(Level.WARNING, "Could not find match for name: " + name);
             return null;
         }
         try {
             widget = factory.newInstance(this, name, value, attributes);
             if (widget == null) {
-                log.log(Level.WARNING, "Factory for name: " + name + " returned null");
+                LOG.log(Level.WARNING, "Factory for name: " + name + " returned null");
                 return null;
             }
             if (widgetName != null) {
                 widgets.put(widgetName, widget);
             }
-            if (log.isLoggable(Level.FINE)) {
-                log.fine("For name: " + name + " created widget: " + widget);
+            if (LOG.isLoggable(Level.FINE)) {
+                LOG.fine("For name: " + name + " created widget: " + widget);
             }
         } catch (Exception e) {
             throw new RuntimeException("Failed to create component for '" + name + "' reason: " + e, e);

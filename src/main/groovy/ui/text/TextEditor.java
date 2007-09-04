@@ -1,7 +1,5 @@
 /*
- * TextEditor.java
- *
- * Copyright (c) 2004, 2007 Evan A Slatis
+ * Copyright 2003-2007 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,7 +66,7 @@ import javax.swing.text.Utilities;
 /**
  * A simple text pane that is printable and wrapping is optional.
  *
- * @author  hippy
+ * @author Evan "Hippy" Slatis
  */
 public class TextEditor extends JTextPane implements Pageable, Printable {
     

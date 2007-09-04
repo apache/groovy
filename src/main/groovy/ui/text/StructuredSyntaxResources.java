@@ -1,7 +1,5 @@
 /*
- * UIResourceMgr.java
- *
- * Copyright (c) 2004, 2007 Evan A Slatis
+ * Copyright 2003-2007 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,9 +25,9 @@ import java.awt.datatransfer.Clipboard;
  * Contains all the basic resources and values used by the utility frame work
  * framework.
  *
- * @author  hippy
+ * @author Evan "Hippy" Slatis
  */
-public class StructuredSyntaxResources {
+public final class StructuredSyntaxResources {
 
     // ==================================================
     // ClipBoard
@@ -61,22 +59,22 @@ public class StructuredSyntaxResources {
     // STANDARD FONTS
     // =====================================================
 
-    public static Font LARGE_FONT = Font.decode("Arial-24");
-    public static Font MEDIUM_FONT = Font.decode("Arial-18");
-    public static Font SMALL_FONT = Font.decode("Arial-12");
+    public static final Font LARGE_FONT = Font.decode("Arial-24");
+    public static final Font MEDIUM_FONT = Font.decode("Arial-18");
+    public static final Font SMALL_FONT = Font.decode("Arial-12");
     
-    public static Font EDITOR_FONT = Font.decode("Monospaced-12");
+    public static final Font EDITOR_FONT = Font.decode("Monospaced-12");
 
     // =====================================================
     // UNDO/REDO NAMES
     // =====================================================
 
-    public static String UNDO = "Undo";
-    public static String REDO = "Redo";
-    public static String PRINT = "Print";
-    public static String FIND = "Find";
-    public static String FIND_NEXT = "Find Next";
-    public static String REPLACE = "Replace";
+    public static final String UNDO = "Undo";
+    public static final String REDO = "Redo";
+    public static final String PRINT = "Print";
+    public static final String FIND = "Find";
+    public static final String FIND_NEXT = "Find Next";
+    public static final String REPLACE = "Replace";
         
     // singleton
     private StructuredSyntaxResources() {

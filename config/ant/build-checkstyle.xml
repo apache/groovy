@@ -32,7 +32,7 @@ $Date: 2007-03-11 19:14:07 +1000 (Sun, 11 Mar 2007) $
         <attribute name="excludes"/>
         <element name="path"/>
         <sequential>
-            <property name="checkstyle.basedir" location="@{sourceDirectory}"/>
+            <property name="checkstyle.basedir" value="@{sourceDirectory}"/>
             <property name="checkstyleReportDir" location="@{reportDirectory}"/>
             <property name="checkstyleResultPrefix" location="@{reportDirectory}/result"/>
             <mkdir dir="@{reportDirectory}"/>

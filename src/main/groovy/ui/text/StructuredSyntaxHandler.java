@@ -1,7 +1,5 @@
 /*
- * StructuredSyntaxHandler.java
- *
- * Copyright (c) 2004, 2007 Evan A Slatis
+ * Copyright 2003-2007 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +26,7 @@ import org.xml.sax.helpers.DefaultHandler;
 
 /**
  *
- * @author  hippy
+ * @author Evan "Hippy" Slatis
  */
 public class StructuredSyntaxHandler extends DefaultHandler {
     
@@ -41,34 +39,34 @@ public class StructuredSyntaxHandler extends DefaultHandler {
     public static final String ALIGN_LEFT = "ALIGN_LEFT";
     public static final String ALIGN_RIGHT = "ALIGN_RIGHT";
 
-    public static final String alignment = "alignment";
-    public static final String background = "background";
-    public static final String bidiLevel = "bidiLevel";
-    public static final String bold = "bold";
-    public static final String componentAttribute = "componentAttribute";
-    public static final String componentElementName = "componentElementName";
-    public static final String composedTextAttribute = "composedTextAttribute";
-    public static final String firstLineIndent = "firstLineIndent";
-    public static final String fontFamily = "fontFamily";
-    public static final String fontSize = "fontSize";
-    public static final String foreground = "foreground";
-    public static final String iconAttribute = "iconAttribute";
-    public static final String iconElementName = "iconElementName";
-    public static final String italic = "italic";
-    public static final String leftIndent = "leftIndent";
-    public static final String lineSpacing = "lineSpacing";
-    public static final String modelAttribute = "modelAttribute";
-    public static final String nameAttribute = "nameAttribute";
-    public static final String orientation = "orientation";
-    public static final String resolveAttribute = "resolveAttribute";
-    public static final String rightIndent = "rightIndent";
-    public static final String spaceAbove = "spaceAbove";
-    public static final String spaceBelow = "spaceBelow";
-    public static final String strikeThrough = "strikeThrough";
-    public static final String subscript = "subscript";
-    public static final String superscript = "superscript";
-    public static final String tabSet = "tabSet";
-    public static final String underline = "underline";
+    public static final String ALIGNMENT = "alignment";
+    public static final String BACKGROUND = "background";
+    public static final String BIDI_LEVEL = "bidiLevel";
+    public static final String BOLD = "bold";
+    public static final String COMPONENT_ATTRIBUTE = "componentAttribute";
+    public static final String COMPONENT_ELEMENT_NAME = "componentElementName";
+    public static final String COMPOSED_TEXT_ATTRIBUTE = "composedTextAttribute";
+    public static final String FIRST_LINE_INDENT = "firstLineIndent";
+    public static final String FONT_FAMILY = "fontFamily";
+    public static final String FONT_SIZE = "fontSize";
+    public static final String FOREGROUND = "foreground";
+    public static final String ICON_ATTRIBUTE = "iconAttribute";
+    public static final String ICON_ELEMENT_NAME = "iconElementName";
+    public static final String ITALIC = "italic";
+    public static final String LEFT_INDENT = "leftIndent";
+    public static final String LINE_SPACING = "lineSpacing";
+    public static final String MODEL_ATTRIBUTE = "modelAttribute";
+    public static final String NAME_ATTRIBUTE = "nameAttribute";
+    public static final String ORIENTATION = "orientation";
+    public static final String RESOLVE_ATTRIBUTE = "resolveAttribute";
+    public static final String RIGHT_INDENT = "rightIndent";
+    public static final String SPACE_ABOVE = "spaceAbove";
+    public static final String SPACE_BELOW = "spaceBelow";
+    public static final String STRIKE_THROUGH = "strikeThrough";
+    public static final String SUBSCRIPT = "subscript";
+    public static final String SUPERSCRIPT = "superscript";
+    public static final String TAB_SET = "tabSet";
+    public static final String UNDERLINE = "underline";
     
     private StructuredSyntaxDocumentFilter.LexerNode currentNode;
     private StructuredSyntaxDocumentFilter.LexerNode parentNode;
@@ -79,6 +77,7 @@ public class StructuredSyntaxHandler extends DefaultHandler {
 
     /**
      * Creates a new instance of MasterFrameHandler
+     * @param filter
      */
     public StructuredSyntaxHandler(StructuredSyntaxDocumentFilter filter) {
         this.filter = filter;

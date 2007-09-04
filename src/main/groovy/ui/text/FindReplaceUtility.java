@@ -1,7 +1,5 @@
 /*
- * FindReplaceUtility.java
- *
- * Copyright (c) 2004, 2007 Evan A Slatis
+ * Copyright 2003-2007 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,9 +53,9 @@ import javax.swing.text.Segment;
 
 /**
  *
- * @author  hippy
+ * @author Evan "Hippy" Slatis
  */
-public class FindReplaceUtility {
+public final class FindReplaceUtility {
     
     public static final String FIND_ACTION_COMMAND = "Find";
     
@@ -69,33 +67,33 @@ public class FindReplaceUtility {
     
     public static final Action FIND_ACTION = new FindAction();
     
-    private static final JDialog findReplaceDialog = new JDialog();
+    private static final JDialog FIND_REPLACE_DIALOG = new JDialog();
         
-    private static final JPanel textFieldPanel = new JPanel(new GridLayout(2, 1));
+    private static final JPanel TEXT_FIELD_PANEL = new JPanel(new GridLayout(2, 1));
         
-    private static final JPanel entryPanel = new JPanel();
+    private static final JPanel ENTRY_PANEL = new JPanel();
     
-    private static final JPanel findPanel = new JPanel();
-    private static final JLabel findLabel = new JLabel("Find What:    ");
-    private static final JComboBox findField = new JComboBox();
+    private static final JPanel FIND_PANEL = new JPanel();
+    private static final JLabel FIND_LABEL = new JLabel("Find What:    ");
+    private static final JComboBox FIND_FIELD = new JComboBox();
     
-    private static final JPanel replacePanel = new JPanel();
-    private static final JLabel replaceLabel = new JLabel("Replace With:");
-    private static final JComboBox replaceField = new JComboBox();
+    private static final JPanel REPLACE_PANEL = new JPanel();
+    private static final JLabel REPLACE_LABEL = new JLabel("Replace With:");
+    private static final JComboBox REPLACE_FIELD = new JComboBox();
 
-    private static final JPanel buttonPanel = new JPanel();
-    private static final JButton findButton = new JButton();
-    private static final JButton replaceButton = new JButton();
-    private static final JButton replaceAllButton = new JButton();
-    private static final JButton closeButton = new JButton();
+    private static final JPanel BUTTON_PANEL = new JPanel();
+    private static final JButton FIND_BUTTON = new JButton();
+    private static final JButton REPLACE_BUTTON = new JButton();
+    private static final JButton REPLACE_ALL_BUTTON = new JButton();
+    private static final JButton CLOSE_BUTTON = new JButton();
     
-    private static final Action closeAction = new CloseAction();
-    private static final Action replaceAction = new ReplaceAction();
+    private static final Action CLOSE_ACTION = new CloseAction();
+    private static final Action REPLACE_ACTION = new ReplaceAction();
 
-    private static final JPanel checkBoxPanel = new JPanel(new GridLayout(3, 1));
-    private static final JCheckBox matchCaseCBox = new JCheckBox("Match Case      ");
-    private static final JCheckBox isBackwardsCBox = new JCheckBox("Search Backwards");
-    private static final JCheckBox wrapSearchCBox = new JCheckBox("Wrap Search     ");
+    private static final JPanel CHECK_BOX_PANEL = new JPanel(new GridLayout(3, 1));
+    private static final JCheckBox MATCH_CASE_CHECKBOX = new JCheckBox("Match Case      ");
+    private static final JCheckBox IS_BACKWARDS_CHECKBOX = new JCheckBox("Search Backwards");
+    private static final JCheckBox WRAP_SEARCH_CHECKBOX = new JCheckBox("Wrap Search     ");
     
     private static JTextComponent textComponent;
     private static AttributeSet attributeSet;
@@ -103,12 +101,12 @@ public class FindReplaceUtility {
     private static int findReplaceCount;
     private static String lastAction;
     
-    private static final EventListenerList eventListenerList = new EventListenerList();
+    private static final EventListenerList EVENT_LISTENER_LIST = new EventListenerList();
     
     // the document segment
-    private static final Segment segment = new Segment();
+    private static final Segment SEGMENT = new Segment();
  
-    private static final FocusAdapter textFocusListener = new FocusAdapter() {
+    private static final FocusAdapter TEXT_FOCUS_LISTENER = new FocusAdapter() {
         public void focusGained(FocusEvent fe) {
             textComponent = (JTextComponent)fe.getSource();
             attributeSet =
@@ -117,85 +115,85 @@ public class FindReplaceUtility {
     };
 
     static {
-        findReplaceDialog.setResizable(false);
-        findReplaceDialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        FIND_REPLACE_DIALOG.setResizable(false);
+        FIND_REPLACE_DIALOG.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         // is next line needed at all?
         /* KeyStroke keyStroke = */ KeyStroke.getKeyStroke("enter");
         KeyAdapter keyAdapter = new KeyAdapter() {            
             public void keyTyped(KeyEvent ke) {
                 if (ke.getKeyChar() == KeyEvent.VK_ENTER) {
-                    findButton.doClick();
+                    FIND_BUTTON.doClick();
                 }
             }
         };
-        findPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
-        findPanel.add(findLabel);
-        findPanel.add(findField);
-        findField.addItem("");
-        findField.setEditable(true);
-        findField.getEditor().getEditorComponent().addKeyListener(keyAdapter);
-        Dimension d = findField.getPreferredSize();
+        FIND_PANEL.setLayout(new FlowLayout(FlowLayout.RIGHT));
+        FIND_PANEL.add(FIND_LABEL);
+        FIND_PANEL.add(FIND_FIELD);
+        FIND_FIELD.addItem("");
+        FIND_FIELD.setEditable(true);
+        FIND_FIELD.getEditor().getEditorComponent().addKeyListener(keyAdapter);
+        Dimension d = FIND_FIELD.getPreferredSize();
         d.width = 225;
-        findField.setPreferredSize(d);
+        FIND_FIELD.setPreferredSize(d);
         
-        replacePanel.add(replaceLabel);
-        replacePanel.add(replaceField);
-        replaceField.setEditable(true);
-        replaceField.getEditor().getEditorComponent().addKeyListener(keyAdapter);
-        replaceField.setPreferredSize(d);
+        REPLACE_PANEL.add(REPLACE_LABEL);
+        REPLACE_PANEL.add(REPLACE_FIELD);
+        REPLACE_FIELD.setEditable(true);
+        REPLACE_FIELD.getEditor().getEditorComponent().addKeyListener(keyAdapter);
+        REPLACE_FIELD.setPreferredSize(d);
         
-        textFieldPanel.setLayout(new BoxLayout(textFieldPanel, BoxLayout.Y_AXIS));
-        textFieldPanel.add(findPanel);
-        textFieldPanel.add(replacePanel);
+        TEXT_FIELD_PANEL.setLayout(new BoxLayout(TEXT_FIELD_PANEL, BoxLayout.Y_AXIS));
+        TEXT_FIELD_PANEL.add(FIND_PANEL);
+        TEXT_FIELD_PANEL.add(REPLACE_PANEL);
         
-        entryPanel.add(textFieldPanel);
-        findReplaceDialog.getContentPane().add(entryPanel, BorderLayout.WEST);
+        ENTRY_PANEL.add(TEXT_FIELD_PANEL);
+        FIND_REPLACE_DIALOG.getContentPane().add(ENTRY_PANEL, BorderLayout.WEST);
 
-        checkBoxPanel.add(matchCaseCBox);
+        CHECK_BOX_PANEL.add(MATCH_CASE_CHECKBOX);
         
-        checkBoxPanel.add(isBackwardsCBox);
+        CHECK_BOX_PANEL.add(IS_BACKWARDS_CHECKBOX);
         
-        checkBoxPanel.add(wrapSearchCBox);
+        CHECK_BOX_PANEL.add(WRAP_SEARCH_CHECKBOX);
                 
-        entryPanel.add(checkBoxPanel);
-        entryPanel.setLayout(new BoxLayout(entryPanel, BoxLayout.Y_AXIS));
+        ENTRY_PANEL.add(CHECK_BOX_PANEL);
+        ENTRY_PANEL.setLayout(new BoxLayout(ENTRY_PANEL, BoxLayout.Y_AXIS));
 
-        replaceAllButton.setAction(new ReplaceAllAction());
-        replaceAllButton.setHorizontalAlignment(JButton.CENTER);
-        d = replaceAllButton.getPreferredSize();
+        REPLACE_ALL_BUTTON.setAction(new ReplaceAllAction());
+        REPLACE_ALL_BUTTON.setHorizontalAlignment(JButton.CENTER);
+        d = REPLACE_ALL_BUTTON.getPreferredSize();
         
-        buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.Y_AXIS));
-        findButton.setAction(FIND_ACTION);
-        findButton.setPreferredSize(d);
-        findButton.setHorizontalAlignment(JButton.CENTER);
+        BUTTON_PANEL.setLayout(new BoxLayout(BUTTON_PANEL, BoxLayout.Y_AXIS));
+        FIND_BUTTON.setAction(FIND_ACTION);
+        FIND_BUTTON.setPreferredSize(d);
+        FIND_BUTTON.setHorizontalAlignment(JButton.CENTER);
         JPanel panel = new JPanel();
-        panel.add(findButton);
-        buttonPanel.add(panel);
-        findReplaceDialog.getRootPane().setDefaultButton(findButton);
+        panel.add(FIND_BUTTON);
+        BUTTON_PANEL.add(panel);
+        FIND_REPLACE_DIALOG.getRootPane().setDefaultButton(FIND_BUTTON);
         
-        replaceButton.setAction(replaceAction);
-        replaceButton.setPreferredSize(d);
-        replaceButton.setHorizontalAlignment(JButton.CENTER);
+        REPLACE_BUTTON.setAction(REPLACE_ACTION);
+        REPLACE_BUTTON.setPreferredSize(d);
+        REPLACE_BUTTON.setHorizontalAlignment(JButton.CENTER);
         panel = new JPanel();
-        panel.add(replaceButton);
-        buttonPanel.add(panel);
+        panel.add(REPLACE_BUTTON);
+        BUTTON_PANEL.add(panel);
         
         panel = new JPanel();
-        panel.add(replaceAllButton);
-        buttonPanel.add(panel);
+        panel.add(REPLACE_ALL_BUTTON);
+        BUTTON_PANEL.add(panel);
         
-        closeButton.setAction(closeAction);
-        closeButton.setPreferredSize(d);
-        closeButton.setHorizontalAlignment(JButton.CENTER);
+        CLOSE_BUTTON.setAction(CLOSE_ACTION);
+        CLOSE_BUTTON.setPreferredSize(d);
+        CLOSE_BUTTON.setHorizontalAlignment(JButton.CENTER);
         panel = new JPanel();
-        panel.add(closeButton);
-        buttonPanel.add(panel);
-        findReplaceDialog.getContentPane().add(buttonPanel);
+        panel.add(CLOSE_BUTTON);
+        BUTTON_PANEL.add(panel);
+        FIND_REPLACE_DIALOG.getContentPane().add(BUTTON_PANEL);
         
-        KeyStroke stroke = (KeyStroke)closeAction.getValue(Action.ACCELERATOR_KEY);
-        JRootPane rPane = findReplaceDialog.getRootPane();
+        KeyStroke stroke = (KeyStroke) CLOSE_ACTION.getValue(Action.ACCELERATOR_KEY);
+        JRootPane rPane = FIND_REPLACE_DIALOG.getRootPane();
         rPane.getInputMap(JButton.WHEN_IN_FOCUSED_WINDOW).put(stroke, "exit");
-        rPane.getActionMap().put("exit", closeAction);
+        rPane.getActionMap().put("exit", CLOSE_ACTION);
     }
 
     // Singleton
@@ -203,15 +201,15 @@ public class FindReplaceUtility {
     }
     
     public static void addTextListener(TextListener tl) {
-        eventListenerList.add(TextListener.class, tl);
+        EVENT_LISTENER_LIST.add(TextListener.class, tl);
     }
     
     private static void fireTextEvent() {
         EventListener[] lstrs =
-            eventListenerList.getListeners(TextListener.class);
+            EVENT_LISTENER_LIST.getListeners(TextListener.class);
         if (lstrs != null && lstrs.length > 0) {
             TextEvent te =
-                new TextEvent(findReplaceDialog, TextEvent.TEXT_VALUE_CHANGED);
+                new TextEvent(FIND_REPLACE_DIALOG, TextEvent.TEXT_VALUE_CHANGED);
             for (int i = 0; i < lstrs.length; i++) {
                 ((TextListener)lstrs[i]).textValueChanged(te);
             }
@@ -236,18 +234,18 @@ public class FindReplaceUtility {
      * @return the search text
      */    
     public static String getSearchText() {
-        return (String)findField.getSelectedItem();
+        return (String) FIND_FIELD.getSelectedItem();
     }
     
     /**
      * @param textComponent the text component to listen to
      */    
     public static void registerTextComponent(JTextComponent textComponent) {
-        textComponent.addFocusListener(textFocusListener);
+        textComponent.addFocusListener(TEXT_FOCUS_LISTENER);
     }
     
     public static void removeTextListener(TextListener tl) {
-        eventListenerList.remove(TextListener.class, tl);
+        EVENT_LISTENER_LIST.remove(TextListener.class, tl);
     }
     
     /**
@@ -258,14 +256,14 @@ public class FindReplaceUtility {
      * @return the location of the next selected, or -1 if not found
      */
     private static int findNext(boolean reverse, int pos) {
-        boolean backwards = isBackwardsCBox.isSelected();
+        boolean backwards = IS_BACKWARDS_CHECKBOX.isSelected();
         backwards = backwards ? !reverse : reverse;
         
-        String pattern = (String)findField.getSelectedItem();
+        String pattern = (String) FIND_FIELD.getSelectedItem();
         if (pattern != null && pattern.length() > 0) {
             try {
                 Document doc = textComponent.getDocument();
-                doc.getText(0, doc.getLength(), segment);
+                doc.getText(0, doc.getLength(), SEGMENT);
             }
             catch (Exception e) {
                 // should NEVER reach here
@@ -280,8 +278,8 @@ public class FindReplaceUtility {
             char oppFirst = Character.isUpperCase(first) ? 
                 Character.toLowerCase(first) : Character.toUpperCase(first);
             int start = pos;
-            boolean wrapped = wrapSearchCBox.isSelected();
-            int end = backwards ? 0 : segment.getEndIndex();
+            boolean wrapped = WRAP_SEARCH_CHECKBOX.isSelected();
+            int end = backwards ? 0 : SEGMENT.getEndIndex();
             pos += backwards ? -1 : 1;
             
         	int length = textComponent.getDocument().getLength();
@@ -291,19 +289,19 @@ public class FindReplaceUtility {
             
             boolean found = false;
             while (!found && (backwards ? pos > end : pos < end)) {
-                found = !matchCaseCBox.isSelected() && segment.array[pos] == oppFirst;
-                found = found ? found : segment.array[pos] == first;
+                found = !MATCH_CASE_CHECKBOX.isSelected() && SEGMENT.array[pos] == oppFirst;
+                found = found ? found : SEGMENT.array[pos] == first;
                 
                 if (found) {
                     pos += backwards ? -(pattern.length() - 1) : 0;
                     for (int i = 0; found && i < pattern.length(); i++) {
                         char c = pattern.charAt(i);
-                        found =  segment.array[pos + i] == c;
-                        if (!matchCaseCBox.isSelected() && !found) {
+                        found =  SEGMENT.array[pos + i] == c;
+                        if (!MATCH_CASE_CHECKBOX.isSelected() && !found) {
                             c = Character.isUpperCase(c) ? 
                                 Character.toLowerCase(c) :
                                 Character.toUpperCase(c);
-                            found =  segment.array[pos + i] == c;
+                            found =  SEGMENT.array[pos + i] == c;
                         }
                     }
                 }
@@ -312,7 +310,7 @@ public class FindReplaceUtility {
                     pos += backwards ? -1 : 1;
 
                     if (pos == end && wrapped) {
-                        pos = backwards ? segment.getEndIndex() : 0;
+                        pos = backwards ? SEGMENT.getEndIndex() : 0;
                         end = start;
                         wrapped = false;
                     }
@@ -325,31 +323,31 @@ public class FindReplaceUtility {
     }
     
     private static void setListStrings() {
-        Object findObject = findField.getSelectedItem();
-        Object replaceObject = replaceField.isShowing() ? 
-            (String)replaceField.getSelectedItem() : "";
+        Object findObject = FIND_FIELD.getSelectedItem();
+        Object replaceObject = REPLACE_FIELD.isShowing() ?
+            (String) REPLACE_FIELD.getSelectedItem() : "";
             
         if (findObject != null && replaceObject != null) {
             boolean found = false;
-            for (int i = 0; !found && i < findField.getItemCount(); i++) {
-                found = findField.getItemAt(i).equals(findObject);
+            for (int i = 0; !found && i < FIND_FIELD.getItemCount(); i++) {
+                found = FIND_FIELD.getItemAt(i).equals(findObject);
             }
             if (!found) {
-                findField.insertItemAt(findObject, 0);
-                if (findField.getItemCount() > 7) {
-                    findField.removeItemAt(7);
+                FIND_FIELD.insertItemAt(findObject, 0);
+                if (FIND_FIELD.getItemCount() > 7) {
+                    FIND_FIELD.removeItemAt(7);
                 }
             }
             
-            if (replaceField.isShowing()) {
+            if (REPLACE_FIELD.isShowing()) {
                 found = false;
-                for (int i = 0; !found && i < replaceField.getItemCount(); i++) {
-                    found = replaceField.getItemAt(i).equals(findObject);
+                for (int i = 0; !found && i < REPLACE_FIELD.getItemCount(); i++) {
+                    found = REPLACE_FIELD.getItemAt(i).equals(findObject);
                 }
                 if (!found) {
-                    replaceField.insertItemAt(replaceObject, 0);
-                    if (replaceField.getItemCount() > 7) {
-                        replaceField.removeItemAt(7);
+                    REPLACE_FIELD.insertItemAt(replaceObject, 0);
+                    if (REPLACE_FIELD.getItemCount() > 7) {
+                        REPLACE_FIELD.removeItemAt(7);
                     }
                 }
             }
@@ -366,51 +364,51 @@ public class FindReplaceUtility {
      */    
     public static void showDialog(boolean isReplace) {
         String title = isReplace ? REPLACE_ACTION_COMMAND : FIND_ACTION_COMMAND;
-        findReplaceDialog.setTitle(title);
+        FIND_REPLACE_DIALOG.setTitle(title);
         
         String text = textComponent.getSelectedText();
         if (text == null) {
         	text = "";
         }
-        findField.getEditor().setItem(text);
-        findField.getEditor().selectAll();
+        FIND_FIELD.getEditor().setItem(text);
+        FIND_FIELD.getEditor().selectAll();
                 
-        replacePanel.setVisible(isReplace);
-        replaceAllButton.setVisible(isReplace);
-        closeButton.setVisible(isReplace);
+        REPLACE_PANEL.setVisible(isReplace);
+        REPLACE_ALL_BUTTON.setVisible(isReplace);
+        CLOSE_BUTTON.setVisible(isReplace);
 
-        Action action = isReplace ? 
-            replaceAction : closeAction;
-        replaceButton.setAction(action);
+        Action action = isReplace ?
+                REPLACE_ACTION : CLOSE_ACTION;
+        REPLACE_BUTTON.setAction(action);
 
-        replaceButton.setPreferredSize(null);
+        REPLACE_BUTTON.setPreferredSize(null);
         Dimension d = isReplace ? 
-            replaceAllButton.getPreferredSize() :
-            replaceButton.getPreferredSize();
-        findButton.setPreferredSize(d);
-        replaceButton.setPreferredSize(d);
-        closeButton.setPreferredSize(d);
+            REPLACE_ALL_BUTTON.getPreferredSize() :
+            REPLACE_BUTTON.getPreferredSize();
+        FIND_BUTTON.setPreferredSize(d);
+        REPLACE_BUTTON.setPreferredSize(d);
+        CLOSE_BUTTON.setPreferredSize(d);
 
-        findReplaceDialog.invalidate();
-        findReplaceDialog.repaint();
-        findReplaceDialog.pack();
+        FIND_REPLACE_DIALOG.invalidate();
+        FIND_REPLACE_DIALOG.repaint();
+        FIND_REPLACE_DIALOG.pack();
         
         java.awt.Frame[] frames = java.awt.Frame.getFrames();
         for (int i = 0; i < frames.length; i++) {
             if (frames[i].isFocused()) {
-                findReplaceDialog.setLocationRelativeTo(frames[i]);
+                FIND_REPLACE_DIALOG.setLocationRelativeTo(frames[i]);
             }
         }
         
-        findReplaceDialog.setVisible(true);
-        findField.requestFocusInWindow();
+        FIND_REPLACE_DIALOG.setVisible(true);
+        FIND_FIELD.requestFocusInWindow();
     }
     
     /**
      * @param textComponent the text component to stop listening to
      */
     public static void unregisterTextComponent(JTextComponent textComponent) {
-        textComponent.removeFocusListener(textFocusListener);
+        textComponent.removeFocusListener(TEXT_FOCUS_LISTENER);
     }
     
     private static class FindAction extends AbstractAction {
@@ -425,8 +423,8 @@ public class FindReplaceUtility {
             lastAction = FIND_ACTION_COMMAND;
             findReplaceCount = 0;
             
-            if (findReplaceDialog.isVisible() &&
-                findReplaceDialog.getTitle().equals(FIND_ACTION_COMMAND)) {
+            if (FIND_REPLACE_DIALOG.isVisible() &&
+                FIND_REPLACE_DIALOG.getTitle().equals(FIND_ACTION_COMMAND)) {
             }
 
             int pos = textComponent.getSelectedText() == null ? 
@@ -437,7 +435,7 @@ public class FindReplaceUtility {
             pos = findNext(reverse, pos);
             
             if (pos > -1) {
-                String pattern = (String)findField.getSelectedItem();
+                String pattern = (String) FIND_FIELD.getSelectedItem();
                 textComponent.select(pos, pos + pattern.length());
                 findReplaceCount = 1;
             }
@@ -467,8 +465,8 @@ public class FindReplaceUtility {
             pos = findNext(false, pos - 1);
 
             if (pos > -1) {
-                String find = (String)findField.getSelectedItem();
-                String replace = (String)replaceField.getSelectedItem();
+                String find = (String) FIND_FIELD.getSelectedItem();
+                String replace = (String) REPLACE_FIELD.getSelectedItem();
                 replace = replace == null ? "" : replace;
                 Document doc = textComponent.getDocument();
                 try {
@@ -514,8 +512,8 @@ public class FindReplaceUtility {
 
             int pos = findNext(false, last - 1);
 
-            String find = (String)findField.getSelectedItem();
-            String replace = (String)replaceField.getSelectedItem();
+            String find = (String) FIND_FIELD.getSelectedItem();
+            String replace = (String) REPLACE_FIELD.getSelectedItem();
             replace = replace == null ? "" : replace;
             while (pos > -1) {
                 Document doc = textComponent.getDocument();
@@ -555,7 +553,7 @@ public class FindReplaceUtility {
         }
 
         public void actionPerformed(ActionEvent ae) {
-            findReplaceDialog.dispose();
+            FIND_REPLACE_DIALOG.dispose();
         }
     }
 }
