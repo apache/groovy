@@ -52,6 +52,7 @@ public class AbstractButtonProperties {
 
 class AbstractButtonSelectedBinding extends AbstractFullBinding implements PropertyChangeListener, ItemListener {
     boolean bound;
+    AbstractButton boundButton;
 
     public AbstractButtonSelectedBinding(PropertyBinding source, TargetBinding target) {
         bound = false;
@@ -61,15 +62,15 @@ class AbstractButtonSelectedBinding extends AbstractFullBinding implements Prope
 
     public synchronized void bind() {
         if (!bound) {
-            AbstractButton ab = (AbstractButton) ((PropertyBinding) sourceBinding).getBean();
+            boundButton = (AbstractButton) ((PropertyBinding) sourceBinding).getBean();
             try {
-                ab.addPropertyChangeListener("model", this);
-                ab.getModel().addItemListener(this);
+                boundButton.addPropertyChangeListener("model", this);
+                boundButton.getModel().addItemListener(this);
                 bound = true;
             } catch (RuntimeException re) {
                 try {
-                    ab.removePropertyChangeListener("model", this);
-                    ab.getModel().removeItemListener(this);
+                    boundButton.removePropertyChangeListener("model", this);
+                    boundButton.getModel().removeItemListener(this);
                 } catch (Exception e) {
                     // ignore as we are re-throwing the original cause
                 }
@@ -82,21 +83,20 @@ class AbstractButtonSelectedBinding extends AbstractFullBinding implements Prope
         if (bound) {
             bound = false;
             // fail dirty, no checks
-            AbstractButton ab = (AbstractButton) ((PropertyBinding)sourceBinding).getBean();
-            ab.removePropertyChangeListener("model", this);
-            ab.getModel().removeItemListener(this);
+            boundButton.removePropertyChangeListener("model", this);
+            boundButton.getModel().removeItemListener(this);
+            boundButton = null;
         }
     }
 
     public void rebind() {
-        unbind();
-        bind();
+        if (bound) {
+            unbind();
+            bind();
+        }
     }
 
     public void setSourceBinding(SourceBinding source) {
-        if (bound) {
-            throw new IllegalStateException("Cannot change source while binding is bound");
-        }
         if (!(source instanceof PropertyBinding)) {
             throw new IllegalArgumentException("Only PropertySourceBindings are accepted");
         }
@@ -111,9 +111,6 @@ class AbstractButtonSelectedBinding extends AbstractFullBinding implements Prope
     }
 
     public void setTargetBinding(TargetBinding target) {
-        if (bound) {
-            throw new IllegalStateException("Cannot change target while binding is bound");
-        }
         super.setTargetBinding(target);
     }
 

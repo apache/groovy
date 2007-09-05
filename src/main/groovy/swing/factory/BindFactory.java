@@ -137,8 +137,13 @@ public class BindFactory implements Factory {
             throw new RuntimeException(name + " does not have suffient properties to initialize");
         }
 
-        if (target != null) {
+        Object o = properties.remove("bind");
+        if (    (o == null)
+            || ((o instanceof Boolean) && ((Boolean)o).booleanValue()))
+        {
             fb.bind();
+        }
+        if (target != null) {
             fb.update();
         }
         return fb;

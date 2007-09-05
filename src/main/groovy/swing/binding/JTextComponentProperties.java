@@ -54,6 +54,7 @@ public class JTextComponentProperties {
 
 class JTextComponentTextBinding extends AbstractFullBinding implements PropertyChangeListener, DocumentListener {
     boolean bound;
+    JTextComponent boundTextComponent;
 
     public JTextComponentTextBinding(PropertyBinding source, TargetBinding target) {
         bound = false;
@@ -63,15 +64,15 @@ class JTextComponentTextBinding extends AbstractFullBinding implements PropertyC
 
     public synchronized void bind() {
         if (!bound) {
-            JTextComponent tc = (JTextComponent) ((PropertyBinding)sourceBinding).getBean();
+            boundTextComponent = (JTextComponent) ((PropertyBinding)sourceBinding).getBean();
             try {
-                tc.addPropertyChangeListener("document", this);
-                tc.getDocument().addDocumentListener(this);
+                boundTextComponent.addPropertyChangeListener("document", this);
+                boundTextComponent.getDocument().addDocumentListener(this);
                 bound = true;
             } catch (RuntimeException re) {
                 try {
-                    tc.removePropertyChangeListener("document", this);
-                    tc.getDocument().removeDocumentListener(this);
+                    boundTextComponent.removePropertyChangeListener("document", this);
+                    boundTextComponent.getDocument().removeDocumentListener(this);
                 } catch (Exception e) {
                     // ignore as we are re-throwing the original cause
                 }
@@ -84,21 +85,20 @@ class JTextComponentTextBinding extends AbstractFullBinding implements PropertyC
         if (bound) {
             bound = false;
             // fail dirty, no checks
-            JTextComponent tc = (JTextComponent) ((PropertyBinding)sourceBinding).getBean();
-            tc.removePropertyChangeListener("document", this);
-            tc.getDocument().removeDocumentListener(this);
+            boundTextComponent.removePropertyChangeListener("document", this);
+            boundTextComponent.getDocument().removeDocumentListener(this);
+            boundTextComponent = null;
         }
     }
 
     public void rebind() {
-        unbind();
-        bind();
+        if (bound) {
+            unbind();
+            bind();
+        }
     }
 
     public void setSourceBinding(SourceBinding source) {
-        if (bound) {
-            throw new IllegalStateException("Cannot change source while binding is bound");
-        }
         if (!(source instanceof PropertyBinding)) {
             throw new IllegalArgumentException("Only PropertyBindings are accepted");
         }
@@ -113,9 +113,6 @@ class JTextComponentTextBinding extends AbstractFullBinding implements PropertyC
     }
 
     public void setTargetBinding(TargetBinding target) {
-        if (bound) {
-            throw new IllegalStateException("Cannot change target while binding is bound");
-        }
         super.setTargetBinding(target);
     }
 

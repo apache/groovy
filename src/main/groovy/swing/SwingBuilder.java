@@ -278,9 +278,13 @@ public class SwingBuilder extends BuilderSupport {
                 FullBinding fb = (FullBinding) value;
                 PropertyBinding ptb = new PropertyBinding(widget, property);
                 fb.setTargetBinding(ptb);
-                fb.bind();
                 try {
                     fb.update();
+                } catch (Exception e) {
+                    // just eat it?
+                }
+                try {
+                    fb.rebind();
                 } catch (Exception e) {
                     // just eat it?
                 }
@@ -309,12 +313,16 @@ public class SwingBuilder extends BuilderSupport {
         registerFactory("actions", new CollectionFactory());
         registerBeanFactory("buttonGroup", ButtonGroup.class);
         registerFactory("map", new MapFactory());
-        registerFactory("bind", new BindFactory());
+
+        // binding related classes
         registerFactory("animate", new AnimateFactory());
+        registerFactory("bind", new BindFactory());
+        registerFactory("model", new ModelFactory());
 
         // ulimate pass through types
         registerFactory("widget", new WidgetFactory()); //TODO prohibit child content somehow
         registerFactory("container", new WidgetFactory());
+
 
         //
         // standalone window classes
@@ -324,6 +332,7 @@ public class SwingBuilder extends BuilderSupport {
         registerFactory("frame", new FrameFactory());
         registerBeanFactory("optionPane", JOptionPane.class);
         registerFactory("window", new WindowFactory());
+
 
         //
         // widgets
@@ -369,6 +378,7 @@ public class SwingBuilder extends BuilderSupport {
         registerBeanFactory("tree", JTree.class);
         registerBeanFactory("viewport", JViewport.class); // sub class?
 
+
         //
         // MVC models
         //
@@ -384,7 +394,8 @@ public class SwingBuilder extends BuilderSupport {
         registerFactory("propertyColumn", new TableModelFactory.PropertyColumnFactory());
         registerFactory("closureColumn", new TableModelFactory.ClosureColumnFactory());
 
-        //
+
+        //                                   
         // Layouts
         //
         registerBeanFactory("borderLayout", BorderLayout.class);

@@ -53,45 +53,61 @@ public class PropertyBinding implements SourceBinding, TargetBinding, TriggerBin
 
     class PropertyFullBinding extends AbstractFullBinding implements PropertyChangeListener {
 
+        Object boundBean;
+        Object boundProperty;
+        boolean bound;
+
         PropertyFullBinding(SourceBinding source, TargetBinding target) {
             setSourceBinding(source);
             setTargetBinding(target);
         }
 
         public void propertyChange(PropertyChangeEvent event) {
-            if (event.getPropertyName().equals(propertyName)) {
+            if (event.getPropertyName().equals(boundProperty)) {
                 update();
             }
         }
 
         public void bind() {
-            try {
-                InvokerHelper.invokeMethodSafe(bean, "addPropertyChangeListener", new Object[] {propertyName, this});
-            } catch (MissingMethodException mme) {
+            if (!bound) {
+                bound = true;
+                boundBean = bean;
+                boundProperty = propertyName;
                 try {
-                    InvokerHelper.invokeMethodSafe(bean, "addPropertyChangeListener", new Object[] {this});
-                } catch (MissingMethodException mme2) {
-                    throw new RuntimeException("Properties in beans of type" + bean.getClass().getName() + " are not observable in any capacity (no PropertyChangeListener support).");
+                    InvokerHelper.invokeMethodSafe(boundBean, "addPropertyChangeListener", new Object[] {boundProperty, this});
+                } catch (MissingMethodException mme) {
+                    try {
+                        InvokerHelper.invokeMethodSafe(boundBean, "addPropertyChangeListener", new Object[] {this});
+                    } catch (MissingMethodException mme2) {
+                        throw new RuntimeException("Properties in beans of type " + bean.getClass().getName() + " are not observable in any capacity (no PropertyChangeListener support).");
+                    }
                 }
             }
         }
 
         public void unbind() {
-            try {
-                InvokerHelper.invokeMethodSafe(bean, "removePropertyChangeListener", new Object[] {propertyName, this});
-            } catch (MissingMethodException mme) {
-                mme.printStackTrace();
+            if (bound) {
                 try {
-                    InvokerHelper.invokeMethodSafe(bean, "removePropertyChangeListener", new Object[] {this});
-                } catch (MissingMethodException mme2) {
-                    mme2.printStackTrace();
+                    InvokerHelper.invokeMethodSafe(boundBean, "removePropertyChangeListener", new Object[] {boundProperty, this});
+                } catch (MissingMethodException mme) {
+                    mme.printStackTrace();
+                    try {
+                        InvokerHelper.invokeMethodSafe(boundBean, "removePropertyChangeListener", new Object[] {this});
+                    } catch (MissingMethodException mme2) {
+                        mme2.printStackTrace();
+                    }
                 }
+                boundBean = null;
+                boundProperty = null;
+                bound = false;
             }
         }
 
         public void rebind() {
-            unbind();
-            bind();
+            if (bound) {
+                unbind();
+                bind();
+            }
         }
 
     }

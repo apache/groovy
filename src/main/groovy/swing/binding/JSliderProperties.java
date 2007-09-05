@@ -52,6 +52,8 @@ public class JSliderProperties {
 
 class JSliderValueBinding extends AbstractFullBinding implements PropertyChangeListener, ChangeListener {
     boolean bound;
+    JSlider boundSlider;
+
 
     public JSliderValueBinding(PropertyBinding source, TargetBinding target) {
         bound = false;
@@ -61,15 +63,15 @@ class JSliderValueBinding extends AbstractFullBinding implements PropertyChangeL
 
     public synchronized void bind() {
         if (!bound) {
-            JSlider slider = (JSlider) ((PropertyBinding)sourceBinding).getBean();
+            boundSlider = (JSlider) ((PropertyBinding)sourceBinding).getBean();
             try {
-                slider.addPropertyChangeListener("model", this);
-                slider.getModel().addChangeListener(this);
+                boundSlider.addPropertyChangeListener("model", this);
+                boundSlider.getModel().addChangeListener(this);
                 bound = true;
             } catch (RuntimeException re) {
                 try {
-                    slider.removePropertyChangeListener("model", this);
-                    slider.getModel().removeChangeListener(this);
+                    boundSlider.removePropertyChangeListener("model", this);
+                    boundSlider.getModel().removeChangeListener(this);
                 } catch (Exception e) {
                     // ignore as we are re-throwing the original cause
                 }
@@ -82,21 +84,20 @@ class JSliderValueBinding extends AbstractFullBinding implements PropertyChangeL
         if (bound) {
             bound = false;
             // fail dirty, no checks
-            JSlider slider = (JSlider) ((PropertyBinding)sourceBinding).getBean();
-            slider.removePropertyChangeListener("model", this);
-            slider.getModel().removeChangeListener(this);
+            boundSlider.removePropertyChangeListener("model", this);
+            boundSlider.getModel().removeChangeListener(this);
+            boundSlider = null;
         }
     }
 
     public void rebind() {
-        unbind();
-        bind();
+        if (bound) {
+            unbind();
+            bind();
+        }
     }
 
     public void setSourceBinding(SourceBinding source) {
-        if (bound) {
-            throw new IllegalStateException("Cannot change source while binding is bound");
-        }
         if (!(source instanceof PropertyBinding)) {
             throw new IllegalArgumentException("Only PropertySourceBindings are accepted");
         }
@@ -111,9 +112,6 @@ class JSliderValueBinding extends AbstractFullBinding implements PropertyChangeL
     }
 
     public void setTargetBinding(TargetBinding target) {
-        if (bound) {
-            throw new IllegalStateException("Cannot change target while binding is bound");
-        }
         super.setTargetBinding(target);
     }
 

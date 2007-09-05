@@ -56,6 +56,7 @@ import java.util.Map;
  * A bean used by the test cases
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * @author <a href="mailto:shemnon@yahoo.com">Danno Ferrin</a>
  * @version $Revision$
  */
 public class DummyBean {
@@ -86,7 +87,7 @@ public class DummyBean {
     }
 
     public void setI(Integer i) {
-        this.i = i;
+        changeSupport.firePropertyChange("i", this.i, this.i = i);
     }
 
     public String getName() {
@@ -94,7 +95,7 @@ public class DummyBean {
     }
 
     public void setName(String name) {
-        this.name = name;
+        changeSupport.firePropertyChange("name", this.name, this.name = name);
     }
 
     // dynamic properties
@@ -130,7 +131,7 @@ public class DummyBean {
     }
 
     public void setPoint(Point point) {
-        this.point = point;
+        changeSupport.firePropertyChange("point", this.point, this.point = point);
     }
 
 }

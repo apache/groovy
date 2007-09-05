@@ -22,16 +22,7 @@ import groovy.lang.Closure;
  * @version $Revision$
  * @since Groovy 1.1
  */
-public interface FullBinding {
-    void bind();
-
-    void unbind();
-
-    void rebind();
-
-    void update();
-
-    void reverseUpdate();
+public interface FullBinding extends BindingUpdatable {
 
     SourceBinding getSourceBinding();
 

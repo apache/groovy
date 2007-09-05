@@ -45,6 +45,7 @@ class SwingTimerFullBinding extends AbstractFullBinding implements ActionListene
     boolean reportFraction;
     boolean reportElapsed;
     boolean repeat;
+    boolean bound;
 
     SwingTimerFullBinding(ClosureSourceBinding source, TargetBinding target) {
         this(source, target, 50, 1000);
@@ -66,15 +67,23 @@ class SwingTimerFullBinding extends AbstractFullBinding implements ActionListene
     }
 
     public void bind() {
-        resetTimer();
+        if (!bound) {
+            resetTimer();
+            bound = true;
+        }
     }
 
     public void unbind() {
-        timer.stop();
+        if (bound) {
+            timer.stop();
+            bound = false;
+        }
     }
 
     public void rebind() {
-        resetTimer();
+        if (bound) {
+            resetTimer();
+        }
     }
 
     public void actionPerformed(ActionEvent e) {
