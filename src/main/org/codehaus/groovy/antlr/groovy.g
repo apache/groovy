@@ -2281,8 +2281,11 @@ assignmentExpression[int lc_stmt]
 
 // conditional test (level 14)
 conditionalExpression[int lc_stmt]
-    :   logicalOrExpression[lc_stmt]
-        ( QUESTION^ nls! assignmentExpression[0] COLON! nls! conditionalExpression[0] )?
+    :   logicalOrExpression[lc_stmt] 
+        ( 
+          (ELVIS_OPERATOR)=> ELVIS_OPERATOR^ nls! conditionalExpression[0] 
+          | QUESTION^ nls! assignmentExpression[0] COLON! nls! conditionalExpression[0] 
+        )?
     ;
 
 
@@ -3254,7 +3257,8 @@ RANGE_INCLUSIVE   options {paraphrase="'..'";}          :   ".."            ;
 RANGE_EXCLUSIVE   options {paraphrase="'..<'";}         :   "..<"           ;
 TRIPLE_DOT        options {paraphrase="'...'";}         :   "..."           ;
 SPREAD_DOT        options {paraphrase="'*.'";}          :   "*."            ;
-OPTIONAL_DOT      options {paraphrase="'?.'";}          :   "?."            ;
+OPTIONAL_DOT      options {paraphrase="'?.'";}          :   "?."			;
+ELVIS_OPERATOR    options {paraphrase="'?:'";}          :   "?:"			;
 MEMBER_POINTER    options {paraphrase="'.&'";}          :   ".&"            ;
 REGEX_FIND        options {paraphrase="'=~'";}          :   "=~"            ;
 REGEX_MATCH       options {paraphrase="'==~'";}         :   "==~"           ;
