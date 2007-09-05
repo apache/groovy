@@ -217,6 +217,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
      * @param handle the handle
      */
     public void setMetaClassCreationHandle(MetaClassCreationHandle handle) {
+		if(handle == null) throw new IllegalArgumentException("Cannot set MetaClassCreationHandle to null value!");
         metaClassCreationHandle = handle;
     }    
 
