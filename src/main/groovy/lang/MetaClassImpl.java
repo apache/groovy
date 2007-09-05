@@ -59,6 +59,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private static final String CLOSURE_DO_CALL_METHOD = "doCall";
     private static final String CLOSURE_CURRY_METHOD = "curry";
     private static final String METHOD_MISSING = "methodMissing";
+    private static final String PROPERTY_MISSING = "propertyMissing";
+
+    private static final Class[] METHOD_MISSING_ARGS = new Class[]{String.class, Object.class};
+    private static final Class[] GETTER_MISSING_ARGS = new Class[]{String.class};
+    private static final Class[] SETTER_MISSING_ARGS = METHOD_MISSING_ARGS;
 
     protected static final Logger LOG = Logger.getLogger(MetaClass.class.getName());
     protected final Class theClass;
@@ -87,7 +92,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private static final MetaMethod AMBIGOUS_LISTENER_METHOD = new MetaMethod(null,null,new Class[]{},null,0);
     private static final Object[] EMPTY_ARGUMENTS = {};
     private final List newGroovyMethodsList = new LinkedList();
-    private static final Class[] METHOD_MISSING_ARGS = new Class[]{String.class, Object.class};
 
     public MetaClassImpl(final Class theClass) {
        this.theClass = theClass;
@@ -511,6 +515,22 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
    }
 
     public Object invokeMissingProperty(Object instance, String propertyName, Object optionalValue, boolean isGetter) {
+
+        if(instance.getClass() != Class.class) {            
+            if(isGetter) {
+                MetaMethod propertyMissing = getMetaMethod(PROPERTY_MISSING, GETTER_MISSING_ARGS);
+                if(propertyMissing!=null) {
+                    return propertyMissing.invoke(instance, new Object[]{propertyName});
+                }
+            }
+            else {
+                MetaMethod propertyMissing = getMetaMethod(PROPERTY_MISSING, SETTER_MISSING_ARGS);
+                if(propertyMissing!=null) {
+                    return propertyMissing.invoke(instance, new Object[]{propertyName, optionalValue});
+                }
+            }
+        }
+
         throw new MissingPropertyException(propertyName, theClass);
     }
 
