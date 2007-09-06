@@ -2914,9 +2914,9 @@ public class DefaultGroovyMethods {
     
     private static Object makeSubClass(Map map, Class clazz) {
         String name = shortName(clazz.getName())+"_groovyProxy";
-        StringBuilder builder = new StringBuilder();
+        StringBuffer buffer = new StringBuffer();
         // add class header with constrcutor
-        builder.append("class ").append(name).append(" extends ")
+        buffer.append("class ").append(name).append(" extends ")
         .append(clazz.getName()).append(" {\n")
         .append("private closureMap\n")
         .append(name).append("(map) {\n")
@@ -2930,7 +2930,7 @@ public class DefaultGroovyMethods {
         for (int i=0; i<methods.length; i++) {
             if (map.containsKey(methods[i].getName())) {
                 selectedMethods.add (methods[i].getName());
-                builder.append(methods[i].getReturnType().getName())
+                buffer.append(methods[i].getReturnType().getName())
                 .append(" ").append(methods[i].getName()).append(" (");
                 Class[] parameterTypes = methods[i].getParameterTypes();
                 boolean first = true;
@@ -2940,25 +2940,25 @@ public class DefaultGroovyMethods {
                 {
                     Class parameter = parameterTypes[parameterTypeIndex];
                     if (!first) {
-                        builder.append(", ");
+                        buffer.append(", ");
                     } else {
                         first=false;
                     }
-                    builder.append(parameter.getName()).append(" ")
+                    buffer.append(parameter.getName()).append(" ")
                     .append("p").append(parameterTypeIndex);
                 }
-                builder.append(") {this.@closureMap['")
+                buffer.append(") {this.@closureMap['")
                 .append(methods[i].getName()).append("'](");
                 first = true;
                 for (int j=0; j<parameterTypes.length; j++) {
                     if (!first) {
-                        builder.append(", ");
+                        buffer.append(", ");
                     } else {
                         first=false;
                     }
-                    builder.append("p").append(j);
+                    buffer.append("p").append(j);
                 }
-                builder.append(")}\n");
+                buffer.append(")}\n");
                 
             }
         }
@@ -2966,18 +2966,18 @@ public class DefaultGroovyMethods {
         for (Iterator iterator = map.keySet().iterator(); iterator.hasNext();) {
             String methodName = (String) iterator.next();
             if (selectedMethods.contains(methodName)) continue;
-            builder.append("def ").append(methodName).append("(Object[] args {\n")
+            buffer.append("def ").append(methodName).append("(Object[] args {\n")
             .append("this.@closureMap['").append(methodName)
             .append("'](*args)\n}\n");
         }
         // end class
-        builder.append("}\n")
+        buffer.append("}\n")
         .append("new ").append(name).append("(map)");
         Binding binding = new Binding();
         binding.setVariable("map", map);
         GroovyShell shell = new GroovyShell(clazz.getClassLoader(), binding);
         try {
-            return shell.evaluate(builder.toString());
+            return shell.evaluate(buffer.toString());
         } catch (MultipleCompilationErrorsException err) {
             throw new GroovyCastException(map,clazz);
         }
