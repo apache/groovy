@@ -23,6 +23,7 @@ import groovy.util.OrderBy;
 import java.io.*;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
@@ -40,7 +41,9 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.codehaus.groovy.control.MultipleCompilationErrorsException;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
+import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
 import org.codehaus.groovy.runtime.typehandling.NumberMath;
 import org.codehaus.groovy.tools.RootLoader;
 import org.w3c.dom.NodeList;
@@ -2890,13 +2893,94 @@ public class DefaultGroovyMethods {
     }
 
     public static Object asType(Map map, Class clazz) {
-        if (clazz.isInterface() && !(clazz.isInstance(map))) {
+        if (!(clazz.isInstance(map)) && clazz.isInterface()) {
             return Proxy.newProxyInstance(
                     clazz.getClassLoader(),
                     new Class[]{clazz},
                     new ConvertedMap(map));
         }
-        return asType((Object) map, clazz);
+        try {
+            return asType((Object) map, clazz);
+        } catch (GroovyCastException ce) {
+            return makeSubClass(map,clazz);
+        }
+    }
+   
+    private static String shortName(String name) {
+        int index = name.lastIndexOf('.');
+        if (index==-1) return name;
+        return name.substring(index+1,name.length());
+    }
+    
+    private static Object makeSubClass(Map map, Class clazz) {
+        String name = shortName(clazz.getName())+"_groovyProxy";
+        StringBuilder builder = new StringBuilder();
+        // add class header with constrcutor
+        builder.append("class ").append(name).append(" extends ")
+        .append(clazz.getName()).append(" {\n")
+        .append("private closureMap\n")
+        .append(name).append("(map) {\n")
+        .append("super()\n")
+        .append("this.closureMap = map\n")
+        .append("}\n");
+        
+        // add overwriting methods
+        List selectedMethods = new ArrayList(); 
+        Method[] methods = clazz.getMethods();
+        for (int i=0; i<methods.length; i++) {
+            if (map.containsKey(methods[i].getName())) {
+                selectedMethods.add (methods[i].getName());
+                builder.append(methods[i].getReturnType().getName())
+                .append(" ").append(methods[i].getName()).append(" (");
+                Class[] parameterTypes = methods[i].getParameterTypes();
+                boolean first = true;
+                for ( int parameterTypeIndex=0; 
+                      parameterTypeIndex<parameterTypes.length; 
+                      parameterTypeIndex++) 
+                {
+                    Class parameter = parameterTypes[parameterTypeIndex];
+                    if (!first) {
+                        builder.append(", ");
+                    } else {
+                        first=false;
+                    }
+                    builder.append(parameter.getName()).append(" ")
+                    .append("p").append(parameterTypeIndex);
+                }
+                builder.append(") {this.@closureMap['")
+                .append(methods[i].getName()).append("'](");
+                first = true;
+                for (int j=0; j<parameterTypes.length; j++) {
+                    if (!first) {
+                        builder.append(", ");
+                    } else {
+                        first=false;
+                    }
+                    builder.append("p").append(j);
+                }
+                builder.append(")}\n");
+                
+            }
+        }
+        // add methods in the map, not overwriting other methods
+        for (Iterator iterator = map.keySet().iterator(); iterator.hasNext();) {
+            String methodName = (String) iterator.next();
+            if (selectedMethods.contains(methodName)) continue;
+            builder.append("def ").append(methodName).append("(Object[] args {\n")
+            .append("this.@closureMap['").append(methodName)
+            .append("'](*args)\n}\n");
+        }
+        // end class
+        builder.append("}\n")
+        .append("new ").append(name).append("(map)");
+        Binding binding = new Binding();
+        binding.setVariable("map", map);
+        GroovyShell shell = new GroovyShell(clazz.getClassLoader(), binding);
+        try {
+            return shell.evaluate(builder.toString());
+        } catch (MultipleCompilationErrorsException err) {
+            throw new GroovyCastException(map,clazz);
+        }
     }
 
     /**
