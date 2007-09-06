@@ -219,7 +219,7 @@ public class GroovyMain {
     }
 
     private static void setSystemPropertyFrom(final String nameValue) {
-        assert nameValue != null;
+        if(nameValue==null) throw new IllegalArgumentException("argument should not be null");
 
         String name, value;
         int i = nameValue.indexOf("=");

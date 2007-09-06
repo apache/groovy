@@ -67,37 +67,4 @@ public abstract class DoubleKeyHashMap extends ComplexKeyHashMap
     return null;
   }
 
-  private static class TestEntry extends Entry {
-    String value;
-  }
-
-  public static void main(String[] args)
-  {
-    DoubleKeyHashMap map = new DoubleKeyHashMap(){
-      public boolean checkEquals(ComplexKeyHashMap.Entry e, Object key1, Object key2)
-      {
-        TestEntry ee = (TestEntry) e;
-        return ee.key1.equals(key1) && ee.key2.equals(key2);
-      }
-
-      public Entry createEntry()
-      {
-        return new TestEntry();
-      }
-    };
-    for (int i = 0; i != 100; ++i )
-      for (int j = 0; j != 100; ++j ) {
-        final TestEntry e = (TestEntry) map.getOrPut(String.valueOf(i), "" + j);
-        e.value = "" + i + j;
-      }
-
-    for (int i = 0; i != 100; ++i )
-      for (int j = 0; j != 100; ++j )
-      {
-        final TestEntry obj = (TestEntry) map.remove("" + i, "" + j);
-        assert  ("" + i + j).equals(obj.value);
-      }
-
-    assert map.size () == 0;
-  }
 }
