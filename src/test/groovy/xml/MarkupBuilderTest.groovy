@@ -237,5 +237,20 @@ require escaping. The other characters consist of:
         assertExpectedXml('''\
 <p><em>Usually</em> Hearts &amp; Diamonds <b>beats</b> Spades &amp; Clubs </p>''')
     }
+    
+    void testCallingMethod() {
+       // this test is to ensure compatiblity only
+       xml.p { 
+         def aValue = myMethod([:]).value
+         em(aValue)
+      }
+      
+      assertExpectedXml('<p><em>call to outside</em></p>')
+    }
+    
+    private myMethod(x) {
+      x.value='call to outside'
+      return x
+    }
 
 }

@@ -17,7 +17,6 @@ package groovy.xml;
 
 import groovy.util.BuilderSupport;
 import groovy.util.IndentPrinter;
-import groovy.lang.Closure;
 
 import java.io.PrintWriter;
 import java.io.Writer;
@@ -80,11 +79,6 @@ public class MarkupBuilder extends BuilderSupport {
     }
 
     protected void setParent(Object parent, Object child) { }
-
-    protected void setClosureDelegate(Closure closure, Object node) {
-        super.setClosureDelegate(closure, node);
-        closure.setResolveStrategy(Closure.DELEGATE_FIRST);
-    }
 
     public Object getMkp() {
         return this;
