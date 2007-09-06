@@ -31,4 +31,13 @@ class TernaryOperatorTest extends GroovyTestCase {
         def y = a!=1 ? a!=2 : a!=1
         assert y == false
     }
+    
+    void testElvisOperator() {
+        def a = 1
+        def x = a?:2
+        assert x==a
+        a = null
+        x = a?:2
+        assert x==2
+    }
 }
