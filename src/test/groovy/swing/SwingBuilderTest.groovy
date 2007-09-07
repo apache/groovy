@@ -798,6 +798,11 @@ class SwingBuilderTest extends GroovyTestCase {
             tableModel(tableModel:tableModel())
             container(panel()) {
                 widget(label("label"))
+                bean("anything")
+            }
+            container(container:panel()) {
+                widget(widget:label("label"))
+                bean(bean:"anything")
             }
         }
         shouldFail() {
@@ -805,6 +810,12 @@ class SwingBuilderTest extends GroovyTestCase {
         }
         shouldFail() {
             swing.widget()
+        }
+        shouldFail() {
+            swing.container()
+        }
+        shouldFail() {
+            swing.bean()
         }
     }
 

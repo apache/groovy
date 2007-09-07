@@ -320,8 +320,9 @@ public class SwingBuilder extends BuilderSupport {
         registerFactory("model", new ModelFactory());
 
         // ulimate pass through types
-        registerFactory("widget", new WidgetFactory()); //TODO prohibit child content somehow
-        registerFactory("container", new WidgetFactory());
+        registerFactory("widget", new WidgetFactory(Component.class)); //TODO prohibit child content somehow
+        registerFactory("container", new WidgetFactory(Component.class));
+        registerFactory("bean", new WidgetFactory(Object.class));
 
 
         //
