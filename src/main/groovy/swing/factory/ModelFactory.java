@@ -15,20 +15,9 @@
  */
 package groovy.swing.factory;
 
-import groovy.lang.Closure;
 import groovy.swing.SwingBuilder;
-import groovy.swing.binding.AbstractButtonProperties;
-import groovy.swing.binding.JSliderProperties;
-import groovy.swing.binding.JTextComponentProperties;
-import org.codehaus.groovy.binding.ClosureSourceBinding;
-import org.codehaus.groovy.binding.EventTriggerBinding;
-import org.codehaus.groovy.binding.FullBinding;
-import org.codehaus.groovy.binding.PropertyBinding;
-import org.codehaus.groovy.binding.TargetBinding;
-import org.codehaus.groovy.binding.TriggerBinding;
 import org.codehaus.groovy.binding.ModelBinding;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
