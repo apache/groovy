@@ -69,6 +69,7 @@ public abstract class AbstractReaderSource implements ReaderSource {
             try {
                 lineSource = new BufferedReader(getReader());
             } catch (Exception e) {
+                // Ignore
             }
             number = 0;
         }
@@ -103,6 +104,7 @@ public abstract class AbstractReaderSource implements ReaderSource {
             try {
                 lineSource.close();
             } catch (Exception e) {
+                // Ignore
             }
         }
 

@@ -77,7 +77,9 @@ public class Expando extends GroovyObjectSupport {
         try {
             return super.getProperty(property);
         }
-        catch (MissingPropertyException e) {}
+        catch (MissingPropertyException e) {
+            // IGNORE
+        }
         return null;
     }
 

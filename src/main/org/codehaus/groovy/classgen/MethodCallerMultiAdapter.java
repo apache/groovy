@@ -20,43 +20,42 @@ import org.objectweb.asm.MethodVisitor;
 public class MethodCallerMultiAdapter {
     private MethodCaller[] methods;
     boolean skipSpreadSafeAndSafe;
-    
-    public static final int maxArgs = 0;
-    
+
+    public static final int MAX_ARGS = 0;
+
     public static MethodCallerMultiAdapter newStatic(Class theClass, String baseName, boolean createNArgs, boolean skipSpreadSafeAndSafe) {
         MethodCallerMultiAdapter mcma = new MethodCallerMultiAdapter();
         mcma.skipSpreadSafeAndSafe = skipSpreadSafeAndSafe;
         if (createNArgs) {
             int numberOfBaseMethods = mcma.numberOfBaseMethods();
-            mcma.methods = new MethodCaller[(maxArgs+2)*numberOfBaseMethods];
-            for (int i=0; i<=maxArgs; i++) {
-                mcma.methods[i*numberOfBaseMethods] = MethodCaller.newStatic(theClass,baseName+i);
+            mcma.methods = new MethodCaller[(MAX_ARGS + 2) * numberOfBaseMethods];
+            for (int i = 0; i <= MAX_ARGS; i++) {
+                mcma.methods[i * numberOfBaseMethods] = MethodCaller.newStatic(theClass, baseName + i);
                 if (skipSpreadSafeAndSafe) continue;
-                mcma.methods[i*numberOfBaseMethods+1] = MethodCaller.newStatic(theClass,baseName+i+"Safe");
-                mcma.methods[i*numberOfBaseMethods+2] = MethodCaller.newStatic(theClass,baseName+i+"SpreadSafe");
+                mcma.methods[i * numberOfBaseMethods + 1] = MethodCaller.newStatic(theClass, baseName + i + "Safe");
+                mcma.methods[i * numberOfBaseMethods + 2] = MethodCaller.newStatic(theClass, baseName + i + "SpreadSafe");
             }
-            mcma.methods[(maxArgs+1)*numberOfBaseMethods] = MethodCaller.newStatic(theClass,baseName+"N");
+            mcma.methods[(MAX_ARGS + 1) * numberOfBaseMethods] = MethodCaller.newStatic(theClass, baseName + "N");
             if (!skipSpreadSafeAndSafe) {
-                mcma.methods[(maxArgs+1)*numberOfBaseMethods+1] = MethodCaller.newStatic(theClass,baseName+"N"+"Safe");
-                mcma.methods[(maxArgs+1)*numberOfBaseMethods+2] = MethodCaller.newStatic(theClass,baseName+"N"+"SpreadSafe");
+                mcma.methods[(MAX_ARGS + 1) * numberOfBaseMethods + 1] = MethodCaller.newStatic(theClass, baseName + "N" + "Safe");
+                mcma.methods[(MAX_ARGS + 1) * numberOfBaseMethods + 2] = MethodCaller.newStatic(theClass, baseName + "N" + "SpreadSafe");
             }
-            
+
         } else if (!skipSpreadSafeAndSafe) {
             mcma.methods = new MethodCaller[]{
-                    MethodCaller.newStatic(theClass,baseName),
-                    MethodCaller.newStatic(theClass,baseName+"Safe"),
-                    MethodCaller.newStatic(theClass,baseName+"SpreadSafe")
+                    MethodCaller.newStatic(theClass, baseName),
+                    MethodCaller.newStatic(theClass, baseName + "Safe"),
+                    MethodCaller.newStatic(theClass, baseName + "SpreadSafe")
             };
         } else {
             mcma.methods = new MethodCaller[]{
-                    MethodCaller.newStatic(theClass,baseName)
+                    MethodCaller.newStatic(theClass, baseName)
             };
         }
         return mcma;
     }
-    
+
     /**
-     * 
      * @param methodVisitor
      * @param numberOfArguments a value >0 describing how many arguments are additionally used for the method call
      * @param safe
@@ -66,15 +65,15 @@ public class MethodCallerMultiAdapter {
         int offset = 0;
         if (safe && !skipSpreadSafeAndSafe) offset = 1;
         if (spreadSafe && !skipSpreadSafeAndSafe) offset = 2;
-        if (numberOfArguments>maxArgs || numberOfArguments<0){
-            offset += (maxArgs+1)*numberOfBaseMethods();
+        if (numberOfArguments > MAX_ARGS || numberOfArguments < 0) {
+            offset += (MAX_ARGS + 1) * numberOfBaseMethods();
         } else {
-            offset += numberOfArguments*numberOfBaseMethods();
+            offset += numberOfArguments * numberOfBaseMethods();
         }
         methods[offset].call(methodVisitor);
     }
-    
-    private int numberOfBaseMethods(){
+
+    private int numberOfBaseMethods() {
         if (skipSpreadSafeAndSafe) return 1;
         return 3;
     }

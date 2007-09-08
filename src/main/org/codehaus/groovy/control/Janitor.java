@@ -18,6 +18,7 @@ package org.codehaus.groovy.control;
 
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 
 /**
  *  An agent that can be used to defer cleanup operations to 
@@ -30,7 +31,7 @@ import java.util.Iterator;
 
 public class Janitor implements HasCleanup
 {
-    private final HashSet pending = new HashSet();   // All objects pending cleanup
+    private final Set pending = new HashSet();   // All objects pending cleanup
     
     public void register( HasCleanup object )
     {
@@ -44,7 +45,9 @@ public class Janitor implements HasCleanup
         {
             HasCleanup object = (HasCleanup)iterator.next();
             
-            try { object.cleanup(); } catch( Exception e ) {}
+            try { object.cleanup(); } catch( Exception e ) {
+                // Ignore
+            }
         }
         
         pending.clear();

@@ -1,3 +1,18 @@
+/*
+ * Copyright 2003-2007 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.codehaus.groovy.reflection;
 
 import groovy.util.ComplexKeyHashMap;
@@ -10,24 +25,23 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
 
-public class ReflectionCache
-{
-  private static Map primitiveTypesMap = new HashMap();
+public class ReflectionCache {
+    private static Map primitiveTypesMap = new HashMap();
 
-  static {
-      primitiveTypesMap.put(byte.class, Byte.class);
-      primitiveTypesMap.put(boolean.class, Boolean.class);
-      primitiveTypesMap.put(char.class, Character.class);
-      primitiveTypesMap.put(double.class, Double.class);
-      primitiveTypesMap.put(float.class,Float.class);
-      primitiveTypesMap.put(int.class, Integer.class);
-      primitiveTypesMap.put(long.class, Long.class);
-      primitiveTypesMap.put(short.class, Short.class);
+    static {
+        primitiveTypesMap.put(byte.class, Byte.class);
+        primitiveTypesMap.put(boolean.class, Boolean.class);
+        primitiveTypesMap.put(char.class, Character.class);
+        primitiveTypesMap.put(double.class, Double.class);
+        primitiveTypesMap.put(float.class, Float.class);
+        primitiveTypesMap.put(int.class, Integer.class);
+        primitiveTypesMap.put(long.class, Long.class);
+        primitiveTypesMap.put(short.class, Short.class);
     }
 
-  public static Class autoboxType(Class type) {
-    final Class res = (Class) primitiveTypesMap.get(type);
-    return res == null ? type : res;
+    public static Class autoboxType(Class type) {
+        final Class res = (Class) primitiveTypesMap.get(type);
+        return res == null ? type : res;
 /*
     final String name = type.getName();
     switch (name.charAt(0)) {
@@ -62,137 +76,126 @@ public class ReflectionCache
          return null;
     }
 */
-  }
-
-  static TripleKeyHashMap mopNames = new TripleKeyHashMap() {
-    public boolean checkEquals(Entry e, Object key1, Object key2, Object key3)
-    {
-      MopNameEntry ee = (MopNameEntry) e;
-      return ee.key1 == key1 && ee.key2.equals(key2) && ee.key3 == key3;
     }
 
-    public Entry createEntry()
-    {
-      return new MopNameEntry();
-    }
-  };
+    static TripleKeyHashMap mopNames = new TripleKeyHashMap() {
+        public boolean checkEquals(Entry e, Object key1, Object key2, Object key3) {
+            MopNameEntry ee = (MopNameEntry) e;
+            return ee.key1 == key1 && ee.key2.equals(key2) && ee.key3 == key3;
+        }
 
-  private static class MopNameEntry extends TripleKeyHashMap.Entry
-  {
-    String value;
-  }
+        public Entry createEntry() {
+            return new MopNameEntry();
+        }
+    };
 
-  public static String getMOPMethodName(Class declaringClass, String name, boolean useThis) {
-    MopNameEntry mopNameEntry = (MopNameEntry) mopNames.getOrPut(declaringClass, name, Boolean.valueOf(useThis));
-    if (mopNameEntry.value == null) {
-      mopNameEntry.value = new StringBuffer().append(useThis ? "this$" : "super$").append(getSuperClassDistance(declaringClass)).append("$").append(name).toString();
-    }
-    return mopNameEntry.value;
-  }
-
-  static final Map /*<Class,SoftReference<CachedClass>>*/ cachedClassMap = new WeakHashMap();
-
-  public static boolean isArray(Class klazz) {
-    CachedClass cachedClass = getCachedClass(klazz);
-    return cachedClass.isArray;
-  }
-
-  static DoubleKeyHashMap assignableMap = new DoubleKeyHashMap() {
-    public boolean checkEquals(ComplexKeyHashMap.Entry e, Object key1, Object key2)
-    {
-      IsAssignableEntry ee = (IsAssignableEntry) e;
-      return ee.key1 == key1 && ee.key2 == key2;
+    private static class MopNameEntry extends TripleKeyHashMap.Entry {
+        String value;
     }
 
-    public Entry createEntry()
-    {
-      return new IsAssignableEntry();
+    public static String getMOPMethodName(Class declaringClass, String name, boolean useThis) {
+        MopNameEntry mopNameEntry = (MopNameEntry) mopNames.getOrPut(declaringClass, name, Boolean.valueOf(useThis));
+        if (mopNameEntry.value == null) {
+            mopNameEntry.value = new StringBuffer().append(useThis ? "this$" : "super$").append(getSuperClassDistance(declaringClass)).append("$").append(name).toString();
+        }
+        return mopNameEntry.value;
     }
-  };
 
-  public static class IsAssignableEntry extends DoubleKeyHashMap.Entry{
-    Boolean value;
-  }
+    static final Map /*<Class,SoftReference<CachedClass>>*/ CACHED_CLASS_MAP = new WeakHashMap();
 
-  public static boolean isAssignableFrom(Class klazz, Class aClass)
-  {
-    IsAssignableEntry val = (IsAssignableEntry) assignableMap.getOrPut(klazz, aClass);
-    if (val.value == null) {
-      val.value = Boolean.valueOf(klazz.isAssignableFrom(aClass));
+    public static boolean isArray(Class klazz) {
+        CachedClass cachedClass = getCachedClass(klazz);
+        return cachedClass.isArray;
     }
-    return val.value.booleanValue();
-  }
 
-  static boolean arrayContentsEq(Object[] a1, Object[] a2) {
-      if (a1 == null) {
-          return a2 == null || a2.length == 0;
-      }
+    static DoubleKeyHashMap assignableMap = new DoubleKeyHashMap() {
+        public boolean checkEquals(ComplexKeyHashMap.Entry e, Object key1, Object key2) {
+            IsAssignableEntry ee = (IsAssignableEntry) e;
+            return ee.key1 == key1 && ee.key2 == key2;
+        }
 
-      if (a2 == null) {
-          return a1.length == 0;
-      }
+        public Entry createEntry() {
+            return new IsAssignableEntry();
+        }
+    };
 
-      if (a1.length != a2.length) {
-          return false;
-      }
-
-      for (int i = 0; i < a1.length; i++) {
-          if (a1[i] != a2[i]) {
-              return false;
-          }
-      }
-
-      return true;
-  }
-
-  static int getSuperClassDistance(Class klazz)
-  {
-    CachedClass cachedClass = getCachedClass(klazz);
-
-    synchronized(cachedClass) {
-      if (cachedClass.distance == -1) {
-        int distance = 0;
-        for ( ; klazz != null; klazz = klazz.getSuperclass() )
-          distance++;
-        cachedClass.distance = distance;
-      }
-      return cachedClass.distance;
+    public static class IsAssignableEntry extends DoubleKeyHashMap.Entry {
+        Boolean value;
     }
-  }
 
-  private static final CachedClass OBJECT_CLASS = new CachedClass(Object.class) {
-    public synchronized CachedClass getCachedSuperClass()
-    {
-      return null;
+    public static boolean isAssignableFrom(Class klazz, Class aClass) {
+        IsAssignableEntry val = (IsAssignableEntry) assignableMap.getOrPut(klazz, aClass);
+        if (val.value == null) {
+            val.value = Boolean.valueOf(klazz.isAssignableFrom(aClass));
+        }
+        return val.value.booleanValue();
     }
-  };
 
-  public static CachedClass getCachedClass(Class klazz)
-  {
-    if (klazz == null)
-      return null;
+    static boolean arrayContentsEq(Object[] a1, Object[] a2) {
+        if (a1 == null) {
+            return a2 == null || a2.length == 0;
+        }
 
-    if (klazz == Object.class)
-      return OBJECT_CLASS;
+        if (a2 == null) {
+            return a1.length == 0;
+        }
 
-    CachedClass cachedClass;
-    synchronized(cachedClassMap) {
-      SoftReference ref = (SoftReference) cachedClassMap.get(klazz);
-      if (ref == null || (cachedClass = (CachedClass) ref.get()) == null) {
-        cachedClass = new CachedClass(klazz);
-        cachedClassMap.put(klazz, new SoftReference(cachedClass));
-      }
+        if (a1.length != a2.length) {
+            return false;
+        }
+
+        for (int i = 0; i < a1.length; i++) {
+            if (a1[i] != a2[i]) {
+                return false;
+            }
+        }
+
+        return true;
     }
-    return cachedClass;
-  }
 
-  public static Method getDeclaredMethodCached(final Class klazz, String mName, Class[] parms)
-  {
-    return getCachedClass(klazz).searchMethods(mName, parms);
-  }
+    static int getSuperClassDistance(Class klazz) {
+        CachedClass cachedClass = getCachedClass(klazz);
 
-  public static CachedMethod [] getDeclaredMethodsCached(final Class klazz)
-  {
-    return getCachedClass(klazz).getMethods();
-  }
+        synchronized (cachedClass) {
+            if (cachedClass.distance == -1) {
+                int distance = 0;
+                for (; klazz != null; klazz = klazz.getSuperclass())
+                    distance++;
+                cachedClass.distance = distance;
+            }
+            return cachedClass.distance;
+        }
+    }
+
+    private static final CachedClass OBJECT_CLASS = new CachedClass(Object.class) {
+        public synchronized CachedClass getCachedSuperClass() {
+            return null;
+        }
+    };
+
+    public static CachedClass getCachedClass(Class klazz) {
+        if (klazz == null)
+            return null;
+
+        if (klazz == Object.class)
+            return OBJECT_CLASS;
+
+        CachedClass cachedClass;
+        synchronized (CACHED_CLASS_MAP) {
+            SoftReference ref = (SoftReference) CACHED_CLASS_MAP.get(klazz);
+            if (ref == null || (cachedClass = (CachedClass) ref.get()) == null) {
+                cachedClass = new CachedClass(klazz);
+                CACHED_CLASS_MAP.put(klazz, new SoftReference(cachedClass));
+            }
+        }
+        return cachedClass;
+    }
+
+    public static Method getDeclaredMethodCached(final Class klazz, String mName, Class[] parms) {
+        return getCachedClass(klazz).searchMethods(mName, parms);
+    }
+
+    public static CachedMethod[] getDeclaredMethodsCached(final Class klazz) {
+        return getCachedClass(klazz).getMethods();
+    }
 }

@@ -40,7 +40,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
     public static final String CURRENT_FACTORY = "_CURRENT_FACTORY_";
     public static final String CURRENT_NODE = "_CURRENT_NODE_";
-    private static final Logger log = Logger.getLogger( FactoryBuilderSupport.class.getName() );
+    private static final Logger LOG = Logger.getLogger( FactoryBuilderSupport.class.getName() );
 
     /**
      * Throws an exception if value is null.
@@ -161,7 +161,7 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
 
         Factory factory = (Factory) factories.get( name );
         if( factory == null ){
-            log.log( Level.WARNING, "Could not find match for name '" + name + "'" );
+            LOG.log( Level.WARNING, "Could not find match for name '" + name + "'" );
             return null;
         }
         getContext().put( CURRENT_FACTORY, factory );
@@ -169,12 +169,12 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
         try{
             node = factory.newInstance( this, name, value, attributes );
             if( node == null ){
-                log.log( Level.WARNING, "GraphicsOperation for name '" + name + "' returned null" );
+                LOG.log( Level.WARNING, "GraphicsOperation for name '" + name + "' returned null" );
                 return null;
             }
 
-            if( log.isLoggable( Level.FINE ) ){
-                log.fine( "For name: " + name + " created widget: " + node );
+            if( LOG.isLoggable( Level.FINE ) ){
+                LOG.fine( "For name: " + name + " created widget: " + node );
             }
         }catch( Exception e ){
             throw new RuntimeException( "Failed to create component for '" + name + "' reason: "

@@ -22,7 +22,7 @@ import antlr.collections.AST;
  * @version $Revision$
  */
 public class ASTRuntimeException extends RuntimeException {
-    private AST ast;
+    private final AST ast;
 
     public ASTRuntimeException(AST ast, String message) {
         super(message + description(ast));
@@ -31,6 +31,7 @@ public class ASTRuntimeException extends RuntimeException {
 
     public ASTRuntimeException(AST ast, String message, Throwable throwable) {
         super(message + description(ast), throwable);
+        this.ast = null;
     }
 
     protected static String description(AST node) {

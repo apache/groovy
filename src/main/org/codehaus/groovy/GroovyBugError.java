@@ -25,16 +25,16 @@ package org.codehaus.groovy;
 public class GroovyBugError extends AssertionError {
     
     // message string
-    private String    message;
+    private String message;
     // optional exception
-    private Exception exception;
+    private final Exception exception;
 
     /**
      * constructs a bug error using the given text
      * @param message the error message text
      */
     public GroovyBugError( String message ) {
-        this.message = message;
+        this(message, null);
     }
     
     /**
@@ -42,7 +42,7 @@ public class GroovyBugError extends AssertionError {
      * @param exception cause of this error
      */
     public GroovyBugError( Exception exception ) {
-        this.exception = exception;
+        this(null, exception);
     }
     
     /**
@@ -51,8 +51,7 @@ public class GroovyBugError extends AssertionError {
      * @param msg additional information about this error
      * @param exception cause of this error
      */
-    public GroovyBugError( String msg, Exception exception )
-    {
+    public GroovyBugError( String msg, Exception exception ) {
         this.exception = exception;
         this.message = msg;
     }

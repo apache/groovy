@@ -11,8 +11,8 @@ import org.objectweb.asm.Opcodes;
 
 
 public class EnumHelper {
-    private static int FS = Opcodes.ACC_FINAL | Opcodes.ACC_STATIC;
-    private static int PUBLIC_FS = Opcodes.ACC_PUBLIC | FS; 
+    private static final int FS = Opcodes.ACC_FINAL | Opcodes.ACC_STATIC;
+    private static final int PUBLIC_FS = Opcodes.ACC_PUBLIC | FS; 
     
     public static ClassNode makeEnumNode(String name, int modifiers, ClassNode[] interfaces, ClassNode outerClass) {
         modifiers = modifiers | Opcodes.ACC_FINAL | Opcodes.ACC_ENUM;

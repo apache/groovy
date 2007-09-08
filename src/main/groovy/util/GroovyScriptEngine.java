@@ -123,7 +123,7 @@ public class GroovyScriptEngine implements ResourceConnector {
                                             try {
                                                 inputStream.close();
                                             } catch (IOException e) {
-
+                                                // IGNORE
                                             }
                                         }
                                     }

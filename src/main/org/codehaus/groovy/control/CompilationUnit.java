@@ -68,16 +68,16 @@ public class CompilationUnit extends ProcessingUnit {
     // CONSTRUCTION AND SUCH
 
 
-    protected HashMap sources;    // The SourceUnits from which this unit is built
+    protected Map sources;    // The SourceUnits from which this unit is built
     protected Map summariesBySourceName;      // Summary of each SourceUnit
     protected Map summariesByPublicClassName;       // Summary of each SourceUnit
     protected Map classSourcesByPublicClassName;    // Summary of each Class
-    protected ArrayList names;      // Names for each SourceUnit in sources.
+    protected List names;      // Names for each SourceUnit in sources.
     protected LinkedList queuedSources;
     
     
     protected CompileUnit ast;        // The overall AST for this CompilationUnit.
-    protected ArrayList generatedClasses;    // The classes generated during classgen.
+    protected List generatedClasses;    // The classes generated during classgen.
 
 
     protected Verifier verifier;   // For use by verify().
@@ -478,7 +478,7 @@ public class CompilationUnit extends ProcessingUnit {
             for (Iterator iter = classes.iterator(); iter.hasNext();) {
                 ClassNode start = (ClassNode) iter.next();
                 ClassNode cn = start;
-                HashSet parents = new HashSet();
+                Set parents = new HashSet();
                 do {
                     if (parents.contains(cn.getName())) {
                         getErrorCollector().addErrorAndContinue(
@@ -592,6 +592,7 @@ public class CompilationUnit extends ProcessingUnit {
                     try {
                         stream.close();
                     } catch (Exception e) {
+                        // Ignore
                     }
                 }
             }            
@@ -820,7 +821,7 @@ public class CompilationUnit extends ProcessingUnit {
     }
 
     private List getPrimaryClassNodes(boolean sort) {
-        ArrayList unsorted = new ArrayList();
+        List unsorted = new ArrayList();
         Iterator modules = this.ast.getModules().iterator();
         while (modules.hasNext()) {
             ModuleNode module = (ModuleNode) modules.next();
@@ -863,7 +864,7 @@ public class CompilationUnit extends ProcessingUnit {
     }
     
     private List getSorted(int[] index, List unsorted) {
-        ArrayList sorted = new ArrayList(unsorted.size());
+        List sorted = new ArrayList(unsorted.size());
         int start = 0;
         for (int i=0; i<unsorted.size(); i++) {           
             int min = -1;

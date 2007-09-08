@@ -19,7 +19,6 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.objectweb.asm.Label;
 
-
 /**
  * Represents compile time variable metadata while compiling a method.
  * 
@@ -29,8 +28,8 @@ import org.objectweb.asm.Label;
  */
 public class Variable {
     
-    public static Variable THIS_VARIABLE = new Variable();
-    public static Variable SUPER_VARIABLE = new Variable();
+    public static final Variable THIS_VARIABLE = new Variable();
+    public static final Variable SUPER_VARIABLE = new Variable();
 
     private int index;
     private ClassNode type;

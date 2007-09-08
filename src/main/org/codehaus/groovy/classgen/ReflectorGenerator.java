@@ -34,7 +34,7 @@ public class ReflectorGenerator implements Opcodes {
     private BytecodeHelper helper = new BytecodeHelper(null);
     private String classInternalName;
 
-    private static ArrayList m_names = new ArrayList();
+    private static List m_names = new ArrayList();
 
     private static String get_m_name (int i) {
       while (i >= m_names.size()) {
@@ -52,7 +52,7 @@ public class ReflectorGenerator implements Opcodes {
         this.cv = cv;
 
         classInternalName = BytecodeHelper.getClassInternalName(className);
-        cv.visit(ClassGenerator.asmJDKVersion, ACC_PUBLIC + ACC_SUPER, classInternalName, (String) null, "org/codehaus/groovy/runtime/Reflector", null);
+        cv.visit(ClassGenerator.asmJDKVersion, ACC_PUBLIC + ACC_SUPER, classInternalName, null, "org/codehaus/groovy/runtime/Reflector", null);
 
         cv.visitField(ACC_PUBLIC + ACC_STATIC, "accessor", "Ljava/lang/Object;", null, null);
 

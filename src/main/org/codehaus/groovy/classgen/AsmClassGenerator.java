@@ -1598,7 +1598,7 @@ public class AsmClassGenerator extends ClassGenerator {
         // arguments
         boolean containsSpreadExpression = containsSpreadExpression(arguments);
         int numberOfArguments = containsSpreadExpression ? -1 : argumentSize(arguments);
-        if (numberOfArguments > adapter.maxArgs || containsSpreadExpression) {
+        if (numberOfArguments > adapter.MAX_ARGS || containsSpreadExpression) {
             ArgumentListExpression ae;
             if (arguments instanceof ArgumentListExpression) {
                 ae = (ArgumentListExpression) arguments;

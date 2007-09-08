@@ -250,6 +250,7 @@ public class SourceUnit extends ProcessingUnit {
                     reader.close();
                 }
                 catch (IOException e) {
+                    // Ignore
                 }
             }
         }

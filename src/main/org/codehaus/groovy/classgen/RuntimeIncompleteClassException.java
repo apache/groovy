@@ -8,15 +8,12 @@
  * Contributors:
  * IBM - Initial API and implementation
  ******************************************************************************/
-
-
 package org.codehaus.groovy.classgen;
 
 import java.util.List;
 
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.syntax.RuntimeParserException;
-
 
 /**
  * RuntimeIncompleteClassException
@@ -25,11 +22,11 @@ import org.codehaus.groovy.syntax.RuntimeParserException;
 public class RuntimeIncompleteClassException extends RuntimeParserException {
 
     /**
-     * @param a_classnames
-     * @param a_node
+     * @param classnames names of classes
+     * @param node the node containing the error
      */
-    public RuntimeIncompleteClassException(List a_classnames, ASTNode a_node) {
-        super("Incomplete class: does not implement abstract methods: " + a_classnames, a_node);
+    public RuntimeIncompleteClassException(List classnames, ASTNode node) {
+        super("Incomplete class: does not implement abstract methods: " + classnames, node);
     }
 
 }

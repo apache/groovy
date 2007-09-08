@@ -16,27 +16,11 @@
 
 package groovy.ui.text;
 
+import javax.swing.text.*;
 import java.nio.CharBuffer;
-
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.SortedSet;
-import java.util.TreeSet;
-
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import javax.swing.text.AttributeSet;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.DefaultStyledDocument;
-import javax.swing.text.DocumentFilter;
-import javax.swing.text.Position;
-import javax.swing.text.Segment;
-import javax.swing.text.Style;
-import javax.swing.text.StyleContext;
 
 /**
  *
@@ -289,11 +273,11 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
         
         private Style defaultStyle;
     
-        private HashMap styleMap = new LinkedHashMap();
-        private HashMap children = new HashMap();
+        private Map styleMap = new LinkedHashMap();
+        private Map children = new HashMap();
 
         private Matcher matcher;
-        private ArrayList groupList = new ArrayList();
+        private List groupList = new ArrayList();
         
         private boolean initialized;
         

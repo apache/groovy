@@ -89,6 +89,7 @@ public class LexerFrame extends JFrame implements ActionListener{
             scriptPane.select(start, start+token.getText().length());
             scriptPane.requestFocus();
         } catch(BadLocationException ex){
+            // IGNORE
         }
     }
 
@@ -146,6 +147,7 @@ public class LexerFrame extends JFrame implements ActionListener{
         try{
             tokenPane.getDocument().insertString(tokenPane.getDocument().getLength(), " ", null);
         } catch(BadLocationException ex1){
+            // Ignore
         }
         try{
             tokenPane.setCaretPosition(tokenPane.getDocument().getLength()-1);
@@ -185,6 +187,7 @@ public class LexerFrame extends JFrame implements ActionListener{
         try{
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch(Exception ignore){
+            // Ignore
         }
         new LexerFrame(GroovyLexer.class, GroovyTokenTypes.class).setVisible(true);
     }

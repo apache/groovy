@@ -419,7 +419,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             if (method.hasDefaultValue()) {
                 Parameter[] parameters = method.getParameters();
                 int counter = 0;
-                ArrayList paramValues = new ArrayList();
+                List paramValues = new ArrayList();
                 int size = parameters.length;
                 for (int i = size - 1; i >= 0; i--) {
                     Parameter parameter = parameters[i];

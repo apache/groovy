@@ -177,7 +177,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport{
 
     private void addConstructor(ClassNode enumClass) {
         // first look if there are declared constructors
-        ArrayList ctors = new ArrayList(enumClass.getDeclaredConstructors());
+        List ctors = new ArrayList(enumClass.getDeclaredConstructors());
         if (ctors.size()==0) {
             // add default constructor
             ConstructorNode init = new ConstructorNode(Opcodes.ACC_PRIVATE,new Parameter[0],ClassNode.EMPTY_ARRAY,new BlockStatement());

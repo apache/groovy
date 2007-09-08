@@ -16,14 +16,6 @@
 
 package org.codehaus.groovy.classgen;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.ListIterator;
-
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
@@ -32,6 +24,8 @@ import org.codehaus.groovy.ast.VariableScope;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+
+import java.util.*;
 
 /**
  * This class is a helper for AsmClassGenerator. It manages
@@ -74,19 +68,19 @@ public class CompileStack implements Opcodes {
     // current label for break
     private Label breakLabel;
     // available variables on stack
-    private HashMap stackVariables = new HashMap();
+    private Map stackVariables = new HashMap();
     // index of the last variable on stack
     private int currentVariableIndex = 1;
     // index for the next variable on stack
     private int nextVariableIndex = 1;
     // currently temporary variables in use
-    private final LinkedList temporaryVariables = new LinkedList();
+    private final List temporaryVariables = new LinkedList();
     // overall used variables for a method/constructor
     private final LinkedList usedVariables = new LinkedList();
     // map containing named labels of parenting blocks
-    private HashMap superBlockNamedLabels = new HashMap();
+    private Map superBlockNamedLabels = new HashMap();
     // map containing named labels of current block
-    private HashMap currentBlockNamedLabels = new HashMap();
+    private Map currentBlockNamedLabels = new HashMap();
     // list containing runnables representing a finally block
     // such a block is created by synchronized or finally and
     // must be called for break/continue/return
@@ -123,11 +117,11 @@ public class CompileStack implements Opcodes {
         Label finallyLabel;
         final int lastVariableIndex;
         final int nextVariableIndex;
-        final HashMap stackVariables;
-        LinkedList temporaryVariables = new LinkedList();
-        LinkedList usedVariables = new LinkedList();
-        final HashMap superBlockNamedLabels;
-        final HashMap currentBlockNamedLabels;
+        final Map stackVariables;
+        List temporaryVariables = new LinkedList();
+        List usedVariables = new LinkedList();
+        final Map superBlockNamedLabels;
+        final Map currentBlockNamedLabels;
         final LinkedList finallyBlocks;
         
         StateStackElement() {
