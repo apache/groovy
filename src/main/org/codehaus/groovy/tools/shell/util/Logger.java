@@ -28,15 +28,12 @@ import java.util.prefs.PreferenceChangeEvent;
  * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
-public final class Logger
-{
+public final class Logger {
     public static IO io;
-
     public final String name;
 
     private Logger(final String name) {
         assert name != null;
-
         this.name = name;
     }
     

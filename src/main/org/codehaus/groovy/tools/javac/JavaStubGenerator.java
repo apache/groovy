@@ -16,29 +16,8 @@
 
 package org.codehaus.groovy.tools.javac;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-
 import groovy.lang.GroovyObjectSupport;
-import org.codehaus.groovy.ast.ClassHelper;
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.ConstructorNode;
-import org.codehaus.groovy.ast.FieldNode;
-import org.codehaus.groovy.ast.GenericsType;
-import org.codehaus.groovy.ast.ImportNode;
-import org.codehaus.groovy.ast.MethodNode;
-import org.codehaus.groovy.ast.ModuleNode;
-import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
@@ -49,6 +28,11 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.ResolveVisitor;
 import org.objectweb.asm.Opcodes;
 
+import java.io.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Modifier;
+import java.util.*;
+
 public class JavaStubGenerator
 {
     private JavaAwareCompilationUnit cu;
@@ -57,7 +41,7 @@ public class JavaStubGenerator
     
     private File outputPath;
 
-    private ArrayList toCompile = new ArrayList();
+    private List toCompile = new ArrayList();
 
     private ResolveVisitor resolver;
 
@@ -522,14 +506,12 @@ public class JavaStubGenerator
     }
 
     private void genImports(ClassNode classNode, PrintWriter out) {
-        HashSet imports = new HashSet();
+        Set imports = new HashSet();
 
         //
         // HACK: Add the default imports... since things like Closure and GroovyObject seem to parse out w/o fully qualified classnames.
         //
-        for (int i=0; i<ResolveVisitor.DEFAULT_IMPORTS.length; i++) {
-            imports.add(ResolveVisitor.DEFAULT_IMPORTS[i]);
-        }
+        imports.addAll(Arrays.asList(ResolveVisitor.DEFAULT_IMPORTS));
         
         ModuleNode moduleNode = classNode.getModule();
         for (Iterator it = moduleNode.getImportPackages().iterator(); it.hasNext();) {

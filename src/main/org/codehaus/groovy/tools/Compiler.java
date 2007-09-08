@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.codehaus.groovy.tools;
 
 import java.io.File;
@@ -22,9 +21,6 @@ import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
-
-
-
 
 /**
  *  A convenience front end for getting standard compilations done.
@@ -35,9 +31,9 @@ import org.codehaus.groovy.control.SourceUnit;
  *  @version $Id$
  */
 
-public class Compiler
-{
-    public static Compiler DEFAULT = new Compiler();
+public class Compiler {
+    // TODO: delete this constant?
+    public static final Compiler DEFAULT = new Compiler();
     
     private CompilerConfiguration configuration = null;  // Optional configuration data
     

@@ -16,7 +16,15 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.*;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
+import org.codehaus.groovy.runtime.typehandling.IntegerCache;
+import org.w3c.dom.Element;
 
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import java.beans.Introspector;
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,27 +34,9 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
-import org.codehaus.groovy.runtime.typehandling.IntegerCache;
-import org.w3c.dom.Element;
-
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.stream.StreamResult;
-import javax.xml.transform.dom.DOMSource;
 
 /**
  * A static helper class to make bytecode generation easier and act as a facade over the Invoker
@@ -60,8 +50,7 @@ public class InvokerHelper {
 
     private static final Object[] EMPTY_MAIN_ARGS = new Object[]{new String[0]};
 
-    private static final Invoker singleton = new Invoker();
-
+    private static final Invoker SINGLETON = new Invoker();
 
 
     public static MetaClass getMetaClass(Object object) {
@@ -74,7 +63,7 @@ public class InvokerHelper {
     }
 
     public static Invoker getInstance() {
-        return singleton;
+        return SINGLETON;
     }
 
     public static Object invokeNoArgumentsMethod(Object object, String methodName) {
@@ -99,23 +88,23 @@ public class InvokerHelper {
     public static Object invokeStaticMethod(Class type, String methodName, Object arguments) {
         return getInstance().invokeStaticMethod(type, methodName, arguments);
     }
-    
+
     public static Object invokeStaticMethod(String klass, String methodName, Object arguments) throws ClassNotFoundException {
-        Class type = InvokerHelper.class.forName(klass);
+        Class type = Class.forName(klass);
         return getInstance().invokeStaticMethod(type, methodName, arguments);
     }
-    
+
 
     public static Object invokeStaticNoArgumentsMethod(Class type, String methodName) {
         return getInstance().invokeStaticMethod(type, methodName, EMPTY_ARGS);
     }
-    
+
     public static Object invokeConstructorOf(Class type, Object arguments) {
         return getInstance().invokeConstructorOf(type, arguments);
     }
-    
+
     public static Object invokeConstructorOf(String klass, Object arguments) throws ClassNotFoundException {
-        Class type = InvokerHelper.class.forName(klass);
+        Class type = Class.forName(klass);
         return getInstance().invokeConstructorOf(type, arguments);
     }
 
@@ -131,36 +120,33 @@ public class InvokerHelper {
         if (value == null) {
             return Collections.EMPTY_LIST;
         }
-        else if (value instanceof List) {
+        if (value instanceof List) {
             return (List) value;
         }
-        else if (value.getClass().isArray()) {
+        if (value.getClass().isArray()) {
             return Arrays.asList((Object[]) value);
         }
-        else if (value instanceof Enumeration) {
+        if (value instanceof Enumeration) {
             List answer = new ArrayList();
             for (Enumeration e = (Enumeration) value; e.hasMoreElements();) {
                 answer.add(e.nextElement());
             }
             return answer;
         }
-        else {
-            // lets assume its a collection of 1
-            return Collections.singletonList(value);
-        }
+        // lets assume its a collection of 1
+        return Collections.singletonList(value);
     }
 
     public static String toString(Object arguments) {
         if (arguments instanceof Object[])
-            return toArrayString((Object[])arguments);
-        else if (arguments instanceof Collection)
-            return toListString((Collection)arguments);
-        else if (arguments instanceof Map)
-            return toMapString((Map)arguments);
-        else if (arguments instanceof Collection)
+            return toArrayString((Object[]) arguments);
+        if (arguments instanceof Collection)
+            return toListString((Collection) arguments);
+        if (arguments instanceof Map)
+            return toMapString((Map) arguments);
+        if (arguments instanceof Collection)
             return format(arguments, true);
-        else
-            return format(arguments, false);
+        return format(arguments, false);
     }
 
     public static String inspect(Object self) {
@@ -234,36 +220,34 @@ public class InvokerHelper {
             Integer number = (Integer) value;
             return IntegerCache.integerValue(-number.intValue());
         }
-        else if (value instanceof Long) {
+        if (value instanceof Long) {
             Long number = (Long) value;
             return new Long(-number.longValue());
         }
-        else if (value instanceof BigInteger) {
+        if (value instanceof BigInteger) {
             return ((BigInteger) value).negate();
         }
-        else if (value instanceof BigDecimal) {
+        if (value instanceof BigDecimal) {
             return ((BigDecimal) value).negate();
         }
-        else if (value instanceof Double) {
+        if (value instanceof Double) {
             Double number = (Double) value;
             return new Double(-number.doubleValue());
         }
-        else if (value instanceof Float) {
+        if (value instanceof Float) {
             Float number = (Float) value;
             return new Float(-number.floatValue());
         }
-        else if (value instanceof ArrayList) {
+        if (value instanceof ArrayList) {
             // value is an list.
-            ArrayList newlist = new ArrayList();
+            List newlist = new ArrayList();
             Iterator it = ((ArrayList) value).iterator();
             for (; it.hasNext();) {
                 newlist.add(negate(it.next()));
             }
             return newlist;
         }
-        else {
-            throw new GroovyRuntimeException("Cannot negate type " + value.getClass().getName() + ", value " + value);
-        }
+        throw new GroovyRuntimeException("Cannot negate type " + value.getClass().getName() + ", value " + value);
     }
 
     /**
@@ -276,26 +260,23 @@ public class InvokerHelper {
         String stringToCompare;
         if (left instanceof String) {
             stringToCompare = (String) left;
-        }
-        else {
+        } else {
             stringToCompare = toString(left);
         }
         String regexToCompareTo;
         if (right instanceof String) {
             regexToCompareTo = (String) right;
-        }
-        else if (right instanceof Pattern) {
+        } else if (right instanceof Pattern) {
             Pattern pattern = (Pattern) right;
             return pattern.matcher(stringToCompare);
-        }
-        else {
+        } else {
             regexToCompareTo = toString(right);
         }
         Matcher matcher = Pattern.compile(regexToCompareTo).matcher(stringToCompare);
         return matcher;
     }
-    
-    
+
+
     /**
      * Find the right hand regex within the left hand string and return a matcher.
      *
@@ -306,8 +287,7 @@ public class InvokerHelper {
         Pattern pattern;
         if (right instanceof Pattern) {
             pattern = (Pattern) right;
-        }
-        else {
+        } else {
             pattern = Pattern.compile(toString(right));
         }
         String stringToCompare = toString(left);
@@ -332,16 +312,12 @@ public class InvokerHelper {
             }
             return new SpreadMap(values);
         }
-        else {
-            throw new SpreadMapEvaluatingException("Cannot spread the map " + value.getClass().getName() + ", value " + value);
-        }
+        throw new SpreadMapEvaluatingException("Cannot spread the map " + value.getClass().getName() + ", value " + value);
     }
 
     public static List createList(Object[] values) {
-        ArrayList answer = new ArrayList(values.length);
-        for (int i = 0; i < values.length; i++) {
-            answer.add(values[i]);
-        }
+        List answer = new ArrayList(values.length);
+        answer.addAll(Arrays.asList(values));
         return answer;
     }
 
@@ -349,16 +325,15 @@ public class InvokerHelper {
         Map answer = new LinkedHashMap(values.length / 2);
         int i = 0;
         while (i < values.length - 1) {
-            if ((values[i] instanceof SpreadMap) && (values[i+1] instanceof Map)) {
-                Map smap = (Map) values[i+1];
+            if ((values[i] instanceof SpreadMap) && (values[i + 1] instanceof Map)) {
+                Map smap = (Map) values[i + 1];
                 Iterator iter = smap.keySet().iterator();
-                for (; iter.hasNext(); ) {
-                    Object key = (Object) iter.next();
+                for (; iter.hasNext();) {
+                    Object key = iter.next();
                     answer.put(key, smap.get(key));
                 }
-                i+=2;
-            }
-            else {
+                i += 2;
+            } else {
                 answer.put(values[i++], values[i++]);
             }
         }
@@ -369,9 +344,7 @@ public class InvokerHelper {
         if (message == null || "".equals(message)) {
             throw new AssertionError("Expression: " + expression);
         }
-        else {
-            throw new AssertionError(String.valueOf(message) + ". Expression: " + expression);
-        }
+        throw new AssertionError(String.valueOf(message) + ". Expression: " + expression);
     }
 
     public static Object runScript(Class scriptClass, String[] args) {
@@ -394,8 +367,7 @@ public class InvokerHelper {
             Script script = null;
             if (object instanceof Script) {
                 script = (Script) object;
-            }
-            else {
+            } else {
                 // it could just be a class, so lets wrap it in a Script wrapper
                 // though the bindings will be ignored
                 script = new Script() {
@@ -427,7 +399,9 @@ public class InvokerHelper {
             Object value = entry.getValue();
             try {
                 mc.setProperty(object, key, value);
-            } catch (MissingPropertyException mpe) {}
+            } catch (MissingPropertyException mpe) {
+                // Ignore
+            }
         }
     }
 
@@ -449,27 +423,21 @@ public class InvokerHelper {
     public static void write(Writer out, Object object) throws IOException {
         if (object instanceof String) {
             out.write((String) object);
-        }
-        else if (object instanceof Object[]) {
+        } else if (object instanceof Object[]) {
             out.write(toArrayString((Object[]) object));
-        }
-        else if (object instanceof Map) {
+        } else if (object instanceof Map) {
             out.write(toMapString((Map) object));
-        }
-        else if (object instanceof Collection) {
+        } else if (object instanceof Collection) {
             out.write(toListString((Collection) object));
-        }
-        else if (object instanceof Writable) {
+        } else if (object instanceof Writable) {
             Writable writable = (Writable) object;
             writable.writeTo(out);
-        }
-        else if (object instanceof InputStream || object instanceof Reader) {
+        } else if (object instanceof InputStream || object instanceof Reader) {
             // Copy stream to stream
             Reader reader;
             if (object instanceof InputStream) {
                 reader = new InputStreamReader((InputStream) object);
-            }
-            else {
+            } else {
                 reader = (Reader) object;
             }
             char[] chars = new char[8192];
@@ -478,42 +446,39 @@ public class InvokerHelper {
                 out.write(chars, 0, i);
             }
             reader.close();
-        }
-        else {
+        } else {
             out.write(toString(object));
         }
     }
-    
+
     public static Iterator asIterator(Object o) {
-        return (Iterator) invokeMethod(o,"iterator",EMPTY_ARGS);
+        return (Iterator) invokeMethod(o, "iterator", EMPTY_ARGS);
     }
-    
+
     protected static String format(Object arguments, boolean verbose) {
         if (arguments == null) {
             final NullObject nullObject = NullObject.getNullObject();
-            return (String)nullObject.getMetaClass().invokeMethod(nullObject, "toString", EMPTY_ARGS);
+            return (String) nullObject.getMetaClass().invokeMethod(nullObject, "toString", EMPTY_ARGS);
         }
-        else if (arguments.getClass().isArray()) {
+        if (arguments.getClass().isArray()) {
             return format(DefaultTypeTransformation.asCollection(arguments), verbose);
         }
-        else if (arguments instanceof Range) {
+        if (arguments instanceof Range) {
             Range range = (Range) arguments;
             if (verbose) {
                 return range.inspect();
-            }
-            else {
+            } else {
                 return range.toString();
             }
         }
-        else if (arguments instanceof List) {
+        if (arguments instanceof List) {
             List list = (List) arguments;
             StringBuffer buffer = new StringBuffer("[");
             boolean first = true;
             for (Iterator iter = list.iterator(); iter.hasNext();) {
                 if (first) {
                     first = false;
-                }
-                else {
+                } else {
                     buffer.append(", ");
                 }
                 buffer.append(format(iter.next(), verbose));
@@ -521,7 +486,7 @@ public class InvokerHelper {
             buffer.append("]");
             return buffer.toString();
         }
-        else if (arguments instanceof Map) {
+        if (arguments instanceof Map) {
             Map map = (Map) arguments;
             if (map.isEmpty()) {
                 return "[:]";
@@ -531,14 +496,13 @@ public class InvokerHelper {
             for (Iterator iter = map.entrySet().iterator(); iter.hasNext();) {
                 if (first) {
                     first = false;
-                }
-                else {
+                } else {
                     buffer.append(", ");
                 }
                 Map.Entry entry = (Map.Entry) iter.next();
                 buffer.append(format(entry.getKey(), verbose));
                 buffer.append(":");
-                if (entry.getValue()==map) {
+                if (entry.getValue() == map) {
                     buffer.append("this Map_");
                 } else {
                     buffer.append(format(entry.getValue(), verbose));
@@ -547,7 +511,7 @@ public class InvokerHelper {
             buffer.append("]");
             return buffer.toString();
         }
-        else if (arguments instanceof Element) {
+        if (arguments instanceof Element) {
             Element node = (Element) arguments;
             TransformerFactory transformerFactory = TransformerFactory.newInstance();
             StringWriter sw = new StringWriter();
@@ -557,28 +521,26 @@ public class InvokerHelper {
                 transformer.transform(new DOMSource(node), new StreamResult(sw));
             }
             catch (TransformerException e) {
+                // Ignore
             }
             return sw.toString();
         }
-        else if (arguments instanceof String) {
+        if (arguments instanceof String) {
             if (verbose) {
-                String arg = ((String)arguments).replaceAll("\\n", "\\\\n");    // line feed
+                String arg = ((String) arguments).replaceAll("\\n", "\\\\n");    // line feed
                 arg = arg.replaceAll("\\r", "\\\\r");      // carriage return
                 arg = arg.replaceAll("\\t", "\\\\t");      // tab
                 arg = arg.replaceAll("\\f", "\\\\f");      // form feed
                 arg = arg.replaceAll("\\\"", "\\\\\"");    // double quotation amrk
                 arg = arg.replaceAll("\\\\", "\\\\");      // back slash
                 return "\"" + arg + "\"";
-            }
-            else {
+            } else {
                 return (String) arguments;
             }
         }
-        else {
-            return arguments.toString();
-        }
+        return arguments.toString();
     }
-    
+
 
     /**
      * A helper method to format the arguments types as a comma-separated list
@@ -672,10 +634,10 @@ public class InvokerHelper {
         argBuf.append(ebdry);
         return argBuf.toString();
     }
-    
+
     public static List createRange(Object from, Object to, boolean inclusive) {
         try {
-            return ScriptBytecodeAdapter.createRange(from,to,inclusive);
+            return ScriptBytecodeAdapter.createRange(from, to, inclusive);
         } catch (RuntimeException re) {
             throw re;
         } catch (Error e) {
@@ -684,42 +646,37 @@ public class InvokerHelper {
             throw new RuntimeException(t);
         }
     }
-    
+
     public static Object bitNegate(Object value) {
         if (value instanceof Integer) {
             Integer number = (Integer) value;
             return new Integer(~number.intValue());
         }
-        else if (value instanceof Long) {
+        if (value instanceof Long) {
             Long number = (Long) value;
             return new Long(~number.longValue());
         }
-        else if (value instanceof BigInteger) {
+        if (value instanceof BigInteger) {
             return ((BigInteger) value).not();
-
         }
-        else if (value instanceof String) {
+        if (value instanceof String) {
             // value is a regular expression.
             return DefaultGroovyMethods.negate(value.toString());
         }
-        else if (value instanceof GString) {
+        if (value instanceof GString) {
             // value is a regular expression.
             return DefaultGroovyMethods.negate(value.toString());
         }
-        else if (value instanceof ArrayList) {
+        if (value instanceof ArrayList) {
             // value is an list.
-            ArrayList newlist = new ArrayList();
+            List newlist = new ArrayList();
             Iterator it = ((ArrayList) value).iterator();
             for (; it.hasNext();) {
                 newlist.add(bitNegate(it.next()));
             }
             return newlist;
         }
-        else {
-            throw new BitwiseNegateEvaluatingException("Cannot bitwise negate type " + value.getClass().getName() + ", value " + value);
-        }
-
-
+        throw new BitwiseNegateEvaluatingException("Cannot bitwise negate type " + value.getClass().getName() + ", value " + value);
     }
 
 }

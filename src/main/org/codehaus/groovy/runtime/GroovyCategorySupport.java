@@ -182,7 +182,7 @@ public class GroovyCategorySupport {
         }
     }
 
-    private static final ThreadLocal local = new ThreadLocal() {
+    private static final ThreadLocal LOCAL = new ThreadLocal() {
         protected Object initialValue() {
         		List stack = new ArrayList();
         		stack.add(Collections.EMPTY_MAP);
@@ -192,19 +192,19 @@ public class GroovyCategorySupport {
     
     private static void newScope() {
         categoriesInUse++;
-        List stack = (List) local.get();
+        List stack = (List) LOCAL.get();
     	Map properties = new WeakHashMap(getProperties());
     	stack.add(properties);
     }
     
     private static void endScope() {
-        List stack = (List) local.get();
+        List stack = (List) LOCAL.get();
     	stack.remove(stack.size() - 1);
         categoriesInUse--;
     }
     
     private static Map getProperties() {
-        List stack = (List) local.get();
+        List stack = (List) LOCAL.get();
         return (Map) stack.get(stack.size() - 1);
     }
     

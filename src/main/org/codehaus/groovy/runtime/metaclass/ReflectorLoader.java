@@ -16,10 +16,11 @@
 
 package org.codehaus.groovy.runtime.metaclass;
 
+import org.codehaus.groovy.runtime.Reflector;
+
 import java.security.ProtectionDomain;
 import java.util.HashMap;
-
-import org.codehaus.groovy.runtime.Reflector;
+import java.util.Map;
 
 /**
  * Reflector creation helper. This class is used to define the Refloctor classes.
@@ -38,7 +39,7 @@ import org.codehaus.groovy.runtime.Reflector;
  */
 public class ReflectorLoader extends ClassLoader {
     private boolean inDefine = false;
-    private final HashMap loadedClasses = new HashMap();
+    private final Map loadedClasses = new HashMap();
     private final ClassLoader delegatationLoader;
 
     private static final String REFLECTOR = Reflector.class.getName();

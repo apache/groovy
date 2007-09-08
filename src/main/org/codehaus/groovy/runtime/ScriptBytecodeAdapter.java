@@ -757,7 +757,7 @@ public class ScriptBytecodeAdapter {
 
     //spread expressions
     public static Object[] despreadList(Object[] args, Object[] spreads, int[] positions) {
-        ArrayList ret = new ArrayList();
+        List ret = new ArrayList();
         int argsPos = 0;
         int spreadPos = 0;
         for (int pos = 0; pos < positions.length; pos++) {

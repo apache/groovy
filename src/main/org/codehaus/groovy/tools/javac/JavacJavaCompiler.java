@@ -31,21 +31,21 @@ import org.codehaus.groovy.control.messages.ExceptionMessage;
 
 public class JavacJavaCompiler implements JavaCompiler {
     private CompilerConfiguration config;
-    
+
     public JavacJavaCompiler(CompilerConfiguration config) {
         this.config = config;
     }
-    
+
     public void compile(List files, CompilationUnit cu) {
         String[] javacParameters = makeParameters(files);
         org.apache.tools.ant.taskdefs.Javac c;
         try {
             Class javac = findJavac(cu);
             Method method = javac.getMethod("compile",
-                    new Class[] { String[].class });
-            method.invoke(null, new Object[] { javacParameters });
+                    new Class[]{String[].class});
+            method.invoke(null, new Object[]{javacParameters});
         } catch (Exception e) {
-            cu.getErrorCollector().addFatalError(new ExceptionMessage(e,true,cu));
+            cu.getErrorCollector().addFatalError(new ExceptionMessage(e, true, cu));
         }
     }
 
@@ -54,54 +54,54 @@ public class JavacJavaCompiler implements JavaCompiler {
         LinkedList paras = new LinkedList();
 
         File target = config.getTargetDirectory();
-        if (target==null) target=new File(".");
-        
+        if (target == null) target = new File(".");
+
         // defaults
         paras.add("-d");
         paras.add(target.getAbsolutePath());
         paras.add("-sourcepath");
-        paras.add(((File)options.get("stubDir")).getAbsolutePath());
-        
+        paras.add(((File) options.get("stubDir")).getAbsolutePath());
+
         // add flags
         String[] flags = (String[]) options.get("flags");
-        if (flags!=null) {
+        if (flags != null) {
             for (int i = 0; i < flags.length; i++) {
-                paras.add('-'+flags[i]);
+                paras.add('-' + flags[i]);
             }
         }
-        
+
         // add namedValues
         String[] namedValues = (String[]) options.get("namedValues");
-        if (namedValues!=null) {
-            for (int i = 0; i < namedValues.length; i+=2) {
-                paras.add('-'+namedValues[i]);
-                paras.add(namedValues[i+1]);
+        if (namedValues != null) {
+            for (int i = 0; i < namedValues.length; i += 2) {
+                paras.add('-' + namedValues[i]);
+                paras.add(namedValues[i + 1]);
             }
         }
-        
+
         // files to compile
         paras.addAll(files);
-        
-        return (String[]) paras.toArray(new String[0]);        
+
+        return (String[]) paras.toArray(new String[paras.size()]);
     }
 
     private Class findJavac(CompilationUnit cu) throws ClassNotFoundException {
         Class javac = null;
-        String MAIN = "com.sun.tools.javac.Main";
+        String main = "com.sun.tools.javac.Main";
         try {
-            javac = Class.forName(MAIN);
+            javac = Class.forName(main);
         } catch (ClassNotFoundException e) {
             ClassLoader cl = this.getClass().getClassLoader();
             try {
-                javac = cl.loadClass(MAIN);
+                javac = cl.loadClass(main);
             } catch (ClassNotFoundException e1) {
                 try {
                     javac = ClassLoader.getSystemClassLoader().loadClass(
-                            MAIN);
+                            main);
                 } catch (ClassNotFoundException e2) {
                     try {
                         javac = cu.getClassLoader().getParent().loadClass(
-                                MAIN);
+                                main);
                     } catch (ClassNotFoundException e3) {
                         // couldn't find compiler - try to find tools.jar
                         // based on java.home setting
@@ -115,7 +115,7 @@ public class JavacJavaCompiler implements JavaCompiler {
                         if (toolsJar.exists()) {
                             GroovyClassLoader loader = cu.getClassLoader();
                             loader.addClasspath(toolsJar.getAbsolutePath());
-                            javac = loader.loadClass(MAIN);
+                            javac = loader.loadClass(main);
                         }
                     }
                 }
