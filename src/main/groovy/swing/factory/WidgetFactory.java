@@ -17,7 +17,6 @@
 package groovy.swing.factory;
 
 import groovy.swing.SwingBuilder;
-import java.awt.Component;
 import java.util.Map;
 
 public class WidgetFactory implements Factory {
