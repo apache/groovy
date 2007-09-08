@@ -136,7 +136,14 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
 
     public Object invokeMethod( String methodName, Object args ) {
         Object name = getName( methodName );
-        return doInvokeMethod( methodName, name, args );
+        Object result = null;
+        try{
+            result = doInvokeMethod( methodName, name, args );
+        }catch( RuntimeException e ){
+            reset();
+            throw e;
+        }
+        return result;
     }
 
     public void registerBeanFactory( String theName, final Class beanClass ) {
@@ -169,12 +176,12 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
         try{
             node = factory.newInstance( this, name, value, attributes );
             if( node == null ){
-                LOG.log( Level.WARNING, "GraphicsOperation for name '" + name + "' returned null" );
+                LOG.log( Level.WARNING, "Factory for name '" + name + "' returned null" );
                 return null;
             }
 
             if( LOG.isLoggable( Level.FINE ) ){
-                LOG.fine( "For name: " + name + " created widget: " + node );
+                LOG.fine( "For name: " + name + " created node: " + node );
             }
         }catch( Exception e ){
             throw new RuntimeException( "Failed to create component for '" + name + "' reason: "
@@ -361,6 +368,13 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
      * A hook before the factory creates the node
      */
     protected void preInstantiate( Object name, Map attributes, Object value ) {
+    }
+
+    /**
+     * Clears the context stack
+     */ 
+    protected void reset() {
+        contexts.clear();
     }
 
     /**
