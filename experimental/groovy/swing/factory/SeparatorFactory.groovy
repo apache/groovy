@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package groovy.swing.factory;
+package groovy.swing.factory
 
-import groovy.swing.SwingBuilder;
-import java.util.Map;
-import javax.swing.JMenu;
-import javax.swing.JPopupMenu;
-import javax.swing.JSeparator;
-import javax.swing.JToolBar;
+import groovy.swing.SwingBuilder
+import javax.swing.JMenu
+import javax.swing.JPopupMenu
+import javax.swing.JSeparator
+import javax.swing.JToolBar
 
 public class SeparatorFactory implements Factory {
     

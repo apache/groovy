@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package groovy.swing.factory;
+package groovy.swing.factory
 
-import groovy.swing.SwingBuilder;
-import java.text.Format;
-import java.util.Map;
-import javax.swing.JFormattedTextField;
+import groovy.swing.SwingBuilder
+import java.text.Format
+import javax.swing.JFormattedTextField
 
 public class FormattedTextFactory implements Factory {
     

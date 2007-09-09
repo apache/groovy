@@ -18,15 +18,22 @@ package groovy.swing.factory
 import groovy.swing.SwingBuilder
 
 /**
- * An interface to represent a factory of beans.
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision: 6778 $
+ * @author <a href="mailto:shemnon@yahoo.com">Danno Ferrin</a>
+ * @version $Revision: 7953 $
+ * @since Groovy 1.1
  */
-public interface Factory {
+class BeanFactory implements Factory {
+    Class beanClass
 
-    /**
-     * Create a new instance
-     */    
-    Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException;
+    public BeanFactory(Class beanClass) {
+        this.beanClass = beanClass
+    }
+
+    public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+        if (SwingBuilder.checkValueIsTypeNotString(value, name, beanClass)) {
+            return value
+        } else {
+            return beanClass.newInstance()
+        }
+    }
 }

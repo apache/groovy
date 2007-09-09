@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package groovy.swing.factory;
+package groovy.swing.factory
 
-import groovy.swing.SwingBuilder;
-import java.util.Map;
-import javax.swing.JSplitPane;
+import groovy.swing.SwingBuilder
+import javax.swing.JSplitPane
 
 public class SplitPaneFactory implements Factory {
     

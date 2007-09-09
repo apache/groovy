@@ -14,21 +14,26 @@
  * limitations under the License.
  */
 
-package groovy.swing.factory;
+package groovy.swing.factory
 
-import groovy.swing.SwingBuilder;
-import java.awt.Component;
-import java.util.Map;
+import groovy.swing.SwingBuilder
 
 public class WidgetFactory implements Factory {
+
+    Class restrictedType;
+
+    public WidgetFactory(Class restrictedType) {
+        this.restrictedType = restrictedType;
+    }
     
     public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
-        if (SwingBuilder.checkValueIsType(value, name, Component.class)) {
+        if (value == null) {
+            value = properties.remove(name);
+        }
+        if ((value != null) && SwingBuilder.checkValueIsType(value, name, restrictedType)) {
             return value;
-        } else if (properties.get(name) instanceof Component) {
-            return properties.remove(name);
         } else {
-            throw new RuntimeException(name + " must have a value argument of type java.awt.Component or a property named " + name + " of type java.awt.Component");
+            throw new RuntimeException("$name must have either a value argument or an attribute named $name that must be of type $restrictedType.name");
         }
     }    
 }

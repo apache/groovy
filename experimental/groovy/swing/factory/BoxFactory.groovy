@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-package groovy.swing.factory;
+package groovy.swing.factory
 
-import groovy.swing.SwingBuilder;
-import java.awt.Dimension;
-import java.util.Map;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
+import groovy.swing.SwingBuilder
+import java.awt.Dimension
+import javax.swing.Box
+import javax.swing.BoxLayout
 
 public class BoxFactory implements Factory {
     
@@ -39,91 +38,90 @@ public class BoxFactory implements Factory {
     }
 }
 
-    public class HBoxFactory implements Factory {
-        public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
-            SwingBuilder.checkValueIsNull(value, name);
-            return Box.createHorizontalBox();
+public class HBoxFactory implements Factory {
+    public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+        SwingBuilder.checkValueIsNull(value, name);
+        return Box.createHorizontalBox();
+    }
+}
+
+public class HGlueFactory implements Factory {
+    public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+        SwingBuilder.checkValueIsNull(value, name);
+        return Box.createHorizontalGlue();
+    }
+}
+
+public class HStrutFactory implements Factory {
+    public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+        SwingBuilder.checkValueIsType(value, name, Number.class);
+        Object num;
+        if (value != null) {
+            num = value;
+        } else {
+            num = properties.remove("width");
+        }
+        if (num instanceof Number) {
+            return Box.createHorizontalStrut(((Number) num).intValue());
+        } else {
+            return Box.createHorizontalStrut(6);
         }
     }
-    
-    public class HGlueFactory implements Factory {
-        public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
-            SwingBuilder.checkValueIsNull(value, name);
-            return Box.createHorizontalGlue();
+}
+
+public class VBoxFactory implements Factory {
+    public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+        SwingBuilder.checkValueIsNull(value, name);
+        return Box.createVerticalBox();
+    }
+}
+
+public class VGlueFactory implements Factory {
+    public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+        SwingBuilder.checkValueIsNull(value, name);
+        return Box.createVerticalGlue();
+    }
+}
+
+public class VStrutFactory implements Factory {
+    public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+        SwingBuilder.checkValueIsType(value, name, Number.class);
+        Object num;
+        if (value != null) {
+            num = value;
+        } else {
+            num = properties.remove("height");
+        }
+        if (num instanceof Number) {
+            return Box.createVerticalStrut(((Number) num).intValue());
+        } else {
+            return Box.createVerticalStrut(6);
         }
     }
-    
-    public class HStrutFactory implements Factory {
-        public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
-            SwingBuilder.checkValueIsType(value, name, Number.class);
-            Object num;
-            if (value != null) {
-                num = value;
-            } else {
-                num = properties.remove("width");
-            }
-            if (num instanceof Number) {
-                return Box.createHorizontalStrut(((Number) num).intValue());
-            } else {
-                return Box.createHorizontalStrut(6);
-            }
-        }
+}
+
+public class GlueFactory implements Factory {
+    public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+        SwingBuilder.checkValueIsNull(value, name);
+        return Box.createGlue();
     }
-    
-    public class VBoxFactory implements Factory {
-        public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
-            SwingBuilder.checkValueIsNull(value, name);
-            return Box.createVerticalBox();
+}
+
+public class RigidAreaFactory implements Factory {
+    public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+        SwingBuilder.checkValueIsNull(value, name);
+        Dimension dim;
+        Object o = properties.remove("size");
+        if (o instanceof Dimension) {
+            dim = (Dimension) o;
+        } else {
+            int w, h;
+            o = properties.remove("width");
+            w = ((o instanceof Number)) ? ((Number) o).intValue() : 6;
+            o = properties.remove("height");
+            h = ((o instanceof Number)) ? ((Number) o).intValue() : 6;
+            dim = new Dimension(w, h);
         }
+        return Box.createRigidArea(dim);
     }
-    
-    public class VGlueFactory implements Factory {
-        public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
-            SwingBuilder.checkValueIsNull(value, name);
-            return Box.createVerticalGlue();
-        }
-    }
-    
-    public class VStrutFactory implements Factory {
-        public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
-            SwingBuilder.checkValueIsType(value, name, Number.class);
-            Object num;
-            if (value != null) {
-                num = value;
-            } else {
-                num = properties.remove("height");
-            }
-            if (num instanceof Number) {
-                return Box.createVerticalStrut(((Number) num).intValue());
-            } else {
-                return Box.createVerticalStrut(6);
-            }
-        }
-    }
-    
-    public class GlueFactory implements Factory {
-        public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
-            SwingBuilder.checkValueIsNull(value, name);
-            return Box.createGlue();
-        }
-    }
-    
-    public class RigidAreaFactory implements Factory {
-        public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
-            SwingBuilder.checkValueIsNull(value, name);
-            Dimension dim;
-            Object o = properties.remove("size");
-            if (o instanceof Dimension) {
-                dim = (Dimension) o;
-            } else {
-                int w, h;
-                o = properties.remove("width");
-                w = ((o instanceof Number)) ? ((Number) o).intValue() : 6;
-                o = properties.remove("height");
-                h = ((o instanceof Number)) ? ((Number) o).intValue() : 6;
-                dim = new Dimension(w, h);
-            }
-            return Box.createRigidArea(dim);
-        }
-    }
-    
+}

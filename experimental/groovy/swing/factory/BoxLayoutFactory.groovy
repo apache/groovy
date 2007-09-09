@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-package groovy.swing.factory;
+package groovy.swing.factory
 
-import groovy.swing.SwingBuilder;
-import java.awt.Container;
-import java.util.Map;
-import javax.swing.BoxLayout;
-import org.codehaus.groovy.runtime.InvokerHelper;
+import groovy.swing.SwingBuilder
+import java.awt.Container
+import javax.swing.BoxLayout
+import org.codehaus.groovy.runtime.InvokerHelper
 
 public class BoxLayoutFactory implements Factory {
     

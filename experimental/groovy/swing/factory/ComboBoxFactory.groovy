@@ -14,13 +14,10 @@
  * limitations under the License.
  */
 
-package groovy.swing.factory;
+package groovy.swing.factory
 
-import groovy.swing.SwingBuilder;
-import java.util.List;
-import java.util.Map;
-import java.util.Vector;
-import javax.swing.JComboBox;
+import groovy.swing.SwingBuilder
+import javax.swing.JComboBox
 
 public class ComboBoxFactory implements Factory {
     

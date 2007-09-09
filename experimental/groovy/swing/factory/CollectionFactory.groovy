@@ -14,12 +14,9 @@
  * limitations under the License.
  */
 
-package groovy.swing.factory;
+package groovy.swing.factory
 
-import groovy.lang.MissingPropertyException;
-import groovy.swing.SwingBuilder;
-import java.util.ArrayList;
-import java.util.Map;
+import groovy.swing.SwingBuilder
 
 /**
  * This returns a mutable java.util.Collection of some sort, to which items are added.  
@@ -33,7 +30,7 @@ public class CollectionFactory implements Factory {
         } else {
             Map.Entry item = (Map.Entry) properties.entrySet().iterator().next();
             throw new MissingPropertyException(
-                "The builder element '" + name + "' is a collections element and has no properties",
+                "The builder element '$name' is a collections element and has no properties",
                 item.getKey().toString(), item.getValue().getClass());
         }
     }

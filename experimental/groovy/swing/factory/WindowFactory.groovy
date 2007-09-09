@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 
-package groovy.swing.factory;
+package groovy.swing.factory
 
-import groovy.swing.SwingBuilder;
-import java.awt.Dialog;
-import java.awt.Frame;
-import java.util.LinkedList;
-import java.util.Map;
-import javax.swing.JWindow;
+import groovy.swing.SwingBuilder
+import java.awt.Dialog
+import java.awt.Frame
+import javax.swing.JWindow
 
 public class WindowFactory implements Factory {
     

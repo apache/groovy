@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-package groovy.swing.factory;
+package groovy.swing.factory
 
-import groovy.swing.SwingBuilder;
-import groovy.swing.impl.TableLayout;
-import groovy.swing.impl.TableLayoutCell;
-import groovy.swing.impl.TableLayoutRow;
-import java.util.Map;
+import groovy.swing.SwingBuilder
+import groovy.swing.impl.TableLayout
+import groovy.swing.impl.TableLayoutCell
+import groovy.swing.impl.TableLayoutRow
 
 public class TableLayoutFactory implements Factory {
     
@@ -31,28 +30,29 @@ public class TableLayoutFactory implements Factory {
         return new TableLayout();
     }
 }
-    public class TRFactory implements Factory {
-        public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
-            SwingBuilder.checkValueIsNull(value, name);
-            //TODO we could make the value arg the parent
-            Object parent = builder.getCurrent();
-            if (parent instanceof TableLayout) {
-                return new TableLayoutRow((TableLayout) parent);
-            } else {
-                throw new RuntimeException("'tr' must be within a 'tableLayout'");
-            }
-        }
-    }
     
-    public class TDFactory implements Factory {
-        public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
-            SwingBuilder.checkValueIsNull(value, name);
-            //TODO we could make the value arg the TR
-            Object parent = builder.getCurrent();
-            if (parent instanceof TableLayoutRow) {
-                return new TableLayoutCell((TableLayoutRow) parent);
-            } else {
-                throw new RuntimeException("'td' must be within a 'tr'");
-            }
+public class TRFactory implements Factory {
+    public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+        SwingBuilder.checkValueIsNull(value, name);
+        //TODO we could make the value arg the parent
+        Object parent = builder.getCurrent();
+        if (parent instanceof TableLayout) {
+            return new TableLayoutRow((TableLayout) parent);
+        } else {
+            throw new RuntimeException("'tr' must be within a 'tableLayout'");
         }
     }
+}
+
+public class TDFactory implements Factory {
+    public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+        SwingBuilder.checkValueIsNull(value, name);
+        //TODO we could make the value arg the TR
+        Object parent = builder.getCurrent();
+        if (parent instanceof TableLayoutRow) {
+            return new TableLayoutCell((TableLayoutRow) parent);
+        } else {
+            throw new RuntimeException("'td' must be within a 'tr'");
+        }
+    }
+}

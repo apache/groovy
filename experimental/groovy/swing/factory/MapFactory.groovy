@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package groovy.swing.factory;
+package groovy.swing.factory
 
-import groovy.swing.SwingBuilder;
-import java.util.Map;
+import groovy.swing.SwingBuilder
 
 public class MapFactory implements Factory {
     

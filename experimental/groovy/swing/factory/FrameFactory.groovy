@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package groovy.swing.factory;
+package groovy.swing.factory
 
-import groovy.swing.SwingBuilder;
-import java.util.Map;
-import javax.swing.JFrame;
+import groovy.swing.SwingBuilder
+import javax.swing.JFrame
 
 public class FrameFactory implements Factory {
     

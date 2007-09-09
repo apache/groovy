@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package groovy.swing.factory;
+package groovy.swing.factory
 
-import groovy.swing.SwingBuilder;
-import java.util.Map;
-import org.codehaus.groovy.runtime.InvokerHelper;
+import groovy.swing.SwingBuilder
+import org.codehaus.groovy.runtime.InvokerHelper
 
 /**
  *

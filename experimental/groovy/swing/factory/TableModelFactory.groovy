@@ -14,16 +14,13 @@
  * limitations under the License.
  */
 
-package groovy.swing.factory;
+package groovy.swing.factory
 
-import groovy.lang.Closure;
-import groovy.model.DefaultTableModel;
-import groovy.model.ValueHolder;
-import groovy.model.ValueModel;
-import groovy.swing.SwingBuilder;
-import java.util.ArrayList;
-import java.util.Map;
-import javax.swing.table.TableModel;
+import groovy.model.DefaultTableModel
+import groovy.model.ValueHolder
+import groovy.model.ValueModel
+import groovy.swing.SwingBuilder
+import javax.swing.table.TableModel
 
 public class TableModelFactory implements Factory {
     
@@ -46,60 +43,59 @@ public class TableModelFactory implements Factory {
     }
 }
 
-    public class PropertyColumnFactory implements Factory {
-    
-        public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
-            SwingBuilder.checkValueIsNull(value, name);
-            Object current = builder.getCurrent();
-            if (current instanceof DefaultTableModel) {
-                DefaultTableModel model = (DefaultTableModel) current;
-                String property = (String) properties.remove("propertyName");
-                if (property == null) {
-                    throw new IllegalArgumentException("Must specify a property for a propertyColumn");
-                }
-                Object header = properties.remove("header");
-                if (header == null) {
-                    header = "";
-                }
-                Class type = (Class) properties.remove("type");
-                if (type == null) {
-                    type = Object.class;
-                }
-                Boolean editable = (Boolean) properties.remove("editable");
-                if (editable == null) {
-                    editable = Boolean.TRUE;
-                }
-                return model.addPropertyColumn(header, property, type, editable.booleanValue());
-            } else {
-                throw new RuntimeException("propertyColumn must be a child of a tableModel");
+public class PropertyColumnFactory implements Factory {
+
+    public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+        SwingBuilder.checkValueIsNull(value, name);
+        Object current = builder.getCurrent();
+        if (current instanceof DefaultTableModel) {
+            DefaultTableModel model = (DefaultTableModel) current;
+            String property = (String) properties.remove("propertyName");
+            if (property == null) {
+                throw new IllegalArgumentException("Must specify a property for a propertyColumn");
             }
+            Object header = properties.remove("header");
+            if (header == null) {
+                header = "";
+            }
+            Class type = (Class) properties.remove("type");
+            if (type == null) {
+                type = Object.class;
+            }
+            Boolean editable = (Boolean) properties.remove("editable");
+            if (editable == null) {
+                editable = Boolean.TRUE;
+            }
+            return model.addPropertyColumn(header, property, type, editable.booleanValue());
+        } else {
+            throw new RuntimeException("propertyColumn must be a child of a tableModel");
         }
     }
+}
 
-    public class ClosureColumnFactory implements Factory {
-    
-        public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
-            SwingBuilder.checkValueIsNull(value, name);
-            Object current = builder.getCurrent();
-            if (current instanceof DefaultTableModel) {
-                DefaultTableModel model = (DefaultTableModel) current;
-                Object header = properties.remove("header");
-                if (header == null) {
-                    header = "";
-                }
-                Closure readClosure = (Closure) properties.remove("read");
-                if (readClosure == null) {
-                    throw new IllegalArgumentException("Must specify 'read' Closure property for a closureColumn");
-                }
-                Closure writeClosure = (Closure) properties.remove("write");
-                Class type = (Class) properties.remove("type");
-                if (type == null) {
-                    type = Object.class;
-                }
-                return model.addClosureColumn(header, readClosure, writeClosure, type);
-            } else {
-                throw new RuntimeException("closureColumn must be a child of a tableModel");
+public class ClosureColumnFactory implements Factory {
+
+    public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+        SwingBuilder.checkValueIsNull(value, name);
+        Object current = builder.getCurrent();
+        if (current instanceof DefaultTableModel) {
+            DefaultTableModel model = (DefaultTableModel) current;
+            Object header = properties.remove("header");
+            if (header == null) {
+                header = "";
             }
+            Closure readClosure = (Closure) properties.remove("read");
+            if (readClosure == null) {
+                throw new IllegalArgumentException("Must specify 'read' Closure property for a closureColumn");
+            }
+            Closure writeClosure = (Closure) properties.remove("write");
+            Class type = (Class) properties.remove("type");
+            if (type == null) {
+                type = Object.class;
+            }
+            return model.addClosureColumn(header, readClosure, writeClosure, type);
+        } else {
+            throw new RuntimeException("closureColumn must be a child of a tableModel");
         }
     }
-
+}
