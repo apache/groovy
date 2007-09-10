@@ -12,15 +12,6 @@
 package groovy.lang
 class MethodMissingTest extends GroovyTestCase {
 
-    void testMethodMissingWithInheritance() {
-         assertEquals "world",MMTest6.hello()
-         assertEquals "cruel world",MMTest6.goodbye()
-         assertEquals "foo",MMTest6.bar()
-
-         shouldFail(MissingMethodException) {
-             MMTest5.bar()
-         }
-    }
 
     void testSimpleMethodMissing() {
         def t = new MMTest()
@@ -54,14 +45,6 @@ class MethodMissingTest extends GroovyTestCase {
 
     }
 
-    void testStaticMethodMissing() {
-        assertEquals "world", MMTest4.hello()
-        assertEquals "bar", MMTest4.stuff()
-
-        def t = new MMTest4()
-        assertEquals "world", t.hello()
-        assertEquals "bar", t.stuff()
-    }
 
     void testStaticMethodMissingViaMetaClass() {
 
@@ -76,6 +59,21 @@ class MethodMissingTest extends GroovyTestCase {
         assertEquals "world", MMTest3.hello()
         assertEquals "foo", MMTest3.stuff()
     }
+
+    void testMethodMissingWithInheritance() {
+         assertEquals "world",MMTest6.hello()
+         assertEquals "cruel world",MMTest6.goodbye()
+
+         MMTest6.metaClass.'static'.methodMissing = { String name, args ->
+            "foo"
+         }
+         assertEquals "foo",MMTest6.bar()
+
+         shouldFail(MissingMethodException) {
+             MMTest5.bar()
+         }
+    }
+
 }
 class MMTest {
     def hello() { "world" }
@@ -89,16 +87,10 @@ class MMTest2 {
 class MMTest3 {
     static hello() { "world" }
 }
-class MMTest4 {
-    static hello() { "world" }
-    static methodMissing(String name, args) {
-        "bar"
-    }
-}
+
 class MMTest5 {
     static hello() { "world" }
 }
 class MMTest6 extends MMTest5 {
     static goodbye() { "cruel world" }
-    static methodMissing(String name, args) { "foo" }
 }

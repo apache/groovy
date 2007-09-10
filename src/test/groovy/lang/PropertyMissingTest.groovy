@@ -61,7 +61,19 @@ class PropertyMissingTest extends GroovyTestCase {
 
     }
 
-    // @TODO Support for static properties?
+    void testStaticPropertyMissingViaMetaClass() {
+
+        shouldFail(MissingPropertyException) {
+            PMTest1.SOME_PROP
+        }
+
+        PMTest1.metaClass.'static'.propertyMissing = { String name ->
+            name
+        }
+
+        assertEquals "SOME_PROP", PMTest1.SOME_PROP
+        assertEquals "FOO", PMTest1.FOO
+    }
 
 }
 class PMTest1 {

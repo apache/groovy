@@ -96,9 +96,22 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass {
     public List getMethods() {
         return delegate.getMethods();
     }
+
+    public List respondsTo(Object obj, String name, Object[] argTypes) {
+        return delegate.respondsTo(obj, name, argTypes);
+    }
+
+    public List respondsTo(Object obj, String name) {
+        return delegate.respondsTo(obj, name);
+    }
+
+    public MetaProperty hasProperty(Object obj, String name) {
+        return delegate.hasProperty(obj, name);
+    }
+
     /* (non-Javadoc)
-     * @see groovy.lang.MetaClass#getProperties()
-     */
+    * @see groovy.lang.MetaClass#getProperties()
+    */
     public List getProperties() {
         return delegate.getProperties();
     }

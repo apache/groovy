@@ -698,6 +698,27 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 	}
 
     /**
+     * Overrides the behaviour of parent getMethods() method to make MetaClass aware of added Expando methods
+     *
+     * @see MetaObjectProtocol#getMethods()
+     * 
+     * @return A list of MetaMethods
+     */
+    public List getMethods() {
+        List methodList =  new ArrayList();
+        methodList.addAll(this.expandoMethods.values());
+        methodList.addAll(super.getMethods());
+        return methodList;        
+    }
+
+    public List getProperties() {
+        List propertyList = new ArrayList();
+        propertyList.addAll(expandoProperties.values());
+        propertyList.addAll(super.getProperties());
+        return propertyList;
+    }
+
+    /**
      * Checks if the metaMethod is a method from the GroovyObject interface such as setProperty, getProperty and invokeMethod
      *
      * @param metaMethod The metaMethod instance
@@ -794,17 +815,28 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 	/**
 	 * Registers a new static method for the given method name and closure on this MetaClass
 	 *
-	 * @param methodName The method name
+	 * @param name The method name
 	 * @param callable The callable Closure
 	 */
-	protected void registerStaticMethod(final String methodName, final Closure callable) {
+	protected void registerStaticMethod(final String name, final Closure callable) {
 		performOperationOnMetaClass(new Callable() {
 			public void call() {
+                String methodName;
+                if(name.equals(METHOD_MISSING))
+                    methodName = STATIC_METHOD_MISSING;
+                else if(name.equals(PROPERTY_MISSING)) 
+                    methodName = STATIC_PROPERTY_MISSING;
+                else
+                    methodName = name;
+
                 ClosureStaticMetaMethod metaMethod = new ClosureStaticMetaMethod(methodName, theClass,callable);
                 if(methodName.equals(INVOKE_METHOD_METHOD) && callable.getParameterTypes().length == 2) {
                     invokeStaticMethodMethod = metaMethod;
                 }
                 else {
+                    if(methodName.equals(METHOD_MISSING)) {
+                        methodName = STATIC_METHOD_MISSING;
+                    }
                     MethodKey key = new DefaultMethodKey(theClass,methodName, metaMethod.getParameterTypes(), false );
 
                     addMetaMethod(metaMethod);

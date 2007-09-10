@@ -58,8 +58,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private static final String CLOSURE_CALL_METHOD = "call";
     private static final String CLOSURE_DO_CALL_METHOD = "doCall";
     private static final String CLOSURE_CURRY_METHOD = "curry";
-    private static final String METHOD_MISSING = "methodMissing";
-    private static final String PROPERTY_MISSING = "propertyMissing";
+    protected static final String STATIC_METHOD_MISSING = "$static_methodMissing";
+    protected static final String STATIC_PROPERTY_MISSING = "$static_propertyMissing";
+    protected static final String METHOD_MISSING = "methodMissing";
+    protected static final String PROPERTY_MISSING = "propertyMissing";
 
     private static final Class[] METHOD_MISSING_ARGS = new Class[]{String.class, Object.class};
     private static final Class[] GETTER_MISSING_ARGS = new Class[]{String.class};
@@ -111,6 +113,47 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
    }
 
     /**
+     * @see MetaObjectProtocol#respondsTo(Object,String, Object[])
+     */
+    public List respondsTo(Object obj,String name, Object[] argTypes) {
+        Class[] classes = castArgumentsToClassArray(argTypes);
+        MetaMethod m = getMetaMethod(name, classes);
+        List methods = new ArrayList();
+        if(m!= null) {
+            methods.add(m);
+        }
+        return methods;
+    }
+
+    private Class[] castArgumentsToClassArray(Object[] argTypes) {
+        Class[] classes = new Class[argTypes.length];
+        for (int i = 0; i < argTypes.length; i++) {
+            Object argType = argTypes[i];
+            if(argType instanceof Class) {
+                classes[i] = (Class)argType;
+            }
+            else {
+                throw new IllegalArgumentException("Arguments to method [respondsTo] must be of type java.lang.Class!");
+            }
+        }
+        return classes;
+    }
+
+    /**
+     * @see MetaObjectProtocol#respondsTo(Object,String, Object[])
+     */
+    public List respondsTo(final Object obj, final String name) {
+        return getMethods(getTheClass(),name,false);
+    }
+
+    /**
+     * @see MetaObjectProtocol#hasProperty(Object,String)
+     */
+    public MetaProperty hasProperty(Object obj,String name) {
+        return getMetaProperty(name);
+    }
+
+    /**
      * @see MetaObjectProtocol#getMetaProperty(String)
      */
     public MetaProperty getMetaProperty(String name) {
@@ -126,34 +169,22 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             return (MetaProperty)propertyMap.get(name);
         }
     }
+
     /**
      * @see MetaObjectProtocol#getStaticMetaMethod(String, Object[])
      */
-    public MetaMethod getStaticMetaMethod(String name, Object[] args) {
-        Class[] argClasses = MetaClassHelper.convertToTypeArray(args);
-        return getStaticMetaMethod(name, argClasses);
+    public MetaMethod getStaticMetaMethod(String name, Object[] argTypes) {
+        Class[] classes = castArgumentsToClassArray(argTypes);
+        return retrieveStaticMethod(name, classes);
     }
 
-    /**
-     * @see MetaObjectProtocol#getStaticMetaMethod(String, Class[])
-     */
-    public MetaMethod getStaticMetaMethod(String name, Class[] argTypes) {
-        return retrieveStaticMethod(name, argTypes);
-    }
 
     /**
      * @see MetaObjectProtocol#getMetaMethod(String, Object[])
      */
-    public MetaMethod getMetaMethod(String name, Object[] args) {
-        Class[] argClasses = MetaClassHelper.convertToTypeArray(args);
-        return getMetaMethod(name, argClasses);
-    }
-
-    /**
-     * @see MetaObjectProtocol#getMetaMethod(String, Class[])
-     */
-    public MetaMethod getMetaMethod(String name, Class[] argTypes) {
-        return pickMethod(name, argTypes);
+    public MetaMethod getMetaMethod(String name, Object[] argTypes) {
+        Class[] classes = castArgumentsToClassArray(argTypes);
+        return pickMethod(name, classes);
     }
 
     public Class getTheClass() {
@@ -534,6 +565,38 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         throw new MissingPropertyException(propertyName, theClass);
     }
 
+    /**
+     * Hook to deal with the case of MissingProperty for static properties. The method will look attempt to look up
+     * "propertyMissing" handlers and invoke them otherwise thrown a MissingPropertyException
+     *
+     * @param instance The instance
+     * @param propertyName The name of the property
+     * @param optionalValue The value in the case of a setter
+     * @param isGetter True if its a getter
+     * @return The value in the case of a getter or a MissingPropertyException
+     */
+    protected Object invokeStaticMissingProperty(Object instance, String propertyName, Object optionalValue, boolean isGetter) {
+        MetaClass mc = instance instanceof Class ? registry.getMetaClass((Class)instance) : this;
+        if(isGetter) {
+            MetaMethod propertyMissing = mc.getMetaMethod(STATIC_PROPERTY_MISSING, GETTER_MISSING_ARGS);
+            if(propertyMissing!=null) {
+                return propertyMissing.invoke(instance, new Object[]{propertyName});
+            }
+        }
+        else {
+            MetaMethod propertyMissing = mc.getMetaMethod(STATIC_PROPERTY_MISSING, SETTER_MISSING_ARGS);
+            if(propertyMissing!=null) {
+                return propertyMissing.invoke(instance, new Object[]{propertyName, optionalValue});
+            }
+        }
+
+        if(instance instanceof Class) {
+            throw new MissingPropertyException(propertyName, (Class)instance);
+        }
+        throw new MissingPropertyException(propertyName, theClass);
+    }
+
+
     private Object invokeMissingMethod(Object instance, String methodName, Object[] arguments, RuntimeException original) {
         MetaMethod method = getMetaMethod(METHOD_MISSING, METHOD_MISSING_ARGS);
         if(method!=null) {
@@ -890,7 +953,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     private Object invokeStaticMissingMethod(Class sender, String methodName, Object[] arguments) {
-        MetaMethod metaMethod = getStaticMetaMethod(METHOD_MISSING, METHOD_MISSING_ARGS);
+        MetaMethod metaMethod = getStaticMetaMethod(STATIC_METHOD_MISSING, METHOD_MISSING_ARGS);
         if(metaMethod!=null) {
             return metaMethod.invoke(sender, new Object[]{methodName, arguments});
         }
@@ -1131,10 +1194,14 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
        //----------------------------------------------------------------------
        // error due to missing method/field
        //----------------------------------------------------------------------
-       return invokeMissingProperty(object, name, null, true);
+       if(isStatic || object instanceof Class)
+            return invokeStaticMissingProperty(object, name, null, true);
+       else
+            return invokeMissingProperty(object, name, null, true);
    }
 
-   private MetaMethod getCategoryMethodGetter(Class sender, String name, boolean useLongVersion) {
+
+    private MetaMethod getCategoryMethodGetter(Class sender, String name, boolean useLongVersion) {
        List possibleGenericMethods = GroovyCategorySupport.getCategoryMethods(sender, name);
        if (possibleGenericMethods != null) {
            for (Iterator iter = possibleGenericMethods.iterator(); iter.hasNext();) {
@@ -1299,6 +1366,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
            
            inheritStaticInterfaceFields(superClasses, interfaces);       
            inheritFields(superClasses);
+
            applyPropertyDescriptors(propertyDescriptors);
            
            applyStrayPropertyMethods(superClasses,classMethodIndex,classPropertyIndex);
@@ -1513,7 +1581,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
        // MetaBeanProperty objects
        for(int i=0; i<propertyDescriptors.length; i++) {
            PropertyDescriptor pd = propertyDescriptors[i];
-           
+
            // skip if the property type is unknown (this seems to be the case if the
            // property descriptor is based on a setX() method that has two parameters,
            // which is not a valid property)
@@ -2195,7 +2263,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
            throw new GroovyRuntimeException("exception while bean introspection",pae.getException());
        }
        PropertyDescriptor[] descriptors = info.getPropertyDescriptors();
-
        // build up the metaproperties based on the public fields, property descriptors,
        // and the getters and setters
        setupProperties(descriptors);

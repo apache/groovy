@@ -15,6 +15,8 @@
  */
 package groovy.lang;
 
+import java.util.List;
+
 /**
  * <p>An interface that defines the API usable by clients of Groovy's Meta Object Protocol (MOP). These methods are
  * implemented by the reference implementation of the @link groovy.lang.MetaClass interface.</p>
@@ -25,6 +27,63 @@ package groovy.lang;
  * @author Graeme Rocher
  */
 public interface MetaObjectProtocol {
+
+    /**
+     * Obtain a list of all meta properties available on this meta class
+     *
+     * @see groovy.lang.MetaBeanProperty
+     * @return A list of MetaBeanProperty instances
+     */
+    List getProperties();
+    /**
+     * Obtain a list of all the meta methods available on this meta class
+     *
+     * @see groovy.lang.MetaMethod
+     * @return A list of MetaMethod instances
+     */
+    List getMethods();
+    
+    /**
+     * <p>Returns true if the implementing MetaClass responds a method with the given name and arguments types
+     *
+     * <p>Note that this method will only return true for realised methods and does not take into account
+     * objects or classes that implement invokeMethod or methodMissing
+     *
+     * <p>This method is "safe" and will always return a boolean and never throw an exception
+     *
+     * @param obj The object to inspect
+     * @param name The name of the method
+     * @param argTypes The argument types
+     * @return A List of MetaMethods which is empty if non exist
+     */
+    List respondsTo(Object obj,String name, Object[] argTypes);
+
+    /**
+     * <p>Returns true if the implementing MetaClass responds a method with the given name regardless of
+     * arguments. In other words this method will return for foo() and foo(String)
+     *
+     * <p>Note that this method will only return true for realised methods and does not take into account
+     * objects or classes that implement invokeMethod or methodMissing
+     *
+     * <p>This method is "safe" and will always return a boolean and never throw an exception
+     *
+     * @param obj The object to inspect
+     * @param name The name of the method
+     * @return A List of MetaMethods which is empty if non exist
+     */
+    List respondsTo(Object obj,String name);
+
+    /**
+     * <p>Returns true of the implementing MetaClass has a property of the given name
+     *
+     * <p>Note that this method will only return true for realised properties and does not take into
+     * account implementation of getProperty or propertyMissing
+     *
+     * @param obj The object to inspect
+     * @param name The name of the property
+     * @return The MetaProperty or null if it doesn't exist
+     */
+    MetaProperty hasProperty(Object obj, String name);
 
     /**
      * Returns a MetaProperty for the given name or null if it doesn't exist
@@ -39,38 +98,21 @@ public interface MetaObjectProtocol {
      * to establish the chosen MetaMethod
      *
      * @param name The name of the MetaMethod
-     * @param args The argument values
+     * @param args The argument types
      * @return A MetaMethod or null if it doesn't exist
      */
     MetaMethod getStaticMetaMethod(String name, Object[] args);
 
-    /**
-     * Retrieves a static MetaMethod for the given name and argument types
-     *
-     * @param name The name of the MetaMethod
-     * @param argTypes The argument types
-     * @return A MetaMethod or null if it doesn't exist
-     */
-    MetaMethod getStaticMetaMethod(String name, Class[] argTypes);
 
     /**
      * Retrieves an instance MetaMethod for the given name and argument values, using the types of the
      * argument values to establish the chosen MetaMethod
      *
      * @param name The name of the MetaMethod
-     * @param args The argument values
+     * @param args The argument types
      * @return A MetaMethod or null if it doesn't exist
      */
     MetaMethod getMetaMethod(String name, Object[] args);
-
-    /**
-     * Retrieves an instance MetaMethod for the given name and argument types
-     *
-     * @param name The name of the MetaMethod
-     * @param argTypes The argument types
-     * @return A MetaMethod or null if it doesn't exist
-     */
-    MetaMethod getMetaMethod(String name, Class[] argTypes);
 
     /**
      * Retrieves that Java Class that the attached Meta behaviours apply to
