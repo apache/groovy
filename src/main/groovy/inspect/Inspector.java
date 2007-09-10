@@ -19,16 +19,16 @@ import groovy.lang.GroovyObject;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaMethod;
 import groovy.lang.PropertyValue;
-
-import java.lang.reflect.Modifier;
-import java.lang.reflect.Method;
-import java.lang.reflect.Field;
-import java.lang.reflect.Constructor;
-import java.util.*;
-import java.io.PrintStream;
-
-import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.InvokerHelper;
+
+import java.io.PrintStream;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.*;
 
 /**
  * The Inspector provides a unified access to an object's
@@ -95,7 +95,7 @@ public class Inspector {
     public boolean isGroovy() {
         return GroovyObject.class.isAssignableFrom(getClassUnderInspection());
     }
-    
+
     /**
      * Gets the object being inspected.
      */
@@ -137,7 +137,7 @@ public class Inspector {
         }
         return result;
     }
-    
+
     /**
      * Get info about usual Java public fields incl. constants.
      * @return  Array of StringArrays that can be indexed with the MEMBER_xxx_IDX constants
@@ -267,10 +267,10 @@ public class Inspector {
         result[MEMBER_DECLARER_IDX] = shortName(method.getDeclaringClass());
         result[MEMBER_TYPE_IDX] = shortName(method.getReturnType());
         result[MEMBER_NAME_IDX] = method.getName();
-	    Class[] params = method.getParameterTypes();
+	    CachedClass[] params = method.getParameterTypes();
         StringBuffer sb = new StringBuffer();
 	    for (int j = 0; j < params.length; j++) {
-		    sb.append(shortName(params[j]));
+		    sb.append(shortName(params[j].getCachedClass()));
 		    if (j < (params.length - 1)) sb.append(", ");
 	    }
         result[MEMBER_PARAMS_IDX] = sb.toString();

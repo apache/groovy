@@ -18,6 +18,7 @@ package groovy.lang;
 
 import org.codehaus.groovy.runtime.*;
 import org.codehaus.groovy.reflection.ParameterTypes;
+import org.codehaus.groovy.reflection.CachedClass;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -28,7 +29,7 @@ import java.security.PrivilegedAction;
 /**
  * Represents a Method on a Java object a little like {@link java.lang.reflect.Method}
  * except without using reflection to invoke the method
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -46,7 +47,7 @@ public class MetaMethod implements Cloneable {
 
     protected ParameterTypes paramTypes;
 
-    public MetaMethod(String name, Class declaringClass, Class[] parameterTypes, Class returnType, int modifiers) {
+    public MetaMethod(String name, Class declaringClass, CachedClass[] parameterTypes, Class returnType, int modifiers) {
         this.name = name;
         this.callClass = declaringClass;
         this.declaringClass = declaringClass;
@@ -55,7 +56,7 @@ public class MetaMethod implements Cloneable {
         paramTypes = new ParameterTypes(parameterTypes);
     }
 
-    public MetaMethod(Method method, Class[] parameterTypes) {
+    public MetaMethod(Method method, CachedClass[] parameterTypes) {
         this(
             method.getName(),
             method.getDeclaringClass(),
@@ -71,7 +72,7 @@ public class MetaMethod implements Cloneable {
 
     /**
      * Checks that the given parameters are valid to call this method
-     * 
+     *
      * @param arguments the arguments to check
      * @throws IllegalArgumentException if the parameters are not valid
      */
@@ -87,7 +88,7 @@ public class MetaMethod implements Cloneable {
                     + InvokerHelper.toString(arguments));
         }
     }
-    
+
     public Object invoke(Object object, Object[] arguments) {
         try {
             if (reflector != null) {
@@ -111,7 +112,7 @@ public class MetaMethod implements Cloneable {
     public Class getCallClass() {
         return callClass;
     }
-    
+
     public void setCallClass(Class c) {
         callClass=c;
     }
@@ -151,10 +152,22 @@ public class MetaMethod implements Cloneable {
             && equal(getParameterTypes(), method.getParameterTypes());
     }
 
-    protected boolean equal(Class[] a, Class[] b) {
+    protected boolean equal(CachedClass[] a, Class[] b) {
         if (a.length == b.length) {
             for (int i = 0, size = a.length; i < size; i++) {
-                if (!a[i].equals(b[i])) {
+                if (!a[i].getCachedClass().equals(b[i])) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    protected boolean equal(CachedClass[] a, CachedClass[] b) {
+        if (a.length == b.length) {
+            for (int i = 0, size = a.length; i < size; i++) {
+                if (a[i] != b[i]) {
                     return false;
                 }
             }
@@ -229,12 +242,12 @@ public class MetaMethod implements Cloneable {
     public boolean isCacheable() {
         return true;
     }
-    
+
     public Class getDeclaringClass() {
         return declaringClass;
     }
 
-    public final Class [] getParameterTypes() {
+    public final CachedClass [] getParameterTypes() {
       return paramTypes.getParameterTypes();
     }
 
@@ -244,5 +257,9 @@ public class MetaMethod implements Cloneable {
 
     public final boolean isArray (int index) {
       return paramTypes.isArray(index);
+    }
+
+    public Class[] getNativeParameterTypes() {
+        return paramTypes.getNativeParameterTypes();
     }
 }

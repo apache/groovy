@@ -30,12 +30,16 @@ public class CachedClass {
     public final boolean isPrimitive;
     public final int modifiers;
     int distance = -1;
+    public final boolean isInterface;
+    public boolean isNumber;
 
     CachedClass(Class klazz) {
         cachedClass = klazz;
         isArray = klazz.isArray();
         isPrimitive = klazz.isPrimitive();
         modifiers = klazz.getModifiers();
+        isInterface = klazz.isInterface();
+        isNumber = Number.class.isAssignableFrom(klazz);
     }
 
     public synchronized CachedClass getCachedSuperClass() {
@@ -50,21 +54,21 @@ public class CachedClass {
             final Method[] declaredMethods = cachedClass.getDeclaredMethods();
             methods = new CachedMethod[declaredMethods.length];
             for (int i = 0; i != methods.length; ++i)
-                methods[i] = new CachedMethod(CachedClass.this, declaredMethods[i]);
+                methods[i] = ReflectionCache.getCachedMethod(declaredMethods[i]);
         }
         return methods;
     }
 
-    public Method searchMethods(String name, Class[] parameterTypes) {
+    public Method searchMethods(String name, CachedClass[] parameterTypes) {
         CachedMethod[] methods = getMethods();
 
         Method res = null;
         for (int i = 0; i < methods.length; i++) {
             CachedMethod m = methods[i];
-            if (m.method.getName().equals(name)
+            if (m.cachedMethod.getName().equals(name)
                     && ReflectionCache.arrayContentsEq(parameterTypes, m.getParameterTypes())
-                    && (res == null || res.getReturnType().isAssignableFrom(m.method.getReturnType())))
-                res = m.method;
+                    && (res == null || res.getReturnType().isAssignableFrom(m.cachedMethod.getReturnType())))
+                res = m.cachedMethod;
         }
 
         return res;

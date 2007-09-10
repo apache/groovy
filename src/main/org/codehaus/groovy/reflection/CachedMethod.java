@@ -23,21 +23,28 @@ import java.lang.reflect.Method;
 public class CachedMethod extends ParameterTypes {
     CachedClass clazz;
 
-    public final Method method;
+    public final Method cachedMethod;
 
     public CachedMethod(CachedClass clazz, Method method) {
-        super(method);
-        this.method = method;
+        this.cachedMethod = method;
         this.clazz = clazz;
+    }
+
+    public CachedMethod(Method method) {
+        this(ReflectionCache.getCachedClass(method.getDeclaringClass()),method);
     }
 
     public static CachedMethod find(Method method) {
         CachedMethod[] methods = ReflectionCache.getCachedClass(method.getDeclaringClass()).getMethods();
         for (int i = 0; i < methods.length; i++) {
             CachedMethod cachedMethod = methods[i];
-            if (cachedMethod.method.equals(method))
+            if (cachedMethod.cachedMethod.equals(method))
                 return cachedMethod;
         }
         return null;
+    }
+
+    Class[] getPT() {
+        return cachedMethod.getParameterTypes();
     }
 }

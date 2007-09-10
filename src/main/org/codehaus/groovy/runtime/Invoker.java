@@ -63,7 +63,7 @@ public class Invoker {
             object = NullObject.getNullObject();
             //throw new NullPointerException("Cannot invoke method " + methodName + "() on null object");
         }
-        
+
         // if the object is a Class, call a static method from that class
         if (object instanceof Class) {
             Class theClass = (Class) object;
@@ -86,14 +86,14 @@ public class Invoker {
     private Object invokePojoMethod(Object object, String methodName, Object arguments) {
         Class theClass = object.getClass();
         // TODO move this out of here
-        if (theClass.isArray() && methodName.equals("equals") && arguments.getClass().isArray()) {
+        if (methodName.equals("equals") && theClass.isArray() && arguments.getClass().isArray()) {
             Object arg = ((Object[]) arguments)[0];
             if (arg.getClass().isArray()) {
                 return Boolean.valueOf(DefaultGroovyMethods.equals((Object[])object, (Object[]) arg));
             }
             return Boolean.valueOf(DefaultGroovyMethods.equals((Object[])object, (List) arg));
         }
-        else if (object instanceof List && methodName.equals("equals") && arguments.getClass().isArray()) {
+        else if (methodName.equals("equals") && object instanceof List && arguments.getClass().isArray()) {
             Object arg = ((Object[]) arguments)[0];
             if (arg.getClass().isArray()) {
                 return Boolean.valueOf(DefaultGroovyMethods.equals((List)object, (Object[]) arg));
@@ -188,7 +188,7 @@ public class Invoker {
         }
         return metaRegistry.getMetaClass(object.getClass()).getProperty(object, property);
     }
-    
+
     /**
      * Sets the property on the given object
      */

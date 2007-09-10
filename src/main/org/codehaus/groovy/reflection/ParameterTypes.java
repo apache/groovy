@@ -4,28 +4,48 @@ import java.lang.reflect.Method;
 
 public class ParameterTypes
 {
-  private Class [] parameterTypes;
-  private boolean [] isArray;
+  private Class [] nativeParamTypes;
+  private CachedClass [] parameterTypes;
 
-  public ParameterTypes(Method method) {
-    parameterTypes = method.getParameterTypes();
-  }
-
-  public ParameterTypes(Class [] pt) {
-    parameterTypes = pt;
-  }
-
-  public boolean isArray (int index) {
-    if (isArray == null) {
-      isArray = new boolean[parameterTypes.length];
-      for (int i = 0; i != parameterTypes.length; ++i)
-        isArray [i] = parameterTypes[i].isArray();
+    public ParameterTypes () {
     }
 
-    return isArray [index];
-  }
+    public ParameterTypes(Class pt []) {
+        nativeParamTypes = pt;
+    }
 
-  public Class[] getParameterTypes() {
+    public ParameterTypes(CachedClass[] parameterTypes) {
+        this.parameterTypes = parameterTypes;
+    }
+
+    public boolean isArray (int index) {
+      return getParameterTypes()[index].isArray;
+    }
+
+  public CachedClass[] getParameterTypes() {
+      if (parameterTypes == null) {
+          if (nativeParamTypes == null)
+            nativeParamTypes = getPT();
+          parameterTypes = new CachedClass [nativeParamTypes.length];
+          for (int i = 0; i != nativeParamTypes.length; ++i)
+            parameterTypes[i] = ReflectionCache.getCachedClass(nativeParamTypes[i]);
+      }
+
       return parameterTypes;
   }
+
+    public Class[] getNativeParameterTypes() {
+        if (nativeParamTypes == null) {
+            if (parameterTypes != null) {
+               nativeParamTypes = new Class [parameterTypes.length];
+                for (int i = 0; i != parameterTypes.length; ++i)
+                  nativeParamTypes[i] = parameterTypes[i].getCachedClass();
+            }
+            else
+              nativeParamTypes = getPT ();
+        }
+        return nativeParamTypes;
+    }
+
+    Class[] getPT() { return null; }
 }

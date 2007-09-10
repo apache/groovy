@@ -20,6 +20,8 @@ import groovy.lang.*;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.reflection.ParameterTypes;
+import org.codehaus.groovy.reflection.CachedConstructor;
+import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 
@@ -45,11 +47,12 @@ public class MetaClassHelper {
 
     public static boolean accessibleToConstructor(final Class at, final Constructor constructor) {
         boolean accessible = false;
-        if (Modifier.isPublic(constructor.getModifiers())) {
+        final int modifiers = constructor.getModifiers();
+        if (Modifier.isPublic(modifiers)) {
             accessible = true;
-        } else if (Modifier.isPrivate(constructor.getModifiers())) {
+        } else if (Modifier.isPrivate(modifiers)) {
             accessible = at.getName().equals(constructor.getName());
-        } else if (Modifier.isProtected(constructor.getModifiers())) {
+        } else if (Modifier.isProtected(modifiers)) {
             Boolean isAccessible = checkCompatiblePackages(at, constructor);
             if (isAccessible != null) {
                 accessible = isAccessible.booleanValue();
@@ -304,7 +307,7 @@ public class MetaClassHelper {
         for (Iterator iter = methods.iterator(); iter.hasNext();) {
             Object method = iter.next();
             final ParameterTypes pt = getParameterTypes(method);
-            Class[] paramTypes = pt.getParameterTypes();
+            CachedClass[] paramTypes = pt.getParameterTypes();
             int paramLength = paramTypes.length;
             if (paramLength == 0) {
                 return method;
@@ -328,31 +331,31 @@ public class MetaClassHelper {
         for (Iterator iter = methods.iterator(); iter.hasNext();) {
             Object method = iter.next();
             final ParameterTypes pt = getParameterTypes(method);
-            Class[] paramTypes = pt.getParameterTypes();
+            CachedClass[] paramTypes = pt.getParameterTypes();
             int paramLength = paramTypes.length;
             if (paramLength == 0 || paramLength > 2) continue;
 
-            Class theType = paramTypes[0];
-            if (theType.isPrimitive()) continue;
+            CachedClass theType = paramTypes[0];
+            if (theType.isPrimitive) continue;
 
             if (paramLength == 2) {
                 if (!isVargsMethod(pt, ARRAY_WITH_NULL)) continue;
-                if (closestClass == theType) {
+                if (closestClass == theType.getCachedClass()) {
                     if (closestVargsClass == null) continue;
-                    Class newVargsClass = paramTypes[1];
+                    Class newVargsClass = paramTypes[1].getCachedClass();
                     if (closestVargsClass == null || isAssignableFrom(newVargsClass, closestVargsClass)) {
                         closestVargsClass = newVargsClass;
                         answer = method;
                     }
-                } else if (closestClass == null || isAssignableFrom(theType, closestClass)) {
-                    closestVargsClass = paramTypes[1];
-                    closestClass = theType;
+                } else if (closestClass == null || isAssignableFrom(theType.getCachedClass(), closestClass)) {
+                    closestVargsClass = paramTypes[1].getCachedClass();
+                    closestClass = theType.getCachedClass();
                     answer = method;
                 }
             } else {
-                if (closestClass == null || isAssignableFrom(theType, closestClass)) {
+                if (closestClass == null || isAssignableFrom(theType.getCachedClass(), closestClass)) {
                     closestVargsClass = null;
-                    closestClass = theType;
+                    closestClass = theType.getCachedClass();
                     answer = method;
                 }
             }
@@ -365,17 +368,20 @@ public class MetaClassHelper {
      *
      * @return the coerced argument
      */
-    protected static Object coerceGString(Object argument, Class clazz) {
-        if (clazz != String.class) return argument;
+    protected static Object coerceGString(Object argument, CachedClass clazz) {
+        if (clazz.getCachedClass() != String.class) return argument;
         if (!(argument instanceof GString)) return argument;
         return argument.toString();
     }
 
-    protected static Object coerceNumber(Object argument, Class param) {
-        if ((Number.class.isAssignableFrom(param) || param.isPrimitive()) && argument instanceof Number) { // Number types
+    // PRECONDITION:
+    //   !ReflectionCache.isAssignableFrom(parameterType, argument.getClass())
+    protected static Object coerceNumber(Object argument, CachedClass cachedParam) {
+        if (argument instanceof Number && (cachedParam.isNumber || cachedParam.isPrimitive)) { // Number types
             Object oldArgument = argument;
             boolean wasDouble = false;
             boolean wasFloat = false;
+            Class param = cachedParam.getCachedClass();
             if (param == Byte.class || param == Byte.TYPE) {
                 argument = new Byte(((Number) argument).byteValue());
             } else if (param == Double.class || param == Double.TYPE) {
@@ -418,12 +424,12 @@ public class MetaClassHelper {
         return argument;
     }
 
-    protected static Object coerceArray(Object argument, Class param) {
-        if (!param.isArray()) return argument;
+    protected static Object coerceArray(Object argument, CachedClass param) {
+        if (!param.isArray) return argument;
         Class argumentClass = argument.getClass();
         if (!argumentClass.isArray()) return argument;
 
-        Class paramComponent = param.getComponentType();
+        Class paramComponent = param.getCachedClass().getComponentType();
         if (paramComponent.isPrimitive()) {
             if (paramComponent == boolean.class && argumentClass == Boolean[].class) {
                 argument = DefaultTypeTransformation.convertToBooleanArray(argument);
@@ -464,8 +470,8 @@ public class MetaClassHelper {
     public static boolean containsMatchingMethod(List list, MetaMethod method) {
         for (Iterator iter = list.iterator(); iter.hasNext();) {
             MetaMethod aMethod = (MetaMethod) iter.next();
-            Class[] params1 = aMethod.getParameterTypes();
-            Class[] params2 = method.getParameterTypes();
+            CachedClass[] params1 = aMethod.getParameterTypes();
+            CachedClass[] params2 = method.getParameterTypes();
             if (params1.length == params2.length) {
                 boolean matches = true;
                 for (int i = 0; i < params1.length; i++) {
@@ -505,21 +511,22 @@ public class MetaClassHelper {
         return ans;
     }
 
-    public static Object doConstructorInvoke(Constructor constructor, Object[] argumentArray) {
+    public static Object doConstructorInvoke(CachedConstructor constructor, Object[] argumentArray) {
+        final Constructor constr = constructor.cachedConstructor;
         if (LOG.isLoggable(Level.FINER)) {
-            logMethodCall(constructor.getDeclaringClass(), constructor.getName(), argumentArray);
+            logMethodCall(constr.getDeclaringClass(), constr.getName(), argumentArray);
         }
-        argumentArray = coerceArgumentsToClasses(argumentArray, new ParameterTypes(constructor.getParameterTypes()));
+        argumentArray = coerceArgumentsToClasses(argumentArray, constructor);
         try {
-            return constructor.newInstance(argumentArray);
+            return constr.newInstance(argumentArray);
         } catch (InvocationTargetException e) {
             throw new InvokerInvocationException(e);
         } catch (IllegalArgumentException e) {
-            throw createExceptionText("failed to invoke constructor: ", constructor, argumentArray, e, false);
+            throw createExceptionText("failed to invoke constructor: ", constr, argumentArray, e, false);
         } catch (IllegalAccessException e) {
-            throw createExceptionText("could not access constructor: ", constructor, argumentArray, e, false);
+            throw createExceptionText("could not access constructor: ", constr, argumentArray, e, false);
         } catch (Exception e) {
-            throw createExceptionText("failed to invoke constructor: ", constructor, argumentArray, e, true);
+            throw createExceptionText("failed to invoke constructor: ", constr, argumentArray, e, true);
         }
     }
 
@@ -535,13 +542,13 @@ public class MetaClassHelper {
     }
 
     public static Object[] coerceArgumentsToClasses(Object[] argumentArray, ParameterTypes pt) {
-        Class paramTypes[] = pt.getParameterTypes();
+        CachedClass paramTypes[] = pt.getParameterTypes();
         // correct argumentArray's length
         if (argumentArray == null) {
             argumentArray = EMPTY_ARRAY;
         } else if (paramTypes.length == 1 && argumentArray.length == 0) {
             if (isVargsMethod(pt, argumentArray))
-                argumentArray = new Object[]{Array.newInstance(paramTypes[0].getComponentType(), 0)};
+                argumentArray = new Object[]{Array.newInstance(paramTypes[0].getCachedClass().getComponentType(), 0)};
             else
                 argumentArray = ARRAY_WITH_NULL;
         } else if (isVargsMethod(pt, argumentArray)) {
@@ -552,8 +559,8 @@ public class MetaClassHelper {
         for (int i = 0; i < argumentArray.length; i++) {
             Object argument = argumentArray[i];
             if (argument == null) continue;
-            Class parameterType = paramTypes[i];
-            if (ReflectionCache.isAssignableFrom(parameterType, argument.getClass())) continue;
+            CachedClass parameterType = paramTypes[i];
+            if (ReflectionCache.isAssignableFrom(parameterType.getCachedClass(), argument.getClass())) continue;
 
             argument = coerceGString(argument, parameterType);
             argument = coerceNumber(argument, parameterType);
@@ -605,8 +612,8 @@ public class MetaClassHelper {
      * @param argumentArray the arguments used to call the method
      * @param paramTypes    the types of the paramters the method takes
      */
-    private static Object[] fitToVargs(Object[] argumentArray, Class[] paramTypes) {
-        Class vargsClass = ReflectionCache.autoboxType(paramTypes[paramTypes.length - 1].getComponentType());
+    private static Object[] fitToVargs(Object[] argumentArray, CachedClass[] paramTypes) {
+        Class vargsClass = ReflectionCache.autoboxType(paramTypes[paramTypes.length - 1].getCachedClass().getComponentType());
 
         if (argumentArray.length == paramTypes.length - 1) {
             // the vargs argument is missing, so fill it with an empty array
@@ -616,7 +623,7 @@ public class MetaClassHelper {
             newArgs[newArgs.length - 1] = vargs;
             return newArgs;
         } else if (argumentArray.length == paramTypes.length) {
-            // the number of arguments is correct, but if the last argument 
+            // the number of arguments is correct, but if the last argument
             // is no array we have to wrap it in a array. if the last argument
             // is null, then we don't have to do anything
             Object lastArgument = argumentArray[argumentArray.length - 1];
@@ -660,7 +667,7 @@ public class MetaClassHelper {
     }
 
     public static Object doMethodInvoke(Object object, MetaMethod method, Object[] argumentArray) {
-        Class[] paramTypes = method.getParameterTypes();
+        CachedClass[] paramTypes = method.getParameterTypes();
         argumentArray = coerceArgumentsToClasses(argumentArray, method.getParamTypes());
         try {
             return method.invoke(object, argumentArray);
@@ -698,16 +705,20 @@ public class MetaClassHelper {
     }
 
     public static ParameterTypes getParameterTypes(Object methodOrConstructor) {
+        if (methodOrConstructor instanceof ParameterTypes) {
+            ParameterTypes pt = (CachedConstructor) methodOrConstructor;
+            return pt;
+        }
         if (methodOrConstructor instanceof MetaMethod) {
             return ((MetaMethod) methodOrConstructor).getParamTypes();
         }
         if (methodOrConstructor instanceof Method) {
             Method method = (Method) methodOrConstructor;
-            return new ParameterTypes(method.getParameterTypes());
+            return ReflectionCache.getCachedMethod(method);
         }
         if (methodOrConstructor instanceof Constructor) {
             Constructor constructor = (Constructor) methodOrConstructor;
-            return new ParameterTypes(constructor.getParameterTypes());
+            return ReflectionCache.getCachedConstructor(constructor);
         }
         throw new IllegalArgumentException("Must be a Method or Constructor");
     }
@@ -800,17 +811,17 @@ public class MetaClassHelper {
         }
         int size = arguments.length;
 
-        Class[] paramTypes = pt.getParameterTypes();
+        CachedClass[] paramTypes = pt.getParameterTypes();
         if ((size >= paramTypes.length || size == paramTypes.length - 1)
                 && paramTypes.length > 0
                 && pt.isArray(paramTypes.length - 1)) {
             // first check normal number of parameters
             for (int i = 0; i < paramTypes.length - 1; i++) {
-                if (isAssignableFrom(paramTypes[i], arguments[i])) continue;
+                if (isAssignableFrom(paramTypes[i].getCachedClass(), arguments[i])) continue;
                 return false;
             }
             // check varged
-            Class clazz = paramTypes[paramTypes.length - 1].getComponentType();
+            Class clazz = paramTypes[paramTypes.length - 1].getCachedClass().getComponentType();
             for (int i = paramTypes.length; i < size; i++) {
                 if (isAssignableFrom(clazz, arguments[i])) continue;
                 return false;
@@ -819,7 +830,7 @@ public class MetaClassHelper {
         } else if (paramTypes.length == size) {
             // lets check the parameter types match
             for (int i = 0; i < size; i++) {
-                if (isAssignableFrom(paramTypes[i], arguments[i])) continue;
+                if (isAssignableFrom(paramTypes[i].getCachedClass(), arguments[i])) continue;
                 return false;
             }
             return true;
@@ -835,7 +846,7 @@ public class MetaClassHelper {
     }
 
     public static boolean isVargsMethod(ParameterTypes pt, Object[] arguments) {
-        Class paramTypes[] = pt.getParameterTypes();
+        CachedClass paramTypes[] = pt.getParameterTypes();
         if (paramTypes.length == 0) return false;
         if (!pt.isArray(paramTypes.length - 1)) return false;
         // -1 because the varg part is optional

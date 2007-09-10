@@ -19,6 +19,7 @@ import groovy.lang.Closure;
 import groovy.lang.ClosureInvokingMethod;
 import org.codehaus.groovy.runtime.NewInstanceMetaMethod;
 import org.codehaus.groovy.reflection.ParameterTypes;
+import org.codehaus.groovy.reflection.CachedClass;
 
 import java.lang.reflect.Modifier;
 
@@ -46,7 +47,7 @@ public class ClosureMetaMethod extends NewInstanceMetaMethod implements ClosureI
      * @param c The closure that this ClosureMetaMethod will invoke when called
      */
     public ClosureMetaMethod(String name, Class declaringClass,Closure c) {
-		super(name, declaringClass, c.getParameterTypes() == null ? new Class[0] : c.getParameterTypes(), Object.class,Modifier.PUBLIC);
+		super(name, declaringClass, c.getParameterTypes() == null ? new CachedClass[0] : new ParameterTypes(c.getParameterTypes()).getParameterTypes(), Object.class,Modifier.PUBLIC);
         Class[] pt = c.getParameterTypes();
 		if(pt == null) {
 			pt = new Class[0];

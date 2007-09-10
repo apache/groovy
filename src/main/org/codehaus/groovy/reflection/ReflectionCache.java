@@ -20,6 +20,7 @@ import groovy.util.DoubleKeyHashMap;
 import groovy.util.TripleKeyHashMap;
 
 import java.lang.ref.SoftReference;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
@@ -102,6 +103,8 @@ public class ReflectionCache {
     }
 
     static final Map /*<Class,SoftReference<CachedClass>>*/ CACHED_CLASS_MAP = new WeakHashMap();
+    private static Map CACHED_METHOD_MAP = new WeakHashMap ();
+    private static final Map CACHED_CONSTRUCTOR_MAP = new WeakHashMap ();
 
     public static boolean isArray(Class klazz) {
         CachedClass cachedClass = getCachedClass(klazz);
@@ -191,8 +194,28 @@ public class ReflectionCache {
         return cachedClass;
     }
 
-    public static Method getDeclaredMethodCached(final Class klazz, String mName, Class[] parms) {
-        return getCachedClass(klazz).searchMethods(mName, parms);
+    public static CachedMethod getCachedMethod(Method method) {
+        CachedMethod cachedMethod;
+        synchronized (CACHED_METHOD_MAP) {
+            SoftReference ref = (SoftReference) CACHED_METHOD_MAP.get(method);
+            if (ref == null || (cachedMethod = (CachedMethod) ref.get()) == null) {
+                cachedMethod = new CachedMethod(method);
+                CACHED_METHOD_MAP.put(method, new SoftReference(cachedMethod));
+            }
+        }
+        return cachedMethod;
+    }
+
+    public static CachedConstructor getCachedConstructor(Constructor c) {
+        CachedConstructor cachedConstructor;
+        synchronized (CACHED_CONSTRUCTOR_MAP) {
+            SoftReference ref = (SoftReference) CACHED_CONSTRUCTOR_MAP.get(c);
+            if (ref == null || (cachedConstructor = (CachedConstructor) ref.get()) == null) {
+                cachedConstructor = new CachedConstructor(c);
+                CACHED_CONSTRUCTOR_MAP.put(c, new SoftReference(cachedConstructor));
+            }
+        }
+        return cachedConstructor;
     }
 
     public static CachedMethod[] getDeclaredMethodsCached(final Class klazz) {

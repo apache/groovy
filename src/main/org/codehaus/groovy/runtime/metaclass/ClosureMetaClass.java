@@ -19,6 +19,7 @@ package org.codehaus.groovy.runtime.metaclass;
 import groovy.lang.*;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.ReflectionCache;
+import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.Reflector;
@@ -138,7 +139,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
             LinkedList matches = new LinkedList();
             for (Iterator iter = matchingMethods.iterator(); iter.hasNext();) {
                 Object method = iter.next();
-                Class[] paramTypes = MetaClassHelper.getParameterTypes(method).getParameterTypes();
+                Class[] paramTypes = MetaClassHelper.getParameterTypes(method).getNativeParameterTypes();
                 if (!MetaClassHelper.parametersAreCompatible(arguments, paramTypes)) continue;
                 long dist = MetaClassHelper.calculateParameterDistance(arguments, paramTypes);
                 if (dist == 0) return method;
@@ -168,7 +169,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
             msg += InvokerHelper.toString(arguments);
             msg += " due to overlapping prototypes between:";
             for (Iterator iter = matches.iterator(); iter.hasNext();) {
-                Class[] types = MetaClassHelper.getParameterTypes(iter.next()).getParameterTypes();
+                CachedClass[] types = MetaClassHelper.getParameterTypes(iter.next()).getParameterTypes();
                 msg += "\n\t" + InvokerHelper.toString(types);
             }
             throw new GroovyRuntimeException(msg);
@@ -347,7 +348,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
             }
         });
         for (int i = 0; i < fieldArray.length; i++) {
-            MetaFieldProperty mfp = new MetaFieldProperty(fieldArray[i]);
+            MetaFieldProperty mfp = MetaFieldProperty.create(fieldArray[i]);
             attributes.put(fieldArray[i].getName(), mfp);
         }
         attributeInitDone = !attributes.isEmpty();
@@ -359,7 +360,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
 
             for (int i = 0; i < methodArray.length; i++) {
                 final CachedMethod cachedMethod = methodArray[i];
-                Method reflectionMethod = cachedMethod.method;
+                Method reflectionMethod = cachedMethod.cachedMethod;
                 if (!reflectionMethod.getName().equals(CLOSURE_DO_CALL_METHOD)) continue;
                 MetaMethod method = createMetaMethod(cachedMethod);
                 closureMethods.add(method);
@@ -377,7 +378,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
     private void assignMethodChooser() {
         if (closureMethods.size() == 1) {
             final MetaMethod doCall = (MetaMethod) closureMethods.get(0);
-            final Class[] c = doCall.getParameterTypes();
+            final CachedClass[] c = doCall.getParameterTypes();
             int length = c.length;
             if (length == 0) {
                 // no arg method
@@ -387,7 +388,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
                         return null;
                     }
                 };
-            } else if (length == 1 && c[0] == Object.class) {
+            } else if (length == 1 && c[0].getCachedClass() == Object.class) {
                 // Object fits all, so simple dispatch rule here
                 chooser = new MethodChooser() {
                     public Object chooseMethod(Class[] arguments, boolean coerce) {
@@ -399,12 +400,12 @@ public final class ClosureMetaClass extends MetaClassImpl {
             } else {
                 boolean allObject = true;
                 for (int i = 0; i < c.length - 1; i++) {
-                    if (c[i] != Object.class) {
+                    if (c[i].getCachedClass() != Object.class) {
                         allObject = false;
                         break;
                     }
                 }
-                if (allObject && c[c.length - 1] == Object.class) {
+                if (allObject && c[c.length - 1].getCachedClass() == Object.class) {
                     // all arguments are object, so test only if argument number is correct
                     chooser = new MethodChooser() {
                         public Object chooseMethod(Class[] arguments, boolean coerce) {
@@ -412,8 +413,8 @@ public final class ClosureMetaClass extends MetaClassImpl {
                             return null;
                         }
                     };
-                } else if (allObject && c[c.length - 1] == Object[].class) {
-                    // all arguments are Object but last, which is a vargs argument, that 
+                } else if (allObject && c[c.length - 1].getCachedClass() == Object[].class) {
+                    // all arguments are Object but last, which is a vargs argument, that
                     // will fit all, so jsut test if the number of argument is equal or
                     // more than the parameters we have.
                     final int minimumLength = c.length - 2;
@@ -439,10 +440,10 @@ public final class ClosureMetaClass extends MetaClassImpl {
             MetaMethod m0 = null, m1 = null;
             for (Iterator iterator = closureMethods.iterator(); iterator.hasNext();) {
                 MetaMethod m = (MetaMethod) iterator.next();
-                Class[] c = m.getParameterTypes();
+                CachedClass[] c = m.getParameterTypes();
                 if (c.length == 0) {
                     m0 = m;
-                } else if (c.length == 1 && c[0] == Object.class) {
+                } else if (c.length == 1 && c[0].getCachedClass() == Object.class) {
                     m1 = m;
                 }
             }
@@ -462,13 +463,13 @@ public final class ClosureMetaClass extends MetaClassImpl {
         if (((MetaClassRegistryImpl) registry).useAccessible()) {
             AccessController.doPrivileged(new PrivilegedAction() {
                 public Object run() {
-                    method.method.setAccessible(true);
+                    method.cachedMethod.setAccessible(true);
                     return null;
                 }
             });
         }
         if (GroovySystem.isUseReflection()) return new ReflectionMetaMethod(method);
-        return new MetaMethod(method.method, method.getParameterTypes());
+        return new MetaMethod(method.cachedMethod, method.getParameterTypes());
     }
 
     private void generateReflector() {

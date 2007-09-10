@@ -24,6 +24,9 @@ import java.lang.reflect.Modifier;
 import java.util.Map;
 import java.util.WeakHashMap;
 
+import org.codehaus.groovy.reflection.CachedClass;
+import org.codehaus.groovy.reflection.ReflectionCache;
+
 /**
  * This MetaBeanProperty will create a psuedo property whoes value is bound to the current
  * Thread using soft references. The values will go out of scope and be garabage collected when
@@ -37,7 +40,7 @@ import java.util.WeakHashMap;
  *
  */
 public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
-	private static final Class[] ZERO_ARGUMENT_LIST = new Class[0];
+	private static final CachedClass[] ZERO_ARGUMENT_LIST = new CachedClass[0];
 	private static final ThreadLocal PROPERTY_INSTANCE_HOLDER = new InheritableThreadLocal();
 
 	private Class declaringClass;
@@ -71,7 +74,7 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
      */
     public void setInitialValueCreator(Closure callable) {
        this.initialValueCreator = callable;
-    }      
+    }
 
     /**
 	 * Constructs a new ThreadManagedBeanProperty for the given arguments
@@ -109,7 +112,7 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
 		this.setter = new ThreadBoundSetter(name);
 		this.initialValueCreator = initialValueCreator;
 
-	}      
+	}
 
     private static Object getThreadBoundPropertyValue(Object obj, String name, Object initialValue) {
 		Map propertyMap = getThreadBoundPropertMap();
@@ -200,7 +203,7 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
 		private String setterName;
 
 		public ThreadBoundSetter(String name) {
-			super(name, declaringClass, new Class[]{type}, type, Modifier.PUBLIC);
+			super(name, declaringClass, new CachedClass[]{ReflectionCache.getCachedClass(type)}, type, Modifier.PUBLIC);
 			setterName = getSetterName(name);
 		}
 

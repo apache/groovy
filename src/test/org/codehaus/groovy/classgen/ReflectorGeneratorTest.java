@@ -50,6 +50,7 @@ import groovy.lang.GroovySystem;
 import groovy.lang.MetaClassRegistry;
 import groovy.lang.MetaMethod;
 import groovy.util.GroovyTestCase;
+import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.objectweb.asm.ClassWriter;
@@ -68,7 +69,7 @@ public class ReflectorGeneratorTest extends GroovyTestCase {
 
     public void testGenerator() throws Exception {
         List methods = new ArrayList();
-        methods.add(new MetaMethod("toCharArray", String.class, new Class[0], char[].class, 0));
+        methods.add(new MetaMethod("toCharArray", String.class, new CachedClass[0], char[].class, 0));
         //methods.add(new MetaMethod("toString", String.class, new Class[0], String.class, 0));
         testMethods(methods);
     }

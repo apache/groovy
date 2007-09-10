@@ -22,17 +22,20 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
 
+import org.codehaus.groovy.reflection.CachedClass;
+import org.codehaus.groovy.reflection.ReflectionCache;
+
 /**
  * @author sam
  * @author Paul King
  */
 public class GroovyCategorySupport {
-    
-    private static long categoriesInUse = 0; 
+
+    private static long categoriesInUse = 0;
 
     /**
      * This method is used to pull all the new methods out of the local thread context with a particular name.
-     * 
+     *
      * @param categorizedClass a class subject to the category methods in the thread context
      * @param name the method name of interest
      * @return the list of methods
@@ -72,7 +75,7 @@ public class GroovyCategorySupport {
                     List newMethodList = (List) iterator.next();
                     if (newMethodList != null) {
                         methodList.addAll(newMethodList);
-                    }                    
+                    }
                 }
             }
         }
@@ -169,12 +172,12 @@ public class GroovyCategorySupport {
         for (int i = 0; i < methods.length; i++) {
             Method method = methods[i];
             if (Modifier.isStatic(method.getModifiers())) {
-                Class[] paramTypes = method.getParameterTypes();
+                CachedClass[] paramTypes = ReflectionCache.getCachedMethod(method).getParameterTypes();
                 if (paramTypes.length > 0) {
-                    Class metaClass = paramTypes[0];
-                    Map metaMethodsMap = getMetaMethods(properties, metaClass);
+                    CachedClass metaClass = paramTypes[0];
+                    Map metaMethodsMap = getMetaMethods(properties, metaClass.getCachedClass());
                     List methodList = getMethodList(metaMethodsMap, method.getName());
-                    MetaMethod mmethod = new CategoryMethod(new MetaMethod(method, paramTypes), metaClass);
+                    MetaMethod mmethod = new CategoryMethod(new MetaMethod(method, paramTypes), metaClass.getCachedClass());
                     methodList.add(mmethod);
                     Collections.sort(methodList);
                 }
@@ -189,29 +192,29 @@ public class GroovyCategorySupport {
         		return stack;
         	}
     };
-    
+
     private static void newScope() {
         categoriesInUse++;
         List stack = (List) LOCAL.get();
     	Map properties = new WeakHashMap(getProperties());
     	stack.add(properties);
     }
-    
+
     private static void endScope() {
         List stack = (List) LOCAL.get();
     	stack.remove(stack.size() - 1);
         categoriesInUse--;
     }
-    
+
     private static Map getProperties() {
         List stack = (List) LOCAL.get();
         return (Map) stack.get(stack.size() - 1);
     }
-    
+
     public static boolean hasCategoryInAnyThread() {
         return categoriesInUse!=0;
     }
-    
+
     private static List getMethodList(Map metaMethodsMap, String name) {
         List methodList = (List) metaMethodsMap.get(name);
         if (methodList == null) {

@@ -17,6 +17,7 @@ package org.codehaus.groovy.classgen;
 
 import groovy.lang.MetaMethod;
 import org.objectweb.asm.*;
+import org.codehaus.groovy.reflection.CachedClass;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -164,7 +165,7 @@ public class ReflectorGenerator implements Opcodes {
         }
         // get bytecode information
         String type = BytecodeHelper.getClassInternalName(callClass.getName());
-        String descriptor = BytecodeHelper.getMethodDescriptor(method.getReturnType(), method.getParameterTypes());
+        String descriptor = BytecodeHelper.getMethodDescriptor(method.getReturnType(), method.getNativeParameterTypes());
 
         // make call
         if (method.isStatic()) {
@@ -181,7 +182,7 @@ public class ReflectorGenerator implements Opcodes {
     }
 
     protected void loadParameters(MetaMethod method, int argumentIndex, MethodVisitor mv) {
-        Class[] parameters = method.getParameterTypes();
+        CachedClass[] parameters = method.getParameterTypes();
         int size = parameters.length;
         for (int i = 0; i < size; i++) {
             // unpack argument from Object[]
@@ -191,7 +192,7 @@ public class ReflectorGenerator implements Opcodes {
 
             // cast argument to parameter class, inclusive unboxing
             // for methods with primitive types
-            Class type = parameters[i];
+            Class type = parameters[i].getCachedClass();
             if (type.isPrimitive()) {
                 helper.unbox(type);
             } else {

@@ -17,38 +17,39 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.ParameterTypes;
+import org.codehaus.groovy.reflection.CachedClass;
 
 /**
  * A MetaMethod implementation where the underlying method is really a static
  * helper method on some class.
- * 
+ *
  * This implementation is used to add new static methods to the JDK writing them as normal
  * static methods with the first parameter being the class on which the method is added.
- * 
+ *
  * @author Guillaume Laforge
  * @version $Revision$
  */
 public class NewStaticMetaMethod extends MetaMethod {
 
     private static final Class[] EMPTY_TYPE_ARRAY = {};
-    
+
     private MetaMethod metaMethod;
     private Class[] bytecodeParameterTypes;
-    
+
     public NewStaticMetaMethod(MetaMethod metaMethod) {
         super(metaMethod);
         this.metaMethod = metaMethod;
         init();
     }
-    
-    public NewStaticMetaMethod(String name, Class declaringClass, Class[] parameterTypes, Class returnType, int modifiers) {
+
+    public NewStaticMetaMethod(String name, Class declaringClass, CachedClass[] parameterTypes, Class returnType, int modifiers) {
         super(name, declaringClass, parameterTypes, returnType, modifiers);
         this.metaMethod = new MetaMethod(name, declaringClass, parameterTypes,returnType, modifiers);
         init();
     }
-    
+
     private void init() {
-        bytecodeParameterTypes = metaMethod.getParameterTypes();
+        bytecodeParameterTypes = metaMethod.getNativeParameterTypes();
         int size = bytecodeParameterTypes !=null ? bytecodeParameterTypes.length : 0;
         Class[] logicalParameterTypes;
         if (size <= 1) {

@@ -22,13 +22,13 @@ import org.codehaus.groovy.reflection.CachedClass;
  * A default implementation of MethodKey
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
+ * @version $Revision: 7922 $
  */
-public class DefaultMethodKey extends MethodKey{
+public class DefaultCachedMethodKey extends MethodKey{
 
-    private final Class[] parameterTypes;
+    private final CachedClass[] parameterTypes;
 
-    public DefaultMethodKey(Class sender, String name, Class[] parameterTypes, boolean isCallToSuper) {
+    public DefaultCachedMethodKey(Class sender, String name, CachedClass[] parameterTypes, boolean isCallToSuper) {
         super(sender, name,isCallToSuper);
         this.parameterTypes = parameterTypes;
     }
@@ -38,8 +38,8 @@ public class DefaultMethodKey extends MethodKey{
     }
 
     public Class getParameterType(int index) {
-        Class c = parameterTypes[index];
+        CachedClass c = parameterTypes[index];
         if (c==null) return Object.class;
-        return c;
+        return c.getCachedClass();
     }
 }

@@ -20,39 +20,40 @@ import groovy.lang.MetaMethod;
 import java.lang.reflect.Modifier;
 
 import org.codehaus.groovy.reflection.ParameterTypes;
+import org.codehaus.groovy.reflection.CachedClass;
 
 /**
  * A MetaMethod implementation where the underlying method is really a static
  * helper method on some class but it appears to be an instance method on a class.
- * 
+ *
  * This implementation is used to add new methods to the JDK writing them as normal
  * static methods with the first parameter being the class on which the method is added.
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
 public class NewInstanceMetaMethod extends MetaMethod {
 
     private static final Class[] EMPTY_TYPE_ARRAY = {};
-    
+
     private MetaMethod metaMethod;
     private Class[] bytecodeParameterTypes ;
 
-    
+
     public NewInstanceMetaMethod(MetaMethod metaMethod) {
         super(metaMethod);
         this.metaMethod = metaMethod;
         init();
     }
-    
-    public NewInstanceMetaMethod(String name, Class declaringClass, Class[] parameterTypes, Class returnType, int modifiers) {
+
+    public NewInstanceMetaMethod(String name, Class declaringClass, CachedClass[] parameterTypes, Class returnType, int modifiers) {
         super(name, declaringClass, parameterTypes, returnType, modifiers);
         this.metaMethod = new MetaMethod(name, declaringClass, parameterTypes,returnType, modifiers);
         init();
     }
-    
+
     private void init() {
-        bytecodeParameterTypes = metaMethod.getParameterTypes();
+        bytecodeParameterTypes = metaMethod.getNativeParameterTypes();
         int size = bytecodeParameterTypes !=null ? bytecodeParameterTypes.length : 0;
         Class[] logicalParameterTypes;
         if (size <= 1) {
@@ -63,7 +64,7 @@ public class NewInstanceMetaMethod extends MetaMethod {
         }
         paramTypes = new ParameterTypes(logicalParameterTypes);
     }
-    
+
     public Class getDeclaringClass() {
         return getBytecodeParameterTypes()[0];
     }
@@ -89,7 +90,7 @@ public class NewInstanceMetaMethod extends MetaMethod {
         System.arraycopy(arguments, 0, newArguments, 1, size);
         return metaMethod.invoke(null, newArguments);
     }
-    
+
     public Class getOwnerClass() {
         return getBytecodeParameterTypes()[0];
     }

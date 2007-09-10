@@ -41,7 +41,7 @@ public class ClosureStaticMetaMethod extends NewStaticMetaMethod implements Clos
      * @param c The closure that this ClosureMetaMethod will invoke when called
      */
     public ClosureStaticMetaMethod(String name, Class declaringClass, Closure c) {
-		super(name, declaringClass, c.getParameterTypes(), Object.class, Modifier.PUBLIC);
+		super(name, declaringClass, new ParameterTypes(c.getParameterTypes()).getParameterTypes(), Object.class, Modifier.PUBLIC);
 		Class [] pt  = c.getParameterTypes();
 		if(pt == null) {
 			pt = new Class[0];
@@ -72,7 +72,7 @@ public class ClosureStaticMetaMethod extends NewStaticMetaMethod implements Clos
      * Retrieves the closure that is invoked by this MetaMethod
      *
      * @return The closure
-     */    
+     */
     public Closure getClosure() {
 		return this.callable;
 	}
