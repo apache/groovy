@@ -128,11 +128,15 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     private Class[] castArgumentsToClassArray(Object[] argTypes) {
+        if(argTypes == null)return new Class[0];
         Class[] classes = new Class[argTypes.length];
         for (int i = 0; i < argTypes.length; i++) {
             Object argType = argTypes[i];
             if(argType instanceof Class) {
                 classes[i] = (Class)argType;
+            }
+            else if(argType == null) {
+                classes[i] = null;                
             }
             else {
                 throw new IllegalArgumentException("Arguments to method [respondsTo] must be of type java.lang.Class!");

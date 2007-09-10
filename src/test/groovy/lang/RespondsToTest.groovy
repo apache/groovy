@@ -11,6 +11,37 @@
 package groovy.lang
 class RespondsToTest extends GroovyTestCase {
 
+    void testRespondsToForMethodEvaluation() {
+        RespondsToTestClass.metaClass.invokeMethod = {String name, args ->
+            def methods = RespondsToTestClass.metaClass.respondsTo(delegate,name, args*.getClass() as Object[])
+            def result
+            if(methods) {
+                // only way to get var-args to work is to do this at the moment. Yuck!
+                if(methods[0].parameterTypes.length == 1 && methods[0].parameterTypes[0] == Object[].class)
+                    result = methods[0].invoke(delegate, [args] as Object[])
+                else
+                    result = methods[0].invoke(delegate, args)
+            }
+            else {
+                result = "foo"
+            }
+            result
+        }
+
+        def t = new RespondsToTestClass()
+        assertEquals "one", t.noArgsMethod()
+        assertEquals "two", t.varArgsMethod(1,2)
+        assertEquals "two", t.varArgsMethod(null,null)
+        assertEquals "three", t.typedArgsMethod("one",1)
+        assertEquals "three", t.typedArgsMethod(null,1)
+        assertEquals "three", t.typedArgsMethod(null,null)
+        assertEquals "four", t.overloadedMethod("one")
+        assertEquals "five", t.overloadedMethod(1)
+        assertEquals "five", t.overloadedMethod(null)
+        assertEquals "six", t.overloadedMethod()
+        assertEquals "foo", t.doStuff()
+    }
+
     void testRespondsTo() {
 
         RTTest2.metaClass.newM = {-> "foo" }
@@ -43,6 +74,14 @@ class RespondsToTest extends GroovyTestCase {
         assert t.metaClass.hasProperty(t,"newProp")
 
     }
+}
+class RespondsToTestClass {
+    def noArgsMethod() { "one" }
+    def varArgsMethod(Object[] args) { "two" }
+    def typedArgsMethod(String one, Integer two) { "three" }
+    def overloadedMethod(String one) { "four" }
+    def overloadedMethod(Integer one) { "five" }
+    def overloadedMethod() { "six" }
 }
 class RTTest1 {
     String five
