@@ -270,7 +270,7 @@ public class Inspector {
 	    CachedClass[] params = method.getParameterTypes();
         StringBuffer sb = new StringBuffer();
 	    for (int j = 0; j < params.length; j++) {
-		    sb.append(shortName(params[j].getCachedClass()));
+            sb.append(shortName(params[j].cachedClass));
 		    if (j < (params.length - 1)) sb.append(", ");
 	    }
         result[MEMBER_PARAMS_IDX] = sb.toString();

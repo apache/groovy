@@ -151,7 +151,6 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         }
     }
 
-
     /**
      * Registers a new MetaClass in the registry to customize the type
      *

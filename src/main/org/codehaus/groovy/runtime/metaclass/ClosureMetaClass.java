@@ -388,52 +388,56 @@ public final class ClosureMetaClass extends MetaClassImpl {
                         return null;
                     }
                 };
-            } else if (length == 1 && c[0].getCachedClass() == Object.class) {
-                // Object fits all, so simple dispatch rule here
-                chooser = new MethodChooser() {
-                    public Object chooseMethod(Class[] arguments, boolean coerce) {
-                        // <2, because foo() is same as foo(null)
-                        if (arguments.length < 2) return doCall;
-                        return null;
-                    }
-                };
             } else {
-                boolean allObject = true;
-                for (int i = 0; i < c.length - 1; i++) {
-                    if (c[i].getCachedClass() != Object.class) {
-                        allObject = false;
-                        break;
-                    }
-                }
-                if (allObject && c[c.length - 1].getCachedClass() == Object.class) {
-                    // all arguments are object, so test only if argument number is correct
+                if (length == 1 && c[0].cachedClass == Object.class) {
+                    // Object fits all, so simple dispatch rule here
                     chooser = new MethodChooser() {
                         public Object chooseMethod(Class[] arguments, boolean coerce) {
-                            if (arguments.length == c.length) return doCall;
-                            return null;
-                        }
-                    };
-                } else if (allObject && c[c.length - 1].getCachedClass() == Object[].class) {
-                    // all arguments are Object but last, which is a vargs argument, that
-                    // will fit all, so jsut test if the number of argument is equal or
-                    // more than the parameters we have.
-                    final int minimumLength = c.length - 2;
-                    chooser = new MethodChooser() {
-                        public Object chooseMethod(Class[] arguments, boolean coerce) {
-                            if (arguments.length > minimumLength) return doCall;
+                            // <2, because foo() is same as foo(null)
+                            if (arguments.length < 2) return doCall;
                             return null;
                         }
                     };
                 } else {
-                    // general case for single method
-                    chooser = new MethodChooser() {
-                        public Object chooseMethod(Class[] arguments, boolean coerce) {
-                            if (MetaClassHelper.isValidMethod(doCall, arguments, coerce)) {
-                                return doCall;
-                            }
-                            return null;
+                    boolean allObject = true;
+                    for (int i = 0; i < c.length - 1; i++) {
+                        if (c[i].cachedClass != Object.class) {
+                            allObject = false;
+                            break;
                         }
-                    };
+                    }
+                    if (allObject && c[c.length - 1].cachedClass == Object.class) {
+                        // all arguments are object, so test only if argument number is correct
+                        chooser = new MethodChooser() {
+                            public Object chooseMethod(Class[] arguments, boolean coerce) {
+                                if (arguments.length == c.length) return doCall;
+                                return null;
+                            }
+                        };
+                    } else {
+                        if (allObject && c[c.length - 1].cachedClass == Object[].class) {
+                            // all arguments are Object but last, which is a vargs argument, that
+                            // will fit all, so jsut test if the number of argument is equal or
+                            // more than the parameters we have.
+                            final int minimumLength = c.length - 2;
+                            chooser = new MethodChooser() {
+                                public Object chooseMethod(Class[] arguments, boolean coerce) {
+                                    if (arguments.length > minimumLength) return doCall;
+                                    return null;
+                                }
+                            };
+                        } else {
+                            // general case for single method
+                            chooser = new MethodChooser() {
+                                public Object chooseMethod(Class[] arguments, boolean coerce) {
+                                    if (MetaClassHelper.isValidMethod(doCall, arguments, coerce)) {
+                                        return doCall;
+                                    }
+                                    return null;
+                                }
+                            };
+                        }
+                    }
                 }
             }
         } else if (closureMethods.size() == 2) {
@@ -443,8 +447,10 @@ public final class ClosureMetaClass extends MetaClassImpl {
                 CachedClass[] c = m.getParameterTypes();
                 if (c.length == 0) {
                     m0 = m;
-                } else if (c.length == 1 && c[0].getCachedClass() == Object.class) {
-                    m1 = m;
+                } else {
+                    if (c.length == 1 && c[0].cachedClass == Object.class) {
+                        m1 = m;
+                    }
                 }
             }
             if (m0 != null && m1 != null) {

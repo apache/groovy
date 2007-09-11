@@ -155,7 +155,7 @@ public class MetaMethod implements Cloneable {
     protected boolean equal(CachedClass[] a, Class[] b) {
         if (a.length == b.length) {
             for (int i = 0, size = a.length; i < size; i++) {
-                if (!a[i].getCachedClass().equals(b[i])) {
+                if (!a[i].cachedClass.equals(b[i])) {
                     return false;
                 }
             }
@@ -253,10 +253,6 @@ public class MetaMethod implements Cloneable {
 
     public final ParameterTypes getParamTypes() {
       return paramTypes;
-    }
-
-    public final boolean isArray (int index) {
-      return paramTypes.isArray(index);
     }
 
     public Class[] getNativeParameterTypes() {

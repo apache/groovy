@@ -192,7 +192,7 @@ public class ReflectorGenerator implements Opcodes {
 
             // cast argument to parameter class, inclusive unboxing
             // for methods with primitive types
-            Class type = parameters[i].getCachedClass();
+            Class type = parameters[i].cachedClass;
             if (type.isPrimitive()) {
                 helper.unbox(type);
             } else {

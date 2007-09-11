@@ -53,6 +53,7 @@ import java.util.logging.Logger;
 * @see groovy.lang.MetaClass
 */
 public class MetaClassImpl implements MetaClass, MutableMetaClass {
+
     private static final String CLOSURE_CALL_METHOD = "call";
     private static final String CLOSURE_DO_CALL_METHOD = "doCall";
     private static final String CLOSURE_CURRY_METHOD = "curry";
@@ -71,12 +72,15 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     protected final boolean isGroovyObject;
     protected final boolean isMap;
     private ClassNode classNode;
-    private final Map classMethodIndex = new HashMap();
-    private Map classMethodIndexForSuper;
-    private final Map classStaticMethodIndex = new HashMap();
-    private final Map classPropertyIndex = new HashMap();
-    private Map classPropertyIndexForSuper = new HashMap();
+
+    private final MethodIndex classMethodIndex = new MethodIndex();
+    private MethodIndex classMethodIndexForSuper;
+    private final MethodIndex classStaticMethodIndex = new MethodIndex();
+
+    private final Index classPropertyIndex = new MethodIndex();
+    private Index classPropertyIndexForSuper = new MethodIndex();
     private final Map staticPropertyIndex = new HashMap();
+
     private final Map listeners = new HashMap();
     private final Map methodCache = new ConcurrentReaderHashMap();
     private final Map staticMethodCache = new ConcurrentReaderHashMap();
@@ -164,7 +168,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @see MetaObjectProtocol#getMetaProperty(String)
      */
     public MetaProperty getMetaProperty(String name) {
-        Map propertyMap = (Map)classPropertyIndex.get(theClass);
+        Map propertyMap = classPropertyIndex.getNotNull(theClass);
         if(propertyMap.containsKey(name)) {
             return (MetaProperty)propertyMap.get(name);
         }
@@ -172,7 +176,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             return (MetaProperty)staticPropertyIndex.get(name);
         }
         else {
-            propertyMap = (Map)classPropertyIndexForSuper.get(theClass);
+            propertyMap = classPropertyIndexForSuper.getNotNull(theClass);
             return (MetaProperty)propertyMap.get(name);
         }
     }
@@ -214,8 +218,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
            makeInterfaceSet(theClass,interfaces);
 
            inheritInterfaceMethods(interfaces);
-           Map theClassIndex = getMap2MapNotNull(classMethodIndex,theClass);
-           Map objectIndex = getMap2MapNotNull(classMethodIndex,Object.class);
+           Map theClassIndex = classMethodIndex.getNotNull(theClass);
+           Map objectIndex = classMethodIndex.getNotNull(Object.class);
            copyNonPrivateMethods(objectIndex,theClassIndex);
            classMethodIndexForSuper = classMethodIndex;
            superClasses.addAll(interfaces);
@@ -235,9 +239,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
            Set interfaces = new HashSet();
            makeInterfaceSet(theClass,interfaces);
 
-           inheritMethods(superClasses,classMethodIndex);
+           inheritMethods(superClasses);
            inheritInterfaceMethods(interfaces);
-           copyClassMethodIndexForSuper();
+           classMethodIndexForSuper = classMethodIndex.copy();
 
            connectMultimethods(superClasses);
            populateInterfaces(interfaces);
@@ -282,7 +286,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
               // in the index for super are replaced later by MOP
               // methods like super$5$foo
               methods.clear();
-              methods.addAll((Collection) ((Map) classMethodIndexForSuper.get(clazz)).get(methodName));
+              methods.addAll((Collection) ((Map) classMethodIndexForSuper.getNotNull(clazz)).get(methodName));
               return methods;
            }
            public boolean replaceMethodList() {return false;}
@@ -295,7 +299,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
        // no MOP methods if not a child of GroovyObject
        if (!GroovyObject.class.isAssignableFrom(theClass)) return;
 
-       final Map mainClassMethodIndex = (Map) classMethodIndex.get(theClass);
+       final Map mainClassMethodIndex = (Map) classMethodIndex.getNotNull(theClass);
        class MOPIter extends MethodIndexAction {
            boolean useThis;
            public boolean skipClass(Class clazz) {
@@ -327,32 +331,18 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
        iter.iterate(classMethodIndex);
    }
 
-  private void copyClassMethodIndexForSuper() {
-       classMethodIndexForSuper = new HashMap(classMethodIndex.size());
-       for (Iterator iter = classMethodIndex.entrySet().iterator(); iter.hasNext();) {
-           Map.Entry cmiEntry = (Map.Entry) iter.next();
-           Map methodIndex = (Map) cmiEntry.getValue();
-           Map copy = new HashMap (methodIndex.size());
-           for (Iterator iterator = methodIndex.entrySet().iterator(); iterator.hasNext();) {
-               Map.Entry mEntry = (Map.Entry) iterator.next();
-               copy.put(mEntry.getKey(), new ArrayList((List) mEntry.getValue()));
-           }
-           classMethodIndexForSuper.put(cmiEntry.getKey(),copy);
-       }
-   }
-
-   private void inheritInterfaceMethods(Set interfaces) {
+    private void inheritInterfaceMethods(Set interfaces) {
        // add methods declared by DGM for interfaces
        List methods = ((MetaClassRegistryImpl)registry).getInstanceMethods();
        for (Iterator iter = methods.iterator(); iter.hasNext();) {
            CachedMethod element = (CachedMethod) iter.next();
-           Class dgmClass = element.getParameterTypes()[0].getCachedClass();
+           Class dgmClass = element.getParameterTypes()[0].cachedClass;
            if (!interfaces.contains(dgmClass)) continue;
            NewInstanceMetaMethod method = new NewInstanceMetaMethod(createMetaMethod(element));
            if (! newGroovyMethodsList.contains(method)){
                newGroovyMethodsList.add(method);
            }
-           Map methodIndex = getMap2MapNotNull(classMethodIndex, theClass);
+           Map methodIndex = classMethodIndex.getNotNull(theClass);
            List list = (List) methodIndex.get(method.getName());
            if (list == null) {
                list = new ArrayList();
@@ -365,19 +355,19 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
        methods = ((MetaClassRegistryImpl)registry).getStaticMethods();
        for (Iterator iter = methods.iterator(); iter.hasNext();) {
            CachedMethod element = (CachedMethod) iter.next();
-           Class dgmClass = element.getParameterTypes()[0].getCachedClass();
+           Class dgmClass = element.getParameterTypes()[0].cachedClass;
            if (!interfaces.contains(dgmClass)) continue;
            addNewStaticMethod(element.cachedMethod);
        }
    }
 
    private void populateInterfaces(Set interfaces){
-       Map currentIndex = getMap2MapNotNull(classMethodIndex,theClass);
+       Map currentIndex = classMethodIndex.getNotNull(theClass);
        Map index = new HashMap();
        copyNonPrivateMethods(currentIndex,index);
        for (Iterator iter = interfaces.iterator(); iter.hasNext();) {
            Class iClass = (Class) iter.next();
-           Map methodIndex = (Map) classMethodIndex.get(iClass);
+           Map methodIndex = classMethodIndex.getNullable(iClass);
            if (methodIndex==null || methodIndex.isEmpty()) {
                classMethodIndex.put(iClass,index);
                continue;
@@ -416,18 +406,18 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
        Map last = null;
        for (Iterator iter = superClasses.iterator(); iter.hasNext();) {
            Class c = (Class) iter.next();
-           Map methodIndex = (Map) classMethodIndex.get(c);
+           Map methodIndex = classMethodIndex.getNullable(c);
            if (methodIndex==last) continue;
            if (last!=null) copyNonPrivateMethods(last,methodIndex);
            last = methodIndex;
        }
    }
 
-   private void inheritMethods(Collection superClasses, Map classMethodIndex){
+   private void inheritMethods(Collection superClasses){
        Map last = null;
        for (Iterator iter = superClasses.iterator(); iter.hasNext();) {
            Class c = (Class) iter.next();
-           Map methodIndex = (Map) classMethodIndex.get(c);
+           Map methodIndex = classMethodIndex.getNullable(c);
            if (last!=null) {
                if (methodIndex.isEmpty()) {
                    classMethodIndex.put(c,last);
@@ -454,9 +444,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
    private List getMethods(Class sender, String name, boolean isCallToSuper) {
        Map methodIndex;
        if (isCallToSuper) {
-           methodIndex = (Map) classMethodIndexForSuper.get(sender);
+           methodIndex = (Map) classMethodIndexForSuper.getNullable(sender);
        } else {
-           methodIndex = (Map) classMethodIndex.get(sender);
+           methodIndex = (Map) classMethodIndex.getNullable(sender);
        }
        List answer;
        if (methodIndex!=null) {
@@ -485,7 +475,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     *         given name
     */
    private List getStaticMethods(Class sender, String name) {
-       Map methodIndex = (Map) classStaticMethodIndex.get(sender);
+       Map methodIndex = (Map) classStaticMethodIndex.getNullable(sender);
        if (methodIndex == null) return Collections.EMPTY_LIST;
        List answer = (List) methodIndex.get(name);
        if (answer == null) return Collections.EMPTY_LIST;
@@ -572,6 +562,16 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         throw new MissingPropertyException(propertyName, theClass);
     }
 
+    private Object invokeMissingMethod(Object instance, String methodName, Object[] arguments, RuntimeException original) {
+        MetaMethod method = getMetaMethod(METHOD_MISSING, METHOD_MISSING_ARGS);
+        if(method!=null) {
+            return method.invoke(instance,new Object[]{methodName, arguments});
+        }
+        else if(original!=null) throw original;
+        else throw new MissingMethodException(methodName, theClass, arguments, false);
+    }
+
+
     /**
      * Hook to deal with the case of MissingProperty for static properties. The method will look attempt to look up
      * "propertyMissing" handlers and invoke them otherwise thrown a MissingPropertyException
@@ -601,16 +601,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             throw new MissingPropertyException(propertyName, (Class)instance);
         }
         throw new MissingPropertyException(propertyName, theClass);
-    }
-
-
-    private Object invokeMissingMethod(Object instance, String methodName, Object[] arguments, RuntimeException original) {
-        MetaMethod method = getMetaMethod(METHOD_MISSING, METHOD_MISSING_ARGS);
-        if(method!=null) {
-            return method.invoke(instance,new Object[]{methodName, arguments});
-        }
-        else if(original!=null) throw original;
-        else throw new MissingMethodException(methodName, theClass, arguments, false);
     }
 
     /**
@@ -879,7 +869,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
        MethodKey methodKey = new DefaultMethodKey(theClass, methodName, arguments, false);
        MetaMethod method = (MetaMethod) staticMethodCache.get(methodKey);
        if (method == null) {
-           method = pickStaticMethod(theClass,methodName, arguments);
+           method = pickStaticMethod(methodName, arguments);
            cacheStaticMethod(methodKey.createCopy(), method);
        }
        return method;
@@ -969,9 +959,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         throw new MissingMethodException(methodName, sender, arguments, true);
     }
 
-    private MetaMethod pickStaticMethod(Class sender, String methodName, Class[] arguments) {
+    private MetaMethod pickStaticMethod(String methodName, Class[] arguments) {
        MetaMethod method = null;
-       List methods = getStaticMethods(sender,methodName);
+       List methods = getStaticMethods(theClass,methodName);
 
        if (!methods.isEmpty()) {
            method = (MetaMethod) chooseMethod(methodName, methods, arguments, false);
@@ -1217,7 +1207,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                MetaMethod mmethod = (MetaMethod) iter.next();
                CachedClass[] paramTypes = mmethod.getParameterTypes();
                if (useLongVersion) {
-                   if (paramTypes.length==1 && paramTypes[0].getCachedClass() == String.class) {
+                   if (paramTypes.length==1 && paramTypes[0].cachedClass == String.class) {
                        return mmethod;
                    }
                } else {
@@ -1235,7 +1225,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                MetaMethod mmethod = (MetaMethod) iter.next();
                CachedClass[] paramTypes = mmethod.getParameterTypes();
                if (useLongVersion) {
-                   if (paramTypes.length==2 && paramTypes[0].getCachedClass() == String.class) {
+                   if (paramTypes.length==2 && paramTypes[0].cachedClass == String.class) {
                        return mmethod;
                    }
                } else {
@@ -1252,7 +1242,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     */
    public List getProperties() {
        checkInitalised();
-       Map propertyMap = (Map) classPropertyIndex.get(theClass);
+       Map propertyMap = classPropertyIndex.getNullable(theClass);
        // simply return the values of the metaproperty map as a List
        List ret = new ArrayList(propertyMap.size());
        for (Iterator iter = propertyMap.values().iterator(); iter.hasNext();) {
@@ -1315,7 +1305,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
            if (isGetter) {
                c = element.getReturnType();
            } else {
-               c = element.getParameterTypes()[0].getCachedClass();
+               c = element.getParameterTypes()[0].cachedClass;
            }
            int localDistance = distanceToObject(c);
            //TODO: maybe implement the case localDistance==distance
@@ -1351,11 +1341,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
            classPropertyIndexForSuper = classPropertyIndex;
            for (Iterator interfaceIter = interfaces.iterator(); interfaceIter.hasNext();) {
                Class iclass = (Class) interfaceIter.next();
-               Map iPropertyIndex = getMap2MapNotNull(classPropertyIndex,theClass);
+               Map iPropertyIndex = classPropertyIndex.getNotNull(theClass);
                addFields(iclass,iPropertyIndex);
                classPropertyIndex.put(iclass,iPropertyIndex);
            }
-           classPropertyIndex.put(Object.class,getMap2MapNotNull(classPropertyIndex,theClass));
+           classPropertyIndex.put(Object.class, classPropertyIndex.getNotNull(theClass));
 
            applyPropertyDescriptors(propertyDescriptors);
            applyStrayPropertyMethods(superClasses,classMethodIndex,classPropertyIndex);
@@ -1381,13 +1371,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
            applyStrayPropertyMethods(superClasses,classMethodIndex,classPropertyIndex);
            applyStrayPropertyMethods(superClasses,classMethodIndexForSuper,classPropertyIndexForSuper);
 
-           copyClassPropertyIndexForSuper();
+           copyClassPropertyIndexForSuper(classPropertyIndexForSuper);
            makeStaticPropertyIndex();
        }
    }
 
    private void makeStaticPropertyIndex() {
-       Map propertyMap = (Map) classPropertyIndex.get(theClass);
+       Map propertyMap = classPropertyIndex.getNotNull(theClass);
        for (Iterator iter = propertyMap.entrySet().iterator(); iter.hasNext();) {
            Map.Entry entry = (Map.Entry) iter.next();
            MetaProperty mp = (MetaProperty) entry.getValue();
@@ -1454,32 +1444,23 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return result;
     }
 
-    private void copyClassPropertyIndexForSuper() {
-       for (Iterator iter = classPropertyIndex.entrySet().iterator(); iter.hasNext();) {
+    private void copyClassPropertyIndexForSuper(Index dest) {
+       for (Iterator iter = classPropertyIndex.getEntrySetIterator(); iter.hasNext();) {
            Map.Entry entry = (Map.Entry) iter.next();
            Map newVal = new HashMap((Map)entry.getValue());
-           classPropertyIndexForSuper.put(entry.getKey(),newVal);
+           dest.put((Class) entry.getKey(),newVal);
        }
    }
 
-   private Map getMap2MapNotNull(Map m, Object key) {
-       Map ret = (Map) m.get(key);
-       if (ret==null) {
-           ret = new HashMap();
-           m.put(key,ret);
-       }
-       return ret;
-   }
-
-   private void inheritStaticInterfaceFields(LinkedList superClasses, Set interfaces) {
+    private void inheritStaticInterfaceFields(LinkedList superClasses, Set interfaces) {
        for (Iterator interfaceIter = interfaces.iterator(); interfaceIter.hasNext();) {
            Class iclass = (Class) interfaceIter.next();
-           Map iPropertyIndex = getMap2MapNotNull(classPropertyIndex,iclass);
+           Map iPropertyIndex = classPropertyIndex.getNotNull(iclass);
            addFields(iclass,iPropertyIndex);
            for (Iterator classIter = superClasses.iterator(); classIter.hasNext();) {
                Class sclass = (Class) classIter.next();
                if (! iclass.isAssignableFrom(sclass)) continue;
-               Map sPropertyIndex = getMap2MapNotNull(classPropertyIndex,sclass);
+               Map sPropertyIndex = classPropertyIndex.getNotNull(sclass);
                copyNonPrivateFields(iPropertyIndex,sPropertyIndex);
            }
        }
@@ -1489,7 +1470,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
        Map last = null;
        for (Iterator iter = superClasses.iterator(); iter.hasNext();) {
            Class klass = (Class) iter.next();
-           Map propertyIndex = getMap2MapNotNull(classPropertyIndex,klass);
+           Map propertyIndex = classPropertyIndex.getNotNull(klass);
            if (last != null) {
                copyNonPrivateFields(last,propertyIndex);
            }
@@ -1519,12 +1500,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
        }
    }
 
-   private void applyStrayPropertyMethods(LinkedList superClasses, Map classMethodIndex, Map classPropertyIndex) {
+   private void applyStrayPropertyMethods(LinkedList superClasses, Index classMethodIndex, Index classPropertyIndex) {
        // now look for any stray getters that may be used to define a property
        for (Iterator iter = superClasses.iterator(); iter.hasNext();) {
            Class klass = (Class) iter.next();
-           Map methodIndex = (Map) classMethodIndex.get(klass);
-           Map propertyIndex = getMap2MapNotNull(classPropertyIndex,klass);
+           Map methodIndex = (Map) classMethodIndex.getNullable(klass);
+           Map propertyIndex = ((Index) classPropertyIndex).getNotNull(klass);
            for (Iterator nameMethodIterator = methodIndex.entrySet().iterator(); nameMethodIterator.hasNext();) {
                Map.Entry entry = (Map.Entry) nameMethodIterator.next();
                String methodName = (String) entry.getKey();
@@ -1556,7 +1537,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
            } else {
                //isSetter
                mp = new MetaBeanProperty(propName,
-                       propertyMethod.getParameterTypes()[0].getCachedClass(),
+                       propertyMethod.getParameterTypes()[0].cachedClass,
                        null, propertyMethod);
            }
        } else {
@@ -1632,7 +1613,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
        }
        else {
 
-           Map propertyMap = getMap2MapNotNull(classPropertyIndex,theClass);
+           Map propertyMap = classPropertyIndex.getNotNull(theClass);
            //keep field
            MetaFieldProperty field;
            MetaProperty old = (MetaProperty) propertyMap.get(mp.getName());
@@ -1729,7 +1710,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                // lets create a dynamic proxy
                Object proxy = Proxy.newProxyInstance(
                        theClass.getClassLoader(),
-                       new Class[]{method.getParameterTypes()[0].getCachedClass()},
+                       new Class[]{method.getParameterTypes()[0].cachedClass},
                        new ConvertedClosure((Closure) newValue,name));
                arguments = new Object[] { proxy };
                newValue = proxy;
@@ -1769,12 +1750,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
            if (arguments.length==1) {
                newValue = DefaultTypeTransformation.castToType(
                        newValue,
-                       method.getParameterTypes()[0].getCachedClass());
+                       method.getParameterTypes()[0].cachedClass);
                arguments[0] = newValue;
            } else {
                newValue = DefaultTypeTransformation.castToType(
                        newValue,
-                       method.getParameterTypes()[1].getCachedClass());
+                       method.getParameterTypes()[1].cachedClass);
                arguments[1] = newValue;
            }
            MetaClassHelper.doMethodInvoke(object,method,arguments);
@@ -1805,20 +1786,17 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
       }
       else if (useSuper)
       {
-        propertyMap = (Map) classPropertyIndexForSuper.get(clazz);
+        propertyMap = (Map) classPropertyIndexForSuper.getNullable(clazz);
       }
       else
       {
-        propertyMap = (Map) classPropertyIndex.get(clazz);
+        propertyMap = (Map) classPropertyIndex.getNullable(clazz);
       }
       if (propertyMap == null)
       {
         if (clazz != theClass)
         {
           clazz = theClass;
-          name = name;
-          useSuper = useSuper;
-          useStatic = useStatic;
           continue;
         }
         else
@@ -1958,16 +1936,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     * Adds all the methods declared in the given class to the metaclass
     * ignoring any matching methods already defined by a derived class
     *
-    * @param theClass
+    * @param aClass
     */
-   private void addMethods(final Class theClass) {
-       Map methodIndex = (Map) classMethodIndex.get(theClass);
-       if (methodIndex==null) {
-           methodIndex = new HashMap();
-           classMethodIndex.put(theClass,methodIndex);
-       }
+   private void addMethods(final Class aClass) {
+       classMethodIndex.getNotNull(aClass);
+
        // add methods directly declared in the class
-       CachedMethod[] cachedMethods = ReflectionCache.getDeclaredMethodsCached(theClass);
+       CachedMethod[] cachedMethods = ReflectionCache.getDeclaredMethodsCached(aClass);
        for (int i = 0; i < cachedMethods.length; i++) {
          final CachedMethod cachedMethod = cachedMethods[i];
          Method reflectionMethod = cachedMethod.cachedMethod;
@@ -1984,37 +1959,19 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
        List methods = ((MetaClassRegistryImpl)registry).getInstanceMethods();
        for (Iterator iter = methods.iterator(); iter.hasNext();) {
            CachedMethod element = (CachedMethod) iter.next();
-           if (element.getParameterTypes()[0].getCachedClass()!=theClass) continue;
+           if (element.getParameterTypes()[0].cachedClass !=aClass) continue;
            addNewInstanceMethod(element.cachedMethod, element.getParameterTypes());
        }
        // add static methods declared by DGM
        methods = ((MetaClassRegistryImpl)registry).getStaticMethods();
        for (Iterator iter = methods.iterator(); iter.hasNext();) {
            CachedMethod element = (CachedMethod) iter.next();
-           if (element.getParameterTypes()[0].getCachedClass()!=theClass) continue;
+           if (element.getParameterTypes()[0].cachedClass !=aClass) continue;
            addNewStaticMethod(element.cachedMethod, element.getParameterTypes());
        }
    }
 
-   private void addToClassMethodIndex(MetaMethod method, Map classMethodIndex) {
-     final Class declaringClass = method.getDeclaringClass();
-     Map methodIndex = (Map) classMethodIndex.get(declaringClass);
-       if (methodIndex==null) {
-           methodIndex = new HashMap();
-           classMethodIndex.put(declaringClass,methodIndex);
-       }
-       String name = method.getName();
-       List list = (List) methodIndex.get(name);
-       if (list == null) {
-           list = new ArrayList();
-           methodIndex.put(name, list);
-           list.add(method);
-       } else {
-           addMethodToList(list,method);
-       }
-   }
-
-   /**
+    /**
     * adds a MetaMethod to this class. WARNING: this method will not
     * do the neccessary steps for multimethod logic and using this
     * method doesn't mean, that a method added here is replacing another
@@ -2035,16 +1992,16 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
            genericSetMethod = method;
        }
        if (method.isStatic()) {
-           addToClassMethodIndex(method,classStaticMethodIndex);
+           classStaticMethodIndex.addToClassMethodIndex(method);
        }
-       addToClassMethodIndex(method,classMethodIndex);
+       classMethodIndex.addToClassMethodIndex(method);
    }
 
    protected boolean isInitialized(){
        return initialized;
    }
 
-   private void addMethodToList(List list, MetaMethod method) {
+   void addMethodToList(List list, MetaMethod method) {
        MetaMethod match = removeMatchingMethod(list,method);
 
        if (match==null) {
@@ -2242,7 +2199,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
    private boolean isGenericGetMethod(MetaMethod method) {
        if (method.getName().equals("get")) {
            CachedClass[] parameterTypes = method.getParameterTypes();
-           return parameterTypes.length == 1 && parameterTypes[0].getCachedClass() == String.class;
+           return parameterTypes.length == 1 && parameterTypes[0].cachedClass == String.class;
        }
        return false;
    }
@@ -2364,7 +2321,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
            }
        }
        if (!Modifier.isPublic(declaringClass.getModifiers())) return false;
-       method.setCallClass(declaringClass.getCachedClass());
+      method.setCallClass(declaringClass.cachedClass);
 
        return true;
    }
@@ -2411,8 +2368,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
    }
 
    private static class MethodIndexAction {
-       public void iterate(Map classMethodIndex){
-           for (Iterator iter = classMethodIndex.entrySet().iterator(); iter.hasNext();) {
+       public void iterate(MethodIndex classMethodIndex){
+           for (Iterator iter = classMethodIndex.getEntrySetIterator(); iter.hasNext();) {
                Map.Entry classEntry = (Map.Entry) iter.next();
                Map methodIndex = (Map) classEntry.getValue();
                Class clazz = (Class) classEntry.getKey();
@@ -2474,4 +2431,84 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
        staticMethodCache.clear();
        methodCache.clear();
    }
+
+    class MethodIndex extends Index {
+
+    public MethodIndex(int size) {
+        super(size);
+    }
+
+    public MethodIndex() {
+        super();
+    }
+
+    void addToClassMethodIndex(MetaMethod method) {
+      final Class declaringClass = method.getDeclaringClass();
+      Map methodIndex = getNotNull(declaringClass);
+        String name = method.getName();
+        List list = (List) methodIndex.get(name);
+        if (list == null) {
+            list = new ArrayList();
+            methodIndex.put(name, list);
+            list.add(method);
+        } else {
+            addMethodToList(list,method);
+        }
+    }
+
+    MethodIndex copy() {
+         MethodIndex result = new MethodIndex();
+         for (Iterator iter = getEntrySetIterator(); iter.hasNext();) {
+             Map.Entry cmiEntry = (Map.Entry) iter.next();
+             Map methodIndex = (Map) cmiEntry.getValue();
+             Map copy = new HashMap(methodIndex.size());
+             for (Iterator iterator = methodIndex.entrySet().iterator(); iterator.hasNext();) {
+                 Map.Entry mEntry = (Map.Entry) iterator.next();
+                 copy.put(mEntry.getKey(), new ArrayList((List) mEntry.getValue()));
+             }
+             result.put((Class) cmiEntry.getKey(),copy);
+         }
+         return result;
+     }
+}
+
+    /**
+ * Created by IntelliJ IDEA.
+     * User: applerestore
+     * Date: Sep 11, 2007
+     * Time: 11:12:07 AM
+     * To change this template use File | Settings | File Templates.
+     */
+    public static class Index {
+        protected final HashMap map;
+
+        public Index(int size) {
+            map = new HashMap(size);
+        }
+
+        public Index() {
+            map = new HashMap();
+        }
+
+        public Map getNotNull(Class key) {
+            Map  res = (Map) map.get(key);
+            if (res == null) {
+              res = new HashMap();
+              map.put(key, res);
+            }
+            return res;
+        }
+
+        public void put(Class key, Map value) {
+            map.put (key, value);
+        }
+
+        public Map getNullable(Class clazz) {
+            return (Map) map.get(clazz);
+        }
+
+        public Iterator getEntrySetIterator() {
+            return map.entrySet().iterator ();
+        }
+    }
 }

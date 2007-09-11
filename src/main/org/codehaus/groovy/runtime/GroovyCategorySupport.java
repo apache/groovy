@@ -175,9 +175,9 @@ public class GroovyCategorySupport {
                 CachedClass[] paramTypes = ReflectionCache.getCachedMethod(method).getParameterTypes();
                 if (paramTypes.length > 0) {
                     CachedClass metaClass = paramTypes[0];
-                    Map metaMethodsMap = getMetaMethods(properties, metaClass.getCachedClass());
+                    Map metaMethodsMap = getMetaMethods(properties, metaClass.cachedClass);
                     List methodList = getMethodList(metaMethodsMap, method.getName());
-                    MetaMethod mmethod = new CategoryMethod(new MetaMethod(method, paramTypes), metaClass.getCachedClass());
+                    MetaMethod mmethod = new CategoryMethod(new MetaMethod(method, paramTypes), metaClass.cachedClass);
                     methodList.add(mmethod);
                     Collections.sort(methodList);
                 }

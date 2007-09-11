@@ -800,12 +800,12 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         else {
             if(getter) {
                 MetaMethod setterMethod = beanProperty.getSetter();
-                Class type = setterMethod != null ? setterMethod.getParameterTypes()[0].getCachedClass() : Object.class;
+                Class type = setterMethod != null ? setterMethod.getParameterTypes()[0].cachedClass : Object.class;
                 beanProperty = new MetaBeanProperty(propertyName,type,metaMethod,setterMethod);
                 propertyCache.put(propertyName, beanProperty);
             }else {
                 MetaMethod getterMethod = beanProperty.getGetter();
-                beanProperty = new MetaBeanProperty(propertyName,metaMethod.getParameterTypes()[0].getCachedClass(),getterMethod,metaMethod);
+                beanProperty = new MetaBeanProperty(propertyName, metaMethod.getParameterTypes()[0].cachedClass,getterMethod,metaMethod);
                 propertyCache .put(propertyName, beanProperty);
             }
         }

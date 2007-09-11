@@ -17,12 +17,10 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.*;
-import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.reflection.ParameterTypes;
 import org.codehaus.groovy.reflection.CachedConstructor;
 import org.codehaus.groovy.reflection.CachedClass;
-import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 
 import java.lang.reflect.*;
@@ -41,7 +39,7 @@ public class MetaClassHelper {
 
     public static final Object[] EMPTY_ARRAY = {};
     public static final Class[] EMPTY_TYPE_ARRAY = {};
-    protected static final Object[] ARRAY_WITH_NULL = {null};
+    public static final Object[] ARRAY_WITH_NULL = {null};
     protected static final Logger LOG = Logger.getLogger(MetaClassHelper.class.getName());
     private static final int MAX_ARG_LEN = 12;
 
@@ -311,7 +309,7 @@ public class MetaClassHelper {
             int paramLength = paramTypes.length;
             if (paramLength == 0) {
                 return method;
-            } else if (paramLength == 1 && isVargsMethod(pt, EMPTY_ARRAY)) {
+            } else if (paramLength == 1 && pt.isVargsMethod(EMPTY_ARRAY)) {
                 vargsMethod = method;
             }
         }
@@ -339,128 +337,30 @@ public class MetaClassHelper {
             if (theType.isPrimitive) continue;
 
             if (paramLength == 2) {
-                if (!isVargsMethod(pt, ARRAY_WITH_NULL)) continue;
-                if (closestClass == theType.getCachedClass()) {
+                if (!pt.isVargsMethod(ARRAY_WITH_NULL)) continue;
+                if (closestClass == theType.cachedClass) {
                     if (closestVargsClass == null) continue;
-                    Class newVargsClass = paramTypes[1].getCachedClass();
+                    Class newVargsClass = paramTypes[1].cachedClass;
                     if (closestVargsClass == null || isAssignableFrom(newVargsClass, closestVargsClass)) {
                         closestVargsClass = newVargsClass;
                         answer = method;
                     }
-                } else if (closestClass == null || isAssignableFrom(theType.getCachedClass(), closestClass)) {
-                    closestVargsClass = paramTypes[1].getCachedClass();
-                    closestClass = theType.getCachedClass();
-                    answer = method;
+                } else {
+                    if (closestClass == null || isAssignableFrom(theType.cachedClass, closestClass)) {
+                        closestVargsClass = paramTypes[1].cachedClass;
+                        closestClass = theType.cachedClass;
+                        answer = method;
+                    }
                 }
             } else {
-                if (closestClass == null || isAssignableFrom(theType.getCachedClass(), closestClass)) {
+                if (closestClass == null || isAssignableFrom(theType.cachedClass, closestClass)) {
                     closestVargsClass = null;
-                    closestClass = theType.getCachedClass();
+                    closestClass = theType.cachedClass;
                     answer = method;
                 }
             }
         }
         return answer;
-    }
-
-    /**
-     * Coerces a GString instance into String if needed
-     *
-     * @return the coerced argument
-     */
-    protected static Object coerceGString(Object argument, CachedClass clazz) {
-        if (clazz.getCachedClass() != String.class) return argument;
-        if (!(argument instanceof GString)) return argument;
-        return argument.toString();
-    }
-
-    // PRECONDITION:
-    //   !ReflectionCache.isAssignableFrom(parameterType, argument.getClass())
-    protected static Object coerceNumber(Object argument, CachedClass cachedParam) {
-        if (argument instanceof Number && (cachedParam.isNumber || cachedParam.isPrimitive)) { // Number types
-            Object oldArgument = argument;
-            boolean wasDouble = false;
-            boolean wasFloat = false;
-            Class param = cachedParam.getCachedClass();
-            if (param == Byte.class || param == Byte.TYPE) {
-                argument = new Byte(((Number) argument).byteValue());
-            } else if (param == Double.class || param == Double.TYPE) {
-                wasDouble = true;
-                argument = new Double(((Number) argument).doubleValue());
-            } else if (param == Float.class || param == Float.TYPE) {
-                wasFloat = true;
-                argument = new Float(((Number) argument).floatValue());
-            } else if (param == Integer.class || param == Integer.TYPE) {
-                argument = new Integer(((Number) argument).intValue());
-            } else if (param == Long.class || param == Long.TYPE) {
-                argument = new Long(((Number) argument).longValue());
-            } else if (param == Short.class || param == Short.TYPE) {
-                argument = new Short(((Number) argument).shortValue());
-            } else if (param == BigDecimal.class) {
-                argument = new BigDecimal(String.valueOf((Number) argument));
-            } else if (param == BigInteger.class) {
-                argument = new BigInteger(String.valueOf((Number) argument));
-            }
-
-            if (oldArgument instanceof BigDecimal) {
-                BigDecimal oldbd = (BigDecimal) oldArgument;
-                boolean throwException = false;
-                if (wasDouble) {
-                    Double d = (Double) argument;
-                    if (d.isInfinite()) throwException = true;
-                } else if (wasFloat) {
-                    Float f = (Float) argument;
-                    if (f.isInfinite()) throwException = true;
-                } else {
-                    BigDecimal newbd = new BigDecimal(String.valueOf((Number) argument));
-                    throwException = !oldArgument.equals(newbd);
-                }
-
-                if (throwException)
-                    throw new IllegalArgumentException(param + " out of range while converting from BigDecimal");
-            }
-
-        }
-        return argument;
-    }
-
-    protected static Object coerceArray(Object argument, CachedClass param) {
-        if (!param.isArray) return argument;
-        Class argumentClass = argument.getClass();
-        if (!argumentClass.isArray()) return argument;
-
-        Class paramComponent = param.getCachedClass().getComponentType();
-        if (paramComponent.isPrimitive()) {
-            if (paramComponent == boolean.class && argumentClass == Boolean[].class) {
-                argument = DefaultTypeTransformation.convertToBooleanArray(argument);
-            } else if (paramComponent == byte.class && argumentClass == Byte[].class) {
-                argument = DefaultTypeTransformation.convertToByteArray(argument);
-            } else if (paramComponent == char.class && argumentClass == Character[].class) {
-                argument = DefaultTypeTransformation.convertToCharArray(argument);
-            } else if (paramComponent == short.class && argumentClass == Short[].class) {
-                argument = DefaultTypeTransformation.convertToShortArray(argument);
-            } else if (paramComponent == int.class && argumentClass == Integer[].class) {
-                argument = DefaultTypeTransformation.convertToIntArray(argument);
-            } else if (paramComponent == long.class &&
-                    (argumentClass == Long[].class || argumentClass == Integer[].class)) {
-                argument = DefaultTypeTransformation.convertToLongArray(argument);
-            } else if (paramComponent == float.class &&
-                    (argumentClass == Float[].class || argumentClass == Integer[].class)) {
-                argument = DefaultTypeTransformation.convertToFloatArray(argument);
-            } else if (paramComponent == double.class &&
-                    (argumentClass == Double[].class || argumentClass == Float[].class
-                            || BigDecimal[].class.isAssignableFrom(argumentClass))) {
-                argument = DefaultTypeTransformation.convertToDoubleArray(argument);
-            }
-        } else if (paramComponent == String.class && argument instanceof GString[]) {
-            GString[] strings = (GString[]) argument;
-            String[] ret = new String[strings.length];
-            for (int i = 0; i < strings.length; i++) {
-                ret[i] = strings[i].toString();
-            }
-            argument = ret;
-        }
-        return argument;
     }
 
     /**
@@ -516,7 +416,7 @@ public class MetaClassHelper {
         if (LOG.isLoggable(Level.FINER)) {
             logMethodCall(constr.getDeclaringClass(), constr.getName(), argumentArray);
         }
-        argumentArray = coerceArgumentsToClasses(argumentArray, constructor);
+        argumentArray = constructor.coerceArgumentsToClasses(argumentArray);
         try {
             return constr.newInstance(argumentArray);
         } catch (InvocationTargetException e) {
@@ -541,36 +441,7 @@ public class MetaClassHelper {
                 setReason ? e : null);
     }
 
-    public static Object[] coerceArgumentsToClasses(Object[] argumentArray, ParameterTypes pt) {
-        CachedClass paramTypes[] = pt.getParameterTypes();
-        // correct argumentArray's length
-        if (argumentArray == null) {
-            argumentArray = EMPTY_ARRAY;
-        } else if (paramTypes.length == 1 && argumentArray.length == 0) {
-            if (isVargsMethod(pt, argumentArray))
-                argumentArray = new Object[]{Array.newInstance(paramTypes[0].getCachedClass().getComponentType(), 0)};
-            else
-                argumentArray = ARRAY_WITH_NULL;
-        } else if (isVargsMethod(pt, argumentArray)) {
-            argumentArray = fitToVargs(argumentArray, paramTypes);
-        }
-
-        //correct Type
-        for (int i = 0; i < argumentArray.length; i++) {
-            Object argument = argumentArray[i];
-            if (argument == null) continue;
-            CachedClass parameterType = paramTypes[i];
-            if (ReflectionCache.isAssignableFrom(parameterType.getCachedClass(), argument.getClass())) continue;
-
-            argument = coerceGString(argument, parameterType);
-            argument = coerceNumber(argument, parameterType);
-            argument = coerceArray(argument, parameterType);
-            argumentArray[i] = argument;
-        }
-        return argumentArray;
-    }
-
-    private static Object makeCommonArray(Object[] arguments, int offset, Class fallback) {
+    public static Object makeCommonArray(Object[] arguments, int offset, Class fallback) {
         // arguments.leght>0 && !=null
         Class baseClass = null;
         for (int i = offset; i < arguments.length; i++) {
@@ -593,7 +464,7 @@ public class MetaClassHelper {
         return result;
     }
 
-    private static Object makeArray(Object obj, Class secondary, int length) {
+    public static Object makeArray(Object obj, Class secondary, int length) {
         Class baseClass = secondary;
         if (obj != null) {
             baseClass = obj.getClass();
@@ -602,55 +473,6 @@ public class MetaClassHelper {
               baseClass = GString.class;
           }*/
         return Array.newInstance(baseClass, length);
-    }
-
-    /**
-     * this method is called when the number of arguments to a method is greater than 1
-     * and if the method is a vargs method. This method will then transform the given
-     * arguments to make the method callable
-     *
-     * @param argumentArray the arguments used to call the method
-     * @param paramTypes    the types of the paramters the method takes
-     */
-    private static Object[] fitToVargs(Object[] argumentArray, CachedClass[] paramTypes) {
-        Class vargsClass = ReflectionCache.autoboxType(paramTypes[paramTypes.length - 1].getCachedClass().getComponentType());
-
-        if (argumentArray.length == paramTypes.length - 1) {
-            // the vargs argument is missing, so fill it with an empty array
-            Object[] newArgs = new Object[paramTypes.length];
-            System.arraycopy(argumentArray, 0, newArgs, 0, argumentArray.length);
-            Object vargs = makeArray(null, vargsClass, 0);
-            newArgs[newArgs.length - 1] = vargs;
-            return newArgs;
-        } else if (argumentArray.length == paramTypes.length) {
-            // the number of arguments is correct, but if the last argument
-            // is no array we have to wrap it in a array. if the last argument
-            // is null, then we don't have to do anything
-            Object lastArgument = argumentArray[argumentArray.length - 1];
-            if (lastArgument != null && !lastArgument.getClass().isArray()) {
-                // no array so wrap it
-                Object vargs = makeArray(lastArgument, vargsClass, 1);
-                System.arraycopy(argumentArray, argumentArray.length - 1, vargs, 0, 1);
-                argumentArray[argumentArray.length - 1] = vargs;
-                return argumentArray;
-            } else {
-                // we may have to box the arguemnt!
-                return argumentArray;
-            }
-        } else if (argumentArray.length > paramTypes.length) {
-            // the number of arguments is too big, wrap all exceeding elements
-            // in an array, but keep the old elements that are no vargs
-            Object[] newArgs = new Object[paramTypes.length];
-            // copy arguments that are not a varg
-            System.arraycopy(argumentArray, 0, newArgs, 0, paramTypes.length - 1);
-            // create a new array for the vargs and copy them
-            int numberOfVargs = argumentArray.length - paramTypes.length;
-            Object vargs = makeCommonArray(argumentArray, paramTypes.length - 1, vargsClass);
-            newArgs[newArgs.length - 1] = vargs;
-            return newArgs;
-        } else {
-            throw new GroovyBugError("trying to call a vargs method without enough arguments");
-        }
     }
 
     private static GroovyRuntimeException createExceptionText(String init, MetaMethod method, Object object, Object[] args, Throwable reason, boolean setReason) {
@@ -667,8 +489,7 @@ public class MetaClassHelper {
     }
 
     public static Object doMethodInvoke(Object object, MetaMethod method, Object[] argumentArray) {
-        CachedClass[] paramTypes = method.getParameterTypes();
-        argumentArray = coerceArgumentsToClasses(argumentArray, method.getParamTypes());
+        argumentArray = method.getParamTypes().coerceArgumentsToClasses(argumentArray);
         try {
             return method.invoke(object, argumentArray);
         } catch (IllegalArgumentException e) {
@@ -814,14 +635,14 @@ public class MetaClassHelper {
         CachedClass[] paramTypes = pt.getParameterTypes();
         if ((size >= paramTypes.length || size == paramTypes.length - 1)
                 && paramTypes.length > 0
-                && pt.isArray(paramTypes.length - 1)) {
+                && pt.getParameterTypes()[(paramTypes.length - 1)].isArray) {
             // first check normal number of parameters
             for (int i = 0; i < paramTypes.length - 1; i++) {
-                if (isAssignableFrom(paramTypes[i].getCachedClass(), arguments[i])) continue;
+                if (isAssignableFrom(paramTypes[i].cachedClass, arguments[i])) continue;
                 return false;
             }
             // check varged
-            Class clazz = paramTypes[paramTypes.length - 1].getCachedClass().getComponentType();
+            Class clazz = paramTypes[paramTypes.length - 1].cachedClass.getComponentType();
             for (int i = paramTypes.length; i < size; i++) {
                 if (isAssignableFrom(clazz, arguments[i])) continue;
                 return false;
@@ -830,7 +651,7 @@ public class MetaClassHelper {
         } else if (paramTypes.length == size) {
             // lets check the parameter types match
             for (int i = 0; i < size; i++) {
-                if (isAssignableFrom(paramTypes[i].getCachedClass(), arguments[i])) continue;
+                if (isAssignableFrom(paramTypes[i].cachedClass, arguments[i])) continue;
                 return false;
             }
             return true;
@@ -843,23 +664,6 @@ public class MetaClassHelper {
 
     public static boolean isValidMethod(Object method, Class[] arguments, boolean includeCoerce) {
         return isValidMethod(getParameterTypes(method), arguments, includeCoerce);
-    }
-
-    public static boolean isVargsMethod(ParameterTypes pt, Object[] arguments) {
-        CachedClass paramTypes[] = pt.getParameterTypes();
-        if (paramTypes.length == 0) return false;
-        if (!pt.isArray(paramTypes.length - 1)) return false;
-        // -1 because the varg part is optional
-        if (paramTypes.length - 1 == arguments.length) return true;
-        if (paramTypes.length - 1 > arguments.length) return false;
-        if (arguments.length > paramTypes.length) return true;
-
-        // only case left is arguments.length == parameterTypes.length
-        Object last = arguments[arguments.length - 1];
-        if (last == null) return true;
-        Class clazz = last.getClass();
-        return !clazz.equals(paramTypes[paramTypes.length - 1]);
-
     }
 
     public static void logMethodCall(Object object, String methodName, Object[] arguments) {
