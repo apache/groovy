@@ -266,6 +266,9 @@ $Date$
     <target name="test" depends="-initializeReports,compileTest,-coverageInstrument,-testInit,-testOne,-testAll"
             description="Compile and test all the classes (or just one class if testCase property is defined)."/>
 
+    <target name="clean-test" depends="clean,test"
+            description="Clean and compile and test all the classes (or just one class if testCase property is defined)."/>
+
     <condition property="_testOne_">
         <and>
             <not>
