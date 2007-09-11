@@ -4,20 +4,22 @@ import gls.scope.CompilableTestSupport
 
 public class StaticScopeTest extends CompilableTestSupport {
 
-   public void testNormalStaticScope() {
-     shouldNotCompile("""
+   public void testNormalStaticScopeInScript() {
+     shouldNotCompile """
        static foo() {
          foo = 1
        }
-     """)
+     """
       
-     shouldCompile("""
+     shouldCompile """
        static foo() {
          def foo=1
        }
-     """)
-     
-     assertScript("""
+     """
+   }
+   
+   public void testNormalStaticScopeInclass() {     
+     assertScript """
        class A {
          static i
          static foo() {
@@ -26,7 +28,16 @@ public class StaticScopeTest extends CompilableTestSupport {
        }
        A.foo()
        assert A.i == 1  
-     """)
+     """
+     shouldNotCompile """
+       class A {
+         def i
+         static foo() {
+           i=1
+         }
+       }
+     """
+
    }
    
    public void testClosureInStaticScope() {

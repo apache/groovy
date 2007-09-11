@@ -321,6 +321,23 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         
         return var;
     }
+    /**
+     * a property on "this", like this.x is transformed to a 
+     * direct field access, so we need to check the
+     * static context here
+     */
+    private void checkPropertyOnThis(PropertyExpression pe) {
+        if (!currentScope.isInStaticContext()) return; 
+        Expression object = pe.getObjectExpression();
+        if (!(object instanceof VariableExpression)) return;
+        VariableExpression ve = (VariableExpression) object;
+        if (!ve.getName().equals("this")) return;
+        String name = pe.getPropertyAsString();
+        if (name==null) return;
+        Variable member = findClassMember(currentClass,name);
+        if (member==null) return;
+        checkVariableContextAccess(member, pe);
+    }
     
     private void checkVariableContextAccess(Variable v, Expression expr) {
         if (inPropertyExpression || v.isInStaticContext() || !currentScope.isInStaticContext()) return;        
@@ -379,11 +396,12 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         boolean ipe = inPropertyExpression;
         inPropertyExpression = true;
         expression.getObjectExpression().visit(this);
-        ipe=false;
+        inPropertyExpression = false;
         expression.getProperty().visit(this);
+        checkPropertyOnThis(expression);
         inPropertyExpression = ipe;
     }
-    
+        
     public void visitClosureExpression(ClosureExpression expression) {
         pushState();
 
@@ -431,10 +449,12 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     
     public void visitClass(ClassNode node) {
         pushState();
+        
+        currentClass = node;
         boolean dynamicMode = node.isScript();
         currentScope.setDynamicResolving(dynamicMode);
         currentScope.setClassScope(node);
-        
+
         super.visitClass(node);
         popState();
     }
