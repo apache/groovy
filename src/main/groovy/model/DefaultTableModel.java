@@ -16,15 +16,13 @@
 package groovy.model;
 
 import groovy.lang.Closure;
-
-import java.util.Collections;
-import java.util.List;
+import org.codehaus.groovy.runtime.InvokerHelper;
 
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableColumnModel;
 import javax.swing.table.TableColumnModel;
-
-import org.codehaus.groovy.runtime.InvokerHelper;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * A default table model made up of PropertyModels on a Value model.
@@ -89,6 +87,7 @@ public class DefaultTableModel extends AbstractTableModel {
      * Adds a new column definition to the table
      */
     public void addColumn(DefaultTableColumn column) {
+        column.setModelIndex(columnModel.getColumnCount());
         columnModel.addColumn(column);
     }
     

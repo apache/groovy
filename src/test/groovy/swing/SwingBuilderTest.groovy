@@ -560,6 +560,35 @@ class SwingBuilderTest extends GroovyTestCase {
         assert table.columnModel.columnCount == 3
     }
 
+    void testTableModelValues() {
+        if (isHeadless()) return
+
+        def squares  = [
+            [ val: 1, square:  1 ],
+            [ val: 2, square:  4 ],
+            [ val: 3, square:  9 ],
+            [ val: 4, square: 16 ]
+        ]
+
+        def swing = new SwingBuilder()
+        def frame = swing.frame(title: 'Tabelle',
+                        windowClosing: { System.exit(0) } ) {
+            scrollPane {
+                table(id:'table') {
+                    tableModel(list: squares) {
+                        propertyColumn(header: "Wert", propertyName: "val")
+                        closureColumn(header: "Quadrat", read: { it.square })
+                    }
+                }
+            }
+        }
+
+        squares.eachWithIndex {it, i ->
+            assert swing.table.getValueAt(i, 0) == it.val
+            assert swing.table.getValueAt(i, 1) == it.square
+        }
+    }
+
     void testSetConstraints() {
         if (isHeadless()) return
 
