@@ -139,7 +139,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 classes[i] = null;                
             }
             else {
-                throw new IllegalArgumentException("Arguments to method [respondsTo] must be of type java.lang.Class!");
+//                throw new IllegalArgumentException("Arguments to method [respondsTo] must be of type java.lang.Class!");
+                classes[i] = argType.getClass();                
             }
         }
         return classes;
