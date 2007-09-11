@@ -42,7 +42,7 @@ public class ConstantExpression extends Expression {
     }
 
     public String toString() {
-        return super.toString() +"[value=" + value + "]";
+        return "ConstantExpression[" + value + "]";
     }
 
     public void visit(GroovyCodeVisitor visitor) {
