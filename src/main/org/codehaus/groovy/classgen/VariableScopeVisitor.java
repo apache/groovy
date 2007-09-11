@@ -34,6 +34,7 @@ import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
@@ -56,13 +57,13 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     private SourceUnit source;
     private boolean inClosure=false;
     private boolean inPropertyExpression = false;
+    private boolean isSpecialContructorCall = false;
     
     private LinkedList stateStack=new LinkedList();
     
     private class StateStackElement {
         VariableScope scope;
         ClassNode clazz;
-        boolean dynamic;
         boolean closure;
         
         StateStackElement() {
@@ -259,8 +260,9 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             ClassNode classScope = scope.getClassScope();
             if (classScope!=null) {
                 Variable member = findClassMember(classScope,var.getName());
+                boolean found = false;
                 if (member!=null) {
-                    boolean cc = currentScope.isInStaticContext();
+                    boolean cc = currentScope.isInStaticContext() || isSpecialContructorCall;
                     boolean cm = member.isInStaticContext();
                     //
                     // we don't allow access from dynamic context to static context
@@ -277,9 +279,14 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
                     // One example for (cm||cm==cc)==false is a static method trying to 
                     // access a non static field.
                     //
-                    if (cm || cm==cc) var = member;
-                }
-                break;
+                    if (cm || cm==cc) {
+                        found = true;
+                        var = member;
+                    }
+                    
+                } 
+                if (isSpecialContructorCall && found) break;
+                if (!isSpecialContructorCall) break;
             }            
             scope = scope.getParent();
         }
@@ -483,6 +490,12 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
 	        }
     	}
         super.visitMethodCallExpression(call);
+    }
+    
+    public void visitConstructorCallExpression(ConstructorCallExpression call) {
+        isSpecialContructorCall = call.isSpecialCall();
+        super.visitConstructorCallExpression(call);
+        isSpecialContructorCall = false;
     }
     
     public void visitProperty(PropertyNode node) {

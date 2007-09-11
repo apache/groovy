@@ -85,5 +85,30 @@ public class StaticScopeTest extends CompilableTestSupport {
         assert Foo.p1 == 1
         
       """
-   }   
+   }
+   
+   public void testSpecialConstructorAccess() {
+     shouldNotCompile """
+       class A{ A(x){} }
+       class B extends A {
+         B(x) { super(nonExistingParameter) }
+       }
+     """
+     
+     shouldNotCompile """
+       class A{ A(x){} }
+       class B extends A {
+         def doNotAccessDynamicFieldsOrProperties
+         B(x) { super(doNotAccessDynamicFieldsOrProperties) }
+       }
+     """
+     
+     shouldCompile """
+       class A{ A(x){} }
+       class B extends A {
+         static allowUsageOfStaticPropertiesAndFields
+         B(x) { super(allowUsageOfStaticPropertiesAndFields) }
+       }
+     """   
+   }
 }

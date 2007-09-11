@@ -6,8 +6,8 @@ import groovy.util.GroovyTestCase;
 public class CompilableTestSupport extends GroovyTestCase {
 	protected void shouldNotCompile(String script) {
 	  try {
-        GroovyShell shell = new GroovyShell()
-        shell.parse(script, getTestClassName())
+        GroovyClassLoader gcl = new GroovyClassLoader()
+        gcl.parseClass(script, getTestClassName())
       } catch (CompilationFailedException cfe) {
         assert true
         return
@@ -16,8 +16,8 @@ public class CompilableTestSupport extends GroovyTestCase {
 	}
 	
 	protected void shouldCompile(String script) {
-      GroovyShell shell = new GroovyShell()
-      shell.parse(script, getTestClassName())
+      GroovyClassLoader gcl = new GroovyClassLoader()
+      gcl.parseClass(script, getTestClassName())
       assert true
 	}
 }
