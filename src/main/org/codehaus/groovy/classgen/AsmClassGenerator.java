@@ -3029,7 +3029,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 initialValue = new VariableExpression(paramName);
                 ClassNode realType = type;
                 type = ClassHelper.makeReference();
-                param.setType(type);
+                param.setType(ClassHelper.makeReference());
                 paramField = answer.addField(paramName, ACC_PRIVATE, type, initialValue);
                 paramField.setHolder(true);
                 String methodName = Verifier.capitalize(paramName);
@@ -3088,12 +3088,8 @@ public class AsmClassGenerator extends ClassGenerator {
         int index = 0;
         for (Iterator iter = references.values().iterator(); iter.hasNext();) {
             org.codehaus.groovy.ast.Variable element = (org.codehaus.groovy.ast.Variable) iter.next();
-            if (element instanceof Parameter) {
-                ret[index] = (Parameter) element;
-            } else {
-                Parameter p = new Parameter(element.getType(), element.getName());
-                ret[index] = p;
-            }
+            Parameter p = new Parameter(element.getType(), element.getName());
+            ret[index] = p;
             index++;
         }
         return ret;

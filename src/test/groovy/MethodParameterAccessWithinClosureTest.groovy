@@ -35,6 +35,23 @@ class MethodParameterAccessWithinClosureTest extends GroovyTestCase {
          assert vendor5(5.0d,2) == 7.0d
     }
     
+    void testAccessToMethodParameterInOverwrittenMethodCalledBySuper() {
+         //  GROOVY-2107
+         assertScript """
+           class A {
+             // the closure is accessing the parameter
+             def foo(x){ return {x}}
+           }
+           class B extends A {
+              def foo(y) {
+                 super.foo(y+1)
+              }
+           }
+           def b = new B()
+           assert b.foo(1).call() == 2
+        """        
+    }
+    
     private String vendor1(cheese) {
         cheese
     }
