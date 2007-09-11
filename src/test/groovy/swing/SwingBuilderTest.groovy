@@ -23,12 +23,58 @@ import java.awt.Dimension
 import java.awt.FlowLayout
 import java.awt.GridBagLayout
 import java.awt.GridLayout
-import java.awt.event.KeyEvent
 import java.awt.event.InputEvent
-
+import java.awt.event.KeyEvent
 import java.text.SimpleDateFormat
-import javax.swing.text.*
-import javax.swing.*
+import javax.swing.Action
+import javax.swing.BorderFactory
+import javax.swing.BoxLayout
+import javax.swing.JButton
+import javax.swing.JCheckBox
+import javax.swing.JCheckBoxMenuItem
+import javax.swing.JColorChooser
+import javax.swing.JComboBox
+import javax.swing.JDesktopPane
+import javax.swing.JDialog
+import javax.swing.JEditorPane
+import javax.swing.JFileChooser
+import javax.swing.JFormattedTextField
+import javax.swing.JFrame
+import javax.swing.JInternalFrame
+import javax.swing.JLabel
+import javax.swing.JLayeredPane
+import javax.swing.JList
+import javax.swing.JMenu
+import javax.swing.JMenuBar
+import javax.swing.JMenuItem
+import javax.swing.JOptionPane
+import javax.swing.JPanel
+import javax.swing.JPasswordField
+import javax.swing.JPopupMenu
+import javax.swing.JProgressBar
+import javax.swing.JRadioButton
+import javax.swing.JRadioButtonMenuItem
+import javax.swing.JScrollBar
+import javax.swing.JScrollPane
+import javax.swing.JSeparator
+import javax.swing.JSlider
+import javax.swing.JSpinner
+import javax.swing.JSplitPane
+import javax.swing.JTabbedPane
+import javax.swing.JTable
+import javax.swing.JTextArea
+import javax.swing.JTextField
+import javax.swing.JTextPane
+import javax.swing.JToggleButton
+import javax.swing.JToolBar
+import javax.swing.JTree
+import javax.swing.JViewport
+import javax.swing.JWindow
+import javax.swing.KeyStroke
+import javax.swing.SpringLayout
+import javax.swing.SwingUtilities
+import javax.swing.text.DateFormatter
+import javax.swing.text.NumberFormatter
 
 class SwingBuilderTest extends GroovyTestCase {
 
@@ -493,6 +539,25 @@ class SwingBuilderTest extends GroovyTestCase {
         }
 
         assert table.columnModel.class.name == 'groovy.model.DefaultTableModel$MyTableColumnModel'
+    }
+
+    void testTableModelChange() {
+        if (isHeadless()) return
+
+        def swing = new SwingBuilder()
+        def table = swing.table {
+            tableModel {
+                propertyColumn(propertyName:'p')
+                propertyColumn(propertyName:'ph', header: 'header')
+                propertyColumn(propertyName:'pt', type: String)
+            }
+        }
+
+        def sorter = new groovy.inspect.swingui.TableSorter(table.model)
+        table.model = sorter
+
+        //GROOVY-2111 - resetting the model w/ a pass-through cleared the columns
+        assert table.columnModel.columnCount == 3
     }
 
     void testSetConstraints() {
