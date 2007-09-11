@@ -1621,16 +1621,6 @@ statement[int prevToken]
     // do-while statement
     |   "do"^ statement "while"! LPAREN! strictContextExpression RPAREN! SEMI!
     *OBS*/
-    // With statement
-    // (This is the Groovy scope-shift mechanism, used for builders.)
-//deprecated    |   "with"^ LPAREN! strictContextExpression RPAREN! nlsWarn! compoundStatement
-
-    // Splice statement, meaningful only inside a "with" expression.
-    // PROPOSED, DECIDE.  Prevents the namespace pollution of a "text" method or some such.
-    |   sp:STAR^ nls!                       {#sp.setType(SPREAD_ARG);}
-        expressionStatement[EOF]
-    // Example:  with(htmlbuilder) { head{} body{ *"some text" } }
-    // Equivalent to:  { htmlbuilder.head{} htmlbuilder.body{ (htmlbuilder as Collection).add("some text") } }
 
     // Import statement.  Can be used in any scope.  Has "import x as y" also.
     |   importStatement
@@ -2495,16 +2485,6 @@ parenthesizedExpression { Token first = LT(1); boolean hasClosureList=false; }
         	}
         }
     ;
-
-//deprecated jun 2007
-//    scopeEscapeExpression
-//    :   DOLLAR^  {#DOLLAR.setType(SCOPE_ESCAPE);} (IDENT | scopeEscapeExpression)
-        // PROPOSE: The SCOPE_ESCAPE operator pops its operand out of the scope of a "with" block.
-        // If not within a "with" block, it pops the operand out of the static global scope,
-        // into whatever dynamic (unchecked) global scope is available when the script is run,
-        // regardless of package and imports.
-        // Example of SCOPE_ESCAPE:  def x=1; with ([x:2,y:-1]) { def y=3; println [$x, x, y] }  =>  "[1, 2, 3]"
-//    ;
 
 /** Things that can show up as expressions, but only in strict
  *  contexts like inside parentheses, argument lists, and list constructors.

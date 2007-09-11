@@ -750,8 +750,6 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
 
     public void testSpreadArg() throws Exception { // not in java
-        assertEquals("myList {*name}", pretty("myList{*name}")); // fails after parser // not in java
-        assertEquals("\"foo${*bar}\"", pretty("\"foo${*bar}\"")); // fails after parser // not in java
         assertEquals("f(*[a, b, c])", pretty("f(*[a,b,c])")); // not in java
         assertEquals("f(*null)", pretty("f(*null)")); // equiv to f() // not in java
     }
