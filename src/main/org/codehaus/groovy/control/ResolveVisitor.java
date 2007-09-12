@@ -59,7 +59,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private boolean isTopLevelProperty = true;
     private boolean inPropertyExpression = false;
     private boolean inClosure = false;
-
+    private boolean isSpecialContructorCall = false;
+    
     private Map genericParameterNames = new HashMap();
 
     public ResolveVisitor(CompilationUnit cu) {
@@ -602,7 +603,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 ClassExpression ce = new ClassExpression(t);
                 ce.setSourcePosition(ve);
                 return ce;
-            } else if (!inPropertyExpression) {
+            } else if (!inPropertyExpression || isSpecialContructorCall) {
                 addStaticVariableError(ve);
             }
         }
@@ -613,7 +614,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private void addStaticVariableError(VariableExpression ve) {
         // closures are always dynamic
         // propertiesExpressions will handle the error a bit different
-        if (inClosure || !ve.isInStaticContext()) return;
+        if (!isSpecialContructorCall && (inClosure || !ve.isInStaticContext())) return;
         if (ve == VariableExpression.THIS_EXPRESSION || ve == VariableExpression.SUPER_EXPRESSION) return;
         Variable v = ve.getAccessedVariable();
         if (v != null && !(v instanceof DynamicVariable) && v.isInStaticContext()) return;
@@ -663,7 +664,10 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     protected Expression transformConstructorCallExpression(ConstructorCallExpression cce) {
         ClassNode type = cce.getType();
         resolveOrFail(type, cce);
-        return cce.transformExpression(this);
+        isSpecialContructorCall = cce.isSpecialCall();
+        Expression ret = cce.transformExpression(this);
+        isSpecialContructorCall = false;
+        return ret;
     }
 
     protected Expression transformMethodCallExpression(MethodCallExpression mce) {

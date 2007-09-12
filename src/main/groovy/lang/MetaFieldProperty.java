@@ -23,7 +23,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.HashMap;
 
 /**
  * Represents a property on a bean which may have a getter and/or a setter

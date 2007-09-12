@@ -260,7 +260,6 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             ClassNode classScope = scope.getClassScope();
             if (classScope!=null) {
                 Variable member = findClassMember(classScope,var.getName());
-                boolean found = false;
                 if (member!=null) {
                     boolean cc = currentScope.isInStaticContext() || isSpecialContructorCall;
                     boolean cm = member.isInStaticContext();
@@ -279,14 +278,9 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
                     // One example for (cm||cm==cc)==false is a static method trying to 
                     // access a non static field.
                     //
-                    if (cm || cm==cc) {
-                        found = true;
-                        var = member;
-                    }
-                    
+                    if (cm || cm==cc) var = member;  
                 } 
-                if (isSpecialContructorCall && found) break;
-                if (!isSpecialContructorCall) break;
+                break;
             }            
             scope = scope.getParent();
         }
@@ -333,8 +327,8 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
      * direct field access, so we need to check the
      * static context here
      */
-    private void checkPropertyOnThis(PropertyExpression pe) {
-        if (!currentScope.isInStaticContext()) return; 
+    private void checkPropertyOnExplicitThis(PropertyExpression pe) {
+        if (!currentScope.isInStaticContext()) return;
         Expression object = pe.getObjectExpression();
         if (!(object instanceof VariableExpression)) return;
         VariableExpression ve = (VariableExpression) object;
@@ -405,7 +399,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         expression.getObjectExpression().visit(this);
         inPropertyExpression = false;
         expression.getProperty().visit(this);
-        checkPropertyOnThis(expression);
+        checkPropertyOnExplicitThis(expression);
         inPropertyExpression = ipe;
     }
         

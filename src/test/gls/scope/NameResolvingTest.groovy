@@ -29,4 +29,13 @@ class NameResolvingTest extends CompilableTestSupport {
       String = 1    
     """
   }
+  
+  public void testClassUsageInSuper(){
+     shouldCompile """
+       class A {A(x){}}
+       class B extends A {
+         B(x){super(Thread)}
+       }
+     """   
+  }
 }
