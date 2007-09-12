@@ -13,16 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package groovy.swing.factory;
+package groovy.swing.factory
 
-import groovy.lang.Closure;
-import groovy.swing.SwingBuilder;
-import org.codehaus.groovy.binding.ClosureSourceBinding;
-import org.codehaus.groovy.binding.FullBinding;
-import org.codehaus.groovy.binding.SwingTimerTriggerBinding;
-
-import java.util.List;
-import java.util.Map;
+import groovy.swing.SwingBuilder
+import org.codehaus.groovy.binding.ClosureSourceBinding
+import org.codehaus.groovy.binding.FullBinding
+import org.codehaus.groovy.binding.SwingTimerTriggerBinding
 
 /**
  * @author <a href="mailto:shemnon@yahoo.com">Danno Ferrin</a>
@@ -76,19 +72,19 @@ public class AnimateFactory implements Factory {
                 duration = new Long(interval.longValue() * divisions);
                 // in Groovy 2.0 use valueOf
             } else {
-                interval = new Integer(1000 / divisions);
+                interval = (1000 / divisions) as int;
                 // in Groovy 2.0 use valueOf
-                duration = new Long(interval.longValue() * divisions);
+                duration = (interval.longValue() * divisions) as long;
                 // in Groovy 2.0 use valueOf
                 // duration won't often be completely 1 sec by default, but it will fire evenly this way
             }
         } else if (interval == null) {
-            interval = new Integer(duration.intValue() / divisions);
+            interval = (duration.intValue() / divisions) as Integer;
             // in Groovy 2.0 use valueOf
         }
         properties.put("duration", duration);
         properties.put("interval", interval);
-        properties.put("stepSize", new Integer(duration.intValue() / divisions));
+        properties.put("stepSize", (duration.intValue() / divisions) as Integer);
         // in Groovy 2.0 use valueOf
 
         properties.put("reportSteps", Boolean.TRUE);
@@ -96,11 +92,9 @@ public class AnimateFactory implements Factory {
         properties.put("reportElapsed", Boolean.FALSE);
 
 
-        return new SwingTimerTriggerBinding().createBinding(new ClosureSourceBinding(new Closure(builder) {
-            public Object call(Object[] arguments) {
-                   return animateRange.get(((Integer)arguments[0]).intValue());
-            }
-        }, new Object[] {new Integer(0)}), null);
+        return new SwingTimerTriggerBinding().createBinding(
+            new ClosureSourceBinding({ num -> animateRange[num] }, [0]),
+            null);
         // in Groovy 2.0 use valueOf
     }
 }

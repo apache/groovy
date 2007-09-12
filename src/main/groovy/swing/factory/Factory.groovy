@@ -13,12 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package groovy.swing.factory;
+package groovy.swing.factory
 
-import groovy.swing.SwingBuilder;
-import java.util.Map;
+import groovy.swing.SwingBuilder
 
-/** 
+/**
  * An interface to represent a factory of beans.
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>

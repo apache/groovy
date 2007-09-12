@@ -14,37 +14,27 @@
  * limitations under the License.
  */
 
-package groovy.swing.factory;
+package groovy.swing.factory
 
-import groovy.swing.SwingBuilder;
-import java.util.Map;
-import org.codehaus.groovy.runtime.InvokerHelper;
+import groovy.swing.SwingBuilder
+import javax.swing.JMenu
+import javax.swing.JPopupMenu
+import javax.swing.JSeparator
+import javax.swing.JToolBar
 
-/**
- *
- * @author Danno Ferrin
- */
-public class TextArgWidgetFactory implements Factory {
-    
-    Class klass;
-    
-    public TextArgWidgetFactory(Class klass) {
-        this.klass = klass;
-    }
+
+
+public class SeparatorFactory implements Factory {
     
     public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
-        if (SwingBuilder.checkValueIsTypeNotString(value, name, klass)) {
-            return value;
+        SwingBuilder.checkValueIsNull(value, name);
+        Object parent = builder.getCurrent();
+        if (parent instanceof JMenu) {
+            return new JPopupMenu.Separator();
+        } else if (parent instanceof JToolBar) {
+            return new JToolBar.Separator();
+        } else {
+            return new JSeparator();
         }
-        
-        Object widget = klass.newInstance();
-        
-        if (value instanceof String) {
-            // this does not create property setting order issues, since the value arg preceeds all properties in the builder element
-            InvokerHelper.setProperty(widget, "text", value);
-        }
-        
-        return widget;
-    }    
-
+    }
 }

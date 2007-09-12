@@ -14,17 +14,15 @@
  * limitations under the License.
  */
 
-package groovy.swing.factory;
+package groovy.swing.factory
 
-import groovy.lang.Closure;
-import groovy.lang.MissingPropertyException;
-import groovy.swing.SwingBuilder;
-import groovy.swing.impl.DefaultAction;
-import java.util.Iterator;
-import java.util.Map;
-import javax.swing.Action;
-import javax.swing.KeyStroke;
-import org.codehaus.groovy.runtime.InvokerHelper;
+import groovy.swing.SwingBuilder
+import groovy.swing.impl.DefaultAction
+import javax.swing.Action
+import javax.swing.KeyStroke
+import org.codehaus.groovy.runtime.InvokerHelper
+
+
 
 /**
  *
@@ -61,13 +59,12 @@ public class ActionFactory implements Factory {
         Object mnemonic = properties.remove("mnemonic");
         if (mnemonic != null) {
             if (!(mnemonic instanceof Number)) {
-                mnemonic = new Integer(mnemonic.toString().charAt(0));
+                mnemonic = mnemonic.toString().charAt(0);
             }
-            action.putValue(Action.MNEMONIC_KEY, mnemonic);
+            action.putValue(Action.MNEMONIC_KEY, mnemonic as Integer);
         }
         
-        for (Iterator iter = properties.entrySet().iterator(); iter.hasNext();) {
-            Map.Entry entry = (Map.Entry) iter.next();
+        for (entry in properties.entrySet()) {
             String propertyName = (String) entry.getKey();
             // first attempt to set as a straight proeprty
             try {

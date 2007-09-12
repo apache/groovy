@@ -14,27 +14,38 @@
  * limitations under the License.
  */
 
-package groovy.swing.factory;
+package groovy.swing.factory
 
-import groovy.swing.SwingBuilder;
-import java.util.Map;
+import groovy.swing.SwingBuilder
+import org.codehaus.groovy.runtime.InvokerHelper
 
-public class WidgetFactory implements Factory {
 
-    Class restrictedType;
 
-    public WidgetFactory(Class restrictedType) {
-        this.restrictedType = restrictedType;
+/**
+ *
+ * @author Danno Ferrin
+ */
+public class TextArgWidgetFactory implements Factory {
+    
+    Class klass;
+    
+    public TextArgWidgetFactory(Class klass) {
+        this.klass = klass;
     }
     
     public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
-        if (value == null) {
-            value = properties.remove(name);
-        }
-        if ((value != null) && SwingBuilder.checkValueIsType(value, name, restrictedType)) {
+        if (SwingBuilder.checkValueIsTypeNotString(value, name, klass)) {
             return value;
-        } else {
-            throw new RuntimeException(name + " must have either a value argument or an attribute named " + name + " that must be of type " + restrictedType.getName());
         }
+        
+        Object widget = klass.newInstance();
+        
+        if (value instanceof String) {
+            // this does not create property setting order issues, since the value arg preceeds all properties in the builder element
+            InvokerHelper.setProperty(widget, "text", value);
+        }
+        
+        return widget;
     }    
+
 }

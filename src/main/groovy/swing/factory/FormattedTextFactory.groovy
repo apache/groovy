@@ -14,15 +14,28 @@
  * limitations under the License.
  */
 
-package groovy.swing.factory;
+package groovy.swing.factory
 
-import groovy.swing.SwingBuilder;
-import java.util.Map;
+import groovy.swing.SwingBuilder
+import java.text.Format
+import javax.swing.JFormattedTextField
 
-public class MapFactory implements Factory {
+
+
+public class FormattedTextFactory implements Factory {
     
     public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
         SwingBuilder.checkValueIsNull(value, name);
-        return properties;
+        //TODO expand value arg to take format
+        JFormattedTextField ftf;
+        if (properties.containsKey("format")) {
+            ftf = new JFormattedTextField((Format) properties.remove("format"));
+        } else if (properties.containsKey("value")) {
+            ftf = new JFormattedTextField(properties.remove("value"));
+        } else {
+            ftf = new JFormattedTextField();
+        }
+        return ftf;
     }
+
 }

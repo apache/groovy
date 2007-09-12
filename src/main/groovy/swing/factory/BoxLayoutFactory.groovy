@@ -14,26 +14,37 @@
  * limitations under the License.
  */
 
-package groovy.swing.factory;
+package groovy.swing.factory
 
-import groovy.swing.SwingBuilder;
-import java.util.Map;
-import javax.swing.JMenu;
-import javax.swing.JPopupMenu;
-import javax.swing.JSeparator;
-import javax.swing.JToolBar;
+import groovy.swing.SwingBuilder
+import java.awt.Container
+import javax.swing.BoxLayout
+import org.codehaus.groovy.runtime.InvokerHelper
 
-public class SeparatorFactory implements Factory {
+
+
+public class BoxLayoutFactory implements Factory {
     
     public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
         SwingBuilder.checkValueIsNull(value, name);
         Object parent = builder.getCurrent();
-        if (parent instanceof JMenu) {
-            return new JPopupMenu.Separator();
-        } else if (parent instanceof JToolBar) {
-            return new JToolBar.Separator();
+        if (parent instanceof Container) {
+            Object axisObject = properties.remove("axis");
+            int axis = BoxLayout.X_AXIS;
+            if (axisObject != null) {
+                Integer i = (Integer) axisObject;
+                axis = i.intValue();
+            }
+
+            Container target = SwingBuilder.getLayoutTarget((Container)parent);
+            BoxLayout answer = new BoxLayout(target, axis);
+
+            // now let's try to set the layout property
+            InvokerHelper.setProperty(target, "layout", answer);
+            return answer;
         } else {
-            return new JSeparator();
+            throw new RuntimeException("Must be nested inside a Container");
         }
     }
+
 }

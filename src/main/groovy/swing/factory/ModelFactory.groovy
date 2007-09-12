@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package groovy.swing.factory;
+package groovy.swing.factory
 
-import groovy.swing.SwingBuilder;
-import org.codehaus.groovy.binding.ModelBinding;
+import groovy.swing.SwingBuilder
+import org.codehaus.groovy.binding.ModelBinding
 
-import java.util.Map;
+
 
 /**
  * @author <a href="mailto:shemnon@yahoo.com">Danno Ferrin</a>
@@ -29,13 +29,12 @@ public class ModelFactory implements Factory {
 
     public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
         if (value == null) {
-            throw new RuntimeException(name + " requires a value argument.");
+            throw new RuntimeException("$name requires a value argument.");
         }
         ModelBinding mb = new ModelBinding(value);
 
         Object o = properties.remove("bind");
-        if ((o instanceof Boolean) && ((Boolean) o).booleanValue())
-        {
+        if ((o instanceof Boolean) && ((Boolean) o).booleanValue()) {
             mb.bind();
         }
         return mb;

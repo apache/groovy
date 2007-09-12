@@ -14,30 +14,14 @@
  * limitations under the License.
  */
 
-package groovy.swing.factory;
+package groovy.swing.factory
 
-import groovy.swing.SwingBuilder;
-import java.util.List;
-import java.util.Map;
-import java.util.Vector;
-import javax.swing.JComboBox;
+import groovy.swing.SwingBuilder
 
-public class ComboBoxFactory implements Factory {
+public class MapFactory implements Factory {
     
     public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
         SwingBuilder.checkValueIsNull(value, name);
-        //TODO expand to allow the value arg to be items
-        Object items = properties.remove("items");
-        if (items instanceof Vector) {
-            return new JComboBox((Vector) items);
-        } else if (items instanceof List) {
-            List list = (List) items;
-            return new JComboBox(list.toArray());
-        } else if (items instanceof Object[]) {
-            return new JComboBox((Object[]) items);
-        } else {
-            return new JComboBox();
-        }
+        return properties;
     }
-
 }

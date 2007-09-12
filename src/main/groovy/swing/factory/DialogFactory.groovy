@@ -14,21 +14,22 @@
  * limitations under the License.
  */
 
-package groovy.swing.factory;
+package groovy.swing.factory
 
-import groovy.swing.SwingBuilder;
-import java.awt.Dialog;
-import java.awt.Frame;
-import java.util.LinkedList;
-import java.util.Map;
-import javax.swing.JWindow;
+import groovy.swing.SwingBuilder
+import java.awt.Dialog
+import java.awt.Frame
+import javax.swing.JDialog
 
-public class WindowFactory implements Factory {
+
+
+public class DialogFactory implements Factory {
     
     public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
-        SwingBuilder.checkValueIsNull(value, name);
-        //TODO we could make the value arg the owner, or a window to allow adding more compnents
-        JWindow window;
+        if (SwingBuilder.checkValueIsType(value, name, JDialog.class)) {
+            return value;
+        }
+        JDialog dialog;
         Object owner = properties.remove("owner");
         LinkedList containingWindows = builder.getContainingWindows();
         // if owner not explicit, use the last window type in the list
@@ -36,14 +37,14 @@ public class WindowFactory implements Factory {
             owner = containingWindows.getLast();
         }
         if (owner instanceof Frame) {
-            window = new JWindow((Frame) owner);
+            dialog = new JDialog((Frame) owner);
         } else if (owner instanceof Dialog) {
-            window = new JWindow((Dialog) owner);
+            dialog = new JDialog((Dialog) owner);
         } else {
-            window = new JWindow();
+            dialog = new JDialog();
         }
-        containingWindows.add(window);
-        return window;
+        containingWindows.add(dialog);
+        return dialog;
     }
 
 }

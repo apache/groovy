@@ -14,27 +14,29 @@
  * limitations under the License.
  */
 
-package groovy.swing.factory;
+package groovy.swing.factory
 
-import groovy.lang.MissingPropertyException;
-import groovy.swing.SwingBuilder;
-import java.util.ArrayList;
-import java.util.Map;
+import groovy.swing.SwingBuilder
+import javax.swing.JComboBox
 
-/**
- * This returns a mutable java.util.Collection of some sort, to which items are added.  
- */
-public class CollectionFactory implements Factory {
+
+
+public class ComboBoxFactory implements Factory {
     
     public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
         SwingBuilder.checkValueIsNull(value, name);
-        if (properties.isEmpty()) {
-            return new ArrayList();
+        //TODO expand to allow the value arg to be items
+        Object items = properties.remove("items");
+        if (items instanceof Vector) {
+            return new JComboBox((Vector) items);
+        } else if (items instanceof List) {
+            List list = (List) items;
+            return new JComboBox(list.toArray());
+        } else if (items instanceof Object[]) {
+            return new JComboBox((Object[]) items);
         } else {
-            Map.Entry item = (Map.Entry) properties.entrySet().iterator().next();
-            throw new MissingPropertyException(
-                "The builder element '" + name + "' is a collections element and has no properties",
-                item.getKey().toString(), item.getValue().getClass());
+            return new JComboBox();
         }
     }
+
 }

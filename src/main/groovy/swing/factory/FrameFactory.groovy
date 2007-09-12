@@ -14,24 +14,22 @@
  * limitations under the License.
  */
 
-package groovy.swing.factory;
+package groovy.swing.factory
 
-import groovy.swing.SwingBuilder;
-import java.util.Map;
-import javax.swing.JSplitPane;
+import groovy.swing.SwingBuilder
+import javax.swing.JFrame
 
-public class SplitPaneFactory implements Factory {
+
+
+public class FrameFactory implements Factory {
     
     public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
-        if (SwingBuilder.checkValueIsType(value, name, JSplitPane.class)) {
+        if (SwingBuilder.checkValueIsType(value, name, JFrame.class)) {
             return value;
         }
-        JSplitPane answer = new JSplitPane();
-        answer.setLeftComponent(null);
-        answer.setRightComponent(null);
-        answer.setTopComponent(null);
-        answer.setBottomComponent(null);
-        return answer;
+        JFrame frame = new JFrame();
+        builder.getContainingWindows().add(frame);
+        return frame;
     }
 
 }

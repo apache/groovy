@@ -14,27 +14,24 @@
  * limitations under the License.
  */
 
-package groovy.swing.factory;
+package groovy.swing.factory
 
-import groovy.swing.SwingBuilder;
-import java.text.Format;
-import java.util.Map;
-import javax.swing.JFormattedTextField;
+import groovy.swing.SwingBuilder
 
-public class FormattedTextFactory implements Factory {
+/**
+ * This returns a mutable java.util.Collection of some sort, to which items are added.  
+ */
+public class CollectionFactory implements Factory {
     
     public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
         SwingBuilder.checkValueIsNull(value, name);
-        //TODO expand value arg to take format
-        JFormattedTextField ftf;
-        if (properties.containsKey("format")) {
-            ftf = new JFormattedTextField((Format) properties.remove("format"));
-        } else if (properties.containsKey("value")) {
-            ftf = new JFormattedTextField(properties.remove("value"));
+        if (properties.isEmpty()) {
+            return new ArrayList();
         } else {
-            ftf = new JFormattedTextField();
+            Map.Entry item = (Map.Entry) properties.entrySet().iterator().next();
+            throw new MissingPropertyException(
+                "The builder element '$name' is a collections element and has no properties",
+                item.key as String, item.value as Class);
         }
-        return ftf;
     }
-
 }

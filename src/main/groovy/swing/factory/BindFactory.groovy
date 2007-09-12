@@ -13,22 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package groovy.swing.factory;
+package groovy.swing.factory
 
-import groovy.lang.Closure;
-import groovy.swing.SwingBuilder;
-import groovy.swing.binding.AbstractButtonProperties;
-import groovy.swing.binding.JSliderProperties;
-import groovy.swing.binding.JTextComponentProperties;
-import org.codehaus.groovy.binding.ClosureSourceBinding;
-import org.codehaus.groovy.binding.EventTriggerBinding;
-import org.codehaus.groovy.binding.FullBinding;
-import org.codehaus.groovy.binding.PropertyBinding;
-import org.codehaus.groovy.binding.TargetBinding;
-import org.codehaus.groovy.binding.TriggerBinding;
-
-import java.util.HashMap;
-import java.util.Map;
+import groovy.swing.SwingBuilder
+import groovy.swing.binding.AbstractButtonProperties
+import groovy.swing.binding.JSliderProperties
+import groovy.swing.binding.JTextComponentProperties
+import org.codehaus.groovy.binding.*
 
 /**
  * @author <a href="mailto:shemnon@yahoo.com">Danno Ferrin</a>
@@ -55,7 +46,7 @@ public class BindFactory implements Factory {
         // covers JToggleButton.selected
         syntheticBindings.putAll(AbstractButtonProperties.getSyntheticProperties());
 
-        // JSlider.value
+        // covers JSlider.value
         syntheticBindings.putAll(JSliderProperties.getSyntheticProperties());
 
         // JComboBox.elements
@@ -98,7 +89,7 @@ public class BindFactory implements Factory {
      */
     public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
         if (value != null) {
-            throw new RuntimeException(name + " elements do not accept a value argument.");
+            throw new RuntimeException("$name elements do not accept a value argument.");
         }
         Object source = properties.remove("source");
         Object target = properties.remove("target");
@@ -119,11 +110,11 @@ public class BindFactory implements Factory {
             Class currentClass = source.getClass();
             while ((trigger == null) && (currentClass != null)) {
                 // should we check interfaces as well?  if so at what level?
-                trigger = (TriggerBinding) syntheticBindings.get(currentClass.getName() + "#" + property);
+                trigger = (TriggerBinding) syntheticBindings.get("$currentClass.name#$property" as String);
                 currentClass = currentClass.getSuperclass();
             }
             if (trigger == null) {
-                //TODO inspect the bean info and throw an error if the property is not obserbable
+                //TODO inspect the bean info and throw an error if the property is not obserbable and not bind:false?
                 trigger = psb;
             }
             fb = trigger.createBinding(psb, tb);
@@ -134,7 +125,7 @@ public class BindFactory implements Factory {
             EventTriggerBinding etb = new EventTriggerBinding(source, trigger);
             fb = etb.createBinding(psb, tb);
         } else {
-            throw new RuntimeException(name + " does not have suffient properties to initialize");
+            throw new RuntimeException("$name does not have suffient properties to initialize");
         }
 
         Object o = properties.remove("bind");
