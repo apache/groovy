@@ -31,7 +31,7 @@ import org.codehaus.groovy.reflection.ReflectionCache;
  */
 public class GroovyCategorySupport {
 
-    private static long categoriesInUse = 0;
+    private static int categoriesInUse = 0;
 
     /**
      * This method is used to pull all the new methods out of the local thread context with a particular name.
@@ -193,14 +193,14 @@ public class GroovyCategorySupport {
         	}
     };
 
-    private static void newScope() {
+    private synchronized static void newScope() {
         categoriesInUse++;
         List stack = (List) LOCAL.get();
     	Map properties = new WeakHashMap(getProperties());
     	stack.add(properties);
     }
 
-    private static void endScope() {
+    private synchronized static void endScope() {
         List stack = (List) LOCAL.get();
     	stack.remove(stack.size() - 1);
         categoriesInUse--;
