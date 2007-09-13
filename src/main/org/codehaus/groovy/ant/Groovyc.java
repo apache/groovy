@@ -27,6 +27,7 @@ import org.apache.tools.ant.util.SourceFileScanner;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.tools.ErrorReporter;
+import org.codehaus.groovy.tools.StringHelper;
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit;
 
 import java.io.File;
@@ -36,7 +37,6 @@ import java.io.StringWriter;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -562,61 +562,7 @@ public class Groovyc extends MatchingTask
     }
     
     public void setJointCompilationOptions(String options) {
-        String[] args = tokenize(options);
+        String[] args = StringHelper.tokenizeUnquoted(options);
         evalCompilerFlags(args);
-    }
-
-    private String[] tokenize(String str) {
-        if (str.length()==0) return new String[0];
-        LinkedList tokens = new LinkedList();
-        StringBuffer buffer = new StringBuffer(str);
-        int pos = 0;
-        boolean didReadWhiteSpaceOnly = true;
-        int tokenStart = 0;
-        while (true) {
-            if(pos==buffer.length()) {
-                if (!didReadWhiteSpaceOnly) {
-                    tokens.add(buffer.substring(tokenStart));
-                }
-                break;
-            }             
-            
-            char current = buffer.charAt(pos);
-            if (current==' ') { 
-                if (!didReadWhiteSpaceOnly) {
-                    tokens.add(buffer.substring(tokenStart, pos));
-                    didReadWhiteSpaceOnly = true;
-                }
-                pos = parseWhiteSpace(buffer,pos);
-                tokenStart = pos;
-            } else if (current=='\'') {
-                didReadWhiteSpaceOnly = false;
-                pos = parseString(buffer,pos,"\'");
-            } else if (current=='\"') {
-                didReadWhiteSpaceOnly = false;
-                pos = parseString(buffer,pos,"\"");
-            } else {
-                didReadWhiteSpaceOnly = false;
-                pos++;
-            }
-        }
-        
-        return (String[]) tokens.toArray(new String[0]);
-    }
-
-    private int parseString(StringBuffer buffer, int pos, String c) {
-        if (pos==buffer.length()-1) return buffer.length();
-        int index = buffer.indexOf(c,pos+1)+1;
-        if (index==-1) return buffer.length();
-        return index;
-    }
-
-    private int parseWhiteSpace(StringBuffer buffer, int pos) {
-        for (;pos<buffer.length();pos++) {
-            if (buffer.charAt(pos) != ' ') return pos;
-        }
-        return buffer.length();
-    }
-    
-    
+    }    
 }
