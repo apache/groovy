@@ -36,6 +36,19 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert lists.combinations() as Set ==
                         [['a', 1], ['a', 2], ['a', 3],
                         ['b', 1], ['b', 2], ['b', 3]] as Set
+        assert combinations(['a', 'b'], [1, 2, 3]) as Set ==
+                        [['a', 1], ['a', 2], ['a', 3],
+                        ['b', 1], ['b', 2], ['b', 3]] as Set
+    }
+
+    void testTranspose() {
+        def lists = [['a', 'b'], [1, 2, 3]]
+        assert lists.transpose() == [['a', 1], ['b', 2]]
+        assert transpose(['a', 'b'], [1, 2, 3]) == [['a', 1], ['b', 2]]
+        assert transpose([1, 2, 3], [4, 5, 6]) == [[1, 4], [2, 5], [3, 6]]
+        assert transpose([1, 2, 3], [4, 5], [9], [6, 7, 8]) == [[1, 4, 9, 6]]
+        assert transpose([1, 2, 3]) == [[1], [2], [3]]
+        assert transpose([]) == []
     }
 
     void testSum() {
@@ -63,8 +76,7 @@ class GroovyMethodsTest extends GroovyTestCase {
     void testJoin() {
         assert [2, 4, 6].join("-") == "2-4-6"
         assert ["edam", "cheddar", "brie"].join(", ") == 'edam, cheddar, brie'
-
-        println(["abc", 5, 2.34].join(", "))
+        assert ["abc", 5, 2.34].join(", ") == "abc, 5, 2.34"
     }
 
     void testTimes() {

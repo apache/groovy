@@ -1203,6 +1203,17 @@ public class DefaultGroovyMethods {
     /**
      * Finds all combinations of items from a collection of collections
      *
+     * @param self any object, effectively making this method always available
+     * @param args an array of collections
+     * @return a List of the combinations found
+     */
+    public static List combinations(Object self, Object[] args) {
+        return combinations(Arrays.asList(args));
+    }
+
+    /**
+     * Finds all combinations of items from a collection of collections
+     *
      * @param self a Collection of collections
      * @return a List of the combinations found
      */
@@ -1232,6 +1243,49 @@ public class DefaultGroovyMethods {
             }
         }
         return combinations;
+    }
+
+    /**
+     * Transposes all items from a collection of collections. So
+     * [['a', 'b'], [1, 2]].transpose() == [['a', 1], ['b', 2]].
+     *
+     * @param self any object, effectively making this method always available
+     * @param args an array of collections
+     * @return a List of the transposed lists
+     */
+    public static List transpose(Object self, Object[] args) {
+        return transpose(Arrays.asList(args));
+    }
+
+    /**
+     * Transposes all items from a collection of collections. So
+     * [['a', 'b'], [1, 2]].transpose() == [['a', 1], ['b', 2]].
+     *
+     * @param self a Collection of collections
+     * @return a List of the transposed lists
+     */
+    public static List transpose(Collection self) {
+        List result = new ArrayList();
+        if (self.isEmpty() || self.size() == 0) return result;
+        int minSize = Integer.MAX_VALUE;
+        for (Iterator outer = self.iterator(); outer.hasNext();) {
+            Object rawListValue = outer.next();
+            List listValue = (List) DefaultTypeTransformation.castToType(rawListValue, List.class);
+            if (listValue.size() < minSize) minSize = listValue.size();
+        }
+        if (minSize == 0) return result;
+        for (int i = 0; i < minSize; i++) {
+            result.add(new ArrayList());
+        }
+        for (Iterator outer = self.iterator(); outer.hasNext();) {
+            Object rawListValue = outer.next();
+            List listValue = (List) DefaultTypeTransformation.castToType(rawListValue, List.class);
+            for (int i = 0; i < minSize; i++) {
+                List resultList = (List) result.get(i);
+                resultList.add(listValue.get(i));
+            }
+        }
+        return result;
     }
 
     /**
