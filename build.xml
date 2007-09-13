@@ -193,33 +193,17 @@ $Date$
     <target name="compileTest" depends="compileMain" unless="_skipTests_"
             description="Compile the Java and Groovy code in the test source.">
         <mkdir dir="${testClassesDirectory}"/>
+      
+        <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpath="${mainClassesDirectory}" classpathref="testPath"/>
+        <groovyc srcdir="${testSourceDirectory}" destdir="${testClassesDirectory}">
+          <classpath>
+            <pathelement path="${mainClassesDirectory}"/>
+            <pathelement path="${testClassesDirectory}"/>
+            <path refid="testPath"/>
+          </classpath>
+          <javac source="1.4" target="1.4"/>
+        </groovyc>
 
-        <!--
-
-        Compiling all the Groovy tests requires a large amount of memory, 128M it appears.  To avoid having to
-        require people to put command line arguments on the ant command line, we fork a new JVM with the
-        required parameters.  Unfortunately, the groovyc task does not support the fork attribute.
-
-        <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpath="${mainClassesDirectory}"/>
-        <groovyc srcdir="${testSourceDirectory}" destdir="${testClassesDirectory}" classpathref="groovyTestCompileDependencies"/>
-
-        This raises the question: Why does compiling the Groovy tests take so much memory?
-
-        -->
-
-        <echo message="Groovyc of test code."/>
-        <java classname="org.codehaus.groovy.ant.Groovyc" fork="true" maxmemory="128M" failonerror="true">
-            <classpath>
-                <pathelement path="${mainClassesDirectory}"/>
-                <pathelement path="${testClassesDirectory}"/>
-                <path refid="testPath"/>
-            </classpath>
-            <arg value="${testClassesDirectory}"/>
-            <arg value="${testSourceDirectory}"/>
-            <arg value="-j"/>
-            <arg value="-Jsource=1.4"/>
-            <arg value="-Jtarget=1.4"/>
-        </java>
     </target>
 
     <target name="compileExamples" depends="compileMain" unless="_skipExamples_"
