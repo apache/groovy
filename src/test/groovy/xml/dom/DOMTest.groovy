@@ -1,7 +1,6 @@
 package groovy.xml.dom
 
 import groovy.xml.*
-import org.codehaus.groovy.sandbox.markup.*
 import org.codehaus.groovy.tools.xml.*
 
 class DOMTest extends GroovyTestCase {

@@ -19,6 +19,7 @@ import groovy.lang.GroovyClassLoader;
 import org.apache.commons.cli.*;
 import org.apache.tools.ant.*;
 import org.apache.tools.ant.listener.AnsiColorLogger;
+import org.apache.tools.ant.taskdefs.Javac;
 import org.apache.tools.ant.taskdefs.MatchingTask;
 import org.apache.tools.ant.types.Path;
 import org.apache.tools.ant.types.Reference;
@@ -29,6 +30,8 @@ import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.tools.ErrorReporter;
 import org.codehaus.groovy.tools.StringHelper;
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit;
+import org.codehaus.groovy.tools.javac.JavaCompiler;
+import org.codehaus.groovy.tools.javac.JavaCompilerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -71,6 +74,7 @@ public class Groovyc extends MatchingTask
     private Path compileClasspath;
     private Path compileSourcepath;
     private String encoding;
+    private Javac javac;
 
     protected File destDir;
     protected Path src;    
@@ -382,6 +386,7 @@ public class Groovyc extends MatchingTask
     public void execute() throws BuildException {
         checkParameters();
         resetFileLists();
+        if (javac!=null) jointCompilation=true;
 
         // scan source directories and dest directory to build up
         // compile lists
@@ -496,13 +501,7 @@ public class Groovyc extends MatchingTask
                 configuration.setSourceEncoding(encoding);
             }
 
-            CompilationUnit unit;
-            if (jointCompilation) {
-                unit = new JavaAwareCompilationUnit(configuration, buildClassLoaderFor());
-            } else {
-                unit = new CompilationUnit(configuration, null, buildClassLoaderFor());
-            }
-
+            CompilationUnit unit = makeCompileUnit();
             unit.addSources(compileList);
             unit.compile();
         }
@@ -522,6 +521,53 @@ public class Groovyc extends MatchingTask
         }
     }
     
+    private CompilationUnit makeCompileUnit() {
+        if (javac!=null) {
+            Map compilerOptions =  new HashMap();
+            compilerOptions.put("stubDir", createTempDir());    
+            configuration.setJointCompilationOptions(compilerOptions);
+            jointCompilation = true;
+        }
+        
+        if (jointCompilation) {            
+            JavaAwareCompilationUnit unit = new JavaAwareCompilationUnit(configuration, buildClassLoaderFor());
+            if (javac!=null) {
+                final JavaCompiler compiler = new JavaCompiler() {
+                    public void compile(List files, CompilationUnit cu) {
+                        // forward options
+                        if (javac.getClasspath()==null) {
+                            javac.setClasspath(compileClasspath);
+                        }
+                        if (javac.getSourcepath()==null && compileSourcepath!=null) {
+                            javac.createSourcepath().add(compileSourcepath);
+                        }
+                        if (javac.getEncoding()==null) {
+                            javac.setEncoding(encoding);
+                        }
+                        javac.setDestdir(destDir);
+                        
+                        Path p = javac.createSrc();
+                        p.add(src);
+                        
+                        Path tmpDir = new Path(getProject());
+                        File dir = (File) cu.getConfiguration().getJointCompilationOptions().get("stubDir");
+                        tmpDir.setLocation(dir);
+                        p.add(tmpDir);
+                        javac.execute();
+                    }
+                };
+                unit.setCompilerFactory(new JavaCompilerFactory() {
+                    public JavaCompiler createCompiler(CompilerConfiguration config) {
+                        return compiler;
+                    }
+                });
+            }
+            return unit;
+        } else {
+            return new CompilationUnit(configuration, null, buildClassLoaderFor());
+        }
+    }
+
     protected File createTempDir()  {
         File tempFile;
         try {
@@ -564,5 +610,11 @@ public class Groovyc extends MatchingTask
     public void setJointCompilationOptions(String options) {
         String[] args = StringHelper.tokenizeUnquoted(options);
         evalCompilerFlags(args);
-    }    
+    }  
+    
+    public Javac createJavac() {
+        if (javac!=null) throw new BuildException("nested javac element allowed only once");
+        javac = new Javac();
+        return javac;
+    }
 }

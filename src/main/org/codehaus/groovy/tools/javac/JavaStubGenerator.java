@@ -90,23 +90,26 @@ public class JavaStubGenerator
             ClassNode superClass = classNode.getSuperClass();
 
             if (!isInterface) {
-                if (superClass.equals(ClassHelper.OBJECT_TYPE))
+                if (superClass.equals(ClassHelper.OBJECT_TYPE)) {
                     superClass = ClassHelper.make(GroovyObjectSupport.class);
-                out.println("  extends " + superClass.getName());
-            } else {
-                if (!superClass.equals(ClassHelper.OBJECT_TYPE))
-                    out.println("  extends " + superClass.getName());
-            }
+                }
+                out.print("  extends ");
+                printTypeName(superClass,out);
+            } 
 
             ClassNode[] interfaces = classNode.getInterfaces();
             if (interfaces != null && interfaces.length > 0) {
-                out.println("  implements");
+                if (isInterface) {
+                    out.println("  extends");
+                } else {
+                    out.println("  implements");
+                }
                 for (int i = 0; i < interfaces.length - 1; ++i)
                     out.println("    " + interfaces[i].getName() + ",");
-                out.println("    "
-                        + interfaces[interfaces.length - 1].getName());
+                out.print("    ");
+                printTypeName(interfaces[interfaces.length - 1],out);
             }
-            out.println("{");
+            out.println(" {");
 
             genMethods(classNode, out);
             genFields(classNode, out);
@@ -296,7 +299,7 @@ public class JavaStubGenerator
                 Class[] types = constructors[i].getParameterTypes();
                 Parameter[] params = new Parameter[types.length];
                 for (int j=0; j<types.length; j++) {
-                    ClassNode ptype = new ClassNode(types[i]);
+                    ClassNode ptype = ClassHelper.make(types[i]);
                     params[j] = new Parameter(ptype, types[i].getName());
                 }
 
@@ -313,15 +316,11 @@ public class JavaStubGenerator
 
         ConstructorNode c = selectAccessibleConstructorFromSuper(node);
         if (c != null) {
-            out.print("super(");
+            out.print("super (");
 
             Parameter[] params = c.getParameters();
             for (int i=0; i<params.length; i++) {
-                out.print("(");
-                printType(params[i].getType(), out);
-                out.print(")");
-                out.print("null");
-
+                printDefaultValue(out, params[i].getType());
                 if (i + 1 < params.length) {
                     out.print(", ");
                 }
@@ -361,7 +360,7 @@ public class JavaStubGenerator
                     }
                 }
                 else {
-                    printDefaultValue(out, arg.getType().getName());
+                    printDefaultValue(out, arg.getType());
                 }
 
                 if (arg != args.get(args.size() - 1)) {
@@ -374,6 +373,8 @@ public class JavaStubGenerator
     }
 
     private void genMethod(MethodNode methodNode, PrintWriter out) {
+        if (methodNode.getName().equals("<clinit>")) return;
+        
         if (!methodNode.getDeclaringClass().isInterface())
             printModifiers(out, methodNode.getModifiers());
 
@@ -399,35 +400,24 @@ public class JavaStubGenerator
         if (!retName.equals("void")) {
             out.print("return ");
 
-            printDefaultValue(out, retName);
+            printDefaultValue(out, retType);
 
             out.print(";");
         }
     }
 
-    private void printDefaultValue(PrintWriter out, String retName) {
-        if (retName.equals("int")
-            || retName.equals("byte")
-            || retName.equals("short")
-            || retName.equals("long")
-            || retName.equals("float")
-            || retName.equals("double")
-            || retName.equals("char"))
-        {
-            //
-            // NOTE: Always cast to avoid any abigous muck
-            //
-            
-            out.print("(");
-            out.print(retName);
-            out.print(")");
-            
-            out.print("0");
-        }
-        else if (retName.equals("boolean")) {
-            out.print("false");
-        }
-        else {
+    private void printDefaultValue(PrintWriter out, ClassNode type) {
+        out.print("(");
+        printType(type,out);
+        out.print(")");
+
+        if (ClassHelper.isPrimitiveType(type)) {
+            if (type==ClassHelper.boolean_TYPE){
+                out.print("false");
+            } else {
+                out.print("0");
+            }
+        } else {
             out.print("null");
         }
     }
@@ -439,7 +429,7 @@ public class JavaStubGenerator
         if (java5 && type.isUsingGenerics()) {
             GenericsType[] types = type.getGenericsTypes();
 
-            out.print(type.getName());
+            printTypeName(type,out);
             out.print("<");
             
             for (int i = 0; i < types.length; i++) {
@@ -452,13 +442,40 @@ public class JavaStubGenerator
             out.print(">");
         }
         else if (type.isArray()) {
-            out.print(type.getComponentType().getName());
+            printType(type.getComponentType(),out);
             out.print("[]");
         }
         else {
-            out.print(type.getName());
+            printTypeName(type,out);
         }
     }
+    
+    private void printTypeName(ClassNode type, PrintWriter out) {
+        if (ClassHelper.isPrimitiveType(type)) {
+            if (type==ClassHelper.boolean_TYPE) {
+                out.print("boolean");
+            } else if (type==ClassHelper.char_TYPE) {
+                out.print("char");
+            } else if (type==ClassHelper.int_TYPE) {
+                out.print("int");
+            } else if (type==ClassHelper.short_TYPE) {
+                out.print("short");
+            } else if (type==ClassHelper.long_TYPE) {
+                out.print("long");
+            } else if (type==ClassHelper.float_TYPE) {
+                out.print("float");
+            } else if (type==ClassHelper.double_TYPE) {
+                out.print("double");
+            } else if (type==ClassHelper.byte_TYPE) {
+                out.print("byte");
+            } else {
+                out.print("void");
+            }
+        } else {
+            out.print(type.getName().replace('$', '.'));
+        }
+    }
+    
     private void printParams(MethodNode methodNode, PrintWriter out) {
         out.print("(");
         Parameter[] parameters = methodNode.getParameters();

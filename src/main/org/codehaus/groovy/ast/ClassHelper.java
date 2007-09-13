@@ -51,6 +51,11 @@ public class ClassHelper {
         Double.class, Float.class, BigDecimal.class, BigInteger.class, Void.class,
         Reference.class, Class.class, MetaClass.class,     
     };
+
+    private static final String[] primitiveClassNames = new String[] {
+        "", "boolean", "char", "byte", "short", 
+        "int", "long", "double", "float", "void"
+    };
     
     public static final ClassNode 
         DYNAMIC_TYPE = new ClassNode(Object.class),  OBJECT_TYPE = DYNAMIC_TYPE,
@@ -169,6 +174,10 @@ public class ClassHelper {
      */
     public static ClassNode make(String name) {
         if (name == null || name.length() == 0) return DYNAMIC_TYPE;
+        
+        for (int i=0; i<primitiveClassNames.length; i++) {
+            if (primitiveClassNames[i].equals(name)) return types[i];
+        }
         
         for (int i=0; i<classes.length; i++) {
             String cname = classes[i].getName();
