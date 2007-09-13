@@ -35,20 +35,17 @@ import java.util.*;
 
 public class JavaStubGenerator
 {
-    private JavaAwareCompilationUnit cu;
     private boolean java5 = false;
     private File outputPath;
     private List toCompile = new ArrayList();
-    private ResolveVisitor resolver;
 
-    public JavaStubGenerator(JavaAwareCompilationUnit cu, File outputPath, boolean java5) {
-        this.cu = cu;
+    public JavaStubGenerator(File outputPath, boolean java5) {
         this.outputPath = outputPath;
         this.java5 = java5;
     }
 
-    public JavaStubGenerator(JavaAwareCompilationUnit cu, File outputPath) {
-        this(cu, outputPath, false);
+    public JavaStubGenerator( File outputPath) {
+        this(outputPath, false);
     }
     
     private void mkdirs(File parent, String relativeFile) {
@@ -81,11 +78,18 @@ public class JavaStubGenerator
             genImports(classNode, out);
 
             boolean isInterface = classNode.isInterface();
-
+            boolean isEnum = (classNode.getModifiers() & Opcodes.ACC_ENUM) !=0;
             printModifiers(out, classNode.getModifiers()
                     & ~(isInterface ? Opcodes.ACC_ABSTRACT : 0));
-            out.println((isInterface ? "interface " : "class ")
-                    + classNode.getNameWithoutPackage());
+            
+            if (isInterface) {
+                out.print ("interface ");
+            } else if (isEnum) {
+                out.print ("enum ");
+            } else {
+                out.print ("class ");
+            }
+            out.println(classNode.getNameWithoutPackage());
 
             ClassNode superClass = classNode.getSuperClass();
 
@@ -152,11 +156,19 @@ public class JavaStubGenerator
 
     private void genFields(ClassNode classNode, PrintWriter out) {
         List fields = classNode.getFields();
-        if (fields != null)
-            for (Iterator it = fields.iterator(); it.hasNext();) {
-                FieldNode fieldNode = (FieldNode) it.next();
+        if (fields == null) return;
+        ArrayList enumFields = new ArrayList(fields.size());
+        for (Iterator it = fields.iterator(); it.hasNext();) {
+            FieldNode fieldNode = (FieldNode) it.next();
+            boolean isEnumField = (fieldNode.getModifiers() & Opcodes.ACC_ENUM) !=0;
+            boolean isSynthetic = (fieldNode.getModifiers() & Opcodes.ACC_SYNTHETIC) !=0;
+            if (isEnumField) {
+                enumFields.add(fieldNode);
+            } else if (!isSynthetic) {
                 genField(fieldNode, out);
             }
+        }
+        genEnumFields(enumFields, out);
     }
 
     private void genProps(ClassNode classNode, PrintWriter out) {
@@ -217,6 +229,21 @@ public class JavaStubGenerator
             printType(propNode.getType(), out);
             out.println(" value) {}");
         }
+    }
+    
+    private void genEnumFields(List fields, PrintWriter out) {
+        if (fields.size()==0) return;
+        boolean first = true;
+        for (Iterator iterator = fields.iterator(); iterator.hasNext();) {
+            FieldNode fieldNode = (FieldNode) iterator.next();
+            if (!first) {
+                out.print(", ");
+            } else {
+                first = false;
+            }
+            out.print(fieldNode.getName());            
+        }
+        out.println();
     }
 
     private void genField(FieldNode fieldNode, PrintWriter out) {
@@ -505,7 +532,7 @@ public class JavaStubGenerator
 
         if ((modifiers & Opcodes.ACC_PRIVATE) != 0)
             out.print("private ");
-
+        
         if ((modifiers & Opcodes.ACC_STATIC) != 0)
             out.print("static ");
 
