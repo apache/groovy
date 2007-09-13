@@ -326,8 +326,8 @@ public class JavaStubGenerator
                 Class[] types = constructors[i].getParameterTypes();
                 Parameter[] params = new Parameter[types.length];
                 for (int j=0; j<types.length; j++) {
-                    ClassNode ptype = ClassHelper.make(types[i]);
-                    params[j] = new Parameter(ptype, types[i].getName());
+                    ClassNode ptype = ClassHelper.make(types[j]);
+                    params[j] = new Parameter(ptype, types[j].getName());
                 }
 
                 return new ConstructorNode(mod, params, null, null);
