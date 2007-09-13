@@ -140,7 +140,11 @@ public abstract class CompileTaskSupport
 
         Path path = getClasspath();
         if (path != null) {
-            gcl.addClasspath(path.toString());
+            final String[] filePaths = path.list();
+            for (int i = 0; i < filePaths.length; i++) {
+                String filePath = filePaths[i];
+                gcl.addClasspath(filePath);
+            }
         }
 
         return gcl;
