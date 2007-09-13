@@ -34,13 +34,7 @@ class TryCatchTest extends GroovyTestCase {
          assert touched , "finally not called with empty try"
      }
 
-
-
      void testWorkingMethod() {
-         /** @todo causes inconsistent stack height
-          assert exceptionCalled == false , "should not invoked the catch clause"
-          */
-         
          try {
 	    	 workingMethod()
 	     }
@@ -143,5 +137,21 @@ class TryCatchTest extends GroovyTestCase {
         return
       }
       assert false
+    }
+    
+    void testTryCatchInConstrcutor() {
+      // the super() call construction left an
+      // element on the stack, causing a inconsisitent
+      // stack height problem for the try-catch
+      // this ensures the stack is clean after the call
+      assertScript """
+        class A {
+          A() {
+            super()
+            try{}catch(e){}
+          }
+        }
+        assert null != new A()
+      """
     }
 }

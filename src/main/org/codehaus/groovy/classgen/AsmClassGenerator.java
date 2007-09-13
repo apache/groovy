@@ -1819,8 +1819,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 mv.visitInsn(DUP_X1);
                 mv.visitInsn(DUP2_X1);
                 mv.visitInsn(POP);
-            }
-            
+            }            
 
             ConstructorNode cn = (ConstructorNode) constructors.get(i);
             String descriptor = helper.getMethodDescriptor(ClassHelper.VOID_TYPE, cn.getParameters());
@@ -1854,6 +1853,10 @@ public class AsmClassGenerator extends ClassGenerator {
         mv.visitMethodInsn(INVOKESPECIAL, "java/lang/IllegalArgumentException", "<init>", "(Ljava/lang/String;)V");
         mv.visitInsn(ATHROW);
         mv.visitLabel(afterSwitch);
+        
+        // to keep the stack hight we kept one object on the stack
+        // for the switch, now we remove that object
+        mv.visitInsn(POP);
     }
 
     private List sortConstructors(ConstructorCallExpression call, ClassNode callNode) {
