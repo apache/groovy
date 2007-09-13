@@ -36,13 +36,9 @@ import java.util.*;
 public class JavaStubGenerator
 {
     private JavaAwareCompilationUnit cu;
-
     private boolean java5 = false;
-    
     private File outputPath;
-
     private List toCompile = new ArrayList();
-
     private ResolveVisitor resolver;
 
     public JavaStubGenerator(JavaAwareCompilationUnit cu, File outputPath, boolean java5) {
@@ -274,8 +270,6 @@ public class JavaStubGenerator
     }
 
     private ConstructorNode selectAccessibleConstructorFromSuper(ConstructorNode node) {
-        assert node != null;
-
         ClassNode type = node.getDeclaringClass();
         ClassNode superType = type.getSuperClass();
 

@@ -59,8 +59,6 @@ public class JavaStubCompilationUnit
     }
 
     public void addSourceFile(final File file) {
-        assert file != null;
-
         if (file.getName().endsWith(".java")) {
             addJavaSource(file);
         }
@@ -70,8 +68,6 @@ public class JavaStubCompilationUnit
     }
 
     private void addJavaSource(final File file) {
-        assert file != null;
-
         //
         // FIXME: Um... not really sure what this is doing...
         //        So either document what its job is... or whack it ;-)
@@ -120,8 +116,6 @@ public class JavaStubCompilationUnit
         private final JavaStubGenerator generator;
 
         public StubGeneratorOperation(final File outputDirectory) {
-            assert outputDirectory != null;
-
             outputDirectory.mkdirs();
 
             boolean java5 = false;

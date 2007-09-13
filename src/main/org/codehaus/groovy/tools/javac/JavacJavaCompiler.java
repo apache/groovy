@@ -20,6 +20,7 @@ import groovy.lang.GroovyClassLoader;
 
 import java.io.File;
 import java.lang.reflect.Method;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -28,6 +29,7 @@ import java.util.Map;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.messages.ExceptionMessage;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 public class JavacJavaCompiler implements JavaCompiler {
     private CompilerConfiguration config;
@@ -41,8 +43,7 @@ public class JavacJavaCompiler implements JavaCompiler {
         org.apache.tools.ant.taskdefs.Javac c;
         try {
             Class javac = findJavac(cu);
-            Method method = javac.getMethod("compile",
-                    new Class[]{String[].class});
+            Method method = javac.getMethod("compile", new Class[]{String[].class});
             method.invoke(null, new Object[]{javacParameters});
         } catch (Exception e) {
             cu.getErrorCollector().addFatalError(new ExceptionMessage(e, true, cu));
@@ -61,7 +62,7 @@ public class JavacJavaCompiler implements JavaCompiler {
         paras.add(target.getAbsolutePath());
         paras.add("-sourcepath");
         paras.add(((File) options.get("stubDir")).getAbsolutePath());
-
+        
         // add flags
         String[] flags = (String[]) options.get("flags");
         if (flags != null) {
@@ -70,15 +71,26 @@ public class JavacJavaCompiler implements JavaCompiler {
             }
         }
 
+        boolean hadClasspath=false;
         // add namedValues
         String[] namedValues = (String[]) options.get("namedValues");
         if (namedValues != null) {
             for (int i = 0; i < namedValues.length; i += 2) {
-                paras.add('-' + namedValues[i]);
+                String name = namedValues[i];
+                if (name.equals("classpath")) hadClasspath = true;
+                paras.add('-' + name);
                 paras.add(namedValues[i + 1]);
             }
         }
-
+        
+        // append classpath if not already defined
+        if (!hadClasspath) {
+            paras.add("-classpath");
+            List classpath = config.getClasspath();
+            String resultPath = DefaultGroovyMethods.join(classpath, File.pathSeparator);
+            paras.add(resultPath);
+        }
+        
         // files to compile
         paras.addAll(files);
 
