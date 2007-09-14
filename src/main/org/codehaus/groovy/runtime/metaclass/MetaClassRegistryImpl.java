@@ -16,6 +16,7 @@
 package org.codehaus.groovy.runtime.metaclass;
 
 import groovy.lang.GroovyRuntimeException;
+import groovy.lang.GroovySystem;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaClassRegistry;
 import org.codehaus.groovy.reflection.CachedMethod;
@@ -128,13 +129,19 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         if (answer!=null) return answer;
         answer = (MetaClass) weakMetaClasses.get(theClass);
         if (answer!=null) return answer;
-        
+
         synchronized (theClass) {
             answer = (MetaClass) weakMetaClasses.get(theClass);
             if (answer!=null) return answer;
+            
             answer = getMetaClassFor(theClass);
-                answer.initialize();
-            weakMetaClasses.put(theClass, answer);
+            answer.initialize();
+            if (GroovySystem.isKeepJavaMetaClasses()) {
+                constantMetaClassCount++;
+                constantMetaClasses.put(theClass,answer);
+            } else {
+                weakMetaClasses.put(theClass, answer);
+            }
             return answer;
         }
     }

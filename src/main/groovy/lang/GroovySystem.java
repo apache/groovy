@@ -18,24 +18,33 @@ package groovy.lang;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 
 public final class GroovySystem {
-    private GroovySystem() {
-        // Do not allow this class to be instantiated
+    //
+    //  TODO: make this initialisation able to set useReflection true
+    //  TODO: have some way of specifying another MetaClass Registry implementation
+    //
+    static {
+        USE_REFLECTION = true;
+        META_CLASS_REGISTRY = new MetaClassRegistryImpl();
     }
-    
-    /**
-     * If true then the MetaClass will only use reflection for method dispatch, property acess, etc.
-     */
-    private static final boolean USE_REFLECTION;
-    
-    /**
-     * Reference to the MetaClass Registry to be used by the Groovy run time system to map classes to MetaClasses
-     */
-    private static final MetaClassRegistry META_CLASS_REGISTRY;
     
     /**
      * The MetaClass for java.lang.Object
      */
     private static MetaClass objectMetaClass;
+    /**
+     * If true then the MetaClass will only use reflection for method dispatch, property acess, etc.
+     */
+    private static final boolean USE_REFLECTION;
+    /**
+     * Reference to the MetaClass Registry to be used by the Groovy run time system to map classes to MetaClasses
+     */
+    private static final MetaClassRegistry META_CLASS_REGISTRY;
+
+    private static boolean keepJavaMetaClasses=false;
+    
+    private GroovySystem() {
+        // Do not allow this class to be instantiated
+    }
 
     public static boolean isUseReflection() {
         return USE_REFLECTION;
@@ -45,12 +54,12 @@ public final class GroovySystem {
         return META_CLASS_REGISTRY;
     }
     
-    //
-    //  TODO: make this initialisation able to set useReflection true
-    //  TODO: have some way of specifying another MetaClass Registry implementation
-    //
-    static {
-        USE_REFLECTION = true;
-        META_CLASS_REGISTRY = new MetaClassRegistryImpl();
+    public static void setKeepJavaMetaClasses(boolean keepJavaMetaClasses) {
+        GroovySystem.keepJavaMetaClasses = keepJavaMetaClasses;
     }
+    
+    public static boolean isKeepJavaMetaClasses() {
+        return keepJavaMetaClasses;
+    }
+    
 }
