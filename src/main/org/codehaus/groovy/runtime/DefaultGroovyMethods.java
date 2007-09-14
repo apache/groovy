@@ -5817,16 +5817,118 @@ public class DefaultGroovyMethods {
      * @throws IOException if an IOException occurs.
      */
     public static String readLine(Reader self) throws IOException {
-        BufferedReader br /* = null */;
-
         if (self instanceof BufferedReader) {
-            br = (BufferedReader) self;
-        } else {
-            br = new BufferedReader(self); // todo dk: bug! will return null on second call
+            BufferedReader br = (BufferedReader) self;
+            return br.readLine();
+        } else if(self.markSupported()) {
+            return readLineFromReaderWithMark(self);
         }
-        return br.readLine();
+        return readLineFromReaderWithoutMark(self);
+    }
+    
+
+    private static int charBufferSize = 4096;     // half the default stream buffer size
+    private static int expectedLineLength = 160;  // double the default line length
+    private static int EOF = -1;                  // End Of File
+    
+
+    /*
+     * This method tries to read subsequent buffers from the reader using a mark
+     */
+    private static String readLineFromReaderWithMark(final Reader input)
+                throws IOException {
+        char [] cbuf = new char[charBufferSize];
+        try {
+            input.mark(charBufferSize);
+        } catch (IOException e) {
+            // this should never happen
+            LOG.warning("Caught exception setting mark on supporting reader: " + e);
+            // fallback 
+            return readLineFromReaderWithoutMark(input);
+        }
+        
+        // could be changed into do..while, but then
+        // we might create an additional StringBuffer
+        // instance at the end of the stream
+        int count = input.read(cbuf);
+        if(count == EOF) // we are at the end of the input data
+            return null;
+
+        StringBuffer line = new StringBuffer(expectedLineLength);
+        // now work on the buffer(s)
+        int ls = lineSeparatorIndex(cbuf, count);
+        while(ls == -1) {
+            line.append(cbuf, 0, count);
+            count = input.read(cbuf);
+            if(count == EOF) {
+                // we are at the end of the input data
+                return line.toString();
+            }
+            ls = lineSeparatorIndex(cbuf, count);
+        }
+        line.append(cbuf, 0, ls);
+        
+        // correct ls if we have \r\n
+        int skipLS = 1;
+        if(ls + 1 < count) {
+            // we are not at the end of the buffer
+            if(cbuf[ls] == '\r' && cbuf[ls + 1] == '\n') {
+                skipLS++;
+            }
+        } else {
+            if(cbuf[ls] == '\r' && input.read() == '\n') {
+                skipLS++;
+            }
+        }
+        
+        //reset() and skip over last linesep
+        input.reset();
+        input.skip(line.length() + skipLS);
+        return line.toString();
+    }
+    
+    /*
+     * This method reads without a buffer.
+     * It returns too many empty lines if \r\n combinations
+     * are used. Nothing can be done because we can't push
+     * back the character we have just read.
+     */
+    private static String readLineFromReaderWithoutMark(Reader input)
+                throws IOException {
+
+        int c = input.read();
+        if(c == -1)
+            return null;
+        StringBuffer line = new StringBuffer(expectedLineLength);
+        
+        while(c != EOF && c != '\n' && c != '\r') {
+            char ch = (char) c;
+            line.append(ch);
+            c = input.read();
+        }
+        return line.toString();
     }
 
+    /*
+     * searches for \n or \r
+     * Returns -1 if not found.
+     */
+    private static int lineSeparatorIndex(char[] array, int length) {
+        for(int k = 0; k < length ; k++) {
+            if(isLineSeparator(array[k])){
+                return k;
+            }
+        }
+        return -1;
+    }
+    
+    /*
+     * true if either \n or \r
+     */
+    private static boolean isLineSeparator(char c) {
+        return c == '\n' || c == '\r';
+    }
+    
     /**
      * Read a single, whole line from the given InputStream
      *
