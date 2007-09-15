@@ -58,6 +58,8 @@ public class AnimateFactory implements Factory {
                 fb.bind();
             }
         }
+
+        builder.addDisposalClosure {fb.unbind()}
         return fb;
     }
 

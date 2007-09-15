@@ -17,64 +17,14 @@
  
 package groovy.swing
 
-import java.awt.BorderLayout
-import java.awt.CardLayout
-import java.awt.Dimension
-import java.awt.FlowLayout
-import java.awt.GridBagLayout
-import java.awt.GridLayout
+import java.awt.*
 import java.awt.event.InputEvent
 import java.awt.event.KeyEvent
 import java.text.SimpleDateFormat
-import javax.swing.Action
-import javax.swing.BorderFactory
-import javax.swing.BoxLayout
-import javax.swing.JButton
-import javax.swing.JCheckBox
-import javax.swing.JCheckBoxMenuItem
-import javax.swing.JColorChooser
-import javax.swing.JComboBox
-import javax.swing.JDesktopPane
-import javax.swing.JDialog
-import javax.swing.JEditorPane
-import javax.swing.JFileChooser
-import javax.swing.JFormattedTextField
-import javax.swing.JFrame
-import javax.swing.JInternalFrame
-import javax.swing.JLabel
-import javax.swing.JLayeredPane
-import javax.swing.JList
-import javax.swing.JMenu
-import javax.swing.JMenuBar
-import javax.swing.JMenuItem
-import javax.swing.JOptionPane
-import javax.swing.JPanel
-import javax.swing.JPasswordField
-import javax.swing.JPopupMenu
-import javax.swing.JProgressBar
-import javax.swing.JRadioButton
-import javax.swing.JRadioButtonMenuItem
-import javax.swing.JScrollBar
-import javax.swing.JScrollPane
-import javax.swing.JSeparator
-import javax.swing.JSlider
-import javax.swing.JSpinner
-import javax.swing.JSplitPane
-import javax.swing.JTabbedPane
-import javax.swing.JTable
-import javax.swing.JTextArea
-import javax.swing.JTextField
-import javax.swing.JTextPane
-import javax.swing.JToggleButton
-import javax.swing.JToolBar
-import javax.swing.JTree
-import javax.swing.JViewport
-import javax.swing.JWindow
-import javax.swing.KeyStroke
-import javax.swing.SpringLayout
-import javax.swing.SwingUtilities
+import javax.swing.*
 import javax.swing.text.DateFormatter
 import javax.swing.text.NumberFormatter
+
 
 class SwingBuilderTest extends GroovyTestCase {
 
@@ -926,5 +876,29 @@ class SwingBuilderTest extends GroovyTestCase {
         swing.edt() { swing.edt() { pass = SwingUtilities.isEventDispatchThread() } }
         assert pass
     }
+
+    public void testDispose() {
+
+        if (isHeadless()) return
+
+        def swing = new SwingBuilder()
+
+        swing.frame(id:'frame').pack()
+        swing.dialog(id:'dialog').pack()
+        swing.window(id:'window').pack()
+
+        //TODO check bind, animate, and model
+        assert swing.frame.isDisplayable()
+        assert swing.dialog.isDisplayable()
+        assert swing.window.isDisplayable()
+        swing.dispose()
+
+        //TODO check bind, animate, and model
+        assert !swing.frame.isDisplayable()
+        assert !swing.dialog.isDisplayable()
+        assert !swing.window.isDisplayable()
+ 
+    }
+
 
 }

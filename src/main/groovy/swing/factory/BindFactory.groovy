@@ -137,6 +137,8 @@ public class BindFactory implements Factory {
         if (target != null) {
             fb.update();
         }
+
+        builder.addDisposalClosure {fb.unbind()}
         return fb;
     }
 }

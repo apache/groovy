@@ -21,8 +21,6 @@ import java.awt.Dialog
 import java.awt.Frame
 import javax.swing.JWindow
 
-
-
 public class WindowFactory implements Factory {
     
     public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
@@ -43,6 +41,8 @@ public class WindowFactory implements Factory {
             window = new JWindow();
         }
         containingWindows.add(window);
+        builder.addDisposalClosure {window.dispose()}
+
         return window;
     }
 

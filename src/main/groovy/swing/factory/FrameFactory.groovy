@@ -19,8 +19,6 @@ package groovy.swing.factory
 import groovy.swing.SwingBuilder
 import javax.swing.JFrame
 
-
-
 public class FrameFactory implements Factory {
     
     public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
@@ -29,6 +27,8 @@ public class FrameFactory implements Factory {
         }
         JFrame frame = new JFrame();
         builder.getContainingWindows().add(frame);
+        builder.addDisposalClosure {frame.dispose()}
+
         return frame;
     }
 

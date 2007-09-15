@@ -31,7 +31,6 @@ import org.codehaus.groovy.binding.FullBinding
 import org.codehaus.groovy.binding.PropertyBinding
 import org.codehaus.groovy.runtime.InvokerHelper
 
-
 /**
  * A helper class for creating Swing widgets using GroovyMarkup
  *
@@ -41,12 +40,13 @@ import org.codehaus.groovy.runtime.InvokerHelper
 public class SwingBuilder extends BuilderSupport {
 
     private static final Logger LOG = Logger.getLogger(SwingBuilder.class.getName());
-    private Map factories = new HashMap();
-    private Object constraints;
-    private Map widgets = new HashMap();
+    private factories = [:]
+    private constraints
+    private widgets = [:]
     // tracks all containing windows, for auto-owned dialogs
-    private LinkedList containingWindows = new LinkedList();
-    private boolean headless = false;
+    private LinkedList containingWindows = new LinkedList()
+    private boolean headless = false
+    private disposalClosures = []
 
 
     public SwingBuilder() {
@@ -500,31 +500,11 @@ public class SwingBuilder extends BuilderSupport {
         return builder.edt(c);
     }
 
-    public KeyStroke shortcut(int key, int modifier) {
+    public KeyStroke shortcut(key, modifier = 0) {
         return KeyStroke.getKeyStroke(key, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask() | modifier);
     }
 
-    public KeyStroke shortcut(int key) {
-        return shortcut(key, 0);
-    }
-
-    public KeyStroke shortcut(char key, int modifier) {
-        return KeyStroke.getKeyStroke(key, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask() | modifier);
-    }
-
-    public KeyStroke shortcut(char key) {
-        return shortcut(key, 0);
-    }
-
-    public KeyStroke shortcut(Character key, int modifier) {
-        return shortcut(key.charValue() as char, modifier);
-    }
-
-    public KeyStroke shortcut(Character key) {
-        return shortcut(key.charValue(), 0);
-    }
-
-    public KeyStroke shortcut(String key, int modifier) {
+    public KeyStroke shortcut(String key, modifier = 0) {
         KeyStroke ks = KeyStroke.getKeyStroke(key);
         if (ks == null) {
             return null;
@@ -533,7 +513,11 @@ public class SwingBuilder extends BuilderSupport {
         }
     }
 
-    public KeyStroke shortcut(String key) {
-        return shortcut(key, 0);
+    public void addDisposalClosure(closure) {
+        disposalClosures += closure
+    }
+
+    public void dispose() {
+        disposalClosures.reverseEach {it()}
     }
 }

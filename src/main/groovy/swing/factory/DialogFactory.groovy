@@ -21,8 +21,6 @@ import java.awt.Dialog
 import java.awt.Frame
 import javax.swing.JDialog
 
-
-
 public class DialogFactory implements Factory {
     
     public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
@@ -44,6 +42,8 @@ public class DialogFactory implements Factory {
             dialog = new JDialog();
         }
         containingWindows.add(dialog);
+        builder.addDisposalClosure {dialog.dispose()}
+
         return dialog;
     }
 
