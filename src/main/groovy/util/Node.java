@@ -122,7 +122,7 @@ public class Node implements java.io.Serializable {
         }
         else {
             // we're probably just a String
-            return Collections.singletonList(value);
+            return java.util.Collections.singletonList(value);
         }
     }
 
