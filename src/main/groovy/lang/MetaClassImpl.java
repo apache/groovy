@@ -65,7 +65,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private static final Class[] METHOD_MISSING_ARGS = new Class[]{String.class, Object.class};
     private static final Class[] GETTER_MISSING_ARGS = new Class[]{String.class};
     private static final Class[] SETTER_MISSING_ARGS = METHOD_MISSING_ARGS;
-
+    
+    private static final Reflector SKIP_REFLECTOR = new Reflector(); 
+    
+    
     protected static final Logger LOG = Logger.getLogger(MetaClass.class.getName());
     protected final Class theClass;
     protected MetaClassRegistry registry;
@@ -2327,15 +2330,20 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
    }
 
   private void generateReflector() {
-       reflector = ((MetaClassRegistryImpl)registry).loadReflector(theClass, allMethods);
-       if (reflector == null) {
-           throw new RuntimeException("Should have a reflector for "+theClass.getName());
-       }
-       // lets set the reflector on all the methods
-       for (Iterator iter = allMethods.iterator(); iter.hasNext();) {
-           MetaMethod metaMethod = (MetaMethod) iter.next();
-           metaMethod.setReflector(reflector);
-       }
+      if (GroovySystem.isUseReflection()) {
+          reflector = SKIP_REFLECTOR;
+      } else {
+          reflector = ((MetaClassRegistryImpl)registry).loadReflector(theClass, allMethods);
+          if (reflector == null) {
+              reflector = SKIP_REFLECTOR;
+              return;
+          }
+          // lets set the reflector on all the methods
+          for (Iterator iter = allMethods.iterator(); iter.hasNext();) {
+              MetaMethod metaMethod = (MetaMethod) iter.next();
+              metaMethod.setReflector(reflector);
+          }
+      }
    }
 
    public List getMethods() {

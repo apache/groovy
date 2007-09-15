@@ -273,10 +273,10 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
             });
         }
         try {
-          return (Reflector) ref.getDeclaredFields()[0].get(null);
+          return (Reflector) ref.newInstance();
         } catch (Exception e) {
-            throw new GroovyRuntimeException("Could not generate and load the reflector for class: " + name + ". Reason: " + e, e);
-    }
+            return null;
+        }
     }
 
     private String getReflectorName(Class theClass) {
