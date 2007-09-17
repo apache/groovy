@@ -821,6 +821,7 @@ public class DefaultGroovyMethods {
      *
      * @param self    the object over which we iterate
      * @param closure the closure applied on each element found
+     * @returns the self Object
      */
     public static Object each(Object self, Closure closure) {
         each(InvokerHelper.asIterator(self), closure);
@@ -832,6 +833,7 @@ public class DefaultGroovyMethods {
      *
      * @param self    an Object
      * @param closure a Closure
+     * @returns the self Object
      */
     public static Object eachWithIndex(Object self, Closure closure) {
         int counter = 0;
@@ -856,6 +858,7 @@ public class DefaultGroovyMethods {
      *
      * @param self    the map over which we iterate
      * @param closure the closure applied on each entry of the map
+     * @return returns the self parameter
      */
     public static Map each(Map self, Closure closure) {
         for (Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
@@ -6621,6 +6624,19 @@ public class DefaultGroovyMethods {
     public static void withPrintWriter(File file, Closure closure) throws IOException {
         withWriter(newPrintWriter(file), closure);
     }
+    
+    /**
+     * Helper method to create a new PrintWriter with a specified charset for a file
+     * and then to pass it into the closure ensuring it's closed again afterwards
+     *
+     * @param file a File
+     * @param charset the charset
+     * @param closure the closure to invoke with the PrintWriter
+     * @throws IOException if an IOException occurs.
+     */
+    public static void withPrintWriter(File file, String charset, Closure closure) throws IOException {
+        withWriter(newPrintWriter(file, charset), closure);
+    }
 
     /**
      * Allows a writer to be used, calling the closure with the writer
@@ -7460,6 +7476,7 @@ public class DefaultGroovyMethods {
      *
      * @param self    the source matcher
      * @param closure a closure
+     * @returns the matcher
      */
     public static Matcher each(Matcher self, Closure closure) {
         while (self.find()) {
