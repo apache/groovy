@@ -169,7 +169,7 @@ public class ReflectionCache {
             return cachedClass.distance;
         }
     }
-
+    
     private static final CachedClass OBJECT_CLASS = new CachedClass(Object.class) {
         public synchronized CachedClass getCachedSuperClass() {
             return null;

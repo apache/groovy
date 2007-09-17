@@ -183,4 +183,18 @@ public class CachedClass {
         }
         return argument;
     }
+    
+    public int getSuperClassDistance() {
+        synchronized (cachedClass) {
+            if (distance == -1) {
+                int distance = 0;
+                for (Class klazz=cachedClass; klazz != null; klazz = klazz.getSuperclass()) {
+                    distance++;
+                }
+                this.distance = distance;
+            }
+            return distance;
+        }
+    }
+
 }

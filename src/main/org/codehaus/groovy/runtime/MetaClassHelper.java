@@ -238,57 +238,74 @@ public class MetaClassHelper {
         }
         return Math.max(max, getMaximumInterfaceDistance(c.getSuperclass(), interfaceClass));
     }
+    
+    private static long calculateParameterDistance(Class argument, Class parameter) {
+        /**
+         * note: when shifting with 32 bit, you should only shift on a long. If you do
+         *       that with an int, then i==(i<<32), which means you loose the shift
+         *       information
+         */
+        
+        if (parameter == argument) return 0;
 
-    public static long calculateParameterDistance(Class[] arguments, Class[] parameters) {
-        int objectDistance = 0, interfaceDistance = 0;
-        for (int i = 0; i < arguments.length; i++) {
-            if (parameters[i] == arguments[i]) continue;
+        if (parameter.isInterface()) {
+            long ret = PRIMITIVES.length;
+            ret = (ret<<32) | getMaximumInterfaceDistance(argument, parameter); 
+            return ret;
+        }
 
-            if (parameters[i].isInterface()) {
-                objectDistance += PRIMITIVES.length;
-                interfaceDistance += getMaximumInterfaceDistance(arguments[i], parameters[i]);
-                continue;
+        long objectDistance = 0;
+        if (argument != null) {
+            if (parameter.isArray()) {
+                if (argument.isArray()) {
+                    return calculateParameterDistance(argument.getComponentType(), parameter.getComponentType());
+                } else {
+                    parameter = parameter.getComponentType();
+                    objectDistance++;
+                }
+            } else if (argument.isArray()) {
+                objectDistance++;
             }
 
-            if (arguments[i] != null) {
-                int pd = getPrimitiveDistance(parameters[i], arguments[i]);
-                if (pd != -1) {
-                    objectDistance += pd;
-                    continue;
-                }
+            long pd = getPrimitiveDistance(parameter, argument);
+            if (pd != -1) return pd<<33;
 
-                // add one to dist to be sure interfaces are prefered
-                objectDistance += PRIMITIVES.length + 1;
-                Class clazz = ReflectionCache.autoboxType(arguments[i]);
-                while (clazz != null) {
-                    if (clazz == parameters[i]) break;
-                    if (clazz == GString.class && parameters[i] == String.class) {
-                        objectDistance += 2;
-                        break;
-                    }
-                    clazz = clazz.getSuperclass();
-                    objectDistance += 3;
-                }
-            } else {
-                // choose the distance to Object if a parameter is null
-                // this will mean that Object is prefered over a more
-                // specific type
-                // remove one to dist to be sure Object is prefered
-                objectDistance--;
-                Class clazz = parameters[i];
-                if (clazz.isPrimitive()) {
+            // add one to dist to be sure interfaces are prefered
+            objectDistance += PRIMITIVES.length<<1 + 1;
+            Class clazz = ReflectionCache.autoboxType(argument);
+            while (clazz != null) {
+                if (clazz == parameter) break;
+                if (clazz == GString.class && parameter == String.class) {
                     objectDistance += 2;
-                } else {
-                    while (clazz != Object.class) {
-                        clazz = clazz.getSuperclass();
-                        objectDistance += 2;
-                    }
+                    break;
+                }
+                clazz = clazz.getSuperclass();
+                objectDistance += 3;
+            }
+        } else {
+            // choose the distance to Object if a parameter is null
+            // this will mean that Object is prefered over a more
+            // specific type
+            // remove one to dist to be sure Object is prefered
+            objectDistance--;
+            Class clazz = parameter;
+            if (clazz.isPrimitive()) {
+                objectDistance += 2;
+            } else {
+                while (clazz != Object.class) {
+                    clazz = clazz.getSuperclass();
+                    objectDistance += 2;
                 }
             }
         }
-        long ret = objectDistance;
-        ret <<= 32;
-        ret |= interfaceDistance;
+        return objectDistance << 32;
+    }
+
+    public static long calculateParameterDistance(Class[] arguments, Class[] parameters) {
+        long ret = 0;
+        for (int i = 0; i < arguments.length; i++) {
+            ret += calculateParameterDistance(arguments[i],parameters[i]);
+        }
         return ret;
     }
 
@@ -323,9 +340,10 @@ public class MetaClassHelper {
     public static Object chooseMostGeneralMethodWith1NullParam(List methods) {
         // lets look for methods with 1 argument which matches the type of the
         // arguments
-        Class closestClass = null;
-        Class closestVargsClass = null;
+        CachedClass closestClass = null;
+        CachedClass closestVargsClass = null;
         Object answer = null;
+        int closestDist = -1;
         for (Iterator iter = methods.iterator(); iter.hasNext();) {
             Object method = iter.next();
             final ParameterTypes pt = getParameterTypes(method);
@@ -338,30 +356,55 @@ public class MetaClassHelper {
 
             if (paramLength == 2) {
                 if (!pt.isVargsMethod(ARRAY_WITH_NULL)) continue;
-                if (closestClass == theType.cachedClass) {
+                if (closestClass == null) {
+                    closestVargsClass = paramTypes[1];
+                    closestClass = theType;
+                    answer = method;
+                } else if (closestClass.cachedClass == theType.cachedClass) {
                     if (closestVargsClass == null) continue;
-                    Class newVargsClass = paramTypes[1].cachedClass;
-                    if (closestVargsClass == null || isAssignableFrom(newVargsClass, closestVargsClass)) {
+                    CachedClass newVargsClass = paramTypes[1];
+                    if (closestVargsClass == null || isAssignableFrom(newVargsClass.cachedClass, closestVargsClass.cachedClass)) {
                         closestVargsClass = newVargsClass;
                         answer = method;
                     }
-                } else {
-                    if (closestClass == null || isAssignableFrom(theType.cachedClass, closestClass)) {
-                        closestVargsClass = paramTypes[1].cachedClass;
-                        closestClass = theType.cachedClass;
-                        answer = method;
-                    }
+                } else if (isAssignableFrom(theType.cachedClass, closestClass.cachedClass)) {
+                    closestVargsClass = paramTypes[1];
+                    closestClass = theType;
+                    answer = method;
                 }
             } else {
-                if (closestClass == null || isAssignableFrom(theType.cachedClass, closestClass)) {
+                if (closestClass == null || isAssignableFrom(theType.cachedClass, closestClass.cachedClass)) {
                     closestVargsClass = null;
-                    closestClass = theType.cachedClass;
+                    closestClass = theType;
                     answer = method;
+                    closestDist = -1;
+                } else {
+                    // closestClass and theType are not in a subtype relation, we need
+                    // to check the distance to Object
+                    if (closestDist==-1) closestDist = closestClass.getSuperClassDistance();
+                    int newDist = theType.getSuperClassDistance();
+                    if (newDist<closestDist) {
+                        closestDist = newDist;
+                        closestVargsClass = null;
+                        closestClass = theType;
+                        answer = method;
+                    }
                 }
             }
         }
         return answer;
     }
+    
+    // 
+    private static int calculateSimplifiedClassDistanceToObject(Class clazz) {
+        int objectDistance = 0;
+        while (clazz != null) {
+            clazz = clazz.getSuperclass();
+            objectDistance ++;
+        }
+        return objectDistance;
+    }
+    
 
     /**
      * @return true if a method of the same matching prototype was found in the

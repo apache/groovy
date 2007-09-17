@@ -24,4 +24,18 @@ public class MethodSelectionTest extends CompilableTestSupport {
       assert m(new E()) == 2
     """   
   }
+  
+  public void testMostGeneralForNull() {
+    // we use the same signatures with different method orders,
+    // because we want to catch method ordering bugs
+    assertScript """
+      def m(String x){1}
+      def m(Integer x){2}
+      assert m(null) == 1
+      
+      def n(Integer x){2}
+      def n(String x){1}
+      assert n(null) == 1
+    """
+  }
 }

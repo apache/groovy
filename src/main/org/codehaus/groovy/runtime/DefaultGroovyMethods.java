@@ -822,8 +822,9 @@ public class DefaultGroovyMethods {
      * @param self    the object over which we iterate
      * @param closure the closure applied on each element found
      */
-    public static void each(Object self, Closure closure) {
+    public static Object each(Object self, Closure closure) {
         each(InvokerHelper.asIterator(self), closure);
+        return self;
     }
 
     /**
@@ -832,17 +833,19 @@ public class DefaultGroovyMethods {
      * @param self    an Object
      * @param closure a Closure
      */
-    public static void eachWithIndex(Object self, Closure closure) {
+    public static Object eachWithIndex(Object self, Closure closure) {
         int counter = 0;
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
             closure.call(new Object[]{iter.next(), new Integer(counter++)});
         }
+        return self;
     }
 
-    private static void each(Iterator iter, Closure closure) {
+    private static Iterator each(Iterator iter, Closure closure) {
         while (iter.hasNext()) {
             closure.call(iter.next());
         }
+        return iter;
     }
 
     /**
@@ -854,11 +857,12 @@ public class DefaultGroovyMethods {
      * @param self    the map over which we iterate
      * @param closure the closure applied on each entry of the map
      */
-    public static void each(Map self, Closure closure) {
+    public static Map each(Map self, Closure closure) {
         for (Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
             Map.Entry entry = (Map.Entry) iter.next();
             callClosureForMapEntry(closure, entry);
         }
+        return self;
     }
 
     /**
@@ -867,8 +871,9 @@ public class DefaultGroovyMethods {
      * @param self    a List
      * @param closure a closure
      */
-    public static void reverseEach(List self, Closure closure) {
+    public static List reverseEach(List self, Closure closure) {
         each(reverse(self).iterator(), closure);
+        return self;
     }
 
     /**
@@ -2448,15 +2453,8 @@ public class DefaultGroovyMethods {
             sublist.add(value);
         }
     }
-
-    /**
-     * A helper method to allow lists to work with subscript operators
-     *
-     * @param self  a List
-     * @param range the subset of the list to set
-     * @param value the value to put at the given sublist or a Collection of values
-     */
-    public static void putAt(List self, IntRange range, Object value) {
+    
+    private static List resizeListWithRangeAndGetSublist(List self, IntRange range) {
         RangeInfo info = subListBorders(self.size(), range);
         int size = self.size();
         if (info.to >= size) {
@@ -2466,13 +2464,32 @@ public class DefaultGroovyMethods {
         }
         List sublist = self.subList(info.from, info.to);
         sublist.clear();
-        if (value instanceof Collection) {
-            Collection col = (Collection) value;
-            if (col.isEmpty()) return;
-            sublist.addAll(col);
-        } else {
-            sublist.add(value);
-        }
+        return sublist;
+    }
+    
+    /**
+     * A helper method to allow lists to work with subscript operators
+     *
+     * @param self  a List
+     * @param range the subset of the list to set
+     * @param value the values to put at the given sublist
+     */
+    public static void putAt(List self, IntRange range, Collection col) {
+        List sublist = resizeListWithRangeAndGetSublist(self,range);
+        if (col.isEmpty()) return;
+        sublist.addAll(col);
+    }
+
+    /**
+     * A helper method to allow lists to work with subscript operators
+     *
+     * @param self  a List
+     * @param range the subset of the list to set
+     * @param value the value to put at the given sublist
+     */
+    public static void putAt(List self, IntRange range, Object value) {
+        List sublist = resizeListWithRangeAndGetSublist(self,range);
+        sublist.add(value);
     }
 
     /**
@@ -3054,6 +3071,12 @@ public class DefaultGroovyMethods {
         if (left.isEmpty())
             return new ArrayList();
 
+        if (left.size() < right.size()) {
+            Collection swaptemp=left;
+            left=right;
+            right=swaptemp;
+        }
+        
         // TODO optimise if same type?
         // boolean nlgnSort = sameType(new Collection[]{left, right});
 
@@ -7438,7 +7461,7 @@ public class DefaultGroovyMethods {
      * @param self    the source matcher
      * @param closure a closure
      */
-    public static void each(Matcher self, Closure closure) {
+    public static Matcher each(Matcher self, Closure closure) {
         while (self.find()) {
             int count = self.groupCount();
             List groups = new ArrayList();
@@ -7447,6 +7470,7 @@ public class DefaultGroovyMethods {
             }
             closure.call(groups.toArray());
         }
+        return self;
     }
 
     /**

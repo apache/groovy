@@ -18,8 +18,6 @@ package org.codehaus.groovy.runtime;
 import groovy.lang.*;
 import org.codehaus.groovy.runtime.wrappers.PojoWrapper;
 
-import java.util.List;
-
 /**
  * A helper class to invoke methods or extract properties on arbitrary Java objects dynamically
  *
@@ -85,21 +83,6 @@ public class Invoker {
 
     private Object invokePojoMethod(Object object, String methodName, Object arguments) {
         Class theClass = object.getClass();
-        // TODO move this out of here
-        if (methodName.equals("equals") && theClass.isArray() && arguments.getClass().isArray()) {
-            Object arg = ((Object[]) arguments)[0];
-            if (arg.getClass().isArray()) {
-                return Boolean.valueOf(DefaultGroovyMethods.equals((Object[])object, (Object[]) arg));
-            }
-            return Boolean.valueOf(DefaultGroovyMethods.equals((Object[])object, (List) arg));
-        }
-        else if (methodName.equals("equals") && object instanceof List && arguments.getClass().isArray()) {
-            Object arg = ((Object[]) arguments)[0];
-            if (arg.getClass().isArray()) {
-                return Boolean.valueOf(DefaultGroovyMethods.equals((List)object, (Object[]) arg));
-            }
-            return Boolean.valueOf(DefaultGroovyMethods.equals((List)object, (List) arg));
-        }
         MetaClass metaClass = metaRegistry.getMetaClass(theClass);
         return metaClass.invokeMethod(object, methodName, asArray(arguments));
     }

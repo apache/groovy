@@ -15,9 +15,6 @@
  */
 package org.codehaus.groovy.runtime;
 
-import org.codehaus.groovy.reflection.CachedClass;
-
-
 /**
  * A default implementation of MethodKey
  *

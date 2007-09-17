@@ -2128,7 +2128,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
            answer = MetaClassHelper.chooseMostGeneralMethodWith1NullParam(methods);
        }
        else {
-           List matchingMethods = new ArrayList();
+           List matchingMethods = new ArrayList(methods.size());
 
            for (Iterator iter = methods.iterator(); iter.hasNext();) {
                Object method = iter.next();
@@ -2193,7 +2193,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
        msg+= InvokerHelper.toString(arguments);
        msg+= " due to overlapping prototypes between:";
        for (Iterator iter = matches.iterator(); iter.hasNext();) {
-           CachedClass[] types=MetaClassHelper.getParameterTypes(iter.next()).getParameterTypes();
+           Class[] types=MetaClassHelper.getParameterTypes(iter.next()).getNativeParameterTypes();
            msg+= "\n\t"+InvokerHelper.toString(types);
        }
        throw new GroovyRuntimeException(msg);

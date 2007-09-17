@@ -37,7 +37,7 @@ class RespondsToTest extends GroovyTestCase {
         assertEquals "three", t.typedArgsMethod(null,null)
         assertEquals "four", t.overloadedMethod("one")
         assertEquals "five", t.overloadedMethod(1)
-        assertEquals "four", t.overloadedMethod(null)  // overloadedMethod(String) defined first so it will be choosen
+        assertEquals "four", t.overloadedMethod(null)
         assertEquals "six", t.overloadedMethod()
         assertEquals "foo", t.doStuff()
     }
