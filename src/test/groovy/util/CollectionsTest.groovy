@@ -15,6 +15,8 @@
  */
 package groovy.util
 
+import static Collections.combinations
+
 /**
  * Tests Collections
  *
@@ -29,12 +31,17 @@ public class CollectionsTest extends GroovyTestCase {
                 ]
         Collection input = [['a', 'b'], [1, 2, 3]]
 
-        // varargs version
-        assert Collections.combinations(*input) as Set == expected
+        // normal varargs versions should match Object[]
         assert Collections.combinations(['a', 'b'], [1, 2, 3]) as Set == expected
+        assert combinations(['a', 'b'], [1, 2, 3]) as Set == expected
 
-        // collection version
+        // spread versions should match Object[]
+        assert Collections.combinations(*input) as Set == expected
+        assert combinations(*input) as Set == expected
+
+        // collection versions should match Collection
         assert Collections.combinations(input) as Set == expected
+        assert combinations(input) as Set == expected
     }
 
     void testTranspose() {
