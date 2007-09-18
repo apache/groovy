@@ -90,6 +90,8 @@ class Console implements CaretListener {
     Closure beforeExecution
     Closure afterExecution
     
+    static String ICON_PATH = 'groovy/ui/ConsoleIcon.png' // used by ObjectBrowser too 
+
     static void main(args) {
         def console = new Console()
         console.run()
@@ -380,6 +382,10 @@ class Console implements CaretListener {
         systemOutInterceptor.start();
 
         bindResults()
+
+        // add icon
+        def icon = new ImageIcon(getClass().classLoader.getResource(ICON_PATH))
+        frame.iconImage = icon.image
 
         frame.show()
         SwingUtilities.invokeLater({inputArea.requestFocus()});

@@ -134,6 +134,10 @@ class ObjectBrowser {
         addSorter(fieldTable)
         addSorter(methodTable)
         
+        // add icon (use the same than groovyConsole)
+        def icon = new ImageIcon(getClass().classLoader.getResource(groovy.ui.Console.ICON_PATH))
+        frame.iconImage = icon.image
+
         frame.show()
         frame.toFront()
     }
