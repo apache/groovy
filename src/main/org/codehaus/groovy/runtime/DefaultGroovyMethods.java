@@ -821,7 +821,7 @@ public class DefaultGroovyMethods {
      *
      * @param self    the object over which we iterate
      * @param closure the closure applied on each element found
-     * @returns the self Object
+     * @return the self Object
      */
     public static Object each(Object self, Closure closure) {
         each(InvokerHelper.asIterator(self), closure);
@@ -833,7 +833,7 @@ public class DefaultGroovyMethods {
      *
      * @param self    an Object
      * @param closure a Closure
-     * @returns the self Object
+     * @return the self Object
      */
     public static Object eachWithIndex(Object self, Closure closure) {
         int counter = 0;
@@ -2475,7 +2475,7 @@ public class DefaultGroovyMethods {
      *
      * @param self  a List
      * @param range the subset of the list to set
-     * @param value the values to put at the given sublist
+     * @param col the collection of values to put at the given sublist
      */
     public static void putAt(List self, IntRange range, Collection col) {
         List sublist = resizeListWithRangeAndGetSublist(self,range);
@@ -7476,7 +7476,7 @@ public class DefaultGroovyMethods {
      *
      * @param self    the source matcher
      * @param closure a closure
-     * @returns the matcher
+     * @return the matcher
      */
     public static Matcher each(Matcher self, Closure closure) {
         while (self.find()) {
