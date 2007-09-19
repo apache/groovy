@@ -471,7 +471,7 @@ declaration!
         {#declaration = #v2;}
     ;
 
-customizedMethod! 
+genericMethod! 
 	:
         // method using a 'def' or a modifier; type is optional
         m:modifiers
@@ -479,9 +479,9 @@ customizedMethod!
         t:typeSpec[false]
         v:variableDefinitions[#m, #t]
         {
-        	#customizedMethod = #v;
+        	#genericMethod = #v;
 			AST old = #v.getFirstChild();
-        	#customizedMethod.setFirstChild(#p);
+        	#genericMethod.setFirstChild(#p);
         	#p.setNextSibling(old);
         }
 	;
@@ -557,7 +557,7 @@ declarationStart!
  * This rule allows more and does no exact match, but it
  * is only a lookahead, not the real rule. 
  */
-customizedMethodStart!
+genericMethodStart!
     :   (	  "def" nls
     		| modifier nls 
     		| annotation nls
@@ -1173,8 +1173,8 @@ classField!  {Token first = LT(1);}
         mc:modifiersOpt! ctor:constructorDefinition[#mc]
         {#classField = #ctor;}
     |
-        (customizedMethodStart)=>
-        dg:customizedMethod
+        (genericMethodStart)=>
+        dg:genericMethod
         {#classField = #dg;}
     |
         (declarationStart)=>
@@ -1570,8 +1570,8 @@ openOrClosableBlock
 statement[int prevToken]
     // prevToken is NLS if previous statement is separated only by a newline
 
-    :   (customizedMethodStart)=>
-        customizedMethod
+    :   (genericMethodStart)=>
+        genericMethod
         
 
     // declarations are ambiguous with "ID DOT" relative to expression
