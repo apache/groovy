@@ -16,7 +16,6 @@
 package org.codehaus.groovy.reflection;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
 
 /**
  * @author Alex.Tkachman

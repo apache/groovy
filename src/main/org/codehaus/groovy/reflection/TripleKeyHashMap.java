@@ -1,4 +1,4 @@
-package groovy.util;
+package org.codehaus.groovy.reflection;
 
 public abstract class TripleKeyHashMap extends ComplexKeyHashMap
 {
