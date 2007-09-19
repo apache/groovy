@@ -19,6 +19,7 @@ import groovy.lang.*;
 import groovy.util.CharsetToolkit;
 import groovy.util.ClosureComparator;
 import groovy.util.OrderBy;
+import groovy.util.GroovyCollections;
 
 import java.io.*;
 import java.lang.reflect.Array;
@@ -1213,10 +1214,10 @@ public class DefaultGroovyMethods {
      *
      * @param self a Collection of lists
      * @return a List of the combinations found
-     * @see groovy.util.Collections#transpose(Collection)
+     * @see GroovyCollections#combinations(Collection)
      */
     public static List combinations(Collection self) {
-        return groovy.util.Collections.combinations(self);
+        return GroovyCollections.combinations(self);
     }
 
     /**
@@ -1224,10 +1225,10 @@ public class DefaultGroovyMethods {
      *
      * @param self a Collection of lists
      * @return a List of the transposed lists
-     * @see groovy.util.Collections#transpose(Collection)
+     * @see GroovyCollections#transpose(Collection)
      */
     public static List transpose(Collection self) {
-        return groovy.util.Collections.transpose(self);
+        return GroovyCollections.transpose(self);
     }
 
     /**
@@ -1519,22 +1520,13 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Selects the maximum value found in the collection
+     * Adds max() method to Collection objects.
      *
      * @param self a Collection
      * @return the maximum value
      */
     public static Object max(Collection self) {
-        Object answer = null;
-        for (Iterator iter = self.iterator(); iter.hasNext();) {
-            Object value = iter.next();
-            if (value != null) {
-                if (answer == null || ScriptBytecodeAdapter.compareGreaterThan(value, answer)) {
-                    answer = value;
-                }
-            }
-        }
-        return answer;
+        return GroovyCollections.max(self);
     }
 
     /**
@@ -1556,22 +1548,13 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Selects the minimum value found in the collection
+     * Adds min() method to Collection objects.
      *
      * @param self a Collection
      * @return the minimum value
      */
     public static Object min(Collection self) {
-        Object answer = null;
-        for (Iterator iter = self.iterator(); iter.hasNext();) {
-            Object value = iter.next();
-            if (value != null) {
-                if (answer == null || ScriptBytecodeAdapter.compareLessThan(value, answer)) {
-                    answer = value;
-                }
-            }
-        }
-        return answer;
+        return GroovyCollections.min(self);
     }
 
     /**
@@ -1601,21 +1584,20 @@ public class DefaultGroovyMethods {
      */
     public static Object min(Collection self, Closure closure) {
         int params = closure.getMaximumNumberOfParameters();
-        if (params == 1) {
-            Object answer = null;
-            Object answer_value = null;
-            for (Iterator iter = self.iterator(); iter.hasNext();) {
-                Object item = iter.next();
-                Object value = closure.call(item);
-                if (answer == null || ScriptBytecodeAdapter.compareLessThan(value, answer_value)) {
-                    answer = item;
-                    answer_value = value;
-                }
-            }
-            return answer;
-        } else {
+        if (params != 1) {
             return min(self, new ClosureComparator(closure));
         }
+        Object answer = null;
+        Object answer_value = null;
+        for (Iterator iter = self.iterator(); iter.hasNext();) {
+            Object item = iter.next();
+            Object value = closure.call(item);
+            if (answer == null || ScriptBytecodeAdapter.compareLessThan(value, answer_value)) {
+                answer = item;
+                answer_value = value;
+            }
+        }
+        return answer;
     }
 
     /**
@@ -1627,21 +1609,20 @@ public class DefaultGroovyMethods {
      */
     public static Object max(Collection self, Closure closure) {
         int params = closure.getMaximumNumberOfParameters();
-        if (params == 1) {
-            Object answer = null;
-            Object AnswerValue = null;
-            for (Iterator iter = self.iterator(); iter.hasNext();) {
-                Object item = iter.next();
-                Object value = closure.call(item);
-                if (answer == null || ScriptBytecodeAdapter.compareLessThan(AnswerValue, value)) {
-                    answer = item;
-                    AnswerValue = value;
-                }
-            }
-            return answer;
-        } else {
+        if (params != 1) {
             return max(self, new ClosureComparator(closure));
         }
+        Object answer = null;
+        Object AnswerValue = null;
+        for (Iterator iter = self.iterator(); iter.hasNext();) {
+            Object item = iter.next();
+            Object value = closure.call(item);
+            if (answer == null || ScriptBytecodeAdapter.compareLessThan(AnswerValue, value)) {
+                answer = item;
+                AnswerValue = value;
+            }
+        }
+        return answer;
     }
 
     /**

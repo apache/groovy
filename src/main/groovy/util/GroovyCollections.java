@@ -16,6 +16,7 @@
 package groovy.util;
 
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
+import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 
 import java.util.*;
 
@@ -24,7 +25,7 @@ import java.util.*;
  *
  * @author Paul King
  */
-public class Collections {
+public class GroovyCollections {
     /**
      * Finds all combinations of items from a collection of lists.
      *
@@ -71,7 +72,7 @@ public class Collections {
 
     /**
      * Transposes a collection of lists. So,
-     * [['a', 'b'], [1, 2]].transpose() == [['a', 1], ['b', 2]].
+     * transpose([['a', 'b'], [1, 2]] as Object[]) == [['a', 1], ['b', 2]].
      *
      * @param lists an array of lists
      * @return a List of the transposed lists
@@ -82,7 +83,7 @@ public class Collections {
 
     /**
      * Transposes a collection of lists. So,
-     * [['a', 'b'], [1, 2]].transpose() == [['a', 1], ['b', 2]].
+     * transpose([['a', 'b'], [1, 2]]) == [['a', 1], ['b', 2]].
      *
      * @param lists a Collection of lists
      * @return a List of the transposed lists
@@ -109,6 +110,66 @@ public class Collections {
             }
         }
         return result;
+    }
+
+    /**
+     * Selects the minimum value found in an array of items, so
+     * min([2, 4, 6] as Object[]) == 2.
+     *
+     * @param items an array of items
+     * @return the minimum value
+     */
+    public static Object min(Object[] items) {
+        return min(Arrays.asList(items));
+    }
+
+    /**
+     * Selects the minimum value found in a collection of items.
+     *
+     * @param items a Collection
+     * @return the minimum value
+     */
+    public static Object min(Collection items) {
+        Object answer = null;
+        for (Iterator iter = items.iterator(); iter.hasNext();) {
+            Object value = iter.next();
+            if (value != null) {
+                if (answer == null || ScriptBytecodeAdapter.compareLessThan(value, answer)) {
+                    answer = value;
+                }
+            }
+        }
+        return answer;
+    }
+
+    /**
+     * Selects the maximum value found in an array of items, so
+     * min([2, 4, 6] as Object[]) == 6.
+     *
+     * @param items an array of items
+     * @return the maximum value
+     */
+    public static Object max(Object[] items) {
+        return max(Arrays.asList(items));
+    }
+
+    /**
+     * Selects the maximum value found in a collection
+     *
+     * @param items a Collection
+     * @return the maximum value
+     */
+    public static Object max(Collection items) {
+        Object answer = null;
+        for (Iterator iter = items.iterator(); iter.hasNext();) {
+            Object value = iter.next();
+            if (value != null) {
+                if (answer == null || ScriptBytecodeAdapter.compareGreaterThan(value, answer)) {
+                    answer = value;
+                }
+            }
+        }
+        return answer;
     }
 
 }
