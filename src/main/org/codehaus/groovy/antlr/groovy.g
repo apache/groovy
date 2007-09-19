@@ -1570,11 +1570,15 @@ openOrClosableBlock
 statement[int prevToken]
     // prevToken is NLS if previous statement is separated only by a newline
 
+    :   (customizedMethodStart)=>
+        customizedMethod
+        
+
     // declarations are ambiguous with "ID DOT" relative to expression
     // statements. Must backtrack to be sure. Could use a semantic
     // predicate to test symbol table to see what the type was coming
     // up, but that's pretty hard without a symbol table ;)
-    :   (declarationStart)=>
+    |   (declarationStart)=>
         declaration
 
     // Attach a label to the front of a statement
