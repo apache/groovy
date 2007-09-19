@@ -15,12 +15,11 @@
  */
 package groovy.util
 
-// TODO: why doesn't star version work here?
-// import static GroovyCollections.*
 import static GroovyCollections.min
 import static GroovyCollections.max
 import static GroovyCollections.combinations
 import static GroovyCollections.transpose
+import static GroovyCollections.sum
 
 /**
 * Tests GroovyCollections
@@ -92,6 +91,20 @@ public class GroovyCollectionsTest extends GroovyTestCase {
         assert max(['a', 'b']) == 'b'
         assert GroovyCollections.max([1, 2, 3]) == 3
         assert max([1, 2, 3]) == 3
+    }
+
+    void testSum() {
+        // normal varargs versions should match Object[]
+        assert GroovyCollections.sum('a', 'b') == 'ab'
+        assert sum('a', 'b') == 'ab'
+        assert GroovyCollections.sum(1, 2, 3) == 6
+        assert sum(1, 2, 3) == 6
+
+        // collection versions
+        assert GroovyCollections.sum(['a', 'b']) == 'ab'
+        assert sum(['a', 'b']) == 'ab'
+        assert GroovyCollections.sum([1, 2, 3]) == 6
+        assert sum([1, 2, 3]) == 6
     }
 
 }

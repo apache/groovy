@@ -17,6 +17,7 @@ package groovy.util;
 
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 import java.util.*;
 
@@ -27,7 +28,7 @@ import java.util.*;
  */
 public class GroovyCollections {
     /**
-     * Finds all combinations of items from a collection of lists.
+     * Finds all combinations of items from an array of lists.
      *
      * @param lists an array of lists
      * @return a List of the combinations found
@@ -71,7 +72,7 @@ public class GroovyCollections {
     }
 
     /**
-     * Transposes a collection of lists. So,
+     * Transposes an array of lists. So,
      * transpose([['a', 'b'], [1, 2]] as Object[]) == [['a', 1], ['b', 2]].
      *
      * @param lists an array of lists
@@ -170,6 +171,26 @@ public class GroovyCollections {
             }
         }
         return answer;
+    }
+
+    /**
+     * Sums all the items from an array of items.
+     *
+     * @param items an array of items
+     * @return the sum of the items
+     */
+    public static Object sum(Object[] items) {
+        return DefaultGroovyMethods.sum(Arrays.asList(items));
+    }
+
+    /**
+     * Sums all the items from a collection of items.
+     *
+     * @param items a collection of items
+     * @return the sum of the items
+     */
+    public static Object sum(Collection items) {
+        return DefaultGroovyMethods.sum(items);
     }
 
 }

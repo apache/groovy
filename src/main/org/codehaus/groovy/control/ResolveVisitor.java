@@ -746,7 +746,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             Map importPackages = module.getStaticImportClasses();
             for (Iterator iter = importPackages.values().iterator(); iter.hasNext();) {
                 ClassNode type = (ClassNode) iter.next();
-                if (resolve(type, false, false, true)) continue;
+                if (resolve(type, false, true, true)) continue;
                 addError("unable to resolve class " + type.getName(), type);
             }
             for (Iterator iter = module.getStaticImportAliases().values().iterator(); iter.hasNext();) {
