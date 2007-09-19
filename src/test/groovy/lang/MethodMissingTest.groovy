@@ -13,6 +13,13 @@ package groovy.lang
 class MethodMissingTest extends GroovyTestCase {
 
 
+    void testOverrideStaticMethodMissingTwice() {
+        MMTest2.metaClass.'static'.methodMissing = { String name, args -> "foo" }
+        assertEquals "foo",MMTest2.doStuff()
+        MMTest2.metaClass.'static'.methodMissing = { String name, args -> "bar" }
+        assertEquals "bar",MMTest2.doStuff()
+    }
+
     void testSimpleMethodMissing() {
         def t = new MMTest()
         assertEquals "world", t.hello()
