@@ -841,6 +841,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
                     MethodKey key = new DefaultCachedMethodKey(theClass,methodName, metaMethod.getParameterTypes(), false );
 
                     addMetaMethod(metaMethod);
+                    cacheStaticMethod(key,metaMethod);
 
                     if(isGetter(methodName, metaMethod.getParameterTypes())) {
                         String propertyName = getPropertyForGetter(methodName);
