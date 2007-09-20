@@ -1,0 +1,26 @@
+#!/bin/sh
+
+##############################################################################
+##                                                                          ##
+##  Groovy Console script for UN*X                                          ##
+##                                                                          ##
+##############################################################################
+
+##
+## $Revision$
+## $Date$
+##
+
+DIRNAME=`dirname "$0"`
+. "$DIRNAME/startGroovy"
+
+#
+# HACK: Temporary support to run the current or new shells
+#
+
+if [ "x$NEWSHELL" != "x" ]; then
+    startGroovy org.codehaus.groovy.tools.shell.Groovysh "$@"
+else
+    startGroovy groovy.ui.InteractiveShell "$@"
+fi
+
