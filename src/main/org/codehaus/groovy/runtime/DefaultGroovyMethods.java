@@ -5876,9 +5876,14 @@ public class DefaultGroovyMethods {
      * @param stream an InputStream
      * @return a line
      * @throws IOException if an IOException occurs.
+     * @deprecated use Reader#readLine instead please
      */
     public static String readLine(InputStream stream) throws IOException {
-        return readLine(new InputStreamReader(stream));
+        throw new DeprecationException(
+                "readLine() on InputStream is no longer supported. " +
+                "Either use a Reader or encapsulate the InputStream" +
+                "with a BufferedReader and an InputStreamReader."
+        );
     }
 
     /**
