@@ -158,6 +158,17 @@ end SpoofTaskContainer execute
     }
     
     /**
+    * Test access to AntBuilder properties
+    */
+    void testAntBuilderProperties() {
+        def ant = new AntBuilder()
+        
+        assertNull ant.project.properties.'myProp'
+        ant.property(name: 'myProp', value: 'blabla')
+        assertEquals 'blabla', ant.project.properties.'myProp'
+    }
+    
+    /**
     * Tests that the AntBuilder can handle conditions (conditions aren't tasks)
     * (test for GROOVY-824)
     */

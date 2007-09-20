@@ -96,8 +96,11 @@ public class AntBuilder extends BuilderSupport {
     	antXmlContext.pushWrapper(parentTask.getRuntimeConfigurableWrapper());
     }
 
-    // dk: introduced for convenience in subclasses
-    protected Project getProject() {
+    /**#
+     * Gets the Ant project in which the tasks are executed
+     * @return the project
+     */
+    public Project getProject() {
         return project;
     }
 
