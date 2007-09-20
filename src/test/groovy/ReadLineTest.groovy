@@ -20,12 +20,6 @@ class ReadLineTest extends GroovyTestCase {
         assert line == "// Do not remove this line: it is used in test below"
     }
     
-    void testReadOneLineFromInputStream() {
-        def line
-        file.withInputStream() {line = it.readLine()}
-        assert line == "// Do not remove this line: it is used in test below"
-    }
-    
     static testString = " ä\n ö\n\n ü\r\n 5\r\r 7\n\r 9"
     static expectedLines = [ " ä", " ö", "", " ü", " 5", "", " 7", "", " 9" ]
     static String[] expectedLinesSlow = [ " ä", " ö", " ü", " 5", " 7" ]
