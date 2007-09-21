@@ -1,0 +1,69 @@
+/*
+ * Copyright 2003-2007 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package groovy.util
+
+import java.beans.PropertyChangeEvent
+import java.beans.PropertyChangeListener
+
+/**
+ * @author <a href="mailto:aalmiray@users.sourceforge.net">Andres Almiray</a>
+ */
+class ObservableMapTest extends GroovyTestCase {
+   void testFireEvent_withoutTest(){
+      def map = new ObservableMap()
+      def listener = new SamplePropertyChangeListener()
+      map.addPropertyChangeListener( listener )
+      
+      // should not trigger an event, value is null
+      def key = 'key'
+      def value1 = 'value1'
+      def value2 = 'value2'
+      map[key] = value1
+      assertNull( listener.event )
+
+      map[key] = value2
+      assertNotNull( listener.event )
+      assertEquals( map, listener.event.source )
+      assertEquals( key, listener.event.propertyName )
+      assertEquals( value1, listener.event.oldValue )
+      assertEquals( value2, listener.event.newValue )
+   }
+
+   void testFireEvent_withTest(){
+      def map = new ObservableMap( {!(it =~ /key/ )} )
+      def listener = new SamplePropertyChangeListener()
+      map.addPropertyChangeListener( listener )
+      
+      // should not trigger an event, value is null
+      def key = 'key'
+      def value1 = 'value1'
+      def value2 = 'value2'
+      map[key] = value1
+      assertNull( listener.event )
+
+      map[key] = value2
+      assertNull( listener.event )
+   }
+}
+
+class SamplePropertyChangeListener implements PropertyChangeListener {
+   PropertyChangeEvent event 
+
+   public void propertyChange( PropertyChangeEvent evt ){
+      event = evt
+   }
+}
