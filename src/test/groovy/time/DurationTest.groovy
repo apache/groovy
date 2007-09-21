@@ -1,7 +1,6 @@
 package groovy.time
 
 import org.codehaus.groovy.runtime.TimeCategory
-import java.util.Date
 
 class DurationTest extends GroovyTestCase {
     void testFixedDurationArithmetic() {
@@ -43,9 +42,9 @@ class DurationTest extends GroovyTestCase {
 
     void testDatumDependantArithmetic() {
         use(TimeCategory) {
-            def now = new Date()
-            def then = (now + 1.month) + 1.week
-            def week = then - (now + 1.month)
+            def start = new Date(961552080000)
+            def then = (start + 1.month) + 1.week
+            def week = then - (start + 1.month)
             assert week.toMilliseconds() == (7 * 24 * 60 * 60 * 1000): \
                 "Expected ${7 * 24 * 60 * 60 * 1000} but was ${week.toMilliseconds()}"
         }
