@@ -28,11 +28,9 @@ class ObservableMapTest extends GroovyTestCase {
       def listener = new SamplePropertyChangeListener()
       map.addPropertyChangeListener( listener )
 
-      // should not trigger an event, value is null
       def key = 'key'
       def value1 = 'value1'
       def value2 = 'value2'
-      assertNull( listener.event )
       map[key] = null
       assertNull( listener.event )
 
@@ -57,19 +55,44 @@ class ObservableMapTest extends GroovyTestCase {
    }
 
    void testFireEvent_withTest(){
-      def map = new ObservableMap( {name, value -> !(name =~ /key/ )} )
+      def map = new ObservableMap( { it != 'value2' } )
       def listener = new SamplePropertyChangeListener()
       map.addPropertyChangeListener( listener )
 
-      // should not trigger an event, value is null
+      def key = 'key'
+      def value1 = 'value1'
+      def value2 = 'value2'
+      map[key] = value1
+      assertNotNull( listener.event )
+      assertEquals( map, listener.event.source )
+      assertEquals( key, listener.event.propertyName )
+      assertNull( listener.event.oldValue )
+      assertEquals( value1, listener.event.newValue )
+
+      listener.event = null
+      map[key] = value2
+      assertNull( listener.event )
+   }
+
+   void testFireEvent_withTestOnKey(){
+      def map = new ObservableMap( { name, value -> name != 'key' } )
+      def listener = new SamplePropertyChangeListener()
+      map.addPropertyChangeListener( listener )
+      
       def key = 'key'
       def value1 = 'value1'
       def value2 = 'value2'
       map[key] = value1
       assertNull( listener.event )
-
       map[key] = value2
       assertNull( listener.event )
+
+      map['key2'] = value1
+      assertNotNull( listener.event )
+      assertEquals( map, listener.event.source )
+      assertEquals( 'key2', listener.event.propertyName )
+      assertNull( listener.event.oldValue )
+      assertEquals( value1, listener.event.newValue )
    }
 }
 

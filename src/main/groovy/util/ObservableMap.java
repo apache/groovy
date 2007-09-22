@@ -32,7 +32,7 @@ import java.util.*;
  * def map = new ObservableMap( {!(it instanceof Closure)} )
  * <p/>
  * // skip all properties whose name matches a regex
- * def map = new ObservableMap( { it =~ /[A-Z+]/ } )
+ * def map = new ObservableMap( { name, value -&gt; !(name =~ /[A-Z+]/) } )
  * </pre>
  *
  * @author <a href="mailto:aalmiray@users.sourceforge.net">Andres Almiray</a>
