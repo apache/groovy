@@ -19,11 +19,7 @@ import groovy.lang.Closure;
 
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Map decorator that will trigger PropertyChangeEvents when a value changes.<br>
@@ -34,7 +30,7 @@ import java.util.Set;
  * <pre>
  * // skip all properties whose value is a closure
  * def map = new ObservableMap( {!(it instanceof Closure)} )
- *
+ * <p/>
  * // skip all properties whose name matches a regex
  * def map = new ObservableMap( { it =~ /[A-Z+]/ } )
  * </pre>
@@ -47,21 +43,21 @@ public class ObservableMap implements Map {
     private Closure test;
 
     public ObservableMap() {
-        this( new HashMap(), null );
+        this(new LinkedHashMap(), null);
     }
 
-    public ObservableMap( Closure test ) {
-        this( new HashMap(), test );
+    public ObservableMap(Closure test) {
+        this(new LinkedHashMap(), test);
     }
 
-    public ObservableMap( Map delegate ) {
-        this( delegate, null );
+    public ObservableMap(Map delegate) {
+        this(delegate, null);
     }
 
-    public ObservableMap( Map delegate, Closure test ) {
+    public ObservableMap(Map delegate, Closure test) {
         this.delegate = delegate;
         this.test = test;
-        pcs = new PropertyChangeSupport( this );
+        pcs = new PropertyChangeSupport(this);
     }
 
     // Map interface
@@ -70,24 +66,24 @@ public class ObservableMap implements Map {
         delegate.clear();
     }
 
-    public boolean containsKey( Object key ) {
-        return delegate.containsKey( key );
+    public boolean containsKey(Object key) {
+        return delegate.containsKey(key);
     }
 
-    public boolean containsValue( Object value ) {
-        return delegate.containsValue( value );
+    public boolean containsValue(Object value) {
+        return delegate.containsValue(value);
     }
 
     public Set entrySet() {
         return delegate.entrySet();
     }
 
-    public boolean equals( Object o ) {
-        return delegate.equals( o );
+    public boolean equals(Object o) {
+        return delegate.equals(o);
     }
 
-    public Object get( Object key ) {
-        return delegate.get( key );
+    public Object get(Object key) {
+        return delegate.get(key);
     }
 
     public int hashCode() {
@@ -102,59 +98,43 @@ public class ObservableMap implements Map {
         return delegate.keySet();
     }
 
-    public Object put( Object key, Object value ) {
+    public Object put(Object key, Object value) {
         Object oldValue = null;
-        if( test != null ){
+        if (test != null) {
             Object result = null;
-            if( test.getMaximumNumberOfParameters() == 2 ){
-                result = test.call( new Object[] { key, value } );
-            }else{
-                result = test.call( value );
+            if (test.getMaximumNumberOfParameters() == 2) {
+                result = test.call(new Object[] {key, value});
+            } else {
+                result = test.call(value);
             }
-            if( result != null && result instanceof Boolean && ((Boolean) result).booleanValue() ){
-                oldValue = delegate.put( key, value );
-                pcs.firePropertyChange( String.valueOf( key ), oldValue, value );
+            if (result != null && result instanceof Boolean && ((Boolean) result).booleanValue()) {
+                oldValue = delegate.put(key, value);
+                if (oldValue != value) {
+                    pcs.firePropertyChange(String.valueOf(key), oldValue, value);
+                }
             }
-        }else{
-            oldValue = delegate.put( key, value );
-            pcs.firePropertyChange( String.valueOf( key ), oldValue, value );
+        } else {
+            oldValue = delegate.put(key, value);
+            if (oldValue != value) {
+                pcs.firePropertyChange(String.valueOf(key), oldValue, value);
+            }
         }
         return oldValue;
     }
 
-    public void putAll( Map map ) {
-        if( map != null ){
-            for( Iterator entries = map.entrySet()
-                    .iterator(); entries.hasNext(); ){
+    public void putAll(Map map) {
+        if (map != null) {
+            for (Iterator entries = map.entrySet()
+                    .iterator(); entries.hasNext();) {
                 Map.Entry entry = (Map.Entry) entries.next();
-                String key = String.valueOf( entry.getKey() );
-                Object value = entry.getValue();
 
-                // copy the code from put() that would make this one a little
-                // bit faster
-                Object oldValue = null;
-                if( test != null ){
-                    Object result = null;
-                    if( test.getMaximumNumberOfParameters() == 2 ){
-                        result = test.call( new Object[] { key, value } );
-                    }else{
-                        result = test.call( value );
-                    }
-                    if( result != null && result instanceof Boolean
-                            && ((Boolean) result).booleanValue() ){
-                        oldValue = delegate.put( key, value );
-                        pcs.firePropertyChange( String.valueOf( key ), oldValue, value );
-                    }
-                }else{
-                    oldValue = delegate.put( key, value );
-                    pcs.firePropertyChange( String.valueOf( key ), oldValue, value );
-                }
+                put(entry.getKey(), entry.getValue());
             }
         }
     }
 
-    public Object remove( Object key ) {
-        return delegate.remove( key );
+    public Object remove(Object key) {
+        return delegate.remove(key);
     }
 
     public int size() {
@@ -167,31 +147,31 @@ public class ObservableMap implements Map {
 
     // observable interface
 
-    public void addPropertyChangeListener( PropertyChangeListener listener ) {
-        pcs.addPropertyChangeListener( listener );
+    public void addPropertyChangeListener(PropertyChangeListener listener) {
+        pcs.addPropertyChangeListener(listener);
     }
 
-    public void addPropertyChangeListener( String propertyName, PropertyChangeListener listener ) {
-        pcs.addPropertyChangeListener( propertyName, listener );
+    public void addPropertyChangeListener(String propertyName, PropertyChangeListener listener) {
+        pcs.addPropertyChangeListener(propertyName, listener);
     }
 
     public PropertyChangeListener[] getPropertyChangeListeners() {
         return pcs.getPropertyChangeListeners();
     }
 
-    public PropertyChangeListener[] getPropertyChangeListeners( String propertyName ) {
-        return pcs.getPropertyChangeListeners( propertyName );
+    public PropertyChangeListener[] getPropertyChangeListeners(String propertyName) {
+        return pcs.getPropertyChangeListeners(propertyName);
     }
 
-    public void removePropertyChangeListener( PropertyChangeListener listener ) {
-        pcs.removePropertyChangeListener( listener );
+    public void removePropertyChangeListener(PropertyChangeListener listener) {
+        pcs.removePropertyChangeListener(listener);
     }
 
-    public void removePropertyChangeListener( String propertyName, PropertyChangeListener listener ) {
-        pcs.removePropertyChangeListener( propertyName, listener );
+    public void removePropertyChangeListener(String propertyName, PropertyChangeListener listener) {
+        pcs.removePropertyChangeListener(propertyName, listener);
     }
 
-    public boolean hasListeners( String propertyName ) {
-        return pcs.hasListeners( propertyName );
+    public boolean hasListeners(String propertyName) {
+        return pcs.hasListeners(propertyName);
     }
 }
