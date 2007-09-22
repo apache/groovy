@@ -17,6 +17,8 @@ class StaticImportTest extends GroovyTestCase {
 
     void testMath() {
         assert cos(2 * PI) == 1.0
+        def closure = { cos(2 * PI) }
+        assert closure() == 1.0
     }
 
     void testAliasing() {

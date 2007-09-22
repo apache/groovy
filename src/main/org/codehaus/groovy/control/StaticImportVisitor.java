@@ -15,16 +15,15 @@
  */
 package org.codehaus.groovy.control;
 
-import java.util.Iterator;
-import java.util.Map;
-
-import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.DynamicVariable;
-import org.codehaus.groovy.ast.FieldNode;
-import org.codehaus.groovy.ast.ModuleNode;
-import org.codehaus.groovy.ast.Variable;
+import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.ast.stmt.Statement;
+
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Visitor to resolve constants and method calls from static Imports
@@ -119,6 +118,9 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         if (exp instanceof MethodCallExpression) {
             return transformMethodCallExpression((MethodCallExpression)exp);
         }
+        if (exp instanceof ClosureExpression) {
+            return transformClosureExpression((ClosureExpression) exp);
+        }
         return exp.transformExpression(this);
     }
 
@@ -131,6 +133,25 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         return ve;
     }
     
+    protected Expression transformClosureExpression(ClosureExpression ce) {
+        Statement s = ce.getCode();
+        if (s instanceof BlockStatement) {
+            transformBlockStatement((BlockStatement) s);
+        }
+        return ce;
+    }
+
+    private void transformBlockStatement(BlockStatement bs) {
+        List statements = bs.getStatements();
+        for (int i = 0; i < statements.size(); i++) {
+            Statement s = (Statement) statements.get(i);
+            if (s instanceof ExpressionStatement) {
+                ExpressionStatement es = (ExpressionStatement) s;
+                es.setExpression(transform(es.getExpression()));
+            }
+        }
+    }
+
     protected Expression transformMethodCallExpression(MethodCallExpression mce) {
         Expression args = transform(mce.getArguments());
         Expression method = transform(mce.getMethod());
