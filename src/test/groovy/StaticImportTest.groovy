@@ -7,8 +7,7 @@ import static java.awt.Color.*
 import static junit.framework.Assert.format
 import static junit.framework.Assert.assertEquals
 import static StaticImportTarget.x
-// TODO: make below work if we leave off java.lang.
-import static java.lang.Math.*
+import static Math.*
 
 class StaticImportTest extends GroovyTestCase {
     void testNormalUsage() {

@@ -189,11 +189,18 @@ $Date$
             </groovyc>
         </ubercompile>
     </target>
-    
+
     <target name="compileTest" depends="compileMain" unless="_skipTests_"
             description="Compile the Java and Groovy code in the test source.">
         <mkdir dir="${testClassesDirectory}"/>
-      
+        <java classname="org.apache.tools.ant.launch.Launcher" fork="true" >
+            <classpath refid="runtimePath" />
+            <arg value="realCompileTest"/>
+            <jvmarg value="-Xmx256m"/>
+        </java>
+    </target>
+
+    <target name="realCompileTest">
         <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpath="${mainClassesDirectory}" classpathref="testPath"/>
         <groovyc srcdir="${testSourceDirectory}" destdir="${testClassesDirectory}">
           <classpath>
