@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<launchConfiguration type="net.sf.eclipsensis.launch.nsisLaunchConfigType">
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
+<listEntry value="/NSIS-Groovy/setup.nsi"/>
+</listAttribute>
+<booleanAttribute key="noCD" value="false"/>
+<listAttribute key="instructions"/>
+<booleanAttribute key="noConfig" value="false"/>
+<booleanAttribute key="runInstaller" value="false"/>
+<stringAttribute key="script" value="${workspace_loc:/NSIS-Groovy/setup.nsi}"/>
+<booleanAttribute key="hdrInfo" value="false"/>
+<intAttribute key="processPriority" value="-1"/>
+<listAttribute key="symbols">
+<listEntry value="SOURCE_DIR­D:\NSIS\NSIS-Groovy\Data\1.0\groovy-1.0"/>
+<listEntry value="SOURCE_VERSION­1.0"/>
+<listEntry value="NATIVE_DIR­D:\NSIS\NSIS-Groovy\Data\native"/>
+<listEntry value="SCRIPTOM_DIR­D:\NSIS\NSIS-Groovy\Data\Scriptom-1.2"/>
+<listEntry value="GANT_DIR­D:\NSIS\NSIS-Groovy\Data\1.0\gant-0.3.1_groovy-1.0"/>
+</listAttribute>
+<booleanAttribute key="solidCompression" value="false"/>
+<stringAttribute key="pluginVersion" value="0.9.5.1"/>
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_TYPES">
+<listEntry value="1"/>
+</listAttribute>
+<intAttribute key="compressor" value="0"/>
+<booleanAttribute key="license" value="false"/>
+<intAttribute key="verbosity" value="-1"/>
+</launchConfiguration>
