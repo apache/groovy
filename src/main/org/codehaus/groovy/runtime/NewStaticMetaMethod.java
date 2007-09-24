@@ -31,10 +31,10 @@ import org.codehaus.groovy.reflection.CachedClass;
  */
 public class NewStaticMetaMethod extends MetaMethod {
 
-    private static final Class[] EMPTY_TYPE_ARRAY = {};
+    private static final CachedClass[] EMPTY_TYPE_ARRAY = {};
 
     private MetaMethod metaMethod;
-    private Class[] bytecodeParameterTypes;
+    private CachedClass[] bytecodeParameterTypes;
 
     public NewStaticMetaMethod(MetaMethod metaMethod) {
         super(metaMethod);
@@ -49,19 +49,19 @@ public class NewStaticMetaMethod extends MetaMethod {
     }
 
     private void init() {
-        bytecodeParameterTypes = metaMethod.getNativeParameterTypes();
+        bytecodeParameterTypes = metaMethod.getParameterTypes();
         int size = bytecodeParameterTypes !=null ? bytecodeParameterTypes.length : 0;
-        Class[] logicalParameterTypes;
+        CachedClass[] logicalParameterTypes;
         if (size <= 1) {
             logicalParameterTypes = EMPTY_TYPE_ARRAY;
         } else {
-            logicalParameterTypes = new Class[--size];
+            logicalParameterTypes = new CachedClass[--size];
             System.arraycopy(bytecodeParameterTypes, 1, logicalParameterTypes, 0, size);
         }
         paramTypes = new ParameterTypes(logicalParameterTypes);
     }
 
-    public Class getDeclaringClass() {
+    public CachedClass getDeclaringClass() {
         return getBytecodeParameterTypes()[0];
     }
 
@@ -73,7 +73,7 @@ public class NewStaticMetaMethod extends MetaMethod {
         return super.getModifiers();
     }
 
-    public Class[] getBytecodeParameterTypes() {
+    public CachedClass[] getBytecodeParameterTypes() {
         return bytecodeParameterTypes;
     }
 

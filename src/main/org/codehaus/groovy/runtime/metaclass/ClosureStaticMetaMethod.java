@@ -19,6 +19,8 @@ import groovy.lang.Closure;
 import groovy.lang.ClosureInvokingMethod;
 import org.codehaus.groovy.runtime.NewStaticMetaMethod;
 import org.codehaus.groovy.reflection.ParameterTypes;
+import org.codehaus.groovy.reflection.CachedClass;
+import org.codehaus.groovy.reflection.ReflectionCache;
 
 import java.lang.reflect.Modifier;
 
@@ -32,7 +34,7 @@ import java.lang.reflect.Modifier;
 public class ClosureStaticMetaMethod extends NewStaticMetaMethod implements ClosureInvokingMethod {
 
 	private final Closure callable;
-	private Class declaringClass;
+	private CachedClass declaringClass;
 
     /**
      *
@@ -48,7 +50,7 @@ public class ClosureStaticMetaMethod extends NewStaticMetaMethod implements Clos
 		}
         paramTypes = new ParameterTypes(pt);
         this.callable = c;
-		this.declaringClass = declaringClass;
+		this.declaringClass = ReflectionCache.getCachedClass(declaringClass);
 
 	}
 
@@ -64,7 +66,7 @@ public class ClosureStaticMetaMethod extends NewStaticMetaMethod implements Clos
     /* (non-Javadoc)
 	 * @see org.codehaus.groovy.runtime.NewStaticMetaMethod#getDeclaringClass()
 	 */
-	public Class getDeclaringClass() {
+	public CachedClass getDeclaringClass() {
 		return this.declaringClass;
 	}
 

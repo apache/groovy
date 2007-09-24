@@ -16,10 +16,18 @@
 package org.codehaus.groovy.reflection;
 
 import groovy.lang.GString;
+import groovy.lang.GroovySystem;
+import org.codehaus.groovy.classgen.BytecodeHelper;
+import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.*;
 
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
@@ -29,8 +37,65 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 public class CachedClass {
     private CachedClass cachedSuperClass;
 
+    private Map allMethodsMap;
+
+    int hashCode;
+
+    private CachedField[] fields;
+    private CachedConstructor[] constructors;
     private CachedMethod[] methods;
     public final Class cachedClass;
+
+    public Map getAllMethodsMap () {
+        if (allMethodsMap == null) {
+
+            allMethodsMap = new HashMap();
+
+            final Set interfaces = getInterfaces();
+            for (Iterator it = interfaces.iterator(); it.hasNext(); ) {
+                CachedClass iface = (CachedClass) it.next();
+                allMethodsMap.putAll(iface.getAllMethodsMap());
+            }
+
+            CachedClass superClass = getCachedSuperClass();
+            if (superClass != null)
+              allMethodsMap.putAll(superClass.getAllMethodsMap());
+
+            getMethods();
+            for (int i = 0; i < methods.length; i++) {
+                CachedMethod method = methods[i];
+                if (!Modifier.isPrivate(method.getModifiers())) {
+                  allMethodsMap.put(method.getSignature(),method);
+                }
+            }
+        }
+
+        return allMethodsMap;
+    }
+
+    public Set getInterfaces() {
+        if (interfaces == null)  {
+            interfaces = new HashSet (0);
+
+            if (cachedClass.isInterface())
+              interfaces.add(this);
+
+            Class[] classes = cachedClass.getInterfaces();
+            for (int i = 0; i < classes.length; i++) {
+                final CachedClass aClass = ReflectionCache.getCachedClass(classes[i]);
+                if (!interfaces.contains(aClass))
+                  interfaces.addAll(aClass.getInterfaces());
+            }
+
+            final CachedClass superClass = getCachedSuperClass();
+            if (superClass != null)
+              interfaces.addAll(superClass.getInterfaces());
+        }
+        return interfaces;
+    }
+
+    private Set interfaces;
+
 
     public final boolean isArray;
     public final boolean isPrimitive;
@@ -60,21 +125,41 @@ public class CachedClass {
             final Method[] declaredMethods = cachedClass.getDeclaredMethods();
             methods = new CachedMethod[declaredMethods.length];
             for (int i = 0; i != methods.length; ++i)
-                methods[i] = ReflectionCache.getCachedMethod(declaredMethods[i]);
+                methods[i] = new CachedMethod(this,declaredMethods[i]);
         }
         return methods;
     }
 
-    public Method searchMethods(String name, CachedClass[] parameterTypes) {
+    public synchronized CachedField[] getFields() {
+        if (fields == null) {
+            final Field[] declaredFields = cachedClass.getDeclaredFields();
+            fields = new CachedField[declaredFields.length];
+            for (int i = 0; i != fields.length; ++i)
+                fields[i] = new CachedField(this, declaredFields[i]);
+        }
+        return fields;
+    }
+
+    public CachedConstructor[] getConstructors() {
+        if (constructors == null) {
+            final Constructor[] declaredContructors = cachedClass.getDeclaredConstructors();
+            constructors = new CachedConstructor[declaredContructors.length];
+            for (int i = 0; i != constructors.length; ++i)
+                constructors[i] = new CachedConstructor(this, declaredContructors[i]);
+        }
+        return constructors;
+    }
+
+    public CachedMethod searchMethods(String name, CachedClass[] parameterTypes) {
         CachedMethod[] methods = getMethods();
 
-        Method res = null;
+        CachedMethod res = null;
         for (int i = 0; i < methods.length; i++) {
             CachedMethod m = methods[i];
-            if (m.cachedMethod.getName().equals(name)
+            if (m.getName().equals(name)
                     && ReflectionCache.arrayContentsEq(parameterTypes, m.getParameterTypes())
                     && (res == null || res.getReturnType().isAssignableFrom(m.cachedMethod.getReturnType())))
-                res = m.cachedMethod;
+                res = m;
         }
 
         return res;
@@ -197,4 +282,44 @@ public class CachedClass {
         }
     }
 
+    public int hashCode() {
+        if (hashCode == 0) {
+          hashCode = super.hashCode();
+          if (hashCode == 0)
+            hashCode = 0xcafebebe;
+        }
+        return hashCode;
+    }
+
+    public boolean isPrimitive() {
+        return isPrimitive;
+    }
+
+    public boolean isVoid() {
+        return cachedClass == void.class;
+    }
+
+    public void box(BytecodeHelper helper) {
+        helper.box(cachedClass);
+    }
+
+    public void unbox(BytecodeHelper helper) {
+        helper.unbox(cachedClass);
+    }
+
+    public boolean isInterface() {
+        return cachedClass.isInterface();
+    }
+
+    public void doCast(BytecodeHelper helper) {
+        helper.doCast(cachedClass);
+    }
+
+    public String getName() {
+        return cachedClass.getName();
+    }
+
+    public String getTypeDescription() {
+        return BytecodeHelper.getTypeDescription(cachedClass);
+    }
 }

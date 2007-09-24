@@ -20,6 +20,7 @@ import groovy.lang.ClosureInvokingMethod;
 import org.codehaus.groovy.runtime.NewInstanceMetaMethod;
 import org.codehaus.groovy.reflection.ParameterTypes;
 import org.codehaus.groovy.reflection.CachedClass;
+import org.codehaus.groovy.reflection.ReflectionCache;
 
 import java.lang.reflect.Modifier;
 
@@ -34,7 +35,7 @@ import java.lang.reflect.Modifier;
 public class ClosureMetaMethod extends NewInstanceMetaMethod implements ClosureInvokingMethod {
 
 	private final Closure callable;
-	private Class declaringClass;
+	private CachedClass declaringClass;
 
 	public ClosureMetaMethod(String name, Closure c) {
 		this(name, c.getOwner().getClass(), c);
@@ -55,14 +56,14 @@ public class ClosureMetaMethod extends NewInstanceMetaMethod implements ClosureI
         paramTypes = new ParameterTypes(pt);
 		this.callable = c;
 
-		this.declaringClass = declaringClass;
+		this.declaringClass = ReflectionCache.getCachedClass(declaringClass);
 	}
 
 
 	/* (non-Javadoc)
 	 * @see org.codehaus.groovy.runtime.NewInstanceMetaMethod#getDeclaringClass()
 	 */
-	public Class getDeclaringClass() {
+	public CachedClass getDeclaringClass() {
 		return declaringClass;
 	}
 

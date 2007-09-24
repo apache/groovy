@@ -90,17 +90,15 @@ public class ReflectionCache {
         String value;
     }
 
-    public static String getMOPMethodName(Class declaringClass, String name, boolean useThis) {
+    public static String getMOPMethodName(CachedClass declaringClass, String name, boolean useThis) {
         MopNameEntry mopNameEntry = (MopNameEntry) mopNames.getOrPut(declaringClass, name, Boolean.valueOf(useThis));
         if (mopNameEntry.value == null) {
-            mopNameEntry.value = new StringBuffer().append(useThis ? "this$" : "super$").append(getSuperClassDistance(declaringClass)).append("$").append(name).toString();
+            mopNameEntry.value = new StringBuffer().append(useThis ? "this$" : "super$").append(declaringClass.getSuperClassDistance()).append("$").append(name).toString();
         }
         return mopNameEntry.value;
     }
 
-    static final Map /*<Class,SoftReference<CachedClass>>*/ CACHED_CLASS_MAP = new WeakHashMap();
-    private static Map CACHED_METHOD_MAP = new WeakHashMap ();
-    private static final Map CACHED_CONSTRUCTOR_MAP = new WeakHashMap ();
+    static final Map /*<Class,SoftReference<CachedClass>>*/ CACHED_CLASS_MAP = new HashMap();
 
     public static boolean isArray(Class klazz) {
         CachedClass cachedClass = getCachedClass(klazz);
@@ -152,25 +150,13 @@ public class ReflectionCache {
         return true;
     }
 
-    static int getSuperClassDistance(Class klazz) {
-        CachedClass cachedClass = getCachedClass(klazz);
-
-        synchronized (cachedClass) {
-            if (cachedClass.distance == -1) {
-                int distance = 0;
-                for (; klazz != null; klazz = klazz.getSuperclass())
-                    distance++;
-                cachedClass.distance = distance;
-            }
-            return cachedClass.distance;
-        }
-    }
-    
-    private static final CachedClass OBJECT_CLASS = new CachedClass(Object.class) {
+    public static final CachedClass OBJECT_CLASS = new CachedClass(Object.class) {
         public synchronized CachedClass getCachedSuperClass() {
             return null;
         }
     };
+
+    public static final CachedClass OBJECT_ARRAY_CLASS = getCachedClass(Object[].class);
 
     public static CachedClass getCachedClass(Class klazz) {
         if (klazz == null)
@@ -190,31 +176,4 @@ public class ReflectionCache {
         return cachedClass;
     }
 
-    public static CachedMethod getCachedMethod(Method method) {
-        CachedMethod cachedMethod;
-        synchronized (CACHED_METHOD_MAP) {
-            SoftReference ref = (SoftReference) CACHED_METHOD_MAP.get(method);
-            if (ref == null || (cachedMethod = (CachedMethod) ref.get()) == null) {
-                cachedMethod = new CachedMethod(method);
-                CACHED_METHOD_MAP.put(method, new SoftReference(cachedMethod));
             }
-        }
-        return cachedMethod;
-    }
-
-    public static CachedConstructor getCachedConstructor(Constructor c) {
-        CachedConstructor cachedConstructor;
-        synchronized (CACHED_CONSTRUCTOR_MAP) {
-            SoftReference ref = (SoftReference) CACHED_CONSTRUCTOR_MAP.get(c);
-            if (ref == null || (cachedConstructor = (CachedConstructor) ref.get()) == null) {
-                cachedConstructor = new CachedConstructor(c);
-                CACHED_CONSTRUCTOR_MAP.put(c, new SoftReference(cachedConstructor));
-            }
-        }
-        return cachedConstructor;
-    }
-
-    public static CachedMethod[] getDeclaredMethodsCached(final Class klazz) {
-        return getCachedClass(klazz).getMethods();
-    }
-}

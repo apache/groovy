@@ -19,6 +19,8 @@ package groovy.lang;
 import org.codehaus.groovy.runtime.*;
 import org.codehaus.groovy.reflection.ParameterTypes;
 import org.codehaus.groovy.reflection.CachedClass;
+import org.codehaus.groovy.reflection.ReflectionCache;
+import org.codehaus.groovy.reflection.CachedMethod;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -37,26 +39,26 @@ public class MetaMethod implements Cloneable {
 
     private String name;
     private Class callClass;
-    private Class declaringClass;
+    private CachedClass declaringClass;
     private Class interfaceClass;
     private Class returnType;
     private int modifiers;
     private Reflector reflector;
     private int methodIndex;
-    private Method method;
+    private CachedMethod method;
 
     protected ParameterTypes paramTypes;
 
     public MetaMethod(String name, Class declaringClass, CachedClass[] parameterTypes, Class returnType, int modifiers) {
         this.name = name;
         this.callClass = declaringClass;
-        this.declaringClass = declaringClass;
+        this.declaringClass = ReflectionCache.getCachedClass(declaringClass);
         this.returnType = returnType;
         this.modifiers = modifiers;
         paramTypes = new ParameterTypes(parameterTypes);
     }
 
-    public MetaMethod(Method method, CachedClass[] parameterTypes) {
+    public MetaMethod(CachedMethod method, CachedClass[] parameterTypes) {
         this(
             method.getName(),
             method.getDeclaringClass(),
@@ -96,11 +98,11 @@ public class MetaMethod implements Cloneable {
             } else {
                 AccessController.doPrivileged(new PrivilegedAction() {
                     public Object run() {
-                        method.setAccessible(true);
+                        method.cachedMethod.setAccessible(true);
                         return null;
                     }
                 });
-                return method.invoke(object, arguments);
+                return method.cachedMethod.invoke(object, arguments);
             }
         } catch (InvocationTargetException ite) {
             throw new InvokerInvocationException(ite.getCause());
@@ -243,7 +245,7 @@ public class MetaMethod implements Cloneable {
         return true;
     }
 
-    public Class getDeclaringClass() {
+    public CachedClass getDeclaringClass() {
         return declaringClass;
     }
 

@@ -28,28 +28,23 @@ import java.security.PrivilegedAction;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 
 public class ReflectionMetaMethod extends MetaMethod {
-    private Method method;
+    private CachedMethod method;
     boolean alreadySetAccessible;
 
-    public ReflectionMetaMethod(CachedMethod method) {
-        super(method.cachedMethod, method.getParameterTypes());
-        this.method = method.cachedMethod;
-    }
-
-  public ReflectionMetaMethod(Method method, CachedClass[] pt) {
+  public ReflectionMetaMethod(CachedMethod method, CachedClass[] pt) {
       super(method, pt);
       this.method = method;
   }
 
-    public ReflectionMetaMethod(Method method) {
-        this(method, ReflectionCache.getCachedMethod(method).getParameterTypes());
+    public ReflectionMetaMethod(CachedMethod method) {
+        this(method, method.getParameterTypes());
     }
 
     public Object invoke(Object object, Object[] arguments) {
     	if ( !alreadySetAccessible ) {
 	    	AccessController.doPrivileged(new PrivilegedAction() {
 	    		public Object run() {
-	    			method.setAccessible(true);
+	    			method.cachedMethod.setAccessible(true);
 	                return null;
 	    		}
 	    	});
@@ -61,7 +56,7 @@ public class ReflectionMetaMethod extends MetaMethod {
         //        System.out.println("Using arguments: " + InvokerHelper.toString(arguments));
 
         try {
-            return method.invoke(object, arguments);
+            return method.cachedMethod.invoke(object, arguments);
         } catch (IllegalArgumentException e) {
             throw new InvokerInvocationException(e);
         } catch (IllegalAccessException e) {

@@ -16,11 +16,11 @@
 
 package org.codehaus.groovy.runtime;
 
-import groovy.lang.*;
-import org.codehaus.groovy.reflection.ReflectionCache;
-import org.codehaus.groovy.reflection.ParameterTypes;
-import org.codehaus.groovy.reflection.CachedConstructor;
-import org.codehaus.groovy.reflection.CachedClass;
+import groovy.lang.Closure;
+import groovy.lang.GString;
+import groovy.lang.GroovyRuntimeException;
+import groovy.lang.MetaMethod;
+import org.codehaus.groovy.reflection.*;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 
 import java.lang.reflect.*;
@@ -578,11 +578,11 @@ public class MetaClassHelper {
         }
         if (methodOrConstructor instanceof Method) {
             Method method = (Method) methodOrConstructor;
-            return ReflectionCache.getCachedMethod(method);
+            return CachedMethod.find(method);
         }
         if (methodOrConstructor instanceof Constructor) {
             Constructor constructor = (Constructor) methodOrConstructor;
-            return ReflectionCache.getCachedConstructor(constructor);
+            return CachedConstructor.find(constructor);
         }
         throw new IllegalArgumentException("Must be a Method or Constructor");
     }

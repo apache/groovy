@@ -264,7 +264,7 @@ public class Inspector {
 	    int mod = method.getModifiers();
         result[MEMBER_ORIGIN_IDX] = GROOVY;
         result[MEMBER_MODIFIER_IDX] = Modifier.toString(mod);
-        result[MEMBER_DECLARER_IDX] = shortName(method.getDeclaringClass());
+        result[MEMBER_DECLARER_IDX] = shortName(method.getDeclaringClass().cachedClass);
         result[MEMBER_TYPE_IDX] = shortName(method.getReturnType());
         result[MEMBER_NAME_IDX] = method.getName();
 	    CachedClass[] params = method.getParameterTypes();

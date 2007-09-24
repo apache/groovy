@@ -24,6 +24,7 @@ import java.util.*;
 
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ReflectionCache;
+import org.codehaus.groovy.reflection.CachedMethod;
 
 /**
  * @author sam
@@ -172,12 +173,12 @@ public class GroovyCategorySupport {
         for (int i = 0; i < methods.length; i++) {
             Method method = methods[i];
             if (Modifier.isStatic(method.getModifiers())) {
-                CachedClass[] paramTypes = ReflectionCache.getCachedMethod(method).getParameterTypes();
+                CachedClass[] paramTypes = CachedMethod.find(method).getParameterTypes();
                 if (paramTypes.length > 0) {
                     CachedClass metaClass = paramTypes[0];
                     Map metaMethodsMap = getMetaMethods(properties, metaClass.cachedClass);
                     List methodList = getMethodList(metaMethodsMap, method.getName());
-                    MetaMethod mmethod = new CategoryMethod(new MetaMethod(method, paramTypes), metaClass.cachedClass);
+                    MetaMethod mmethod = new CategoryMethod(new MetaMethod(CachedMethod.find(method), paramTypes), metaClass.cachedClass);
                     methodList.add(mmethod);
                     Collections.sort(methodList);
                 }

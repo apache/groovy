@@ -15,19 +15,25 @@
  */
 package org.codehaus.groovy.reflection;
 
+import org.codehaus.groovy.runtime.InvokerInvocationException;
+import org.codehaus.groovy.classgen.BytecodeHelper;
+
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 /**
  * @author Alex.Tkachman
  */
 public class CachedMethod extends ParameterTypes {
-    CachedClass clazz;
+    public final CachedClass cachedClass;
 
     public final Method cachedMethod;
 
     public CachedMethod(CachedClass clazz, Method method) {
         this.cachedMethod = method;
-        this.clazz = clazz;
+        this.cachedClass = clazz;
     }
 
     public CachedMethod(Method method) {
@@ -46,5 +52,34 @@ public class CachedMethod extends ParameterTypes {
 
     Class[] getPT() {
         return cachedMethod.getParameterTypes();
+    }
+
+    public String getName() {
+        return cachedMethod.getName();
+    }
+
+    public String getDescriptor() {
+        return BytecodeHelper.getMethodDescriptor(getReturnType(), getNativeParameterTypes());
+    }
+
+    public Class getDeclaringClass() {
+        return cachedClass.cachedClass;
+    }
+
+    public Class getReturnType() {
+        return cachedMethod.getReturnType();
+    }
+
+    public int getParamsCount() {
+        return getParameterTypes().length;
+    }
+
+    public int getModifiers() {
+        return cachedMethod.getModifiers();
+    }
+
+
+    public String getSignature() {
+        return getName() + getDescriptor();
     }
 }

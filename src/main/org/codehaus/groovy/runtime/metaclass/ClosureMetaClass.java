@@ -356,7 +356,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
 
     public synchronized void initialize() {
         if (!isInitialized()) {
-            CachedMethod[] methodArray = ReflectionCache.getDeclaredMethodsCached(theClass);
+            CachedMethod[] methodArray = theCachedClass.getMethods();
 
             for (int i = 0; i < methodArray.length; i++) {
                 final CachedMethod cachedMethod = methodArray[i];
@@ -475,7 +475,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
             });
         }
         if (GroovySystem.isUseReflection()) return new ReflectionMetaMethod(method);
-        return new MetaMethod(method.cachedMethod, method.getParameterTypes());
+        return new MetaMethod(method, method.getParameterTypes());
     }
 
     private void generateReflector() {

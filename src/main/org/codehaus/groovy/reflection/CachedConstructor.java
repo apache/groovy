@@ -16,6 +16,7 @@
 package org.codehaus.groovy.reflection;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 
 /**
  * @author Alex.Tkachman
@@ -42,4 +43,15 @@ public class CachedConstructor extends ParameterTypes {
     Class[] getPT() {
         return cachedConstructor.getParameterTypes();
     }
+
+    public static CachedConstructor find(Constructor constructor) {
+        CachedConstructor[] constructors = ReflectionCache.getCachedClass(constructor.getDeclaringClass()).getConstructors();
+        for (int i = 0; i < constructors.length; i++) {
+            CachedConstructor cachedConstructor = constructors[i];
+            if (cachedConstructor.cachedConstructor.equals(constructor))
+                return cachedConstructor;
+        }
+        throw new RuntimeException("Couldn't find method: " + constructor);
+    }
+
 }
