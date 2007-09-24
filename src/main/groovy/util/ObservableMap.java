@@ -101,6 +101,7 @@ public class ObservableMap implements Map {
     public Object put(Object key, Object value) {
         Object oldValue = null;
         if (test != null) {
+            oldValue = delegate.put(key, value);
             Object result = null;
             if (test.getMaximumNumberOfParameters() == 2) {
                 result = test.call(new Object[] {key, value});
@@ -108,7 +109,6 @@ public class ObservableMap implements Map {
                 result = test.call(value);
             }
             if (result != null && result instanceof Boolean && ((Boolean) result).booleanValue()) {
-                oldValue = delegate.put(key, value);
                 if (oldValue != value) {
                     pcs.firePropertyChange(String.valueOf(key), oldValue, value);
                 }
