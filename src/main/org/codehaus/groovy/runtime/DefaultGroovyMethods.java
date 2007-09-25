@@ -7555,6 +7555,19 @@ public class DefaultGroovyMethods {
         }
     }
 
+    /**
+     * Obtains a MetaClass for an object either from the registry or in the case of
+     * a GroovyObject from the object itself
+     *
+     * @param obj The object in question
+     * @return The MetaClass
+     */
+    public static MetaClass getMetaClass(Object obj) {
+        if(obj instanceof GroovyObject) {
+            return ((GroovyObject)obj).getMetaClass();
+        }
+        return GroovySystem.getMetaClassRegistry().getMetaClass(obj.getClass());        
+    }
 
     /**
      * A Runnable which waits for a process to complete together with a notification scheme
