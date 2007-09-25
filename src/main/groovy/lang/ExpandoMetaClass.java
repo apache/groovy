@@ -622,15 +622,17 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 
 
 	protected void performOperationOnMetaClass(Callable c) {
-        try {
-            if(allowChangesAfterInit) {
-                this.initialized = false;
-            }
+        synchronized(this) {
+            try {
+                if(allowChangesAfterInit) {
+                    this.initialized = false;
+                }
 
-            c.call();
-        }
-        finally {
-            if(initCalled)this.initialized = true;
+                c.call();
+            }
+            finally {
+                if(initCalled)this.initialized = true;
+            }
         }
 	}
 
