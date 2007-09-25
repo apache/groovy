@@ -21,6 +21,7 @@ import groovy.swing.SwingBuilder
 import groovy.ui.text.FindReplaceUtility
 import java.awt.*
 import java.awt.event.KeyEvent
+import java.util.List
 import javax.swing.*
 import javax.swing.event.CaretEvent
 import javax.swing.event.CaretListener
