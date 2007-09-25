@@ -22,14 +22,24 @@ import groovy.swing.SwingBuilder
  * @version $Revision: 7953 $
  * @since Groovy 1.1
  */
-class BeanFactory implements Factory {
+class BeanFactory extends AbstractFactory {
     Class beanClass
+    protected boolean leaf
 
     public BeanFactory(Class beanClass) {
-        this.beanClass = beanClass
+        this(beanClass, false)
     }
 
-    public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+    public BeanFactory(Class beanClass, boolean leaf) {
+        this.beanClass = beanClass
+        this.leaf = leaf
+    }
+
+    public boolean isLeaf() {
+        return leaf
+    }
+
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
         if (SwingBuilder.checkValueIsTypeNotString(value, name, beanClass)) {
             return value
         } else {

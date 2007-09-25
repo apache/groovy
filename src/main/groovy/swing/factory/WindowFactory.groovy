@@ -21,9 +21,9 @@ import java.awt.Dialog
 import java.awt.Frame
 import javax.swing.JWindow
 
-public class WindowFactory implements Factory {
+public class WindowFactory extends AbstractFactory {
     
-    public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
         SwingBuilder.checkValueIsNull(value, name);
         //TODO we could make the value arg the owner, or a window to allow adding more compnents
         JWindow window;

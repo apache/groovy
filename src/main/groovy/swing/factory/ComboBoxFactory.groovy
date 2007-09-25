@@ -19,11 +19,9 @@ package groovy.swing.factory
 import groovy.swing.SwingBuilder
 import javax.swing.JComboBox
 
-
-
-public class ComboBoxFactory implements Factory {
+public class ComboBoxFactory extends AbstractFactory {
     
-    public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
         SwingBuilder.checkValueIsNull(value, name);
         //TODO expand to allow the value arg to be items
         Object items = properties.remove("items");

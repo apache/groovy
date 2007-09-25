@@ -406,6 +406,22 @@
         </contributor>
     </contributors>
 
+    <!-- for timiong framework, until Chet gets an official one -->
+    <repositories>
+        <repository>
+            <id>Ambiance Third Part</id>
+            <url>
+                http://laurent.granie.free.fr/ambiance/ambiance-thirdpart-repository
+            </url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+        </repository>
+    </repositories>
+
     <dependencies>
 
         <!-- core dependencies -->
@@ -641,6 +657,14 @@
             <groupId>jline</groupId>
             <artifactId>jline</artifactId>
             <version>0.9.91</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <!-- Used by SwingBuilder.animate() -->
+        <dependency>
+            <groupId>org.jdesktop</groupId>
+            <artifactId>TimingFramework</artifactId>
+            <version>1.0</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>

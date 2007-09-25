@@ -15,12 +15,11 @@
  */
 package org.codehaus.groovy.binding;
 
+import groovy.lang.MissingMethodException;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
-import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
-
-import groovy.lang.MissingMethodException;
+import java.beans.PropertyChangeListener;
 
 
 /**
@@ -56,6 +55,7 @@ public class PropertyBinding implements SourceBinding, TargetBinding, TriggerBin
         Object boundBean;
         Object boundProperty;
         boolean bound;
+        boolean boundToProperty;
 
         PropertyFullBinding(SourceBinding source, TargetBinding target) {
             setSourceBinding(source);
@@ -63,7 +63,7 @@ public class PropertyBinding implements SourceBinding, TargetBinding, TriggerBin
         }
 
         public void propertyChange(PropertyChangeEvent event) {
-            if (event.getPropertyName().equals(boundProperty)) {
+            if (boundToProperty || event.getPropertyName().equals(boundProperty)) {
                 update();
             }
         }
@@ -75,8 +75,10 @@ public class PropertyBinding implements SourceBinding, TargetBinding, TriggerBin
                 boundProperty = propertyName;
                 try {
                     InvokerHelper.invokeMethodSafe(boundBean, "addPropertyChangeListener", new Object[] {boundProperty, this});
+                    boundToProperty = true;
                 } catch (MissingMethodException mme) {
                     try {
+                        boundToProperty = false;
                         InvokerHelper.invokeMethodSafe(boundBean, "addPropertyChangeListener", new Object[] {this});
                     } catch (MissingMethodException mme2) {
                         throw new RuntimeException("Properties in beans of type " + bean.getClass().getName() + " are not observable in any capacity (no PropertyChangeListener support).");
@@ -87,14 +89,17 @@ public class PropertyBinding implements SourceBinding, TargetBinding, TriggerBin
 
         public void unbind() {
             if (bound) {
-                try {
-                    InvokerHelper.invokeMethodSafe(boundBean, "removePropertyChangeListener", new Object[] {boundProperty, this});
-                } catch (MissingMethodException mme) {
-                    mme.printStackTrace();
+                if (boundToProperty) {
+                    try {
+                        InvokerHelper.invokeMethodSafe(boundBean, "removePropertyChangeListener", new Object[] {boundProperty, this});
+                    } catch (MissingMethodException mme) {
+                        // ignore, too bad so sad they don't follow conventions, we'll just leave the listener attached
+                    }
+                } else {
                     try {
                         InvokerHelper.invokeMethodSafe(boundBean, "removePropertyChangeListener", new Object[] {this});
                     } catch (MissingMethodException mme2) {
-                        mme2.printStackTrace();
+                        // ignore, too bad so sad they don't follow conventions, we'll just leave the listener attached
                     }
                 }
                 boundBean = null;

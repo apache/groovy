@@ -21,11 +21,9 @@ import java.awt.Dimension
 import javax.swing.Box
 import javax.swing.BoxLayout
 
-
-
-public class BoxFactory implements Factory {
+public class BoxFactory extends AbstractFactory {
     
-    public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
         if (SwingBuilder.checkValueIsType(value, name, Box.class)) {
             return value;
         }
@@ -40,22 +38,22 @@ public class BoxFactory implements Factory {
     }
 }
 
-public class HBoxFactory implements Factory {
-    public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+public class HBoxFactory extends AbstractFactory {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
         SwingBuilder.checkValueIsNull(value, name);
         return Box.createHorizontalBox();
     }
 }
 
-public class HGlueFactory implements Factory {
-    public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+public class HGlueFactory extends AbstractFactory {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
         SwingBuilder.checkValueIsNull(value, name);
         return Box.createHorizontalGlue();
     }
 }
 
-public class HStrutFactory implements Factory {
-    public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+public class HStrutFactory extends AbstractFactory {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
         SwingBuilder.checkValueIsType(value, name, Number.class);
         Object num;
         if (value != null) {
@@ -71,22 +69,22 @@ public class HStrutFactory implements Factory {
     }
 }
 
-public class VBoxFactory implements Factory {
-    public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+public class VBoxFactory extends AbstractFactory {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
         SwingBuilder.checkValueIsNull(value, name);
         return Box.createVerticalBox();
     }
 }
 
-public class VGlueFactory implements Factory {
-    public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+public class VGlueFactory extends AbstractFactory {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
         SwingBuilder.checkValueIsNull(value, name);
         return Box.createVerticalGlue();
     }
 }
 
-public class VStrutFactory implements Factory {
-    public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+public class VStrutFactory extends AbstractFactory {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
         SwingBuilder.checkValueIsType(value, name, Number.class);
         Object num;
         if (value != null) {
@@ -102,15 +100,15 @@ public class VStrutFactory implements Factory {
     }
 }
 
-public class GlueFactory implements Factory {
-    public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+public class GlueFactory extends AbstractFactory {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
         SwingBuilder.checkValueIsNull(value, name);
         return Box.createGlue();
     }
 }
 
-public class RigidAreaFactory implements Factory {
-    public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+public class RigidAreaFactory extends AbstractFactory {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
         SwingBuilder.checkValueIsNull(value, name);
         Dimension dim;
         Object o = properties.remove("size");

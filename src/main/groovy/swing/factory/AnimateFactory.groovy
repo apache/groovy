@@ -15,7 +15,7 @@
  */
 package groovy.swing.factory
 
-import groovy.swing.SwingBuilder
+import java.util.logging.Logger
 import org.codehaus.groovy.binding.ClosureSourceBinding
 import org.codehaus.groovy.binding.FullBinding
 import org.codehaus.groovy.binding.SwingTimerTriggerBinding
@@ -25,27 +25,48 @@ import org.codehaus.groovy.binding.SwingTimerTriggerBinding
  * @version $Revision: 7797 $
  * @since Groovy 1.1
  */
-public class AnimateFactory implements Factory {
 
-    public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+
+
+/**
+ * attributes --
+ *  range (range or 2 item array of point, dimension, etc):
+ *     an range objet.  defaults to [0.0f..1.0f] also, default argument
+ *
+ *  duration (int) : time in ms to operate
+ *  interval (int) : for discrete ranges, time between items
+ *  start (boolean) : Wheter or not to start animation immediately default true
+ *  repeatCount (double) : how many times to repeat the animation 
+ *  repeatBehavior (Animatior.RepeatBehavior) : how to repeat
+ *  resolution (int) : for indescrete ranges, time between updates
+ *  startDelay (int) : ms to delay start
+ *  startDirection (Animator.Direction) : direction to start
+ *  startValue (range value) : value to start animations at.
+ *  endBehavior (Animator.endBehavior) :
+ *  acceleration (float) : fraction of time to accelerate
+ *  deceleration (float) : fraction of time to accelerate
+ *  easeIn (boolean) : same as acceleration: easeIn ? 0.25F : 0.0F
+ *  easeOut (boolean) : same as deceleration: easeIn ? 0.25F : 0.0F
+ */
+
+public class AnimateFactory extends AbstractFactory {
+
+    private static final Logger LOG = Logger.getLogger(AnimateFactory.class.getName());
+
+
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+        LOG.warning("Using a lower-grade animation node for 1.4 level JVMs.  Use a 5.0 or higher VM for better a better animate()")
+
         if (value == null) {
             value = properties.remove("range");
         }
-        //if ((value == null) && properties.containsKey("begin") && properties.containsKey("end")) {
-        //    value = new Object[] {properties.remove("begin"), properties.remove("")};
-        //}
-        //if ((value != null) && (value.getClass().isArray())) {
-        //    Arrays.asList(((Object[])value));
-        //}
-
-
 
         FullBinding fb  = null;
         if (value instanceof List) {
             //if (((List)value).size() > 2) {
             //    return createInterpolateAnimation(builder, ((List)value).get(0), ((List)value).get(1), properties);
             //} else {
-                fb = createListAnimation(builder, (List) value, properties);
+                fb = createListAnimation((List) value, properties);
             //}
         }
         if (fb != null) {
@@ -63,7 +84,7 @@ public class AnimateFactory implements Factory {
         return fb;
     }
 
-    private FullBinding createListAnimation(SwingBuilder builder, final List animateRange, Map properties) {
+    private FullBinding createListAnimation(final List animateRange, Map properties) {
         Number duration = (Number) properties.get("duration");
         Number interval = (Number) properties.get("interval");
 

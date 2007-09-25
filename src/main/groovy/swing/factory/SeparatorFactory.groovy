@@ -22,11 +22,9 @@ import javax.swing.JPopupMenu
 import javax.swing.JSeparator
 import javax.swing.JToolBar
 
-
-
-public class SeparatorFactory implements Factory {
+public class SeparatorFactory extends AbstractFactory {
     
-    public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
         SwingBuilder.checkValueIsNull(value, name);
         Object parent = builder.getCurrent();
         if (parent instanceof JMenu) {

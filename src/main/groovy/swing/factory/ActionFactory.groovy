@@ -22,15 +22,13 @@ import javax.swing.Action
 import javax.swing.KeyStroke
 import org.codehaus.groovy.runtime.InvokerHelper
 
-
-
 /**
  *
  * @author Danno Ferrin
  */
-public class ActionFactory implements Factory {
+public class ActionFactory extends AbstractFactory {
     
-    public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
         Action action = null;
         if (SwingBuilder.checkValueIsTypeNotString(value, name, Action.class)) {
             action = (Action) value;

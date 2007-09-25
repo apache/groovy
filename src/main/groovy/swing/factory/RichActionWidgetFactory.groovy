@@ -16,7 +16,6 @@
 
 package groovy.swing.factory
 
-import groovy.swing.SwingBuilder
 import java.lang.reflect.Constructor
 import java.lang.reflect.InvocationTargetException
 import java.util.logging.Level
@@ -24,13 +23,11 @@ import java.util.logging.Logger
 import javax.swing.Action
 import javax.swing.Icon
 
-
-
 /**
  *
  * @author shemnon
  */
-public class RichActionWidgetFactory implements Factory {
+public class RichActionWidgetFactory extends AbstractFactory {
     static final Class[] ACTION_ARGS = [Action];
     static final Class[] ICON_ARGS = [Icon];
     static final Class[] STRING_ARGS = [String];
@@ -55,7 +52,7 @@ public class RichActionWidgetFactory implements Factory {
         }
     }
     
-    public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
         try {
             if (value == null) {
                 return klass.newInstance();

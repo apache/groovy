@@ -16,27 +16,21 @@
 
 package groovy.ui
 
-import groovy.swing.SwingBuilder
 import groovy.inspect.swingui.ObjectBrowser
-
-import java.awt.BorderLayout
-import java.awt.EventQueue
-import java.awt.Color
-import java.awt.Font
-import java.awt.Insets
-import java.awt.Toolkit
-import java.awt.event.KeyEvent
-import java.io.PrintWriter
-import java.io.StringWriter
-import java.util.EventObject
-
-import javax.swing.*
-import javax.swing.text.*
-import javax.swing.event.*
-
-import org.codehaus.groovy.runtime.InvokerHelper
+import groovy.swing.SwingBuilder
 import groovy.ui.text.FindReplaceUtility
+import java.awt.*
+import java.awt.event.KeyEvent
+import javax.swing.*
+import javax.swing.event.CaretEvent
+import javax.swing.event.CaretListener
+import javax.swing.text.Style
+import javax.swing.text.StyleConstants
+import javax.swing.text.StyleContext
+import javax.swing.text.StyledDocument
+import org.codehaus.groovy.runtime.InvokerHelper
 
+// to disambiguate from java.awt.List
 /**
  * Groovy Swing console.
  *
@@ -352,7 +346,7 @@ class Console implements CaretListener {
 
         inputArea = inputEditor.textEditor
         // attach ctrl-enter to input area
-        swing.widget(inputArea) {
+        swing.container(inputArea) {
             action(runAction)
         }
         outputArea = swing.outputArea

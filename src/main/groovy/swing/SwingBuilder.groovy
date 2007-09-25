@@ -22,7 +22,7 @@ import groovy.swing.impl.ContainerFacade
 import groovy.swing.impl.Startable
 import java.awt.*
 import java.lang.reflect.InvocationTargetException
-import java.util.logging.Level
+import java.util.Map.Entry
 import java.util.logging.Logger
 import javax.swing.*
 import javax.swing.table.TableColumn
@@ -37,10 +37,9 @@ import org.codehaus.groovy.runtime.InvokerHelper
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class SwingBuilder extends BuilderSupport {
+public class SwingBuilder extends FactoryBuilderSupport {
 
     private static final Logger LOG = Logger.getLogger(SwingBuilder.class.getName());
-    private factories = [:]
     private constraints
     private widgets = [:]
     // tracks all containing windows, for auto-owned dialogs
@@ -181,6 +180,7 @@ public class SwingBuilder extends BuilderSupport {
 
     protected void nodeCompleted(Object parent, Object node) {
         // set models after the node has been completed
+        //TODO move into factory
         if (node instanceof TableModel && parent instanceof JTable) {
             JTable table = (JTable) parent;
             TableModel model = (TableModel) node;
@@ -192,68 +192,42 @@ public class SwingBuilder extends BuilderSupport {
                 table.setAutoCreateColumnsFromModel(false);
             }
         }
+        //TODO move into factory
         if (node instanceof Startable) {
             Startable startable = (Startable) node;
             startable.start();
         }
+        //TODO move into factory
         if (node instanceof Window) {
             if (!containingWindows.isEmpty() && containingWindows.getLast() == node) {
                 containingWindows.removeLast();
             }
         }
-    }
-
-    protected Object createNode(Object name) {
-        return createNode(name, Collections.EMPTY_MAP, null);
-    }
-
-    protected Object createNode(Object name, Object value) {
-        return createNode(name, Collections.EMPTY_MAP, value);
-    }
-
-    protected Object createNode(Object name, Map attributes) {
-        return createNode(name, attributes, null);
+        super.nodeCompleted(parent, node)
     }
 
     protected Object createNode(Object name, Map attributes, Object value) {
         String widgetName = (String) attributes.remove("id");
         constraints = attributes.remove("constraints");
-        Object widget;
-        Factory factory = (Factory) factories.get(name);
-        if (factory == null) {
-            LOG.log(Level.WARNING, "Could not find match for name: $name");
-            return null;
+
+        Object widget = super.createNode(name, attributes, value)
+        if (widgetName != null) {
+            widgets.put(widgetName, widget);
         }
-        try {
-            widget = factory.newInstance(this, name, value, attributes);
-            if (widget == null) {
-                LOG.log(Level.WARNING, "Factory for name: $name returned null");
-                return null;
-            }
-            if (widgetName != null) {
-                widgets.put(widgetName, widget);
-            }
-            if (LOG.isLoggable(Level.FINE)) {
-                LOG.fine("For name: $name created widget: $widget");
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to create component for '$name' reason: $e", e);
-        }
-        handleWidgetAttributes(widget, attributes);
+
         return widget;
     }
 
-    protected void handleWidgetAttributes(Object widget, Map attributes) {
-        // first, short circuit
-        if (attributes.isEmpty() || (widget == null)) {
-            return;
-        }
+    /**
+     * Total override to support bindings efficiently and in order
+     */
+    protected void setNodeAttributes(Object node, Map attributes) {
 
         // some special cases...
         if (attributes.containsKey("buttonGroup")) {
             Object o = attributes.get("buttonGroup");
-            if ((o instanceof ButtonGroup) && (widget instanceof AbstractButton)) {
-                ((AbstractButton) widget).getModel().setGroup((ButtonGroup) o);
+            if ((o instanceof ButtonGroup) && (node instanceof AbstractButton)) {
+                ((AbstractButton) node).getModel().setGroup((ButtonGroup) o);
                 attributes.remove("buttonGroup");
             }
         }
@@ -262,20 +236,18 @@ public class SwingBuilder extends BuilderSupport {
         Object mnemonic = attributes.remove("mnemonic");
         if (mnemonic != null) {
             if (mnemonic instanceof Number) {
-                InvokerHelper.setProperty(widget, "mnemonic", new Character((char) ((Number) mnemonic).intValue()));
+                InvokerHelper.setProperty(node, "mnemonic", new Character((char) ((Number) mnemonic).intValue()));
             } else {
-                InvokerHelper.setProperty(widget, "mnemonic", new Character(mnemonic.toString().charAt(0)));
+                InvokerHelper.setProperty(node, "mnemonic", new Character(mnemonic.toString().charAt(0)));
             }
         }
 
-        // set the properties
-
-        for (entry in attributes.entrySet()) {
+        for (Entry entry in attributes.entrySet()) {
             String property = entry.key.toString();
             Object value = entry.value;
             if (value instanceof FullBinding) {
                 FullBinding fb = (FullBinding) value;
-                PropertyBinding ptb = new PropertyBinding(widget, property);
+                PropertyBinding ptb = new PropertyBinding(node, property);
                 fb.setTargetBinding(ptb);
                 try {
                     fb.update();
@@ -288,7 +260,7 @@ public class SwingBuilder extends BuilderSupport {
                     // just eat it?
                 }
             } else {
-                InvokerHelper.setProperty(widget, property, value);
+                InvokerHelper.setProperty(node, property, value);
             }
         }
     }
@@ -314,14 +286,21 @@ public class SwingBuilder extends BuilderSupport {
         registerFactory("map", new MapFactory());
 
         // binding related classes
-        registerFactory("animate", new AnimateFactory());
+        try {
+            // high quality stuff for Java 5.0+
+            registerFactory("animate", (Factory) Class.forName('groovy.swing.factory.TimingFrameworkFactory').newInstance());
+        } catch (Exception e) {
+            // less effective stuff for Java 1.4
+            registerFactory("animate", new AnimateFactory());
+        }
+
         registerFactory("bind", new BindFactory());
         registerFactory("model", new ModelFactory());
 
         // ulimate pass through types
-        registerFactory("widget", new WidgetFactory(Component)); //TODO prohibit child content somehow
-        registerFactory("container", new WidgetFactory(Component));
-        registerFactory("bean", new WidgetFactory(Object));
+        registerFactory("widget", new WidgetFactory(Component, true)); 
+        registerFactory("container", new WidgetFactory(Component, false));
+        registerFactory("bean", new WidgetFactory(Object, true));
 
 
         //
@@ -427,24 +406,12 @@ public class SwingBuilder extends BuilderSupport {
 
     }
 
-    public void registerBeanFactory(String theName, final Class beanClass) {
-        registerFactory(theName, new BeanFactory(beanClass));
-    }
-
-    public void registerFactory(String name, Factory factory) {
-        factories.put(name, factory);
-    }
-
     public Object getConstraints() {
         return constraints;
     }
 
     public LinkedList getContainingWindows() {
         return containingWindows;
-    }
-
-    public Object getCurrent() { //NOPMD not pointless, makes it public from private
-        return super.getCurrent();
     }
 
     public static void checkValueIsNull(Object value, Object name) {

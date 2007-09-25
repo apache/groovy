@@ -21,11 +21,9 @@ import java.awt.Container
 import javax.swing.BoxLayout
 import org.codehaus.groovy.runtime.InvokerHelper
 
-
-
-public class BoxLayoutFactory implements Factory {
+public class BoxLayoutFactory extends AbstractFactory {
     
-    public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
         SwingBuilder.checkValueIsNull(value, name);
         Object parent = builder.getCurrent();
         if (parent instanceof Container) {

@@ -19,11 +19,9 @@ package groovy.swing.factory
 import groovy.swing.SwingBuilder
 import javax.swing.JSplitPane
 
-
-
-public class SplitPaneFactory implements Factory {
+public class SplitPaneFactory extends AbstractFactory {
     
-    public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
         if (SwingBuilder.checkValueIsType(value, name, JSplitPane.class)) {
             return value;
         }

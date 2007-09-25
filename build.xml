@@ -70,6 +70,14 @@ $Date$
         <echo message="Operating system name: ${os.name}"/>
         <echo message="Operating system architecture: ${os.arch}"/>
         <echo message="Operating system version: ${os.version}"/>
+
+        <!-- some files won't compile on certinan JVM versions because
+             of library issues, exclude those -->
+
+        <condition property="jvm.level.excludes" value="groovy/swing/factory/TimingFrameworkFactory.groovy org/codehaus/groovy/binding/TimingFrameworkTriggerBinding.groovy">
+            <equals arg1="${ant.java.version}" arg2="1.4"/>
+        </condition>
+        <property name="jvm.level.excludes" value="nothing"/>
     </target>
     
     <target name="-checkAntVersion" depends="-excludeLegacyAntVersion,-ensureRequiredAntVersion"
@@ -106,28 +114,11 @@ $Date$
         <mkdir dir="${mainClassesDirectory}"/>
         <mkdir dir="${toolsClassesDirectory}"/>
         <javac srcdir="${mainSourceDirectory}" includeantruntime="false" destdir="${mainClassesDirectory}"
-               deprecation="on" debug="yes" source="1.4" target="1.4" fork="true" classpathref="compilePath"/>
-
-        <!--
-
-        There seems to be a problem using the groovyc task directly.  If we use it directly as below then there
-        is an NoClassDefFoundError for class org/objectweb/asm/Opcodes.  If however we run a separate java task
-        to run the groovyc task then everything works as it should.
-
-        <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpath="${mainClassesDirectory}"/>
-        <groovyc srcdir="${mainSourceDirectory}" destdir="${mainClassesDirectory}" classpathref="groovyMainCompileDependencies"/>
-
-        -->
+               deprecation="on" debug="yes" source="1.4" target="1.4" fork="true" classpathref="compilePath" excludes="${jvm.level.excludes}"/>
 
         <echo message="Groovyc of main code."/>
-        <java classname="org.codehaus.groovy.ant.Groovyc" failonerror="true">
-            <classpath>
-                <pathelement path="${mainClassesDirectory}"/>
-                <path refid="compilePath"/>
-            </classpath>
-            <arg value="${mainClassesDirectory}"/>
-            <arg value="${mainSourceDirectory}"/>
-        </java>
+        <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpath="${mainClassesDirectory}" classpathref="testPath"/>
+        <groovyc srcdir="${mainSourceDirectory}" destdir="${mainClassesDirectory}" classpathref="compilePath"  excludes="${jvm.level.excludes}"/>
     </target>
 
     <target name="ubercompile:bootstrap" depends="-init,-includeResources,ensureGrammars" if="uber">
@@ -139,6 +130,7 @@ $Date$
                source="1.4"
                target="1.4"
                fork="true"
+               excludes="${jvm.level.excludes}"
                includeantruntime="false">
             <classpath refid="compilePath"/>
             <src location="${mainSourceDirectory}"/>
@@ -179,12 +171,12 @@ $Date$
             </classpath>
             <src location="${mainSourceDirectory}"/>
             
-            <generatestubs destdir="${mainStubsDirectory}">
+            <generatestubs destdir="${mainStubsDirectory}" includes="**/*.groovy" excludes="${jvm.level.excludes}">
                 <configuration targetBytecode="1.4"/>
             </generatestubs>
             
-            <javac includeantruntime="false" deprecation="on" debug="yes" source="1.4" target="1.4" fork="true"/>
-            <groovyc>
+            <javac includeantruntime="false" deprecation="on" debug="yes" source="1.4" target="1.4" fork="true" excludes="${jvm.level.excludes}"/>
+            <groovyc includes="**/*.groovy" excludes="${jvm.level.excludes}">
                 <configuration debug="true" verbose="true"/>
             </groovyc>
         </ubercompile>
@@ -193,16 +185,15 @@ $Date$
     <target name="compileTest" depends="compileMain" unless="_skipTests_"
             description="Compile the Java and Groovy code in the test source.">
         <mkdir dir="${testClassesDirectory}"/>
-        <java classname="org.apache.tools.ant.launch.Launcher" fork="true" >
+        <java classname="org.apache.tools.ant.launch.Launcher" fork="true" maxmemory="256m" failonerror="true">
             <classpath refid="runtimePath" />
             <arg value="realCompileTest"/>
-            <jvmarg value="-Xmx256m"/>
         </java>
     </target>
 
     <target name="realCompileTest">
         <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpath="${mainClassesDirectory}" classpathref="testPath"/>
-        <groovyc srcdir="${testSourceDirectory}" destdir="${testClassesDirectory}">
+        <groovyc srcdir="${testSourceDirectory}" destdir="${testClassesDirectory}" excludes="${jvm.level.excludes}">
           <classpath>
             <pathelement path="${mainClassesDirectory}"/>
             <pathelement path="${testClassesDirectory}"/>

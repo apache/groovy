@@ -21,9 +21,9 @@ import groovy.swing.SwingBuilder
 /**
  * This returns a mutable java.util.Collection of some sort, to which items are added.  
  */
-public class CollectionFactory implements Factory {
+public class CollectionFactory extends AbstractFactory {
     
-    public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
         SwingBuilder.checkValueIsNull(value, name);
         if (properties.isEmpty()) {
             return new ArrayList();

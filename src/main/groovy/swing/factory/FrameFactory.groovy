@@ -19,9 +19,9 @@ package groovy.swing.factory
 import groovy.swing.SwingBuilder
 import javax.swing.JFrame
 
-public class FrameFactory implements Factory {
+public class FrameFactory extends AbstractFactory {
     
-    public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
         if (SwingBuilder.checkValueIsType(value, name, JFrame.class)) {
             return value;
         }

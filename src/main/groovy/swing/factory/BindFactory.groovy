@@ -15,7 +15,6 @@
  */
 package groovy.swing.factory
 
-import groovy.swing.SwingBuilder
 import groovy.swing.binding.AbstractButtonProperties
 import groovy.swing.binding.JSliderProperties
 import groovy.swing.binding.JTextComponentProperties
@@ -26,7 +25,7 @@ import org.codehaus.groovy.binding.*
  * @version $Revision$
  * @since Groovy 1.1
  */
-public class BindFactory implements Factory {
+public class BindFactory extends AbstractFactory {
 
     Map/*<String, TriggerBinding*/ syntheticBindings;
 
@@ -87,7 +86,7 @@ public class BindFactory implements Factory {
      * @throws InstantiationException
      * @throws IllegalAccessException
      */
-    public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
         if (value != null) {
             throw new RuntimeException("$name elements do not accept a value argument.");
         }

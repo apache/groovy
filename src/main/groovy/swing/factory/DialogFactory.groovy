@@ -21,9 +21,9 @@ import java.awt.Dialog
 import java.awt.Frame
 import javax.swing.JDialog
 
-public class DialogFactory implements Factory {
+public class DialogFactory extends AbstractFactory {
     
-    public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
         if (SwingBuilder.checkValueIsType(value, name, JDialog.class)) {
             return value;
         }

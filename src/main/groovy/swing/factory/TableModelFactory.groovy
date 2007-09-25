@@ -22,11 +22,9 @@ import groovy.model.ValueModel
 import groovy.swing.SwingBuilder
 import javax.swing.table.TableModel
 
-
-
-public class TableModelFactory implements Factory {
+public class TableModelFactory extends AbstractFactory {
     
-    public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
         if (SwingBuilder.checkValueIsType(value, name, TableModel.class)) {
             return value;
         } else if (properties.get(name) instanceof TableModel) {
@@ -45,9 +43,9 @@ public class TableModelFactory implements Factory {
     }
 }
 
-public class PropertyColumnFactory implements Factory {
+public class PropertyColumnFactory extends AbstractFactory {
 
-    public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
         SwingBuilder.checkValueIsNull(value, name);
         Object current = builder.getCurrent();
         if (current instanceof DefaultTableModel) {
@@ -75,9 +73,9 @@ public class PropertyColumnFactory implements Factory {
     }
 }
 
-public class ClosureColumnFactory implements Factory {
+public class ClosureColumnFactory extends AbstractFactory {
 
-    public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
         SwingBuilder.checkValueIsNull(value, name);
         Object current = builder.getCurrent();
         if (current instanceof DefaultTableModel) {

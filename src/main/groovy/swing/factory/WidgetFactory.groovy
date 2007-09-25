@@ -18,15 +18,21 @@ package groovy.swing.factory
 
 import groovy.swing.SwingBuilder
 
-public class WidgetFactory implements Factory {
+public class WidgetFactory extends AbstractFactory {
 
     Class restrictedType;
+    protected boolean leaf
 
-    public WidgetFactory(Class restrictedType) {
-        this.restrictedType = restrictedType;
+    public WidgetFactory(Class restrictedType, boolean leaf) {
+        this.restrictedType = restrictedType
+        this.leaf = leaf
+    }
+
+    boolean isLeaf() {
+        return leaf
     }
     
-    public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
         if (value == null) {
             value = properties.remove(name);
         }

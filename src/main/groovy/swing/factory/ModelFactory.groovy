@@ -15,19 +15,16 @@
  */
 package groovy.swing.factory
 
-import groovy.swing.SwingBuilder
 import org.codehaus.groovy.binding.ModelBinding
-
-
 
 /**
  * @author <a href="mailto:shemnon@yahoo.com">Danno Ferrin</a>
  * @version $Revision$
  * @since Groovy 1.1
  */
-public class ModelFactory implements Factory {
+public class ModelFactory extends AbstractFactory {
 
-    public Object newInstance(SwingBuilder builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
         if (value == null) {
             throw new RuntimeException("$name requires a value argument.");
         }

@@ -25,7 +25,6 @@ import javax.swing.*
 import javax.swing.text.DateFormatter
 import javax.swing.text.NumberFormatter
 
-
 class SwingBuilderTest extends GroovyTestCase {
 
     private boolean isHeadless() {
@@ -382,7 +381,7 @@ class SwingBuilderTest extends GroovyTestCase {
 
         def swing = new SwingBuilder()
         char q = 'Q'
-        swing.actions() {
+        swing.actions {
             verifyAccel(action(accelerator: shortcut(q)))
             verifyAccel(action(accelerator: shortcut(q, InputEvent.SHIFT_DOWN_MASK)), InputEvent.SHIFT_DOWN_MASK)
             verifyAccel(action(accelerator: shortcut(KeyEvent.VK_NUMPAD5)))
@@ -450,7 +449,7 @@ class SwingBuilderTest extends GroovyTestCase {
                 propertyColumn(propertyName:'peth', editable:false, type: String, header: 'header')
             }
         }
-        swing.model.columnList.each() { col ->
+        swing.model.columnList.each { col ->
             def propName = col.valueModel.property
             assert (col.headerValue == 'header') ^ !propName.contains('h')
             assert (col.type == String) ^ !propName.contains('t')
@@ -578,7 +577,7 @@ class SwingBuilderTest extends GroovyTestCase {
         assert msg == "'td' must be within a 'tr'"
         swing.frame(){
             tableLayout(){
-                tr() {
+                tr {
                     td {
                         label()
                     }
@@ -615,7 +614,7 @@ class SwingBuilderTest extends GroovyTestCase {
 
         def swing = new SwingBuilder()
         def foo = swing.button('North')
-        def frame = swing.frame() {
+        def frame = swing.frame {
             borderLayout()
             widget(foo, constraints: BorderLayout.NORTH)
             // a failed test throws MissingPropertyException by now
@@ -640,11 +639,11 @@ class SwingBuilderTest extends GroovyTestCase {
         if (isHeadless()) return
         
         def swing = new SwingBuilder()
-        swing.frame() {
+        swing.frame {
             menu("test") {
                 separator(id:"menuSep")
             }
-            toolBar() {
+            toolBar {
                 separator(id:"tbSep")
             }
             separator(id:"sep")
@@ -658,7 +657,7 @@ class SwingBuilderTest extends GroovyTestCase {
         if (isHeadless()) return
         
         def swing = new SwingBuilder()
-        def collection = swing.actions() {
+        def collection = swing.actions {
             action(id:'test')
         }
         assert collection.contains(swing.test)
@@ -671,7 +670,7 @@ class SwingBuilderTest extends GroovyTestCase {
         assert swing.bogusWidget() == null
 
         swing.registerFactory("nullWidget", 
-            [newInstance:{builder, name, value, props -> null}] as groovy.swing.factory.Factory)
+            [newInstance:{builder, name, value, props -> null}] as AbstractFactory)
         assert swing.nullWidget() == null
     } 
 
@@ -738,7 +737,7 @@ class SwingBuilderTest extends GroovyTestCase {
         noValueItems.each {name ->
             println name
             shouldFail {
-                swing.frame() {
+                swing.frame {
                     "$name"(swing."$name"(), id:"${name}Self".toString())
                 }
 	    }
@@ -798,12 +797,12 @@ class SwingBuilderTest extends GroovyTestCase {
         ]
         selfItems.each {name ->
             println name
-            swing.frame() {
+            swing.frame {
                 "$name"(swing."$name"(), id:"${name}Self".toString())
             }
 
             shouldFail {
-                swing.frame() {
+                swing.frame {
                     swing."$name"(icon)
                 }
 	    }
@@ -820,21 +819,21 @@ class SwingBuilderTest extends GroovyTestCase {
         ]
         textItems.each {name ->
             println name
-            swing.frame() {
+            swing.frame {
                 "$name"(swing."$name"(), id:"${name}Self".toString())
                 "$name"('text', id:"${name}Text".toString())
             }
             assert swing."${name}Text".text == 'text'
 
             shouldFail {
-                swing.frame() {
+                swing.frame {
                     swing."$name"(icon)
                 }
 	    }
         }
         
         // leftovers...
-        swing.frame() {
+        swing.frame {
             action(action:anAction)
             box(axis:BoxLayout.Y_AXIS)
             hstrut(5)
@@ -849,17 +848,27 @@ class SwingBuilderTest extends GroovyTestCase {
                 bean(bean:"anything")
             }
         }
-        shouldFail() {
+        shouldFail {
             swing.actions(property:'fails')
         }
-        shouldFail() {
+        shouldFail {
             swing.widget()
         }
-        shouldFail() {
+        shouldFail {
+            swing.widget(label('label')) {
+                label('No Content For You!')
+            }
+        }
+        shouldFail {
             swing.container()
         }
-        shouldFail() {
+        shouldFail {
             swing.bean()
+        }
+        shouldFail {
+            swing.bean("anything") {
+                label('Nothing')
+            }
         }
     }
 
@@ -869,11 +878,11 @@ class SwingBuilderTest extends GroovyTestCase {
         def swing = new SwingBuilder()
         
         boolean pass = false
-        swing.edt() { pass = SwingUtilities.isEventDispatchThread() }
+        swing.edt { pass = SwingUtilities.isEventDispatchThread() }
         assert pass
         
         pass = false
-        swing.edt() { swing.edt() { pass = SwingUtilities.isEventDispatchThread() } }
+        swing.edt { swing.edt { pass = SwingUtilities.isEventDispatchThread() } }
         assert pass
     }
 
