@@ -1466,9 +1466,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
            for (Iterator nameMethodIterator = methodIndex.entrySet().iterator(); nameMethodIterator.hasNext();) {
                Map.Entry entry = (Map.Entry) nameMethodIterator.next();
                String methodName = (String) entry.getKey();
-               // name too sort?
+               // name too short?
                if (methodName.length() < 4) continue;
-               //possible getter/setter                                                       Ä
+               // possible getter/setter
                boolean isGetter = methodName.startsWith("get");
                boolean isSetter = methodName.startsWith("set");
                if (!isGetter && !isSetter) continue;
