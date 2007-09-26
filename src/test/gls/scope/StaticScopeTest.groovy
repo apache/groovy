@@ -1,7 +1,5 @@
 package gls.scope
 
-import gls.scope.CompilableTestSupport
-
 public class StaticScopeTest extends CompilableTestSupport {
 
     public void testNormalStaticScopeInScript() {
