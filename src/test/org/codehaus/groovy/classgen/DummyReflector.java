@@ -76,6 +76,7 @@ public class DummyReflector extends Reflector {
     */
 
     public Object invoke(MetaMethod method, Object object, Object[] arguments) {
+/*
         switch (method.getMethodIndex()) {
             case 1:
                 return ((String) object).toCharArray();
@@ -84,6 +85,8 @@ public class DummyReflector extends Reflector {
             default:
                 return noSuchMethod(method, object, arguments);
         }
+*/
+        return null;
     }
 
     public Object invokeConstructorAt(Object at, Object constructor, Object[] arguments) {

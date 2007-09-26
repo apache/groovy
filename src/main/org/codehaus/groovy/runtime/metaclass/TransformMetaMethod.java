@@ -16,6 +16,8 @@
 package org.codehaus.groovy.runtime.metaclass;
 
 import groovy.lang.MetaMethod;
+import org.codehaus.groovy.reflection.CachedClass;
+import org.codehaus.groovy.reflection.ParameterTypes;
 
 /**
  * A MetaMethod implementation useful for implementing coercion based invocations
@@ -29,8 +31,27 @@ public class TransformMetaMethod extends MetaMethod {
     private MetaMethod metaMethod;
 
     public TransformMetaMethod(MetaMethod metaMethod) {
-        super(metaMethod);
         this.metaMethod = metaMethod;
+    }
+
+    public int getModifiers() {
+        return metaMethod.getModifiers();
+    }
+
+    public String getName() {
+        return metaMethod.getName();
+    }
+
+    public Class getReturnType() {
+        return metaMethod.getReturnType();
+    }
+
+    public CachedClass getDeclaringClass() {
+        return metaMethod.getDeclaringClass();
+    }
+
+    public ParameterTypes getParamTypes() {
+        return metaMethod.getParamTypes();
     }
 
     public Object invoke(Object object, Object[] arguments) {

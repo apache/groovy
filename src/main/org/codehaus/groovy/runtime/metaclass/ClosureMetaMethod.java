@@ -17,9 +17,9 @@ package org.codehaus.groovy.runtime.metaclass;
 
 import groovy.lang.Closure;
 import groovy.lang.ClosureInvokingMethod;
-import org.codehaus.groovy.runtime.NewInstanceMetaMethod;
-import org.codehaus.groovy.reflection.ParameterTypes;
+import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.CachedClass;
+import org.codehaus.groovy.reflection.ParameterTypes;
 import org.codehaus.groovy.reflection.ReflectionCache;
 
 import java.lang.reflect.Modifier;
@@ -32,44 +32,45 @@ import java.lang.reflect.Modifier;
  * @author Graeme Rocher
  * @since 1.1
  */
-public class ClosureMetaMethod extends NewInstanceMetaMethod implements ClosureInvokingMethod {
+public class ClosureMetaMethod extends MetaMethod implements ClosureInvokingMethod {
 
 	private final Closure callable;
-	private CachedClass declaringClass;
+    private final String name;
+    private final ParameterTypes pt;
+    private final CachedClass declaringClass;
 
-	public ClosureMetaMethod(String name, Closure c) {
+    public ClosureMetaMethod(String name, Closure c) {
 		this(name, c.getOwner().getClass(), c);
 	}
 
-    /**
-     *
-     * @param name The name of the MetaMethod
-     * @param declaringClass The class which declared the MetaMethod
-     * @param c The closure that this ClosureMetaMethod will invoke when called
-     */
     public ClosureMetaMethod(String name, Class declaringClass,Closure c) {
-		super(name, declaringClass, c.getParameterTypes() == null ? new CachedClass[0] : new ParameterTypes(c.getParameterTypes()).getParameterTypes(), Object.class,Modifier.PUBLIC);
-        Class[] pt = c.getParameterTypes();
-		if(pt == null) {
-			pt = new Class[0];
-		}
-        paramTypes = new ParameterTypes(pt);
-		this.callable = c;
-
-		this.declaringClass = ReflectionCache.getCachedClass(declaringClass);
-	}
+		this.name = name;
+        callable = c;
+        pt = new ParameterTypes(c.getParameterTypes());
+        this.declaringClass = ReflectionCache.getCachedClass(declaringClass);
+    }
 
 
-	/* (non-Javadoc)
-	 * @see org.codehaus.groovy.runtime.NewInstanceMetaMethod#getDeclaringClass()
-	 */
+    public int getModifiers() {
+        return Modifier.PUBLIC;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public Class getReturnType() {
+        return Object.class;
+    }
+
 	public CachedClass getDeclaringClass() {
 		return declaringClass;
 	}
 
-	/* (non-Javadoc)
-	 * @see groovy.lang.MetaMethod#invoke(java.lang.Object, java.lang.Object[])
-	 */
+    public ParameterTypes getParamTypes() {
+        return pt;
+    }
+
 	public Object invoke(final Object object, final Object[] arguments) {
 		Closure cloned = (Closure) callable.clone();
 		cloned.setDelegate(object);

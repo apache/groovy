@@ -17,6 +17,7 @@
 package groovy.lang;
 
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
+import org.codehaus.groovy.reflection.CachedField;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -34,8 +35,8 @@ public class MetaFieldProperty extends MetaProperty {
     boolean alreadySetAccessible;
     private Field field;
 
-    public static MetaFieldProperty create(Field field) {
-        return new MetaFieldProperty(field);
+    public static MetaFieldProperty create(CachedField field) {
+        return new MetaFieldProperty(field.field);
     }
 
     private MetaFieldProperty(Field field) {

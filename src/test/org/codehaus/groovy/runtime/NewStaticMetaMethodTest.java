@@ -46,7 +46,6 @@
 package org.codehaus.groovy.runtime;
 
 import junit.framework.TestCase;
-import org.codehaus.groovy.runtime.metaclass.ReflectionMetaMethod;
 import org.codehaus.groovy.reflection.CachedMethod;
 
 import java.lang.reflect.Method;
@@ -95,6 +94,6 @@ public class NewStaticMetaMethodTest extends TestCase {
     }
 
     protected NewInstanceMetaMethod createNewMetaMethod(Method method) {
-        return new NewInstanceMetaMethod(new ReflectionMetaMethod(CachedMethod.find(method)));
+        return NewInstanceMetaMethod.createNewInstanceMetaMethod(CachedMethod.find(method));
     }
 }

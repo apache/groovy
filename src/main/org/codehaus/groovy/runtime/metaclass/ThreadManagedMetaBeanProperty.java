@@ -26,6 +26,7 @@ import java.util.WeakHashMap;
 
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ReflectionCache;
+import org.codehaus.groovy.reflection.ParameterTypes;
 
 /**
  * This MetaBeanProperty will create a psuedo property whoes value is bound to the current
@@ -166,28 +167,42 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
 	class ThreadBoundGetter extends MetaMethod {
 
 
-		private String getterName;
+		private final String name, name0;
+        private final ParameterTypes pt = new ParameterTypes(new CachedClass[0]);
 
 
-		public ThreadBoundGetter(String name) {
-			super(name, declaringClass, ZERO_ARGUMENT_LIST, type, Modifier.PUBLIC);
-			getterName = getGetterName(name, type);
+        public ThreadBoundGetter(String name) {
+			this.name = getGetterName(name, type);
+            this.name0 = name;
 		}
 
 
-		/* (non-Javadoc)
-		 * @see groovy.lang.MetaMethod#getName()
-		 */
-		public String getName() {
-			return getterName;
+        public int getModifiers() {
+            return Modifier.PUBLIC;
+        }
+
+        public String getName() {
+			return name;
 		}
 
+        public Class getReturnType() {
+            return type;
+        }
 
-		/* (non-Javadoc)
-		 * @see groovy.lang.MetaMethod#invoke(java.lang.Object, java.lang.Object[])
-		 */
+        public CachedClass getDeclaringClass() {
+            return ReflectionCache.getCachedClass(declaringClass);
+        }
+
+        public ParameterTypes getParamTypes() {
+            return pt;
+        }
+
+
+        /* (non-Javadoc)
+           * @see groovy.lang.MetaMethod#invoke(java.lang.Object, java.lang.Object[])
+           */
 		public Object invoke(Object object, Object[] arguments) {
-			return getThreadBoundPropertyValue(object, name, getInitialValue());
+			return getThreadBoundPropertyValue(object, name0, getInitialValue());
 		}
 	}
 
@@ -200,26 +215,41 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
 	private class ThreadBoundSetter extends MetaMethod {
 
 
-		private String setterName;
+		private final String name, name0;
+        private ParameterTypes pt = new ParameterTypes(new CachedClass[]{ReflectionCache.getCachedClass(type)});
 
-		public ThreadBoundSetter(String name) {
-			super(name, declaringClass, new CachedClass[]{ReflectionCache.getCachedClass(type)}, type, Modifier.PUBLIC);
-			setterName = getSetterName(name);
-		}
+        public ThreadBoundSetter(String name) {
+			this.name = getSetterName(name);
+            this.name0 = name;
+        }
 
 
-
-		/* (non-Javadoc)
+        public int getModifiers() {
+            return Modifier.PUBLIC;
+        }/* (non-Javadoc)
 		 * @see groovy.lang.MetaMethod#getName()
 		 */
 		public String getName() {
-			return setterName;
+			return name;
 		}
-		/* (non-Javadoc)
-		 * @see groovy.lang.MetaMethod#invoke(java.lang.Object, java.lang.Object[])
-		 */
+
+        public Class getReturnType() {
+            return type;
+        }
+
+        public CachedClass getDeclaringClass() {
+            return ReflectionCache.getCachedClass(declaringClass);
+        }
+
+        public ParameterTypes getParamTypes() {
+            return pt;
+        }
+
+        /* (non-Javadoc)
+           * @see groovy.lang.MetaMethod#invoke(java.lang.Object, java.lang.Object[])
+           */
 		public Object invoke(Object object, Object[] arguments) {
-			return setThreadBoundPropertyValue(object, name, arguments[0]);
+			return setThreadBoundPropertyValue(object, name0, arguments[0]);
 		}
 	}
 

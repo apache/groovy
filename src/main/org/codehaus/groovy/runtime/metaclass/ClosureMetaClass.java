@@ -18,15 +18,14 @@ package org.codehaus.groovy.runtime.metaclass;
 
 import groovy.lang.*;
 import org.codehaus.groovy.reflection.CachedMethod;
-import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.reflection.CachedClass;
+import org.codehaus.groovy.reflection.CachedField;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.Reflector;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -342,11 +341,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
     private synchronized void initAttributes() {
         if (!attributes.isEmpty()) return;
         attributes.put("!", null); // just a dummy for later
-        Field[] fieldArray = (Field[]) AccessController.doPrivileged(new PrivilegedAction() {
-            public Object run() {
-                return theClass.getDeclaredFields();
-            }
-        });
+        CachedField[] fieldArray = theCachedClass.getFields();
         for (int i = 0; i < fieldArray.length; i++) {
             MetaFieldProperty mfp = MetaFieldProperty.create(fieldArray[i]);
             attributes.put(fieldArray[i].getName(), mfp);
@@ -474,18 +469,22 @@ public final class ClosureMetaClass extends MetaClassImpl {
                 }
             });
         }
-        if (GroovySystem.isUseReflection()) return new ReflectionMetaMethod(method);
-        return new MetaMethod(method, method.getParameterTypes());
+        if (GroovySystem.isUseReflection())
+            return ReflectionMetaMethod.createReflectionMetaMethod(method);
+        return StdMetaMethod.createStdMetaMethod(method);
     }
 
     private void generateReflector() {
+        if (GroovySystem.isUseReflection())
+          return;
+
         reflector = ((MetaClassRegistryImpl) registry).loadReflector(theClass, closureMethods);
         if (reflector == null) {
             throw new RuntimeException("Should have a reflector for " + theClass.getName());
         }
         // lets set the reflector on all the methods
         for (Iterator iter = closureMethods.iterator(); iter.hasNext();) {
-            MetaMethod metaMethod = (MetaMethod) iter.next();
+            StdMetaMethod metaMethod = (StdMetaMethod) iter.next();
             metaMethod.setReflector(reflector);
         }
     }

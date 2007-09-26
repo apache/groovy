@@ -867,7 +867,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 		});
 	}
 
-	/**
+    /**
 	 * @return The Java class enhanced by this MetaClass
 	 */
 	public Class getJavaClass() {

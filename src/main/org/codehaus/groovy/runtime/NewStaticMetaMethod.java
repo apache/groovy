@@ -15,9 +15,12 @@
  */
 package org.codehaus.groovy.runtime;
 
-import groovy.lang.MetaMethod;
-import org.codehaus.groovy.reflection.ParameterTypes;
 import org.codehaus.groovy.reflection.CachedClass;
+import org.codehaus.groovy.reflection.CachedMethod;
+import org.codehaus.groovy.reflection.ParameterTypes;
+import org.codehaus.groovy.runtime.metaclass.StdMetaMethod;
+
+import java.util.HashMap;
 
 /**
  * A MetaMethod implementation where the underlying method is really a static
@@ -29,27 +32,16 @@ import org.codehaus.groovy.reflection.CachedClass;
  * @author Guillaume Laforge
  * @version $Revision$
  */
-public class NewStaticMetaMethod extends MetaMethod {
+public class NewStaticMetaMethod extends StdMetaMethod {
 
     private static final CachedClass[] EMPTY_TYPE_ARRAY = {};
 
-    private MetaMethod metaMethod;
     private CachedClass[] bytecodeParameterTypes;
+    private ParameterTypes paramTypes;
 
-    public NewStaticMetaMethod(MetaMethod metaMethod) {
-        super(metaMethod);
-        this.metaMethod = metaMethod;
-        init();
-    }
-
-    public NewStaticMetaMethod(String name, Class declaringClass, CachedClass[] parameterTypes, Class returnType, int modifiers) {
-        super(name, declaringClass, parameterTypes, returnType, modifiers);
-        this.metaMethod = new MetaMethod(name, declaringClass, parameterTypes,returnType, modifiers);
-        init();
-    }
-
-    private void init() {
-        bytecodeParameterTypes = metaMethod.getParameterTypes();
+    private NewStaticMetaMethod(CachedMethod method) {
+        super(method);
+        bytecodeParameterTypes = method.getParameterTypes();
         int size = bytecodeParameterTypes !=null ? bytecodeParameterTypes.length : 0;
         CachedClass[] logicalParameterTypes;
         if (size <= 1) {
@@ -77,11 +69,25 @@ public class NewStaticMetaMethod extends MetaMethod {
         return bytecodeParameterTypes;
     }
 
+    public ParameterTypes getParamTypes() {
+        return paramTypes;
+    }
+
     public Object invoke(Object object, Object[] arguments) {
         int size = arguments.length;
         Object[] newArguments = new Object[size + 1];
         System.arraycopy(arguments, 0, newArguments, 1, size);
         newArguments[0] = null;
-        return metaMethod.invoke(null, newArguments);
+        return super.invoke(null, newArguments);
+    }
+
+    private static HashMap cache = new HashMap();
+    public synchronized static NewStaticMetaMethod createNewStaticMetaMethod(CachedMethod element) {
+        NewStaticMetaMethod method = (NewStaticMetaMethod) cache.get(element);
+        if (method == null) {
+            method = new NewStaticMetaMethod(element);
+            cache.put(element, method);
+        }
+        return method;
     }
 }

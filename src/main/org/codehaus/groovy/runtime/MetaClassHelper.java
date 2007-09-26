@@ -570,8 +570,7 @@ public class MetaClassHelper {
 
     public static ParameterTypes getParameterTypes(Object methodOrConstructor) {
         if (methodOrConstructor instanceof ParameterTypes) {
-            ParameterTypes pt = (CachedConstructor) methodOrConstructor;
-            return pt;
+            return (CachedConstructor) methodOrConstructor;
         }
         if (methodOrConstructor instanceof MetaMethod) {
             return ((MetaMethod) methodOrConstructor).getParamTypes();

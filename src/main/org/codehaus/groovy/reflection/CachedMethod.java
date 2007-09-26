@@ -16,6 +16,7 @@
 package org.codehaus.groovy.reflection;
 
 import org.codehaus.groovy.runtime.InvokerInvocationException;
+import org.codehaus.groovy.runtime.metaclass.ReflectionMetaMethod;
 import org.codehaus.groovy.classgen.BytecodeHelper;
 
 import java.lang.reflect.InvocationTargetException;
@@ -30,6 +31,7 @@ public class CachedMethod extends ParameterTypes {
     public final CachedClass cachedClass;
 
     public final Method cachedMethod;
+    private boolean alreadySetAccessible;
 
     public CachedMethod(CachedClass clazz, Method method) {
         this.cachedMethod = method;
@@ -81,5 +83,19 @@ public class CachedMethod extends ParameterTypes {
 
     public String getSignature() {
         return getName() + getDescriptor();
+    }
+
+    public Object invokeByReflection(Object object, Object[] arguments) throws IllegalAccessException, InvocationTargetException {
+        if ( !alreadySetAccessible ) {
+            AccessController.doPrivileged(new PrivilegedAction() {
+                public Object run() {
+                    cachedMethod.setAccessible(true);
+                    return null;
+                }
+            });
+            alreadySetAccessible = true;
+        }
+
+        return cachedMethod.invoke(object, arguments);
     }
 }

@@ -17,14 +17,13 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
 import groovy.lang.MetaMethod;
+import org.codehaus.groovy.reflection.CachedClass;
+import org.codehaus.groovy.reflection.CachedMethod;
+import org.codehaus.groovy.runtime.metaclass.StdMetaMethod;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
-
-import org.codehaus.groovy.reflection.CachedClass;
-import org.codehaus.groovy.reflection.ReflectionCache;
-import org.codehaus.groovy.reflection.CachedMethod;
 
 /**
  * @author sam
@@ -87,7 +86,7 @@ public class GroovyCategorySupport {
     private static class CategoryMethod extends NewInstanceMetaMethod implements Comparable {
         private final Class metaClass;
 
-        public CategoryMethod(MetaMethod metaMethod, Class metaClass) {
+        public CategoryMethod(CachedMethod metaMethod, Class metaClass) {
             super(metaMethod);
             this.metaClass = metaClass;
         }
@@ -173,12 +172,13 @@ public class GroovyCategorySupport {
         for (int i = 0; i < methods.length; i++) {
             Method method = methods[i];
             if (Modifier.isStatic(method.getModifiers())) {
-                CachedClass[] paramTypes = CachedMethod.find(method).getParameterTypes();
+                final CachedMethod cachedMethod = CachedMethod.find(method);
+                CachedClass[] paramTypes = cachedMethod.getParameterTypes();
                 if (paramTypes.length > 0) {
                     CachedClass metaClass = paramTypes[0];
                     Map metaMethodsMap = getMetaMethods(properties, metaClass.cachedClass);
                     List methodList = getMethodList(metaMethodsMap, method.getName());
-                    MetaMethod mmethod = new CategoryMethod(new MetaMethod(CachedMethod.find(method), paramTypes), metaClass.cachedClass);
+                    MetaMethod mmethod = new CategoryMethod(cachedMethod, metaClass.cachedClass);
                     methodList.add(mmethod);
                     Collections.sort(methodList);
                 }

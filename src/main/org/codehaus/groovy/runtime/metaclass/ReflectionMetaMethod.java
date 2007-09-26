@@ -18,45 +18,43 @@ package org.codehaus.groovy.runtime.metaclass;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.CachedClass;
-import org.codehaus.groovy.reflection.ReflectionCache;
+import org.codehaus.groovy.reflection.ParameterTypes;
 
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
+import java.util.HashMap;
 
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 
 public class ReflectionMetaMethod extends MetaMethod {
-    private CachedMethod method;
-    boolean alreadySetAccessible;
+    protected final CachedMethod method;
 
-  public ReflectionMetaMethod(CachedMethod method, CachedClass[] pt) {
-      super(method, pt);
-      this.method = method;
-  }
+    protected ReflectionMetaMethod(CachedMethod method) {
+          this.method = method;
+      }
 
-    public ReflectionMetaMethod(CachedMethod method) {
-        this(method, method.getParameterTypes());
+    public int getModifiers() {
+        return method.getModifiers();
+    }
+
+    public String getName() {
+        return method.getName();
+    }
+
+    public Class getReturnType() {
+        return method.getReturnType();
+    }
+
+    public CachedClass getDeclaringClass() {
+        return method.cachedClass;
+    }
+
+    public ParameterTypes getParamTypes() {
+        return method;
     }
 
     public Object invoke(Object object, Object[] arguments) {
-    	if ( !alreadySetAccessible ) {
-	    	AccessController.doPrivileged(new PrivilegedAction() {
-	    		public Object run() {
-	    			method.cachedMethod.setAccessible(true);
-	                return null;
-	    		}
-	    	});
-	    	alreadySetAccessible = true;
-    	}
-
-        //        System.out.println("About to invoke method: " + method);
-        //        System.out.println("Object: " + object);
-        //        System.out.println("Using arguments: " + InvokerHelper.toString(arguments));
-
         try {
-            return method.cachedMethod.invoke(object, arguments);
+            return method.invokeByReflection(object, arguments);
         } catch (IllegalArgumentException e) {
             throw new InvokerInvocationException(e);
         } catch (IllegalAccessException e) {
@@ -64,5 +62,15 @@ public class ReflectionMetaMethod extends MetaMethod {
         } catch (InvocationTargetException e) {
             throw new InvokerInvocationException(e);
         }
+    }
+
+    private static HashMap cache = new HashMap();
+    public synchronized static ReflectionMetaMethod createReflectionMetaMethod(CachedMethod element) {
+        ReflectionMetaMethod method = (ReflectionMetaMethod) cache.get(element);
+        if (method == null) {
+            method = new ReflectionMetaMethod(element);
+            cache.put(element, method);
+        }
+        return method;
     }
 }

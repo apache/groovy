@@ -16,8 +16,12 @@
 package org.codehaus.groovy.classgen;
 
 import groovy.lang.MetaMethod;
-import org.objectweb.asm.*;
 import org.codehaus.groovy.reflection.CachedClass;
+import org.codehaus.groovy.runtime.metaclass.StdMetaMethod;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.Label;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -102,7 +106,7 @@ public class ReflectorGenerator implements Opcodes {
         int[] indices = new int[methodCount];
         for (int i = 0; i < methodCount; i++) {
             labels[i] = new Label();
-            MetaMethod method = (MetaMethod) methods.get(i);
+            StdMetaMethod method = (StdMetaMethod) methods.get(i);
             method.setMethodIndex(i + 1);
             indices[i] = method.getMethodIndex();
         }
@@ -143,7 +147,7 @@ public class ReflectorGenerator implements Opcodes {
                     null);
             helper = new BytecodeHelper(mv);
 
-            MetaMethod method = (MetaMethod) methods.get(i);
+            StdMetaMethod method = (StdMetaMethod) methods.get(i);
             invokeMethod(method, mv);
             if (method.getReturnType() == void.class) {
                 mv.visitInsn(ACONST_NULL);
@@ -154,15 +158,15 @@ public class ReflectorGenerator implements Opcodes {
         }
     }
 
-    protected void invokeMethod(MetaMethod method, MethodVisitor mv) {
+    protected void invokeMethod(StdMetaMethod method, MethodVisitor mv) {
         // compute class to make the call on
-        Class callClass = method.getInterfaceClass();
-        boolean useInterface = false;
-        if (callClass == null) {
-            callClass = method.getCallClass();
-        } else {
-            useInterface = true;
-        }
+        Class callClass = method.getDeclaringClass().cachedClass;
+        boolean useInterface = callClass.isInterface();
+//        if (callClass == null) {
+//            callClass = method.getCallClass();
+//        } else {
+//            useInterface = true;
+//        }
         // get bytecode information
         String type = BytecodeHelper.getClassInternalName(callClass.getName());
         String descriptor = BytecodeHelper.getMethodDescriptor(method.getReturnType(), method.getNativeParameterTypes());

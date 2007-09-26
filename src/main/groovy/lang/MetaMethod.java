@@ -35,41 +35,25 @@ import java.security.PrivilegedAction;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class MetaMethod implements Cloneable {
+public abstract class MetaMethod implements Cloneable {
 
-    private String name;
-    private Class callClass;
-    private CachedClass declaringClass;
-    private Class interfaceClass;
-    private Class returnType;
-    private int modifiers;
-    private Reflector reflector;
-    private int methodIndex;
-    private CachedMethod method;
-
-    protected ParameterTypes paramTypes;
-
-    public MetaMethod(String name, Class declaringClass, CachedClass[] parameterTypes, Class returnType, int modifiers) {
-        this.name = name;
-        this.callClass = declaringClass;
-        this.declaringClass = ReflectionCache.getCachedClass(declaringClass);
-        this.returnType = returnType;
-        this.modifiers = modifiers;
-        paramTypes = new ParameterTypes(parameterTypes);
+    public MetaMethod() {
     }
 
-    public MetaMethod(CachedMethod method, CachedClass[] parameterTypes) {
-        this(
-            method.getName(),
-            method.getDeclaringClass(),
-            parameterTypes,
-            method.getReturnType(),
-            method.getModifiers());
-        this.method = method;
-    }
+    public abstract int getModifiers();
 
-    public MetaMethod(MetaMethod metaMethod) {
-        this(metaMethod.method, metaMethod.getParameterTypes());
+    public abstract String getName();
+
+    public abstract Class getReturnType();
+
+    public abstract CachedClass getDeclaringClass();
+
+    public abstract ParameterTypes getParamTypes();
+
+    public abstract Object invoke(Object object, Object[] arguments);
+
+    public final CachedClass [] getParameterTypes() {
+        return getParamTypes().getParameterTypes();
     }
 
     /**
@@ -90,71 +74,14 @@ public class MetaMethod implements Cloneable {
                     + InvokerHelper.toString(arguments));
         }
     }
-
-    public Object invoke(Object object, Object[] arguments) {
-        try {
-            if (reflector != null) {
-                return reflector.invoke(this, object, arguments);
-            } else {
-                AccessController.doPrivileged(new PrivilegedAction() {
-                    public Object run() {
-                        method.cachedMethod.setAccessible(true);
-                        return null;
-                    }
-                });
-                return method.cachedMethod.invoke(object, arguments);
-            }
-        } catch (InvocationTargetException ite) {
-            throw new InvokerInvocationException(ite.getCause());
-        } catch (Exception e) {
-            throw new InvokerInvocationException(e);
-        }
-    }
-
-    public Class getCallClass() {
-        return callClass;
-    }
-
-    public void setCallClass(Class c) {
-        callClass=c;
-    }
-
-    public int getMethodIndex() {
-        return methodIndex;
-    }
-
-    public void setMethodIndex(int methodIndex) {
-        this.methodIndex = methodIndex;
-    }
-
-    public int getModifiers() {
-        return modifiers;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public Class getReturnType() {
-        return returnType;
-    }
-
-    public Reflector getReflector() {
-        return reflector;
-    }
-
-    public void setReflector(Reflector reflector) {
-        this.reflector = reflector;
-    }
-
     public boolean isMethod(Method method) {
-        return name.equals(method.getName())
-            && modifiers == method.getModifiers()
-            && returnType.equals(method.getReturnType())
+        return getName().equals(method.getName())
+            && getModifiers() == method.getModifiers()
+            && getReturnType().equals(method.getReturnType())
             && equal(getParameterTypes(), method.getParameterTypes());
     }
 
-    protected boolean equal(CachedClass[] a, Class[] b) {
+    protected static boolean equal(CachedClass[] a, Class[] b) {
         if (a.length == b.length) {
             for (int i = 0, size = a.length; i < size; i++) {
                 if (!a[i].cachedClass.equals(b[i])) {
@@ -166,7 +93,7 @@ public class MetaMethod implements Cloneable {
         return false;
     }
 
-    protected boolean equal(CachedClass[] a, CachedClass[] b) {
+    protected static boolean equal(CachedClass[] a, CachedClass[] b) {
         if (a.length == b.length) {
             for (int i = 0, size = a.length; i < size; i++) {
                 if (a[i] != b[i]) {
@@ -181,13 +108,13 @@ public class MetaMethod implements Cloneable {
     public String toString() {
         return super.toString()
             + "[name: "
-            + name
+            + getName()
             + " params: "
             + InvokerHelper.toString(getParameterTypes())
             + " returns: "
-            + returnType
+            + getReturnType()
             + " owner: "
-            + callClass
+            + getDeclaringClass()
             + "]";
     }
 
@@ -201,19 +128,19 @@ public class MetaMethod implements Cloneable {
     }
 
     public boolean isStatic() {
-        return (modifiers & Modifier.STATIC) != 0;
+        return (getModifiers() & Modifier.STATIC) != 0;
     }
 
-    public boolean isPrivate() {
-        return (modifiers & Modifier.PRIVATE) != 0;
+    public final boolean isPrivate() {
+        return (getModifiers() & Modifier.PRIVATE) != 0;
     }
 
-    public boolean isProtected() {
-        return (modifiers & Modifier.PROTECTED) != 0;
+    public final boolean isProtected() {
+        return (getModifiers() & Modifier.PROTECTED) != 0;
     }
 
-    public boolean isPublic() {
-        return (modifiers & Modifier.PUBLIC) != 0;
+    public final boolean isPublic() {
+        return (getModifiers() & Modifier.PUBLIC) != 0;
     }
 
     /**
@@ -221,43 +148,23 @@ public class MetaMethod implements Cloneable {
      * @return true if the given method has the same name, parameters, return type
      * and modifiers but may be defined on another type
      */
-    public boolean isSame(MetaMethod method) {
-        return name.equals(method.getName())
-            && compatibleModifiers(modifiers, method.getModifiers())
-            && returnType.equals(method.getReturnType())
+    public final boolean isSame(MetaMethod method) {
+        return getName().equals(method.getName())
+            && compatibleModifiers(getModifiers(), method.getModifiers())
+            && getReturnType().equals(method.getReturnType())
             && equal(getParameterTypes(), method.getParameterTypes());
     }
 
-    protected boolean compatibleModifiers(int modifiersA, int modifiersB) {
+    private static boolean compatibleModifiers(int modifiersA, int modifiersB) {
         int mask = Modifier.PRIVATE | Modifier.PROTECTED | Modifier.PUBLIC | Modifier.STATIC;
         return (modifiersA & mask) == (modifiersB & mask);
-    }
-
-    public Class getInterfaceClass() {
-        return interfaceClass;
-    }
-
-    public void setInterfaceClass(Class interfaceClass) {
-        this.interfaceClass = interfaceClass;
     }
 
     public boolean isCacheable() {
         return true;
     }
 
-    public CachedClass getDeclaringClass() {
-        return declaringClass;
-    }
-
-    public final CachedClass [] getParameterTypes() {
-      return paramTypes.getParameterTypes();
-    }
-
-    public final ParameterTypes getParamTypes() {
-      return paramTypes;
-    }
-
-    public Class[] getNativeParameterTypes() {
-        return paramTypes.getNativeParameterTypes();
+    public final Class[] getNativeParameterTypes() {
+        return getParamTypes().getNativeParameterTypes();
     }
 }

@@ -15,12 +15,13 @@
  */
 package org.codehaus.groovy.runtime;
 
-import groovy.lang.MetaMethod;
+import org.codehaus.groovy.reflection.CachedClass;
+import org.codehaus.groovy.reflection.CachedMethod;
+import org.codehaus.groovy.reflection.ParameterTypes;
+import org.codehaus.groovy.runtime.metaclass.StdMetaMethod;
 
 import java.lang.reflect.Modifier;
-
-import org.codehaus.groovy.reflection.ParameterTypes;
-import org.codehaus.groovy.reflection.CachedClass;
+import java.util.HashMap;
 
 /**
  * A MetaMethod implementation where the underlying method is really a static
@@ -32,28 +33,17 @@ import org.codehaus.groovy.reflection.CachedClass;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class NewInstanceMetaMethod extends MetaMethod {
+public class NewInstanceMetaMethod extends StdMetaMethod {
 
     private static final CachedClass[] EMPTY_TYPE_ARRAY = {};
 
-    private MetaMethod metaMethod;
     private CachedClass[] bytecodeParameterTypes ;
+    private ParameterTypes paramTypes;
 
 
-    public NewInstanceMetaMethod(MetaMethod metaMethod) {
-        super(metaMethod);
-        this.metaMethod = metaMethod;
-        init();
-    }
-
-    public NewInstanceMetaMethod(String name, Class declaringClass, CachedClass[] parameterTypes, Class returnType, int modifiers) {
-        super(name, declaringClass, parameterTypes, returnType, modifiers);
-        this.metaMethod = new MetaMethod(name, declaringClass, parameterTypes,returnType, modifiers);
-        init();
-    }
-
-    private void init() {
-        bytecodeParameterTypes = metaMethod.getParameterTypes();
+    NewInstanceMetaMethod(CachedMethod method) {
+        super(method);
+        bytecodeParameterTypes = method.getParameterTypes();
         int size = bytecodeParameterTypes !=null ? bytecodeParameterTypes.length : 0;
         CachedClass[] logicalParameterTypes;
         if (size <= 1) {
@@ -63,6 +53,10 @@ public class NewInstanceMetaMethod extends MetaMethod {
             System.arraycopy(bytecodeParameterTypes, 1, logicalParameterTypes, 0, size);
         }
         paramTypes = new ParameterTypes(logicalParameterTypes);
+    }
+
+    public ParameterTypes getParamTypes() {
+        return paramTypes;
     }
 
     public CachedClass getDeclaringClass() {
@@ -88,10 +82,20 @@ public class NewInstanceMetaMethod extends MetaMethod {
         Object[] newArguments = new Object[size + 1];
         newArguments[0] = object;
         System.arraycopy(arguments, 0, newArguments, 1, size);
-        return metaMethod.invoke(null, newArguments);
+        return super.invoke(null, newArguments);
     }
 
     public CachedClass getOwnerClass() {
         return getBytecodeParameterTypes()[0];
+    }
+
+    private static HashMap cache = new HashMap();
+    public synchronized static NewInstanceMetaMethod createNewInstanceMetaMethod(CachedMethod element) {
+        NewInstanceMetaMethod method = (NewInstanceMetaMethod) cache.get(element);
+        if (method == null) {
+            method = new NewInstanceMetaMethod(element);
+            cache.put(element, method);
+        }
+        return method;
     }
 }

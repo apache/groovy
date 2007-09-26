@@ -17,9 +17,9 @@ package org.codehaus.groovy.runtime.metaclass;
 
 import groovy.lang.Closure;
 import groovy.lang.ClosureInvokingMethod;
-import org.codehaus.groovy.runtime.NewStaticMetaMethod;
-import org.codehaus.groovy.reflection.ParameterTypes;
+import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.CachedClass;
+import org.codehaus.groovy.reflection.ParameterTypes;
 import org.codehaus.groovy.reflection.ReflectionCache;
 
 import java.lang.reflect.Modifier;
@@ -31,10 +31,12 @@ import java.lang.reflect.Modifier;
  * @author Graeme Rocher
  * @since 01.1
  */
-public class ClosureStaticMetaMethod extends NewStaticMetaMethod implements ClosureInvokingMethod {
+public class ClosureStaticMetaMethod extends MetaMethod implements ClosureInvokingMethod {
 
 	private final Closure callable;
-	private CachedClass declaringClass;
+	private final CachedClass declaringClass;
+    private final ParameterTypes pt;
+    private final String name;
 
     /**
      *
@@ -43,32 +45,37 @@ public class ClosureStaticMetaMethod extends NewStaticMetaMethod implements Clos
      * @param c The closure that this ClosureMetaMethod will invoke when called
      */
     public ClosureStaticMetaMethod(String name, Class declaringClass, Closure c) {
-		super(name, declaringClass, new ParameterTypes(c.getParameterTypes()).getParameterTypes(), Object.class, Modifier.PUBLIC);
-		Class [] pt  = c.getParameterTypes();
-		if(pt == null) {
-			pt = new Class[0];
-		}
-        paramTypes = new ParameterTypes(pt);
+        pt = new ParameterTypes(c.getParameterTypes());
         this.callable = c;
 		this.declaringClass = ReflectionCache.getCachedClass(declaringClass);
-
+        this.name = name;
 	}
 
-	/* (non-Javadoc)
-	 * @see groovy.lang.MetaMethod#invoke(java.lang.Object, java.lang.Object[])
-	 */
 	public Object invoke(Object object, Object[] arguments) {
 		Closure cloned = (Closure) callable.clone();
 		cloned.setDelegate(object);
 		return cloned.call(arguments);
 	}
 
-    /* (non-Javadoc)
-	 * @see org.codehaus.groovy.runtime.NewStaticMetaMethod#getDeclaringClass()
-	 */
-	public CachedClass getDeclaringClass() {
+    public int getModifiers() {
+        return Modifier.PUBLIC | Modifier.STATIC;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public Class getReturnType() {
+        return Object.class;
+    }
+
+    public CachedClass getDeclaringClass() {
 		return this.declaringClass;
 	}
+
+    public ParameterTypes getParamTypes() {
+        return pt;
+    }
 
     /**
      * Retrieves the closure that is invoked by this MetaMethod
