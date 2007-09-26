@@ -1468,7 +1468,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                String methodName = (String) entry.getKey();
                // name too short?
                if (methodName.length() < 4) continue;
-               // possible getter/setter
+               // possible getter/setter?
                boolean isGetter = methodName.startsWith("get");
                boolean isSetter = methodName.startsWith("set");
                if (!isGetter && !isSetter) continue;

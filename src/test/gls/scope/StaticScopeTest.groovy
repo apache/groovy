@@ -4,22 +4,41 @@ import gls.scope.CompilableTestSupport
 
 public class StaticScopeTest extends CompilableTestSupport {
 
-   public void testNormalStaticScopeInScript() {
-     shouldNotCompile """
+    public void testNormalStaticScopeInScript() {
+        shouldNotCompile """
        static foo() {
          foo = 1
        }
      """
-      
-     shouldCompile """
+
+        shouldCompile """
        static foo() {
          def foo=1
        }
      """
-   }
-   
-   public void testNormalStaticScopeInclass() {     
-     assertScript """
+    }
+
+    public void testStaticImportInclass() {
+        assertScript """
+        import static Math.*
+        class B {
+            static main(args) { assert cos(2 * PI) == 1.0 }
+        }
+        """
+    }
+
+    public void testStaticImportProperty() {
+        assertScript """
+        import static A.*
+        class B {
+            static main(args) { assert temperature == 42 }
+        }
+        class A { static temperature = 42 }
+        """
+    }
+
+    public void testNormalStaticScopeInclass() {
+        assertScript """
        class A {
          static i
          static foo() {
@@ -29,7 +48,7 @@ public class StaticScopeTest extends CompilableTestSupport {
        A.foo()
        assert A.i == 1  
      """
-     shouldNotCompile """
+        shouldNotCompile """
        class A {
          def i
          static foo() {
@@ -38,36 +57,36 @@ public class StaticScopeTest extends CompilableTestSupport {
        }
      """
 
-   }
-   
-   public void testClosureInStaticScope() {
-     shouldCompile("""
+    }
+
+    public void testClosureInStaticScope() {
+        shouldCompile("""
        5.times { foo=2 }
      """)
-     
-     shouldCompile("""
+
+        shouldCompile("""
        5.times { foo=it }
      """)
-     
-   }
-   
-   public void testFullyQualifiedClassName() {
-      assertScript """
+
+    }
+
+    public void testFullyQualifiedClassName() {
+        assertScript """
         static foo() {java.lang.Integer}
         assert foo() == java.lang.Integer
       """
-      // TODO: removed while fixing GROOVY-2136, add back in
-//      shouldNotCompile """
-//        static foo() { java.lang.JavaOrGroovyThatsTheQuestion }
-//      """
-      shouldCompile """
+        // TODO: removed while fixing GROOVY-2136, add back in
+        //      shouldNotCompile """
+        //        static foo() { java.lang.JavaOrGroovyThatsTheQuestion }
+        //      """
+        shouldCompile """
         foo() { java.lang.JavaOrGroovyThatsTheQuestion }
       """
-   }
-   
-   public void testStaticPropertyInit() {
-      // GROOVY-1910
-      assertScript """
+    }
+
+    public void testStaticPropertyInit() {
+        // GROOVY-1910
+        assertScript """
         class Foo {
            static p1 = 1
            static p2 = p1
@@ -75,9 +94,9 @@ public class StaticScopeTest extends CompilableTestSupport {
         assert Foo.p2 == Foo.p1
         assert Foo.p1 == 1
       """
-      
-      // should not compile for mistyped name
-      shouldNotCompile """
+
+        // should not compile for mistyped name
+        shouldNotCompile """
         class Foo {
            static p1 = 1
            static p2 = x1
@@ -86,30 +105,30 @@ public class StaticScopeTest extends CompilableTestSupport {
         assert Foo.p1 == 1
         
       """
-   }
-   
-   public void testSpecialConstructorAccess() {
-     shouldNotCompile """
+    }
+
+    public void testSpecialConstructorAccess() {
+        shouldNotCompile """
        class A{ A(x){} }
        class B extends A {
          B(x) { super(nonExistingParameter) }
        }
      """
-     
-     shouldNotCompile """
+
+        shouldNotCompile """
        class A{ A(x){} }
        class B extends A {
          def doNotAccessDynamicFieldsOrProperties
          B(x) { super(doNotAccessDynamicFieldsOrProperties) }
        }
      """
-     
-     shouldCompile """
+
+        shouldCompile """
        class A{ A(x){} }
        class B extends A {
          static allowUsageOfStaticPropertiesAndFields
          B(x) { super(allowUsageOfStaticPropertiesAndFields) }
        }
-     """   
-   }
+     """
+    }
 }
