@@ -22,7 +22,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
 /**
  * A static method call on a class
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -38,15 +38,15 @@ public class StaticMethodCallExpression extends Expression {
         this.method = method;
         this.arguments = arguments;
     }
-    
+
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitStaticMethodCallExpression(this);
     }
-    
+
     public Expression transformExpression(ExpressionTransformer transformer) {
-        Expression ret = new StaticMethodCallExpression(getType(), method, transformer.transform(arguments)); 
+        Expression ret = new StaticMethodCallExpression(getOwnerType(), method, transformer.transform(arguments));
         ret.setSourcePosition(this);
-        return ret; 
+        return ret;
     }
 
     public Expression getArguments() {
@@ -58,12 +58,13 @@ public class StaticMethodCallExpression extends Expression {
     }
 
     public String getText() {
-        return getType().getName() + "." + method + arguments.getText();
+        return getOwnerType().getName() + "." + method + arguments.getText();
     }
 
     public String toString() {
         return super.toString() + "[" + getOwnerType().getName() + "#" + method + " arguments: " + arguments + "]";
     }
+
     public ClassNode getOwnerType() {
         return ownerType;
     }
