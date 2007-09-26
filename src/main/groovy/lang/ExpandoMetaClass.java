@@ -568,8 +568,11 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 				return new ExpandoMetaConstructor();
 			}
 			else {
-				return new ExpandoMetaProperty(property);
-			}
+                if (myMetaClass.hasProperty(this, property) == null)
+                  return new ExpandoMetaProperty(property);
+                else
+                  return myMetaClass.getProperty(this, property);
+            }
 		}
 		else {
 			return myMetaClass.getProperty(this, property);
