@@ -462,6 +462,22 @@ public class SwingBuilder extends FactoryBuilderSupport {
         return this;
     }
 
+    public SwingBuilder doLater(Closure c) {
+        c.setDelegate(this)
+        if (headless) {
+            c.call()
+        } else {
+            SwingUtilities.invokeLater(c.curry([this]))
+        }
+        return this
+    }
+
+    public SwingBuilder doOutside(Closure c) {
+        c.setDelegate(this);
+        new Thread(c.curry([this])).start()
+        return this
+    }
+
     public static SwingBuilder build(Closure c) {
         SwingBuilder builder = new SwingBuilder();
         return builder.edt(c);

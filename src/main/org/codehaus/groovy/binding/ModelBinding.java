@@ -33,7 +33,6 @@ public class ModelBinding extends GroovyObjectSupport implements BindingUpdatabl
 
     Object model;
     boolean bound;
-    
 
     final Map/*<String, PropertyBinding>*/ propertyBindings = new HashMap/*<String, PropertyBinding>*/();
     final List/*<FullBinding>*/ generatedBindings = new ArrayList/*<FullBinding>*/();
@@ -56,7 +55,7 @@ public class ModelBinding extends GroovyObjectSupport implements BindingUpdatabl
         while (iter.hasNext()) {
             ((PropertyBinding)iter.next()).setBean(model);
         }
-        //TODO only bind if already bound
+
         rebind();
         update();
     }

@@ -24,6 +24,13 @@ import org.codehaus.groovy.binding.ModelBinding
  */
 public class ModelFactory extends AbstractFactory {
 
+    // because isleaf is true we can keep state across calls assuming the same object
+    protected boolean doBind
+
+    public boolean isLeaf() {
+        return true
+    }
+
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
         if (value == null) {
             throw new RuntimeException("$name requires a value argument.");
@@ -31,9 +38,14 @@ public class ModelFactory extends AbstractFactory {
         ModelBinding mb = new ModelBinding(value);
 
         Object o = properties.remove("bind");
-        if ((o instanceof Boolean) && ((Boolean) o).booleanValue()) {
-            mb.bind();
-        }
+        doBind = (o instanceof Boolean) && ((Boolean) o).booleanValue()
         return mb;
     }
+
+    public void onNodeCompleted( FactoryBuilderSupport builder, Object parent, Object node ) {
+        if (doBind) {
+            node.bind()
+        }
+    }
+
 }

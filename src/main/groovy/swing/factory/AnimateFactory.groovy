@@ -80,7 +80,7 @@ public class AnimateFactory extends AbstractFactory {
             }
         }
 
-        builder.addDisposalClosure {fb.unbind()}
+        builder.addDisposalClosure(fb.&unbind)
         return fb;
     }
 

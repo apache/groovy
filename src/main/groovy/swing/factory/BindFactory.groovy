@@ -137,7 +137,7 @@ public class BindFactory extends AbstractFactory {
             fb.update();
         }
 
-        builder.addDisposalClosure {fb.unbind()}
+        builder.addDisposalClosure(fb.&unbind)
         return fb;
     }
 }

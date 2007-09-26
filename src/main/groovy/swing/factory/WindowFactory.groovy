@@ -23,6 +23,9 @@ import javax.swing.JWindow
 
 public class WindowFactory extends AbstractFactory {
     
+    LinkedList/*<JWindow>*/ packers = new LinkedList([null])
+    LinkedList/*<JWindow>*/ showers = new LinkedList([null])
+
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
         SwingBuilder.checkValueIsNull(value, name);
         //TODO we could make the value arg the owner, or a window to allow adding more compnents
@@ -41,9 +44,30 @@ public class WindowFactory extends AbstractFactory {
             window = new JWindow();
         }
         containingWindows.add(window);
-        builder.addDisposalClosure {window.dispose()}
+
+        Object o = properties.remove("pack")
+        if ((o instanceof Boolean) && ((Boolean) o).booleanValue()) {
+            packers.add(window)
+        }
+        o = properties.remove("show")
+        if ((o instanceof Boolean) && ((Boolean) o).booleanValue()) {
+            showers.add(window)
+        }
+
+        builder.addDisposalClosure(window.&dispose)
 
         return window;
+    }
+
+    public void onNodeCompleted( FactoryBuilderSupport builder, Object parent, Object node ) {
+        if (packers.last.is(node)) {
+            node.pack()
+            packers.removeLast()
+        }
+        if (showers.last.is(node)) {
+            node.visible = true
+            showers.removeLast()
+        }
     }
 
 }

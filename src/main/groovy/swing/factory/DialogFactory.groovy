@@ -22,29 +22,53 @@ import java.awt.Frame
 import javax.swing.JDialog
 
 public class DialogFactory extends AbstractFactory {
-    
+
+    LinkedList/*<JDialog>*/ packers = new LinkedList([null])
+    LinkedList/*<JDialog>*/ showers = new LinkedList([null])
+
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
         if (SwingBuilder.checkValueIsType(value, name, JDialog.class)) {
-            return value;
+            return value
         }
-        JDialog dialog;
-        Object owner = properties.remove("owner");
-        LinkedList containingWindows = builder.getContainingWindows();
+        JDialog dialog
+        Object owner = properties.remove("owner")
+        LinkedList containingWindows = builder.getContainingWindows()
         // if owner not explicit, use the last window type in the list
         if ((owner == null) && !containingWindows.isEmpty()) {
-            owner = containingWindows.getLast();
+            owner = containingWindows.getLast()
         }
         if (owner instanceof Frame) {
-            dialog = new JDialog((Frame) owner);
+            dialog = new JDialog((Frame) owner)
         } else if (owner instanceof Dialog) {
-            dialog = new JDialog((Dialog) owner);
+            dialog = new JDialog((Dialog) owner)
         } else {
-            dialog = new JDialog();
+            dialog = new JDialog()
         }
-        containingWindows.add(dialog);
-        builder.addDisposalClosure {dialog.dispose()}
+        containingWindows.add(dialog)
 
-        return dialog;
+        Object o = properties.remove("pack")
+        if ((o instanceof Boolean) && ((Boolean) o).booleanValue()) {
+            packers.add(dialog)
+        }
+        o = properties.remove("show")
+        if ((o instanceof Boolean) && ((Boolean) o).booleanValue()) {
+            showers.add(dialog)
+        }
+
+        builder.addDisposalClosure(dialog.&dispose)
+
+        return dialog
+    }
+
+    public void onNodeCompleted( FactoryBuilderSupport builder, Object parent, Object node ) {
+        if (packers.last.is(node)) {
+            node.pack()
+            packers.removeLast()
+        }
+        if (showers.last.is(node)) {
+            node.visible = true
+            showers.removeLast()
+        }
     }
 
 }

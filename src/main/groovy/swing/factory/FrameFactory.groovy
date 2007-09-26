@@ -21,15 +21,39 @@ import javax.swing.JFrame
 
 public class FrameFactory extends AbstractFactory {
     
+    LinkedList/*<JFrame>*/ packers = new LinkedList([null])
+    LinkedList/*<JFrame>*/ showers = new LinkedList([null])
+
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
         if (SwingBuilder.checkValueIsType(value, name, JFrame.class)) {
             return value;
         }
         JFrame frame = new JFrame();
         builder.getContainingWindows().add(frame);
-        builder.addDisposalClosure {frame.dispose()}
+
+        Object o = properties.remove("pack")
+        if ((o instanceof Boolean) && ((Boolean) o).booleanValue()) {
+            packers.add(frame)
+        }
+        o = properties.remove("show")
+        if ((o instanceof Boolean) && ((Boolean) o).booleanValue()) {
+            showers.add(frame)
+        }
+
+        builder.addDisposalClosure(frame.&dispose)
 
         return frame;
+    }
+
+    public void onNodeCompleted( FactoryBuilderSupport builder, Object parent, Object node ) {
+        if (packers.last.is(node)) {
+            node.pack()
+            packers.removeLast()
+        }
+        if (showers.last.is(node)) {
+            node.visible = true
+            showers.removeLast()
+        }
     }
 
 }
