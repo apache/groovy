@@ -686,6 +686,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 
 
 					addMetaMethod(metaMethod);
+                    dropMethodCache(methodName);
                     expandoMethods.put(key,metaMethod);
 
 					if(inited && isGetter(methodName, metaMethod.getParameterTypes())) {
@@ -846,6 +847,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
                     MethodKey key = new DefaultCachedMethodKey(theClass,methodName, metaMethod.getParameterTypes(), false );
 
                     addMetaMethod(metaMethod);
+                    dropStaticMethodCache (methodName);
                     cacheStaticMethod(key,metaMethod);
 
                     if(isGetter(methodName, metaMethod.getParameterTypes())) {

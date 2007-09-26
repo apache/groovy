@@ -23,9 +23,19 @@ class ExpandoMetaClassTest extends GroovyTestCase {
 
     void testOverrideStaticMethod() {        
         TestStatic.metaClass.'static'.f = { "first" }
-        TestStatic.metaClass.'static'.f = { "second" }
+        assertEquals "first",TestStatic.f("")
 
+        TestStatic.metaClass.'static'.f = { "second" }
         assertEquals "second",TestStatic.f("")
+    }
+
+
+    void testOverrideMethod() {
+        TestStatic.metaClass.f = { "first" }
+        assertEquals "first",new TestStatic ().f("")
+
+        TestStatic.metaClass.f = { "second" }
+        assertEquals "second",new TestStatic ().f("")
     }
 
 

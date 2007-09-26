@@ -2331,6 +2331,22 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
        }
    }
 
+    protected void dropStaticMethodCache(String name) {
+        for (Iterator it = staticMethodCache.keySet().iterator(); it.hasNext(); ) {
+            MethodKey k = (MethodKey) it.next();
+            if (name.equals(k.getName()))
+              it.remove();
+        }
+    }
+
+    protected void dropMethodCache(String name) {
+        for (Iterator it = methodCache.keySet().iterator(); it.hasNext(); ) {
+            MethodKey k = (MethodKey) it.next();
+            if (name.equals(k.getName()))
+              it.remove();
+        }
+    }
+
    private static class MethodIndexAction {
        public void iterate(MethodIndex classMethodIndex){
            for (Iterator iter = classMethodIndex.getEntrySetIterator(); iter.hasNext();) {
