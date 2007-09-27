@@ -18,6 +18,9 @@ package groovy.swing.factory
 import groovy.swing.binding.AbstractButtonProperties
 import groovy.swing.binding.JSliderProperties
 import groovy.swing.binding.JTextComponentProperties
+
+import java.util.Map.Entry;
+
 import org.codehaus.groovy.binding.*
 
 /**
@@ -140,4 +143,32 @@ public class BindFactory extends AbstractFactory {
         builder.addDisposalClosure(fb.&unbind)
         return fb;
     }
+
+    public static Closure attributeDelegate =
+        { FactoryBuilderSupport builder, Object node, Map attributes ->
+            Iterator iter = attributes.entrySet().iterator()
+            while (iter.hasNext()) {
+                Entry entry = (Entry) iter.next()
+                String property = entry.key.toString();
+                Object value = entry.value;
+                if (value instanceof FullBinding) {
+                    FullBinding fb = (FullBinding) value;
+                    PropertyBinding ptb = new PropertyBinding(node, property);
+                    fb.setTargetBinding(ptb);
+                    try {
+                        fb.update();
+                    } catch (Exception e) {
+                        // just eat it?
+                    }
+                    try {
+                        fb.rebind();
+                    } catch (Exception e) {
+                        // just eat it?
+                    }
+                    // this is why we cannot use entrySet().each { }
+                    iter.remove();
+                }
+            }
+        }
+
 }

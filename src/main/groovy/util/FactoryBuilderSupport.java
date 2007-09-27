@@ -23,9 +23,9 @@ import groovy.lang.MissingMethodException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -87,7 +87,8 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
         }
     }
 
-    private Stack contexts = new Stack();
+    private LinkedList contexts = new LinkedList();
+    private LinkedList/*<Closure>*/ attributeDelegates = new LinkedList/*<Closure>*/(); //
     private Map factories = new HashMap();
     private Closure nameMappingClosure;
     private FactoryBuilderSupport proxyBuilder;
@@ -146,6 +147,24 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
         return result;
     }
 
+    /**
+     * Add an attribute delegate so it can intercept attributes being set.
+     * Attribute delegates are fire in a FILO pattern, so that nested delegates
+     * getfirst crack.
+     * @param attrDelegate
+     */
+    public void addAttributeDelegate( Closure attrDelegate ) {
+        attributeDelegates.addFirst( attrDelegate );
+    }
+
+    /**
+     * remove the most recently added instance of teh attribute delegate.
+     * @param attrDelegate
+     */
+    public void removeAttributeDelegat( Closure attrDelegate ) {
+        attributeDelegates.remove( attrDelegate );
+    }
+
     public void registerBeanFactory( String theName, final Class beanClass ) {
         registerFactory( theName, new AbstractFactory(){
             public Object newInstance( FactoryBuilderSupport builder, Object name, Object value,
@@ -187,7 +206,7 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
             throw new RuntimeException( "Failed to create component for '" + name + "' reason: "
                     + e, e );
         }
-        postIstantiate( name, attributes, node );
+        postInstantiate( name, attributes, node );
         handleNodeAttributes( node, attributes );
         return node;
     }
@@ -321,13 +340,17 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
             return;
         }
 
+        for( Iterator iter = attributeDelegates.iterator(); iter.hasNext(); ) {
+            ( (Closure) iter.next()).call( new Object[] {this, node, attributes} ) ;
+        }
+
         if( getCurrentFactory().onHandleNodeAttributes( this, node, attributes ) ){
             setNodeAttributes( node, attributes );
         }
     }
 
     protected void newContext() {
-        contexts.push( new HashMap() );
+        contexts.addFirst( new HashMap() );
     }
 
     /**
@@ -342,13 +365,13 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
     }
 
     protected Map popContext() {
-        return (Map) contexts.pop();
+        return (Map) contexts.removeFirst();
     }
 
     /**
      * A hook after the factory creates the node and before attributes are set
      */
-    protected void postIstantiate( Object name, Map attributes, Object node ) {
+    protected void postInstantiate( Object name, Map attributes, Object node ) {
     }
 
     /**

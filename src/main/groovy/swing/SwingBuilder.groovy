@@ -218,53 +218,6 @@ public class SwingBuilder extends FactoryBuilderSupport {
         return widget;
     }
 
-    /**
-     * Total override to support bindings efficiently and in order
-     */
-    protected void setNodeAttributes(Object node, Map attributes) {
-
-        // some special cases...
-        if (attributes.containsKey("buttonGroup")) {
-            Object o = attributes.get("buttonGroup");
-            if ((o instanceof ButtonGroup) && (node instanceof AbstractButton)) {
-                ((AbstractButton) node).getModel().setGroup((ButtonGroup) o);
-                attributes.remove("buttonGroup");
-            }
-        }
-
-        // this next statement nd if/else is a workaround until GROOVY-305 is fixed
-        Object mnemonic = attributes.remove("mnemonic");
-        if (mnemonic != null) {
-            if (mnemonic instanceof Number) {
-                InvokerHelper.setProperty(node, "mnemonic", new Character((char) ((Number) mnemonic).intValue()));
-            } else {
-                InvokerHelper.setProperty(node, "mnemonic", new Character(mnemonic.toString().charAt(0)));
-            }
-        }
-
-        for (Entry entry in attributes.entrySet()) {
-            String property = entry.key.toString();
-            Object value = entry.value;
-            if (value instanceof FullBinding) {
-                FullBinding fb = (FullBinding) value;
-                PropertyBinding ptb = new PropertyBinding(node, property);
-                fb.setTargetBinding(ptb);
-                try {
-                    fb.update();
-                } catch (Exception e) {
-                    // just eat it?
-                }
-                try {
-                    fb.rebind();
-                } catch (Exception e) {
-                    // just eat it?
-                }
-            } else {
-                InvokerHelper.setProperty(node, property, value);
-            }
-        }
-    }
-
     public static String capitalize(String text) {
         char ch = text.charAt(0);
         if (Character.isUpperCase(ch)) {
@@ -282,8 +235,17 @@ public class SwingBuilder extends FactoryBuilderSupport {
         //
         registerFactory("action", new ActionFactory());
         registerFactory("actions", new CollectionFactory());
-        registerBeanFactory("buttonGroup", ButtonGroup);
         registerFactory("map", new MapFactory());
+        registerBeanFactory("buttonGroup", ButtonGroup);
+        addAttributeDelegate {builder, node, attributes ->
+            if (attributes.containsKey("buttonGroup")) {
+                def o = attributes.get("buttonGroup")
+                if ((o instanceof ButtonGroup) && (node instanceof AbstractButton)) {
+                    node.model.group = o
+                    attributes.remove("buttonGroup")
+                }
+            }
+        }
 
         // binding related classes
         try {
@@ -295,6 +257,7 @@ public class SwingBuilder extends FactoryBuilderSupport {
         }
 
         registerFactory("bind", new BindFactory());
+        addAttributeDelegate(BindFactory.attributeDelegate)
         registerFactory("model", new ModelFactory());
 
         // ulimate pass through types
