@@ -36,7 +36,6 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
     private boolean stillResolving;
     private boolean isSpecialContructorCall;
     private boolean inClosure;
-    private boolean isTopLevelProperty;
     private boolean inPropertyExpression;
 
     public StaticImportVisitor(CompilationUnit cu) {
@@ -109,24 +108,18 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
     }
 
     protected Expression transformPropertyExpression(PropertyExpression pe) {
-        boolean itlp = isTopLevelProperty;
         boolean ipe = inPropertyExpression;
         Expression objectExpression = pe.getObjectExpression();
         inPropertyExpression = true;
-        isTopLevelProperty = !(objectExpression.getClass() == PropertyExpression.class);
-        objectExpression = transform(objectExpression);
+        objectExpression = objectExpression.transformExpression(this);
         inPropertyExpression = false;
-        Expression property = transform(pe.getProperty());
-        isTopLevelProperty = itlp;
+        Expression property = pe.getProperty().transformExpression(this);
         inPropertyExpression = ipe;
 
         boolean spreadSafe = pe.isSpreadSafe();
         pe = new PropertyExpression(objectExpression, property, pe.isSafe());
         pe.setSpreadSafe(spreadSafe);
-
-        if (isTopLevelProperty) {
-            checkStaticScope(pe);
-        }
+        checkStaticScope(pe);
         return pe;
     }
 

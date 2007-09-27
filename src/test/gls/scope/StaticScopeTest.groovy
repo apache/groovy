@@ -72,14 +72,13 @@ public class StaticScopeTest extends CompilableTestSupport {
         assertScript """
         static foo() {java.lang.Integer}
         assert foo() == java.lang.Integer
-      """
-        // TODO: removed while fixing GROOVY-2136, add back in
-        //      shouldNotCompile """
-        //        static foo() { java.lang.JavaOrGroovyThatsTheQuestion }
-        //      """
+        """
+        shouldNotCompile """
+        static foo() { java.lang.JavaOrGroovyThatsTheQuestion }
+        """
         shouldCompile """
         foo() { java.lang.JavaOrGroovyThatsTheQuestion }
-      """
+        """
     }
 
     public void testStaticPropertyInit() {
