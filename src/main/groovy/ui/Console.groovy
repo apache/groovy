@@ -20,6 +20,7 @@ import groovy.inspect.swingui.ObjectBrowser
 import groovy.swing.SwingBuilder
 import groovy.ui.text.FindReplaceUtility
 import java.awt.*
+import java.awt.image.BufferedImage
 import java.awt.event.KeyEvent
 import java.util.List
 import javax.swing.*
@@ -30,6 +31,7 @@ import javax.swing.text.StyleConstants
 import javax.swing.text.StyleContext
 import javax.swing.text.StyledDocument
 import org.codehaus.groovy.runtime.InvokerHelper
+import org.codehaus.groovy.runtime.StackTraceUtils
 
 // to disambiguate from java.awt.List
 /**
@@ -108,6 +110,14 @@ class Console implements CaretListener {
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
         System.setProperty("apple.laf.useScreenMenuBar", "true")
         System.setProperty("com.apple.mrj.application.apple.menu.about.name", "GroovyConsole")
+        System.setProperty("groovy.sanitized.stacktraces", """org.codehaus.groovy.runtime.
+                org.codehaus.groovy.
+                groovy.lang.
+                gjdk.groovy.lang.
+                sun.
+                java.lang.reflect.
+                java.lang.Thread
+                groovy.ui.Console""")
 
         swing = new SwingBuilder()
 
@@ -179,7 +189,7 @@ class Console implements CaretListener {
             action(id: 'cutAction',
                 name: 'Cut',
                 closure: this.&cut,
-                mnemonic: 't',
+                mnemonic: 'T',
                 accelerator: shortcut('X')
             )
             action(id: 'copyAction',
@@ -215,7 +225,7 @@ class Console implements CaretListener {
             action(id: 'clearOutputAction',
                 name: 'Clear Output',
                 closure: this.&clearOutput, 
-                mnemonic: 'l', 
+                mnemonic: 'O',
                 accelerator: shortcut('W')
             )
             action(id: 'runAction',
@@ -242,6 +252,17 @@ class Console implements CaretListener {
                 closure: this.&captureStdOut, 
                 mnemonic: 'C'
             )
+            action(id: 'fullStackTracesAction',
+                name: 'Show Full Stack Traces',
+                closure: this.&fullStackTraces,
+                mnemonic: 'F'
+            )
+            try {
+                System.setProperty("groovy.full.stacktrace",
+                    Boolean.toString(Boolean.parseBoolean(System.getProperty("groovy.full.stacktrace", "false"))))
+            } catch (SecurityException se) {
+                fullStackTracesAction.enabled = false;
+            }
             action(id: 'largerFontAction',
                 name: 'Larger Font',
                 closure: this.&largerFont,
@@ -265,10 +286,10 @@ class Console implements CaretListener {
             )
         }
 
+
         frame = swing.frame(
             title: 'GroovyConsole',
-            location: [100,100],
-            size: [500,400],
+            location: [100,100], // in groovy 2.0 use platform default location
             defaultCloseOperation: WindowConstants.DO_NOTHING_ON_CLOSE
         ) {
             menuBar {
@@ -305,6 +326,11 @@ class Console implements CaretListener {
                     menuItem(smallerFontAction)
                     separator()
                     checkBoxMenuItem(captureStdOutAction, selected: captureStdOut)
+                    checkBoxMenuItem(fullStackTracesAction, id:'fullStackTracesMenuItem')
+                    try {
+                        fullStackTracesMenuItem.selected =
+                            Boolean.parseBoolean(System.getProperty("groovy.full.stacktrace", "false"))
+                    } catch (SecurityException se) { }
                 }
 
                 menu(text: 'History', mnemonic: 'I') {
@@ -329,7 +355,7 @@ class Console implements CaretListener {
             splitPane(id: 'splitPane', resizeWeight: 0.50F,
                 orientation: JSplitPane.VERTICAL_SPLIT, constraints: BorderLayout.CENTER)
             {
-                widget(widget: inputEditor)
+                widget(inputEditor)
                 scrollPane {
                     textPane(id: 'outputArea',
                         editable: false,
@@ -346,12 +372,25 @@ class Console implements CaretListener {
         }   // end of frame
 
         inputArea = inputEditor.textEditor
+
         // attach ctrl-enter to input area
         swing.container(inputArea) {
             action(runAction)
         }
+
         outputArea = swing.outputArea
         addStylesToDocument(outputArea)
+
+        Graphics g = GraphicsEnvironment.localGraphicsEnvironment.createGraphics (new BufferedImage(100, 100, BufferedImage.TYPE_INT_RGB))
+        FontMetrics fm = g.getFontMetrics(outputArea.font)
+        outputArea.preferredSize = [
+            fm.charWidth(0x77) * 81,
+            (fm.getHeight() + fm.leading) * 12] as Dimension
+        //inputArea.setFont(outputArea.font)
+        inputEditor.preferredSize = outputArea.preferredSize
+        // good enough, ther are margins and scrollbars and such to worry about for 80x12x2
+
+
         statusLabel = swing.status
 
         runWaitDialog = swing.dialog(title: 'Groovy executing', 
@@ -382,11 +421,13 @@ class Console implements CaretListener {
         def icon = new ImageIcon(getClass().classLoader.getResource(ICON_PATH))
         frame.iconImage = icon.image
 
+        frame.pack()
         frame.show()
         SwingUtilities.invokeLater({inputArea.requestFocus()});
     }
 
     void addStylesToDocument(JTextPane outputArea) {
+        outputArea.setFont(new Font("Monospaced", outputArea.font.style, outputArea.font.size))
         StyledDocument doc = outputArea.getStyledDocument();
 
         Style defStyle = StyleContext.getDefaultStyleContext().getStyle(StyleContext.DEFAULT_STYLE);
@@ -471,6 +512,11 @@ class Console implements CaretListener {
         captureStdOut = evt.source.selected
     }
 
+    void fullStackTraces(EventObject evt) {
+        System.setProperty("groovy.full.stacktrace",
+            Boolean.toString(evt.source.selected))
+    }
+
     void caretUpdate(CaretEvent e){
         textSelectionStart = Math.min(e.dot,e.mark)
         textSelectionEnd = Math.max(e.dot,e.mark)
@@ -549,7 +595,7 @@ class Console implements CaretListener {
         appendOutput(t.toString(), resultStyle)
 
         StringWriter sw = new StringWriter()
-        new PrintWriter(sw).withWriter { pw -> t.printStackTrace(pw) }
+        new PrintWriter(sw).withWriter { pw -> StackTraceUtils.deepSanitize(t).printStackTrace(pw) }
 
         appendOutputNl("\n${sw.buffer}\n", outputStyle)
         bindResults()
