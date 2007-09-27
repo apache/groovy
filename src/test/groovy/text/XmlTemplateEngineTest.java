@@ -20,7 +20,7 @@ public class XmlTemplateEngineTest extends TestCase {
                 + "</xml>";
         String xmlResult = "<xml>\n" //
                 + "  Stein\n" //
-                + xmlTemplateEngine.getIndention() + "Stein\n" //
+                + xmlTemplateEngine.getIndentation() + "Stein\n" //
                 + "Stein" + System.getProperty("line.separator") //
                 + "</xml>\n";
         Template template = xmlTemplateEngine.createTemplate(xmlScript);

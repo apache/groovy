@@ -31,13 +31,24 @@ import org.codehaus.groovy.control.CompilationFailedException;
 
 /**
  * @author tug@wilson.co.uk
+ * @author Paul King
  */
 public class GStringTemplateEngine extends TemplateEngine {
+    private final ClassLoader parentLoader;
+
+    public GStringTemplateEngine() {
+        this(GStringTemplate.class.getClassLoader());
+    }
+
+    public GStringTemplateEngine(ClassLoader parentLoader) {
+        this.parentLoader = parentLoader;
+    }
+
     /* (non-Javadoc)
-     * @see groovy.text.TemplateEngine#createTemplate(java.io.Reader)
-     */
+    * @see groovy.text.TemplateEngine#createTemplate(java.io.Reader)
+    */
     public Template createTemplate(final Reader reader) throws CompilationFailedException, ClassNotFoundException, IOException {
-        return new GStringTemplate(reader);
+        return new GStringTemplate(reader, parentLoader);
     }
 
     private static class GStringTemplate implements Template {
@@ -58,11 +69,12 @@ public class GStringTemplateEngine extends TemplateEngine {
          * { out -> out << "${"test"} of expr and "; test = 1 ; out << "${test} script."}.asWritable()
          *
          * @param reader
+         * @param parentLoader
          * @throws CompilationFailedException
          * @throws ClassNotFoundException
          * @throws IOException
          */
-        public GStringTemplate(final Reader reader) throws CompilationFailedException, ClassNotFoundException, IOException {
+        GStringTemplate(final Reader reader, final ClassLoader parentLoader) throws CompilationFailedException, ClassNotFoundException, IOException {
             final StringBuffer templateExpressions = new StringBuffer("package groovy.tmp.templates\n def getTemplate() { return { out -> delegate = new Binding(delegate); out << \"\"\"");
             boolean writingString = true;
 
@@ -100,9 +112,6 @@ public class GStringTemplateEngine extends TemplateEngine {
 
             templateExpressions.append("}.asWritable()}");
 
-//            System.out.println(templateExpressions.toString());
-
-            final ClassLoader parentLoader = getClass().getClassLoader();
             final GroovyClassLoader loader =
                     (GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
                         public Object run() {

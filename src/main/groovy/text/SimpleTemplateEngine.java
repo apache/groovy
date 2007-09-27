@@ -39,35 +39,48 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  *
  * @author sam
  * @author Christian Stein
+ * @author Paul King
  */
 public class SimpleTemplateEngine extends TemplateEngine {
+    private boolean verbose;
 
-    private final boolean verbose;
+    private GroovyShell groovyShell;
 
     public SimpleTemplateEngine() {
-        this(false);
+        this(GroovyShell.class.getClassLoader());
     }
 
     public SimpleTemplateEngine(boolean verbose) {
-        this.verbose = verbose;
+        this(GroovyShell.class.getClassLoader());
+        setVerbose(verbose);
+    }
+
+    public SimpleTemplateEngine(ClassLoader parentLoader) {
+        this(new GroovyShell(parentLoader));
+    }
+
+    public SimpleTemplateEngine(GroovyShell groovyShell) {
+        this.groovyShell = groovyShell;
     }
 
     public Template createTemplate(Reader reader) throws CompilationFailedException, IOException {
-        return createTemplate(GroovyShell.class.getClassLoader(), reader);
-    }
-
-    public Template createTemplate(ClassLoader parentLoader, Reader reader)
-            throws CompilationFailedException, IOException {
         SimpleTemplate template = new SimpleTemplate();
-        GroovyShell shell = new GroovyShell(parentLoader);
         String script = template.parse(reader);
         if (verbose) {
             System.out.println("\n-- script source --");
             System.out.print(script);
             System.out.println("\n-- script end --\n");
         }
-        template.script = shell.parse(script);
+        template.script = groovyShell.parse(script);
         return template;
+    }
+
+    public void setVerbose(boolean verbose) {
+        this.verbose = verbose;
+    }
+
+    public boolean isVerbose() {
+        return verbose;
     }
 
     private static class SimpleTemplate implements Template {
@@ -121,8 +134,8 @@ public class SimpleTemplateEngine extends TemplateEngine {
          * into the script while escaping quotes.
          *
          * @param reader a reader for the template text
-         * @throws IOException if something goes wrong
          * @return the parsed text
+         * @throws IOException if something goes wrong
          */
         protected String parse(Reader reader) throws IOException {
             if (!reader.markSupported()) {
@@ -186,7 +199,7 @@ public class SimpleTemplateEngine extends TemplateEngine {
          * Closes the currently open write and writes out the following text as a GString expression until it reaches an end %>.
          *
          * @param reader a reader for the template text
-         * @param sw a StringWriter to write expression content
+         * @param sw     a StringWriter to write expression content
          * @throws IOException if something goes wrong
          */
         private void groovyExpression(Reader reader, StringWriter sw) throws IOException {
@@ -212,7 +225,7 @@ public class SimpleTemplateEngine extends TemplateEngine {
          * Closes the currently open write and writes the following text as normal Groovy script code until it reaches an end %>.
          *
          * @param reader a reader for the template text
-         * @param sw a StringWriter to write expression content
+         * @param sw     a StringWriter to write expression content
          * @throws IOException if something goes wrong
          */
         private void groovySection(Reader reader, StringWriter sw) throws IOException {
