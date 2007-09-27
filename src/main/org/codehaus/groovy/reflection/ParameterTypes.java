@@ -8,7 +8,7 @@ import java.lang.reflect.Array;
 public class ParameterTypes
 {
   private Class [] nativeParamTypes;
-  private CachedClass [] parameterTypes;
+  protected CachedClass [] parameterTypes;
 
     public ParameterTypes () {
     }

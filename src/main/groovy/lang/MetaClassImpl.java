@@ -94,7 +94,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private List constructors;
     private final List allMethods = new ArrayList();
     private List interfaceMethods;
-    private Reflector reflector;
     private boolean initialized;
     // we only need one of these that can be reused over and over.
     private final MetaProperty arrayLengthProperty = new MetaArrayLengthProperty();
@@ -2177,9 +2176,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
            addProperties();
            initialized = true;
        }
-       if (reflector == null) {
-           generateReflector();
-       }
    }
 
    private void addProperties()  {
@@ -2232,17 +2228,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
   private MetaMethod createMetaMethod0(CachedMethod method)
   {
-    StdMetaMethod answer = StdMetaMethod.createStdMetaMethod(method);
-    if (isValidReflectorMethod(answer)) {
-        allMethods.add(answer);
-        answer.setMethodIndex(allMethods.size());
-
-        if (GroovySystem.isUseReflection()) {
-            //log.warning("Creating reflection based dispatcher for: " + method);
-            return ReflectionMetaMethod.createReflectionMetaMethod(method);
-        }
-        else
-          return answer;
+    if (method.canBeCalledByReflector()) {
+        final StdMetaMethod stdMetaMethod = StdMetaMethod.createStdMetaMethod(method);
+        allMethods.add(stdMetaMethod);
+        return stdMetaMethod;
     }
     else
       return ReflectionMetaMethod.createReflectionMetaMethod(method);
@@ -2256,61 +2245,44 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
        if (method.getDeclaringClass().isInterface)
            return true;
 
-      if (!GroovySystem.isUseReflection()) {
-           // lets see if this method is implemented on an interface
-           List interfaceMethods = getInterfaceMethods();
-           for (Iterator iter = interfaceMethods.iterator(); iter.hasNext();) {
-               MetaMethod aMethod = (MetaMethod) iter.next();
-               if (method.isSame(aMethod)) {
-                   method.setInterfaceClass(aMethod.getDeclaringClass().cachedClass);
-                   return true;
-               }
-           }
-
-           // it's no interface method, so try to find the highest class
-           // in hierarchy defining this method
-           CachedClass declaringClass = ReflectionCache.getCachedClass(method.getCallClass());
-           for (CachedClass clazz=declaringClass; clazz!=null; clazz=clazz.getCachedSuperClass()) {
-               try {
-                 final String mName = method.getName();
-                 final CachedClass[] parms = method.getParameterTypes();
-
-                 if (!Modifier.isPublic(clazz.getModifiers())) continue;
-
-                 CachedMethod m = clazz.searchMethods(mName, parms);
-                 if (m == null || !Modifier.isPublic(m.getModifiers())) continue;
-
-                 declaringClass = clazz;
-               } catch (SecurityException e) {
-               }
-           }
-           if (!Modifier.isPublic(declaringClass.getModifiers()))
-               return false;
-
-           method.setCallClass(declaringClass.cachedClass);
-       }
+//      if (!GroovySystem.isUseReflection()) {
+//           // lets see if this method is implemented on an interface
+//           List interfaceMethods = getInterfaceMethods();
+//           for (Iterator iter = interfaceMethods.iterator(); iter.hasNext();) {
+//               MetaMethod aMethod = (MetaMethod) iter.next();
+//               if (method.isSame(aMethod)) {
+//                   method.setInterfaceClass(aMethod.getDeclaringClass().cachedClass);
+//                   return true;
+//               }
+//           }
+//
+//           // it's no interface method, so try to find the highest class
+//           // in hierarchy defining this method
+//           CachedClass declaringClass = ReflectionCache.getCachedClass(method.getCallClass());
+//           for (CachedClass clazz=declaringClass; clazz!=null; clazz=clazz.getCachedSuperClass()) {
+//               try {
+//                 final String mName = method.getName();
+//                 final CachedClass[] parms = method.getParameterTypes();
+//
+//                 if (!Modifier.isPublic(clazz.getModifiers())) continue;
+//
+//                 CachedMethod m = clazz.searchMethods(mName, parms);
+//                 if (m == null || !Modifier.isPublic(m.getModifiers())) continue;
+//
+//                 declaringClass = clazz;
+//               } catch (SecurityException e) {
+//               }
+//           }
+//           if (!Modifier.isPublic(declaringClass.getModifiers()))
+//               return false;
+//
+//           method.setCallClass(declaringClass.cachedClass);
+//       }
 
        return true;
    }
 
-  private void generateReflector() {
-      if (GroovySystem.isUseReflection()) {
-          reflector = SKIP_REFLECTOR;
-      } else {
-          reflector = ((MetaClassRegistryImpl)registry).loadReflector(theClass, allMethods);
-          if (reflector == null) {
-              reflector = SKIP_REFLECTOR;
-              return;
-          }
-          // lets set the reflector on all the methods
-          for (Iterator iter = allMethods.iterator(); iter.hasNext();) {
-              StdMetaMethod metaMethod = (StdMetaMethod) iter.next();
-              metaMethod.setReflector(reflector);
-          }
-      }
-   }
-
-   public List getMethods() {
+    public List getMethods() {
        return allMethods;
    }
 

@@ -16,8 +16,9 @@
 package org.codehaus.groovy.reflection;
 
 import groovy.lang.GString;
-import groovy.lang.GroovySystem;
+import groovy.lang.MetaClassRegistry;
 import org.codehaus.groovy.classgen.BytecodeHelper;
+import org.codehaus.groovy.runtime.Reflector;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
@@ -29,8 +30,6 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
 
-import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
-
 /**
  * @author Alex.Tkachman
  */
@@ -40,6 +39,8 @@ public class CachedClass {
     private Map allMethodsMap;
 
     int hashCode;
+
+    private Reflector reflector;
 
     private CachedField[] fields;
     private CachedConstructor[] constructors;
@@ -321,5 +322,13 @@ public class CachedClass {
 
     public String getTypeDescription() {
         return BytecodeHelper.getTypeDescription(cachedClass);
+    }
+
+    public synchronized Reflector getReflector() {
+        if (reflector == null) {
+            final MetaClassRegistry metaClassRegistry = MetaClassRegistryImpl.getInstance(MetaClassRegistryImpl.LOAD_DEFAULT);
+            reflector = ((MetaClassRegistryImpl)metaClassRegistry).loadReflector(cachedClass, Arrays.asList(getMethods()));
+        }
+        return reflector;
     }
 }

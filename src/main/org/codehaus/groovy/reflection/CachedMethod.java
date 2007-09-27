@@ -15,12 +15,12 @@
  */
 package org.codehaus.groovy.reflection;
 
-import org.codehaus.groovy.runtime.InvokerInvocationException;
-import org.codehaus.groovy.runtime.metaclass.ReflectionMetaMethod;
 import org.codehaus.groovy.classgen.BytecodeHelper;
+import org.codehaus.groovy.runtime.Reflector;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
@@ -32,6 +32,7 @@ public class CachedMethod extends ParameterTypes {
 
     public final Method cachedMethod;
     private boolean alreadySetAccessible;
+    private int methodIndex;
 
     public CachedMethod(CachedClass clazz, Method method) {
         this.cachedMethod = method;
@@ -98,4 +99,40 @@ public class CachedMethod extends ParameterTypes {
 
         return cachedMethod.invoke(object, arguments);
     }
+
+    public boolean isStatic() {
+        return (getModifiers() & Modifier.STATIC) != 0;
+    }
+
+    public void setMethodIndex(int i) {
+        methodIndex = i;
+    }
+
+    public int getMethodIndex() {
+        return methodIndex;
+    }
+
+    public Object invoke(Object object, Object[] arguments) throws IllegalAccessException, InvocationTargetException {
+        final Reflector reflector = cachedClass.getReflector();
+        if (methodIndex != 0)
+          return reflector.invoke(this, object, arguments);
+        else
+          return invokeByReflection(object, arguments);
+    }
+
+    public boolean canBeCalledByReflector () {
+            if (!Modifier.isPublic(cachedClass.getModifiers()))
+                return false;
+
+            if (!Modifier.isPublic(getModifiers()))
+              return false;
+
+            getParameterTypes();
+            for (int i = 0; i != parameterTypes.length; ++i) {
+                if (!parameterTypes[i].isPrimitive && !Modifier.isPublic(parameterTypes[i].getModifiers()))
+                  return false;
+            }
+        return true;
+    }
 }
+

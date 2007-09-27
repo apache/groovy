@@ -15,15 +15,15 @@
  */
 package org.codehaus.groovy.classgen;
 
-import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.CachedClass;
-import org.codehaus.groovy.runtime.metaclass.StdMetaMethod;
+import org.codehaus.groovy.reflection.CachedMethod;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -50,7 +50,12 @@ public class ReflectorGenerator implements Opcodes {
     }
 
     public ReflectorGenerator(List methods) {
-        this.methods = methods;
+        this.methods = new ArrayList(methods.size());
+        for (Iterator it = methods.iterator(); it.hasNext(); ) {
+            CachedMethod method = (CachedMethod) it.next();
+            if (method.canBeCalledByReflector())
+              this.methods.add(method);
+        }
     }
 
     public void generate(ClassVisitor cv, String className) {
@@ -86,7 +91,7 @@ public class ReflectorGenerator implements Opcodes {
         MethodVisitor mv = cv.visitMethod(
                 ACC_PUBLIC,
                 "invoke",
-                "(Lgroovy/lang/MetaMethod;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;",
+                "(Lorg/codehaus/groovy/reflection/CachedMethod;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;",
                 null,
                 null);
 
@@ -98,7 +103,7 @@ public class ReflectorGenerator implements Opcodes {
 
         // get method number for switch
         mv.visitVarInsn(ALOAD, 1);
-        mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/MetaMethod", "getMethodIndex", "()I");
+        mv.visitMethodInsn(INVOKEVIRTUAL, "org/codehaus/groovy/reflection/CachedMethod", "getMethodIndex", "()I");
 
         // init meta methods with number
         Label defaultLabel = new Label();
@@ -106,9 +111,8 @@ public class ReflectorGenerator implements Opcodes {
         int[] indices = new int[methodCount];
         for (int i = 0; i < methodCount; i++) {
             labels[i] = new Label();
-            StdMetaMethod method = (StdMetaMethod) methods.get(i);
-            method.setMethodIndex(i + 1);
-            indices[i] = method.getMethodIndex();
+            CachedMethod method = (CachedMethod) methods.get(i);
+            method.setMethodIndex(indices[i] = i+1);
         }
 
         // do switch
@@ -121,7 +125,7 @@ public class ReflectorGenerator implements Opcodes {
                     INVOKESPECIAL,
                     classInternalName,
                     get_m_name(i),
-                    "(Lgroovy/lang/MetaMethod;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
+                    "(Lorg/codehaus/groovy/reflection/CachedMethod;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
             mv.visitInsn(ARETURN);
         }
 
@@ -131,7 +135,7 @@ public class ReflectorGenerator implements Opcodes {
                 INVOKEVIRTUAL,
                 classInternalName,
                 "noSuchMethod",
-                "(Lgroovy/lang/MetaMethod;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
+                "(Lorg/codehaus/groovy/reflection/CachedMethod;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
         mv.visitInsn(ARETURN);
         // end method
         mv.visitMaxs(4, 4);
@@ -142,12 +146,12 @@ public class ReflectorGenerator implements Opcodes {
             mv = cv.visitMethod(
                     ACC_PRIVATE,
                     get_m_name(i),
-                    "(Lgroovy/lang/MetaMethod;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;",
+                    "(Lorg/codehaus/groovy/reflection/CachedMethod;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;",
                     null,
                     null);
             helper = new BytecodeHelper(mv);
 
-            StdMetaMethod method = (StdMetaMethod) methods.get(i);
+            CachedMethod method = (CachedMethod) methods.get(i);
             invokeMethod(method, mv);
             if (method.getReturnType() == void.class) {
                 mv.visitInsn(ACONST_NULL);
@@ -158,9 +162,9 @@ public class ReflectorGenerator implements Opcodes {
         }
     }
 
-    protected void invokeMethod(StdMetaMethod method, MethodVisitor mv) {
+    protected void invokeMethod(CachedMethod method, MethodVisitor mv) {
         // compute class to make the call on
-        Class callClass = method.getDeclaringClass().cachedClass;
+        Class callClass = method.getDeclaringClass();
         boolean useInterface = callClass.isInterface();
 //        if (callClass == null) {
 //            callClass = method.getCallClass();
@@ -185,7 +189,7 @@ public class ReflectorGenerator implements Opcodes {
         helper.box(method.getReturnType());
     }
 
-    protected void loadParameters(MetaMethod method, int argumentIndex, MethodVisitor mv) {
+    protected void loadParameters(CachedMethod method, int argumentIndex, MethodVisitor mv) {
         CachedClass[] parameters = method.getParameterTypes();
         int size = parameters.length;
         for (int i = 0; i < size; i++) {

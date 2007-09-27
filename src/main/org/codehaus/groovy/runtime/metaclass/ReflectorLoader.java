@@ -107,4 +107,40 @@ public class ReflectorLoader extends ClassLoader {
     public synchronized Class getLoadedClass(String name) {
         return (Class)loadedClasses.get(name);
     }
+
+    static String getReflectorName(Class theClass) {
+        String className = theClass.getName();
+        if (className.startsWith("java.")) {
+            String packagePrefix = "gjdk.";
+            String name = packagePrefix + className + "_GroovyReflector";
+            if (theClass.isArray()) {
+                   Class clazz = theClass;
+                   name = packagePrefix;
+                   int level = 0;
+                   while (clazz.isArray()) {
+                      clazz = clazz.getComponentType();
+                      level++;
+                   }
+                String componentName = clazz.getName();
+                name = packagePrefix + componentName + "_GroovyReflectorArray";
+                if (level>1) name += level;
+            }
+            return name;
+        }
+        else {
+            String name = className.replace('$','_') + "_GroovyReflector";
+            if (theClass.isArray()) {
+                   Class clazz = theClass;
+                   int level = 0;
+                   while (clazz.isArray()) {
+                      clazz = clazz.getComponentType();
+                      level++;
+                   }
+                String componentName = clazz.getName();
+                name = componentName.replace('$','_') + "_GroovyReflectorArray";
+                if (level>1) name += level;
+            }
+            return name;
+        }
+    }
 }

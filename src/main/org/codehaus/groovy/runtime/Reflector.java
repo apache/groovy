@@ -17,7 +17,7 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.MetaMethod;
 import groovy.lang.MissingMethodException;
-
+import org.codehaus.groovy.reflection.CachedMethod;
 
 
 /**
@@ -28,11 +28,11 @@ import groovy.lang.MissingMethodException;
  */
 public class Reflector {
 
-    public Object invoke(MetaMethod method, Object object, Object[] arguments) {
+    public Object invoke(CachedMethod method, Object object, Object[] arguments) {
         return noSuchMethod(method, object, arguments);
     }
 
-    protected Object noSuchMethod(MetaMethod method, Object object, Object[] arguments) {
-        throw new MissingMethodException(method.getName(), method.getDeclaringClass().cachedClass, arguments, false);
+    protected Object noSuchMethod(CachedMethod method, Object object, Object[] arguments) {
+        throw new MissingMethodException(method.getName(), method.getDeclaringClass(), arguments, false);
     }
 }

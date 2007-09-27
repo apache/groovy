@@ -35,10 +35,8 @@
 
 package org.codehaus.groovy.classgen;
 
-import groovy.lang.MetaMethod;
 import org.codehaus.groovy.runtime.Reflector;
-
-import java.util.List;
+import org.codehaus.groovy.reflection.CachedMethod;
 
 /**
  * This is a scratch class used to experiment with ASM to see what kind of
@@ -75,7 +73,7 @@ public class DummyReflector extends Reflector {
     }
     */
 
-    public Object invoke(MetaMethod method, Object object, Object[] arguments) {
+    public Object invoke(CachedMethod method, Object object, Object[] arguments) {
 /*
         switch (method.getMethodIndex()) {
             case 1:

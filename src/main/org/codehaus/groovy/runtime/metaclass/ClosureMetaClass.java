@@ -53,7 +53,6 @@ import java.util.logging.Level;
  */
 public final class ClosureMetaClass extends MetaClassImpl {
     private boolean initialized;
-    private Reflector reflector;
     private final List closureMethods = new ArrayList(3);
     private Map attributes = new HashMap();
     private MethodChooser chooser;
@@ -365,9 +364,6 @@ public final class ClosureMetaClass extends MetaClassImpl {
 
             initialized = true;
         }
-        if (reflector == null) {
-            generateReflector();
-        }
     }
 
     private void assignMethodChooser() {
@@ -461,32 +457,25 @@ public final class ClosureMetaClass extends MetaClassImpl {
     }
 
     private MetaMethod createMetaMethod(final CachedMethod method) {
-        if (((MetaClassRegistryImpl) registry).useAccessible()) {
-            AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
-                    method.cachedMethod.setAccessible(true);
-                    return null;
-                }
-            });
-        }
-        if (GroovySystem.isUseReflection())
+        if (method.canBeCalledByReflector())
+            return StdMetaMethod.createStdMetaMethod(method);
+        else
             return ReflectionMetaMethod.createReflectionMetaMethod(method);
-        return StdMetaMethod.createStdMetaMethod(method);
     }
 
     private void generateReflector() {
-        if (GroovySystem.isUseReflection())
-          return;
-
-        reflector = ((MetaClassRegistryImpl) registry).loadReflector(theClass, closureMethods);
-        if (reflector == null) {
-            throw new RuntimeException("Should have a reflector for " + theClass.getName());
-        }
-        // lets set the reflector on all the methods
-        for (Iterator iter = closureMethods.iterator(); iter.hasNext();) {
-            StdMetaMethod metaMethod = (StdMetaMethod) iter.next();
-            metaMethod.setReflector(reflector);
-        }
+//        if (GroovySystem.isUseReflection())
+//          return;
+//
+//        reflector = ((MetaClassRegistryImpl) registry).loadReflector(theClass, closureMethods);
+//        if (reflector == null) {
+//            throw new RuntimeException("Should have a reflector for " + theClass.getName());
+//        }
+//        // lets set the reflector on all the methods
+//        for (Iterator iter = closureMethods.iterator(); iter.hasNext();) {
+//            StdMetaMethod metaMethod = (StdMetaMethod) iter.next();
+//            metaMethod.setReflector(reflector);
+//        }
     }
 
     private MetaClass lookupObjectMetaClass(Object object) {

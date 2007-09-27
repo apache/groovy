@@ -48,10 +48,9 @@ package org.codehaus.groovy.classgen;
 
 import groovy.lang.GroovySystem;
 import groovy.lang.MetaClassRegistry;
-import groovy.lang.MetaMethod;
 import groovy.util.GroovyTestCase;
-import org.codehaus.groovy.reflection.CachedClass;
-import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.reflection.ReflectionCache;
+import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.util.ASMifierClassVisitor;
@@ -59,7 +58,9 @@ import org.objectweb.asm.util.CheckClassAdapter;
 
 import java.io.FileOutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
@@ -75,7 +76,7 @@ public class ReflectorGeneratorTest extends GroovyTestCase {
     }
 
     public void testObjectGenerator() throws Exception {
-        List methods = InvokerHelper.getMetaClass(new Object()).getMethods();
+        List methods = Arrays.asList(ReflectionCache.OBJECT_CLASS.getMethods());
         testMethods(methods);
     }
 
@@ -110,5 +111,28 @@ public class ReflectorGeneratorTest extends GroovyTestCase {
         Object reflector = ((MetaClassRegistryImpl) registry).loadReflector(getClass(), methods);
 
         System.out.println("Created new reflector: " + reflector);
+    }
+
+    public void testP () {
+        A_GroovyReflector.doIt(); 
+    }
+}
+
+class A {
+    protected void protectedMethod() {}
+}
+
+class A_GroovyReflector {
+    static void doIt () {
+
+        new A ().protectedMethod();
+
+        try {
+            CachedMethod m = CachedMethod.find(A.class.getDeclaredMethod("protectedMethod", new Class [0] ));
+            m.invoke(new A(), new Object[0]);
+        } catch (NoSuchMethodException e) {
+        } catch (IllegalAccessException e) {
+        } catch (InvocationTargetException e) {
+        }
     }
 }
