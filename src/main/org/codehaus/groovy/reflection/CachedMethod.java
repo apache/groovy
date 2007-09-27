@@ -113,10 +113,10 @@ public class CachedMethod extends ParameterTypes {
     }
 
     public Object invoke(Object object, Object[] arguments) throws IllegalAccessException, InvocationTargetException {
-        final Reflector reflector = cachedClass.getReflector();
-        if (methodIndex != 0)
-          return reflector.invoke(this, object, arguments);
-        else
+//        final Reflector reflector = cachedClass.getReflector();
+//        if (methodIndex != 0)
+//          return reflector.invoke(this, object, arguments);
+//        else
           return invokeByReflection(object, arguments);
     }
 
