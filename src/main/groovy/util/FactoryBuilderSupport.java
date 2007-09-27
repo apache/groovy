@@ -104,14 +104,14 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
 
     public Map getContext() {
         if( !contexts.isEmpty() ){
-            return (Map) contexts.get(contexts.size() - 1);
+            return (Map) contexts.getFirst();
         }
         return null;
     }
 
     public Object getCurrent() {
         if( !contexts.isEmpty() ){
-            Map context = (Map) contexts.get(contexts.size() - 1);
+            Map context = (Map) contexts.getFirst();
             return context.get( CURRENT_NODE );
         }
         return null;
@@ -119,7 +119,7 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
 
     public Factory getCurrentFactory() {
         if( !contexts.isEmpty() ){
-            Map context = (Map) contexts.get(contexts.size() - 1);
+            Map context = (Map) contexts.getFirst();
             return (Factory) context.get( CURRENT_FACTORY );
         }
         return null;
