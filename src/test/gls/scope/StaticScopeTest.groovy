@@ -4,16 +4,16 @@ public class StaticScopeTest extends CompilableTestSupport {
 
     public void testNormalStaticScopeInScript() {
         shouldNotCompile """
-       static foo() {
-         foo = 1
-       }
-     """
+        static foo() {
+            foo = 1
+        }
+        """
 
         shouldCompile """
-       static foo() {
-         def foo=1
-       }
-     """
+        static foo() {
+            def foo=1
+        }
+        """
     }
 
     public void testStaticImportInclass() {
@@ -37,35 +37,34 @@ public class StaticScopeTest extends CompilableTestSupport {
 
     public void testNormalStaticScopeInclass() {
         assertScript """
-       class A {
-         static i
-         static foo() {
-           i=1
-         }
-       }
-       A.foo()
-       assert A.i == 1  
-     """
-        shouldNotCompile """
-       class A {
-         def i
-         static foo() {
-           i=1
-         }
-       }
-     """
+        class A {
+            static i
+            static foo() {
+                i=1
+            }
+        }
+        A.foo()
+        assert A.i == 1
+        """
 
+        shouldNotCompile """
+        class A {
+            def i
+            static foo() {
+                i=1
+            }
+        }
+        """
     }
 
     public void testClosureInStaticScope() {
         shouldCompile("""
-       5.times { foo=2 }
-     """)
+        5.times { foo=2 }
+        """)
 
         shouldCompile("""
-       5.times { foo=it }
-     """)
-
+        5.times { foo=it }
+        """)
     }
 
     public void testFullyQualifiedClassName() {
@@ -73,9 +72,11 @@ public class StaticScopeTest extends CompilableTestSupport {
         static foo() {java.lang.Integer}
         assert foo() == java.lang.Integer
         """
+
         shouldNotCompile """
         static foo() { java.lang.JavaOrGroovyThatsTheQuestion }
         """
+
         shouldCompile """
         foo() { java.lang.JavaOrGroovyThatsTheQuestion }
         """
@@ -85,54 +86,60 @@ public class StaticScopeTest extends CompilableTestSupport {
         // GROOVY-1910
         assertScript """
         class Foo {
-           static p1 = 1
-           static p2 = p1
+             static p1 = 1
+             static p2 = p1
         }
         assert Foo.p2 == Foo.p1
         assert Foo.p1 == 1
-      """
+        """
 
         // should not compile for mistyped name
         shouldNotCompile """
         class Foo {
-           static p1 = 1
-           static p2 = x1
+            static p1 = 1
+            static p2 = x1
         }
         assert Foo.p2 == Foo.p1
         assert Foo.p1 == 1
-        
-      """
+        """
     }
 
     public void testSpecialConstructorAccess() {
-        shouldNotCompile """
-       class A{ A(x){} }
-       class B extends A {
-         B(x) { super(nonExistingParameter) }
-       }
-     """
-     
-     shouldCompile """
-       class A{ A(x){} }
-       class B extends A {
-         B(x) { super(x) }
-       }
-     """
-
-     shouldNotCompile """
-       class A{ A(x){} }
-       class B extends A {
-         def doNotAccessDynamicFieldsOrProperties
-         B(x) { super(doNotAccessDynamicFieldsOrProperties) }
-       }
-     """
+        shouldCompile """
+        class A{ A(x){} }
+        class B extends A {
+            B(x) { super(x) }
+        }
+        """
 
         shouldCompile """
-       class A{ A(x){} }
-       class B extends A {
-         static allowUsageOfStaticPropertiesAndFields
-         B(x) { super(allowUsageOfStaticPropertiesAndFields) }
-       }
-     """
+        class A{ A(x){} }
+        class B extends A {
+            B(x) { super(x.something) }
+        }
+        """
+
+        shouldNotCompile """
+        class A{ A(x){} }
+        class B extends A {
+            B(x) { super(nonExistingParameter) }
+        }
+        """
+
+        shouldNotCompile """
+        class A{ A(x){} }
+        class B extends A {
+            def doNotAccessDynamicFieldsOrProperties
+            B(x) { super(doNotAccessDynamicFieldsOrProperties) }
+        }
+        """
+
+        shouldCompile """
+        class A{ A(x){} }
+        class B extends A {
+            static allowUsageOfStaticPropertiesAndFields
+            B(x) { super(allowUsageOfStaticPropertiesAndFields) }
+        }
+        """
     }
 }

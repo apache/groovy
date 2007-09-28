@@ -17,8 +17,6 @@ package org.codehaus.groovy.control;
 
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
-import org.codehaus.groovy.ast.stmt.BlockStatement;
-import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 
 import java.util.*;
@@ -34,7 +32,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
     private SourceUnit source;
     private CompilationUnit compilationUnit;
     private boolean stillResolving;
-    private boolean isSpecialContructorCall;
+    private boolean inSpecialContructorCall;
     private boolean inClosure;
     private boolean inPropertyExpression;
 
@@ -73,7 +71,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         if (v == null || !(v instanceof DynamicVariable)) return ve;
         Expression result = findStaticFieldImportFromModule(v.getName());
         if (result != null) return result;
-        if (!inPropertyExpression || isSpecialContructorCall) addStaticVariableError(ve);
+        if (!inPropertyExpression || inSpecialContructorCall) addStaticVariableError(ve);
         return ve;
     }
 
@@ -92,9 +90,9 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
     }
 
     protected Expression transformConstructorCallExpression(ConstructorCallExpression cce) {
-        isSpecialContructorCall = cce.isSpecialCall();
+        inSpecialContructorCall = cce.isSpecialCall();
         Expression ret = cce.transformExpression(this);
-        isSpecialContructorCall = false;
+        inSpecialContructorCall = false;
         return ret;
     }
 
@@ -119,7 +117,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         boolean spreadSafe = pe.isSpreadSafe();
         pe = new PropertyExpression(objectExpression, property, pe.isSafe());
         pe.setSpreadSafe(spreadSafe);
-        checkStaticScope(pe);
+        if (!inSpecialContructorCall) checkStaticScope(pe);
         return pe;
     }
 
@@ -137,7 +135,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
     private void addStaticVariableError(VariableExpression ve) {
         // closures are always dynamic
         // propertiesExpressions will handle the error a bit different
-        if (!isSpecialContructorCall && (inClosure || !ve.isInStaticContext())) return;
+        if (!inSpecialContructorCall && (inClosure || !ve.isInStaticContext())) return;
         if (stillResolving) return;
         if (ve == VariableExpression.THIS_EXPRESSION || ve == VariableExpression.SUPER_EXPRESSION) return;
         Variable v = ve.getAccessedVariable();
