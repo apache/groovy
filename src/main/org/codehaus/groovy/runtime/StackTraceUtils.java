@@ -54,8 +54,8 @@ public class StackTraceUtils {
      * @return The exception passed in, after cleaning the stack trace
      */
     public static Throwable sanitize(Throwable t) {
-        // Note that this getProperty access may well be synced...
-        if (!Boolean.parseBoolean(System.getProperty("groovy.full.stacktrace", "false"))) {
+        // Note that this getBoolean access may well be synced...
+        if (!Boolean.getBoolean("groovy.full.stacktrace")) {
             StackTraceElement[] trace = t.getStackTrace();
             List newTrace = new ArrayList();
             for (int i = 0; i < trace.length; i++) {
