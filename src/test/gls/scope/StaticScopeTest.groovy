@@ -111,8 +111,15 @@ public class StaticScopeTest extends CompilableTestSupport {
          B(x) { super(nonExistingParameter) }
        }
      """
+     
+     shouldCompile """
+       class A{ A(x){} }
+       class B extends A {
+         B(x) { super(x) }
+       }
+     """
 
-        shouldNotCompile """
+     shouldNotCompile """
        class A{ A(x){} }
        class B extends A {
          def doNotAccessDynamicFieldsOrProperties

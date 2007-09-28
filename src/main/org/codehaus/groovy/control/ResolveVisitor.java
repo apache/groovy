@@ -499,6 +499,22 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return null;
     }
 
+    // iterate from the outside to the inside and throw an error
+    // for each VariableExpression that is found but not referenced
+    // do this only in a static scope
+    private void checkStaticScope(PropertyExpression pe) {
+        if (inClosure) return;
+        for (Expression it = pe; it != null; it = ((PropertyExpression) it).getObjectExpression()) {
+            if (it instanceof PropertyExpression) continue;
+            if (it instanceof VariableExpression) {
+                VariableExpression ve = (VariableExpression) it;
+                Variable v = ve.getAccessedVariable();
+                addStaticVariableError(ve);
+            }
+            return;
+        }
+    }
+
     // iterate from the inner most to the outer and check for classes
     // this check will ignore a .class property, for Example Integer.class will be
     // a PropertyExpression with the ClassExpression of Integer as objectExpression
@@ -591,6 +607,19 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         }
         resolveOrFail(ve.getType(), ve);
         return ve;
+    }
+
+    private void addStaticVariableError(VariableExpression ve) {
+        // closures are always dynamic
+        // propertiesExpressions will handle the error a bit different
+        if (!isSpecialContructorCall && (inClosure || !ve.isInStaticContext())) return;
+        if (ve == VariableExpression.THIS_EXPRESSION || ve == VariableExpression.SUPER_EXPRESSION) return;
+        Variable v = ve.getAccessedVariable();
+        if (v instanceof Parameter) return;
+        if (v != null && !(v instanceof DynamicVariable) && v.isInStaticContext()) return;
+        addError("the name " + ve.getName() + " doesn't refer to a declared variable or class. The static" +
+                " scope requires to declare variables before using them. If the variable should have" +
+                " been a class check the spelling.", ve);
     }
 
     protected Expression transformBinaryExpression(BinaryExpression be) {
