@@ -245,7 +245,8 @@ $Date$
         <echo message="Setting headless mode ..."/>
     </target>
 
-    <target name="test" depends="-initializeReports,compileTest,-coverageInstrument,-testInit,-testOne,-testAll"
+    <target name="test" 
+depends="-checkAntVersion,-initializeReports,compileTest,-coverageInstrument,-testInit,-testOne,-testAll"
             description="Compile and test all the classes (or just one class if testCase property is defined)."/>
 
     <target name="clean-test" depends="clean,test"
