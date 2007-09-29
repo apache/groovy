@@ -7,7 +7,7 @@ import static java.awt.Color.*
 import static junit.framework.Assert.format
 import static junit.framework.Assert.assertEquals
 import static StaticImportTarget.x
-import static Math.*
+import static java.lang.Math.*
 
 class StaticImportTest extends GroovyTestCase {
     void testNormalUsage() {

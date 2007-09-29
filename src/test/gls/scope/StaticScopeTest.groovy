@@ -18,7 +18,7 @@ public class StaticScopeTest extends CompilableTestSupport {
 
     public void testStaticImportInclass() {
         assertScript """
-        import static Math.*
+        import static java.lang.Math.*
         class B {
             static main(args) { assert cos(2 * PI) == 1.0 }
         }

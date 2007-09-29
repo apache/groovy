@@ -15,7 +15,7 @@
  */
 package groovy.util
 
-import static GroovyCollections.*
+import static groovy.util.GroovyCollections.*
 
 /**
 * Tests GroovyCollections
