@@ -224,15 +224,24 @@ $Date$
 
     <target name="realCompileExamples">
         <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpath="${mainClassesDirectory}"/>
-        <groovyc srcdir="${examplesSourceDirectory}" destdir="${examplesClassesDirectory}">
+        <groovyc srcdir="${examplesSourceDirectory}/webapps/groovlet-examples/WEB-INF/groovy"
+                 destdir="${examplesClassesDirectory}">
+            <classpath>
+                <pathelement path="${mainClassesDirectory}"/>
+                <path refid="compilePath"/>
+                <path refid="examplesPath"/>
+            </classpath>
+        </groovyc>
+        <groovyc srcdir="${examplesSourceDirectory}"
+                destdir="${examplesClassesDirectory}"
+                excludes="webapps/groovlet-examples/WEB-INF/groovy/**">
             <classpath>
                 <pathelement path="${mainClassesDirectory}"/>
                 <pathelement path="${examplesClassesDirectory}"/>
                 <path refid="compilePath"/>
                 <path refid="examplesPath"/>
             </classpath>
-            <!-- uncomment if we have mixed Groovy/Java examples -->
-            <!-- <javac source="1.4" target="1.4" fork="true" memorymaximumsize="64m"/> -->
+            <javac source="1.4" target="1.4" fork="true" memorymaximumsize="64m"/>
         </groovyc>
 
     </target>
