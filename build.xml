@@ -227,6 +227,7 @@ $Date$
         <groovyc srcdir="${examplesSourceDirectory}" destdir="${examplesClassesDirectory}">
             <classpath>
                 <pathelement path="${mainClassesDirectory}"/>
+                <pathelement path="${examplesClassesDirectory}"/>
                 <path refid="compilePath"/>
                 <path refid="examplesPath"/>
             </classpath>
