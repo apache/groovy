@@ -22,10 +22,10 @@ $Date$
 -->
 
 <project name="Groovy" default="createJars" basedir=".">
-    
+
     <property file="local.build.properties"/>
     <property file="build.properties"/>
-    <property name="ant.requiredVersion" value="1.7"/>
+    <property name="ant.requiredVersion" value="1.6.5"/>
 
     <!-- config/ant/build-maven.xml imports config/ant/build-setup.xml where all the paths are defined. -->
     <import file="config/ant/build-maven.xml"/>
@@ -38,7 +38,7 @@ $Date$
             <istrue value="${skipTests}"/>
         </or>
     </condition>
-    
+
     <condition property="_skipExamples_">
         <istrue value="${skipExamples}"/>
     </condition>
@@ -67,26 +67,28 @@ $Date$
     <target name="-init" depends="-fetchDependencies">
         <echo message="Java Runtime Environment version: ${java.version}"/>
         <echo message="Java Runtime Environment vendor: ${java.vendor}"/>
+        <echo message="Ant version: ${ant.version}"/>
         <echo message="Operating system name: ${os.name}"/>
         <echo message="Operating system architecture: ${os.arch}"/>
         <echo message="Operating system version: ${os.version}"/>
 
-        <!-- some files won't compile on certinan JVM versions because
+        <!-- some files won't compile on certain JVM versions because
              of library issues, exclude those -->
 
-        <condition property="jvm.level.excludes" value="groovy/swing/factory/TimingFrameworkFactory.groovy org/codehaus/groovy/binding/TimingFrameworkTriggerBinding.groovy">
+        <condition property="jvm.level.excludes"
+                   value="groovy/swing/factory/TimingFrameworkFactory.groovy org/codehaus/groovy/binding/TimingFrameworkTriggerBinding.groovy">
             <equals arg1="${ant.java.version}" arg2="1.4"/>
         </condition>
         <property name="jvm.level.excludes" value="nothing"/>
     </target>
-    
-    <target name="-checkAntVersion" depends="-excludeLegacyAntVersion,-ensureRequiredAntVersion"
+
+    <target name="-checkAntVersion" depends="-excludeLegacyAntVersion"
             description="Check that we are running on the required version of Ant."/>
 
     <target name="-excludeLegacyAntVersion">
         <!-- antversion didn't exist in early versions of ant so we have
              a legacy check to provide a nicer error message in this case -->
-        <fail message="You are using ant ${ant.version}, please install using ant ${ant.requiredVersion}+">
+        <fail message="You are using ant ${ant.version}, please build using ant ${ant.requiredVersion}+">
             <condition>
                 <or>
                     <contains string="${ant.version}" substring="1.1"></contains>
@@ -94,36 +96,46 @@ $Date$
                     <contains string="${ant.version}" substring="1.3"></contains>
                     <contains string="${ant.version}" substring="1.4"></contains>
                     <contains string="${ant.version}" substring="1.5"></contains>
-                    <contains string="${ant.version}" substring="1.6"></contains>
+                    <and>
+                        <contains string="${ant.version}" substring="1.6"></contains>
+                        <not>
+                            <contains string="${ant.version}" substring="${ant.requiredVersion}"></contains>
+                        </not>
+                    </and>
                 </or>
             </condition>
-       </fail>
+        </fail>
     </target>
 
-    <target name="-ensureRequiredAntVersion">
-       <fail message="You are using ant ${ant.version}, please install using ant ${ant.requiredVersion}+">
-           <condition><not><antversion atleast="${ant.requiredVersion}"/></not></condition>
-       </fail>
-    </target>
+    <!-- add back in if we make 1.7+ minimal required version for build again
+        <target name="-ensureRequiredAntVersion">
+           <fail message="You are using ant ${ant.version}, please install using ant ${ant.requiredVersion}+"/>
+               <condition><not><antversion atleast="${ant.requiredVersion}"/></not></condition>
+           </fail>
+        </target>
+    -->
 
     <target name="compileMain" depends="ubercompile,stagedcompile"
             description="Compile the Java and Groovy code in the main source.">
     </target>
-    
+
     <target name="stagedcompile" depends="-init,-includeResources,ensureGrammars" unless="uber">
         <mkdir dir="${mainClassesDirectory}"/>
         <mkdir dir="${toolsClassesDirectory}"/>
         <javac srcdir="${mainSourceDirectory}" includeantruntime="false" destdir="${mainClassesDirectory}"
-               deprecation="on" debug="yes" source="1.4" target="1.4" fork="true" classpathref="compilePath" excludes="${jvm.level.excludes}"/>
+               deprecation="on" debug="yes" source="1.4" target="1.4" fork="true" classpathref="compilePath"
+               excludes="${jvm.level.excludes}"/>
 
         <echo message="Groovyc of main code."/>
-        <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpath="${mainClassesDirectory}" classpathref="testPath"/>
-        <groovyc srcdir="${mainSourceDirectory}" destdir="${mainClassesDirectory}" classpathref="compilePath"  excludes="${jvm.level.excludes}"/>
+        <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpath="${mainClassesDirectory}"
+                 classpathref="runtimePath"/>
+        <groovyc srcdir="${mainSourceDirectory}" destdir="${mainClassesDirectory}" classpathref="compilePath"
+                 excludes="${jvm.level.excludes}"/>
     </target>
 
     <target name="ubercompile:bootstrap" depends="-init,-includeResources,ensureGrammars" if="uber">
         <mkdir dir="${mainClassesDirectory}"/>
-        
+
         <javac destdir="${mainClassesDirectory}"
                deprecation="on"
                debug="yes"
@@ -134,13 +146,13 @@ $Date$
                includeantruntime="false">
             <classpath refid="compilePath"/>
             <src location="${mainSourceDirectory}"/>
-            
+
             <!--
             NOTE: This list includes *most* of the classes which are required for the ubercompile
                   bits to work, adding them here to allow for more incremental compilation when
                   required support classes change.
             -->
-            
+
             <include name="groovy/lang/**/*.java"/>
             <include name="org/codehaus/groovy/ant/**/*.java"/>
             <include name="org/codehaus/groovy/antlr/**/*.java"/>
@@ -152,7 +164,7 @@ $Date$
             <include name="org/codehaus/groovy/syntax/**/*.java"/>
             <include name="org/codehaus/groovy/tools/javac/**/*.java"/>
         </javac>
-        
+
         <taskdef name="ubercompile" classname="org.codehaus.groovy.ant.UberCompileTask">
             <classpath>
                 <pathelement location="${mainClassesDirectory}"/>
@@ -160,22 +172,23 @@ $Date$
             </classpath>
         </taskdef>
     </target>
-    
+
     <target name="ubercompile" depends="ubercompile:bootstrap" if="uber">
         <mkdir dir="${mainStubsDirectory}"/>
-        
+
         <ubercompile destdir="${mainClassesDirectory}">
             <classpath>
                 <pathelement location="${mainClassesDirectory}"/>
                 <path refid="compilePath"/>
             </classpath>
             <src location="${mainSourceDirectory}"/>
-            
+
             <generatestubs destdir="${mainStubsDirectory}" includes="**/*.groovy" excludes="${jvm.level.excludes}">
                 <configuration targetBytecode="1.4"/>
             </generatestubs>
-            
-            <javac includeantruntime="false" deprecation="on" debug="yes" source="1.4" target="1.4" fork="true" excludes="${jvm.level.excludes}"/>
+
+            <javac includeantruntime="false" deprecation="on" debug="yes" source="1.4" target="1.4" fork="true"
+                   excludes="${jvm.level.excludes}"/>
             <groovyc includes="**/*.groovy" excludes="${jvm.level.excludes}">
                 <configuration debug="true" verbose="true"/>
             </groovyc>
@@ -185,21 +198,19 @@ $Date$
     <target name="compileTest" depends="compileMain" unless="_skipTests_"
             description="Compile the Java and Groovy code in the test source.">
         <mkdir dir="${testClassesDirectory}"/>
-        <java classname="org.apache.tools.ant.launch.Launcher" fork="true" maxmemory="256m" failonerror="true">
-            <classpath refid="runtimePath" />
-            <arg value="realCompileTest"/>
-        </java>
+        <antforked target="realCompileTest"/>
     </target>
 
     <target name="realCompileTest">
-        <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpath="${mainClassesDirectory}" classpathref="testPath"/>
+        <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpath="${mainClassesDirectory}"
+                 classpathref="testPath"/>
         <groovyc srcdir="${testSourceDirectory}" destdir="${testClassesDirectory}" excludes="${jvm.level.excludes}">
-          <classpath>
-            <pathelement path="${mainClassesDirectory}"/>
-            <pathelement path="${testClassesDirectory}"/>
-            <path refid="testPath"/>
-          </classpath>
-          <javac source="1.4" target="1.4" fork="true" memorymaximumsize="64m"/>
+            <classpath>
+                <pathelement path="${mainClassesDirectory}"/>
+                <pathelement path="${testClassesDirectory}"/>
+                <path refid="testPath"/>
+            </classpath>
+            <javac source="1.4" target="1.4" fork="true" memorymaximumsize="64m"/>
         </groovyc>
 
     </target>
@@ -207,20 +218,21 @@ $Date$
     <target name="compileExamples" depends="compileMain" unless="_skipExamples_"
             description="Compile the Java and Groovy code in the examples source directory.">
         <mkdir dir="${examplesClassesDirectory}"/>
-        <echo message="Groovyc of example code."/>
-        <java classname="org.codehaus.groovy.ant.Groovyc" fork="true">
+        <echo message="Compiling example code."/>
+        <antforked target="realCompileExamples"/>
+    </target>
+
+    <target name="realCompileExamples">
+        <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpath="${mainClassesDirectory}"/>
+        <groovyc srcdir="${examplesSourceDirectory}" destdir="${examplesClassesDirectory}">
             <classpath>
                 <pathelement path="${mainClassesDirectory}"/>
-                <pathelement path="${examplesClassesDirectory}"/>
                 <path refid="compilePath"/>
                 <path refid="examplesPath"/>
             </classpath>
-            <arg value="${examplesClassesDirectory}"/>
-            <arg value="${examplesSourceDirectory}"/>
-            <arg value="-j"/>
-            <arg value="-Jsource=1.4"/>
-            <arg value="-Jtarget=1.4"/>
-        </java>
+            <javac source="1.4" target="1.4" fork="true" memorymaximumsize="64m"/>
+        </groovyc>
+
     </target>
 
     <target name="-initializeReports">
@@ -245,8 +257,8 @@ $Date$
         <echo message="Setting headless mode ..."/>
     </target>
 
-    <target name="test" 
-depends="-checkAntVersion,-initializeReports,compileTest,-coverageInstrument,-testInit,-testOne,-testAll"
+    <target name="test"
+            depends="-checkAntVersion,-initializeReports,compileTest,-coverageInstrument,-testInit,-testOne,-testAll"
             description="Compile and test all the classes (or just one class if testCase property is defined)."/>
 
     <target name="clean-test" depends="clean,test"
@@ -347,7 +359,7 @@ depends="-checkAntVersion,-initializeReports,compileTest,-coverageInstrument,-te
             <attribute name="Implementation-Vendor" value="The Codehaus"/>
         </manifest>
     </target>
-    
+
     <target name="-includeResources" depends="-includeGroovyDocTemplates">
         <copy todir="${mainClassesDirectory}">
             <fileset dir="${mainSourceDirectory}">
@@ -358,7 +370,7 @@ depends="-checkAntVersion,-initializeReports,compileTest,-coverageInstrument,-te
             </fileset>
         </copy>
     </target>
-    
+
     <target name="-includeGroovyDocTemplates">
         <copy todir="${mainClassesDirectory}">
             <fileset dir="${mainSourceDirectory}">
@@ -419,14 +431,14 @@ depends="-checkAntVersion,-initializeReports,compileTest,-coverageInstrument,-te
 
     <target name="install" depends="createJars" unless="testFailed"
             description="Create an installation hierarchy in target/install.">
-        
+
         <!--
         FIXME: Its not really a good idea to delete stuff, as it tends to negate Ant's (or other tools)
                ability to run faster incremental builds.
         -->
         <delete dir="${installDirectory}" quiet="true"/>
         <mkdir dir="${installDirectory}"/>
-        
+
         <!-- Install license files -->
         <copy todir="${installDirectory}">
             <fileset dir="${basedir}">
@@ -436,26 +448,26 @@ depends="-checkAntVersion,-initializeReports,compileTest,-coverageInstrument,-te
             </fileset>
         </copy>
         <fixcrlf srcdir="${installDirectory}" eol="crlf" includes="*.txt"/>
-        
+
         <!-- Install generated artifacts and runtime dependencies -->
         <mkdir dir="${installDirectory}/lib"/>
         <copy todir="${installDirectory}/lib">
             <fileset file="${targetDistDirectory}/groovy-${groovyVersion}.jar"/>
             <fileset dir="${runtimeLibDirectory}" includes="*.jar"/>
         </copy>
-        
+
         <!-- Install the embeddable bits -->
         <mkdir dir="${installDirectory}/embeddable"/>
         <copy todir="${installDirectory}/embeddable">
             <fileset file="${targetDistDirectory}/groovy-all-${groovyVersion}.jar"/>
         </copy>
-        
+
         <!-- Install configuration files -->
         <mkdir dir="${installDirectory}/conf"/>
         <copy toDir="${installDirectory}/conf">
             <fileset dir="${sourceDirectory}/conf" includes="*"/>
         </copy>
-        
+
         <!-- Install scripts -->
         <mkdir dir="${installDirectory}/bin"/>
         <copy toDir="${installDirectory}/bin">
@@ -464,7 +476,7 @@ depends="-checkAntVersion,-initializeReports,compileTest,-coverageInstrument,-te
                 <filter token="GROOVYJAR" value="groovy-${groovyVersion}.jar"/>
             </filterset>
         </copy>
-        
+
         <!-- Tweak scripts for platform compatibility -->
         <fixcrlf srcdir="${installDirectory}/bin" eol="lf" excludes="*.bat"/>
         <fixcrlf srcdir="${installDirectory}/bin" eol="crlf" includes="*.bat"/>
@@ -488,7 +500,7 @@ depends="-checkAntVersion,-initializeReports,compileTest,-coverageInstrument,-te
 
     <target name="-compileTools" depends="compileMain">
         <echo message="Groovyc of tools code."/>
-        <java classname="org.codehaus.groovy.ant.Groovyc">
+        <java classname="org.codehaus.groovy.ant.Groovyc" fork="true">
             <classpath>
                 <path refid="toolsPath"/>
                 <pathelement path="${mainClassesDirectory}"/>
@@ -520,7 +532,7 @@ depends="-checkAntVersion,-initializeReports,compileTest,-coverageInstrument,-te
     </target>
 
     <target name="doc" depends="-compileTools,-docInit" description="Create the documentation.">
-        <java classname="org.codehaus.groovy.tools.DocGenerator" fork="yes">
+        <java classname="org.codehaus.groovy.tools.DocGenerator" fork="true">
             <classpath>
                 <pathelement path="${toolsClassesDirectory}"/>
                 <path refid="toolsPath"/>
@@ -602,34 +614,34 @@ depends="-checkAntVersion,-initializeReports,compileTest,-coverageInstrument,-te
 
     <target name="distribution" depends="install,doc" description="Create everything needed for a distribution.">
         <zip destfile="${targetDistDirectory}/groovy-binary-${groovyVersion}.zip"
-            comment="The Groovy ${groovyVersion} binary distribution.">
-            
+             comment="The Groovy ${groovyVersion} binary distribution.">
+
             <!-- Make unix scripts executable -->
             <zipfileset dir="${installDirectory}" prefix="groovy-${groovyVersion}" filemode="775">
                 <include name="bin/*"/>
                 <exclude name="bin/*.*"/>
                 <exclude name="bin/startGroovy*"/>
             </zipfileset>
-            
+
             <!-- Include the other scripts asis -->
             <zipfileset dir="${installDirectory}" prefix="groovy-${groovyVersion}">
                 <include name="bin/*.*"/>
                 <include name="bin/startGroovy*"/>
             </zipfileset>
-            
+
             <!-- Include everything else asis too -->
             <zipfileset dir="${installDirectory}" prefix="groovy-${groovyVersion}">
                 <exclude name="bin/**"/>
                 <include name="**"/>
             </zipfileset>
         </zip>
-        
+
         <zip destfile="${targetDistDirectory}/groovy-docs-${groovyVersion}.zip"
              comment="The Groovy ${groovyVersion} documentation distribution.">
             <zipfileset dir="${wikiPdfDirectory}" includes="wiki-snapshot.pdf" prefix="groovy-${groovyVersion}/pdf"/>
             <zipfileset dir="${docsDirectory}" prefix="groovy-${groovyVersion}/html"/>
         </zip>
-        
+
         <zip destfile="${targetDistDirectory}/groovy-src-${groovyVersion}.zip"
              comment="The Groovy ${groovyVersion} source distribution.">
             <zipfileset dir="${basedir}" prefix="groovy-${groovyVersion}">
@@ -644,7 +656,7 @@ depends="-checkAntVersion,-initializeReports,compileTest,-coverageInstrument,-te
             </zipfileset>
         </zip>
     </target>
-    
+
     <target name="dist" depends="distribution" description="Alias to distribution for the lazy."/>
 
 </project>
