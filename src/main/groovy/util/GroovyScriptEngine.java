@@ -177,7 +177,7 @@ public class GroovyScriptEngine implements ResourceConnector {
                 }
             } finally {
                 try {
-                    in.close();
+                    if (in!=null) in.close();
                 } catch (IOException e) {
                     // Do nothing: Just want to make sure it is closed
                 }
