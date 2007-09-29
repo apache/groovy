@@ -124,16 +124,17 @@ public class MarkupBuilder extends BuilderSupport {
         toState(1, name);
         for (Iterator iter = attributes.entrySet().iterator(); iter.hasNext();) {
             Map.Entry entry = (Map.Entry) iter.next();
-            out.print(" ");
-
-            // Output the attribute name,
-            print(entry.getKey().toString());
-
-            // Output the attribute value within quotes. Use whichever
-            // type of quotes are currently configured.
-            out.print(this.useDoubleQuotes ? "=\"" : "='");
-            print(escapeAttributeValue(entry.getValue().toString()));
-            out.print(this.useDoubleQuotes ? "\"" : "'");
+            Object attributeValue = entry.getValue();
+            if (attributeValue != null) {
+                out.print(" ");
+                // Output the attribute name,
+                print(entry.getKey().toString());
+                // Output the attribute value within quotes. Use whichever
+                // type of quotes are currently configured.
+                out.print(this.useDoubleQuotes ? "=\"" : "='");
+                print(escapeAttributeValue(attributeValue.toString()));
+                out.print(this.useDoubleQuotes ? "\"" : "'");
+            }
         }
 
         if (value != null) {

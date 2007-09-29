@@ -60,7 +60,7 @@ class MarkupBuilderTest extends GroovyTestCase {
             elem1('hello1')
             elem2('hello2')
             nestedElem(x:'abc', y:'def') {
-                child(z:'def')
+                child(z:'def', nulltest:null)
                 child2()
             }
             nestedElem2(z:'zzz') {
