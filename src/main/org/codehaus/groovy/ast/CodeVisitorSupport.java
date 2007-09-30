@@ -152,6 +152,10 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
         expression.getTrueExpression().visit(this);
         expression.getFalseExpression().visit(this);
     }
+    
+    public void visitShortTernaryExpression(ElvisOperatorExpression expression) {
+        visitTernaryExpression(expression);
+    }
 
     public void visitPostfixExpression(PostfixExpression expression) {
         expression.getExpression().visit(this);

@@ -36,8 +36,15 @@ class TernaryOperatorTest extends GroovyTestCase {
         def a = 1
         def x = a?:2
         assert x==a
+        
         a = null
         x = a?:2
         assert x==2
+        
+        def list = ['a','b','c']
+        def index = 0
+        def ret = list[index++]?:"something else"
+        assert index==1
+        assert ret=='a'
     }
 }

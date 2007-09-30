@@ -1590,21 +1590,20 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     protected Expression ternaryExpression(AST ternaryNode) {
         AST node = ternaryNode.getFirstChild();
         Expression base = expression(node);
-        BooleanExpression booleanExpression = new BooleanExpression(base);
-        booleanExpression.setSourcePosition(base);
         node = node.getNextSibling();
         Expression left = expression(node);
         node = node.getNextSibling();
-        Expression right;
+        Expression ret;
         if (node==null) {
-            right = left;
-            left = base;
+            ret = new ElvisOperatorExpression(base, left);
         } else {
-            right = expression(node);
+            Expression right = expression(node);
+            BooleanExpression booleanExpression = new BooleanExpression(base);
+            booleanExpression.setSourcePosition(base);
+            ret = new TernaryExpression(booleanExpression, left, right);
         }
-        TernaryExpression ternaryExpression = new TernaryExpression(booleanExpression, left, right);
-        configureAST(ternaryExpression, ternaryNode);
-        return ternaryExpression;
+        configureAST(ret, ternaryNode);
+        return ret;
     }
 
     protected Expression variableExpression(AST node) {

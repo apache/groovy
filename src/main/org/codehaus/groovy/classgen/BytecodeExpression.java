@@ -26,6 +26,13 @@ import org.codehaus.groovy.ast.expr.ExpressionTransformer;
  * @version $Revision$
  */
 public abstract class BytecodeExpression extends Expression {
+    public static BytecodeExpression NOP = new BytecodeExpression() {
+        public void visit(GroovyCodeVisitor visitor) {
+            //do nothing             
+        }
+    };
+    
+    
     public BytecodeExpression() {
     }
     

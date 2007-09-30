@@ -76,6 +76,8 @@ public interface GroovyCodeVisitor {
     void visitConstructorCallExpression(ConstructorCallExpression expression);
 
     void visitTernaryExpression(TernaryExpression expression);
+    
+    void visitShortTernaryExpression(ElvisOperatorExpression expression);
 
     void visitBinaryExpression(BinaryExpression expression);
 

@@ -702,17 +702,41 @@ public class AsmClassGenerator extends ClassGenerator {
     public void visitTernaryExpression(TernaryExpression expression) {
         onLineNumber(expression, "visitTernaryExpression");
 
-        expression.getBooleanExpression().visit(this);
+        BooleanExpression boolPart = expression.getBooleanExpression();
+        Expression truePart = expression.getTrueExpression();
+        Expression falsePart = expression.getFalseExpression();
+        
+        if (expression instanceof ElvisOperatorExpression) {
+            visitAndAutoboxBoolean(expression.getTrueExpression());
+            boolPart = new BooleanExpression(
+                    new BytecodeExpression() {
+                        public void visit(GroovyCodeVisitor visitor) {
+                            mv.visitInsn(DUP);
+                        }
+                    }
+            );
+            truePart = BytecodeExpression.NOP;
+            final Expression oldFalse = falsePart;
+            falsePart = new BytecodeExpression() {
+                public void visit(GroovyCodeVisitor visitor) {
+                    mv.visitInsn(POP);
+                    visitAndAutoboxBoolean(oldFalse);
+                }
+            };
+        }
+        
+        
+        boolPart.visit(this);
 
         Label l0 = new Label();
         mv.visitJumpInsn(IFEQ, l0);
-        visitAndAutoboxBoolean(expression.getTrueExpression());
+        visitAndAutoboxBoolean(truePart);
 
         Label l1 = new Label();
         mv.visitJumpInsn(GOTO, l1);
         mv.visitLabel(l0);
 
-        visitAndAutoboxBoolean(expression.getFalseExpression());
+        visitAndAutoboxBoolean(falsePart);
         mv.visitLabel(l1);
     }
 
