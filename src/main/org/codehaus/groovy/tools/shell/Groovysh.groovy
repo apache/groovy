@@ -35,6 +35,7 @@ import org.codehaus.groovy.tools.shell.util.ANSI
 import org.codehaus.groovy.tools.shell.util.HelpFormatter
 import org.codehaus.groovy.tools.shell.util.Logger
 import org.codehaus.groovy.tools.shell.util.XmlCommandRegistrar
+import org.codehaus.groovy.runtime.StackTraceUtils
 
 /**
  * An interactive shell for evaluating Groovy code from the command-line (aka. groovysh).
@@ -352,32 +353,36 @@ class Groovysh
         assert cause != null
         
         io.err.println("@|bold,red ERROR| ${cause.class.name}: @|bold,red ${cause.message}|")
-        
+
         if (log.debug) {
             // If we have debug enabled then skip the fancy bits below
             log.debug(cause)
         }
-        else if (io.verbose) {
+        else {
+            boolean sanitize = prefs.getBoolean('sanitize-stack-trace', true)
+
+            // Sanitize the stack trace unless we are inverbose mode, or the user has request otherwise
+            if (!io.verbose && sanitize) {
+                cause = StackTraceUtils.deepSanitize(cause);
+            }
+
             def trace = cause.stackTrace
+
             def buff = new StringBuffer()
-            
+
             for (e in trace) {
                 buff << "        @|bold at| ${e.className}.${e.methodName} (@|bold "
-                
-                buff << (e.nativeMethod ? 'Native Method' : 
+
+                buff << (e.nativeMethod ? 'Native Method' :
                             (e.fileName != null && e.lineNumber != -1 ? "${e.fileName}:${e.lineNumber}" :
                                 (e.fileName != null ? e.fileName : 'Unknown Source')))
-                
+
                 buff << '|)'
-                
+
                 io.err.println(buff)
-                
+
                 buff.setLength(0) // Reset the buffer
-                
-                //
-                // FIXME: Need to make sure this doesn't eat up other muck...
-                //
-                
+
                 // Stop the trace once we find the root of the evaluated script
                 if (e.className == EVAL_SCRIPT_FILENAME && e.methodName == 'run') {
                     io.err.println('        @|bold ...|')
