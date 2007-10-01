@@ -17,11 +17,8 @@ package org.codehaus.groovy.runtime;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
- *
  * Originally was grails.utils.GrailsUtils, removed some grails specific stuff.
  * Utility methods removing internal lines from stack traces
  *
@@ -31,12 +28,9 @@ import java.util.logging.Logger;
  * @version $Revision: 5544 $
  * First Created: 02-Jun-2006
  * Last Updated: $Date: 2007-09-21 13:53:07 -0500 (Fri, 21 Sep 2007) $
- *
  */
-public class StackTraceUtils {
-
-	//private static final Logger LOG  = Logger.getLogger(StackUtils.class.getName()); //TODO use shell logger?  commons logger?
-    private static final Logger STACK_LOG  = Logger.getLogger("StackTrace"); //TODO use shell logger?  commons logger?
+public class StackTraceUtils
+{
     private static final String[] GROOVY_PACKAGES =
             System.getProperty("groovy.sanitized.stacktraces",
                 "groovy.," +
@@ -64,8 +58,7 @@ public class StackTraceUtils {
                     newTrace.add( stackTraceElement);
                 }
             }
-            // We don't want to lose anything, so log it
-            STACK_LOG.log(Level.WARNING, "Sanitizing stacktrace:", t);
+
             StackTraceElement[] clean = new StackTraceElement[newTrace.size()];
             newTrace.toArray(clean);
             t.setStackTrace(clean);
