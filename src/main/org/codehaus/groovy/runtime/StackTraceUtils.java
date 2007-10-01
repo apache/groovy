@@ -16,7 +16,11 @@ package org.codehaus.groovy.runtime;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
 
 /**
  * Originally was grails.utils.GrailsUtils, removed some grails specific stuff.
@@ -29,8 +33,25 @@ import java.util.List;
  * First Created: 02-Jun-2006
  * Last Updated: $Date: 2007-09-21 13:53:07 -0500 (Fri, 21 Sep 2007) $
  */
-public class StackTraceUtils
-{
+public class StackTraceUtils {
+
+    public static final String STACK_LOG_NAME = "StackTrace";
+    private static final Logger STACK_LOG;
+    // set log to consume traces by default, end user can override later
+    static {
+        outer: do {
+            Enumeration existingLogs = LogManager.getLogManager().getLoggerNames();
+            while (existingLogs.hasMoreElements()) {
+                if (STACK_LOG_NAME.equals(existingLogs.nextElement())) {
+                    STACK_LOG = Logger.getLogger(STACK_LOG_NAME);
+                    break outer;
+                }
+            }
+            STACK_LOG = Logger.getLogger(STACK_LOG_NAME);
+            STACK_LOG.setUseParentHandlers(false);
+        } while (false);
+    }
+
     private static final String[] GROOVY_PACKAGES =
             System.getProperty("groovy.sanitized.stacktraces",
                 "groovy.," +
@@ -58,6 +79,9 @@ public class StackTraceUtils
                     newTrace.add( stackTraceElement);
                 }
             }
+            // We don't want to lose anything, so log it
+  	        STACK_LOG.log(Level.WARNING, "Sanitizing stacktrace:", t);
+
 
             StackTraceElement[] clean = new StackTraceElement[newTrace.size()];
             newTrace.toArray(clean);

@@ -90,6 +90,7 @@ class Console implements CaretListener {
     static String ICON_PATH = 'groovy/ui/ConsoleIcon.png' // used by ObjectBrowser too 
 
     static void main(args) {
+        java.util.logging.Logger.getLogger(StackTraceUtils.STACK_LOG_NAME).useParentHandlers = true
         def console = new Console()
         console.run()
     }
