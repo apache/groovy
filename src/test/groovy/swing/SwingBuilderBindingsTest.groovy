@@ -1,5 +1,5 @@
 /*
- * $Id:  $
+ * $Id$
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -196,34 +196,6 @@ public class SwingBuilderBindingsTest extends GroovyTestCase {
         assert swing.txt.enabled == swing.cb.enabled
     }
 
-
-    public void testAnimate() {
-        if (isHeadless()) return
-        SwingBuilder swing = new SwingBuilder()
-
-        int result = 0
-        swing.actions() {
-            spinner(id:'spin', value:animate(0..10, duration: 100, id:'anime', interval: 5), stateChanged: {result += spin.value})
-        }
-
-        sleep(150)
-        assert swing.spin.value > 0
-        assert result > 0
-
-        result = 0
-        swing.spin.value = 0
-        swing.anime.rebind()
-        sleep(150)
-        assert swing.spin.value > 0
-        assert result > 0
-
-        result = 0
-        swing.spin.value = 0
-        swing.anime.bind()
-        swing.anime.unbind()
-        assert swing.spin.value < 2
-        assert result < 2
-    }
 
     public void testModel() {
         if (isHeadless()) return

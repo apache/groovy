@@ -102,6 +102,10 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
         this.proxyBuilder = this;
     }
 
+    public Map getFactories() {
+        return Collections.unmodifiableMap(factories);
+    }
+
     public Map getContext() {
         if( !contexts.isEmpty() ){
             return (Map) contexts.getFirst();

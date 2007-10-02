@@ -248,14 +248,6 @@ public class SwingBuilder extends FactoryBuilderSupport {
         }
 
         // binding related classes
-        try {
-            // high quality stuff for Java 5.0+
-            registerFactory("animate", (Factory) Class.forName('groovy.swing.factory.TimingFrameworkFactory').newInstance());
-        } catch (Exception e) {
-            // less effective stuff for Java 1.4
-            registerFactory("animate", new AnimateFactory());
-        }
-
         registerFactory("bind", new BindFactory());
         addAttributeDelegate(BindFactory.attributeDelegate)
         registerFactory("model", new ModelFactory());

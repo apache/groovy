@@ -896,13 +896,13 @@ class SwingBuilderTest extends GroovyTestCase {
         swing.dialog(id:'dialog').pack()
         swing.window(id:'window').pack()
 
-        //TODO check bind, animate, and model
+        //TODO check bind and model
         assert swing.frame.isDisplayable()
         assert swing.dialog.isDisplayable()
         assert swing.window.isDisplayable()
         swing.dispose()
 
-        //TODO check bind, animate, and model
+        //TODO check bind and model
         assert !swing.frame.isDisplayable()
         assert !swing.dialog.isDisplayable()
         assert !swing.window.isDisplayable()
