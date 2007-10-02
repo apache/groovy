@@ -529,7 +529,7 @@ $Date$
         <mkdir dir="${docsDirectory}"/>
     </target>
 
-    <target name="doc" depends="-compileTools,-docInit" description="Create the documentation.">
+    <target name="doc" depends="-compileTools,-docInit,-includeGroovyDocTemplates" description="Create the documentation.">
         <java classname="org.codehaus.groovy.tools.DocGenerator" fork="true">
             <classpath>
                 <pathelement path="${toolsClassesDirectory}"/>
