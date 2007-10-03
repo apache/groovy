@@ -360,20 +360,20 @@ public class MetaClassHelper {
                     closestVargsClass = paramTypes[1];
                     closestClass = theType;
                     answer = method;
-                } else if (closestClass.cachedClass == theType.cachedClass) {
+                } else if (closestClass.getCachedClass() == theType.getCachedClass()) {
                     if (closestVargsClass == null) continue;
                     CachedClass newVargsClass = paramTypes[1];
-                    if (closestVargsClass == null || isAssignableFrom(newVargsClass.cachedClass, closestVargsClass.cachedClass)) {
+                    if (closestVargsClass == null || isAssignableFrom(newVargsClass.getCachedClass(), closestVargsClass.getCachedClass())) {
                         closestVargsClass = newVargsClass;
                         answer = method;
                     }
-                } else if (isAssignableFrom(theType.cachedClass, closestClass.cachedClass)) {
+                } else if (isAssignableFrom(theType.getCachedClass(), closestClass.getCachedClass())) {
                     closestVargsClass = paramTypes[1];
                     closestClass = theType;
                     answer = method;
                 }
             } else {
-                if (closestClass == null || isAssignableFrom(theType.cachedClass, closestClass.cachedClass)) {
+                if (closestClass == null || isAssignableFrom(theType.getCachedClass(), closestClass.getCachedClass())) {
                     closestVargsClass = null;
                     closestClass = theType;
                     answer = method;
@@ -680,11 +680,11 @@ public class MetaClassHelper {
                 && pt.getParameterTypes()[(paramTypes.length - 1)].isArray) {
             // first check normal number of parameters
             for (int i = 0; i < paramTypes.length - 1; i++) {
-                if (isAssignableFrom(paramTypes[i].cachedClass, arguments[i])) continue;
+                if (isAssignableFrom(paramTypes[i].getCachedClass(), arguments[i])) continue;
                 return false;
             }
             // check varged
-            Class clazz = paramTypes[paramTypes.length - 1].cachedClass.getComponentType();
+            Class clazz = paramTypes[paramTypes.length - 1].getCachedClass().getComponentType();
             for (int i = paramTypes.length; i < size; i++) {
                 if (isAssignableFrom(clazz, arguments[i])) continue;
                 return false;
@@ -693,7 +693,7 @@ public class MetaClassHelper {
         } else if (paramTypes.length == size) {
             // lets check the parameter types match
             for (int i = 0; i < size; i++) {
-                if (isAssignableFrom(paramTypes[i].cachedClass, arguments[i])) continue;
+                if (isAssignableFrom(paramTypes[i].getCachedClass(), arguments[i])) continue;
                 return false;
             }
             return true;

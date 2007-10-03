@@ -21,6 +21,7 @@ import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ParameterTypes;
 
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.HashMap;
 
 import org.codehaus.groovy.runtime.InvokerInvocationException;
@@ -72,5 +73,9 @@ public class ReflectionMetaMethod extends MetaMethod {
             cache.put(element, method);
         }
         return method;
+    }
+
+    public boolean isMethod(Method method) {
+        return method == this.method.cachedMethod || super.isMethod(method);    //To change body of overridden methods use File | Settings | File Templates.
     }
 }

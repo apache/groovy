@@ -15,6 +15,8 @@
  */
 package groovy.lang;
 
+import org.codehaus.groovy.reflection.CachedMethod;
+import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.CurriedClosure;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
@@ -102,18 +104,17 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
         this.thisObject = thisObject;
 
         final Class clazz = this.getClass();
-        final Method[] methods = (Method[]) AccessController.doPrivileged(new  PrivilegedAction() {
-            public Object run() {
-                return clazz.getDeclaredMethods();
-            }
-        });
+        final CachedMethod[] methods = ReflectionCache.getCachedClass(clazz).getMethods();
 
         // set it to -1 for starters so parameterTypes will always get a type
         maximumNumberOfParameters = -1;
         for (int j = 0; j < methods.length; j++) {
-            if ("doCall".equals(methods[j].getName()) && methods[j].getParameterTypes().length > maximumNumberOfParameters) {
-                parameterTypes = methods[j].getParameterTypes();
-                maximumNumberOfParameters = parameterTypes.length;
+            if ("doCall".equals(methods[j].getName())) {
+                final Class[] pt = methods[j].getNativeParameterTypes();
+                if (pt.length > maximumNumberOfParameters) {
+                    parameterTypes = pt;
+                    maximumNumberOfParameters = parameterTypes.length;
+                }
             }
         }
         // this line should be useless, but well, just in case

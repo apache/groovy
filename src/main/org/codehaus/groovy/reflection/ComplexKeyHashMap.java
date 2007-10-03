@@ -1,5 +1,9 @@
 package org.codehaus.groovy.reflection;
 
+import java.util.Iterator;
+import java.util.ConcurrentModificationException;
+import java.util.NoSuchElementException;
+
 public class ComplexKeyHashMap
 {
   public static class Entry {
@@ -89,5 +93,51 @@ public class ComplexKeyHashMap
               result <<= 1;
       }
       return result;
+  }
+
+  public Iterator getEntrySetIterator() {
+        return new Iterator() {
+            Entry next;	// next entry to return
+            int index;		// current slot
+            Entry current;	// current entry
+
+            {
+                Entry[] t = table;
+                int i = t.length;
+                Entry n = null;
+                if (size != 0) { // advance to first entry
+                    while (i > 0 && (n = t[--i]) == null) {}
+                }
+                next = n;
+                index = i;
+            }
+
+            public boolean hasNext() {
+                return next != null;
+            }
+
+            public Object next() {
+                return nextEntry();
+            }
+
+            Entry nextEntry() {
+                Entry e = next;
+                if (e == null)
+                    throw new NoSuchElementException();
+
+                Entry n = e.next;
+                Entry[] t = table;
+                int i = index;
+                while (n == null && i > 0)
+                    n = t[--i];
+                index = i;
+                next = n;
+                return current = e;
+            }
+
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
+        };
   }
 }

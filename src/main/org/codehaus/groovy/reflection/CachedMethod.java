@@ -16,23 +16,25 @@
 package org.codehaus.groovy.reflection;
 
 import org.codehaus.groovy.classgen.BytecodeHelper;
-import org.codehaus.groovy.runtime.Reflector;
+import org.codehaus.groovy.runtime.metaclass.MethodHelper;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Arrays;
 
 /**
  * @author Alex.Tkachman
  */
-public class CachedMethod extends ParameterTypes {
+public class CachedMethod extends ParameterTypes implements Comparable{
     public final CachedClass cachedClass;
 
     public final Method cachedMethod;
     private boolean alreadySetAccessible;
     private int methodIndex;
+    private int hashCode;
 
     public CachedMethod(CachedClass clazz, Method method) {
         this.cachedMethod = method;
@@ -45,12 +47,17 @@ public class CachedMethod extends ParameterTypes {
 
     public static CachedMethod find(Method method) {
         CachedMethod[] methods = ReflectionCache.getCachedClass(method.getDeclaringClass()).getMethods();
-        for (int i = 0; i < methods.length; i++) {
-            CachedMethod cachedMethod = methods[i];
-            if (cachedMethod.cachedMethod.equals(method))
-                return cachedMethod;
-        }
-        return null;
+//        for (int i = 0; i < methods.length; i++) {
+//            CachedMethod cachedMethod = methods[i];
+//            if (cachedMethod.cachedMethod.equals(method))
+//                return cachedMethod;
+//        }
+//        return null;
+        int i = Arrays.binarySearch(methods, method);
+        if (i < 0)
+          return null;
+
+        return methods[i];
     }
 
     Class[] getPT() {
@@ -66,7 +73,7 @@ public class CachedMethod extends ParameterTypes {
     }
 
     public Class getDeclaringClass() {
-        return cachedClass.cachedClass;
+        return cachedClass.getCachedClass();
     }
 
     public Class getReturnType() {
@@ -101,7 +108,7 @@ public class CachedMethod extends ParameterTypes {
     }
 
     public boolean isStatic() {
-        return (getModifiers() & Modifier.STATIC) != 0;
+        return MethodHelper.isStatic(cachedMethod);
     }
 
     public void setMethodIndex(int i) {
@@ -134,5 +141,85 @@ public class CachedMethod extends ParameterTypes {
             }
         return true;
     }
+
+    public int compareTo(Object o) {
+      if (o instanceof CachedMethod)
+        return compareToCachedMethod((CachedMethod)o);
+      else
+        return compareToMethod((Method)o);
+    }
+
+    private int compareToCachedMethod(CachedMethod m) {
+        if (m == null)
+         return -1;
+
+        final int strComp = getName().compareTo(m.getName());
+        if (strComp != 0)
+          return strComp;
+
+        final int retComp = getReturnType().getName().compareTo(m.getReturnType().getName());
+        if (retComp != 0)
+          return retComp;
+
+        CachedClass[]  params =   getParameterTypes();
+        CachedClass [] mparams = m.getParameterTypes();
+
+        final int pd = params.length - mparams.length;
+        if (pd != 0)
+          return pd;
+
+        for (int i = 0; i != params.length; ++i)
+        {
+            final int nameComp = params[i].getName().compareTo(mparams[i].getName());
+            if (nameComp != 0)
+              return nameComp;
+        }
+
+        throw new RuntimeException("Should never happen");
+    }
+
+    private int compareToMethod(Method m) {
+        if (m == null)
+         return -1;
+
+        final int strComp = getName().compareTo(m.getName());
+        if (strComp != 0)
+          return strComp;
+
+        final int retComp = getReturnType().getName().compareTo(m.getReturnType().getName());
+        if (retComp != 0)
+          return retComp;
+
+        CachedClass[]  params =   getParameterTypes();
+        Class [] mparams = m.getParameterTypes();
+
+        final int pd = params.length - mparams.length;
+        if (pd != 0)
+          return pd;
+
+        for (int i = 0; i != params.length; ++i)
+        {
+            final int nameComp = params[i].getName().compareTo(mparams[i].getName());
+            if (nameComp != 0)
+              return nameComp;
+        }
+
+        return 0;
+    }
+
+    public boolean equals(Object o) {
+        return (o instanceof CachedMethod && cachedMethod.equals(((CachedMethod)o).cachedMethod))
+                || (o instanceof Method && cachedMethod.equals(o));
+    }
+
+    public int hashCode() {
+        if (hashCode == 0) {
+           hashCode = cachedMethod.hashCode();
+           if (hashCode == 0)
+             hashCode = 0xcafebebe;
+        }
+        return hashCode;
+    }
+
 }
 

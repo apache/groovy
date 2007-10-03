@@ -22,13 +22,10 @@ import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedField;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.MetaClassHelper;
-import org.codehaus.groovy.runtime.Reflector;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.*;
 import java.util.logging.Level;
 
@@ -380,7 +377,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
                     }
                 };
             } else {
-                if (length == 1 && c[0].cachedClass == Object.class) {
+                if (length == 1 && c[0].getCachedClass() == Object.class) {
                     // Object fits all, so simple dispatch rule here
                     chooser = new MethodChooser() {
                         public Object chooseMethod(Class[] arguments, boolean coerce) {
@@ -392,12 +389,12 @@ public final class ClosureMetaClass extends MetaClassImpl {
                 } else {
                     boolean allObject = true;
                     for (int i = 0; i < c.length - 1; i++) {
-                        if (c[i].cachedClass != Object.class) {
+                        if (c[i].getCachedClass() != Object.class) {
                             allObject = false;
                             break;
                         }
                     }
-                    if (allObject && c[c.length - 1].cachedClass == Object.class) {
+                    if (allObject && c[c.length - 1].getCachedClass() == Object.class) {
                         // all arguments are object, so test only if argument number is correct
                         chooser = new MethodChooser() {
                             public Object chooseMethod(Class[] arguments, boolean coerce) {
@@ -406,7 +403,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
                             }
                         };
                     } else {
-                        if (allObject && c[c.length - 1].cachedClass == Object[].class) {
+                        if (allObject && c[c.length - 1].getCachedClass() == Object[].class) {
                             // all arguments are Object but last, which is a vargs argument, that
                             // will fit all, so jsut test if the number of argument is equal or
                             // more than the parameters we have.
@@ -439,7 +436,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
                 if (c.length == 0) {
                     m0 = m;
                 } else {
-                    if (c.length == 1 && c[0].cachedClass == Object.class) {
+                    if (c.length == 1 && c[0].getCachedClass() == Object.class) {
                         m1 = m;
                     }
                 }

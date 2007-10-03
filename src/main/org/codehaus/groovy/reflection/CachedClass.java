@@ -26,6 +26,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.ref.WeakReference;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
@@ -45,7 +46,7 @@ public class CachedClass {
     private CachedField[] fields;
     private CachedConstructor[] constructors;
     private CachedMethod[] methods;
-    public final Class cachedClass;
+    private final Class cachedClass;
 
     public Map getAllMethodsMap () {
         if (allMethodsMap == null) {
@@ -78,10 +79,10 @@ public class CachedClass {
         if (interfaces == null)  {
             interfaces = new HashSet (0);
 
-            if (cachedClass.isInterface())
+            if (getCachedClass().isInterface())
               interfaces.add(this);
 
-            Class[] classes = cachedClass.getInterfaces();
+            Class[] classes = getCachedClass().getInterfaces();
             for (int i = 0; i < classes.length; i++) {
                 final CachedClass aClass = ReflectionCache.getCachedClass(classes[i]);
                 if (!interfaces.contains(aClass))
@@ -116,24 +117,25 @@ public class CachedClass {
 
     public synchronized CachedClass getCachedSuperClass() {
         if (cachedSuperClass == null)
-            cachedSuperClass = ReflectionCache.getCachedClass(cachedClass.getSuperclass());
+            cachedSuperClass = ReflectionCache.getCachedClass(getCachedClass().getSuperclass());
 
         return cachedSuperClass;
     }
 
     public synchronized CachedMethod[] getMethods() {
         if (methods == null) {
-            final Method[] declaredMethods = cachedClass.getDeclaredMethods();
+            final Method[] declaredMethods = getCachedClass().getDeclaredMethods();
             methods = new CachedMethod[declaredMethods.length];
             for (int i = 0; i != methods.length; ++i)
                 methods[i] = new CachedMethod(this,declaredMethods[i]);
+            Arrays.sort(methods);
         }
         return methods;
     }
 
     public synchronized CachedField[] getFields() {
         if (fields == null) {
-            final Field[] declaredFields = cachedClass.getDeclaredFields();
+            final Field[] declaredFields = getCachedClass().getDeclaredFields();
             fields = new CachedField[declaredFields.length];
             for (int i = 0; i != fields.length; ++i)
                 fields[i] = new CachedField(this, declaredFields[i]);
@@ -143,7 +145,7 @@ public class CachedClass {
 
     public CachedConstructor[] getConstructors() {
         if (constructors == null) {
-            final Constructor[] declaredContructors = cachedClass.getDeclaredConstructors();
+            final Constructor[] declaredContructors = getCachedClass().getDeclaredConstructors();
             constructors = new CachedConstructor[declaredContructors.length];
             for (int i = 0; i != constructors.length; ++i)
                 constructors[i] = new CachedConstructor(this, declaredContructors[i]);
@@ -176,7 +178,7 @@ public class CachedClass {
      * @return the coerced argument
      */
     protected Object coerceGString(Object argument) {
-        if (cachedClass != String.class) return argument;
+        if (getCachedClass() != String.class) return argument;
         if (!(argument instanceof GString)) return argument;
         return argument.toString();
     }
@@ -188,7 +190,7 @@ public class CachedClass {
             Object oldArgument = argument;
             boolean wasDouble = false;
             boolean wasFloat = false;
-            Class param = cachedClass;
+            Class param = getCachedClass();
             if (param == Byte.class || param == Byte.TYPE) {
                 argument = new Byte(((Number) argument).byteValue());
             } else if (param == Double.class || param == Double.TYPE) {
@@ -236,7 +238,7 @@ public class CachedClass {
         Class argumentClass = argument.getClass();
         if (!argumentClass.isArray()) return argument;
 
-        Class paramComponent = cachedClass.getComponentType();
+        Class paramComponent = getCachedClass().getComponentType();
         if (paramComponent.isPrimitive()) {
             if (paramComponent == boolean.class && argumentClass == Boolean[].class) {
                 argument = DefaultTypeTransformation.convertToBooleanArray(argument);
@@ -271,10 +273,10 @@ public class CachedClass {
     }
     
     public int getSuperClassDistance() {
-        synchronized (cachedClass) {
+        synchronized (getCachedClass()) {
             if (distance == -1) {
                 int distance = 0;
-                for (Class klazz=cachedClass; klazz != null; klazz = klazz.getSuperclass()) {
+                for (Class klazz= getCachedClass(); klazz != null; klazz = klazz.getSuperclass()) {
                     distance++;
                 }
                 this.distance = distance;
@@ -297,38 +299,42 @@ public class CachedClass {
     }
 
     public boolean isVoid() {
-        return cachedClass == void.class;
+        return getCachedClass() == void.class;
     }
 
     public void box(BytecodeHelper helper) {
-        helper.box(cachedClass);
+        helper.box(getCachedClass());
     }
 
     public void unbox(BytecodeHelper helper) {
-        helper.unbox(cachedClass);
+        helper.unbox(getCachedClass());
     }
 
     public boolean isInterface() {
-        return cachedClass.isInterface();
+        return getCachedClass().isInterface();
     }
 
     public void doCast(BytecodeHelper helper) {
-        helper.doCast(cachedClass);
+        helper.doCast(getCachedClass());
     }
 
     public String getName() {
-        return cachedClass.getName();
+        return getCachedClass().getName();
     }
 
     public String getTypeDescription() {
-        return BytecodeHelper.getTypeDescription(cachedClass);
+        return BytecodeHelper.getTypeDescription(getCachedClass());
     }
 
     public synchronized Reflector getReflector() {
         if (reflector == null) {
             final MetaClassRegistry metaClassRegistry = MetaClassRegistryImpl.getInstance(MetaClassRegistryImpl.LOAD_DEFAULT);
-            reflector = ((MetaClassRegistryImpl)metaClassRegistry).loadReflector(cachedClass, Arrays.asList(getMethods()));
+            reflector = ((MetaClassRegistryImpl)metaClassRegistry).loadReflector(getCachedClass(), Arrays.asList(getMethods()));
         }
         return reflector;
+    }
+
+    public Class getCachedClass() {
+        return cachedClass;
     }
 }

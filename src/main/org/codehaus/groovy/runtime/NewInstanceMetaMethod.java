@@ -33,34 +33,11 @@ import java.util.HashMap;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class NewInstanceMetaMethod extends StdMetaMethod {
-
-    private static final CachedClass[] EMPTY_TYPE_ARRAY = {};
-
-    private CachedClass[] bytecodeParameterTypes ;
-    private ParameterTypes paramTypes;
+public class NewInstanceMetaMethod extends NewMetaMethod {
 
 
     NewInstanceMetaMethod(CachedMethod method) {
         super(method);
-        bytecodeParameterTypes = method.getParameterTypes();
-        int size = bytecodeParameterTypes !=null ? bytecodeParameterTypes.length : 0;
-        CachedClass[] logicalParameterTypes;
-        if (size <= 1) {
-            logicalParameterTypes = EMPTY_TYPE_ARRAY;
-        } else {
-            logicalParameterTypes = new CachedClass[--size];
-            System.arraycopy(bytecodeParameterTypes, 1, logicalParameterTypes, 0, size);
-        }
-        paramTypes = new ParameterTypes(logicalParameterTypes);
-    }
-
-    public ParameterTypes getParamTypes() {
-        return paramTypes;
-    }
-
-    public CachedClass getDeclaringClass() {
-        return getBytecodeParameterTypes()[0];
     }
 
     public boolean isStatic() {
@@ -72,10 +49,6 @@ public class NewInstanceMetaMethod extends StdMetaMethod {
         return super.getModifiers() ^ Modifier.STATIC;
     }
 
-    public CachedClass[] getBytecodeParameterTypes() {
-        return bytecodeParameterTypes;
-    }
-
     public Object invoke(Object object, Object[] arguments)  {
         // we need to cheat using the type
         int size = arguments.length;
@@ -83,10 +56,6 @@ public class NewInstanceMetaMethod extends StdMetaMethod {
         newArguments[0] = object;
         System.arraycopy(arguments, 0, newArguments, 1, size);
         return super.invoke(null, newArguments);
-    }
-
-    public CachedClass getOwnerClass() {
-        return getBytecodeParameterTypes()[0];
     }
 
     private static HashMap cache = new HashMap();

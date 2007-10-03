@@ -19,7 +19,6 @@ import groovy.lang.Closure;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedMethod;
-import org.codehaus.groovy.runtime.metaclass.StdMetaMethod;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -176,9 +175,9 @@ public class GroovyCategorySupport {
                 CachedClass[] paramTypes = cachedMethod.getParameterTypes();
                 if (paramTypes.length > 0) {
                     CachedClass metaClass = paramTypes[0];
-                    Map metaMethodsMap = getMetaMethods(properties, metaClass.cachedClass);
+                    Map metaMethodsMap = getMetaMethods(properties, metaClass.getCachedClass());
                     List methodList = getMethodList(metaMethodsMap, method.getName());
-                    MetaMethod mmethod = new CategoryMethod(cachedMethod, metaClass.cachedClass);
+                    MetaMethod mmethod = new CategoryMethod(cachedMethod, metaClass.getCachedClass());
                     methodList.add(mmethod);
                     Collections.sort(methodList);
                 }

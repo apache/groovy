@@ -16,11 +16,10 @@
 package org.codehaus.groovy.reflection;
 
 import java.lang.ref.SoftReference;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.WeakHashMap;
+import java.util.TreeMap;
 
 public class ReflectionCache {
     private static Map primitiveTypesMap = new HashMap();

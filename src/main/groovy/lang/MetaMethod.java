@@ -19,14 +19,9 @@ package groovy.lang;
 import org.codehaus.groovy.runtime.*;
 import org.codehaus.groovy.reflection.ParameterTypes;
 import org.codehaus.groovy.reflection.CachedClass;
-import org.codehaus.groovy.reflection.ReflectionCache;
-import org.codehaus.groovy.reflection.CachedMethod;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 /**
  * Represents a Method on a Java object a little like {@link java.lang.reflect.Method}
@@ -84,7 +79,7 @@ public abstract class MetaMethod implements Cloneable {
     protected static boolean equal(CachedClass[] a, Class[] b) {
         if (a.length == b.length) {
             for (int i = 0, size = a.length; i < size; i++) {
-                if (!a[i].cachedClass.equals(b[i])) {
+                if (!a[i].getCachedClass().equals(b[i])) {
                     return false;
                 }
             }

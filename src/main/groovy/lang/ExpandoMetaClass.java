@@ -21,6 +21,7 @@ import org.codehaus.groovy.runtime.metaclass.ThreadManagedMetaBeanProperty;
 import org.codehaus.groovy.runtime.metaclass.ClosureStaticMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.ConcurrentReaderHashMap;
 import org.codehaus.groovy.reflection.CachedClass;
+import org.codehaus.groovy.reflection.ReflectionCache;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -174,8 +175,8 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
      */
     public Object invokeMissingProperty(Object instance, String propertyName, Object optionalValue, boolean isGetter) {
         Class theClass = instance instanceof Class ? (Class)instance : instance.getClass();
-        Class superClass = theClass;
-        while(superClass != Object.class) {
+        CachedClass superClass = theCachedClass;
+        while(superClass != ReflectionCache.OBJECT_CLASS) {
             final MetaBeanProperty property = findPropertyInClassHierarchy(propertyName, superClass);
             if(property != null) {
                 addMetaBeanProperty(property);
@@ -187,7 +188,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
                     return property.getProperty(instance);
                 }
             }
-            superClass = superClass.getSuperclass();
+            superClass = superClass.getCachedSuperClass();
         }
         // got here to property not found, look for getProperty or setProperty overrides
         if(isGetter) {
@@ -209,18 +210,18 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         return super.invokeMissingProperty(instance, propertyName, optionalValue, isGetter);
     }
 
-    private MetaBeanProperty findPropertyInClassHierarchy(String propertyName, Class theClass) {
+    private MetaBeanProperty findPropertyInClassHierarchy(String propertyName, CachedClass theClass) {
         MetaBeanProperty property= null;
-        final Class superClass = theClass.getSuperclass();
-        MetaClass metaClass = this.registry.getMetaClass(superClass);
+        final CachedClass superClass = theClass.getCachedSuperClass();
+        MetaClass metaClass = this.registry.getMetaClass(superClass.getCachedClass());
         if(metaClass instanceof MutableMetaClass) {
             property = getMetaPropertyFromMutableMetaClass(propertyName,metaClass);
             if(property == null) {
-                if(superClass != Object.class) {
+                if(superClass != ReflectionCache.OBJECT_CLASS) {
                     property = findPropertyInClassHierarchy(propertyName, superClass);
                 }
                 if(property == null) {
-                    final Class[] interfaces = theClass.getInterfaces();
+                    final Class[] interfaces = theClass.getCachedClass().getInterfaces();
                     property = searchInterfacesForMetaProperty(propertyName, interfaces);
                 }
             }
@@ -806,12 +807,12 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         else {
             if(getter) {
                 MetaMethod setterMethod = beanProperty.getSetter();
-                Class type = setterMethod != null ? setterMethod.getParameterTypes()[0].cachedClass : Object.class;
+                Class type = setterMethod != null ? setterMethod.getParameterTypes()[0].getCachedClass() : Object.class;
                 beanProperty = new MetaBeanProperty(propertyName,type,metaMethod,setterMethod);
                 propertyCache.put(propertyName, beanProperty);
             }else {
                 MetaMethod getterMethod = beanProperty.getGetter();
-                beanProperty = new MetaBeanProperty(propertyName, metaMethod.getParameterTypes()[0].cachedClass,getterMethod,metaMethod);
+                beanProperty = new MetaBeanProperty(propertyName, metaMethod.getParameterTypes()[0].getCachedClass(),getterMethod,metaMethod);
                 propertyCache .put(propertyName, beanProperty);
             }
         }

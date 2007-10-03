@@ -7,7 +7,7 @@ import java.lang.reflect.Array;
 
 public class ParameterTypes
 {
-  private Class [] nativeParamTypes;
+  protected Class [] nativeParamTypes;
   protected CachedClass [] parameterTypes;
 
     public ParameterTypes () {
@@ -38,7 +38,7 @@ public class ParameterTypes
             if (parameterTypes != null) {
                nativeParamTypes = new Class [parameterTypes.length];
                 for (int i = 0; i != parameterTypes.length; ++i) {
-                    nativeParamTypes[i] = parameterTypes[i].cachedClass;
+                    nativeParamTypes[i] = parameterTypes[i].getCachedClass();
                 }
             }
             else
@@ -63,7 +63,7 @@ public class ParameterTypes
         Object last = arguments[arguments.length - 1];
         if (last == null) return true;
         Class clazz = last.getClass();
-        return !clazz.equals(parameterTypes[lenMinus1].cachedClass);
+        return !clazz.equals(parameterTypes[lenMinus1].getCachedClass());
 
     }
 
@@ -74,7 +74,7 @@ public class ParameterTypes
             argumentArray = MetaClassHelper.EMPTY_ARRAY;
         } else if (parameterTypes.length == 1 && argumentArray.length == 0) {
             if (isVargsMethod(argumentArray)) {
-                argumentArray = new Object[]{Array.newInstance(parameterTypes[0].cachedClass.getComponentType(), 0)};
+                argumentArray = new Object[]{Array.newInstance(parameterTypes[0].getCachedClass().getComponentType(), 0)};
             }
             else
                 argumentArray = MetaClassHelper.ARRAY_WITH_NULL;
@@ -87,7 +87,7 @@ public class ParameterTypes
             Object argument = argumentArray[i];
             if (argument == null) continue;
             CachedClass parameterType = parameterTypes[i];
-            if (ReflectionCache.isAssignableFrom(parameterType.cachedClass, argument.getClass())) continue;
+            if (ReflectionCache.isAssignableFrom(parameterType.getCachedClass(), argument.getClass())) continue;
 
             argument = parameterType.coerceGString(argument);
             argument = parameterType.coerceNumber(argument);
@@ -106,7 +106,7 @@ public class ParameterTypes
      * @param paramTypes    the types of the paramters the method takes
      */
     private static Object[] fitToVargs(Object[] argumentArray, CachedClass[] paramTypes) {
-        Class vargsClass = ReflectionCache.autoboxType(paramTypes[paramTypes.length - 1].cachedClass.getComponentType());
+        Class vargsClass = ReflectionCache.autoboxType(paramTypes[paramTypes.length - 1].getCachedClass().getComponentType());
 
         if (argumentArray.length == paramTypes.length - 1) {
             // the vargs argument is missing, so fill it with an empty array
