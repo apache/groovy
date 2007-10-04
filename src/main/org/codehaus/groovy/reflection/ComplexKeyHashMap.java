@@ -52,7 +52,7 @@ public class ComplexKeyHashMap
   }
 
   public void init(int initCapacity) {
-      threshold = (initCapacity * 2)/8;
+      threshold = (initCapacity * 6)/8;
       table = new Entry[initCapacity];
   }
 
@@ -76,12 +76,12 @@ public class ComplexKeyHashMap
       }
 
       table = newTable;
-      threshold = (2 * newLength) / 8;
+      threshold = (6 * newLength) / 8;
   }
 
   private int capacity(int expectedMaxSize) {
-      // Compute min capacity for expectedMaxSize given a load factor of 1/4
-      int minCapacity = (8 * expectedMaxSize)/2;
+      // Compute min capacity for expectedMaxSize given a load factor of 3/4
+      int minCapacity = (8 * expectedMaxSize)/6;
 
       // Compute the appropriate capacity
       int result;
@@ -95,8 +95,13 @@ public class ComplexKeyHashMap
       return result;
   }
 
-  public Iterator getEntrySetIterator() {
-        return new Iterator() {
+  public interface EntryIterator {
+      boolean hasNext ();
+      Entry   next ();
+  }
+
+  public EntryIterator  getEntrySetIterator() {
+        return new EntryIterator() {
             Entry next;	// next entry to return
             int index;		// current slot
             Entry current;	// current entry
@@ -116,7 +121,7 @@ public class ComplexKeyHashMap
                 return next != null;
             }
 
-            public Object next() {
+            public Entry next() {
                 return nextEntry();
             }
 
@@ -133,10 +138,6 @@ public class ComplexKeyHashMap
                 index = i;
                 next = n;
                 return current = e;
-            }
-
-            public void remove() {
-                throw new UnsupportedOperationException();
             }
         };
   }

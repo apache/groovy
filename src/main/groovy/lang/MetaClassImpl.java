@@ -84,7 +84,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     private final Index classPropertyIndex = new MethodIndex();
     private Index classPropertyIndexForSuper = new MethodIndex();
-    private final Map staticPropertyIndex = new HashMap();
+    private final SingleKeyHashMap staticPropertyIndex = new SingleKeyHashMap();
 
     private final Map listeners = new HashMap();
     private final Map methodCache = new ConcurrentReaderHashMap();
@@ -170,7 +170,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @see MetaObjectProtocol#getMetaProperty(String)
      */
     public MetaProperty getMetaProperty(String name) {
-        Map propertyMap = classPropertyIndex.getNotNull(theCachedClass);
+        SingleKeyHashMap propertyMap = classPropertyIndex.getNotNull(theCachedClass);
         if(propertyMap.containsKey(name)) {
             return (MetaProperty)propertyMap.get(name);
         }
@@ -218,8 +218,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
            Set interfaces = theCachedClass.getInterfaces();
 
            inheritInterfaceMethods(interfaces);
-           Map theClassIndex = classMethodIndex.getNotNull(theCachedClass);
-           Map objectIndex = classMethodIndex.getNotNull(ReflectionCache.OBJECT_CLASS);
+           SingleKeyHashMap theClassIndex = classMethodIndex.getNotNull(theCachedClass);
+           SingleKeyHashMap objectIndex = classMethodIndex.getNotNull(ReflectionCache.OBJECT_CLASS);
            copyNonPrivateMethods(objectIndex,theClassIndex);
            classMethodIndexForSuper = classMethodIndex;
            superClasses.addAll(interfaces);
@@ -299,7 +299,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
        // no MOP methods if not a child of GroovyObject
        if (!GroovyObject.class.isAssignableFrom(theClass)) return;
 
-       final Map mainClassMethodIndex = classMethodIndex.getNotNull(theCachedClass);
+       final SingleKeyHashMap mainClassMethodIndex = classMethodIndex.getNotNull(theCachedClass);
        class MOPIter extends MethodIndexAction {
            boolean useThis;
            public boolean skipClass(CachedClass clazz) {
@@ -341,14 +341,14 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
            if (! newGroovyMethodsList.contains(method)){
                newGroovyMethodsList.add(method);
            }
-           Map methodIndex = classMethodIndex.getNotNull(theCachedClass);
-           ArrayList list = (ArrayList) methodIndex.get(method.getName());
-           if (list == null) {
-               list = new ArrayList();
-               methodIndex.put(method.getName(), list);
+           SingleKeyHashMap methodIndex = classMethodIndex.getNotNull(theCachedClass);
+           SingleKeyHashMap.Entry e = (SingleKeyHashMap.Entry) methodIndex.getOrPut(method.getName());
+           if (e.value == null) {
+               final ArrayList list = new ArrayList();
+               e.value = list;
                list.add(method);
            } else {
-               addMethodToList(list,method);
+               addMethodToList((ArrayList) e.value,method);
            }
        }
        methods = ((MetaClassRegistryImpl)registry).getStaticMethods();
@@ -361,12 +361,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
    }
 
    private void populateInterfaces(Set interfaces){
-       Map currentIndex = classMethodIndex.getNotNull(theCachedClass);
-       Map index = new HashMap();
+       SingleKeyHashMap currentIndex = classMethodIndex.getNotNull(theCachedClass);
+       SingleKeyHashMap index = new SingleKeyHashMap();
        copyNonPrivateMethods(currentIndex,index);
        for (Iterator iter = interfaces.iterator(); iter.hasNext();) {
            CachedClass iClass = (CachedClass) iter.next();
-           Map methodIndex = classMethodIndex.getNullable(iClass);
+           SingleKeyHashMap methodIndex = classMethodIndex.getNullable(iClass);
            if (methodIndex==null || methodIndex.isEmpty()) {
                classMethodIndex.put(iClass,index);
                continue;
@@ -375,25 +375,29 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
        }
    }
 
-   private void copyNonPrivateMethods(Map from, Map to) {
-       for (Iterator iterator = from.entrySet().iterator(); iterator.hasNext();) {
-           Map.Entry element = (Map.Entry) iterator.next();
-           List oldList = (List) element.getValue();
-           ArrayList newList = (ArrayList) to.get(element.getKey());
-           if (newList==null) {
-               to.put(element.getKey(),new ArrayList(oldList));
+   private void copyNonPrivateMethods(SingleKeyHashMap from, SingleKeyHashMap to) {
+       for (ComplexKeyHashMap.EntryIterator iterator = from.getEntrySetIterator(); iterator.hasNext();) {
+           SingleKeyHashMap.Entry element = (SingleKeyHashMap.Entry) iterator.next();
+           ArrayList oldList = (ArrayList) element.getValue();
+           SingleKeyHashMap.Entry e = (SingleKeyHashMap.Entry) to.getOrPut(element.getKey());
+           if (e.value==null) {
+               e.value = copyArrayList(oldList);
            } else {
-               addNonPrivateMethods(newList,oldList);
+               addNonPrivateMethods((ArrayList) e.value,oldList);
            }
        }
    }
 
-   private void connectMultimethods(List superClasses){
+    private ArrayList copyArrayList(ArrayList oldList) {
+        return (ArrayList) oldList.clone();
+    }
+
+    private void connectMultimethods(List superClasses){
        superClasses = DefaultGroovyMethods.reverse(superClasses);
-       Map last = null;
+       SingleKeyHashMap last = null;
        for (Iterator iter = superClasses.iterator(); iter.hasNext();) {
            CachedClass c = (CachedClass) iter.next();
-           Map methodIndex = classMethodIndex.getNullable(c);
+           SingleKeyHashMap methodIndex = classMethodIndex.getNullable(c);
            if (methodIndex==last) continue;
            if (last!=null) copyNonPrivateMethods(last,methodIndex);
            last = methodIndex;
@@ -401,10 +405,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
    }
 
    private void inheritMethods(Collection superClasses){
-       Map last = null;
+       SingleKeyHashMap last = null;
        for (Iterator iter = superClasses.iterator(); iter.hasNext();) {
            CachedClass c = (CachedClass) iter.next();
-           Map methodIndex = classMethodIndex.getNotNull(c);
+           SingleKeyHashMap methodIndex = classMethodIndex.getNotNull(c);
            if (last!=null) {
                if (methodIndex.isEmpty()) {
                    classMethodIndex.put(c,last);
@@ -416,9 +420,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
        }
    }
 
-   private void addNonPrivateMethods(ArrayList newList, List oldList) {
-       for (Iterator iter = oldList.iterator(); iter.hasNext();) {
-           MetaMethod element = (MetaMethod) iter.next();
+   private void addNonPrivateMethods(ArrayList newList, ArrayList oldList) {
+       int len = oldList.size();
+       for (int i = 0; i != len; ++i) {
+           MetaMethod element = (MetaMethod) oldList.get(i);
            if (element.isPrivate()) continue;
            addMethodToList(newList,element);
        }
@@ -429,7 +434,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     *         given name
     */
    private List getMethods(Class sender, String name, boolean isCallToSuper) {
-       Map methodIndex;
+       SingleKeyHashMap methodIndex;
     final CachedClass aClass = ReflectionCache.getCachedClass(sender);
        if (isCallToSuper) {
            methodIndex = classMethodIndexForSuper.getNullable(aClass);
@@ -464,7 +469,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     */
    private List getStaticMethods(Class sender, String name) {
        final CachedClass aClass = ReflectionCache.getCachedClass(sender);
-       Map methodIndex = classStaticMethodIndex.getNullable(aClass);
+       SingleKeyHashMap methodIndex = classStaticMethodIndex.getNullable(aClass);
        if (methodIndex == null)
            return Collections.EMPTY_LIST;
        List answer = (List) methodIndex.get(name);
@@ -1212,11 +1217,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     */
    public List getProperties() {
        checkInitalised();
-       Map propertyMap = classPropertyIndex.getNullable(theCachedClass);
+       SingleKeyHashMap propertyMap = classPropertyIndex.getNullable(theCachedClass);
        // simply return the values of the metaproperty map as a List
        List ret = new ArrayList(propertyMap.size());
-       for (Iterator iter = propertyMap.values().iterator(); iter.hasNext();) {
-           MetaProperty element = (MetaProperty) iter.next();
+       for (ComplexKeyHashMap.EntryIterator iter = propertyMap.getEntrySetIterator(); iter.hasNext();) {
+           MetaProperty element = (MetaProperty) ((SingleKeyHashMap.Entry) iter.next()).value;
            if (element instanceof MetaFieldProperty) continue;
            // filter out DGM beans
            if (element instanceof MetaBeanProperty) {
@@ -1323,10 +1328,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
            Set interfaces = theCachedClass.getInterfaces();
 
            classPropertyIndexForSuper = classPropertyIndex;
-           final Map cPI = classPropertyIndex.getNotNull(theCachedClass);
+           final SingleKeyHashMap cPI = classPropertyIndex.getNotNull(theCachedClass);
            for (Iterator interfaceIter = interfaces.iterator(); interfaceIter.hasNext();) {
                CachedClass iclass = (CachedClass) interfaceIter.next();
-               Map iPropertyIndex = cPI;
+               SingleKeyHashMap iPropertyIndex = cPI;
                addFields(iclass,iPropertyIndex);
                classPropertyIndex.put(iclass,iPropertyIndex);
            }
@@ -1342,7 +1347,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
            // if this an Array, then add the special read-only "length" property
            if (theCachedClass.isArray) {
-               Map map = new HashMap();
+               SingleKeyHashMap map = new SingleKeyHashMap();
                map.put("length", arrayLengthProperty);
                classPropertyIndex.put(theCachedClass,map);
            }
@@ -1361,9 +1366,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
    }
 
    private void makeStaticPropertyIndex() {
-       Map propertyMap = classPropertyIndex.getNotNull(theCachedClass);
-       for (Iterator iter = propertyMap.entrySet().iterator(); iter.hasNext();) {
-           Map.Entry entry = (Map.Entry) iter.next();
+       SingleKeyHashMap propertyMap = classPropertyIndex.getNotNull(theCachedClass);
+       for (ComplexKeyHashMap.EntryIterator iter = propertyMap.getEntrySetIterator(); iter.hasNext();) {
+           SingleKeyHashMap.Entry entry = ((SingleKeyHashMap.Entry) iter.next());
+
            MetaProperty mp = (MetaProperty) entry.getValue();
            if (mp instanceof MetaFieldProperty) {
                MetaFieldProperty mfp = (MetaFieldProperty) mp;
@@ -1428,9 +1434,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     private void copyClassPropertyIndexForSuper(Index dest) {
-       for (Iterator iter = classPropertyIndex.getEntrySetIterator(); iter.hasNext();) {
-           Map.Entry entry = (Map.Entry) iter.next();
-           Map newVal = new HashMap((Map)entry.getValue());
+       for (ComplexKeyHashMap.EntryIterator iter = classPropertyIndex.getEntrySetIterator(); iter.hasNext();) {
+           SingleKeyHashMap.Entry entry = (SingleKeyHashMap.Entry) iter.next();
+           SingleKeyHashMap newVal = new SingleKeyHashMap();
            dest.put((CachedClass) entry.getKey(),newVal);
        }
    }
@@ -1438,22 +1444,22 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private void inheritStaticInterfaceFields(LinkedList superClasses, Set interfaces) {
        for (Iterator interfaceIter = interfaces.iterator(); interfaceIter.hasNext();) {
            CachedClass iclass = (CachedClass) interfaceIter.next();
-           Map iPropertyIndex = classPropertyIndex.getNotNull(iclass);
+           SingleKeyHashMap iPropertyIndex = classPropertyIndex.getNotNull(iclass);
            addFields(iclass,iPropertyIndex);
            for (Iterator classIter = superClasses.iterator(); classIter.hasNext();) {
                CachedClass sclass = (CachedClass) classIter.next();
                if (! iclass.getCachedClass().isAssignableFrom(sclass.getCachedClass())) continue;
-               Map sPropertyIndex = classPropertyIndex.getNotNull(sclass);
+               SingleKeyHashMap sPropertyIndex = classPropertyIndex.getNotNull(sclass);
                copyNonPrivateFields(iPropertyIndex,sPropertyIndex);
            }
        }
    }
 
    private void inheritFields(LinkedList superClasses) {
-       Map last = null;
+       SingleKeyHashMap last = null;
        for (Iterator iter = superClasses.iterator(); iter.hasNext();) {
            CachedClass klass = (CachedClass) iter.next();
-           Map propertyIndex = classPropertyIndex.getNotNull(klass);
+           SingleKeyHashMap propertyIndex = classPropertyIndex.getNotNull(klass);
            if (last != null) {
                copyNonPrivateFields(last,propertyIndex);
            }
@@ -1462,7 +1468,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
        }
    }
 
-   private void addFields(final CachedClass klass, Map propertyIndex) {
+   private void addFields(final CachedClass klass, SingleKeyHashMap propertyIndex) {
        CachedField[] fields = klass.getFields();
        for(int i = 0; i < fields.length; i++) {
            MetaFieldProperty mfp = MetaFieldProperty.create(fields[i]);
@@ -1470,9 +1476,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
        }
    }
 
-   private void copyNonPrivateFields(Map from, Map to) {
-       for (Iterator iter = from.entrySet().iterator(); iter.hasNext();) {
-           Map.Entry entry = (Map.Entry) iter.next();
+   private void copyNonPrivateFields(SingleKeyHashMap from, SingleKeyHashMap to) {
+       for (ComplexKeyHashMap.EntryIterator iter = from.getEntrySetIterator(); iter.hasNext();) {
+           SingleKeyHashMap.Entry entry = (SingleKeyHashMap.Entry) iter.next();
            MetaFieldProperty mfp = (MetaFieldProperty) entry.getValue();
            if (!Modifier.isPublic(mfp.getModifiers()) && !Modifier.isProtected(mfp.getModifiers())) continue;
            to.put(entry.getKey(),mfp);
@@ -1483,10 +1489,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
        // now look for any stray getters that may be used to define a property
        for (Iterator iter = superClasses.iterator(); iter.hasNext();) {
            CachedClass klass = (CachedClass) iter.next();
-           Map methodIndex = classMethodIndex.getNullable(klass);
-           Map propertyIndex = classPropertyIndex.getNotNull(klass);
-           for (Iterator nameMethodIterator = methodIndex.entrySet().iterator(); nameMethodIterator.hasNext();) {
-               Map.Entry entry = (Map.Entry) nameMethodIterator.next();
+           SingleKeyHashMap methodIndex = classMethodIndex.getNullable(klass);
+           SingleKeyHashMap propertyIndex = classPropertyIndex.getNotNull(klass);
+           for (ComplexKeyHashMap.EntryIterator nameMethodIterator = methodIndex.getEntrySetIterator(); nameMethodIterator.hasNext();) {
+               SingleKeyHashMap.Entry entry = (SingleKeyHashMap.Entry) nameMethodIterator.next();
                String methodName = (String) entry.getKey();
                // name too short?
                if (methodName.length() < 4) continue;
@@ -1522,7 +1528,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
     }
 
-    private void createMetaBeanProperty(Map propertyIndex, String propName, boolean isGetter, MetaMethod propertyMethod){
+    private void createMetaBeanProperty(SingleKeyHashMap propertyIndex, String propName, boolean isGetter, MetaMethod propertyMethod){
        // is this property already accounted for?
        MetaProperty mp = (MetaProperty) propertyIndex.get(propName);
        if (mp == null) {
@@ -1609,7 +1615,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
        }
        else {
 
-           Map propertyMap = classPropertyIndex.getNotNull(theCachedClass);
+           SingleKeyHashMap propertyMap = classPropertyIndex.getNotNull(theCachedClass);
            //keep field
            MetaFieldProperty field;
            MetaProperty old = (MetaProperty) propertyMap.get(mp.getName());
@@ -1775,7 +1781,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
   {
     while (true)
     {
-      Map propertyMap;
+      SingleKeyHashMap propertyMap;
       if (useStatic)
       {
         propertyMap = staticPropertyIndex;
@@ -1945,8 +1951,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
            } /*else if (Modifier.isAbstract(reflectionMethod.getModifiers())) {
                continue;
            }*/
-           MetaMethod method = createMetaMethod(cachedMethod);
-           addMetaMethod(method);
+           addMetaMethod(createMetaMethod(cachedMethod));
        }
        // add methods declared by DGM
        List methods = ((MetaClassRegistryImpl)registry).getInstanceMethods();
@@ -2388,13 +2393,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
    private static class MethodIndexAction {
        public void iterate(MethodIndex classMethodIndex){
-           for (Iterator iter = classMethodIndex.getEntrySetIterator(); iter.hasNext();) {
-               Map.Entry classEntry = (Map.Entry) iter.next();
+           for (ComplexKeyHashMap.EntryIterator iter = classMethodIndex.getEntrySetIterator(); iter.hasNext();) {
+               SingleKeyHashMap.Entry classEntry = (SingleKeyHashMap.Entry) iter.next();
                CachedClass clazz = (CachedClass) classEntry.getKey();
                if (skipClass(clazz)) continue;
-               Map methodIndex = (Map) classEntry.getValue();
-               for (Iterator iterator = methodIndex.entrySet().iterator(); iterator.hasNext();) {
-                   Map.Entry nameEntry = (Map.Entry) iterator.next();
+               SingleKeyHashMap methodIndex = (SingleKeyHashMap) classEntry.getValue();
+               for (ComplexKeyHashMap.EntryIterator iterator = methodIndex.getEntrySetIterator(); iterator.hasNext();) {
+                   SingleKeyHashMap.Entry nameEntry = (SingleKeyHashMap.Entry) iterator.next();
                    String name = (String) nameEntry.getKey();
                    List oldList = (List) nameEntry.getValue();
                    List newList = methodNameAction(clazz, name, oldList);
@@ -2453,81 +2458,78 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     class MethodIndex extends Index {
 
-    public MethodIndex(int size) {
-        super(size);
-    }
+        public MethodIndex(int size) {
+            super(size);
+        }
 
-    public MethodIndex() {
-        super();
-    }
+        public MethodIndex() {
+            super();
+        }
 
-    void addToClassMethodIndex(MetaMethod method) {
-      final CachedClass declaringClass = method.getDeclaringClass();
-      Map methodIndex = getNotNull(declaringClass);
-        String name = method.getName();
-        ArrayList list = (ArrayList) methodIndex.get(name);
-        if (list == null) {
-            list = new ArrayList(2);
-            methodIndex.put(name, list);
-            list.add(method);
-        } else {
-            addMethodToList(list,method);
+        void addToClassMethodIndex(MetaMethod method) {
+          final CachedClass declaringClass = method.getDeclaringClass();
+          SingleKeyHashMap methodIndex = getNotNull(declaringClass);
+            String name = method.getName();
+            SingleKeyHashMap.Entry e = (Entry) methodIndex.getOrPut(name);
+            if (e.value == null) {
+                List list = new ArrayList(2);
+                list.add(method);
+                e.value = list;
+            } else {
+                addMethodToList((ArrayList) e.value,method);
+            }
+        }
+
+        MethodIndex copy() {
+             MethodIndex result = new MethodIndex();
+             for (EntryIterator iter = getEntrySetIterator(); iter.hasNext();) {
+                 Entry cmiEntry = (Entry) iter.next();
+
+                 SingleKeyHashMap methodIndex = (SingleKeyHashMap) cmiEntry.getValue();
+                 SingleKeyHashMap copy = new SingleKeyHashMap();
+                 for (EntryIterator iterator = methodIndex.getEntrySetIterator(); iterator.hasNext();) {
+                     Entry mEntry = (Entry) iterator.next();
+                     final Entry entry = copy.putCopyOfUnexisting(mEntry);
+                     entry.value = copyArrayList((ArrayList) mEntry.getValue());
+                 }
+
+                 Entry newEntry = result.putCopyOfUnexisting(cmiEntry);
+                 newEntry.value = copy;
+             }
+             return result;
+        }
+
+        protected Object clone() throws CloneNotSupportedException {
+            return super.clone();
         }
     }
 
-    MethodIndex copy() {
-         MethodIndex result = new MethodIndex();
-         for (Iterator iter = getEntrySetIterator(); iter.hasNext();) {
-             Map.Entry cmiEntry = (Map.Entry) iter.next();
-             Map methodIndex = (Map) cmiEntry.getValue();
-             Map copy = new HashMap(methodIndex.size());
-             for (Iterator iterator = methodIndex.entrySet().iterator(); iterator.hasNext();) {
-                 Map.Entry mEntry = (Map.Entry) iterator.next();
-                 copy.put(mEntry.getKey(), new ArrayList((List) mEntry.getValue()));
-             }
-             result.put((CachedClass) cmiEntry.getKey(),copy);
-         }
-         return result;
-     }
-}
-
-    /**
- * Created by IntelliJ IDEA.
-     * User: applerestore
-     * Date: Sep 11, 2007
-     * Time: 11:12:07 AM
-     * To change this template use File | Settings | File Templates.
-     */
-    public static class Index {
-        protected final HashMap map;
+    public static class Index extends SingleKeyHashMap{
 
         public Index(int size) {
-            map = new HashMap(size);
         }
 
         public Index() {
-            map = new HashMap();
         }
 
-        public Map getNotNull(CachedClass key) {
-            Map  res = (Map) map.get(key);
-            if (res == null) {
-              res = new HashMap(key.getMethods().length);
-              map.put(key, res);
+        public SingleKeyHashMap getNotNull(CachedClass key) {
+            Entry  res = (Entry) getOrPut(key);
+            if (res.value == null) {
+              res.value = new SingleKeyHashMap();
             }
-            return res;
+            return (SingleKeyHashMap) res.value;
         }
 
-        public void put(CachedClass key, Map value) {
-            map.put (key, value);
+        public void put(CachedClass key, SingleKeyHashMap value) {
+            ((Entry)getOrPut (key)).value = value;
         }
 
-        public Map getNullable(CachedClass clazz) {
-            return (Map) map.get(clazz);
+        public SingleKeyHashMap getNullable(CachedClass clazz) {
+            return (SingleKeyHashMap) get(clazz);
         }
 
-        public Iterator getEntrySetIterator() {
-            return map.entrySet().iterator ();
+        public boolean checkEquals(ComplexKeyHashMap.Entry e, Object key) {
+            return ((Entry)e).key.equals(key);
         }
     }
 
