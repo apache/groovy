@@ -3352,11 +3352,12 @@ public class DefaultGroovyMethods {
             List tmpAnswer = new LinkedList(self);
             for (Iterator iter = tmpAnswer.iterator(); iter.hasNext();) {
                 Object element = iter.next();
-                //boolean removeElement = false;
-                for (Iterator iterator = removeMe.iterator(); iterator.hasNext();) {
+                boolean elementRemoved = false;
+                for (Iterator iterator = removeMe.iterator(); iterator.hasNext() && !elementRemoved;) {
                     Object elt = iterator.next();
-                    if (elt != null && numberComparator.compare(element, elt) == 0) {
+                    if (numberComparator.compare(element, elt) == 0) {
                         iter.remove();
+                        elementRemoved = true;
                     }
                 }
             }
