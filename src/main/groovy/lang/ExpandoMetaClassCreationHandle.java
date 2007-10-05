@@ -46,8 +46,7 @@ public class ExpandoMetaClassCreationHandle extends MetaClassCreationHandle {
 	 */
 	public MetaClass create(Class theClass, MetaClassRegistry registry) {
 		if(theClass != ExpandoMetaClass.class) {
-			ExpandoMetaClass emc = new ExpandoMetaClass(theClass);
-			emc.setAllowChangesAfterInit(true);
+			ExpandoMetaClass emc = new ExpandoMetaClass(theClass, false ,true);
 			Set modifiedSuperExpandos = retrieveModifiedSuperExpandos(emc);
             emc.refreshInheritedMethods(modifiedSuperExpandos);
 			emc.initialize();

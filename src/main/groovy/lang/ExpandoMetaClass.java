@@ -136,6 +136,20 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 	    this.inRegistry = register;
 	}
 
+	/**
+	 * Constructs a new ExpandoMetaClass instance for the given class optionally placing the MetaClass
+	 * in the MetaClassRegistry automatically
+	 *
+	 * @param theClass The class that the MetaClass applies to
+	 * @param register True if the MetaClass should be registered inside the MetaClassRegistry. This defaults to true and ExpandoMetaClass will effect all instances if changed
+     * @param allowChangesAfterInit Should the meta class be modifiable after initialization. Default is false.
+	 */
+	public ExpandoMetaClass(Class theClass, boolean register, boolean allowChangesAfterInit) {
+		this(theClass);
+	    this.inRegistry = register;
+        this.allowChangesAfterInit = allowChangesAfterInit;
+    }
+
 
     /**
      * Overrides the default missing method behaviour and adds the capability to look up a method from super class
@@ -302,7 +316,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         return isModified ? metaClass.getMetaMethod(methodName, arguments) : null;
     }
 
-    public boolean isModified() {
+    public synchronized boolean isModified() {
         return this.modified;
     }
 
@@ -329,21 +343,14 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     }
 
 
-    /**
-	 * @param allowChangesAfterInit the allowChangesAfterInit to set
-	 */
-	public void setAllowChangesAfterInit(boolean allowChangesAfterInit) {
-		this.allowChangesAfterInit = allowChangesAfterInit;
-	}
 
-
-	/* (non-Javadoc)
+    /* (non-Javadoc)
 	 * @see groovy.lang.MetaClassImpl#initialize()
 	 */
 	public synchronized void initialize() {
-        if (!this.initialized) {
+        if (!isInitialized()) {
             super.initialize();
-            this.initialized = true;
+            setInitialized(true);
             this.initCalled = true;
         }
     }
@@ -352,12 +359,16 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 	/* (non-Javadoc)
 	 * @see groovy.lang.MetaClassImpl#isInitialized()
 	 */
-	protected boolean isInitialized() {
+	protected synchronized boolean isInitialized() {
 		return this.initialized;
 	}
 
+    protected synchronized void setInitialized(boolean b) {
+        this.initialized = b;
+    }
 
-	private void addSuperMethodIfNotOverriden(final MetaMethod metaMethodFromSuper) {
+
+    private void addSuperMethodIfNotOverriden(final MetaMethod metaMethodFromSuper) {
 		performOperationOnMetaClass(new Callable() {
 			public void call() {
 
@@ -616,28 +627,26 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 			registerInstanceMethod(property, callable);
 
 		}
-		else if(property.equals("allowChangesAfterInit")) {
-			this.allowChangesAfterInit = ((Boolean)newValue).booleanValue();
-		}
 		else {
 			registerBeanProperty(property, newValue);
 		}
 	}
 
 
-	protected void performOperationOnMetaClass(Callable c) {
-        synchronized(this) {
+    
+    protected synchronized void performOperationOnMetaClass(Callable c) {
             try {
                 if(allowChangesAfterInit) {
-                    this.initialized = false;
+                    setInitialized(false);
                 }
 
                 c.call();
             }
             finally {
-                if(initCalled)this.initialized = true;
+                if(initCalled){
+                    setInitialized(true);
+                }
             }
-        }
 	}
 
 	/**

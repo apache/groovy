@@ -40,9 +40,8 @@ class ExpandoMetaClassTest extends GroovyTestCase {
 
 
     void testStaticBeanStyleProperties() {
-        def mc = new ExpandoMetaClass(TestInvokeMethod.class, true)
+        def mc = new ExpandoMetaClass(TestInvokeMethod.class, true, true)
         mc.initialize()
-        mc.allowChangesAfterInit = true
         GroovySystem.metaClassRegistry.setMetaClass(TestInvokeMethod.class, mc)
 
         mc.'static'.getHello = {-> "bar!"}
@@ -51,9 +50,8 @@ class ExpandoMetaClassTest extends GroovyTestCase {
     }
 
     void testOverrideInvokeStaticMethod() {
-        def mc = new ExpandoMetaClass(TestInvokeMethod.class, true)
+        def mc = new ExpandoMetaClass(TestInvokeMethod.class, true, true)
         mc.initialize()
-        mc.allowChangesAfterInit = true
         GroovySystem.metaClassRegistry.setMetaClass(TestInvokeMethod.class, mc)
 
         mc.'static'.invokeMethod = {String methodName, args ->
@@ -71,9 +69,9 @@ class ExpandoMetaClassTest extends GroovyTestCase {
     }
 
     void testOverrideInvokeMethod() {
-        def mc = new ExpandoMetaClass(TestInvokeMethod.class)
+        def mc = new ExpandoMetaClass(TestInvokeMethod.class, false, true)
         mc.initialize()
-        mc.allowChangesAfterInit = true
+
 
         assert mc.hasMetaMethod("invokeMe", [String] as Class[])
 
@@ -90,9 +88,8 @@ class ExpandoMetaClassTest extends GroovyTestCase {
     }
 
     void testOverrideSetProperty() {
-        def mc = new ExpandoMetaClass(TestGetProperty.class)
+        def mc = new ExpandoMetaClass(TestGetProperty.class, false, true)
         mc.initialize()
-        mc.allowChangesAfterInit = true
 
         assert mc.hasMetaProperty("name")
 
@@ -114,9 +111,8 @@ class ExpandoMetaClassTest extends GroovyTestCase {
     }
 
     void testOverrideGetProperty() {
-        def mc = new ExpandoMetaClass(TestGetProperty.class)
+        def mc = new ExpandoMetaClass(TestGetProperty.class, false , true)
         mc.initialize()
-        mc.allowChangesAfterInit = true
 
         assert mc.hasMetaProperty("name")
 
@@ -136,9 +132,8 @@ class ExpandoMetaClassTest extends GroovyTestCase {
     }
 
     void testBooleanGetterWithClosure() {
-        def metaClass = new ExpandoMetaClass(Test.class)
+        def metaClass = new ExpandoMetaClass(Test.class, false, true)
         metaClass.initialize()
-        metaClass.allowChangesAfterInit = true
         metaClass.isValid = {-> true}
 
         def t = new Test()
@@ -150,8 +145,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
 
 
     void testAllowAdditionOfProperties() {
-        def metaClass = new ExpandoMetaClass(Test.class)
-        metaClass.allowChangesAfterInit = true
+        def metaClass = new ExpandoMetaClass(Test.class, false, true)
 
         metaClass.getOne << {->
             "testme"
@@ -174,8 +168,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
     }
 
     void testAllowAdditionOfMethods() {
-        def metaClass = new ExpandoMetaClass(Test.class)
-        metaClass.allowChangesAfterInit = true
+        def metaClass = new ExpandoMetaClass(Test.class, false, true)
 
         metaClass.myMethod << {->
             "testme"
@@ -269,8 +262,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
 
         assertEquals "test", t.doSomething("test")
 
-        def metaClass = new ExpandoMetaClass(Test.class)
-        metaClass.allowChangesAfterInit = true
+        def metaClass = new ExpandoMetaClass(Test.class, false, true)
         metaClass.initialize()
 
         metaClass.doSomething = {Integer i -> i + 1}
@@ -286,8 +278,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
 
         assertEquals "test", t.doSomething("test")
 
-        def metaClass = new ExpandoMetaClass(Test.class)
-        metaClass.allowChangesAfterInit = true
+        def metaClass = new ExpandoMetaClass(Test.class, false, true)
 
 
         metaClass.doSomething = {Integer i -> i + 1}

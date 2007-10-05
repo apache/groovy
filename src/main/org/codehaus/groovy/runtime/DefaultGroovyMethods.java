@@ -7547,9 +7547,8 @@ public class DefaultGroovyMethods {
         MetaClass mc = metaClassRegistry.getMetaClass(c);
         if (mc instanceof ExpandoMetaClass) return (ExpandoMetaClass) mc;
         else {
-            ExpandoMetaClass emc = new ExpandoMetaClass(c, true);
+            ExpandoMetaClass emc = new ExpandoMetaClass(c, true, true);
             emc.initialize();
-            emc.setAllowChangesAfterInit(true);
             metaClassRegistry.setMetaClass(c, emc);
             return emc;
         }
