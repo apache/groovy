@@ -23,11 +23,19 @@ public class ParameterTypes
 
     public CachedClass[] getParameterTypes() {
       if (parameterTypes == null) {
-          if (nativeParamTypes == null)
-            nativeParamTypes = getPT();
-          parameterTypes = new CachedClass [nativeParamTypes.length];
-          for (int i = 0; i != nativeParamTypes.length; ++i)
-            parameterTypes[i] = ReflectionCache.getCachedClass(nativeParamTypes[i]);
+        synchronized (this) {
+          if (parameterTypes != null)
+            return parameterTypes;
+
+          Class [] npt = nativeParamTypes == null ? getPT() : nativeParamTypes;
+
+          CachedClass [] pt = new CachedClass [npt.length];
+          for (int i = 0; i != npt.length; ++i)
+            pt[i] = ReflectionCache.getCachedClass(npt[i]);
+
+          nativeParamTypes = npt;
+          parameterTypes = pt;
+        }
       }
 
       return parameterTypes;
@@ -35,14 +43,21 @@ public class ParameterTypes
 
     public Class[] getNativeParameterTypes() {
         if (nativeParamTypes == null) {
+          synchronized (this) {
+            if (nativeParamTypes != null)
+              return nativeParamTypes;
+
+            Class [] npt;
             if (parameterTypes != null) {
-               nativeParamTypes = new Class [parameterTypes.length];
+                npt = new Class [parameterTypes.length];
                 for (int i = 0; i != parameterTypes.length; ++i) {
-                    nativeParamTypes[i] = parameterTypes[i].getCachedClass();
+                    npt[i] = parameterTypes[i].getCachedClass();
                 }
             }
             else
-              nativeParamTypes = getPT ();
+              npt = getPT ();
+            nativeParamTypes = npt;
+          }
         }
         return nativeParamTypes;
     }
