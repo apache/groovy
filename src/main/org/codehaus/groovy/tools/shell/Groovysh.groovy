@@ -51,11 +51,11 @@ class Groovysh
     private static final MessageSource messages = new MessageSource(Groovysh.class)
     
     private final Preferences prefs = Preferences.userNodeForPackage(Groovysh.class)
+
+    private final BufferManager buffers = new BufferManager()
     
     private final GroovyShell interp
     
-    private final BufferManager buffers = new BufferManager()
-
     private final List imports = []
     
     private InteractiveShellRunner runner
@@ -87,7 +87,7 @@ class Groovysh
     }
     
     private void setLastResult(final Object obj) {
-        boolean showLastResult = io.verbose || prefs.getBoolean('show-last-result', false)
+        boolean showLastResult = io.verbose || prefs.getBoolean('show-last-result', true)
         
         if (showLastResult) {
             io.out.println("@|bold ===>| $obj")
@@ -111,7 +111,7 @@ class Groovysh
     private String renderPrompt() {
         def lineNum = formatLineNumber(buffers.current().size())
         
-        return prompt.render("@|bold groovy:|(${buffers.selected})@|bold :|${lineNum}@|bold >| ")
+        return prompt.render("@|bold groovy:|${lineNum}@|bold >| ")
     }
     
     protected Object executeCommand(final String line) {
@@ -274,7 +274,7 @@ class Groovysh
                 result = script.run()
             }
 
-            log.debug("Evaluation result: $result")
+            log.debug("Evaluation result: ${String.valueOf(result)} (${result?.class})")
 
             // Keep only the methods that have been defined in the script
             type.declaredMethods.each { Method m ->
