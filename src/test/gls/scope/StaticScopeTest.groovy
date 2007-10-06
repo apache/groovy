@@ -58,13 +58,32 @@ public class StaticScopeTest extends CompilableTestSupport {
     }
 
     public void testClosureInStaticScope() {
-        shouldCompile("""
+        shouldCompile """
         5.times { foo=2 }
-        """)
+        """
 
-        shouldCompile("""
+        shouldCompile """
         5.times { foo=it }
-        """)
+        """
+    }
+
+    public void testScriptMethodCall() {
+        assertScript """
+        import static java.util.Calendar.getInstance as now
+        def now = now().time
+        assert now.class == Date
+        """
+
+        // TODO: why does in-lining of now variable break? GROOVY-1809 issue?
+        assertScript """
+        import static java.util.Calendar.getInstance as now
+        assert now().time.getClass() == Date
+        """
+
+        shouldCompile """
+        import static java.lang.Math.*
+        cos(cos(cos(PI)))
+        """
     }
 
     public void testFullyQualifiedClassName() {

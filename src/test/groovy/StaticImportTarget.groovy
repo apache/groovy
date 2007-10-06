@@ -5,6 +5,6 @@ class StaticImportTarget {
         return message * times
     }
     def y(String message, int times) {
-        return message * times
+        return x(message, times)
     }
 }

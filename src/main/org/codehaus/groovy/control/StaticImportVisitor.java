@@ -35,6 +35,8 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
     private boolean inSpecialContructorCall;
     private boolean inClosure;
     private boolean inPropertyExpression;
+    private Expression foundMethod;
+    private Expression foundArgs;
 
     public StaticImportVisitor(CompilationUnit cu) {
         compilationUnit = cu;
@@ -62,6 +64,20 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         }
         if (exp.getClass() == ConstructorCallExpression.class) {
             return transformConstructorCallExpression((ConstructorCallExpression) exp);
+        }
+        if (exp.getClass() == ArgumentListExpression.class) {
+            Expression result = exp.transformExpression(this);
+            if (inPropertyExpression) {
+                foundArgs = result;
+            }
+            return result;
+        }
+        if (exp.getClass() == ConstantExpression.class) {
+            Expression result = exp.transformExpression(this);
+            if (inPropertyExpression) {
+                foundMethod = result;
+            }
+            return result;
         }
         return exp.transformExpression(this);
     }
@@ -105,14 +121,27 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         return ce;
     }
 
+    // TODO: find a nicer way to do this - we are unravelling what ResolveVisitor ravelled
     protected Expression transformPropertyExpression(PropertyExpression pe) {
-        boolean ipe = inPropertyExpression;
+        boolean oldInPropertyExpression = inPropertyExpression;
+        Expression oldFoundArgs = foundArgs;
+        Expression oldFoundMethod = foundMethod;
         Expression objectExpression = pe.getObjectExpression();
         inPropertyExpression = true;
+        foundArgs = null;
+        foundMethod = null;
         objectExpression = objectExpression.transformExpression(this);
+        if (foundArgs != null && foundMethod != null) {
+            Expression result = findStaticMethodImportFromModule(foundMethod, foundArgs);
+            if (result != null) {
+                objectExpression = result;
+            }
+        }
         inPropertyExpression = false;
         Expression property = pe.getProperty().transformExpression(this);
-        inPropertyExpression = ipe;
+        inPropertyExpression = oldInPropertyExpression;
+        foundArgs = oldFoundArgs;
+        foundMethod = oldFoundMethod;
 
         boolean spreadSafe = pe.isSpreadSafe();
         pe = new PropertyExpression(objectExpression, property, pe.isSafe());
@@ -187,7 +216,10 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         if (module == null || !(method instanceof ConstantExpression)) return null;
         Map aliases = module.getStaticImportAliases();
         ConstantExpression ce = (ConstantExpression) method;
-        final String name = (String) ce.getValue();
+        Object value = ce.getValue();
+        // skip non-Strings, e.g. Integer
+        if (!(value instanceof String)) return null;
+        final String name = (String) value;
         if (aliases.containsKey(name)) {
             ClassNode node = (ClassNode) aliases.get(name);
             Map fields = module.getStaticImportFields();

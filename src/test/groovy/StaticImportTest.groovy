@@ -1,6 +1,6 @@
 package groovy
 
-import static Boolean.FALSE as F
+import static java.lang.Boolean.FALSE as F
 import static java.text.DateFormat.MEDIUM as M
 import static java.text.DateFormat.MEDIUM
 import static java.awt.Color.*
@@ -8,29 +8,47 @@ import static junit.framework.Assert.format
 import static junit.framework.Assert.assertEquals
 import static StaticImportTarget.x
 import static java.lang.Math.*
+import static java.util.Calendar.getInstance as now
 
 class StaticImportTest extends GroovyTestCase {
-    void testNormalUsage() {
+    void testFieldWithAliasInExpression() {
         assert !F
     }
 
-    void testMath() {
+    void testMethodAndField() {
         assert cos(2 * PI) == 1.0
+    }
+
+    static myStaticMethod() {
+        cos(2 * PI)
+    }
+
+    void testMethodAndFieldInStaticContext() {
+        assert myStaticMethod() == 1.0
+    }
+
+    void testMethodAndFieldInClosure() {
         def closure = { cos(2 * PI) }
         assert closure() == 1.0
     }
 
-    void testAliasing() {
+    void testFieldAliasing() {
         assert MEDIUM == M
     }
 
-    void testWildCarding() {
+    void testMethodAliasing() {
+        // GROOVY-1809 making this not possible on one line?
+        def now = now().time
+        assert now.class == Date
+    }
+
+    void testWildCardAliasing() {
         assert LIGHT_GRAY == java.awt.Color.LIGHT_GRAY
     }
 
     private format(a, b, c, ignored) { format(a, b, c) }
 
-    void testMethodSelection() {
+    void testMethodDefCanUseStaticallyImportedMethodWithSameNameButDiffArgs() {
         assert format("different", "abc", "aBc", 3) == 'different expected:<abc> but was:<aBc>'
     }
 
