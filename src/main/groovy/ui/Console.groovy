@@ -541,6 +541,8 @@ class Console implements CaretListener {
             frame.hide()
             frame.dispose()
         }
+        
+        systemOutInterceptor.stop();
     }
 
     void fileNewFile(EventObject evt = null) {
