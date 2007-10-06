@@ -464,6 +464,14 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         pushState(node.isStatic());
         
         node.setVariableScope(currentScope);
+        
+        // GROOVY-2156
+        Parameter[] parameters = node.getParameters();
+        for (int i = 0; i < parameters.length; i++) {
+            Parameter parameter = parameters[i];
+            visitAnnotations(parameter);
+        }
+
         declare(node.getParameters(),node);
         
         super.visitConstructorOrMethod(node, isConstructor);
