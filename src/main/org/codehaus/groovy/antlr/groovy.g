@@ -2160,7 +2160,7 @@ namePart  {Token first = LT(1);}
  *  TODO: What's the rationale for these?
  */
 keywordPropertyNames
-    :   (   "class" | "in" | "as" | "def"
+    :   (   "class" | "in" | "as" | "def" | "default" | "static" | "goto"
         |   "if" | "else" | "for" | "while" | "do" | "switch" | "try" | "catch" | "finally"
         |   builtInType
         )
