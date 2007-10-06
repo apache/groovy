@@ -36,16 +36,18 @@ import java.util.*;
 public class JavaStubGenerator
 {
     private boolean java5 = false;
+    private boolean requireSuperResolved = false;
     private File outputPath;
     private List toCompile = new ArrayList();
 
-    public JavaStubGenerator(File outputPath, boolean java5) {
+    public JavaStubGenerator(final File outputPath, final boolean requireSuperResolved, final boolean java5) {
         this.outputPath = outputPath;
+        this.requireSuperResolved = requireSuperResolved;
         this.java5 = java5;
     }
 
-    public JavaStubGenerator( File outputPath) {
-        this(outputPath, false);
+    public JavaStubGenerator(final File outputPath) {
+        this(outputPath, false, false);
     }
     
     private void mkdirs(File parent, String relativeFile) {
@@ -57,7 +59,7 @@ public class JavaStubGenerator
     
     public void generateClass(ClassNode classNode) throws FileNotFoundException {
         // Only attempt to render our self if our super-class is resolved, else wait for it
-        if (!classNode.getSuperClass().isResolved()) {
+        if (requireSuperResolved && !classNode.getSuperClass().isResolved()) {
             return;
         }
 

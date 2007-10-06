@@ -126,7 +126,7 @@ public class JavaStubCompilationUnit
                 java5 = true;
             }
 
-            generator = new JavaStubGenerator(outputDirectory, java5);
+            generator = new JavaStubGenerator(outputDirectory, true, java5);
         }
 
         public void call(final SourceUnit source, final GeneratorContext context, final ClassNode node) throws CompilationFailedException {
