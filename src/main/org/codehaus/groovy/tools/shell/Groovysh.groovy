@@ -393,85 +393,95 @@ class Groovysh
     }
     
     int run(final String[] args) {
+        String commandLine = null
+
+        if (args != null && args.length > 0) {
+            commandLine = args.join(' ')
+        }
+
+        return run(commandLine as String)
+    }
+
+    int run(final String commandLine) {
         def term = Terminal.terminal
-        
+
         if (log.debug) {
             log.debug("Terminal ($term)")
             log.debug("    Supported:  $term.supported")
             log.debug("    ECHO:       $term.echo (enabled: $term.echoEnabled)")
             log.debug("    H x W:      $term.terminalHeight x $term.terminalWidth")
             log.debug("    ANSI:       ${term.isANSISupported()}")
-            
+
             if (term instanceof jline.WindowsTerminal) {
                 log.debug("    Direct:     ${term.directConsole}")
             }
         }
-        
+
         def code
-        
+
         try {
             loadUserScript('groovysh.profile')
-            
-            if (args != null && args.length > 0) {
+
+            if (commandLine != null) {
                 // Run the given commands
-                execute(args.join(' '))
+                execute(commandLine)
             }
             else {
                 loadUserScript('groovysh.rc')
-                
+
                 // Setup the interactive runner
                 runner = new InteractiveShellRunner(this, this.&renderPrompt as Closure)
-                
+
                 // Setup the history
                 runner.history = history = new History()
                 runner.historyFile = new File(userStateDirectory, 'groovysh.history')
-                
+
                 // Setup the error handler
                 runner.errorHandler = this.&displayError
-                
+
                 //
                 // TODO: See if we want to add any more language specific completions, like for println for example?
                 //
-                
+
                 // Display the welcome banner
                 if (!io.quiet) {
                     def width = term.terminalWidth
-                    
+
                     // If we can't tell, or have something bogus then use a reasonable default
                     if (width < 1) {
                         width = 80
                     }
-                    
+
                     io.out.println(messages.format('startup_banner.0', InvokerHelper.version, System.properties['java.vm.version']))
                     io.out.println(messages['startup_banner.1'])
                     io.out.println('-' * (width - 1))
                 }
-                
+
                 // And let 'er rip... :-)
                 runner.run()
             }
-            
+
             code = 0
         }
         catch (ExitNotification n) {
             log.debug("Exiting w/code: ${n.code}")
-            
+
             code = n.code
         }
         catch (Throwable t) {
             io.err.println(messages.format('info.fatal', t))
             t.printStackTrace(io.err)
-            
+
             code = 1
         }
-        
+
         assert code != null // This should never happen
-        
+
         return code
     }
 
     static void main(final String[] args) {
-        def io = new IO()
+        IO io = new IO()
         Logger.io = io
         
         def cli = new CliBuilder(usage : 'groovysh [options] [...]', formatter: new HelpFormatter(), writer: io.out)
@@ -499,77 +509,32 @@ class Groovysh
 
         if (options.hasOption('T')) {
             def type = options.getOptionValue('T')
-            switch (type) {
-                case 'unix':
-                    type = jline.UnixTerminal.class.name
-                    break
-
-                case 'win':
-                case 'windows':
-                    type = jline.WindowsTerminal.class.name
-                    break
-
-                case 'false':
-                case 'off':
-                case 'none':
-                    type = jline.UnsupportedTerminal.class.name
-            }
-
-            System.setProperty('jline.terminal', type)
-
-            //
-            // HACK: Disable ANSI, for some reason UnsupportedTerminal reports ANSI as enabled, when it shouldn't
-            //
-            ANSI.enabled = false
+            setTerminalType(type)
         }
 
         if (options.hasOption('D')) {
             def values = options.getOptionValues('D')
 
             values.each {
-                def name
-                def value
-
-                if (it.indexOf('=') > 0) {
-                    def tmp = it.split('=', 2)
-                    name = tmp[0]
-                    value = tmp[1]
-                }
-                else {
-                    name = it
-                    value = true
-                }
-                
-                System.setProperty(name, value)
+                setSystemProperty(it as String)
             }
         }
 
         if (options.v) {
-            io.verbose = true
+            enableVerbose(io)
         }
 
         if (options.d) {
-            Logger.debug = true
-            io.verbose = true // --debug implies --verbose
+            enableDebug(io)
         }
         
         if (options.q) {
-            io.quiet = true
-            io.verbose = false // --quiet implies !--verbose
-            Logger.debug = false // --quiet implies !--debug
+            enableQuiet(io)
         }
 
         if (options.hasOption('C')) {
             def value = options.getOptionValue('C')
-            
-            if (value == null) {
-                value = true // --color is the same as --color=true
-            }
-            else {
-                value = Boolean.valueOf(value).booleanValue(); // For JDK 1.4 compat
-            }
-
-            ANSI.enabled = value
+            setColor(value)
         }
         
         def code
@@ -600,6 +565,72 @@ class Groovysh
         // asked to shutdown
         
         System.exit(code)
+    }
+
+    static void setTerminalType(final String type) {
+        switch (type) {
+            case 'unix':
+                type = jline.UnixTerminal.class.name
+                break
+
+            case 'win':
+            case 'windows':
+                type = jline.WindowsTerminal.class.name
+                break
+
+            case 'false':
+            case 'off':
+            case 'none':
+                type = jline.UnsupportedTerminal.class.name
+        }
+
+        System.setProperty('jline.terminal', type)
+
+        // Disable ANSI, for some reason UnsupportedTerminal reports ANSI as enabled, when it shouldn't
+        ANSI.enabled = false
+    }
+
+    static void setColor(value) {
+        if (value == null) {
+            value = true // --color is the same as --color=true
+        }
+        else {
+            value = Boolean.valueOf(value).booleanValue(); // For JDK 1.4 compat
+        }
+
+        ANSI.enabled = value
+    }
+
+    static void enableDebug(final IO io) {
+        Logger.debug = true
+        enableVerbose(io) // --debug implies --verbose
+    }
+
+    static void enableVerbose(final IO io) {
+        io.verbose = true
+    }
+
+    static void enableQuiet(final IO io) {
+        io.quiet = true
+        io.verbose = false // --quiet implies !--verbose
+        Logger.debug = false // --quiet implies !--debug
+    }
+
+    static void setSystemProperty(final String nameValue) {
+        String name
+        String value
+
+        if (nameValue.indexOf('=') > 0) {
+            def tmp = nameValue.split('=', 2)
+            name = tmp[0]
+            value = tmp[1]
+        }
+        else {
+            name = nameValue
+            value = Boolean.TRUE.toString()
+        }
+
+        System.setProperty(name, value)
     }
 }
 
