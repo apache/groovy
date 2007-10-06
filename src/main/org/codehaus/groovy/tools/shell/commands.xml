@@ -40,8 +40,6 @@
     
     <command>org.codehaus.groovy.tools.shell.commands.SaveCommand</command>
     
-    <command>org.codehaus.groovy.tools.shell.commands.BufferCommand</command>
-    
     <command>org.codehaus.groovy.tools.shell.commands.HistoryCommand</command>
     
     <command>org.codehaus.groovy.tools.shell.commands.AliasCommand</command>
