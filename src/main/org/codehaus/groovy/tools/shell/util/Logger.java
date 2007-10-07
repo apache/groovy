@@ -16,10 +16,10 @@
 
 package org.codehaus.groovy.tools.shell.util;
 
-import org.codehaus.groovy.tools.shell.IO;
-
-import java.util.prefs.PreferenceChangeListener;
 import java.util.prefs.PreferenceChangeEvent;
+import java.util.prefs.PreferenceChangeListener;
+
+import org.codehaus.groovy.tools.shell.IO;
 
 /**
  * Provides a very, very basic logging API.
@@ -80,33 +80,23 @@ public final class Logger {
     //
     
     private static final String DEBUG = "DEBUG";
-    
-    public static boolean debug;
-
-    static {
-        debug = Preferences.debug;
-
-        Preferences.addChangeListener(new PreferenceChangeListener() {
-            public void preferenceChange(final PreferenceChangeEvent event) {
-                if (event.getKey().equals("debug")) {
-                    debug = event.getNode().getBoolean("debug", false);
-                }
-            }
-        });
-    }
 
     public boolean isDebugEnabled() {
-        return debug;
+        return Preferences.verbosity == IO.Verbosity.DEBUG;
+    }
+
+    public boolean isDebug() {
+        return isDebugEnabled();
     }
     
     public void debug(final Object msg) throws Exception {
-        if (debug) {
+        if (isDebugEnabled()) {
             log(DEBUG, msg, null);
         }
     }
     
     public void debug(final Object msg, final Throwable cause) throws Exception {
-        if (debug) {
+        if (isDebugEnabled()) {
             log(DEBUG, msg, cause);
         }
     }

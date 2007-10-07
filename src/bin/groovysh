@@ -7,8 +7,7 @@
 ##############################################################################
 
 ##
-## $Revision$
-## $Date$
+## $Id$
 ##
 
 DIRNAME=`dirname "$0"`
@@ -19,7 +18,7 @@ DIRNAME=`dirname "$0"`
 #
 
 if [ "x$NEWSHELL" != "x" ]; then
-    startGroovy org.codehaus.groovy.tools.shell.Groovysh "$@"
+    startGroovy org.codehaus.groovy.tools.shell.Main "$@"
 else
     startGroovy groovy.ui.InteractiveShell "$@"
 fi

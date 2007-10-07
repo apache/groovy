@@ -1,8 +1,8 @@
 @if "%DEBUG%" == "" @echo off
 
 @rem 
-@rem $Revision$ $Date$
-@rem 
+@rem $Id$
+@rem
 
 @rem Set local scope for the variables with windows NT shell
 if "%OS%"=="Windows_NT" setlocal
@@ -16,7 +16,7 @@ rem
 rem HACK: Temporary support to run the current or new shells
 rem 
 
-set CLASSNAME=org.codehaus.groovy.tools.shell.Groovysh
+set CLASSNAME=org.codehaus.groovy.tools.shell.Main
 if "%NEWSHELL%" == "" set CLASSNAME=groovy.ui.InteractiveShell
 
 "%DIRNAME%\startGroovy.bat" "%DIRNAME%" %CLASSNAME% %*

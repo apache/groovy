@@ -16,8 +16,11 @@
 
 package org.codehaus.groovy.tools.shell.util;
 
-import java.util.prefs.PreferenceChangeListener;
 import java.util.prefs.BackingStoreException;
+import java.util.prefs.PreferenceChangeListener;
+import java.util.prefs.PreferenceChangeEvent;
+
+import org.codehaus.groovy.tools.shell.IO;
 
 /**
  * Container for shell preferences.
@@ -29,11 +32,32 @@ public class Preferences
 {
     private static final java.util.prefs.Preferences STORE = java.util.prefs.Preferences.userRoot().node("/org/codehaus/groovy/tools/shell");
 
-    public static boolean debug = STORE.getBoolean("debug", false);
+    public static IO.Verbosity verbosity;
 
-    public static boolean verbose = STORE.getBoolean("verbose", false);
+    static {
+        String tmp = STORE.get("verbosity", IO.Verbosity.INFO.name);
+        try {
+            verbosity = IO.Verbosity.forName(tmp);
+        }
+        catch (IllegalArgumentException e) {
+            verbosity = IO.Verbosity.INFO;
+            STORE.remove("verbosity");
+        }
 
-    public static boolean quiet = STORE.getBoolean("quiet", false);
+        addChangeListener(new PreferenceChangeListener() {
+            public void preferenceChange(final PreferenceChangeEvent event) {
+                if (event.getKey().equals("verbosity")) {
+                    String name = event.getNewValue();
+                    try {
+                        verbosity = IO.Verbosity.forName(name);
+                    }
+                    catch (Exception e) {
+                        event.getNode().put(event.getKey(), verbosity.name);
+                    }
+                }
+            }
+        });
+    }
 
     public static boolean showLastResult = STORE.getBoolean("show-last-result", true);
 

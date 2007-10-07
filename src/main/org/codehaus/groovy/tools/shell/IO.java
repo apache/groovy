@@ -55,12 +55,6 @@ public class IO
     /** Prefered error output writer. */
     public final PrintWriter err;
 
-    /** Flag to indicate that verbose output is expected. */
-    public boolean verbose;
-
-    /** Flag to indicate that quiet output is expected. */
-    public boolean quiet;
-
     /**
      * Construct a new IO container.
      */
@@ -82,30 +76,6 @@ public class IO
 
         this.out = new RenderWriter(outputStream, true);
         this.err = new RenderWriter(errorStream, true);
-
-        //
-        // TODO: Change to verbosity as done in GShell's IO
-        //
-
-        verbose = Preferences.verbose;
-
-        Preferences.addChangeListener(new PreferenceChangeListener() {
-            public void preferenceChange(final PreferenceChangeEvent event) {
-                if (event.getKey().equals("verbose")) {
-                    verbose = event.getNode().getBoolean("verbose", false);
-                }
-            }
-        });
-
-        quiet = Preferences.quiet;
-
-        Preferences.addChangeListener(new PreferenceChangeListener() {
-            public void preferenceChange(final PreferenceChangeEvent event) {
-                if (event.getKey().equals("quiet")) {
-                    verbose = event.getNode().getBoolean("quiet", false);
-                }
-            }
-        });
     }
 
     /**
@@ -113,6 +83,55 @@ public class IO
      */
     public IO() {
         this(System.in, System.out, System.err);
+    }
+
+    /**
+     * Set the verbosity level.
+     *
+     * @param verbosity
+     */
+    public void setVerbosity(final Verbosity verbosity) {
+        assert verbosity != null;
+
+        Preferences.verbosity = verbosity;
+    }
+
+    /**
+     * Returns the verbosity level.
+     */
+    public Verbosity getVerbosity() {
+        return Preferences.verbosity;
+    }
+
+    /**
+     * Check if the verbosity level is set to {@link Verbosity#QUIET}.
+     */
+    public boolean isQuiet() {
+        return getVerbosity() == Verbosity.QUIET;
+    }
+
+    /**
+     * Check if the verbosity level is set to {@link Verbosity#INFO}.
+     */
+    public boolean isInfo() {
+        return getVerbosity() == Verbosity.INFO;
+    }
+
+    /**
+     * Check if the verbosity level is set to {@link Verbosity#VERBOSE}.
+     */
+    public boolean isVerbose() {
+        return getVerbosity() == Verbosity.VERBOSE;
+    }
+
+    /**
+     * Check if the verbosity level is set to {@link Verbosity#DEBUG}.
+     *
+     * <p>For generaly usage, when debug output is required, it is better
+     * to use the logging facility instead.
+     */
+    public boolean isDebug() {
+        return getVerbosity() == Verbosity.DEBUG;
     }
 
     /**
@@ -130,5 +149,49 @@ public class IO
         in.close();
         out.close();
         err.close();
+    }
+
+    //
+    // Verbosity
+    //
+
+    public static final class Verbosity
+    {
+        public static final Verbosity QUIET = new Verbosity("QUIET");
+
+        public static final Verbosity INFO = new Verbosity("INFO");
+
+        public static final Verbosity VERBOSE = new Verbosity("VERBOSE");
+
+        public static final Verbosity DEBUG = new Verbosity("DEBUG");
+
+        public final String name;
+
+        private Verbosity(final String name) {
+            this.name = name;
+        }
+
+        public String toString() {
+            return name;
+        }
+
+        public static Verbosity forName(final String name) {
+            assert name != null;
+
+            if (QUIET.name.equalsIgnoreCase(name)) {
+                return QUIET;
+            }
+            if (INFO.name.equalsIgnoreCase(name)) {
+                return INFO;
+            }
+            if (VERBOSE.name.equalsIgnoreCase(name)) {
+                return VERBOSE;
+            }
+            if (DEBUG.name.equalsIgnoreCase(name)) {
+                return DEBUG;
+            }
+
+            throw new IllegalArgumentException("Invalid verbosity name: " + name);
+        }
     }
 }
