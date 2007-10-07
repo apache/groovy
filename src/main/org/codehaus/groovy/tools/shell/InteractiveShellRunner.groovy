@@ -83,7 +83,14 @@ class InteractiveShellRunner
     }
     
     protected String readLine() {
-        return reader.readLine(prompt.call())
+        try {
+            return reader.readLine(prompt.call())
+        }
+        catch (StringIndexOutOfBoundsException e) {
+            log.debug("HACK: Try and work around GROOVY-2152 for now", e)
+
+            return "";
+        }
     }
 }
 
