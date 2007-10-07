@@ -48,6 +48,11 @@ public class Preferences
             public void preferenceChange(final PreferenceChangeEvent event) {
                 if (event.getKey().equals("verbosity")) {
                     String name = event.getNewValue();
+
+                    if (name == null) {
+                        name = IO.Verbosity.INFO.name;
+                    }
+
                     try {
                         verbosity = IO.Verbosity.forName(name);
                     }
