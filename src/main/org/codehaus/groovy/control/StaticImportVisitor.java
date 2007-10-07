@@ -35,7 +35,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
     private boolean inSpecialContructorCall;
     private boolean inClosure;
     private boolean inPropertyExpression;
-    private Expression foundMethod;
+    private Expression foundConstant;
     private Expression foundArgs;
 
     public StaticImportVisitor(CompilationUnit cu) {
@@ -75,7 +75,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         if (exp.getClass() == ConstantExpression.class) {
             Expression result = exp.transformExpression(this);
             if (inPropertyExpression) {
-                foundMethod = result;
+                foundConstant = result;
             }
             return result;
         }
@@ -84,10 +84,11 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
 
     protected Expression transformVariableExpression(VariableExpression ve) {
         Variable v = ve.getAccessedVariable();
-        if (v == null || !(v instanceof DynamicVariable)) return ve;
-        Expression result = findStaticFieldImportFromModule(v.getName());
-        if (result != null) return result;
-        if (!inPropertyExpression || inSpecialContructorCall) addStaticVariableError(ve);
+        if (v != null && v instanceof DynamicVariable) {
+            Expression result = findStaticFieldImportFromModule(v.getName());
+            if (result != null) return result;
+            if (!inPropertyExpression || inSpecialContructorCall) addStaticVariableError(ve);
+        }
         return ve;
     }
 
@@ -100,6 +101,8 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
                 return ret;
             }
         }
+        Expression object = transform(mce.getObjectExpression());
+        mce.setObjectExpression(object);
         mce.setArguments(args);
         mce.setMethod(method);
         return mce;
@@ -125,27 +128,21 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
     protected Expression transformPropertyExpression(PropertyExpression pe) {
         boolean oldInPropertyExpression = inPropertyExpression;
         Expression oldFoundArgs = foundArgs;
-        Expression oldFoundMethod = foundMethod;
-        Expression objectExpression = pe.getObjectExpression();
+        Expression oldFoundMethod = foundConstant;
         inPropertyExpression = true;
+        Expression objectExpression = transform(pe.getObjectExpression());
         foundArgs = null;
-        foundMethod = null;
-        objectExpression = objectExpression.transformExpression(this);
-        if (foundArgs != null && foundMethod != null) {
-            Expression result = findStaticMethodImportFromModule(foundMethod, foundArgs);
+        foundConstant = null;
+        if (foundArgs != null && foundConstant != null) {
+            Expression result = findStaticMethodImportFromModule(foundConstant, foundArgs);
             if (result != null) {
                 objectExpression = result;
             }
         }
-        inPropertyExpression = false;
-        Expression property = pe.getProperty().transformExpression(this);
         inPropertyExpression = oldInPropertyExpression;
         foundArgs = oldFoundArgs;
-        foundMethod = oldFoundMethod;
-
-        boolean spreadSafe = pe.isSpreadSafe();
-        pe = new PropertyExpression(objectExpression, property, pe.isSafe());
-        pe.setSpreadSafe(spreadSafe);
+        foundConstant = oldFoundMethod;
+        pe.setObjectExpression(objectExpression);
         if (!inSpecialContructorCall) checkStaticScope(pe);
         return pe;
     }

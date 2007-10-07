@@ -32,6 +32,14 @@ class StaticImportTest extends GroovyTestCase {
         assert closure() == 1.0
     }
 
+    void testFieldAsObjectExpression() {
+        assert PI.equals(Math.PI)
+    }
+
+    void testFieldAsArgumentList() {
+        assert ("" + PI.toString()).contains('3.14')
+    }
+
     void testFieldAliasing() {
         assert MEDIUM == M
     }
