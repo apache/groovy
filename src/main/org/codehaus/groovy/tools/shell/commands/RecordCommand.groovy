@@ -34,6 +34,12 @@ class RecordCommand
         this.functions = [ 'start', 'stop', 'status' ]
 
         this.defaultFunction = 'status'
+
+        addShutdownHook {
+            if (recording) {
+                do_stop()
+            }
+        }
     }
 
     private File file
