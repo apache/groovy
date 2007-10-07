@@ -16,30 +16,31 @@
 
 package org.codehaus.groovy.tools.shell.expr
 
+import org.codehaus.groovy.tools.shell.Groovysh
+
 /**
- * Tests for <tt>time = { it() }</tt> expressions.
+ * Support for expression tests.
  *
  * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
-class TimeItTest
-    extends ExprTestSupport
+abstract class ExprTestSupport
+    extends GroovyTestCase
 {
-    void testSingleLine() {
-        def result = shell.execute('time = { it() }')
-        assert result != null
-    }
+    Groovysh shell
+    Object lastResult
 
-    void testMultiLine() {
-        def result
+    void setUp() {
+        super.setUp()
 
-        result = shell.execute('time = {')
-        assert result == null
+        shell = new Groovysh()
 
-        result = shell.execute('it()')
-        assert result == null
+        shell.errorHook = { Throwable cause ->
+            throw cause
+        }
 
-        result = shell.execute('}')
-        assert result != null
+        shell.resultHook = { result ->
+            lastResult = result
+        }
     }
 }

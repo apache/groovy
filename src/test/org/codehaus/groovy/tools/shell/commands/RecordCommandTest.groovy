@@ -16,7 +16,7 @@
 
 package org.codehaus.groovy.tools.shell.commands
 
-import org.codehaus.groovy.tools.shell.Groovysh
+import org.codehaus.groovy.tools.shell.CommandTestSupport
 
 /**
  * Tests for the {@link RecordCommand} class.
@@ -25,42 +25,32 @@ import org.codehaus.groovy.tools.shell.Groovysh
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class RecordCommandTest
-    extends GroovyTestCase
+    extends CommandTestSupport
 {
-    Groovysh shell
-
     void setUp() {
         super.setUp()
 
-        shell = new Groovysh()
-        
-        shell.errorHook = { Throwable cause ->
-            throw cause
-        }
-
-        shell.resultHook = { result ->
-            // ignore
-        }
+        shell << new RecordCommand(shell)
     }
 
     void testStopNotStarted() {
         try {
-            shell.execute('record stop')
+            shell << 'record stop'
             fail()
         }
         catch (Exception expected) {}
     }
 
     void testStartAlreadyStarted() {
-        shell.execute('record start')
+        shell << 'record start'
 
         try {
-            shell.execute('record start')
+            shell << 'record start'
             fail()
         }
         catch (Exception expected) {}
 
-        def file = shell.execute('record stop')
+        def file = shell << 'record stop'
 
         file.delete()
     }
