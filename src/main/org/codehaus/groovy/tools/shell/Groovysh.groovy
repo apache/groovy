@@ -261,7 +261,7 @@ class Groovysh
             }
 
             // Need to use String.valueOf() here to avoid icky exceptions causes by GString coercion
-            log.debug("Evaluation result: ${String.valueOf(result)} (${result?.class})")
+            log.debug("Evaluation result: ${String.valueOf(result)} (${result?.getClass()})")
 
             // Keep only the methods that have been defined in the script
             type.declaredMethods.each { Method m ->
