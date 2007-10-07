@@ -25,12 +25,6 @@ package org.codehaus.groovy.tools.shell.commands
 class RecordCommandTest
     extends CommandTestSupport
 {
-    void setUp() {
-        super.setUp()
-
-        shell << new RecordCommand(shell)
-    }
-
     void testStopNotStarted() {
         try {
             shell << 'record stop'

@@ -25,13 +25,6 @@ package org.codehaus.groovy.tools.shell.commands
 class HelpCommandTest
     extends CommandTestSupport
 {
-    void setUp() {
-        super.setUp()
-        
-        shell << new HelpCommand(shell)
-        shell << new ExitCommand(shell)
-    }
-    
     void testList() {
         shell << 'help'
     }

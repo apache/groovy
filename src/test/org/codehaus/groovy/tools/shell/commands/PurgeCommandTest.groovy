@@ -16,38 +16,32 @@
 
 package org.codehaus.groovy.tools.shell.commands
 
-import org.codehaus.groovy.tools.shell.ExitNotification
-
 /**
- * Tests for the {@link ExitCommand} class.
+ * Tests for the {@link PurgeCommand} class.
  *
  * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
-class ExitCommandTest
+class PurgeCommandTest
     extends CommandTestSupport
 {
-    void testWithNoArgs() {
-        try {
-            shell << 'exit'
-            fail()
-        }
-        catch (ExitNotification e) {
-            // expected
-        }
+    void testPurgeVariables() {
+        shell << 'purge variables'
     }
-    
-    /*
-    FIXME: Errors don't currently throw anything, just io.error.println()'s...
-    
-    void testWithArgs() {
-        try {
-            shell << 'exit foo'
-            fail()
-        }
-        catch (Exception e) {
-            // expected
-        }
+
+    void testPurgeClasses() {
+        shell << 'purge classes'
     }
-    */
+
+    void testPurgeImports() {
+        shell << 'purge imports'
+    }
+
+    void testPurgePreferences() {
+        shell << 'purge preferences'
+    }
+
+    void testPurgeAll() {
+        shell << 'purge all'
+    }
 }

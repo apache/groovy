@@ -16,7 +16,7 @@
 
 package org.codehaus.groovy.tools.shell.commands
 
-import org.codehaus.groovy.tools.shell.Shell
+import org.codehaus.groovy.tools.shell.Groovysh
 
 /**
  * Support for testing {@link Command} instances.
@@ -27,13 +27,21 @@ import org.codehaus.groovy.tools.shell.Shell
 abstract class CommandTestSupport
     extends GroovyTestCase
 {
-    Shell shell
-    
+    Groovysh shell
+
+    Object lastResult
+
     void setUp() {
-        shell = new Shell()
-    }
-    
-    void tearDown() {
-        shell = null
+        super.setUp()
+
+        shell = new Groovysh()
+
+        shell.errorHook = { Throwable cause ->
+            throw cause
+        }
+
+        shell.resultHook = { result ->
+            lastResult = result
+        }
     }
 }
