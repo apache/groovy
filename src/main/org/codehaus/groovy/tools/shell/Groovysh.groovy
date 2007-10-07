@@ -379,7 +379,7 @@ class Groovysh
 
         if (showLastResult) {
             // Need to use String.valueOf() here to avoid icky exceptions causes by GString coercion
-            io.out.println("@|bold ===>| ${String.valueOf(obj)}")
+            io.out.println("@|bold ===>| ${String.valueOf(result)}")
         }
     }
 
