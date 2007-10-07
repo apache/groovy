@@ -74,10 +74,10 @@ public class StaticScopeTest extends CompilableTestSupport {
         assert now.class == Date
         """
 
-        // TODO: why does in-lining of now variable break? GROOVY-1809 issue?
-        assertScript """
+        // TODO: why does in-lining of now variable from above break? GROOVY-1809 issue?
+        shouldCompile """
         import static java.util.Calendar.getInstance as now
-        assert now().time.getClass() == Date
+        assert now().time.class == Date
         """
 
         shouldCompile """
