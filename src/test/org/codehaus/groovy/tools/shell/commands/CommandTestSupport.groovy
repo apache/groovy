@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package org.codehaus.groovy.tools.shell
+package org.codehaus.groovy.tools.shell.commands
+
+import org.codehaus.groovy.tools.shell.Shell
 
 /**
  * Support for testing {@link Command} instances.

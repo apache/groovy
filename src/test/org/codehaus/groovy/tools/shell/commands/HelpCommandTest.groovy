@@ -16,10 +16,8 @@
 
 package org.codehaus.groovy.tools.shell.commands
 
-import org.codehaus.groovy.tools.shell.CommandTestSupport
-
 /**
- * Unit tests for the {@link HelpCommand} class.
+ * Tests for the {@link HelpCommand} class.
  *
  * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>

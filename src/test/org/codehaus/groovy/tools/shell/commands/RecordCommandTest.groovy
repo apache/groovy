@@ -16,8 +16,6 @@
 
 package org.codehaus.groovy.tools.shell.commands
 
-import org.codehaus.groovy.tools.shell.CommandTestSupport
-
 /**
  * Tests for the {@link RecordCommand} class.
  *

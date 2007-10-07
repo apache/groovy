@@ -16,11 +16,10 @@
 
 package org.codehaus.groovy.tools.shell.commands
 
-import org.codehaus.groovy.tools.shell.CommandTestSupport
 import org.codehaus.groovy.tools.shell.ExitNotification
 
 /**
- * Unit tests for the {@link ExitCommand} class.
+ * Tests for the {@link ExitCommand} class.
  *
  * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
