@@ -92,6 +92,8 @@ class Groovysh
         }
 
         interp.context['_'] = obj
+
+        maybeRecordResult(obj)
     }
     
     File getUserStateDirectory() {
@@ -115,7 +117,37 @@ class Groovysh
     protected Object executeCommand(final String line) {
         return super.execute(line)
     }
-    
+
+    private void maybeRecordInput(final String line) {
+        def record = registry['record']
+        
+        if (record != null) {
+            record.recordInput(line)
+        }
+    }
+
+    private void maybeRecordResult(final Object result) {
+        def record = registry['record']
+
+        if (record != null) {
+            record.recordResult(result)
+        }
+    }
+
+    private void maybeRecordError(Throwable cause) {
+        def record = registry['record']
+
+        if (record != null) {
+            boolean sanitize = Preferences.sanitizeStackTrace
+
+            if (sanitize) {
+                cause = StackTraceUtils.deepSanitize(cause);
+            }
+
+            record.recordError(cause)
+        }
+    }
+
     /**
      * Execute a single line, where the line may be a command or Groovy code (complete or incomplete).
      */
@@ -126,7 +158,9 @@ class Groovysh
         if (line.trim().size() == 0) {
             return null
         }
-        
+
+        maybeRecordInput(line)
+
         def result
         
         // First try normal command execution
@@ -352,6 +386,8 @@ class Groovysh
         assert cause != null
         
         io.err.println("@|bold,red ERROR| ${cause.class.name}: @|bold,red ${cause.message}|")
+
+        maybeRecordError(cause)
 
         if (log.debug) {
             // If we have debug enabled then skip the fancy bits below
