@@ -33,25 +33,21 @@ class ShadowCommand
         
         this.hidden = true
         
-        this.functions = [ 'debug', 'verbose', 'this' ]
+        this.functions = [ 'debug', 'verbose', 'info', 'this' ]
     }
     
     def do_debug = {
-        def flag = !log.debug
-        
-        io.out.println("Toggling logging debug to: $flag")
-        
-        log.debug = flag
+        io.verbosity = IO.Verbosity.DEBUG
     }
     
     def do_verbose = {
-        def flag = !io.verbose
-        
-        io.out.println("Toggling logging verbose to: $flag")
-        
-        io.verbose = flag
+        io.verbosity = IO.Verbosity.VERBOSE
     }
-    
+
+    def do_info = {
+        io.verbosity = IO.Verbosity.INFO
+    }
+
     def do_this = {
         return this
     }
