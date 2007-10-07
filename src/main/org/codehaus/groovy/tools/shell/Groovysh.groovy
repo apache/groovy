@@ -29,9 +29,7 @@ import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.control.CompilationFailedException
 
 import org.codehaus.groovy.tools.shell.util.MessageSource
-import org.codehaus.groovy.tools.shell.util.ANSI
 import org.codehaus.groovy.tools.shell.util.ANSI.Renderer as AnsiRenderer
-import org.codehaus.groovy.tools.shell.util.Logger
 import org.codehaus.groovy.tools.shell.util.XmlCommandRegistrar
 import org.codehaus.groovy.runtime.StackTraceUtils
 import org.codehaus.groovy.tools.shell.util.Preferences
@@ -87,27 +85,9 @@ class Groovysh
         this(new IO())
     }
 
-    File getUserStateDirectory() {
-        def userHome = new File(System.getProperty('user.home'))
-        def dir = new File(userHome, '.groovy')
-        return dir.canonicalFile
-    }
-    
-    private Object getLastResult() {
-        return interp.context['_']
-    }
-    
-    private AnsiRenderer prompt = new AnsiRenderer()
-    
-    private String renderPrompt() {
-        def lineNum = formatLineNumber(buffers.current().size())
-        
-        return prompt.render("@|bold groovy:|${lineNum}@|bold >| ")
-    }
-    
-    protected Object executeCommand(final String line) {
-        return super.execute(line)
-    }
+    //
+    // Execution
+    //
 
     /**
      * Execute a single line, where the line may be a command or Groovy code (complete or incomplete).
@@ -168,7 +148,11 @@ class Groovysh
         
         return result
     }
-    
+
+    protected Object executeCommand(final String line) {
+        return super.execute(line)
+    }
+
     /**
      * Attempt to parse the given buffer.
      */
@@ -271,16 +255,6 @@ class Groovysh
                 }
             }
         }
-        /*
-        catch (Throwable t) {
-            // Unroll invoker exceptions
-            if (t instanceof InvokerInvocationException) {
-                t = t.cause
-            }
-
-            throw t
-        }
-        */
         finally {
             def cache = interp.classLoader.classCache
             
@@ -295,16 +269,6 @@ class Groovysh
     }
 
     /**
-     * Format the given number suitable for rendering as a line number column.
-     */
-    private String formatLineNumber(final int num) {
-        assert num >= 0
-        
-        // Make a %03d-like string for the line number
-        return num.toString().padLeft(3, '0')
-    }
-    
-    /**
      * Display the given buffer.
      */
     private void displayBuffer(final List buffer) {
@@ -316,7 +280,39 @@ class Groovysh
             io.out.println(" ${lineNum}@|bold >| $line")
         }
     }
-    
+
+    //
+    // Prompt
+    //
+
+    private AnsiRenderer prompt = new AnsiRenderer()
+
+    private String renderPrompt() {
+        def lineNum = formatLineNumber(buffers.current().size())
+
+        return prompt.render("@|bold groovy:|${lineNum}@|bold >| ")
+    }
+
+    /**
+     * Format the given number suitable for rendering as a line number column.
+     */
+    private String formatLineNumber(final int num) {
+        assert num >= 0
+
+        // Make a %03d-like string for the line number
+        return num.toString().padLeft(3, '0')
+    }
+
+    //
+    // User Profile Scripts
+    //
+
+    File getUserStateDirectory() {
+        def userHome = new File(System.getProperty('user.home'))
+        def dir = new File(userHome, '.groovy')
+        return dir.canonicalFile
+    }
+
     private void loadUserScript(final String filename) {
         assert filename
         
@@ -324,11 +320,20 @@ class Groovysh
         
         if (file.exists()) {
             def command = registry['load']
-            
+
             if (command) {
                 log.debug("Loading user-script: $file")
-                
-                command.load(file.toURI().toURL())
+
+                // Disable showLastResult for profile scripts
+                boolean tmp = Preferences.showLastResult
+                Preferences.showLastResult = false
+
+                try {
+                    command.load(file.toURI().toURL())
+                }
+                finally {
+                    Preferences.showLastResult = tmp
+                }
             }
             else {
                 log.error("Unable to load user-script, missing 'load' command")
@@ -397,14 +402,12 @@ class Groovysh
         maybeRecordResult(result)
     }
 
+    private Object getLastResult() {
+        return interp.context['_']
+    }
+
     final Closure defaultErrorHook = { Throwable cause ->
         assert cause != null
-
-        // Show a simple compilation error, otherwise dump the full details
-        if (cause instanceof CompilationFailedException) {
-            io.err.println(messages.format('info.error', status.cause.message))
-            return
-        }
 
         io.err.println("@|bold,red ERROR| ${cause.class.name}: @|bold,red ${cause.message}|")
 
@@ -551,23 +554,9 @@ class Groovysh
     }
 }
 
-/*
-//
-// FIXME: We have to have the { on the same line right now for this to work...
-//
-
-enum ParseCode {
-    COMPLETE,
-    INCOMPLETE,
-    ERROR
-    ;
-}
-*/
-
-//
-// FIXME: This new enum stuff only works on Java 5 :-(
-//
-
+/**
+ * Container for the parse code.
+ */
 class ParseCode {
     static final ParseCode COMPLETE = new ParseCode(code: 0)
     static final ParseCode INCOMPLETE = new ParseCode(code: 1)
@@ -582,9 +571,6 @@ class ParseCode {
 
 /**
  * Container for parse status details.
- *
- * @version $Id$
- * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class ParseStatus
 {

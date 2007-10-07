@@ -32,7 +32,7 @@ class PurgeCommand
     PurgeCommand(final Shell shell) {
         super(shell, 'purge', '\\p')
         
-        this.functions = [ 'variables', 'classes', 'imports', 'preferences', /*'buffers',*/ 'all' ]
+        this.functions = [ 'variables', 'classes', 'imports', 'preferences', 'all' ]
     }
     
     def do_variables = {
@@ -81,15 +81,5 @@ class PurgeCommand
             io.out.println("Preferences purged") // TODO: i18n
         }
     }
-
-    /*
-    def do_buffers = {
-        buffers.reset()
-        
-        if (io.verbose) {
-            io.out.println('All buffers purged') // TODO: i18n
-        }
-    }
-    */
 }
 
