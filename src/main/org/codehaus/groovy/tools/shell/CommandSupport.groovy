@@ -154,7 +154,15 @@ abstract class CommandSupport
     //
     // Shell access helpers
     //
-    
+
+    protected BufferManager getBuffers() {
+        return shell.buffers
+    }
+
+    protected List getBuffer() {
+        return shell.buffers.current()
+    }
+
     protected List getImports() {
         return shell.imports
     }
