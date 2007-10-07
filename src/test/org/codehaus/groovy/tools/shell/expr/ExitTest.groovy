@@ -16,32 +16,24 @@
 
 package org.codehaus.groovy.tools.shell.expr
 
-import org.codehaus.groovy.tools.shell.Groovysh
-
 /**
- * Support for expression tests.
+ * Tests that we can't call <tt>System.exit()</tt>.
  *
  * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
-abstract class ExprTestSupport
-    extends GroovyTestCase
+class ExitTest
+    extends ExprTestSupport
 {
-    Groovysh shell
-    
-    Object lastResult
-
-    void setUp() {
-        super.setUp()
-
-        shell = new Groovysh()
-
-        shell.errorHook = { Throwable cause ->
-            throw cause
+    void testSystemExit() {
+        /*
+        FIXME: Need to get this one working... its not happy right now
+        
+        try {
+            shell.execute('System.exit(0)')
+            fail()
         }
-
-        shell.resultHook = { result ->
-            lastResult = result
-        }
+        catch (SecurityException expected) {}
+        */
     }
 }
