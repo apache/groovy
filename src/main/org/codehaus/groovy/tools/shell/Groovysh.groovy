@@ -31,7 +31,6 @@ import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.tools.shell.util.MessageSource
 import org.codehaus.groovy.tools.shell.util.ANSI
 import org.codehaus.groovy.tools.shell.util.ANSI.Renderer as AnsiRenderer
-import org.codehaus.groovy.tools.shell.util.HelpFormatter
 import org.codehaus.groovy.tools.shell.util.Logger
 import org.codehaus.groovy.tools.shell.util.XmlCommandRegistrar
 import org.codehaus.groovy.runtime.StackTraceUtils
@@ -49,9 +48,9 @@ class Groovysh
     private static final String NEWLINE = System.properties['line.separator']
     
     private static final MessageSource messages = new MessageSource(Groovysh.class)
-    
+
     private final BufferManager buffers = new BufferManager()
-    
+
     private final GroovyShell interp
     
     private final List imports = []
@@ -96,7 +95,7 @@ class Groovysh
     }
     
     File getUserStateDirectory() {
-        def userHome = new File(System.properties['user.home'])
+        def userHome = new File(System.getProperty('user.home'))
         def dir = new File(userHome, '.groovy')
         return dir.canonicalFile
     }
@@ -261,7 +260,7 @@ class Groovysh
 
         def source = (imports + buffer).join(NEWLINE)
         def result
-        
+
         Class type
         try {
             Script script = interp.parse(source, EVAL_SCRIPT_FILENAME)

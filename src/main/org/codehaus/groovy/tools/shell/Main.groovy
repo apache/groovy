@@ -21,6 +21,7 @@ import org.codehaus.groovy.tools.shell.util.ANSI
 import org.codehaus.groovy.tools.shell.util.HelpFormatter
 import org.codehaus.groovy.tools.shell.util.Logger
 import org.codehaus.groovy.tools.shell.util.MessageSource
+import org.codehaus.groovy.tools.shell.util.NoExitSecurityManager
 
 /**
  * Main CLI entry-point for <tt>groovysh</tt>.
@@ -109,8 +110,17 @@ class Main
         }
 
         // Boot up the shell... :-)
+        Groovysh shell = new Groovysh(io)
 
-        code = new Groovysh(io).run(options.arguments() as String[])
+        SecurityManager psm = System.getSecurityManager()
+        System.setSecurityManager(new NoExitSecurityManager())
+
+        try {
+            code = shell.run(options.arguments() as String[])
+        }
+        finally {
+            System.setSecurityManager(psm)
+        }
 
         // Force the JVM to exit at this point, since shell could have created threads or
         // popped up Swing components that will cause the JVM to linger after we have been
