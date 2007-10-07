@@ -102,6 +102,8 @@ class RecordCommand
         writer.flush()
         
         io.out.println("Recording session to: $file")
+
+        return file
     }
 
     def do_stop = {
@@ -117,16 +119,22 @@ class RecordCommand
 
         io.out.println("Recording stopped; session saved as: $file (${file.length()} bytes)")
 
+        def tmp = file
         file = null
+
+        return tmp
     }
 
     def do_status = {
         if (!recording) {
             io.out.println("Not recording")
+
+            return null
         }
-        else {
-            io.out.println("Recording to file: $file (${file.length()} bytes)")
-        }
+
+        io.out.println("Recording to file: $file (${file.length()} bytes)")
+
+        return file
     }
 }
 

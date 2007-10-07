@@ -18,6 +18,7 @@ package org.codehaus.groovy.tools.shell.commands
 
 import org.codehaus.groovy.tools.shell.ComplexCommandSupport
 import org.codehaus.groovy.tools.shell.Shell
+import org.codehaus.groovy.tools.shell.util.Preferences
 
 /**
  * The 'shadow' command.
@@ -37,15 +38,15 @@ class ShadowCommand
     }
     
     def do_debug = {
-        io.verbosity = IO.Verbosity.DEBUG
+        Preferences.verbosity = IO.Verbosity.DEBUG
     }
     
     def do_verbose = {
-        io.verbosity = IO.Verbosity.VERBOSE
+        Preferences.verbosity = IO.Verbosity.VERBOSE
     }
 
     def do_info = {
-        io.verbosity = IO.Verbosity.INFO
+        Preferences.verbosity = IO.Verbosity.INFO
     }
 
     def do_this = {

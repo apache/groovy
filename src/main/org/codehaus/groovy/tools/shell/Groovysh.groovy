@@ -66,6 +66,10 @@ class Groovysh
         assert binding
         
         interp = new GroovyShell(classLoader, binding)
+
+        //
+        // TODO: Change this to be more embed/test friendly
+        //
         
         def registrar = new XmlCommandRegistrar(this, classLoader)
         registrar.register(getClass().getResource('commands.xml'))
@@ -82,20 +86,7 @@ class Groovysh
     Groovysh() {
         this(new IO())
     }
-    
-    private void setLastResult(final Object obj) {
-        boolean showLastResult = !io.quiet && (io.verbose || Preferences.showLastResult)
-        
-        if (showLastResult) {
-            // Need to use String.valueOf() here to avoid icky exceptions causes by GString coercion
-            io.out.println("@|bold ===>| ${String.valueOf(obj)}")
-        }
 
-        interp.context['_'] = obj
-
-        maybeRecordResult(obj)
-    }
-    
     File getUserStateDirectory() {
         def userHome = new File(System.getProperty('user.home'))
         def dir = new File(userHome, '.groovy')
@@ -116,36 +107,6 @@ class Groovysh
     
     protected Object executeCommand(final String line) {
         return super.execute(line)
-    }
-
-    private void maybeRecordInput(final String line) {
-        def record = registry['record']
-        
-        if (record != null) {
-            record.recordInput(line)
-        }
-    }
-
-    private void maybeRecordResult(final Object result) {
-        def record = registry['record']
-
-        if (record != null) {
-            record.recordResult(result)
-        }
-    }
-
-    private void maybeRecordError(Throwable cause) {
-        def record = registry['record']
-
-        if (record != null) {
-            boolean sanitize = Preferences.sanitizeStackTrace
-
-            if (sanitize) {
-                cause = StackTraceUtils.deepSanitize(cause);
-            }
-
-            record.recordError(cause)
-        }
     }
 
     /**
@@ -198,14 +159,7 @@ class Groovysh
                 break
 
             case ParseCode.ERROR:
-                // Show a simple compilation error, otherwise dump the full details
-                if (status.cause instanceof CompilationFailedException) {
-                    io.err.println(messages.format('info.error', status.cause.message))
-                }
-                else {
-                    displayError(status.cause)
-                }
-                break
+                throw status.cause
 
             default:
                 // Should never happen
@@ -381,10 +335,77 @@ class Groovysh
             }
         }
     }
+
+    //
+    // Recording
+    //
+
+    private void maybeRecordInput(final String line) {
+        def record = registry['record']
+
+        if (record != null) {
+            record.recordInput(line)
+        }
+    }
+
+    private void maybeRecordResult(final Object result) {
+        def record = registry['record']
+
+        if (record != null) {
+            record.recordResult(result)
+        }
+    }
+
+    private void maybeRecordError(Throwable cause) {
+        def record = registry['record']
+
+        if (record != null) {
+            boolean sanitize = Preferences.sanitizeStackTrace
+
+            if (sanitize) {
+                cause = StackTraceUtils.deepSanitize(cause);
+            }
+
+            record.recordError(cause)
+        }
+    }
     
-    private void displayError(final Throwable cause) {
+    //
+    // Hooks
+    //
+
+    final Closure defaultResultHook = { result ->
+        boolean showLastResult = !io.quiet && (io.verbose || Preferences.showLastResult)
+
+        if (showLastResult) {
+            // Need to use String.valueOf() here to avoid icky exceptions causes by GString coercion
+            io.out.println("@|bold ===>| ${String.valueOf(obj)}")
+        }
+    }
+
+    Closure resultHook = defaultResultHook
+
+    private void setLastResult(final Object result) {
+        if (resultHook == null) {
+            throw new IllegalStateException("Result hook is not set")
+        }
+
+        resultHook.call(result)
+
+        interp.context['_'] = result
+
+        maybeRecordResult(result)
+    }
+
+    final Closure defaultErrorHook = { Throwable cause ->
         assert cause != null
-        
+
+        // Show a simple compilation error, otherwise dump the full details
+        if (cause instanceof CompilationFailedException) {
+            io.err.println(messages.format('info.error', status.cause.message))
+            return
+        }
+
         io.err.println("@|bold,red ERROR| ${cause.class.name}: @|bold,red ${cause.message}|")
 
         maybeRecordError(cause)
@@ -426,7 +447,21 @@ class Groovysh
             }
         }
     }
-    
+
+    Closure errorHook = defaultErrorHook
+
+    private void displayError(final Throwable cause) {
+        if (errorHook == null) {
+            throw new IllegalStateException("Error hook is not set")
+        }
+
+        errorHook.call(cause)
+    }
+
+    //
+    // Interactive Shell
+    //
+
     int run(final String[] args) {
         String commandLine = null
 
