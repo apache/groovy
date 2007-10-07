@@ -20,9 +20,10 @@ import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.Shell
 
 import org.codehaus.groovy.tools.shell.util.SimpleCompletor
+import org.codehaus.groovy.tools.shell.util.Preferences
 
 /**
- * The 'set' command.
+ * The 'set' command, used to set preferences.
  *
  * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
@@ -38,7 +39,7 @@ class SetCommand
         def loader = {
             def list = []
 
-            def keys = preferences.keys()
+            def keys = Preferences.keys()
 
             keys.each { list << it }
 
@@ -55,16 +56,16 @@ class SetCommand
         assert args != null
         
         if (args.size() == 0) {
-            def keys = preferences.keys()
+            def keys = Preferences.keys()
             
             if (keys.size() == 0) {
-                io.out.println('No preferences are currently set')
+                io.out.println('No preferences are set')
                 return
             }
             else {
                 io.out.println('Preferences:')
                 keys.each {
-                    def value = preferences.get(it, null)
+                    def value = Preferences.get(it, null)
                     println("    $it=$value")
                 }
             }
@@ -87,6 +88,6 @@ class SetCommand
         
         log.debug("Setting preference: $name=$value")
         
-        preferences.put(name, String.valueOf(value))
+        Preferences.put(name, String.valueOf(value))
     }
 }

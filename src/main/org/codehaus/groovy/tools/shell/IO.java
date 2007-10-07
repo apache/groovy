@@ -25,9 +25,9 @@ import java.io.Reader;
 
 import java.util.prefs.PreferenceChangeEvent;
 import java.util.prefs.PreferenceChangeListener;
-import java.util.prefs.Preferences;
 
 import org.codehaus.groovy.tools.shell.util.ANSI.RenderWriter;
+import org.codehaus.groovy.tools.shell.util.Preferences;
 
 /**
  * Container for input/output handles.
@@ -72,27 +72,24 @@ public class IO
         this.inputStream = inputStream;
         this.outputStream = outputStream;
         this.errorStream = errorStream;
-        
+
         this.in = new InputStreamReader(inputStream);
 
         //
         // TODO: Once all user output is in i18n, then it would be more efficent to have the MessageSource
         //       be ANSI-aware instead of this...
         //
-        
+
         this.out = new RenderWriter(outputStream, true);
         this.err = new RenderWriter(errorStream, true);
 
-
         //
-        // HACK: Hack in some ugly-ass-preferences muck for now... until we can think of a better solution
+        // TODO: Change to verbosity as done in GShell's IO
         //
 
-        Preferences prefs = Preferences.userRoot().node("/org/codehaus/groovy/tools/shell");
+        verbose = Preferences.verbose;
 
-        verbose = prefs.getBoolean("verbose", false);
-
-        prefs.addPreferenceChangeListener(new PreferenceChangeListener() {
+        Preferences.addChangeListener(new PreferenceChangeListener() {
             public void preferenceChange(final PreferenceChangeEvent event) {
                 if (event.getKey().equals("verbose")) {
                     verbose = event.getNode().getBoolean("verbose", false);
@@ -100,9 +97,9 @@ public class IO
             }
         });
 
-        quiet = prefs.getBoolean("quiet", false);
+        quiet = Preferences.quiet;
 
-        prefs.addPreferenceChangeListener(new PreferenceChangeListener() {
+        Preferences.addChangeListener(new PreferenceChangeListener() {
             public void preferenceChange(final PreferenceChangeEvent event) {
                 if (event.getKey().equals("quiet")) {
                     verbose = event.getNode().getBoolean("quiet", false);

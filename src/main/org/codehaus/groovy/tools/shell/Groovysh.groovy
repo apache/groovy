@@ -18,8 +18,6 @@ package org.codehaus.groovy.tools.shell
 
 import java.lang.reflect.Method
 
-import java.util.prefs.Preferences
-
 import jline.Terminal
 import jline.History
 
@@ -32,10 +30,12 @@ import org.codehaus.groovy.control.CompilationFailedException
 
 import org.codehaus.groovy.tools.shell.util.MessageSource
 import org.codehaus.groovy.tools.shell.util.ANSI
+import org.codehaus.groovy.tools.shell.util.ANSI.Renderer as AnsiRenderer
 import org.codehaus.groovy.tools.shell.util.HelpFormatter
 import org.codehaus.groovy.tools.shell.util.Logger
 import org.codehaus.groovy.tools.shell.util.XmlCommandRegistrar
 import org.codehaus.groovy.runtime.StackTraceUtils
+import org.codehaus.groovy.tools.shell.util.Preferences
 
 /**
  * An interactive shell for evaluating Groovy code from the command-line (aka. groovysh).
@@ -50,8 +50,6 @@ class Groovysh
     
     private static final MessageSource messages = new MessageSource(Groovysh.class)
     
-    private final Preferences prefs = Preferences.userNodeForPackage(Groovysh.class)
-
     private final BufferManager buffers = new BufferManager()
     
     private final GroovyShell interp
@@ -87,10 +85,11 @@ class Groovysh
     }
     
     private void setLastResult(final Object obj) {
-        boolean showLastResult = io.verbose || prefs.getBoolean('show-last-result', true)
+        boolean showLastResult = !io.quiet && (io.verbose || Preferences.showLastResult)
         
         if (showLastResult) {
-            io.out.println("@|bold ===>| $obj")
+            // Need to use String.valueOf() here to avoid icky exceptions causes by GString coercion
+            io.out.println("@|bold ===>| ${String.valueOf(obj)}")
         }
 
         interp.context['_'] = obj
@@ -106,7 +105,7 @@ class Groovysh
         return interp.context['_']
     }
     
-    private ANSI.Renderer prompt = new ANSI.Renderer()
+    private AnsiRenderer prompt = new AnsiRenderer()
     
     private String renderPrompt() {
         def lineNum = formatLineNumber(buffers.current().size())
@@ -156,7 +155,7 @@ class Groovysh
         switch (status.code) {
             case ParseCode.COMPLETE:
                 // Evaluate the current buffer
-                result = evaluate(current)
+                lastResult = result = evaluate(current)
                 buffers.clearSelected()
                 break
 
@@ -180,7 +179,7 @@ class Groovysh
                 throw new Error("Invalid parse status: $status.code")
         }
         
-        return (lastResult = result)
+        return result
     }
     
     /**
@@ -274,6 +273,7 @@ class Groovysh
                 result = script.run()
             }
 
+            // Need to use String.valueOf() here to avoid icky exceptions causes by GString coercion
             log.debug("Evaluation result: ${String.valueOf(result)} (${result?.class})")
 
             // Keep only the methods that have been defined in the script
@@ -359,7 +359,7 @@ class Groovysh
             log.debug(cause)
         }
         else {
-            boolean sanitize = prefs.getBoolean('sanitize-stack-trace', true)
+            boolean sanitize = Preferences.sanitizeStackTrace
 
             // Sanitize the stack trace unless we are inverbose mode, or the user has request otherwise
             if (!io.verbose && sanitize) {

@@ -20,6 +20,7 @@ import org.codehaus.groovy.runtime.MethodClosure
 
 import org.codehaus.groovy.tools.shell.ComplexCommandSupport
 import org.codehaus.groovy.tools.shell.Shell
+import org.codehaus.groovy.tools.shell.util.Preferences
 
 /**
  * The 'show' command.
@@ -33,7 +34,7 @@ class ShowCommand
     ShowCommand(final Shell shell) {
         super(shell, 'show', '\\S')
         
-        this.functions = [ 'variables', 'classes', 'imports', 'all' ]
+        this.functions = [ 'variables', 'classes', 'imports', 'preferences', 'all' ]
     }
     
     def do_variables = {
@@ -51,8 +52,9 @@ class ShowCommand
                     //
                     value = "method ${value.method}()"
                 }
-                
-                io.out.println("  $key = $value")
+
+                // Need to use String.valueOf() here to avoid icky exceptions causes by GString coercion
+                io.out.println("  $key = ${String.valueOf(value)}")
             }
         }
     }
@@ -83,6 +85,23 @@ class ShowCommand
                 io.out.println("  $it")
             }
         }
+    }
+
+    def do_preferences = {
+        def keys = Preferences.keys()
+
+        if (keys.size() == 0) {
+            io.out.println('No preferences are set')
+            return
+        }
+        else {
+            io.out.println('Preferences:')
+            keys.each {
+                def value = Preferences.get(it, null)
+                println("    $it=$value")
+            }
+        }
+        return
     }
 }
 

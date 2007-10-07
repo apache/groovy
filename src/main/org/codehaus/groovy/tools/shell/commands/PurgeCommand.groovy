@@ -18,6 +18,7 @@ package org.codehaus.groovy.tools.shell.commands
 
 import org.codehaus.groovy.tools.shell.ComplexCommandSupport
 import org.codehaus.groovy.tools.shell.Shell
+import org.codehaus.groovy.tools.shell.util.Preferences
 
 /**
  * The 'purge' command.
@@ -31,7 +32,7 @@ class PurgeCommand
     PurgeCommand(final Shell shell) {
         super(shell, 'purge', '\\p')
         
-        this.functions = [ 'variables', 'classes', 'imports', 'buffers', 'all' ]
+        this.functions = [ 'variables', 'classes', 'imports', 'preferences', /*'buffers',*/ 'all' ]
     }
     
     def do_variables = {
@@ -72,7 +73,16 @@ class PurgeCommand
             }
         }
     }
-    
+
+    def do_preferences = {
+        Preferences.clear()
+        
+        if (io.verbose) {
+            io.out.println("Preferences purged") // TODO: i18n
+        }
+    }
+
+    /*
     def do_buffers = {
         buffers.reset()
         
@@ -80,5 +90,6 @@ class PurgeCommand
             io.out.println('All buffers purged') // TODO: i18n
         }
     }
+    */
 }
 

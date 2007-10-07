@@ -19,7 +19,6 @@ package org.codehaus.groovy.tools.shell.util;
 import org.codehaus.groovy.tools.shell.IO;
 
 import java.util.prefs.PreferenceChangeListener;
-import java.util.prefs.Preferences;
 import java.util.prefs.PreferenceChangeEvent;
 
 /**
@@ -85,15 +84,9 @@ public final class Logger {
     public static boolean debug;
 
     static {
-        //
-        // HACK: For now put in some ugly preferences API muck until we can find a more elegant solution
-        //
-        
-        Preferences prefs = Preferences.userRoot().node("/org/codehaus/groovy/tools/shell");
+        debug = Preferences.debug;
 
-        debug = prefs.getBoolean("debug", false);
-
-        prefs.addPreferenceChangeListener(new PreferenceChangeListener() {
+        Preferences.addChangeListener(new PreferenceChangeListener() {
             public void preferenceChange(final PreferenceChangeEvent event) {
                 if (event.getKey().equals("debug")) {
                     debug = event.getNode().getBoolean("debug", false);
