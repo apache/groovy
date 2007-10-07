@@ -19,6 +19,14 @@ public class SingleKeyHashMap extends ComplexKeyHashMap
       }
   }
 
+    public SingleKeyHashMap () {
+        super ();
+    }
+
+    public SingleKeyHashMap (boolean b) {
+        super (false);
+    }
+
     public boolean containsKey(String name) {
         return get(name) != null;
     }
@@ -95,5 +103,28 @@ public class SingleKeyHashMap extends ComplexKeyHashMap
     }
 
     return null;
+  }
+
+  public static SingleKeyHashMap copy (SingleKeyHashMap dst, SingleKeyHashMap src, Copier copier) {
+      dst.threshold = src.threshold;
+      dst.size = src.size;
+      final int len = src.table.length;
+      final ComplexKeyHashMap.Entry[] t = new ComplexKeyHashMap.Entry[len], tt = src.table;
+      for (int i = 0; i != len; ++i) {
+          for (Entry e = (Entry) tt[i]; e != null; e = (Entry) e.next) {
+              Entry ee = new Entry();
+              ee.hash = e.hash;
+              ee.key = e.key;
+              ee.value = copier.copy(e.value);
+              ee.next = t [i];
+              t [i] = ee;
+          }
+      }
+      dst.table = t;
+      return dst;
+  }
+
+  public static interface Copier {
+      Object copy (Object value);
   }
 }

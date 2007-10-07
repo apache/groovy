@@ -24,6 +24,9 @@ public class ComplexKeyHashMap
       init(DEFAULT_CAPACITY);
   }
 
+    public ComplexKeyHashMap(boolean b) {
+    }
+
   public ComplexKeyHashMap(int expectedMaxSize) {
     init (capacity(expectedMaxSize));
   }

@@ -16,10 +16,7 @@
 
 package org.codehaus.groovy.runtime;
 
-import groovy.lang.Closure;
-import groovy.lang.GString;
-import groovy.lang.GroovyRuntimeException;
-import groovy.lang.MetaMethod;
+import groovy.lang.*;
 import org.codehaus.groovy.reflection.*;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 
@@ -317,10 +314,10 @@ public class MetaClassHelper {
      * @return the method with 1 parameter which takes the most general type of
      *         object (e.g. Object)
      */
-    public static Object chooseEmptyMethodParams(List methods) {
+    public static Object chooseEmptyMethodParams(FastArray methods) {
         Object vargsMethod = null;
-        for (Iterator iter = methods.iterator(); iter.hasNext();) {
-            Object method = iter.next();
+        for (int i = 0; i != methods.size(); ++i) {
+            Object method = methods.get(i);
             final ParameterTypes pt = getParameterTypes(method);
             CachedClass[] paramTypes = pt.getParameterTypes();
             int paramLength = paramTypes.length;
@@ -337,15 +334,15 @@ public class MetaClassHelper {
      * @return the method with 1 parameter which takes the most general type of
      *         object (e.g. Object) ignoring primitve types
      */
-    public static Object chooseMostGeneralMethodWith1NullParam(List methods) {
+    public static Object chooseMostGeneralMethodWith1NullParam(FastArray methods) {
         // lets look for methods with 1 argument which matches the type of the
         // arguments
         CachedClass closestClass = null;
         CachedClass closestVargsClass = null;
         Object answer = null;
         int closestDist = -1;
-        for (Iterator iter = methods.iterator(); iter.hasNext();) {
-            Object method = iter.next();
+        for (int i = 0; i != methods.size(); ++i) {
+            Object method = methods.get(i);
             final ParameterTypes pt = getParameterTypes(method);
             CachedClass[] paramTypes = pt.getParameterTypes();
             int paramLength = paramTypes.length;
@@ -677,7 +674,7 @@ public class MetaClassHelper {
         CachedClass[] paramTypes = pt.getParameterTypes();
         if ((size >= paramTypes.length || size == paramTypes.length - 1)
                 && paramTypes.length > 0
-                && pt.getParameterTypes()[(paramTypes.length - 1)].isArray) {
+                && paramTypes[(paramTypes.length - 1)].isArray) {
             // first check normal number of parameters
             for (int i = 0; i < paramTypes.length - 1; i++) {
                 if (isAssignableFrom(paramTypes[i].getCachedClass(), arguments[i])) continue;

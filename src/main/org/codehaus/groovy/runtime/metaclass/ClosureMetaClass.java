@@ -17,9 +17,10 @@
 package org.codehaus.groovy.runtime.metaclass;
 
 import groovy.lang.*;
-import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedField;
+import org.codehaus.groovy.reflection.CachedMethod;
+import org.codehaus.groovy.reflection.FastArray;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
@@ -50,7 +51,7 @@ import java.util.logging.Level;
  */
 public final class ClosureMetaClass extends MetaClassImpl {
     private boolean initialized;
-    private final List closureMethods = new ArrayList(3);
+    private final FastArray closureMethods = new FastArray(3);
     private Map attributes = new HashMap();
     private MethodChooser chooser;
     private volatile boolean attributeInitDone = false;
@@ -96,10 +97,10 @@ public final class ClosureMetaClass extends MetaClassImpl {
     }
 
     private static class NormalMethodChooser implements MethodChooser {
-        private final List methods;
+        private final FastArray methods;
         final Class theClass;
 
-        NormalMethodChooser(Class theClass, List methods) {
+        NormalMethodChooser(Class theClass, FastArray methods) {
             this.theClass = theClass;
             this.methods = methods;
         }
@@ -112,8 +113,8 @@ public final class ClosureMetaClass extends MetaClassImpl {
             } else {
                 List matchingMethods = new ArrayList();
 
-                for (Iterator iter = methods.iterator(); iter.hasNext();) {
-                    Object method = iter.next();
+                for (int i = 0; i != methods.size(); ++i) {
+                    Object method = methods.get(i);
 
                     // making this false helps find matches
                     if (MetaClassHelper.isValidMethod(method, arguments, coerce)) {
@@ -430,8 +431,8 @@ public final class ClosureMetaClass extends MetaClassImpl {
             }
         } else if (closureMethods.size() == 2) {
             MetaMethod m0 = null, m1 = null;
-            for (Iterator iterator = closureMethods.iterator(); iterator.hasNext();) {
-                MetaMethod m = (MetaMethod) iterator.next();
+            for (int i = 0; i != closureMethods.size(); ++i) {
+                MetaMethod m = (MetaMethod) closureMethods.get(i);
                 CachedClass[] c = m.getParameterTypes();
                 if (c.length == 0) {
                     m0 = m;
@@ -488,7 +489,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
 
     public List getMethods() {
         List answer = CLOSURE_METACLASS.getMetaMethods();
-        answer.addAll(closureMethods);
+        answer.addAll(closureMethods.toList());
         return answer;
     }
 
