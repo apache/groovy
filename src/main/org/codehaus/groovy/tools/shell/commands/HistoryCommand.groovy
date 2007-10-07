@@ -58,7 +58,10 @@ class HistoryCommand
             fail("Shell does not appear to be interactive; Can not query history")
         }
         
-        return super.execute(args)
+        super.execute(args)
+
+        // Don't return anything
+        return null
     }
     
     def do_show = {
@@ -93,6 +96,10 @@ class HistoryCommand
         }
         
         def id = args[0]
+
+        //
+        // FIXME: This won't work as desired because the history shifts when we run recall and could internally shift more from alias redirection
+        //
         
         try {
             id = Integer.parseInt(id)
