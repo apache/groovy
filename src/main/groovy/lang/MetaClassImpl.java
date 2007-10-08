@@ -269,7 +269,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
    private void removeMultimethodsOverloadedWithPrivateMethods() {
        MethodIndexAction mia = new MethodIndexAction() {
-           public FastArray methodNameAction(CachedClass clazz, String methodName, FastArray methods) {
+           public void methodNameAction(CachedClass clazz, String methodName, FastArray methods) {
               boolean hasPrivate=false;
               for (int i = 0; i != methods.size(); ++i) {
                   MetaMethod method = (MetaMethod) methods.get(i);
@@ -278,7 +278,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                       break;
                   }
               }
-              if (!hasPrivate) return null;
+              if (!hasPrivate) return;
               // We have private methods for that name, so remove the
               // multimethods. That is the same as in our index for
               // super, so just copy the list from there. It is not
@@ -287,9 +287,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
               // methods like super$5$foo
               methods.clear();
               methods.addAll((FastArray) classMethodIndexForSuper.getNotNull(clazz).get(methodName));
-              return methods;
            }
-           public boolean replaceMethodList() {return false;}
        };
        mia.iterate(classMethodIndex);
    }
@@ -305,18 +303,19 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
            public boolean skipClass(CachedClass clazz) {
                return !useThis && clazz==theCachedClass;
            }
-           public void methodListAction(CachedClass clazz, String methodName, MetaMethod method, FastArray oldList, FastArray newList) {
-               String mopName = ReflectionCache.getMOPMethodName(method.getDeclaringClass(), methodName,useThis);
-               FastArray matches = (FastArray) mainClassMethodIndex.get(mopName);
-               if (matches==null) {
-                   newList.add(method);
-                   return;
-               }
-               int matchingMethod = findMatchingMethod(matches,method);
-               if (matchingMethod==-1) {
-                   newList.add(method);
-               } else {
-                   newList.add(matches.get(matchingMethod));
+
+           public void methodNameAction(CachedClass clazz, String methodName, FastArray methods) {
+               final int size = methods.size();
+               for (int i = 0; i != size; ++i) {
+                   MetaMethod method = (MetaMethod) methods.get(i);
+                   String mopName = ReflectionCache.getMOPMethodName(method.getDeclaringClass(), methodName,useThis);
+                   FastArray matches = (FastArray) mainClassMethodIndex.get(mopName);
+                   if (matches!=null) {
+                       int matchingMethod = findMatchingMethod(matches,method);
+                       if (matchingMethod!=-1) {
+                           methods.set(i, matches.get(matchingMethod));
+                       }
+                   }
                }
            }
        }
@@ -2363,7 +2362,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
     }
 
-   private static class MethodIndexAction {
+   private static abstract class MethodIndexAction {
        public void iterate(MethodIndex classMethodIndex){
            for (ComplexKeyHashMap.EntryIterator iter = classMethodIndex.getEntrySetIterator(); iter.hasNext();) {
                SingleKeyHashMap.Entry classEntry = (SingleKeyHashMap.Entry) iter.next();
@@ -2372,24 +2371,14 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                SingleKeyHashMap methodIndex = (SingleKeyHashMap) classEntry.getValue();
                for (ComplexKeyHashMap.EntryIterator iterator = methodIndex.getEntrySetIterator(); iterator.hasNext();) {
                    SingleKeyHashMap.Entry nameEntry = (SingleKeyHashMap.Entry) iterator.next();
-                   String name = (String) nameEntry.getKey();
-                   FastArray oldList = (FastArray) nameEntry.getValue();
-                   FastArray newList = methodNameAction(clazz, name, oldList);
-                   if (replaceMethodList()) nameEntry.setValue(newList);
+                   methodNameAction(clazz, (String) nameEntry.getKey(), (FastArray) nameEntry.getValue());
                }
            }
        }
-       public FastArray methodNameAction(CachedClass clazz, String methodName, FastArray methods) {
-           FastArray newList = new FastArray(methods.size());
-           for (int i = 0; i != methods.size(); ++i) {
-               MetaMethod method = (MetaMethod) methods.get(i);
-               methodListAction(clazz,methodName,method,methods,newList);
-           }
-           return newList;
-       }
+
+       public abstract void methodNameAction(CachedClass clazz, String methodName, FastArray methods);
+
        public boolean skipClass(CachedClass clazz) {return false;}
-       public void methodListAction(CachedClass clazz, String methodName, MetaMethod method, FastArray oldList, FastArray newList) {}
-       public boolean replaceMethodList(){return true;}
    }
 
    public Object getProperty(Object object, String property) {
