@@ -174,7 +174,7 @@ public class LoaderConfiguration {
     private void findMatchingFiles(File[] files, Pattern pattern) {
         for (int i = 0; i < files.length; i++) {
             File file = files[i];
-            Matcher m = pattern.matcher(getSlashyPath(file.getAbsolutePath()));
+            Matcher m = pattern.matcher(getSlashyPath(file.getPath()));
             if (m.matches() && file.isFile()) {
                 addFile(file);
             }
