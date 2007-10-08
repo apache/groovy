@@ -456,6 +456,7 @@
             <artifactId>ant-junit</artifactId>
             <version>1.7.0</version>
             <scope>runtime</scope>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.apache.ant</groupId>
@@ -523,6 +524,7 @@
             <artifactId>bsf</artifactId>
             <version>2.4.0</version>
             <scope>compile</scope>
+            <optional>true</optional>
         </dependency>
 
         <!-- only used for JMX utilities -->
@@ -531,6 +533,7 @@
             <artifactId>mx4j</artifactId>
             <version>3.0.2</version>
             <scope>compile</scope>
+            <optional>true</optional>
         </dependency>
 
         <dependency>
@@ -538,6 +541,7 @@
             <artifactId>mockobjects-core</artifactId>
             <version>0.09</version>
             <scope>compile</scope>
+            <optional>true</optional>
         </dependency>
 
         <dependency>
@@ -561,12 +565,14 @@
             <artifactId>servlet-api</artifactId>
             <version>2.4</version>
             <scope>compile</scope>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>jsp-api</artifactId>
             <version>2.0</version>
             <scope>compile</scope>
+            <optional>true</optional>
         </dependency>
 
         <!-- used to dump out the AST -->
@@ -575,6 +581,7 @@
             <artifactId>xstream</artifactId>
             <version>1.2.2</version>
             <scope>compile</scope>
+            <optional>true</optional>
         </dependency>
         
         <!-- Used for richer interactive groovysh support -->
