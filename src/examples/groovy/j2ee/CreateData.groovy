@@ -1,10 +1,3 @@
-//import java.io.File
-
-//context = this.getProperty('context')
-
-//logDir = new File('logs')
-//logDir.mkdir()
-
 println("Called with context: " + context)
 
 db = context.lookup("/client/tools/DatabaseHome").create()
