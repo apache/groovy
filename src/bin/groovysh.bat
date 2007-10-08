@@ -12,12 +12,8 @@ if "%OS%"=="Windows_NT" setlocal
 set DIRNAME=%~dp0
 if "%DIRNAME%" == "" set DIRNAME=.\
 
-rem 
-rem HACK: Temporary support to run the current or new shells
-rem 
-
-set CLASSNAME=org.codehaus.groovy.tools.shell.Main
-if "%NEWSHELL%" == "" set CLASSNAME=groovy.ui.InteractiveShell
+set CLASSNAME=groovy.ui.InteractiveShell
+if "%OLDSHELL%" == "" set CLASSNAME=org.codehaus.groovy.tools.shell.Main
 
 "%DIRNAME%\startGroovy.bat" "%DIRNAME%" %CLASSNAME% %*
 
