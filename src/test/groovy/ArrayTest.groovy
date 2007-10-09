@@ -128,7 +128,7 @@ class ArrayTest extends GroovyTestCase {
         Object[] y = [[1,2]]
         assert y == x
         assert [[1,2],[3,4]] as int[][] == [[1,2],[3,4]] as int[][]
-        assert [[[5,6],[7,8]]] as int[][][] == [[[5,6],[7,8]]] as int[][][]
+        assert [[[5,6],[7,8]]] as int[][][] == [[[5,6],[7,8]]] as Long[][][]
         assert [[1,2],[3,4]] as long[][] == [[1,2],[3,4]] as long[][]
         assert [[1,2],[3,4]] as long[][] == [[1,2],[3,4]] as Long[][]
         assert [[1,2],[3,4]] as long[][] == [[1,2],[3,4]]

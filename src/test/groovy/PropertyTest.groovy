@@ -42,7 +42,13 @@ class PropertyTest extends GroovyTestCase {
         assert foo.location == "Atlanta"
         assert foo.getLocation() == "Atlanta"
     }
-    
+
+    // GROOVY-1809
+    void testClassWithPrivateFieldAndGetter() {
+        assert java.awt.Font.getName() == 'java.awt.Font'
+        assert java.awt.Font.name == 'java.awt.Font'
+    }
+
     void testOverloadedGetter() {
         
         def foo = new Foo()
