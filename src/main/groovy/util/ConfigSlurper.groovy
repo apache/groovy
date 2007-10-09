@@ -51,6 +51,7 @@ class ConfigSlurper {
     GroovyClassLoader classLoader = new GroovyClassLoader()
     String environment
     private envMode = false
+	private Map bindingVars
 
     ConfigSlurper() { }
 
@@ -61,6 +62,13 @@ class ConfigSlurper {
     ConfigSlurper(String env) {
         this.environment = env
     }
+
+	/**
+	 * Sets any additional variables that should be placed into the binding when evaluating Config scripts
+	 */
+	void setBinding(Map vars) {
+		this.bindingVars = vars
+	}
 
     /**
      * Parses a ConfigObject instances from an instance of java.util.Properties
@@ -232,8 +240,12 @@ class ConfigSlurper {
                 current = config
             }
             current[prefix+name] = value
-        }                     
-        script.binding = new ConfigBinding(setProperty)
+        }                
+     	def binding = new ConfigBinding(setProperty)
+		if(this.bindingVars) {
+			binding.getVariables().putAll(this.bindingVars)
+		}
+        script.binding = binding
 
 
         script.run()

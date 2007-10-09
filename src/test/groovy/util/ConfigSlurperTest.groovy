@@ -25,6 +25,16 @@ package groovy.util
  */
 
 class  ConfigSlurperTest extends GroovyTestCase {
+	
+	void testConfigBinding() {
+		def slurper = new ConfigSlurper()
+		slurper.binding = [foo:"bar"]
+		def config = slurper.parse('''
+test=foo + 1		
+		''')
+		assertEquals "bar1", config.test
+
+	}
 
     void testEnvironmentProperties2() {
         def config = new ConfigSlurper("production").parse('''
