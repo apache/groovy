@@ -27,6 +27,7 @@ import org.codehaus.groovy.syntax.Types;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -41,6 +42,7 @@ import java.util.List;
 public class Verifier implements GroovyClassVisitor, Opcodes {
 
     public static final String __TIMESTAMP = "__timeStamp";
+    public static final String __TIMESTAMP__ = "__timeStamp__239_neverHappen";
 	private ClassNode classNode;
     private MethodNode methodNode;
 
@@ -217,6 +219,17 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     //"",
                     node,
                     new ConstantExpression(new Long(System.currentTimeMillis())));
+            // alternatively , FieldNode timeTagField = SourceUnit.createFieldNode("public static final long __timeStamp = " + System.currentTimeMillis() + "L");
+            timeTagField.setSynthetic(true);
+            node.addField(timeTagField);
+
+            timeTagField = new FieldNode(
+                    Verifier.__TIMESTAMP__ + String.valueOf(System.currentTimeMillis()),
+                    Modifier.PUBLIC | Modifier.STATIC,
+                    ClassHelper.Long_TYPE,
+                    //"",
+                    node,
+                    new ConstantExpression(new Long(0)));
             // alternatively , FieldNode timeTagField = SourceUnit.createFieldNode("public static final long __timeStamp = " + System.currentTimeMillis() + "L");
             timeTagField.setSynthetic(true);
             node.addField(timeTagField);
@@ -582,6 +595,24 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
     public void visitGenericType(GenericsType genericsType) {
 
+    }
+
+    public static long getTimestamp (Class clazz) {
+        final Field[] fields = clazz.getFields();
+        for (int i = 0; i != fields.length; ++i ) {
+           if (Modifier.isStatic(fields[i].getModifiers())) {
+               final String name = fields[i].getName();
+               if (name.startsWith(__TIMESTAMP__)) {
+                 try {
+                     return Long.decode(name.substring(__TIMESTAMP__.length())).longValue();
+                 }
+                 catch (NumberFormatException e) {
+                     return Long.MAX_VALUE;
+                 }
+             }
+           }
+        }
+        return Long.MAX_VALUE;
     }
 
 }

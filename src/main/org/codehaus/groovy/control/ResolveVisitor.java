@@ -183,15 +183,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
     // NOTE: copied from GroovyClassLoader
     private long getTimeStamp(Class cls) {
-        Field field;
-        Long o;
-        try {
-            field = cls.getField(Verifier.__TIMESTAMP);
-            o = (Long) field.get(null);
-        } catch (Exception e) {
-            return Long.MAX_VALUE;
-        }
-        return o.longValue();
+        return Verifier.getTimestamp(cls);
     }
 
     // NOTE: copied from GroovyClassLoader

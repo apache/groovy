@@ -713,14 +713,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * @return the time stamp
      */
     protected long getTimeStamp(Class cls) {
-        Long o;
-        try {
-            Field field = cls.getField(Verifier.__TIMESTAMP);
-            o = (Long) field.get(null);
-        } catch (Exception e) {
-            return Long.MAX_VALUE;
-        }
-        return o.longValue();
+        return Verifier.getTimestamp(cls);
     }
     
     /*
