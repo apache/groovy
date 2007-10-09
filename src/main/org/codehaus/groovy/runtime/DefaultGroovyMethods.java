@@ -3144,41 +3144,6 @@ public class DefaultGroovyMethods {
         return true;
     }
 
-    public static boolean equals(Object[] left, Object[] right) {
-        if (left == null) {
-            return right == null;
-        }
-        if (right == null) {
-            return false;
-        }
-        if (left.length != right.length) {
-            return false;
-        }
-        final NumberAwareComparator numberAwareComparator = new NumberAwareComparator();
-        for (int i = left.length - 1; i >= 0; i--) {
-            final Object o1 = left[i];
-            final Object o2 = right[i];
-            if (o1 == null) {
-                if (o2 != null) return false;
-            } else {
-                if (o1 instanceof Number) {
-                    if (!(o2 instanceof Number && numberAwareComparator.compare(o1, o2) == 0)) {
-                        return false;
-                    }
-                } else {
-                    // Use this way of calling equals in case the element is a List
-                    // or any other type which has an equals in DGM
-                    if (!invokeEquals(o1, o2)) return false;
-                }
-            }
-        }
-        return true;
-    }
-
-    private static boolean invokeEquals(Object o1, Object o2) {
-        return ((Boolean) InvokerHelper.invokeMethod(o1, "equals", new Object[]{o2})).booleanValue();
-    }
-
     public static boolean equals(Object[] left, List right) {
         return coercedEquals(left, right);
     }
@@ -3209,9 +3174,7 @@ public class DefaultGroovyMethods {
                         return false;
                     }
                 } else {
-                    // Use this way of calling equals in case the element is a List
-                    // or any other type which has an equals in DGM
-                    if (!invokeEquals(o1, o2)) return false;
+                    if (!DefaultTypeTransformation.compareEqual(o1, o2)) return false;
                 }
             }
         }
@@ -3250,9 +3213,7 @@ public class DefaultGroovyMethods {
                         return false;
                     }
                 } else {
-                    // Use this way of calling equals in case the element is a List
-                    // or any other type which has an equals in DGM
-                    if (!invokeEquals(o1, o2)) return false;
+                    if (!DefaultTypeTransformation.compareEqual(o1, o2)) return false;
                 }
             }
         }

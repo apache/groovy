@@ -450,7 +450,11 @@ public class DefaultTypeTransformation {
         int size = Array.getLength(array);
         List list = new ArrayList(size);
         for (int i = 0; i < size; i++) {
-            list.add(Array.get(array, i));
+            Object item = Array.get(array, i);
+            if (item.getClass().isArray() && item.getClass().getComponentType().isPrimitive()) {
+                item = primitiveArrayToList(item);
+            }
+            list.add(item);
         }
         return list;
     }
@@ -508,18 +512,17 @@ public class DefaultTypeTransformation {
         if (left instanceof Comparable) {
             return compareTo(left, right) == 0;
         }
-        // handle int[] on both sides as special case for efficiency
-        if (left instanceof int[] && right instanceof int[]) {
-            return DefaultGroovyMethods.equals((int[]) left, (int[]) right);
+        // handle arrays on both sides as special case for efficiency
+        Class leftClass = left.getClass();
+        Class rightClass = right.getClass();
+        if (leftClass.isArray() && rightClass.isArray()) {
+            return compareArrayEqual(left, right);
         }
-        if (left.getClass().isArray() && left.getClass().getComponentType().isPrimitive()) {
+        if (leftClass.isArray() && leftClass.getComponentType().isPrimitive()) {
             left = primitiveArrayToList(left);
         }
-        if (right.getClass().isArray() && right.getClass().getComponentType().isPrimitive()) {
+        if (rightClass.isArray() && rightClass.getComponentType().isPrimitive()) {
             right = primitiveArrayToList(right);
-        }
-        if (left instanceof Object[] && right instanceof Object[]) {
-            return DefaultGroovyMethods.equals((Object[]) left, (Object[]) right);
         }
         if (left instanceof Object[] && right instanceof List) {
             return DefaultGroovyMethods.equals((Object[]) left, (List) right);
@@ -532,7 +535,25 @@ public class DefaultTypeTransformation {
         }
         return left.equals(right);
     }
-    
+
+    public static boolean compareArrayEqual(Object left, Object right) {
+        if (left == null) {
+            return right == null;
+        }
+        if (right == null) {
+            return false;
+        }
+        if (Array.getLength(left) != Array.getLength(right)) {
+            return false;
+        }
+        for (int i = 0; i < Array.getLength(left); i++) {
+            Object l = Array.get(left, i);
+            Object r = Array.get(right, i);
+            if (!compareEqual(l, r)) return false;
+        }
+        return true;
+    }
+
     /**
      * @return true if the given value is a valid character string (i.e. has length of 1)
      */
@@ -551,7 +572,6 @@ public class DefaultTypeTransformation {
      * @param type component type of the array
      */
     public static Object[] convertPrimitiveArray(Object a, Class type) {
-//        System.out.println("a.getClass() = " + a.getClass());
         Object[] ans = null;
         String elemType = type.getName();
         if (elemType.equals("int")) {
@@ -847,5 +867,5 @@ public class DefaultTypeTransformation {
             return a;
         }
     }
-    
+
 }

@@ -113,6 +113,10 @@ class ArrayTest extends GroovyTestCase {
         assert arr1 == list1
         assert list1 == primarr1
         assert primarr1 == list1
+        boolean[] bools1 = [true, true, false]
+        boolean[] bools2 = [true, true, false]
+        assert bools1 == bools2
+        assert bools1 == [true, true, false] as boolean[]
     }
 
     void testComplexArrayEquals() {
@@ -123,8 +127,19 @@ class ArrayTest extends GroovyTestCase {
         def x = [[1,2] as Integer[]]
         Object[] y = [[1,2]]
         assert y == x
-        //TODO: make this work; currently throws ClassCastException
-        //assert [[1,2],[3,4]] as int[][] == [[1,2],[3,4]] as int[][]
+        assert [[1,2],[3,4]] as int[][] == [[1,2],[3,4]] as int[][]
+        assert [[[5,6],[7,8]]] as int[][][] == [[[5,6],[7,8]]] as int[][][]
+        assert [[1,2],[3,4]] as long[][] == [[1,2],[3,4]] as long[][]
+        assert [[1,2],[3,4]] as long[][] == [[1,2],[3,4]] as Long[][]
+        assert [[1,2],[3,4]] as long[][] == [[1,2],[3,4]]
+        assert [[1,2],[3,4]] as long[][] == [[1,2] as short[], [3,4] as short[]]
+        int[][] intsA = [[1,2],[3,4]]
+        assert intsA == [[1,2],[3,4]] as int[][]
+        int[][] intsB = [[1,2],[3,4]]
+        assert intsA == intsB
+        boolean[][] boolsA = [[true, true], [false, true], [false]]
+        boolean[][] boolsB = [[true, true], [false, true], [false]]
+        assert boolsA == boolsB
     }
 
 }
