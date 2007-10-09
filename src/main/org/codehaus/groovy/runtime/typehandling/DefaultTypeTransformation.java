@@ -238,6 +238,8 @@ public class DefaultTypeTransformation {
             return box(castToChar(object));
         } else if (type == Boolean.class) {
             return box(castToBoolean(object));
+        } else if (type == Class.class) {
+            return castToClass(object);
         } else if (Number.class.isAssignableFrom(type)) {
             Number n = castToNumber(object);
             if (type == Byte.class) {
@@ -325,7 +327,15 @@ public class DefaultTypeTransformation {
         }
         throw new GroovyCastException(object,type);
     }
-    
+
+    private static Class castToClass(Object object) {
+        try {
+            return Class.forName (object.toString());
+        } catch (Exception e) {
+            throw new GroovyCastException(object,Class.class);
+        }
+    }
+
     public static Object asArray(Object object, Class type) {
         Collection list = asCollection(object);
         int size = list.size();
