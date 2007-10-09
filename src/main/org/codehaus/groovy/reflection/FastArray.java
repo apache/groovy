@@ -1,5 +1,7 @@
 package org.codehaus.groovy.reflection;
 
+import com.sun.jmx.snmp.internal.SnmpDecryptedPdu;
+
 import java.util.AbstractList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -103,5 +105,9 @@ public class FastArray implements Cloneable {
                 return size;
             }
         };
+    }
+
+    public Object[] getArray() {
+        return data;
     }
 }

@@ -1,7 +1,7 @@
 package org.codehaus.groovy.runtime.metaclass;
 
 import org.codehaus.groovy.reflection.CachedMethod;
-import org.codehaus.groovy.runtime.Reflector;
+import org.codehaus.groovy.reflection.SingleKeyHashMap;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 
 import java.lang.reflect.InvocationTargetException;
@@ -27,13 +27,12 @@ public class StdMetaMethod extends ReflectionMetaMethod {
         }
     }
 
-    private static HashMap cache = new HashMap();
+    private static SingleKeyHashMap cache = new SingleKeyHashMap();
     public synchronized static StdMetaMethod createStdMetaMethod(CachedMethod element) {
-        StdMetaMethod method = (StdMetaMethod) cache.get(element);
-        if (method == null) {
-            method = new StdMetaMethod(element);
-            cache.put(element, method);
+        SingleKeyHashMap.Entry method = cache.getOrPut(element);
+        if (method.value == null) {
+            method.value = new StdMetaMethod(element);
         }
-        return method;
+        return (StdMetaMethod) method.value;
     }
 }

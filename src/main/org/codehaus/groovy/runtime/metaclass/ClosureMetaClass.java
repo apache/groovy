@@ -113,8 +113,10 @@ public final class ClosureMetaClass extends MetaClassImpl {
             } else {
                 List matchingMethods = new ArrayList();
 
-                for (int i = 0; i != methods.size(); ++i) {
-                    Object method = methods.get(i);
+                final int len = methods.size();
+                final Object[] data = methods.getArray();
+                for (int i = 0; i != len; ++i) {
+                    Object method = data[i];
 
                     // making this false helps find matches
                     if (MetaClassHelper.isValidMethod(method, arguments, coerce)) {

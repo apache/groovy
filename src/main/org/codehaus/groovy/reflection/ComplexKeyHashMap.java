@@ -11,7 +11,7 @@ public class ComplexKeyHashMap
     public Entry next;
   }
 
-  Entry table [];
+  protected Entry table [];
 
   protected static final int DEFAULT_CAPACITY = 32;
   protected static final int MINIMUM_CAPACITY = 4;
@@ -102,6 +102,11 @@ public class ComplexKeyHashMap
       boolean hasNext ();
       Entry   next ();
   }
+
+
+    public ComplexKeyHashMap.Entry[] getTable() {
+        return table;
+    }
 
   public EntryIterator  getEntrySetIterator() {
         return new EntryIterator() {

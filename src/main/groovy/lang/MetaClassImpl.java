@@ -271,8 +271,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
        MethodIndexAction mia = new MethodIndexAction() {
            public void methodNameAction(CachedClass clazz, String methodName, FastArray methods) {
               boolean hasPrivate=false;
-              for (int i = 0; i != methods.size(); ++i) {
-                  MetaMethod method = (MetaMethod) methods.get(i);
+               final int len = methods.size();
+               final Object [] data = methods.getArray();
+               for (int i = 0; i != len; ++i) {
+                  MetaMethod method = (MetaMethod) data[i];
                   if (method.isPrivate() && clazz == method.getDeclaringClass()) {
                       hasPrivate = true;
                       break;
@@ -305,9 +307,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
            }
 
            public void methodNameAction(CachedClass clazz, String methodName, FastArray methods) {
-               final int size = methods.size();
-               for (int i = 0; i != size; ++i) {
-                   MetaMethod method = (MetaMethod) methods.get(i);
+               final int len = methods.size();
+               final Object [] data = methods.getArray();
+               for (int i = 0; i != len; ++i) {
+                   MetaMethod method = (MetaMethod) data [i];
                    String mopName = ReflectionCache.getMOPMethodName(method.getDeclaringClass(), methodName,useThis);
                    FastArray matches = (FastArray) mainClassMethodIndex.get(mopName);
                    if (matches!=null) {
@@ -341,7 +344,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                newGroovyMethodsList.add(method);
            }
            SingleKeyHashMap methodIndex = classMethodIndex.getNotNull(theCachedClass);
-           SingleKeyHashMap.Entry e = (SingleKeyHashMap.Entry) methodIndex.getOrPut(method.getName());
+           SingleKeyHashMap.Entry e = methodIndex.getOrPut(method.getName());
            if (e.value == null) {
                final FastArray list = new FastArray();
                e.value = list;
@@ -349,13 +352,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
            } else {
                addMethodToList((FastArray) e.value,method);
            }
-       }
-       methods = ((MetaClassRegistryImpl)registry).getStaticMethods();
-       for (Iterator iter = methods.iterator(); iter.hasNext();) {
-           CachedMethod element = (CachedMethod) iter.next();
-           CachedClass dgmClass = element.getParameterTypes()[0];
-           if (!interfaces.contains(dgmClass)) continue;
-           addNewStaticMethod(element.cachedMethod);
        }
    }
 
@@ -375,14 +371,24 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
    }
 
    private void copyNonPrivateMethods(SingleKeyHashMap from, SingleKeyHashMap to) {
-       for (ComplexKeyHashMap.EntryIterator iterator = from.getEntrySetIterator(); iterator.hasNext();) {
-           SingleKeyHashMap.Entry element = (SingleKeyHashMap.Entry) iterator.next();
-           FastArray oldList = (FastArray) element.getValue();
-           SingleKeyHashMap.Entry e = (SingleKeyHashMap.Entry) to.getOrPut(element.getKey());
-           if (e.value==null) {
-               e.value = oldList.copy();
-           } else {
-               addNonPrivateMethods((FastArray) e.value,oldList);
+       ComplexKeyHashMap.Entry [] table = from.getTable();
+       int len = table.length;
+       for ( int i = 0; i != len; ++i) {
+           for ( SingleKeyHashMap.Entry element = (SingleKeyHashMap.Entry) table[i]; element != null; element = (SingleKeyHashMap.Entry) element.next)
+           {
+               FastArray oldList = (FastArray) element.getValue();
+               SingleKeyHashMap.Entry e = to.getOrPutEntry(element);
+               if (e.value==null) {
+                   e.value = oldList.copy();
+               } else {
+                   int len1 = oldList.size();
+                   Object list [] = oldList.getArray ();
+                   for (int j = 0; j != len1; ++j) {
+                       MetaMethod method = (MetaMethod) list[j];
+                       if (method.isPrivate()) continue;
+                       addMethodToList((FastArray) e.value, method);
+                   }
+               }
            }
        }
    }
@@ -415,16 +421,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
        }
    }
 
-   private void addNonPrivateMethods(FastArray newList, FastArray oldList) {
-       int len = oldList.size();
-       for (int i = 0; i != len; ++i) {
-           MetaMethod element = (MetaMethod) oldList.get(i);
-           if (element.isPrivate()) continue;
-           addMethodToList(newList,element);
-       }
-   }
-
-/**
+    /**
     * @return all the normal instance methods avaiable on this class for the
     *         given name
     */
@@ -447,7 +444,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
        if (!isCallToSuper && GroovyCategorySupport.hasCategoryInAnyThread()) {
            List used = GroovyCategorySupport.getCategoryMethods(sender, name);
            if (used != null) {
-               answer = (FastArray) answer.copy();
+               answer = answer.copy();
                for (Iterator iter = used.iterator(); iter.hasNext();) {
                    MetaMethod element = (MetaMethod) iter.next();
                    final int found = findMatchingMethod(answer, element);
@@ -1247,9 +1244,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
    private MetaMethod findPropertyMethod(FastArray methods, boolean isGetter) {
        Object ret = null;
-       int len = methods.size();
+       final int len = methods.size();
+       final Object [] data = methods.getArray();
        for (int i = 0; i != len; ++i) {
-           MetaMethod element = (MetaMethod) methods.get(i);
+           MetaMethod element = (MetaMethod) data[i];
            if ( !isGetter &&
                 //(element.getReturnType() == Void.class || element.getReturnType() == Void.TYPE) &&
                 element.getParameterTypes().length == 1)
@@ -1959,6 +1957,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                continue;
            addNewInstanceMethod(element);
        }
+
        // add static methods declared by DGM
        methods = ((MetaClassRegistryImpl)registry).getStaticMethods();
        for (Iterator iter = methods.iterator(); iter.hasNext();) {
@@ -2043,8 +2042,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     private int findMatchingMethod(FastArray list, MetaMethod method) {
         int len = list.size();
+        Object data []  = list.getArray();
         for (int j = 0; j != len; ++j) {
-            MetaMethod aMethod = (MetaMethod) list.get(j);
+            MetaMethod aMethod = (MetaMethod) data[j];
             CachedClass[] params1 = aMethod.getParameterTypes();
             CachedClass[] params2 = method.getParameterTypes();
             if (params1.length == params2.length) {
@@ -2068,8 +2068,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     */
    private MetaMethod findMethod(CachedMethod aMethod) {
        FastArray methods = getMethods(theClass,aMethod.getName(),false);
-       for (int i = 0; i != methods.size; ++i) {
-           MetaMethod method = (MetaMethod) methods.get(i);
+       final int len = methods.size;
+       final Object data [] = methods.getArray();
+       for (int i = 0; i != len; ++i) {
+           MetaMethod method = (MetaMethod) data[i];
            if (method.isMethod(aMethod.cachedMethod)) {
                return method;
            }
@@ -2129,8 +2131,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
        else {
            List matchingMethods = new ArrayList(methods.size());
 
-           for (int i = 0; i != methods.size; ++i) {
-               Object method = methods.get(i);
+           final int len = methods.size;
+           Object data [] = methods.getArray();
+           for (int i = 0; i != len; ++i) {
+               Object method = data[i];
 
                // making this false helps find matches
                if (MetaClassHelper.isValidMethod(method, arguments, coerce)) {
@@ -2364,14 +2368,27 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
    private static abstract class MethodIndexAction {
        public void iterate(MethodIndex classMethodIndex){
-           for (ComplexKeyHashMap.EntryIterator iter = classMethodIndex.getEntrySetIterator(); iter.hasNext();) {
-               SingleKeyHashMap.Entry classEntry = (SingleKeyHashMap.Entry) iter.next();
-               CachedClass clazz = (CachedClass) classEntry.getKey();
-               if (skipClass(clazz)) continue;
-               SingleKeyHashMap methodIndex = (SingleKeyHashMap) classEntry.getValue();
-               for (ComplexKeyHashMap.EntryIterator iterator = methodIndex.getEntrySetIterator(); iterator.hasNext();) {
-                   SingleKeyHashMap.Entry nameEntry = (SingleKeyHashMap.Entry) iterator.next();
-                   methodNameAction(clazz, (String) nameEntry.getKey(), (FastArray) nameEntry.getValue());
+           final ComplexKeyHashMap.Entry[] table = classMethodIndex.getTable();
+           int len = table.length;
+           for (int i = 0; i != len; ++i) {
+               for ( SingleKeyHashMap.Entry classEntry = (SingleKeyHashMap.Entry) table[i];
+                     classEntry != null;
+                     classEntry = (SingleKeyHashMap.Entry) classEntry.next) {
+
+                   CachedClass clazz = (CachedClass) classEntry.getKey();
+
+                   if (skipClass(clazz)) continue;
+
+                   SingleKeyHashMap methodIndex = (SingleKeyHashMap) classEntry.getValue();
+                   final ComplexKeyHashMap.Entry[] table2 = methodIndex.getTable();
+                   int len2 = table2.length;
+                   for (int j = 0; j != len2; ++j) {
+                       for (SingleKeyHashMap.Entry nameEntry = (SingleKeyHashMap.Entry) table2[j];
+                            nameEntry != null;
+                            nameEntry = (SingleKeyHashMap.Entry) nameEntry.next) {
+                         methodNameAction(clazz, (String) nameEntry.getKey(), (FastArray) nameEntry.getValue());
+                       }
+                   }
                }
            }
        }

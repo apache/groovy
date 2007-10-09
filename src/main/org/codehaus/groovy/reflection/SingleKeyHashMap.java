@@ -45,7 +45,7 @@ public class SingleKeyHashMap extends ComplexKeyHashMap
     return null;
   }
 
-  public ComplexKeyHashMap.Entry getOrPut(Object key)
+  public Entry getOrPut(Object key)
   {
     int h = hash (key.hashCode());
       final ComplexKeyHashMap.Entry[] t = table;
@@ -53,7 +53,7 @@ public class SingleKeyHashMap extends ComplexKeyHashMap
     ComplexKeyHashMap.Entry e = t[index];
     for (; e != null; e = e.next)
         if (e.hash == h && ((Entry) e).key.equals(key))
-          return e;
+          return (Entry) e;
 
       Entry entry = new Entry();
       entry.next = t [index];
@@ -65,7 +65,29 @@ public class SingleKeyHashMap extends ComplexKeyHashMap
       resize(2* t.length);
 
     return entry;
-  }
+  }                                                    
+
+    public Entry getOrPutEntry(Entry element) {
+        Object key = element.key;
+        int h = element.hash;
+          final ComplexKeyHashMap.Entry[] t = table;
+          final int index = h & (t.length - 1);
+        ComplexKeyHashMap.Entry e = t[index];
+        for (; e != null; e = e.next)
+            if (e.hash == h && ((Entry) e).key.equals(key))
+              return (Entry) e;
+
+          Entry entry = new Entry();
+          entry.next = t [index];
+          entry.hash = h;
+          entry.key = key;
+          t[index] = entry;
+
+        if ( ++size == threshold )
+          resize(2* t.length);
+
+        return entry;
+    }
 
     public Entry putCopyOfUnexisting(Entry ee)
     {

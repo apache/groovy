@@ -316,8 +316,10 @@ public class MetaClassHelper {
      */
     public static Object chooseEmptyMethodParams(FastArray methods) {
         Object vargsMethod = null;
-        for (int i = 0; i != methods.size(); ++i) {
-            Object method = methods.get(i);
+        final int len = methods.size();
+        final Object[] data = methods.getArray();
+        for (int i = 0; i != len; ++i) {
+            Object method = data[i];
             final ParameterTypes pt = getParameterTypes(method);
             CachedClass[] paramTypes = pt.getParameterTypes();
             int paramLength = paramTypes.length;
@@ -341,8 +343,10 @@ public class MetaClassHelper {
         CachedClass closestVargsClass = null;
         Object answer = null;
         int closestDist = -1;
-        for (int i = 0; i != methods.size(); ++i) {
-            Object method = methods.get(i);
+        final int len = methods.size();
+        for (int i = 0; i != len; ++i) {
+            final Object[] data = methods.getArray();
+            Object method = data[i];
             final ParameterTypes pt = getParameterTypes(method);
             CachedClass[] paramTypes = pt.getParameterTypes();
             int paramLength = paramTypes.length;
