@@ -525,6 +525,9 @@ public class CompilationUnit extends ProcessingUnit {
                 scopeVisitor.visitClass(node);
 
                 resolveVisitor.startResolving(node, source);
+
+                GenericsVisitor genericsVisitor = new GenericsVisitor(source);
+                genericsVisitor.visitClass(node);
             }
 
         }

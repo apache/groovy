@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import org.codehaus.groovy.runtime.GeneratedClosure;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.objectweb.asm.Opcodes;
 
 /**
@@ -137,6 +138,10 @@ public class ClassHelper {
      * @return ClassNode instance created from the given class
      */
     public static ClassNode make(Class c) {
+        return make(c,true);
+    }
+    
+    public static ClassNode make(Class c, boolean includeGenerics) {
         for (int i=0; i<classes.length; i++) {
             if (c==classes[i]) return types[i];
         }
@@ -145,6 +150,7 @@ public class ClassHelper {
             return cn.makeArray();
         }
         ClassNode t = new ClassNode(c);
+        if (includeGenerics) VMPluginFactory.getPlugin().setGenericsTypes(t);
         return t;
     }
     

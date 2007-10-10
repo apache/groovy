@@ -107,7 +107,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     private GenericsType[] genericsTypes=null;
     private boolean usesGenerics=false;
     
-    // if set tot true the name getGenericsTypes consists
+    // if set to true the name getGenericsTypes consists
     // of 1 element describing the name of the placeholder
     private boolean placeholder;
     
@@ -735,7 +735,9 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         if (!lazyInitDone && !isResolved()) {
             throw new GroovyBugError("Classnode#getSuperClass for "+getName()+" called before class resolving");
         }
-        return redirect().getUnresolvedSuperClass();
+        ClassNode sn = redirect().getUnresolvedSuperClass();
+        if (sn!=null) sn=sn.redirect();
+        return sn;
     }
     
     public ClassNode getUnresolvedSuperClass() {

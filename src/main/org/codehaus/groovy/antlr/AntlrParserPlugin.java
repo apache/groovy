@@ -2335,7 +2335,6 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         if (typeArgumentList.size()>0) {
             basicType.setGenericsTypes((GenericsType[]) typeArgumentList.toArray(new GenericsType[0]));
         }
-        
         return basicType;
     }
     
@@ -2380,9 +2379,11 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         AST node = typeNode.getFirstChild();
         if (node != null) {
             if (isType(INDEX_OP, node) || isType(ARRAY_DECLARATOR, node)) {
-                return makeType(node).makeArray();
-             }
-            answer = ClassHelper.make(qualifiedName(node));
+                answer = makeType(node).makeArray();
+            } else {
+                answer = ClassHelper.make(qualifiedName(node));
+            }
+            configureAST(answer,node);
         }
         return answer;
     }

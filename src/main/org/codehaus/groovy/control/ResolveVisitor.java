@@ -28,7 +28,6 @@ import org.codehaus.groovy.syntax.Types;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -300,7 +299,6 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return false;
     }
 
-
     private void setClass(ClassNode n, Class cls) {
         ClassNode cn = ClassHelper.make(cls);
         n.setRedirect(cn);
@@ -554,9 +552,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             if (resolve(type, false, false, false)) return new ClassExpression(type);
         }
         Expression ret = pe;
-        if (isTopLevelProperty) {
-            ret = correctClassClassChain(pe);
-        }
+        if (isTopLevelProperty) ret = correctClassClassChain(pe);
         return ret;
     }
 
