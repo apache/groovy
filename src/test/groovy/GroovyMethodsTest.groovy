@@ -151,6 +151,15 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert c.size() == l.size()
     }
 
+    void testStringToList() {
+        String s = 'hello 10'
+        def gs = "hello ${5+5}"
+        def expected = ["h", "e", "l", "l", "o", " ", "1", "0"]
+        assert s.toList() == expected
+        assert s as String[] == expected
+        assert gs as String[] == expected
+    }
+
     void testCollectionAsList() {
         Integer[] nums = [1, 2, 3, 4, 5]
         def numList = nums as List

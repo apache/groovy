@@ -427,6 +427,9 @@ public class DefaultTypeTransformation {
         else if (value instanceof String) {
             return DefaultGroovyMethods.toList((String) value);
         }
+        else if (value instanceof GString) {
+            return DefaultGroovyMethods.toList(value.toString());
+        }
         else if (value instanceof File) {
             try {
                 return DefaultGroovyMethods.readLines((File) value);
