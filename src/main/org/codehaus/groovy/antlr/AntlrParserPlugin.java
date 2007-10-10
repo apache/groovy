@@ -1378,16 +1378,15 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 return notExpression;
 
             case UNARY_MINUS:
-                return negateExpression(node);
+                return unaryMinusExpression(node);
 
             case BNOT:
-                BitwiseNegExpression bitwiseNegExpression = new BitwiseNegExpression(expression(node.getFirstChild()));
-                configureAST(bitwiseNegExpression, node);
-                return bitwiseNegExpression;
+                BitwiseNegationExpression bitwiseNegationExpression = new BitwiseNegationExpression(expression(node.getFirstChild()));
+                configureAST(bitwiseNegationExpression, node);
+                return bitwiseNegationExpression;
 
             case UNARY_PLUS:
-                return expression(node.getFirstChild());
-
+                return unaryPlusExpression(node);
 
                 // Prefix expressions
             case INC:
@@ -2141,8 +2140,8 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         return call;
     }
 
-    protected Expression negateExpression(AST negateExpr) {
-        AST node = negateExpr.getFirstChild();
+    protected Expression unaryMinusExpression(AST unaryMinusExpr) {
+        AST node = unaryMinusExpr.getFirstChild();
 
         // if we are a number literal then lets just parse it
         // as the negation operator on MIN_INT causes rounding to a long
@@ -2152,20 +2151,38 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             case NUM_FLOAT:
             case NUM_BIG_DECIMAL:
                 ConstantExpression constantExpression = new ConstantExpression(Numbers.parseDecimal("-" + text));
-                configureAST(constantExpression, negateExpr);
+                configureAST(constantExpression, unaryMinusExpr);
                 return constantExpression;
 
             case NUM_BIG_INT:
             case NUM_INT:
             case NUM_LONG:
                 ConstantExpression constantLongExpression = new ConstantExpression(Numbers.parseInteger("-" + text));
-                configureAST(constantLongExpression, negateExpr);
+                configureAST(constantLongExpression, unaryMinusExpr);
                 return constantLongExpression;
 
             default:
-                NegationExpression negationExpression = new NegationExpression(expression(node));
-                configureAST(negationExpression, negateExpr);
-                return negationExpression;
+                UnaryMinusExpression unaryMinusExpression = new UnaryMinusExpression(expression(node));
+                configureAST(unaryMinusExpression, unaryMinusExpr);
+                return unaryMinusExpression;
+        }
+    }
+
+    protected Expression unaryPlusExpression(AST unaryPlusExpr) {
+        AST node = unaryPlusExpr.getFirstChild();
+        switch (node.getType()) {
+            case NUM_DOUBLE:
+            case NUM_FLOAT:
+            case NUM_BIG_DECIMAL:
+            case NUM_BIG_INT:
+            case NUM_INT:
+            case NUM_LONG:
+                return expression(node);
+
+            default:
+                UnaryPlusExpression unaryPlusExpression = new UnaryPlusExpression(expression(node));
+                configureAST(unaryPlusExpression, unaryPlusExpr);
+                return unaryPlusExpression;
         }
     }
 

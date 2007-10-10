@@ -1836,7 +1836,7 @@ public class DefaultGroovyMethods {
      * @param self a String to convert into a regular expression
      * @return the regular expression pattern
      */
-    public static Pattern negate(String self) {
+    public static Pattern bitwiseNegate(String self) {
         return Pattern.compile(self);
     }
 
@@ -4867,8 +4867,8 @@ public class DefaultGroovyMethods {
      * @param left a Number
      * @return the negation of the number
      */
-    public static Number negate(Number left) {
-        return NumberMath.negate(left);
+    public static Number unaryMinus(Number left) {
+        return NumberMath.unaryMinus(left);
     }
 
 

@@ -19,29 +19,29 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
 /**
- * @author phk
+ * @author sam
  */
-public class BitwiseNegExpression extends Expression {
+public class UnaryMinusExpression extends Expression {
 
-    private Expression expression;
+	private final Expression expression;
 	
-    public BitwiseNegExpression(Expression expression) {
-        this.expression = expression;
-    }
+	public UnaryMinusExpression(Expression expression) {
+		this.expression = expression;
+	}
 
-    public Expression getExpression() {
-        return expression;
-    }
+	public Expression getExpression() {
+		return expression;
+	}
 
-    public void visit(GroovyCodeVisitor visitor) {
-        visitor.visitBitwiseNegExpression(this);
-    }
+	public void visit(GroovyCodeVisitor visitor) {
+		visitor.visitUnaryMinusExpression(this);
+	}
 
-    public Expression transformExpression(ExpressionTransformer transformer) {
-        Expression ret = new BitwiseNegExpression(transformer.transform(expression));
+	public Expression transformExpression(ExpressionTransformer transformer) {
+        Expression ret = new UnaryMinusExpression(transformer.transform(expression));
         ret.setSourcePosition(this);
         return ret;
-    }
+	}
 
     public String getText() {
 		return expression.getText();
@@ -49,6 +49,10 @@ public class BitwiseNegExpression extends Expression {
 
     public ClassNode getType() {
         return expression.getType();
+    }
+
+    public boolean isDynamic() {
+        return false;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
 }

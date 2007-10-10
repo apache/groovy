@@ -1,4 +1,4 @@
-package groovy
+package groovy.operator
 
 class DoubleOperationTest extends GroovyTestCase {
 

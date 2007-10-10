@@ -1,6 +1,6 @@
-package groovy
+package groovy.operator
 
-class TernaryOperatorTest extends GroovyTestCase {
+class TernaryOperatorsTest extends GroovyTestCase {
 
     void testSimpleUse() {
         def y = 5
@@ -24,7 +24,7 @@ class TernaryOperatorTest extends GroovyTestCase {
         assert param == "foo"
     }
     
-    void testwithBoolean(){
+    void testWithBoolean(){
         def a = 1
         def x = a!=null ? a!=2 : a!=1
         assert x == true

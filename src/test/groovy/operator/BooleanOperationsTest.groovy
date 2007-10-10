@@ -1,6 +1,6 @@
-package groovy
+package groovy.operator
 
-class BooleanOperationTest extends GroovyTestCase {
+class BooleanOperationsTest extends GroovyTestCase {
 
     void testComparisons() {
         assert true

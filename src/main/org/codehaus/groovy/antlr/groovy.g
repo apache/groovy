@@ -1431,7 +1431,7 @@ parameterDeclaration!
 
         // TODO:  What do formal parameters for keyword arguments look like?
 
-        // TODO:  Should this be SPREAD_ARG instead?
+        // Java-style var args
         ( TRIPLE_DOT! { spreadParam = true; } )?
 
         id:IDENT

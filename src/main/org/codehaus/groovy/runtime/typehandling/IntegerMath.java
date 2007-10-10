@@ -72,11 +72,11 @@ public class IntegerMath extends NumberMath {
         return new Integer(left.intValue() % right.intValue());
     }
 
-    protected Number negateImpl(Number left) {
+    protected Number unaryMinusImpl(Number left) {
         return new Integer(-left.intValue());
     }
 
-    protected Number bitNegateImpl(Number left) {
+    protected Number bitwiseNegateImpl(Number left) {
         return new Integer(~left.intValue());
     }
 

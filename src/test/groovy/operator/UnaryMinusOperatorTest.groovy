@@ -1,6 +1,6 @@
-package groovy
+package groovy.operator
 
-class UnaryMinusTest extends GroovyTestCase {
+class UnaryMinusOperatorTest extends GroovyTestCase {
 
     void testUnaryMinus() {
         def value = -1

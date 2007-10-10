@@ -1,9 +1,8 @@
-package groovy
+package groovy.operator
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
 
-class BigDecimalOperationTest extends GroovyTestCase {
+class BigDecimalOperatorsTest extends GroovyTestCase {
 
     def x, y
 

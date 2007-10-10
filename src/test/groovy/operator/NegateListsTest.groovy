@@ -1,4 +1,4 @@
-package groovy
+package groovy.operator
 
 /** 
  * Test to negate lists in Classic Groovy.

@@ -219,6 +219,6 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
      * @return the regular expression pattern
      */
     public Pattern negate() {
-        return DefaultGroovyMethods.negate(toString());
+        return DefaultGroovyMethods.bitwiseNegate(toString());
     }
 }

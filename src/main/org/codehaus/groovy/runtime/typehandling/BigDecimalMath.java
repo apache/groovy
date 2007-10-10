@@ -82,7 +82,7 @@ public class BigDecimalMath extends NumberMath {
 		}
 	}
 
-    protected Number negateImpl(Number left) {
+    protected Number unaryMinusImpl(Number left) {
         return toBigDecimal(left).negate();
     }
 }

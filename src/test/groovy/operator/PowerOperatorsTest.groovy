@@ -1,12 +1,12 @@
-package groovy
+package groovy.operator
 
 /** 
  * Test Math Power Operation in Classic/New Groovy
  * 
  * @author Pilho Kim
- * @version $Revision$
+ * @version $Revision: 4996 $
  */
-class PowerOperationTest extends GroovyTestCase {
+class PowerOperatorsTest extends GroovyTestCase {
 
     void testConstantPowerOperation() {
         assert 2**5 == 32

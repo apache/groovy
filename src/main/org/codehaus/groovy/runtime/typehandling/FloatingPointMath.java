@@ -54,7 +54,7 @@ public class FloatingPointMath extends NumberMath {
         return new Double(left.doubleValue() % right.doubleValue());
     }
     
-    protected Number negateImpl(Number left) {
+    protected Number unaryMinusImpl(Number left) {
         return new Double(-left.doubleValue());
     }
 }

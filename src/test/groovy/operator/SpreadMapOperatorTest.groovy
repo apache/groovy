@@ -1,4 +1,4 @@
-package groovy
+package groovy.operator
 
 /**
  * Test the spread map operator "*:".

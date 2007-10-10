@@ -127,9 +127,11 @@ public interface GroovyCodeVisitor {
 
     void visitNotExpression(NotExpression expression);
 
-    void visitNegationExpression(NegationExpression expression);
+    void visitUnaryMinusExpression(UnaryMinusExpression expression);
 
-    void visitBitwiseNegExpression(BitwiseNegExpression expression);
+    void visitUnaryPlusExpression(UnaryPlusExpression expression);
+
+    void visitBitwiseNegationExpression(BitwiseNegationExpression expression);
 
     void visitCastExpression(CastExpression expression);
 

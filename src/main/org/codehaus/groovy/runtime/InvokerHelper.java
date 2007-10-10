@@ -215,7 +215,7 @@ public class InvokerHelper {
         return getInstance().getMethodPointer(object, methodName);
     }
 
-    public static Object negate(Object value) {
+    public static Object unaryMinus(Object value) {
         if (value instanceof Integer) {
             Integer number = (Integer) value;
             return IntegerCache.integerValue(-number.intValue());
@@ -243,11 +243,32 @@ public class InvokerHelper {
             List newlist = new ArrayList();
             Iterator it = ((ArrayList) value).iterator();
             for (; it.hasNext();) {
-                newlist.add(negate(it.next()));
+                newlist.add(unaryMinus(it.next()));
             }
             return newlist;
         }
-        throw new GroovyRuntimeException("Cannot negate type " + value.getClass().getName() + ", value " + value);
+        return invokeMethod(value, "negative", new Object[0]);
+    }
+
+    public static Object unaryPlus(Object value) {
+        if (value instanceof Integer ||
+                value instanceof Long ||
+                value instanceof BigInteger ||
+                value instanceof BigDecimal ||
+                value instanceof Double ||
+                value instanceof Float) {
+            return value;
+        }
+        if (value instanceof ArrayList) {
+            // value is an list.
+            List newlist = new ArrayList();
+            Iterator it = ((ArrayList) value).iterator();
+            for (; it.hasNext();) {
+                newlist.add(unaryPlus(it.next()));
+            }
+            return newlist;
+        }
+        return invokeMethod(value, "positive", new Object[0]);
     }
 
     /**
@@ -647,7 +668,7 @@ public class InvokerHelper {
         }
     }
 
-    public static Object bitNegate(Object value) {
+    public static Object bitwiseNegate(Object value) {
         if (value instanceof Integer) {
             Integer number = (Integer) value;
             return new Integer(~number.intValue());
@@ -661,22 +682,22 @@ public class InvokerHelper {
         }
         if (value instanceof String) {
             // value is a regular expression.
-            return DefaultGroovyMethods.negate(value.toString());
+            return DefaultGroovyMethods.bitwiseNegate(value.toString());
         }
         if (value instanceof GString) {
             // value is a regular expression.
-            return DefaultGroovyMethods.negate(value.toString());
+            return DefaultGroovyMethods.bitwiseNegate(value.toString());
         }
         if (value instanceof ArrayList) {
             // value is an list.
             List newlist = new ArrayList();
             Iterator it = ((ArrayList) value).iterator();
             for (; it.hasNext();) {
-                newlist.add(bitNegate(it.next()));
+                newlist.add(bitwiseNegate(it.next()));
             }
             return newlist;
         }
-        throw new BitwiseNegateEvaluatingException("Cannot bitwise negate type " + value.getClass().getName() + ", value " + value);
+        return invokeMethod(value, "bitwiseNegate", new Object[0]);
     }
 
 }

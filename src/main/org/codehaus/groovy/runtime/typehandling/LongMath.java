@@ -60,11 +60,11 @@ public class LongMath extends NumberMath {
         return new Long(left.longValue() % right.longValue());
     }
     
-    protected Number negateImpl(Number left) {
+    protected Number unaryMinusImpl(Number left) {
         return new Long(-left.longValue());
     }
     
-    protected Number bitNegateImpl(Number left) {
+    protected Number bitwiseNegateImpl(Number left) {
         return new Long(~left.longValue());
     }
     

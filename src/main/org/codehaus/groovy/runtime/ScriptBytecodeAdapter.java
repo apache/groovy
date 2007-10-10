@@ -739,7 +739,7 @@ public class ScriptBytecodeAdapter {
 
     //regexpr
     public static Pattern regexPattern(Object regex) {
-        return DefaultGroovyMethods.negate(regex.toString());
+        return DefaultGroovyMethods.bitwiseNegate(regex.toString());
     }
 
     public static Matcher findRegex(Object left, Object right) throws Throwable {
@@ -786,17 +786,20 @@ public class ScriptBytecodeAdapter {
         return InvokerHelper.spreadMap(value);
     }
 
-    //negation
-    public static Object negate(Object value) throws Throwable {
+    public static Object unaryMinus(Object value) throws Throwable {
         try {
-            return InvokerHelper.negate(value);
+            return InvokerHelper.unaryMinus(value);
         } catch (GroovyRuntimeException gre) {
             return unwrap(gre);
         }
     }
 
-    public static Object bitNegate(Object value) {
-        return InvokerHelper.bitNegate(value);
+    public static Object unaryPlus(Object value) {
+        return InvokerHelper.unaryPlus(value);
+    }
+
+    public static Object bitwiseNegate(Object value) {
+        return InvokerHelper.bitwiseNegate(value);
     }
 
     public static MetaClass initMetaClass(Object object) {
@@ -810,6 +813,5 @@ public class ScriptBytecodeAdapter {
             return ((GroovyObject) object).getMetaClass();
         }
     }
-
 
 }

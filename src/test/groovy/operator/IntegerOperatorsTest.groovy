@@ -1,6 +1,6 @@
-package groovy
+package groovy.operator
 
-class IntegerOperationTest extends GroovyTestCase {
+class IntegerOperatorsTest extends GroovyTestCase {
 
     def x
     def y

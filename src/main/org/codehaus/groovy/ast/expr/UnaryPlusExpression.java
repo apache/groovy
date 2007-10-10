@@ -19,13 +19,13 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
 /**
- * @author sam
+ * @author Paul King
  */
-public class NegationExpression extends Expression {
+public class UnaryPlusExpression extends Expression {
 
 	private final Expression expression;
-	
-	public NegationExpression(Expression expression) {
+
+	public UnaryPlusExpression(Expression expression) {
 		this.expression = expression;
 	}
 
@@ -34,11 +34,11 @@ public class NegationExpression extends Expression {
 	}
 
 	public void visit(GroovyCodeVisitor visitor) {
-		visitor.visitNegationExpression(this);
+		visitor.visitUnaryPlusExpression(this);
 	}
 
 	public Expression transformExpression(ExpressionTransformer transformer) {
-        Expression ret = new NegationExpression(transformer.transform(expression)); 
+        Expression ret = new UnaryPlusExpression(transformer.transform(expression));
         ret.setSourcePosition(this);
         return ret;
 	}
@@ -52,7 +52,7 @@ public class NegationExpression extends Expression {
     }
 
     public boolean isDynamic() {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return false;
     }
 
 }

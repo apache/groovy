@@ -128,8 +128,8 @@ public abstract class NumberMath {
     	return getMath(left).rightShiftUnsignedImpl(left,right);
     }
     
-    public static Number negate(Number left) {
-        return getMath(left).negateImpl(left);
+    public static Number unaryMinus(Number left) {
+        return getMath(left).unaryMinusImpl(left);
     }
     
     public static boolean isFloatingPoint(Number number) {
@@ -220,7 +220,7 @@ public abstract class NumberMath {
 	protected abstract Number multiplyImpl(Number left, Number right);
 	protected abstract Number divideImpl(Number left, Number right);
 	protected abstract int compareToImpl(Number left, Number right);
-    protected abstract Number negateImpl(Number left);
+    protected abstract Number unaryMinusImpl(Number left);
 
 
     protected Number orImpl(Number left, Number right) {

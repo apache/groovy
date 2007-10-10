@@ -130,11 +130,12 @@ public class AsmClassGenerator extends ClassGenerator {
     // Closure
     static final MethodCaller getMethodPointer = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "getMethodPointer");
     static final MethodCaller invokeClosureMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeClosure");
-    //negation
-    static final MethodCaller negation = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "negate");
-    static final MethodCaller bitNegation = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "bitNegate");
+    // unary plus, unary minus, bitwise negation
+    static final MethodCaller unaryPlus = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "unaryPlus");
+    static final MethodCaller unaryMinus = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "unaryMinus");
+    static final MethodCaller bitwiseNegate = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "bitwiseNegate");
 
-    // type converions
+    // type conversions
     static final MethodCaller asTypeMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "asType");
     static final MethodCaller castToTypeMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "castToType");
     static final MethodCaller createListMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "createList");
@@ -1211,7 +1212,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 break;
 
             case Types.BITWISE_AND_EQUAL:
-                evaluateBinaryExpressionWithAsignment("and", expression);
+                evaluateBinaryExpressionWithAssignment("and", expression);
                 break;
 
             case Types.BITWISE_OR:
@@ -1219,7 +1220,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 break;
 
             case Types.BITWISE_OR_EQUAL:
-                evaluateBinaryExpressionWithAsignment("or", expression);
+                evaluateBinaryExpressionWithAssignment("or", expression);
                 break;
 
             case Types.BITWISE_XOR:
@@ -1227,7 +1228,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 break;
 
             case Types.BITWISE_XOR_EQUAL:
-                evaluateBinaryExpressionWithAsignment("xor", expression);
+                evaluateBinaryExpressionWithAssignment("xor", expression);
                 break;
 
             case Types.PLUS:
@@ -1235,7 +1236,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 break;
 
             case Types.PLUS_EQUAL:
-                evaluateBinaryExpressionWithAsignment("plus", expression);
+                evaluateBinaryExpressionWithAssignment("plus", expression);
                 break;
 
             case Types.MINUS:
@@ -1243,7 +1244,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 break;
 
             case Types.MINUS_EQUAL:
-                evaluateBinaryExpressionWithAsignment("minus", expression);
+                evaluateBinaryExpressionWithAssignment("minus", expression);
                 break;
 
             case Types.MULTIPLY:
@@ -1251,7 +1252,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 break;
 
             case Types.MULTIPLY_EQUAL:
-                evaluateBinaryExpressionWithAsignment("multiply", expression);
+                evaluateBinaryExpressionWithAssignment("multiply", expression);
                 break;
 
             case Types.DIVIDE:
@@ -1261,7 +1262,7 @@ public class AsmClassGenerator extends ClassGenerator {
             case Types.DIVIDE_EQUAL:
                 //SPG don't use divide since BigInteger implements directly
                 //and we want to dispatch through DefaultGroovyMethods to get a BigDecimal result
-                evaluateBinaryExpressionWithAsignment("div", expression);
+                evaluateBinaryExpressionWithAssignment("div", expression);
                 break;
 
             case Types.INTDIV:
@@ -1269,7 +1270,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 break;
 
             case Types.INTDIV_EQUAL:
-                evaluateBinaryExpressionWithAsignment("intdiv", expression);
+                evaluateBinaryExpressionWithAssignment("intdiv", expression);
                 break;
 
             case Types.MOD:
@@ -1277,7 +1278,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 break;
 
             case Types.MOD_EQUAL:
-                evaluateBinaryExpressionWithAsignment("mod", expression);
+                evaluateBinaryExpressionWithAssignment("mod", expression);
                 break;
 
             case Types.POWER:
@@ -1285,7 +1286,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 break;
 
             case Types.POWER_EQUAL:
-                evaluateBinaryExpressionWithAsignment("power", expression);
+                evaluateBinaryExpressionWithAssignment("power", expression);
                 break;
 
             case Types.LEFT_SHIFT:
@@ -1293,7 +1294,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 break;
 
             case Types.LEFT_SHIFT_EQUAL:
-                evaluateBinaryExpressionWithAsignment("leftShift", expression);
+                evaluateBinaryExpressionWithAssignment("leftShift", expression);
                 break;
 
             case Types.RIGHT_SHIFT:
@@ -1301,7 +1302,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 break;
 
             case Types.RIGHT_SHIFT_EQUAL:
-                evaluateBinaryExpressionWithAsignment("rightShift", expression);
+                evaluateBinaryExpressionWithAssignment("rightShift", expression);
                 break;
 
             case Types.RIGHT_SHIFT_UNSIGNED:
@@ -1309,7 +1310,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 break;
 
             case Types.RIGHT_SHIFT_UNSIGNED_EQUAL:
-                evaluateBinaryExpressionWithAsignment("rightShiftUnsigned", expression);
+                evaluateBinaryExpressionWithAssignment("rightShiftUnsigned", expression);
                 break;
 
             case Types.KEYWORD_INSTANCEOF:
@@ -1510,16 +1511,22 @@ public class AsmClassGenerator extends ClassGenerator {
         new CastExpression(ClassHelper.STRING_TYPE, name).visit(this);
     }
 
-    public void visitNegationExpression(NegationExpression expression) {
+    public void visitUnaryMinusExpression(UnaryMinusExpression expression) {
         Expression subExpression = expression.getExpression();
         subExpression.visit(this);
-        negation.call(mv);
+        unaryMinus.call(mv);
     }
 
-    public void visitBitwiseNegExpression(BitwiseNegExpression expression) {
+    public void visitUnaryPlusExpression(UnaryPlusExpression expression) {
         Expression subExpression = expression.getExpression();
         subExpression.visit(this);
-        bitNegation.call(mv);
+        unaryPlus.call(mv);
+    }
+
+    public void visitBitwiseNegationExpression(BitwiseNegationExpression expression) {
+        Expression subExpression = expression.getExpression();
+        subExpression.visit(this);
+        bitwiseNegate.call(mv);
     }
 
     public void visitCastExpression(CastExpression expression) {
@@ -2303,7 +2310,7 @@ public class AsmClassGenerator extends ClassGenerator {
             BinaryExpression binExp = (BinaryExpression) expression;
             switch (binExp.getOperation().getType()) {   // br todo should leave a copy of the value on the stack for all the assignemnt.
 //                case Types.EQUAL :   // br a copy of the right value is left on the stack (see evaluateEqual()) so a pop is required for a standalone assignment
-//                case Types.PLUS_EQUAL : // this and the following are related to evaluateBinaryExpressionWithAsignment()
+//                case Types.PLUS_EQUAL : // this and the following are related to evaluateBinaryExpressionWithAssignment()
 //                case Types.MINUS_EQUAL :
 //                case Types.MULTIPLY_EQUAL :
 //                case Types.DIVIDE_EQUAL :
@@ -3218,7 +3225,7 @@ public class AsmClassGenerator extends ClassGenerator {
         compareToMethod.call(mv);
     }
 
-    protected void evaluateBinaryExpressionWithAsignment(String method, BinaryExpression expression) {
+    protected void evaluateBinaryExpressionWithAssignment(String method, BinaryExpression expression) {
         Expression leftExpression = expression.getLeftExpression();
         if (leftExpression instanceof BinaryExpression) {
             BinaryExpression leftBinExpr = (BinaryExpression) leftExpression;

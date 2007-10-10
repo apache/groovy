@@ -58,11 +58,11 @@ public class BigIntegerMath extends NumberMath {
         return toBigInteger(left).mod(toBigInteger(right));
     }
     
-    protected Number negateImpl(Number left) {
+    protected Number unaryMinusImpl(Number left) {
         return toBigInteger(left).negate();
     }
 
-    protected Number bitNegateImpl(Number left) {
+    protected Number bitwiseNegateImpl(Number left) {
         return toBigInteger(left).not();
     }
 

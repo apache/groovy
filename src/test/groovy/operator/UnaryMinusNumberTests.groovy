@@ -1,6 +1,6 @@
-package groovy
+package groovy.operator
 
-class NegationTests extends GroovyTestCase {
+class UnaryMinusNumberTests extends GroovyTestCase {
 
     void testNegateInteger() {
         def a = -1

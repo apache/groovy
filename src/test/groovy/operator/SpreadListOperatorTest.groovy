@@ -1,7 +1,7 @@
-package groovy
+package groovy.operator
 
 /**
- * @version $Revision$
+ * @version $Revision: 4996 $
  *
  * <code>[2, 3].toSpreadList() equals to *[2, 3]</code> <br><br>
  *

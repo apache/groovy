@@ -1,6 +1,6 @@
-package groovy
+package groovy.operator
 
-class StringOperationTest extends GroovyTestCase {
+class StringOperatorsTest extends GroovyTestCase {
 
     def x
     def y
