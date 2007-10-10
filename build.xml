@@ -114,7 +114,9 @@ $Date$
         <mkdir dir="${mainClassesDirectory}"/>
         <mkdir dir="${toolsClassesDirectory}"/>
         <javac srcdir="${mainSourceDirectory}" includeantruntime="false" destdir="${mainClassesDirectory}"
-               deprecation="on" debug="yes" source="1.4" target="1.4" fork="true" classpathref="compilePath"/>
+               deprecation="on" debug="yes" source="1.4" target="1.4" fork="true" classpathref="compilePath">
+               <exclude name="**/vmplugin/v5/**" unless="groovy.build.vm5"/>
+        </javac>
 
         <echo message="Groovyc of main code."/>
         <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpath="${mainClassesDirectory}"
