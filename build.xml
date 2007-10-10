@@ -384,6 +384,7 @@ $Date$
     <target name="-createBaseJar" unless="testFailed">
         <jar destfile="${targetDistDirectory}/groovy-${groovyVersion}.jar" basedir="${mainClassesDirectory}"
              excludes="*.groovy" manifest="${mainClassesDirectory}/META-INF/MANIFEST.MF"/>
+        <jar destfile="${targetDistDirectory}/groovy-${groovyVersion}-sources.jar" basedir="${mainSourceDirectory}"/>
     </target>
 
     <target name="-jarjarInit">
@@ -421,6 +422,10 @@ $Date$
         </jarjar>
         <copy file="${targetDistDirectory}/groovy-all-${groovyVersion}.jar"
               tofile="${targetDistDirectory}/groovy-all-minimal-${groovyVersion}.jar"/>
+        <copy file="${targetDistDirectory}/groovy-${groovyVersion}-sources.jar"
+              tofile="${targetDistDirectory}/groovy-all-${groovyVersion}-sources.jar"/>
+        <copy file="${targetDistDirectory}/groovy-all-${groovyVersion}-sources.jar"
+              tofile="${targetDistDirectory}/groovy-all-minimal-${groovyVersion}-sources.jar"/>
         <delete dir="${stagingDirectory}" quiet="true"/>
     </target>
 
