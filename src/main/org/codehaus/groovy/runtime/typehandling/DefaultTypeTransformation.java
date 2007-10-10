@@ -462,6 +462,15 @@ public class DefaultTypeTransformation {
         return list;
     }
     
+    public static Object[] primitiveArrayBox(Object array) {
+        int size = Array.getLength(array);
+        Object[] ret = (Object[]) Array.newInstance(ReflectionCache.autoboxType(array.getClass().getComponentType()), size);
+        for (int i = 0; i < size; i++) {
+            ret[i]=Array.get(array, i);
+        }
+        return ret;
+    }
+    
     /**
      * Compares the two objects handling nulls gracefully and performing numeric type coercion if required
      */
@@ -568,121 +577,6 @@ public class DefaultTypeTransformation {
             }
         }
         return false;
-    }
-    
-    /**
-     * @param a    array of primitives
-     * @param type component type of the array
-     */
-    public static Object[] convertPrimitiveArray(Object a, Class type) {
-        Object[] ans = null;
-        String elemType = type.getName();
-        if (elemType.equals("int")) {
-            // conservative coding
-            if (a.getClass().getName().equals("[Ljava.lang.Integer;")) {
-                ans = (Integer[]) a;
-            }
-            else {
-                int[] ia = (int[]) a;
-                ans = new Integer[ia.length];
-                for (int i = 0; i < ia.length; i++) {
-                    int e = ia[i];
-                    ans[i] = IntegerCache.integerValue(e);
-                }
-            }
-        }
-        else if (elemType.equals("char")) {
-            if (a.getClass().getName().equals("[Ljava.lang.Character;")) {
-                ans = (Character[]) a;
-            }
-            else {
-                char[] ia = (char[]) a;
-                ans = new Character[ia.length];
-                for (int i = 0; i < ia.length; i++) {
-                    char e = ia[i];
-                    ans[i] = new Character(e);
-                }
-            }
-        }
-        else if (elemType.equals("boolean")) {
-            if (a.getClass().getName().equals("[Ljava.lang.Boolean;")) {
-                ans = (Boolean[]) a;
-            }
-            else {
-                boolean[] ia = (boolean[]) a;
-                ans = new Boolean[ia.length];
-                for (int i = 0; i < ia.length; i++) {
-                    boolean e = ia[i];
-                    ans[i] = new Boolean(e);
-                }
-            }
-        }
-        else if (elemType.equals("byte")) {
-            if (a.getClass().getName().equals("[Ljava.lang.Byte;")) {
-                ans = (Byte[]) a;
-            }
-            else {
-                byte[] ia = (byte[]) a;
-                ans = new Byte[ia.length];
-                for (int i = 0; i < ia.length; i++) {
-                    byte e = ia[i];
-                    ans[i] = new Byte(e);
-                }
-            }
-        }
-        else if (elemType.equals("short")) {
-            if (a.getClass().getName().equals("[Ljava.lang.Short;")) {
-                ans = (Short[]) a;
-            }
-            else {
-                short[] ia = (short[]) a;
-                ans = new Short[ia.length];
-                for (int i = 0; i < ia.length; i++) {
-                    short e = ia[i];
-                    ans[i] = new Short(e);
-                }
-            }
-        }
-        else if (elemType.equals("float")) {
-            if (a.getClass().getName().equals("[Ljava.lang.Float;")) {
-                ans = (Float[]) a;
-            }
-            else {
-                float[] ia = (float[]) a;
-                ans = new Float[ia.length];
-                for (int i = 0; i < ia.length; i++) {
-                    float e = ia[i];
-                    ans[i] = new Float(e);
-                }
-            }
-        }
-        else if (elemType.equals("long")) {
-            if (a.getClass().getName().equals("[Ljava.lang.Long;")) {
-                ans = (Long[]) a;
-            }
-            else {
-                long[] ia = (long[]) a;
-                ans = new Long[ia.length];
-                for (int i = 0; i < ia.length; i++) {
-                    long e = ia[i];
-                    ans[i] = new Long(e);
-                }
-            }
-        }
-        else if (elemType.equals("double")) {
-            if (a.getClass().getName().equals("[Ljava.lang.Double;")) {
-                ans = (Double[]) a;
-            }
-            else {
-                double[] ia = (double[]) a;
-                ans = new Double[ia.length];
-                for (int i = 0; i < ia.length; i++) {
-                    double e = ia[i];
-                    ans[i] = new Double(e);
-                }
-            }
-        }
-        return ans;
     }
 
     public static int[] convertToIntArray(Object a) {

@@ -20,9 +20,9 @@ class VArgsTest extends GroovyTestCase {
   void testDoubleMethod() {
     // with BigDecimal
     assert doubleMethod()==20
-    assert doubleMethod(1.0)==21
-    assert doubleMethod(1.0,1.0)==22
-    assert doubleMethod(1.0,1.0,1.0)==23 
+    assert doubleMethod(1.0G)==21
+    assert doubleMethod(1.0G,1.0G)==22
+    assert doubleMethod(1.0G,1.0G,1.0G)==23 
     assert doubleMethod([1,2,2,2] as BigDecimal[])==24
     
     // with double
@@ -88,5 +88,11 @@ class VArgsTest extends GroovyTestCase {
   void testOverloadedMethod2() {
     assert overloadedMethod2(null) == 2
     assert overloadedMethod2("foo") == 2
+  }
+  
+  def normalVargsMethod(Object[] a){a.length}
+  
+  void testArrayCoercion() {
+    assert normalVargsMethod([1,2,3] as int[]) == 3
   }
 }

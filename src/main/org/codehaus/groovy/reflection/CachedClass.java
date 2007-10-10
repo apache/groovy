@@ -237,6 +237,7 @@ public class CachedClass {
         if (!isArray) return argument;
         Class argumentClass = argument.getClass();
         if (!argumentClass.isArray()) return argument;
+        Class argumentComponent = argumentClass.getComponentType();
 
         Class paramComponent = getCachedClass().getComponentType();
         if (paramComponent.isPrimitive()) {
@@ -268,6 +269,8 @@ public class CachedClass {
                 ret[i] = strings[i].toString();
             }
             argument = ret;
+        } else if (paramComponent==Object.class && argumentComponent.isPrimitive()){
+            argument = DefaultTypeTransformation.primitiveArrayBox(argument);
         }
         return argument;
     }
