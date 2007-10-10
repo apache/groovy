@@ -163,10 +163,19 @@ class GenericsTest extends GenericsTestBase {
 			]
 	}
 
-	public void testInvalidParameterUsage_FAILS() {
-	    if (notYetImplemented()) return
+	public void testInvalidParameterUsage() {
 	    shouldNotCompile """
 	    	abstract class B<T> implements Map<T>{}
 	    """
+	    shouldNotCompile """
+	        class A<T,V> extends ArrayList<T,V>{}
+        """ 
+        shouldNotCompile """
+	        class A<T extends Number> {}
+	        class B<T> extends A<T>{}
+        """
+	    shouldNotCompile """
+	        class B<T> extends ArrayList<?>{}
+        """ 
 	}
 }

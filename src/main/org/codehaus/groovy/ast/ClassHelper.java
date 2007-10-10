@@ -61,10 +61,10 @@ public class ClassHelper {
     public static final ClassNode 
         DYNAMIC_TYPE = new ClassNode(Object.class),  OBJECT_TYPE = DYNAMIC_TYPE,
         VOID_TYPE = new ClassNode(Void.TYPE),        CLOSURE_TYPE = new ClassNode(Closure.class),
-        GSTRING_TYPE = new ClassNode(GString.class), LIST_TYPE = new ClassNode(List.class),
+        GSTRING_TYPE = new ClassNode(GString.class), LIST_TYPE = makeWithoutCaching(List.class),
         MAP_TYPE = new ClassNode(Map.class),         RANGE_TYPE = new ClassNode(Range.class),
         PATTERN_TYPE = new ClassNode(Pattern.class), STRING_TYPE = new ClassNode(String.class),
-        SCRIPT_TYPE = new ClassNode(Script.class),   REFERENCE_TYPE = new ClassNode(Reference.class),
+        SCRIPT_TYPE = new ClassNode(Script.class),   REFERENCE_TYPE = makeWithoutCaching(Reference.class),
         
         boolean_TYPE = new ClassNode(boolean.class),     char_TYPE = new ClassNode(char.class),
         byte_TYPE = new ClassNode(byte.class),           int_TYPE = new ClassNode(int.class),
@@ -146,13 +146,22 @@ public class ClassHelper {
             if (c==classes[i]) return types[i];
         }
         if (c.isArray()) {
-            ClassNode cn = make(c.getComponentType());
+            ClassNode cn = make(c.getComponentType(),includeGenerics);
             return cn.makeArray();
         }
+        return makeWithoutCaching(c,includeGenerics);
+    }
+    
+    public static ClassNode makeWithoutCaching(Class c){
+        return makeWithoutCaching(c,true);
+    }
+    
+    public static ClassNode makeWithoutCaching(Class c, boolean includeGenerics){
         ClassNode t = new ClassNode(c);
         if (includeGenerics) VMPluginFactory.getPlugin().setGenericsTypes(t);
         return t;
     }
+    
     
     /**
      * Creates a ClassNode using a given class.

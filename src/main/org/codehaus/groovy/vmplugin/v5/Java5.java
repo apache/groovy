@@ -70,7 +70,7 @@ public class Java5 implements VMPluging {
         } else if (type instanceof TypeVariable) {
             return configureTypeVariableReference((TypeVariable) type);
         } else if (type instanceof Class) {
-            return ClassHelper.make((Class) type, false);
+            return ClassHelper.makeWithoutCaching((Class) type, false);
         } else {
             throw new GroovyBugError("unknown type: " + type + " := " + type.getClass());
         }        

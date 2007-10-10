@@ -16,7 +16,6 @@
 package org.codehaus.groovy.vmplugin;
 
 import org.codehaus.groovy.vmplugin.v4.Java4;
-import org.codehaus.groovy.vmplugin.v5.Java5;
 
 /**
  * factory class to get functionlity based on the VM version.
@@ -27,11 +26,13 @@ import org.codehaus.groovy.vmplugin.v5.Java5;
 public class VMPluginFactory {
     
     private static final String JDK5_CLASSNAME_CHECK = "java.lang.annotation.Annotation";
+    private static final String JDK5_PLUGIN_NAME = "org.codehaus.groovy.vmplugin.v5.Java5";
     private static VMPluging plugin;
     static {
         try {
             ClassLoader.getSystemClassLoader().loadClass(JDK5_CLASSNAME_CHECK);
-            plugin = new Java5();
+            plugin = (VMPluging) VMPluginFactory.class.getClassLoader()
+                                 .loadClass(JDK5_PLUGIN_NAME).newInstance();
         } catch(Exception ex) {
             plugin = new Java4();
         }

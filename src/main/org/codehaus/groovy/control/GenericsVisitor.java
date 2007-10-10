@@ -38,8 +38,11 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
     
     public void visitClass(ClassNode node) {
         boolean error=checkWildcard(node);
-        if (!error) {
-            checkGenericsUsage(node.getUnresolvedSuperClass(false), node.getSuperClass());
+        if (error) return;
+        checkGenericsUsage(node.getUnresolvedSuperClass(false), node.getSuperClass());
+        ClassNode[] interfaces = node.getInterfaces();
+        for (int i = 0; i < interfaces.length; i++) {
+            checkGenericsUsage(interfaces[i], interfaces[i].redirect());
         }
     }
     
@@ -67,13 +70,15 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
         if (cnTypes==null) {
             addError( "The class "+n.getName()+" refers to the class "+
                       cn.getName()+" and uses "+nTypes.length+
-                      " parameters, but the refered class takes no parameters", n);
+                      " parameters, but the referred class takes no parameters", n);
+            return;
         }
         if (nTypes.length!=cnTypes.length) {
             addError( "The class "+n.getName()+" refers to the class "+
                       cn.getName()+" and uses "+nTypes.length+
                       " parameters, but the refered class needs "+
                       cnTypes.length, n);
+            return;
         }
         // check bounds
         for (int i=0; i<nTypes.length; i++) {

@@ -114,7 +114,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     /**
      * Returns the ClassNode this ClassNode is redirecting to.
      */
-    protected ClassNode redirect(){
+    public ClassNode redirect(){
         if (redirect==null) return this;
         return redirect.redirect();
     }
