@@ -16,20 +16,18 @@
 package org.codehaus.groovy.tools.xml;
 
 import groovy.util.IndentPrinter;
+import org.w3c.dom.*;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-
-import org.w3c.dom.Attr;
-import org.w3c.dom.Comment;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.ProcessingInstruction;
-import org.w3c.dom.Text;
 
 /**
  * A SAX handler for turning XML into Groovy scripts
@@ -40,6 +38,11 @@ import org.w3c.dom.Text;
 public class DomToGroovy {
 
     private IndentPrinter out;
+    private boolean inMixed = false;
+    private String qt = "'";
+    private List keywords = Arrays.asList(new String[]{
+        "import", "private", "public", "protected"
+    });
 
     public DomToGroovy(PrintWriter out) {
         this(new IndentPrinter(out));
@@ -54,8 +57,49 @@ public class DomToGroovy {
         printChildren(document, new HashMap());
     }
 
+    public static void main(String[] args) {
+        if (args.length < 1) {
+            System.out.println("Usage: DomToGroovy infilename [outfilename]");
+            System.exit(1);
+        }
+        Document document = null;
+        try {
+            document = parse(args[0]);
+        } catch (Exception e) {
+            System.out.println("Unable to parse input file '" + args[0] + "': " + e.getMessage());
+            System.exit(1);
+        }
+        PrintWriter writer = null;
+        if (args.length < 2) {
+            writer = new PrintWriter(System.out);
+        } else {
+            try {
+                writer = new PrintWriter(new FileWriter(new File(args[1])));
+            } catch (IOException e) {
+                System.out.println("Unable to create output file '" + args[1] + "': " + e.getMessage());
+                System.exit(1);
+            }
+        }
+        DomToGroovy converter = new DomToGroovy(writer);
+        converter.out.incrementIndent();
+        writer.println("#!/bin/groovy");
+        writer.println();
+        writer.println("// generated from " + args[0]);
+        writer.println("System.out << new groovy.xml.StreamingMarkupBuilder().bind {");        
+        converter.print(document);
+        writer.println("}");
+        writer.close();
+    }
+
     // Implementation methods
     //-------------------------------------------------------------------------
+    private static Document parse(String name) throws Exception {
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        factory.setNamespaceAware(true);
+        DocumentBuilder builder = factory.newDocumentBuilder();
+        return builder.parse(new File(name));
+    }
+
     protected void print(Node node, Map namespaces, boolean endWithComma) {
         switch (node.getNodeType()) {
             case Node.ELEMENT_NODE :
@@ -80,37 +124,44 @@ public class DomToGroovy {
         printIndent();
 
         String prefix = element.getPrefix();
-        if (prefix != null && prefix.length() > 0) {
+        boolean hasPrefix = prefix != null && prefix.length() > 0;
+        String localName = getLocalName(element);
+        boolean isKeyword = checkEscaping(localName);
+        if (isKeyword || hasPrefix) print(qt);
+        if (hasPrefix) {
             print(prefix);
             print(".");
         }
-        print(getLocalName(element));
+        print(localName);
+        if (isKeyword || hasPrefix) print(qt);
+        print("(");
 
         boolean hasAttributes = printAttributes(element);
 
         NodeList list = element.getChildNodes();
         int length = list.getLength();
         if (length == 0) {
-            printEnd(hasAttributes ? ")" : "()", endWithComma);
+            printEnd(")", endWithComma);
         } else {
             Node node = list.item(0);
             if (length == 1 && node instanceof Text) {
                 Text textNode = (Text) node;
                 String text = getTextNodeData(textNode);
-                if (hasAttributes) print(", '");
-                else print("('");
-                print(text);
-                printEnd("')", endWithComma);
+                if (hasAttributes) print(", ");
+                printQuoted(text);
+                printEnd(")", endWithComma);
             } else if (mixedContent(list)) {
-                println(" [");
+                println(") {");
                 out.incrementIndent();
+                boolean oldInMixed = inMixed;
+                inMixed = true;
                 for (node = element.getFirstChild(); node != null; node = node.getNextSibling()) {
-                    boolean useComma = node.getNextSibling() != null;
-                    print(node, namespaces, useComma);
+                    print(node, namespaces, false);
                 }
+                inMixed = oldInMixed;
                 out.decrementIndent();
                 printIndent();
-                printEnd("]", endWithComma);
+                printEnd("}", endWithComma);
             } else {
                 println(") {");
                 out.incrementIndent();
@@ -122,13 +173,25 @@ public class DomToGroovy {
         }
     }
 
+    private void printQuoted(String text) {
+        if (text.indexOf("\n") != -1) {
+            print("'''");
+            print(text);
+            print("'''");
+        } else {
+            print(qt);
+            print(escapeQuote(text));
+            print(qt);
+        }
+    }
+
     protected void printPI(ProcessingInstruction instruction, boolean endWithComma) {
         printIndent();
-        print("xml.pi('");
+        print("mkp.pi(" + qt);
         print(instruction.getTarget());
-        print("', '");
+        print(qt + ", " + qt);
         print(instruction.getData());
-        printEnd("');", endWithComma);
+        printEnd(qt + ");", endWithComma);
     }
 
     protected void printComment(Comment comment, boolean endWithComma) {
@@ -145,13 +208,14 @@ public class DomToGroovy {
         String text = getTextNodeData(node);
         if (text.length() > 0) {
             printIndent();
-            //            print("xml.append('");
-            //            print(text);
-            //            println("');");
-            print("'");
-            print(text);
-            printEnd("'", endWithComma);
+            if (inMixed) print("mkp.yield ");
+            printQuoted(text);
+            printEnd("", endWithComma);
         }
+    }
+
+    private String escapeQuote(String text) {
+        return text.replaceAll("\\\\", "\\\\\\\\").replaceAll(qt, "\\\\" + qt);
     }
 
     protected Map defineNamespaces(Element element, Map namespaces) {
@@ -180,10 +244,11 @@ public class DomToGroovy {
         namespaces.put(prefix, uri);
         if (!prefix.equals("xmlns") && !prefix.equals("xml")) {
             printIndent();
+            print("mkp.declareNamespace(");
             print(prefix);
-            print(" = xmlns.namespace('");
+            print(":" + qt);
             print(uri);
-            println("')");
+            println(qt + ")");
         }
     }
 
@@ -196,7 +261,6 @@ public class DomToGroovy {
             for (int i = 0; i < length; i++) {
                 printAttributeWithPrefix((Attr) attributes.item(i), buffer);
             }
-            print("(");
             for (int i = 0; i < length; i++) {
                 hasAttribute = printAttributeWithoutPrefix((Attr) attributes.item(i), hasAttribute);
             }
@@ -204,9 +268,7 @@ public class DomToGroovy {
                 if (hasAttribute) {
                     print(", ");
                 }
-                print("xmlns=[");
                 print(buffer.toString());
-                print("]");
                 hasAttribute = true;
             }
         }
@@ -215,16 +277,17 @@ public class DomToGroovy {
 
     private void printAttributeWithPrefix(Attr attribute, StringBuffer buffer) {
         String prefix = attribute.getPrefix();
-        if (prefix != null && prefix.length() > 0) {
+        if (prefix != null && prefix.length() > 0 && !prefix.equals("xmlns")) {
             if (buffer.length() > 0) {
                 buffer.append(", ");
             }
+            buffer.append(qt);
             buffer.append(prefix);
             buffer.append(".");
             buffer.append(getLocalName(attribute));
-            buffer.append(":'");
-            buffer.append(getAttributeValue(attribute));
-            buffer.append("'");
+            buffer.append(qt + ":" + qt);
+            buffer.append(escapeQuote(getAttributeValue(attribute)));
+            buffer.append(qt);
         }
     }
 
@@ -240,12 +303,19 @@ public class DomToGroovy {
             } else {
                 print(", ");
             }
-            print(getLocalName(attribute));
-            print(":'");
-            print(getAttributeValue(attribute));
-            print("'");
+            String localName = getLocalName(attribute);
+            boolean needsEscaping = checkEscaping(localName);
+            if (needsEscaping) print(qt);
+            print(localName);
+            if (needsEscaping) print(qt);
+            print(":");
+            printQuoted(getAttributeValue(attribute));
         }
         return hasAttribute;
+    }
+
+    private boolean checkEscaping(String localName) {
+        return keywords.contains(localName) || localName.indexOf("-") != -1;
     }
 
     protected String getTextNodeData(Text node) {
