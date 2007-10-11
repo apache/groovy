@@ -4,11 +4,7 @@ import gls.scope.CompilableTestSupport
 
 public class CovariantReturnTest extends CompilableTestSupport {
 
-  /**
-   * This test ensures Groovy can choose a method based on interfaces.
-   * Choosing such an interface should not be hidden by subclasses.
-   */
-  public void testMostSpecificInterface() {
+  void testCovariantReturn() {
     assertScript """
       class A {
         Object foo() {1}
@@ -23,17 +19,17 @@ public class CovariantReturnTest extends CompilableTestSupport {
     """   
   }
   
-  public void testMostGeneralForNull() {
-    // we use the same signatures with different method orders,
-    // because we want to catch method ordering bugs
+  void testCovariantReturnOverwritingAbstractMethod() {
     assertScript """
-      def m(String x){1}
-      def m(Integer x){2}
-      assert m(null) == 1
-      
-      def n(Integer x){2}
-      def n(String x){1}
-      assert n(null) == 1
+       abstract class Numeric {
+         abstract Numeric eval();
+       }
+
+       class Rational extends Numeric {
+         Rational eval() {this}
+       }
+     
+       assert Rational.declaredMethods.findAll{it.name=="eval"}.size()==2    
     """
   }
 }
