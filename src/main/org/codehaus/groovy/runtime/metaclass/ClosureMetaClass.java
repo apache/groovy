@@ -219,12 +219,27 @@ public final class ClosureMetaClass extends MetaClassImpl {
         final Closure closure = (Closure) object;
         if (CLOSURE_DO_CALL_METHOD.equals(methodName) || CLOSURE_CALL_METHOD.equals(methodName)) {
             method = pickClosureMethod(argClasses);
-            if (method != null) return MetaClassHelper.doMethodInvoke(object, method, arguments);
         } else if (CLOSURE_CURRY_METHOD.equals(methodName)) {
             return closure.curry(arguments);
         } else {
             method = CLOSURE_METACLASS.pickMethod(methodName, argClasses);
         }
+        if (method==null && arguments.length==1 && arguments[0] instanceof List) {
+            Object[] newArguments = ((List) arguments[0]).toArray();
+            Class[] newArgClasses = MetaClassHelper.convertToTypeArray(newArguments);
+            method = pickClosureMethod(newArgClasses);
+            if (method!=null) {
+                method = new TransformMetaMethod(method) {
+                    public Object invoke(Object object, Object[] arguments) {
+                        Object firstArgument = arguments[0];
+                        List list = (List) firstArgument;
+                        arguments = list.toArray();
+                        return super.invoke(object, arguments);
+                    }
+                };
+            }
+        }
+        if (method != null) return MetaClassHelper.doMethodInvoke(object, method, arguments);
 
         MissingMethodException last = null;
         Object callObject = object;

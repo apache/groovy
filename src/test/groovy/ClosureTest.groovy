@@ -137,6 +137,15 @@ class ClosureTest extends GroovyTestCase {
         assert 0 == c.getDirective()
         assert 0 == c.directive
     }
+    
+    /**
+     * GROOVY-2150 ensure list call is available on closure
+     */
+    void testCallClosureWithlist() {
+      def list = [1,2]
+      def cl = {a,b->a+b }
+      assert cl(list)==3
+    }
 }
 
 public class TinyAgent {
