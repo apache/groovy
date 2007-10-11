@@ -178,4 +178,16 @@ class GenericsTest extends GenericsTestBase {
 	        class B<T> extends ArrayList<?>{}
         """ 
 	}
+	
+	void testCovariantReturn() {
+        shouldNotCompile """
+          class A<T> {
+              T foo(T t) {1}
+           }
+
+          class B extends A<Long>{
+              String foo(Long l){"2"}
+          }
+        """
+	}
 }

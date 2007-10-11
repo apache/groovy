@@ -236,6 +236,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 super.visitClass(classNode);
                 if (!classNode.declaresInterface(ClassHelper.GENERATED_CLOSURE_Type.getName())) {
                     createMopMethods();
+                    addCovariantMethods();
                 }
                 createSyntheticStaticFields();
             }
@@ -270,6 +271,125 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
+    private void addCovariantMethods() {
+        ClassNode sn = classNode.getSuperClass();
+        if (sn==null) return;
+        List declaredMethods = classNode.getMethods();
+        ArrayList methodsToAdd = new ArrayList();
+        
+        for (Iterator it = declaredMethods.iterator(); it.hasNext();) {
+            MethodNode method = (MethodNode) it.next();
+            addCovariantMethodInSuper(sn,method);
+        }
+    }
+    
+    private void addCovariantMethodInSuper(ClassNode sn, MethodNode method) {
+        for (ClassNode current=sn; sn!=null; sn=sn.getSuperClass()) {
+            List superClassMethods = sn.getMethods();
+            for (Iterator sit = superClassMethods.iterator(); sit.hasNext();) {
+                MethodNode superClassMethod = (MethodNode) sit.next();
+                if (!superClassMethod.getName().equals(method.getName())) continue;
+                Map genericsSpec = createGenericsSpec(current);
+                if (!equalParameters(method,superClassMethod,genericsSpec)) continue;
+                ClassNode mr = method.getReturnType();
+                ClassNode smr = correctToGenericsSpec(genericsSpec, superClassMethod.getReturnType());
+                if (mr.equals(smr)) continue;
+                if (!mr.isDerivedFrom(smr)) {
+                    throw new RuntimeParserException(
+                            "the return type is incompatible with "+
+                             superClassMethod.getTypeDescriptor()+
+                            " in "+sn.getName(),method);
+                }
+                if ((superClassMethod.getModifiers()&ACC_FINAL)!=0) {
+                    throw new RuntimeParserException(
+                            "cannot override final method "+
+                             superClassMethod.getTypeDescriptor()+
+                            " in "+sn.getName(),method);
+                }
+                if ((superClassMethod.getModifiers()&ACC_STATIC) !=
+                    (method.getModifiers()&ACC_STATIC)
+                ) {
+                    throw new RuntimeParserException(
+                            "cannot override method "+
+                             superClassMethod.getTypeDescriptor()+
+                            " in "+sn.getName()+" with disparate static modifier"
+                            ,method);
+                }
+                mv = cv.visitMethod(
+                        method.getModifiers() | ACC_SYNTHETIC | ACC_BRIDGE,
+                        superClassMethod.getName(),
+                        BytecodeHelper.getMethodDescriptor(superClassMethod.getReturnType(), superClassMethod.getParameters()),
+                        BytecodeHelper.getGenericsMethodSignature(superClassMethod),
+                        buildExceptions(superClassMethod.getExceptions())      
+                );
+                boolean isStatic = (superClassMethod.getModifiers()&ACC_STATIC)==0;
+                mv.visitVarInsn(ALOAD,0);
+                mv.visitMethodInsn(
+                        INVOKEVIRTUAL, internalClassName, method.getName(),
+                        BytecodeHelper.getMethodDescriptor(method.getReturnType(), method.getParameters()));
+                helper = new BytecodeHelper(mv);
+                helper.doReturn(method.getReturnType());
+                mv.visitMaxs(0,0);
+                mv.visitEnd();
+                return;
+            }
+        }
+    }
+    
+    private ClassNode correctToGenericsSpec(Map genericsSpec, ClassNode type) {
+        if (type.isGenericsPlaceHolder()){
+            String name = type.getGenericsTypes()[0].getName();
+            type = (ClassNode) genericsSpec.get(name);
+        }
+        if (type==null) type = ClassHelper.OBJECT_TYPE;
+        return type;
+    }
+    
+    private boolean equalParameters(MethodNode m1, MethodNode m2, Map genericsSpec) {
+        Parameter[] p1 = m1.getParameters();
+        Parameter[] p2 = m2.getParameters();
+        if (p1.length!=p2.length) return false;
+        for (int i = 0; i < p2.length; i++) {
+            ClassNode type = p2[i].getType();
+            type = correctToGenericsSpec(genericsSpec,type);
+            if (!p1[i].getType().equals(type)) return false;
+        }
+        return true;
+    }
+    
+    private Map createGenericsSpec(ClassNode sn) {
+        HashMap ret = new HashMap();
+        ClassNode stop = sn.getSuperClass();
+        for (ClassNode current = classNode; current!=null && current.redirect()!=stop; current=current.getUnresolvedSuperClass(false)) {
+            // ret contains the type specs for the child class, what we now need
+            // is the type spec for the super class. To get that we first apply the 
+            // type parameters to the super class and then use the type names of the super
+            // class to reset the map. Example:
+            //   class A<V,W,X>{}
+            //   class B<T extends Number> extends A<T,Long,String> {}
+            // first we have:    T->Number
+            // we apply it to A<T,Long,String> -> A<Number,Long,String>
+            // resulting in:     V->Number,W->Long,X->String
+            
+            GenericsType[] sgts = current.getGenericsTypes();
+            if (sgts==null) {
+                ret.clear();
+                continue;
+            }
+            ClassNode[] spec = new ClassNode[sgts.length];
+            for (int i = 0; i < spec.length; i++) {
+                spec[i]=correctToGenericsSpec(ret, sgts[i].getType());
+            }
+            GenericsType[] newGts = current.redirect().getGenericsTypes();
+            ret.clear();
+            for (int i = 0; i < spec.length; i++) {
+                ret.put(newGts[i].getName(), spec[i]);
+            }            
+        }
+        
+        return ret;
+    }
+    
     public void visitGenericType(GenericsType genericsType) {
         ClassNode type = genericsType.getType();
         genericParameterNames.put(type.getName(), genericsType);
