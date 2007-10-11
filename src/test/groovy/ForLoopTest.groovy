@@ -117,6 +117,13 @@ class ForLoopTest extends GroovyTestCase {
          sum++
        }
        assert sum==10
+       
+       def list = [1,2]
+       sum=0
+       for (Iterator i = list.iterator();i.hasNext();){
+         sum += i.next()
+       }
+       assert sum==3
     }
     
     void testClassicForNested() {

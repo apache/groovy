@@ -1666,29 +1666,14 @@ forStatement
     ;
 
 closureList
-	{Token first = LT(1); boolean wasSemi=true;}
+	{Token first = LT(1);}
     :
     	
-    	(strictContextExpression {wasSemi=false;})?
-    	(SEMI!
-    		{
-    			if (wasSemi) {
-    				astFactory.addASTChild(currentAST,astFactory.create(EMPTY_STAT, "EMPTY_STAT"));
-    			}
-    			wasSemi=true;
-    		} 
-    		(( 	SEMI!
-        		{
-        			if (wasSemi) {
-        				astFactory.addASTChild(currentAST,astFactory.create(EMPTY_STAT, "EMPTY_STAT"));
-        			}
-        			wasSemi=true;
-        		})
-        	| (
-        		strictContextExpression
-        		{wasSemi=false;}
-        	))
-    	)*
+    	strictContextExpression
+    	(
+    			SEMI! strictContextExpression 
+    	   |	SEMI! {astFactory.addASTChild(currentAST,astFactory.create(EMPTY_STAT, "EMPTY_STAT"));}
+    	)+
 		{#closureList = #(create(CLOSURE_LIST,"CLOSURE_LIST",first,LT(1)),#closureList);}
     ;
 
