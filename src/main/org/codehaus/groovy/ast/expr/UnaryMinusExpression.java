@@ -52,7 +52,7 @@ public class UnaryMinusExpression extends Expression {
     }
 
     public boolean isDynamic() {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return false;
     }
 
 }

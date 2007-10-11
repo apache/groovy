@@ -30,8 +30,8 @@ public class ReflectionMetaMethod extends MetaMethod {
     protected final CachedMethod method;
 
     protected ReflectionMetaMethod(CachedMethod method) {
-          this.method = method;
-      }
+        this.method = method;
+    }
 
     public int getModifiers() {
         return method.getModifiers();
@@ -66,6 +66,7 @@ public class ReflectionMetaMethod extends MetaMethod {
     }
 
     private static HashMap cache = new HashMap();
+
     public synchronized static ReflectionMetaMethod createReflectionMetaMethod(CachedMethod element) {
         ReflectionMetaMethod method = (ReflectionMetaMethod) cache.get(element);
         if (method == null) {
@@ -76,6 +77,6 @@ public class ReflectionMetaMethod extends MetaMethod {
     }
 
     public boolean isMethod(Method method) {
-        return method == this.method.cachedMethod || super.isMethod(method);    //To change body of overridden methods use File | Settings | File Templates.
+        return method == this.method.cachedMethod || super.isMethod(method);
     }
 }

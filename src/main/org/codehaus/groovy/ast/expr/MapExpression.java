@@ -23,7 +23,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
 /**
  * Represents a map expression [1 : 2, "a" : "b", x : y] which creates a mutable Map
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -33,18 +33,18 @@ public class MapExpression extends Expression {
     public MapExpression() {
         this(new ArrayList());
     }
-    
+
     public MapExpression(List mapEntryExpressions) {
         this.mapEntryExpressions = mapEntryExpressions;
         //TODO: get the type's of the expressions to specify the
         // map type to Map<X> if possible.
         setType(ClassHelper.MAP_TYPE);
     }
-    
+
     public void addMapEntryExpression(MapEntryExpression expression) {
         mapEntryExpressions.add(expression);
     }
-    
+
     public List getMapEntryExpressions() {
         return mapEntryExpressions;
     }
@@ -54,15 +54,15 @@ public class MapExpression extends Expression {
     }
 
     public boolean isDynamic() {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return false;
     }
 
     public Expression transformExpression(ExpressionTransformer transformer) {
         Expression ret = new MapExpression(transformExpressions(getMapEntryExpressions(), transformer));
         ret.setSourcePosition(this);
-        return ret;        
+        return ret;
     }
-    
+
     public String toString() {
         return super.toString() + mapEntryExpressions;
     }
