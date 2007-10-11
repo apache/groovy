@@ -54,11 +54,11 @@ public class DomToGroovyTest extends GroovyTestCase {
           }
         }'''
     private static final String EXPECTED_BUILDER_SCRIPT_4 = '''
-        xsd = xmlns.namespace('http://www.w3.org/2001/XMLSchema')
-        xsd.schema(xmlns=[xmlns.xsd:'http://www.w3.org/2001/XMLSchema']) {
-          xsd.simpleType(name:'SKU') {
-            xsd.restriction(base:'xsd:string') {
-              xsd.pattern(value:'\\d{3}-[A-Z]{2}')
+        mkp.declareNamespace(xsd:'http://www.w3.org/2001/XMLSchema')
+        'xsd.schema'() {
+          'xsd.simpleType'(name:'SKU') {
+            'xsd.restriction'(base:'xsd:string') {
+              'xsd.pattern'(value:'\\\\d{3}-[A-Z]{2}')
             }
           }
         }'''
