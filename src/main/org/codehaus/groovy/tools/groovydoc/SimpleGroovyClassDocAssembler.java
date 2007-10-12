@@ -158,19 +158,19 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter {
 		String returnValue = "";
 		
 		String text = sourceBuffer.getSnippet(new LineColumn(1,1), new LineColumn(t.getLine(), t.getColumn()));
+        if (text != null) {
+            int openBlockIndex = text.lastIndexOf("{");
+            int closingBlockIndex = text.lastIndexOf("}");
+            int lastBlockIndex = Math.max(openBlockIndex, closingBlockIndex);
+            if (lastBlockIndex > 0) {
+                text = text.substring(lastBlockIndex);
+            }
 
-		int openBlockIndex = text.lastIndexOf("{");
-		int closingBlockIndex = text.lastIndexOf("}");
-		int lastBlockIndex = Math.max(openBlockIndex, closingBlockIndex);
-		if (lastBlockIndex > 0) {
-			text = text.substring(lastBlockIndex);
-		}
-
-		Matcher m = previousJavaDocCommentPattern.matcher(text);
-		if (m.find()) {
-			returnValue = m.group(1);
-		}
-		
+            Matcher m = previousJavaDocCommentPattern.matcher(text);
+            if (m.find()) {
+                returnValue = m.group(1);
+            }
+        }
 		
 		return returnValue;
 	}
