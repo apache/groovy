@@ -60,7 +60,7 @@ $Date: 2007-03-11 19:14:07 +1000 (Sun, 11 Mar 2007) $
     <macrodef name="antforked">
         <attribute name="target"/>
         <sequential>
-            <java classname="org.apache.tools.ant.launch.Launcher" fork="true" maxmemory="128m" failonerror="true">
+            <java classname="org.apache.tools.ant.launch.Launcher" fork="true" maxmemory="256m" failonerror="true">
                 <classpath refid="runtimePath"/>
                 <arg value="@{target}"/>
             </java>
