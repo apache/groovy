@@ -168,8 +168,6 @@ class ConfigSlurper {
 
             if(current[name]) {
                 result = current[name]
-            } else if (config[name]) {
-            	result = config[name]
             } else {
                 result = new ConfigObject()
                 current[name] = result
