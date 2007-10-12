@@ -140,7 +140,43 @@ class ClosureResolvingTest extends GroovyTestCase {
         assertEquals "stuff", c.call()
 
     }
+    
+    void testOwnerDelegateChain() {
+        def outerdel= new TestResolve3(del: "outer delegate" )
+        def innerdel= new TestResolve3(del: "inner delegate")
+        
+        def cout= {
+            assert delegate == outerdel
+            assert delegate.whoisThis() == outerdel
+            assert delegate.del == "outer delegate"
+            assert delegate.met() == "I'm the method inside 'outer delegate'"
+
+            assert whoisThis() == outerdel
+            assert del == "outer delegate"
+            assert met() == "I'm the method inside 'outer delegate'"
+
+            def cin= {
+                assert delegate == innerdel
+                assert delegate.whoisThis() == innerdel
+                assert delegate.del == "inner delegate"
+                assert delegate.met() == "I'm the method inside 'inner delegate'"
+
+                assert whoisThis() == outerdel
+                assert del == "outer delegate"
+                assert met() == "I'm the method inside 'outer delegate'"
+            
+            }
+
+            cin.delegate= innerdel
+            cin()
+        }
+
+        cout.delegate= outerdel
+        cout() 
+    }
+    
 }
+
 class TestResolve1 {
     def foo = "hello"
 
@@ -152,3 +188,11 @@ class TestResolve2 {
 
     def doStuff() { "bar" }
 }
+
+ class TestResolve3 {
+    def del;
+    String toString(){del}
+    def whoisThis() { return this }
+    def met() { return "I'm the method inside '"+del+"'" }
+ }
+

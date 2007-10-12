@@ -17,6 +17,7 @@
 package org.codehaus.groovy.runtime.metaclass;
 
 import groovy.lang.*;
+
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedField;
 import org.codehaus.groovy.reflection.CachedMethod;
@@ -247,6 +248,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
         if (method == null) {
             final Object owner = closure.getOwner();
             final Object delegate = closure.getDelegate();
+            final Object thisObject = closure.getThisObject();
             final int resolveStrategy = closure.getResolveStrategy();
             boolean invokeOnDelegate = false;
             boolean invokeOnOwner = false;
@@ -284,11 +286,26 @@ public final class ClosureMetaClass extends MetaClassImpl {
                     }
                     break;
                 default: // owner first
-                    method = getDelegateMethod(closure, owner, methodName, argClasses);
-                    callObject = owner;
+                    // owner first means we start with the outer most owner that is not a generated closure
+                    // this owner is equal to the this object, so we check that one first.                    
+                    method = getDelegateMethod(closure, thisObject, methodName, argClasses);
+                    callObject = thisObject;
                     if (method == null) {
-                        method = getDelegateMethod(closure, delegate, methodName, argClasses);
-                        callObject = delegate;
+                        //try finding a delegate that has that method... we start from 
+                        // outside building a stack and try each delegate
+                        LinkedList list = new LinkedList();
+                        for (Object current = closure; current!=thisObject; ) {
+                            Closure currentClosure = (Closure) current; 
+                            if (currentClosure.getDelegate()!=null) list.add(current);
+                            current=currentClosure.getOwner();
+                        }
+
+                        while (!list.isEmpty() && method==null) {
+                            Closure closureWithDelegate = (Closure) list.removeLast();
+                            Object currentDelegate = closureWithDelegate.getDelegate();
+                            method = getDelegateMethod(closureWithDelegate,currentDelegate,methodName,argClasses);
+                            callObject = currentDelegate;
+                        }
                     }
                     if (method == null) {
                         invokeOnDelegate = delegate != closure && (delegate instanceof GroovyObject);

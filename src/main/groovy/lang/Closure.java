@@ -24,9 +24,6 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.lang.reflect.Method;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 /**
  * Represents any closure object in Groovy.
@@ -155,7 +152,7 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
         return resolveStrategy;
     }
 
-    protected Object getThisObject(){
+    public Object getThisObject(){
         return thisObject;
     }
 
