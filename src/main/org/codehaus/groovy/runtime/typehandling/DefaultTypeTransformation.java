@@ -454,7 +454,7 @@ public class DefaultTypeTransformation {
         List list = new ArrayList(size);
         for (int i = 0; i < size; i++) {
             Object item = Array.get(array, i);
-            if (item.getClass().isArray() && item.getClass().getComponentType().isPrimitive()) {
+            if (item != null && item.getClass().isArray() && item.getClass().getComponentType().isPrimitive()) {
                 item = primitiveArrayToList(item);
             }
             list.add(item);
