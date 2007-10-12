@@ -18,6 +18,7 @@ package groovy.swing.factory
 
 import java.awt.Component
 import java.awt.Window
+import javax.swing.JTabbedPane
 
 class ComponentFactory extends BeanFactory {
 
@@ -27,6 +28,12 @@ class ComponentFactory extends BeanFactory {
 
     public ComponentFactory(Class beanClass, boolean leaf) {
         super(beanClass, leaf)
+    }
+
+    public void setParent(FactoryBuilderSupport builder, Object parent, Object child) {
+        if (parent instanceof JTabbedPane) {
+            parent.add((Component)child)
+        }
     }
 
     public void setChild(FactoryBuilderSupport builder, Object parent, Object child) {
