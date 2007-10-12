@@ -1887,6 +1887,13 @@ public class AsmClassGenerator extends ClassGenerator {
         
         // to keep the stack hight we kept one object on the stack
         // for the switch, now we remove that object
+        if (constructorNode==null) {
+            // but in case we are not in a constructor we have an additional
+            // object on the stack, the result of our constructor call
+            // which we want to keep, so we swap the arguments to remove 
+            // the right one
+            mv.visitInsn(SWAP);
+        }
         mv.visitInsn(POP);
     }
 
