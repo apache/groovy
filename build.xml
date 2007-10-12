@@ -43,6 +43,12 @@ $Date$
         <istrue value="${skipExamples}"/>
     </condition>
 
+    <condition property="groovy.build.vm5">
+        <not>
+            <contains string="${ant.java.version}" substring="1.4"/>
+        </not>
+    </condition>
+
     <target name="-initCoverage">
         <condition property="_forceCoverage_">
             <and>
@@ -71,6 +77,15 @@ $Date$
         <echo message="Operating system name: ${os.name}"/>
         <echo message="Operating system architecture: ${os.arch}"/>
         <echo message="Operating system version: ${os.version}"/>
+    </target>
+
+    <target name="-jvm14BuildWarning" unless="groovy.build.vm5">
+        <echo>
+===================================================================
+  WARNING: You are building Groovy with a 1.4 JDK - the resulting
+           jar will be missing some Java 1.5+ specific features.
+===================================================================
+        </echo>
     </target>
 
     <target name="-checkAntVersion" depends="-excludeLegacyAntVersion"
@@ -110,7 +125,7 @@ $Date$
             description="Compile the Java and Groovy code in the main source.">
     </target>
 
-    <target name="stagedcompile" depends="-init,-includeResources,ensureGrammars" unless="uber">
+    <target name="stagedcompile" depends="-init,-includeResources,ensureGrammars,-jvm14BuildWarning" unless="uber">
         <mkdir dir="${mainClassesDirectory}"/>
         <mkdir dir="${toolsClassesDirectory}"/>
         <javac srcdir="${mainSourceDirectory}" includeantruntime="false" destdir="${mainClassesDirectory}"
