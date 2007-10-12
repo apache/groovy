@@ -52,7 +52,11 @@ public class GroovyScriptEngine implements ResourceConnector {
     public static void main(String[] urls) throws Exception {
         URL[] roots = new URL[urls.length];
         for (int i = 0; i < roots.length; i++) {
-            roots[i] = new File(urls[i]).toURI().toURL();
+            if(urls[i].indexOf("://") != -1) {
+                roots[i] = new URL(urls[i]);
+            } else {
+                roots[i] = new File(urls[i]).toURI().toURL();
+            }
         }
         GroovyScriptEngine gse = new GroovyScriptEngine(roots);
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
@@ -107,24 +111,20 @@ public class GroovyScriptEngine implements ResourceConnector {
                                         currentCacheEntry.dependencies.put(
                                                 dependentScriptConn.getURL(),
                                                 new Long(dependentScriptConn.getLastModified()));
+                                        return parseClass(dependentScriptConn.getInputStream(), filename);
                                     } catch (ResourceException e1) {
                                         throw new ClassNotFoundException("Could not read " + className + ": " + e1);
-                                    }
-                                    InputStream inputStream = null;
-                                    try {
-                                        inputStream = dependentScriptConn.getInputStream();
-                                        return parseClass(inputStream, filename);
                                     } catch (CompilationFailedException e2) {
                                         throw new ClassNotFoundException("Syntax error in " + className + ": " + e2);
-                                    } catch (IOException e2) {
-                                        throw new ClassNotFoundException("Problem reading " + className + ": " + e2);
+                                    } catch (IOException e3) {
+                                        throw new ClassNotFoundException("Problem reading " + className + ": " + e3);
                                     } finally {
-                                        if (inputStream != null) {
-                                            try {
-                                                inputStream.close();
-                                            } catch (IOException e) {
-                                                // IGNORE
+                                        try {
+                                            if (dependentScriptConn != null && dependentScriptConn.getInputStream() != null) {
+                                                dependentScriptConn.getInputStream().close();
                                             }
+                                        } catch (IOException e) {
+                                            // IGNORE
                                         }
                                     }
                                 }
@@ -174,12 +174,6 @@ public class GroovyScriptEngine implements ResourceConnector {
                     se = new ResourceException(message);
                 } else {
                     se = new ResourceException(message, se);
-                }
-            } finally {
-                try {
-                    if (in!=null) in.close();
-                } catch (IOException e) {
-                    // Do nothing: Just want to make sure it is closed
                 }
             }
         }
