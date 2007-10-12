@@ -310,9 +310,16 @@ class SwingBuilderTest extends GroovyTestCase {
         if (isHeadless()) return
 
         def swing = new SwingBuilder()
-        swing.tabbedPane{
-            button()
+        swing.tabbedPane(id:'tp') {
+            panel(id:'p1', name:'Title 1')
+            panel(id:'p2')
         }
+
+        assert swing.tp.tabCount == 2
+        assert swing.tp.indexOfComponent(swing.p1) == 0
+        assert swing.tp.indexOfComponent(swing.p2) == 1
+        assert swing.tp.indexOfTab('Title 1') == 0
+
     }
 
     void testComboBox() {
@@ -1023,7 +1030,7 @@ class SwingBuilderTest extends GroovyTestCase {
             //"menuBar",
             "optionPane",
             "panel",
-            "popupMenu",
+            //"popupMenu",
             "progressBar",
             "scrollBar",
             "scrollPane",

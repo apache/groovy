@@ -23,7 +23,11 @@ import javax.swing.table.TableModel
 class TableFactory extends BeanFactory {
 
     public TableFactory() {
-        super(JTable)
+        this(JTable)
+    }
+
+    public TableFactory(Class klass) {
+        super(klass, false)
     }
 
     public void setChild(FactoryBuilderSupport builder, Object parent, Object child) {

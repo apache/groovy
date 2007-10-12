@@ -30,12 +30,6 @@ class ComponentFactory extends BeanFactory {
         super(beanClass, leaf)
     }
 
-    public void setParent(FactoryBuilderSupport builder, Object parent, Object child) {
-        if (parent instanceof JTabbedPane) {
-            parent.add((Component)child)
-        }
-    }
-
     public void setChild(FactoryBuilderSupport builder, Object parent, Object child) {
         if (!(child instanceof Component) || (child instanceof Window)) {
             return;
