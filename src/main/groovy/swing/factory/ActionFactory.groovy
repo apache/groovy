@@ -21,6 +21,7 @@ import groovy.swing.impl.DefaultAction
 import javax.swing.Action
 import javax.swing.KeyStroke
 import org.codehaus.groovy.runtime.InvokerHelper
+import javax.swing.JComponent
 
 /**
  *
@@ -28,22 +29,27 @@ import org.codehaus.groovy.runtime.InvokerHelper
  */
 public class ActionFactory extends AbstractFactory {
     
-    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         Action action = null;
         if (SwingBuilder.checkValueIsTypeNotString(value, name, Action.class)) {
             action = (Action) value;
-        } else if (properties.get(name) instanceof Action) {
-            action = (Action) properties.remove(name);
+        } else if (attributes.get(name) instanceof Action) {
+            action = (Action) attributes.remove(name);
         } else {
             action = new DefaultAction();
         }
-        
-        if ((properties.get("closure") instanceof Closure) && (action instanceof DefaultAction)){
-            Closure closure = (Closure) properties.remove("closure");
+        return action;
+    }
+
+    public boolean onHandleNodeAttributes( FactoryBuilderSupport builder, Object action,
+            Map attributes)
+    {
+        if ((attributes.get("closure") instanceof Closure) && (action instanceof DefaultAction)){
+            Closure closure = (Closure) attributes.remove("closure");
             ((DefaultAction)action).setClosure(closure);
         }
 
-        Object accel = properties.remove("accelerator");
+        Object accel = attributes.remove("accelerator");
         if (accel != null) {
             KeyStroke stroke = null;
             if (accel instanceof KeyStroke) {
@@ -54,7 +60,7 @@ public class ActionFactory extends AbstractFactory {
             action.putValue(Action.ACCELERATOR_KEY, stroke);
         }
 
-        Object mnemonic = properties.remove("mnemonic");
+        Object mnemonic = attributes.remove("mnemonic");
         if (mnemonic != null) {
             if (!(mnemonic instanceof Number)) {
                 mnemonic = mnemonic.toString().charAt(0);
@@ -62,7 +68,7 @@ public class ActionFactory extends AbstractFactory {
             action.putValue(Action.MNEMONIC_KEY, mnemonic as Integer);
         }
         
-        for (entry in properties.entrySet()) {
+        for (entry in attributes.entrySet()) {
             String propertyName = (String) entry.getKey();
             // first attempt to set as a straight proeprty
             try {
@@ -70,13 +76,49 @@ public class ActionFactory extends AbstractFactory {
             } catch (MissingPropertyException mpe) {
                 // failing that store them in the action values list
                 // typically standard Action names start with upper case, so lets upper case it
-                propertyName = SwingBuilder.capitalize(propertyName);
+                propertyName = capitalize(propertyName);
                 action.putValue(propertyName, entry.getValue());
             }
 
         }
-        properties.clear();
-        
-        return action;
-    }    
+
+        return false
+    }
+
+    public void setParent(FactoryBuilderSupport builder, Object parent, Object action) {
+        try {
+            InvokerHelper.setProperty(parent, "action", action);
+        } catch (RuntimeException re) {
+            // must not have an action property...
+            // so we ignore it and go on
+        }
+        Object keyStroke = action.getValue("KeyStroke");
+        if (parent instanceof JComponent) {
+            JComponent component = (JComponent) parent;
+            KeyStroke stroke = null;
+            if (keyStroke instanceof String) {
+                stroke = KeyStroke.getKeyStroke((String) keyStroke);
+            } else if (keyStroke instanceof KeyStroke) {
+                stroke = (KeyStroke) keyStroke;
+            }
+            if (stroke != null) {
+                String key = action.toString();
+                component.getInputMap().put(stroke, key);
+                component.getActionMap().put(key, action);
+            }
+        }
+    }
+
+
+    String capitalize(String text) {
+        char ch = text.charAt(0);
+        if (Character.isUpperCase(ch)) {
+            return text;
+        }
+        StringBuffer buffer = new StringBuffer(text.length());
+        buffer.append(Character.toUpperCase(ch));
+        buffer.append(text.substring(1));
+        return buffer.toString();
+    }
+
 }

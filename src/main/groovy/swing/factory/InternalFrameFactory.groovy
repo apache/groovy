@@ -13,37 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package groovy.swing.factory
 
-import groovy.swing.SwingBuilder
+import javax.swing.JInternalFrame
 
-/**
- * @author <a href="mailto:shemnon@yahoo.com">Danno Ferrin</a>
- * @version $Revision: 7953 $
- * @since Groovy 1.1
- */
-class BeanFactory extends AbstractFactory {
-    Class beanClass
-    protected boolean leaf
-
-    public BeanFactory(Class beanClass) {
-        this(beanClass, false)
-    }
-
-    public BeanFactory(Class beanClass, boolean leaf) {
-        this.beanClass = beanClass
-        this.leaf = leaf
-    }
-
-    public boolean isLeaf() {
-        return leaf
-    }
+class InternalFrameFactory extends RootPaneContainerFactory {
 
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
-        if (SwingBuilder.checkValueIsTypeNotString(value, name, beanClass)) {
-            return value
-        } else {
-            return beanClass.newInstance()
+        if (FactoryBuilderSupport.checkValueIsType(value, name, JInternalFrame.class)) {
+            return value;
         }
+        JInternalFrame frame = new JInternalFrame();
+
+        return frame;
     }
 }

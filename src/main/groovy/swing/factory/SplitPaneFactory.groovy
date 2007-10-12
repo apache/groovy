@@ -21,7 +21,7 @@ import javax.swing.JSplitPane
 
 public class SplitPaneFactory extends AbstractFactory {
     
-    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         if (SwingBuilder.checkValueIsType(value, name, JSplitPane.class)) {
             return value;
         }
@@ -33,4 +33,20 @@ public class SplitPaneFactory extends AbstractFactory {
         return answer;
     }
 
+
+    public void setChild(FactoryBuilderSupport factory, Object parent, Object child) {
+        if (parent.getOrientation() == JSplitPane.HORIZONTAL_SPLIT) {
+            if (parent.getTopComponent() == null) {
+                parent.setTopComponent(child);
+            } else {
+                parent.setBottomComponent(child);
+            }
+        } else {
+            if (parent.getLeftComponent() == null) {
+                parent.setLeftComponent(child);
+            } else {
+                parent.setRightComponent(child);
+            }
+        }
+    }
 }

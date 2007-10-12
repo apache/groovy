@@ -23,16 +23,22 @@ import groovy.swing.impl.TableLayoutRow
 
 public class TableLayoutFactory extends AbstractFactory {
     
-    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         if (SwingBuilder.checkValueIsType(value, name, TableLayout.class)) {
             return value;
         }
         return new TableLayout();
     }
+
+    public void setParent(FactoryBuilderSupport builder, Object parent, Object child) {
+        if (builder.getParentFactory()) {
+            builder.getParentFactory().setChild (builder, parent, child.getComponent());
+        }
+    }
 }
     
 public class TRFactory extends AbstractFactory {
-    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         SwingBuilder.checkValueIsNull(value, name);
         //TODO we could make the value arg the parent
         Object parent = builder.getCurrent();
@@ -42,10 +48,14 @@ public class TRFactory extends AbstractFactory {
             throw new RuntimeException("'tr' must be within a 'tableLayout'");
         }
     }
+
+    public void onNodeCompleted(FactoryBuilderSupport builder, Object parent, Object node) {
+        node.start()
+    }
 }
 
 public class TDFactory extends AbstractFactory {
-    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         SwingBuilder.checkValueIsNull(value, name);
         //TODO we could make the value arg the TR
         Object parent = builder.getCurrent();
@@ -54,5 +64,9 @@ public class TDFactory extends AbstractFactory {
         } else {
             throw new RuntimeException("'td' must be within a 'tr'");
         }
+    }
+
+    public void setChild(FactoryBuilderSupport builder, Object parent, Object child) {
+        parent.addComponent(child)
     }
 }

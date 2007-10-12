@@ -22,14 +22,14 @@ import javax.swing.JFormattedTextField
 
 public class FormattedTextFactory extends AbstractFactory {
     
-    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         SwingBuilder.checkValueIsNull(value, name);
         //TODO expand value arg to take format
         JFormattedTextField ftf;
-        if (properties.containsKey("format")) {
-            ftf = new JFormattedTextField((Format) properties.remove("format"));
-        } else if (properties.containsKey("value")) {
-            ftf = new JFormattedTextField(properties.remove("value"));
+        if (attributes.containsKey("format")) {
+            ftf = new JFormattedTextField((Format) attributes.remove("format"));
+        } else if (attributes.containsKey("value")) {
+            ftf = new JFormattedTextField(attributes.remove("value"));
         } else {
             ftf = new JFormattedTextField();
         }

@@ -58,4 +58,6 @@ public interface Factory {
     void onNodeCompleted( FactoryBuilderSupport builder, Object parent, Object node );
 
     void setParent( FactoryBuilderSupport builder, Object parent, Object child );
+
+    void setChild( FactoryBuilderSupport builder, Object parent, Object child );
 }

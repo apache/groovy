@@ -21,54 +21,32 @@ import java.awt.Dialog
 import java.awt.Frame
 import javax.swing.JDialog
 
-public class DialogFactory extends AbstractFactory {
+public class DialogFactory extends RootPaneContainerFactory {
 
-    LinkedList/*<JDialog>*/ packers = new LinkedList([null])
-    LinkedList/*<JDialog>*/ showers = new LinkedList([null])
-
-    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
-        if (SwingBuilder.checkValueIsType(value, name, JDialog.class)) {
-            return value
-        }
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         JDialog dialog
-        Object owner = properties.remove("owner")
-        LinkedList containingWindows = builder.getContainingWindows()
-        // if owner not explicit, use the last window type in the list
-        if ((owner == null) && !containingWindows.isEmpty()) {
-            owner = containingWindows.getLast()
-        }
-        if (owner instanceof Frame) {
-            dialog = new JDialog((Frame) owner)
-        } else if (owner instanceof Dialog) {
-            dialog = new JDialog((Dialog) owner)
+        if (SwingBuilder.checkValueIsType(value, name, JDialog.class)) {
+            dialog = value
         } else {
-            dialog = new JDialog()
+            Object owner = attributes.remove("owner")
+            LinkedList containingWindows = builder.containingWindows
+            // if owner not explicit, use the last window type in the list
+            if ((owner == null) && !containingWindows.isEmpty()) {
+                owner = containingWindows.getLast()
+            }
+            if (owner instanceof Frame) {
+                dialog = new JDialog((Frame) owner)
+            } else if (owner instanceof Dialog) {
+                dialog = new JDialog((Dialog) owner)
+            } else {
+                dialog = new JDialog()
+            }
         }
-        containingWindows.add(dialog)
 
-        Object o = properties.remove("pack")
-        if ((o instanceof Boolean) && ((Boolean) o).booleanValue()) {
-            packers.add(dialog)
-        }
-        o = properties.remove("show")
-        if ((o instanceof Boolean) && ((Boolean) o).booleanValue()) {
-            showers.add(dialog)
-        }
-
-        builder.addDisposalClosure(dialog.&dispose)
+        handelRootPaneTasks(builder, dialog, attributes)
 
         return dialog
     }
 
-    public void onNodeCompleted( FactoryBuilderSupport builder, Object parent, Object node ) {
-        if (packers.last.is(node)) {
-            node.pack()
-            packers.removeLast()
-        }
-        if (showers.last.is(node)) {
-            node.visible = true
-            showers.removeLast()
-        }
-    }
 
 }

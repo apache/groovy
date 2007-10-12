@@ -32,9 +32,9 @@ public class WidgetFactory extends AbstractFactory {
         return leaf
     }
     
-    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         if (value == null) {
-            value = properties.remove(name);
+            value = attributes.remove(name);
         }
         if ((value != null) && SwingBuilder.checkValueIsType(value, name, restrictedType)) {
             return value;

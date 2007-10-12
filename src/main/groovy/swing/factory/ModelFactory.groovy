@@ -31,13 +31,13 @@ public class ModelFactory extends AbstractFactory {
         return true
     }
 
-    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         if (value == null) {
             throw new RuntimeException("$name requires a value argument.");
         }
         ModelBinding mb = new ModelBinding(value);
 
-        Object o = properties.remove("bind");
+        Object o = attributes.remove("bind");
         doBind = (o instanceof Boolean) && ((Boolean) o).booleanValue()
         return mb;
     }

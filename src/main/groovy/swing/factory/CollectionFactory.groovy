@@ -23,15 +23,19 @@ import groovy.swing.SwingBuilder
  */
 public class CollectionFactory extends AbstractFactory {
     
-    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         SwingBuilder.checkValueIsNull(value, name);
-        if (properties.isEmpty()) {
+        if (attributes.isEmpty()) {
             return new ArrayList();
         } else {
-            Map.Entry item = (Map.Entry) properties.entrySet().iterator().next();
+            def item = attributes.entrySet().iterator().next();
             throw new MissingPropertyException(
-                "The builder element '$name' is a collections element and has no properties",
+                "The builder element '$name' is a collections element and accepts no attributes",
                 item.key as String, item.value as Class);
         }
+    }
+
+    public void setChild(FactoryBuilderSupport builder, Object parent, Object child) {
+        parent.add(child)
     }
 }

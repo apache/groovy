@@ -52,7 +52,7 @@ public class RichActionWidgetFactory extends AbstractFactory {
         }
     }
     
-    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         try {
             if (value == null) {
                 return klass.newInstance();

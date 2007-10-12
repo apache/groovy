@@ -21,53 +21,30 @@ import java.awt.Dialog
 import java.awt.Frame
 import javax.swing.JWindow
 
-public class WindowFactory extends AbstractFactory {
+public class WindowFactory extends RootPaneContainerFactory {
     
-    LinkedList/*<JWindow>*/ packers = new LinkedList([null])
-    LinkedList/*<JWindow>*/ showers = new LinkedList([null])
-
-    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
-        SwingBuilder.checkValueIsNull(value, name);
-        //TODO we could make the value arg the owner, or a window to allow adding more compnents
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         JWindow window;
-        Object owner = properties.remove("owner");
-        LinkedList containingWindows = builder.getContainingWindows();
-        // if owner not explicit, use the last window type in the list
-        if ((owner == null) && !containingWindows.isEmpty()) {
-            owner = containingWindows.getLast();
-        }
-        if (owner instanceof Frame) {
-            window = new JWindow((Frame) owner);
-        } else if (owner instanceof Dialog) {
-            window = new JWindow((Dialog) owner);
+        if (SwingBuilder.checkValueIsType(value, name, JWindow.class)) {
+            window = value
         } else {
-            window = new JWindow();
+            LinkedList containingWindows = builder.containingWindows;
+            Object owner = attributes.remove("owner");
+            // if owner not explicit, use the last window type in the list
+            if ((owner == null) && !containingWindows.empty) {
+                owner = containingWindows.last;
+            }
+            if (owner) {
+                // the joys of the MOP!
+                window = new JWindow(owner);
+            } else {
+                window = new JWindow();
+            }
         }
-        containingWindows.add(window);
 
-        Object o = properties.remove("pack")
-        if ((o instanceof Boolean) && ((Boolean) o).booleanValue()) {
-            packers.add(window)
-        }
-        o = properties.remove("show")
-        if ((o instanceof Boolean) && ((Boolean) o).booleanValue()) {
-            showers.add(window)
-        }
-
-        builder.addDisposalClosure(window.&dispose)
+        handelRootPaneTasks(builder, window, attributes)
 
         return window;
-    }
-
-    public void onNodeCompleted( FactoryBuilderSupport builder, Object parent, Object node ) {
-        if (packers.last.is(node)) {
-            node.pack()
-            packers.removeLast()
-        }
-        if (showers.last.is(node)) {
-            node.visible = true
-            showers.removeLast()
-        }
     }
 
 }

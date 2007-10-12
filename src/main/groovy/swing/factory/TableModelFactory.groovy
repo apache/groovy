@@ -21,18 +21,19 @@ import groovy.model.ValueHolder
 import groovy.model.ValueModel
 import groovy.swing.SwingBuilder
 import javax.swing.table.TableModel
+import javax.swing.JTable
 
 public class TableModelFactory extends AbstractFactory {
     
-    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         if (SwingBuilder.checkValueIsType(value, name, TableModel.class)) {
             return value;
-        } else if (properties.get(name) instanceof TableModel) {
-            return properties.remove(name);
+        } else if (attributes.get(name) instanceof TableModel) {
+            return attributes.remove(name);
         } else {
-            ValueModel model = (ValueModel) properties.remove("model");
+            ValueModel model = (ValueModel) attributes.remove("model");
             if (model == null) {
-                Object list = properties.remove("list");
+                Object list = attributes.remove("list");
                 if (list == null) {
                     list = new ArrayList();
                 }
@@ -41,28 +42,37 @@ public class TableModelFactory extends AbstractFactory {
             return new DefaultTableModel(model);
         }
     }
+
+    public void onNodeCompleted(FactoryBuilderSupport builder, Object parent, Object node) {
+        if ((node.columnCount > 0)
+            && (parent instanceof JTable))
+        {
+            parent.columnModel = node.columnModel
+            parent.autoCreateColumnsFromModel = false;
+        }
+    }
 }
 
 public class PropertyColumnFactory extends AbstractFactory {
 
-    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         SwingBuilder.checkValueIsNull(value, name);
         Object current = builder.getCurrent();
         if (current instanceof DefaultTableModel) {
             DefaultTableModel model = (DefaultTableModel) current;
-            String property = (String) properties.remove("propertyName");
+            String property = (String) attributes.remove("propertyName");
             if (property == null) {
                 throw new IllegalArgumentException("Must specify a property for a propertyColumn");
             }
-            Object header = properties.remove("header");
+            Object header = attributes.remove("header");
             if (header == null) {
                 header = "";
             }
-            Class type = (Class) properties.remove("type");
+            Class type = (Class) attributes.remove("type");
             if (type == null) {
                 type = Object.class;
             }
-            Boolean editable = (Boolean) properties.remove("editable");
+            Boolean editable = (Boolean) attributes.remove("editable");
             if (editable == null) {
                 editable = Boolean.TRUE;
             }
@@ -75,21 +85,21 @@ public class PropertyColumnFactory extends AbstractFactory {
 
 public class ClosureColumnFactory extends AbstractFactory {
 
-    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         SwingBuilder.checkValueIsNull(value, name);
         Object current = builder.getCurrent();
         if (current instanceof DefaultTableModel) {
             DefaultTableModel model = (DefaultTableModel) current;
-            Object header = properties.remove("header");
+            Object header = attributes.remove("header");
             if (header == null) {
                 header = "";
             }
-            Closure readClosure = (Closure) properties.remove("read");
+            Closure readClosure = (Closure) attributes.remove("read");
             if (readClosure == null) {
                 throw new IllegalArgumentException("Must specify 'read' Closure property for a closureColumn");
             }
-            Closure writeClosure = (Closure) properties.remove("write");
-            Class type = (Class) properties.remove("type");
+            Closure writeClosure = (Closure) attributes.remove("write");
+            Class type = (Class) attributes.remove("type");
             if (type == null) {
                 type = Object.class;
             }

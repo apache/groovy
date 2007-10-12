@@ -27,13 +27,10 @@
 
 import groovy.swing.SwingBuilder
 import java.awt.BorderLayout
-import java.net.URL
-import javax.swing.BorderFactory
 import javax.swing.JOptionPane
 import javax.swing.JSplitPane
 import javax.swing.JTree
 import javax.swing.ListSelectionModel
-import javax.swing.SwingUtilities
 import javax.swing.WindowConstants
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.TreeSelectionModel

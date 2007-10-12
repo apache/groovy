@@ -21,15 +21,19 @@ import java.awt.Dimension
 import javax.swing.Box
 import javax.swing.BoxLayout
 
-public class BoxFactory extends AbstractFactory {
+public class BoxFactory extends ComponentFactory {
+
+    public BoxFactory() {
+        super(null);
+    }
     
-    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         if (SwingBuilder.checkValueIsType(value, name, Box.class)) {
             return value;
         }
         int axis = BoxLayout.X_AXIS; // default to X so it behaves like FlowLayout
-        if (properties.containsKey("axis")) {
-            Object o = properties.remove("axis");
+        if (attributes.containsKey("axis")) {
+            Object o = attributes.remove("axis");
             if (o instanceof Number) {
                 axis = ((Number)o).intValue();
             }
@@ -38,28 +42,33 @@ public class BoxFactory extends AbstractFactory {
     }
 }
 
-public class HBoxFactory extends AbstractFactory {
-    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+public class HBoxFactory extends ComponentFactory {
+
+    public HBoxFactory() {
+        super(null);
+    }
+
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         SwingBuilder.checkValueIsNull(value, name);
         return Box.createHorizontalBox();
     }
 }
 
 public class HGlueFactory extends AbstractFactory {
-    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         SwingBuilder.checkValueIsNull(value, name);
         return Box.createHorizontalGlue();
     }
 }
 
 public class HStrutFactory extends AbstractFactory {
-    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         SwingBuilder.checkValueIsType(value, name, Number.class);
         Object num;
         if (value != null) {
             num = value;
         } else {
-            num = properties.remove("width");
+            num = attributes.remove("width");
         }
         if (num instanceof Number) {
             return Box.createHorizontalStrut(((Number) num).intValue());
@@ -69,28 +78,33 @@ public class HStrutFactory extends AbstractFactory {
     }
 }
 
-public class VBoxFactory extends AbstractFactory {
-    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+public class VBoxFactory extends ComponentFactory {
+
+    public VBoxFactory() {
+        super(null);
+    }
+
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         SwingBuilder.checkValueIsNull(value, name);
         return Box.createVerticalBox();
     }
 }
 
 public class VGlueFactory extends AbstractFactory {
-    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         SwingBuilder.checkValueIsNull(value, name);
         return Box.createVerticalGlue();
     }
 }
 
 public class VStrutFactory extends AbstractFactory {
-    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         SwingBuilder.checkValueIsType(value, name, Number.class);
         Object num;
         if (value != null) {
             num = value;
         } else {
-            num = properties.remove("height");
+            num = attributes.remove("height");
         }
         if (num instanceof Number) {
             return Box.createVerticalStrut(((Number) num).intValue());
@@ -101,24 +115,24 @@ public class VStrutFactory extends AbstractFactory {
 }
 
 public class GlueFactory extends AbstractFactory {
-    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         SwingBuilder.checkValueIsNull(value, name);
         return Box.createGlue();
     }
 }
 
 public class RigidAreaFactory extends AbstractFactory {
-    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         SwingBuilder.checkValueIsNull(value, name);
         Dimension dim;
-        Object o = properties.remove("size");
+        Object o = attributes.remove("size");
         if (o instanceof Dimension) {
             dim = (Dimension) o;
         } else {
             int w, h;
-            o = properties.remove("width");
+            o = attributes.remove("width");
             w = ((o instanceof Number)) ? ((Number) o).intValue() : 6;
-            o = properties.remove("height");
+            o = attributes.remove("height");
             h = ((o instanceof Number)) ? ((Number) o).intValue() : 6;
             dim = new Dimension(w, h);
         }

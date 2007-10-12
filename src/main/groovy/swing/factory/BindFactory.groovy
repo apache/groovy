@@ -84,28 +84,28 @@ public class BindFactory extends AbstractFactory {
      * @param builder
      * @param name
      * @param value
-     * @param properties
+     * @param attributes
      * @return the newly created instance
      * @throws InstantiationException
      * @throws IllegalAccessException
      */
-    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         if (value != null) {
             throw new RuntimeException("$name elements do not accept a value argument.");
         }
-        Object source = properties.remove("source");
-        Object target = properties.remove("target");
+        Object source = attributes.remove("source");
+        Object target = attributes.remove("target");
 
         TargetBinding tb = null;
         if (target != null) {
-            String targetProperty = (String) properties.remove("targetProperty");
+            String targetProperty = (String) attributes.remove("targetProperty");
             tb = new PropertyBinding(target, targetProperty);
         }
         FullBinding fb;
 
-        if (properties.containsKey("sourceProperty")) {
+        if (attributes.containsKey("sourceProperty")) {
             // first check for synthetic properties
-            String property = (String) properties.remove("sourceProperty");
+            String property = (String) attributes.remove("sourceProperty");
             PropertyBinding psb = new PropertyBinding(source, property);
 
             TriggerBinding trigger = null;
@@ -120,17 +120,17 @@ public class BindFactory extends AbstractFactory {
                 trigger = psb;
             }
             fb = trigger.createBinding(psb, tb);
-        } else if (properties.containsKey("sourceEvent") && properties.containsKey("sourceValue")) {
-            Closure queryValue = (Closure) properties.remove("sourceValue");
+        } else if (attributes.containsKey("sourceEvent") && attributes.containsKey("sourceValue")) {
+            Closure queryValue = (Closure) attributes.remove("sourceValue");
             ClosureSourceBinding psb = new ClosureSourceBinding(queryValue);
-            String trigger = (String) properties.remove("sourceEvent");
+            String trigger = (String) attributes.remove("sourceEvent");
             EventTriggerBinding etb = new EventTriggerBinding(source, trigger);
             fb = etb.createBinding(psb, tb);
         } else {
-            throw new RuntimeException("$name does not have suffient properties to initialize");
+            throw new RuntimeException("$name does not have suffient attributes to initialize");
         }
 
-        Object o = properties.remove("bind");
+        Object o = attributes.remove("bind");
         if (    (o == null)
             || ((o instanceof Boolean) && ((Boolean)o).booleanValue()))
         {

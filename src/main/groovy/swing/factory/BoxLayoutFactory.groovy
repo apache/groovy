@@ -22,19 +22,19 @@ import javax.swing.BoxLayout
 import org.codehaus.groovy.runtime.InvokerHelper
 
 public class BoxLayoutFactory extends AbstractFactory {
-    
-    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         SwingBuilder.checkValueIsNull(value, name);
         Object parent = builder.getCurrent();
         if (parent instanceof Container) {
-            Object axisObject = properties.remove("axis");
+            Object axisObject = attributes.remove("axis");
             int axis = BoxLayout.X_AXIS;
             if (axisObject != null) {
                 Integer i = (Integer) axisObject;
                 axis = i.intValue();
             }
 
-            Container target = SwingBuilder.getLayoutTarget((Container)parent);
+            Container target = LayoutFactory.getLayoutTarget(parent);
             BoxLayout answer = new BoxLayout(target, axis);
 
             // now let's try to set the layout property
@@ -42,6 +42,13 @@ public class BoxLayoutFactory extends AbstractFactory {
             return answer;
         } else {
             throw new RuntimeException("Must be nested inside a Container");
+        }
+    }
+
+    public void setParent(FactoryBuilderSupport builder, Object parent, Object child) {
+        if (parent instanceof Container) {
+            Container target = LayoutFactory.getLayoutTarget(parent);
+            InvokerHelper.setProperty(target, "layout", child);
         }
     }
 

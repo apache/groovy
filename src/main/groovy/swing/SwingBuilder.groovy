@@ -15,21 +15,12 @@
  */
 package groovy.swing
 
-import groovy.model.DefaultTableModel
 import groovy.swing.factory.*
-import groovy.swing.impl.ComponentFacade
-import groovy.swing.impl.ContainerFacade
-import groovy.swing.impl.Startable
 import java.awt.*
 import java.lang.reflect.InvocationTargetException
-import java.util.Map.Entry
 import java.util.logging.Logger
 import javax.swing.*
 import javax.swing.table.TableColumn
-import javax.swing.table.TableModel
-import org.codehaus.groovy.binding.FullBinding
-import org.codehaus.groovy.binding.PropertyBinding
-import org.codehaus.groovy.runtime.InvokerHelper
 
 /**
  * A helper class for creating Swing widgets using GroovyMarkup
@@ -39,14 +30,16 @@ import org.codehaus.groovy.runtime.InvokerHelper
  */
 public class SwingBuilder extends FactoryBuilderSupport {
 
+    // Properties
+    def constraints
+    LinkedList containingWindows = new LinkedList()
+    Map widgets = [:]
+
+    // local fields
     private static final Logger LOG = Logger.getLogger(SwingBuilder.class.getName());
-    private constraints
-    private widgets = [:]
     // tracks all containing windows, for auto-owned dialogs
-    private LinkedList containingWindows = new LinkedList()
     private boolean headless = false
     private disposalClosures = []
-
 
     public SwingBuilder() {
         registerWidgets();
@@ -59,174 +52,6 @@ public class SwingBuilder extends FactoryBuilderSupport {
             return super.getProperty(name);
         }
         return widget;
-    }
-
-    protected void setParent(Object parent, Object child) {
-        if (parent instanceof Collection) {
-            ((Collection) parent).add(child);
-        } else if (child instanceof Action) {
-            setParentForAction(parent, (Action) child);
-        } else if ((child instanceof LayoutManager) && (parent instanceof Container)) {
-            Container target = getLayoutTarget((Container) parent);
-            InvokerHelper.setProperty(target, "layout", child);
-            // doesn't work, use toolTipText property
-            //        } else if (child instanceof JToolTip && parent instanceof JComponent) {
-            //            ((JToolTip) child).setComponent((JComponent) parent);
-        } else if (parent instanceof JTable && child instanceof TableColumn) {
-            JTable table = (JTable) parent;
-            TableColumn column = (TableColumn) child;
-            table.addColumn(column);
-        } else if (parent instanceof JTabbedPane && child instanceof Component) {
-            JTabbedPane tabbedPane = (JTabbedPane) parent;
-            tabbedPane.add((Component) child);
-        } else if (child instanceof Window) {
-            // do nothing.  owner of window is set elsewhere, and this
-            // shouldn't get added to any parent as a child
-            // if it is a top level component anyway
-        } else {
-            Component component = null;
-            if (child instanceof Component) {
-                component = (Component) child;
-            } else if (child instanceof ComponentFacade) {
-                ComponentFacade facade = (ComponentFacade) child;
-                component = facade.getComponent();
-            }
-            if (component != null) {
-                setParentForComponent(parent, component);
-            }
-        }
-    }
-
-    private void setParentForComponent(Object parent, Component component) {
-        if (parent instanceof JFrame && component instanceof JMenuBar) {
-            JFrame frame = (JFrame) parent;
-            frame.setJMenuBar((JMenuBar) component);
-        } else if (parent instanceof RootPaneContainer) {
-            RootPaneContainer rpc = (RootPaneContainer) parent;
-            if (constraints != null) {
-                rpc.getContentPane().add(component, constraints);
-            } else {
-                rpc.getContentPane().add(component);
-            }
-        } else if (parent instanceof JScrollPane) {
-            JScrollPane scrollPane = (JScrollPane) parent;
-            if (component instanceof JViewport) {
-                scrollPane.setViewport((JViewport) component);
-            } else {
-                scrollPane.setViewportView(component);
-            }
-        } else if (parent instanceof JSplitPane) {
-            JSplitPane splitPane = (JSplitPane) parent;
-            if (splitPane.getOrientation() == JSplitPane.HORIZONTAL_SPLIT) {
-                if (splitPane.getTopComponent() == null) {
-                    splitPane.setTopComponent(component);
-                } else {
-                    splitPane.setBottomComponent(component);
-                }
-            } else {
-                if (splitPane.getLeftComponent() == null) {
-                    splitPane.setLeftComponent(component);
-                } else {
-                    splitPane.setRightComponent(component);
-                }
-            }
-        } else if (parent instanceof JMenuBar && component instanceof JMenu) {
-            JMenuBar menuBar = (JMenuBar) parent;
-            menuBar.add((JMenu) component);
-        } else if (parent instanceof Container) {
-            Container container = (Container) parent;
-            if (constraints != null) {
-                container.add(component, constraints);
-            } else {
-                container.add(component);
-            }
-        } else if (parent instanceof ContainerFacade) {
-            ContainerFacade facade = (ContainerFacade) parent;
-            facade.addComponent(component);
-        }
-    }
-
-    private void setParentForAction(Object parent, Action action) {
-        try {
-            InvokerHelper.setProperty(parent, "action", action);
-        } catch (RuntimeException re) {
-            // must not have an action property...
-            // so we ignore it and go on
-        }
-        Object keyStroke = action.getValue("KeyStroke");
-        if (parent instanceof JComponent) {
-            JComponent component = (JComponent) parent;
-            KeyStroke stroke = null;
-            if (keyStroke instanceof String) {
-                stroke = KeyStroke.getKeyStroke((String) keyStroke);
-            } else if (keyStroke instanceof KeyStroke) {
-                stroke = (KeyStroke) keyStroke;
-            }
-            if (stroke != null) {
-                String key = action.toString();
-                component.getInputMap().put(stroke, key);
-                component.getActionMap().put(key, action);
-            }
-        }
-    }
-
-    public static Container getLayoutTarget(Container parent) {
-        if (parent instanceof RootPaneContainer) {
-            RootPaneContainer rpc = (RootPaneContainer) parent;
-            parent = rpc.getContentPane();
-        }
-        return parent;
-    }
-
-    protected void nodeCompleted(Object parent, Object node) {
-        // set models after the node has been completed
-        //TODO move into factory
-        if (node instanceof TableModel && parent instanceof JTable) {
-            JTable table = (JTable) parent;
-            TableModel model = (TableModel) node;
-            table.setModel(model);
-            if ((model instanceof DefaultTableModel)
-                && (model.getColumnCount() > 0 ))
-            {
-                table.setColumnModel(((DefaultTableModel) model).getColumnModel());
-                table.setAutoCreateColumnsFromModel(false);
-            }
-        }
-        //TODO move into factory
-        if (node instanceof Startable) {
-            Startable startable = (Startable) node;
-            startable.start();
-        }
-        //TODO move into factory
-        if (node instanceof Window) {
-            if (!containingWindows.isEmpty() && containingWindows.getLast() == node) {
-                containingWindows.removeLast();
-            }
-        }
-        super.nodeCompleted(parent, node)
-    }
-
-    protected Object createNode(Object name, Map attributes, Object value) {
-        String widgetName = (String) attributes.remove("id");
-        constraints = attributes.remove("constraints");
-
-        Object widget = super.createNode(name, attributes, value)
-        if (widgetName != null) {
-            widgets.put(widgetName, widget);
-        }
-
-        return widget;
-    }
-
-    public static String capitalize(String text) {
-        char ch = text.charAt(0);
-        if (Character.isUpperCase(ch)) {
-            return text;
-        }
-        StringBuffer buffer = new StringBuffer(text.length());
-        buffer.append(Character.toUpperCase(ch));
-        buffer.append(text.substring(1));
-        return buffer.toString();
     }
 
     protected void registerWidgets() {
@@ -247,6 +72,14 @@ public class SwingBuilder extends FactoryBuilderSupport {
             }
         }
 
+        //object id delegage, for propertyNotFound
+        addAttributeDelegate {builder, node, attributes ->
+            def theID = attributes.remove('id')
+            if (theID) {
+                widgets[theID] = node
+            }
+        }
+
         // binding related classes
         registerFactory("bind", new BindFactory());
         addAttributeDelegate(BindFactory.attributeDelegate)
@@ -262,9 +95,9 @@ public class SwingBuilder extends FactoryBuilderSupport {
         // standalone window classes
         //
         registerFactory("dialog", new DialogFactory());
-        registerBeanFactory("fileChooser", JFileChooser);
+        registerFactory("fileChooser", new ComponentFactory(JFileChooser));
         registerFactory("frame", new FrameFactory());
-        registerBeanFactory("optionPane", JOptionPane);
+        registerFactory("optionPane", new ComponentFactory(JOptionPane));
         registerFactory("window", new WindowFactory());
 
 
@@ -288,29 +121,29 @@ public class SwingBuilder extends FactoryBuilderSupport {
 
         registerBeanFactory("colorChooser", JColorChooser);
         registerFactory("comboBox", new ComboBoxFactory());
-        registerBeanFactory("desktopPane", JDesktopPane);
+        registerFactory("desktopPane", new ComponentFactory(JDesktopPane));
         registerFactory("formattedTextField", new FormattedTextFactory());
-        registerBeanFactory("internalFrame", JInternalFrame);
-        registerBeanFactory("layeredPane", JLayeredPane);
+        registerFactory("internalFrame", new InternalFrameFactory());
+        registerFactory("layeredPane", new ComponentFactory(JLayeredPane));
         registerBeanFactory("list", JList);
-        registerBeanFactory("menu", JMenu);
-        registerBeanFactory("menuBar", JMenuBar);
-        registerBeanFactory("panel", JPanel);
-        registerBeanFactory("popupMenu", JPopupMenu);
+        registerFactory("menu", new ComponentFactory(JMenu));
+        registerFactory("menuBar", new ComponentFactory(JMenuBar));
+        registerFactory("panel", new ComponentFactory(JPanel));
+        registerFactory("popupMenu", new ComponentFactory(JPopupMenu));
         registerBeanFactory("progressBar", JProgressBar);
         registerBeanFactory("scrollBar", JScrollBar);
-        registerBeanFactory("scrollPane", JScrollPane);
+        registerFactory("scrollPane", new ScrollPaneFactory());
         registerFactory("separator", new SeparatorFactory());
         registerBeanFactory("slider", JSlider);
         registerBeanFactory("spinner", JSpinner);
         registerFactory("splitPane", new SplitPaneFactory());
-        registerBeanFactory("tabbedPane", JTabbedPane);
-        registerBeanFactory("table", JTable);
+        registerFactory("tabbedPane", new ComponentFactory(JTabbedPane));
+        registerFactory("table", new TableFactory());
         registerBeanFactory("tableColumn", TableColumn);
-        registerBeanFactory("toolBar", JToolBar);
+        registerFactory("toolBar", new ComponentFactory(JToolBar));
         //registerBeanFactory("tooltip", JToolTip); // doesn't work, use toolTipText property
         registerBeanFactory("tree", JTree);
-        registerBeanFactory("viewport", JViewport); // sub class?
+        registerFactory("viewport", new ComponentFactory(JViewport)); // sub class?
 
 
         //
@@ -332,15 +165,20 @@ public class SwingBuilder extends FactoryBuilderSupport {
         //
         // Layouts
         //
-        registerBeanFactory("borderLayout", BorderLayout);
-        registerBeanFactory("cardLayout", CardLayout);
-        registerBeanFactory("flowLayout", FlowLayout);
-        registerBeanFactory("gridBagLayout", GridBagLayout);
-        registerBeanFactory("gridLayout", GridLayout);
-        registerBeanFactory("overlayLayout", OverlayLayout);
-        registerBeanFactory("springLayout", SpringLayout);
+        registerFactory("borderLayout", new LayoutFactory(BorderLayout));
+        registerFactory("cardLayout", new LayoutFactory(CardLayout));
+        registerFactory("flowLayout", new LayoutFactory(FlowLayout));
+        registerFactory("gridBagLayout", new LayoutFactory(GridBagLayout));
+        registerFactory("gridLayout", new LayoutFactory(GridLayout));
+        registerFactory("overlayLayout", new LayoutFactory(OverlayLayout));
+        registerFactory("springLayout", new LayoutFactory(SpringLayout));
         registerBeanFactory("gridBagConstraints", GridBagConstraints);
         registerBeanFactory("gbc", GridBagConstraints); // shortcut name
+        // constraints delegate
+        addAttributeDelegate {builder, node, attributes ->
+            constraints = attributes.remove('constraints')
+        }
+
 
         // Box layout and friends
         registerFactory("boxLayout", new BoxLayoutFactory());
@@ -359,46 +197,6 @@ public class SwingBuilder extends FactoryBuilderSupport {
         registerFactory("tr", new TRFactory());
         registerFactory("td", new TDFactory());
 
-    }
-
-    public Object getConstraints() {
-        return constraints;
-    }
-
-    public LinkedList getContainingWindows() {
-        return containingWindows;
-    }
-
-    public static void checkValueIsNull(Object value, Object name) {
-        if (value != null) {
-            throw new RuntimeException("$name elements do not accept a value argument.");
-        }
-    }
-
-    public static boolean checkValueIsType(Object value, Object name, Class type) {
-        if (value != null) {
-            if (type.isAssignableFrom(value.getClass())) {
-                return true;
-            } else {
-                throw new RuntimeException("The value argument of $name must be of type $type.name");
-            }
-        } else {
-            return false;
-        }
-    }
-
-    public static boolean checkValueIsTypeNotString(Object value, Object name, Class type) {
-        if (value != null) {
-            if (type.isAssignableFrom(value.getClass())) {
-                return true;
-            } else if (value instanceof String) {
-                return false;
-            } else {
-                throw new RuntimeException("The value argument of $name must be of type $type.name or a String.");
-            }
-        } else {
-            return false;
-        }
     }
 
     public SwingBuilder edt(Closure c) {

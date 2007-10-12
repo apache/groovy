@@ -18,41 +18,29 @@ package groovy.swing.factory
 
 import groovy.swing.SwingBuilder
 import javax.swing.JFrame
+import javax.swing.JMenuBar
 
-public class FrameFactory extends AbstractFactory {
+public class FrameFactory extends RootPaneContainerFactory {
     
-    LinkedList/*<JFrame>*/ packers = new LinkedList([null])
-    LinkedList/*<JFrame>*/ showers = new LinkedList([null])
 
-    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
+        JFrame frame
         if (SwingBuilder.checkValueIsType(value, name, JFrame.class)) {
-            return value;
-        }
-        JFrame frame = new JFrame();
-        builder.getContainingWindows().add(frame);
-
-        Object o = properties.remove("pack")
-        if ((o instanceof Boolean) && ((Boolean) o).booleanValue()) {
-            packers.add(frame)
-        }
-        o = properties.remove("show")
-        if ((o instanceof Boolean) && ((Boolean) o).booleanValue()) {
-            showers.add(frame)
+            frame = value
+        } else {
+            frame = new JFrame()
         }
 
-        builder.addDisposalClosure(frame.&dispose)
+        handelRootPaneTasks(builder, frame, attributes)
 
         return frame;
     }
 
-    public void onNodeCompleted( FactoryBuilderSupport builder, Object parent, Object node ) {
-        if (packers.last.is(node)) {
-            node.pack()
-            packers.removeLast()
-        }
-        if (showers.last.is(node)) {
-            node.visible = true
-            showers.removeLast()
+    public void setChild(FactoryBuilderSupport build, Object parent, Object child) {
+        if (child instanceof JMenuBar) {
+            parent.JMenuBar = child
+        } else {
+            super.setChild(build, parent, child)
         }
     }
 

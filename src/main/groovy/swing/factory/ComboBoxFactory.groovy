@@ -21,10 +21,10 @@ import javax.swing.JComboBox
 
 public class ComboBoxFactory extends AbstractFactory {
     
-    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         SwingBuilder.checkValueIsNull(value, name);
         //TODO expand to allow the value arg to be items
-        Object items = properties.remove("items");
+        Object items = attributes.remove("items");
         if (items instanceof Vector) {
             return new JComboBox((Vector) items);
         } else if (items instanceof List) {

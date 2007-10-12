@@ -186,9 +186,28 @@ class SwingBuilderTest extends GroovyTestCase {
         if (isHeadless()) return
 
         def swing = new SwingBuilder()
-        swing.window{
-            window()
-            frame{ window() }
+        swing.window (id:'root') {
+            window(id:'child1')
+            frame(id:'child2') {
+                window(id:'child2_1')
+            }
+        }
+        swing.window (id:'root2')
+
+        //assert swing.root.owner == null;
+        assert swing.child1.owner == swing.root
+        assert swing.child2.owner == null // it's a frame, frames have no owners
+        assert swing.child2_1.owner == swing.child2
+
+        assert swing.root2.owner != swing.root
+        assert swing.root2.owner != swing.child1
+        assert swing.root2.owner != swing.child2
+        assert swing.root2.owner != swing.child2_1
+
+        swing.panel {
+            swing.frame()
+            swing.window()
+            swing.dialog()
         }
     }
 
@@ -196,9 +215,20 @@ class SwingBuilderTest extends GroovyTestCase {
         if (isHeadless()) return
 
         def swing = new SwingBuilder()
-        swing.dialog()
-        swing.frame{ dialog() }
-        swing.dialog{ dialog() }
+        swing.dialog(id:'d1')
+        swing.frame(id:'f') { dialog(id:'fd') }
+        swing.dialog(id:'d') { dialog(id:'dd') }
+        swing.dialog(id:'d2')
+
+        //assert swing.d1.owner == null
+        assert swing.fd.owner == swing.f
+        assert swing.dd.owner == swing.d
+
+        assert swing.d2.owner != swing.dd
+        assert swing.d2.owner != swing.fd
+        assert swing.d2.owner != swing.d
+        assert swing.d2.owner != swing.f
+        assert swing.d2.owner != swing.d1
     }
 
     void testWindows() {
@@ -475,7 +505,7 @@ class SwingBuilderTest extends GroovyTestCase {
         assert msg.contains("Must specify 'read' Closure property for a closureColumn"): \
             "Instead found message: " + msg
         def closure = { x -> x }
-        def table = swing.table{
+        def table = swing.table {
             tableModel(){
                 closureColumn(read:closure, write:closure, header:'header')
             }
@@ -575,15 +605,21 @@ class SwingBuilderTest extends GroovyTestCase {
             }
         }
         assert msg == "'td' must be within a 'tr'"
-        swing.frame(){
+        swing.frame(id:'frame'){
             tableLayout(){
                 tr {
                     td {
-                        label()
+                        label(id:'label')
                     }
                 }
             }
         }
+
+        assert swing.label.parent
+        assert swing.label.parent.parent
+        assert swing.label.parent.parent.parent
+        assert swing.label.parent.parent.parent.parent
+        assert swing.frame == swing.label.parent.parent.parent.parent.parent
     }
 
     void testAttributeOrdering() {
@@ -731,11 +767,10 @@ class SwingBuilderTest extends GroovyTestCase {
             "vbox",
             "vglue",
             "vstrut",
-            "window",
         ]
 
         noValueItems.each {name ->
-            println name
+            //println name
             shouldFail {
                 swing.frame {
                     "$name"(swing."$name"(), id:"${name}Self".toString())
@@ -794,9 +829,10 @@ class SwingBuilderTest extends GroovyTestCase {
             "tree",
             "viewport",
             //"widget",
+            "window",
         ]
         selfItems.each {name ->
-            println name
+            //println name
             swing.frame {
                 "$name"(swing."$name"(), id:"${name}Self".toString())
             }
@@ -818,7 +854,7 @@ class SwingBuilderTest extends GroovyTestCase {
             "textPane",
         ]
         textItems.each {name ->
-            println name
+            //println name
             swing.frame {
                 "$name"(swing."$name"(), id:"${name}Self".toString())
                 "$name"('text', id:"${name}Text".toString())
@@ -887,9 +923,7 @@ class SwingBuilderTest extends GroovyTestCase {
     }
 
     public void testDispose() {
-
         if (isHeadless()) return
-
         def swing = new SwingBuilder()
 
         swing.frame(id:'frame').pack()
@@ -909,5 +943,182 @@ class SwingBuilderTest extends GroovyTestCase {
  
     }
 
+    public void testPackAndShow() {
+        if (isHeadless()) return
+        def swing = new SwingBuilder()
+
+        swing.frame(id:'frame', pack:true)
+        swing.dialog(id:'dialog', pack:true)
+        swing.window(id:'window', pack:true)
+
+        assert swing.frame.isDisplayable()
+        assert swing.dialog.isDisplayable()
+        assert swing.window.isDisplayable()
+        swing.dispose()
+
+        swing.frame(id:'frame', show:true)
+        swing.dialog(id:'dialog', show:true)
+        swing.window(id:'window', show:true)
+
+        assert swing.frame.visible
+        assert swing.dialog.visible
+        assert swing.window.visible
+        swing.dispose()
+
+        swing.frame(id:'frame', pack:true, show:true)
+        swing.dialog(id:'dialog', pack:true, show:true)
+        swing.window(id:'window', pack:true, show:true)
+
+        assert swing.frame.visible
+        assert swing.dialog.visible
+        assert swing.window.visible
+        swing.dispose()
+    }
+
+    public void testContainment() {
+        if (isHeadless()) return
+        def swing = new SwingBuilder()
+
+        def topLevel = [
+            "window",
+            "frame",
+            "dialog",
+            "internalFrame",
+        ]
+
+        def containers = [
+            "hbox",
+            "box",
+            "desktopPane",
+            "layeredPane",
+            "panel",
+            "popupMenu",
+            //"scrollPane",
+            "splitPane",
+            "tabbedPane",
+            "toolBar",
+            "viewport",
+        ]
+
+        def components = [
+            "comboBox",
+            "formattedTextField",
+            "glue",
+            "hbox",
+            "hglue",
+            "hstrut",
+            "rigidArea",
+            "separator",
+            "vbox",
+            "vglue",
+            "vstrut",
+            "box",
+            "colorChooser",
+            "desktopPane",
+            "fileChooser",
+            "internalFrame",
+            "layeredPane",
+            "list",
+            "menu",
+            //"menuBar",
+            "optionPane",
+            "panel",
+            "popupMenu",
+            "progressBar",
+            "scrollBar",
+            "scrollPane",
+            "slider",
+            "spinner",
+            "splitPane",
+            "tabbedPane",
+            "table",
+            "toolBar",
+            "tree",
+            "viewport",
+            "editorPane",
+            "label",
+            "passwordField",
+            "textArea",
+            "textField",
+            "textPane",
+        ]
+
+
+        topLevel.each {parentWidget ->
+            components.each { childWidget ->
+                //println "$parentWidget / $childWidget"
+                def child
+                def parent = swing."$parentWidget" { child = "$childWidget"() }
+                assert parent.contentPane == child.parent
+            }
+        }
+
+        containers.each {parentWidget ->
+            components.each { childWidget ->
+                //println "$parentWidget / $childWidget"
+                def child
+                def parent = swing."$parentWidget" { child = "$childWidget"() }
+                assert parent == child.parent
+            }
+        }
+
+        components.each { childWidget ->
+            //println "scrollPane / $childWidget"
+
+            def child
+            def parent = swing.scrollPane { child = "$childWidget"() }
+            if (childWidget == 'viewport') {
+                assert parent.viewport == child
+            } else {
+                assert parent.viewport == child.parent
+            }
+        }
+    }
+
+    public void testMenus() {
+        if (isHeadless()) return
+        def swing = new SwingBuilder()
+
+        def frame = swing.frame {
+            menuBar(id:'bar') {
+                menu('menu', id:'menu') {
+                    menuItem('item', id:'item')
+                    checkBoxMenuItem('check', id:'check')
+                    radioButtonMenuItem('radio', id:'radio')
+                    separator(id:'sep')
+                    menu('subMenu', id:'subMenu') {
+                        menuItem('item', id:'subitem')
+                        checkBoxMenuItem('check', id:'subcheck')
+                        radioButtonMenuItem('radio', id:'subradio')
+                        separator(id:'subsep')
+                        menu('subSubMenu', id:'subSubMenu')
+                    }
+                }
+            }
+        }
+
+        assert frame.JMenuBar == swing.bar
+        assert swing.bar.menuCount == 1
+        assert swing.bar.getMenu(0) == swing.menu
+
+        assert swing.menu.itemCount == 5
+        assert swing.menu.getItem(0) == swing.item
+        assert swing.menu.getItem(1) == swing.check
+        assert swing.menu.getItem(2) == swing.radio
+        assert swing.menu.getItem(3) == null // not a menu item
+        assert swing.menu.getMenuComponent(3) == swing.sep
+        assert swing.menu.getItem(4) == swing.subMenu
+        shouldFail { swing.menu.getItem(5) }
+
+        assert swing.subMenu.itemCount == 5
+        assert swing.subMenu.getItem(0) == swing.subitem
+        assert swing.subMenu.getItem(1) == swing.subcheck
+        assert swing.subMenu.getItem(2) == swing.subradio
+        assert swing.subMenu.getItem(3) == null // not a menu item
+        assert swing.subMenu.getMenuComponent(3) == swing.subsep
+        assert swing.subMenu.getItem(4) == swing.subSubMenu
+
+
+    }
 
 }

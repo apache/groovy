@@ -3,7 +3,6 @@ package groovy.swing
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.GridBagConstraints
-import javax.swing.BorderFactory
 import javax.swing.SwingConstants
 import javax.swing.WindowConstants
 
@@ -31,7 +30,7 @@ class Widgets {
         unownedDialog = swing.dialog(
             title:'unrooted dialog',
             location: [200, 200],
-            size: [100, 100],
+            pack:true,
             defaultCloseOperation:WindowConstants.DISPOSE_ON_CLOSE
             ) {
                 label("I am unowned, but not unwanted");
@@ -66,7 +65,7 @@ class Widgets {
                     def deeplyOwnedDialog = swing.dialog(
                         title:'rooted dialog #2',
                         location: [200, 200],
-                        size: [100, 100],
+                        pack:true,
                         defaultCloseOperation:WindowConstants.DISPOSE_ON_CLOSE
                         ) {
                         label("ownership is deep");
@@ -192,7 +191,7 @@ class Widgets {
             ownedDialog = swing.dialog(
                 title:'rooted dialog',
                 location: [200, 200],
-                size: [100, 100],
+                pack:true,
                 defaultCloseOperation:WindowConstants.DISPOSE_ON_CLOSE
                 ) {
                 label("j00 h4v3 b33n 0wn3xed");

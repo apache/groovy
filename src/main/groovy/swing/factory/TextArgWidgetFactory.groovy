@@ -31,7 +31,7 @@ public class TextArgWidgetFactory extends AbstractFactory {
         this.klass = klass;
     }
     
-    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map properties) throws InstantiationException, IllegalAccessException {
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         if (SwingBuilder.checkValueIsTypeNotString(value, name, klass)) {
             return value;
         }
@@ -39,7 +39,7 @@ public class TextArgWidgetFactory extends AbstractFactory {
         Object widget = klass.newInstance();
         
         if (value instanceof String) {
-            // this does not create property setting order issues, since the value arg preceeds all properties in the builder element
+            // this does not create property setting order issues, since the value arg preceeds all attributes in the builder element
             InvokerHelper.setProperty(widget, "text", value);
         }
         

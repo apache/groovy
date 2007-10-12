@@ -39,6 +39,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  */
 public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
     public static final String CURRENT_FACTORY = "_CURRENT_FACTORY_";
+    public static final String PARENT_FACTORY = "_PARENT_FACTORY_";
     public static final String CURRENT_NODE = "_CURRENT_NODE_";
     private static final Logger LOG = Logger.getLogger( FactoryBuilderSupport.class.getName() );
 
@@ -125,6 +126,14 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
         if( !contexts.isEmpty() ){
             Map context = (Map) contexts.getFirst();
             return (Factory) context.get( CURRENT_FACTORY );
+        }
+        return null;
+    }
+
+    public Factory getParentFactory() {
+        if( !contexts.isEmpty() ){
+            Map context = (Map) contexts.getFirst();
+            return (Factory) context.get( PARENT_FACTORY );
         }
         return null;
     }
@@ -304,8 +313,10 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
                 throw new RuntimeException( "'" + name + "' doesn't support nesting." );
             }
             // push new node on stack
+            Object parentFactory = getCurrentFactory();
             newContext();
             getContext().put( CURRENT_NODE, node );
+            getContext().put( PARENT_FACTORY, parentFactory);
             // lets register the builder as the delegate
             setClosureDelegate( closure, node );
             closure.call();
@@ -340,7 +351,7 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
 
     protected void handleNodeAttributes( Object node, Map attributes ) {
         // first, short circuit
-        if( attributes.isEmpty() || (node == null) ){
+        if( node == null ){
             return;
         }
 
@@ -399,7 +410,7 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
 
     /**
      * Clears the context stack
-     */ 
+     */
     protected void reset() {
         contexts.clear();
     }
@@ -436,6 +447,10 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
 
     protected void setParent( Object parent, Object child ) {
         getCurrentFactory().setParent( this, parent, child );
+        Factory parentFactory = getParentFactory();
+        if (parentFactory != null) {
+            parentFactory.setChild( this, parent, child );
+        }
     }
 
     protected void setProxyBuilder( FactoryBuilderSupport proxyBuilder ) {

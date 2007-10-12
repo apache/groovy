@@ -38,4 +38,9 @@ public abstract class AbstractFactory implements Factory {
     public void setParent( FactoryBuilderSupport builder, Object parent, Object child ) {
 
     }
+
+    public void setChild( FactoryBuilderSupport builder, Object parent, Object child ) {
+
+    }
+
 }
