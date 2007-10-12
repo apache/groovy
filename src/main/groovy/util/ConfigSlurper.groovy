@@ -160,15 +160,17 @@ class ConfigSlurper {
         mc.getProperty = { String name ->
             def result
             def current
-            if(stack) current = stack.peek()
-            else {
+            if(stack) {
+                current = stack.peek()
+            } else {
                 current = config
             }
 
             if(current[name]) {
                 result = current[name]
-            }
-            else {
+            } else if (config[name]) {
+            	result = config[name]
+            } else {
                 result = new ConfigObject()
                 current[name] = result
             }
@@ -181,12 +183,10 @@ class ConfigSlurper {
                     try {
                         envMode = true
                         args[0].call()
-                    }
-                    finally {
+                    } finally {
                         envMode = false
                     }
-                }
-                else if(envMode) {
+                } else if (envMode) {
                     if(name == environment) {
                         def co = new ConfigObject()
                         config[ENV_SETTINGS] = co
@@ -200,32 +200,29 @@ class ConfigSlurper {
                         }
                         stack.pop()
                     }
-                }
-                else {
+                } else {
                     def co = new ConfigObject()
                     if(stack) {
                         stack.peek()[name] = co
-                    }
-                    else {
+                    } else {
                         config[name] = co
                     }
                     stack.push(co)
                     args[0].call()
                     stack.pop()
                 }
-            }
-            else if(args.length == 2 && args[1] instanceof Closure) {
+            } else if (args.length == 2 && args[1] instanceof Closure) {
                 try {
                    prefix = name +'.'
                     def conf = stack ? stack.peek() : config
                     conf[name] = args[0]
                     args[1].call()
                 }  finally { prefix = "" }
-            }
-            else {
+            } else {
                 MetaMethod mm = mc.getMetaMethod(name, args)
-                if(mm)result = mm.invoke(delegate, args)
-                else {
+                if(mm) {
+                    result = mm.invoke(delegate, args)
+                } else {
                     throw new MissingMethodException(name, getClass(), args)
                 }
             }
@@ -235,8 +232,9 @@ class ConfigSlurper {
 
         def setProperty = { String name, value ->
             def current
-            if(stack) current = stack.peek()
-            else {
+            if(stack) {
+                current = stack.peek()
+            } else {
                 current = config
             }
             current[prefix+name] = value
