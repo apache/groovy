@@ -16,12 +16,24 @@
 
 package groovy.util
 
+/**
+ * Find files according to a base directory and an includes and excludes pattern.
+ * The include and exclude patterns conform to regex conventions.
+ *
+ *   @author Dierk Koenig
+ *   @author Paul King
+ */
 class FileNameByRegexFinder implements IFileNameFinder{
 
    List getFileNames(String basedir, String pattern){
+       getFileNames(basedir, pattern, "")
+   }
+   List getFileNames(String basedir, String pattern, String excludesPattern){
       def result = []
       new File(basedir).eachFileRecurse {
-          if (it.path =~ pattern) result << it.absolutePath
+          if (it.path =~ pattern && (!excludesPattern || !(it.path =~ excludesPattern))) {
+              result << it.absolutePath
+          }
       }
       return result
    }

@@ -20,4 +20,5 @@ import java.util.List;
 
 public interface IFileNameFinder {
     List getFileNames(String basedir, String pattern);
+    List getFileNames(String basedir, String pattern, String excludesPattern);
 }
