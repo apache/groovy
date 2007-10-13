@@ -88,6 +88,17 @@ $Date$
         </echo>
     </target>
 
+    <!-- will go away after 1.1 final -->
+    <target name="-jvm15BuildWarning" if="groovy.build.vm5">
+        <echo>
+===================================================================
+  WARNING: You are building Groovy with a 1.5+ JDK - please check
+           that you are not using any 1.5+ classes directly in a
+           way that would break the 1.4 build.
+===================================================================
+        </echo>
+    </target>
+
     <target name="-checkAntVersion" depends="-excludeLegacyAntVersion"
             description="Check that we are running on the required version of Ant."/>
 
@@ -125,7 +136,7 @@ $Date$
             description="Compile the Java and Groovy code in the main source.">
     </target>
 
-    <target name="stagedcompile" depends="-init,-includeResources,ensureGrammars,-jvm14BuildWarning" unless="uber">
+    <target name="stagedcompile" depends="-init,-includeResources,ensureGrammars,-jvm14BuildWarning,-jvm15BuildWarning" unless="uber">
         <mkdir dir="${mainClassesDirectory}"/>
         <mkdir dir="${toolsClassesDirectory}"/>
         <javac srcdir="${mainSourceDirectory}" includeantruntime="false" destdir="${mainClassesDirectory}"
@@ -317,7 +328,15 @@ $Date$
         </and>
     </condition>
 
-    <target name="-testAll" if="_testAll_">
+    <target name="-collect14tests" unless="groovy.build.vm5">
+        <fileset id="ubertests.fileset" dir="${testClassesDirectory}" includes="UberTest*.class" excludes="Uber*VM5.class"/>
+    </target>
+
+    <target name="-collect15tests" if="groovy.build.vm5">
+        <fileset id="ubertests.fileset" dir="${testClassesDirectory}" includes="UberTest*.class"/>
+    </target>
+
+    <target name="-testAll" if="_testAll_" depends="-collect14tests,-collect15tests">
         <mkdir dir="${junitRawDirectory}"/>
         <junit printsummary="true" fork="true" includeantruntime="false" failureproperty="testFailed"
                maxmemory="${groovyJUnit_mx}" dir="${basedir}">
@@ -325,7 +344,7 @@ $Date$
             <formatter type="xml"/>
             <formatter type="plain" unless="noTextReports"/>
             <batchtest todir="${junitRawDirectory}">
-                <fileset dir="${testClassesDirectory}" includes="UberTest*.class"/>
+                <fileset refid="ubertests.fileset"/>
             </batchtest>
             <classpath>
                 <path refid="testPath"/>
