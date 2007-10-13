@@ -2024,7 +2024,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             list.add(method);
         } else {
             MetaMethod match = (MetaMethod) list.get(found);
-            if (match.isPrivate() || match.getDeclaringClass().isInterface()) {
+            if (match.isPrivate()
+                || (match.getDeclaringClass().isInterface() && !method.getDeclaringClass().isInterface())) {
+                // do not overwrite interface methods with instance methods
                 // do not overwrite private methods
                 // Note: private methods from parent classes are not shown here,
                 // but when doing the multimethod connection step, we overwrite
