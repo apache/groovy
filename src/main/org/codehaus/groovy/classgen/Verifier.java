@@ -647,9 +647,10 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 Map genericsSpec = createGenericsSpec(current);
                 if (!equalParameters(method,superClassMethod,genericsSpec)) continue;
                 ClassNode mr = method.getReturnType();
-                ClassNode smr = correctToGenericsSpec(genericsSpec, superClassMethod.getReturnType());
+                ClassNode smr = superClassMethod.getReturnType();
                 if (mr.equals(smr)) continue;
-                if (!mr.isDerivedFrom(smr)) {
+                ClassNode testmr = correctToGenericsSpec(genericsSpec,smr);
+                if (!mr.isDerivedFrom(testmr)) {
                     throw new RuntimeParserException(
                             "the return type is incompatible with "+
                              superClassMethod.getTypeDescriptor()+
@@ -686,8 +687,12 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                                 BytecodeHelper helper = new BytecodeHelper(mv);
                                 mv.visitVarInsn(ALOAD,0);
                                 Parameter[] para = superClassMethod.getParameters();
+                                Parameter[] goal = method.getParameters();
                                 for (int i = 0; i < para.length; i++) {
                                     helper.load(para[i].getType(), i+1);
+                                    if (!para[i].getType().equals(goal[i].getType())) {
+                                        helper.doCast(goal[i].getType());
+                                    }
                                 }
                                 mv.visitMethodInsn(
                                         INVOKEVIRTUAL, 

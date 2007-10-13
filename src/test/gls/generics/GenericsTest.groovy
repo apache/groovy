@@ -152,5 +152,23 @@ class GenericsTest extends GenericsTestBase {
               String foo(Long l){"2"}
           }
         """
-	}
+
+        assertScript """
+          class A<T> {
+              T foo(T t) {1}
+           }
+
+          class B extends A<Long>{
+              Long foo(Long l){2}
+          }
+          def b = new B();
+          try {
+            b.foo(new Object())
+            assert false
+          } catch (ClassCastException cce) {
+            assert true
+          }
+          assert b.foo((Long) 1) == 2
+        """
+	}	
 }
