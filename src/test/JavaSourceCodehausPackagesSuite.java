@@ -78,6 +78,7 @@ public class JavaSourceCodehausPackagesSuite {
         suite.addTestSuite(org.codehaus.groovy.classgen.TupleListTest.class);
         suite.addTestSuite(org.codehaus.groovy.runtime.TupleListTest.class);
         suite.addTestSuite(VerifierCodeVisitorTest.class);
+        suite.addTestSuite(JdkDynamicProxyTest.class);
         return suite;
     }
 }

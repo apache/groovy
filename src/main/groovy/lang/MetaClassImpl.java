@@ -227,6 +227,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         } else {
             LinkedList superClasses = getSuperClasses();
             // let's add all the base class methods
+            addInterfaceMethods();
+
             for (Iterator iter = superClasses.iterator(); iter.hasNext();) {
                 CachedClass c = (CachedClass) iter.next();
                 addMethods(c);
@@ -244,6 +246,26 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
 
         replaceWithMOPCalls();
+    }
+
+    private void addInterfaceMethods() {
+        SingleKeyHashMap methodIndex = classMethodIndex.getNotNull(theCachedClass);
+        for (Iterator iter = theCachedClass.getInterfaces().iterator(); iter.hasNext();) {
+            CachedClass c = (CachedClass) iter.next();
+            final CachedMethod[] m = c.getMethods();
+            for (int i=0; i != m.length; ++i) {
+                MetaMethod method = ReflectionMetaMethod.createReflectionMetaMethod(m [i]);
+                String name = method.getName();
+                SingleKeyHashMap.Entry e = methodIndex.getOrPut(name);
+                if (e.value == null) {
+                    FastArray list = new FastArray(2);
+                    list.add(method);
+                    e.value = list;
+                } else {
+                    addMethodToList((FastArray) e.value, method);
+                }
+            }
+        }
     }
 
     private LinkedList getSuperClasses() {
@@ -2002,7 +2024,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             list.add(method);
         } else {
             MetaMethod match = (MetaMethod) list.get(found);
-            if (match.isPrivate()) {
+            if (match.isPrivate() || match.getDeclaringClass().isInterface()) {
                 // do not overwrite private methods
                 // Note: private methods from parent classes are not shown here,
                 // but when doing the multimethod connection step, we overwrite
@@ -2247,12 +2269,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     private MetaMethod createMetaMethod0(CachedMethod method) {
-        if (method.canBeCalledByReflector()) {
-            final StdMetaMethod stdMetaMethod = StdMetaMethod.createStdMetaMethod(method);
-            allMethods.add(stdMetaMethod);
-            return stdMetaMethod;
-        } else
-            return ReflectionMetaMethod.createReflectionMetaMethod(method);
+        final ReflectionMetaMethod metaMethod = ReflectionMetaMethod.createReflectionMetaMethod(method);
+        if (method.canBeCalledByReflector())
+            allMethods.add(metaMethod);
+        return metaMethod;
     }
 
     private boolean isValidReflectorMethod(StdMetaMethod method) {

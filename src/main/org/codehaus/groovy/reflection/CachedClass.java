@@ -314,7 +314,7 @@ public class CachedClass {
     }
 
     public boolean isInterface() {
-        return getCachedClass().isInterface();
+        return isInterface;
     }
 
     public void doCast(BytecodeHelper helper) {
