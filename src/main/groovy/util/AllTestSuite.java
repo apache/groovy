@@ -42,6 +42,7 @@ import java.util.logging.Logger;
  *
  * See also groovy.util.AllTestSuiteTest.groovy
  * @author Dierk Koenig based on a prototype by Andrew Glover
+ * @author Paul King
  * todo: dk: make FileNameFinder injectable
  */
 public class AllTestSuite extends TestSuite {
@@ -54,12 +55,20 @@ public class AllTestSuite extends TestSuite {
     public static final String SYSPROP_TEST_DIR = "groovy.test.dir";
 
     /** The System Property to set as the filename pattern for collection of Test Cases.
-     * The pattern will be used as Regualar Expression pattern applied with the find
-     * operator agains each candidate file.path.
+     * The pattern will be used as Regular Expression pattern applied with the find
+     * operator against each candidate file.path.
      * Key is "groovy.test.pattern".
      * Default value is "Test.groovy".
      */
     public static final String SYSPROP_TEST_PATTERN = "groovy.test.pattern";
+
+    /** The System Property to set as a filename excludes pattern for collection of Test Cases.
+     * When non-empty, the pattern will be used as Regular Expression pattern applied with the
+     * find operator against each candidate file.path.
+     * Key is "groovy.test.excludesPattern".
+     * Default value is "".
+     */
+    public static final String SYSPROP_TEST_EXCLUDES_PATTERN = "groovy.test.excludesPattern";
 
     private static final Logger LOG = Logger.getLogger(AllTestSuite.class.getName());
     private static final ClassLoader JAVA_LOADER = AllTestSuite.class.getClassLoader();
@@ -80,14 +89,21 @@ public class AllTestSuite extends TestSuite {
     public static Test suite() {
         String basedir = System.getProperty(SYSPROP_TEST_DIR, "./test/");
         String pattern = System.getProperty(SYSPROP_TEST_PATTERN, "**/*Test.groovy");
+        String excludesPattern = System.getProperty(SYSPROP_TEST_EXCLUDES_PATTERN, "");
         return suite(basedir, pattern);
     }    
 
     public static Test suite(String basedir, String pattern) {
+        return suite(basedir, pattern, "");
+    }
+
+    public static Test suite(String basedir, String pattern, String excludesPattern) {
         AllTestSuite suite = new AllTestSuite();
         String fileName = "";
         try {
-            Collection filenames = finder.getFileNames(basedir, pattern);
+            Collection filenames = excludesPattern.length() > 0
+                    ? finder.getFileNames(basedir, pattern, excludesPattern)
+                    : finder.getFileNames(basedir, pattern);
             for (Iterator iter = filenames.iterator(); iter.hasNext();) {
                 fileName = (String) iter.next();
                 LOG.finest("trying to load "+ fileName);
