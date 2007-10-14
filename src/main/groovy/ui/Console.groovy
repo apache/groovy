@@ -31,6 +31,7 @@ import javax.swing.text.Style
 import javax.swing.text.StyleConstants
 import javax.swing.text.StyleContext
 import javax.swing.text.StyledDocument
+import javax.swing.text.Element
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.StackTraceUtils
 
@@ -62,6 +63,11 @@ class Console implements CaretListener {
     JTextPane outputArea
     JLabel statusLabel
     JDialog runWaitDialog
+    
+    // row info
+    Element rootElement
+    int cursorPos
+    int rowNum
 
     // Styles for output area
     Style promptStyle;
@@ -365,11 +371,18 @@ class Console implements CaretListener {
                 }
             }
 
-            label(id: 'status',
-                text: 'Welcome to the Groovy.', 
-                constraints: BorderLayout.SOUTH,
-                border: BorderFactory.createLoweredBevelBorder()
-            )
+            panel(id: 'statusPanel', constraints: BorderLayout.SOUTH, layout : new BorderLayout()) {
+                label(id: 'status',
+                     text: 'Welcome to Groovy.',
+                     constraints: BorderLayout.CENTER,
+                     border: BorderFactory.createLoweredBevelBorder()
+                )
+                
+                label(id: 'rowNumAndColNum', 
+                       text: '1',
+                       constraints: BorderLayout.EAST,
+                       border: BorderFactory.createLoweredBevelBorder())
+            }
         }   // end of frame
 
         inputArea = inputEditor.textEditor
@@ -412,6 +425,8 @@ class Console implements CaretListener {
         frame.windowClosing = this.&exit
         inputArea.addCaretListener(this)
         inputArea.document.undoableEditHappened = { setDirty(true) }
+        
+        rootElement = inputArea.document.defaultRootElement
 
         systemOutInterceptor = new SystemOutputInterceptor(this.&notifySystemOut)
         systemOutInterceptor.start();
@@ -521,6 +536,8 @@ class Console implements CaretListener {
     void caretUpdate(CaretEvent e){
         textSelectionStart = Math.min(e.dot,e.mark)
         textSelectionEnd = Math.max(e.dot,e.mark)
+        
+        setRowNumAndColNum()
     }
 
     void clearOutput(EventObject evt = null) {
@@ -829,6 +846,13 @@ class Console implements CaretListener {
 
     void selectAll(EventObject evt = null) {
         invokeTextAction(evt, { source -> source.selectAll() })
+    }
+    
+    void setRowNumAndColNum() {
+       cursorPos = inputArea.getCaretPosition()
+       rowNum = rootElement.getElementIndex(cursorPos)
+       swing.rowNumAndColNum.setText("${rowNum + 1}")
+       // TODO set colNum
     }
 }
 
