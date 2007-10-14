@@ -22,6 +22,7 @@ import groovy.ui.text.FindReplaceUtility
 import java.awt.*
 import java.awt.image.BufferedImage
 import java.awt.event.KeyEvent
+// to disambiguate from java.awt.List
 import java.util.List
 import javax.swing.*
 import javax.swing.event.CaretEvent
@@ -33,7 +34,6 @@ import javax.swing.text.StyledDocument
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.StackTraceUtils
 
-// to disambiguate from java.awt.List
 /**
  * Groovy Swing console.
  *
@@ -698,7 +698,8 @@ class Console implements CaretListener {
 
     // actually run the
     void runScript(EventObject evt = null) {
-        def record = new HistoryRecord( allText: inputArea.getText(),
+        def endLine = System.getProperty('line.separator')
+        def record = new HistoryRecord( allText: inputArea.getText().replaceAll(endLine, '\n'),
             selectionStart: textSelectionStart, selectionEnd: textSelectionEnd)
         addToHistory(record)
 
