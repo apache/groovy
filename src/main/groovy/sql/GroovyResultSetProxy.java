@@ -30,33 +30,35 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
  * GroovyResultSetProxy is used to create a proxy for GroovyResultSet.
- * Due to the version incompatibility between java 6 and older versions 
- * methods with additional logic were moved in an extension class. When
- * getting properties or calling methods the runtime will try to first
+ * Due to the version incompatibility between java 6 and older versions
+ * methods with additional logic were moved into an extension class. When
+ * getting properties or calling methods, the runtime will try to first
  * execute these on the extension and then on the ResultSet itself.
  * This way it is possible to replace and add methods. To overload methods
  * from ResultSet all methods have to be implemented on the extension
  * class.
- * 
+ *
  * @author Jochen Theodorou
  */
 public final class GroovyResultSetProxy implements InvocationHandler {
-    
+
     private GroovyResultSetExtension extension;
-    
+
     /**
      * Creates a new procy instance.
      * This will create the extension automatically using
      * GroovyResultSetExtension
-     * @see GroovyResultSetExtension
+     *
      * @param set the result set to delegate to
+     * @see GroovyResultSetExtension
      */
     public GroovyResultSetProxy(ResultSet set) {
         extension = new GroovyResultSetExtension(set);
     }
-    
+
     /**
-     * Creates a new procy instance with a custom extension.
+     * Creates a new proxy instance with a custom extension.
+     *
      * @param ext the extension
      * @see GroovyResultSetExtension
      */
@@ -67,64 +69,54 @@ public final class GroovyResultSetProxy implements InvocationHandler {
     /**
      * Invokes a method for the GroovyResultSet.
      * This will try to invoke the given method first on the extension
-     * and then on the result set given as procy parameter.
-     * @param proxy the result set
+     * and then on the result set given as proxy parameter.
+     *
+     * @param proxy  the result set
      * @param method the method name of this method will be used
-     * to make a call on the extension. If this fails the call will be
-     * done on proxy instead
-     * @param args for the call
+     *               to make a call on the extension. If this fails the call will be
+     *               done on the proxy instead
+     * @param args   for the call
      * @see ResultSet
      * @see java.lang.reflect.InvocationHandler#invoke(java.lang.Object, java.lang.reflect.Method, java.lang.Object[])
      */
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         String name = method.getName();
-        if (method.getDeclaringClass()==GroovyObject.class) {
+        if (method.getDeclaringClass() == GroovyObject.class) {
             if (name.equals("getMetaClass")) {
                 return getMetaClass();
             } else if (name.equals("setMetaClass")) {
                 return setMetaClass((MetaClass) args[0]);
             }
         }
-        
-        if (method.getDeclaringClass()!=Object.class) {
-            try {
-                return InvokerHelper.invokeMethod(extension,method.getName(),args);
-            } catch (MissingMethodException mme) {
-                // IGNORE
-            }
-        }
-        
-        try {
-            return method.invoke(proxy,args);
-        } catch (InvocationTargetException ite) {
-            throw ite.getCause();
-        }
+
+        return InvokerHelper.invokeMethod(extension, method.getName(), args);
     }
-    
+
     private MetaClass metaClass;
-    
+
     private MetaClass setMetaClass(MetaClass mc) {
         metaClass = mc;
         return mc;
     }
 
     private MetaClass getMetaClass() {
-        if (metaClass==null) {
+        if (metaClass == null) {
             metaClass = GroovySystem.getMetaClassRegistry().getMetaClass(GroovyResultSet.class);
-        } 
+        }
         return metaClass;
     }
 
     /**
-     * Gets an procy instance that can be used as GroovyResultSet.
+     * Gets a proxy instance that can be used as GroovyResultSet.
+     *
      * @return the proxy
      */
     public GroovyResultSet getImpl() {
-        return (GroovyResultSet) 
-            Proxy.newProxyInstance (
-                this.getClass().getClassLoader(),
-                new Class[]{GroovyResultSet.class},
-                this
-            );
+        return (GroovyResultSet)
+                Proxy.newProxyInstance(
+                        this.getClass().getClassLoader(),
+                        new Class[]{GroovyResultSet.class},
+                        this
+                );
     }
 }

@@ -20,6 +20,7 @@ import groovy.lang.MissingPropertyException;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.ResultSetMetaData;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -60,6 +61,27 @@ public class GroovyResultSetExtension {
     public GroovyResultSetExtension(ResultSet set) {
         updated = false;
         resultSet = set;
+    }
+
+    public String toString() {
+        try {
+            StringBuffer sb = new StringBuffer("[");
+            ResultSetMetaData metaData = resultSet.getMetaData();
+            int count = metaData.getColumnCount();
+            for (int i = 1; i <= count; i++) {
+                sb.append(metaData.getColumnName(i));
+                sb.append(":");
+                sb.append(resultSet.getObject(i).toString());
+                if (i < count) {
+                    sb.append(", ");
+                }
+            }
+            sb.append("]");
+            return sb.toString();
+        } catch (SQLException e) {
+//            System.err.println("e.getMessage() = " + e.getMessage());
+            return super.toString();
+        }
     }
 
     /**
