@@ -2908,36 +2908,48 @@ public class DefaultGroovyMethods {
         // add class header with constrcutor
         buffer.append("class ").append(name).append(" extends ")
                 .append(clazz.getName()).append(" {\n")
-                .append("private closureMap\n")
+                .append("    private closureMap\n    ")
                 .append(name).append("(map) {\n")
-                .append("super()\n")
-                .append("this.closureMap = map\n")
-                .append("}\n");
+                .append("        super()\n")
+                .append("        this.closureMap = map\n")
+                .append("    }\n");
 
         // add overwriting methods
         List selectedMethods = new ArrayList();
-        Method[] methods = clazz.getMethods();
-        for (int i = 0; i < methods.length; i++) {
-            if (map.containsKey(methods[i].getName())) {
-                selectedMethods.add(methods[i].getName());
-                buffer.append(methods[i].getReturnType().getName())
-                        .append(" ").append(methods[i].getName()).append(" (");
-                Class[] parameterTypes = methods[i].getParameterTypes();
+
+        List publicAndProtectedMethods = toList(clazz.getMethods());
+        // add the protected methods of the class and its parents
+        Class currentClass = clazz;
+        do {
+            Method[] protectedMethods = currentClass.getDeclaredMethods();
+            for (int i = 0; i < protectedMethods.length; i++) {
+                Method method = protectedMethods[i];
+                if (Modifier.isProtected(method.getModifiers()))
+                    publicAndProtectedMethods.add(method);
+            }
+            currentClass = currentClass.getSuperclass();
+        } while (currentClass != null);
+
+        Iterator iterator1 = publicAndProtectedMethods.iterator();
+        while (iterator1.hasNext()) {
+            Method method = (Method) iterator1.next();
+            if (map.containsKey(method.getName())) {
+                selectedMethods.add(method.getName());
+                buffer.append("    ").append(method.getReturnType().getSimpleName())
+                        .append(" ").append(method.getName()).append("(");
+                Class[] parameterTypes = method.getParameterTypes();
                 boolean first = true;
-                for (int parameterTypeIndex = 0;
-                     parameterTypeIndex < parameterTypes.length;
-                     parameterTypeIndex++) {
+                for (int parameterTypeIndex = 0; parameterTypeIndex < parameterTypes.length; parameterTypeIndex++) {
                     Class parameter = parameterTypes[parameterTypeIndex];
                     if (!first) {
                         buffer.append(", ");
                     } else {
                         first = false;
                     }
-                    buffer.append(parameter.getName()).append(" ")
+                    buffer.append(parameter.getSimpleName()).append(" ")
                             .append("p").append(parameterTypeIndex);
                 }
-                buffer.append(") {this.@closureMap['")
-                        .append(methods[i].getName()).append("'](");
+                buffer.append(") { this.@closureMap['").append(method.getName()).append("'] (");
                 first = true;
                 for (int j = 0; j < parameterTypes.length; j++) {
                     if (!first) {
@@ -2947,7 +2959,7 @@ public class DefaultGroovyMethods {
                     }
                     buffer.append("p").append(j);
                 }
-                buffer.append(")}\n");
+                buffer.append(") }\n");
 
             }
         }
@@ -2955,13 +2967,12 @@ public class DefaultGroovyMethods {
         for (Iterator iterator = map.keySet().iterator(); iterator.hasNext();) {
             String methodName = (String) iterator.next();
             if (selectedMethods.contains(methodName)) continue;
-            buffer.append("def ").append(methodName).append("(Object[] args {\n")
-                    .append("this.@closureMap['").append(methodName)
-                    .append("'](*args)\n}\n");
+            buffer.append("    def ").append(methodName).append("(Object[] args) { \n")
+                    .append("        this.@closureMap['").append(methodName).append("'] (*args)\n    }\n");
         }
         // end class
-        buffer.append("}\n")
-                .append("new ").append(name).append("(map)");
+        buffer.append("}\n").append("new ").append(name).append("(map)");
+        
         Binding binding = new Binding();
         binding.setVariable("map", map);
         GroovyShell shell = new GroovyShell(clazz.getClassLoader(), binding);
