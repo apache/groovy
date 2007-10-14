@@ -118,13 +118,9 @@ public class SimpleTemplateEngine extends TemplateEngine {
                  * @see java.lang.Object#toString()
                  */
                 public String toString() {
-                    try {
-                        StringWriter sw = new StringWriter();
-                        writeTo(sw);
-                        return sw.toString();
-                    } catch (Exception e) {
-                        return e.toString();
-                    }
+                    StringWriter sw = new StringWriter();
+                    writeTo(sw);
+                    return sw.toString();
                 }
             };
         }
