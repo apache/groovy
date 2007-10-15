@@ -2935,8 +2935,7 @@ public class DefaultGroovyMethods {
             Method method = (Method) iterator1.next();
             if (map.containsKey(method.getName())) {
                 selectedMethods.add(method.getName());
-                // TODO: getName() was getSimpleName() - move out to jvm5 package?
-                buffer.append("    ").append(method.getReturnType().getName())
+                buffer.append("    ").append(getSimpleName(method.getReturnType()))
                         .append(" ").append(method.getName()).append("(");
                 Class[] parameterTypes = method.getParameterTypes();
                 boolean first = true;
@@ -2947,8 +2946,7 @@ public class DefaultGroovyMethods {
                     } else {
                         first = false;
                     }
-                    // TODO: getName() was getSimpleName() - move out to jvm5 package?
-                    buffer.append(parameter.getName()).append(" ")
+                    buffer.append(getSimpleName(parameter)).append(" ")
                             .append("p").append(parameterTypeIndex);
                 }
                 buffer.append(") { this.@closureMap['").append(method.getName()).append("'] (");
@@ -2982,6 +2980,26 @@ public class DefaultGroovyMethods {
             return shell.evaluate(buffer.toString());
         } catch (MultipleCompilationErrorsException err) {
             throw new GroovyCastException(map, clazz);
+        }
+    }
+
+    /**
+     * TODO once we switch to Java 1.5 bt default, use Class#getSimpleName() directly
+     * 
+     * @param c the class of which we want the readable simple name
+     * @return the readable simple name
+     */
+    private static String getSimpleName(Class c) {
+        if (c.isArray()) {
+            int dimension = 0;
+            Class componentClass = c;
+            while (componentClass.isArray()) {
+                componentClass = componentClass.getComponentType();
+                dimension++;
+            }
+            return componentClass.getName().replaceAll("\\$", "\\.") + multiply("[]", new Integer(dimension));
+        } else {
+            return c.getName().replaceAll("\\$", "\\.");
         }
     }
 
