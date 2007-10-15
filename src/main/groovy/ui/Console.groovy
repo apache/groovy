@@ -63,11 +63,12 @@ class Console implements CaretListener {
     JTextPane outputArea
     JLabel statusLabel
     JDialog runWaitDialog
-    
+
     // row info
     Element rootElement
     int cursorPos
     int rowNum
+    int colNum
 
     // Styles for output area
     Style promptStyle;
@@ -92,8 +93,8 @@ class Console implements CaretListener {
     def runThread = null
     Closure beforeExecution
     Closure afterExecution
-    
-    static String ICON_PATH = 'groovy/ui/ConsoleIcon.png' // used by ObjectBrowser too 
+
+    static String ICON_PATH = 'groovy/ui/ConsoleIcon.png' // used by ObjectBrowser too
 
     static void main(args) {
         java.util.logging.Logger.getLogger(StackTraceUtils.STACK_LOG_NAME).useParentHandlers = true
@@ -133,20 +134,20 @@ class Console implements CaretListener {
         swing.actions {
             action(id: 'newFileAction',
                 name: 'New File',
-                closure: this.&fileNewFile, 
+                closure: this.&fileNewFile,
                 mnemonic: 'N',
                 accelerator: shortcut('N')
             )
             action(id: 'newWindowAction',
                 name: 'New Window',
-                closure: this.&fileNewWindow, 
+                closure: this.&fileNewWindow,
                 mnemonic: 'W',
                 accelerator: shortcut('shift N')
             )
             action(id: 'openAction',
                 name: 'Open',
-                closure: this.&fileOpen, 
-                mnemonic: 'O', 
+                closure: this.&fileOpen,
+                mnemonic: 'O',
                 accelerator: shortcut('O')
             )
             action(id: 'saveAction',
@@ -157,7 +158,7 @@ class Console implements CaretListener {
             )
             action(id: 'saveAsAction',
                 name: 'Save As...',
-                closure: this.&fileSaveAs,  
+                closure: this.&fileSaveAs,
                 mnemonic: 'A',
             )
             action(inputEditor.printAction,
@@ -167,7 +168,7 @@ class Console implements CaretListener {
                 accelerator: shortcut('P'))
             action(id: 'exitAction',
                 name: 'Exit',
-                closure: this.&exit, 
+                closure: this.&exit,
                 mnemonic: 'X'
             )
             // whether or not application exit should have an
@@ -219,44 +220,44 @@ class Console implements CaretListener {
             )
             action(id: 'historyPrevAction',
                 name: 'Previous',
-                closure: this.&historyPrev, 
-                mnemonic: 'P', 
+                closure: this.&historyPrev,
+                mnemonic: 'P',
                 accelerator: shortcut(KeyEvent.VK_COMMA)
             )
             action(id: 'historyNextAction',
-                name: 'Next', 
-                closure: this.&historyNext, 
-                mnemonic: 'N', 
+                name: 'Next',
+                closure: this.&historyNext,
+                mnemonic: 'N',
                 accelerator: shortcut(KeyEvent.VK_PERIOD)
             )
             action(id: 'clearOutputAction',
                 name: 'Clear Output',
-                closure: this.&clearOutput, 
+                closure: this.&clearOutput,
                 mnemonic: 'O',
                 accelerator: shortcut('W')
             )
             action(id: 'runAction',
                 name: 'Run',
-                closure: this.&runScript, 
-                mnemonic: 'R', 
+                closure: this.&runScript,
+                mnemonic: 'R',
                 keyStroke: 'ctrl ENTER', // does this need to be shortcutted or explicitly ctrl?
                 accelerator: shortcut('R')
             )
             action(id: 'inspectLastAction',
                 name: 'Inspect Last',
-                closure: this.&inspectLast, 
-                mnemonic: 'I', 
+                closure: this.&inspectLast,
+                mnemonic: 'I',
                 accelerator: shortcut('I')
             )
             action(id: 'inspectVariablesAction',
                 name: 'Inspect Variables',
-                closure: this.&inspectVariables, 
-                mnemonic: 'V', 
+                closure: this.&inspectVariables,
+                mnemonic: 'V',
                 accelerator: shortcut('J')
             )
             action(id: 'captureStdOutAction',
                 name: 'Capture Standard Output',
-                closure: this.&captureStdOut, 
+                closure: this.&captureStdOut,
                 mnemonic: 'C'
             )
             action(id: 'fullStackTracesAction',
@@ -273,22 +274,22 @@ class Console implements CaretListener {
             action(id: 'largerFontAction',
                 name: 'Larger Font',
                 closure: this.&largerFont,
-                mnemonic: 'L', 
+                mnemonic: 'L',
                 accelerator: shortcut('shift L')
             )
             action(id: 'smallerFontAction',
                 name: 'Smaller Font',
                 closure: this.&smallerFont,
-                mnemonic: 'S', 
+                mnemonic: 'S',
                 accelerator: shortcut('shift S')
             )
             action(id: 'aboutAction',
                 name: 'About',
-                closure: this.&showAbout, 
+                closure: this.&showAbout,
                 mnemonic: 'A'
             )
             action(id: 'interruptAction',
-                name: 'Interrupt', 
+                name: 'Interrupt',
                 closure: this.&confirmRunInterrupt
             )
         }
@@ -375,13 +376,19 @@ class Console implements CaretListener {
                 label(id: 'status',
                      text: 'Welcome to Groovy.',
                      constraints: BorderLayout.CENTER,
-                     border: BorderFactory.createLoweredBevelBorder()
+                     border: BorderFactory.createCompoundBorder(
+                               BorderFactory.createLoweredBevelBorder(),
+                               BorderFactory.createEmptyBorder(1,3,1,3))
                 )
-                
-                label(id: 'rowNumAndColNum', 
-                       text: '1',
+
+                label(id: 'rowNumAndColNum',
+                       text: '1:1',
+                       border: BorderFactory.createEmptyBorder(1,3,1,3),
                        constraints: BorderLayout.EAST,
-                       border: BorderFactory.createLoweredBevelBorder())
+                       border: BorderFactory.createCompoundBorder(
+                               BorderFactory.createLoweredBevelBorder(),
+                               BorderFactory.createEmptyBorder(1,3,1,3))
+                )
             }
         }   // end of frame
 
@@ -407,15 +414,15 @@ class Console implements CaretListener {
 
         statusLabel = swing.status
 
-        runWaitDialog = swing.dialog(title: 'Groovy executing', 
-                owner: frame, 
+        runWaitDialog = swing.dialog(title: 'Groovy executing',
+                owner: frame,
                 modal: true
         ) {
-            vbox(border: BorderFactory.createEmptyBorder(6, 6, 6, 6)) {  
+            vbox(border: BorderFactory.createEmptyBorder(6, 6, 6, 6)) {
                 label(text: "Groovy is now executing. Please wait.", alignmentX: 0.5f)
                 vstrut()
                 button(interruptAction,
-                    margin: new Insets(10, 20, 10, 20), 
+                    margin: new Insets(10, 20, 10, 20),
                     alignmentX: 0.5f
                 )
             }
@@ -425,7 +432,7 @@ class Console implements CaretListener {
         frame.windowClosing = this.&exit
         inputArea.addCaretListener(this)
         inputArea.document.undoableEditHappened = { setDirty(true) }
-        
+
         rootElement = inputArea.document.defaultRootElement
 
         systemOutInterceptor = new SystemOutputInterceptor(this.&notifySystemOut)
@@ -536,7 +543,7 @@ class Console implements CaretListener {
     void caretUpdate(CaretEvent e){
         textSelectionStart = Math.min(e.dot,e.mark)
         textSelectionEnd = Math.max(e.dot,e.mark)
-        
+
         setRowNumAndColNum()
     }
 
@@ -558,7 +565,7 @@ class Console implements CaretListener {
             frame.hide()
             frame.dispose()
         }
-        
+
         systemOutInterceptor.stop();
     }
 
@@ -847,12 +854,15 @@ class Console implements CaretListener {
     void selectAll(EventObject evt = null) {
         invokeTextAction(evt, { source -> source.selectAll() })
     }
-    
+
     void setRowNumAndColNum() {
-       cursorPos = inputArea.getCaretPosition()
-       rowNum = rootElement.getElementIndex(cursorPos)
-       swing.rowNumAndColNum.setText("${rowNum + 1}")
-       // TODO set colNum
+        cursorPos = inputArea.getCaretPosition()
+        rowNum = rootElement.getElementIndex(cursorPos) + 1
+
+        def rowElement = rootElement.getElement(rowNum - 1)
+        colNum = cursorPos - rowElement.getStartOffset() + 1
+
+        swing.rowNumAndColNum.setText("$rowNum:$colNum")
     }
 }
 
