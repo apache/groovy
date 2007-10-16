@@ -41,7 +41,7 @@ abstract class RootPaneContainerFactory extends AbstractFactory {
     }
 
 
-    public void handelRootPaneTasks(FactoryBuilderSupport builder, Window container, Map attributes) {
+    public void handleRootPaneTasks(FactoryBuilderSupport builder, Window container, Map attributes) {
 
         builder.containingWindows.add(container)
 

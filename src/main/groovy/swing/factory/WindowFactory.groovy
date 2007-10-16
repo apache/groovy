@@ -42,7 +42,7 @@ public class WindowFactory extends RootPaneContainerFactory {
             }
         }
 
-        handelRootPaneTasks(builder, window, attributes)
+        handleRootPaneTasks(builder, window, attributes)
 
         return window;
     }

@@ -31,7 +31,7 @@ public class FrameFactory extends RootPaneContainerFactory {
             frame = new JFrame()
         }
 
-        handelRootPaneTasks(builder, frame, attributes)
+        handleRootPaneTasks(builder, frame, attributes)
 
         return frame;
     }

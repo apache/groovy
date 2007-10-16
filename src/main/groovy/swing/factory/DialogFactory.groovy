@@ -43,7 +43,7 @@ public class DialogFactory extends RootPaneContainerFactory {
             }
         }
 
-        handelRootPaneTasks(builder, dialog, attributes)
+        handleRootPaneTasks(builder, dialog, attributes)
 
         return dialog
     }
