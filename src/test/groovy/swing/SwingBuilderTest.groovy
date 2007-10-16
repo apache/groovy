@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
- 
+
 package groovy.swing
 
 import java.awt.*
@@ -22,8 +22,11 @@ import java.awt.event.InputEvent
 import java.awt.event.KeyEvent
 import java.text.SimpleDateFormat
 import javax.swing.*
+import javax.swing.JPopupMenu.Separator as JPopupMenu_Separator
+import javax.swing.JToolBar.Separator as JToolBar_Separator
 import javax.swing.text.DateFormatter
 import javax.swing.text.NumberFormatter
+import javax.swing.plaf.metal.MetalLookAndFeel
 
 class SwingBuilderTest extends GroovyTestCase {
 
@@ -145,9 +148,9 @@ class SwingBuilderTest extends GroovyTestCase {
 
         def swing = new SwingBuilder()
         def label = swing.label("By Value:")
-        def widgetByValue = swing.widget(label) 
+        def widgetByValue = swing.widget(label)
         assert widgetByValue != null
-        def widgetByLabel = swing.widget(widget: label) 
+        def widgetByLabel = swing.widget(widget: label)
         assert widgetByLabel != null
     }
 
@@ -651,7 +654,7 @@ class SwingBuilderTest extends GroovyTestCase {
         // should result in a 250,250 offset from centering it before sizing it
         assert locationFirst != locationLast
     }
-    
+
     void testWidgetPassthroughConstraints() {
         if (isHeadless()) return
 
@@ -662,17 +665,17 @@ class SwingBuilderTest extends GroovyTestCase {
             widget(foo, constraints: BorderLayout.NORTH)
             // a failed test throws MissingPropertyException by now
         }
-    }    
-    
+    }
+
     void testGROOVY1837ReuseAction() {
         if (isHeadless()) return
-        
+
         def swing = new SwingBuilder()
 
         def testAction = swing.action(name:'test', mnemonic:'A', accelerator:'ctrl R')
         assert testAction.getValue(Action.MNEMONIC_KEY) != null
         assert testAction.getValue(Action.ACCELERATOR_KEY) != null
-        
+
         swing.action(testAction)
         assert testAction.getValue(Action.MNEMONIC_KEY) != null
         assert testAction.getValue(Action.ACCELERATOR_KEY) != null
@@ -680,7 +683,7 @@ class SwingBuilderTest extends GroovyTestCase {
 
     void testSeparators() {
         if (isHeadless()) return
-        
+
         def swing = new SwingBuilder()
         swing.frame {
             menu("test") {
@@ -691,14 +694,14 @@ class SwingBuilderTest extends GroovyTestCase {
             }
             separator(id:"sep")
         }
-        assert swing.menuSep instanceof JPopupMenu.Separator
-        assert swing.tbSep instanceof JToolBar.Separator
+        assert swing.menuSep instanceof JPopupMenu_Separator
+        assert swing.tbSep instanceof JToolBar_Separator
         assert swing.sep instanceof JSeparator
     }
 
     void testCollectionNodes() {
         if (isHeadless()) return
-        
+
         def swing = new SwingBuilder()
         def collection = swing.actions {
             action(id:'test')
@@ -708,14 +711,14 @@ class SwingBuilderTest extends GroovyTestCase {
 
     void testFactoryCornerCases() {
         if (isHeadless()) return
-        
+
         def swing = new SwingBuilder()
         assert swing.bogusWidget() == null
 
-        swing.registerFactory("nullWidget", 
+        swing.registerFactory("nullWidget",
             [newInstance:{builder, name, value, props -> null}] as AbstractFactory)
         assert swing.nullWidget() == null
-    } 
+    }
 
     void testFactoryLogging() {
         def logger = java.util.logging.Logger.getLogger(SwingBuilder.class.name)
@@ -728,18 +731,18 @@ class SwingBuilderTest extends GroovyTestCase {
 
     void testEnhancedValueArguments() {
         if (isHeadless()) return
-        
+
         def swing = new SwingBuilder()
 
         def anAction = swing.action(name:"test action")
         def icon = new javax.swing.plaf.metal.MetalComboBoxIcon()
         def richActionItems = [
-            'button', 
-            'checkBox', 
-            'radioButton', 
+            'button',
+            'checkBox',
+            'radioButton',
             'toggleButton',
-            'menuItem', 
-            'checkBoxMenuItem', 
+            'menuItem',
+            'checkBoxMenuItem',
             'radioButtonMenuItem'
         ]
 
@@ -874,7 +877,7 @@ class SwingBuilderTest extends GroovyTestCase {
                 }
 	    }
         }
-        
+
         // leftovers...
         swing.frame {
             action(action:anAction)
@@ -917,13 +920,13 @@ class SwingBuilderTest extends GroovyTestCase {
 
     public void testEDT() {
         if (isHeadless()) return
-        
+
         def swing = new SwingBuilder()
-        
+
         boolean pass = false
         swing.edt { pass = SwingUtilities.isEventDispatchThread() }
         assert pass
-        
+
         pass = false
         swing.edt { swing.edt { pass = SwingUtilities.isEventDispatchThread() } }
         assert pass
@@ -947,7 +950,7 @@ class SwingBuilderTest extends GroovyTestCase {
         assert !swing.frame.isDisplayable()
         assert !swing.dialog.isDisplayable()
         assert !swing.window.isDisplayable()
- 
+
     }
 
     public void testPackAndShow() {
@@ -1124,7 +1127,57 @@ class SwingBuilderTest extends GroovyTestCase {
         assert swing.subMenu.getItem(3) == null // not a menu item
         assert swing.subMenu.getMenuComponent(3) == swing.subsep
         assert swing.subMenu.getItem(4) == swing.subSubMenu
+    }
 
+    public void testLookAndFeel() {
+        if (isHeadless()) return
+        def swing = new SwingBuilder()
+
+        def oldLAF = UIManager.getLookAndFeel();
+        try {
+            // test LAFs guaranteed to be everywhere
+            swing.lookAndFeel('metal')
+            swing.lookAndFeel('system')
+            swing.lookAndFeel('crossPlatform')
+
+            // test alternate invocations...
+            swing.lookAndFeel(new javax.swing.plaf.metal.MetalLookAndFeel())
+            shouldFail() {
+                swing.lookAndFeel(this)
+            }
+            swing.lookAndFeel('javax.swing.plaf.metal.MetalLookAndFeel')
+            shouldFail() {
+                swing.lookAndFeel('BogusLookAndFeel')
+            }
+
+            // test Metal Themeing and aux attributes
+            swing.lookAndFeel('metal', theme: 'steel', boldFonts: false)
+            shouldFail {
+                swing.lookAndFeel('metal', theme: 'steel', boldFonts: false, bogusAttribute: 'bad bad bad')
+            }
+
+            // test setup via attribute alone
+            swing.lookAndFeel(lookAndFeel:'metal', theme: 'steel', boldFonts: false)
+
+            // test Look and Feel Closure
+            swing.lookAndFeel('metal') { laf ->
+                assert laf instanceof MetalLookAndFeel
+            }
+            swing.lookAndFeel('metal', boldFonts: true) { laf ->
+                assert laf instanceof MetalLookAndFeel
+            }
+            swing.lookAndFeel(lookAndFeel:'metal', boldFonts: true) { laf ->
+                assert laf instanceof MetalLookAndFeel
+            }
+            shouldFail {
+                swing.lookAndFeel() {laf ->
+                    println "shouldn't get here"
+                }
+            }
+
+        } finally {
+            UIManager.setLookAndFeel(oldLAF)
+        }
 
     }
 

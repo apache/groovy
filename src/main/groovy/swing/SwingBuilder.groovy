@@ -36,7 +36,7 @@ public class SwingBuilder extends FactoryBuilderSupport {
     Map widgets = [:]
 
     // local fields
-    private static final Logger LOG = Logger.getLogger(SwingBuilder.class.getName());
+    private static final Logger LOG = Logger.getLogger(SwingBuilder.name);
     // tracks all containing windows, for auto-owned dialogs
     private boolean headless = false
     private disposalClosures = []
@@ -95,9 +95,9 @@ public class SwingBuilder extends FactoryBuilderSupport {
         // standalone window classes
         //
         registerFactory("dialog", new DialogFactory());
-        registerFactory("fileChooser", new ComponentFactory(JFileChooser));
+        registerBeanFactory("fileChooser", JFileChooser);
         registerFactory("frame", new FrameFactory());
-        registerFactory("optionPane", new ComponentFactory(JOptionPane));
+        registerBeanFactory("optionPane", JOptionPane);
         registerFactory("window", new WindowFactory());
 
 
@@ -121,15 +121,15 @@ public class SwingBuilder extends FactoryBuilderSupport {
 
         registerBeanFactory("colorChooser", JColorChooser);
         registerFactory("comboBox", new ComboBoxFactory());
-        registerFactory("desktopPane", new ComponentFactory(JDesktopPane));
+        registerBeanFactory("desktopPane", JDesktopPane);
         registerFactory("formattedTextField", new FormattedTextFactory());
         registerFactory("internalFrame", new InternalFrameFactory());
-        registerFactory("layeredPane", new ComponentFactory(JLayeredPane));
+        registerBeanFactory("layeredPane", JLayeredPane);
         registerBeanFactory("list", JList);
-        registerFactory("menu", new ComponentFactory(JMenu));
-        registerFactory("menuBar", new ComponentFactory(JMenuBar));
-        registerFactory("panel", new ComponentFactory(JPanel));
-        registerFactory("popupMenu", new ComponentFactory(JPopupMenu));
+        registerBeanFactory("menu", JMenu);
+        registerBeanFactory("menuBar", JMenuBar);
+        registerBeanFactory("panel", JPanel);
+        registerBeanFactory("popupMenu", JPopupMenu);
         registerBeanFactory("progressBar", JProgressBar);
         registerBeanFactory("scrollBar", JScrollBar);
         registerFactory("scrollPane", new ScrollPaneFactory());
@@ -137,13 +137,13 @@ public class SwingBuilder extends FactoryBuilderSupport {
         registerBeanFactory("slider", JSlider);
         registerBeanFactory("spinner", JSpinner);
         registerFactory("splitPane", new SplitPaneFactory());
-        registerFactory("tabbedPane", new ComponentFactory(JTabbedPane));
+        registerBeanFactory("tabbedPane", JTabbedPane);
         registerFactory("table", new TableFactory());
         registerBeanFactory("tableColumn", TableColumn);
-        registerFactory("toolBar", new ComponentFactory(JToolBar));
+        registerBeanFactory("toolBar", JToolBar);
         //registerBeanFactory("tooltip", JToolTip); // doesn't work, use toolTipText property
         registerBeanFactory("tree", JTree);
-        registerFactory("viewport", new ComponentFactory(JViewport)); // sub class?
+        registerBeanFactory("viewport", JViewport); // sub class?
 
 
         //
@@ -196,6 +196,30 @@ public class SwingBuilder extends FactoryBuilderSupport {
         registerFactory("tableLayout", new TableLayoutFactory());
         registerFactory("tr", new TRFactory());
         registerFactory("td", new TDFactory());
+
+    }
+
+    /**
+     * Do some overrides for standard component handlers, else use super
+     */
+    public void registerBeanFactory(String nodeName, Class klass) {
+        // poke at the type to see if we need special handling
+        if (LayoutManager.isAssignableFrom(klass)) {
+            registerFactory(nodeName, new LayoutFactory(klass))
+        } else if (JScrollPane.isAssignableFrom(klass)) {
+            registerFactory(nodeName, new ScrollPaneFactory(klass))
+        } else if (JTable.isAssignableFrom(klass)) {
+            registerFactory(nodeName, new TableFactory(klass))
+        } else if (JComponent.isAssignableFrom(klass)
+            || JApplet.isAssignableFrom(klass)
+            || JDialog.isAssignableFrom(klass)
+            || JFrame.isAssignableFrom(klass)
+            || JWindow.isAssignableFrom(klass)
+        ) {
+            registerFactory(nodeName, new ComponentFactory(klass))
+        } else {
+            super.registerBeanFactory(nodeName, klass)
+        }
 
     }
 
@@ -255,5 +279,18 @@ public class SwingBuilder extends FactoryBuilderSupport {
 
     public void dispose() {
         disposalClosures.reverseEach {it()}
+    }
+
+    public LookAndFeel lookAndFeel(Object lookAndFeel, Closure initCode = null) {
+        lookAndFeel([:], lookAndFeel, initCode)
+    }
+
+    public LookAndFeel lookAndFeel(Map attributes = [:], Object lookAndFeel = null, Closure initCode = null) {
+        // if we get rid of this warning, we can make it static.
+        if (context) {
+            LOG.warning "For best result do not call lookAndFeel when it is a child of a SwingBuidler node, initializaiton of the Look and Feel may be inconsistant."
+        }
+
+        LookAndFeelHelper.instance.lookAndFeel(lookAndFeel, attributes, initCode)
     }
 }
