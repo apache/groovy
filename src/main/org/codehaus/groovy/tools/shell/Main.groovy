@@ -129,27 +129,37 @@ class Main
         System.exit(code)
     }
 
-    static void setTerminalType(final String type) {
+    static void setTerminalType(String type) {
+        assert type != null
+        
+        type = type.toLowerCase();
+
         switch (type) {
+            case 'auto':
+                type = null;
+                break;
+
             case 'unix':
-                type = jline.UnixTerminal.class.name
+                type = 'jline.UnixTerminal'
                 break
 
             case 'win':
             case 'windows':
-                type = jline.WindowsTerminal.class.name
+                type = 'jline.WindowsTerminal'
                 break
 
             case 'false':
             case 'off':
             case 'none':
-                type = jline.UnsupportedTerminal.class.name
+                type = 'jline.UnsupportedTerminal'
+                // Disable ANSI, for some reason UnsupportedTerminal reports ANSI as enabled, when it shouldn't
+                ANSI.enabled = false
+                break;
         }
 
-        System.setProperty('jline.terminal', type)
-
-        // Disable ANSI, for some reason UnsupportedTerminal reports ANSI as enabled, when it shouldn't
-        ANSI.enabled = false
+        if (type != null) {
+            System.setProperty('jline.terminal', type)
+        }
     }
 
     static void setColor(value) {
