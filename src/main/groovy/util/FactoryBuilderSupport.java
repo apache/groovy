@@ -149,7 +149,7 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
     }
 
     public Object invokeMethod( String methodName, Object args ) {
-        Object name = getName( methodName );
+        Object name = proxyBuilder.getName( methodName );
         Object result = null;
         try{
             result = doInvokeMethod( methodName, name, args );
@@ -203,8 +203,8 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
             LOG.log( Level.WARNING, "Could not find match for name '" + name + "'" );
             return null;
         }
-        getContext().put( CURRENT_FACTORY, factory );
-        preInstantiate( name, attributes, value );
+        proxyBuilder.getContext().put( CURRENT_FACTORY, factory );
+        proxyBuilder.preInstantiate( name, attributes, value );
         try{
             node = factory.newInstance( this, name, value, attributes );
             if( node == null ){
@@ -219,8 +219,8 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
             throw new RuntimeException( "Failed to create component for '" + name + "' reason: "
                     + e, e );
         }
-        postInstantiate( name, attributes, node );
-        handleNodeAttributes( node, attributes );
+        proxyBuilder.postInstantiate( name, attributes, node );
+        proxyBuilder.handleNodeAttributes( node, attributes );
         return node;
     }
 
@@ -229,9 +229,9 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
         Closure closure = null;
         List list = InvokerHelper.asList( args );
 
-        if( contexts.isEmpty() ){
+        if( proxyBuilder.getContexts().isEmpty() ){
             // should be called on first build method only
-            newContext();
+            proxyBuilder.newContext();
         }
         switch( list.size() ){
             case 0:
@@ -296,37 +296,37 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
         }
 
         if( node == null ){
-            if( contexts.size() == 1 ){
+            if( proxyBuilder.getContexts().size() == 1 ){
                 // pop the first context
                 popContext();
             }
             return node;
         }
 
-        Object current = getCurrent();
+        Object current = proxyBuilder.getCurrent();
         if( current != null ){
             proxyBuilder.setParent( current, node );
         }
 
         if( closure != null ){
-            if( getCurrentFactory().isLeaf() ){
+            if( proxyBuilder.getCurrentFactory().isLeaf() ){
                 throw new RuntimeException( "'" + name + "' doesn't support nesting." );
             }
             // push new node on stack
-            Object parentFactory = getCurrentFactory();
-            newContext();
-            getContext().put( CURRENT_NODE, node );
-            getContext().put( PARENT_FACTORY, parentFactory);
+            Object parentFactory = proxyBuilder.getCurrentFactory();
+            proxyBuilder.newContext();
+            proxyBuilder.getContext().put( CURRENT_NODE, node );
+            proxyBuilder.getContext().put( PARENT_FACTORY, parentFactory);
             // lets register the builder as the delegate
-            setClosureDelegate( closure, node );
+            proxyBuilder.setClosureDelegate( closure, node );
             closure.call();
-            popContext();
+            proxyBuilder.popContext();
         }
 
         proxyBuilder.nodeCompleted( current, node );
-        if( contexts.size() == 1 ){
+        if( proxyBuilder.getContexts().size() == 1 ){
             // pop the first context
-            popContext();
+            proxyBuilder.popContext();
         }
         return proxyBuilder.postNodeCompletion( current, node );
     }
@@ -359,8 +359,8 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
             ( (Closure) iter.next()).call( new Object[] {this, node, attributes} ) ;
         }
 
-        if( getCurrentFactory().onHandleNodeAttributes( this, node, attributes ) ){
-            setNodeAttributes( node, attributes );
+        if( proxyBuilder.getCurrentFactory().onHandleNodeAttributes( this, node, attributes ) ){
+            proxyBuilder.setNodeAttributes( node, attributes );
         }
     }
 
@@ -376,7 +376,7 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
      * @param parent the parent of the node being processed
      */
     protected void nodeCompleted( Object parent, Object node ) {
-        getCurrentFactory().onNodeCompleted( this, parent, node );
+        proxyBuilder.getCurrentFactory().onNodeCompleted( this, parent, node );
     }
 
     protected Map popContext() {
@@ -446,8 +446,8 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
     }
 
     protected void setParent( Object parent, Object child ) {
-        getCurrentFactory().setParent( this, parent, child );
-        Factory parentFactory = getParentFactory();
+        proxyBuilder.getCurrentFactory().setParent( this, parent, child );
+        Factory parentFactory = proxyBuilder.getParentFactory();
         if (parentFactory != null) {
             parentFactory.setChild( this, parent, child );
         }
@@ -455,5 +455,9 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
 
     protected void setProxyBuilder( FactoryBuilderSupport proxyBuilder ) {
         this.proxyBuilder = proxyBuilder;
+    }
+
+    protected LinkedList getContexts() {
+        return contexts;
     }
 }
