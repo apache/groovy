@@ -19,12 +19,12 @@ import javax.swing.LookAndFeel
 import javax.swing.UIManager
 import javax.swing.plaf.metal.MetalLookAndFeel
 import javax.swing.plaf.metal.MetalTheme
-import javax.swing.plaf.metal.OceanTheme
 import javax.swing.plaf.metal.DefaultMetalTheme
 
 
 class LookAndFeelHelper {
 
+    private static final OCEAN_THEME = 'javax.swing.plaf.metal.OceanTheme'
     // protected so you can subclass and replace the singleton
     protected static LookAndFeelHelper instance;
 
@@ -68,7 +68,7 @@ class LookAndFeelHelper {
             theme : { laf, theme ->
                 if (!(theme instanceof MetalTheme)) {
                     if (theme == 'ocean') {
-                        theme = new OceanTheme()
+                        theme = Class.forName(OCEAN_THEME).newInstance()
                     } else if (theme == 'steel') {
                         theme = new DefaultMetalTheme();
                     } else {
