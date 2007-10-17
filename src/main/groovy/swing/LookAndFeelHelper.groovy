@@ -47,9 +47,9 @@ class LookAndFeelHelper {
         crossPlatform : UIManager.getCrossPlatformLookAndFeelClassName(),
 
         // jgoodies, requires external library
-        plastic   : 'com.jgoodies.plaf.plastic.PlasticLookAndFeel',
-        plastic3D : 'com.jgoodies.plaf.plastic.Plastic3DLookAndFeel',
-        plasticXP : 'com.jgoodies.plaf.plastic.PlasticXPLookAndFeel',
+        plastic   : 'com.jgoodies.looks.plastic.PlasticLookAndFeel',
+        plastic3D : 'com.jgoodies.looks.plastic.Plastic3DLookAndFeel',
+        plasticXP : 'com.jgoodies.looks.plastic.PlasticXPLookAndFeel',
 
         // substance, requires external library
         substance : 'org.jvnet.substance.SubstanceLookAndFeel',
@@ -76,17 +76,15 @@ class LookAndFeelHelper {
                 };
                 MetalLookAndFeel.currentTheme = theme
             },
-            boldFonts : { laf, bold -> UIManager.put('swing.boldMetal', bold as Boolean) }
+            boldFonts : { laf, bold -> UIManager.put('swing.boldMetal', bold as Boolean) },
+            noxp : { laf, xp -> UIManager.put('swing.noxp', bold as Boolean) },
         ],
         'org.jvnet.substance.SubstanceLookAndFeel' : [
-            theme: { laf, theme -> laf.currentTheme = theme },
-            skin: { laf, skin -> laf.skin = skin },
-            watermark : { laf, watermark -> laf.currentWatermark = watermark },
+            // use setters instead of properties to get multi-dispatch
+            theme: { laf, theme -> laf.setCurrentTheme(theme) },
+            skin: { laf, skin -> laf.setSkin(skin) },
+            watermark : { laf, watermark -> laf.setCurrentWatermark(watermark) },
         ],
-        'javax.swing.plaf.synth.SynthLookAndFeel' : [
-            styleFactory: { laf, styleFactyory -> laf.styleFactory = styleFactory }
-            // any more complex init should be done in the init closure
-        ]
     ]
 
     public String addLookAndFeelAttributeHandler(String className, String attr, Closure handler) {
@@ -129,8 +127,11 @@ class LookAndFeelHelper {
             if (possibleAttributes[k]) {
                 possibleAttributes[k](lafInstance, v)
             } else {
-                String attrs = possibleAttributes.keySet() as String
-                throw new RuntimeException("SwingBuilder initialization for the Look and Feel Class $lafClassName only accepts the following attributes: $attrs")
+                try {
+                    lafInstance."$k" = v
+                } catch (MissingPropertyException mpe) {
+                    throw new RuntimeException("SwingBuilder initialization for the Look and Feel Class $lafClassName does accept the attribute $k")
+                }
             }
         }
 
