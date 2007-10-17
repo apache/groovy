@@ -35,7 +35,7 @@ class ComponentFactory extends BeanFactory {
             return;
         }
         try {
-            def constraints = builder.constraints
+            def constraints = builder.context.constraints
             if (constraints != null) {
                 parent.add(child, constraints)
             } else {

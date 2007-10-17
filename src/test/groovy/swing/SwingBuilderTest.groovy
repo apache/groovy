@@ -214,6 +214,17 @@ class SwingBuilderTest extends GroovyTestCase {
         }
     }
 
+    void testFrames() {
+        if (isHeadless()) return
+        def swing = new SwingBuilder()
+
+        swing.frame(id:'frame') {
+            button('test', id:'button', defaultButton:true)
+        }
+        assert swing.frame.rootPane.defaultButton == swing.button
+        assert swing.button.defaultButton
+    }
+
     void testDialogs() {
         if (isHeadless()) return
 

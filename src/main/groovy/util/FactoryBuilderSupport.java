@@ -166,15 +166,16 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
      * getfirst crack.
      * @param attrDelegate
      */
-    public void addAttributeDelegate( Closure attrDelegate ) {
+    public Closure addAttributeDelegate( Closure attrDelegate ) {
         attributeDelegates.addFirst( attrDelegate );
+        return attrDelegate;
     }
 
     /**
      * remove the most recently added instance of teh attribute delegate.
      * @param attrDelegate
      */
-    public void removeAttributeDelegat( Closure attrDelegate ) {
+    public void removeAttributeDelegate( Closure attrDelegate ) {
         attributeDelegates.remove( attrDelegate );
     }
 

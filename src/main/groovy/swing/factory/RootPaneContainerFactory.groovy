@@ -18,18 +18,16 @@ package groovy.swing.factory
 
 import java.awt.Component
 import java.awt.Window
+import javax.swing.JButton
 
 abstract class RootPaneContainerFactory extends AbstractFactory {
-
-    LinkedList packers = new LinkedList([null])
-    LinkedList showers = new LinkedList([null])
 
     public void setChild(FactoryBuilderSupport builder, Object parent, Object child) {
         if (!(child instanceof Component) || (child instanceof Window)) {
             return;
         }
         try {
-            def constraints = builder.constraints
+            def constraints = builder.context.constraints
             if (constraints != null) {
                 parent.contentPane.add(child, constraints)
             } else {
@@ -42,17 +40,18 @@ abstract class RootPaneContainerFactory extends AbstractFactory {
 
 
     public void handleRootPaneTasks(FactoryBuilderSupport builder, Window container, Map attributes) {
+        builder.context.defaultButtonDelegate =
+            builder.addAttributeDelegate {myBuilder, node, myAttributes ->
+                if (myAttributes.defaultButton && (node instanceof JButton)) {
+                    container.rootPane.defaultButton = node
+                    myAttributes.remove('defaultButton')
+                }
+            }
 
         builder.containingWindows.add(container)
 
-        Object o = attributes.remove("pack")
-        if ((o instanceof Boolean) && ((Boolean) o).booleanValue()) {
-            packers.add(container)
-        }
-        o = attributes.remove("show")
-        if ((o instanceof Boolean) && ((Boolean) o).booleanValue()) {
-            showers.add(container)
-        }
+        builder.context.pack = attributes.remove('pack')
+        builder.context.show = attributes.remove('show')
 
         builder.addDisposalClosure(container.&dispose)
     }
@@ -65,15 +64,14 @@ abstract class RootPaneContainerFactory extends AbstractFactory {
             }
         }
 
-        if (packers.last.is(node)) {
+        if (builder.context.pack) {
             node.pack()
-            packers.removeLast()
         }
-        if (showers.last.is(node)) {
+        if (builder.context.show) {
             node.visible = true
-            showers.removeLast()
         }
-    }
 
+        builder.removeAttributeDelegate(builder.context.defaultButtonDelegate)
+    }
 
 }

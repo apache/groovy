@@ -43,11 +43,9 @@ public class RichActionWidgetFactory extends AbstractFactory {
             iconCtor = klass.getConstructor(ICON_ARGS);
             stringCtor = klass.getConstructor(STRING_ARGS);
             this.klass = klass;
-        }
-        catch (NoSuchMethodException ex) {
-            Logger.getLogger("global").log(Level.SEVERE, null, ex);
-        }
-        catch (SecurityException ex) {
+        } catch (NoSuchMethodException ex) {
+            Logger.getLogger("global").log(Level.INFO, null, ex);
+        } catch (SecurityException ex) {
             Logger.getLogger("global").log(Level.SEVERE, null, ex);
         }
     }

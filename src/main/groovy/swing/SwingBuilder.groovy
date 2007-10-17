@@ -31,7 +31,6 @@ import javax.swing.table.TableColumn
 public class SwingBuilder extends FactoryBuilderSupport {
 
     // Properties
-    def constraints
     LinkedList containingWindows = new LinkedList()
     Map widgets = [:]
 
@@ -62,27 +61,14 @@ public class SwingBuilder extends FactoryBuilderSupport {
         registerFactory("actions", new CollectionFactory());
         registerFactory("map", new MapFactory());
         registerBeanFactory("buttonGroup", ButtonGroup);
-        addAttributeDelegate {builder, node, attributes ->
-            if (attributes.containsKey("buttonGroup")) {
-                def o = attributes.get("buttonGroup")
-                if ((o instanceof ButtonGroup) && (node instanceof AbstractButton)) {
-                    node.model.group = o
-                    attributes.remove("buttonGroup")
-                }
-            }
-        }
+        addAttributeDelegate(SwingBuilder.&buttonGroupAttributeDelegate)
 
         //object id delegage, for propertyNotFound
-        addAttributeDelegate {builder, node, attributes ->
-            def theID = attributes.remove('id')
-            if (theID) {
-                widgets[theID] = node
-            }
-        }
+        addAttributeDelegate(SwingBuilder.&objectIDAttributeDelegate)
 
         // binding related classes
         registerFactory("bind", new BindFactory());
-        addAttributeDelegate(BindFactory.attributeDelegate)
+        addAttributeDelegate(BindFactory.&bindingAttributeDelegate)
         registerFactory("model", new ModelFactory());
 
         // ulimate pass through types
@@ -175,9 +161,7 @@ public class SwingBuilder extends FactoryBuilderSupport {
         registerBeanFactory("gridBagConstraints", GridBagConstraints);
         registerBeanFactory("gbc", GridBagConstraints); // shortcut name
         // constraints delegate
-        addAttributeDelegate {builder, node, attributes ->
-            constraints = attributes.remove('constraints')
-        }
+        addAttributeDelegate(SwingBuilder.&constraintsAttributeDelegate)
 
 
         // Box layout and friends
@@ -292,5 +276,26 @@ public class SwingBuilder extends FactoryBuilderSupport {
         }
 
         LookAndFeelHelper.instance.lookAndFeel(lookAndFeel, attributes, initCode)
+    }
+
+    public static buttonGroupAttributeDelegate(def builder, def node, def attributes) {
+        if (attributes.containsKey("buttonGroup")) {
+            def o = attributes.get("buttonGroup")
+            if ((o instanceof ButtonGroup) && (node instanceof AbstractButton)) {
+                node.model.group = o
+                attributes.remove("buttonGroup")
+            }
+        }
+    }
+
+    public static objectIDAttributeDelegate(def builder, def node, def attributes) {
+        def theID = attributes.remove('id')
+        if (theID) {
+            builder.widgets[theID] = node
+        }
+    }
+
+    public static constraintsAttributeDelegate(def builder, def node, def attributes) {
+        builder.context.constraints = attributes.remove('constraints')
     }
 }
