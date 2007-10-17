@@ -11,6 +11,7 @@
     <!-- remove embedded antlr and asm dependencies  -->
     <xsl:template match="/*[local-name() = 'project']/*[local-name() = 'dependencies']/*[local-name() = 'dependency'][*/text() = 'antlr']"/>
     <xsl:template match="/*[local-name() = 'project']/*[local-name() = 'dependencies']/*[local-name() = 'dependency'][*/text() = 'asm']"/>
+    <xsl:template match="/*[local-name() = 'project']/*[local-name() = 'dependencies']/*[local-name() = 'dependency'][*/text() = 'commons-cli']"/>
 
     <xsl:template match="@*|node()">
         <xsl:copy>
