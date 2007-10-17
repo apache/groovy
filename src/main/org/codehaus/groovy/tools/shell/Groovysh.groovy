@@ -22,7 +22,6 @@ import jline.Terminal
 import jline.History
 
 import org.codehaus.groovy.runtime.InvokerHelper
-import org.codehaus.groovy.runtime.InvokerInvocationException
 import org.codehaus.groovy.runtime.MethodClosure
 
 import org.codehaus.groovy.control.SourceUnit
@@ -233,7 +232,12 @@ class Groovysh
             displayBuffer(buffer)
         }
 
-        def source = (imports + buffer).join(NEWLINE)
+        //
+        // HACK: Fix for GROOVY-2213.  Insert a runnable statement (ie. 'true') after imports so that we can
+        //       always run the buffer and get any class/enum/whatever defs defined.
+        //
+
+        def source = (imports + [ 'true' ] + buffer).join(NEWLINE)
         def result
 
         Class type
