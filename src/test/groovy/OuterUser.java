@@ -1,7 +1,7 @@
 package groovy;
 
 /**
- * <p>Sample class used for testing that groovy can call inner classes contructors.</p>
+ * <p>Sample class used for testing that groovy can call inner classes constructors.</p>
  *
  * @author Guillaume Laforge
  * @cvs.revision $Revision$

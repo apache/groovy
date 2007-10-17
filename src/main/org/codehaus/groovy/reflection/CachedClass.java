@@ -145,10 +145,10 @@ public class CachedClass {
 
     public CachedConstructor[] getConstructors() {
         if (constructors == null) {
-            final Constructor[] declaredContructors = getCachedClass().getDeclaredConstructors();
-            constructors = new CachedConstructor[declaredContructors.length];
+            final Constructor[] declaredConstructors = getCachedClass().getDeclaredConstructors();
+            constructors = new CachedConstructor[declaredConstructors.length];
             for (int i = 0; i != constructors.length; ++i)
-                constructors[i] = new CachedConstructor(this, declaredContructors[i]);
+                constructors[i] = new CachedConstructor(this, declaredConstructors[i]);
         }
         return constructors;
     }

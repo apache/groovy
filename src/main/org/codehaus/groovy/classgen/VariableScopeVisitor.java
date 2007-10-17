@@ -58,7 +58,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     private SourceUnit source;
     private boolean inClosure = false;
     private boolean inPropertyExpression = false;
-    private boolean isSpecialContructorCall = false;
+    private boolean isSpecialConstructorCall = false;
 
     private LinkedList stateStack = new LinkedList();
 
@@ -261,7 +261,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             if (classScope != null) {
                 Variable member = findClassMember(classScope, var.getName());
                 if (member != null) {
-                    boolean cc = currentScope.isInStaticContext() || isSpecialContructorCall;
+                    boolean cc = currentScope.isInStaticContext() || isSpecialConstructorCall;
                     boolean cm = member.isInStaticContext();
                     //
                     // we don't allow access from dynamic context to static context
@@ -494,9 +494,9 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     }
 
     public void visitConstructorCallExpression(ConstructorCallExpression call) {
-        isSpecialContructorCall = call.isSpecialCall();
+        isSpecialConstructorCall = call.isSpecialCall();
         super.visitConstructorCallExpression(call);
-        isSpecialContructorCall = false;
+        isSpecialConstructorCall = false;
     }
 
     public void visitProperty(PropertyNode node) {

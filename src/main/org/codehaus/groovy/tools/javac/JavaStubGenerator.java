@@ -137,7 +137,7 @@ public class JavaStubGenerator
     }
 
     private void genMethods(ClassNode classNode, PrintWriter out) {
-        getContructors(classNode, out);
+        getConstructors(classNode, out);
 
         List methods = classNode.getMethods();
         if (methods != null)
@@ -147,7 +147,7 @@ public class JavaStubGenerator
             }
     }
 
-    private void getContructors(ClassNode classNode, PrintWriter out) {
+    private void getConstructors(ClassNode classNode, PrintWriter out) {
         List constrs = classNode.getDeclaredConstructors();
         if (constrs != null)
             for (Iterator it = constrs.iterator(); it.hasNext();) {
@@ -295,7 +295,7 @@ public class JavaStubGenerator
         else {
             out.println(" {");
 
-            genSpecialContructorArgs(out, constructorNode, constrCall);
+            genSpecialConstructorArgs(out, constructorNode, constrCall);
 
             out.println("}");
         }
@@ -339,7 +339,7 @@ public class JavaStubGenerator
         return null;
     }
 
-    private void genSpecialContructorArgs(PrintWriter out, ConstructorNode node, ConstructorCallExpression constrCall) {
+    private void genSpecialConstructorArgs(PrintWriter out, ConstructorNode node, ConstructorCallExpression constrCall) {
         // Select a constructor from our class, or super-class which is legal to call,
         // then write out an invoke w/nulls using casts to avoid abigous crapo
 

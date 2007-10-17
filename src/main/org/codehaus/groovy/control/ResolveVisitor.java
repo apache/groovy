@@ -58,7 +58,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private boolean isTopLevelProperty = true;
     private boolean inPropertyExpression = false;
     private boolean inClosure = false;
-    private boolean isSpecialContructorCall = false;
+    private boolean isSpecialConstructorCall = false;
 
     private Map genericParameterNames = new HashMap();
 
@@ -621,9 +621,9 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     protected Expression transformConstructorCallExpression(ConstructorCallExpression cce) {
         ClassNode type = cce.getType();
         resolveOrFail(type, cce);
-        isSpecialContructorCall = cce.isSpecialCall();
+        isSpecialConstructorCall = cce.isSpecialCall();
         Expression ret = cce.transformExpression(this);
-        isSpecialContructorCall = false;
+        isSpecialConstructorCall = false;
         return ret;
     }
 

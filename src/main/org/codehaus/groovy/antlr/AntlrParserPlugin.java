@@ -1968,7 +1968,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         Expression ret = expression;
         //FIXME: do we really want this() to create a new object regardless
         // the position.. for example not as first statement in a constructor
-        // this=first statement in contructor is handled by specialConstructorCallExpression
+        // this=first statement in constructor is handled by specialConstructorCallExpression
         // we may have to add a check and remove this part of the code
         if (implicitThis && "this".equals(expression.getMethodAsString())) {
             ret = new ConstructorCallExpression(this.classNode, arguments);

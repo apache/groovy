@@ -47,7 +47,7 @@ import java.util.*;
  * // defines a new static method with the 'static' qualifier
  * metaClass.'static'.myMethod << { args ->  }
  *
- * // defines a new contructor
+ * // defines a new constructor
  * metaClass.constructor << { String arg -> }
  *
  * // defines or replaces a constructor

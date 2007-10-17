@@ -32,7 +32,8 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
     private SourceUnit source;
     private CompilationUnit compilationUnit;
     private boolean stillResolving;
-    private boolean inSpecialContructorCall;
+    private boolean inSpecialConstructorCall;
+    private ClassNode lastFoundConstructorType;
     private boolean inClosure;
     private boolean inPropertyExpression;
     private Expression foundConstant;
@@ -87,7 +88,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         if (v != null && v instanceof DynamicVariable) {
             Expression result = findStaticFieldImportFromModule(v.getName());
             if (result != null) return result;
-            if (!inPropertyExpression || inSpecialContructorCall) addStaticVariableError(ve);
+            if (!inPropertyExpression || inSpecialConstructorCall) addStaticVariableError(ve);
         }
         return ve;
     }
@@ -100,6 +101,15 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
             if (ret != null) {
                 return ret;
             }
+            if (inSpecialConstructorCall
+                    && method instanceof ConstantExpression
+                    && lastFoundConstructorType != null) {
+                ConstantExpression ce = (ConstantExpression) method;
+                Object value = ce.getValue();
+                if (value instanceof String) {
+                    return new StaticMethodCallExpression(lastFoundConstructorType, (String) value, args);
+                }
+            }
         }
         Expression object = transform(mce.getObjectExpression());
         mce.setObjectExpression(object);
@@ -109,9 +119,12 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
     }
 
     protected Expression transformConstructorCallExpression(ConstructorCallExpression cce) {
-        inSpecialContructorCall = cce.isSpecialCall();
+        inSpecialConstructorCall = cce.isSpecialCall();
         Expression ret = cce.transformExpression(this);
-        inSpecialContructorCall = false;
+        if (!inSpecialConstructorCall) {
+            lastFoundConstructorType = ret.getType();
+        }
+        inSpecialConstructorCall = false;
         return ret;
     }
 
@@ -130,9 +143,9 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         Expression oldFoundArgs = foundArgs;
         Expression oldFoundMethod = foundConstant;
         inPropertyExpression = true;
-        Expression objectExpression = transform(pe.getObjectExpression());
         foundArgs = null;
         foundConstant = null;
+        Expression objectExpression = transform(pe.getObjectExpression());
         if (foundArgs != null && foundConstant != null) {
             Expression result = findStaticMethodImportFromModule(foundConstant, foundArgs);
             if (result != null) {
@@ -143,7 +156,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         foundArgs = oldFoundArgs;
         foundConstant = oldFoundMethod;
         pe.setObjectExpression(objectExpression);
-        if (!inSpecialContructorCall) checkStaticScope(pe);
+        if (!inSpecialConstructorCall) checkStaticScope(pe);
         return pe;
     }
 
@@ -161,7 +174,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
     private void addStaticVariableError(VariableExpression ve) {
         // closures are always dynamic
         // propertiesExpressions will handle the error a bit different
-        if (!inSpecialContructorCall && (inClosure || !ve.isInStaticContext())) return;
+        if (!inSpecialConstructorCall && (inClosure || !ve.isInStaticContext())) return;
         if (stillResolving) return;
         if (ve == VariableExpression.THIS_EXPRESSION || ve == VariableExpression.SUPER_EXPRESSION) return;
         Variable v = ve.getAccessedVariable();
