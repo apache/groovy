@@ -33,7 +33,6 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
     private CompilationUnit compilationUnit;
     private boolean stillResolving;
     private boolean inSpecialConstructorCall;
-    private ClassNode lastFoundConstructorType;
     private boolean inClosure;
     private boolean inPropertyExpression;
     private Expression foundConstant;
@@ -101,29 +100,27 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
             if (ret != null) {
                 return ret;
             }
-            if (inSpecialConstructorCall
-                    && method instanceof ConstantExpression
-                    && lastFoundConstructorType != null) {
+            if (inSpecialConstructorCall && method instanceof ConstantExpression) {
                 ConstantExpression ce = (ConstantExpression) method;
                 Object value = ce.getValue();
                 if (value instanceof String) {
-                    return new StaticMethodCallExpression(lastFoundConstructorType, (String) value, args);
+                    return new StaticMethodCallExpression(currentClass, (String) value, args);
                 }
             }
         }
         Expression object = transform(mce.getObjectExpression());
-        mce.setObjectExpression(object);
-        mce.setArguments(args);
-        mce.setMethod(method);
-        return mce;
+
+        MethodCallExpression result = new MethodCallExpression(object, method, args);
+        result.setSafe(mce.isSafe());
+        result.setImplicitThis(mce.isImplicitThis());
+        result.setSpreadSafe(mce.isSpreadSafe());
+        result.setSourcePosition(mce);
+        return result;
     }
 
     protected Expression transformConstructorCallExpression(ConstructorCallExpression cce) {
         inSpecialConstructorCall = cce.isSpecialCall();
         Expression ret = cce.transformExpression(this);
-        if (!inSpecialConstructorCall) {
-            lastFoundConstructorType = ret.getType();
-        }
         inSpecialConstructorCall = false;
         return ret;
     }
