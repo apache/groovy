@@ -29,8 +29,6 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.crypto.spec.PSource;
-
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
@@ -91,9 +89,9 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
         }
     }
 
-    private LinkedList contexts = new LinkedList();
+    private LinkedList/*<Map<String,Object>>*/ contexts = new LinkedList/*<Map<String,Object>>*/ ();
     private LinkedList/*<Closure>*/ attributeDelegates = new LinkedList/*<Closure>*/(); //
-    private Map factories = new HashMap();
+    private Map/*<String,Factory>*/ factories = new HashMap/*<String,Factory>*/();
     private Closure nameMappingClosure;
     private FactoryBuilderSupport proxyBuilder;
     private LinkedList/*<Closure>*/ preInstantiateDelegates = new LinkedList/*<Closure>*/();
