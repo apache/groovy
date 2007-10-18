@@ -30,13 +30,19 @@ import javax.swing.plaf.metal.MetalLookAndFeel
 
 class SwingBuilderTest extends GroovyTestCase {
 
-    private boolean isHeadless() {
+    private Boolean isHeadless
+
+    private Boolean isHeadless() {
+        if (isHeadless != null)
+          return isHeadless;
+
         try {
             new JFrame("testing")
-            return false
+            isHeadless = false
         } catch (java.awt.HeadlessException he) {
-            return true
+            isHeadless = true
         }
+        return isHeadless
     }
 
     void testNamedWidgetCreation() {
