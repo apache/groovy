@@ -29,6 +29,8 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.crypto.spec.PSource;
+
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
@@ -40,6 +42,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
     public static final String CURRENT_FACTORY = "_CURRENT_FACTORY_";
     public static final String PARENT_FACTORY = "_PARENT_FACTORY_";
+    public static final String PARENT_NODE = "_PARENT_NODE_";
     public static final String CURRENT_NODE = "_CURRENT_NODE_";
     private static final Logger LOG = Logger.getLogger( FactoryBuilderSupport.class.getName() );
 
@@ -93,6 +96,9 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
     private Map factories = new HashMap();
     private Closure nameMappingClosure;
     private FactoryBuilderSupport proxyBuilder;
+    private LinkedList/*<Closure>*/ preInstantiateDelegates = new LinkedList/*<Closure>*/();
+    private LinkedList/*<Closure>*/ postInstantiateDelegates = new LinkedList/*<Closure>*/();
+    private LinkedList/*<Closure>*/ nodeCompletionDelegates = new LinkedList/*<Closure>*/();
 
     public FactoryBuilderSupport() {
         this.proxyBuilder = this;
@@ -163,7 +169,7 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
     /**
      * Add an attribute delegate so it can intercept attributes being set.
      * Attribute delegates are fire in a FILO pattern, so that nested delegates
-     * getfirst crack.
+     * get first crack.
      * @param attrDelegate
      */
     public Closure addAttributeDelegate( Closure attrDelegate ) {
@@ -172,11 +178,68 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
     }
 
     /**
-     * remove the most recently added instance of teh attribute delegate.
+     * Remove the most recently added instance of the attribute delegate.
      * @param attrDelegate
      */
     public void removeAttributeDelegate( Closure attrDelegate ) {
         attributeDelegates.remove( attrDelegate );
+    }
+
+    /**
+     * Add a preInstantiate delegate so it can intercept nodes before they are created.
+     * PreInstantiate delegates are fire in a FILO pattern, so that nested delegates
+     * get first crack.
+     * @param delegate
+     */
+    public Closure addPreInstantiateDelegate( Closure delegate ) {
+        preInstantiateDelegates.addFirst( delegate );
+        return delegate;
+    }
+
+    /**
+     * Remove the most recently added instance of the preInstantiate delegate.
+     * @param delegate
+     */
+    public void removePreInstantiateDelegate( Closure delegate ) {
+        preInstantiateDelegates.remove( delegate );
+    }
+
+    /**
+     * Add a postInstantiate delegate so it can intercept nodes after they are created.
+     * PostInstantiate delegates are fire in a FILO pattern, so that nested delegates
+     * get first crack.
+     * @param delegate
+     */
+    public Closure addPostInstantiateDelegate( Closure delegate ) {
+        postInstantiateDelegates.addFirst( delegate );
+        return delegate;
+    }
+
+    /**
+     * Remove the most recently added instance of the postInstantiate delegate.
+     * @param delegate
+     */
+    public void removePostInstantiateDelegate( Closure delegate ) {
+        postInstantiateDelegates.remove( delegate );
+    }
+
+    /**
+     * Add a nodeCompletion delegate so it can intercept nodes after they done with building.
+     * NodeCompletion delegates are fire in a FILO pattern, so that nested delegates
+     * get first crack.
+     * @param delegate
+     */
+    public Closure addNodeCompletionDelegate( Closure delegate ) {
+        nodeCompletionDelegates.addFirst( delegate );
+        return delegate;
+    }
+
+    /**
+     * Remove the most recently added instance of the nodeCompletion delegate.
+     * @param delegate
+     */
+    public void removeNodeCompletionDelegate( Closure delegate ) {
+        nodeCompletionDelegates.remove( delegate );
     }
 
     public void registerBeanFactory( String theName, final Class beanClass ) {
@@ -318,6 +381,7 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
             proxyBuilder.newContext();
             proxyBuilder.getContext().put( CURRENT_NODE, node );
             proxyBuilder.getContext().put( PARENT_FACTORY, parentFactory);
+            proxyBuilder.getContext().put( PARENT_NODE, current );
             // lets register the builder as the delegate
             proxyBuilder.setClosureDelegate( closure, node );
             closure.call();
@@ -388,6 +452,9 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
      * A hook after the factory creates the node and before attributes are set
      */
     protected void postInstantiate( Object name, Map attributes, Object node ) {
+        for( Iterator iter = postInstantiateDelegates.iterator(); iter.hasNext(); ) {
+            ( (Closure) iter.next()).call( new Object[] {this, node, attributes} ) ;
+        }
     }
 
     /**
@@ -400,6 +467,10 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
      * @return the node, possibly new, that represents the markup element
      */
     protected Object postNodeCompletion( Object parent, Object node ) {
+        for( Iterator iter = nodeCompletionDelegates.iterator(); iter.hasNext(); ) {
+            ( (Closure) iter.next()).call( new Object[] {this, parent, node} ) ;
+        }
+
         return node;
     }
 
@@ -407,6 +478,9 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
      * A hook before the factory creates the node
      */
     protected void preInstantiate( Object name, Map attributes, Object value ) {
+        for( Iterator iter = preInstantiateDelegates.iterator(); iter.hasNext(); ) {
+            ( (Closure) iter.next()).call( new Object[] {this, value, attributes} ) ;
+        }
     }
 
     /**
