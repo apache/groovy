@@ -142,6 +142,14 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
         return null;
     }
 
+    public Object getParentNode() {
+        if( !contexts.isEmpty() ){
+            Map context = (Map) contexts.getFirst();
+            return context.get( PARENT_NODE );
+        }
+        return null;
+    }
+
     /**
      * Convenience method when no arguments are required
      *
