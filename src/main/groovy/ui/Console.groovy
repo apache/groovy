@@ -1,4 +1,4 @@
-/*
+    /*
  * Copyright 2003-2007 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,6 +21,8 @@ import groovy.swing.SwingBuilder
 import groovy.ui.text.FindReplaceUtility
 import java.awt.*
 import java.awt.image.BufferedImage
+import java.awt.event.ActionEvent
+import java.awt.event.InputEvent
 import java.awt.event.KeyEvent
 // to disambiguate from java.awt.List
 import java.util.List
@@ -188,11 +190,29 @@ class Console implements CaretListener {
                 mnemonic: 'R',
                 accelerator: shortcut('shift Z') // is control-shift-Z or control-Y more common?
             )
-            action(FindReplaceUtility.FIND_ACTION,
-                id: 'findAction',
-                name: 'Find/Replace...',
+            action(id: 'findAction',
+                name: 'Find...',
+                closure: this.&find,
                 mnemonic: 'F',
                 accelerator: shortcut('F')
+            )
+            action(id: 'findNextAction',
+                name: 'Find Next',
+                closure: this.&findNext,
+                mnemonic: 'N',
+                accelerator: KeyStroke.getKeyStroke(KeyEvent.VK_F3, 0)
+            )
+            action(id: 'findPreviousAction',
+                name: 'Find Previous',
+                closure: this.&findPrevious,
+                mnemonic: 'V',
+                accelerator: KeyStroke.getKeyStroke(KeyEvent.VK_F3, InputEvent.SHIFT_DOWN_MASK)
+            )
+            action(id: 'replaceAction',
+                name: 'Replace...',
+                closure: this.&replace,
+                mnemonic: 'E',
+                accelerator: shortcut('H')
             )
             action(id: 'cutAction',
                 name: 'Cut',
@@ -322,8 +342,11 @@ class Console implements CaretListener {
                     menuItem(copyAction)
                     menuItem(pasteAction)
                     separator()
-                    //menuItem(findAction)
-                    //separator()
+                    menuItem(findAction)
+                    menuItem(findNextAction)
+                    menuItem(findPreviousAction)
+                    menuItem(replaceAction)
+                    separator()
                     menuItem(selectAllAction)
                 }
 
@@ -807,6 +830,27 @@ class Console implements CaretListener {
         def dialog = pane.createDialog(frame, 'About GroovyConsole')
         dialog.show()
     }
+
+    void find(EventObject evt = null) {
+        FindReplaceUtility.showDialog()
+    }
+
+    void findNext(EventObject evt = null) {
+        FindReplaceUtility.FIND_ACTION.actionPerformed(evt)
+    }
+
+    void findPrevious(EventObject evt = null) {
+        def reverseEvt = new ActionEvent(
+            evt.getSource(), evt.getID(),
+            evt.getActionCommand(), evt.getWhen(),
+            ActionEvent.SHIFT_MASK) //reverse
+        FindReplaceUtility.FIND_ACTION.actionPerformed(reverseEvt)
+    }
+
+    void replace(EventObject evt = null) {
+        FindReplaceUtility.showDialog(true)
+    }
+
 
     // Shows the 'wait' dialog
     void showRunWaitDialog() {
