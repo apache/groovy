@@ -25,6 +25,45 @@ public class StaticScopeTest extends CompilableTestSupport {
         """
     }
 
+    public void testStaticMethodInConstructor() {
+        assertScript """
+        class B {
+            def instanceVariable = 0
+            static classVariable = 0
+            B() { instanceVariable = method(); init() }
+            static int method() { 1 }
+            static int init() { classVariable = 2 }
+        }
+        assert new B().instanceVariable == 1
+        assert B.classVariable == 2
+        """
+    }
+
+    public void testStaticMethodInSpecialConstructorCall() {
+        assertScript """
+        class A {
+            def instanceVariable = 0
+            A(x) { instanceVariable = x }
+            A(x, y) { this( method(x + y) ) }
+            static int method(x) { 2 * x }
+        }
+        assert new A(2).instanceVariable == 2
+        assert new A(2, 5).instanceVariable == 14
+        """
+        assertScript """
+        class B {
+            def instanceVariable = 0
+            B(x) { instanceVariable = x }
+        }
+        class C extends B {
+            C(x, y) { super( method(x + y) ) }
+            static int method(x) { 2 * x }
+        }
+        assert new B(2).instanceVariable == 2
+        assert new C(2, 5).instanceVariable == 14
+        """
+    }
+
     public void testStaticImportProperty() {
         assertScript """
         import static A.*
