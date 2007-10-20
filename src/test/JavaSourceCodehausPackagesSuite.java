@@ -1,6 +1,6 @@
 import junit.framework.Test;
 import junit.framework.TestSuite;
-
+import org.codehaus.groovy.ant.GroovyTest;
 import org.codehaus.groovy.antlr.AnnotationSourceParsingTest;
 import org.codehaus.groovy.antlr.EnumSourceParsingTest;
 import org.codehaus.groovy.antlr.GroovySourceASTTest;
@@ -41,6 +41,7 @@ public class JavaSourceCodehausPackagesSuite {
         suite.addTestSuite(FileSystemCompilerTest.class);
         suite.addTestSuite(ForTest.class);
         suite.addTestSuite(GetPropertyTest.class);
+        suite.addTestSuite(GroovyTest.class);
         suite.addTestSuite(GroovyClassLoaderTest.class);
         suite.addTestSuite(GroovyDocToolTest.class);
         suite.addTestSuite(GroovySourceASTTest.class);

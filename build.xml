@@ -219,7 +219,10 @@ $Date$
     <target name="realCompileTest">
         <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpath="${mainClassesDirectory}"
                  classpathref="testPath"/>
-        <groovyc srcdir="${testSourceDirectory}" destdir="${testClassesDirectory}" >
+        <!-- compile Groovy test files excluding ones which we want to pick up from the file system -->
+        <groovyc srcdir="${testSourceDirectory}"
+                 destdir="${testClassesDirectory}"
+                 excludes="org/codehaus/groovy/ant/**/GroovyTest*.groovy" >
             <classpath>
                 <pathelement path="${mainClassesDirectory}"/>
                 <pathelement path="${testClassesDirectory}"/>

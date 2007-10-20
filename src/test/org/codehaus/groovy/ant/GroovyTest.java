@@ -10,7 +10,7 @@ import java.io.File;
 /**
  * Unit tests for the {@link Groovy} ant task.
  * Caution: the *.groovy files used by this test should not get compiled with the rest of the
- * test classes compilation process otherwiser they would be available in the classpath
+ * test classes compilation process otherwise they would be available in the classpath
  * and the tests here would be meaningless (tested by testClasspath_missing).
  *
  * @author Marc Guillemot
@@ -73,5 +73,11 @@ public class GroovyTest extends GroovyTestCase {
         assertNull(FLAG);
         project.executeTarget("groovyClasspath_nestedClasspath");
         assertEquals("from groovytest3.GroovyTest3Class.doSomething()", FLAG);
+    }
+
+    public void testGroovyArgUsage() {
+        assertNull(FLAG);
+        project.executeTarget("groovyArgUsage");
+        assertEquals("from groovytest3.GroovyTest3Class.doSomethingWithArgs() 1 2 3", FLAG);
     }
 }

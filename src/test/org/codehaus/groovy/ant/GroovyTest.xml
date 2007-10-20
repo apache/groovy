@@ -51,6 +51,14 @@
         </groovy>
     </target>
 
+    <target name="groovyArgUsage" depends="defineTask">
+        <groovy classpath="groovytest3">
+            <arg line="1 2 3"/>
+            def foo = new GroovyTest3Class()
+            foo.doSomethingWithArgs(args)
+        </groovy>
+    </target>
+
     <target name="defineTask">
         <taskdef name="groovy" classname="org.codehaus.groovy.ant.Groovy"/>
     </target>

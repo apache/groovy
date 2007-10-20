@@ -21,31 +21,19 @@ import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyShell;
 import groovy.lang.Script;
 import groovy.util.AntBuilder;
-
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.io.PrintWriter;
-import java.io.Reader;
-import java.io.StringWriter;
-import java.lang.reflect.Field;
-import java.util.Vector;
-
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.DirectoryScanner;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.Task;
-import org.apache.tools.ant.types.FileSet;
-import org.apache.tools.ant.types.Path;
-import org.apache.tools.ant.types.Reference;
+import org.apache.tools.ant.types.*;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.tools.ErrorReporter;
+
+import java.io.*;
+import java.lang.reflect.Field;
+import java.util.Vector;
 
 /**
  * Executes a series of Groovy statements.
@@ -95,6 +83,8 @@ public class Groovy extends Task
      */
     private CompilerConfiguration configuration = new CompilerConfiguration();
 
+    private Commandline cmdline = new Commandline();
+
     /**
      * Enable compiler to report stack trace information if a problem occurs
      * during compilation.
@@ -140,8 +130,6 @@ public class Groovy extends Task
     /**
      * whether output should be appended to or overwrite
      * an existing file.  Defaults to false.
-     *
-     * @since Ant 1.5
      */
     public void setAppend(boolean append) {
         this.append = append;
@@ -262,6 +250,9 @@ public class Groovy extends Task
         return answer.toString();
     }
 
+    public Commandline.Argument createArg() {
+        return cmdline.createArgument();
+    }
 
     /**
      * read in lines and execute them
@@ -338,6 +329,7 @@ public class Groovy extends Task
             script.setProperty("properties", new AntProjectPropertiesDelegate(project));
             script.setProperty("target", getOwningTarget());
             script.setProperty("task", this);
+            script.setProperty("args", cmdline.getCommandline());
             if (mavenPom != null) {
                 script.setProperty("pom", mavenPom);
             }
