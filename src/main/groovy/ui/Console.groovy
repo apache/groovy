@@ -287,7 +287,7 @@ class Console implements CaretListener {
             )
             try {
                 System.setProperty("groovy.full.stacktrace",
-                    Boolean.toString(Boolean.parseBoolean(System.getProperty("groovy.full.stacktrace", "false"))))
+                    Boolean.toString(Boolean.valueOf(System.getProperty("groovy.full.stacktrace", "false"))))
             } catch (SecurityException se) {
                 fullStackTracesAction.enabled = false;
             }
@@ -360,7 +360,7 @@ class Console implements CaretListener {
                     checkBoxMenuItem(fullStackTracesAction, id:'fullStackTracesMenuItem')
                     try {
                         fullStackTracesMenuItem.selected =
-                            Boolean.parseBoolean(System.getProperty("groovy.full.stacktrace", "false"))
+                            Boolean.valueOf(System.getProperty("groovy.full.stacktrace", "false"))
                     } catch (SecurityException se) { }
                 }
 
