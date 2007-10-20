@@ -42,6 +42,7 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
     public static final String PARENT_FACTORY = "_PARENT_FACTORY_";
     public static final String PARENT_NODE = "_PARENT_NODE_";
     public static final String CURRENT_NODE = "_CURRENT_NODE_";
+    public static final String PARENT_CONTEXT = "_PARENT_CONTEXT_";
     private static final Logger LOG = Logger.getLogger( FactoryBuilderSupport.class.getName() );
 
     /**
@@ -108,44 +109,52 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
     }
 
     public Map getFactories() {
-        return Collections.unmodifiableMap(factories);
+        return Collections.unmodifiableMap(proxyBuilder.factories);
     }
 
     public Map getContext() {
-        if( !contexts.isEmpty() ){
-            return (Map) contexts.getFirst();
+        if( !proxyBuilder.contexts.isEmpty() ){
+            return (Map) proxyBuilder.contexts.getFirst();
         }
         return null;
     }
 
     public Object getCurrent() {
-        if( !contexts.isEmpty() ){
-            Map context = (Map) contexts.getFirst();
+        if( !proxyBuilder.contexts.isEmpty() ){
+            Map context = (Map) proxyBuilder.contexts.getFirst();
             return context.get( CURRENT_NODE );
         }
         return null;
     }
 
     public Factory getCurrentFactory() {
-        if( !contexts.isEmpty() ){
-            Map context = (Map) contexts.getFirst();
+        if( !proxyBuilder.contexts.isEmpty() ){
+            Map context = (Map) proxyBuilder.contexts.getFirst();
             return (Factory) context.get( CURRENT_FACTORY );
         }
         return null;
     }
 
     public Factory getParentFactory() {
-        if( !contexts.isEmpty() ){
-            Map context = (Map) contexts.getFirst();
+        if( !proxyBuilder.contexts.isEmpty() ){
+            Map context = (Map) proxyBuilder.contexts.getFirst();
             return (Factory) context.get( PARENT_FACTORY );
         }
         return null;
     }
 
     public Object getParentNode() {
-        if( !contexts.isEmpty() ){
-            Map context = (Map) contexts.getFirst();
+        if( !proxyBuilder.contexts.isEmpty() ){
+            Map context = (Map) proxyBuilder.contexts.getFirst();
             return context.get( PARENT_NODE );
+        }
+        return null;
+    }
+
+    public Map getParentContext() {
+        if( !proxyBuilder.contexts.isEmpty() ){
+            Map context = (Map) proxyBuilder.contexts.getFirst();
+            return (Map) context.get( PARENT_CONTEXT );
         }
         return null;
     }
@@ -179,7 +188,7 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
      * @param attrDelegate
      */
     public Closure addAttributeDelegate( Closure attrDelegate ) {
-        attributeDelegates.addFirst( attrDelegate );
+        proxyBuilder.attributeDelegates.addFirst( attrDelegate );
         return attrDelegate;
     }
 
@@ -188,7 +197,7 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
      * @param attrDelegate
      */
     public void removeAttributeDelegate( Closure attrDelegate ) {
-        attributeDelegates.remove( attrDelegate );
+        proxyBuilder.attributeDelegates.remove( attrDelegate );
     }
 
     /**
@@ -198,7 +207,7 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
      * @param delegate
      */
     public Closure addPreInstantiateDelegate( Closure delegate ) {
-        preInstantiateDelegates.addFirst( delegate );
+        proxyBuilder.preInstantiateDelegates.addFirst( delegate );
         return delegate;
     }
 
@@ -207,7 +216,7 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
      * @param delegate
      */
     public void removePreInstantiateDelegate( Closure delegate ) {
-        preInstantiateDelegates.remove( delegate );
+        proxyBuilder.preInstantiateDelegates.remove( delegate );
     }
 
     /**
@@ -217,7 +226,7 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
      * @param delegate
      */
     public Closure addPostInstantiateDelegate( Closure delegate ) {
-        postInstantiateDelegates.addFirst( delegate );
+        proxyBuilder.postInstantiateDelegates.addFirst( delegate );
         return delegate;
     }
 
@@ -226,7 +235,7 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
      * @param delegate
      */
     public void removePostInstantiateDelegate( Closure delegate ) {
-        postInstantiateDelegates.remove( delegate );
+        proxyBuilder.postInstantiateDelegates.remove( delegate );
     }
 
     /**
@@ -236,7 +245,7 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
      * @param delegate
      */
     public Closure addNodeCompletionDelegate( Closure delegate ) {
-        nodeCompletionDelegates.addFirst( delegate );
+        proxyBuilder.nodeCompletionDelegates.addFirst( delegate );
         return delegate;
     }
 
@@ -245,7 +254,7 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
      * @param delegate
      */
     public void removeNodeCompletionDelegate( Closure delegate ) {
-        nodeCompletionDelegates.remove( delegate );
+        proxyBuilder.nodeCompletionDelegates.remove( delegate );
     }
 
     public void registerBeanFactory( String theName, final Class beanClass ) {
@@ -262,13 +271,13 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
     }
 
     public void registerFactory( String name, Factory factory ) {
-        factories.put( name, factory );
+        proxyBuilder.factories.put( name, factory );
     }
 
     protected Object createNode( Object name, Map attributes, Object value ) {
         Object node = null;
 
-        Factory factory = (Factory) factories.get( name );
+        Factory factory = proxyBuilder.resolveFactory( name );
         if( factory == null ){
             LOG.log( Level.WARNING, "Could not find match for name '" + name + "'" );
             return null;
@@ -292,6 +301,15 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
         proxyBuilder.postInstantiate( name, attributes, node );
         proxyBuilder.handleNodeAttributes( node, attributes );
         return node;
+    }
+
+    /**
+     * Returns the Factory associated with name.<br>
+     * This is a hook for subclasses to plugin a custom strategy
+     * for mapping names to factories.
+     */
+    protected Factory resolveFactory( Object name ) {
+        return (Factory) proxyBuilder.factories.get( name );
     }
 
     protected Object doInvokeMethod( String methodName, Object name, Object args ) {
@@ -384,10 +402,12 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
             }
             // push new node on stack
             Object parentFactory = proxyBuilder.getCurrentFactory();
+            Map parentContext = proxyBuilder.getContext();
             proxyBuilder.newContext();
             proxyBuilder.getContext().put( CURRENT_NODE, node );
             proxyBuilder.getContext().put( PARENT_FACTORY, parentFactory);
             proxyBuilder.getContext().put( PARENT_NODE, current );
+            proxyBuilder.getContext().put( PARENT_CONTEXT, parentContext );
             // lets register the builder as the delegate
             proxyBuilder.setClosureDelegate( closure, node );
             closure.call();
@@ -410,8 +430,8 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
      * @return the object representing the name
      */
     protected Object getName( String methodName ) {
-        if( nameMappingClosure != null ){
-            return nameMappingClosure.call( methodName );
+        if( proxyBuilder.nameMappingClosure != null ){
+            return proxyBuilder.nameMappingClosure.call( methodName );
         }
         return methodName;
     }
@@ -426,7 +446,7 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
             return;
         }
 
-        for( Iterator iter = attributeDelegates.iterator(); iter.hasNext(); ) {
+        for( Iterator iter = proxyBuilder.attributeDelegates.iterator(); iter.hasNext(); ) {
             ( (Closure) iter.next()).call( new Object[] {this, node, attributes} ) ;
         }
 
@@ -436,7 +456,7 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
     }
 
     protected void newContext() {
-        contexts.addFirst( new HashMap() );
+        proxyBuilder.contexts.addFirst( new HashMap() );
     }
 
     /**
@@ -451,14 +471,14 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
     }
 
     protected Map popContext() {
-        return (Map) contexts.removeFirst();
+        return (Map) proxyBuilder.contexts.removeFirst();
     }
 
     /**
      * A hook after the factory creates the node and before attributes are set
      */
     protected void postInstantiate( Object name, Map attributes, Object node ) {
-        for( Iterator iter = postInstantiateDelegates.iterator(); iter.hasNext(); ) {
+        for( Iterator iter = proxyBuilder.postInstantiateDelegates.iterator(); iter.hasNext(); ) {
             ( (Closure) iter.next()).call( new Object[] {this, node, attributes} ) ;
         }
     }
@@ -473,7 +493,7 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
      * @return the node, possibly new, that represents the markup element
      */
     protected Object postNodeCompletion( Object parent, Object node ) {
-        for( Iterator iter = nodeCompletionDelegates.iterator(); iter.hasNext(); ) {
+        for( Iterator iter = proxyBuilder.nodeCompletionDelegates.iterator(); iter.hasNext(); ) {
             ( (Closure) iter.next()).call( new Object[] {this, parent, node} ) ;
         }
 
@@ -484,7 +504,7 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
      * A hook before the factory creates the node
      */
     protected void preInstantiate( Object name, Map attributes, Object value ) {
-        for( Iterator iter = preInstantiateDelegates.iterator(); iter.hasNext(); ) {
+        for( Iterator iter = proxyBuilder.preInstantiateDelegates.iterator(); iter.hasNext(); ) {
             ( (Closure) iter.next()).call( new Object[] {this, value, attributes} ) ;
         }
     }
@@ -493,7 +513,7 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
      * Clears the context stack
      */
     protected void reset() {
-        contexts.clear();
+        proxyBuilder.contexts.clear();
     }
 
     /**
@@ -539,6 +559,6 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
     }
 
     protected LinkedList getContexts() {
-        return contexts;
+        return proxyBuilder.contexts;
     }
 }
