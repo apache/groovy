@@ -117,7 +117,9 @@ class Console implements CaretListener {
     }
 
     void run() {
-        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
+        swing = new SwingBuilder()
+
+        swing.lookAndFeel('system')
         System.setProperty("apple.laf.useScreenMenuBar", "true")
         System.setProperty("com.apple.mrj.application.apple.menu.about.name", "GroovyConsole")
         System.setProperty("groovy.sanitized.stacktraces", """org.codehaus.groovy.runtime.
@@ -129,7 +131,6 @@ class Console implements CaretListener {
                 java.lang.Thread
                 groovy.ui.Console""")
 
-        swing = new SwingBuilder()
 
         def inputEditor = new ConsoleTextEditor()
 
@@ -406,7 +407,6 @@ class Console implements CaretListener {
 
                 label(id: 'rowNumAndColNum',
                        text: '1:1',
-                       border: BorderFactory.createEmptyBorder(1,3,1,3),
                        constraints: BorderLayout.EAST,
                        border: BorderFactory.createCompoundBorder(
                                BorderFactory.createLoweredBevelBorder(),
@@ -587,6 +587,7 @@ class Console implements CaretListener {
         if (askToSaveFile()) {
             frame.hide()
             frame.dispose()
+            FindReplaceUtility.dispose()
         }
 
         systemOutInterceptor.stop();

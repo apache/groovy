@@ -556,4 +556,8 @@ public final class FindReplaceUtility {
             FIND_REPLACE_DIALOG.dispose();
         }
     }
+
+    public static void dispose() {
+        FIND_REPLACE_DIALOG.dispose();
+    }
 }
