@@ -97,7 +97,7 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
     private FactoryBuilderSupport proxyBuilder;
     private LinkedList/*<Closure>*/ preInstantiateDelegates = new LinkedList/*<Closure>*/();
     private LinkedList/*<Closure>*/ postInstantiateDelegates = new LinkedList/*<Closure>*/();
-    private LinkedList/*<Closure>*/ nodeCompletionDelegates = new LinkedList/*<Closure>*/();
+    private LinkedList/*<Closure>*/ postNodeCompletionDelegates = new LinkedList/*<Closure>*/();
 
     public FactoryBuilderSupport() {
         this.proxyBuilder = this;
@@ -244,8 +244,8 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
      * get first crack.
      * @param delegate
      */
-    public Closure addNodeCompletionDelegate( Closure delegate ) {
-        proxyBuilder.nodeCompletionDelegates.addFirst( delegate );
+    public Closure addPostNodeCompletionDelegate( Closure delegate ) {
+        proxyBuilder.postNodeCompletionDelegates.addFirst( delegate );
         return delegate;
     }
 
@@ -253,8 +253,8 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
      * Remove the most recently added instance of the nodeCompletion delegate.
      * @param delegate
      */
-    public void removeNodeCompletionDelegate( Closure delegate ) {
-        proxyBuilder.nodeCompletionDelegates.remove( delegate );
+    public void removePostNodeCompletionDelegate( Closure delegate ) {
+        proxyBuilder.postNodeCompletionDelegates.remove( delegate );
     }
 
     public void registerBeanFactory( String theName, final Class beanClass ) {
@@ -415,11 +415,12 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
         }
 
         proxyBuilder.nodeCompleted( current, node );
+        node = proxyBuilder.postNodeCompletion( current, node );
         if( proxyBuilder.getContexts().size() == 1 ){
             // pop the first context
             proxyBuilder.popContext();
         }
-        return proxyBuilder.postNodeCompletion( current, node );
+	return node;
     }
 
     /**
@@ -471,11 +472,16 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
     }
 
     protected Map popContext() {
-        return (Map) proxyBuilder.contexts.removeFirst();
+	if( !proxyBuilder.contexts.isEmpty() ){
+            return (Map) proxyBuilder.contexts.removeFirst();
+	}
+        return null;	
     }
 
     /**
-     * A hook after the factory creates the node and before attributes are set
+     * A hook after the factory creates the node and before attributes are set.<br>
+     * It will call any registered postInstantiateDelegates, if you override this method
+     * be sure to call this impl somewhere in your code.
      */
     protected void postInstantiate( Object name, Map attributes, Object node ) {
         for( Iterator iter = proxyBuilder.postInstantiateDelegates.iterator(); iter.hasNext(); ) {
@@ -486,14 +492,16 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
     /**
      * A hook to allow nodes to be processed once they have had all of their
      * children applied and allows the actual node object that represents the
-     * Markup element to be changed
+     * Markup element to be changed.<br>
+     * It will call any registered postNodeCompletionDelegates, if you override 
+     * this method be sure to call this impl at the end of your code.
      *
      * @param node the current node being processed
      * @param parent the parent of the node being processed
      * @return the node, possibly new, that represents the markup element
      */
     protected Object postNodeCompletion( Object parent, Object node ) {
-        for( Iterator iter = proxyBuilder.nodeCompletionDelegates.iterator(); iter.hasNext(); ) {
+        for( Iterator iter = proxyBuilder.postNodeCompletionDelegates.iterator(); iter.hasNext(); ) {
             ( (Closure) iter.next()).call( new Object[] {this, parent, node} ) ;
         }
 
@@ -501,7 +509,9 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
     }
 
     /**
-     * A hook before the factory creates the node
+     * A hook before the factory creates the node.<br>
+     * It will call any registered preInstantiateDelegates, if you override this method
+     * be sure to call this impl somewhere in your code.
      */
     protected void preInstantiate( Object name, Map attributes, Object value ) {
         for( Iterator iter = proxyBuilder.preInstantiateDelegates.iterator(); iter.hasNext(); ) {
