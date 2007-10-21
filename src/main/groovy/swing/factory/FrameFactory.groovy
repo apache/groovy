@@ -21,7 +21,6 @@ import javax.swing.JFrame
 import javax.swing.JMenuBar
 
 public class FrameFactory extends RootPaneContainerFactory {
-    
 
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         JFrame frame

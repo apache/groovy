@@ -20,8 +20,8 @@ import groovy.swing.SwingBuilder
 
 public class WidgetFactory extends AbstractFactory {
 
-    Class restrictedType;
-    protected boolean leaf
+    final Class restrictedType;
+    protected final boolean leaf
 
     public WidgetFactory(Class restrictedType, boolean leaf) {
         this.restrictedType = restrictedType

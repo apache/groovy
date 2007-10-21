@@ -32,12 +32,12 @@ public interface Factory {
      * @param builder the FactoryBuilder
      * @param name the name of the node being built
      * @param value the 'value' argument in the build node
-     * @param properties the attributes of the build arg
+     * @param attributes the attributes of the build arg
      * @return the object created for the builder
      * @throws InstantiationException
      * @throws IllegalAccessException
      */
-    Object newInstance( FactoryBuilderSupport builder, Object name, Object value, Map properties )
+    Object newInstance( FactoryBuilderSupport builder, Object name, Object value, Map attributes )
             throws InstantiationException, IllegalAccessException;
 
     /**

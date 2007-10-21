@@ -30,7 +30,7 @@ import org.codehaus.groovy.binding.*
  */
 public class BindFactory extends AbstractFactory {
 
-    Map/*<String, TriggerBinding*/ syntheticBindings;
+    final Map/*<String, TriggerBinding*/ syntheticBindings;
 
     public BindFactory() {
         syntheticBindings = new HashMap();

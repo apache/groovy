@@ -23,8 +23,8 @@ import groovy.swing.SwingBuilder
  * @since Groovy 1.1
  */
 class BeanFactory extends AbstractFactory {
-    Class beanClass
-    protected boolean leaf
+    final Class beanClass
+    final protected boolean leaf
 
     public BeanFactory(Class beanClass) {
         this(beanClass, false)

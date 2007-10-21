@@ -21,6 +21,8 @@ import java.lang.reflect.InvocationTargetException
 import java.util.logging.Logger
 import javax.swing.*
 import javax.swing.table.TableColumn
+import javax.swing.border.BevelBorder
+import javax.swing.border.EtchedBorder
 
 /**
  * A helper class for creating Swing widgets using GroovyMarkup
@@ -180,6 +182,20 @@ public class SwingBuilder extends FactoryBuilderSupport {
         registerFactory("tableLayout", new TableLayoutFactory());
         registerFactory("tr", new TRFactory());
         registerFactory("td", new TDFactory());
+
+        //
+        // borders
+        //
+        registerFactory("lineBorder", new LineBorderFactory())
+        registerFactory("loweredBevelBorder", new BevelBorderFactory(BevelBorder.LOWERED))
+        registerFactory("raisedBevelBorder", new BevelBorderFactory(BevelBorder.RAISED))
+        registerFactory("etchedBorder", new EtchedBorderFactory(EtchedBorder.LOWERED))
+        registerFactory("loweredEtchedBorder", new EtchedBorderFactory(EtchedBorder.LOWERED))
+        registerFactory("raisedEtchedBorder", new EtchedBorderFactory(EtchedBorder.RAISED))
+        registerFactory("titledBorder", new TitledBorderFactory())
+        registerFactory("emptyBorder", new EmptyBorderFactory())
+        registerFactory("compoundBorder", new CompoundBorderFactory())
+        registerFactory("matteBorder", new MatteBorderFactory())
 
     }
 

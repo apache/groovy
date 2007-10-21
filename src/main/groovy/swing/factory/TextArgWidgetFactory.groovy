@@ -25,7 +25,7 @@ import org.codehaus.groovy.runtime.InvokerHelper
  */
 public class TextArgWidgetFactory extends AbstractFactory {
     
-    Class klass;
+    final Class klass;
     
     public TextArgWidgetFactory(Class klass) {
         this.klass = klass;

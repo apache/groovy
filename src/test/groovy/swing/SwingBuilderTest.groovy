@@ -27,6 +27,7 @@ import javax.swing.JToolBar.Separator as JToolBar_Separator
 import javax.swing.text.DateFormatter
 import javax.swing.text.NumberFormatter
 import javax.swing.plaf.metal.MetalLookAndFeel
+import javax.swing.border.TitledBorder
 
 class SwingBuilderTest extends GroovyTestCase {
 
@@ -1195,7 +1196,123 @@ class SwingBuilderTest extends GroovyTestCase {
         } finally {
             UIManager.setLookAndFeel(oldLAF)
         }
+   }
 
+    public void testBorders() {
+        if (isHeadless()) return
+        def swing = new SwingBuilder()
+
+        // classic smoke test, try every valid combination and look for smoke...
+        swing.frame {
+            lineBorder(color:Color.BLACK, parent:true)
+            lineBorder(color:Color.BLACK, thickness:4, parent:true)
+            lineBorder(color:Color.BLACK, roundedCorners:true, parent:true)
+            lineBorder(color:Color.BLACK, thickness:4, roundedCorners:true, parent:true)
+            raisedBevelBorder(parent:true)
+            raisedBevelBorder(highlight:Color.GREEN, shadow:Color.PINK, parent:true)
+            raisedBevelBorder(highlightOuter:Color.GREEN, highlightInner:Color.RED, shadowOuter:Color.PINK, shadowInner:Color.BLUE, parent:true)
+            loweredBevelBorder(parent:true)
+            loweredBevelBorder(highlight:Color.GREEN, shadow:Color.PINK, parent:true)
+            loweredBevelBorder(highlightOuter:Color.GREEN, highlightInner:Color.RED, shadowOuter:Color.PINK, shadowInner:Color.BLUE, parent:true)
+            etchedBorder(parent:true)
+            etchedBorder(highlight:Color.GREEN, shadow:Color.PINK, parent:true)
+            loweredEtchedBorder(parent:true)
+            loweredEtchedBorder(highlight:Color.GREEN, shadow:Color.PINK, parent:true)
+            raisedEtchedBorder(parent:true)
+            raisedEtchedBorder(highlight:Color.GREEN, shadow:Color.PINK, parent:true)
+            titledBorder("Title 1", parent:true)
+            titledBorder(title:"Title 2", parent:true)
+            titledBorder("Title 3", position:'bottom', parent:true)
+            titledBorder(title:"Title 4", position:'aboveBottom', parent:true)
+            titledBorder("Title 5", position:TitledBorder.ABOVE_TOP, parent:true)
+            titledBorder(title:"Title 6", position:TitledBorder.BOTTOM, parent:true)
+            titledBorder("Title 7", justification:'right', parent:true)
+            titledBorder(title:"Title 8", justification:'acenter', parent:true)
+            titledBorder("Title 9", justification:TitledBorder.TRAILING, parent:true)
+            titledBorder(title:"Title A", justification:TitledBorder.LEADING, parent:true)
+            titledBorder("Title B", border:lineBorder(color:Color.RED, thickness:6), parent:true)
+            titledBorder(title:"Title C", border:lineBorder(color:Color.BLUE, thickness:6), parent:true)
+            titledBorder("Title D", color:Color.CYAN, parent:true)
+            titledBorder(title:"Title E", border:lineBorder(color:Color.BLUE, thickness:6), parent:true)
+            emptyBorder(6, parent:true)
+            emptyBorder([3,5,6,9], parent:true)
+            emptyBorder(top:6, left:5, bottom:6, right:9, parent:true)
+            compoundBorder([titledBorder("single")], parent:true)
+            compoundBorder([titledBorder("outer"), titledBorder("inner")], parent:true)
+            compoundBorder(outer:titledBorder("outer"), inner:titledBorder("inner"), parent:true)
+            compoundBorder([titledBorder("outer"), titledBorder("middle"), titledBorder("inner")], parent:true)
+            matteBorder(Color.MAGENTA, size:7, parent:true)
+            matteBorder(7, color:Color.MAGENTA, parent:true)
+            matteBorder(javax.swing.plaf.metal.MetalIconFactory.getCheckBoxIcon(), size:9, parent:true)
+            matteBorder(9, icon:javax.swing.plaf.metal.MetalIconFactory.getCheckBoxIcon(), parent:true)
+
+            lineBorder(color:Color.BLACK)
+            lineBorder(color:Color.BLACK, thickness:4)
+            lineBorder(color:Color.BLACK, roundedCorners:true)
+            lineBorder(color:Color.BLACK, thickness:4, roundedCorners:true)
+            raisedBevelBorder()
+            raisedBevelBorder(highlight:Color.GREEN, shadow:Color.PINK)
+            raisedBevelBorder(highlightOuter:Color.GREEN, highlightInner:Color.RED, shadowOuter:Color.PINK, shadowInner:Color.BLUE)
+            loweredBevelBorder()
+            loweredBevelBorder(highlight:Color.GREEN, shadow:Color.PINK)
+            loweredBevelBorder(highlightOuter:Color.GREEN, highlightInner:Color.RED, shadowOuter:Color.PINK, shadowInner:Color.BLUE)
+            etchedBorder()
+            etchedBorder(highlight:Color.GREEN, shadow:Color.PINK)
+            loweredEtchedBorder()
+            loweredEtchedBorder(highlight:Color.GREEN, shadow:Color.PINK)
+            raisedEtchedBorder()
+            raisedEtchedBorder(highlight:Color.GREEN, shadow:Color.PINK)
+            titledBorder("Title 1")
+            titledBorder(title:"Title 2")
+            titledBorder("Title 3", position:'bottom')
+            titledBorder(title:"Title 4", position:'aboveBottom')
+            titledBorder("Title 5", position:TitledBorder.ABOVE_TOP)
+            titledBorder(title:"Title 6", position:TitledBorder.BOTTOM)
+            titledBorder("Title 7", justification:'right')
+            titledBorder(title:"Title 8", justification:'acenter')
+            titledBorder("Title 9", justification:TitledBorder.TRAILING)
+            titledBorder(title:"Title A", justification:TitledBorder.LEADING)
+            titledBorder("Title B", border:lineBorder(color:Color.RED, thickness:6))
+            titledBorder(title:"Title C", border:lineBorder(color:Color.BLUE, thickness:6))
+            titledBorder("Title D", color:Color.CYAN)
+            titledBorder(title:"Title E", border:lineBorder(color:Color.BLUE, thickness:6))
+            emptyBorder(6)
+            emptyBorder([3,5,6,9])
+            emptyBorder(top:6, left:5, bottom:6, right:9)
+            compoundBorder([titledBorder("single")])
+            compoundBorder([titledBorder("outer"), titledBorder("inner")])
+            compoundBorder(outer:titledBorder("outer"), inner:titledBorder("inner"))
+            compoundBorder([titledBorder("outer"), titledBorder("middle"), titledBorder("inner")])
+            matteBorder(Color.MAGENTA, size:7)
+            matteBorder(7, color:Color.MAGENTA)
+            matteBorder(javax.swing.plaf.metal.MetalIconFactory.getCheckBoxIcon(), size:9)
+            matteBorder(9, icon:javax.swing.plaf.metal.MetalIconFactory.getCheckBoxIcon())
+        }
+    }
+
+    public void testBorderAttachment() {
+        if (isHeadless()) return
+        def swing = new SwingBuilder()
+
+        swing.frame(id:'frame') {
+           raisedBevelBorder()
+        }
+        assert swing.frame.contentPane.border == null
+
+        swing.frame(id:'frame') {
+           raisedBevelBorder(parent:true)
+        }
+        assert swing.frame.contentPane.border != null
+
+        swing.panel(id:'panel') {
+           raisedBevelBorder()
+        }
+        assert swing.panel.border == null
+
+        swing.panel(id:'panel') {
+           raisedBevelBorder(parent:true)
+        }
+        assert swing.panel.border != null
     }
 
 }

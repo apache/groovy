@@ -38,7 +38,6 @@ abstract class RootPaneContainerFactory extends AbstractFactory {
         }
     }
 
-
     public void handleRootPaneTasks(FactoryBuilderSupport builder, Window container, Map attributes) {
         builder.context.defaultButtonDelegate =
             builder.addAttributeDelegate {myBuilder, node, myAttributes ->

@@ -32,10 +32,10 @@ public class RichActionWidgetFactory extends AbstractFactory {
     static final Class[] ICON_ARGS = [Icon];
     static final Class[] STRING_ARGS = [String];
     
-    Constructor actionCtor;
-    Constructor iconCtor;
-    Constructor stringCtor;
-    Class klass;
+    final Constructor actionCtor;
+    final Constructor iconCtor;
+    final Constructor stringCtor;
+    final Class klass;
     
     public RichActionWidgetFactory(Class klass) {
         try {

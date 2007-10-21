@@ -18,9 +18,12 @@ package groovy.swing.factory
 
 import groovy.swing.SwingBuilder
 import javax.swing.JMenu
-import javax.swing.JPopupMenu
+import javax.swing.JPopupMenu.Separator as JPopupMenu_Separator // JetGroovy bug
 import javax.swing.JSeparator
 import javax.swing.JToolBar
+import javax.swing.JToolBar.Separator as JToolBar_Separator
+
+// JetGroovy bug
 
 public class SeparatorFactory extends AbstractFactory {
     
@@ -28,9 +31,9 @@ public class SeparatorFactory extends AbstractFactory {
         SwingBuilder.checkValueIsNull(value, name);
         Object parent = builder.getCurrent();
         if (parent instanceof JMenu) {
-            return new JPopupMenu.Separator();
+            return new JPopupMenu_Separator();
         } else if (parent instanceof JToolBar) {
-            return new JToolBar.Separator();
+            return new JToolBar_Separator();
         } else {
             return new JSeparator();
         }
