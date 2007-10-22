@@ -261,8 +261,15 @@ class Console implements CaretListener {
                 name: 'Run',
                 closure: this.&runScript,
                 mnemonic: 'R',
-                keyStroke: 'ctrl ENTER', // does this need to be shortcutted or explicitly ctrl?
+                keyStroke: shortcut('ENTER'),
                 accelerator: shortcut('R')
+            )
+            action(id: 'runSelectionAction',
+                name: 'Run Selection',
+                closure: this.&runSelectedScript,
+                mnemonic: 'E',
+                keyStroke: shortcut('shift ENTER'),
+                accelerator: shortcut('shift R')
             )
             action(id: 'inspectLastAction',
                 name: 'Inspect Last',
@@ -372,6 +379,7 @@ class Console implements CaretListener {
 
                 menu(text: 'Script', mnemonic: 'S') {
                     menuItem(runAction)
+                    menuItem(runSelectionAction)
                     separator()
                     menuItem(inspectLastAction)
                     menuItem(inspectVariablesAction)
@@ -400,17 +408,13 @@ class Console implements CaretListener {
                 label(id: 'status',
                      text: 'Welcome to Groovy.',
                      constraints: BorderLayout.CENTER,
-                     border: BorderFactory.createCompoundBorder(
-                               BorderFactory.createLoweredBevelBorder(),
-                               BorderFactory.createEmptyBorder(1,3,1,3))
+                     border: compoundBorder([lowerBeveledBorder(), emptyBorder([1,3,1,3])])
                 )
 
                 label(id: 'rowNumAndColNum',
                        text: '1:1',
                        constraints: BorderLayout.EAST,
-                       border: BorderFactory.createCompoundBorder(
-                               BorderFactory.createLoweredBevelBorder(),
-                               BorderFactory.createEmptyBorder(1,3,1,3))
+                        border: compoundBorder([lowerBeveledBorder(), emptyBorder([1,3,1,3])])
                 )
             }
         }   // end of frame
@@ -420,6 +424,7 @@ class Console implements CaretListener {
         // attach ctrl-enter to input area
         swing.container(inputArea) {
             action(runAction)
+            action(runSelectionAction)
         }
 
         outputArea = swing.outputArea
@@ -441,7 +446,7 @@ class Console implements CaretListener {
                 owner: frame,
                 modal: true
         ) {
-            vbox(border: BorderFactory.createEmptyBorder(6, 6, 6, 6)) {
+            vbox(border: emptyBorder(6)) {
                 label(text: "Groovy is now executing. Please wait.", alignmentX: 0.5f)
                 vstrut()
                 button(interruptAction,
@@ -744,15 +749,24 @@ class Console implements CaretListener {
         return false
     }
 
-    // actually run the
+    // actually run the script
+
     void runScript(EventObject evt = null) {
+        runScriptImpl(false)
+    }
+
+    void runSelectedScript(EventObject evt = null) {
+        runScriptImpl(true)
+    }
+
+    private void runScriptImpl(boolean selected) {
         def endLine = System.getProperty('line.separator')
         def record = new HistoryRecord( allText: inputArea.getText().replaceAll(endLine, '\n'),
             selectionStart: textSelectionStart, selectionEnd: textSelectionEnd)
         addToHistory(record)
 
         // Print the input text
-        for (line in record.textToRun.tokenize("\n")) {
+        for (line in record.getTextToRun(selected).tokenize("\n")) {
             appendOutputNl('groovy> ', promptStyle)
             appendOutput(line, commandStyle)
         }
@@ -771,7 +785,7 @@ class Console implements CaretListener {
                 if(beforeExecution) {
                     beforeExecution()
                 }
-                def result = shell.evaluate(record.textToRun, name);
+                def result = shell.evaluate(record.getTextToRun(selected), name);
                 if(afterExecution) {
                     afterExecution()
                 }
@@ -920,8 +934,8 @@ class HistoryRecord {
     def result
     def exception
 
-    def getTextToRun() {
-        if (selectionStart != selectionEnd) {
+    def getTextToRun(boolean useSelection) {
+        if (useSelection && selectionStart != selectionEnd) {
             return allText[selectionStart ..< selectionEnd]
         }
         return allText
