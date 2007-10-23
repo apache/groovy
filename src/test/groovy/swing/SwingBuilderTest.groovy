@@ -28,6 +28,7 @@ import javax.swing.text.DateFormatter
 import javax.swing.text.NumberFormatter
 import javax.swing.plaf.metal.MetalLookAndFeel
 import javax.swing.border.TitledBorder
+import groovy.ui.Console
 
 class SwingBuilderTest extends GroovyTestCase {
 
@@ -1315,4 +1316,91 @@ class SwingBuilderTest extends GroovyTestCase {
         assert swing.panel.border != null
     }
 
+    public void testImageIcon() {
+        if (isHeadless()) return
+        def swing = new SwingBuilder()
+
+        String baseDir = new File("src/main").absolutePath
+
+        String resource = Console.ICON_PATH
+        String path = baseDir + resource
+        File file = new File(path)
+        String relativeResource = file.name
+        URL url = file.toURL()
+
+        swing.imageIcon(path, id:'ii')
+        assert swing.ii != null
+
+        swing.imageIcon(file:path, id:'ii')
+        assert swing.ii != null
+
+        swing.imageIcon(path, description:'<none>', id:'ii')
+        assert swing.ii != null
+        assert swing.ii.description == '<none>'
+
+        swing.imageIcon(file:path, description:'<none>', id:'ii')
+        assert swing.ii != null
+        assert swing.ii.description == '<none>'
+
+
+        swing.imageIcon(url, id:'ii')
+        assert swing.ii != null
+
+        swing.imageIcon(url:url, id:'ii')
+        assert swing.ii != null
+
+        swing.imageIcon(url, description:'<none>', id:'ii')
+        assert swing.ii != null
+        assert swing.ii.description == '<none>'
+
+        swing.imageIcon(url:url, description:'<none>', id:'ii')
+        assert swing.ii != null
+        assert swing.ii.description == '<none>'
+
+
+        swing.imageIcon(resource, id:'ii')
+        assert swing.ii != null
+
+        swing.imageIcon(resource:resource, id:'ii')
+        assert swing.ii != null
+
+        swing.imageIcon(resource, description:'<none>', id:'ii')
+        assert swing.ii != null
+        assert swing.ii.description == '<none>'
+
+        swing.imageIcon(file:resource, description:'<none>', id:'ii')
+        assert swing.ii != null
+        assert swing.ii.description == '<none>'
+
+
+        swing.imageIcon(resource, class:Console, id:'ii')
+        assert swing.ii != null
+
+        swing.imageIcon(resource:resource, class:Console, id:'ii')
+        assert swing.ii != null
+
+        swing.imageIcon(resource, description:'<none>', class:Console, id:'ii')
+        assert swing.ii != null
+        assert swing.ii.description == '<none>'
+
+        swing.imageIcon(file:resource, description:'<none>', class:Console, id:'ii')
+        assert swing.ii != null
+        assert swing.ii.description == '<none>'
+
+
+        swing.imageIcon(relativeResource, class:Console, id:'ii')
+        assert swing.ii != null
+
+        swing.imageIcon(resource:relativeResource, class:Console, id:'ii')
+        assert swing.ii != null
+
+        swing.imageIcon(relativeResource, description:'<none>', class:Console, id:'ii')
+        assert swing.ii != null
+        assert swing.ii.description == '<none>'
+
+        swing.imageIcon(file:relativeResource, description:'<none>', class:Console, id:'ii')
+        assert swing.ii != null
+        assert swing.ii.description == '<none>'
+
+    }
 }

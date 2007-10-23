@@ -50,7 +50,9 @@ class ObjectBrowser {
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
         swing = new SwingBuilder()
         
-        frame = swing.frame(title:'Groovy Object Browser', location:[200,200], size:[800,600],
+        frame = swing.frame(title:'Groovy Object Browser', location:[200,200],
+                size:[800,600], pack: true, show:true,
+                iconImage: swing.imageIcon(groovy.ui.Console.ICON_PATH).image,
                 defaultCloseOperation:WindowConstants.DISPOSE_ON_CLOSE) {
                 
             menuBar {
@@ -61,7 +63,7 @@ class ObjectBrowser {
             panel() {
                 borderLayout()
                 panel(  name:"Class Info",
-                        border: BorderFactory.createEmptyBorder(5,10,5,10),
+                        border: emptyBorder([5,10,5,10]),
                         constraints:BorderLayout.NORTH) {
                     flowLayout(alignment:FlowLayout.LEFT)
                     def props = inspector.classProps
@@ -134,11 +136,6 @@ class ObjectBrowser {
         addSorter(fieldTable)
         addSorter(methodTable)
         
-        // add icon (use the same than groovyConsole)
-        def icon = new ImageIcon(getClass().classLoader.getResource(groovy.ui.Console.ICON_PATH))
-        frame.iconImage = icon.image
-
-        frame.show()
         frame.toFront()
     }
     

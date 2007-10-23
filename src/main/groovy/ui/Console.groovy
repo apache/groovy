@@ -96,7 +96,7 @@ class Console implements CaretListener {
     Closure beforeExecution
     Closure afterExecution
 
-    static String ICON_PATH = 'groovy/ui/ConsoleIcon.png' // used by ObjectBrowser too
+    static String ICON_PATH = '/groovy/ui/ConsoleIcon.png' // used by ObjectBrowser too
 
     static void main(args) {
         java.util.logging.Logger.getLogger(StackTraceUtils.STACK_LOG_NAME).useParentHandlers = true
@@ -326,6 +326,7 @@ class Console implements CaretListener {
         frame = swing.frame(
             title: 'GroovyConsole',
             location: [100,100], // in groovy 2.0 use platform default location
+            iconImage: swing.imageIcon(ICON_PATH).image,
             defaultCloseOperation: WindowConstants.DO_NOTHING_ON_CLOSE
         ) {
             menuBar {
@@ -408,13 +409,13 @@ class Console implements CaretListener {
                 label(id: 'status',
                      text: 'Welcome to Groovy.',
                      constraints: BorderLayout.CENTER,
-                     border: compoundBorder([lowerBeveledBorder(), emptyBorder([1,3,1,3])])
+                     border: compoundBorder([loweredBevelBorder(), emptyBorder([1,3,1,3])])
                 )
 
                 label(id: 'rowNumAndColNum',
                        text: '1:1',
                        constraints: BorderLayout.EAST,
-                        border: compoundBorder([lowerBeveledBorder(), emptyBorder([1,3,1,3])])
+                        border: compoundBorder([loweredBevelBorder(), emptyBorder([1,3,1,3])])
                 )
             }
         }   // end of frame
@@ -467,10 +468,6 @@ class Console implements CaretListener {
         systemOutInterceptor.start();
 
         bindResults()
-
-        // add icon
-        def icon = new ImageIcon(getClass().classLoader.getResource(ICON_PATH))
-        frame.iconImage = icon.image
 
         frame.pack()
         frame.show()

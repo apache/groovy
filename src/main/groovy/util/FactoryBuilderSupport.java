@@ -43,6 +43,7 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
     public static final String PARENT_NODE = "_PARENT_NODE_";
     public static final String CURRENT_NODE = "_CURRENT_NODE_";
     public static final String PARENT_CONTEXT = "_PARENT_CONTEXT_";
+    public static final String OWNER = "owner";
     private static final Logger LOG = Logger.getLogger( FactoryBuilderSupport.class.getName() );
 
     /**
@@ -404,6 +405,7 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
             Object parentFactory = proxyBuilder.getCurrentFactory();
             Map parentContext = proxyBuilder.getContext();
             proxyBuilder.newContext();
+            proxyBuilder.getContext().put( OWNER, closure.getOwner());
             proxyBuilder.getContext().put( CURRENT_NODE, node );
             proxyBuilder.getContext().put( PARENT_FACTORY, parentFactory);
             proxyBuilder.getContext().put( PARENT_NODE, current );
