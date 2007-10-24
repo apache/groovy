@@ -331,7 +331,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         // let us collect the abstract super classes and stop at the
         // first non abstract super class. If such a class still 
         // contains abstract methods, then loading that class will fail.
-        // No need to be extra carefull here for that.
+        // No need to be extra careful here for that.
         ClassNode parent = this.redirect();
         do {
             abstractNodes.add(parent);

@@ -160,7 +160,7 @@ public class GroovyCategorySupport {
     /**
      * Delegated to from the global use(CategoryClass) method.  It scans the Category class for static methods
      * that take 1 or more parameters.  The first parameter is the class you are adding the category method to,
-     * additional parameters are those paramteres needed by that method.  A use statement cannot be undone and
+     * additional parameters are those parameters needed by that method.  A use statement cannot be undone and
      * is valid only for the current thread.
      *
      * @param categoryClass the class containing category methods

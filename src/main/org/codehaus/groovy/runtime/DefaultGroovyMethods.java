@@ -20,6 +20,7 @@ import groovy.util.CharsetToolkit;
 import groovy.util.ClosureComparator;
 import groovy.util.OrderBy;
 import groovy.util.GroovyCollections;
+import groovy.util.ProxyGenerator;
 
 import java.io.*;
 import java.lang.reflect.Array;
@@ -2892,114 +2893,7 @@ public class DefaultGroovyMethods {
         try {
             return asType((Object) map, clazz);
         } catch (GroovyCastException ce) {
-            return makeSubClass(map, clazz);
-        }
-    }
-
-    private static String shortName(String name) {
-        int index = name.lastIndexOf('.');
-        if (index == -1) return name;
-        return name.substring(index + 1, name.length());
-    }
-
-    private static Object makeSubClass(Map map, Class clazz) {
-        String name = shortName(clazz.getName()) + "_groovyProxy";
-        StringBuffer buffer = new StringBuffer();
-        // add class header with constructor
-        buffer.append("class ").append(name).append(" extends ")
-                .append(clazz.getName()).append(" {\n")
-                .append("    private closureMap\n    ")
-                .append(name).append("(map) {\n")
-                .append("        super()\n")
-                .append("        this.closureMap = map\n")
-                .append("    }\n");
-
-        // add overwriting methods
-        List selectedMethods = new ArrayList();
-
-        List publicAndProtectedMethods = toList(clazz.getMethods());
-        // add the protected methods of the class and its parents
-        Class currentClass = clazz;
-        do {
-            Method[] protectedMethods = currentClass.getDeclaredMethods();
-            for (int i = 0; i < protectedMethods.length; i++) {
-                Method method = protectedMethods[i];
-                if (Modifier.isProtected(method.getModifiers()))
-                    publicAndProtectedMethods.add(method);
-            }
-            currentClass = currentClass.getSuperclass();
-        } while (currentClass != null);
-
-        Iterator iterator1 = publicAndProtectedMethods.iterator();
-        while (iterator1.hasNext()) {
-            Method method = (Method) iterator1.next();
-            if (map.containsKey(method.getName())) {
-                selectedMethods.add(method.getName());
-                buffer.append("    ").append(getSimpleName(method.getReturnType()))
-                        .append(" ").append(method.getName()).append("(");
-                Class[] parameterTypes = method.getParameterTypes();
-                boolean first = true;
-                for (int parameterTypeIndex = 0; parameterTypeIndex < parameterTypes.length; parameterTypeIndex++) {
-                    Class parameter = parameterTypes[parameterTypeIndex];
-                    if (!first) {
-                        buffer.append(", ");
-                    } else {
-                        first = false;
-                    }
-                    buffer.append(getSimpleName(parameter)).append(" ")
-                            .append("p").append(parameterTypeIndex);
-                }
-                buffer.append(") { this.@closureMap['").append(method.getName()).append("'] (");
-                first = true;
-                for (int j = 0; j < parameterTypes.length; j++) {
-                    if (!first) {
-                        buffer.append(", ");
-                    } else {
-                        first = false;
-                    }
-                    buffer.append("p").append(j);
-                }
-                buffer.append(") }\n");
-
-            }
-        }
-        // add methods in the map, not overwriting other methods
-        for (Iterator iterator = map.keySet().iterator(); iterator.hasNext();) {
-            String methodName = (String) iterator.next();
-            if (selectedMethods.contains(methodName)) continue;
-            buffer.append("    def ").append(methodName).append("(Object[] args) { \n")
-                    .append("        this.@closureMap['").append(methodName).append("'] (*args)\n    }\n");
-        }
-        // end class
-        buffer.append("}\n").append("new ").append(name).append("(map)");
-        
-        Binding binding = new Binding();
-        binding.setVariable("map", map);
-        GroovyShell shell = new GroovyShell(clazz.getClassLoader(), binding);
-        try {
-            return shell.evaluate(buffer.toString());
-        } catch (MultipleCompilationErrorsException err) {
-            throw new GroovyCastException(map, clazz);
-        }
-    }
-
-    /**
-     * TODO once we switch to Java 1.5 bt default, use Class#getSimpleName() directly
-     * 
-     * @param c the class of which we want the readable simple name
-     * @return the readable simple name
-     */
-    private static String getSimpleName(Class c) {
-        if (c.isArray()) {
-            int dimension = 0;
-            Class componentClass = c;
-            while (componentClass.isArray()) {
-                componentClass = componentClass.getComponentType();
-                dimension++;
-            }
-            return componentClass.getName().replaceAll("\\$", "\\.") + multiply("[]", new Integer(dimension));
-        } else {
-            return c.getName().replaceAll("\\$", "\\.");
+            return ProxyGenerator.instantiateAggregateFromBaseClass(map, clazz);
         }
     }
 

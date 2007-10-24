@@ -15,13 +15,13 @@
  */
 package groovy
 
-import static org.codehaus.groovy.runtime.DefaultGroovyMethods.*
+import static groovy.util.ProxyGenerator.*
 
 /**
- * This test verifies the behaviour of DGM#getSimpleName(Class) used in Map of closures coercion to classes.
- * The behaviour of DGM#getSimpleName(Class) should be the same as Class#getSimpleName().
+ * This test verifies the behaviour of ProxyGenerator#getSimpleName(Class) used in Map of closures coercion to classes.
+ * The behaviour of ProxyGenerator#getSimpleName(Class) should be the same as Class#getSimpleName().
  *
- * TODO remove this class when we can use Class#getSimpleName() in DGM#makeSubClass(Map map, Class clazz)
+ * TODO remove this class when we can use Class#getSimpleName() in ProxyGenerator#instantiateAggregate(Map map, List interfaces, Class clazz)
  */
 class ClassGetSimpleNameTest extends GroovyTestCase {
 

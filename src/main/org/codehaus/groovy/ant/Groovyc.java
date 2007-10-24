@@ -464,7 +464,7 @@ public class Groovyc extends MatchingTask
 
         if (destDir != null && !destDir.isDirectory()) {
             throw new BuildException(
-                "destination directory \"" + destDir + "\" does not exist " + "or is not a directory",
+                "destination directory \"" + destDir + "\" does not exist or is not a directory",
                 getLocation());
         }
 
