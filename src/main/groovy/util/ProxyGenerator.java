@@ -172,6 +172,20 @@ public class ProxyGenerator {
     }
 
     private static void addOverridingMapCall(StringBuffer buffer, Method method) {
+        Class[] parameterTypes = addMethodPrefix(buffer, method);
+        addMethodBody(buffer, method, parameterTypes);
+        addMethodSuffix(buffer);
+    }
+
+    private static void addMapOrDummyCall(Map map, StringBuffer buffer, Method method) {
+        Class[] parameterTypes = addMethodPrefix(buffer, method);
+        if (map.containsKey(method.getName())) {
+            addMethodBody(buffer, method, parameterTypes);
+        }
+        addMethodSuffix(buffer);
+    }
+
+    private static Class[] addMethodPrefix(StringBuffer buffer, Method method) {
         buffer.append("    ").append(getSimpleName(method.getReturnType()))
                 .append(" ").append(method.getName()).append("(");
         Class[] parameterTypes = method.getParameterTypes();
@@ -183,40 +197,22 @@ public class ProxyGenerator {
             buffer.append(getSimpleName(parameter)).append(" ")
                     .append("p").append(parameterTypeIndex);
         }
-        buffer.append(") { this.@closureMap['").append(method.getName()).append("'] (");
+        buffer.append(") { ");
+        return parameterTypes;
+    }
+
+    private static void addMethodBody(StringBuffer buffer, Method method, Class[] parameterTypes) {
+        buffer.append("this.@closureMap['").append(method.getName()).append("'] (");
         for (int j = 0; j < parameterTypes.length; j++) {
             if (j != 0) {
                 buffer.append(", ");
             }
             buffer.append("p").append(j);
         }
-        buffer.append(") }\n");
+        buffer.append(")");
     }
 
-    // TODO remove some dup with above?
-    private static void addMapOrDummyCall(Map map, StringBuffer buffer, Method method) {
-        buffer.append("    ").append(getSimpleName(method.getReturnType()))
-                .append(" ").append(method.getName()).append("(");
-        Class[] parameterTypes = method.getParameterTypes();
-        for (int parameterTypeIndex = 0; parameterTypeIndex < parameterTypes.length; parameterTypeIndex++) {
-            Class parameter = parameterTypes[parameterTypeIndex];
-            if (parameterTypeIndex > 0) {
-                buffer.append(", ");
-            }
-            buffer.append(getSimpleName(parameter)).append(" ")
-                    .append("p").append(parameterTypeIndex);
-        }
-        buffer.append(") { ");
-        if (map.containsKey(method.getName())) {
-            buffer.append("this.@closureMap['").append(method.getName()).append("'] (");
-            for (int j = 0; j < parameterTypes.length; j++) {
-                if (j > 0) {
-                    buffer.append(", ");
-                }
-                buffer.append("p").append(j);
-            }
-            buffer.append(")");
-        }
+    private static void addMethodSuffix(StringBuffer buffer) {
         buffer.append(" }\n");
     }
 
