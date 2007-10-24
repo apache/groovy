@@ -17,6 +17,8 @@ public class TraversalTestHelper {
         return traverse(input, visitorClass, null);
     }
 
+
+    // todo - the visitor doesn't always take PrintStreams as constructor params!  Could be a more reusable implementation than this...
     public String traverse(String input, Class visitorClass, Boolean extraParam) throws Exception {
         if (!Visitor.class.isAssignableFrom(visitorClass)) {
             throw new RuntimeException("Invalid class for traversal: " + visitorClass.getName());

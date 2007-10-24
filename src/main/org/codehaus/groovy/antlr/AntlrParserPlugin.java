@@ -61,7 +61,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
         setController(sourceUnit);
 
-        SourceBuffer sourceBuffer = new SourceBuffer();
+        final SourceBuffer sourceBuffer = new SourceBuffer();
         UnicodeEscapingReader unicodeReader = new UnicodeEscapingReader(reader,sourceBuffer);
         GroovyLexer lexer = new GroovyLexer(unicodeReader);
         unicodeReader.setLexer(lexer);
@@ -96,7 +96,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         
         AccessController.doPrivileged(new PrivilegedAction() {
             public Object run() {
-            	outputASTInVariousFormsIfNeeded(sourceUnit);
+            	outputASTInVariousFormsIfNeeded(sourceUnit, sourceBuffer);
                 return null;
             }
         });
@@ -104,7 +104,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         return null; //new Reduction(Tpken.EOF);
     }
 
-    private void outputASTInVariousFormsIfNeeded(SourceUnit sourceUnit) {
+    private void outputASTInVariousFormsIfNeeded(SourceUnit sourceUnit, SourceBuffer sourceBuffer) {
         // straight xstream output of AST
         if ("xml".equals(System.getProperty("antlr.ast"))) {
             saveAsXML(sourceUnit.getName(), ast);
@@ -128,6 +128,18 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             try {
                 PrintStream out = new PrintStream(new FileOutputStream(sourceUnit.getName() + ".mm"));
                 Visitor visitor = new MindMapPrinter(out,tokenNames);
+                AntlrASTProcessor treewalker = new PreOrderTraversal(visitor);
+                treewalker.process(ast);
+            } catch (FileNotFoundException e) {
+                System.out.println("Cannot create " + sourceUnit.getName() + ".mm");
+            }
+        }
+
+        // include original line/col info and source code on the mindmap output
+        if ("extendedMindmap".equals(System.getProperty("antlr.ast"))) {
+            try {
+                PrintStream out = new PrintStream(new FileOutputStream(sourceUnit.getName() + ".mm"));
+                Visitor visitor = new MindMapPrinter(out,tokenNames,sourceBuffer);
                 AntlrASTProcessor treewalker = new PreOrderTraversal(visitor);
                 treewalker.process(ast);
             } catch (FileNotFoundException e) {

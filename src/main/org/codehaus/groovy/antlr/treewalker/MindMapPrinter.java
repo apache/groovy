@@ -15,10 +15,12 @@
  */
 package org.codehaus.groovy.antlr.treewalker;
 
-import java.io.PrintStream;
-
 import org.codehaus.groovy.antlr.GroovySourceAST;
+import org.codehaus.groovy.antlr.LineColumn;
+import org.codehaus.groovy.antlr.SourceBuffer;
 import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
+
+import java.io.PrintStream;
 
 /**
  * An antlr AST visitor that prints a format suitable for viewing in http://freemind.sourceforge.net
@@ -31,6 +33,7 @@ public class MindMapPrinter extends VisitorAdapter {
     private final String[] tokenNames;
     private final PrintStream out;
     private int depth;
+    private SourceBuffer sourceBuffer;
 
     /**
      * A visitor that prints a format suitable for viewing in http://freemind.sourceforge.net
@@ -43,6 +46,11 @@ public class MindMapPrinter extends VisitorAdapter {
         this.out = out;
     }
 
+    public MindMapPrinter(PrintStream out,String[] tokenNames, SourceBuffer sourceBuffer) {
+        this.tokenNames = tokenNames;
+        this.out = out;
+        this.sourceBuffer = sourceBuffer;
+    }
     public void setUp() {
         depth = 0;
         out.println("<map version='0.7.1'><node TEXT='AST'>");
@@ -342,10 +350,21 @@ public class MindMapPrinter extends VisitorAdapter {
                 }
         }
         name = escape(name);
+        if (sourceBuffer != null) {
+            name += "&#xa;";
+            name += t.getLine() + "," + t.getColumn() + " - " + t.getLineLast() + "," + t.getColumnLast();
+            name += "&#xa;";
+            name += escape(sourceBuffer.getSnippet(new LineColumn(t.getLine(), t.getColumn()), new LineColumn(t.getLineLast(), t.getColumnLast())));
+        }
         return name;
     }
 
     private String escape(String name) {
+        if (name == null) return null;
+        // remove middle of large bits of text
+        if (name.length() > 200) {
+            name = name.substring(0,100) + " ..... " + name.substring(name.length() - 100);
+        }
         name = name.replace('"',' ');
         name = name.replace('\'',' ');
         name = name.replaceAll("&","&amp;");

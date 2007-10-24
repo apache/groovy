@@ -59,13 +59,11 @@ public class GroovyDocToolTest extends GroovyTestCase {
         assertTrue(categoryMethodDocument.indexOf("<method returns=\"boolean\" name=\"hasCategoryInAnyThread\">") > 0);
 
         String packageDocument = output.getText(MOCK_DIR + FS + "org" + FS + "codehaus" + FS + "groovy" + FS + "runtime" + FS + "packageDocStructuredData.xml");
-        // TODO: fix code then reinstate assertion
-        //assertTrue(packageDocument.indexOf("<class name=\"CategoryMethod\" />") > 0);
+        assertTrue(packageDocument.indexOf("<class name=\"CategoryMethod\" />") > 0);
 
         String rootDocument = output.getText(MOCK_DIR + FS + "rootDocStructuredData.xml");
-        // TODO: fix code then reinstate assertion(s)
-        // assertTrue(rootDocument.indexOf("<package name=\"org" + FS + "codehaus" + FS + "groovy" + FS + "runtime\" />") > 0);
-        // assertTrue(rootDocument.indexOf("<class path=\"org" + FS + "codehaus" + FS + "groovy" + FS + "runtime" + FS + "CategoryMethod\" name=\"CategoryMethod\" />") > 0);
+        assertTrue(rootDocument.indexOf("<package name=\"org" + FS + "codehaus" + FS + "groovy" + FS + "runtime\" />") > 0);
+        assertTrue(rootDocument.indexOf("<class path=\"org" + FS + "codehaus" + FS + "groovy" + FS + "runtime" + FS + "CategoryMethod\" name=\"CategoryMethod\" />") > 0);
     }
 
     public void testConstructors() throws Exception {

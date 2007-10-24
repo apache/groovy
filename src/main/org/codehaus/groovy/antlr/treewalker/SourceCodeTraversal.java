@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2005 Jeremy Rayner
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ public class SourceCodeTraversal extends TraversalHelper {
         
         // gather and sort all unvisited AST nodes
         unvisitedNodes = new ArrayList();
-        traverse((GroovySourceAST)t);
+        traverse(t);
         Collections.sort(unvisitedNodes);
     }
 
