@@ -91,14 +91,14 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
         }
     }
 
-    private LinkedList/*<Map<String,Object>>*/ contexts = new LinkedList/*<Map<String,Object>>*/ ();
-    private LinkedList/*<Closure>*/ attributeDelegates = new LinkedList/*<Closure>*/(); //
-    private Map/*<String,Factory>*/ factories = new HashMap/*<String,Factory>*/();
+    private LinkedList/* <Map<String,Object>> */contexts = new LinkedList/* <Map<String,Object>> */();
+    private LinkedList/* <Closure> */attributeDelegates = new LinkedList/* <Closure> */(); //
+    private Map/* <String,Factory> */factories = new HashMap/* <String,Factory> */();
     private Closure nameMappingClosure;
     private FactoryBuilderSupport proxyBuilder;
-    private LinkedList/*<Closure>*/ preInstantiateDelegates = new LinkedList/*<Closure>*/();
-    private LinkedList/*<Closure>*/ postInstantiateDelegates = new LinkedList/*<Closure>*/();
-    private LinkedList/*<Closure>*/ postNodeCompletionDelegates = new LinkedList/*<Closure>*/();
+    private LinkedList/* <Closure> */preInstantiateDelegates = new LinkedList/* <Closure> */();
+    private LinkedList/* <Closure> */postInstantiateDelegates = new LinkedList/* <Closure> */();
+    private LinkedList/* <Closure> */postNodeCompletionDelegates = new LinkedList/* <Closure> */();
 
     public FactoryBuilderSupport() {
         this.proxyBuilder = this;
@@ -109,10 +109,16 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
         this.proxyBuilder = this;
     }
 
+    /**
+     * Returns the factory map.
+     */
     public Map getFactories() {
-        return Collections.unmodifiableMap(proxyBuilder.factories);
+        return Collections.unmodifiableMap( proxyBuilder.factories );
     }
 
+    /**
+     * Returns the context of the current node.
+     */
     public Map getContext() {
         if( !proxyBuilder.contexts.isEmpty() ){
             return (Map) proxyBuilder.contexts.getFirst();
@@ -120,6 +126,9 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
         return null;
     }
 
+    /**
+     * Returns the current node being built.
+     */
     public Object getCurrent() {
         if( !proxyBuilder.contexts.isEmpty() ){
             Map context = (Map) proxyBuilder.contexts.getFirst();
@@ -128,6 +137,9 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
         return null;
     }
 
+    /**
+     * Returns the factory that built the current node.
+     */
     public Factory getCurrentFactory() {
         if( !proxyBuilder.contexts.isEmpty() ){
             Map context = (Map) proxyBuilder.contexts.getFirst();
@@ -136,6 +148,9 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
         return null;
     }
 
+    /**
+     * Returns the factory of the parent of the current node.
+     */
     public Factory getParentFactory() {
         if( !proxyBuilder.contexts.isEmpty() ){
             Map context = (Map) proxyBuilder.contexts.getFirst();
@@ -144,6 +159,9 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
         return null;
     }
 
+    /**
+     * Returns the parent of the current node.
+     */
     public Object getParentNode() {
         if( !proxyBuilder.contexts.isEmpty() ){
             Map context = (Map) proxyBuilder.contexts.getFirst();
@@ -152,6 +170,9 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
         return null;
     }
 
+    /**
+     * Returns the context of the parent of the current node.
+     */
     public Map getParentContext() {
         if( !proxyBuilder.contexts.isEmpty() ){
             Map context = (Map) proxyBuilder.contexts.getFirst();
@@ -167,16 +188,16 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
      * @param methodName the name of the method to invoke
      */
     public Object invokeMethod( String methodName ) {
-        return invokeMethod( methodName, null );
+        return proxyBuilder.invokeMethod( methodName, null );
     }
 
     public Object invokeMethod( String methodName, Object args ) {
         Object name = proxyBuilder.getName( methodName );
         Object result = null;
         try{
-            result = doInvokeMethod( methodName, name, args );
+            result = proxyBuilder.doInvokeMethod( methodName, name, args );
         }catch( RuntimeException e ){
-            reset();
+            proxyBuilder.reset();
             throw e;
         }
         return result;
@@ -186,6 +207,7 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
      * Add an attribute delegate so it can intercept attributes being set.
      * Attribute delegates are fire in a FILO pattern, so that nested delegates
      * get first crack.
+     *
      * @param attrDelegate
      */
     public Closure addAttributeDelegate( Closure attrDelegate ) {
@@ -195,6 +217,7 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
 
     /**
      * Remove the most recently added instance of the attribute delegate.
+     *
      * @param attrDelegate
      */
     public void removeAttributeDelegate( Closure attrDelegate ) {
@@ -202,9 +225,10 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
     }
 
     /**
-     * Add a preInstantiate delegate so it can intercept nodes before they are created.
-     * PreInstantiate delegates are fire in a FILO pattern, so that nested delegates
-     * get first crack.
+     * Add a preInstantiate delegate so it can intercept nodes before they are
+     * created. PreInstantiate delegates are fire in a FILO pattern, so that
+     * nested delegates get first crack.
+     *
      * @param delegate
      */
     public Closure addPreInstantiateDelegate( Closure delegate ) {
@@ -214,6 +238,7 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
 
     /**
      * Remove the most recently added instance of the preInstantiate delegate.
+     *
      * @param delegate
      */
     public void removePreInstantiateDelegate( Closure delegate ) {
@@ -221,9 +246,10 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
     }
 
     /**
-     * Add a postInstantiate delegate so it can intercept nodes after they are created.
-     * PostInstantiate delegates are fire in a FILO pattern, so that nested delegates
-     * get first crack.
+     * Add a postInstantiate delegate so it can intercept nodes after they are
+     * created. PostInstantiate delegates are fire in a FILO pattern, so that
+     * nested delegates get first crack.
+     *
      * @param delegate
      */
     public Closure addPostInstantiateDelegate( Closure delegate ) {
@@ -233,6 +259,7 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
 
     /**
      * Remove the most recently added instance of the postInstantiate delegate.
+     *
      * @param delegate
      */
     public void removePostInstantiateDelegate( Closure delegate ) {
@@ -240,9 +267,10 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
     }
 
     /**
-     * Add a nodeCompletion delegate so it can intercept nodes after they done with building.
-     * NodeCompletion delegates are fire in a FILO pattern, so that nested delegates
-     * get first crack.
+     * Add a nodeCompletion delegate so it can intercept nodes after they done
+     * with building. NodeCompletion delegates are fire in a FILO pattern, so
+     * that nested delegates get first crack.
+     *
      * @param delegate
      */
     public Closure addPostNodeCompletionDelegate( Closure delegate ) {
@@ -252,14 +280,19 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
 
     /**
      * Remove the most recently added instance of the nodeCompletion delegate.
+     *
      * @param delegate
      */
     public void removePostNodeCompletionDelegate( Closure delegate ) {
         proxyBuilder.postNodeCompletionDelegates.remove( delegate );
     }
 
+    /**
+     * Registers a factory for a JavaBean.<br>
+     * The JavaBean clas should have a no-args constructor.
+     */
     public void registerBeanFactory( String theName, final Class beanClass ) {
-        registerFactory( theName, new AbstractFactory(){
+        proxyBuilder.registerFactory( theName, new AbstractFactory(){
             public Object newInstance( FactoryBuilderSupport builder, Object name, Object value,
                     Map properties ) throws InstantiationException, IllegalAccessException {
                 if( checkValueIsTypeNotString( value, name, beanClass ) ){
@@ -271,6 +304,9 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
         } );
     }
 
+    /**
+     * Registers a factory for a node name.
+     */
     public void registerFactory( String name, Factory factory ) {
         proxyBuilder.factories.put( name, factory );
     }
@@ -278,7 +314,7 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
     protected Object createNode( Object name, Map attributes, Object value ) {
         Object node = null;
 
-        Factory factory = proxyBuilder.resolveFactory( name );
+        Factory factory = proxyBuilder.resolveFactory( name, attributes, value );
         if( factory == null ){
             LOG.log( Level.WARNING, "Could not find match for name '" + name + "'" );
             return null;
@@ -306,10 +342,10 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
 
     /**
      * Returns the Factory associated with name.<br>
-     * This is a hook for subclasses to plugin a custom strategy
-     * for mapping names to factories.
+     * This is a hook for subclasses to plugin a custom strategy for mapping
+     * names to factories.
      */
-    protected Factory resolveFactory( Object name ) {
+    protected Factory resolveFactory( Object name, Map attributes, Object value ) {
         return (Factory) proxyBuilder.factories.get( name );
     }
 
@@ -387,7 +423,7 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
         if( node == null ){
             if( proxyBuilder.getContexts().size() == 1 ){
                 // pop the first context
-                popContext();
+                proxyBuilder.popContext();
             }
             return node;
         }
@@ -405,9 +441,9 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
             Object parentFactory = proxyBuilder.getCurrentFactory();
             Map parentContext = proxyBuilder.getContext();
             proxyBuilder.newContext();
-            proxyBuilder.getContext().put( OWNER, closure.getOwner());
+            proxyBuilder.getContext().put( OWNER, closure.getOwner() );
             proxyBuilder.getContext().put( CURRENT_NODE, node );
-            proxyBuilder.getContext().put( PARENT_FACTORY, parentFactory);
+            proxyBuilder.getContext().put( PARENT_FACTORY, parentFactory );
             proxyBuilder.getContext().put( PARENT_NODE, current );
             proxyBuilder.getContext().put( PARENT_CONTEXT, parentContext );
             // lets register the builder as the delegate
@@ -418,11 +454,12 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
 
         proxyBuilder.nodeCompleted( current, node );
         node = proxyBuilder.postNodeCompletion( current, node );
-        if( proxyBuilder.getContexts().size() == 1 ){
+        if( proxyBuilder.getContexts()
+                .size() == 1 ){
             // pop the first context
             proxyBuilder.popContext();
         }
-	return node;
+        return node;
     }
 
     /**
@@ -449,8 +486,8 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
             return;
         }
 
-        for( Iterator iter = proxyBuilder.attributeDelegates.iterator(); iter.hasNext(); ) {
-            ( (Closure) iter.next()).call( new Object[] {this, node, attributes} ) ;
+        for( Iterator iter = proxyBuilder.attributeDelegates.iterator(); iter.hasNext(); ){
+            ((Closure) iter.next()).call( new Object[] { this, node, attributes } );
         }
 
         if( proxyBuilder.getCurrentFactory().onHandleNodeAttributes( this, node, attributes ) ){
@@ -474,20 +511,20 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
     }
 
     protected Map popContext() {
-	if( !proxyBuilder.contexts.isEmpty() ){
+        if( !proxyBuilder.contexts.isEmpty() ){
             return (Map) proxyBuilder.contexts.removeFirst();
-	}
-        return null;	
+        }
+        return null;
     }
 
     /**
      * A hook after the factory creates the node and before attributes are set.<br>
-     * It will call any registered postInstantiateDelegates, if you override this method
-     * be sure to call this impl somewhere in your code.
+     * It will call any registered postInstantiateDelegates, if you override
+     * this method be sure to call this impl somewhere in your code.
      */
     protected void postInstantiate( Object name, Map attributes, Object node ) {
-        for( Iterator iter = proxyBuilder.postInstantiateDelegates.iterator(); iter.hasNext(); ) {
-            ( (Closure) iter.next()).call( new Object[] {this, node, attributes} ) ;
+        for( Iterator iter = proxyBuilder.postInstantiateDelegates.iterator(); iter.hasNext(); ){
+            ((Closure) iter.next()).call( new Object[] { this, node, attributes } );
         }
     }
 
@@ -495,7 +532,7 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
      * A hook to allow nodes to be processed once they have had all of their
      * children applied and allows the actual node object that represents the
      * Markup element to be changed.<br>
-     * It will call any registered postNodeCompletionDelegates, if you override 
+     * It will call any registered postNodeCompletionDelegates, if you override
      * this method be sure to call this impl at the end of your code.
      *
      * @param node the current node being processed
@@ -503,8 +540,8 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
      * @return the node, possibly new, that represents the markup element
      */
     protected Object postNodeCompletion( Object parent, Object node ) {
-        for( Iterator iter = proxyBuilder.postNodeCompletionDelegates.iterator(); iter.hasNext(); ) {
-            ( (Closure) iter.next()).call( new Object[] {this, parent, node} ) ;
+        for( Iterator iter = proxyBuilder.postNodeCompletionDelegates.iterator(); iter.hasNext(); ){
+            ((Closure) iter.next()).call( new Object[] { this, parent, node } );
         }
 
         return node;
@@ -512,12 +549,12 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
 
     /**
      * A hook before the factory creates the node.<br>
-     * It will call any registered preInstantiateDelegates, if you override this method
-     * be sure to call this impl somewhere in your code.
+     * It will call any registered preInstantiateDelegates, if you override this
+     * method be sure to call this impl somewhere in your code.
      */
     protected void preInstantiate( Object name, Map attributes, Object value ) {
-        for( Iterator iter = proxyBuilder.preInstantiateDelegates.iterator(); iter.hasNext(); ) {
-            ( (Closure) iter.next()).call( new Object[] {this, value, attributes} ) ;
+        for( Iterator iter = proxyBuilder.preInstantiateDelegates.iterator(); iter.hasNext(); ){
+            ((Closure) iter.next()).call( new Object[] { this, value, attributes } );
         }
     }
 
@@ -551,8 +588,7 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
         for( Iterator iter = attributes.entrySet()
                 .iterator(); iter.hasNext(); ){
             Map.Entry entry = (Map.Entry) iter.next();
-            String property = entry.getKey()
-                    .toString();
+            String property = entry.getKey().toString();
             Object value = entry.getValue();
             InvokerHelper.setProperty( node, property, value );
         }
@@ -561,7 +597,7 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
     protected void setParent( Object parent, Object child ) {
         proxyBuilder.getCurrentFactory().setParent( this, parent, child );
         Factory parentFactory = proxyBuilder.getParentFactory();
-        if (parentFactory != null) {
+        if( parentFactory != null ){
             parentFactory.setChild( this, parent, child );
         }
     }
