@@ -58,7 +58,7 @@ abstract class CommandSupport
     protected CommandRegistry registry
     
     /** Standard aliases for the command. */
-    final List<CommandAlias> aliases = []
+    final List/*<CommandAlias>*/ aliases = []
     
     /** Flag to indicate if the command should be hidden or not. */
     boolean hidden = false

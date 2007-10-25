@@ -105,7 +105,7 @@ class CommandsMultiCompletor
 {
     protected final Logger log = Logger.create(this.class)
     
-    List<Completor> list = []
+    List/*<Completor>*/ list = []
     
     private boolean dirty = false
     

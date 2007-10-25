@@ -27,7 +27,7 @@ import org.codehaus.groovy.tools.shell.util.SimpleCompletor
 abstract class ComplexCommandSupport
     extends CommandSupport
 {
-    protected List<String> functions
+    protected List/*<String>*/ functions
     
     protected String defaultFunction
     

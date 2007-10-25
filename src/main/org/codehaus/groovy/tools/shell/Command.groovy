@@ -38,7 +38,7 @@ interface Command
 
     String getHelp()
 
-    List<CommandAlias> getAliases()
+    List/*<CommandAlias>*/ getAliases()
 
     Object execute(List args)
     
