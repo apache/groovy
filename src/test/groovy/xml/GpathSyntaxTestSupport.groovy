@@ -163,6 +163,13 @@ class GpathSyntaxTestSupport {
             def gromit = root.character.find{ it.@id == '2' }
             assert gromit.@name.name() == "name"
         }
+        if (isParser(root)) {
+            // additional parser shorthand
+            assert 'Wallace' == root.character[0].@name
+            def gromit = root.character.find {it.@id == '2'}
+            def actualName = gromit.@name
+            assert actualName == 'Gromit'
+        }
     }
 
     static void checkAttributes(Closure getRoot) {

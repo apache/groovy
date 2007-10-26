@@ -15,6 +15,9 @@
  */
 package groovy.util;
 
+import groovy.lang.DelegatingMetaClass;
+import groovy.lang.GroovySystem;
+import groovy.lang.MetaClass;
 import groovy.xml.QName;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
@@ -28,11 +31,17 @@ import java.util.*;
  * though the types are extensible to provide a flexible structure, e.g. you could use a
  * QName as the name which includes a namespace URI and a local name. Or a JMX ObjectName etc.
  * So this class can represent metadata like {foo a=1 b="abc"} or nested metadata like {foo a=1 b="123" { bar x=12 text="hello" }}
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * @author Paul King
  * @version $Revision$
  */
 public class Node implements java.io.Serializable {
+
+    static {
+        // wrap the standard MetaClass with the delegate
+        setMetaClass(GroovySystem.getMetaClassRegistry().getMetaClass(Node.class));
+    }
 
     private static final long serialVersionUID = 4121134753270542643L;
     private Node parent;
@@ -57,7 +66,7 @@ public class Node implements java.io.Serializable {
         this.name = name;
         this.attributes = attributes;
         this.value = value;
-        
+
         if (parent != null) {
             Object parentValue = parent.value();
             List parentList;
@@ -72,11 +81,28 @@ public class Node implements java.io.Serializable {
         }
     }
 
+    private static void setMetaClass(final MetaClass metaClass) {
+        final MetaClass newMetaClass = new DelegatingMetaClass(metaClass) {
+            /* (non-Javadoc)
+            * @see groovy.lang.DelegatingMetaClass#getAttribute(java.lang.Object, java.lang.String)
+            */
+            public Object getAttribute(final Object object, final String attribute) {
+                Node n = (Node) object;
+                return n.get("@" + attribute);
+            }
+
+            public void setAttribute(final Object object, final String attribute, final Object newValue) {
+                Node n = (Node) object;
+                n.attributes.put("@" + attribute, newValue);
+            }
+        };
+        GroovySystem.getMetaClassRegistry().setMetaClass(Node.class, newMetaClass);
+    }
+
     public String text() {
         if (value instanceof String) {
             return (String) value;
-        }
-        else if (value instanceof Collection) {
+        } else if (value instanceof Collection) {
             Collection coll = (Collection) value;
             String previousText = null;
             StringBuffer buffer = null;
@@ -86,8 +112,7 @@ public class Node implements java.io.Serializable {
                     String childText = (String) child;
                     if (previousText == null) {
                         previousText = childText;
-                    }
-                    else {
+                    } else {
                         if (buffer == null) {
                             buffer = new StringBuffer();
                             buffer.append(previousText);
@@ -98,8 +123,7 @@ public class Node implements java.io.Serializable {
             }
             if (buffer != null) {
                 return buffer.toString();
-            }
-            else {
+            } else {
                 if (previousText != null) {
                     return previousText;
                 }
@@ -108,19 +132,17 @@ public class Node implements java.io.Serializable {
         return "";
     }
 
-    
+
     public Iterator iterator() {
         return children().iterator();
     }
-    
+
     public List children() {
         if (value == null) {
             return new ArrayList();
-        }
-        else if (value instanceof List) {
+        } else if (value instanceof List) {
             return (List) value;
-        }
-        else {
+        } else {
             // we're probably just a String
             return java.util.Collections.singletonList(value);
         }
@@ -133,7 +155,7 @@ public class Node implements java.io.Serializable {
     public Object attribute(Object key) {
         return (attributes != null) ? attributes.get(key) : null;
     }
-    
+
     public Object name() {
         return name;
     }
@@ -152,6 +174,7 @@ public class Node implements java.io.Serializable {
 
     /**
      * Provides lookup of elements by non-namespaced name
+     *
      * @param key the name (or shortcut key) of the node(s) of interest
      * @return the nodes which match key
      */
@@ -183,7 +206,7 @@ public class Node implements java.io.Serializable {
         }
         return answer;
     }
-    
+
     /**
      * Provides lookup of elements by QName.
      *
@@ -217,10 +240,10 @@ public class Node implements java.io.Serializable {
         answer.addAll(depthFirstRest());
         return answer;
     }
-    
+
     private List depthFirstRest() {
         List answer = new NodeList();
-        for (Iterator iter = InvokerHelper.asIterator(value); iter.hasNext(); ) {
+        for (Iterator iter = InvokerHelper.asIterator(value); iter.hasNext();) {
             Object child = iter.next();
             if (child instanceof Node) {
                 Node childNode = (Node) child;
@@ -244,14 +267,14 @@ public class Node implements java.io.Serializable {
         answer.addAll(breadthFirstRest());
         return answer;
     }
-    
+
     private List breadthFirstRest() {
         List answer = new NodeList();
         List nextLevelChildren = getDirectChildren();
         while (!nextLevelChildren.isEmpty()) {
             List working = new NodeList(nextLevelChildren);
             nextLevelChildren = new NodeList();
-            for (Iterator iter = working.iterator(); iter.hasNext(); ) {
+            for (Iterator iter = working.iterator(); iter.hasNext();) {
                 Node childNode = (Node) iter.next();
                 answer.add(childNode);
                 List children = childNode.getDirectChildren();
@@ -263,7 +286,7 @@ public class Node implements java.io.Serializable {
 
     private List getDirectChildren() {
         List answer = new NodeList();
-        for (Iterator iter = InvokerHelper.asIterator(value); iter.hasNext(); ) {
+        for (Iterator iter = InvokerHelper.asIterator(value); iter.hasNext();) {
             Object child = iter.next();
             if (child instanceof Node) {
                 Node childNode = (Node) child;
