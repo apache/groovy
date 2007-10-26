@@ -25,7 +25,6 @@ import groovy.util.ProxyGenerator;
 import java.io.*;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
@@ -43,7 +42,6 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.codehaus.groovy.control.MultipleCompilationErrorsException;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
 import org.codehaus.groovy.runtime.typehandling.NumberMath;
@@ -2255,7 +2253,7 @@ public class DefaultGroovyMethods {
      * @return a new Map containing the given keys
      */
     public static Map subMap(Map map, Collection keys) {
-        Map answer = new HashMap(keys.size());
+        Map answer = new LinkedHashMap(keys.size());
         for (Iterator iter = keys.iterator(); iter.hasNext();) {
             Object key = iter.next();
             answer.put(key, map.get(key));
