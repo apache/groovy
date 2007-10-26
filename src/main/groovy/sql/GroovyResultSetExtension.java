@@ -16,6 +16,7 @@
 package groovy.sql;
 
 import groovy.lang.Closure;
+import groovy.lang.GroovyObjectSupport;
 import groovy.lang.MissingPropertyException;
 
 import java.sql.ResultSet;
@@ -23,6 +24,9 @@ import java.sql.SQLException;
 import java.sql.ResultSetMetaData;
 import java.util.Iterator;
 import java.util.Map;
+
+import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.InvokerInvocationException;
 
 /**
  * GroovyResultSetExtension implements additional logic for ResultSet. Due to 
@@ -39,7 +43,7 @@ import java.util.Map;
  *  
  * @author Jochen Theodorou
  */
-public class GroovyResultSetExtension {
+public class GroovyResultSetExtension extends GroovyObjectSupport{
 
     private boolean updated;
     private final ResultSet resultSet;
@@ -84,6 +88,14 @@ public class GroovyResultSetExtension {
         }
     }
 
+    public Object invokeMethod(String name, Object args) {
+        try {
+            return InvokerHelper.invokeMethod(getResultSet(), name, args);
+        } catch (SQLException se) {
+            throw new InvokerInvocationException(se);
+        }
+    }
+    
     /**
      * Gets the value of the designated column in the current row 
      * of as an <code>Object</code>.

@@ -83,6 +83,13 @@ class SqlTest extends GroovyTestCase {
         }
     }
 
+    void testMetaData() {
+      sql.eachRow('select * from PERSON') {
+	       assert it[0] != null
+	       assert it.getMetaData() != null
+	  }
+    }
+
     protected def createSql() {
         def ds = new org.hsqldb.jdbc.jdbcDataSource()
         ds.database = "jdbc:hsqldb:mem:foo" + getMethodName()
