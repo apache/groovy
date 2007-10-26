@@ -30,11 +30,10 @@ import javax.swing.border.EtchedBorder
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class SwingBuilder extends FactoryBuilderSupport {
+public class SwingBuilder  extends FactoryBuilderSupport {
 
     // Properties
     LinkedList containingWindows = new LinkedList()
-    Map widgets = [:]
 
     // local fields
     private static final Logger LOG = Logger.getLogger(SwingBuilder.name)
@@ -45,14 +44,6 @@ public class SwingBuilder extends FactoryBuilderSupport {
     public SwingBuilder() {
         registerWidgets()
         headless = GraphicsEnvironment.isHeadless()
-    }
-
-    public Object getProperty(String name) {
-        Object widget = widgets.get(name)
-        if (widget == null) {
-            return super.getProperty(name)
-        }
-        return widget
     }
 
     protected void registerWidgets() {
@@ -307,7 +298,7 @@ public class SwingBuilder extends FactoryBuilderSupport {
     public static objectIDAttributeDelegate(def builder, def node, def attributes) {
         def theID = attributes.remove('id')
         if (theID) {
-            builder.widgets[theID] = node
+            builder.setVariable(theID, node)
         }
     }
 

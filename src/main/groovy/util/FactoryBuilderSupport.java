@@ -16,9 +16,14 @@
 
 package groovy.util;
 
+import groovy.lang.Binding;
 import groovy.lang.Closure;
-import groovy.lang.GroovyObjectSupport;
+import groovy.lang.DelegatingMetaClass;
+import groovy.lang.MetaClass;
 import groovy.lang.MissingMethodException;
+import groovy.lang.Script;
+
+import org.codehaus.groovy.runtime.InvokerHelper;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -26,10 +31,9 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
  * Mix of BuilderSupport and SwingBuilder's factory support.
@@ -37,7 +41,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Andres Almiray <aalmiray@users.sourceforge.com>
  */
-public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
+public abstract class FactoryBuilderSupport extends Binding {
     public static final String CURRENT_FACTORY = "_CURRENT_FACTORY_";
     public static final String PARENT_FACTORY = "_PARENT_FACTORY_";
     public static final String PARENT_NODE = "_PARENT_NODE_";
@@ -651,5 +655,74 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
      */
     protected LinkedList getContexts() {
         return proxyBuilder.contexts;
+    }
+
+    public Object build(Class viewClass) {
+        if (Script.class.isAssignableFrom(viewClass)) {
+            Script script;
+            try {
+                script = (Script) viewClass.newInstance();
+            } catch (InstantiationException e) {
+                throw new RuntimeException(e);
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
+            return build(script);
+        } else {
+            throw new RuntimeException("Only scripts can be executed via build(Class)");
+        }
+    }
+
+    public Object build(Script script) {
+        synchronized (script) {
+            MetaClass scriptMetaClass = script.getMetaClass();
+            try {
+                script.setMetaClass(new FactoryInterceptorMetaClass(scriptMetaClass, this));
+                script.setBinding(this);
+                return script.run();
+            } finally {
+                script.setMetaClass(scriptMetaClass);
+            }
+        }
+    }
+}
+
+class FactoryInterceptorMetaClass extends DelegatingMetaClass {
+
+    FactoryBuilderSupport factory;
+
+    public FactoryInterceptorMetaClass(MetaClass delegate, FactoryBuilderSupport factory) {
+        super(delegate);
+        this.factory = factory;
+    }
+
+    public Object invokeMethod(Object object, String methodName, Object arguments) {
+        try {
+            return delegate.invokeMethod(object, methodName, arguments);
+        } catch (MissingMethodException mme) {
+            // attempt factory resolution
+            try {
+                return factory.invokeMethod(methodName, arguments);
+            } catch (MissingMethodException mme2) {
+                // throw original
+                // should we chain in mme2 somehow?
+                throw mme;
+            }
+        }
+    }
+
+    public Object invokeMethod(Object object, String methodName, Object[] arguments) {
+        try {
+            return delegate.invokeMethod(object, methodName, arguments);
+        } catch (MissingMethodException mme) {
+            // attempt factory resolution
+            try {
+                return factory.invokeMethod(methodName, arguments);
+            } catch (MissingMethodException mme2) {
+                // throw original
+                // should we chain in mme2 somehow?
+                throw mme;
+            }
+        }
     }
 }
