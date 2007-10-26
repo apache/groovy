@@ -2157,11 +2157,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (answer != null) {
             return answer;
         }
-        throw new GroovyRuntimeException(
-                "Could not find which method to invoke from this list: "
-                        + methods
-                        + " for arguments: "
-                        + InvokerHelper.toString(arguments));
+        throw new MethodSelectionException(methodName, methods, arguments);
     }
 
     private Object chooseMostSpecificParams(String name, List matchingMethods, Class[] arguments) {

@@ -38,4 +38,23 @@ public class MethodSelectionTest extends CompilableTestSupport {
       assert n(null) == 1
     """
   }
+  
+  void testMethodSelectionException() {
+    assertScript """
+      import org.codehaus.groovy.runtime.metaclass.MethodSelectionException as MSE
+    
+      def foo(int x) {}
+      def foo(Number x) {}
+      
+      try {
+        foo()
+        assert false
+      } catch (MSE mse) {
+        assert mse.message.indexOf("foo()") >0
+        assert mse.message.indexOf("#foo(int)") >0
+        assert mse.message.indexOf("#foo(java.lang.Number)") >0
+      }
+    
+    """  
+  }
 }
