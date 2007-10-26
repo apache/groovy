@@ -1,20 +1,36 @@
 // Groovy Regex Coach - Copyright 2007 Jeremy Rayner
-import groovy.swing.SwingBuilder
-import java.awt.Color
-import java.awt.event.ActionEvent
-import java.awt.event.ActionListener
-import java.awt.event.KeyAdapter
-import java.awt.event.KeyEvent
-import java.util.regex.PatternSyntaxException
-import javax.swing.text.DefaultHighlighter.DefaultHighlightPainter
-
 // inspired by http://weitz.de/regex-coach/
+import java.awt.*
+import java.awt.event.*
+import java.util.regex.*
+import javax.swing.*
+import javax.swing.text.DefaultHighlighter
+import groovy.swing.SwingBuilder
 
 // define the view
 def swing = new SwingBuilder()
-
-def gui = swing.build(RegexCoachView)
-
+def gui = swing.frame(title:'The Groovy Regex Coach', location:[20,40], size:[600,500], defaultCloseOperation:WindowConstants.EXIT_ON_CLOSE) {
+  panel(layout:new BorderLayout()) {
+    splitPane(orientation:JSplitPane.VERTICAL_SPLIT, dividerLocation:150) {
+      panel(layout:new BorderLayout()) {
+	label(constraints:BorderLayout.NORTH, text:'Regular expression:')
+	scrollPane(constraints:BorderLayout.CENTER) {textPane(id:'regexPane')}
+	label(constraints:BorderLayout.SOUTH, id:'regexStatus', text:' ')
+      }
+      panel(layout:new BorderLayout()) {
+	label(constraints:BorderLayout.NORTH, text:'Target string:')
+	scrollPane(constraints:BorderLayout.CENTER) {textPane(id:'targetPane')}
+	panel(constraints:BorderLayout.SOUTH, layout:new BorderLayout()) {
+	  label(constraints:BorderLayout.NORTH, id:'targetStatus', text:' ')
+	  panel(constraints:BorderLayout.SOUTH, layout:new FlowLayout()) {
+	    button('<<-', id:'scanLeft')
+	    button('->>', id:'scanRight')
+	  }
+	}
+      }
+    }
+  }
+}
 def highlighter = new RegexHighlighter(swing:swing)
 swing.regexPane.addKeyListener(highlighter)
 swing.targetPane.addKeyListener(highlighter)
@@ -25,10 +41,10 @@ gui.show()
 class RegexHighlighter extends KeyAdapter implements ActionListener {
   def swing // reference to the view
   int scanIndex // how many times to execute matcher.find()
-  def orange = new DefaultHighlightPainter(Color.ORANGE)
-  def yellow = new DefaultHighlightPainter(Color.YELLOW)
-  def red = new DefaultHighlightPainter(Color.RED)
-  
+  def orange = new DefaultHighlighter.DefaultHighlightPainter(Color.ORANGE)
+  def yellow = new DefaultHighlighter.DefaultHighlightPainter(Color.YELLOW)
+  def red = new DefaultHighlighter.DefaultHighlightPainter(Color.RED)
+
   // react to user actions
   public void actionPerformed(ActionEvent event) {
     if (event.actionCommand == '<<-') {scanIndex = Math.max(scanIndex - 1, 0)}
@@ -51,12 +67,12 @@ class RegexHighlighter extends KeyAdapter implements ActionListener {
   private doHighlights() {
     try {
       resetView()
-      // note: get the text from the underlying document, 
+      // note: get the text from the underlying document,
       // otherwise carriage return/line feeds different when using the JTextPane text
-      def regex = swing.regexPane.document.getText(0,swing.regexPane.document.length) 
+      def regex = swing.regexPane.document.getText(0,swing.regexPane.document.length)
       def target = swing.targetPane.document.getText(0,swing.targetPane.document.length)
 
-      def matcher = (target =~ regex) 
+      def matcher = (target =~ regex)
 
       // scan past the matches before the match we want
       int scan = 0
