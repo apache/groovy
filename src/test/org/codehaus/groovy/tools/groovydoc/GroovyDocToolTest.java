@@ -18,15 +18,21 @@
 package org.codehaus.groovy.tools.groovydoc;
 
 import groovy.util.GroovyTestCase;
+import org.codehaus.groovy.groovydoc.GroovyClassDoc;
+import org.codehaus.groovy.groovydoc.GroovyMethodDoc;
+import org.codehaus.groovy.groovydoc.GroovyRootDoc;
 
 public class GroovyDocToolTest extends GroovyTestCase {
     GroovyDocTool xmlTool;
     GroovyDocTool xmlToolForTests;
+    GroovyDocTool plainTool;
     private static final String FS = "/";
     private static final String MOCK_DIR = "mock" + FS + "doc";
     private static final String TEMPLATES_DIR = "main" + FS + "org" + FS + "codehaus" + FS + "groovy" + FS + "tools" + FS + "groovydoc" + FS + "gstring-templates";
 
     public void setUp() {
+        plainTool = new GroovyDocTool("src" + FS + "test");
+
         xmlTool = new GroovyDocTool(
                 new FileSystemResourceManager("src"), // template storage
                 "src" + FS + "main", // source file dirs
@@ -42,6 +48,32 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 new String[]{TEMPLATES_DIR + FS + "package-level" + FS + "packageDocStructuredData.xml"},
                 new String[]{TEMPLATES_DIR + FS + "class-level" + FS + "classDocStructuredData.xml"}
         );
+    }
+
+    public void testPlainGroovyDocTool() throws Exception {
+        plainTool.add("org" + FS + "codehaus" + FS + "groovy" + FS + "tools" + FS + "groovydoc" + FS + "GroovyDocToolTest.java");
+        GroovyRootDoc root = plainTool.getRootDoc();
+
+        // loop through classes in tree
+        GroovyClassDoc[] classDocs = root.classes();
+        for (int i=0; i< classDocs.length; i++) {
+            GroovyClassDoc clazz = root.classes()[i];
+
+            assertEquals("GroovyDocToolTest", clazz.name());
+
+            // loop through methods in class
+            boolean seenThisMethod = false;
+            GroovyMethodDoc[] methodDocs = clazz.methods();
+            for (int j=0; j< methodDocs.length; j++) {
+                GroovyMethodDoc method = clazz.methods()[j];
+
+                if ("testPlainGroovyDocTool".equals(method.name())) {
+                    seenThisMethod = true;
+                }
+
+            }
+            assertTrue(seenThisMethod);
+        }
     }
 
     public void testGroovyDocTheCategoryMethodClass() throws Exception {

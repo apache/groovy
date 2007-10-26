@@ -15,28 +15,41 @@
  */
 package org.codehaus.groovy.tools.groovydoc;
 
-import java.io.IOException;
-import java.io.File;
-
-import org.codehaus.groovy.groovydoc.GroovyRootDoc;
-
 import antlr.RecognitionException;
 import antlr.TokenStreamException;
+import org.codehaus.groovy.groovydoc.GroovyRootDoc;
+
+import java.io.File;
+import java.io.IOException;
 
 public class GroovyDocTool {
-	
-	
-	public GroovyDocTool(ResourceManager resourceManager, String sourcepath, String classTemplate) {
+
+    /**
+     * Constructor for use by people who only want to interact with the Groovy Doclet Tree (rootDoc)
+     * @param sourcepath where the sources to be added can be found
+     */
+    public GroovyDocTool(String sourcepath) {
+        this(null,sourcepath,null);
+    }
+
+    public GroovyDocTool(ResourceManager resourceManager, String sourcepath, String classTemplate) {
 		this(resourceManager, sourcepath, new String[]{}, new String[]{}, new String[] {classTemplate});
 	}
 
 	public GroovyDocTool(ResourceManager resourceManager, String sourcepath, String[] docTemplates, String[] packageTemplates, String[] classTemplates) {
 		rootDocBuilder = new GroovyRootDocBuilder(this, sourcepath);
-		templateEngine = new GroovyDocTemplateEngine(this, resourceManager, docTemplates, packageTemplates, classTemplates);
+		if (resourceManager == null) {
+            templateEngine = null;
+        } else {
+            templateEngine = new GroovyDocTemplateEngine(this, resourceManager, docTemplates, packageTemplates, classTemplates);
+        }
 	}
 	
 	public void add(String filename) throws RecognitionException, TokenStreamException, IOException {
-		System.out.println("Loading source files for " + filename);
+		if (templateEngine != null) {
+            // only print out if we are being used for template generation
+            System.out.println("Loading source files for " + filename);
+        }
 		rootDocBuilder.buildTree(filename);
 	}
 	
@@ -45,11 +58,15 @@ public class GroovyDocTool {
 	}
 
 	public void renderToOutput(OutputTool output, String destdir) throws Exception {
-		GroovyDocWriter writer = new GroovyDocWriter(this, output, templateEngine);
-		GroovyRootDoc rootDoc = rootDocBuilder.getRootDoc();
-		writer.writeRoot(rootDoc, destdir);
-		writer.writePackages(rootDoc, destdir);
-		writer.writeClasses(rootDoc, destdir);
+		if (templateEngine != null) {
+            GroovyDocWriter writer = new GroovyDocWriter(this, output, templateEngine);
+            GroovyRootDoc rootDoc = rootDocBuilder.getRootDoc();
+            writer.writeRoot(rootDoc, destdir);
+            writer.writePackages(rootDoc, destdir);
+            writer.writeClasses(rootDoc, destdir);
+        } else {
+            throw new UnsupportedOperationException("No template engine was found");
+        }
 	}
 	
 	private final GroovyRootDocBuilder rootDocBuilder;
