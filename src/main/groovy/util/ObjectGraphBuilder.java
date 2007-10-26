@@ -59,21 +59,21 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
     }
 
     /**
-     * Returns the current ChildPropertySetter
+     * Returns the current ChildPropertySetter.
      */
     public ChildPropertySetter getChildPropertySetter() {
         return childPropertySetter;
     }
 
     /**
-     * Returns the current ClassNameResolver
+     * Returns the current ClassNameResolver.
      */
     public ClassNameResolver getClassNameResolver() {
         return classNameResolver;
     }
 
     /**
-     * Returns the current NewInstanceResolver
+     * Returns the current NewInstanceResolver.
      */
     public NewInstanceResolver getNewInstanceResolver() {
         return newInstanceResolver;
@@ -88,7 +88,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
     }
 
     /**
-     * Returns the current RelationNameResolver
+     * Returns the current RelationNameResolver.
      */
     public RelationNameResolver getRelationNameResolver() {
         return relationNameResolver;
@@ -96,7 +96,8 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
 
     /**
      * Sets the current ChildPropertySetter.<br>
-     * It will assign DefaultChildPropertySetter if null.
+     * It will assign DefaultChildPropertySetter if null.<br>
+     * It accepts a ChildPropertySetter instance or a Closure.
      */
     public void setChildPropertySetter( final Object childPropertySetter ) {
         if( childPropertySetter instanceof ChildPropertySetter ){
@@ -116,7 +117,8 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
 
     /**
      * Sets the current ClassNameResolver.<br>
-     * It will assign DefaultClassNameResolver if null.
+     * It will assign DefaultClassNameResolver if null.<br>
+     * It accepts a ClassNameResolver instance, a String or a Closure.
      */
     public void setClassNameResolver( final Object classNameResolver ) {
         if( classNameResolver instanceof ClassNameResolver ){
@@ -141,7 +143,8 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
 
     /**
      * Sets the current IdentifierResolver.<br>
-     * It will assign DefaultIdentifierResolver if null.
+     * It will assign DefaultIdentifierResolver if null.<br>
+     * It accepts a IdentifierResolver instance or a Closure.
      */
     public void setIdentifierResolver( final Object identifierResolver ) {
         if( identifierResolver instanceof IdentifierResolver ){
@@ -159,7 +162,8 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
 
     /**
      * Sets the current NewInstanceResolver.<br>
-     * It will assign DefaultNewInstanceResolver if null.
+     * It will assign DefaultNewInstanceResolver if null.<br>
+     * It accepts a NewInstanceResolver instance or a Closure.
      */
     public void setNewInstanceResolver( final Object newInstanceResolver ) {
         if( newInstanceResolver instanceof NewInstanceResolver ){
@@ -178,7 +182,8 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
 
     /**
      * Sets the current ReferenceResolver.<br>
-     * It will assign DefaultReferenceResolver if null.
+     * It will assign DefaultReferenceResolver if null.<br>
+     * It accepts a ReferenceResolver instance or a Closure.
      */
     public void setReferenceResolver( final Object referenceResolver ) {
         if( referenceResolver instanceof ReferenceResolver ){
