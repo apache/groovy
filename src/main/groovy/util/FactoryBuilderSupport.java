@@ -48,6 +48,9 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
 
     /**
      * Throws an exception if value is null.
+     *
+     * @param value the node's value
+     * @param name the node's name
      */
     public static void checkValueIsNull( Object value, Object name ) {
         if( value != null ){
@@ -56,8 +59,12 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
     }
 
     /**
-     * Returns true if type is assignale to the value's class, false if value is
-     * null.
+     * Returns true if type is assignalbe to the value's class, false if value
+     * is null.<br>
+     *
+     * @param value the node's value
+     * @param name the node's name
+     * @param type a Class that may be assignable to the value's class
      */
     public static boolean checkValueIsType( Object value, Object name, Class type ) {
         if( value != null ){
@@ -74,7 +81,11 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
 
     /**
      * Returns true if type is assignale to the value's class, false if value is
-     * null or a String.
+     * null or a String.<br>
+     *
+     * @param value the node's value
+     * @param name the node's name
+     * @param type a Class that may be assignable to the value's class
      */
     public static boolean checkValueIsTypeNotString( Object value, Object name, Class type ) {
         if( value != null ){
@@ -110,7 +121,7 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
     }
 
     /**
-     * Returns the factory map.
+     * Returns the factory map (Unmodifiable Map).
      */
     public Map getFactories() {
         return Collections.unmodifiableMap( proxyBuilder.factories );
@@ -205,7 +216,7 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
 
     /**
      * Add an attribute delegate so it can intercept attributes being set.
-     * Attribute delegates are fire in a FILO pattern, so that nested delegates
+     * Attribute delegates are fired in a FILO pattern, so that nested delegates
      * get first crack.
      *
      * @param attrDelegate
@@ -226,7 +237,7 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
 
     /**
      * Add a preInstantiate delegate so it can intercept nodes before they are
-     * created. PreInstantiate delegates are fire in a FILO pattern, so that
+     * created. PreInstantiate delegates are fired in a FILO pattern, so that
      * nested delegates get first crack.
      *
      * @param delegate
@@ -247,7 +258,7 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
 
     /**
      * Add a postInstantiate delegate so it can intercept nodes after they are
-     * created. PostInstantiate delegates are fire in a FILO pattern, so that
+     * created. PostInstantiate delegates are fired in a FILO pattern, so that
      * nested delegates get first crack.
      *
      * @param delegate
@@ -268,7 +279,7 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
 
     /**
      * Add a nodeCompletion delegate so it can intercept nodes after they done
-     * with building. NodeCompletion delegates are fire in a FILO pattern, so
+     * with building. NodeCompletion delegates are fired in a FILO pattern, so
      * that nested delegates get first crack.
      *
      * @param delegate
@@ -311,6 +322,10 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
         proxyBuilder.factories.put( name, factory );
     }
 
+    /**
+     * This method is responsible for instanciating a node and configure its
+     * properties.
+     */
     protected Object createNode( Object name, Map attributes, Object value ) {
         Object node = null;
 
@@ -349,7 +364,10 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
         return (Factory) proxyBuilder.factories.get( name );
     }
 
-    protected Object doInvokeMethod( String methodName, Object name, Object args ) {
+    /**
+     * This method is the workhorse of the builder.
+     */
+    private Object doInvokeMethod( String methodName, Object name, Object args ) {
         Object node = null;
         Closure closure = null;
         List list = InvokerHelper.asList( args );
@@ -476,10 +494,20 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
         return methodName;
     }
 
+    /**
+     * Returns the current builder that serves as a proxy.<br>
+     * Proxy builders are useful for changing the building context, thus
+     * enabling mix &amp; match builders.
+     */
     protected FactoryBuilderSupport getProxyBuilder() {
         return proxyBuilder;
     }
 
+    /**
+     * Assigns any existing properties to the node.<br>
+     * It will call attributeDelegates before passing control to the factory
+     * that built the node.
+     */
     protected void handleNodeAttributes( Object node, Map attributes ) {
         // first, short circuit
         if( node == null ){
@@ -495,6 +523,9 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
         }
     }
 
+    /**
+     * Pushes a new context on the stack.
+     */
     protected void newContext() {
         proxyBuilder.contexts.addFirst( new HashMap() );
     }
@@ -510,6 +541,9 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
         proxyBuilder.getCurrentFactory().onNodeCompleted( this, parent, node );
     }
 
+    /**
+     * Removes the last context from the stack.
+     */
     protected Map popContext() {
         if( !proxyBuilder.contexts.isEmpty() ){
             return (Map) proxyBuilder.contexts.removeFirst();
@@ -559,7 +593,7 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
     }
 
     /**
-     * Clears the context stack
+     * Clears the context stack.
      */
     protected void reset() {
         proxyBuilder.contexts.clear();
@@ -594,6 +628,9 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
         }
     }
 
+    /**
+     * Strategy method to stablish parent/child relationships.
+     */
     protected void setParent( Object parent, Object child ) {
         proxyBuilder.getCurrentFactory().setParent( this, parent, child );
         Factory parentFactory = proxyBuilder.getParentFactory();
@@ -602,10 +639,16 @@ public abstract class FactoryBuilderSupport extends GroovyObjectSupport {
         }
     }
 
+    /**
+     * Sets the builder to be used as a proxy.
+     */
     protected void setProxyBuilder( FactoryBuilderSupport proxyBuilder ) {
         this.proxyBuilder = proxyBuilder;
     }
 
+    /**
+     * Returns the stack of available contexts.
+     */
     protected LinkedList getContexts() {
         return proxyBuilder.contexts;
     }
