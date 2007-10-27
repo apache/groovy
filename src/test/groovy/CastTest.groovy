@@ -106,8 +106,17 @@ class CastTest extends GroovyTestCase {
     void testAsSet() {
     	def mySet = [2, 3, 4, 3] as SortedSet
     	assert mySet instanceof SortedSet
+    	
+    	// identity test
+    	mySet = {} as SortedSet
+    	assert mySet.is ( mySet as SortedSet )
+    	
     	mySet = [2, 3, 4, 3] as Set
     	assert mySet instanceof HashSet
+    	
+        // identitiy test
+    	mySet = {} as Set
+    	assert mySet.is ( mySet as Set )
     }
 
 }
