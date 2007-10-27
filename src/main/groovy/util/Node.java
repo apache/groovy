@@ -50,7 +50,7 @@ public class Node implements java.io.Serializable {
     private Object value;
 
     public Node(Node parent, Object name) {
-        this(parent, name, new ArrayList());
+        this(parent, name, new NodeList());
     }
 
     public Node(Node parent, Object name, Object value) {
@@ -58,7 +58,7 @@ public class Node implements java.io.Serializable {
     }
 
     public Node(Node parent, Object name, Map attributes) {
-        this(parent, name, attributes, new ArrayList());
+        this(parent, name, attributes, new NodeList());
     }
 
     public Node(Node parent, Object name, Map attributes, Object value) {
@@ -81,6 +81,18 @@ public class Node implements java.io.Serializable {
         }
     }
 
+    public Node appendNode(Object name, Map attributes) {
+        return new Node(this, name, attributes);
+    }
+
+    public Node appendNode(Object name, Object value) {
+        return new Node(this, name, value);
+    }
+
+    public Node appendNode(Object name, Map attributes, Object value) {
+        return new Node(this, name, attributes, value);
+    }
+
     private static void setMetaClass(final MetaClass metaClass) {
         final MetaClass newMetaClass = new DelegatingMetaClass(metaClass) {
             /* (non-Javadoc)
@@ -93,7 +105,18 @@ public class Node implements java.io.Serializable {
 
             public void setAttribute(final Object object, final String attribute, final Object newValue) {
                 Node n = (Node) object;
-                n.attributes.put("@" + attribute, newValue);
+                n.attributes().put(attribute, newValue);
+            }
+
+            /* (non-Javadoc)
+            * @see groovy.lang.MetaClass#getProperty(java.lang.Object, java.lang.String)
+            */
+            public Object getProperty(Object object, String property) {
+                if (object instanceof Node) {
+                    Node n = (Node) object;
+                    return n.get(property);
+                }
+                return super.getProperty(object, property);
             }
         };
         GroovySystem.getMetaClassRegistry().setMetaClass(Node.class, newMetaClass);
@@ -139,12 +162,14 @@ public class Node implements java.io.Serializable {
 
     public List children() {
         if (value == null) {
-            return new ArrayList();
+            return new NodeList();
         } else if (value instanceof List) {
             return (List) value;
         } else {
             // we're probably just a String
-            return java.util.Collections.singletonList(value);
+            NodeList result = new NodeList();
+            result.add(value);
+            return result;
         }
     }
 

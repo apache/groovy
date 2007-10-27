@@ -17,14 +17,13 @@
 package groovy.util;
 
 import groovy.xml.QName;
+import org.codehaus.groovy.runtime.InvokerHelper;
 
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
-import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
  * Prints a node with all childs in XML format.
@@ -120,10 +119,11 @@ public class XmlNodePrinter {
             return;
         }
 
-        /*
-         * Still here?!
-         */
-        throw new RuntimeException("Unsupported node value: " + node.value());
+        // treat as simple type - probably a String
+        printName(node, true);
+        printSimpleItemWithIndent(value);
+        printName(node, false);
+        out.flush();
     }
 
     protected void printLineBegin() {
@@ -154,14 +154,22 @@ public class XmlNodePrinter {
                 print((Node) value);
                 continue;
             }
-            /*
-             * Print out "simple" text nodes.
-             */
-            printLineBegin();
-            out.print(InvokerHelper.toString(value));
-            printLineEnd();
+            printSimpleItem(value);
+
         }
         out.decrementIndent();
+    }
+
+    private void printSimpleItemWithIndent(Object value) {
+        out.incrementIndent();
+        printSimpleItem(value);
+        out.decrementIndent();
+    }
+
+    private void printSimpleItem(Object value) {
+        printLineBegin();
+        out.print(InvokerHelper.toString(value));
+        printLineEnd();
     }
 
     protected void printName(Node node, boolean begin) {

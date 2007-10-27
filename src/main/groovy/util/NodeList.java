@@ -15,17 +15,26 @@
  */
 package groovy.util;
 
+import groovy.lang.DelegatingMetaClass;
+import groovy.lang.GroovySystem;
+import groovy.lang.MetaClass;
 import groovy.xml.QName;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * A List implementation which is returned by queries on a {@link Node}
  * which provides some XPath like helper methods for GPath.
  */
 public class NodeList extends ArrayList {
+
+    static {
+        // wrap the standard MetaClass with the delegate
+        setMetaClass(GroovySystem.getMetaClassRegistry().getMetaClass(NodeList.class));
+    }
 
     public NodeList() {
     }
@@ -37,12 +46,51 @@ public class NodeList extends ArrayList {
     public NodeList(int size) {
         super(size);
     }
-    
+
+    private static void setMetaClass(final MetaClass metaClass) {
+        final MetaClass newMetaClass = new DelegatingMetaClass(metaClass) {
+            /* (non-Javadoc)
+            * @see groovy.lang.DelegatingMetaClass#getAttribute(java.lang.Object, java.lang.String)
+            */
+            public Object getAttribute(final Object object, final String attribute) {
+                NodeList nl = (NodeList) object;
+                Iterator it = nl.iterator();
+                List result = new ArrayList();
+                while (it.hasNext()) {
+                    Node node = (Node) it.next();
+                    result.add(node.attributes().get(attribute));
+                }
+                return result;
+            }
+
+            public void setAttribute(final Object object, final String attribute, final Object newValue) {
+                NodeList nl = (NodeList) object;
+                Iterator it = nl.iterator();
+                while (it.hasNext()) {
+                    Node node = (Node) it.next();
+                    node.attributes().put(attribute, newValue);
+                }
+            }
+
+            /* (non-Javadoc)
+            * @see groovy.lang.MetaClass#getProperty(java.lang.Object, java.lang.String)
+            */
+            public Object getProperty(Object object, String property) {
+                if (object instanceof NodeList) {
+                    NodeList nl = (NodeList) object;
+                    return nl.getAt(property);
+                }
+                return super.getProperty(object, property);
+            }
+        };
+        GroovySystem.getMetaClassRegistry().setMetaClass(NodeList.class, newMetaClass);
+    }
+
     /**
      * Provides lookup of elements by non-namespaced name.
      *
-     * @return the nodes of interest which match name
      * @param name the name or shortcut key for nodes of interest
+     * @return the nodes of interest which match name
      */
     public NodeList getAt(String name) {
         NodeList answer = new NodeList();
@@ -53,8 +101,7 @@ public class NodeList extends ArrayList {
                 Object temp = childNode.get(name);
                 if (temp instanceof Collection) {
                     answer.addAll((Collection) temp);
-                }
-                else {
+                } else {
                     answer.add(temp);
                 }
             }
@@ -65,8 +112,8 @@ public class NodeList extends ArrayList {
     /**
      * Provides lookup of elements by QName.
      *
-     * @return the nodes of interest which match name
      * @param name the name or shortcut key for nodes of interest
+     * @return the nodes of interest which match name
      */
     public NodeList getAt(QName name) {
         NodeList answer = new NodeList();
@@ -83,7 +130,7 @@ public class NodeList extends ArrayList {
 
     /**
      * Returns the text value of all of the elements in the collection.
-     * 
+     *
      * @return the text value of all the elements in the collection or null
      */
     public String text() {
@@ -94,15 +141,13 @@ public class NodeList extends ArrayList {
             String text = null;
             if (child instanceof String) {
                 text = (String) child;
-            }
-            else if (child instanceof Node) {
+            } else if (child instanceof Node) {
                 text = ((Node) child).text();
             }
             if (text != null) {
                 if (previousText == null) {
                     previousText = text;
-                }
-                else {
+                } else {
                     if (buffer == null) {
                         buffer = new StringBuffer();
                         buffer.append(previousText);
