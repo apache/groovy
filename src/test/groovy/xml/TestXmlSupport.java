@@ -46,17 +46,14 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package groovy.xml;
 
+import groovy.xml.dom.DOMUtil;
 import org.codehaus.groovy.classgen.TestSupport;
 import org.w3c.dom.Node;
-import org.xml.sax.SAXException;
+import org.w3c.dom.Element;
 import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.stream.StreamResult;
-import javax.xml.transform.dom.DOMSource;
 import java.io.IOException;
 
 /**
@@ -66,15 +63,7 @@ import java.io.IOException;
 public abstract class TestXmlSupport extends TestSupport {
 
     protected void dump(Node node) throws IOException {
-        TransformerFactory transformerFactory = TransformerFactory.newInstance();
-        try {
-            Transformer transformer = transformerFactory.newTransformer();
-            transformer.setOutputProperty("indent", "yes");
-            transformer.transform(new DOMSource(node), new StreamResult(System.out));
-        }
-        catch (TransformerException e) {
-        }
-        System.out.println();
+        DOMUtil.serialize((Element) node, System.out);
     }
 
     protected SAXBuilder createSAXBuilder() throws IOException {

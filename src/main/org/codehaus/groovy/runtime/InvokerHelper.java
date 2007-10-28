@@ -16,15 +16,11 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.*;
+import groovy.xml.dom.DOMUtil;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.typehandling.IntegerCache;
 import org.w3c.dom.Element;
 
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 import java.beans.Introspector;
 import java.io.IOException;
 import java.io.InputStream;
@@ -533,18 +529,7 @@ public class InvokerHelper {
             return buffer.toString();
         }
         if (arguments instanceof Element) {
-            Element node = (Element) arguments;
-            TransformerFactory transformerFactory = TransformerFactory.newInstance();
-            StringWriter sw = new StringWriter();
-            try {
-                Transformer transformer = transformerFactory.newTransformer();
-                transformer.setOutputProperty("indent", "yes");
-                transformer.transform(new DOMSource(node), new StreamResult(sw));
-            }
-            catch (TransformerException e) {
-                // Ignore
-            }
-            return sw.toString();
+            return DOMUtil.serialize((Element) arguments);
         }
         if (arguments instanceof String) {
             if (verbose) {
