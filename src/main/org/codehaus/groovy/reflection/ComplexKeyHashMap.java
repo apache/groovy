@@ -1,7 +1,5 @@
 package org.codehaus.groovy.reflection;
 
-import java.util.Iterator;
-import java.util.ConcurrentModificationException;
 import java.util.NoSuchElementException;
 
 public class ComplexKeyHashMap
@@ -9,6 +7,15 @@ public class ComplexKeyHashMap
   public static class Entry {
     public int hash;
     public Entry next;
+    public Object value;
+
+    public Object getValue() {
+      return value;
+    }
+
+    public void setValue(Object value) {
+      this.value = value;
+    }
   }
 
   protected Entry table [];

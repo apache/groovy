@@ -17,7 +17,6 @@
 package org.codehaus.groovy.runtime.metaclass;
 
 import groovy.lang.*;
-
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedField;
 import org.codehaus.groovy.reflection.CachedMethod;
@@ -384,15 +383,15 @@ public final class ClosureMetaClass extends MetaClassImpl {
     public synchronized void initialize() {
         if (!isInitialized()) {
             CachedMethod[] methodArray = theCachedClass.getMethods();
-
-            for (int i = 0; i < methodArray.length; i++) {
-                final CachedMethod cachedMethod = methodArray[i];
-                Method reflectionMethod = cachedMethod.cachedMethod;
-                if (!reflectionMethod.getName().equals(CLOSURE_DO_CALL_METHOD)) continue;
-                MetaMethod method = createMetaMethod(cachedMethod);
-                closureMethods.add(method);
+            synchronized (theCachedClass) {
+                for (int i = 0; i < methodArray.length; i++) {
+                    final CachedMethod cachedMethod = methodArray[i];
+                    Method reflectionMethod = cachedMethod.cachedMethod;
+                    if (!reflectionMethod.getName().equals(CLOSURE_DO_CALL_METHOD)) continue;
+                    MetaMethod method = cachedMethod.getReflectionMetaMethod();
+                    closureMethods.add(method);
+                }
             }
-
             assignMethodChooser();
 
             initialized = true;
@@ -487,13 +486,6 @@ public final class ClosureMetaClass extends MetaClassImpl {
             // not the standard closure.
             chooser = new NormalMethodChooser(theClass, closureMethods);
         }
-    }
-
-    private MetaMethod createMetaMethod(final CachedMethod method) {
-        if (method.canBeCalledByReflector())
-            return StdMetaMethod.createStdMetaMethod(method);
-        else
-            return ReflectionMetaMethod.createReflectionMetaMethod(method);
     }
 
     private void generateReflector() {

@@ -19,6 +19,7 @@ import groovy.lang.Closure;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedMethod;
+import org.codehaus.groovy.runtime.metaclass.NewInstanceMetaMethod;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;

@@ -15,10 +15,11 @@
  */
 package org.codehaus.groovy.reflection;
 
+import groovy.lang.MetaMethod;
 import org.codehaus.groovy.classgen.BytecodeHelper;
 import org.codehaus.groovy.runtime.metaclass.MethodHelper;
+import org.codehaus.groovy.runtime.metaclass.ReflectionMetaMethod;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.security.AccessController;
@@ -35,10 +36,12 @@ public class CachedMethod extends ParameterTypes implements Comparable{
     private boolean alreadySetAccessible;
     private int methodIndex;
     private int hashCode;
+    private MetaMethod reflectionMetaMethod;
 
     public CachedMethod(CachedClass clazz, Method method) {
         this.cachedMethod = method;
         this.cachedClass = clazz;
+        alreadySetAccessible = Modifier.isPublic(method.getModifiers()) && Modifier.isPublic(clazz.getModifiers());
     }
 
     public CachedMethod(Method method) {
@@ -93,7 +96,7 @@ public class CachedMethod extends ParameterTypes implements Comparable{
         return getName() + getDescriptor();
     }
 
-    public Object invokeByReflection(Object object, Object[] arguments) throws IllegalAccessException, InvocationTargetException {
+    public Method setAccessible() {
         if ( !alreadySetAccessible ) {
             AccessController.doPrivileged(new PrivilegedAction() {
                 public Object run() {
@@ -101,10 +104,9 @@ public class CachedMethod extends ParameterTypes implements Comparable{
                     return null;
                 }
             });
-            alreadySetAccessible = true;
         }
-
-        return cachedMethod.invoke(object, arguments);
+        alreadySetAccessible = true;
+        return cachedMethod;
     }
 
     public boolean isStatic() {
@@ -117,14 +119,6 @@ public class CachedMethod extends ParameterTypes implements Comparable{
 
     public int getMethodIndex() {
         return methodIndex;
-    }
-
-    public Object invoke(Object object, Object[] arguments) throws IllegalAccessException, InvocationTargetException {
-//        final Reflector reflector = cachedClass.getReflector();
-//        if (methodIndex != 0)
-//          return reflector.invoke(this, object, arguments);
-//        else
-          return invokeByReflection(object, arguments);
     }
 
     public boolean canBeCalledByReflector () {
@@ -221,5 +215,16 @@ public class CachedMethod extends ParameterTypes implements Comparable{
         return hashCode;
     }
 
+    public String toString() {
+        return cachedMethod.toString();
+    }
+
+    // Should have lock for declaringClass
+    public MetaMethod getReflectionMetaMethod() {
+        if (reflectionMetaMethod == null) {
+          reflectionMetaMethod = new ReflectionMetaMethod(this);
+        }
+        return reflectionMetaMethod;
+    }
 }
 

@@ -13,54 +13,44 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.codehaus.groovy.runtime;
+package org.codehaus.groovy.runtime.metaclass;
 
-import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedMethod;
-import org.codehaus.groovy.reflection.ParameterTypes;
-import org.codehaus.groovy.runtime.metaclass.StdMetaMethod;
 
-import java.util.HashMap;
+import java.lang.reflect.Modifier;
 
 /**
  * A MetaMethod implementation where the underlying method is really a static
- * helper method on some class.
+ * helper method on some class but it appears to be an instance method on a class.
  *
- * This implementation is used to add new static methods to the JDK writing them as normal
+ * This implementation is used to add new methods to the JDK writing them as normal
  * static methods with the first parameter being the class on which the method is added.
  *
- * @author Guillaume Laforge
+ * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class NewStaticMetaMethod extends NewMetaMethod {
+public class NewInstanceMetaMethod extends NewMetaMethod {
 
-    private NewStaticMetaMethod(CachedMethod method) {
+
+    public NewInstanceMetaMethod(CachedMethod method) {
         super(method);
     }
 
     public boolean isStatic() {
-        return true;
+        return false;
     }
 
     public int getModifiers() {
-        return super.getModifiers();
+        // lets clear the static bit
+        return super.getModifiers() ^ Modifier.STATIC;
     }
 
-    public Object invoke(Object object, Object[] arguments) {
+    public Object invoke(Object object, Object[] arguments)  {
+        // we need to cheat using the type
         int size = arguments.length;
         Object[] newArguments = new Object[size + 1];
+        newArguments[0] = object;
         System.arraycopy(arguments, 0, newArguments, 1, size);
-        newArguments[0] = null;
         return super.invoke(null, newArguments);
-    }
-
-    private static HashMap cache = new HashMap();
-    public synchronized static NewStaticMetaMethod createNewStaticMetaMethod(CachedMethod element) {
-        NewStaticMetaMethod method = (NewStaticMetaMethod) cache.get(element);
-        if (method == null) {
-            method = new NewStaticMetaMethod(element);
-            cache.put(element, method);
-        }
-        return method;
     }
 }

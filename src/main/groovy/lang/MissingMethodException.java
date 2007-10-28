@@ -31,27 +31,32 @@ public class MissingMethodException extends GroovyRuntimeException {
     private final String method;
     private final Class type;
     private final boolean isStatic;
+    private final Object arguments [];
 
     public MissingMethodException(String method, Class type, Object[] arguments) {
         this(method,type,arguments,false);
     }
     
     public MissingMethodException(String method, Class type, Object[] arguments, boolean isStatic) {
-	    super(
-	        "No signature of method: "
-	    		+ (isStatic ? "static " : "")
-	    		+ type.getName()
-				+ "."
-	            + method
-				+ "() is applicable for argument types: ("
-				+ InvokerHelper.toTypeString(arguments)
-	            + ") values: "
-				+ InvokerHelper.toString(arguments));
+	    super();
 	    this.method = method;
 	    this.type = type;
         this.isStatic = isStatic;
-	}
-    
+        this.arguments = arguments;
+    }
+
+    public String getMessage() {
+        return "No signature of method: "
+                    + (isStatic ? "static " : "")
+                    + type.getName()
+                    + "."
+                    + method
+                    + "() is applicable for argument types: ("
+                    + InvokerHelper.toTypeString(arguments)
+                    + ") values: "
+                    + InvokerHelper.toString(arguments);
+    }
+
     /**
      * @return the name of the method that could not be found
      */

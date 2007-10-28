@@ -16,7 +16,9 @@
 package org.codehaus.groovy.reflection;
 
 import groovy.lang.GString;
+import groovy.lang.GroovySystem;
 import groovy.lang.MetaClassRegistry;
+import groovy.lang.MetaMethod;
 import org.codehaus.groovy.classgen.BytecodeHelper;
 import org.codehaus.groovy.runtime.Reflector;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
@@ -25,19 +27,18 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.lang.ref.WeakReference;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @author Alex.Tkachman
  */
 public class CachedClass {
     private CachedClass cachedSuperClass;
-
-    private Map allMethodsMap;
 
     int hashCode;
 
@@ -47,33 +48,8 @@ public class CachedClass {
     private CachedConstructor[] constructors;
     private CachedMethod[] methods;
     private final Class cachedClass;
-
-    public Map getAllMethodsMap () {
-        if (allMethodsMap == null) {
-
-            allMethodsMap = new HashMap();
-
-            final Set interfaces = getInterfaces();
-            for (Iterator it = interfaces.iterator(); it.hasNext(); ) {
-                CachedClass iface = (CachedClass) it.next();
-                allMethodsMap.putAll(iface.getAllMethodsMap());
-            }
-
-            CachedClass superClass = getCachedSuperClass();
-            if (superClass != null)
-              allMethodsMap.putAll(superClass.getAllMethodsMap());
-
-            getMethods();
-            for (int i = 0; i < methods.length; i++) {
-                CachedMethod method = methods[i];
-                if (!Modifier.isPrivate(method.getModifiers())) {
-                  allMethodsMap.put(method.getSignature(),method);
-                }
-            }
-        }
-
-        return allMethodsMap;
-    }
+    private MetaMethod[] metaMethods;
+    public ArrayList mopMethods;
 
     public Set getInterfaces() {
         if (interfaces == null)  {
@@ -96,8 +72,30 @@ public class CachedClass {
         return interfaces;
     }
 
-    private Set interfaces;
+    private Set ownInterfaces;
 
+    public Set getOwnInterfaces() {
+        if (ownInterfaces == null)  {
+            ownInterfaces = new HashSet (0);
+
+            if (getCachedClass().isInterface())
+              ownInterfaces.add(this);
+
+            Class[] classes = getCachedClass().getInterfaces();
+            for (int i = 0; i < classes.length; i++) {
+                final CachedClass aClass = ReflectionCache.getCachedClass(classes[i]);
+                if (!ownInterfaces.contains(aClass))
+                  ownInterfaces.addAll(aClass.getInterfaces());
+            }
+
+            final CachedClass superClass = getCachedSuperClass();
+            if (superClass != null)
+              ownInterfaces.addAll(superClass.getInterfaces());
+        }
+        return ownInterfaces;
+    }
+
+    private Set interfaces;
 
     public final boolean isArray;
     public final boolean isPrimitive;
@@ -116,8 +114,15 @@ public class CachedClass {
     }
 
     public synchronized CachedClass getCachedSuperClass() {
-        if (cachedSuperClass == null)
-            cachedSuperClass = ReflectionCache.getCachedClass(getCachedClass().getSuperclass());
+        if (cachedSuperClass == null) {
+            if (!isArray)
+              cachedSuperClass = ReflectionCache.getCachedClass(getCachedClass().getSuperclass());
+            else
+              if (cachedClass.getComponentType().isPrimitive() || cachedClass.getComponentType() == Object.class)
+                cachedSuperClass = ReflectionCache.OBJECT_CLASS;
+              else
+                cachedSuperClass = ReflectionCache.OBJECT_ARRAY_CLASS;
+        }
 
         return cachedSuperClass;
     }
@@ -339,5 +344,56 @@ public class CachedClass {
 
     public Class getCachedClass() {
         return cachedClass;
+    }
+
+    public synchronized MetaMethod[] getMetaMethods() {
+        if (metaMethods == null) {
+            getMethods();
+            ArrayList arr = new ArrayList(methods.length);
+
+            for (int i = 0; i != methods.length; ++i) {
+                final CachedMethod cachedMethod = methods[i];
+
+                if (cachedMethod.getName().indexOf('+') >= 0) {
+                    // Skip Synthetic methods inserted by JDK 1.5 compilers and later
+                    continue;
+                } /*else if (Modifier.isAbstract(reflectionMethod.getModifiers())) {
+                   continue;
+               }*/
+
+                String name = cachedMethod.getName();
+                if (name.startsWith("super$") || name.startsWith("this$")) {
+                  if (mopMethods == null) {
+                      mopMethods = new ArrayList();
+                  }
+                  mopMethods.add(cachedMethod.getReflectionMetaMethod());
+                }
+                else
+                  arr.add(cachedMethod.getReflectionMetaMethod());
+            }
+
+
+            // add methods declared by DGM
+            final MetaClassRegistryImpl metaClassRegistry = (MetaClassRegistryImpl) GroovySystem.getMetaClassRegistry();
+            FastArray methods;
+            methods = metaClassRegistry.getInstanceMethods();
+            for (int i = 0; i != methods.size; ++i) {
+                MetaMethod element = (MetaMethod) methods.get(i);
+                if (element.getDeclaringClass() != this)
+                    continue;
+                arr.add(element);
+            }
+
+            // add static methods declared by DGM
+            methods = metaClassRegistry.getStaticMethods();
+            for (int i = 0; i != methods.size; ++i) {
+                MetaMethod element = (MetaMethod) methods.get(i);
+                if (element.getDeclaringClass() != this)
+                    continue;
+                arr.add(element);
+            }
+            metaMethods = (MetaMethod[]) arr.toArray(new MetaMethod[arr.size()]);
+        }
+        return metaMethods;
     }
 }

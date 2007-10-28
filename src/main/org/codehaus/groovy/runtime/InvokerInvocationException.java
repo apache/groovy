@@ -15,7 +15,7 @@
  */
 package org.codehaus.groovy.runtime;
 
-import groovy.lang.*;
+import groovy.lang.GroovyRuntimeException;
 
 import java.lang.reflect.InvocationTargetException;
 
@@ -28,11 +28,15 @@ import java.lang.reflect.InvocationTargetException;
 public class InvokerInvocationException extends GroovyRuntimeException {
 
     public InvokerInvocationException(InvocationTargetException e) {
-        super(e.getTargetException().toString(), e.getTargetException());
+        super(e.getTargetException());
     }
 
     public InvokerInvocationException(Throwable cause) {
-        super((cause==null)?"java.lang.NullPointerException":cause.getMessage(),cause);
+        super(cause);
     }
 
+    public String getMessage() {
+        Throwable cause = getCause();
+        return (cause==null)?"java.lang.NullPointerException":cause.toString();
+    }
 }

@@ -47,6 +47,7 @@ package org.codehaus.groovy.runtime;
 
 import junit.framework.TestCase;
 import org.codehaus.groovy.reflection.CachedMethod;
+import org.codehaus.groovy.runtime.metaclass.NewInstanceMetaMethod;
 
 import java.lang.reflect.Method;
 
@@ -65,7 +66,7 @@ public class NewStaticMetaMethodTest extends TestCase {
         Object answer = metaMethod.invoke("abc", new Object[]{"xyz"});
         assertEquals("def", answer);
 
-        assertTrue("Should not appear as static method", metaMethod.isStatic() == false);
+        assertTrue("Should not appear as static method", !metaMethod.isStatic());
     }
 
     public void testInvokeDefaultGroovyMethod() throws Exception {
@@ -94,6 +95,6 @@ public class NewStaticMetaMethodTest extends TestCase {
     }
 
     protected NewInstanceMetaMethod createNewMetaMethod(Method method) {
-        return NewInstanceMetaMethod.createNewInstanceMetaMethod(CachedMethod.find(method));
+        return new NewInstanceMetaMethod(CachedMethod.find(method));
     }
 }

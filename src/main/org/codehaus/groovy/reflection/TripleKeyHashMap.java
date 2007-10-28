@@ -1,6 +1,6 @@
 package org.codehaus.groovy.reflection;
 
-public abstract class TripleKeyHashMap extends ComplexKeyHashMap
+public class TripleKeyHashMap extends ComplexKeyHashMap
 {
   public static class Entry extends ComplexKeyHashMap.Entry{
     public Object key1, key2, key3;
@@ -16,7 +16,9 @@ public abstract class TripleKeyHashMap extends ComplexKeyHashMap
     return null;
   }
 
-  public abstract boolean checkEquals(Entry e, Object key1, Object key2, Object key3);
+  public boolean checkEquals(Entry e, Object key1, Object key2, Object key3) {
+      return e.key1.equals(key1) && e.key2.equals(key2) && e.key3.equals(key3);
+  }
 
   public Entry getOrPut(Object key1, Object key2, Object key3)
   {
@@ -41,7 +43,9 @@ public abstract class TripleKeyHashMap extends ComplexKeyHashMap
     return entry;
   }
 
-  public abstract Entry createEntry();
+  public Entry createEntry() {
+      return new Entry ();
+  }
 
   public final ComplexKeyHashMap.Entry remove(Object key1, Object key2, Object key3) {
     int h = hash (31*(31*key1.hashCode()+key2.hashCode())+key3.hashCode());

@@ -16,10 +16,8 @@
 package org.codehaus.groovy.reflection;
 
 import java.lang.ref.SoftReference;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.TreeMap;
 
 public class ReflectionCache {
     private static Map primitiveTypesMap = new HashMap();
@@ -74,27 +72,14 @@ public class ReflectionCache {
 */
     }
 
-    static TripleKeyHashMap mopNames = new TripleKeyHashMap() {
-        public boolean checkEquals(Entry e, Object key1, Object key2, Object key3) {
-            MopNameEntry ee = (MopNameEntry) e;
-            return ee.key1 == key1 && ee.key2.equals(key2) && ee.key3 == key3;
-        }
-
-        public Entry createEntry() {
-            return new MopNameEntry();
-        }
-    };
-
-    private static class MopNameEntry extends TripleKeyHashMap.Entry {
-        String value;
-    }
+    static TripleKeyHashMap mopNames = new TripleKeyHashMap();
 
     public static String getMOPMethodName(CachedClass declaringClass, String name, boolean useThis) {
-        MopNameEntry mopNameEntry = (MopNameEntry) mopNames.getOrPut(declaringClass, name, Boolean.valueOf(useThis));
+        TripleKeyHashMap.Entry mopNameEntry = mopNames.getOrPut(declaringClass, name, Boolean.valueOf(useThis));
         if (mopNameEntry.value == null) {
             mopNameEntry.value = new StringBuffer().append(useThis ? "this$" : "super$").append(declaringClass.getSuperClassDistance()).append("$").append(name).toString();
         }
-        return mopNameEntry.value;
+        return (String) mopNameEntry.value;
     }
 
     static final Map /*<Class,SoftReference<CachedClass>>*/ CACHED_CLASS_MAP = new HashMap();
@@ -104,27 +89,14 @@ public class ReflectionCache {
         return cachedClass.isArray;
     }
 
-    static DoubleKeyHashMap assignableMap = new DoubleKeyHashMap() {
-        public boolean checkEquals(ComplexKeyHashMap.Entry e, Object key1, Object key2) {
-            IsAssignableEntry ee = (IsAssignableEntry) e;
-            return ee.key1 == key1 && ee.key2 == key2;
-        }
-
-        public Entry createEntry() {
-            return new IsAssignableEntry();
-        }
-    };
-
-    public static class IsAssignableEntry extends DoubleKeyHashMap.Entry {
-        Boolean value;
-    }
+    static DoubleKeyHashMap assignableMap = new DoubleKeyHashMap();
 
     public static boolean isAssignableFrom(Class klazz, Class aClass) {
-        IsAssignableEntry val = (IsAssignableEntry) assignableMap.getOrPut(klazz, aClass);
+        DoubleKeyHashMap.Entry val = assignableMap.getOrPut(klazz, aClass);
         if (val.value == null) {
             val.value = Boolean.valueOf(klazz.isAssignableFrom(aClass));
         }
-        return val.value.booleanValue();
+        return ((Boolean)val.value).booleanValue();
     }
 
     static boolean arrayContentsEq(Object[] a1, Object[] a2) {

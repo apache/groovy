@@ -282,7 +282,8 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
      * @return the value if applicable or null if there is no return statement in the closure
      */
     public Object call() {
-        return call(new Object[]{});
+        final Object[] NOARGS = {};
+        return call(NOARGS);
     }
     
     public Object call(Object[] args) {

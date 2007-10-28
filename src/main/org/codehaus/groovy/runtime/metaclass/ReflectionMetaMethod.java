@@ -16,20 +16,18 @@
 package org.codehaus.groovy.runtime.metaclass;
 
 import groovy.lang.MetaMethod;
-import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.CachedClass;
+import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.ParameterTypes;
+import org.codehaus.groovy.runtime.InvokerInvocationException;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.HashMap;
-
-import org.codehaus.groovy.runtime.InvokerInvocationException;
 
 public class ReflectionMetaMethod extends MetaMethod {
     protected final CachedMethod method;
 
-    protected ReflectionMetaMethod(CachedMethod method) {
+    public ReflectionMetaMethod(CachedMethod method) {
         this.method = method;
     }
 
@@ -55,7 +53,7 @@ public class ReflectionMetaMethod extends MetaMethod {
 
     public Object invoke(Object object, Object[] arguments) {
         try {
-            return method.invokeByReflection(object, arguments);
+            return method.setAccessible().invoke(object, arguments);
         } catch (IllegalArgumentException e) {
             throw new InvokerInvocationException(e);
         } catch (IllegalAccessException e) {
@@ -63,17 +61,6 @@ public class ReflectionMetaMethod extends MetaMethod {
         } catch (InvocationTargetException e) {
             throw new InvokerInvocationException(e);
         }
-    }
-
-    private static HashMap cache = new HashMap();
-
-    public synchronized static ReflectionMetaMethod createReflectionMetaMethod(CachedMethod element) {
-        ReflectionMetaMethod method = (ReflectionMetaMethod) cache.get(element);
-        if (method == null) {
-            method = new ReflectionMetaMethod(element);
-            cache.put(element, method);
-        }
-        return method;
     }
 
     public boolean isMethod(Method method) {

@@ -27,15 +27,18 @@ package groovy.lang;
  */
 public class MissingPropertyException extends GroovyRuntimeException {
 
+    public static final Object MPE = new Object();
+
     private final String property;
     private final Class type;
 
     public MissingPropertyException(String property, Class type) {
-        this("No such property: " + property + " for class: " + type.getName(), property, type);
+        this.property = property;
+        this.type = type;
     }
 
     public MissingPropertyException(String property, Class type, Throwable t) {
-        super("No such property: " + property + " for class: " + type.getName() + ". Reason: " + t, t);
+        super(t);
         this.property = property;
         this.type = type;
     }
@@ -44,6 +47,14 @@ public class MissingPropertyException extends GroovyRuntimeException {
         super(message);
         this.property = property;
         this.type = type;
+    }
+
+    public String getMessageWithoutLocationText() {
+        final Throwable cause = getCause();
+        if (cause == null)
+          return "No such property: " + property + " for class: " + type.getName();
+        else
+          return "No such property: " + property + " for class: " + type.getName() + ". Reason: " + cause;
     }
 
     /**

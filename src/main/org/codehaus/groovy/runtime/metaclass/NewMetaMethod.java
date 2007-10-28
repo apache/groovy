@@ -1,14 +1,13 @@
-package org.codehaus.groovy.runtime;
+package org.codehaus.groovy.runtime.metaclass;
 
-import org.codehaus.groovy.runtime.metaclass.StdMetaMethod;
+import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.ParameterTypes;
-import org.codehaus.groovy.reflection.CachedClass;
 
 /**
  * Base class for NewInstanceMetaMethod and NewStaticMetaMethod
  */
-class NewMetaMethod extends StdMetaMethod {
+public class NewMetaMethod extends ReflectionMetaMethod {
     protected static final CachedClass[] EMPTY_TYPE_ARRAY = {};
     protected CachedClass[] bytecodeParameterTypes ;
     protected ParameterTypes paramTypes;

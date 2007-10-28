@@ -16,9 +16,11 @@
 
 package groovy.lang;
 
-import org.codehaus.groovy.runtime.*;
-import org.codehaus.groovy.reflection.ParameterTypes;
+import org.codehaus.groovy.classgen.BytecodeHelper;
 import org.codehaus.groovy.reflection.CachedClass;
+import org.codehaus.groovy.reflection.ParameterTypes;
+import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.MetaClassHelper;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -31,6 +33,8 @@ import java.lang.reflect.Modifier;
  * @version $Revision$
  */
 public abstract class MetaMethod implements Cloneable {
+    private String signature;
+    private String mopName;
 
     public MetaMethod() {
     }
@@ -161,5 +165,43 @@ public abstract class MetaMethod implements Cloneable {
 
     public final Class[] getNativeParameterTypes() {
         return getParamTypes().getNativeParameterTypes();
+    }
+
+    public String getDescriptor() {
+        return BytecodeHelper.getMethodDescriptor(getReturnType(), getNativeParameterTypes());
+    }
+
+    public synchronized String getSignature() {
+        if (signature == null) {
+            CachedClass [] parameters = getParameterTypes();
+            final String name = getName();
+            StringBuffer buf = new StringBuffer(name.length()+parameters.length*10);
+            buf.append(getReturnType().getName());
+            //
+            buf.append(' ');
+            buf.append(name);
+            buf.append('(');
+            for (int i = 0; i < parameters.length; i++) {
+                if (i > 0) {
+                    buf.append(", ");
+                }
+                buf.append(parameters[i].getName());
+            }
+            buf.append(')');
+            return buf.toString();
+        }
+        return signature;
+    }
+
+    public String getMopName() {
+        if (mopName == null) {
+          String name = getName();
+          CachedClass declaringClass = getDeclaringClass();
+          if ((getModifiers() & (Modifier.PUBLIC| Modifier.PROTECTED)) == 0)
+            mopName = new StringBuffer().append("this$").append(declaringClass.getSuperClassDistance()).append("$").append(name).toString();
+          else
+            mopName = new StringBuffer().append("super$").append(declaringClass.getSuperClassDistance()).append("$").append(name).toString();
+        }
+        return mopName;
     }
 }

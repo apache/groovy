@@ -19,18 +19,20 @@ import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovySystem;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaClassRegistry;
-import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.classgen.ReflectorGenerator;
+import org.codehaus.groovy.reflection.CachedClass;
+import org.codehaus.groovy.reflection.CachedMethod;
+import org.codehaus.groovy.reflection.FastArray;
+import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
 import org.codehaus.groovy.runtime.Reflector;
 import org.objectweb.asm.ClassWriter;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -52,8 +54,8 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     private MemoryAwareConcurrentReadMap loaderMap = new MemoryAwareConcurrentReadMap();
     private boolean useAccessible;
     
-    private LinkedList instanceMethods = new LinkedList();
-    private LinkedList staticMethods = new LinkedList();
+    private FastArray instanceMethods = new FastArray();
+    private FastArray staticMethods = new FastArray();
 
     public static final int LOAD_DEFAULT = 0;
     public static final int DONT_LOAD_DEFAULT = 1;
@@ -107,16 +109,17 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     }
     
     private void registerMethods(final Class theClass, final boolean useInstanceMethods) {
-        Method[] methods = theClass.getMethods();
+        CachedMethod[] methods = ReflectionCache.getCachedClass(theClass).getMethods();
         for (int i = 0; i < methods.length; i++) {
-            Method method = methods[i];
-            if (MethodHelper.isStatic(method)) {
-                Class[] paramTypes = method.getParameterTypes();
+            CachedMethod method = methods[i];
+            final int mod = method.getModifiers();
+            if (Modifier.isStatic(mod) && Modifier.isPublic(mod)) {
+                CachedClass[] paramTypes = method.getParameterTypes();
                 if (paramTypes.length > 0) {
                     if (useInstanceMethods) {
-                        instanceMethods.add(CachedMethod.find(method));
+                        instanceMethods.add(new NewInstanceMetaMethod(method));
                     } else {
-                        staticMethods.add(CachedMethod.find(method));
+                        staticMethods.add(new NewStaticMetaMethod(method));
                     }
                 }
             }
@@ -298,11 +301,11 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         return name;
     }
 
-    public List getInstanceMethods() {
+    public FastArray getInstanceMethods() {
         return instanceMethods;
     }
 
-    public List getStaticMethods() {
+    public FastArray getStaticMethods() {
         return staticMethods;
     }
 }

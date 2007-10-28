@@ -3,21 +3,12 @@ package org.codehaus.groovy.reflection;
 public class SingleKeyHashMap extends ComplexKeyHashMap
 {
     public static class Entry extends ComplexKeyHashMap.Entry{
-    public Object key;
-    public Object value;
+        public Object key;
 
-      public Object getKey() {
-          return key;
-      }
-
-      public Object getValue() {
-          return value;
-      }
-
-      public void setValue(Object value) {
-          this.value = value;
-      }
-  }
+        public Object getKey() {
+              return key;
+        }
+    }
 
     public SingleKeyHashMap () {
         super ();
@@ -32,7 +23,7 @@ public class SingleKeyHashMap extends ComplexKeyHashMap
     }
 
     public void put(Object key, Object value) {
-        ((Entry)getOrPut(key)).value = value;
+        getOrPut(key).value = value;
     }
 
   public final Object get(Object key) {
