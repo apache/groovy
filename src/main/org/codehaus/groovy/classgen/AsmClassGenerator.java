@@ -3386,7 +3386,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 invokeMethod,false,false,false);
         
         // we need special code for arrays to store the result
-        boolean handled = false;
+        boolean setResult = true;
         if (expression instanceof BinaryExpression) {
             BinaryExpression be = (BinaryExpression) expression;
             if (be.getOperation().getType()==Types.LEFT_SQUARE_BRACKET) {
@@ -3404,10 +3404,16 @@ public class AsmClassGenerator extends ClassGenerator {
                         be.getLeftExpression(), new ConstantExpression("putAt"),
                         args,
                         invokeMethod,false,false,false);
-                handled = true;
+                mv.visitInsn(POP);
+                setResult = false;
             } 
+        } else if (expression instanceof ConstantExpression) {
+            setResult = false;
         }
-        if (!handled) {
+        
+        if (setResult) {
+            // we want to keep a value on stack, so we have to DUP here
+            if (expression instanceof VariableExpression) mv.visitInsn(DUP);
             leftHandExpression = true;
             expression.visit(this);
             leftHandExpression = false;
@@ -3418,8 +3424,7 @@ public class AsmClassGenerator extends ClassGenerator {
         // execute Method
         execMethodAndStoreForSubscriptOperator(method,expression);
 
-        // reload new value
-        expression.visit(this);
+        // new value is already on stack, so nothing to do here
     }
 
     protected void evaluatePostfixMethod(String method, Expression expression) {
@@ -3431,7 +3436,9 @@ public class AsmClassGenerator extends ClassGenerator {
 
         // execute Method
         execMethodAndStoreForSubscriptOperator(method,expression);
-
+        // remove the result of the method call
+        mv.visitInsn(POP);
+        
         //reload saved value
         mv.visitVarInsn(ALOAD, tempIdx);
         compileStack.removeVar(tempIdx);

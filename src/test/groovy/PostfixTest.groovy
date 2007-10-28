@@ -40,4 +40,8 @@ class PostfixTest extends GroovyTestCase {
         assert i[0]++ == 2
         assert i[0] == 3
     }
+    
+    void testConstantPostFix() {
+        assert 1 == 1++
+    }    
 }

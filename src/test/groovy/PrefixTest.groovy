@@ -45,4 +45,8 @@ class PrefixTest extends GroovyTestCase {
         --i[0]
         assert i[0] == 0
     }
+    
+    void testConstantPostFix() {
+        assert 2 == ++1
+    }  
 }
