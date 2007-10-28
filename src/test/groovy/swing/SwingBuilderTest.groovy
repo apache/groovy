@@ -335,12 +335,18 @@ class SwingBuilderTest extends GroovyTestCase {
         swing.tabbedPane(id:'tp') {
             panel(id:'p1', name:'Title 1')
             panel(id:'p2')
+            panel(id:'p3', title:'Title 3')
+            panel(id:'p4', title:'Title 4', name:'Name 4')
         }
 
-        assert swing.tp.tabCount == 2
+        assert swing.tp.tabCount == 4
         assert swing.tp.indexOfComponent(swing.p1) == 0
         assert swing.tp.indexOfComponent(swing.p2) == 1
+        assert swing.tp.indexOfComponent(swing.p3) == 2
+        assert swing.tp.indexOfComponent(swing.p4) == 3
         assert swing.tp.indexOfTab('Title 1') == 0
+        assert swing.tp.indexOfTab('Title 3') == 2
+        assert swing.tp.indexOfTab('Title 4') == 3
 
     }
 

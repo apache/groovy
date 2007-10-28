@@ -19,14 +19,23 @@ package groovy.swing.factory
 import java.awt.Component
 import java.awt.Window
 
-class ComponentFactory extends BeanFactory {
+class TabbedPaneFactory extends BeanFactory {
 
-    public ComponentFactory(Class beanClass) {
-        super(beanClass)
+    public TabbedPaneFactory(Class beanClass) {
+        super(beanClass, false)
     }
 
-    public ComponentFactory(Class beanClass, boolean leaf) {
-        super(beanClass, leaf)
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
+        builder.context.tabbedPaneFactoryClosure = this.&inspectChild
+        builder.addAttributeDelegate(builder.context.tabbedPaneFactoryClosure)
+        return super.newInstance(builder, name, value, attributes)
+    }
+
+    public static void inspectChild(FactoryBuilderSupport builder, Object node, Map attributes) {
+        Object name = attributes.remove('title')
+        if (name) {
+            builder.context.put(node, name)
+        }
     }
 
     public void setChild(FactoryBuilderSupport builder, Object parent, Object child) {
@@ -34,9 +43,9 @@ class ComponentFactory extends BeanFactory {
             return;
         }
         try {
-            def constraints = builder.context.constraints
-            if (constraints != null) {
-                parent.add(child, constraints)
+            def title = builder.context[child]
+            if (title != null) {
+                parent.add(title, child)
             } else {
                 parent.add(child)
             }
@@ -44,4 +53,11 @@ class ComponentFactory extends BeanFactory {
             parent.add(child)
         }
     }
+
+    public void onNodeCompleted( FactoryBuilderSupport builder, Object parent, Object node ) {
+        super.onNodeCompleted (builder, parent, node)
+        builder.removeAttributeDelegate(builder.context.tabbedPaneFactoryClosure)
+    }
+
+
 }

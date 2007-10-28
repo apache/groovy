@@ -117,7 +117,7 @@ public class SwingBuilder  extends FactoryBuilderSupport {
         registerBeanFactory("slider", JSlider)
         registerBeanFactory("spinner", JSpinner)
         registerFactory("splitPane", new SplitPaneFactory())
-        registerBeanFactory("tabbedPane", JTabbedPane)
+        registerFactory("tabbedPane", new TabbedPaneFactory(JTabbedPane))
         registerFactory("table", new TableFactory())
         registerBeanFactory("tableColumn", TableColumn)
         registerBeanFactory("toolBar", JToolBar)
