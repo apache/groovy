@@ -66,4 +66,8 @@ public class ReflectionMetaMethod extends MetaMethod {
     public boolean isMethod(Method method) {
         return method == this.method.cachedMethod || super.isMethod(method);
     }
+
+    public String toString () {
+        return method.toString();
+    }
 }

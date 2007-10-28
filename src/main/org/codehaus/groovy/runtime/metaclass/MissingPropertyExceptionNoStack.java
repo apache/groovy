@@ -1,4 +1,6 @@
-package groovy.lang;
+package org.codehaus.groovy.runtime.metaclass;
+
+import groovy.lang.MissingPropertyException;
 
 public class MissingPropertyExceptionNoStack extends MissingPropertyException {
 

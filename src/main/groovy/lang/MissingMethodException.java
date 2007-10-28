@@ -31,6 +31,11 @@ public class MissingMethodException extends GroovyRuntimeException {
     private final String method;
     private final Class type;
     private final boolean isStatic;
+
+    public Object[] getArguments() {
+        return arguments;
+    }
+
     private final Object arguments [];
 
     public MissingMethodException(String method, Class type, Object[] arguments) {

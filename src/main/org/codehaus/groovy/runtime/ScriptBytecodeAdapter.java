@@ -16,6 +16,8 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.*;
+import org.codehaus.groovy.runtime.metaclass.MissingMethodExceptionNoStack;
+import org.codehaus.groovy.runtime.metaclass.MissingPropertyExceptionNoStack;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.wrappers.GroovyObjectWrapper;
 import org.codehaus.groovy.runtime.wrappers.PojoWrapper;
@@ -47,6 +49,11 @@ public class ScriptBytecodeAdapter {
         if (gre instanceof MissingPropertyExceptionNoStack) {
             MissingPropertyExceptionNoStack noStack = (MissingPropertyExceptionNoStack) gre;
             throw new MissingPropertyException(noStack.getProperty(), noStack.getType());
+        }
+
+        if (gre instanceof MissingMethodExceptionNoStack) {
+            MissingMethodExceptionNoStack noStack = (MissingMethodExceptionNoStack) gre;
+            throw new MissingMethodException(noStack.getMethod(), noStack.getType(), noStack.getArguments(), noStack.isStatic());
         }
 
         Throwable th = gre;

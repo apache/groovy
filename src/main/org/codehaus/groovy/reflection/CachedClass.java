@@ -29,10 +29,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author Alex.Tkachman
@@ -48,8 +45,8 @@ public class CachedClass {
     private CachedConstructor[] constructors;
     private CachedMethod[] methods;
     private final Class cachedClass;
-    private MetaMethod[] metaMethods;
-    public ArrayList mopMethods;
+    private MetaMethod[] newMetaMethods;
+    public  CachedMethod [] mopMethods;
 
     public Set getInterfaces() {
         if (interfaces == null)  {
@@ -127,23 +124,53 @@ public class CachedClass {
         return cachedSuperClass;
     }
 
-    public synchronized CachedMethod[] getMethods() {
+    public CachedMethod[] getMethods() {
         if (methods == null) {
-            final Method[] declaredMethods = getCachedClass().getDeclaredMethods();
-            methods = new CachedMethod[declaredMethods.length];
-            for (int i = 0; i != methods.length; ++i)
-                methods[i] = new CachedMethod(this,declaredMethods[i]);
-            Arrays.sort(methods);
+            synchronized (this) {
+                final Method[] declaredMethods = getCachedClass().getDeclaredMethods();
+                ArrayList methods = new ArrayList(declaredMethods.length);
+                ArrayList mopMethods = new ArrayList(declaredMethods.length);
+                for (int i = 0; i != declaredMethods.length; ++i) {
+                    final CachedMethod cachedMethod = new CachedMethod(this, declaredMethods[i]);
+                    final String name = cachedMethod.getName();
+
+                    if (name.indexOf('+') >= 0) {
+                        // Skip Synthetic methods inserted by JDK 1.5 compilers and later
+                        continue;
+                    } /*else if (Modifier.isAbstract(reflectionMethod.getModifiers())) {
+                       continue;
+                    }*/
+
+                    if (name.startsWith("this$") || name.startsWith("super$"))
+                      mopMethods.add(cachedMethod);
+                    else
+                      methods.add(cachedMethod);
+                }
+                this.methods = (CachedMethod[]) methods.toArray(new CachedMethod[methods.size()]);
+                Arrays.sort(this.methods);
+
+                final CachedClass superClass = getCachedSuperClass();
+                if (superClass != null) {
+                    superClass.getMethods();
+                    final CachedMethod[] superMopMethods = superClass.mopMethods;
+                    for (int i = 0; i != superMopMethods.length; ++i)
+                      mopMethods.add(superMopMethods[i]);
+                }
+                this.mopMethods = (CachedMethod[]) mopMethods.toArray(new CachedMethod[mopMethods.size()]);
+                Arrays.sort(this.mopMethods, CachedMethodComparatorByName.INSTANCE);
+            }
         }
         return methods;
     }
 
     public synchronized CachedField[] getFields() {
         if (fields == null) {
-            final Field[] declaredFields = getCachedClass().getDeclaredFields();
-            fields = new CachedField[declaredFields.length];
-            for (int i = 0; i != fields.length; ++i)
-                fields[i] = new CachedField(this, declaredFields[i]);
+            synchronized (this) {
+                final Field[] declaredFields = getCachedClass().getDeclaredFields();
+                fields = new CachedField[declaredFields.length];
+                for (int i = 0; i != fields.length; ++i)
+                    fields[i] = new CachedField(this, declaredFields[i]);
+            }
         }
         return fields;
     }
@@ -346,54 +373,49 @@ public class CachedClass {
         return cachedClass;
     }
 
-    public synchronized MetaMethod[] getMetaMethods() {
-        if (metaMethods == null) {
-            getMethods();
-            ArrayList arr = new ArrayList(methods.length);
+    public MetaMethod[] getNewMetaMethods() {
+        if (newMetaMethods == null) {
+            synchronized (this) {
+                ArrayList arr = new ArrayList();
 
-            for (int i = 0; i != methods.length; ++i) {
-                final CachedMethod cachedMethod = methods[i];
-
-                if (cachedMethod.getName().indexOf('+') >= 0) {
-                    // Skip Synthetic methods inserted by JDK 1.5 compilers and later
-                    continue;
-                } /*else if (Modifier.isAbstract(reflectionMethod.getModifiers())) {
-                   continue;
-               }*/
-
-                String name = cachedMethod.getName();
-                if (name.startsWith("super$") || name.startsWith("this$")) {
-                  if (mopMethods == null) {
-                      mopMethods = new ArrayList();
-                  }
-                  mopMethods.add(cachedMethod.getReflectionMetaMethod());
+                // add methods declared by DGM
+                final MetaClassRegistryImpl metaClassRegistry = (MetaClassRegistryImpl) GroovySystem.getMetaClassRegistry();
+                FastArray methods;
+                methods = metaClassRegistry.getInstanceMethods();
+                for (int i = 0; i != methods.size; ++i) {
+                    MetaMethod element = (MetaMethod) methods.get(i);
+                    if (element.getDeclaringClass() != this)
+                        continue;
+                    arr.add(element);
                 }
-                else
-                  arr.add(cachedMethod.getReflectionMetaMethod());
-            }
 
-
-            // add methods declared by DGM
-            final MetaClassRegistryImpl metaClassRegistry = (MetaClassRegistryImpl) GroovySystem.getMetaClassRegistry();
-            FastArray methods;
-            methods = metaClassRegistry.getInstanceMethods();
-            for (int i = 0; i != methods.size; ++i) {
-                MetaMethod element = (MetaMethod) methods.get(i);
-                if (element.getDeclaringClass() != this)
-                    continue;
-                arr.add(element);
+                // add static methods declared by DGM
+                methods = metaClassRegistry.getStaticMethods();
+                for (int i = 0; i != methods.size; ++i) {
+                    MetaMethod element = (MetaMethod) methods.get(i);
+                    if (element.getDeclaringClass() != this)
+                        continue;
+                    arr.add(element);
+                }
+                newMetaMethods = (MetaMethod[]) arr.toArray(new MetaMethod[arr.size()]);
             }
-
-            // add static methods declared by DGM
-            methods = metaClassRegistry.getStaticMethods();
-            for (int i = 0; i != methods.size; ++i) {
-                MetaMethod element = (MetaMethod) methods.get(i);
-                if (element.getDeclaringClass() != this)
-                    continue;
-                arr.add(element);
-            }
-            metaMethods = (MetaMethod[]) arr.toArray(new MetaMethod[arr.size()]);
         }
-        return metaMethods;
+        return newMetaMethods;
+    }
+
+    public static class CachedMethodComparatorByName implements Comparator {
+        public static final Comparator INSTANCE = new CachedMethodComparatorByName();
+
+        public int compare(Object o1, Object o2) {
+            return ((CachedMethod)o1).getName().compareTo(((CachedMethod)o2).getName());
+        }
+    }
+
+    public static class CachedMethodComparatorWithString implements Comparator {
+        public static final Comparator INSTANCE = new CachedMethodComparatorWithString();
+
+        public int compare(Object o1, Object o2) {
+            return ((CachedMethod)o1).getName().compareTo((String)o2);
+        }
     }
 }

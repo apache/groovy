@@ -205,12 +205,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     private void fillMethodIndex() {
-        ArrayList mopMethodsList = new ArrayList();
         if (theClass.isInterface()) {
             // simplified version for interfaces (less inheritance)
             LinkedList superClasses = new LinkedList();
             superClasses.add(ReflectionCache.OBJECT_CLASS);
-            addMethods(ReflectionCache.OBJECT_CLASS, mopMethodsList);
+            addMethods(ReflectionCache.OBJECT_CLASS);
 
             Set interfaces = theCachedClass.getInterfaces();
 
@@ -224,7 +223,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 CachedClass c = (CachedClass) iter.next();
                 classMethodIndex.put(c, theClassIndex);
                 if (c != ReflectionCache.OBJECT_CLASS)
-                    addMethods(c, null);
+                    addMethods(c);
             }
         } else {
             LinkedList superClasses = getSuperClasses();
@@ -233,7 +232,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
             for (Iterator iter = superClasses.iterator(); iter.hasNext();) {
                 CachedClass c = (CachedClass) iter.next();
-                addMethods(c, mopMethodsList);
+                addMethods(c);
             }
 
             Set interfaces = theCachedClass.getInterfaces();
@@ -246,11 +245,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             populateInterfaces(interfaces);
             removeMultimethodsOverloadedWithPrivateMethods();
 
-            MetaMethod mopMethods[] = (MetaMethod[]) mopMethodsList.toArray(new MetaMethod[mopMethodsList.size()]);
-            final MetaMethodComparator metaMethodComparator = new MetaMethodComparator();
-            Arrays.sort(mopMethods, metaMethodComparator);
-
-            replaceWithMOPCalls(mopMethods);
+            replaceWithMOPCalls(theCachedClass.mopMethods);
         }
     }
 
@@ -318,9 +313,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
 
-    private Comparator metaMethodComparator2 = new MetaMethodComparator2();
-
-    private void replaceWithMOPCalls(final MetaMethod[] mopMethods) {
+    private void replaceWithMOPCalls(final CachedMethod[] mopMethods) {
         // no MOP methods if not a child of GroovyObject
         if (!isGroovyObject) return;
 
@@ -335,9 +328,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 final Object[] data = methods.getArray();
                 for (int i = 0; i != len; ++i) {
                     MetaMethod method = (MetaMethod) data[i];
-                    if (!(method instanceof NewMetaMethod) && useThis ^ (method.getModifiers() & (Modifier.PUBLIC | Modifier.PROTECTED)) == 0) continue;
+                    if (method instanceof NewMetaMethod)
+                      continue;
+                    if (useThis ^ (method.getModifiers() & (Modifier.PUBLIC | Modifier.PROTECTED)) == 0) continue;
                     String mopName = method.getMopName();
-                    int index = Arrays.binarySearch(mopMethods, mopName, metaMethodComparator2);
+                    int index = Arrays.binarySearch(mopMethods, mopName, CachedClass.CachedMethodComparatorWithString.INSTANCE);
                     if (index >= 0) {
                         int from = index;
                         while (from > 0 && mopMethods[from-1].getName().equals(mopName))
@@ -348,7 +343,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
                         int matchingMethod = findMatchingMethod(mopMethods, from, to, method);
                         if (matchingMethod != -1) {
-                            methods.set(i, mopMethods[matchingMethod]);
+                            methods.set(i, mopMethods[matchingMethod].getReflectionMetaMethod());
                         }
                     }
                 }
@@ -588,7 +583,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (methodMissing != null) {
             return methodMissing.invoke(instance, new Object[]{methodName, arguments});
         } else if (original != null) throw original;
-        else throw new MissingMethodException(methodName, theClass, arguments, false);
+        else throw new MissingMethodExceptionNoStack(methodName, theClass, arguments, false);
     }
 
 
@@ -791,11 +786,14 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         } else {
             // if no method was found, try to find a closure defined as a field of the class and run it
             Object value = null;
-            try {
-                value = this.getProperty(object, methodName);
-            } catch (MissingPropertyException mpe) {
-                // ignore
+            final MetaProperty metaProperty = this.getMetaProperty(theCachedClass, methodName, false, false);
+            if (metaProperty != null)
+              value = metaProperty.getProperty(object);
+            else {
+                if (object instanceof Map)
+                  value = ((Map)object).get(methodName);
             }
+
             if (value instanceof Closure) {  // This test ensures that value != this If you ever change this ensure that value != this
                 Closure closure = (Closure) value;
                 MetaClass delegateMetaClass = closure.getMetaClass();
@@ -1961,37 +1959,32 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      *
      * @param aClass
      */
-    private void addMethods(final CachedClass aClass, ArrayList mopMethods) {
+    private void addMethods(final CachedClass aClass) {
         SingleKeyHashMap methodIndex = classMethodIndex.getNotNull(aClass);
         SingleKeyHashMap staticMethodIndex = classStaticMethodIndex.getNotNull(aClass);
         
         addOwnMethods(aClass, methodIndex, staticMethodIndex);
-
-        if (mopMethods != null && aClass.mopMethods != null)
-          mopMethods.addAll (aClass.mopMethods);
+        addNewNetaMethods(aClass, methodIndex, staticMethodIndex);
     }
 
     private void addOwnMethods(CachedClass aClass, SingleKeyHashMap methodIndex, SingleKeyHashMap staticMethodIndex) {
         // add methods directly declared in the class
-        MetaMethod[] cachedMethods = aClass.getMetaMethods();
+        CachedMethod[] cachedMethods = aClass.getMethods();
+        for (int i = 0; i < cachedMethods.length; i++) {
+            MetaMethod metaMethod = cachedMethods[i].getReflectionMetaMethod();
+            addToAllMethodsIfPublic(metaMethod);
+            addMetaMethodToIndex(metaMethod, methodIndex, staticMethodIndex);
+        }
+    }
+
+    private void addNewNetaMethods(CachedClass aClass, SingleKeyHashMap methodIndex, SingleKeyHashMap staticMethodIndex) {
+        // add methods directly declared in the class
+        MetaMethod[] cachedMethods = aClass.getNewMetaMethods();
         for (int i = 0; i < cachedMethods.length; i++) {
             final MetaMethod method = cachedMethods[i];
-            if (method.getName().indexOf('+') >= 0) {
-                // Skip Synthetic methods inserted by JDK 1.5 compilers and later
-                continue;
-            } /*else if (Modifier.isAbstract(reflectionMethod.getModifiers())) {
-               continue;
-           }*/
 
-            if (method instanceof NewMetaMethod) {
-                if (!newGroovyMethodsSet.contains(method)) {
-                    newGroovyMethodsSet.add(method);
-                    addMetaMethodToIndex(method, methodIndex, staticMethodIndex);
-                }
-            }
-            else
-            {
-                addToAllMethodsIfPublic(method);
+            if (!newGroovyMethodsSet.contains(method)) {
+                newGroovyMethodsSet.add(method);
                 addMetaMethodToIndex(method, methodIndex, staticMethodIndex);
             }
         }
@@ -2108,9 +2101,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return -1;
     }
 
-    private int findMatchingMethod(MetaMethod data[], int from, int to, MetaMethod method) {
+    private int findMatchingMethod(CachedMethod[] data, int from, int to, MetaMethod method) {
         for (int j = from; j <= to; ++j) {
-            MetaMethod aMethod = data[j];
+            CachedMethod aMethod = data[j];
             CachedClass[] params1 = aMethod.getParameterTypes();
             CachedClass[] params2 = method.getParameterTypes();
             if (params1.length == params2.length) {
@@ -2518,15 +2511,4 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
     }
 
-    private static class MetaMethodComparator implements Comparator {
-        public int compare(Object o1, Object o2) {
-            return ((MetaMethod)o1).getName().compareTo(((MetaMethod)o2).getName());
-        }
-    }
-
-    private static class MetaMethodComparator2 implements Comparator {
-        public int compare(Object o1, Object o2) {
-            return ((MetaMethod)o1).getName().compareTo((String)o2);
-        }
-    }
 }

@@ -188,7 +188,7 @@ public abstract class MetaMethod implements Cloneable {
                 buf.append(parameters[i].getName());
             }
             buf.append(')');
-            return buf.toString();
+            signature = buf.toString();
         }
         return signature;
     }
