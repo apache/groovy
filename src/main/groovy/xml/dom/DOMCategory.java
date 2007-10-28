@@ -15,13 +15,12 @@
  */
 package groovy.xml.dom;
 
-import org.w3c.dom.*;
+import groovy.xml.QName;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.InvokerHelper;
+import org.w3c.dom.*;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.*;
 
 /**
  * @author sam
@@ -190,6 +189,56 @@ public class DOMCategory {
         result.add(createNodeList(self));
         result.add(self.getElementsByTagName("*"));
         return new NodeListsHolder(result);
+    }
+
+    public static void setValue(Element self, String value) {
+        self.getFirstChild().setNodeValue(value);
+    }
+
+    public static void putAt(Element self, String property, Object value) {
+        if (property.startsWith("@")) {
+            String attributeName = property.substring(1);
+            Document doc = self.getOwnerDocument();
+            Attr newAttr = doc.createAttribute(attributeName);
+            newAttr.setValue(value.toString());
+            self.setAttributeNode(newAttr);
+            return;
+        }
+        InvokerHelper.setProperty(self, property, value);
+    }
+
+    public static Element appendNode(Element self, Object name) {
+        return appendNode(self, name, (String)null);
+    }
+
+    public static Element appendNode(Element self, Object name, Map attributes) {
+        return appendNode(self, name, attributes, null);
+    }
+
+    public static Element appendNode(Element self, Object name, String value) {
+        Document doc = self.getOwnerDocument();
+        Element newChild;
+        if (name instanceof QName) {
+            QName qn = (QName) name;
+            newChild = doc.createElementNS(qn.getNamespaceURI(), qn.getQualifiedName());
+        } else {
+            newChild = doc.createElement(name.toString());
+        }
+        if (value != null) {
+            Text text = doc.createTextNode(value);
+            newChild.appendChild(text);
+        }
+        self.appendChild(newChild);
+        return newChild;
+    }
+
+    public static Element appendNode(Element self, Object name, Map attributes, String value) {
+        Element result = appendNode(self, name, value);
+        for (Iterator iterator = attributes.entrySet().iterator(); iterator.hasNext();) {
+            Map.Entry e = (Map.Entry) iterator.next();
+            putAt(result, "@" + e.getKey().toString(), e.getValue());
+        }
+        return result;
     }
 
     private static NodeList createNodeList(Element self) {
