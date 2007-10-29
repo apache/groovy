@@ -702,7 +702,12 @@ class FactoryInterceptorMetaClass extends DelegatingMetaClass {
         } catch (MissingMethodException mme) {
             // attempt factory resolution
             try {
-                return factory.invokeMethod(methodName, arguments);
+                if (factory.getMetaClass().respondsTo(factory, methodName).isEmpty()) {
+                    // dispatch to fectories if it is not a literal method
+                    return factory.invokeMethod(methodName, arguments);
+                } else {
+                    return InvokerHelper.invokeMethod(factory, methodName, arguments);
+                }
             } catch (MissingMethodException mme2) {
                 // throw original
                 // should we chain in mme2 somehow?
@@ -717,7 +722,12 @@ class FactoryInterceptorMetaClass extends DelegatingMetaClass {
         } catch (MissingMethodException mme) {
             // attempt factory resolution
             try {
-                return factory.invokeMethod(methodName, arguments);
+                if (factory.getMetaClass().respondsTo(factory, methodName).isEmpty()) {
+                    // dispatch to fectories if it is not a literal method
+                    return factory.invokeMethod(methodName, arguments);
+                } else {
+                    return InvokerHelper.invokeMethod(factory, methodName, arguments);
+                }
             } catch (MissingMethodException mme2) {
                 // throw original
                 // should we chain in mme2 somehow?
