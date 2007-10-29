@@ -23,6 +23,7 @@ import javax.swing.*
 import javax.swing.table.TableColumn
 import javax.swing.border.BevelBorder
 import javax.swing.border.EtchedBorder
+import org.codehaus.groovy.runtime.MethodClosure
 
 /**
  * A helper class for creating Swing widgets using GroovyMarkup
@@ -221,7 +222,10 @@ public class SwingBuilder  extends FactoryBuilderSupport {
             c.call(this)
         } else {
             try {
-                SwingUtilities.invokeAndWait(c.curry([this]))
+                if (!(c instanceof MethodClosure)) {
+                    c = c.curry([this])
+                }
+                SwingUtilities.invokeAndWait(c)
             } catch (InterruptedException e) {
                 throw new GroovyRuntimeException("interrupted swing interaction", e)
             } catch (InvocationTargetException e) {
@@ -236,14 +240,20 @@ public class SwingBuilder  extends FactoryBuilderSupport {
         if (headless) {
             c.call()
         } else {
-            SwingUtilities.invokeLater(c.curry([this]))
+            if (!(c instanceof MethodClosure)) {
+                c = c.curry([this])
+            }
+            SwingUtilities.invokeLater(c)
         }
         return this
     }
 
     public SwingBuilder doOutside(Closure c) {
         c.setDelegate(this)
-        new Thread(c.curry([this])).start()
+        if (!(c instanceof MethodClosure)) {
+            c = c.curry([this])
+        }
+        new Thread(c).start()
         return this
     }
 

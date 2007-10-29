@@ -943,9 +943,14 @@ class SwingBuilderTest extends GroovyTestCase {
         }
     }
 
+    boolean instancePass
+
+    public void markPassed() {
+        instancePass = true
+    }
+
     public void testEDT() {
         if (isHeadless()) return
-
         def swing = new SwingBuilder()
 
         boolean pass = false
@@ -955,6 +960,57 @@ class SwingBuilderTest extends GroovyTestCase {
         pass = false
         swing.edt { swing.edt { pass = SwingUtilities.isEventDispatchThread() } }
         assert pass
+
+        instancePass = false
+        swing.edt this.&markPassed
+        assert instancePass
+    }
+
+    public void testDoLater() {
+        if (isHeadless()) return
+        def swing = new SwingBuilder()
+
+        boolean pass = false
+        swing.doLater {sleep 100; pass = true }
+        assert !pass
+        sleep 200
+        assert pass
+
+        // doLater in the EDT is still a do later
+        pass = false
+        swing.edt { swing.doLater {sleep 100; pass = true } }
+        assert !pass
+        sleep 200
+        assert pass
+
+        instancePass = false
+        swing.doLater this.&markPassed
+        sleep 50
+        assert instancePass
+    }
+
+    public void testDoOutside() {
+        if (isHeadless()) return
+        def swing = new SwingBuilder()
+
+        boolean pass = false
+        swing.doOutside {sleep 100; pass = true }
+        assert !pass
+        sleep 200
+        assert pass
+
+        pass = false
+        swing.edt {
+            swing.doOutside {sleep 100; pass = true }
+            assert !pass
+            sleep 200
+            assert pass
+        }
+
+        instancePass = false
+        swing.doOutside this.&markPassed
+        sleep 50
+        assert instancePass
     }
 
     public void testDispose() {
