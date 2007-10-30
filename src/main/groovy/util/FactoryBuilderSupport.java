@@ -210,10 +210,16 @@ public abstract class FactoryBuilderSupport extends Binding {
     public Object invokeMethod( String methodName, Object args ) {
         Object name = proxyBuilder.getName( methodName );
         Object result = null;
+        Object previousContext = proxyBuilder.getContext();
         try{
             result = proxyBuilder.doInvokeMethod( methodName, name, args );
         }catch( RuntimeException e ){
-            proxyBuilder.reset();
+            // remove contexts created after we started
+            if (proxyBuilder.contexts.contains(previousContext)) {
+                while (proxyBuilder.getContext() != previousContext) {
+                    proxyBuilder.popContext();
+                }
+            }
             throw e;
         }
         return result;
