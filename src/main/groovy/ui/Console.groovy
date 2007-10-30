@@ -1,4 +1,4 @@
-    /*
+/*
  * Copyright 2003-2007 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -139,7 +139,9 @@ class Console implements CaretListener {
                 name: 'New File',
                 closure: this.&fileNewFile,
                 mnemonic: 'N',
-                accelerator: shortcut('N')
+                accelerator: shortcut('N'),
+                smallIcon: imageIcon(resource:"icons/page.png", class:this),
+                shortDescription: 'New Groovy Script'
             )
             action(id: 'newWindowAction',
                 name: 'New Window',
@@ -151,13 +153,17 @@ class Console implements CaretListener {
                 name: 'Open',
                 closure: this.&fileOpen,
                 mnemonic: 'O',
-                accelerator: shortcut('O')
+                accelerator: shortcut('O'),
+                smallIcon: imageIcon(resource:"icons/folder_page.png", class:this),
+                shortDescription: 'Open Groovy Script'
             )
             action(id: 'saveAction',
                 name: 'Save',
                 closure: this.&fileSave,
                 mnemonic: 'S',
-                accelerator: shortcut('S')
+                accelerator: shortcut('S'),
+                smallIcon: imageIcon(resource:"icons/disk.png", class:this),
+                shortDescription: 'Save Groovy Script'
             )
             action(id: 'saveAsAction',
                 name: 'Save As...',
@@ -168,7 +174,8 @@ class Console implements CaretListener {
                 id: 'printAction',
                 name: 'Print...',
                 mnemonic: 'P',
-                accelerator: shortcut('P'))
+                accelerator: shortcut('P')
+            )
             action(id: 'exitAction',
                 name: 'Exit',
                 closure: this.&exit,
@@ -182,20 +189,25 @@ class Console implements CaretListener {
                 id: 'undoAction',
                 name: 'Undo',
                 mnemonic: 'U',
-                accelerator: shortcut('Z')
+                accelerator: shortcut('Z'),
+                smallIcon: imageIcon(resource:"icons/arrow_undo.png", class:this),
+                shortDescription: 'Undo'
             )
             action(inputEditor.redoAction,
                 id: 'redoAction',
                 name: 'Redo',
-                closure: this.&redo,
                 mnemonic: 'R',
-                accelerator: shortcut('shift Z') // is control-shift-Z or control-Y more common?
+                accelerator: shortcut('shift Z'), // is control-shift-Z or control-Y more common?
+                smallIcon: imageIcon(resource:"icons/arrow_redo.png", class:this),
+                shortDescription: 'Redo'
             )
             action(id: 'findAction',
                 name: 'Find...',
                 closure: this.&find,
                 mnemonic: 'F',
-                accelerator: shortcut('F')
+                accelerator: shortcut('F'),
+                smallIcon: imageIcon(resource:"icons/find.png", class:this),
+                shortDescription: 'Find'
             )
             action(id: 'findNextAction',
                 name: 'Find Next',
@@ -213,25 +225,33 @@ class Console implements CaretListener {
                 name: 'Replace...',
                 closure: this.&replace,
                 mnemonic: 'E',
-                accelerator: shortcut('H')
+                accelerator: shortcut('H'),
+                smallIcon: imageIcon(resource:"icons/text_replace.png", class:this),
+                shortDescription: 'Replace'
             )
             action(id: 'cutAction',
                 name: 'Cut',
                 closure: this.&cut,
                 mnemonic: 'T',
-                accelerator: shortcut('X')
+                accelerator: shortcut('X'),
+                smallIcon: imageIcon(resource:"icons/cut.png", class:this),
+                shortDescription: 'Cut'
             )
             action(id: 'copyAction',
                 name: 'Copy',
                 closure: this.&copy,
                 mnemonic: 'C',
-                accelerator: shortcut('C')
+                accelerator: shortcut('C'),
+                smallIcon: imageIcon(resource:"icons/page_copy.png", class:this),
+                shortDescription: 'Copy'
             )
             action(id: 'pasteAction',
                 name: 'Paste',
                 closure: this.&paste,
                 mnemonic: 'P',
-                accelerator: shortcut('V')
+                accelerator: shortcut('V'),
+                smallIcon: imageIcon(resource:"icons/page_paste.png", class:this),
+                shortDescription: 'Paste'
             )
             action(id: 'selectAllAction',
                 name: 'Select All',
@@ -243,13 +263,17 @@ class Console implements CaretListener {
                 name: 'Previous',
                 closure: this.&historyPrev,
                 mnemonic: 'P',
-                accelerator: shortcut(KeyEvent.VK_COMMA)
+                accelerator: shortcut(KeyEvent.VK_COMMA),
+                smallIcon: imageIcon(resource:"icons/book_previous.png", class:this),
+                shortDescription: 'Previous Groovy Script'
             )
             action(id: 'historyNextAction',
                 name: 'Next',
                 closure: this.&historyNext,
                 mnemonic: 'N',
-                accelerator: shortcut(KeyEvent.VK_PERIOD)
+                accelerator: shortcut(KeyEvent.VK_PERIOD),
+                smallIcon: imageIcon(resource:"icons/book_next.png", class:this),
+                shortDescription: 'Next Groovy Script'
             )
             action(id: 'clearOutputAction',
                 name: 'Clear Output',
@@ -262,7 +286,9 @@ class Console implements CaretListener {
                 closure: this.&runScript,
                 mnemonic: 'R',
                 keyStroke: shortcut('ENTER'),
-                accelerator: shortcut('R')
+                accelerator: shortcut('R'),
+                smallIcon: imageIcon(resource:"icons/script_go.png", class:this),
+                shortDescription: 'Execute Groovy Script'
             )
             action(id: 'runSelectionAction',
                 name: 'Run Selection',
@@ -393,6 +419,27 @@ class Console implements CaretListener {
 
             borderLayout()
 
+            toolBar(rollover:true, constraints:BorderLayout.NORTH) {
+                button(newFileAction, text:null)
+                button(openAction, text:null)
+                button(saveAction, text:null)
+                separator()
+                button(undoAction, text:null)
+                button(redoAction, text:null)
+                separator()
+                button(cutAction, text:null)
+                button(copyAction, text:null)
+                button(pasteAction, text:null)
+                separator()
+                button(findAction, text:null)
+                button(replaceAction, text:null)
+                separator()
+                button(historyPrevAction, text:null)
+                button(historyNextAction, text:null)
+                separator()
+                button(runAction, text:null)
+            }
+
             splitPane(id: 'splitPane', resizeWeight: 0.50F,
                 orientation: JSplitPane.VERTICAL_SPLIT, constraints: BorderLayout.CENTER)
             {
@@ -484,15 +531,15 @@ class Console implements CaretListener {
         StyleConstants.setFontFamily(regular, "Monospaced")
 
         promptStyle = doc.addStyle("prompt", regular)
-        StyleConstants.setForeground(promptStyle, Color.BLUE)
+        StyleConstants.setForeground(promptStyle, new Color(0, 128, 0))
 
         commandStyle = doc.addStyle("command", regular);
-        StyleConstants.setForeground(commandStyle, Color.MAGENTA)
+        StyleConstants.setForeground(commandStyle, Color.BLUE)
 
         outputStyle = regular
 
         resultStyle = doc.addStyle("result", regular)
-        StyleConstants.setBackground(resultStyle, Color.BLUE)
+        StyleConstants.setForeground(resultStyle, Color.BLUE)
         StyleConstants.setBackground(resultStyle, Color.YELLOW)
     }
 
