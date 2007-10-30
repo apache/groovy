@@ -401,7 +401,7 @@ $Date$
         <copy todir="${mainClassesDirectory}">
             <fileset dir="${mainSourceDirectory}">
                 <include name="groovy/ui/*.properties"/>
-                <include name="groovy/ui/*.png"/>
+                <include name="groovy/ui/**/*.png"/>
                 <include name="org/codehaus/groovy/tools/shell/**/*.properties"/>
                 <include name="org/codehaus/groovy/tools/shell/**/*.xml"/>
             </fileset>
