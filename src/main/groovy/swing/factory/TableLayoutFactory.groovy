@@ -20,6 +20,8 @@ import groovy.swing.SwingBuilder
 import groovy.swing.impl.TableLayout
 import groovy.swing.impl.TableLayoutCell
 import groovy.swing.impl.TableLayoutRow
+import java.awt.Component
+import java.awt.Window
 
 public class TableLayoutFactory extends AbstractFactory {
     
@@ -67,6 +69,9 @@ public class TDFactory extends AbstractFactory {
     }
 
     public void setChild(FactoryBuilderSupport builder, Object parent, Object child) {
+        if (!(child instanceof Component) || (child instanceof Window)) {
+            return;
+        }
         parent.addComponent(child)
     }
 }

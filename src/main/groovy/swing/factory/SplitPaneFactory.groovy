@@ -18,6 +18,8 @@ package groovy.swing.factory
 
 import groovy.swing.SwingBuilder
 import javax.swing.JSplitPane
+import java.awt.Window
+import java.awt.Component
 
 public class SplitPaneFactory extends AbstractFactory {
     
@@ -35,6 +37,9 @@ public class SplitPaneFactory extends AbstractFactory {
 
 
     public void setChild(FactoryBuilderSupport factory, Object parent, Object child) {
+        if (!(child instanceof Component) || (child instanceof Window)) {
+            return;
+        }
         if (parent.getOrientation() == JSplitPane.HORIZONTAL_SPLIT) {
             if (parent.getTopComponent() == null) {
                 parent.setTopComponent(child);

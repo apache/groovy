@@ -18,6 +18,8 @@ package groovy.swing.factory
 
 import javax.swing.JScrollPane
 import javax.swing.JViewport
+import java.awt.Component
+import java.awt.Window
 
 
 class ScrollPaneFactory extends BeanFactory {
@@ -31,6 +33,9 @@ class ScrollPaneFactory extends BeanFactory {
     }
 
     public void setChild(FactoryBuilderSupport factory, Object parent, Object child) {
+        if (!(child instanceof Component) || (child instanceof Window)) {
+            return;
+        }
         if (child instanceof JViewport) {
             parent.setViewport(child);
         } else {
