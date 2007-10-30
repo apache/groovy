@@ -19,6 +19,7 @@ package groovy.util;
 import groovy.lang.Binding;
 import groovy.lang.Closure;
 import groovy.lang.DelegatingMetaClass;
+import groovy.lang.GroovyClassLoader;
 import groovy.lang.MetaClass;
 import groovy.lang.MissingMethodException;
 import groovy.lang.Script;
@@ -659,14 +660,7 @@ public abstract class FactoryBuilderSupport extends Binding {
 
     public Object build(Class viewClass) {
         if (Script.class.isAssignableFrom(viewClass)) {
-            Script script;
-            try {
-                script = (Script) viewClass.newInstance();
-            } catch (InstantiationException e) {
-                throw new RuntimeException(e);
-            } catch (IllegalAccessException e) {
-                throw new RuntimeException(e);
-            }
+            Script script = InvokerHelper.createScript(viewClass, this);
             return build(script);
         } else {
             throw new RuntimeException("Only scripts can be executed via build(Class)");
@@ -684,6 +678,10 @@ public abstract class FactoryBuilderSupport extends Binding {
                 script.setMetaClass(scriptMetaClass);
             }
         }
+    }
+
+    public Object build(final String script, GroovyClassLoader loader) {
+        return build(loader.parseClass(script));
     }
 }
 
