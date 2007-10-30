@@ -41,7 +41,6 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
     private ChildPropertySetter childPropertySetter;
     private ClassNameResolver classNameResolver;
     private IdentifierResolver identifierResolver;
-    private Map/* <Object> */instances = new HashMap/* <Object> */();
     private NewInstanceResolver newInstanceResolver;
     private ObjectFactory objectFactory = new ObjectFactory();
     private ObjectRefFactory objectRefFactory = new ObjectRefFactory();
@@ -77,14 +76,6 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
      */
     public NewInstanceResolver getNewInstanceResolver() {
         return newInstanceResolver;
-    }
-
-    public Object getProperty( String name ) {
-        Object object = instances.get( name );
-        if( object == null ){
-            return super.getProperty( name );
-        }
-        return object;
     }
 
     /**
@@ -213,7 +204,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
         Map context = getContext();
         String objectId = (String) context.get( OBJECT_ID );
         if( objectId != null && node != null ){
-            instances.put( objectId, node );
+            setVariable( objectId, node );
         }
     }
 
@@ -285,7 +276,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
                 return classname.toUpperCase();
             }
             return classname.substring( 0, 1 )
-                    .toUpperCase() + classname.substring( 1, classname.length() - 1 );
+                    .toUpperCase() + classname.substring( 1 );
         }
     }
 
