@@ -624,7 +624,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         ClassNode sn = classNode.getSuperClass();
         if (sn==null) return;
         List declaredMethods = classNode.getMethods();
-        ArrayList methodsToAdd = new ArrayList();
+        List methodsToAdd = new ArrayList();
         
         for (Iterator it = declaredMethods.iterator(); it.hasNext();) {
             MethodNode method = (MethodNode) it.next();
@@ -733,7 +733,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     }
     
     private Map createGenericsSpec(ClassNode sn) {
-        HashMap ret = new HashMap();
+        Map ret = new HashMap();
         ClassNode stop = sn.getSuperClass();
         for (ClassNode current = classNode; current!=null && current.redirect()!=stop; current=current.getUnresolvedSuperClass(false)) {
             // ret contains the type specs for the child class, what we now need

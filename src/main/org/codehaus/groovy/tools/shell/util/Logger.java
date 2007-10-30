@@ -16,9 +16,6 @@
 
 package org.codehaus.groovy.tools.shell.util;
 
-import java.util.prefs.PreferenceChangeEvent;
-import java.util.prefs.PreferenceChangeListener;
-
 import org.codehaus.groovy.tools.shell.IO;
 
 /**

@@ -400,7 +400,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
          * @param child the child node
          */
         String resolveParentRelationName( String parentName, Object parent, String childName,
-                Object childs );
+                Object child);
     }
 
     private static class ObjectFactory extends AbstractFactory {

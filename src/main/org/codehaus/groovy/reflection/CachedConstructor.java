@@ -16,7 +16,6 @@
 package org.codehaus.groovy.reflection;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
 
 /**
  * @author Alex.Tkachman
@@ -30,14 +29,15 @@ public class CachedConstructor extends ParameterTypes {
         this.cachedConstructor = c;
         this.clazz = clazz;
         try {
-        c.setAccessible(true);
+            c.setAccessible(true);
         }
-        catch (SecurityException e)
-        {}
+        catch (SecurityException e) {
+            // IGNORE
+        }
     }
 
     public CachedConstructor(Constructor c) {
-        this(ReflectionCache.getCachedClass(c.getDeclaringClass()),c);
+        this(ReflectionCache.getCachedClass(c.getDeclaringClass()), c);
     }
 
     Class[] getPT() {

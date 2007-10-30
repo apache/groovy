@@ -15,7 +15,6 @@
  */
 package org.codehaus.groovy.runtime;
 
-import groovy.lang.MetaMethod;
 import groovy.lang.MissingMethodException;
 import org.codehaus.groovy.reflection.CachedMethod;
 

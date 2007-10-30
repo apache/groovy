@@ -23,9 +23,6 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.Reader;
 
-import java.util.prefs.PreferenceChangeEvent;
-import java.util.prefs.PreferenceChangeListener;
-
 import org.codehaus.groovy.tools.shell.util.ANSI.RenderWriter;
 import org.codehaus.groovy.tools.shell.util.Preferences;
 

@@ -1,7 +1,5 @@
 package org.codehaus.groovy.reflection;
 
-import org.codehaus.groovy.runtime.InvokerInvocationException;
-
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
@@ -10,9 +8,9 @@ public class CachedField {
 
     CachedClass cachedClass;
 
-    public CachedField (CachedClass clazz, Field field) {
-      this.field = field;
-      cachedClass = clazz;
+    public CachedField(CachedClass clazz, Field field) {
+        this.field = field;
+        cachedClass = clazz;
     }
 
     public String getName() {

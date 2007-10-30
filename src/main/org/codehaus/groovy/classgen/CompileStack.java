@@ -104,10 +104,10 @@ public class CompileStack implements Opcodes {
     private int localVariableOffset;
     // this is used to store the goals for a "break foo" call
     // in a loop where foo is a label.
-	private final HashMap namedLoopBreakLabel = new HashMap();
+	private final Map namedLoopBreakLabel = new HashMap();
 	//this is used to store the goals for a "continue foo" call
     // in a loop where foo is a label.
-	private final HashMap namedLoopContinueLabel = new HashMap();
+	private final Map namedLoopContinueLabel = new HashMap();
     private String className;
 	
     private class StateStackElement {

@@ -4,7 +4,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class StringHelper {
-    private final static char 
+    private static final char 
         SPACE = ' ', SINGLE_QUOTE = '\'', DOUBLE_QUOTE = '"';
     
     /**

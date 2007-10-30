@@ -1543,7 +1543,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
     }
 
-    private final static HashMap propNames = new HashMap(1024);
+    private static final HashMap propNames = new HashMap(1024);
 
     private String getPropName(String methodName) {
         String name = (String) propNames.get(methodName);
@@ -2335,7 +2335,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
     }
 
-    private static abstract class MethodIndexAction {
+    private abstract static class MethodIndexAction {
         public void iterate(MethodIndex classMethodIndex) {
             final ComplexKeyHashMap.Entry[] table = classMethodIndex.getTable();
             int len = table.length;

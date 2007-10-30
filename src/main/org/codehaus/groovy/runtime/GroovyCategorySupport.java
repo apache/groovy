@@ -194,14 +194,14 @@ public class GroovyCategorySupport {
         	}
     };
 
-    private synchronized static void newScope() {
+    private static synchronized void newScope() {
         categoriesInUse++;
         List stack = (List) LOCAL.get();
     	Map properties = new WeakHashMap(getProperties());
     	stack.add(properties);
     }
 
-    private synchronized static void endScope() {
+    private static synchronized void endScope() {
         List stack = (List) LOCAL.get();
     	stack.remove(stack.size() - 1);
         categoriesInUse--;
