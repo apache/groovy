@@ -443,26 +443,30 @@ class Console implements CaretListener {
             splitPane(id: 'splitPane', resizeWeight: 0.50F,
                 orientation: JSplitPane.VERTICAL_SPLIT, constraints: BorderLayout.CENTER)
             {
-                widget(inputEditor)
-                scrollPane {
+                widget(inputEditor, border:emptyBorder(0))
+                scrollPane(border:emptyBorder(0)) {
                     textPane(id: 'outputArea',
                         editable: false,
-                        background: new Color(255,255,218)
+                        background: new Color(255,255,218),
+                        border:emptyBorder(4)
                     )
                 }
             }
 
-            panel(id: 'statusPanel', constraints: BorderLayout.SOUTH, layout : new BorderLayout()) {
-                label(id: 'status',
-                     text: 'Welcome to Groovy.',
-                     constraints: BorderLayout.CENTER,
-                     border: compoundBorder([loweredBevelBorder(), emptyBorder([1,3,1,3])])
+            panel(id: 'statusPanel', constraints: BorderLayout.SOUTH) {
+                gridBagLayout()
+                separator(constraints:gbc(gridwidth:GridBagConstraints.REMAINDER, fill:GridBagConstraints.HORIZONTAL))
+                label('Welcome to Groovy.',
+                    id: 'status',
+                    constraints:gbc(weightx:1.0,
+                        anchor:GridBagConstraints.WEST,
+                        fill:GridBagConstraints.HORIZONTAL,
+                        insets: [1,3,1,3])
                 )
-
-                label(id: 'rowNumAndColNum',
-                       text: '1:1',
-                       constraints: BorderLayout.EAST,
-                        border: compoundBorder([loweredBevelBorder(), emptyBorder([1,3,1,3])])
+                separator(orientation:SwingConstants.VERTICAL, constraints:gbc(fill:GridBagConstraints.VERTICAL))
+                label('1:1',
+                    id: 'rowNumAndColNum',
+                    constraints:gbc(insets: [1,3,1,3])
                 )
             }
         }   // end of frame
@@ -470,7 +474,7 @@ class Console implements CaretListener {
         inputArea = inputEditor.textEditor
 
         // attach ctrl-enter to input area
-        swing.container(inputArea) {
+        swing.container(inputArea, border:swing.emptyBorder(4)) {
             action(runAction)
             action(runSelectionAction)
         }
