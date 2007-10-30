@@ -16,7 +16,6 @@
 package org.codehaus.groovy.reflection;
 
 import groovy.lang.GString;
-import groovy.lang.GroovySystem;
 import groovy.lang.MetaClassRegistry;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.classgen.BytecodeHelper;
@@ -37,6 +36,8 @@ import java.util.*;
 public class CachedClass {
     private CachedClass cachedSuperClass;
 
+    private static final MetaMethod[] EMPTY = new MetaMethod[0];
+
     int hashCode;
 
     private Reflector reflector;
@@ -45,7 +46,7 @@ public class CachedClass {
     private CachedConstructor[] constructors;
     private CachedMethod[] methods;
     private final Class cachedClass;
-    private MetaMethod[] newMetaMethods;
+    private MetaMethod[] newMetaMethods = EMPTY;
     public  CachedMethod [] mopMethods;
 
     public Set getInterfaces() {
@@ -374,33 +375,11 @@ public class CachedClass {
     }
 
     public MetaMethod[] getNewMetaMethods() {
-        if (newMetaMethods == null) {
-            synchronized (this) {
-                ArrayList arr = new ArrayList();
-
-                // add methods declared by DGM
-                final MetaClassRegistryImpl metaClassRegistry = (MetaClassRegistryImpl) GroovySystem.getMetaClassRegistry();
-                FastArray methods;
-                methods = metaClassRegistry.getInstanceMethods();
-                for (int i = 0; i != methods.size; ++i) {
-                    MetaMethod element = (MetaMethod) methods.get(i);
-                    if (element.getDeclaringClass() != this)
-                        continue;
-                    arr.add(element);
-                }
-
-                // add static methods declared by DGM
-                methods = metaClassRegistry.getStaticMethods();
-                for (int i = 0; i != methods.size; ++i) {
-                    MetaMethod element = (MetaMethod) methods.get(i);
-                    if (element.getDeclaringClass() != this)
-                        continue;
-                    arr.add(element);
-                }
-                newMetaMethods = (MetaMethod[]) arr.toArray(new MetaMethod[arr.size()]);
-            }
-        }
         return newMetaMethods;
+    }
+
+    public void setNewMopMethods(ArrayList arr) {
+        newMetaMethods = (MetaMethod[]) arr.toArray(new MetaMethod[arr.size()]);
     }
 
     public static class CachedMethodComparatorByName implements Comparator {

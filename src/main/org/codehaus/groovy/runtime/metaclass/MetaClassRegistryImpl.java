@@ -33,7 +33,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.List;
+import java.util.*;
 
 /**
  * A registry of MetaClass instances which caches introspection &
@@ -82,9 +82,18 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         this.useAccessible = useAccessible;
         
         if (loadDefault == LOAD_DEFAULT) {
+            HashMap map = new HashMap();
+
             // lets register the default methods
-            registerMethods(DefaultGroovyMethods.class, true);
-            registerMethods(DefaultGroovyStaticMethods.class, false);
+            registerMethods(DefaultGroovyMethods.class, true, map);
+            registerMethods(DefaultGroovyStaticMethods.class, false, map);
+
+            for (Iterator it = map.entrySet().iterator(); it.hasNext(); ) {
+                Map.Entry e = (Map.Entry) it.next();
+                CachedClass cls = (CachedClass) e.getKey();
+                ArrayList list = (ArrayList) e.getValue();
+                cls.setNewMopMethods(list);
+            }
         }
 
         installMetaClassCreationHandle();
@@ -108,18 +117,28 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
 	       }
     }
     
-    private void registerMethods(final Class theClass, final boolean useInstanceMethods) {
+    private void registerMethods(final Class theClass, final boolean useInstanceMethods, Map map) {
         CachedMethod[] methods = ReflectionCache.getCachedClass(theClass).getMethods();
+
         for (int i = 0; i < methods.length; i++) {
             CachedMethod method = methods[i];
             final int mod = method.getModifiers();
             if (Modifier.isStatic(mod) && Modifier.isPublic(mod)) {
                 CachedClass[] paramTypes = method.getParameterTypes();
                 if (paramTypes.length > 0) {
+                    ArrayList arr = (ArrayList) map.get(paramTypes[0]);
+                    if (arr == null) {
+                        arr = new ArrayList(4);
+                        map.put(paramTypes[0],arr);
+                    }
                     if (useInstanceMethods) {
-                        instanceMethods.add(new NewInstanceMetaMethod(method));
+                        final NewInstanceMetaMethod metaMethod = new NewInstanceMetaMethod(method);
+                        arr.add(metaMethod);
+                        instanceMethods.add(metaMethod);
                     } else {
-                        staticMethods.add(new NewStaticMetaMethod(method));
+                        final NewStaticMetaMethod metaMethod = new NewStaticMetaMethod(method);
+                        arr.add(metaMethod);
+                        staticMethods.add(metaMethod);
                     }
                 }
             }

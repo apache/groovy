@@ -400,16 +400,17 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private void inheritInterfaceMethods(Set interfaces) {
         // add methods declared by DGM for interfaces
         SingleKeyHashMap methodIndex = classMethodIndex.getNotNull(theCachedClass);
-        FastArray methods = ((MetaClassRegistryImpl) registry).getInstanceMethods();
-        for (int i = 0; i != methods.size; ++i) {
-            MetaMethod method = (MetaMethod) methods.get(i);
-            CachedClass dgmClass = method.getDeclaringClass();
-            if (!interfaces.contains(dgmClass)) continue;
-            if (!newGroovyMethodsSet.contains(method)) {
-                newGroovyMethodsSet.add(method);
+        for (Iterator it = interfaces.iterator(); it.hasNext(); ) {
+            CachedClass cls = (CachedClass) it.next();
+            MetaMethod methods [] = cls.getNewMetaMethods();
+            for (int i = 0; i < methods.length; i++) {
+                MetaMethod method = methods[i];
+                if (!newGroovyMethodsSet.contains(method)) {
+                    newGroovyMethodsSet.add(method);
+                }
+                SingleKeyHashMap.Entry e = methodIndex.getOrPut(method.getName());
+                addMethodToList(e, method);
             }
-            SingleKeyHashMap.Entry e = methodIndex.getOrPut(method.getName());
-            addMethodToList(e, method);
         }
     }
 
@@ -441,18 +442,15 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         Object oldListOrMethod = from.getValue();
         if (oldListOrMethod instanceof FastArray) {
             FastArray oldList = (FastArray) oldListOrMethod;
-            SingleKeyHashMap.Entry e = to.getOrPutEntry(from);
-            if (e.value == null) {
-                e.value = oldList.copy();
-            }
-            else {
-                int len1 = oldList.size();
-                Object list[] = oldList.getArray();
-                for (int j = 0; j != len1; ++j) {
-                    MetaMethod method = (MetaMethod) list[j];
-                    if (method.isPrivate()) continue;
-                    addMethodToList(e, method);
-                }
+            SingleKeyHashMap.Entry e = null;
+            int len1 = oldList.size();
+            Object list[] = oldList.getArray();
+            for (int j = 0; j != len1; ++j) {
+                MetaMethod method = (MetaMethod) list[j];
+                if (method.isPrivate()) continue;
+                if (e == null)
+                    e = to.getOrPutEntry(from);
+                addMethodToList(e, method);
             }
         }
         else {
