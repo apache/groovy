@@ -193,6 +193,46 @@ public class QName implements Serializable {
     }
 
     /**
+     * Tests if this QName matches another object.
+     * <p>
+     * If the given object is not a QName or String equivalent or is null then this method
+     * returns <tt>false</tt>.
+     * <p>
+     * For two QNames to be considered matching requires that both
+     * localPart and namespaceURI must be equal or one of them is a wildcard.
+     *
+     * If the supplied object is a String, then it is split in two on the last colon
+     * and the first half is matched against the prefix || namespaceURI
+     * and the second half is matched against the localPart
+     *
+     * @param o the reference object with which to compare
+     *
+     * @return <code>true</code> if the given object matches
+     * this QName: <code>false</code> otherwise.
+     */
+    public boolean matches(Object o) {
+        if (this == o) return true;
+        if (o == null) return false;
+        if (o instanceof QName) {
+            final QName qName = (QName) o;
+            if (!namespaceURI.equals(qName.namespaceURI) && !namespaceURI.equals("*") && !qName.namespaceURI.equals("*")) return false;
+            return localPart.equals(qName.localPart) || localPart.equals("*") || qName.localPart.equals("*");
+        } else if (o instanceof String) {
+            final String string = (String)o;
+            if (string.length() == 0) return false;
+            // try matching against 'prefix:localname'
+            int lastColonIndex = string.lastIndexOf(":");
+            if (lastColonIndex < 0 || lastColonIndex == string.length() - 1) return false;
+            final String stringPrefix = string.substring(0,lastColonIndex);
+            final String stringLocalPart = string.substring(lastColonIndex + 1);
+            if (stringPrefix.equals(prefix) || stringPrefix.equals(namespaceURI) || stringPrefix.equals("*")) {
+                return localPart.equals(stringLocalPart) || stringLocalPart.equals("*");
+            }
+        }
+        return false;
+    }
+
+    /**
      * Returns a QName holding the value of the specified String.
      * <p>
      * The string must be in the form returned by the QName.toString()

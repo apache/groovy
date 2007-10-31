@@ -17,20 +17,7 @@ class MarkupAndMethodBug extends GroovyTestCase {
         def builder = NodeBuilder.newInstance()
         
         def root = builder.people() {
-            person(name:getTestName()) {
-            /*
-                location(name:'London')
-                projects {
-                    project(name:'geronimo')
-                }
-            }
-            person(name:'Bob') {
-                location(name:'Atlanta')
-                projects {
-                    project(name:'drools')
-                }
-            */
-            }
+            person(name:getTestName())
         }
         
         assert root != null

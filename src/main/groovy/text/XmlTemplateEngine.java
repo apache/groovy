@@ -93,12 +93,9 @@ public class XmlTemplateEngine extends TemplateEngine {
         protected boolean printSpecialNode(Node node) {
             Object name = node.name();
             if (name != null && name instanceof QName) {
-                /*
-                 * FIXME Somethings wrong with the SAX- or XMLParser. Prefix should only contain 'gsp'?!
-                 */
-                String s = ((QName) name).getPrefix();
-                if (s.startsWith("gsp:")) {
-                    s = s.substring(4); // 4 = "gsp:".length()
+                QName qn = (QName) name;
+                if (qn.getPrefix().equals("gsp")) {
+                    String s = qn.getLocalPart();
                     if (s.length() == 0) {
                         throw new RuntimeException("No local part after 'gsp:' given in node " + node);
                     }

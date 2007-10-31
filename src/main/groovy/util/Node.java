@@ -22,6 +22,7 @@ import groovy.xml.QName;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 import java.io.PrintWriter;
+import java.io.Serializable;
 import java.util.*;
 
 /**
@@ -36,7 +37,7 @@ import java.util.*;
  * @author Paul King
  * @version $Revision$
  */
-public class Node implements java.io.Serializable {
+public class Node implements Serializable {
 
     static {
         // wrap the standard MetaClass with the delegate
@@ -163,14 +164,14 @@ public class Node implements java.io.Serializable {
     public List children() {
         if (value == null) {
             return new NodeList();
-        } else if (value instanceof List) {
-            return (List) value;
-        } else {
-            // we're probably just a String
-            NodeList result = new NodeList();
-            result.add(value);
-            return result;
         }
+        if (value instanceof List) {
+            return (List) value;
+        }
+        // we're probably just a String
+        List result = new NodeList();
+        result.add(value);
+        return result;
     }
 
     public Map attributes() {
@@ -217,19 +218,7 @@ public class Node implements java.io.Serializable {
         if ("**".equals(key)) {
             return depthFirst();
         }
-        // iterate through list looking for node with name 'key'
-        List answer = new NodeList();
-        for (Iterator iter = children().iterator(); iter.hasNext();) {
-            Object child = iter.next();
-            if (child instanceof Node) {
-                Node childNode = (Node) child;
-                Object childNodeName = childNode.name();
-                if (childNodeName != null && childNodeName.equals(key)) {
-                    answer.add(childNode);
-                }
-            }
-        }
-        return answer;
+        return getByName(key);
     }
 
     /**
@@ -245,7 +234,33 @@ public class Node implements java.io.Serializable {
             if (child instanceof Node) {
                 Node childNode = (Node) child;
                 Object childNodeName = childNode.name();
-                if (childNodeName != null && childNodeName.equals(name)) {
+                if (name.matches(childNodeName)) {
+                    answer.add(childNode);
+                }
+            }
+        }
+        return answer;
+    }
+
+    /**
+     * Provides lookup of elements by name.
+     *
+     * @param name the name of interest
+     * @return the nodes matching name
+     */
+    private NodeList getByName(String name) {
+        NodeList answer = new NodeList();
+        for (Iterator iter = children().iterator(); iter.hasNext();) {
+            Object child = iter.next();
+            if (child instanceof Node) {
+                Node childNode = (Node) child;
+                Object childNodeName = childNode.name();
+                if (childNodeName instanceof QName) {
+                    QName qn = (QName) childNodeName;
+                    if (qn.matches(name)) {
+                        answer.add(childNode);
+                    }
+                } else if (name.equals(childNodeName)) {
                     answer.add(childNode);
                 }
             }

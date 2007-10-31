@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Prints a node with all childs in XML format.
+ * Prints a node with all children in XML format.
  * 
  * @see groovy.util.NodePrinter
  * @author Christian Stein
@@ -67,7 +67,7 @@ public class XmlNodePrinter {
         Object name = node.name();
         if (name instanceof QName) {
             QName qname = (QName) name;
-            return /* qname.getPrefix() + ":" + */qname.getLocalPart();
+            return qname.getQualifiedName();
         }
         return name.toString();
     }
@@ -87,7 +87,6 @@ public class XmlNodePrinter {
          * Handle empty elements like '<br/>', '<img/> or '<hr noshade="noshade"/>.
          */
         if (isEmptyElement(node)) {
-            // System.err.println("empty-dead");
             printLineBegin();
             out.print("<");
             out.print(getNameOfNode(node));
@@ -102,7 +101,6 @@ public class XmlNodePrinter {
          * Handle GSP tag element!
          */
         if (printSpecialNode(node)) {
-            // System.err.println("special-dead");
             out.flush();
             return;
         }

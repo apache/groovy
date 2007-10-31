@@ -55,6 +55,7 @@ public class XmlParser implements ContentHandler {
     private XMLReader reader;
     private Node parent;
     private boolean trimWhitespace = true;
+    private boolean namespaceAware;
 
     public XmlParser() throws ParserConfigurationException, SAXException {
         this(false, true);
@@ -63,6 +64,7 @@ public class XmlParser implements ContentHandler {
     public XmlParser(boolean validating, boolean namespaceAware) throws ParserConfigurationException, SAXException {
         SAXParserFactory factory = FactorySupport.createSaxParserFactory();
         factory.setNamespaceAware(namespaceAware);
+        this.namespaceAware = namespaceAware;
         factory.setValidating(validating);
         reader = factory.newSAXParser().getXMLReader();
     }
@@ -78,7 +80,9 @@ public class XmlParser implements ContentHandler {
 
     /**
      * Parses the content of the given file as XML turning it into a tree
-     * of Nodes
+     * of Nodes.
+     *
+     * @return the root node of the parsed tree of Nodes
      */
     public Node parse(File file) throws IOException, SAXException {
         InputSource input = new InputSource(new FileInputStream(file));
@@ -90,6 +94,8 @@ public class XmlParser implements ContentHandler {
 
     /**
      * Parse the content of the specified input source into a tree of Nodes.
+     *
+     * @return the root node of the parsed tree of Nodes
      */
     public Node parse(InputSource input) throws IOException, SAXException {
         getXMLReader().parse(input);
@@ -98,8 +104,11 @@ public class XmlParser implements ContentHandler {
 
     /**
      * Parse the content of the specified input stream into a tree of Nodes.
+     *
      * Note that using this method will not provide the parser with any URI
      * for which to find DTDs etc
+     *
+     * @return the root node of the parsed tree of Nodes
      */
     public Node parse(InputStream input) throws IOException, SAXException {
         InputSource is = new InputSource(input);
@@ -109,8 +118,11 @@ public class XmlParser implements ContentHandler {
 
     /**
      * Parse the content of the specified reader into a tree of Nodes.
+     *
      * Note that using this method will not provide the parser with any URI
      * for which to find DTDs etc
+     *
+     * @return the root node of the parsed tree of Nodes
      */
     public Node parse(Reader in) throws IOException, SAXException {
         InputSource is = new InputSource(in);
@@ -119,7 +131,9 @@ public class XmlParser implements ContentHandler {
     }
 
     /**
-     * Parse the content of the specified URI into a tree of Nodes
+     * Parse the content of the specified URI into a tree of Nodes.
+     *
+     * @return the root node of the parsed tree of Nodes
      */
     public Node parse(String uri) throws IOException, SAXException {
         InputSource is = new InputSource(uri);
@@ -128,9 +142,10 @@ public class XmlParser implements ContentHandler {
     }
 
     /**
-     * A helper method to parse the given text as XML
+     * A helper method to parse the given text as XML.
      * 
-     * @param text
+     * @param text the XML text to parse
+     * @return the root node of the parsed tree of Nodes
      */
     public Node parseText(String text) throws IOException, SAXException {
         return parse(new StringReader(text));
@@ -231,7 +246,7 @@ public class XmlParser implements ContentHandler {
             String value = list.getValue(i);
             attributes.put(attributeName, value);
         }
-        parent = new Node(parent, name, attributes, new ArrayList());
+        parent = new Node(parent, name, attributes, new NodeList());
         stack.add(parent);
     }
 
@@ -293,14 +308,19 @@ public class XmlParser implements ContentHandler {
 
     protected Object getElementName(String namespaceURI, String localName, String qName) throws SAXException {
         String name = localName;
+        String prefix = "";
         if ((name == null) || (name.length() < 1)) {
             name = qName;
         }
         if (namespaceURI == null || namespaceURI.length() <= 0) {
             return name;
         }
-        else {
-            return new QName(namespaceURI, name, qName);
+        if (qName != null && qName.length() > 0 && namespaceAware) {
+            int index = qName.lastIndexOf(":");
+            if (index > 0) {
+                prefix = qName.substring(0, index);
+            }
         }
+        return new QName(namespaceURI, name, prefix);
     }
 }
