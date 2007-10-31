@@ -586,7 +586,11 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         if ((type == Types.ASSIGNMENT_OPERATOR || type == Types.EQUAL) &&
                 left instanceof ClassExpression) {
             ClassExpression ce = (ClassExpression) left;
-            addError("you tried to assign a value to the class '" + ce.getType().getName() + "'", be.getLeftExpression());
+            String error = "you tried to assign a value to the class '" + ce.getType().getName() + "'";
+            if (ce.getType().isScript()) {
+                error += ". Do you have a script with this name?";
+            }
+            addError(error, be.getLeftExpression());
             return be;
         }
         if (left instanceof ClassExpression && be.getRightExpression() instanceof ListExpression) {
