@@ -45,6 +45,7 @@ import org.xml.sax.*;
  * most simple use cases of processing XML.
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * @author Paul King
  * @version $Revision$
  */
 public class XmlParser implements ContentHandler {
@@ -54,6 +55,7 @@ public class XmlParser implements ContentHandler {
     private Locator locator;
     private XMLReader reader;
     private Node parent;
+
     private boolean trimWhitespace = true;
     private boolean namespaceAware;
 
@@ -77,12 +79,35 @@ public class XmlParser implements ContentHandler {
         reader = parser.getXMLReader();
     }
 
+    /**
+     * Returns the current trim whitespace setting.
+     *
+     * @return true if whitespace will be trimmed
+     */
+    public boolean isTrimWhitespace() {
+        return trimWhitespace;
+    }
+
+    /**
+     * Sets the trim whitespace setting value.
+     *
+     * @param trimWhitespace the desired setting value
+     */
+    public void setTrimWhitespace(boolean trimWhitespace) {
+        this.trimWhitespace = trimWhitespace;
+    }
 
     /**
      * Parses the content of the given file as XML turning it into a tree
      * of Nodes.
      *
+     * @param file the File containing the XML to be parsed
      * @return the root node of the parsed tree of Nodes
+     * @throws SAXException Any SAX exception, possibly
+     *                      wrapping another exception.
+     * @throws IOException  An IO exception from the parser,
+     *                      possibly from a byte stream or character stream
+     *                      supplied by the application.
      */
     public Node parse(File file) throws IOException, SAXException {
         InputSource input = new InputSource(new FileInputStream(file));
@@ -95,7 +120,13 @@ public class XmlParser implements ContentHandler {
     /**
      * Parse the content of the specified input source into a tree of Nodes.
      *
+     * @param input the InputSource for the XML to parse
      * @return the root node of the parsed tree of Nodes
+     * @throws SAXException Any SAX exception, possibly
+     *                      wrapping another exception.
+     * @throws IOException  An IO exception from the parser,
+     *                      possibly from a byte stream or character stream
+     *                      supplied by the application.
      */
     public Node parse(InputSource input) throws IOException, SAXException {
         getXMLReader().parse(input);
@@ -108,7 +139,13 @@ public class XmlParser implements ContentHandler {
      * Note that using this method will not provide the parser with any URI
      * for which to find DTDs etc
      *
+     * @param input an InputStream containing the XML to be parsed
      * @return the root node of the parsed tree of Nodes
+     * @throws SAXException Any SAX exception, possibly
+     *                      wrapping another exception.
+     * @throws IOException  An IO exception from the parser,
+     *                      possibly from a byte stream or character stream
+     *                      supplied by the application.
      */
     public Node parse(InputStream input) throws IOException, SAXException {
         InputSource is = new InputSource(input);
@@ -122,7 +159,13 @@ public class XmlParser implements ContentHandler {
      * Note that using this method will not provide the parser with any URI
      * for which to find DTDs etc
      *
+     * @param in a Reader to read the XML to be parsed
      * @return the root node of the parsed tree of Nodes
+     * @throws SAXException Any SAX exception, possibly
+     *                      wrapping another exception.
+     * @throws IOException  An IO exception from the parser,
+     *                      possibly from a byte stream or character stream
+     *                      supplied by the application.
      */
     public Node parse(Reader in) throws IOException, SAXException {
         InputSource is = new InputSource(in);
@@ -133,7 +176,13 @@ public class XmlParser implements ContentHandler {
     /**
      * Parse the content of the specified URI into a tree of Nodes.
      *
+     * @param uri a String containing a uri pointing to the XML to be parsed
      * @return the root node of the parsed tree of Nodes
+     * @throws SAXException Any SAX exception, possibly
+     *                      wrapping another exception.
+     * @throws IOException  An IO exception from the parser,
+     *                      possibly from a byte stream or character stream
+     *                      supplied by the application.
      */
     public Node parse(String uri) throws IOException, SAXException {
         InputSource is = new InputSource(uri);
@@ -146,6 +195,11 @@ public class XmlParser implements ContentHandler {
      * 
      * @param text the XML text to parse
      * @return the root node of the parsed tree of Nodes
+     * @throws SAXException Any SAX exception, possibly
+     *                      wrapping another exception.
+     * @throws IOException  An IO exception from the parser,
+     *                      possibly from a byte stream or character stream
+     *                      supplied by the application.
      */
     public Node parseText(String text) throws IOException, SAXException {
         return parse(new StringReader(text));

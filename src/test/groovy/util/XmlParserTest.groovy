@@ -205,4 +205,14 @@ p() {
     void testMixedMarkup() {
         MixedMarkupTestSupport.checkMixedMarkup(getRoot)
     }
+
+    void testWhitespaceTrimming() {
+        def text = '<outer><inner>   Here is some text    </inner></outer>'
+        def parser = new XmlParser()
+        def outer = parser.parseText(text)
+        assert outer.inner.text() == 'Here is some text'
+        parser.setTrimWhitespace false
+        outer = parser.parseText(text)
+        assert outer.inner.text() == '   Here is some text    '
+    }
 }
