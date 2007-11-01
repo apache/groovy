@@ -76,8 +76,28 @@ class ThisAndSuperTest extends GroovyTestCase{
 		}
 	}
 
+    void testSuperEach () {
+        def x = new TestForSuperEach()
+        x.each {
+            x.res << "I am it: ${it.class.name}"
+        }
+
+        assertEquals 3, x.res.size()
+        assertEquals "start each in subclass", x.res [0]
+        assertEquals "I am it: groovy.TestForSuperEach", x.res [1]
+        assertEquals "end of each in subclass", x.res [2]
+    }
 }
 
+class TestForSuperEach {
+  def res = []
+    
+  def each(Closure c) {
+      res << "start each in subclass"
+      super.each(c)
+      res << "end of each in subclass"
+  }
+}
 
 class TestForSuperHelper1 {
   def foo(){1}
