@@ -15,13 +15,13 @@
  */
 package groovy.lang;
 
-import org.codehaus.groovy.runtime.*;
-import org.codehaus.groovy.runtime.metaclass.ClosureMetaMethod;
-import org.codehaus.groovy.runtime.metaclass.ThreadManagedMetaBeanProperty;
-import org.codehaus.groovy.runtime.metaclass.ClosureStaticMetaMethod;
-import org.codehaus.groovy.runtime.metaclass.ConcurrentReaderHashMap;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ReflectionCache;
+import org.codehaus.groovy.runtime.*;
+import org.codehaus.groovy.runtime.metaclass.ClosureMetaMethod;
+import org.codehaus.groovy.runtime.metaclass.ClosureStaticMetaMethod;
+import org.codehaus.groovy.runtime.metaclass.ConcurrentReaderHashMap;
+import org.codehaus.groovy.runtime.metaclass.ThreadManagedMetaBeanProperty;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -276,6 +276,9 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     private MetaMethod findMethodInClassHeirarchy(String methodName, Object[] arguments, Class theClass) {
         MetaMethod method = null;
         final Class superClass = theClass.getSuperclass();
+        if (superClass == null)
+          return null;
+        
         MetaClass metaClass = this.registry.getMetaClass(superClass);
         if(metaClass instanceof MutableMetaClass) {
             method = getMetaMethodFromMutableMetaClass(methodName, arguments, metaClass);

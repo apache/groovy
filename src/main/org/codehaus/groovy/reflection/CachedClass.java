@@ -397,4 +397,8 @@ public class CachedClass {
             return ((CachedMethod)o1).getName().compareTo((String)o2);
         }
     }
+
+    public String toString() {
+        return cachedClass.toString();
+    }
 }

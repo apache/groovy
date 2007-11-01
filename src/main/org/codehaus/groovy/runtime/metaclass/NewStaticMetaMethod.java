@@ -17,6 +17,8 @@ package org.codehaus.groovy.runtime.metaclass;
 
 import org.codehaus.groovy.reflection.CachedMethod;
 
+import java.lang.reflect.Modifier;
+
 /**
  * A MetaMethod implementation where the underlying method is really a static
  * helper method on some class.
@@ -38,7 +40,7 @@ public class NewStaticMetaMethod extends NewMetaMethod {
     }
 
     public int getModifiers() {
-        return super.getModifiers();
+        return Modifier.PUBLIC | Modifier.STATIC;
     }
 
     public Object invoke(Object object, Object[] arguments) {

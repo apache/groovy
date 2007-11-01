@@ -42,7 +42,7 @@ public class NewInstanceMetaMethod extends NewMetaMethod {
 
     public int getModifiers() {
         // lets clear the static bit
-        return super.getModifiers() ^ Modifier.STATIC;
+        return Modifier.PUBLIC;
     }
 
     public Object invoke(Object object, Object[] arguments)  {
