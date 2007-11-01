@@ -18,6 +18,7 @@ package groovy.swing.factory
 
 import java.awt.Component
 import java.awt.Window
+import javax.swing.JTabbedPane
 
 class TabbedPaneFactory extends BeanFactory {
 
@@ -32,9 +33,17 @@ class TabbedPaneFactory extends BeanFactory {
     }
 
     public static void inspectChild(FactoryBuilderSupport builder, Object node, Map attributes) {
-        Object name = attributes.remove('title')
-        if (name) {
-            builder.context.put(node, name)
+        if (builder.current instanceof JTabbedPane) {
+            def name = attributes.remove('title')
+            def icon = attributes.remove('tabIcon')
+            def disabledIcon = attributes.remove('tabDisabledIcon')
+            def toolTip = attributes.remove('tabToolTip')
+            def background = attributes.remove('tabBackground')
+            def foreground = attributes.remove('tabForeground')
+            def enabled = attributes.remove('tabEnabled')
+            def mnemonic = attributes.remove('tabMnemonic')
+            def displayedMnemonicIndex = attributes.remove('tabDisplayedMnemonicIndex')
+            builder.context.put(node, [name, icon, disabledIcon, toolTip, background, foreground, enabled, mnemonic, displayedMnemonicIndex])
         }
     }
 
@@ -43,11 +52,34 @@ class TabbedPaneFactory extends BeanFactory {
             return;
         }
         try {
-            def title = builder.context[child]
-            if (title != null) {
-                parent.add(title, child)
-            } else {
-                parent.add(child)
+            def title = builder.context[child] ?: [null, null, null, null, null, null, null, null, null]
+            if (title[0] == null) {
+                title[0] = child.name
+            }
+            parent.addTab(title[0], title[1], child, title[3])
+            int index = parent.indexOfComponent(child)
+            if (title[2]) {
+                parent.setDisabledIconAt(index, title[2])
+            }
+            if (title[4]) {
+                parent.setBackgroundAt(index, title[4])
+            }
+            if (title[5]) {
+                parent.setForegroundAt(index, title[5])
+            }
+            if (title[6] != null) {
+                parent.setEnabledAt(index, title[6])
+            }
+            if (title[7]) {
+                def mnemonic = title[7]
+                if (mnemonic instanceof String) {
+                    parent.setMnemonicAt(index, mnemonic.charAt(0) as int)
+                } else {
+                    parent.setMnemonicAt(index, mnemonic as int)
+                } 
+            }
+            if (title[8]) {
+                parent.setDisplayedMnemonicIndexAt(index, title[8])
             }
         } catch (MissingPropertyException mpe) {
             parent.add(child)

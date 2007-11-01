@@ -337,9 +337,17 @@ class SwingBuilderTest extends GroovyTestCase {
             panel(id:'p2')
             panel(id:'p3', title:'Title 3')
             panel(id:'p4', title:'Title 4', name:'Name 4')
+            panel(id:'p5', title:'Title 5', tabIcon: imageIcon(Console.ICON_PATH, id:'i5'))
+            panel(id:'p6', title:'Title 6', tabDisabledIcon: imageIcon(Console.ICON_PATH, id:'i6'))
+            panel(id:'p7', title:'Title 7', tabToolTip:'tip 7')
+            panel(id:'p8', title:'Title 8', tabBackground:Color.GREEN)
+            panel(id:'p9', title:'Title 9', tabForeground:Color.GREEN)
+            panel(id:'pA', title:'Title A', tabEnabled:false)
+            panel(id:'pB', title:'Title B', tabMnemonic: 'T');
+            panel(id:'pC', title:'Title C', tabDisplayedMnemonicIndex: 2);
         }
 
-        assert swing.tp.tabCount == 4
+        assert swing.tp.tabCount == 12 
         assert swing.tp.indexOfComponent(swing.p1) == 0
         assert swing.tp.indexOfComponent(swing.p2) == 1
         assert swing.tp.indexOfComponent(swing.p3) == 2
@@ -347,7 +355,15 @@ class SwingBuilderTest extends GroovyTestCase {
         assert swing.tp.indexOfTab('Title 1') == 0
         assert swing.tp.indexOfTab('Title 3') == 2
         assert swing.tp.indexOfTab('Title 4') == 3
-
+        assert swing.tp.getIconAt(4) == swing.i5
+        assert swing.tp.getDisabledIconAt(5) == swing.i6
+        assert swing.tp.getToolTipTextAt(6) == 'tip 7'
+        assert swing.tp.getBackgroundAt(7) == Color.GREEN
+        assert swing.tp.getForegroundAt(8) == Color.GREEN
+        println swing.tp.isEnabledAt(9)
+        assert swing.tp.isEnabledAt(9) == false
+        assert swing.tp.getMnemonicAt(10) == 0x54
+        assert swing.tp.getDisplayedMnemonicIndexAt(11) == 2
     }
 
     void testComboBox() {
