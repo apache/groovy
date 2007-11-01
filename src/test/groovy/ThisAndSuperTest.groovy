@@ -87,7 +87,18 @@ class ThisAndSuperTest extends GroovyTestCase{
         assertEquals "I am it: groovy.TestForSuperEach", x.res [1]
         assertEquals "end of each in subclass", x.res [2]
     }
+
+    void testDgm () {
+      assertEquals A.empty(), '123'
+    }
 }
+
+class A {
+   static {
+       A.metaClass.static.empty << { -> '123' }
+   }
+}
+
 
 class TestForSuperEach {
   def res = []
