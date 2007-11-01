@@ -27,8 +27,10 @@ class MockFor {
     MockProxyMetaClass proxy
     Demand demand
     def expect
+    Class clazz
 
     MockFor(Class clazz) {
+        this.clazz = clazz
         proxy = MockProxyMetaClass.make(clazz)
         demand = new Demand()
         expect = new StrictExpectation(demand)
@@ -43,5 +45,12 @@ class MockFor {
     void use(GroovyObject obj, Closure closure) {
         proxy.use obj, closure
         expect.verify()
+    }
+
+    Object proxyInstance() {
+        if (!clazz.isInterface()) return null
+        def instance = ProxyGenerator.instantiateAggregateFromInterface(clazz)
+        instance.metaClass = proxy
+        return instance
     }
 }
