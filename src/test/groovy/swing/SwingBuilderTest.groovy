@@ -360,10 +360,26 @@ class SwingBuilderTest extends GroovyTestCase {
         assert swing.tp.getToolTipTextAt(6) == 'tip 7'
         assert swing.tp.getBackgroundAt(7) == Color.GREEN
         assert swing.tp.getForegroundAt(8) == Color.GREEN
-        println swing.tp.isEnabledAt(9)
         assert swing.tp.isEnabledAt(9) == false
         assert swing.tp.getMnemonicAt(10) == 0x54
         assert swing.tp.getDisplayedMnemonicIndexAt(11) == 2
+
+        swing.tabbedPane(id:'tp', selectedComponent:swing.p2) {
+            panel(p1, name:'Title 1')
+            panel(p2)
+            panel(p3)
+        }
+        assert swing.tp.selectedIndex == 1
+        assert swing.tp.selectedComponent == swing.p2
+
+        swing.tabbedPane(id:'tp', selectedIndex:1) {
+            panel(p1, name:'Title 1')
+            panel(p2)
+            panel(p3)
+        }
+        assert swing.tp.selectedIndex == 1
+        assert swing.tp.selectedComponent == swing.p2
+
     }
 
     void testComboBox() {

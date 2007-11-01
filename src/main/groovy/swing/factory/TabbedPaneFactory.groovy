@@ -29,6 +29,8 @@ class TabbedPaneFactory extends BeanFactory {
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         builder.context.tabbedPaneFactoryClosure = this.&inspectChild
         builder.addAttributeDelegate(builder.context.tabbedPaneFactoryClosure)
+        builder.context.selectedIndex = attributes.remove('selectedIndex')
+        builder.context.selectedComponent = attributes.remove('selectedComponent')
         return super.newInstance(builder, name, value, attributes)
     }
 
@@ -89,6 +91,12 @@ class TabbedPaneFactory extends BeanFactory {
     public void onNodeCompleted( FactoryBuilderSupport builder, Object parent, Object node ) {
         super.onNodeCompleted (builder, parent, node)
         builder.removeAttributeDelegate(builder.context.tabbedPaneFactoryClosure)
+        if (builder.context.selectedComponent != null) {
+            node.selectedComponent = builder.context.selectedComponent
+        }
+        if (builder.context.selectedIndex != null) {
+            node.selectedIndex = builder.context.selectedIndex
+        }
     }
 
 
