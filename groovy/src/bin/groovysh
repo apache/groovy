@@ -1,0 +1,21 @@
+#!/bin/sh
+
+##############################################################################
+##                                                                          ##
+##  Groovy Console script for UN*X                                          ##
+##                                                                          ##
+##############################################################################
+
+##
+## $Id$
+##
+
+DIRNAME=`dirname "$0"`
+. "$DIRNAME/startGroovy"
+
+if [ "x$OLDSHELL" != "x" ]; then
+    startGroovy groovy.ui.InteractiveShell "$@"
+else
+    startGroovy org.codehaus.groovy.tools.shell.Main "$@"
+fi
+

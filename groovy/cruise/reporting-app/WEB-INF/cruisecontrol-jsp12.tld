@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<!DOCTYPE taglib
+  PUBLIC "-//Sun Microsystems, Inc.//DTD JSP Tag Library 1.2//EN"
+  "http://java.sun.com/dtd/web-jsptaglibrary_1_2.dtd">
+
+<!--********************************************************************************
+ * CruiseControl, a Continuous Integration Toolkit
+ * Copyright (c) 2001, ThoughtWorks, Inc.
+ * 651 W Washington Ave. Suite 600
+ * Chicago, IL 60661 USA
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ *     + Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *
+ *     + Redistributions in binary form must reproduce the above
+ *       copyright notice, this list of conditions and the following
+ *       disclaimer in the documentation and/or other materials provided
+ *       with the distribution.
+ *
+ *     + Neither the name of ThoughtWorks, Inc., CruiseControl, nor the
+ *       names of its contributors may be used to endorse or promote
+ *       products derived from this software without specific prior
+ *       written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ ********************************************************************************-->
+<taglib>
+    <tlib-version>1.0</tlib-version>
+    <jsp-version>1.2</jsp-version>
+    <short-name>cruisecontrol</short-name>
+    <uri>http://cruisecontrol.sourceforge.net/taglibs/cruisecontrol-1.0</uri>
+    <tag>
+        <name>xsl</name>
+        <tag-class>net.sourceforge.cruisecontrol.taglib.XSLTag</tag-class>
+        <body-content>JSP</body-content>
+        <description>
+            Transforms the xml build log using XSL.
+        </description>
+        <attribute>
+            <name>xslFile</name>
+            <required>true</required>
+        </attribute>
+        <attribute>
+            <name>xslRootContext</name>
+            <required>false</required>
+        </attribute>
+    </tag>
+    <tag>
+        <name>currentbuildstatus</name>
+        <tag-class>net.sourceforge.cruisecontrol.taglib.CurrentBuildStatusTag</tag-class>
+        <body-content>empty</body-content>
+        <description>
+            Report when the build started, or when it will start again.
+        </description>
+    </tag>
+    <tag>
+        <name>nav</name>
+        <tag-class>net.sourceforge.cruisecontrol.taglib.NavigationTag</tag-class>
+        <tei-class>net.sourceforge.cruisecontrol.taglib.NavigationTagExtraInfo</tei-class>
+        <body-content>JSP</body-content>
+        <description>
+            Builds the navigation
+        </description>
+        <attribute>
+            <name>dateFormat</name>
+            <required>false</required>
+        </attribute>
+        <attribute>
+            <name>startingBuildNumber</name>
+            <required>false</required>
+        </attribute>
+        <attribute>
+            <name>finalBuildNumber</name>
+            <required>false</required>
+        </attribute>
+    </tag>
+    <tag>
+        <name>artifactsLink</name>
+        <tag-class>net.sourceforge.cruisecontrol.taglib.ArtifactsLinkTag</tag-class>
+        <tei-class>net.sourceforge.cruisecontrol.taglib.ArtifactsLinkTagExtraInfo</tei-class>
+        <body-content>JSP</body-content>
+        <description>
+            Inserts link to the artifacts FileServlet
+        </description>
+    </tag>
+     <tag>
+        <name>buildInfo</name>
+        <tag-class>net.sourceforge.cruisecontrol.taglib.BuildInfoTag</tag-class>
+        <tei-class>net.sourceforge.cruisecontrol.taglib.BuildInfoTagExtraInfo</tei-class>
+        <body-content>empty</body-content>
+        <description>
+            Inserts information about the various builds into the page scope.
+        </description>
+    </tag>
+    <tag>
+        <name>tabsheet</name>
+        <tag-class>net.sourceforge.cruisecontrol.taglib.TabSheetTag</tag-class>
+        <body-content>JSP</body-content>
+        <description>Creates a tab sheet that tabs can be placed into.</description>
+    </tag>
+    <tag>
+        <name>tab</name>
+        <tag-class>net.sourceforge.cruisecontrol.taglib.TabTag</tag-class>
+        <body-content>JSP</body-content>
+        <description>Creates a tab that selected content gets put into.</description>
+        <attribute>
+            <name>name</name>
+            <required>true</required>
+        </attribute>
+        <attribute>
+            <name>label</name>
+            <required>true</required>
+        </attribute>
+    </tag>
+    <tag>
+        <name>link</name>
+        <tag-class>net.sourceforge.cruisecontrol.taglib.LinkTag</tag-class>
+        <tei-class>net.sourceforge.cruisecontrol.taglib.LinkTagExtraInfo</tei-class>
+        <body-content>empty</body-content>
+        <description>Builds up a link URL</description>
+        <attribute>
+            <name>id</name>
+            <required>true</required>
+        </attribute>
+        <attribute>
+            <name>exclude</name>
+            <required>false</required>
+        </attribute>
+    </tag>
+</taglib>
