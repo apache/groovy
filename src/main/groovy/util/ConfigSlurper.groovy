@@ -156,23 +156,28 @@ class ConfigSlurper {
         GroovySystem.metaClassRegistry.removeMetaClass(script.class)
         def mc = script.class.metaClass
         def prefix = ""
-        Stack stack = new Stack()
+        LinkedList stack = new LinkedList()
+        stack << [config:config,scope:[:]]
+        def pushStack = { co ->
+	        stack << [config:co,scope:stack.last.scope.clone()]
+        }
+        def assignName = { name, co ->
+        	def current = stack.last
+        	current.config[name] = co
+        	current.scope[name] = co
+        }
         mc.getProperty = { String name ->
+            def current = stack.last
             def result
-            def current
-            if(stack) {
-                current = stack.peek()
-            } else {
-                current = config
-            }
-
-            if(current[name]) {
-                result = current[name]
+            if(current.config.get(name)) {
+                result = current.config.get(name)
+            } else if(current.scope[name]) {
+                result = current.scope[name]
             } else {
                 result = new ConfigObject()
-                current[name] = result
+                assignName.call(name,result)
             }
-            return result
+            result
         }
         mc.invokeMethod = { String name, args ->
             def result
@@ -189,7 +194,7 @@ class ConfigSlurper {
                         def co = new ConfigObject()
                         config[ENV_SETTINGS] = co
 
-                        stack.push(co)
+                        pushStack.call(co)
                         try {
                             envMode = false
                             args[0].call()
@@ -200,21 +205,16 @@ class ConfigSlurper {
                     }
                 } else {
                     def co = new ConfigObject()
-                    if(stack) {
-                        stack.peek()[name] = co
-                    } else {
-                        config[name] = co
-                    }
-                    stack.push(co)
+                    assignName.call(name, co)
+                    pushStack.call(co)
                     args[0].call()
                     stack.pop()
                 }
             } else if (args.length == 2 && args[1] instanceof Closure) {
                 try {
                    prefix = name +'.'
-                    def conf = stack ? stack.peek() : config
-                    conf[name] = args[0]
-                    args[1].call()
+                   assignName.call(name, args[0])
+                   args[1].call()
                 }  finally { prefix = "" }
             } else {
                 MetaMethod mm = mc.getMetaMethod(name, args)
@@ -229,13 +229,7 @@ class ConfigSlurper {
         script.metaClass = mc
 
         def setProperty = { String name, value ->
-            def current
-            if(stack) {
-                current = stack.peek()
-            } else {
-                current = config
-            }
-            current[prefix+name] = value
+            assignName.call(prefix+name, value)
         }                
      	def binding = new ConfigBinding(setProperty)
 		if(this.bindingVars) {

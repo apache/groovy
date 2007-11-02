@@ -145,6 +145,39 @@ smtp.username = "fred"
         assertEquals "http://localhost:80/resources", config.resources.URL
 
     }
+    
+    void testScopedVariableReusage() {
+        def conf = '''
+          a0 = "Goofy"
+          a1 = "$a0"
+          a2."$a0" = "Mickey Mouse and " + "$a0"
+          group1 { a0 = "Donald Duck" }
+          group2 { 
+            a0 = a0
+            a1 = "$group1.a0" 
+            group3 {
+              a0 = "inner$a0" 
+              group4 {
+                a0 = "inner$a0"
+                a1 = a1
+                a3 = "Dagobert Duck"
+              }
+            }
+            a3 = a3 
+          }
+          a3 = "$group1.a0"
+        '''
+
+        def config = new ConfigSlurper().parse(conf)
+        assert config.group1.a0 == "Donald Duck"
+        assert config.group2.a0 == "Goofy"
+        assert config.group2.group3.a0 == "innerGoofy"
+        assert config.group2.group3.group4.a0 == "innerinnerGoofy"
+        assert config.group2.group3.group4.a1 == "Donald Duck"
+        assert config.group2.group3.group4.a3 == "Dagobert Duck"
+        assert config.group2.a3 == [:]
+        assert config.a3 == "Donald Duck"
+    }
 
     void testLog4jConfiguration() {
         def slurper = new ConfigSlurper()
