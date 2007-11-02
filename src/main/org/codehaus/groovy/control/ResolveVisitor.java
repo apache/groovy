@@ -82,7 +82,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         Parameter[] paras = node.getParameters();
         for (int i = 0; i < paras.length; i++) {
             Parameter p = paras[i];
-
+            p.setInitialExpression(transform(p.getInitialExpression()));
             resolveOrFail(p.getType(), p.getType());
             visitAnnotations(p);
         }
