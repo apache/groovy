@@ -3413,7 +3413,11 @@ public class AsmClassGenerator extends ClassGenerator {
         
         if (setResult) {
             // we want to keep a value on stack, so we have to DUP here
-            if (expression instanceof VariableExpression) mv.visitInsn(DUP);
+            if (expression instanceof VariableExpression ||
+                expression instanceof PropertyExpression) 
+            {
+                mv.visitInsn(DUP);
+            }
             leftHandExpression = true;
             expression.visit(this);
             leftHandExpression = false;
