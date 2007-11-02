@@ -35,8 +35,16 @@ import java.util.*;
  */
 public class ProxyGenerator {
 
+    public static Object instantiateAggregateFromBaseClass(Class clazz) {
+        return instantiateAggregateFromBaseClass(null, clazz);
+    }
+
     public static Object instantiateAggregateFromBaseClass(Map map, Class clazz) {
-        return instantiateAggregate(map, null, clazz);
+        return instantiateAggregateFromBaseClass(map, clazz, null);
+    }
+
+    public static Object instantiateAggregateFromBaseClass(Map map, Class clazz, Object[] constructorArgs) {
+        return instantiateAggregate(map, null, clazz, constructorArgs);
     }
 
     public static Object instantiateAggregateFromInterface(Class clazz) {
@@ -46,10 +54,14 @@ public class ProxyGenerator {
     public static Object instantiateAggregateFromInterface(Map map, Class clazz) {
         List interfaces = new ArrayList();
         interfaces.add(clazz);
-        return instantiateAggregate(map, interfaces, null);
+        return instantiateAggregate(map, interfaces, null, null);
     }
 
     public static Object instantiateAggregate(Map closureMap, List interfaces, Class clazz) {
+        return instantiateAggregate(closureMap, interfaces, clazz, null);
+    }
+
+    public static Object instantiateAggregate(Map closureMap, List interfaces, Class clazz, Object[] constructorArgs) {
         Map map = new HashMap();
         if (closureMap != null) {
             map = closureMap;
@@ -62,10 +74,11 @@ public class ProxyGenerator {
         if (clazz != null) {
             baseClass = clazz;
         }
+        boolean hasArgs = constructorArgs != null && constructorArgs.length > 0;
         String name = shortName(baseClass.getName()) + "_groovyProxy";
         StringBuffer buffer = new StringBuffer();
 
-        // add class header with constructor
+        // add class header and fields
         buffer.append("class ").append(name);
         if (clazz != null) {
             buffer.append(" extends ").append(baseClass.getName());
@@ -79,12 +92,21 @@ public class ProxyGenerator {
             }
             buffer.append(thisInterface.getName());
         }
-        buffer.append(" {\n")
-                .append("    private closureMap\n    ")
-                .append(name).append("(map) {\n")
-                .append("        super()\n")
-                .append("        this.closureMap = map\n")
-                .append("    }\n");
+        buffer.append(" {\n").append("    private closureMap\n    ");
+
+        // add constructor
+        buffer.append(name).append("(map");
+        if (hasArgs) {
+            buffer.append(", args");
+        }
+        buffer.append(") {\n");
+        buffer.append("        super(");
+        if (hasArgs) {
+            buffer.append("*args");
+        }
+        buffer.append(")\n");
+        buffer.append("        this.closureMap = map\n");
+        buffer.append("    }\n");
 
         // add overwriting methods
         List selectedMethods = new ArrayList();
@@ -122,10 +144,16 @@ public class ProxyGenerator {
 
         // end class
 
-        buffer.append("}\n").append("new ").append(name).append("(map)");
+        buffer.append("}\n").append("new ").append(name);
+        buffer.append("(map");
+        if (hasArgs) {
+            buffer.append(", constructorArgs");
+        }
+        buffer.append(")");
 
         Binding binding = new Binding();
         binding.setVariable("map", map);
+        binding.setVariable("constructorArgs", constructorArgs);
         ClassLoader cl = baseClass.getClassLoader();
         if (clazz == null && interfacesToImplement.size() > 0) {
             Class c = (Class) interfacesToImplement.get(0);
