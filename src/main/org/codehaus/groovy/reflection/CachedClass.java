@@ -125,58 +125,54 @@ public class CachedClass {
         return cachedSuperClass;
     }
 
-    public CachedMethod[] getMethods() {
+    public synchronized CachedMethod[] getMethods() {
         if (methods == null) {
-            synchronized (this) {
-                final Method[] declaredMethods = getCachedClass().getDeclaredMethods();
-                ArrayList methods = new ArrayList(declaredMethods.length);
-                ArrayList mopMethods = new ArrayList(declaredMethods.length);
-                for (int i = 0; i != declaredMethods.length; ++i) {
-                    final CachedMethod cachedMethod = new CachedMethod(this, declaredMethods[i]);
-                    final String name = cachedMethod.getName();
+            final Method[] declaredMethods = getCachedClass().getDeclaredMethods();
+            ArrayList methods = new ArrayList(declaredMethods.length);
+            ArrayList mopMethods = new ArrayList(declaredMethods.length);
+            for (int i = 0; i != declaredMethods.length; ++i) {
+                final CachedMethod cachedMethod = new CachedMethod(this, declaredMethods[i]);
+                final String name = cachedMethod.getName();
 
-                    if (name.indexOf('+') >= 0) {
-                        // Skip Synthetic methods inserted by JDK 1.5 compilers and later
-                        continue;
-                    } /*else if (Modifier.isAbstract(reflectionMethod.getModifiers())) {
-                       continue;
-                    }*/
+                if (name.indexOf('+') >= 0) {
+                    // Skip Synthetic methods inserted by JDK 1.5 compilers and later
+                    continue;
+                } /*else if (Modifier.isAbstract(reflectionMethod.getModifiers())) {
+                   continue;
+                }*/
 
-                    if (name.startsWith("this$") || name.startsWith("super$"))
-                      mopMethods.add(cachedMethod);
-                    else
-                      methods.add(cachedMethod);
-                }
-                this.methods = (CachedMethod[]) methods.toArray(new CachedMethod[methods.size()]);
-                Arrays.sort(this.methods);
-
-                final CachedClass superClass = getCachedSuperClass();
-                if (superClass != null) {
-                    superClass.getMethods();
-                    final CachedMethod[] superMopMethods = superClass.mopMethods;
-                    for (int i = 0; i != superMopMethods.length; ++i)
-                      mopMethods.add(superMopMethods[i]);
-                }
-                this.mopMethods = (CachedMethod[]) mopMethods.toArray(new CachedMethod[mopMethods.size()]);
-                Arrays.sort(this.mopMethods, CachedMethodComparatorByName.INSTANCE);
+                if (name.startsWith("this$") || name.startsWith("super$"))
+                  mopMethods.add(cachedMethod);
+                else
+                  methods.add(cachedMethod);
             }
+            this.methods = (CachedMethod[]) methods.toArray(new CachedMethod[methods.size()]);
+            Arrays.sort(this.methods);
+
+            final CachedClass superClass = getCachedSuperClass();
+            if (superClass != null) {
+                superClass.getMethods();
+                final CachedMethod[] superMopMethods = superClass.mopMethods;
+                for (int i = 0; i != superMopMethods.length; ++i)
+                  mopMethods.add(superMopMethods[i]);
+            }
+            this.mopMethods = (CachedMethod[]) mopMethods.toArray(new CachedMethod[mopMethods.size()]);
+            Arrays.sort(this.mopMethods, CachedMethodComparatorByName.INSTANCE);
         }
         return methods;
     }
 
     public synchronized CachedField[] getFields() {
         if (fields == null) {
-            synchronized (this) {
-                final Field[] declaredFields = getCachedClass().getDeclaredFields();
-                fields = new CachedField[declaredFields.length];
-                for (int i = 0; i != fields.length; ++i)
-                    fields[i] = new CachedField(this, declaredFields[i]);
-            }
+            final Field[] declaredFields = getCachedClass().getDeclaredFields();
+            fields = new CachedField[declaredFields.length];
+            for (int i = 0; i != fields.length; ++i)
+                fields[i] = new CachedField(this, declaredFields[i]);
         }
         return fields;
     }
 
-    public CachedConstructor[] getConstructors() {
+    public synchronized CachedConstructor[] getConstructors() {
         if (constructors == null) {
             final Constructor[] declaredConstructors = getCachedClass().getDeclaredConstructors();
             constructors = new CachedConstructor[declaredConstructors.length];
