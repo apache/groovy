@@ -7,6 +7,7 @@ import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MixinNode;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.ListExpression;
 import org.objectweb.asm.Opcodes;
 
 
@@ -37,6 +38,11 @@ public class EnumHelper {
 
     public static void addEnumConstant(ClassNode enumClass, String name, Expression init) {
         int modifiers = PUBLIC_FS | Opcodes.ACC_ENUM;
+        if  (init!=null && !(init instanceof ListExpression)) {
+            ListExpression list = new ListExpression();
+            list.addExpression(init);
+            init = list;
+        }
         FieldNode fn = new FieldNode(name,modifiers,enumClass,enumClass,init);
         enumClass.addField(fn);
     }
