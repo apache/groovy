@@ -57,8 +57,12 @@ public class ProxyGenerator {
         return instantiateAggregate(map, interfaces, null, null);
     }
 
+    public static Object instantiateAggregate(List interfaces) {
+        return instantiateAggregate(null, interfaces);
+    }
+
     public static Object instantiateAggregate(Map closureMap, List interfaces) {
-        return instantiateAggregate(closureMap, interfaces, null, null);
+        return instantiateAggregate(closureMap, interfaces, null);
     }
 
     public static Object instantiateAggregate(Map closureMap, List interfaces, Class clazz) {
