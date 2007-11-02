@@ -171,6 +171,7 @@ $Date$
             <artifact:deploy file="${targetDistDirectory}/@{artifact}-@{version}.jar">
                 <pom refid="@{artifact}.pom"/>
                 <attach file="${targetDistDirectory}/@{artifact}-@{version}-sources.jar" classifier="sources"/>
+                <attach file="${targetDistDirectory}/@{artifact}-@{version}-javadoc.jar" classifier="javadoc"/>
             </artifact:deploy>
         </sequential>
     </macrodef>
@@ -182,6 +183,7 @@ $Date$
             <artifact:install file="${targetDistDirectory}/@{artifact}-@{version}.jar">
                 <pom refid="@{artifact}.pom"/>
                 <attach file="${targetDistDirectory}/@{artifact}-@{version}-sources.jar" classifier="sources"/>
+                <attach file="${targetDistDirectory}/@{artifact}-@{version}-javadoc.jar" classifier="javadoc"/>
             </artifact:install>
         </sequential>
     </macrodef>

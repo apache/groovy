@@ -584,18 +584,13 @@ $Date$
         <mkdir dir="${docsDirectory}"/>
     </target>
 
-    <target name="doc" depends="-compileTools,-docInit,-includeGroovyDocTemplates" description="Create the documentation.">
-        <java classname="org.codehaus.groovy.tools.DocGenerator" fork="true">
-            <classpath>
-                <pathelement path="${toolsClassesDirectory}"/>
-                <path refid="toolsPath"/>
-                <pathelement path="${mainClassesDirectory}"/>
-            </classpath>
-        </java>
+    <target name="doc" depends="javadoc, groovydoc" description="Create the documentation."/>
+
+    <target name="javadoc" depends="-fetchDependencies,-docInit" description="Create the javadoc documentation.">
         <property name="title" value="Groovy"/>
         <javadoc destdir="${docsDirectory}/api" author="true" version="true"
                  windowtitle="${title} (${groovyVersion})" doctitle="${title} (${groovyVersion})"
-                 encoding="ISO-8859-1" useexternalfile="true"
+                 encoding="ISO-8859-1" useexternalfile="true" source="1.4"
                  footer="Copyright &amp;copy; 2003-2007 The Codehaus. All rights reserved.">
             <classpath>
                 <path path="${mainClassesDirectory}"/>
@@ -608,23 +603,24 @@ $Date$
             <link href="http://java.sun.com/j2ee/1.4/docs/api"/>
             <link href="http://www.antlr2.org/javadoc"/>
         </javadoc>
-        <taskdef name="groovydoc" classname="org.codehaus.groovy.ant.Groovydoc">
-            <classpath>
-                <path path="${mainClassesDirectory}"/>
-                <path refid="compilePath"/>
-            </classpath>
-        </taskdef>
-        <groovydoc
-                destdir="${docsDirectory}/gapi"
-                sourcepath="${mainSourceDirectory}"
-                packagenames="**.*"
-                use="true"
-                windowtitle="groovydoc"
-                private="false"/>
+        <jar basedir="${docsDirectory}/api" destfile="${targetDistDirectory}/groovy-${groovyVersion}-javadoc.jar"/>
+        <copy toFile="${targetDistDirectory}/groovy-all-${groovyVersion}-javadoc.jar">
+            <fileset file="${targetDistDirectory}/groovy-${groovyVersion}-javadoc.jar"/>
+        </copy>
+        <copy toFile="${targetDistDirectory}/groovy-all-minimal-${groovyVersion}-javadoc.jar">
+            <fileset file="${targetDistDirectory}/groovy-${groovyVersion}-javadoc.jar"/>
+        </copy>
     </target>
 
     <target name="groovydoc" depends="-compileTools,-docInit,-includeGroovyDocTemplates"
             description="Create the groovydoc documentation.">
+        <java classname="org.codehaus.groovy.tools.DocGenerator" fork="true">
+            <classpath>
+                <pathelement path="${toolsClassesDirectory}"/>
+                <path refid="toolsPath"/>
+                <pathelement path="${mainClassesDirectory}"/>
+            </classpath>
+        </java>
         <taskdef name="groovydoc" classname="org.codehaus.groovy.ant.Groovydoc">
             <classpath>
                 <path path="${mainClassesDirectory}"/>
@@ -651,14 +647,14 @@ $Date$
         </delete>
     </target>
 
-    <target name="deploy" depends="-mavenDeployInit,install"
+    <target name="deploy" depends="-mavenDeployInit,install,doc"
             description="Deploy jars to maven repository.">
         <mavenDeploy version="${groovyVersion}" artifact="groovy"/>
         <mavenDeploy version="${groovyVersion}" artifact="groovy-all"/>
         <mavenDeploy version="${groovyVersion}" artifact="groovy-all-minimal"/>
     </target>
 
-    <target name="installRepo" depends="-mavenInit,install"
+    <target name="installRepo" depends="-mavenInit,install,doc"
             description="Deploy artifacts to local maven repository.">
         <mavenInstallRepo version="${groovyVersion}" artifact="groovy"/>
         <mavenInstallRepo version="${groovyVersion}" artifact="groovy-all"/>
