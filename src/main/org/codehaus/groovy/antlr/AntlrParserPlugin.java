@@ -20,7 +20,6 @@ import antlr.TokenStreamException;
 import antlr.TokenStreamRecognitionException;
 import antlr.collections.AST;
 import com.thoughtworks.xstream.XStream;
-
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.antlr.parser.GroovyLexer;
 import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
@@ -314,7 +313,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         node = node.getNextSibling();
         ClassNode superClass = ClassHelper.OBJECT_TYPE;
 
-        ClassNode[] interfaces = {};
+        ClassNode[] interfaces = ClassNode.EMPTY_ARRAY;
         if (isType(EXTENDS_CLAUSE, node)) {
             interfaces = interfaces(node);
             node = node.getNextSibling();
@@ -355,7 +354,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             node = node.getNextSibling();
         }
 
-        ClassNode[] interfaces = {};
+        ClassNode[] interfaces = ClassNode.EMPTY_ARRAY;
         if (isType(IMPLEMENTS_CLAUSE, node)) {
             interfaces = interfaces(node);
             node = node.getNextSibling();
@@ -510,7 +509,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         if (parameters==null) parameters = Parameter.EMPTY_ARRAY;
         node = node.getNextSibling();
         
-        ClassNode[] exceptions=new ClassNode[0];
+        ClassNode[] exceptions= ClassNode.EMPTY_ARRAY;
         if (isType(LITERAL_throws, node)) {
         	AST throwsNode = node.getFirstChild();
         	List exceptionList = new ArrayList();
@@ -564,7 +563,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         if (parameters == null) parameters = Parameter.EMPTY_ARRAY;
         node = node.getNextSibling();
 
-        ClassNode[] exceptions=new ClassNode[0];
+        ClassNode[] exceptions= ClassNode.EMPTY_ARRAY;
         if (isType(LITERAL_throws, node)) {
         	AST throwsNode = node.getFirstChild();
         	List exceptionList = new ArrayList();
@@ -674,7 +673,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         for (AST implementNode = node.getFirstChild(); implementNode != null; implementNode = implementNode.getNextSibling()) {
             interfaceList.add(makeTypeWithArguments(implementNode));
         }
-        ClassNode[] interfaces = {};
+        ClassNode[] interfaces = ClassNode.EMPTY_ARRAY;
         if (!interfaceList.isEmpty()) {
             interfaces = new ClassNode[interfaceList.size()];
             interfaceList.toArray(interfaces);
@@ -2365,7 +2364,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             bounds.add(bound);
         }
         if (bounds.size()==0) return null;
-        return (ClassNode[]) bounds.toArray(new ClassNode[0]);
+        return (ClassNode[]) bounds.toArray(new ClassNode[bounds.size()]);
     }
     
     protected GenericsType[] makeGenericsType(AST rootNode) {

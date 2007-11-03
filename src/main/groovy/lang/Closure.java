@@ -94,6 +94,7 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
 
     private int directive;
     public static final int DONE = 1, SKIP = 2;
+    private static final Object[] EMPTY_OBJECT_ARRAY = {};
 
     public Closure(Object owner, Object thisObject) {
         this.owner = owner;
@@ -282,7 +283,7 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
      * @return the value if applicable or null if there is no return statement in the closure
      */
     public Object call() {
-        final Object[] NOARGS = {};
+        final Object[] NOARGS = EMPTY_OBJECT_ARRAY;
         return call(NOARGS);
     }
     

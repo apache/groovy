@@ -529,7 +529,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
     }
 
     public MetaMethod pickMethod(String name, Class[] argTypes) {
-        if (argTypes == null) argTypes = new Class[0];
+        if (argTypes == null) argTypes = EMPTY_CLASS_ARRAY;
         if (name.equals(CLOSURE_CALL_METHOD) || name.equals(CLOSURE_DO_CALL_METHOD)) {
             return pickClosureMethod(argTypes);
         }

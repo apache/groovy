@@ -2993,7 +2993,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
         Parameter[] parameters = expression.getParameters();
         if (parameters == null) {
-            parameters = new Parameter[0];
+            parameters = Parameter.EMPTY_ARRAY;
         } else if (parameters.length == 0) {
             // lets create a default 'it' parameter
             parameters = new Parameter[]{new Parameter(ClassHelper.OBJECT_TYPE, "it", ConstantExpression.NULL)};

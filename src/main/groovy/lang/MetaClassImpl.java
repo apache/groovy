@@ -100,6 +100,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private MetaMethod methodMissing;
     private MetaMethodIndex.Header mainClassMethodHeader;
     private final MetaMethodIndex metaMethodIndex = new MetaMethodIndex();
+    protected static final Class[] EMPTY_CLASS_ARRAY = new Class[0];
 
 
     public MetaClassImpl(final Class theClass) {
@@ -130,7 +131,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     private Class[] castArgumentsToClassArray(Object[] argTypes) {
-        if (argTypes == null) return new Class[0];
+        if (argTypes == null) return EMPTY_CLASS_ARRAY;
         Class[] classes = new Class[argTypes.length];
         for (int i = 0; i < argTypes.length; i++) {
             Object argType = argTypes[i];

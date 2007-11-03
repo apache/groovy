@@ -16,7 +16,10 @@
 
 package org.codehaus.groovy.runtime;
 
-import groovy.lang.*;
+import groovy.lang.Closure;
+import groovy.lang.GString;
+import groovy.lang.GroovyRuntimeException;
+import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.*;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 
@@ -571,7 +574,7 @@ public class MetaClassHelper {
 
     public static ParameterTypes getParameterTypes(Object methodOrConstructor) {
         if (methodOrConstructor instanceof ParameterTypes) {
-            return (CachedConstructor) methodOrConstructor;
+            return (ParameterTypes) methodOrConstructor;
         }
         if (methodOrConstructor instanceof MetaMethod) {
             return ((MetaMethod) methodOrConstructor).getParamTypes();

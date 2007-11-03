@@ -22,11 +22,7 @@ import org.codehaus.groovy.runtime.typehandling.IntegerCache;
 import org.w3c.dom.Element;
 
 import java.beans.Introspector;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.Writer;
+import java.io.*;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
@@ -46,6 +42,7 @@ public class InvokerHelper {
     private static final Object[] EMPTY_MAIN_ARGS = new Object[]{new String[0]};
 
     private static final Invoker SINGLETON = new Invoker();
+    private static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
 
 
     public static MetaClass getMetaClass(Object object) {
@@ -242,7 +239,7 @@ public class InvokerHelper {
             }
             return newlist;
         }
-        return invokeMethod(value, "negative", new Object[0]);
+        return invokeMethod(value, "negative", EMPTY_OBJECT_ARRAY);
     }
 
     public static Object unaryPlus(Object value) {
@@ -263,7 +260,7 @@ public class InvokerHelper {
             }
             return newlist;
         }
-        return invokeMethod(value, "positive", new Object[0]);
+        return invokeMethod(value, "positive", EMPTY_OBJECT_ARRAY);
     }
 
     /**
@@ -681,7 +678,7 @@ public class InvokerHelper {
             }
             return newlist;
         }
-        return invokeMethod(value, "bitwiseNegate", new Object[0]);
+        return invokeMethod(value, "bitwiseNegate", EMPTY_OBJECT_ARRAY);
     }
 
 }

@@ -16,7 +16,10 @@
 package org.codehaus.groovy.ast;
 
 import groovy.lang.Binding;
-import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.expr.ArgumentListExpression;
+import org.codehaus.groovy.ast.expr.ClassExpression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
@@ -53,6 +56,7 @@ public class ModuleNode extends ASTNode implements Opcodes {
     private boolean createClassForStatements = true;
     private transient SourceUnit context;
     private boolean importsResolved = false;
+    private static final String[] EMPTY_STRING_ARRAY = new String[] { /* class names, not qualified */ };
 
 
     public ModuleNode (SourceUnit context ) {
@@ -104,7 +108,7 @@ public class ModuleNode extends ASTNode implements Opcodes {
 
     public String[]  addImportPackage(String packageName) {
         importPackages.add(packageName);
-        return new String[] { /* class names, not qualified */ };
+        return EMPTY_STRING_ARRAY;
     }
 
     public void addStatement(Statement node) {

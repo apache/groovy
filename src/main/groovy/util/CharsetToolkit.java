@@ -18,7 +18,7 @@ package groovy.util;
 
 import java.io.*;
 import java.nio.charset.Charset;
-import java.util.*;
+import java.util.Collection;
 
 /**
  * <p>Utility class to guess the encoding of a given text file.</p>
@@ -54,6 +54,7 @@ public class CharsetToolkit {
     private Charset charset;
     private boolean enforce8Bit = true;
     private final File file;
+    private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
     /**
      * Constructor of the <code>CharsetToolkit</code> utility class.
@@ -69,7 +70,7 @@ public class CharsetToolkit {
             byte[] bytes = new byte[4096];
             int bytesRead = input.read(bytes);
             if (bytesRead == -1) {
-                this.buffer = new byte[0];
+                this.buffer = EMPTY_BYTE_ARRAY;
             }
             else if (bytesRead < 4096) {
                 byte[] bytesToGuess = new byte[bytesRead];

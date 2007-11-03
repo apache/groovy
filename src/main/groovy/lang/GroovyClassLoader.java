@@ -23,38 +23,20 @@
  */
 package groovy.lang;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.net.URLConnection;
-import java.net.URLDecoder;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ModuleNode;
+import org.codehaus.groovy.classgen.Verifier;
+import org.codehaus.groovy.control.*;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.ClassWriter;
+
+import java.io.*;
+import java.net.*;
 import java.security.AccessController;
 import java.security.CodeSource;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.ModuleNode;
-import org.codehaus.groovy.classgen.Verifier;
-import org.codehaus.groovy.control.CompilationFailedException;
-import org.codehaus.groovy.control.CompilationUnit;
-import org.codehaus.groovy.control.CompilerConfiguration;
-import org.codehaus.groovy.control.Phases;
-import org.codehaus.groovy.control.SourceUnit;
-import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.ClassWriter;
+import java.util.*;
 
 /**
  * A ClassLoader which can load Groovy classes. The loaded classes are cached,
@@ -847,7 +829,8 @@ public class GroovyClassLoader extends URLClassLoader {
      */
     public Class[] getLoadedClasses() {
         synchronized (this) {
-            return (Class[]) classCache.values().toArray(new Class[0]);
+            final Collection values = classCache.values();
+            return (Class[]) values.toArray(new Class[values.size()]);
         }
     }
 

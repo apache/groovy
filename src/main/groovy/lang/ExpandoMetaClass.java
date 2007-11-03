@@ -666,7 +666,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 					MetaBeanProperty mbp = newValue instanceof MetaBeanProperty ? (MetaBeanProperty)newValue : new ThreadManagedMetaBeanProperty(theClass,property,type,newValue);
 
                     final MetaMethod getter = mbp.getGetter();
-                    final MethodKey getterKey = new DefaultCachedMethodKey(theClass,getter.getName(), new CachedClass[0],false );
+                    final MethodKey getterKey = new DefaultCachedMethodKey(theClass,getter.getName(), CachedClass.EMPTY_ARRAY,false );
                     final MetaMethod setter = mbp.getSetter();
                     final MethodKey setterKey = new DefaultCachedMethodKey(theClass,setter.getName(), setter.getParameterTypes(),false );
                     addMetaMethod(getter);

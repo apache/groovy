@@ -16,11 +16,12 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.*;
-import groovy.util.CharsetToolkit;
-import groovy.util.ClosureComparator;
-import groovy.util.OrderBy;
-import groovy.util.GroovyCollections;
-import groovy.util.ProxyGenerator;
+import groovy.util.*;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
+import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
+import org.codehaus.groovy.runtime.typehandling.NumberMath;
+import org.codehaus.groovy.tools.RootLoader;
+import org.w3c.dom.NodeList;
 
 import java.io.*;
 import java.lang.reflect.Array;
@@ -29,24 +30,13 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.net.MalformedURLException;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
+import java.net.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
-import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
-import org.codehaus.groovy.runtime.typehandling.NumberMath;
-import org.codehaus.groovy.tools.RootLoader;
-import org.w3c.dom.NodeList;
 
 /**
  * This class defines all the new groovy methods which appear on normal JDK
@@ -5429,11 +5419,11 @@ public class DefaultGroovyMethods {
     //-------------------------------------------------------------------------
 
     public static Boolean and(Boolean left, Boolean right) {
-        return Boolean.valueOf(left.booleanValue() & right.booleanValue());
+        return Boolean.valueOf(left.booleanValue() && right.booleanValue());
     }
 
     public static Boolean or(Boolean left, Boolean right) {
-        return Boolean.valueOf(left.booleanValue() | right.booleanValue());
+        return Boolean.valueOf(left.booleanValue() || right.booleanValue());
     }
 
     public static Boolean xor(Boolean left, Boolean right) {

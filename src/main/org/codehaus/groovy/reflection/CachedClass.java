@@ -48,6 +48,7 @@ public class CachedClass {
     private final Class cachedClass;
     private MetaMethod[] newMetaMethods = EMPTY;
     public  CachedMethod [] mopMethods;
+    public static final CachedClass[] EMPTY_ARRAY = new CachedClass[0];
 
     public Set getInterfaces() {
         if (interfaces == null)  {
