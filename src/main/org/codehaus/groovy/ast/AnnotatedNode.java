@@ -15,11 +15,7 @@
  */
 package org.codehaus.groovy.ast;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Base class for any AST node which is capable of being annotated
@@ -28,8 +24,8 @@ import java.util.Map;
  * @version $Revision$
  */
 public class AnnotatedNode extends ASTNode {
-    private final Map annotations = new HashMap();
-    private Map annotationClasses = new HashMap();
+    private Map annotations = Collections.EMPTY_MAP;
+    private Map annotationClasses = Collections.EMPTY_MAP;
     private boolean synthetic;
     ClassNode declaringClass;
 
@@ -41,14 +37,16 @@ public class AnnotatedNode extends ASTNode {
     }
 
     public AnnotationNode getAnnotations(String name) {
-        return (AnnotationNode) annotations.get(name);
+        return annotations == Collections.EMPTY_MAP ? null : (AnnotationNode) annotations.get(name);
     }
     
     public ClassNode getAnnotationClass(String name) {
-        return (ClassNode) annotationClasses.get(name);
+        return annotationClasses == Collections.EMPTY_MAP ? null : (ClassNode) annotationClasses.get(name);
     }
 
     public void addAnnotation(String name, AnnotationNode value) {
+        checkInit();
+
         annotationClasses.put(name,value.getClassNode());
         AnnotationNode oldValue = (AnnotationNode) annotations.get(name);
 
@@ -68,6 +66,13 @@ public class AnnotatedNode extends ASTNode {
             }
             list.add(value);
         }
+    }
+
+    private void checkInit() {
+        if (annotations == Collections.EMPTY_MAP)
+          annotations = new HashMap();
+        if (annotationClasses == Collections.EMPTY_MAP)
+          annotationClasses = new HashMap();
     }
 
     public void addAnnotations(List annotations) {
