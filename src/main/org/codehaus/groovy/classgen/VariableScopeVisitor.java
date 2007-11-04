@@ -15,36 +15,19 @@
  */
 package org.codehaus.groovy.classgen;
 
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-
 import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.ast.ASTNode;
-import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
-import org.codehaus.groovy.ast.ClassHelper;
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.FieldNode;
-import org.codehaus.groovy.ast.MethodNode;
-import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.PropertyNode;
-import org.codehaus.groovy.ast.DynamicVariable;
+import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.Variable;
-import org.codehaus.groovy.ast.VariableScope;
-import org.codehaus.groovy.ast.expr.ClosureExpression;
-import org.codehaus.groovy.ast.expr.ConstantExpression;
-import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
-import org.codehaus.groovy.ast.expr.DeclarationExpression;
-import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.FieldExpression;
-import org.codehaus.groovy.ast.expr.MethodCallExpression;
-import org.codehaus.groovy.ast.expr.PropertyExpression;
-import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.control.SourceUnit;
+
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * goes through an AST and initializes the scopes
@@ -149,15 +132,14 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             // to declare a variable of the same name as a class member
             if (scope.getClassScope() != null) break;
 
-            Map declares = scope.getDeclaredVariables();
-            if (declares.get(var.getName()) != null) {
+            if (scope.getDeclaredVariable(var.getName()) != null) {
                 // variable already declared
                 addError(msg.toString(), expr);
                 break;
             }
         }
         // declare the variable even if there was an error to allow more checks
-        currentScope.getDeclaredVariables().put(var.getName(), var);
+        currentScope.putDeclaredVariable(var);
     }
 
     protected SourceUnit getSourceUnit() {
@@ -240,20 +222,23 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
                 dynamicScope = scope;
             }
 
-            Map declares = scope.getDeclaredVariables();
-            if (declares.get(var.getName()) != null) {
-                var = (Variable) declares.get(var.getName());
-                break;
-            }
-            Map localReferenced = scope.getReferencedLocalVariables();
-            if (localReferenced.get(var.getName()) != null) {
-                var = (Variable) localReferenced.get(var.getName());
+            Variable var1;
+            var1 = scope.getDeclaredVariable(var.getName());
+
+            if (var1 != null) {
+                var = var1;
                 break;
             }
 
-            Map classReferenced = scope.getReferencedClassVariables();
-            if (classReferenced.get(var.getName()) != null) {
-                var = (Variable) classReferenced.get(var.getName());
+            var1 = (Variable) scope.getReferencedLocalVariable(var.getName());
+            if (var1 != null) {
+                var = var1;
+                break;
+            }
+
+            var1 = scope.getReferencedClassVariable(var.getName());
+            if (var1 != null) {
+                var = var1;
                 break;
             }
 
@@ -304,17 +289,16 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
                 Map references = null;
                 if (end.isClassScope() || end.isRoot() ||
                         (end.isReferencedClassVariable(name) && end.getDeclaredVariable(name) == null)) {
-                    references = scope.getReferencedClassVariables();
+                    scope.putReferencedClassVariable(var);
                 } else {
-                    references = scope.getReferencedLocalVariables();
                     var.setClosureSharedVariable(var.isClosureSharedVariable() || inClosure);
+                    scope.putReferencedLocalVariable(var);
                 }
-                references.put(var.getName(), var);
                 scope = scope.getParent();
             }
             if (end.isResolvingDynamic()) {
                 if (end.getDeclaredVariable(var.getName()) == null) {
-                    end.getDeclaredVariables().put(var.getName(), var);
+                    end.putDeclaredVariable(var);
                 }
             }
         }
@@ -350,7 +334,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
 
         // declare a static variable to be able to continue the check
         DynamicVariable v2 = new DynamicVariable(v.getName(), currentScope.isInStaticContext());
-        currentScope.getDeclaredVariables().put(v.getName(), v2);
+        currentScope.putDeclaredVariable(v2);
     }
 
     // ------------------------------
@@ -421,7 +405,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             }
         } else if (expression.getParameters() != null) {
             DynamicVariable var = new DynamicVariable("it", currentScope.isInStaticContext());
-            currentScope.getDeclaredVariables().put("it", var);
+            currentScope.putDeclaredVariable(var);
         }
 
         super.visitClosureExpression(expression);

@@ -3048,10 +3048,10 @@ public class AsmClassGenerator extends ClassGenerator {
         block.setSourcePosition(expression);
         VariableExpression outer = new VariableExpression("_outerInstance");
         outer.setSourcePosition(expression);
-        block.getVariableScope().getReferencedLocalVariables().put("_outerInstance", outer);
+        block.getVariableScope().putReferencedLocalVariable(outer);
         VariableExpression thisObject = new VariableExpression("_thisObject");
         thisObject.setSourcePosition(expression);
-        block.getVariableScope().getReferencedLocalVariables().put("_thisObject", thisObject);
+        block.getVariableScope().putReferencedLocalVariable(thisObject);
         TupleExpression conArgs = new TupleExpression(outer, thisObject);
         block.addStatement(
                 new ExpressionStatement(
@@ -3124,10 +3124,9 @@ public class AsmClassGenerator extends ClassGenerator {
 
     protected Parameter[] getClosureSharedVariables(ClosureExpression ce) {
         VariableScope scope = ce.getVariableScope();
-        Map references = scope.getReferencedLocalVariables();
-        Parameter[] ret = new Parameter[references.size()];
+        Parameter[] ret = new Parameter[scope.getReferencedLocalVariablesCount()];
         int index = 0;
-        for (Iterator iter = references.values().iterator(); iter.hasNext();) {
+        for (Iterator iter = scope.getReferencedLocalVariablesIterator(); iter.hasNext();) {
             org.codehaus.groovy.ast.Variable element = (org.codehaus.groovy.ast.Variable) iter.next();
             Parameter p = new Parameter(element.getType(), element.getName());
             ret[index] = p;
@@ -3618,7 +3617,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 if (!variable.isDynamicTyped()) return type;
             }
             if (variable == null) {
-                org.codehaus.groovy.ast.Variable var = (org.codehaus.groovy.ast.Variable) compileStack.getScope().getReferencedClassVariables().get(varExpr.getName());
+                org.codehaus.groovy.ast.Variable var = (org.codehaus.groovy.ast.Variable) compileStack.getScope().getReferencedClassVariable(varExpr.getName());
                 if (var != null && !var.isDynamicTyped()) return var.getType();
             }
         }

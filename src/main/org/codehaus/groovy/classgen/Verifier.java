@@ -17,7 +17,6 @@ package org.codehaus.groovy.classgen;
 
 import groovy.lang.GroovyObject;
 import groovy.lang.MetaClass;
-
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.*;
@@ -28,13 +27,9 @@ import org.codehaus.groovy.syntax.Types;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
-import java.lang.reflect.Modifier;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.lang.reflect.Modifier;
+import java.util.*;
 
 /**
  * Verifies the AST node and adds any defaulted AST code before
@@ -124,8 +119,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 VariableExpression vMethods = new VariableExpression("method");
                 VariableExpression vArguments = new VariableExpression("arguments");
                 VariableScope blockScope = new VariableScope();
-                blockScope.getReferencedLocalVariables().put("method",vMethods);
-                blockScope.getReferencedLocalVariables().put("arguments",vArguments);
+                blockScope.putReferencedLocalVariable(vMethods);
+                blockScope.putReferencedLocalVariable(vArguments);
                 
                 node.addSyntheticMethod(
                     "invokeMethod",
@@ -179,8 +174,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     VariableExpression vProp = new VariableExpression("property");
                     VariableExpression vValue = new VariableExpression("value");
                     blockScope = new VariableScope();
-                    blockScope.getReferencedLocalVariables().put("property",vProp);
-                    blockScope.getReferencedLocalVariables().put("value",vValue);
+                    blockScope.putReferencedLocalVariable(vProp);
+                    blockScope.putReferencedLocalVariable(vValue);
                     
                     node.addSyntheticMethod(
                         "setProperty",

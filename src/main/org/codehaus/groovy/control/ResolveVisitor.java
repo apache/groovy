@@ -569,7 +569,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 // for each parentscope too
                 for (VariableScope scope = currentScope; scope != null && !scope.isRoot(); scope = scope.getParent()) {
                     if (scope.isRoot()) break;
-                    if (scope.getReferencedClassVariables().remove(ve.getName()) == null) break;
+                    if (scope.removeReferencedClassVariable(ve.getName()) == null) break;
                 }
                 ClassExpression ce = new ClassExpression(t);
                 ce.setSourcePosition(ve);

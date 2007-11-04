@@ -15,7 +15,9 @@
  */
 package org.codehaus.groovy.ast;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -27,9 +29,9 @@ import java.util.Map;
  * @version $Revision$
  */
 public class VariableScope  {
-    private Map declaredVariables = new HashMap();
-    private Map referencedLocalVariables = new HashMap();
-    private Map referencedClassVariables = new HashMap();
+    private Map declaredVariables = Collections.EMPTY_MAP;
+    private Map referencedLocalVariables = Collections.EMPTY_MAP;
+    private Map referencedClassVariables = Collections.EMPTY_MAP;
  
     private boolean inStaticContext = false;
     private boolean resolvesDynamic = false; 
@@ -41,22 +43,13 @@ public class VariableScope  {
     public VariableScope(VariableScope parent) {
         this.parent = parent;
     }
-    public Map getDeclaredVariables() {
-        return declaredVariables;
-    }
+
     public Variable getDeclaredVariable(String name) {
         return (Variable) declaredVariables.get(name);
     }
-    public Map getReferencedLocalVariables() {
-        return referencedLocalVariables;
-    }
-    
+
     public boolean isReferencedLocalVariable(String name) {
         return referencedLocalVariables.containsKey(name);
-    }
-    
-    public Map getReferencedClassVariables() {
-        return referencedClassVariables;
     }
     
     public boolean isReferencedClassVariable(String name) {
@@ -101,12 +94,62 @@ public class VariableScope  {
     public VariableScope copy() {
         VariableScope copy = new VariableScope();
         copy.clazzScope = clazzScope;
-        copy.declaredVariables.putAll(declaredVariables);
+        if (declaredVariables.size() > 0) {
+          copy.declaredVariables = new HashMap();
+          copy.declaredVariables.putAll(declaredVariables);
+        }
         copy.inStaticContext = inStaticContext;
         copy.parent = parent;
-        copy.referencedClassVariables.putAll(referencedClassVariables);
-        copy.referencedLocalVariables.putAll(referencedLocalVariables);
+        if (referencedClassVariables.size() > 0) {
+            copy.referencedClassVariables = new HashMap();
+            copy.referencedClassVariables.putAll(referencedClassVariables);
+        }
+        if (referencedLocalVariables.size() > 0) {
+            copy.referencedLocalVariables = new HashMap();
+            copy.referencedLocalVariables.putAll(referencedLocalVariables);
+        }
         copy.resolvesDynamic = resolvesDynamic;
         return copy;
+    }
+
+    public void putDeclaredVariable(Variable var) {
+        if (declaredVariables == Collections.EMPTY_MAP)
+          declaredVariables = new HashMap();
+        declaredVariables.put(var.getName(), var);
+    }
+
+    public Iterator getReferencedLocalVariablesIterator() {
+        return referencedLocalVariables.values().iterator();
+    }
+
+    public int getReferencedLocalVariablesCount() {
+        return referencedLocalVariables.size();
+    }
+
+    public Variable getReferencedLocalVariable(String name) {
+        return (Variable) referencedLocalVariables.get(name);
+    }
+
+    public void putReferencedLocalVariable(Variable var) {
+        if (referencedLocalVariables == Collections.EMPTY_MAP)
+          referencedLocalVariables = new HashMap();
+        referencedLocalVariables.put(var.getName(), var);
+    }
+
+    public void putReferencedClassVariable(Variable var) {
+        if (referencedClassVariables == Collections.EMPTY_MAP)
+          referencedClassVariables = new HashMap();
+        referencedClassVariables.put(var.getName(), var);
+    }
+
+    public Variable getReferencedClassVariable(String name) {
+        return (Variable) referencedClassVariables.get(name); 
+    }
+
+    public Object removeReferencedClassVariable(String name) {
+        if (referencedClassVariables == Collections.EMPTY_MAP)
+          return null;
+        else
+          return referencedClassVariables.remove(name);
     }
 }

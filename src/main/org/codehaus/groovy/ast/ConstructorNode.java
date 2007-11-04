@@ -15,11 +15,10 @@
  */
 package org.codehaus.groovy.ast;
 
-import java.util.Map;
-
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.stmt.*;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.ast.stmt.Statement;
 
 
 /**
@@ -38,9 +37,8 @@ public class ConstructorNode extends MethodNode {
         super("<init>",modifiers,ClassHelper.VOID_TYPE,parameters,exceptions,code);
         
         VariableScope scope = new VariableScope();
-        Map declares = scope.getDeclaredVariables(); 
         for (int i = 0; i < parameters.length; i++) {
-            declares.put(parameters[i].getName(),parameters[i]);
+            scope.putDeclaredVariable(parameters[i]);
         }
         this.setVariableScope(scope);
     }
