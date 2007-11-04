@@ -13,7 +13,7 @@ class ThisAndSuperTest extends GroovyTestCase{
 		assert helper.aClosureUsingSuper() == 1
   		// accessing private method should not be changed
   		// by a public method of the same name and signature!
-		assert helper.closureUsingPrivateMethod() == "bar"
+		assertEquals "bar", helper.closureUsingPrivateMethod() 
 		assert helper.bar() == "no bar"
 		
 		assert helper.aField == "I am a field"

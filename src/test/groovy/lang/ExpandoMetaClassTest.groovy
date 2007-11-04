@@ -482,7 +482,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
         metaClass.initialize()
 
         def t = new Test()
-        t.metaClass = metaClass
+        t.metaClass = metaClass                                                
 
         assertEquals "mine blah!", t.borrowMe("blah")
         // GROOVY-1993

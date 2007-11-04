@@ -25,14 +25,21 @@ import java.util.NoSuchElementException;
 
 public class MetaMethodIndex {
     public SingleKeyHashMap methodHeaders = new SingleKeyHashMap();
+    private CachedClass theCachedClass;
 
     public static class Header {
         public Entry head;
         Class cls;
         public int clsHashCode31;
+        public Class subclass;
 
         public Header(Class cls) {
+            this (cls, null);
+        }
+
+        public Header(Class cls, Class subclass) {
             this.cls = cls;
+            this.subclass = subclass;
             this.clsHashCode31 = 31 * cls.hashCode();
         }
     }
@@ -46,10 +53,28 @@ public class MetaMethodIndex {
         public Class cls;
 
         public Object methods, methodsForSuper, staticMethods;
+
+        public String toString () {
+            return "[" + name + ", " + cls.getName() + "]";
+        }
     }
 
-    public MetaMethodIndex() {
+    public MetaMethodIndex(CachedClass theCachedClass) {
+        this.theCachedClass = theCachedClass;
         init(DEFAULT_CAPACITY);
+
+        CachedClass last = null;
+        if (!theCachedClass.isInterface()) {
+            for (CachedClass c = theCachedClass; c != null; c = c.getCachedSuperClass()) {
+              final SingleKeyHashMap.Entry e = methodHeaders.getOrPut(c.getCachedClass());
+              e.value = new Header (c.getCachedClass(), last == null ? null : last.getCachedClass());
+              last = c;
+            }
+        }
+        else {
+            final SingleKeyHashMap.Entry e = methodHeaders.getOrPut(Object.class);
+            e.value = new Header (Object.class, theCachedClass.getCachedClass());
+        }
     }
 
     protected Entry table[];
@@ -221,6 +246,16 @@ public class MetaMethodIndex {
             copyNonPrivateMethods(e, to);
     }
 
+    public void copyAllMethodsToSuper(Header from, Header to) {
+        for (Entry e = from.head; e != null; e = e.nextClassEntry)
+            copyAllMethodsToSuper(e, to);
+    }
+
+    public void copyNonPrivateMethodsFromSuper(Header from) {
+        for (Entry e = from.head; e != null; e = e.nextClassEntry)
+            copyNonPrivateMethodsFromSuper(e);
+    }
+
     private void copyNonPrivateMethods(Entry from, Header to) {
         Object oldListOrMethod = from.methods;
         if (oldListOrMethod instanceof FastArray) {
@@ -244,6 +279,48 @@ public class MetaMethodIndex {
         }
     }
 
+    private void copyAllMethodsToSuper(Entry from, Header to) {
+        Object oldListOrMethod = from.methods;
+        if (oldListOrMethod instanceof FastArray) {
+            FastArray oldList = (FastArray) oldListOrMethod;
+            Entry e = null;
+            int len1 = oldList.size();
+            Object list[] = oldList.getArray();
+            for (int j = 0; j != len1; ++j) {
+                MetaMethod method = (MetaMethod) list[j];
+                if (e == null)
+                    e = getOrPutMethods(from.name, to);
+                e.methodsForSuper = addMethodToList(e.methodsForSuper, method);
+            }
+        } else {
+            MetaMethod method = (MetaMethod) oldListOrMethod;
+            Entry e = getOrPutMethods(from.name, to);
+            e.methodsForSuper = addMethodToList(e.methodsForSuper, method);
+        }
+    }
+
+    private void copyNonPrivateMethodsFromSuper(Entry e) {
+        Object oldListOrMethod = e.methodsForSuper;
+        if (oldListOrMethod == null)
+          return;
+        
+        if (oldListOrMethod instanceof FastArray) {
+            FastArray oldList = (FastArray) oldListOrMethod;
+            int len1 = oldList.size();
+            Object list[] = oldList.getArray();
+            for (int j = 0; j != len1; ++j) {
+                MetaMethod method = (MetaMethod) list[j];
+                if (method.isPrivate()) continue;
+                e.methods = addMethodToList(e.methods, method);
+            }
+        } else {
+            MetaMethod method = (MetaMethod) oldListOrMethod;
+            if (!method.isPrivate()) {
+                e.methods = addMethodToList(e.methods, method);
+            }
+        }
+    }
+
     public void copyNonPrivateMethodsDown(Class from, Class to) {
         copyNonPrivateNonNewMetaMethods(getHeader(from), getHeader(to));
     }
@@ -255,6 +332,9 @@ public class MetaMethodIndex {
 
     private void copyNonPrivateNonNewMetaMethods(Entry from, Header to) {
         Object oldListOrMethod = from.methods;
+        if (oldListOrMethod == null)
+          return;
+        
         if (oldListOrMethod instanceof FastArray) {
             FastArray oldList = (FastArray) oldListOrMethod;
             Entry e = null;
