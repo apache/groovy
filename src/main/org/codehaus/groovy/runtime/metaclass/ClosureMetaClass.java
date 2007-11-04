@@ -211,12 +211,13 @@ public final class ClosureMetaClass extends MetaClassImpl {
             MetaClassHelper.logMethodCall(object, methodName, originalArguments);
         }
 
-        final Object[] arguments = originalArguments == null ? EMPTY_ARGUMENTS : originalArguments;
+        final Object[] arguments = makeArguments(originalArguments, methodName); 
         final Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
         unwrap(arguments);
 
         MetaMethod method;
         final Closure closure = (Closure) object;
+
         if (CLOSURE_DO_CALL_METHOD.equals(methodName) || CLOSURE_CALL_METHOD.equals(methodName)) {
             method = pickClosureMethod(argClasses);
             if (method==null && arguments.length==1 && arguments[0] instanceof List) {
@@ -343,6 +344,16 @@ public final class ClosureMetaClass extends MetaClassImpl {
 
         if (last != null) throw last;
         throw new MissingMethodException(methodName, theClass, arguments, false);
+    }
+
+    private Object[] makeArguments(Object[] arguments, String methodName) {
+        if (arguments == null) return EMPTY_ARGUMENTS;
+        if (CLOSURE_CALL_METHOD.equals(methodName)) {
+            if (arguments.length==1 && arguments[0] instanceof Object[]) {
+                return (Object[]) arguments[0];
+            }
+        }
+        return arguments;
     }
 
     private Object invokeOnDelegationObjects(

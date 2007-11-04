@@ -505,6 +505,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
         child.errors = [1, 2, 3]
         assert child.errors.size() == 3
         //TODO disable ExpandoMetaClass
+        ExpandoMetaClass.disableGlobally()
     }
 
     def doMethods(clazz) {
