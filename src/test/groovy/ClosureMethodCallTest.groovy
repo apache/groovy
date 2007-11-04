@@ -19,7 +19,7 @@ class ClosureMethodCallTest extends GroovyTestCase {
         assert foo == "hello sam and james"
     }
     
-    void testClosureCallMethodWithObjectArray() {^
+    void testClosureCallMethodWithObjectArray() {
       // GROOVY-2266
       def args = [1] as Object[]
       def closure = {x -> x}
