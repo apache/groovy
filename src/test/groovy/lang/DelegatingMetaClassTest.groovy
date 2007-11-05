@@ -13,6 +13,7 @@ class DelegatingMetaClassTest extends GroovyTestCase {
         def metaClass = new DelegatingMetaClass(getClass())
 
         assert metaClass.isGroovyObject()
+        assertEquals DelegatingMetaClassTest, metaClass.getTheClass()
     }
 
 }

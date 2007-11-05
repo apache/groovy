@@ -44,13 +44,11 @@ public class ExpandoMetaClassCreationHandle extends MetaClassCreationHandle {
 	/* (non-Javadoc)
 	 * @see groovy.lang.MetaClassRegistry.MetaClassCreationHandle#create(java.lang.Class, groovy.lang.MetaClassRegistry)
 	 */
-	public MetaClass create(Class theClass, MetaClassRegistry registry) {
+	protected MetaClass createNormalMetaClass(Class theClass, MetaClassRegistry registry) {
 		if(theClass != ExpandoMetaClass.class) {
 			ExpandoMetaClass emc = new ExpandoMetaClass(theClass, false ,true);
 			Set modifiedSuperExpandos = retrieveModifiedSuperExpandos(emc);
             emc.refreshInheritedMethods(modifiedSuperExpandos);
-			emc.initialize();
-
 			return emc;
 		}
 		else {

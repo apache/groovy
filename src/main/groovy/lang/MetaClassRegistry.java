@@ -15,10 +15,10 @@
  */
 package groovy.lang;
 
-import java.lang.reflect.Constructor;
-
 import org.codehaus.groovy.runtime.GeneratedClosure;
 import org.codehaus.groovy.runtime.metaclass.ClosureMetaClass;
+
+import java.lang.reflect.Constructor;
 
 /**
  * A MetaClassRegistry is an object that is responsible for managing the a cache of MetaClass instances. Each
@@ -76,19 +76,26 @@ public interface MetaClassRegistry {
      * @author Jochen Theodorou
      */
     class MetaClassCreationHandle {
-        public MetaClass create(Class theClass, MetaClassRegistry registry) {
+        public final MetaClass create(Class theClass, MetaClassRegistry registry) {
 	       try {
 	           final Class customMetaClass = Class.forName("groovy.runtime.metaclass." + theClass.getName() + "MetaClass");
-	           final Constructor customMetaClassConstructor = customMetaClass.getConstructor(new Class[]{MetaClassRegistry.class, Class.class});
-	           return (MetaClass)customMetaClassConstructor.newInstance(new Object[]{registry, theClass});
-	       } catch (final ClassNotFoundException e) {
-               return createNormalMetaclass(theClass, registry);
+               if (DelegatingMetaClass.class.isAssignableFrom(customMetaClass)) {
+                   final Constructor customMetaClassConstructor = customMetaClass.getConstructor(new Class[]{MetaClass.class});
+                   MetaClass normalMetaClass = createNormalMetaClass(theClass, registry);
+                   return (MetaClass)customMetaClassConstructor.newInstance(new Object[]{normalMetaClass});
+               }
+               else {
+                   final Constructor customMetaClassConstructor = customMetaClass.getConstructor(new Class[]{MetaClassRegistry.class, Class.class});
+                   return (MetaClass)customMetaClassConstructor.newInstance(new Object[]{registry, theClass});
+               }
+           } catch (final ClassNotFoundException e) {
+               return createNormalMetaClass(theClass, registry);
 	       } catch (final Exception e) {
 	           throw new GroovyRuntimeException("Could not instantiate custom Metaclass for class: " + theClass.getName() + ". Reason: " + e, e);
 	       }
         }
 
-        private MetaClass createNormalMetaclass(Class theClass,MetaClassRegistry registry) {
+        protected MetaClass createNormalMetaClass(Class theClass,MetaClassRegistry registry) {
             if (GeneratedClosure.class.isAssignableFrom(theClass)) {
                 return new ClosureMetaClass(registry,theClass);
             } else {
