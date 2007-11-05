@@ -9,9 +9,9 @@ class CustomMetaClassTest extends GroovyTestCase{
   void testEmcCreated () {
     GroovySystem.metaClassRegistry.removeMetaClass metaClass.theClass
     ExpandoMetaClass.enableGlobally()
-    metaClass = GroovySystem.metaClassRegistry.getMetaClass(CustomMetaClassTest)
-    assertTrue metaClass instanceof groovy.runtime.metaclass.groovy.bugs.CustomMetaClassTestMetaClass
-    assertEquals  ExpandoMetaClass, metaClass.delegate.class
+        metaClass = GroovySystem.metaClassRegistry.getMetaClass(CustomMetaClassTest)
+        assertTrue metaClass instanceof groovy.runtime.metaclass.groovy.bugs.CustomMetaClassTestMetaClass
+        assertEquals  ExpandoMetaClass, metaClass.delegate.class
     ExpandoMetaClass.disableGlobally()
   }
 }
