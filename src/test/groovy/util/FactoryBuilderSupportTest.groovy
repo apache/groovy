@@ -251,6 +251,170 @@ class FactoryBuilderSupportTest extends GroovyTestCase{
                           'post_node_completion',null, node
                         ]
     }
+
+    void testWithBuilder() {
+        def b = new SpoofFactoryBuilder()
+        def c = new SpoofFactoryBuilder()
+        def factory = new XFactory( builder:c )
+        c.registerFactory( "fooz", factory )
+        c.registerFactory( "baz", factory )
+        b.foo(){
+            bar()
+            withBuilder(c){
+               fooz(){
+                  baz()
+               }   
+            }
+        }
+
+        assert b.log == [
+            'new_instance','foo',null,
+            'handle_node_attributes','x',
+                'new_instance','bar',null,
+                'handle_node_attributes','x',
+            'set_parent', 'x', 'x',
+            'set_child', 'x', 'x',
+                'node_completed','x','x',
+                'post_node_completion', 'x', 'x',
+            'node_completed',null,'x',
+            'post_node_completion',null, 'x'
+            ]
+        assert c.log == [
+            'new_instance','fooz',null,
+            'handle_node_attributes','x',
+                'new_instance','baz',null,
+                'handle_node_attributes','x',
+            'set_parent', 'x', 'x',
+            'set_child', 'x', 'x',
+                'node_completed','x','x',
+                'post_node_completion', 'x', 'x',
+            'node_completed',null,'x',
+            'post_node_completion',null, 'x'
+            ]
+    }
+
+    void testWithBuilderAndName() {
+        def b = new SpoofFactoryBuilder()
+        def c = new SpoofFactoryBuilder()
+        def factory = new XFactory( builder:c )
+        c.registerFactory( "fooz", factory )
+        c.registerFactory( "baz", factory )
+        b.foo(){
+            bar()
+            withBuilder(c,'foo'){
+               fooz(){
+                  baz()
+               }   
+            }
+        }
+
+        assert b.log == [
+            'new_instance','foo',null,
+            'handle_node_attributes','x',
+                'new_instance','bar',null,
+                'handle_node_attributes','x',
+                'set_parent', 'x', 'x',
+                'set_child', 'x', 'x',
+                'node_completed','x','x',
+                'post_node_completion', 'x', 'x',
+                'new_instance','foo','x',
+                'handle_node_attributes','x',
+                'set_parent', 'x', 'x',
+                'set_child', 'x', 'x',
+                'node_completed','x','x',
+                'post_node_completion', 'x', 'x',
+            'node_completed',null,'x',
+            'post_node_completion',null, 'x'
+            ]
+        assert c.log == [
+            'new_instance','fooz',null,
+            'handle_node_attributes','x',
+                'new_instance','baz',null,
+                'handle_node_attributes','x',
+                'set_parent', 'x', 'x',
+                'set_child', 'x', 'x',
+                'node_completed','x','x',
+                'post_node_completion', 'x', 'x',
+            'node_completed',null,'x',
+            'post_node_completion',null, 'x'
+            ]
+    }
+
+    void testWithBuilderAndNameAndAttributes() {
+        def b = new SpoofFactoryBuilder()
+        def c = new SpoofFactoryBuilder()
+        def factory = new XFactory( builder:c )
+        c.registerFactory( "fooz", factory )
+        c.registerFactory( "baz", factory )
+        b.foo(){
+            bar()
+            withBuilder(c,'foo',bar:'baz'){
+               fooz(){
+                  baz()
+               }   
+            }
+        }
+
+        assert b.log == [
+            'new_instance','foo',null,
+            'handle_node_attributes','x',
+                'new_instance','bar',null,
+                'handle_node_attributes','x',
+                'set_parent', 'x', 'x',
+                'set_child', 'x', 'x',
+                'node_completed','x','x',
+                'post_node_completion', 'x', 'x',
+                'new_instance','foo','x','bar','baz',
+                'handle_node_attributes','x','bar','baz',
+                'set_parent', 'x', 'x',
+                'set_child', 'x', 'x',
+                'node_completed','x','x',
+                'post_node_completion', 'x', 'x',
+            'node_completed',null,'x',
+            'post_node_completion',null, 'x'
+            ]
+        assert c.log == [
+            'new_instance','fooz',null,
+            'handle_node_attributes','x',
+                'new_instance','baz',null,
+                'handle_node_attributes','x',
+                'set_parent', 'x', 'x',
+                'set_child', 'x', 'x',
+                'node_completed','x','x',
+                'post_node_completion', 'x', 'x',
+            'node_completed',null,'x',
+            'post_node_completion',null, 'x'
+            ]
+    }
+
+    void testWithBuilderAndThrowAnException() {
+        def b = new SpoofFactoryBuilder()
+        def c = new SpoofFactoryBuilder()
+
+        shouldFail( RuntimeException ) {
+            b.foo(){
+                bar()
+                withBuilder(c){
+                   throw new RuntimeException("expected")
+                }
+            }
+        }
+
+        assert b.log == [
+            'new_instance','foo',null,
+            'handle_node_attributes','x',
+                'new_instance','bar',null,
+                'handle_node_attributes','x',
+                'set_parent', 'x', 'x',
+                'set_child', 'x', 'x',
+                'node_completed','x','x',
+                'post_node_completion', 'x', 'x'/*,
+            'node_completed',null,'x',
+            'post_node_completion',null, 'x'*/
+            // node foo() was not completed successfuly
+            ]
+        assert c.log == []
+    }
 }
 
 /**

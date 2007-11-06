@@ -689,6 +689,102 @@ public abstract class FactoryBuilderSupport extends Binding {
     public Object build(final String script, GroovyClassLoader loader) {
         return build(loader.parseClass(script));
     }
+
+    /**
+     * Switches the builder's proxyBuilder during the execution of a closure.<br>
+     * This is useful to temporary change the building context to another builder
+     * without the need for a contrived setup. It will also take care of restoring
+     * the previous proxyBuilder when the execution finishes, even if an exception
+     * was thrown from inside the closure.
+     *
+     * @param builder the temporary builder to switch to as proxyBuilder.
+     * @param closure the closure to be executed under the temporary builder.
+     *
+     * @throws RuntimeException - any exception the closure might have thrown during
+     * execution.
+     * @return the execution result of the closure.
+     */ 
+    public Object withBuilder( FactoryBuilderSupport builder, Closure closure ) {
+        if( builder == null || closure == null ) {
+	    return null;
+	}
+
+	Object result = null;
+        Object previousContext = proxyBuilder.getContext();
+	FactoryBuilderSupport previousProxyBuilder = proxyBuilder;
+	try {
+            proxyBuilder = builder;
+	    closure.setDelegate( builder );
+	    result = closure.call();
+	}
+	catch( RuntimeException e ) {
+            // remove contexts created after we started
+            proxyBuilder = previousProxyBuilder;
+            if (proxyBuilder.contexts.contains(previousContext)) {
+                while (proxyBuilder.getContext() != previousContext) {
+                    proxyBuilder.popContext();
+                }
+            }
+            throw e;
+	}
+	finally {
+            proxyBuilder = previousProxyBuilder;
+	}
+
+        return result;
+    }
+
+    /**
+     * Switches the builder's proxyBuilder during the execution of a closure.<br>
+     * This is useful to temporary change the building context to another builder
+     * without the need for a contrived setup. It will also take care of restoring
+     * the previous proxyBuilder when the execution finishes, even if an exception
+     * was thrown from inside the closure. Additionally it will use the closure's
+     * result as the value for the node identified by 'name'.
+     *
+     * @param builder the temporary builder to switch to as proxyBuilder.
+     * @param name the node to build on the 'parent' builder.
+     * @param closure the closure to be executed under the temporary builder.
+     *
+     * @throws RuntimeException - any exception the closure might have thrown during
+     * execution.
+     * @return a node that responds to value of name with the closure's result as its
+     * value.
+     */
+    public Object withBuilder( FactoryBuilderSupport builder, String name, Closure closure ) {
+       if( name == null ) {
+          return null;
+       }
+       Object result = proxyBuilder.withBuilder( builder, closure );
+       return proxyBuilder.invokeMethod( name, new Object[]{ result });
+    }
+
+    /**
+     * Switches the builder's proxyBuilder during the execution of a closure.<br>
+     * This is useful to temporary change the building context to another builder
+     * without the need for a contrived setup. It will also take care of restoring
+     * the previous proxyBuilder when the execution finishes, even if an exception
+     * was thrown from inside the closure. Additionally it will use the closure's
+     * result as the value for the node identified by 'name' and assign any attributes
+     * that might have been set.
+     *
+     * @param attributes additional properties for the node on the parent builder.
+     * @param builder the temporary builder to switch to as proxyBuilder.
+     * @param name the node to build on the 'parent' builder.
+     * @param closure the closure to be executed under the temporary builder.
+     *
+     * @throws RuntimeException - any exception the closure might have thrown during
+     * execution.
+     * @return a node that responds to value of name with the closure's result as its
+     * value.
+     */
+    public Object withBuilder( Map attributes, FactoryBuilderSupport builder, String name, Closure closure ) {
+       if( name == null ) {
+          return null;
+       }
+       Object result = proxyBuilder.withBuilder( builder, closure );
+       return proxyBuilder.invokeMethod( name, new Object[]{ attributes, result });
+    }
 }
 
 class FactoryInterceptorMetaClass extends DelegatingMetaClass {
