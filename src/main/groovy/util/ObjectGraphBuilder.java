@@ -47,6 +47,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
     private ReferenceResolver referenceResolver;
     private RelationNameResolver relationNameResolver;
     private Map/* <String,Class> */resolvedClasses = new HashMap/* <String,Class> */();
+    private ClassLoader classLoader;
 
     public ObjectGraphBuilder() {
         classNameResolver = new DefaultClassNameResolver();
@@ -64,6 +65,13 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
         return childPropertySetter;
     }
 
+    /**
+     * Returns the classLoader used to load a node's class.
+     */
+    public ClassLoader getClassLoader() {
+    	return classLoader;
+    }
+    
     /**
      * Returns the current ClassNameResolver.
      */
@@ -104,6 +112,13 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
         }else{
             this.childPropertySetter = new DefaultChildPropertySetter();
         }
+    }
+    
+    /**
+     * Sets the classLoader used to load a node's class.
+     */
+    public void setClassLoader( ClassLoader classLoader ){
+    	this.classLoader = classLoader;
     }
 
     /**
@@ -229,7 +244,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
 
     /**
      * Strategy for setting a child node on its parent.<br>
-     * Usefult for handling Lists/Arrays vs normal properties.
+     * Useful for handling Lists/Arrays vs normal properties.
      */
     public interface ChildPropertySetter {
         /**
@@ -410,12 +425,24 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
             String classname = ogbuilder.classNameResolver.resolveClassname( (String) name );
             Class klass = (Class) ogbuilder.resolvedClasses.get( classname );
             if( klass == null ){
-                try{
-                    klass = Class.forName( classname );
-                    ogbuilder.resolvedClasses.put( classname, klass );
-                }catch( ClassNotFoundException e ){
-                    throw new InstantiationException( e.getMessage() );
+                klass = loadClass( ogbuilder.classLoader, classname );
+                if( klass == null ){
+                	klass = loadClass( ogbuilder.getClass().getClassLoader(), classname );
                 }
+                if( klass == null ){
+            	    try{
+                        klass = Class.forName( classname );
+                    }catch( ClassNotFoundException e ){
+                        // ignore
+                    }
+                }
+                if( klass == null ){
+                	klass = loadClass( Thread.currentThread().getContextClassLoader(), classname );
+                }
+                if( klass == null ){
+                	throw new RuntimeException(new ClassNotFoundException(classname));
+                }
+                ogbuilder.resolvedClasses.put( classname, klass );
             }
 
             Map context = ogbuilder.getContext();
@@ -468,6 +495,17 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
                 ogbuilder.childPropertySetter.setChild( parent, child, parentName,
                         ogbuilder.relationNameResolver.resolveChildRelationName( parentName,
                                 parent, childName, child ) );
+            }
+        }
+        
+        private Class loadClass( ClassLoader classLoader, String classname ){
+            if( classLoader == null || classname == null ){
+            	return null;
+            }
+        	try{
+                return classLoader.loadClass( classname );
+            }catch( ClassNotFoundException e ){
+                return null;
             }
         }
     }
