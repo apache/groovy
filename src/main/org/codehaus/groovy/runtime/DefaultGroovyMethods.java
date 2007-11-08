@@ -17,6 +17,7 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.*;
 import groovy.util.*;
+import org.codehaus.groovy.runtime.metaclass.MissingPropertyExceptionNoStack;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
 import org.codehaus.groovy.runtime.typehandling.NumberMath;
@@ -2598,7 +2599,15 @@ public class DefaultGroovyMethods {
         List answer = new ArrayList(coll.size());
         for (Iterator iter = coll.iterator(); iter.hasNext();) {
             Object item = iter.next();
-            Object value = InvokerHelper.getProperty(item, property);
+            Object value;
+            try {
+                value = InvokerHelper.getProperty(item, property);
+            } catch (MissingPropertyExceptionNoStack mpe) {
+                String causeString = new MissingPropertyException(mpe.getProperty(), mpe.getType()).toString();
+                throw new MissingPropertyException("Exception evaluating property '" + property +
+                        "' for " + coll.getClass().getName() + ", Reason: " + causeString);
+            }
+            // TODO why do we flatten here?
             if (value instanceof Collection) {
                 answer.addAll((Collection) value);
             } else {
