@@ -188,7 +188,9 @@ public class PropertyTest extends GroovyTestCase {
         listOfList.add(list);
 
         List value = (List) InvokerHelper.getProperty(listOfList, "name");
-        assertArrayEquals(new Object[]{"James", "Bob"}, value.toArray());
+        Object[] objects = value.toArray();
+        List objectList = (List) objects[0];
+        assertArrayEquals(new Object[]{"James", "Bob"}, objectList.toArray());
     }
 
     public void testNodeNavigationProperty() throws Exception {

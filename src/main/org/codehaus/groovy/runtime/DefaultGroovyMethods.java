@@ -2607,12 +2607,7 @@ public class DefaultGroovyMethods {
                 throw new MissingPropertyException("Exception evaluating property '" + property +
                         "' for " + coll.getClass().getName() + ", Reason: " + causeString);
             }
-            // TODO why do we flatten here?
-            if (value instanceof Collection) {
-                answer.addAll((Collection) value);
-            } else {
-                answer.add(value);
-            }
+            answer.add(value);
         }
         return answer;
     }
