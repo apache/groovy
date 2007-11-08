@@ -600,7 +600,12 @@ public class Groovyc extends MatchingTask
                         break;
                     }
                 }
-                if (!found)
+		/*
+		 * fix for GROOVY-2284
+		 * seems like AntClassLoader doesn't check if the file
+		 * may not exist in the classpath yet
+		 */ 
+                if (!found /*&& new File(cpEntry).exists()*/)
                     antLoader.addPathElement(cpEntry);
             }
         }
