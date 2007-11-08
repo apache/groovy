@@ -27,6 +27,7 @@ class MockFor {
     MockProxyMetaClass proxy
     Demand demand
     def expect
+    Map instanceExpectations = [:]
     Class clazz
 
     MockFor(Class clazz) {
@@ -47,10 +48,30 @@ class MockFor {
         expect.verify()
     }
 
+    void verify(GroovyObject obj) {
+        instanceExpectations[obj].verify()
+    }
+
     Object proxyInstance() {
         if (!clazz.isInterface()) return null
         def instance = ProxyGenerator.instantiateAggregateFromInterface(clazz)
-        instance.metaClass = proxy
+        def thisproxy = MockProxyMetaClass.make(clazz)
+        def thisexpect = new StrictExpectation(demand)
+        thisproxy.interceptor = new MockInterceptor(expectation: thisexpect)
+        instance.metaClass = thisproxy
+        instanceExpectations[instance] = thisexpect
         return instance
+    }
+
+    Object proxyDelegateInstance() {
+        if (!clazz.isInterface()) return null
+        def instance = ProxyGenerator.instantiateAggregateFromInterface(clazz)
+        def thisproxy = MockProxyMetaClass.make(clazz)
+        def thisexpect = new StrictExpectation(demand)
+        thisproxy.interceptor = new MockInterceptor(expectation: thisexpect)
+        instance.metaClass = thisproxy
+        def wrapped = ProxyGenerator.instantiateDelegate([clazz], instance)
+        instanceExpectations[wrapped] = thisexpect
+        return wrapped
     }
 }
