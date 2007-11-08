@@ -1,11 +1,15 @@
 package org.codehaus.groovy.ant;
 
+import groovy.lang.GroovyRuntimeException;
 import groovy.util.GroovyTestCase;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.ProjectHelper;
 
 import java.io.File;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.regex.Pattern;
 
 /**
  * Unit tests for the {@link Groovy} ant task.
@@ -79,5 +83,33 @@ public class GroovyTest extends GroovyTestCase {
         assertNull(FLAG);
         project.executeTarget("groovyArgUsage");
         assertEquals("from groovytest3.GroovyTest3Class.doSomethingWithArgs() 1 2 3", FLAG);
+    }
+
+    /**
+     * Test that helpful "file name" appears in the stack trace and not just "Script1" 
+     */
+    public void testFileNameInStackTrace() {
+    	testFileNameInStackTrace("groovyErrorMsg", "\\(embedded_script_in_.*GroovyTest.xml");
+    	testFileNameInStackTrace("groovyErrorMsg_ExternalFile", "GroovyTest_errorMessage.groovy");
+    }
+
+    private void testFileNameInStackTrace(final String target, final String fileNamePattern) {
+        try {
+            project.executeTarget(target);
+            fail();
+        }
+        catch (final BuildException e) {
+            assertEquals(BuildException.class, e.getClass());
+            final Throwable cause = e.getCause();
+            assertTrue(cause instanceof GroovyRuntimeException);
+
+            final StringWriter sw = new StringWriter();
+            cause.printStackTrace(new PrintWriter(sw));
+            
+            final String stackTrace = sw.toString();
+            final Pattern pattern = Pattern.compile(fileNamePattern);
+            assertTrue("Does >" + stackTrace + "< contain >" + fileNamePattern + "<?", 
+            		pattern.matcher(stackTrace).find());
+        }
     }
 }

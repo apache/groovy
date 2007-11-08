@@ -26,6 +26,7 @@ import org.apache.tools.ant.DirectoryScanner;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.Task;
 import org.apache.tools.ant.types.*;
+import org.apache.tools.ant.util.StringUtils;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -318,12 +319,13 @@ public class Groovy extends Task
             baseClassLoader = GroovyShell.class.getClassLoader();
         }
 
+        final String scriptName = computeScriptName();
         final GroovyClassLoader classLoader = new GroovyClassLoader(baseClassLoader);
         addClassPathes(classLoader);
         
         final GroovyShell groovy = new GroovyShell(classLoader, new Binding(), configuration);
         try {
-            final Script script = groovy.parse(txt);
+            final Script script = groovy.parse(txt, scriptName);
             script.setProperty("ant", new AntBuilder(this));
             script.setProperty("project", project);
             script.setProperty("properties", new AntProjectPropertiesDelegate(project));
@@ -334,13 +336,34 @@ public class Groovy extends Task
                 script.setProperty("pom", mavenPom);
             }
             script.run();
-        } catch (CompilationFailedException e) {
+        }
+        catch (final CompilationFailedException e) {
             StringWriter writer = new StringWriter();
             new ErrorReporter( e, false ).write( new PrintWriter(writer) );
             String message = writer.toString();
-            throw new BuildException("Script Failed: "+ message, getLocation());
+            throw new BuildException("Script Failed: "+ message, e, getLocation());
         }
     }
+
+
+    /**
+     * Try to build a script name for the script of the groovy task to have an helpful value in stack traces in case of exception
+     * @return the name to use when compiling the script
+     */
+	private String computeScriptName() {
+		if (srcFile != null) {
+			return srcFile.getAbsolutePath();
+		}
+		else {
+			String name = "embedded_script_in_";
+			if (getLocation().getFileName().length() > 0)
+				name += getLocation().getFileName().replaceAll("[^\\w_\\.-]", "_");
+			else
+				name += "groovy_Ant_task";
+
+			return name;
+		}
+	}
 
 
 	/**

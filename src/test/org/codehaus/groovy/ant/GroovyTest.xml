@@ -59,6 +59,22 @@
         </groovy>
     </target>
 
+    <target name="groovyErrorMsg" depends="defineTask">
+        <groovy>
+        	// should produce an error message
+
+        	def f = {
+        		t.notExisting()
+        	}
+
+        	f()
+        </groovy>
+    </target>
+
+    <target name="groovyErrorMsg_ExternalFile" depends="defineTask">
+        <groovy src="GroovyTest_errorMessage.groovy"/>
+    </target>
+
     <target name="defineTask">
         <taskdef name="groovy" classname="org.codehaus.groovy.ant.Groovy"/>
     </target>
