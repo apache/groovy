@@ -357,7 +357,7 @@ public class Groovy extends Task
 		else {
 			String name = "embedded_script_in_";
 			if (getLocation().getFileName().length() > 0)
-				name += getLocation().getFileName().replaceAll("[^\\w_\\.-]", "_");
+				name += getLocation().getFileName().replaceAll("[^\\w_\\.]", "_");
 			else
 				name += "groovy_Ant_task";
 
