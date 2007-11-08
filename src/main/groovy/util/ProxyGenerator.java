@@ -34,6 +34,7 @@ import java.util.*;
  * @author Guillaume Laforge
  */
 public class ProxyGenerator {
+    public static boolean debug = false;
 
     public static Object instantiateAggregateFromBaseClass(Class clazz) {
         return instantiateAggregateFromBaseClass(null, clazz);
@@ -168,11 +169,73 @@ public class ProxyGenerator {
             cl = c.getClassLoader();
         }
         GroovyShell shell = new GroovyShell(cl, binding);
+        if (debug) System.out.println("proxy source:\n------------------\n" + buffer.toString() + "\n------------------");
         try {
             return shell.evaluate(buffer.toString());
         } catch (MultipleCompilationErrorsException err) {
             throw new GroovyCastException(map, baseClass);
         }
+    }
+
+    public static Object instantiateDelegate(List interfaces, Object delegate) {
+        List interfacesToImplement = new ArrayList();
+        if (interfaces != null) {
+            interfacesToImplement = interfaces;
+        }
+        String name = shortName(delegate.getClass().getName()) + "_delegateProxy";
+        StringBuffer buffer = new StringBuffer();
+
+        // add class header and fields
+        buffer.append("import org.codehaus.groovy.runtime.InvokerHelper\nclass ").append(name);
+        for (int i = 0; i < interfacesToImplement.size(); i++) {
+            Class thisInterface = (Class) interfacesToImplement.get(i);
+            if (i == 0) {
+                buffer.append(" implements ");
+            } else {
+                buffer.append(", ");
+            }
+            buffer.append(thisInterface.getName());
+        }
+        buffer.append(" {\n").append("    private delegate\n    ");
+
+        // add constructor
+        buffer.append(name).append("(delegate) {\n");
+        buffer.append("        this.delegate = delegate\n");
+        buffer.append("    }\n");
+
+        // add interface methods
+        List interfaceMethods = new ArrayList();
+        for (int i = 0; i < interfacesToImplement.size(); i++) {
+            Class thisInterface = (Class) interfacesToImplement.get(i);
+            interfaceMethods.addAll(DefaultGroovyMethods.toList(thisInterface.getMethods()));
+            interfaceMethods.addAll(getInheritedMethods(thisInterface));
+        }
+        for (int i = 0; i < interfaceMethods.size(); i++) {
+            Method method = (Method) interfaceMethods.get(i);
+            addWrappedCall(buffer, method);
+        }
+
+        // end class
+
+        buffer.append("}\n").append("new ").append(name);
+        buffer.append("(delegate)");
+
+        Binding binding = new Binding();
+        binding.setVariable("delegate", delegate);
+        ClassLoader cl = delegate.getClass().getClassLoader();
+        GroovyShell shell = new GroovyShell(cl, binding);
+        if (debug) System.out.println("proxy source:\n------------------\n" + buffer.toString() + "\n------------------");
+        try {
+            return shell.evaluate(buffer.toString());
+        } catch (MultipleCompilationErrorsException err) {
+            throw new GroovyCastException(delegate, Proxy.class);
+        }
+    }
+
+    private static void addWrappedCall(StringBuffer buffer, Method method) {
+        Class[] parameterTypes = addMethodPrefix(buffer, method);
+        addWrappedMethodBody(buffer, method, parameterTypes);
+        addMethodSuffix(buffer);
     }
 
     private static boolean containsEquivalentMethod(List publicAndProtectedMethods, Method candidate) {
@@ -248,8 +311,20 @@ public class ProxyGenerator {
         buffer.append(")");
     }
 
+    private static void addWrappedMethodBody(StringBuffer buffer, Method method, Class[] parameterTypes) {
+        buffer.append("\n        def args = [");
+        for (int j = 0; j < parameterTypes.length; j++) {
+            if (j != 0) {
+                buffer.append(", ");
+            }
+            buffer.append("p").append(j);
+        }
+        buffer.append("]\n        ");
+        buffer.append("InvokerHelper.invokeMethod(delegate, '").append(method.getName()).append("', args)\n");
+    }
+
     private static void addMethodSuffix(StringBuffer buffer) {
-        buffer.append(" }\n");
+        buffer.append("    }\n");
     }
 
     /**
