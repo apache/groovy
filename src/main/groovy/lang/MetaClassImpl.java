@@ -763,12 +763,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
         unwrap(arguments);
 
-        MetaMethod method = getMethodWithoutCaching(sender, methodName, argClasses, isCallToSuper);
+        MetaMethod method = getMethodWithCaching(sender, methodName, argClasses, isCallToSuper);
 
         if (method == null && arguments.length == 1 && arguments[0] instanceof List) {
             Object[] newArguments = ((List) arguments[0]).toArray();
             Class[] newArgClasses = MetaClassHelper.convertToTypeArray(newArguments);
-            method = getMethodWithoutCaching(sender, methodName, newArgClasses, isCallToSuper);
+            method = getMethodWithCaching(sender, methodName, newArgClasses, isCallToSuper);
             if (method != null) {
                 method = new TransformMetaMethod(method) {
                     public Object invoke(Object object, Object[] arguments) {
