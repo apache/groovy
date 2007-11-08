@@ -29,6 +29,7 @@ import java.util.List
 import javax.swing.*
 import javax.swing.event.CaretEvent
 import javax.swing.event.CaretListener
+import javax.swing.event.DocumentListener
 import javax.swing.text.Style
 import javax.swing.text.StyleConstants
 import javax.swing.text.StyleContext
@@ -511,7 +512,7 @@ class Console implements CaretListener {
         // add listeners
         frame.windowClosing = this.&exit
         inputArea.addCaretListener(this)
-        inputArea.document.undoableEditHappened = { setDirty(true) }
+        inputArea.document.addDocumentListener({ setDirty(true) } as DocumentListener)
 
         rootElement = inputArea.document.defaultRootElement
 
