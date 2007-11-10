@@ -1701,15 +1701,17 @@ public class DefaultGroovyMethods {
         int from = normaliseIndex(DefaultTypeTransformation.intUnbox(range.getFrom()), text.length());
         int to = normaliseIndex(DefaultTypeTransformation.intUnbox(range.getTo()), text.length());
 
+        boolean reverse = range.isReverse();
         // If this is a backwards range, reverse the arguments to substring.
         if (from > to) {
             int tmp = from;
             from = to;
             to = tmp;
+            reverse = !reverse;
         }
 
         CharSequence sequence = text.subSequence(from, to + 1);
-        return range.isReverse() ? reverse((String) sequence) : sequence;
+        return reverse ? reverse((String) sequence) : sequence;
     }
 
     /**

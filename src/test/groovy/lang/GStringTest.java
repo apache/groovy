@@ -71,12 +71,6 @@ public class GStringTest extends GroovyTestCase {
         DummyGString a = new DummyGString(new Object[]{"James"});
         DummyGString b = new DummyGString(new Object[]{"Bob"});
         GString result = a.plus(b);
-
-        //        System.out.println("Strings: " +
-        // InvokerHelper.toString(result.getStrings()));
-        //        System.out.println("Values: " +
-        // InvokerHelper.toString(result.getValues()));
-
         assertEquals("Hello James!Hello Bob!", result.toString());
     }
 
@@ -84,13 +78,6 @@ public class GStringTest extends GroovyTestCase {
         DummyGString a = new DummyGString(new Object[]{"James"}, new String[]{"Hello "});
         DummyGString b = new DummyGString(new Object[]{"Bob"}, new String[]{"Hello "});
         GString result = a.plus(b);
-
-        //        System.out.println("Found: " + result);
-        //        System.out.println("Strings: " +
-        // InvokerHelper.toString(result.getStrings()));
-        //        System.out.println("Values: " +
-        // InvokerHelper.toString(result.getValues()));
-
         assertEquals("Hello JamesHello Bob", result.toString());
     }
 
