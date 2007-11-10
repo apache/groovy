@@ -43,7 +43,15 @@ class BeanFactory extends AbstractFactory {
         if (SwingBuilder.checkValueIsTypeNotString(value, name, beanClass)) {
             return value
         } else {
-            return beanClass.newInstance()
+            Object bean = beanClass.newInstance()
+            if (value instanceof String) {
+                try {
+                    bean.text = value
+                } catch (MissingPropertyException mpe) {
+                    throw new RuntimeException("In $name value argument of type String cannot be applied to property text:");
+                }
+            }
+            return bean
         }
     }
 }

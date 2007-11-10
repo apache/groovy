@@ -17,6 +17,8 @@
 package groovy.swing.factory
 
 import groovy.swing.SwingBuilder
+import java.awt.Component
+import java.awt.Window
 
 public class WidgetFactory extends AbstractFactory {
 
@@ -41,5 +43,22 @@ public class WidgetFactory extends AbstractFactory {
         } else {
             throw new RuntimeException("$name must have either a value argument or an attribute named $name that must be of type $restrictedType.name");
         }
-    }    
+    }
+
+    public void setChild(FactoryBuilderSupport builder, Object parent, Object child) {
+        if (!(child instanceof Component) || (child instanceof Window)) {
+            return;
+        }
+        try {
+            def constraints = builder.context.constraints
+            if (constraints != null) {
+                parent.add(child, constraints)
+            } else {
+                parent.add(child)
+            }
+        } catch (MissingPropertyException mpe) {
+            parent.add(child)
+        }
+    }
+
 }
