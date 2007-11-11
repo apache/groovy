@@ -2887,7 +2887,12 @@ public class DefaultGroovyMethods {
         try {
             return asType((Object) map, clazz);
         } catch (GroovyCastException ce) {
-            return ProxyGenerator.instantiateAggregateFromBaseClass(map, clazz);
+            try {
+                return ProxyGenerator.instantiateAggregateFromBaseClass(map, clazz);
+            } catch (GroovyRuntimeException cause) {
+                throw new GroovyCastException("Error casting map to " + clazz.getName() +
+                        ", Reason: " + cause.getMessage());
+            }
         }
     }
 

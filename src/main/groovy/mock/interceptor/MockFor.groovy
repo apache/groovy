@@ -16,6 +16,8 @@
 
 package groovy.mock.interceptor
 
+import java.lang.reflect.Modifier
+
 /**
     Facade over the Mocking details.
     A Mock's expectation is always sequence dependent and it's use always ends with a verify().
@@ -53,10 +55,10 @@ class MockFor {
     }
 
     Object proxyInstance() {
-        if (!clazz.isInterface()) return null
-        def instance = ProxyGenerator.instantiateAggregateFromInterface(clazz)
+        def instance = getInstance(clazz, null)
         def thisproxy = MockProxyMetaClass.make(clazz)
-        def thisexpect = new StrictExpectation(demand)
+        def thisdemand = new Demand(recorded: new ArrayList(demand.recorded))
+        def thisexpect = new StrictExpectation(thisdemand)
         thisproxy.interceptor = new MockInterceptor(expectation: thisexpect)
         instance.metaClass = thisproxy
         instanceExpectations[instance] = thisexpect
@@ -64,14 +66,34 @@ class MockFor {
     }
 
     Object proxyDelegateInstance() {
-        if (!clazz.isInterface()) return null
-        def instance = ProxyGenerator.instantiateAggregateFromInterface(clazz)
+        def instance = getInstance(clazz, null)
         def thisproxy = MockProxyMetaClass.make(clazz)
-        def thisexpect = new StrictExpectation(demand)
+        def thisdemand = new Demand(recorded: new ArrayList(demand.recorded))
+        def thisexpect = new StrictExpectation(thisdemand)
         thisproxy.interceptor = new MockInterceptor(expectation: thisexpect)
         instance.metaClass = thisproxy
-        def wrapped = ProxyGenerator.instantiateDelegate([clazz], instance)
+        def wrapped = null
+        if (clazz.isInterface()) {
+            wrapped = ProxyGenerator.instantiateDelegate([clazz], instance)
+        } else {
+            wrapped = ProxyGenerator.instantiateDelegate(instance)
+        }
         instanceExpectations[wrapped] = thisexpect
         return wrapped
     }
+
+    private getInstance(Class clazz, args) {
+        def instance = null
+        if (clazz.isInterface()) {
+            instance = ProxyGenerator.instantiateAggregateFromInterface(clazz)
+        } else if (Modifier.isAbstract(clazz.modifiers)) {
+            instance = ProxyGenerator.instantiateAggregateFromBaseClass(clazz, args)
+        } else if (args != null) {
+            instance = ProxyGenerator.instantiateDelegate(clazz.newInstance(args))
+        } else {
+            instance = ProxyGenerator.instantiateDelegate(clazz.newInstance())
+        }
+        return instance
+    }
+
 }

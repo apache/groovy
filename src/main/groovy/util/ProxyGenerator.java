@@ -15,12 +15,9 @@
  */
 package groovy.util;
 
-import groovy.lang.Binding;
-import groovy.lang.GroovyObjectSupport;
-import groovy.lang.GroovyShell;
+import groovy.lang.*;
 import org.codehaus.groovy.control.MultipleCompilationErrorsException;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
-import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -173,8 +170,12 @@ public class ProxyGenerator {
         try {
             return shell.evaluate(buffer.toString());
         } catch (MultipleCompilationErrorsException err) {
-            throw new GroovyCastException(map, baseClass);
+            throw new GroovyRuntimeException("Error creating proxy: " + err.getMessage());
         }
+    }
+
+    public static Object instantiateDelegate(Object delegate) {
+        return instantiateDelegate(null, delegate);
     }
 
     public static Object instantiateDelegate(List interfaces, Object delegate) {
@@ -203,6 +204,12 @@ public class ProxyGenerator {
         buffer.append("        this.delegate = delegate\n");
         buffer.append("    }\n");
 
+        List objectMethods = DefaultGroovyMethods.toList(Object.class.getMethods());
+        objectMethods.addAll(getInheritedMethods(Object.class));
+
+        List groovyObjectMethods = DefaultGroovyMethods.toList(GroovyObject.class.getMethods());
+        groovyObjectMethods.addAll(getInheritedMethods(GroovyObject.class));
+
         // add interface methods
         List interfaceMethods = new ArrayList();
         for (int i = 0; i < interfacesToImplement.size(); i++) {
@@ -212,7 +219,21 @@ public class ProxyGenerator {
         }
         for (int i = 0; i < interfaceMethods.size(); i++) {
             Method method = (Method) interfaceMethods.get(i);
-            addWrappedCall(buffer, method);
+            if (!containsEquivalentMethod(objectMethods, method) &&
+                    !containsEquivalentMethod(groovyObjectMethods, method)) {
+                addWrappedCall(buffer, method);
+            }
+        }
+        List additionalMethods = new ArrayList();
+        additionalMethods.addAll(DefaultGroovyMethods.toList(delegate.getClass().getMethods()));
+        additionalMethods.addAll(getInheritedMethods(delegate.getClass()));
+        for (int i = 0; i < additionalMethods.size(); i++) {
+            Method method = (Method) additionalMethods.get(i);
+            if (!containsEquivalentMethod(interfaceMethods, method) &&
+                    !containsEquivalentMethod(objectMethods, method) &&
+                    !containsEquivalentMethod(groovyObjectMethods, method)) {
+                addWrappedCall(buffer, method);
+            }
         }
 
         // end class
@@ -228,7 +249,7 @@ public class ProxyGenerator {
         try {
             return shell.evaluate(buffer.toString());
         } catch (MultipleCompilationErrorsException err) {
-            throw new GroovyCastException(delegate, Proxy.class);
+            throw new GroovyRuntimeException("Error creating proxy: " + err.getMessage());
         }
     }
 
@@ -238,6 +259,7 @@ public class ProxyGenerator {
         addMethodSuffix(buffer);
     }
 
+    // TODO: make this smarter
     private static boolean containsEquivalentMethod(List publicAndProtectedMethods, Method candidate) {
         for (int i = 0; i < publicAndProtectedMethods.size(); i++) {
             Method method = (Method) publicAndProtectedMethods.get(i);
