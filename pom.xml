@@ -309,6 +309,24 @@
                 <role>Developer</role>
             </roles>
         </developer>
+        <developer>
+            <name>James Williams</name>
+            <id>jwill</id>
+            <email></email>
+            <organization></organization>
+            <roles>
+                <role>Developer</role>
+            </roles>
+        </developer>
+        <developer>
+            <name>Andres Almiray</name>
+            <id>aalmiray</id>
+            <email>aalmiray@users.sourceforge.net</email>
+            <organization></organization>
+            <roles>
+                <role>Developer</role>
+            </roles>
+        </developer>
     </developers>
 
     <contributors>
