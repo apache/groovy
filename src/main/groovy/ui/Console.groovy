@@ -37,6 +37,7 @@ import javax.swing.text.StyledDocument
 import javax.swing.text.Element
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.StackTraceUtils
+import java.util.prefs.Preferences
 
 /**
  * Groovy Swing console.
@@ -88,6 +89,7 @@ class Console implements CaretListener {
     int textSelectionStart  // keep track of selections in inputArea
     int textSelectionEnd
     def scriptFile
+    File currentFileChooserDir = new File(Preferences.userNodeForPackage(Console).get('currentFileChooserDir', '.')) 
 
     // Running scripts
     GroovyShell shell
@@ -851,10 +853,12 @@ class Console implements CaretListener {
     }
 
     def selectFilename(name = "Open") {
-        def fc = new JFileChooser()
+        def fc = new JFileChooser(currentFileChooserDir)
         fc.fileSelectionMode = JFileChooser.FILES_ONLY
         fc.acceptAllFileFilterUsed = true
         if (fc.showDialog(frame, name) == JFileChooser.APPROVE_OPTION) {
+            currentFileChooserDir = fc.currentDirectory
+            Preferences.userNodeForPackage(Console).put('currentFileChooserDir', currentFileChooserDir.path)
             return fc.selectedFile
         } else {
             return null
