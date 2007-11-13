@@ -11,8 +11,10 @@ class CustomMetaClassTest extends GroovyTestCase{
         def firstInstance = "first"
         assertEquals "first", firstInstance.toString()
 
-        def myMetaClass = new MyDelegatingMetaClass(String.class)
         def invoker = InvokerHelper.instance
+        def stored = invoker.metaRegistry.getMetaClass(String.class)
+        def myMetaClass = new MyDelegatingMetaClass(String.class)
+        invoker.metaRegistry.removeMetaClass String.class
         invoker.metaRegistry.setMetaClass(String.class, myMetaClass)
 
         /*
@@ -28,6 +30,9 @@ class CustomMetaClassTest extends GroovyTestCase{
          */
         assertEquals "changed first", firstInstance.toString()
         assertEquals "changed second", secondInstance.toString()
+
+        invoker.metaRegistry.removeMetaClass String.class
+        invoker.metaRegistry.setMetaClass String.class, stored
     }
 
   void testNormalCreated () {
