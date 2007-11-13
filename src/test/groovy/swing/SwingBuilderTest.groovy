@@ -17,24 +17,25 @@
 
 package groovy.swing
 
+import javax.swing.JPopupMenu.Separator as JPopupMenu_Separator
+import javax.swing.JToolBar.Separator as JToolBar_Separator
+
+import groovy.ui.Console
 import java.awt.*
 import java.awt.event.InputEvent
 import java.awt.event.KeyEvent
 import java.text.SimpleDateFormat
 import javax.swing.*
-import javax.swing.JPopupMenu.Separator as JPopupMenu_Separator
-import javax.swing.JToolBar.Separator as JToolBar_Separator
+import javax.swing.border.TitledBorder
+import javax.swing.plaf.metal.MetalLookAndFeel
 import javax.swing.text.DateFormatter
 import javax.swing.text.NumberFormatter
-import javax.swing.plaf.metal.MetalLookAndFeel
-import javax.swing.border.TitledBorder
-import groovy.ui.Console
 
 class SwingBuilderTest extends GroovyTestCase {
 
-    private boolean headless
+    private static boolean headless
 
-    public SwintBuilderTest() {
+    static {
         try {
             new JFrame("testing")
             headless = false
