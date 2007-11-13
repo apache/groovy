@@ -18,14 +18,12 @@ package groovy.util;
 import groovy.lang.Closure;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovyShell;
+import junit.framework.TestCase;
+import org.codehaus.groovy.runtime.InvokerHelper;
 
-import java.util.logging.Logger;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-
-import junit.framework.TestCase;
-
-import org.codehaus.groovy.runtime.InvokerHelper;
+import java.util.logging.Logger;
 
 /**
  * A default JUnit TestCase in Groovy. This provides a number of helper methods
@@ -241,13 +239,7 @@ public class GroovyTestCase extends TestCase {
         try {
             code.call();
         } catch (GroovyRuntimeException gre) {
-            th = gre;
-            while (th.getCause()!=null && th.getCause()!=gre){ // if wrapped, find the root cause
-                th=th.getCause();
-                if (th!=gre && (th instanceof GroovyRuntimeException)) {
-                    gre = (GroovyRuntimeException) th;
-                }
-            }            
+            th = unwrap(gre);
         } catch (Throwable e) {
             th = e;
         }
@@ -361,4 +353,11 @@ public class GroovyTestCase extends TestCase {
     }
 
     private static final ThreadLocal notYetImplementedFlag = new ThreadLocal();
+
+    private Throwable unwrap (GroovyRuntimeException gre) {
+        Throwable th = gre;
+        if (th.getCause() != null && th.getCause() != gre) th = th.getCause();
+        if (th != gre && (th instanceof GroovyRuntimeException)) return unwrap((GroovyRuntimeException) th);
+        return th;
+    }
 }

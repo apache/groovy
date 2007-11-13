@@ -40,4 +40,31 @@ class GroovyTestCaseTest extends GroovyTestCase {
         assertEquals 'x', msg
     }
 
+    void testShouldFail() {
+        shouldFail(MyException) {
+            new Foo().createBar()
+        }
+    }
+
+    void testShouldFailWithNestedException() {
+        shouldFail(MyException) {
+            new Foo().createBarWithNestedException()
+        }
+    }
+}
+
+class Foo {
+    def createBar() {
+        throw new MyException(null)
+    }
+
+    def createBarWithNestedException() {
+        throw new MyException(new NullPointerException())
+    }
+}
+
+class MyException extends RuntimeException {
+    MyException(Throwable cause) {
+        super(cause);
+    }
 }
