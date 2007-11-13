@@ -655,13 +655,13 @@ class SwingBuilderTest extends GroovyTestCase {
         if (headless) return
 
         def swing = new SwingBuilder()
-        def msg = shouldFail(RuntimeException){
+        def msg = shouldFailWithCause(RuntimeException){
             def frame = swing.frame(){
                 tr()
             }
         }
         assert msg == "'tr' must be within a 'tableLayout'"
-        msg = shouldFail(RuntimeException){
+        msg = shouldFailWithCause(RuntimeException){
             def frame = swing.frame(){
                 tableLayout(){
                     td()
