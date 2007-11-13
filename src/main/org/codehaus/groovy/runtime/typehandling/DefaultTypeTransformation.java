@@ -545,7 +545,7 @@ public class DefaultTypeTransformation {
         if (left instanceof List && right instanceof List) {
             return DefaultGroovyMethods.equals((List) left, (List) right);
         }
-        return left.equals(right);
+        return ((Boolean) InvokerHelper.invokeMethod(left, "equals", right)).booleanValue();
     }
 
     public static boolean compareArrayEqual(Object left, Object right) {

@@ -20,6 +20,7 @@ import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovyShell;
 import junit.framework.TestCase;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -351,6 +352,22 @@ public class GroovyTestCase extends TestCase {
             && returnType.equals(Void.TYPE)
             && Modifier.isPublic(method.getModifiers());
     }
+
+    public static void assertEquals(String message, Object expected, Object actual) {
+        if (expected == null && actual == null)
+			return;
+		if (expected != null && DefaultTypeTransformation.compareEqual(expected, actual))
+			return;
+		failNotEquals(message, expected, actual);
+    }
+
+    public static void assertEquals(Object expected, Object actual) {
+	    assertEquals(null, expected, actual);
+	}
+
+	public static void assertEquals(String expected, String actual) {
+	    assertEquals(null, expected, actual);
+	}
 
     private static final ThreadLocal notYetImplementedFlag = new ThreadLocal();
 
