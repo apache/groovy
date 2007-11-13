@@ -15,10 +15,7 @@
  */
 package org.codehaus.groovy.runtime.metaclass;
 
-import groovy.lang.GroovyRuntimeException;
-import groovy.lang.GroovySystem;
-import groovy.lang.MetaClass;
-import groovy.lang.MetaClassRegistry;
+import groovy.lang.*;
 import org.codehaus.groovy.classgen.ReflectorGenerator;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedMethod;
@@ -80,7 +77,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     
     public MetaClassRegistryImpl(final int loadDefault, final boolean useAccessible) {
         this.useAccessible = useAccessible;
-        
+
         if (loadDefault == LOAD_DEFAULT) {
             HashMap map = new HashMap();
 
@@ -97,6 +94,13 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         }
 
         installMetaClassCreationHandle();
+
+        final MetaClass emcMetaClass = getMetaClassFor(ExpandoMetaClass.class);
+        emcMetaClass.initialize();
+        constantMetaClasses.put(ExpandoMetaClass.class,emcMetaClass);
+        constantMetaClassCount = 1;
+
+
    }
 
     /**
