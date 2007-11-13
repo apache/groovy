@@ -2,20 +2,6 @@ package groovy.bugs
 
 import org.codehaus.groovy.runtime.InvokerHelper
 
-class MyDelegatingMetaClass extends groovy.lang.DelegatingMetaClass
-{
-    MyDelegatingMetaClass(final Class a_class)
-    {
-        super(a_class);
-        initialize()
-    }
-
-    public Object invokeMethod(Object a_object, String a_methodName, Object[] a_arguments)
-    {
-        return "changed ${super.invokeMethod(a_object, a_methodName, a_arguments)}"
-    }
-}
-
 class CustomMetaClassTest extends GroovyTestCase{
     void testReplaceMetaClass() {
         /*
@@ -58,3 +44,18 @@ class CustomMetaClassTest extends GroovyTestCase{
     ExpandoMetaClass.disableGlobally()
   }
 }
+
+class MyDelegatingMetaClass extends groovy.lang.DelegatingMetaClass
+{
+    MyDelegatingMetaClass(final Class a_class)
+    {
+        super(a_class);
+        initialize()
+    }
+
+    public Object invokeMethod(Object a_object, String a_methodName, Object[] a_arguments)
+    {
+        return "changed ${super.invokeMethod(a_object, a_methodName, a_arguments)}"
+    }
+}
+
