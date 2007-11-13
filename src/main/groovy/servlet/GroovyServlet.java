@@ -142,7 +142,8 @@ public class GroovyServlet extends AbstractHttpServlet {
             if (e == null) {
                 error.append(" Script processing failed.");
                 error.append(runtimeException.getMessage());
-                error.append(runtimeException.getStackTrace()[0].toString());
+                if (runtimeException.getStackTrace().length > 0)
+                    error.append(runtimeException.getStackTrace()[0].toString());
                 servletContext.log(error.toString());
                 System.err.println(error.toString());
                 runtimeException.printStackTrace(System.err);
@@ -164,7 +165,8 @@ public class GroovyServlet extends AbstractHttpServlet {
              */
             servletContext.log("An error occurred processing the request", runtimeException);
             error.append(e.getMessage());
-            error.append(e.getStackTrace()[0].toString());
+            if (e.getStackTrace().length > 0)
+                error.append(e.getStackTrace()[0].toString());
             servletContext.log(e.toString());
             System.err.println(e.toString());
             runtimeException.printStackTrace(System.err);
