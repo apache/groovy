@@ -55,7 +55,11 @@ class MockFor {
     }
 
     Object proxyInstance() {
-        def instance = getInstance(clazz, null)
+        proxyInstance(null)
+    }
+
+    Object proxyInstance(args) {
+        def instance = getInstance(clazz, args)
         def thisproxy = MockProxyMetaClass.make(clazz)
         def thisdemand = new Demand(recorded: new ArrayList(demand.recorded))
         def thisexpect = new StrictExpectation(thisdemand)
@@ -66,7 +70,11 @@ class MockFor {
     }
 
     Object proxyDelegateInstance() {
-        def instance = getInstance(clazz, null)
+        proxyInstance(null)
+    }
+
+    Object proxyDelegateInstance(args) {
+        def instance = getInstance(clazz, args)
         def thisproxy = MockProxyMetaClass.make(clazz)
         def thisdemand = new Demand(recorded: new ArrayList(demand.recorded))
         def thisexpect = new StrictExpectation(thisdemand)
@@ -89,9 +97,9 @@ class MockFor {
         } else if (Modifier.isAbstract(clazz.modifiers)) {
             instance = ProxyGenerator.instantiateAggregateFromBaseClass(clazz, args)
         } else if (args != null) {
-            instance = ProxyGenerator.instantiateDelegate(clazz.newInstance(args))
+            instance = clazz.newInstance(args)
         } else {
-            instance = ProxyGenerator.instantiateDelegate(clazz.newInstance())
+            instance = clazz.newInstance()
         }
         return instance
     }
