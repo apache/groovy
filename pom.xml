@@ -467,6 +467,7 @@
             <artifactId>commons-cli</artifactId>
             <version>1.0</version>
             <scope>compile</scope>
+            <optional>true</optional>
             <exclusions>
                 <exclusion>
                     <groupId>commons-lang</groupId>
