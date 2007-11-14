@@ -112,7 +112,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     private boolean resolveToInner (ClassNode type) {
-        String name = type.getName();
+        String name = type.getName(), saved = name;
         while (true) {
             int len = name.lastIndexOf('.');
             if (len == -1)
@@ -122,6 +122,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             if (resolve(type))
               return true;
         }
+        type.setName(saved);
         return false;
     }
 
