@@ -1,7 +1,5 @@
 package groovy.mock.interceptor
 
-import groovy.mock.interceptor.MockFor
-
 class MockForJavaTest extends GroovyTestCase {
     void testIterator() {
         def iteratorContext = new MockFor(Iterator)

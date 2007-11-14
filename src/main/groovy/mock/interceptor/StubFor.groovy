@@ -16,6 +16,8 @@
 
 package groovy.mock.interceptor
 
+import java.lang.reflect.Modifier
+
 /**
     Facade over the Stubbing details.
     A Stub's expectation is sequence independent and use of verify() is left to the user.
@@ -29,8 +31,11 @@ class StubFor {
     MockProxyMetaClass proxy
     Demand demand
     def expect
+    Map instanceExpectations = [:]
+    Class clazz
 
     StubFor(Class clazz) {
+        this.clazz = clazz
         proxy = MockProxyMetaClass.make(clazz)
         demand = new Demand()
         expect = new LooseExpectation(demand)
