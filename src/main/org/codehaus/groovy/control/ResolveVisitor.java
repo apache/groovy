@@ -111,8 +111,23 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         super.visitProperty(node);
     }
 
+    private boolean resolveToInner (ClassNode type) {
+        String name = type.getName();
+        while (true) {
+            int len = name.lastIndexOf('.');
+            if (len == -1)
+              break;
+            name = name.substring(0,len) + "$" + name.substring(len+1);
+            type.setName(name);
+            if (resolve(type))
+              return true;
+        }
+        return false;
+    }
+
     private void resolveOrFail(ClassNode type, String msg, ASTNode node) {
         if (resolve(type)) return;
+        if (resolveToInner(type)) return;
         addError("unable to resolve class " + type.getName() + " " + msg, node);
     }
 
