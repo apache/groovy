@@ -367,37 +367,40 @@ public class InvokerHelper {
     }
 
     public static Script createScript(Class scriptClass, Binding context) {
+        Script script = null;
         // for empty scripts
         if (scriptClass == null) {
-            return new Script() {
+            script = new Script() {
                 public Object run() {
                     return null;
                 }
             };
-        }
-        try {
-            final GroovyObject object = (GroovyObject) scriptClass.newInstance();
-            Script script = null;
-            if (object instanceof Script) {
-                script = (Script) object;
-            } else {
-                // it could just be a class, so lets wrap it in a Script wrapper
-                // though the bindings will be ignored
-                script = new Script() {
-                    public Object run() {
-                        object.invokeMethod("main", EMPTY_MAIN_ARGS);
-                        return null;
-                    }
-                };
-                setProperties(object, context.getVariables());
+        } else {
+            try {
+                final GroovyObject object = (GroovyObject) scriptClass
+                        .newInstance();
+                if (object instanceof Script) {
+                    script = (Script) object;
+                } else {
+                    // it could just be a class, so lets wrap it in a Script
+                    // wrapper
+                    // though the bindings will be ignored
+                    script = new Script() {
+                        public Object run() {
+                            object.invokeMethod("main", EMPTY_MAIN_ARGS);
+                            return null;
+                        }
+                    };
+                    setProperties(object, context.getVariables());
+                }
+            } catch (Exception e) {
+                throw new GroovyRuntimeException(
+                        "Failed to create Script instance for class: "
+                                + scriptClass + ". Reason: " + e, e);
             }
-            script.setBinding(context);
-            return script;
         }
-        catch (Exception e) {
-            throw new GroovyRuntimeException("Failed to create Script instance for class: " + scriptClass + ". Reason: " + e,
-                    e);
-        }
+        script.setBinding(context);
+        return script;
     }
 
     /**
