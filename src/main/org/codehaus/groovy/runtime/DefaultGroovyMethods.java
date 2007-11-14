@@ -7297,7 +7297,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * gets the input and error streams from a process and reads them
+     * Gets the output and error streams from a process and reads them
      * to avoid the process to block due to a full ouput buffer. For this
      * two Threads are started, so this method will return immediately
      *
