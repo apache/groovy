@@ -22,6 +22,8 @@ import java.lang.reflect.Modifier
     Facade over the Mocking details.
     A Mock's expectation is always sequence dependent and it's use always ends with a verify().
     See also StubFor.
+    @author Dierk Koenig
+    @author Paul King
 */
 
 class MockFor {
@@ -70,7 +72,7 @@ class MockFor {
     }
 
     Object proxyDelegateInstance() {
-        proxyInstance(null)
+        proxyDelegateInstance(null)
     }
 
     Object proxyDelegateInstance(args) {
@@ -97,9 +99,17 @@ class MockFor {
         } else if (Modifier.isAbstract(clazz.modifiers)) {
             instance = ProxyGenerator.instantiateAggregateFromBaseClass(clazz, args)
         } else if (args != null) {
-            instance = clazz.newInstance(args)
+            if (clazz instanceof GroovyObject) {
+                instance = clazz.newInstance(args)
+            } else {
+                instance = ProxyGenerator.instantiateDelegate(clazz.newInstance(args))
+            }
         } else {
-            instance = clazz.newInstance()
+            if (clazz instanceof GroovyObject) {
+                instance = clazz.newInstance()
+            } else {
+                instance = ProxyGenerator.instantiateDelegate(clazz.newInstance())
+            }
         }
         return instance
     }
