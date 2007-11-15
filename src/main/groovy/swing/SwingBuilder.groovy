@@ -40,7 +40,6 @@ public class SwingBuilder  extends FactoryBuilderSupport {
     private static final Logger LOG = Logger.getLogger(SwingBuilder.name)
     // tracks all containing windows, for auto-owned dialogs
     private boolean headless = false
-    private disposalClosures = []
 
     public SwingBuilder() {
         registerWidgets()
@@ -272,14 +271,6 @@ public class SwingBuilder  extends FactoryBuilderSupport {
             return null
         } else {
             return KeyStroke.getKeyStroke(ks.getKeyCode(), ks.getModifiers() | modifier | Toolkit.getDefaultToolkit().getMenuShortcutKeyMask())        }
-    }
-
-    public void addDisposalClosure(closure) {
-        disposalClosures += closure
-    }
-
-    public void dispose() {
-        disposalClosures.reverseEach {it()}
     }
 
     public LookAndFeel lookAndFeel(Object lookAndFeel, Closure initCode = null) {
