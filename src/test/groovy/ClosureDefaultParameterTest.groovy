@@ -18,6 +18,13 @@ class ClosureDefaultParameterTest extends GroovyTestCase {
         assert block(456) == "456 abc"
         assert block(456, "def") == "456 def"
     }
+    
+    void testClosureWithDefaultParamFromOuterScope() {
+        def y = 555
+        def boo = {x = y -> x}
+        assert boo() == y
+        assert boo(1) == 1
+    }
 
 }
 

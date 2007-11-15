@@ -401,7 +401,10 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             Parameter[] parameters = expression.getParameters();
             for (int i = 0; i < parameters.length; i++) {
                 parameters[i].setInStaticContext(currentScope.isInStaticContext());
-                declare(parameters[i], expression);
+                if (parameters[i].hasInitialExpression()) {
+                    parameters[i].getInitialExpression().visit(this);
+                }
+                declare(parameters[i], expression);                
             }
         } else if (expression.getParameters() != null) {
             DynamicVariable var = new DynamicVariable("it", currentScope.isInStaticContext());
