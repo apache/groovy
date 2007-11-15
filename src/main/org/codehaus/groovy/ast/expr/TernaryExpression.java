@@ -15,6 +15,7 @@
  */
 package org.codehaus.groovy.ast.expr;
 
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
@@ -77,6 +78,6 @@ public class TernaryExpression extends Expression {
     }
 
     public ClassNode getType() {
-        return trueExpression.getType();
+        return ClassHelper.OBJECT_TYPE;
     }
 }

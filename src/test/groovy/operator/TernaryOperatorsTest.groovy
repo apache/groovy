@@ -47,4 +47,10 @@ class TernaryOperatorsTest extends GroovyTestCase {
         assert index==1
         assert ret=='a'
     }
+    
+    void testForType() {
+        boolean b = false
+        int anInt = b ? 100 : 100 / 3
+        assert anInt.class == Integer
+    }
 }
