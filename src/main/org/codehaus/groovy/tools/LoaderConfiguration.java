@@ -30,23 +30,30 @@ import java.util.regex.Pattern;
  * The stream can be for example a FileInputStream from a file with
  * the following format:
  * <p/>
+ * <pre>
  * # comment
  * main is classname
  * load path
  * load file
  * load pathWith${property}
+ * load pathWith!{required.property}
  * load path/*.jar
- * <p/>
+ * </pre>
  * <ul>
  * <li>All lines starting with "#" are ignored.</li>
  * <li>The "main is" part may only be once in the file. The String
- * afterwards is the name of a class if a main method. </li>
+ * afterwards is the name of a class with a main method. </li>
  * <li>The "load" command will add the given file or path to the
- * classpath in this configuration object.
+ * classpath in this configuration object. If the path does not 
+ * exist, the path will be ignored.
  * </li>
+ * <li>properties referenced using !{x} are required.</li>
+ * <li>properties referenced using ${x} are not required. If the 
+ * property does not exist the whole load instruction line will 
+ * be ignored.</li>
  * </ul>
  * <p/>
- * Defining the main class is optional if @see #setRequireMain(boolean) was
+ * Defining the main class is optional if setRequireMain(boolean) was
  * called with false, before reading the configuration.
  * You can use the wildcard "*" to filter the path, but only for files, not
  * directories. The  ${propertyname} is replaced by the value of the system's
@@ -108,16 +115,28 @@ public class LoaderConfiguration {
 
         if (requireMain && main == null) throw new IOException("missing main class definition in config file");
     }
-
+    
     /**
      * exapands the properties inside the given string to it's values
      */
     private String assignProperties(String str) {
         int propertyIndexStart = 0, propertyIndexEnd = 0;
+        boolean requireProperty = false;
         String result = "";
 
         while (propertyIndexStart < str.length()) {
-            propertyIndexStart = str.indexOf("${", propertyIndexStart);
+            {
+                int i1 = str.indexOf("${", propertyIndexStart);
+                int i2 = str.indexOf("!{", propertyIndexStart);
+                if (i1==-1) {
+                    propertyIndexStart = i2; 
+                } else if (i2==-1) {
+                    propertyIndexStart = i1;
+                } else {
+                    propertyIndexStart = Math.min(i1,i2);
+                }
+                requireProperty=propertyIndexStart==i2;
+            }
             if (propertyIndexStart == -1) break;
             result += str.substring(propertyIndexEnd, propertyIndexStart);
 
@@ -128,7 +147,11 @@ public class LoaderConfiguration {
             String propertyValue = System.getProperty(propertyKey);
             // assume properties contain paths
             if (propertyValue == null) {
-                throw new IllegalArgumentException("Variable $" + propertyKey + " in groovy-starter.conf references a non-existent System property! Try passing the property to the VM using -D" + propertyKey + "=myValue");
+                if (requireProperty) {
+                    throw new IllegalArgumentException("Variable " + propertyKey + " in groovy-starter.conf references a non-existent System property! Try passing the property to the VM using -D" + propertyKey + "=myValue in JAVA_OPTS");
+                } else {
+                    return null;
+                }
             }
             propertyValue = getSlashyPath(propertyValue);
             result += propertyValue;
@@ -152,6 +175,7 @@ public class LoaderConfiguration {
      * by using the * wildcard like in any shell
      */
     private void loadFilteredPath(String filter) {
+        if (filter==null) return;
         int starIndex = filter.indexOf(WILDCARD);
         if (starIndex == -1) {
             addFile(new File(filter));
@@ -161,7 +185,7 @@ public class LoaderConfiguration {
         String startDir = filter.substring(0, starIndex - 1);
         File root = new File(startDir);
 
-        filter = filter.replaceAll("\\.", "\\\\.");
+        filter = Pattern.quote(filter);
         filter = filter.replaceAll("\\" + WILDCARD, WILD_CARD_REGEX);
         Pattern pattern = Pattern.compile(filter);
 
