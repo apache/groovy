@@ -1,6 +1,6 @@
 package gls.generics.vm5
 
-class GenericsTest extends gls.generics.GenericsTestBase {
+class GenericsTest extends GenericsTestBase {
 
     public void testClassWithoutParameterExtendsClassWithFixedParameter() {
         createClassInfo """
