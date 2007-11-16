@@ -38,6 +38,7 @@ import java.util.regex.Pattern;
  * load pathWith${property}
  * load pathWith!{required.property}
  * load path/*.jar
+ * load path/&#42;&#42;/&#42;.jar
  * </pre>
  * <ul>
  * <li>All lines starting with "#" are ignored.</li>
@@ -51,15 +52,17 @@ import java.util.regex.Pattern;
  * <li>properties referenced using ${x} are not required. If the 
  * property does not exist the whole load instruction line will 
  * be ignored.</li>
+ * <li>* is used to match zero or more characters in a file.</li>
+ * <li>** is used to match zero or more directories.</li> 
  * </ul>
  * <p/>
  * Defining the main class is optional if setRequireMain(boolean) was
  * called with false, before reading the configuration.
  * You can use the wildcard "*" to filter the path, but only for files, not
- * directories. The  ${propertyname} is replaced by the value of the system's
- * propertyname. You can use user.home here for example. If the property does
+ * directories. to match directories use "**". The  ${propertyname} is replaced by the value of the system's
+ * property name. You can use user.home here for example. If the property does
  * not exist, an empty string will be used. If the path or file after the load
- * does not exist, the path will be ignored.
+ * command does not exist, the path will be ignored.
  *
  * @author Jochen Theodorou
  * @version $Revision$
@@ -72,7 +75,9 @@ public class LoaderConfiguration {
     private String main;
     private boolean requireMain;
     private static final char WILDCARD = '*';
-    private static final String WILD_CARD_REGEX = "[^/]+?";
+    private static final String ALL_WILDCARD = ""+WILDCARD+WILDCARD;
+    private static final String MATCH_FILE_NAME = "\\\\E[^/]+?\\\\Q";
+    private static final String MATCH_ALL = "\\\\E.+?\\\\Q";
 
     /**
      * creates a new loader configuration
@@ -181,31 +186,34 @@ public class LoaderConfiguration {
             addFile(new File(filter));
             return;
         }
-
+        boolean recursive = filter.indexOf(ALL_WILDCARD) != -1;
+        
         String startDir = filter.substring(0, starIndex - 1);
         File root = new File(startDir);
 
         filter = Pattern.quote(filter);
-        filter = filter.replaceAll("\\" + WILDCARD, WILD_CARD_REGEX);
+        filter = filter.replaceAll("\\"+WILDCARD+"\\"+WILDCARD, MATCH_ALL);
+        filter = filter.replaceAll("\\" + WILDCARD, MATCH_FILE_NAME);
         Pattern pattern = Pattern.compile(filter);
 
         final File[] files = root.listFiles();
         if (files != null) {
-            findMatchingFiles(files, pattern);
+            findMatchingFiles(files, pattern, recursive);
         }
     }
 
-    private void findMatchingFiles(File[] files, Pattern pattern) {
+    private void findMatchingFiles(File[] files, Pattern pattern, boolean recursive) {
         for (int i = 0; i < files.length; i++) {
             File file = files[i];
-            Matcher m = pattern.matcher(getSlashyPath(file.getPath()));
+            String fileString = getSlashyPath(file.getPath());
+            Matcher m = pattern.matcher(fileString);
             if (m.matches() && file.isFile()) {
                 addFile(file);
             }
-            if (file.isDirectory()) {
+            if (file.isDirectory() && recursive) {
                 final File[] dirFiles = file.listFiles();
                 if (dirFiles != null) {
-                    findMatchingFiles(dirFiles, pattern);
+                    findMatchingFiles(dirFiles, pattern, true);
                 }
             }
         }
