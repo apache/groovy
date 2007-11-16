@@ -313,6 +313,12 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         node = node.getNextSibling();
         ClassNode superClass = ClassHelper.OBJECT_TYPE;
 
+        GenericsType[] genericsType = null;
+        if (isType(TYPE_PARAMETERS,node)) {
+            genericsType = makeGenericsType(node);
+            node = node.getNextSibling();
+        }
+        
         ClassNode[] interfaces = ClassNode.EMPTY_ARRAY;
         if (isType(EXTENDS_CLAUSE, node)) {
             interfaces = interfaces(node);
@@ -322,6 +328,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         addNewClassName(name);
         classNode = new ClassNode(dot(getPackageName(), name), modifiers, superClass, interfaces, null);
         classNode.addAnnotations(annotations);
+        classNode.setGenericsTypes(genericsType);
         configureAST(classNode, classDef);
 
         assertNodeType(OBJBLOCK, node);
