@@ -7426,14 +7426,16 @@ public class DefaultGroovyMethods {
      * String.metaClass.myMethod = { println "foo" }
      *
      * @param c The java.lang.Class instance
-     * @return An ExpandoMetaClass instance
+     * @return An MetaClass instance
      */
-    public static ExpandoMetaClass getMetaClass(Class c) {
+    public static MetaClass getMetaClass(Class c) {
         MetaClassRegistry metaClassRegistry = GroovySystem.getMetaClassRegistry();
         MetaClass mc = metaClassRegistry.getMetaClass(c);
-        if (mc instanceof ExpandoMetaClass) return (ExpandoMetaClass) mc;
+        if (mc instanceof ExpandoMetaClass
+         || mc instanceof DelegatingMetaClass && ((DelegatingMetaClass)mc).getAdaptee() instanceof ExpandoMetaClass)
+            return mc;
         else {
-            ExpandoMetaClass emc = new ExpandoMetaClass(c, true, true);
+            MetaClass emc = ExpandoMetaClassCreationHandle.instance.create(c, metaClassRegistry);
             emc.initialize();
             metaClassRegistry.setMetaClass(c, emc);
             return emc;

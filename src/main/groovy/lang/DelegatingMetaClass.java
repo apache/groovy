@@ -17,6 +17,7 @@
 package groovy.lang;
 
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.runtime.InvokerHelper;
 
 import java.lang.reflect.Method;
 import java.util.List;
@@ -26,7 +27,7 @@ import java.util.List;
  *
  */
 
-public class DelegatingMetaClass implements MetaClass, MutableMetaClass {
+public class DelegatingMetaClass implements MetaClass, MutableMetaClass, GroovyObject {
     protected MetaClass delegate;
     
     public DelegatingMetaClass(final MetaClass delegate) {
@@ -171,12 +172,11 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass {
     public int hashCode() {
         return delegate.hashCode();
     }
-    /* (non-Javadoc)
-     * @see java.lang.Object#toString()
-     */
-    public String toString() {
-        return delegate.toString();
+
+    public String toString() { 
+        return super.toString() + "[" + delegate.toString()+ "]";
     }
+
     /**
      * @deprecated
      */
@@ -247,4 +247,52 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass {
 	public void setAdaptee(MetaClass adaptee) {
 		this.delegate = adaptee; 
 	}
+
+    public MetaClass getAdaptee() {
+        return this.delegate; 
+    }
+
+    public Object invokeMethod(String name, Object args) {
+      try {
+        return getMetaClass().invokeMethod(this, name, args);
+      }
+      catch (MissingMethodException e) {
+        if (delegate instanceof GroovyObject)
+          return ((GroovyObject)delegate).invokeMethod(name, args);
+        else
+          throw e;
+      }
+    }
+
+    public Object getProperty(String property) {
+      try {
+        return getMetaClass().getProperty(this, property);
+      }
+      catch (MissingPropertyException e) {
+        if (delegate instanceof GroovyObject)
+          return ((GroovyObject)delegate).getProperty(property);
+        else
+          throw e;
+      }
+    }
+
+    public void setProperty(String property, Object newValue) {
+        try {
+          getMetaClass().setProperty(this, property, newValue);
+        }
+        catch (MissingPropertyException e) {
+          if (delegate instanceof GroovyObject)
+            ((GroovyObject)delegate).setProperty(property, newValue);
+          else
+            throw e;
+        }
+    }
+
+    public MetaClass getMetaClass() {
+        return InvokerHelper.getMetaClass(this);
+    }
+
+    public void setMetaClass(MetaClass metaClass) {
+        throw new UnsupportedOperationException();
+    }
 }

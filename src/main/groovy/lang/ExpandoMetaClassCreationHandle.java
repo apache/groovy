@@ -38,6 +38,8 @@ import java.util.*;
  */
 public class ExpandoMetaClassCreationHandle extends MetaClassCreationHandle {
 
+    public static final ExpandoMetaClassCreationHandle instance = new ExpandoMetaClassCreationHandle();
+
 	private final Map modifiedExpandos = new ConcurrentReaderHashMap();
 
 
@@ -111,6 +113,18 @@ public class ExpandoMetaClassCreationHandle extends MetaClassCreationHandle {
      *
      */
     public static void enable() {
-        GroovySystem.getMetaClassRegistry().setMetaClassCreationHandle(new ExpandoMetaClassCreationHandle());
+        final MetaClassRegistry metaClassRegistry = GroovySystem.getMetaClassRegistry();
+        if (metaClassRegistry.getMetaClassCreationHandler() != instance) {
+           instance.modifiedExpandos.clear();
+           metaClassRegistry.setMetaClassCreationHandle(instance);
+        }
+    }
+
+    public static void disable() {
+        final MetaClassRegistry metaClassRegistry = GroovySystem.getMetaClassRegistry();
+        if (metaClassRegistry.getMetaClassCreationHandler() == instance) {
+            instance.modifiedExpandos.clear();
+            metaClassRegistry.setMetaClassCreationHandle(new MetaClassCreationHandle());
+        }
     }
 }

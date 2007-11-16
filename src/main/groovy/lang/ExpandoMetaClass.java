@@ -95,7 +95,6 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 
     // These two properties are used when no ExpandoMetaClassCreationHandle is present
 
-    private boolean hasCreationHandle;
     private MetaClass myMetaClass;
     private boolean allowChangesAfterInit;
 
@@ -342,7 +341,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
      * Call to disable the global use of ExpandoMetaClass
      */
     public static void disableGlobally() {
-        GroovySystem.getMetaClassRegistry().setMetaClassCreationHandle( new MetaClassRegistry.MetaClassCreationHandle() );
+        ExpandoMetaClassCreationHandle.disable();
     }
 
 
@@ -797,7 +796,6 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 		// tell child classes of this class to re-inherit their methods
 		if(registry.getMetaClassCreationHandler() instanceof ExpandoMetaClassCreationHandle) {
 			ExpandoMetaClassCreationHandle creationHandler = (ExpandoMetaClassCreationHandle)registry.getMetaClassCreationHandler();
-			hasCreationHandle  = true;
 			if(!creationHandler.hasModifiedMetaClass(this))
 				creationHandler.registerModifiedMetaClass(this);
 

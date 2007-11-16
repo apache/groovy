@@ -36,7 +36,7 @@ class CustomMetaClassTest extends GroovyTestCase{
     }
 
   void testNormalCreated () {
-      assertTrue metaClass instanceof groovy.runtime.metaclass.groovy.bugs.CustomMetaClassTestMetaClass
+      assertEquals groovy.runtime.metaclass.groovy.bugs.CustomMetaClassTestMetaClass, metaClass.class
       assertEquals  MetaClassImpl, metaClass.delegate.class
   }
 
@@ -47,7 +47,44 @@ class CustomMetaClassTest extends GroovyTestCase{
         assertTrue metaClass instanceof groovy.runtime.metaclass.groovy.bugs.CustomMetaClassTestMetaClass
         assertEquals  ExpandoMetaClass, metaClass.delegate.class
     ExpandoMetaClass.disableGlobally()
+    GroovySystem.metaClassRegistry.removeMetaClass metaClass.theClass
   }
+
+  void testStaticMetaClass () {
+      // Custom metaclass created
+      assertEquals  groovy.runtime.metaclass.groovy.bugs.CustomMetaClassTestMetaClass, metaClass.class
+      // delegated to MCImpl
+      assertEquals  MetaClassImpl, metaClass.delegate.class
+
+      MetaClass expandoMetaClass = CustomMetaClassTest.metaClass
+
+      // It still to be custom
+      assertEquals groovy.runtime.metaclass.groovy.bugs.CustomMetaClassTestMetaClass, expandoMetaClass.class
+      // But delegated to EMC
+      assertEquals  ExpandoMetaClass, expandoMetaClass.delegate.class
+
+      // But object still to hold reference to old one
+      assertEquals  MetaClassImpl, metaClass.delegate.class
+      // let give it chance to reinitialize
+      metaClass = null
+      // Now it should be OK
+      assertEquals  ExpandoMetaClass, expandoMetaClass.delegate.class
+
+      expandoMetaClass.toString = {
+          -> "I am modified"
+      }
+
+      assertEquals "I am modified", toString()
+
+      assertEquals "I am modified", metaClass.invokeMethod(this, "toString", null)
+
+      expandoMetaClass.static.toString = {
+          -> "I am modified static"
+      }
+
+      assertEquals "I am modified static", getClass().toString()
+  }
+
 }
 
 class MyDelegatingMetaClass extends groovy.lang.DelegatingMetaClass

@@ -41,8 +41,9 @@ class ExpandoMetaClassCreationHandleTest extends GroovyTestCase {
 
         Object.metaClass.doStuff = {-> delegate.toString().toUpperCase() }
 
-        assertEquals "HELLO", foo.doStuff()                
+        assertEquals "HELLO", foo.doStuff()
     }
+
     void testInheritFromInterfaceHeirarchy() {
         registry.removeMetaClass(IBar.class)
         registry.removeMetaClass(Foo.class)
@@ -141,8 +142,6 @@ class ExpandoMetaClassCreationHandleTest extends GroovyTestCase {
 
         assertEquals "bar!!", t.doStuff()
         assertEquals "foo", t.invokeMe()
-
-
     }
 
 	void testInterfaceMethodInheritance() {
