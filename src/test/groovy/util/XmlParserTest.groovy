@@ -215,4 +215,24 @@ p() {
         outer = parser.parseText(text)
         assert outer.inner.text() == '   Here is some text    '
     }
+
+    void testUpdate() {
+        def xml = '<root></root>'
+        def parser = new XmlParser()
+        def root = parser.parseText(xml)
+        root.appendNode('child', [attr:'child attr'], 'child text')
+        root.@attr = 'root attr'
+        root.'@other' = 'other attr'
+
+        def writer = new StringWriter()
+        new XmlNodePrinter(new PrintWriter(writer)).print(root)
+        def result = writer.toString()
+        assert result == '''\
+<root attr="root attr" other="other attr">
+  <child attr="child attr">
+    child text
+  </child>
+</root>
+'''
+    }
 }
