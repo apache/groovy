@@ -163,6 +163,14 @@ class GenericsTest extends GenericsTestBase {
 			]
 	}
 	
+	public void testInterfaceWithParameter() {
+	    createClassInfo """
+	    	interface B<T> {}
+	    """
+	    assert signatures == ["class"    : "<T:Ljava/lang/Object;>Ljava/lang/Object;"]
+	}	
+	
+	
 	public void testInvalidParameterUsage() {
 	    shouldNotCompile """
 	    	abstract class B<T> implements Map<T>{}

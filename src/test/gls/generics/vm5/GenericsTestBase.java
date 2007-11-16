@@ -1,4 +1,4 @@
-package gls.generics;
+package gls.generics.vm5;
 
 
 import java.util.HashMap;
