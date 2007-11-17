@@ -3669,6 +3669,41 @@ public class DefaultGroovyMethods {
         return primitiveArrayGet(array, indices);
     }
 
+    /**
+     * Support the subscript operator for a Bitset
+     *
+     * @param self a BitSet
+     * @param index index to retrieve
+     * @return value of the bit at the given index
+     * @see java.util.BitSet
+     */
+    public static boolean getAt(BitSet self, int index) {
+        return self.get(index);
+    }
+
+    /**
+     * Support retrieving a subset of a BitSet using a Range
+     *
+     * @param self a BitSet
+     * @param range a Range defining the desired subset
+     * @return a new BitSet that represents the requested subset
+     * @see java.util.BitSet
+     * @see groovy.lang.Range
+     */
+    public static BitSet getAt(BitSet self, IntRange range) {
+        int from = DefaultTypeTransformation.intUnbox(range.getFrom());
+        int to = DefaultTypeTransformation.intUnbox(range.getTo());
+
+        // If this is a backwards range, reverse the arguments to get.
+        if (from > to) {
+            int tmp = to;
+            to = from;
+            from = tmp;
+        }
+
+        return self.get(from, to + 1);
+    }
+
     public static Boolean putAt(boolean[] array, int idx, Boolean newValue) {
         return (Boolean) primitiveArrayPut(array, idx, newValue);
     }
@@ -3729,6 +3764,40 @@ public class DefaultGroovyMethods {
             newValue = new Double(n.doubleValue());
         }
         return (Double) primitiveArrayPut(array, idx, newValue);
+    }
+
+    /**
+     * Support assigning a range of values with a single assignment statement
+     *
+     * @param self a BitSet
+     * @param range the range of values to set
+     * @param value value
+     * @see java.util.BitSet
+     * @see groovy.lang.Range
+     */
+    public static void putAt(BitSet self, IntRange range, boolean value) {
+        int from = DefaultTypeTransformation.intUnbox(range.getFrom());
+        int to = DefaultTypeTransformation.intUnbox(range.getTo());
+
+        // If this is a backwards range, reverse the arguments to set.
+        if (from > to) {
+            int tmp = to;
+            to = from;
+            from = tmp;
+        }
+        self.set(from, to + 1, value);
+    }
+
+    /**
+     * Support subscript style assignment for a BitSet
+     *
+     * @param self a BitSet
+     * @param index index of the entry to set
+     * @param value value
+     * @see java.util.BitSet
+     */
+    public static void putAt(BitSet self, int index, boolean value) {
+        self.set(index, value);
     }
 
     public static int size(boolean[] array) {
