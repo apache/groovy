@@ -191,7 +191,7 @@ public class LoaderConfiguration {
         String startDir = filter.substring(0, starIndex - 1);
         File root = new File(startDir);
 
-        filter = Pattern.quote(filter);
+        filter = quote(filter);
         filter = filter.replaceAll("\\"+WILDCARD+"\\"+WILDCARD, MATCH_ALL);
         filter = filter.replaceAll("\\" + WILDCARD, MATCH_FILE_NAME);
         Pattern pattern = Pattern.compile(filter);
@@ -313,5 +313,25 @@ public class LoaderConfiguration {
      */
     public void setRequireMain(boolean requireMain) {
         this.requireMain = requireMain;
+    }
+
+    // Copied for Pattern from JDK 1.5
+    private static String quote(String s) {
+        int slashEIndex = s.indexOf("\\E");
+        if (slashEIndex == -1)
+            return "\\Q" + s + "\\E";
+
+        StringBuffer sb = new StringBuffer(s.length() * 2);
+        sb.append("\\Q");
+        slashEIndex = 0;
+        int current = 0;
+        while ((slashEIndex = s.indexOf("\\E", current)) != -1) {
+            sb.append(s.substring(current, slashEIndex));
+            current = slashEIndex + 2;
+            sb.append("\\E\\\\E\\Q");
+        }
+        sb.append(s.substring(current, s.length()));
+        sb.append("\\E");
+        return sb.toString();
     }
 }
