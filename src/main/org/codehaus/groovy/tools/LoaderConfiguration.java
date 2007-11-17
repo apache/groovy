@@ -315,23 +315,20 @@ public class LoaderConfiguration {
         this.requireMain = requireMain;
     }
 
-    // Copied for Pattern from JDK 1.5
+    // Replacement for Pattern.quote from JDK 1.5
     private static String quote(String s) {
-        int slashEIndex = s.indexOf("\\E");
-        if (slashEIndex == -1)
-            return "\\Q" + s + "\\E";
-
         StringBuffer sb = new StringBuffer(s.length() * 2);
+        int eIndex = s.indexOf("\\E");
+        if (eIndex == -1)
+            return sb.append("\\Q").append(s).append("\\E").toString();
+
         sb.append("\\Q");
-        slashEIndex = 0;
-        int current = 0;
-        while ((slashEIndex = s.indexOf("\\E", current)) != -1) {
-            sb.append(s.substring(current, slashEIndex));
-            current = slashEIndex + 2;
-            sb.append("\\E\\\\E\\Q");
+        eIndex = 0;
+        int cur = 0;
+        while ((eIndex = s.indexOf("\\E", cur)) != -1) {
+            sb.append(s.substring(cur, eIndex)).append("\\E\\\\E\\Q");
+            cur = eIndex + 2;
         }
-        sb.append(s.substring(current, s.length()));
-        sb.append("\\E");
-        return sb.toString();
+        return sb.append(s.substring(cur, s.length())).append("\\E").toString();
     }
 }
