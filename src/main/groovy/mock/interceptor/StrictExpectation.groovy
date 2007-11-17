@@ -71,14 +71,7 @@ class StrictExpectation {
 
     /** verify all calls are in expected range */
     void verify() {
-        for (i in 0 ..< fDemand.recorded.size()) {
-            def call = fDemand.recorded[i]
-            def msg = "verify[$i]: expected ${call.range.toString()} call(s) to '${call.name}' but was "
-            if ( null == fCalls[i] )
-                throw new AssertionFailedError(msg + "never called.")
-            if (! call.range.contains( fCalls[i] ) )
-                throw new AssertionFailedError(msg + "called ${fCalls[i]} time(s).")
-        }
+        fDemand.verify(fCalls)
     }
 
 }
