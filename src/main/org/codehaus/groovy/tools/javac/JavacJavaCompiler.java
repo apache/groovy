@@ -97,41 +97,38 @@ public class JavacJavaCompiler implements JavaCompiler {
     }
 
     private Class findJavac(CompilationUnit cu) throws ClassNotFoundException {
-        Class javac = null;
         String main = "com.sun.tools.javac.Main";
         try {
-            javac = Class.forName(main);
-        } catch (ClassNotFoundException e) {
+            return Class.forName(main);
+        } catch (ClassNotFoundException e) {}
+            
+        try {
             ClassLoader cl = this.getClass().getClassLoader();
-            try {
-                javac = cl.loadClass(main);
-            } catch (ClassNotFoundException e1) {
-                try {
-                    javac = ClassLoader.getSystemClassLoader().loadClass(
-                            main);
-                } catch (ClassNotFoundException e2) {
-                    try {
-                        javac = cu.getClassLoader().getParent().loadClass(
-                                main);
-                    } catch (ClassNotFoundException e3) {
-                        // couldn't find compiler - try to find tools.jar
-                        // based on java.home setting
-                        String javaHome = System.getProperty("java.home");
-                        if (javaHome.toLowerCase(Locale.US).endsWith("jre")) {
-                            javaHome = javaHome.substring(0, javaHome
-                                    .length() - 4);
-                        }
-                        File toolsJar = new File(
-                                (javaHome + "/lib/tools.jar"));
-                        if (toolsJar.exists()) {
-                            GroovyClassLoader loader = cu.getClassLoader();
-                            loader.addClasspath(toolsJar.getAbsolutePath());
-                            javac = loader.loadClass(main);
-                        }
-                    }
-                }
-            }
+            return cl.loadClass(main);
+        } catch (ClassNotFoundException e) {}
+        
+        try {
+            return ClassLoader.getSystemClassLoader().loadClass(main);
+        } catch (ClassNotFoundException e) {}
+        
+        try {
+            return cu.getClassLoader().getParent().loadClass(main);
+        } catch (ClassNotFoundException e3) {}
+        
+        
+        // couldn't find compiler - try to find tools.jar
+        // based on java.home setting
+        String javaHome = System.getProperty("java.home");
+        if (javaHome.toLowerCase(Locale.US).endsWith("jre")) {
+            javaHome = javaHome.substring(0, javaHome.length() - 4);
         }
-        return javac;
+        File toolsJar = new File((javaHome + "/lib/tools.jar"));
+        if (toolsJar.exists()) {
+            GroovyClassLoader loader = cu.getClassLoader();
+            loader.addClasspath(toolsJar.getAbsolutePath());
+            return loader.loadClass(main);
+        }
+        
+        throw new ClassNotFoundException("unable to locate the java compiler com.sun.tools.javac.Main, please change your classloader settings");
     }
 }
