@@ -166,7 +166,8 @@ public class ProxyGenerator {
             cl = c.getClassLoader();
         }
         GroovyShell shell = new GroovyShell(cl, binding);
-        if (debug) System.out.println("proxy source:\n------------------\n" + buffer.toString() + "\n------------------");
+        if (debug)
+            System.out.println("proxy source:\n------------------\n" + buffer.toString() + "\n------------------");
         try {
             return shell.evaluate(buffer.toString());
         } catch (MultipleCompilationErrorsException err) {
@@ -179,6 +180,15 @@ public class ProxyGenerator {
     }
 
     public static Object instantiateDelegate(List interfaces, Object delegate) {
+        return instantiateDelegate(null, interfaces, delegate);
+    }
+
+    public static Object instantiateDelegate(Map closureMap, List interfaces, Object delegate) {
+        Map map = new HashMap();
+        if (closureMap != null) {
+            map = closureMap;
+        }
+        List selectedMethods = new ArrayList();
         List interfacesToImplement = new ArrayList();
         if (interfaces != null) {
             interfacesToImplement = interfaces;
@@ -197,10 +207,11 @@ public class ProxyGenerator {
             }
             buffer.append(thisInterface.getName());
         }
-        buffer.append(" {\n").append("    private delegate\n    ");
+        buffer.append(" {\n").append("    private delegate\n").append("    private closureMap\n    ");
 
         // add constructor
-        buffer.append(name).append("(delegate) {\n");
+        buffer.append(name).append("(map, delegate) {\n");
+        buffer.append("        this.closureMap = map\n");
         buffer.append("        this.delegate = delegate\n");
         buffer.append("    }\n");
 
@@ -221,7 +232,8 @@ public class ProxyGenerator {
             Method method = (Method) interfaceMethods.get(i);
             if (!containsEquivalentMethod(objectMethods, method) &&
                     !containsEquivalentMethod(groovyObjectMethods, method)) {
-                addWrappedCall(buffer, method);
+                selectedMethods.add(method.getName());
+                addWrappedCall(buffer, method, map);
             }
         }
         List additionalMethods = new ArrayList();
@@ -232,20 +244,30 @@ public class ProxyGenerator {
             if (!containsEquivalentMethod(interfaceMethods, method) &&
                     !containsEquivalentMethod(objectMethods, method) &&
                     !containsEquivalentMethod(groovyObjectMethods, method)) {
-                addWrappedCall(buffer, method);
+                selectedMethods.add(method.getName());
+                addWrappedCall(buffer, method, map);
             }
+        }
+
+        // add leftover methods from the map
+        for (Iterator iterator = map.keySet().iterator(); iterator.hasNext();) {
+            String methodName = (String) iterator.next();
+            if (selectedMethods.contains(methodName)) continue;
+            addNewMapCall(buffer, methodName);
         }
 
         // end class
 
         buffer.append("}\n").append("new ").append(name);
-        buffer.append("(delegate)");
+        buffer.append("(map, delegate)");
 
         Binding binding = new Binding();
+        binding.setVariable("map", map);
         binding.setVariable("delegate", delegate);
         ClassLoader cl = delegate.getClass().getClassLoader();
         GroovyShell shell = new GroovyShell(cl, binding);
-        if (debug) System.out.println("proxy source:\n------------------\n" + buffer.toString() + "\n------------------");
+        if (debug)
+            System.out.println("proxy source:\n------------------\n" + buffer.toString() + "\n------------------");
         try {
             return shell.evaluate(buffer.toString());
         } catch (MultipleCompilationErrorsException err) {
@@ -253,23 +275,36 @@ public class ProxyGenerator {
         }
     }
 
-    private static void addWrappedCall(StringBuffer buffer, Method method) {
-        Class[] parameterTypes = addMethodPrefix(buffer, method);
-        addWrappedMethodBody(buffer, method, parameterTypes);
-        addMethodSuffix(buffer);
+    private static void addWrappedCall(StringBuffer buffer, Method method, Map map) {
+        if (map.containsKey(method.getName())) {
+            addOverridingMapCall(buffer, method);
+        } else {
+            Class[] parameterTypes = addMethodPrefix(buffer, method);
+            addWrappedMethodBody(buffer, method, parameterTypes);
+            addMethodSuffix(buffer);
+        }
     }
 
-    // TODO: make this smarter
     private static boolean containsEquivalentMethod(List publicAndProtectedMethods, Method candidate) {
         for (int i = 0; i < publicAndProtectedMethods.size(); i++) {
             Method method = (Method) publicAndProtectedMethods.get(i);
             if (candidate.getName().equals(method.getName()) &&
-                    candidate.getParameterTypes().length == method.getParameterTypes().length &&
-                    candidate.getReturnType().equals(method.getReturnType())) {
+                    candidate.getReturnType().equals(method.getReturnType()) &&
+                    hasMatchingParameterTypes(candidate, method)) {
                 return true;
             }
         }
         return false;
+    }
+
+    private static boolean hasMatchingParameterTypes(Method method, Method candidate) {
+        Class[] candidateParamTypes = candidate.getParameterTypes();
+        Class[] methodParamTypes = method.getParameterTypes();
+        if (candidateParamTypes.length != methodParamTypes.length) return false;
+        for (int i = 0; i < methodParamTypes.length; i++) {
+            if (!candidateParamTypes[i].equals(methodParamTypes[i])) return false;
+        }
+        return true;
     }
 
     private static List getInheritedMethods(Class baseClass) {
@@ -288,7 +323,7 @@ public class ProxyGenerator {
     }
 
     private static void addNewMapCall(StringBuffer buffer, String methodName) {
-        buffer.append("    def ").append(methodName).append("(Object[] args) { \n")
+        buffer.append("    def ").append(methodName).append("(Object[] args) {\n")
                 .append("        this.@closureMap['").append(methodName).append("'] (*args)\n    }\n");
     }
 
@@ -334,7 +369,7 @@ public class ProxyGenerator {
     }
 
     private static void addWrappedMethodBody(StringBuffer buffer, Method method, Class[] parameterTypes) {
-        buffer.append("\n        def args = [");
+        buffer.append("\n        Object[] args = [");
         for (int j = 0; j < parameterTypes.length; j++) {
             if (j != 0) {
                 buffer.append(", ");
