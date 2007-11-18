@@ -616,93 +616,122 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     }
     
     private void addCovariantMethods(ClassNode classNode) {
-        ClassNode sn = classNode.getSuperClass();
-        if (sn==null) return;
-        List declaredMethods = classNode.getMethods();
         List methodsToAdd = new ArrayList();
+        List declaredMethods = new ArrayList(classNode.getMethods());
+        Map genericsSpec = new HashMap();
         
-        for (Iterator it = declaredMethods.iterator(); it.hasNext();) {
-            MethodNode method = (MethodNode) it.next();
-            if ((method.getModifiers()&ACC_STATIC)!=0) continue;
-            addCovariantMethodInSuper(sn,method,methodsToAdd);
+        // remove staic methods from declaredMethods
+        for (Iterator methodsIterator = declaredMethods.iterator(); methodsIterator.hasNext();) {
+            MethodNode m = (MethodNode) methodsIterator.next();
+            if (m.isStatic()) methodsIterator.remove();
         }
+        
+        addCovariantMethods(classNode, declaredMethods, methodsToAdd, genericsSpec);
+       
         for (Iterator it = methodsToAdd.iterator(); it.hasNext();) {
             MethodNode method = (MethodNode) it.next();
             classNode.addMethod(method);
         }
     }
     
-    private void addCovariantMethodInSuper(ClassNode sn, final MethodNode method, List methodsToAdd) {
-        for (ClassNode current=sn; current!=null; current=current.getSuperClass()) {
-            List superClassMethods = current.getMethods();
-            for (Iterator sit = superClassMethods.iterator(); sit.hasNext();) {
-                final MethodNode superClassMethod = (MethodNode) sit.next();
-                if ((superClassMethod.getModifiers()&ACC_STATIC)!=0) continue;
-                if (!superClassMethod.getName().equals(method.getName())) continue;
-                Map genericsSpec = createGenericsSpec(current);
-                if (!equalParameters(method,superClassMethod,genericsSpec)) continue;
-                ClassNode mr = method.getReturnType();
-                ClassNode smr = superClassMethod.getReturnType();
-                if (mr.equals(smr)) continue;
-                ClassNode testmr = correctToGenericsSpec(genericsSpec,smr);
-                if (!mr.isDerivedFrom(testmr)) {
-                    throw new RuntimeParserException(
-                            "the return type is incompatible with "+
-                             superClassMethod.getTypeDescriptor()+
-                            " in "+current.getName(),method);
-                }
-                if ((superClassMethod.getModifiers()&ACC_FINAL)!=0) {
-                    throw new RuntimeParserException(
-                            "cannot override final method "+
-                             superClassMethod.getTypeDescriptor()+
-                            " in "+current.getName(),method);
-                }
-                if ((superClassMethod.getModifiers()&ACC_STATIC) !=
-                    (method.getModifiers()&ACC_STATIC)
-                ) {
-                    throw new RuntimeParserException(
-                            "cannot override method "+
-                             superClassMethod.getTypeDescriptor()+
-                            " in "+current.getName()+" with disparate static modifier"
-                            ,method);
-                }
-                
-                MethodNode newMethod = new MethodNode(
-                        superClassMethod.getName(),
-                        method.getModifiers() | ACC_SYNTHETIC | ACC_BRIDGE,
-                        superClassMethod.getReturnType(),
-                        superClassMethod.getParameters(),
-                        superClassMethod.getExceptions(),
-                        null
-                );
-                List instructions = new ArrayList(1);
-                instructions.add (
-                        new BytecodeInstruction() {
-                            public void visit(MethodVisitor mv) {
-                                BytecodeHelper helper = new BytecodeHelper(mv);
-                                mv.visitVarInsn(ALOAD,0);
-                                Parameter[] para = superClassMethod.getParameters();
-                                Parameter[] goal = method.getParameters();
-                                for (int i = 0; i < para.length; i++) {
-                                    helper.load(para[i].getType(), i+1);
-                                    if (!para[i].getType().equals(goal[i].getType())) {
-                                        helper.doCast(goal[i].getType());
-                                    }
-                                }
-                                mv.visitMethodInsn(
-                                        INVOKEVIRTUAL, 
-                                        BytecodeHelper.getClassInternalName(classNode),
-                                        method.getName(),
-                                        BytecodeHelper.getMethodDescriptor(method.getReturnType(), method.getParameters()));
-                                helper.doReturn(superClassMethod.getReturnType());
+    private void addCovariantMethods(ClassNode classNode, List declaredMethods, List methodsToAdd, Map oldGenericsSpec) {
+        ClassNode sn = classNode.getUnresolvedSuperClass(false);
+        if (sn!=null && sn.redirect()!=ClassHelper.OBJECT_TYPE) {
+            Map genericsSpec = createGenericsSpec(sn,oldGenericsSpec);
+            for (Iterator it = declaredMethods.iterator(); it.hasNext();) {
+                MethodNode method = (MethodNode) it.next();
+                if (method.isStatic()) continue;
+                storeMissingCovariantMethods(sn,method,methodsToAdd,genericsSpec);
+                addCovariantMethods(sn,declaredMethods,methodsToAdd,genericsSpec);
+            }
+        }
+        
+        ClassNode[] interfaces = classNode.getInterfaces();
+        for (int i=0; i<interfaces.length; i++) {            
+            Map genericsSpec = createGenericsSpec(interfaces[i],oldGenericsSpec);
+            for (Iterator it = declaredMethods.iterator(); it.hasNext();) {
+                MethodNode method = (MethodNode) it.next();
+                if (method.isStatic()) continue;
+                storeMissingCovariantMethods(interfaces[i],method,methodsToAdd,genericsSpec);
+                addCovariantMethods(sn,declaredMethods,methodsToAdd,genericsSpec);
+            }
+        }        
+    }
+    
+    private MethodNode getCovariantImplementation(final MethodNode oldMethod, final MethodNode overridingMethod, Map genericsSpec) {
+        if (!oldMethod.getName().equals(overridingMethod.getName())) return null;
+        if (!equalParameters(overridingMethod,oldMethod,genericsSpec)) return null;
+        ClassNode mr = overridingMethod.getReturnType();
+        ClassNode omr = oldMethod.getReturnType();
+        if (mr.equals(omr)) return null;
+        ClassNode testmr = correctToGenericsSpec(genericsSpec,omr);
+        if (!mr.isDerivedFrom(testmr)) {
+            throw new RuntimeParserException(
+                    "the return type is incompatible with "+
+                    oldMethod.getTypeDescriptor()+
+                    " in "+oldMethod.getDeclaringClass().getName(),
+                    overridingMethod);
+        }
+        if ((oldMethod.getModifiers()&ACC_FINAL)!=0) {
+            throw new RuntimeParserException(
+                    "cannot override final method "+
+                    oldMethod.getTypeDescriptor()+
+                    " in "+oldMethod.getDeclaringClass().getName(),
+                    overridingMethod);
+        }
+        if (oldMethod.isStatic() != overridingMethod.isStatic()){
+            throw new RuntimeParserException(
+                    "cannot override method "+
+                    oldMethod.getTypeDescriptor()+
+                    " in "+oldMethod.getDeclaringClass().getName()+
+                    " with disparate static modifier",
+                    overridingMethod);
+        }
+        
+        MethodNode newMethod = new MethodNode(
+                oldMethod.getName(),
+                overridingMethod.getModifiers() | ACC_SYNTHETIC | ACC_BRIDGE,
+                oldMethod.getReturnType(),
+                oldMethod.getParameters(),
+                oldMethod.getExceptions(),
+                null
+        );
+        List instructions = new ArrayList(1);
+        instructions.add (
+                new BytecodeInstruction() {
+                    public void visit(MethodVisitor mv) {
+                        BytecodeHelper helper = new BytecodeHelper(mv);
+                        mv.visitVarInsn(ALOAD,0);
+                        Parameter[] para = oldMethod.getParameters();
+                        Parameter[] goal = overridingMethod.getParameters();
+                        for (int i = 0; i < para.length; i++) {
+                            helper.load(para[i].getType(), i+1);
+                            if (!para[i].getType().equals(goal[i].getType())) {
+                                helper.doCast(goal[i].getType());
                             }
                         }
+                        mv.visitMethodInsn(
+                                INVOKEVIRTUAL, 
+                                BytecodeHelper.getClassInternalName(classNode),
+                                overridingMethod.getName(),
+                                BytecodeHelper.getMethodDescriptor(overridingMethod.getReturnType(), overridingMethod.getParameters()));
+                        helper.doReturn(oldMethod.getReturnType());
+                    }
+                }
 
-                );
-                newMethod.setCode(new BytecodeSequence(instructions));
-                methodsToAdd.add(newMethod);
-                return;
-            }
+        );
+        newMethod.setCode(new BytecodeSequence(instructions));
+        return newMethod;
+    }
+    
+    private void storeMissingCovariantMethods(ClassNode current, MethodNode method, List methodsToAdd, Map genericsSpec) {
+        List methods = current.getMethods();
+        for (Iterator sit = methods.iterator(); sit.hasNext();) {
+            MethodNode toOverride = (MethodNode) sit.next();
+            MethodNode bridgeMethod = getCovariantImplementation(toOverride,method,genericsSpec);
+            if (bridgeMethod==null) continue;
+            methodsToAdd.add (bridgeMethod);
+            return;
         }
     }
     
@@ -727,25 +756,20 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         return true;
     }
     
-    private Map createGenericsSpec(ClassNode sn) {
-        Map ret = new HashMap();
-        ClassNode stop = sn.getSuperClass();
-        for (ClassNode current = classNode; current!=null && current.redirect()!=stop; current=current.getUnresolvedSuperClass(false)) {
-            // ret contains the type specs for the child class, what we now need
-            // is the type spec for the super class. To get that we first apply the 
-            // type parameters to the super class and then use the type names of the super
-            // class to reset the map. Example:
-            //   class A<V,W,X>{}
-            //   class B<T extends Number> extends A<T,Long,String> {}
-            // first we have:    T->Number
-            // we apply it to A<T,Long,String> -> A<Number,Long,String>
-            // resulting in:     V->Number,W->Long,X->String
-            
-            GenericsType[] sgts = current.getGenericsTypes();
-            if (sgts==null) {
-                ret.clear();
-                continue;
-            }
+    private Map createGenericsSpec(ClassNode current, Map oldSpec) {
+        Map ret = new HashMap(oldSpec);
+        // ret contains the type specs, what we now need is the type spec for the 
+        // current class. To get that we first apply the type parameters to the 
+        // current class and then use the type names of the current class to reset 
+        // the map. Example:
+        //   class A<V,W,X>{}
+        //   class B<T extends Number> extends A<T,Long,String> {}
+        // first we have:    T->Number
+        // we apply it to A<T,Long,String> -> A<Number,Long,String>
+        // resulting in:     V->Number,W->Long,X->String
+
+        GenericsType[] sgts = current.getGenericsTypes();
+        if (sgts!=null) {
             ClassNode[] spec = new ClassNode[sgts.length];
             for (int i = 0; i < spec.length; i++) {
                 spec[i]=correctToGenericsSpec(ret, sgts[i].getType());
@@ -756,7 +780,6 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 ret.put(newGts[i].getName(), spec[i]);
             }            
         }
-        
         return ret;
     }
 

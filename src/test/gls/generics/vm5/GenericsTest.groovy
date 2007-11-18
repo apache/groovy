@@ -216,4 +216,17 @@ class GenericsTest extends GenericsTestBase {
           assert b.foo((Long) 1) == 2
         """
 	}	
+	
+	void testCovariantReturnWithInterface() {
+	  assertScript """
+	    import java.util.concurrent.*
+
+        class CallableTask implements Callable<String> {
+          public String call() { "x" }
+        } 
+        
+        def task = new CallableTask()
+        assert task.call() == "x"
+      """  
+	}
 }

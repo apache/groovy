@@ -90,6 +90,9 @@ public class Java5 implements VMPluging {
     private ClassNode configureTypeVariableReference(TypeVariable tv) {
         ClassNode cn = ClassHelper.makeWithoutCaching(tv.getName());
         cn.setGenericsPlaceHolder(true);
+        ClassNode cn2 = ClassHelper.makeWithoutCaching(tv.getName());
+        GenericsType[] gts = new GenericsType[]{new GenericsType(cn2)};
+        cn.setGenericsTypes(gts);
         return cn;
     }
     
