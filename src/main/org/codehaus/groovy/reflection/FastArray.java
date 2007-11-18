@@ -124,6 +124,7 @@ public class FastArray implements Cloneable {
     }
 
     public String toString() {
+        if (size() == 0) return "[]";
         return toList().toString();
     }
 }
