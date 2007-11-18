@@ -143,6 +143,18 @@ class PropertyTest extends GroovyTestCase {
           new A().foo = 2
         """
       }
-   }   
+   }
+
+   void testBaseProperties() {
+       assert new Child().field == 'foobar'
+   }
 }
 
+class Base {
+    protected String field = 'bar'
+}
+
+class Child extends Base {
+    protected String field = 'foo' + super.field
+    public getField() { field }
+}

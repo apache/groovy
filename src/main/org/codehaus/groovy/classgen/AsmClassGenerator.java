@@ -1967,11 +1967,16 @@ public class AsmClassGenerator extends ClassGenerator {
 
     private void visitAttributeOrProperty(PropertyExpression expression, MethodCallerMultiAdapter adapter) {
         Expression objectExpression = expression.getObjectExpression();
-        if (isThisExpression(objectExpression)) {
-            // lets use the field expression if its available
+        if (isThisOrSuper(objectExpression)) {
+            // let's use the field expression if it's available
             String name = expression.getPropertyAsString();
             if (name != null) {
-                FieldNode field = classNode.getField(name);
+                FieldNode field = null;
+                if (isSuperExpression(objectExpression)) {
+                    field = classNode.getSuperClass().getField(name);
+                } else {
+                    field = classNode.getField(name);
+                }
                 if (field != null) {
                     visitFieldExpression(new FieldExpression(field));
                     return;
@@ -2016,7 +2021,7 @@ public class AsmClassGenerator extends ClassGenerator {
         if (leftHandExpression) {
             adapter = setField;
             if (isGroovyObject(objectExpression)) adapter = setGroovyObjectField;
-            if (usesSuper(expression)) adapter = getFieldOnSuper;
+            if (usesSuper(expression)) adapter = setFieldOnSuper;
         } else {
             adapter = getField;
             if (isGroovyObject(objectExpression)) adapter = getGroovyObjectField;
@@ -2255,7 +2260,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
     protected void processClassVariable(String name) {
         if (passingClosureParams && isInScriptBody()) {
-            // lets create a ScriptReference to pass into the closure
+            // let's create a ScriptReference to pass into the closure
             mv.visitTypeInsn(NEW, "org/codehaus/groovy/runtime/ScriptReference");
             mv.visitInsn(DUP);
 

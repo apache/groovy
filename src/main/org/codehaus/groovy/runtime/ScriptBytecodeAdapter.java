@@ -256,9 +256,9 @@ public class ScriptBytecodeAdapter {
     //       special constructor invocation (via this/super)
     //  --------------------------------------------------------       
 
-    public static int selectConstructorAndTransformArguments(Object[] arguments, int numberOfCosntructors, Class which) {
+    public static int selectConstructorAndTransformArguments(Object[] arguments, int numberOfConstructors, Class which) {
         MetaClass metaClass = GroovySystem.getMetaClassRegistry().getMetaClass(which);
-        return metaClass.selectConstructorAndTransformArguments(numberOfCosntructors, arguments);
+        return metaClass.selectConstructorAndTransformArguments(numberOfConstructors, arguments);
     }
 
     //  --------------------------------------------------------
