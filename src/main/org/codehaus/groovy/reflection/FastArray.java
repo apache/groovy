@@ -122,4 +122,8 @@ public class FastArray implements Cloneable {
     public Object[] getArray() {
         return data;
     }
+
+    public String toString() {
+        return toList().toString();
+    }
 }
