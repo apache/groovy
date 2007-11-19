@@ -79,7 +79,7 @@ class BitSetTest extends GroovyTestCase{
 
         assertNotSame 'subSet should not have been the same object', bitSet, subSet
 
-        // the last true bit should be at index 6
+        // the last true bit should be at index 5
         assertEquals 'result had wrong logical size', 6, subSet.length()
 
         assertFalse 'index 0 should have been false', subSet[0]
