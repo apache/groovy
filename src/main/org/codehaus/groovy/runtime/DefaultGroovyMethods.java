@@ -3688,7 +3688,7 @@ public class DefaultGroovyMethods {
      * @param range a Range defining the desired subset
      * @return a new BitSet that represents the requested subset
      * @see java.util.BitSet
-     * @see groovy.lang.Range
+     * @see groovy.lang.IntRange
      */
     public static BitSet getAt(BitSet self, IntRange range) {
         int from = DefaultTypeTransformation.intUnbox(range.getFrom());
