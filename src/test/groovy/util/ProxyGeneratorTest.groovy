@@ -69,6 +69,18 @@ class ProxyGeneratorTest extends GroovyTestCase {
         assert testClass.myMethodX() == "the injected X"
         assert testClass.myMethodE() == "the injected E"
     }
+
+    void testDelegateWithBaseClass() {
+        def delegate = new TestClass()
+        Map map = [myMethodE: {"the injected E"}, myMethodB: {"the new B"}, myMethodX: {"the injected X"}]
+        TestClass testClass = ProxyGenerator.instantiateDelegateWithBaseClass(map, [TestInterface, TestOtherInterface], delegate)
+        assert testClass instanceof TestInterface
+        assert testClass instanceof TestOtherInterface
+        assert testClass.myMethodA() == "the original A"
+        assert testClass.myMethodB() == "the new B"
+        assert testClass.myMethodX() == "the injected X"
+        assert testClass.myMethodE() == "the injected E"
+    }
 }
 
 class TestClass {

@@ -184,6 +184,14 @@ public class ProxyGenerator {
     }
 
     public static Object instantiateDelegate(Map closureMap, List interfaces, Object delegate) {
+        return instantiateDelegateWithBaseClass(closureMap, interfaces, delegate, null);
+    }
+
+    public static Object instantiateDelegateWithBaseClass(Map closureMap, List interfaces, Object delegate) {
+        return instantiateDelegateWithBaseClass(closureMap, interfaces, delegate, delegate.getClass());
+    }
+
+    public static Object instantiateDelegateWithBaseClass(Map closureMap, List interfaces, Object delegate, Class baseClass) {
         Map map = new HashMap();
         if (closureMap != null) {
             map = closureMap;
@@ -198,6 +206,10 @@ public class ProxyGenerator {
 
         // add class header and fields
         buffer.append("import org.codehaus.groovy.runtime.InvokerHelper\nclass ").append(name);
+        if (baseClass != null) {
+            buffer.append(" extends ").append(baseClass.getName());
+        }
+        
         for (int i = 0; i < interfacesToImplement.size(); i++) {
             Class thisInterface = (Class) interfacesToImplement.get(i);
             if (i == 0) {
