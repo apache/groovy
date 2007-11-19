@@ -81,7 +81,7 @@ public class GroovyMain {
     private boolean debug = false;
 
     // Compiler configuration, used to set the encodings of the scripts/classes
-    private CompilerConfiguration conf = new CompilerConfiguration();
+    private CompilerConfiguration conf = new CompilerConfiguration(System.getProperties());
 
     /**
      * Main CLI interface.

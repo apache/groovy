@@ -21,6 +21,7 @@ import org.codehaus.groovy.control.messages.WarningMessage;
 
 import java.io.File;
 import java.io.PrintWriter;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -33,25 +34,35 @@ import java.util.StringTokenizer;
  *
  * @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
  * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
+ * @author <a href="mailto:jim@pagesmiths.com">Jim White</a>
  * @version $Id$
  */
 
 public class CompilerConfiguration {
-    public static final CompilerConfiguration DEFAULT = new CompilerConfiguration();
-
-    /** Whether to use the JSR parser or not if no property is explicitly stated */
-    protected static final boolean DEFAULT_JSR_FLAG = true;
 
     private static final String JDK5_CLASSNAME_CHECK = "java.lang.annotation.Annotation";
 
+    /** This (<code>"1.5"</code>) is the value for targetBytecode to compile for a JDK 1.5 or later JVM. **/
     public static final String POST_JDK5 = "1.5";
     
+    /** This (<code>"1.4"<code/>) is the value for targetBytecode to compile for a JDK 1.4 JVM. **/
     public static final String PRE_JDK5 = "1.4";
 
-    private static boolean jsrGroovy;
+    // Just call getVMVersion() once.
+    public static final String currentJVMVersion = getVMVersion();
 
+    // Static initializers are executed in text order,
+    // therefore we must do this one last!
     /**
-     * See WarningMessage for levels
+     *  A convenience for getting a default configuration.  Do not modify it!
+     *  See {@link CompilerConfiguration(Properties)} for an example on how to
+     *  make a suitable copy to modify.  But if you're really starting from a
+     *  default context, then you probably just want <code>new CompilerConfiguration()</code>. 
+     */
+    public static final CompilerConfiguration DEFAULT = new CompilerConfiguration();
+    
+    /**
+     * See {@link WarningMessage} for levels.
      */
     private int warningLevel;
     /**
@@ -59,7 +70,7 @@ public class CompilerConfiguration {
      */
     private String sourceEncoding;
     /**
-     * A PrintWriter for communicating with the user
+     * A <code>PrintWriter</code> for communicating with the user
      */
     private PrintWriter output;
     /**
@@ -86,17 +97,13 @@ public class CompilerConfiguration {
      * Base class name for scripts (must derive from Script)
      */
     private String scriptBaseClass;
-    /**
-     * should we use the New JSR Groovy parser or stay with the static one
-     */
-    private boolean useNewGroovy = getDefaultJsrFlag();
 
     private ParserPluginFactory pluginFactory;
 
     /**
      * extension used to find a groovy file
      */
-    private String defaultScriptExtension = ".groovy";
+    private String defaultScriptExtension;
     
     /**
      * if set to true recompilation is enabled
@@ -136,7 +143,7 @@ public class CompilerConfiguration {
         setRecompileGroovySource(false);
         setMinimumRecompilationInterval(100);
         setTargetBytecode(getVMVersion());
-
+        setDefaultScriptExtension(".groovy");
 
         //
         // Source file encoding
@@ -155,33 +162,110 @@ public class CompilerConfiguration {
 
         try {
             setOutput(new PrintWriter(System.err));
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             // IGNORE
         }
-        /*try {
-            setClasspath(System.getProperty("java.class.path"));
-        }
-        catch (Exception e) {
-        }*/
 
         try {
             String target = System.getProperty("groovy.target.directory");
             if (target != null) {
                 setTargetDirectory(target);
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             // IGNORE
         }
+    }
+    
+    /**
+     * Copy constructor.  Use this if you have a mostly correct configuration
+     * for your compilation but you want to make a some changes programmatically.  
+     * An important reason to prefer this approach is that your code will most
+     * likely be forward compatible with future changes to this configuration API.<br/>
+     * An example of this copy constructor at work:<br/>
+     * <pre>
+     *    // In all likelihood there is already a configuration in your code's context
+     *    // for you to copy, but for the sake of this example we'll use the global default.
+     *    CompilerConfiguration myConfiguration = new CompilerConfiguration(CompilerConfiguration.DEFAULT);
+     *    myConfiguration.setDebug(true);
+     *</pre>
+     * @param configuration The configuration to copy.
+     */
+    public CompilerConfiguration(CompilerConfiguration configration) {
+        setWarningLevel(configration.getWarningLevel());
+        setOutput(configration.getOutput());
+        setTargetDirectory(configration.getTargetDirectory());
+        setClasspathList(new LinkedList(configration.getClasspath()));
+        setVerbose(configration.getVerbose());
+        setDebug(configration.getDebug());
+        setTolerance(configration.getTolerance());
+        setScriptBaseClass(configration.getScriptBaseClass());
+        setRecompileGroovySource(configration.getRecompileGroovySource());
+        setMinimumRecompilationInterval(configration.getMinimumRecompilationInterval());
+        setTargetBytecode(configration.getTargetBytecode());
+        setDefaultScriptExtension(configration.getDefaultScriptExtension());
+        setSourceEncoding(configration.getSourceEncoding());
+        setOutput(configration.getOutput());
+        setTargetDirectory(configration.getTargetDirectory());
+        setJointCompilationOptions(new HashMap(configration.getJointCompilationOptions()));
+        setPluginFactory(configration.getPluginFactory());
     }
 
 
     /**
      * Sets the Flags to the specified configuration, with defaults
      * for those not supplied.
+     * Note that those "defaults" here do <em>not</em> include checking the
+     * settings in {@link System#getProperties()} in general, only file.encoding, 
+     * groovy.target.directory and groovy.source.encoding are.<br/>
+     * If you want to set a few flags but keep Groovy's default
+     * configuration behavior then be sure to make your settings in
+     * a Properties that is backed by <code>System.getProperties()</code> (which
+     * is done using the {@link Properties(Properties)} constructor).<br/>
+     *   That might be done like this:<br/>
+     * <pre>
+     *    Properties myProperties = new Properties(System.getProperties());
+     *    myProperties.setProperty("groovy.output.debug", "true");
+     *    myConfiguration = new CompilerConfiguration(myProperties);
+     * </pre>
+     * And you also have to contend with a possible SecurityException when
+     * getting the system properties (See {@link java.lang.System#getProperties()}).<br/> 
+     * An safer method would be to copy a default
+     * CompilerConfiguration and make your changes there using the
+     * setter.<br/>
+     * <pre>
+     *    // In all likelihood there is already a configuration for you to copy,
+     *    // but for the sake of this example we'll use the global default.
+     *    CompilerConfiguration myConfiguration = new CompilerConfiguration(CompilerConfiguration.DEFAULT);
+     *    myConfiguration.setDebug(true);
+     * </pre>
+     * Another reason to use the copy constructor rather than this one is that you
+     * must call {@link #setOutput}.  Calling <code>setOutput(null)</code> is valid and will
+     * set up a <code>PrintWriter</code> to a bit bucket.  The copy constructor will of course set
+     * the same one as the original.
+     *
+     *<table summary="Groovy Compiler Configuration Properties">
+         <tr>
+            <th>Property Key</th><th>Get/Set Property Name</th>
+         </tr>
+            <tr>
+            <td><code>"groovy.warnings"</code></td><td>{@link #getWarningLevel}</td></tr>
+            <tr><td><code>"groovy.source.encoding"</code></td><td>{@link #getSourceEncoding}</td></tr>
+            <tr><td><code>"groovy.target.directory"</code></td><td>{@link #getTargetDirectory}</td></tr>
+            <tr><td><code>"groovy.target.bytecode"</code></td><td>{@link #getTargetBytecode}</td></tr>
+            <tr><td><code>"groovy.classpath"</code></td><td>{@link #getClasspath}</td></tr>
+            <tr><td><code>"groovy.output.verbose"</code></td><td>{@link #getVerbose}</td></tr>
+            <tr><td><code>"groovy.output.debug"</code></td><td>{@link #getDebug}</td></tr>
+            <tr><td><code>"groovy.errors.tolerance"</code></td><td>{@link #getTolerance}</td></tr>
+            <tr><td><code>"groovy.script.extension"</code></td><td>{@link #getDefaultScriptExtension}</td></tr>
+            <tr><td><code>"groovy.script.base"</code></td><td>{@link #getScriptBaseClass}</td></tr>
+            <tr><td><code>"groovy.recompile"</code></td><td>{@link #getRecompileGroovySource}</td></tr>
+            <tr><td><code>"groovy.recompile.minimumInterval"</code></td><td>{@link #getMinimumRecompilationInterval}</td></tr>
+            <tr><td>
+         </tr>
+     </table>
+     <br/>
+     * @param configuration The properties to get flag values from.
      */
-
     public CompilerConfiguration(Properties configuration) throws ConfigurationException {
         this();
 
@@ -195,8 +279,7 @@ public class CompilerConfiguration {
         try {
             text = configuration.getProperty("groovy.warnings", "likely errors");
             numeric = Integer.parseInt(text);
-        }
-        catch (NumberFormatException e) {
+        } catch (NumberFormatException e) {
             if (text.equals("none")) {
                 numeric = WarningMessage.NONE;
             }
@@ -213,12 +296,11 @@ public class CompilerConfiguration {
                 throw new ConfigurationException("unrecogized groovy.warnings: " + text);
             }
         }
-
         setWarningLevel(numeric);
 
-        //
-        // Source file encoding
-
+        // 
+        // Source file encoding 
+        // 
         text = configuration.getProperty("groovy.source.encoding");
         if (text != null) {
             setSourceEncoding(text);
@@ -227,75 +309,49 @@ public class CompilerConfiguration {
 
         //
         // Target directory for classes
-
-        text = configuration.getProperty("groovy.target.directory");
-        if (text != null) {
-            setTargetDirectory(text);
-        }
-
         //
-        // Target bytecode
-        setTargetBytecode(getVMVersion());
+        text = configuration.getProperty("groovy.target.directory");
+        if (text != null) setTargetDirectory(text);
         
         text = configuration.getProperty("groovy.target.bytecode");
-        if (text != null) {
-            setTargetBytecode(text);
-        }
+        if (text != null) setTargetBytecode(text);
         
         //
         // Classpath
-
+        //
         text = configuration.getProperty("groovy.classpath");
-        if (text != null) {
-            setClasspath(text);
-        }
-
+        if (text != null) setClasspath(text);
 
         //
         // Verbosity
-
+        //
         text = configuration.getProperty("groovy.output.verbose");
-        if (text != null && text.equals("true")) {
-            setVerbose(true);
-        }
-
+        if (text != null && text.equals("true")) setVerbose(true);
 
         //
         // Debugging
-
+        //
         text = configuration.getProperty("groovy.output.debug");
-        if (text != null && text.equals("true")) {
-            setDebug(true);
-        }
-
+        if (text != null && text.equals("true")) setDebug(true);
 
         //
         // Tolerance
-
+        // 
         numeric = 10;
-
         try {
             text = configuration.getProperty("groovy.errors.tolerance", "10");
             numeric = Integer.parseInt(text);
-        }
-        catch (NumberFormatException e) {
+        } catch (NumberFormatException e) {
             throw new ConfigurationException(e);
         }
-
         setTolerance(numeric);
 
 
         //
         // Script Base Class
-
+        //
         text = configuration.getProperty("groovy.script.base");
-        setScriptBaseClass(text);
-
-        text = configuration.getProperty("groovy.jsr");
-        if (text != null) {
-            setUseNewGroovy(text.equalsIgnoreCase("true"));
-        }
-        
+        if (text!=null) setScriptBaseClass(text);
         
         //
         // recompilation options
@@ -307,10 +363,14 @@ public class CompilerConfiguration {
         
         numeric = 100;
         try {
-            text = configuration.getProperty("groovy.recompile.minimumIntervall", ""+numeric);
-            numeric = Integer.parseInt(text);
-        }
-        catch (NumberFormatException e) {
+            text = configuration.getProperty("groovy.recompile.minimumIntervall");
+            if (text==null) text = configuration.getProperty("groovy.recompile.minimumInterval");
+            if (text!=null) {
+                numeric = Integer.parseInt(text);
+            } else {
+                numeric = 100;
+            }
+        } catch (NumberFormatException e) {
             throw new ConfigurationException(e);
         }
         setMinimumRecompilationInterval(numeric);
@@ -393,8 +453,7 @@ public class CompilerConfiguration {
     public void setTargetDirectory(String directory) {
         if (directory != null && directory.length() > 0) {
             this.targetDirectory = new File(directory);
-        }
-        else {
+        } else {
             this.targetDirectory = null;
         }
     }
@@ -426,6 +485,14 @@ public class CompilerConfiguration {
         while (tokenizer.hasMoreTokens()) {
             this.classpath.add(tokenizer.nextToken());
         }
+    }
+    
+    /**
+     * sets the classpath using a list of Strings
+     * @param l list of strings containg the classpathparts
+     */
+    public void setClasspathList(List l) {
+        this.classpath = new LinkedList(l);
     }
 
 
@@ -496,20 +563,9 @@ public class CompilerConfiguration {
         this.scriptBaseClass = scriptBaseClass;
     }
 
-    /**
-     * Returns true if the new groovy (JSR) parser is enabled
-     */
-    public boolean isUseNewGroovy() {
-        return useNewGroovy;
-    }
-
-    public void setUseNewGroovy(boolean useNewGroovy) {
-        this.useNewGroovy = useNewGroovy;
-    }
-
     public ParserPluginFactory getPluginFactory() {
         if (pluginFactory == null) {
-            pluginFactory = ParserPluginFactory.newInstance(isUseNewGroovy());
+            pluginFactory = ParserPluginFactory.newInstance(true);
         }
         return pluginFactory;
     }
@@ -517,36 +573,6 @@ public class CompilerConfiguration {
     public void setPluginFactory(ParserPluginFactory pluginFactory) {
         this.pluginFactory = pluginFactory;
     }
-
-    /**
-     * Returns true if we are the JSR compatible Groovy language
-     */
-    public static boolean isJsrGroovy() {
-        return jsrGroovy;
-    }
-
-    /**
-     * Should only be called by the JSR parser
-     */
-    public static void setJsrGroovy(boolean value) {
-        jsrGroovy = value;
-    }
-
-    protected static boolean getDefaultJsrFlag() {
-        // TODO a temporary hack while we have 2 parsers
-        String property = null;
-        try {
-             property = System.getProperty("groovy.jsr");
-        }
-        catch (Throwable e) {
-            // ignore security warnings
-        }
-        if (property != null) {
-            return "true".equalsIgnoreCase(property);
-        }
-        return DEFAULT_JSR_FLAG;
-    }
-
 
     public String getDefaultScriptExtension() {
         return defaultScriptExtension;
@@ -599,18 +625,26 @@ public class CompilerConfiguration {
         try {
             Class.forName(JDK5_CLASSNAME_CHECK);
             return POST_JDK5;
-        }
-        catch(Exception ex) {
+        } catch(Exception ex) {
             // IGNORE
         }
         
         return PRE_JDK5;
     }
     
+    /**
+     * Gets the joint compilation options for this configuration.
+     * @return the options
+     */
     public Map getJointCompilationOptions() {
         return jointCompilationOptions;
     }
     
+    /**
+     * Sets the joint compilation options for this configuration. 
+     * Using null will disable joint compilation.
+     * @param options the options
+     */
     public void setJointCompilationOptions(Map options) {
         jointCompilationOptions = options;
     }
