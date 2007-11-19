@@ -1,4 +1,18 @@
-
+/*
+ * Copyright 2003-2007 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package groovy
 
 class BitSetTest extends GroovyTestCase{
@@ -9,25 +23,24 @@ class BitSetTest extends GroovyTestCase{
         bitSet[2] = true
         bitSet[3] = true
 
-        assertFalse 'index 0 should have been false', bitSet[0]
-        assertFalse 'index 1 should have been false', bitSet[1]
-        assertTrue 'index 2 should have been true', bitSet[2]
-        assertTrue 'index 3 should have been true', bitSet[3]
-        assertFalse 'index 4 should have been false', bitSet[4]
+        assertBitFalse bitSet, 0
+        assertBitFalse bitSet, 1
+        assertBitTrue  bitSet, 2
+        assertBitTrue  bitSet, 3
+        assertBitFalse bitSet, 4
     }
-
 
     void testSubscriptAssignmentWithRange() {
         def bitSet = new BitSet()
 
         bitSet[2..4] = true
 
-        assertFalse 'index 0 should have been false', bitSet[0]
-        assertFalse 'index 1 should have been false', bitSet[1]
-        assertTrue 'index 2 should have been true', bitSet[2]
-        assertTrue 'index 3 should have been true', bitSet[3]
-        assertTrue 'index 4 should have been true', bitSet[4]
-        assertFalse 'index 5 should have been false', bitSet[5]
+        assertBitFalse bitSet, 0
+        assertBitFalse bitSet, 1
+        assertBitTrue  bitSet, 2
+        assertBitTrue  bitSet, 3
+        assertBitTrue  bitSet, 4
+        assertBitFalse bitSet, 5
     }
 
     void testSubscriptAssignmentWithReverseRange() {
@@ -35,12 +48,12 @@ class BitSetTest extends GroovyTestCase{
 
         bitSet[4..2] = true
 
-        assertFalse 'index 0 should have been false', bitSet[0]
-        assertFalse 'index 1 should have been false', bitSet[1]
-        assertTrue 'index 2 should have been true', bitSet[2]
-        assertTrue 'index 3 should have been true', bitSet[3]
-        assertTrue 'index 4 should have been true', bitSet[4]
-        assertFalse 'index 5 should have been false', bitSet[5]
+        assertBitFalse bitSet, 0
+        assertBitFalse bitSet, 1
+        assertBitTrue  bitSet, 2
+        assertBitTrue  bitSet, 3
+        assertBitTrue  bitSet, 4
+        assertBitFalse bitSet, 5
     }
 
     void testSubscriptAccessWithRange() {
@@ -58,13 +71,13 @@ class BitSetTest extends GroovyTestCase{
         // the last true bit should be at index 6
         assertEquals 'result had wrong logical size', 7, subSet.length()
 
-        assertFalse 'index 0 should have been false', subSet[0]
-        assertFalse 'index 1 should have been false', subSet[1]
-        assertTrue 'index 2 should have been true', subSet[2]
-        assertFalse 'index 3 should have been false', subSet[3]
-        assertFalse 'index 4 should have been false', subSet[4]
-        assertFalse 'index 5 should have been false', subSet[5]
-        assertTrue 'index 6 should have been true', subSet[6]
+        assertBitFalse subSet, 0
+        assertBitFalse subSet, 1
+        assertBitTrue  subSet, 2
+        assertBitFalse subSet, 3
+        assertBitFalse subSet, 4
+        assertBitFalse subSet, 5
+        assertBitTrue  subSet, 6
     }
 
     void testSubscriptAccessWithReverseRange() {
@@ -82,12 +95,73 @@ class BitSetTest extends GroovyTestCase{
         // the last true bit should be at index 5
         assertEquals 'result had wrong logical size', 6, subSet.length()
 
-        assertFalse 'index 0 should have been false', subSet[0]
-        assertFalse 'index 1 should have been false', subSet[1]
-        assertFalse 'index 2 should have been false', subSet[2]
-        assertFalse 'index 3 should have been false', subSet[3]
-        assertTrue 'index 4 should have been true', subSet[4]
-        assertTrue 'index 5 should have been true', subSet[5]
-        assertFalse 'index 6 should have been false', subSet[6]
+        assertBitFalse subSet, 0
+        assertBitFalse subSet, 1
+        assertBitFalse subSet, 2
+        assertBitFalse subSet, 3
+        assertBitTrue  subSet, 4
+        assertBitTrue  subSet, 5
+        assertBitFalse subSet, 6
+    }
+
+    void testAnd() {
+        def a = new BitSet()
+        a[2] = true
+        a[3] = true
+        def b = new BitSet()
+        b[1] = true
+        b[3] = true
+        def c = a & b
+        assertBitFalse c, 0
+        assertBitFalse c, 1
+        assertBitFalse c, 2
+        assertBitTrue  c, 3
+    }
+
+    void testOr() {
+        def a = new BitSet()
+        a[2] = true
+        a[3] = true
+        def b = new BitSet()
+        b[1] = true
+        b[3] = true
+        def c = a | b
+        assertBitFalse c, 0
+        assertBitTrue  c, 1
+        assertBitTrue  c, 2
+        assertBitTrue  c, 3
+    }
+
+    void testXor() {
+        def a = new BitSet()
+        a[2] = true
+        a[3] = true
+        def b = new BitSet()
+        b[1] = true
+        b[3] = true
+        def c = a ^ b
+        assertBitFalse c, 0
+        assertBitTrue  c, 1
+        assertBitTrue  c, 2
+        assertBitFalse c, 3
+    }
+
+    void testBitwiseNegate() {
+        def a = new BitSet()
+        a[2] = true
+        a[3] = true
+        def b = ~a
+        assertBitTrue  b, 0
+        assertBitTrue  b, 1
+        assertBitFalse b, 2
+        assertBitFalse b, 3
+    }
+
+    private assertBitTrue(bitset, index) {
+        assertTrue  'index ' + index + ' should have been true',  bitset[index]
+    }
+
+    private assertBitFalse(bitset, index) {
+        assertFalse 'index ' + index + ' should have been false', bitset[index]
     }
 }

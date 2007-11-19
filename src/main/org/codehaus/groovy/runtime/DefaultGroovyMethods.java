@@ -4833,11 +4833,62 @@ public class DefaultGroovyMethods {
      * Bitwise AND together two Numbers
      *
      * @param left  a Number
-     * @param right another Number to bitwse AND
+     * @param right another Number to bitwise AND
      * @return the bitwise AND of both Numbers
      */
     public static Number and(Number left, Number right) {
         return NumberMath.and(left, right);
+    }
+
+    /**
+     * Bitwise AND together two BitSets
+     *
+     * @param left  a BitSet
+     * @param right another BitSet to bitwise AND
+     * @return the bitwise AND of both BitSets
+     */
+    public static BitSet and(BitSet left, BitSet right) {
+        BitSet result = (BitSet) left.clone();
+        result.and(right);
+        return result;
+    }
+
+    /**
+     * Bitwise XOR together two BitSets
+     *
+     * @param left  a BitSet
+     * @param right another BitSet to bitwise AND
+     * @return the bitwise XOR of both BitSets
+     */
+    public static BitSet xor(BitSet left, BitSet right) {
+        BitSet result = (BitSet) left.clone();
+        result.xor(right);
+        return result;
+    }
+
+    /**
+     * Bitwise NEGATE a BitSet
+     *
+     * @param self a BitSet
+     * @return the bitwise NEGATE of the BitSet
+     */
+    public static BitSet bitwiseNegate(BitSet self) {
+        BitSet result = (BitSet) self.clone();
+        result.flip(0, result.size() - 1);
+        return result;
+    }
+
+    /**
+     * Bitwise OR together two BitSets
+     *
+     * @param left  a BitSet
+     * @param right another BitSet to bitwise AND
+     * @return the bitwise OR of both BitSets
+     */
+    public static BitSet or(BitSet left, BitSet right) {
+        BitSet result = (BitSet) left.clone();
+        result.or(right);
+        return result;
     }
 
     /**
