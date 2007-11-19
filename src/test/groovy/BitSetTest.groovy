@@ -70,28 +70,24 @@ class BitSetTest extends GroovyTestCase{
     void testSubscriptAccessWithReverseRange() {
         def bitSet = new BitSet()
 
-        bitSet[7] = true
-        bitSet[11] = true
+        bitSet[3] = true
+        bitSet[4] = true
 
-        def subSet = bitSet[15..3]
+        def subSet = bitSet[8..2]
 
         assertTrue 'subSet should have been a BitSet', subSet instanceof BitSet
 
         assertNotSame 'subSet should not have been the same object', bitSet, subSet
 
-        // the last true bit should be at index 8
-        assertEquals 'result had wrong logical size', 9, subSet.length()
+        // the last true bit should be at index 6
+        assertEquals 'result had wrong logical size', 6, subSet.length()
 
         assertFalse 'index 0 should have been false', subSet[0]
         assertFalse 'index 1 should have been false', subSet[1]
         assertFalse 'index 2 should have been false', subSet[2]
         assertFalse 'index 3 should have been false', subSet[3]
         assertTrue 'index 4 should have been true', subSet[4]
-        assertFalse 'index 5 should have been false', subSet[5]
+        assertTrue 'index 5 should have been true', subSet[5]
         assertFalse 'index 6 should have been false', subSet[6]
-        assertFalse 'index 7 should have been false', subSet[7]
-        assertTrue 'index 8 should have been true', subSet[8]
-        assertFalse 'index 9 should have been false', subSet[9]
     }
-
 }

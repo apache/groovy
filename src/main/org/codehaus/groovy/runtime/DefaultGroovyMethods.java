@@ -3694,14 +3694,19 @@ public class DefaultGroovyMethods {
         int from = DefaultTypeTransformation.intUnbox(range.getFrom());
         int to = DefaultTypeTransformation.intUnbox(range.getTo());
 
-        // If this is a backwards range, reverse the arguments to get.
-        if (from > to) {
-            int tmp = to;
-            to = from;
-            from = tmp;
-        }
+        BitSet result = new BitSet();
 
-        return self.get(from, to + 1);
+        if(range.isReverse()) {
+            for(int index = to; index >= from; index--) {
+                result.set(to - index, self.get(index));
+            }
+        } else {
+            for(int index = from; index <= to; index++) {
+                result.set(index - from, self.get(index));
+            }
+        }
+        
+        return result;
     }
 
     public static Boolean putAt(boolean[] array, int idx, Boolean newValue) {
