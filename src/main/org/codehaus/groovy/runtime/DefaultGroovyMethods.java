@@ -3696,16 +3696,19 @@ public class DefaultGroovyMethods {
 
         BitSet result = new BitSet();
 
+        int numberOfBits = to - from + 1;
+        int adjuster = 1;
+        int offset = from;
+
         if(range.isReverse()) {
-            for(int index = to; index >= from; index--) {
-                result.set(to - index, self.get(index));
-            }
-        } else {
-            for(int index = from; index <= to; index++) {
-                result.set(index - from, self.get(index));
-            }
+            adjuster = -1;
+            offset = to;
         }
-        
+
+        for (int i = 0; i < numberOfBits; i++) {
+            result.set(i, self.get(offset + (adjuster * i)));
+        }
+
         return result;
     }
 
