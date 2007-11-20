@@ -3039,7 +3039,9 @@ public class DefaultGroovyMethods {
                 BigDecimal x2 = new BigDecimal(String.valueOf(o2));
                 return x1.compareTo(x2);
             }
-            if (o1.getClass() == o2.getClass() && o1 instanceof Comparable) {
+            if (o1 instanceof Comparable && o2 instanceof Comparable &&
+                    (o1.getClass().isAssignableFrom(o2.getClass()) ||
+                            o2.getClass().isAssignableFrom(o1.getClass()))) {
                 return ((Comparable) o1).compareTo((Comparable) o2);
             }
             int x1 = o1.hashCode();

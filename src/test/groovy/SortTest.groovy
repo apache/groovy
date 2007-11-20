@@ -36,7 +36,19 @@ class SortTest extends GroovyTestCase {
         list.sort { it.cheese }
         assert list.name == ['Joe', 'Bob', 'James', 'Chris']
     }
-    
+
+    void testSortClassHierarchy() {
+        def listOfFoo = [
+                new Foo(5),
+                new Foo(7),
+                new Bar(4),
+                new Bar(6)
+                ]
+        def sorted = listOfFoo.sort()
+        assert sorted.collect{ it.class } == [Bar, Foo, Bar, Foo]
+        assert sorted.collect{ it.key } == (4..7).toList()
+    }
+
     def getPeople() {
         def answer = []
         answer << new Expando(name:'James', cheese:'Edam', location:'London')
@@ -46,4 +58,15 @@ class SortTest extends GroovyTestCase {
         return answer
     }
 
+}
+
+class Foo implements Comparable {
+    int key
+    Foo(int key) { this.key = key }
+    int compareTo(Object rhs) { key - rhs.key }
+    String toString() { this.class.name + ": " + key }
+}
+
+class Bar extends Foo {
+    public Bar(int x) {super(x)}
 }
