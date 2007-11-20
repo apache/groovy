@@ -26,7 +26,6 @@ import org.apache.tools.ant.DirectoryScanner;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.Task;
 import org.apache.tools.ant.types.*;
-import org.apache.tools.ant.util.StringUtils;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -89,7 +88,7 @@ public class Groovy extends Task
     /**
      * Enable compiler to report stack trace information if a problem occurs
      * during compilation.
-     * @param stacktrace
+     * @param stacktrace set to true to enable stacktrace reporting
      */
     public void setStacktrace(boolean stacktrace) {
         configuration.setDebug(stacktrace);
@@ -129,8 +128,10 @@ public class Groovy extends Task
     }
 
     /**
-     * whether output should be appended to or overwrite
+     * Whether output should be appended to or overwrite
      * an existing file.  Defaults to false.
+     *
+     * @param append set to true to append
      */
     public void setAppend(boolean append) {
         this.append = append;
@@ -147,7 +148,9 @@ public class Groovy extends Task
 
     /**
      * Returns a new path element that can be configured.
-     * Gets called for instance by Ant when it encounters a nested <classpath> element. 
+     * Gets called for instance by Ant when it encounters a nested &lt;classpath&gt; element.
+     *
+     * @return the resulting created path
      */
     public Path createClasspath() {
         if (this.classpath == null) {
@@ -159,9 +162,11 @@ public class Groovy extends Task
     /**
      * Set the classpath for loading
      * using the classpath reference.
+     *
+     * @param ref the refid to use
      */
-    public void setClasspathRef(final Reference r) {
-        createClasspath().setRefid(r);
+    public void setClasspathRef(final Reference ref) {
+        createClasspath().setRefid(ref);
     }
 
     /**
@@ -256,7 +261,9 @@ public class Groovy extends Task
     }
 
     /**
-     * read in lines and execute them
+     * Read in lines and execute them.
+     *
+     * @param reader the reader from which to get the groovy source to exec
      */
     protected void runStatements(Reader reader, PrintStream out)
         throws IOException {
@@ -275,7 +282,7 @@ public class Groovy extends Task
             }
         }
         // Catch any statements not followed by ;
-        if (!txt.equals("")) {
+        if (!txt.toString().equals("")) {
             execGroovy(txt.toString(), out);
         }
     }
@@ -283,8 +290,11 @@ public class Groovy extends Task
 
     /**
      * Exec the statement.
+     *
+     * @param txt the groovy source to exec
      */
     protected void execGroovy(final String txt, final PrintStream out) {
+        // TODO: out never used?
         log.debug("execGroovy()");
 
         // Check and ignore empty statements
@@ -383,6 +393,7 @@ public class Groovy extends Task
 
     /**
      * print any results in the statement.
+     * @param out the output PrintStream to print to
      */
     protected void printResults(PrintStream out) {
         log.debug("printResults()");
