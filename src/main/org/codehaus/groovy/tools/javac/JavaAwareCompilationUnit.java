@@ -52,7 +52,7 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
         javaSources = new LinkedList();
         generationGoal = (File) configuration.getJointCompilationOptions().get("stubDir");
         
-        stubGenerator = new JavaStubGenerator(generationGoal);
+        stubGenerator = new JavaStubGenerator(generationGoal,true,true);
         
         addPhaseOperation(new PrimaryClassNodeOperation() {
             public void call(SourceUnit source, GeneratorContext context, ClassNode node) throws CompilationFailedException {

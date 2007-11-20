@@ -93,14 +93,14 @@ public class JavaStubGenerator
             }
             out.println(classNode.getNameWithoutPackage());
 
-            ClassNode superClass = classNode.getSuperClass();
+            ClassNode superClass = classNode.getUnresolvedSuperClass(false);
 
             if (!isInterface) {
                 if (superClass.equals(ClassHelper.OBJECT_TYPE)) {
                     superClass = ClassHelper.make(GroovyObjectSupport.class);
                 }
                 out.print("  extends ");
-                printTypeName(superClass,out);
+                printType(superClass,out);
             } 
 
             ClassNode[] interfaces = classNode.getInterfaces();
@@ -110,10 +110,13 @@ public class JavaStubGenerator
                 } else {
                     out.println("  implements");
                 }
-                for (int i = 0; i < interfaces.length - 1; ++i)
-                    out.println("    " + interfaces[i].getName() + ",");
+                for (int i = 0; i < interfaces.length - 1; ++i) {
+                    out.print("    ");
+                    printType(interfaces[i], out);
+                    out.print(",");
+                }
                 out.print("    ");
-                printTypeName(interfaces[interfaces.length - 1],out);
+                printType(interfaces[interfaces.length - 1],out);
             }
             out.println(" {");
 
@@ -143,7 +146,7 @@ public class JavaStubGenerator
         if (methods != null)
             for (Iterator it = methods.iterator(); it.hasNext();) {
                 MethodNode methodNode = (MethodNode) it.next();
-                genMethod(methodNode, out);
+                genMethod(classNode, methodNode, out);
             }
     }
 
@@ -152,7 +155,7 @@ public class JavaStubGenerator
         if (constrs != null)
             for (Iterator it = constrs.iterator(); it.hasNext();) {
                 ConstructorNode constrNode = (ConstructorNode) it.next();
-                genConstructor(constrNode, out);
+                genConstructor(classNode, constrNode, out);
             }
     }
 
@@ -280,11 +283,11 @@ public class JavaStubGenerator
         return (ConstructorCallExpression) expr;
     }
 
-    private void genConstructor(ConstructorNode constructorNode, PrintWriter out) {
+    private void genConstructor(ClassNode clazz, ConstructorNode constructorNode, PrintWriter out) {
         // printModifiers(out, constructorNode.getModifiers());
 
         out.print("public "); // temporary hack
-        out.print(constructorNode.getDeclaringClass().getNameWithoutPackage());
+        out.print(clazz.getNameWithoutPackage());
 
         printParams(constructorNode, out);
 
@@ -298,6 +301,15 @@ public class JavaStubGenerator
             genSpecialConstructorArgs(out, constructorNode, constrCall);
 
             out.println("}");
+        }
+        
+        // handling of default values
+        Parameter[] params = getDefaultValueReducedParameters(constructorNode);
+        if (params!=constructorNode.getParameters()) {
+            ConstructorNode m = new ConstructorNode(
+                    constructorNode.getModifiers(), params,
+                    constructorNode.getExceptions(), constructorNode.getCode());
+            genConstructor(clazz,m,out);
         }
     }
 
@@ -401,11 +413,10 @@ public class JavaStubGenerator
         out.println(");");
     }
 
-    private void genMethod(MethodNode methodNode, PrintWriter out) {
+    private void genMethod(ClassNode clazz, MethodNode methodNode, PrintWriter out) {
         if (methodNode.getName().equals("<clinit>")) return;
         
-        if (!methodNode.getDeclaringClass().isInterface())
-            printModifiers(out, methodNode.getModifiers());
+        if (!clazz.isInterface()) printModifiers(out, methodNode.getModifiers());
 
         printType(methodNode.getReturnType(), out);
         out.print(" ");
@@ -421,7 +432,29 @@ public class JavaStubGenerator
             printReturn(out, retType);
             out.println("}");
         }
+        
+        // handling of default values
+        Parameter[] params = getDefaultValueReducedParameters(methodNode);
+        if (params!=methodNode.getParameters()) {
+            MethodNode m = new MethodNode(
+                    methodNode.getName(), methodNode.getModifiers(),
+                    methodNode.getReturnType(), params,
+                    methodNode.getExceptions(),null);
+            genMethod(clazz,m,out);
+        }
+    }
 
+    private Parameter[] getDefaultValueReducedParameters(MethodNode methodNode) {
+        Parameter[] params = methodNode.getParameters();
+        for (int i = params.length-1; i>-1; i--) {
+            if (params[i].hasInitialExpression()) {
+                Parameter[] newParams = new Parameter[params.length-1];
+                System.arraycopy(params, 0, newParams, 0, i);
+                System.arraycopy(params, i+1, newParams, i, params.length-i-1);
+                return newParams;
+            }
+        }
+        return params;
     }
 
     private void printReturn(PrintWriter out, ClassNode retType) {
@@ -452,30 +485,12 @@ public class JavaStubGenerator
     }
 
     private void printType(ClassNode type, PrintWriter out) {
-        //
-        // NOTE: Only render generics for type if we are allowed to use Java5 stuff
-        //
-        if (java5 && type.isUsingGenerics()) {
-            GenericsType[] types = type.getGenericsTypes();
-
-            printTypeName(type,out);
-            out.print("<");
-            
-            for (int i = 0; i < types.length; i++) {
-                if (i != 0) {
-                    out.print(", ");
-                }
-                out.print(types[i]);
-            }
-            
-            out.print(">");
-        }
-        else if (type.isArray()) {
+        if (type.isArray()) {
             printType(type.getComponentType(),out);
             out.print("[]");
-        }
-        else {
+        } else {
             printTypeName(type,out);
+            if (java5) writeGenericsBounds(out,type.getGenericsTypes());
         }
     }
     
@@ -501,10 +516,36 @@ public class JavaStubGenerator
                 out.print("void");
             }
         } else {
-            out.print(type.getName().replace('$', '.'));
+            out.print(type.redirect().getName().replace('$', '.'));
         }
     }
     
+    private void writeGenericsBounds(PrintWriter out, GenericsType[] genericsTypes) {
+        if (genericsTypes==null || genericsTypes.length==0) return;
+        out.print('<');
+        for (int i = 0; i < genericsTypes.length; i++) {
+            if (i!=0) out.print(", ");
+            writeGenericsBounds(out,genericsTypes[i]);
+        }
+        out.print('>');
+    }
+    
+    private void writeGenericsBounds(PrintWriter out, GenericsType genericsType) {
+        printTypeName(genericsType.getType(), out);
+        ClassNode[] upperBounds = genericsType.getUpperBounds();
+        ClassNode lowerBound = genericsType.getLowerBound();
+        if (upperBounds!=null) {
+            out.print(" extends ");
+            for (int i = 0; i < upperBounds.length; i++) {
+                printType(upperBounds[i],out);
+                if (i+1<upperBounds.length) out.print(" & ");
+            }
+        } else if (lowerBound!=null) {
+            out.print(" super ");
+            printType(lowerBound,out);
+        }       
+    }
+
     private void printParams(MethodNode methodNode, PrintWriter out) {
         out.print("(");
         Parameter[] parameters = methodNode.getParameters();
