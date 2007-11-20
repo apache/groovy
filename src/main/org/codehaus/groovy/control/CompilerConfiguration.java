@@ -272,7 +272,15 @@ public class CompilerConfiguration {
      */
     public CompilerConfiguration(Properties configuration) throws ConfigurationException {
         this();
-
+        configure(configuration);
+    }
+    
+    /**
+     * Method to configure a this CompilerConfiguration by using Properties.
+     * For a list of available properties look at {link {@link #CompilerConfiguration(Properties)}.
+     * @param configuration The properties to get flag values from.
+     */
+    public void configure(Properties configuration) throws ConfigurationException {
         String text = null;
         int numeric = 0;
 
