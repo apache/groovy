@@ -616,7 +616,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     }
     
     private void addCovariantMethods(ClassNode classNode) {
-        List methodsToAdd = new ArrayList();
+        Map methodsToAdd = new HashMap();
         List declaredMethods = new ArrayList(classNode.getMethods());
         Map genericsSpec = new HashMap();
         
@@ -628,13 +628,13 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         
         addCovariantMethods(classNode, declaredMethods, methodsToAdd, genericsSpec);
        
-        for (Iterator it = methodsToAdd.iterator(); it.hasNext();) {
+        for (Iterator it = methodsToAdd.values().iterator(); it.hasNext();) {
             MethodNode method = (MethodNode) it.next();
             classNode.addMethod(method);
         }
     }
     
-    private void addCovariantMethods(ClassNode classNode, List declaredMethods, List methodsToAdd, Map oldGenericsSpec) {
+    private void addCovariantMethods(ClassNode classNode, List declaredMethods, Map methodsToAdd, Map oldGenericsSpec) {
         ClassNode sn = classNode.getUnresolvedSuperClass(false);
         if (sn!=null && sn.redirect()!=ClassHelper.OBJECT_TYPE) {
             Map genericsSpec = createGenericsSpec(sn,oldGenericsSpec);
@@ -691,8 +691,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         MethodNode newMethod = new MethodNode(
                 oldMethod.getName(),
                 overridingMethod.getModifiers() | ACC_SYNTHETIC | ACC_BRIDGE,
-                oldMethod.getReturnType(),
-                oldMethod.getParameters(),
+                oldMethod.getReturnType().getPlainNodeReference(),
+                cleanParameters(oldMethod.getParameters()),
                 oldMethod.getExceptions(),
                 null
         );
@@ -724,15 +724,33 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         return newMethod;
     }
     
-    private void storeMissingCovariantMethods(ClassNode current, MethodNode method, List methodsToAdd, Map genericsSpec) {
+    private Parameter[] cleanParameters(Parameter[] parameters) {
+        Parameter[] params = new Parameter[parameters.length];
+        for (int i = 0; i < params.length; i++) {
+            params[i] = new Parameter(parameters[i].getType().getPlainNodeReference(),parameters[i].getName());
+        }
+        return params;
+    }
+
+    private void storeMissingCovariantMethods(ClassNode current, MethodNode method, Map methodsToAdd, Map genericsSpec) {
         List methods = current.getMethods();
         for (Iterator sit = methods.iterator(); sit.hasNext();) {
             MethodNode toOverride = (MethodNode) sit.next();
             MethodNode bridgeMethod = getCovariantImplementation(toOverride,method,genericsSpec);
             if (bridgeMethod==null) continue;
-            methodsToAdd.add (bridgeMethod);
+            methodsToAdd.put (bridgeMethod.getTypeDescriptor(),bridgeMethod);
             return;
         }
+    }
+    
+    private ClassNode correctToGenericsSpec(Map genericsSpec, GenericsType type) {
+        ClassNode ret = null;
+        if (type.isPlaceholder()){
+            String name = type.getName();
+            ret = (ClassNode) genericsSpec.get(name);
+        }
+        if (ret==null) ret = type.getType();
+        return ret;
     }
     
     private ClassNode correctToGenericsSpec(Map genericsSpec, ClassNode type) {
@@ -772,7 +790,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         if (sgts!=null) {
             ClassNode[] spec = new ClassNode[sgts.length];
             for (int i = 0; i < spec.length; i++) {
-                spec[i]=correctToGenericsSpec(ret, sgts[i].getType());
+                spec[i]=correctToGenericsSpec(ret, sgts[i]);
             }
             GenericsType[] newGts = current.redirect().getGenericsTypes();
             ret.clear();

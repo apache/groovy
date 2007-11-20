@@ -679,6 +679,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * @return true if this node is derived from the given class node
      */
     public boolean isDerivedFrom(ClassNode type) {
+        if (type.equals(ClassHelper.OBJECT_TYPE)) return true;
         ClassNode node = this;
         while (node != null) {
             if (type.equals(node)) {
@@ -1042,4 +1043,10 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         usesGenerics = b;
     }
     
+    public ClassNode getPlainNodeReference() {
+        ClassNode n = new ClassNode(getName(),getModifiers(),getSuperClass(),null,null);
+        n.isPrimaryNode = false;
+        n.setRedirect(this.redirect);
+        return n;
+    }
 }

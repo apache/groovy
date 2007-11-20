@@ -92,6 +92,7 @@ public class JavaStubGenerator
                 out.print ("class ");
             }
             out.println(classNode.getNameWithoutPackage());
+            writeGenericsBounds(out, classNode, true);
 
             ClassNode superClass = classNode.getUnresolvedSuperClass(false);
 
@@ -489,11 +490,10 @@ public class JavaStubGenerator
             printType(type.getComponentType(),out);
             out.print("[]");
         } else {
-            printTypeName(type,out);
-            if (java5) writeGenericsBounds(out,type.getGenericsTypes());
+            writeGenericsBounds(out,type,false);
         }
     }
-    
+
     private void printTypeName(ClassNode type, PrintWriter out) {
         if (ClassHelper.isPrimitiveType(type)) {
             if (type==ClassHelper.boolean_TYPE) {
@@ -520,6 +520,12 @@ public class JavaStubGenerator
         }
     }
     
+    
+    private void writeGenericsBounds(PrintWriter out, ClassNode type, boolean skipName) {
+        if (!skipName) printTypeName(type,out);
+        if (java5 && !type.isGenericsPlaceHolder()) writeGenericsBounds(out,type.getGenericsTypes());
+    }
+    
     private void writeGenericsBounds(PrintWriter out, GenericsType[] genericsTypes) {
         if (genericsTypes==null || genericsTypes.length==0) return;
         out.print('<');
@@ -531,19 +537,23 @@ public class JavaStubGenerator
     }
     
     private void writeGenericsBounds(PrintWriter out, GenericsType genericsType) {
-        printTypeName(genericsType.getType(), out);
-        ClassNode[] upperBounds = genericsType.getUpperBounds();
-        ClassNode lowerBound = genericsType.getLowerBound();
-        if (upperBounds!=null) {
-            out.print(" extends ");
-            for (int i = 0; i < upperBounds.length; i++) {
-                printType(upperBounds[i],out);
-                if (i+1<upperBounds.length) out.print(" & ");
-            }
-        } else if (lowerBound!=null) {
-            out.print(" super ");
-            printType(lowerBound,out);
-        }       
+        if (genericsType.isPlaceholder()) {
+            out.print(genericsType.getName());
+        } else {
+            printTypeName(genericsType.getType(), out);
+            ClassNode[] upperBounds = genericsType.getUpperBounds();
+            ClassNode lowerBound = genericsType.getLowerBound();
+            if (upperBounds!=null) {
+                out.print(" extends ");
+                for (int i = 0; i < upperBounds.length; i++) {
+                    printType(upperBounds[i],out);
+                    if (i+1<upperBounds.length) out.print(" & ");
+                }
+            } else if (lowerBound!=null) {
+                out.print(" super ");
+                printType(lowerBound,out);
+            }       
+        }
     }
 
     private void printParams(MethodNode methodNode, PrintWriter out) {

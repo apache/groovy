@@ -51,8 +51,8 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
         super(configuration,null,groovyClassLoader);
         javaSources = new LinkedList();
         generationGoal = (File) configuration.getJointCompilationOptions().get("stubDir");
-        
-        stubGenerator = new JavaStubGenerator(generationGoal,true,true);
+        boolean useJava5 = configuration.getTargetBytecode().equals(CompilerConfiguration.POST_JDK5);
+        stubGenerator = new JavaStubGenerator(generationGoal,false,useJava5);
         
         addPhaseOperation(new PrimaryClassNodeOperation() {
             public void call(SourceUnit source, GeneratorContext context, ClassNode node) throws CompilationFailedException {
