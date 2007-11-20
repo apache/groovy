@@ -55,7 +55,7 @@ public class CompilerConfiguration {
     // therefore we must do this one last!
     /**
      *  A convenience for getting a default configuration.  Do not modify it!
-     *  See {@link CompilerConfiguration(Properties)} for an example on how to
+     *  See {@link #CompilerConfiguration(Properties)} for an example on how to
      *  make a suitable copy to modify.  But if you're really starting from a
      *  default context, then you probably just want <code>new CompilerConfiguration()</code>. 
      */
@@ -190,24 +190,24 @@ public class CompilerConfiguration {
      *</pre>
      * @param configuration The configuration to copy.
      */
-    public CompilerConfiguration(CompilerConfiguration configration) {
-        setWarningLevel(configration.getWarningLevel());
-        setOutput(configration.getOutput());
-        setTargetDirectory(configration.getTargetDirectory());
-        setClasspathList(new LinkedList(configration.getClasspath()));
-        setVerbose(configration.getVerbose());
-        setDebug(configration.getDebug());
-        setTolerance(configration.getTolerance());
-        setScriptBaseClass(configration.getScriptBaseClass());
-        setRecompileGroovySource(configration.getRecompileGroovySource());
-        setMinimumRecompilationInterval(configration.getMinimumRecompilationInterval());
-        setTargetBytecode(configration.getTargetBytecode());
-        setDefaultScriptExtension(configration.getDefaultScriptExtension());
-        setSourceEncoding(configration.getSourceEncoding());
-        setOutput(configration.getOutput());
-        setTargetDirectory(configration.getTargetDirectory());
-        setJointCompilationOptions(new HashMap(configration.getJointCompilationOptions()));
-        setPluginFactory(configration.getPluginFactory());
+    public CompilerConfiguration(CompilerConfiguration configuration) {
+        setWarningLevel(configuration.getWarningLevel());
+        setOutput(configuration.getOutput());
+        setTargetDirectory(configuration.getTargetDirectory());
+        setClasspathList(new LinkedList(configuration.getClasspath()));
+        setVerbose(configuration.getVerbose());
+        setDebug(configuration.getDebug());
+        setTolerance(configuration.getTolerance());
+        setScriptBaseClass(configuration.getScriptBaseClass());
+        setRecompileGroovySource(configuration.getRecompileGroovySource());
+        setMinimumRecompilationInterval(configuration.getMinimumRecompilationInterval());
+        setTargetBytecode(configuration.getTargetBytecode());
+        setDefaultScriptExtension(configuration.getDefaultScriptExtension());
+        setSourceEncoding(configuration.getSourceEncoding());
+        setOutput(configuration.getOutput());
+        setTargetDirectory(configuration.getTargetDirectory());
+        setJointCompilationOptions(new HashMap(configuration.getJointCompilationOptions()));
+        setPluginFactory(configuration.getPluginFactory());
     }
 
 
@@ -220,7 +220,7 @@ public class CompilerConfiguration {
      * If you want to set a few flags but keep Groovy's default
      * configuration behavior then be sure to make your settings in
      * a Properties that is backed by <code>System.getProperties()</code> (which
-     * is done using the {@link Properties(Properties)} constructor).<br/>
+     * is done using the {@link #CompilerConfiguration(Properties)} constructor).<br/>
      *   That might be done like this:<br/>
      * <pre>
      *    Properties myProperties = new Properties(System.getProperties());
