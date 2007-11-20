@@ -94,7 +94,7 @@ public class CompilerConfigurationTest extends GroovyTestCase {
 
         assertEquals("PaRaNoiA", System.getProperty("groovy.warnings"));
 
-        final CompilerConfiguration config = new CompilerConfiguration();
+        final CompilerConfiguration config = new CompilerConfiguration(System.getProperties());
 
         assertEquals(WarningMessage.PARANOIA, config.getWarningLevel());
         assertEquals(false, config.getDebug());

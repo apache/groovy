@@ -12,6 +12,7 @@ import org.codehaus.groovy.bsf.BSFTest;
 import org.codehaus.groovy.bsf.CacheBSFTest;
 import org.codehaus.groovy.classgen.*;
 import org.codehaus.groovy.control.CompilationUnitTest;
+import org.codehaus.groovy.control.CompilerConfigurationTest;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessageTest;
 import org.codehaus.groovy.runtime.*;
 import org.codehaus.groovy.syntax.TokenTest;
@@ -80,6 +81,7 @@ public class JavaSourceCodehausPackagesSuite {
         suite.addTestSuite(org.codehaus.groovy.runtime.TupleListTest.class);
         suite.addTestSuite(VerifierCodeVisitorTest.class);
         suite.addTestSuite(JdkDynamicProxyTest.class);
+        suite.addTestSuite(CompilerConfigurationTest.class);
         return suite;
     }
 }
