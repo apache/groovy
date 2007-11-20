@@ -38,14 +38,14 @@ class SortTest extends GroovyTestCase {
     }
 
     void testSortClassHierarchy() {
-        def listOfFoo = [
-                new Foo(5),
-                new Foo(7),
-                new Bar(4),
-                new Bar(6)
+        def aFooList = [
+                new AFoo(5),
+                new AFoo(7),
+                new ABar(4),
+                new ABar(6)
                 ]
-        def sorted = listOfFoo.sort()
-        assert sorted.collect{ it.class } == [Bar, Foo, Bar, Foo]
+        def sorted = aFooList.sort()
+        assert sorted.collect{ it.class } == [ABar, AFoo, ABar, AFoo]
         assert sorted.collect{ it.key } == (4..7).toList()
     }
 
@@ -60,13 +60,13 @@ class SortTest extends GroovyTestCase {
 
 }
 
-class Foo implements Comparable {
+class AFoo implements Comparable {
     int key
-    Foo(int key) { this.key = key }
+    AFoo(int key) { this.key = key }
     int compareTo(Object rhs) { key - rhs.key }
     String toString() { this.class.name + ": " + key }
 }
 
-class Bar extends Foo {
-    public Bar(int x) {super(x)}
+class ABar extends AFoo {
+    public ABar(int x) {super(x)}
 }
