@@ -319,7 +319,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
             public boolean equals(Object obj) {
                 Key other = (Key) obj;
-                return other.name.equals(name);
+                return other.name.equals(name) && equalParameterTypes(other.params,params);
                 //&&                        equalParameterTypes(other.params,params);
             }
         }
@@ -348,13 +348,13 @@ public class AsmClassGenerator extends ClassGenerator {
         mops.clear();
     }
 
-//    private boolean equalParameterTypes(Parameter[] p1, Parameter[] p2) {
-//        if (p1.length!=p2.length) return false;
-//        for (int i=0; i<p1.length; i++) {
-//            if (!p1[i].getType().equals(p2[i].getType())) return false;
-//        }
-//        return true;
-//    }
+    private boolean equalParameterTypes(Parameter[] p1, Parameter[] p2) {
+        if (p1.length!=p2.length) return false;
+        for (int i=0; i<p1.length; i++) {
+            if (!p1[i].getType().equals(p2[i].getType())) return false;
+        }
+        return true;
+    }
 
     /**
      * generates a Meta Object Protocoll method, that is used to call a non public
