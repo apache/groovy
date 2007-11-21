@@ -179,7 +179,10 @@ class AbstractHttpServletTest extends GroovyTestCase {
 	public void testGetResourceConnection_Replace1stFooWithBar() {
 		def servletContext = [
 		    getRealPath: {arg -> "realPath" + arg}, 
-		    getResource: {arg -> new URL("http://" + arg)}] as ServletContext
+		    getResource: {arg -> 
+		      if (arg.startsWith("//")) arg=arg.substring(2)
+		      new URL("http://" + arg)}
+		] as ServletContext
 
 		def servletConfig = [
 		    getServletContext: {servletContext}, 
@@ -208,7 +211,10 @@ class AbstractHttpServletTest extends GroovyTestCase {
 	public void testGetResourceConnection_ReplaceAllFooWithBar() {
 		def servletContext = [
 		    getRealPath: {arg -> "realPath" + arg}, 
-		    getResource: {arg -> new URL("http://" + arg)}] as ServletContext
+		    getResource: {arg -> 
+		      if (arg.startsWith("//")) arg=arg.substring(2)
+		      new URL("http://" + arg)
+		}] as ServletContext
 
 		def servletConfig = [
 		    getServletContext: {servletContext}, 
