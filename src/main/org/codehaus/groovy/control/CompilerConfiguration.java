@@ -190,28 +190,28 @@ public class CompilerConfiguration {
      *</pre>
      * @param configuration The configuration to copy.
      */
-    public CompilerConfiguration(CompilerConfiguration configration) {
-        setWarningLevel(configration.getWarningLevel());
-        setOutput(configration.getOutput());
-        setTargetDirectory(configration.getTargetDirectory());
-        setClasspathList(new LinkedList(configration.getClasspath()));
-        setVerbose(configration.getVerbose());
-        setDebug(configration.getDebug());
-        setTolerance(configration.getTolerance());
-        setScriptBaseClass(configration.getScriptBaseClass());
-        setRecompileGroovySource(configration.getRecompileGroovySource());
-        setMinimumRecompilationInterval(configration.getMinimumRecompilationInterval());
-        setTargetBytecode(configration.getTargetBytecode());
-        setDefaultScriptExtension(configration.getDefaultScriptExtension());
-        setSourceEncoding(configration.getSourceEncoding());
-        setOutput(configration.getOutput());
-        setTargetDirectory(configration.getTargetDirectory());
-        Map jointCompilationOptions = configration.getJointCompilationOptions();
+    public CompilerConfiguration(CompilerConfiguration configuration) {
+        setWarningLevel(configuration.getWarningLevel());
+        setOutput(configuration.getOutput());
+        setTargetDirectory(configuration.getTargetDirectory());
+        setClasspathList(new LinkedList(configuration.getClasspath()));
+        setVerbose(configuration.getVerbose());
+        setDebug(configuration.getDebug());
+        setTolerance(configuration.getTolerance());
+        setScriptBaseClass(configuration.getScriptBaseClass());
+        setRecompileGroovySource(configuration.getRecompileGroovySource());
+        setMinimumRecompilationInterval(configuration.getMinimumRecompilationInterval());
+        setTargetBytecode(configuration.getTargetBytecode());
+        setDefaultScriptExtension(configuration.getDefaultScriptExtension());
+        setSourceEncoding(configuration.getSourceEncoding());
+        setOutput(configuration.getOutput());
+        setTargetDirectory(configuration.getTargetDirectory());
+        Map jointCompilationOptions = configuration.getJointCompilationOptions();
         if (jointCompilationOptions!=null) {
             jointCompilationOptions = new HashMap(jointCompilationOptions);
         }
         setJointCompilationOptions(jointCompilationOptions);
-        setPluginFactory(configration.getPluginFactory());
+        setPluginFactory(configuration.getPluginFactory());
     }
 
 
