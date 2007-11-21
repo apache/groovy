@@ -13,6 +13,7 @@ class CustomMetaClassTest extends GroovyTestCase{
 
         def invoker = InvokerHelper.instance
         def stored = invoker.metaRegistry.getMetaClass(String.class)
+        assert stored instanceof MetaClassImpl
         def myMetaClass = new MyDelegatingMetaClass(String.class)
         invoker.metaRegistry.removeMetaClass String.class
         invoker.metaRegistry.setMetaClass(String.class, myMetaClass)
@@ -32,7 +33,8 @@ class CustomMetaClassTest extends GroovyTestCase{
         assertEquals "changed second", secondInstance.toString()
 
         invoker.metaRegistry.removeMetaClass String.class
-        invoker.metaRegistry.setMetaClass String.class, stored
+        stored = invoker.metaRegistry.getMetaClass(String.class)
+        assert stored instanceof MetaClassImpl
     }
 
   void testNormalCreated () {
@@ -47,7 +49,11 @@ class CustomMetaClassTest extends GroovyTestCase{
         assertTrue metaClass instanceof groovy.runtime.metaclass.groovy.bugs.CustomMetaClassTestMetaClass
         assertEquals  ExpandoMetaClass, metaClass.delegate.class
     ExpandoMetaClass.disableGlobally()
+
     GroovySystem.metaClassRegistry.removeMetaClass metaClass.theClass
+    metaClass = null
+    assert getMetaClass() instanceof groovy.runtime.metaclass.groovy.bugs.CustomMetaClassTestMetaClass
+    assert MetaClassImpl == getMetaClass().delegate.class
   }
 
   void testStaticMetaClass () {
@@ -83,6 +89,11 @@ class CustomMetaClassTest extends GroovyTestCase{
       }
 
       assertEquals "I am modified static", getClass().toString()
+      
+      GroovySystem.metaClassRegistry.removeMetaClass metaClass.theClass
+      metaClass = null
+      assert getMetaClass() instanceof groovy.runtime.metaclass.groovy.bugs.CustomMetaClassTestMetaClass
+      assert MetaClassImpl == getMetaClass().delegate.class
   }
 
 }
