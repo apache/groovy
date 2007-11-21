@@ -161,6 +161,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport{
                                 )
                         )
                 );
+                arrayInit.add(new FieldExpression(field));
             }
             
             block.add(
