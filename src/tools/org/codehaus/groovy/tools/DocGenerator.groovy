@@ -21,14 +21,19 @@ import java.util.*;
  */
 class DocGenerator
 {
-	File           file
-	File           outputFile
+	def sourceFiles = []
+	File outputFolder
 	JavaDocBuilder builder
+	// categorize all groovy methods per core JDK class to which it applies
+	def jdkEnhancedClasses = [:]
+    def packages = [:]
+	def sortedPackages
 
-	DocGenerator(File fileToParse, File outputFile)
+	DocGenerator(sourceFiles, File outputFolder)
 	{
-		this.file       = fileToParse
-		this.outputFile = outputFile
+		this.sourceFiles = sourceFiles
+		this.outputFolder = outputFolder
+		parse()
 	}
 
 	/**
@@ -37,287 +42,248 @@ class DocGenerator
 	 */
 	private void parse()
 	{
-		def reader  = file.newReader()
 		builder = new JavaDocBuilder()
+		sourceFiles.each {
+			println "adding reader for $it"
+			builder.addSource(it.newReader())
+		}
 
-		builder.addSource(reader)
+		def sources = builder.getSources()
+
+		def methods = []
+		sources.each { source ->
+			def classes = source.getClasses()
+			classes.each { aClass ->
+				methods.addAll (aClass.methods as List)
+			}
+		}
+	
+        def start = System.currentTimeMillis();
+		for (method in methods) {
+			if (method.isPublic() && method.isStatic()) {
+				def parameters = method.getParameters()
+				def jdkClass = parameters[0].getType().toString()
+
+				if (jdkClass.startsWith('groovy')) {
+					// nothing, skip it
+				}
+				else if (jdkEnhancedClasses.containsKey(jdkClass)) {
+				    List l = jdkEnhancedClasses[jdkClass];
+					l.add(method)
+			    }
+				else
+					jdkEnhancedClasses[jdkClass] = [method]
+			}
+		}
+
+		jdkEnhancedClasses.keySet().each { className ->
+        	def thePackage = className.contains(".") ? className.replaceFirst(/\.[^\.]*$/, "") : ""
+        	if (!packages.containsKey(thePackage)) {
+        		packages[thePackage] = []
+        	}
+    		packages[thePackage] << className
+        }
+        sortedPackages = new TreeSet(packages.keySet())
 	}
 
 	/**
 	 * Builds an HTML page from the structure of DefaultGroovyMethods.
 	 */
 		
-		def generate() {
-			parse()
-			
-			def sources = builder.getSources()
+	def generateNew() {
+		def engine = new groovy.text.SimpleTemplateEngine()
 
-			def firstSource = sources[0]
-			def classes = firstSource.getClasses()
-			def groovyMeth = classes[0]
-	
-			// categorize all groovy methods per core JDK class to which it applies
-			def jdkEnhancedClasses = [:]
-			def methods = groovyMeth.getMethods()
-			
-            def start = System.currentTimeMillis();
-			for (method in methods) {
-				if (method.isPublic() && method.isStatic()) {
-					def parameters = method.getParameters()
-					def jdkClass = parameters[0].getType().toString()
-
-					if (jdkEnhancedClasses.containsKey(jdkClass)) {
-					    List l = jdkEnhancedClasses[jdkClass];
-						l.add(method)
-				    }
-					else
-						jdkEnhancedClasses[jdkClass] = [method]
-				}
+		// the index
+		def templateIndex = createTemplate(engine, 'index.html')
+		def out = new File(outputFolder, 'index.html')
+		def binding = [packages: sortedPackages]
+		out.withWriter {
+			it << templateIndex.make(binding)
+		}
+		// the overview
+		def templateOverview = createTemplate(engine, 'overview-summary.html')
+		out = new File(outputFolder, 'overview-summary.html')
+		binding = [packages: sortedPackages]
+		out.withWriter {
+			it << templateOverview.make(binding)
+		}
+		
+		def templateOverviewFrame = createTemplate(engine, 'template.overview-frame.html')
+		out = new File(outputFolder, 'overview-frame.html')
+		binding = [packages: sortedPackages]
+		out.withWriter {
+			it << templateOverviewFrame.make(binding)
+		}
+		
+		// the allclasses-frame.html
+		def templateAllClasses = createTemplate(engine, 'template.allclasses-frame.html')
+		out = new File(outputFolder, 'allclasses-frame.html')
+		binding = [classes: jdkEnhancedClasses.keySet().sort { it.replaceAll('.*\\.', '')}]
+		out.withWriter {
+			it << templateAllClasses.make(binding)
+		}
+		
+		// the package-frame.html for each package
+		def templatePackageFrame = createTemplate(engine, 'template.package-frame.html')
+		packages.each { curPackage, packageClasses ->
+			def packageName = curPackage ? curPackage : "primitive-types"
+			generatePackageFrame(templatePackageFrame, packageName, packageClasses)
+		}		
+		
+		// the class.html for each class
+		def templateClass = createTemplate(engine, 'template.class.html')
+		packages.each { curPackage, packageClasses ->
+			def packageName = curPackage ? curPackage : "primitive-types"
+			packageClasses.each {
+				generateClassDetails(templateClass, packageName, it)
 			}
-            //start = System.currentTimeMillis();
-	        println " added classes in ${System.currentTimeMillis() - start} ms"
+		}		
+		
+	}
+	private generateClassDetails(template, curPackage, aClass)
+	{
+		def dir = new File(outputFolder, curPackage.replaceAll('\\.', File.separator))
+		dir.mkdirs()
+		def out = new File(dir, aClass.replaceAll('.*\\.', '') + '.html')
+		def listOfMethods = jdkEnhancedClasses[aClass].sort{ it.name }
+		def methods = []
+		listOfMethods.each { method ->
+			def parameters = method.getTagsByName("param").collect { [name: it.value.replaceAll(' .*', ''), comment: it.value.replaceAll('^\\w*', '')]}
+			if (parameters)
+				parameters.remove(0) // method is static, first arg is the "real this"
 
-			def headElement = { head {
-								mkp.comment 'generated by Groovy using Streaming Markup'
-								title 'GDK : Groovy methods'
-								style(['type':'text/css'], '   @import url("./style/maven-base.css"); ')
-								style(['type':'text/css'], '   @import url("http://codehaus.org/codehaus-style.css"); ')
-							}
-						  }
-							
-			def sortedClasses = new TreeSet(jdkEnhancedClasses.keySet())
-							
-			def ind = 0
-			def cellsInRow = 4
-			// Split sortedClasses into list of 4-element lists
-			def rowList = sortedClasses.inject([]) { list, item ->
-				if (ind++ % cellsInRow == 0)
-					list << [item]
-				else
-					list[-1] << item
-				return list
-			}
+			def returnType = getReturnType(method)
+			def methodInfo = [name: method.name, 
+			                  comment: getComment(method),
+			                  shortComment: getComment(method).replaceAll('\\..*', ''),
+			                  returnComment: method.getTagByName("return")?.getValue() ?: '',
+			                  returnTypeDocUrl: getDocUrl(returnType),
+			                  parametersSignature: getParametersDecl(method),
+			                  parametersDocUrl: getParametersDocUrl(method),
+			                  parameters: parameters,
+			                  isStatic: method.parentClass.name == 'DefaultGroovyStaticMethods']
+			methods << methodInfo
+		}
 
-			def classLinks = { mkp.yield {
-					def classCounter = 0
-					table(width:'100%') {
-						tr {
-							th(colspan:"${cellsInRow}", "Groovy JDK classes")
-						}
-						for (row in rowList) {
-							if (row.size() < cellsInRow) {
-								(cellsInRow - row.size()).times { row << "" }
-							}
-							tr {
-								for (className in row) {
-									td(width:'25%') {
-										a(href:"#cls${classCounter}", "${className}")
-									}
-									classCounter++;            	    				
-								}
-							}
-						}
-					}
-				}
-			}
+		def binding = [className: aClass.replaceAll(/.*\./, ''),
+		           packageName: curPackage,
+		           methods: methods]
+		out.withWriter {
+			it << template.make(binding)
+		}
+	}
 
-			def summary = { mkp.yield {
-					            def counter = 0
-								def classCounter = 0
-					
-								// lets iterate in sorted class name order
-								for (String className in sortedClasses) {
-					
-									p { a(name:"cls${classCounter}") }
-									b className
-									classCounter++
-					
-									def listOfMethods = jdkEnhancedClasses[className]
-									listOfMethods.sort{ it.name }
-									
-									table(width:'100%') {
-										for (JavaMethod meth in listOfMethods) {
-						                    counter++
-						                    
-						                    tr {
-						                    	td(width:'30%') {
-						                    		mkp.yield getReturnType(meth)
-						                    	}
-						                    	td(width:'70%') {
-						                    		a(href:"#meth${counter}") { 
-						                    			mkp.yield meth.getName()
-						                    		}
-						                    		mkp.yield "(${getParametersDecl(meth)})"
-						                    	}
-						                    }
-										}
-									}
-								}
-							}
-						}
-								
-			def details = { mkp.yield {
-								def counter = 0
-								
-								for (className in sortedClasses) {
-					
-									h2 className
-					
-									def listOfMethods = jdkEnhancedClasses[className]
-									listOfMethods.sort{ it.name }
-									
-									for (JavaMethod meth in listOfMethods) {
-					                    counter++
+	private String getParametersDocUrl(method)
+	{
+		getParameters(method).collect{"${getDocUrl(it.type.toString())} ${it.getName()}" }.join(", ")
+	}
 
-					                    a(name:"meth${counter}")
-					                    
-					                    p {
-					                    	b "${getReturnType(meth)} ${meth.getName()}(${getParametersDecl(meth)})"
-					                    }
-					                    
-				                    	ul {
-				                    		//
-				                    		// Java comments can contain markup - pass it through as is
-				                    		//
-				                   			mkp.yieldUnescaped "${getComment(meth)}  "
-				                   			
-					                    	ul {
-												def params = meth.getTags()
-												def count = 0
-												
-												for (param in params) {
-													if (count++ != 0 && param.getName() != "throws" && param.getName() != "return") {
-														li "${param.getName()} ${param.getValue()}"
-													}
-												 }
+	private String getDocUrl(type)
+	{
+		if (!type.contains('.'))
+			return type
+		
+		def shortClassName = type.replaceAll(".*\\.", "")
+		def packageName = type[0..(-shortClassName.size()-2)] 
+		def apiBaseUrl, title
+		if (type.startsWith("groovy")) {
+			apiBaseUrl = "http://groovy.codehaus.org/api/"
+			title = "Groovy class in $packageName"
+		}
+		else {
+			apiBaseUrl = "http://java.sun.com/j2se/1.4.2/docs/api/"
+			title = "JDK class in $packageName"
+		}
 
-												def returnType = getReturnType(meth)
+		def url = apiBaseUrl + type.replaceAll("\\.", "/") + '.html'
+		return "<a href='$url' title='$title'>$shortClassName</a>"
+	}
+
+	private generatePackageFrame(templatePackageFrame, curPackage, packageClasses)
+	{
+		def dir = new File(outputFolder, curPackage.replaceAll('\\.', File.separator))
+		dir.mkdirs()
+		def out = new File(dir, 'package-frame.html')
+		def binding = [classes: packageClasses.sort().collect { it.replaceAll(/.*\./, '')},
+		           packageName: curPackage]
+		out.withWriter {
+			it << templatePackageFrame.make(binding)
+		}
+	}
 	
-												if (returnType != "") {
-												    if (returnType != "void") {
-													    li {
-													    	b "returns"
-															mkp.yield ": ${returnType}"
-															    	
-													        def returnTag = meth.getTagByName("return")
-													                
-													        if (returnTag != null) {
-													        	mkp.yield " - "
-													        	i returnTag.getValue()
-															}
-														}
-													}
-													
-													def exceptions = meth.getExceptions()
-													
-													for (ex in exceptions) {
-														if (ex != null) {
-															li {
-																b "throws"
-																mkp.yield ": ${ex}"
-	
-																def exMsg = meth.getTagByName("throws")
-																
-																if (exMsg != null) {
-																	mkp.yield " - "
-																	i exMsg.getValue()
-																}
-															}
-														}
-													}
-												}
-											}
-					                    }
-									}
-								}
-					  		}
-					  	}
-					  				
-			def bodyElement = { body {
-								h1 'Groovy JDK methods'
-								p 'New methods added to the JDK to make it more groovy.'
-								mkp.yield classLinks
-								mkp.yield summary
-								mkp.yield details
-							 }
-						   }
-					
-			 outputFile.getParentFile().mkdirs()
-			 outputFile.newPrintWriter() << new StreamingMarkupBuilder().bind{ html {
-																						mkp.yield headElement
-																						mkp.yield bodyElement
-																					 }
-																			  }
-		}
+	def createTemplate(templateEngine, resourceFile)
+	{
+		def resourceUrl = getClass().getResource(resourceFile)
+		return templateEngine.createTemplate(resourceUrl.text)
+	}
 
-		/**
-	 	* Retrieves a String representing the return type
-	 	*/
-		private getReturnType(method)
-		{
-		    def returnType = method.getReturns()
-		    
-		    if (returnType != null) {
-		    	    return returnType.toString()
-		    } else {
-		    	    return ""
-		    }
-		}
 
-		/**
-		 * Retrieve a String representing the declaration of the parameters of the method passed as parameter.
-		 *
-		 * @param method a method
-		 * @return the declaration of the method (long version)
-		 */
-		private getParametersDecl(method)
-		{
-			getParameters(method).collect{ "${it.getType()} ${it.getName()}" }.join(", ")
-		}
+	/**
+ 	* Retrieves a String representing the return type
+ 	*/
+	private getReturnType(method)
+	{
+	    def returnType = method.getReturns()
+	    
+	    if (returnType != null) {
+	    	    return returnType.toString()
+	    } else {
+	    	    return ""
+	    }
+	}
 
-		/**
-		 * Retrieve the parameters of the method.
-		 *
-		 * @param method a method
-		 * @return a list of parameters without the first one
-		 */
-		private getParameters(method)
-		{
-		    if (method.getParameters().size() > 1)
-			    return method.getParameters().toList()[1..-1]
-			else
-			    return []
-		}
+	/**
+	 * Retrieve a String representing the declaration of the parameters of the method passed as parameter.
+	 *
+	 * @param method a method
+	 * @return the declaration of the method (long version)
+	 */
+	private getParametersDecl(method)
+	{
+		getParameters(method).collect{ "${it.getType()} ${it.getName()}" }.join(", ")
+	}
 
-		/**
-		 * Retrieve the JavaDoc comment associated with the method passed as parameter.
-		 *
-		 * @param method a method
-		 * @return the JavaDoc comment associated with this method
-		 */
-		private getComment(method)
-		{
-			def ans = method.getComment()
-			if (ans == null) return ""
-			return ans
-		}
+	/**
+	 * Retrieve the parameters of the method.
+	 *
+	 * @param method a method
+	 * @return a list of parameters without the first one
+	 */
+	private getParameters(method)
+	{
+	    if (method.getParameters().size() > 1)
+		    return method.getParameters().toList()[1..-1]
+		else
+		    return []
+	}
+
+	/**
+	 * Retrieve the JavaDoc comment associated with the method passed as parameter.
+	 *
+	 * @param method a method
+	 * @return the JavaDoc comment associated with this method
+	 */
+	private getComment(method)
+	{
+		def ans = method.getComment()
+		if (ans == null) return ""
+		return ans
+	}
 
     /**
      * Main entry point.
      */
     static void main(args)
     {
-        def defaultGroovyMethodSource =
-            //new File("D:/cvs-groovy/groovy/groovy-core/src/main/org/codehaus/groovy/runtime/DefaultGroovyMethods.java")
-            new File("src/main/org/codehaus/groovy/runtime/DefaultGroovyMethods.java")
-        def outFileName =
-            //new File("D:/cvs-groovy/groovy/groovy-core/target/html/groovy-jdk.html")
-            new File("target/html/groovy-jdk.html")
+        def defaultGroovyMethodSource = new File("src/main/org/codehaus/groovy/runtime/DefaultGroovyMethods.java")
+        def defaultGroovyStaticMethodSource = new File("src/main/org/codehaus/groovy/runtime/DefaultGroovyStaticMethods.java")
+        def outFolder = new File("target/html/groovy-jdk")
+        outFolder.mkdirs()
 
         def start = System.currentTimeMillis();
 
-        def docGen = new DocGenerator(defaultGroovyMethodSource, outFileName)
-        docGen.generate()
+        def docGen = new DocGenerator([defaultGroovyMethodSource, defaultGroovyStaticMethodSource], outFolder)
+        docGen.generateNew()
 
         def end = System.currentTimeMillis();
 

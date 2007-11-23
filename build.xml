@@ -578,6 +578,11 @@ $Date$
             <arg value="${toolsClassesDirectory}"/>
             <arg value="${toolsSourceDirectory}"/>
         </java>
+        <copy todir="${toolsClassesDirectory}">
+            <fileset dir="${toolsSourceDirectory}">
+                <include name="**/*.html"/>
+            </fileset>
+        </copy>
     </target>
 
     <target name="buildinfo">
@@ -637,6 +642,7 @@ $Date$
                 <pathelement path="${mainClassesDirectory}"/>
             </classpath>
         </java>
+		<copy todir="target/html/groovy-jdk" file="src/tools/org/codehaus/groovy/tools/groovy.ico"/>
         <taskdef name="groovydoc" classname="org.codehaus.groovy.ant.Groovydoc">
             <classpath>
                 <path path="${mainClassesDirectory}"/>
@@ -652,8 +658,18 @@ $Date$
                 private="false"/>
     </target>
 
+	<target name="docGDK" depends="-compileTools" description="Create the GDK documentation">
+        <java classname="org.codehaus.groovy.tools.DocGenerator" fork="yes" failonerror="true">
+            <classpath>
+                <pathelement path="${toolsClassesDirectory}"/>
+                <path refid="toolsPath"/>
+                <pathelement path="${mainClassesDirectory}"/>
+            </classpath>
+        </java>
+		<copy todir="target/html/groovy-jdk" file="src/tools/org/codehaus/groovy/tools/groovy.ico"/>
+	</target>
 
-    <target name="clean" description="Clean out the built materials.">
+	<target name="clean" description="Clean out the built materials.">
         <delete dir="${targetDirectory}" quiet="true"/>
         <delete quiet="true">
             <fileset dir="." includes="**/*~"/>
