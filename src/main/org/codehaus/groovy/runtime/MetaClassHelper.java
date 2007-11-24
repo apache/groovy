@@ -151,7 +151,7 @@ public class MetaClassHelper {
 
 
     /**
-     * @param list the original list
+     * @param list          the original list
      * @param parameterType the resulting array type
      * @return the constructed array
      */
@@ -238,19 +238,19 @@ public class MetaClassHelper {
         }
         return Math.max(max, getMaximumInterfaceDistance(c.getSuperclass(), interfaceClass));
     }
-    
+
     private static long calculateParameterDistance(Class argument, Class parameter) {
         /**
          * note: when shifting with 32 bit, you should only shift on a long. If you do
          *       that with an int, then i==(i<<32), which means you loose the shift
          *       information
          */
-        
+
         if (parameter == argument) return 0;
 
         if (parameter.isInterface()) {
             long ret = PRIMITIVES.length;
-            ret = (ret<<32) | getMaximumInterfaceDistance(argument, parameter); 
+            ret = (ret << 32) | getMaximumInterfaceDistance(argument, parameter);
             return ret;
         }
 
@@ -268,10 +268,10 @@ public class MetaClassHelper {
             }
 
             long pd = getPrimitiveDistance(parameter, argument);
-            if (pd != -1) return pd<<33;
+            if (pd != -1) return pd << 33;
 
             // add one to dist to be sure interfaces are prefered
-            objectDistance += PRIMITIVES.length<<1 + 1;
+            objectDistance += PRIMITIVES.length << 1 + 1;
             Class clazz = ReflectionCache.autoboxType(argument);
             while (clazz != null) {
                 if (clazz == parameter) break;
@@ -304,7 +304,7 @@ public class MetaClassHelper {
     public static long calculateParameterDistance(Class[] arguments, Class[] parameters) {
         long ret = 0;
         for (int i = 0; i < arguments.length; i++) {
-            ret += calculateParameterDistance(arguments[i],parameters[i]);
+            ret += calculateParameterDistance(arguments[i], parameters[i]);
         }
         return ret;
     }
@@ -314,6 +314,7 @@ public class MetaClassHelper {
     }
 
     /**
+     * @param methods the methods to choose from
      * @return the method with 1 parameter which takes the most general type of
      *         object (e.g. Object)
      */
@@ -336,11 +337,12 @@ public class MetaClassHelper {
     }
 
     /**
+     * @param methods the methods to choose from
      * @return the method with 1 parameter which takes the most general type of
      *         object (e.g. Object) ignoring primitve types
      */
     public static Object chooseMostGeneralMethodWith1NullParam(FastArray methods) {
-        // lets look for methods with 1 argument which matches the type of the
+        // let's look for methods with 1 argument which matches the type of the
         // arguments
         CachedClass closestClass = null;
         CachedClass closestVargsClass = null;
@@ -385,9 +387,9 @@ public class MetaClassHelper {
                 } else {
                     // closestClass and theType are not in a subtype relation, we need
                     // to check the distance to Object
-                    if (closestDist==-1) closestDist = closestClass.getSuperClassDistance();
+                    if (closestDist == -1) closestDist = closestClass.getSuperClassDistance();
                     int newDist = theType.getSuperClassDistance();
-                    if (newDist<closestDist) {
+                    if (newDist < closestDist) {
                         closestDist = newDist;
                         closestVargsClass = null;
                         closestClass = theType;
@@ -398,19 +400,21 @@ public class MetaClassHelper {
         }
         return answer;
     }
-    
+
     // 
     private static int calculateSimplifiedClassDistanceToObject(Class clazz) {
         int objectDistance = 0;
         while (clazz != null) {
             clazz = clazz.getSuperclass();
-            objectDistance ++;
+            objectDistance++;
         }
         return objectDistance;
     }
-    
+
 
     /**
+     * @param list   a list of MetaMethods
+     * @param method the MetaMethod of interest
      * @return true if a method of the same matching prototype was found in the
      *         list
      */
@@ -438,7 +442,8 @@ public class MetaClassHelper {
     /**
      * param instance array to the type array
      *
-     * @param args
+     * @param args the arguments
+     * @return the types of the arguments
      */
     public static Class[] convertToTypeArray(Object[] args) {
         if (args == null)
@@ -567,6 +572,10 @@ public class MetaClassHelper {
      * Returns a callable object for the given method name on the object.
      * The object acts like a Closure in that it can be called, like a closure
      * and passed around - though really its a method pointer, not a closure per se.
+     *
+     * @param object the object containing the method
+     * @param methodName the method of interest
+     * @return the resulting closure-like method pointer
      */
     public static Closure getMethodPointer(Object object, String methodName) {
         return new MethodClosure(object, methodName);
