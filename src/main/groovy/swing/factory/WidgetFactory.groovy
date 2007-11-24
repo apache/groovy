@@ -16,7 +16,6 @@
 
 package groovy.swing.factory
 
-import groovy.swing.SwingBuilder
 import java.awt.Component
 import java.awt.Window
 
@@ -38,7 +37,7 @@ public class WidgetFactory extends AbstractFactory {
         if (value == null) {
             value = attributes.remove(name);
         }
-        if ((value != null) && SwingBuilder.checkValueIsType(value, name, restrictedType)) {
+        if ((value != null) && FactoryBuilderSupport.checkValueIsType(value, name, restrictedType)) {
             return value;
         } else {
             throw new RuntimeException("$name must have either a value argument or an attribute named $name that must be of type $restrictedType.name");

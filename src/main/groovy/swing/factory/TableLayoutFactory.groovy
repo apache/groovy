@@ -16,7 +16,6 @@
 
 package groovy.swing.factory
 
-import groovy.swing.SwingBuilder
 import groovy.swing.impl.TableLayout
 import groovy.swing.impl.TableLayoutCell
 import groovy.swing.impl.TableLayoutRow
@@ -26,7 +25,7 @@ import java.awt.Window
 public class TableLayoutFactory extends AbstractFactory {
     
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
-        if (SwingBuilder.checkValueIsType(value, name, TableLayout.class)) {
+        if (FactoryBuilderSupport.checkValueIsType(value, name, TableLayout.class)) {
             return value;
         }
         return new TableLayout();
@@ -41,7 +40,7 @@ public class TableLayoutFactory extends AbstractFactory {
     
 public class TRFactory extends AbstractFactory {
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
-        SwingBuilder.checkValueIsNull(value, name);
+        FactoryBuilderSupport.checkValueIsNull(value, name);
         //TODO we could make the value arg the parent
         Object parent = builder.getCurrent();
         if (parent instanceof TableLayout) {
@@ -58,7 +57,7 @@ public class TRFactory extends AbstractFactory {
 
 public class TDFactory extends AbstractFactory {
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
-        SwingBuilder.checkValueIsNull(value, name);
+        FactoryBuilderSupport.checkValueIsNull(value, name);
         //TODO we could make the value arg the TR
         Object parent = builder.getCurrent();
         if (parent instanceof TableLayoutRow) {

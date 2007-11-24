@@ -16,7 +16,6 @@
 
 package groovy.swing.factory
 
-import groovy.swing.SwingBuilder
 import javax.swing.JFrame
 import javax.swing.JMenuBar
 
@@ -24,7 +23,7 @@ public class FrameFactory extends RootPaneContainerFactory {
 
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         JFrame frame
-        if (SwingBuilder.checkValueIsType(value, name, JFrame.class)) {
+        if (FactoryBuilderSupport.checkValueIsType(value, name, JFrame.class)) {
             frame = value
         } else {
             frame = new JFrame()

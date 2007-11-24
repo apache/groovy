@@ -16,7 +16,6 @@
 
 package groovy.swing.factory
 
-import groovy.swing.SwingBuilder
 import java.awt.Dialog
 import java.awt.Frame
 import javax.swing.JDialog
@@ -25,7 +24,7 @@ public class DialogFactory extends RootPaneContainerFactory {
 
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         JDialog dialog
-        if (SwingBuilder.checkValueIsType(value, name, JDialog.class)) {
+        if (FactoryBuilderSupport.checkValueIsType(value, name, JDialog.class)) {
             dialog = value
         } else {
             Object owner = attributes.remove("owner")

@@ -16,8 +16,6 @@
 
 package groovy.swing.factory
 
-import groovy.swing.SwingBuilder
-
 /**
  * This returns a mutable java.util.Collection of some sort, to which items are added.  
  */

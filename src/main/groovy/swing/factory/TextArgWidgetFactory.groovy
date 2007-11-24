@@ -16,7 +16,6 @@
 
 package groovy.swing.factory
 
-import groovy.swing.SwingBuilder
 import org.codehaus.groovy.runtime.InvokerHelper
 
 /**
@@ -32,7 +31,7 @@ public class TextArgWidgetFactory extends AbstractFactory {
     }
     
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
-        if (SwingBuilder.checkValueIsTypeNotString(value, name, klass)) {
+        if (FactoryBuilderSupport.checkValueIsTypeNotString(value, name, klass)) {
             return value;
         }
         

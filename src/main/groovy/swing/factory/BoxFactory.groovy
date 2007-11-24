@@ -16,7 +16,6 @@
 
 package groovy.swing.factory
 
-import groovy.swing.SwingBuilder
 import java.awt.Dimension
 import javax.swing.Box
 import javax.swing.BoxLayout
@@ -28,7 +27,7 @@ public class BoxFactory extends ComponentFactory {
     }
     
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
-        if (SwingBuilder.checkValueIsType(value, name, Box.class)) {
+        if (FactoryBuilderSupport.checkValueIsType(value, name, Box.class)) {
             return value;
         }
         int axis = BoxLayout.X_AXIS; // default to X so it behaves like FlowLayout
@@ -49,21 +48,21 @@ public class HBoxFactory extends ComponentFactory {
     }
 
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
-        SwingBuilder.checkValueIsNull(value, name);
+        FactoryBuilderSupport.checkValueIsNull(value, name);
         return Box.createHorizontalBox();
     }
 }
 
 public class HGlueFactory extends AbstractFactory {
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
-        SwingBuilder.checkValueIsNull(value, name);
+        FactoryBuilderSupport.checkValueIsNull(value, name);
         return Box.createHorizontalGlue();
     }
 }
 
 public class HStrutFactory extends AbstractFactory {
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
-        SwingBuilder.checkValueIsType(value, name, Number.class);
+        FactoryBuilderSupport.checkValueIsType(value, name, Number.class);
         Object num;
         if (value != null) {
             num = value;
@@ -85,21 +84,21 @@ public class VBoxFactory extends ComponentFactory {
     }
 
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
-        SwingBuilder.checkValueIsNull(value, name);
+        FactoryBuilderSupport.checkValueIsNull(value, name);
         return Box.createVerticalBox();
     }
 }
 
 public class VGlueFactory extends AbstractFactory {
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
-        SwingBuilder.checkValueIsNull(value, name);
+        FactoryBuilderSupport.checkValueIsNull(value, name);
         return Box.createVerticalGlue();
     }
 }
 
 public class VStrutFactory extends AbstractFactory {
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
-        SwingBuilder.checkValueIsType(value, name, Number.class);
+        FactoryBuilderSupport.checkValueIsType(value, name, Number.class);
         Object num;
         if (value != null) {
             num = value;
@@ -116,14 +115,14 @@ public class VStrutFactory extends AbstractFactory {
 
 public class GlueFactory extends AbstractFactory {
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
-        SwingBuilder.checkValueIsNull(value, name);
+        FactoryBuilderSupport.checkValueIsNull(value, name);
         return Box.createGlue();
     }
 }
 
 public class RigidAreaFactory extends AbstractFactory {
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
-        SwingBuilder.checkValueIsNull(value, name);
+        FactoryBuilderSupport.checkValueIsNull(value, name);
         Dimension dim;
         Object o = attributes.remove("size");
         if (o instanceof Dimension) {

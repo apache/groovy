@@ -16,7 +16,6 @@
 
 package groovy.swing.factory
 
-import groovy.swing.SwingBuilder
 import java.awt.Dialog
 import java.awt.Frame
 import javax.swing.JWindow
@@ -25,7 +24,7 @@ public class WindowFactory extends RootPaneContainerFactory {
     
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         JWindow window;
-        if (SwingBuilder.checkValueIsType(value, name, JWindow.class)) {
+        if (FactoryBuilderSupport.checkValueIsType(value, name, JWindow.class)) {
             window = value
         } else {
             LinkedList containingWindows = builder.containingWindows;

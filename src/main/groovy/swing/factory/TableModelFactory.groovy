@@ -19,14 +19,13 @@ package groovy.swing.factory
 import groovy.model.DefaultTableModel
 import groovy.model.ValueHolder
 import groovy.model.ValueModel
-import groovy.swing.SwingBuilder
 import javax.swing.table.TableModel
 import javax.swing.JTable
 
 public class TableModelFactory extends AbstractFactory {
     
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
-        if (SwingBuilder.checkValueIsType(value, name, TableModel.class)) {
+        if (FactoryBuilderSupport.checkValueIsType(value, name, TableModel.class)) {
             return value;
         } else if (attributes.get(name) instanceof TableModel) {
             return attributes.remove(name);
@@ -56,7 +55,7 @@ public class TableModelFactory extends AbstractFactory {
 public class PropertyColumnFactory extends AbstractFactory {
 
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
-        SwingBuilder.checkValueIsNull(value, name);
+        FactoryBuilderSupport.checkValueIsNull(value, name);
         Object current = builder.getCurrent();
         if (current instanceof DefaultTableModel) {
             DefaultTableModel model = (DefaultTableModel) current;
@@ -86,7 +85,7 @@ public class PropertyColumnFactory extends AbstractFactory {
 public class ClosureColumnFactory extends AbstractFactory {
 
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
-        SwingBuilder.checkValueIsNull(value, name);
+        FactoryBuilderSupport.checkValueIsNull(value, name);
         Object current = builder.getCurrent();
         if (current instanceof DefaultTableModel) {
             DefaultTableModel model = (DefaultTableModel) current;

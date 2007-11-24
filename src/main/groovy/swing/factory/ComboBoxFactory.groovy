@@ -16,13 +16,12 @@
 
 package groovy.swing.factory
 
-import groovy.swing.SwingBuilder
 import javax.swing.JComboBox
 
 public class ComboBoxFactory extends AbstractFactory {
     
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
-        SwingBuilder.checkValueIsNull(value, name);
+        FactoryBuilderSupport.checkValueIsNull(value, name);
         //TODO expand to allow the value arg to be items
         Object items = attributes.remove("items");
         if (items instanceof Vector) {

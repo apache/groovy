@@ -15,8 +15,6 @@
  */
 package groovy.swing.factory
 
-import groovy.swing.SwingBuilder
-
 /**
  * @author <a href="mailto:shemnon@yahoo.com">Danno Ferrin</a>
  * @version $Revision: 7953 $
@@ -40,7 +38,7 @@ class BeanFactory extends AbstractFactory {
     }
 
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
-        if (SwingBuilder.checkValueIsTypeNotString(value, name, beanClass)) {
+        if (FactoryBuilderSupport.checkValueIsTypeNotString(value, name, beanClass)) {
             return value
         } else {
             Object bean = beanClass.newInstance()
