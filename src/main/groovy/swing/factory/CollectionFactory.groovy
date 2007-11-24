@@ -22,7 +22,7 @@ package groovy.swing.factory
 public class CollectionFactory extends AbstractFactory {
     
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
-        SwingBuilder.checkValueIsNull(value, name);
+        FactoryBuilderSupport.checkValueIsNull(value, name);
         if (attributes.isEmpty()) {
             return new ArrayList();
         } else {
