@@ -2854,6 +2854,17 @@ public class DefaultGroovyMethods {
         }
     }
 
+	/**
+	 * Converts the given collection to either a List, Set, or
+	 * SortedSet.  If the given class is something else, the 
+	 * call is defered to {link #asType(Object,Class)}.  If this
+	 * collection is already of the given type, the same instance is
+	 * returned.
+	 * @see #asType(Object,Class)
+	 * @param col
+	 * @param clazz
+	 * @return the object resulting from this type conversion
+	 */
     public static Object asType(Collection col, Class clazz) {
         if (clazz == List.class) {
             return asList(col);
@@ -2867,6 +2878,14 @@ public class DefaultGroovyMethods {
         return asType((Object) col, clazz);
     }
 
+	/**
+	 * Convenience method which coerces the closure to an implementation
+	 * of the given class.  The class is assumed to be an interface or class
+	 * with a single method definition.
+	 * @param cl the implementaiton of the single method
+	 * @param clazz the target type
+	 * @return a Proxy of the given type which wraps this closure.
+	 */
     public static Object asType(Closure cl, Class clazz) {
         if (clazz.isInterface() && !(clazz.isInstance(cl))) {
             return Proxy.newProxyInstance(
@@ -2877,6 +2896,14 @@ public class DefaultGroovyMethods {
         return asType((Object) cl, clazz);
     }
 
+	/**
+	 * Coerces this map to the given type, using the map's keys as the public
+	 * method names, and values as the implementation.  Typically the value 
+	 * would be a closure which behaves like the method implementation.
+	 * @param map this map
+	 * @param clazz the target type
+	 * @return a Proxy of the given type, which defers calls to this map's elements.
+	 */
     public static Object asType(Map map, Class clazz) {
         if (!(clazz.isInstance(map)) && clazz.isInterface()) {
             return Proxy.newProxyInstance(
@@ -2897,7 +2924,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Reverses the list
+     * Reverses the list.  The result is a new List with the same items in 
+     * reverse order.
      *
      * @param self a List
      * @return a reversed List
@@ -2953,11 +2981,13 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Create a List composed of the same elements repeated a certain number of times.
+     * Create a List composed of the elements of this list, repeated 
+     * a certain number of times.  Note that for non- primitive 
+     * elements, multiple references to the same instance will be added.
      *
      * @param self   a Collection
      * @param factor the number of times to append
-     * @return a List
+     * @return the multiplied list
      */
     public static List multiply(Collection self, Number factor) {
         int size = factor.intValue();
@@ -2969,7 +2999,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Create a List composed of the intersection of both collections
+     * Create a List composed of the intersection of both collections.
      *
      * @param left  a Collection
      * @param right a Collection
@@ -3006,7 +3036,8 @@ public class DefaultGroovyMethods {
      *
      * @param left  a Collection
      * @param right a Collection
-     * @return boolean   <code>true</code> if the intersection of two collections is empty, <code>false</code> otherwise.
+     * @return boolean   <code>true</code> if the intersection of two collections 
+     * 	is empty, <code>false</code> otherwise.
      */
     public static boolean disjoint(Collection left, Collection right) {
 
@@ -3070,10 +3101,26 @@ public class DefaultGroovyMethods {
         return true;
     }
 
+	/**
+	 * Determines if the contents of this array are equal to the 
+	 * contents of the given list, in the same order.  This returns 
+	 * <code>false</code> if either collection is <code>null</code>.
+	 * @param left this array
+	 * @param right the list being compared
+	 * @return true if the contents of both collections are equal
+	 */
     public static boolean equals(Object[] left, List right) {
         return coercedEquals(left, right);
     }
 
+	/**
+	 * Determines if the contents of this list are equal to the 
+	 * contents of the given array in the same order.  This returns 
+	 * <code>false</code> if either collection is <code>null</code>.
+	 * @param left this List
+	 * @param right this Object[] being compared to
+	 * @return true if the contents of both collections are equal
+	 */
     public static boolean equals(List left, Object[] right) {
         return coercedEquals(right, left);
     }
@@ -3108,13 +3155,15 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Compare two Lists.
-     * If numbers exits in the Lists, then they are compared as numbers,
-     * for example 2 == 2L.
+     * Compare the contents of two Lists.  Order matters.
+     * If numbers exist in the Lists, then they are compared as numbers,
+     * for example 2 == 2L.  If either list is <code>null</code>, the result
+     * is <code>false</code>.
      *
-     * @param left  a List
-     * @param right a List
-     * @return boolean   <code>true</code> if two Lists equals, <code>false</code> otherwise.
+     * @param left  this List
+     * @param right the List being compared to.
+     * @return boolean   <code>true</code> if the contents of both lists are identical, 
+     * 	<code>false</code> otherwise.
      */
     public static boolean equals(List left, List right) {
         if (left == null) {
@@ -3256,11 +3305,11 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Create a Set composed of the elements of the first set minus the operand
+     * Create a new List composed of the elements of the first list minus the operand
      *
      * @param self    a List object
      * @param operand an element to remove from the list
-     * @return the resulting list with the operand removed
+     * @return the resulting List with the operand removed
      */
     public static List minus(List self, Object operand) {
         Comparator numberComparator = new NumberAwareComparator();
@@ -3308,11 +3357,12 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Overloads the left shift operator to provide an easy way to append objects to a list
+     * Overloads the left shift operator to provide an easy way to append 
+     * objects to a Collection.
      *
      * @param self  a Collection
      * @param value an Object to be added to the collection.
-     * @return a Collection with an Object added to it.
+     * @return same collection, after the value was added to it.
      */
     public static Collection leftShift(Collection self, Object value) {
         self.add(value);
@@ -3321,11 +3371,11 @@ public class DefaultGroovyMethods {
 
     /**
      * Overloads the left shift operator to provide an easy way to append multiple
-     * objects as string representations to a String
+     * objects as string representations to a String.
      *
      * @param self  a String
      * @param value an Obect
-     * @return a StringBuffer
+     * @return a StringBuffer built from this string
      */
     public static StringBuffer leftShift(String self, Object value) {
         return new StringBuffer(self).append(value);
@@ -3343,11 +3393,11 @@ public class DefaultGroovyMethods {
 
     /**
      * Overloads the left shift operator to provide an easy way to append multiple
-     * objects as string representations to a StringBuffer
+     * objects as string representations to a StringBuffer.
      *
      * @param self  a StringBuffer
      * @param value a value to append
-     * @return a StringBuffer
+     * @return the StringBuffer on which this operation was invoked
      */
     public static StringBuffer leftShift(StringBuffer self, Object value) {
         self.append(value);
@@ -3355,11 +3405,12 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Overloads the left shift operator to provide an append mechanism to add things to a writer
+     * Overloads the left shift operator to provide a mechanism to append 
+     * values to a writer.
      *
      * @param self  a Writer
      * @param value a value to append
-     * @return a StringWriter
+     * @return the writer on which this operation was invoked
      * @throws IOException if an I/O error occurs.
      */
     public static Writer leftShift(Writer self, Object value) throws IOException {
@@ -4095,7 +4146,7 @@ public class DefaultGroovyMethods {
     /**
      * Converts the given string into a Boolean object
      * If the trimmed string is "true", "y" or "1" (ignoring case)
-     * then the result is true othewrwise it is false
+     * then the result is true othewrwise it is false.
      *
      * @param self a String
      * @return The Boolean value
@@ -4111,8 +4162,9 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Tokenize a String
+     * Tokenize a String based on the given string delimiter.
      *
+     * @see java.util.StringTokenizer#StringTokenizer(java.lang.String, java.lang.String)
      * @param self  a String
      * @param token the delimiter
      * @return a List of tokens
@@ -7321,6 +7373,24 @@ public class DefaultGroovyMethods {
         return asType((Object) self, c);
     }
 
+	/**
+	 * <p>Provides a method to perform custom 'dynamic' type conversion
+	 * to the given class using the <code>as</code> operator.</p>
+	 * <strong>Example:</strong> <code>'123' as Double</code>
+	 * <p>By default, the following types are supported:
+	 * <ul>
+	 *  <li>List</li>
+	 *  <li>BigDecimal</li>
+	 *  <li>BigInteger</li>
+	 *  <li>Character</li>
+	 *  <li>Character</li>
+	 *  <li>Double</li>
+	 *  <li>Float</li>
+	 *  <li>File</li>
+	 * </ul>
+	 * If any other type is given, the call is delegated to 
+	 * {@link #asType(Object,Class)}.
+	 */
     public static Object asType(String self, Class c) {
         if (c == List.class) {
             return toList(self);
@@ -7345,9 +7415,9 @@ public class DefaultGroovyMethods {
 
     /**
      * An alias method so that a process appears similar to System.out, System.in, System.err;
-     * you can use process.in, process.out, process.err in a similar way
+     * you can use process.in, process.out, process.err in a similar fashion.
      *
-     * @param self a Process object
+     * @param self a Process instance
      * @return the InputStream for the process
      */
     public static InputStream getIn(Process self) {
@@ -7357,7 +7427,7 @@ public class DefaultGroovyMethods {
     /**
      * Read the text of the output stream of the Process.
      *
-     * @param self a Process
+     * @param self a Process instance
      * @return the text of the output
      * @throws IOException if an IOException occurs.
      */
@@ -7367,9 +7437,9 @@ public class DefaultGroovyMethods {
 
     /**
      * An alias method so that a process appears similar to System.out, System.in, System.err;
-     * you can use process.in, process.out, process.err in a similar way
+     * you can use process.in, process.out, process.err in a similar fashion.
      *
-     * @param self a Process object
+     * @param self a Process instance
      * @return the error InputStream for the process
      */
     public static InputStream getErr(Process self) {
@@ -7378,9 +7448,9 @@ public class DefaultGroovyMethods {
 
     /**
      * An alias method so that a process appears similar to System.out, System.in, System.err;
-     * you can use process.in, process.out, process.err in a similar way
+     * you can use process.in, process.out, process.err in a similar fashion.
      *
-     * @param self a Process object
+     * @param self a Process instance
      * @return the OutputStream for the process
      */
     public static OutputStream getOut(Process self) {
@@ -7388,10 +7458,10 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Overloads the left shift operator to provide an append mechanism
-     * to pipe into a Process
+     * Overloads the left shift operator (&lt;&lt;) to provide an append mechanism
+     * to pipe data to a Process.
      *
-     * @param self  a Process
+     * @param self  a Process instance
      * @param value a value to append
      * @return a Writer
      * @throws IOException if an IOException occurs.
@@ -7404,8 +7474,8 @@ public class DefaultGroovyMethods {
      * Overloads the left shift operator to provide an append mechanism
      * to pipe into a Process
      *
-     * @param self  a Process
-     * @param value a value to append
+     * @param self  a Process instance
+     * @param value data to append
      * @return an OutputStream
      * @throws IOException if an IOException occurs.
      */
@@ -7428,8 +7498,8 @@ public class DefaultGroovyMethods {
 
     /**
      * Gets the output and error streams from a process and reads them
-     * to avoid the process to block due to a full ouput buffer. For this
-     * two Threads are started, so this method will return immediately
+     * to keep the process from blocking due to a full ouput buffer. For this
+     * two Threads are started, so this method will return immediately.
      *
      * @param self a Process
      */
@@ -7444,7 +7514,7 @@ public class DefaultGroovyMethods {
 
     /**
      * Process each regex group matched substring of the given string. If the closure
-     * parameter takes one argument an array with all match groups is passed to it.
+     * parameter takes one argument, an array with all match groups is passed to it.
      * If the closure takes as many arguments as there are match groups, then each
      * parameter will be one match group.
      *
@@ -7493,7 +7563,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Iterates over every element of the collection and return the index of the first object
+     * Iterates over every element of the collection and returns the index of the first object
      * that matches the condition specified in the closure
      *
      * @param self    the iteration object over which we iterate
@@ -7512,10 +7582,11 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Iterates through the class loader parents until it finds a loader with a class
-     * named equal to org.codehaus.groovy.tools.RootLoader. If there is no such class
-     * null will be returned. The name has to be used because a direct compare with
-     * == may fail as the class may be loaded through different classloaders.
+     * Iterates through the classloader parents until it finds a loader with a class
+     * named "org.codehaus.groovy.tools.RootLoader". If there is no such class
+     * <code>null</code> will be returned. The name is used for comparison because 
+     * a direct comparison using == may fail as the class may be loaded through 
+     * different classloaders.
      *
      * @param self a ClassLoader
      * @return the rootLoader for the ClassLoader
@@ -7541,10 +7612,23 @@ public class DefaultGroovyMethods {
         return DefaultTypeTransformation.castToType(obj, type);
     }
 
+	/**
+	 * Convenience method to dynamically create a new instance of this
+	 * class.  Calls the default constructor.
+	 *
+	 * @return a new instance of this class
+	 */
     public static Object newInstance(Class c) {
         return InvokerHelper.getInstance().invokeConstructorOf(c, null);
     }
 
+	/**
+	 * Helper to construct a new instance from the given arguments.
+	 * The constructor is called based on the number and types in the
+	 * args array.  Use <code>newInstance(null)</code> or simply 
+	 * <code>newInstance()</code> for the default (no-arg) constructor.
+	 * @return a new instance of this class.
+	 */
     public static Object newInstance(Class c, Object[] args) {
         if (args == null) args = new Object[]{null};
         return InvokerHelper.getInstance().invokeConstructorOf(c, args);
@@ -7553,7 +7637,7 @@ public class DefaultGroovyMethods {
 
     /**
      * Adds a "metaClass" property to all class objects so you can use the syntax
-     * String.metaClass.myMethod = { println "foo" }
+     * <code>String.metaClass.myMethod = { println "foo" }</code>
      *
      * @param c The java.lang.Class instance
      * @return An MetaClass instance
@@ -7574,7 +7658,7 @@ public class DefaultGroovyMethods {
 
     /**
      * Obtains a MetaClass for an object either from the registry or in the case of
-     * a GroovyObject from the object itself
+     * a GroovyObject from the object itself.
      *
      * @param obj The object in question
      * @return The MetaClass
@@ -7655,13 +7739,23 @@ public class DefaultGroovyMethods {
         }
     }
 
+	/**
+	 * Attempts to create an Iterator for the given object by first 
+	 * converting it to a Collection.
+	 * @see DefaultTypeTransformation#asCollection(Object)
+	 * @return an Iterator for the given Object.
+	 */
     public static Iterator iterator(Object o) {
         return DefaultTypeTransformation.asCollection(o).iterator();
     }
 
     /**
+     * Allows an Enumeration to behave like an Iterator.  Note that the
+     * {@link Iterator#remove() remove()} method is unsupported since the 
+     * underlying Enumeration does not provide a mechanism for removing items.
+     *
      * @param enumeration an Enumeration object
-     * @return an Iterator for the Enumeration
+     * @return an Iterator for the given Enumeration
      */
     public static Iterator iterator(final Enumeration enumeration) {
         return new Iterator() {
@@ -7685,6 +7779,8 @@ public class DefaultGroovyMethods {
     // TODO move into DOMCategory once we can make use of optional categories transparent
 
     /**
+     * Makes NodeList iterable by returning an Iterator that traverses each
+     * Node in the list.
      * @param nodeList a NodeList
      * @return an Iterator for a NodeList
      */
@@ -7707,6 +7803,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * Retuns an {@link Iterator} which traverses each match.
+     * @see Matcher#group()
      * @param matcher a Matcher object
      * @return an Iterator for a Matcher
      */
@@ -7745,6 +7843,9 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * Creates an iterator which will traverse through the reader a line at a time.
+     *
+     * @see java.io.BufferedReader#readLine()
      * @param self a Reader object
      * @return an Iterator for the Reader
      */
