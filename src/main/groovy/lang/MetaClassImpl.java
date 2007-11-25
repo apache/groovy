@@ -591,19 +591,21 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 if (answer instanceof MetaMethod) {
                     arr = new FastArray();
                     arr.add(answer);
+                } else {
+                    arr = ((FastArray) answer).copy();
                 }
-                else
-                  arr = ((FastArray) answer).copy();
 
                 for (Iterator iter = used.iterator(); iter.hasNext();) {
                     MetaMethod element = (MetaMethod) iter.next();
                     final int found = findMatchingMethod(arr, element);
-                    if (found != -1)
-                        arr.set(found, element);
-                    else
+                    if (found != -1) {
+                        MetaMethod orig = (MetaMethod) arr.get(found);
+                        arr.set(found, GroovyCategorySupport.getClosestMatchingCategoryMethod(sender, orig, element));
+                    } else {
                         arr.add(element);
+                    }
+                    answer = arr;
                 }
-                answer = arr;
             }
         }
         return answer;

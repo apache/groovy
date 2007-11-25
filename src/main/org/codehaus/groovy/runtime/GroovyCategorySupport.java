@@ -83,6 +83,18 @@ public class GroovyCategorySupport {
         return methodList;
     }
 
+    public static Object getClosestMatchingCategoryMethod(Class sender, MetaMethod orig, MetaMethod element) {
+        // for now just compare MetaMethods
+        if (orig instanceof CategoryMethod && element instanceof CategoryMethod) {
+            CategoryMethod o = (CategoryMethod) orig;
+            CategoryMethod e = (CategoryMethod) element;
+            if (o.compareTo(e) < 0) {
+                return orig;
+            }
+        }
+        return element;
+    }
+    
     private static class CategoryMethod extends NewInstanceMetaMethod implements Comparable {
         private final Class metaClass;
 
@@ -104,14 +116,14 @@ public class GroovyCategorySupport {
             Class thatClass = thatMethod.metaClass;
             if (thisClass == thatClass) return 0;
             Class loop = thisClass;
-            while(loop != Object.class) {
+            while(loop != null && loop != Object.class) {
                 loop = thisClass.getSuperclass();
                 if (loop == thatClass) {
                     return -1;
                 }
             }
             loop = thatClass;
-            while (loop != Object.class) {
+            while (loop != null && loop != Object.class) {
                 loop = thatClass.getSuperclass();
                 if (loop == thisClass) {
                     return 1;
