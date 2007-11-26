@@ -16,11 +16,9 @@
 package org.codehaus.groovy.reflection;
 
 import groovy.lang.GString;
-import groovy.lang.MetaClassRegistry;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.classgen.BytecodeHelper;
 import org.codehaus.groovy.runtime.Reflector;
-import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.lang.reflect.Constructor;
@@ -360,10 +358,10 @@ public class CachedClass {
     }
 
     public synchronized Reflector getReflector() {
-        if (reflector == null) {
+        /*if (reflector == null) {
             final MetaClassRegistry metaClassRegistry = MetaClassRegistryImpl.getInstance(MetaClassRegistryImpl.LOAD_DEFAULT);
             reflector = ((MetaClassRegistryImpl)metaClassRegistry).loadReflector(getCachedClass(), Arrays.asList(getMethods()));
-        }
+        }*/
         return reflector;
     }
 

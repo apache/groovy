@@ -99,6 +99,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport{
                     )
             );
             valueOfMethod.setCode(code);
+            valueOfMethod.setSynthetic(true);
             enumClass.addMethod(valueOfMethod);
         }
         addConstructor(enumClass);

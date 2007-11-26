@@ -349,10 +349,9 @@ public class MetaMethodIndex {
             }
         } else {
             MetaMethod method = (MetaMethod) oldListOrMethod;
-            if (method instanceof NewMetaMethod || method.isPrivate()) {
-                Entry e = getOrPutMethods(from.name, to);
-                e.methods = addMethodToList(e.methods, method);
-            }
+            if (method instanceof NewMetaMethod || method.isPrivate()) return;
+            Entry e = getOrPutMethods(from.name, to);
+            e.methods = addMethodToList(e.methods, method);
         }
     }
 
@@ -403,6 +402,7 @@ public class MetaMethodIndex {
                 list.add(method);
             } else {
                 MetaMethod match = (MetaMethod) list.get(found);
+                if (match==method) return o;
                 if (match.isPrivate()
                         || (match.getDeclaringClass().isInterface() && !method.getDeclaringClass().isInterface())) {
                     // do not overwrite interface methods with instance methods
@@ -432,6 +432,7 @@ public class MetaMethodIndex {
     }
 
     private boolean isMatchingMethod(MetaMethod aMethod, MetaMethod method) {
+        if (aMethod==method) return true;
         CachedClass[] params1 = aMethod.getParameterTypes();
         CachedClass[] params2 = method.getParameterTypes();
         if (params1.length != params2.length) {

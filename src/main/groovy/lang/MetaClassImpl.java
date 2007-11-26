@@ -591,21 +591,15 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 if (answer instanceof MetaMethod) {
                     arr = new FastArray();
                     arr.add(answer);
-                } else {
-                    arr = ((FastArray) answer).copy();
                 }
+                else
+                  arr = ((FastArray) answer).copy();
 
                 for (Iterator iter = used.iterator(); iter.hasNext();) {
                     MetaMethod element = (MetaMethod) iter.next();
-                    final int found = findMatchingMethod(arr, element);
-                    if (found != -1) {
-                        MetaMethod orig = (MetaMethod) arr.get(found);
-                        arr.set(found, GroovyCategorySupport.getClosestMatchingCategoryMethod(sender, orig, element));
-                    } else {
-                        arr.add(element);
-                    }
-                    answer = arr;
+                    filterMatchingMethodForCategory(arr, element);
                 }
+                answer = arr;
             }
         }
         return answer;
@@ -2169,33 +2163,52 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     protected boolean isInitialized() {
         return initialized;
     }
-
-    private boolean isMatchingMethod (MetaMethod aMethod, MetaMethod method) {
+    
+    /**
+     * return false: add method
+     *        null:  ignore method
+     *        true:  replace
+     */
+    private Boolean getMatchKindForCategory(MetaMethod aMethod, MetaMethod categoryMethod) {
         CachedClass[] params1 = aMethod.getParameterTypes();
-        CachedClass[] params2 = method.getParameterTypes();
-        if (params1.length != params2.length) {
-            return false;
-        }
+        CachedClass[] params2 = categoryMethod.getParameterTypes();
+        if (params1.length != params2.length) return Boolean.FALSE;
 
-        boolean matches = true;
         for (int i = 0; i < params1.length; i++) {
-            if (params1[i] != params2[i]) {
-                matches = false;
-                break;
-            }
+            if (params1[i] != params2[i]) return Boolean.FALSE;
         }
-        return matches;
+        
+        Class aMethodClass = aMethod.getDeclaringClass().getCachedClass();
+        Class categoryMethodClass = categoryMethod.getDeclaringClass().getCachedClass();
+        
+        if (aMethodClass==categoryMethodClass) return Boolean.TRUE;
+        boolean match = aMethodClass.isAssignableFrom(categoryMethodClass);
+        if (match) return Boolean.TRUE;
+        return null;
     }
 
-    private int findMatchingMethod(FastArray list, MetaMethod method) {
+    private void filterMatchingMethodForCategory(FastArray list, MetaMethod method) {
         int len = list.size();
+        if (len==0) {
+            list.add(method);
+            return;
+        }
+        
+        Boolean bestMatch = null;
         Object data[] = list.getArray();
         for (int j = 0; j != len; ++j) {
             MetaMethod aMethod = (MetaMethod) data[j];
-            if (isMatchingMethod(aMethod, method))
-              return j;
+            Boolean match = getMatchKindForCategory(aMethod, method);
+            // true == replace
+            if (match==Boolean.TRUE) {
+                list.set(j, method);
+                return;
+            }
+            if (bestMatch==null) bestMatch=match;
         }
-        return -1;
+        // false == add
+        if (bestMatch==Boolean.FALSE) list.add(method);
+        // only other value is null, which means to ignore that method
     }
 
     private int findMatchingMethod(CachedMethod[] data, int from, int to, MetaMethod method) {

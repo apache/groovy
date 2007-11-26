@@ -320,7 +320,6 @@ public class AsmClassGenerator extends ClassGenerator {
             public boolean equals(Object obj) {
                 Key other = (Key) obj;
                 return other.name.equals(name) && equalParameterTypes(other.params,params);
-                //&&                        equalParameterTypes(other.params,params);
             }
         }
         LinkedList mopCalls = new LinkedList();

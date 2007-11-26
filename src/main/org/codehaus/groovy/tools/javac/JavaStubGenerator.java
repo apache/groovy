@@ -17,6 +17,7 @@
 package org.codehaus.groovy.tools.javac;
 
 import groovy.lang.GroovyObjectSupport;
+
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
@@ -100,8 +101,10 @@ public class JavaStubGenerator
                 if (superClass.equals(ClassHelper.OBJECT_TYPE)) {
                     superClass = ClassHelper.make(GroovyObjectSupport.class);
                 }
-                out.print("  extends ");
-                printType(superClass,out);
+                if (!isEnum) {
+                    out.print("  extends ");
+                    printType(superClass,out);
+                }
             } 
 
             ClassNode[] interfaces = classNode.getInterfaces();
@@ -121,8 +124,8 @@ public class JavaStubGenerator
             }
             out.println(" {");
 
-            genMethods(classNode, out);
-            genFields(classNode, out);
+            genFields(classNode, out, isEnum);
+            genMethods(classNode, out, isEnum);
             genProps(classNode, out);
 
             out.println("}");
@@ -140,13 +143,25 @@ public class JavaStubGenerator
         }
     }
 
-    private void genMethods(ClassNode classNode, PrintWriter out) {
-        getConstructors(classNode, out);
+    private void genMethods(ClassNode classNode, PrintWriter out, boolean isEnum) {
+        if (!isEnum) getConstructors(classNode, out);
 
         List methods = classNode.getMethods();
         if (methods != null)
             for (Iterator it = methods.iterator(); it.hasNext();) {
                 MethodNode methodNode = (MethodNode) it.next();
+                if(isEnum && methodNode.isSynthetic()) {
+                    // skip values() method and valueOf(String)
+                    String name = methodNode.getName();
+                    Parameter[] params = methodNode.getParameters();
+                    if (name.equals("values") && params.length==0) continue;
+                    if (name.equals("valueOf") && 
+                        params.length==1 &&
+                        params[0].getType().equals(ClassHelper.STRING_TYPE))
+                    {
+                        continue;
+                    }
+                }
                 genMethod(classNode, methodNode, out);
             }
     }
@@ -160,10 +175,11 @@ public class JavaStubGenerator
             }
     }
 
-    private void genFields(ClassNode classNode, PrintWriter out) {
+    private void genFields(ClassNode classNode, PrintWriter out, boolean isEnum) {
         List fields = classNode.getFields();
         if (fields == null) return;
         ArrayList enumFields = new ArrayList(fields.size());
+        ArrayList normalFields = new ArrayList(fields.size());
         for (Iterator it = fields.iterator(); it.hasNext();) {
             FieldNode fieldNode = (FieldNode) it.next();
             boolean isEnumField = (fieldNode.getModifiers() & Opcodes.ACC_ENUM) !=0;
@@ -171,10 +187,14 @@ public class JavaStubGenerator
             if (isEnumField) {
                 enumFields.add(fieldNode);
             } else if (!isSynthetic) {
-                genField(fieldNode, out);
+                normalFields.add(fieldNode);
             }
         }
         genEnumFields(enumFields, out);
+        for (Iterator iterator = normalFields.iterator(); iterator.hasNext();) {
+            FieldNode fieldNode = (FieldNode) iterator.next();
+            genField(fieldNode, out);            
+        } 
     }
 
     private void genProps(ClassNode classNode, PrintWriter out) {
@@ -249,10 +269,11 @@ public class JavaStubGenerator
             }
             out.print(fieldNode.getName());            
         }
-        out.println();
+        out.println(";");
     }
 
     private void genField(FieldNode fieldNode, PrintWriter out) {
+        if ((fieldNode.getModifiers()&Opcodes.ACC_PRIVATE)!=0) return;
         printModifiers(out, fieldNode.getModifiers());
 
         printType(fieldNode.getType(), out);
