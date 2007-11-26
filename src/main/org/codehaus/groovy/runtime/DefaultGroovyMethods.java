@@ -69,11 +69,13 @@ public class DefaultGroovyMethods {
 
     /**
      * Identity check. Since == is overridden in Groovy with the meaning of equality
-     * we need some fallback to check for object identity.
+     * we need some fallback to check for object identity.  Invoke using the
+     * 'is' operator, like so: <code>def same = (this is that)</code>
      *
      * @param self  an object
      * @param other an object to compare identity with
-     * @return true if self and other are identical, false otherwise
+     * @return true if self and other are both references to the same 
+     * 	instance, false otherwise
      */
     public static boolean is(Object self, Object other) {
         return self == other;
@@ -81,7 +83,7 @@ public class DefaultGroovyMethods {
 
     /**
      * Allows the closure to be called for the object reference self
-     * synonym for 'with()'
+     * synonym for 'with()'.
      *
      * @param self    the object to have a closure act upon
      * @param closure the closure to call on the object
@@ -111,7 +113,7 @@ public class DefaultGroovyMethods {
      * property names.
      *
      * @param self     the object to act upon
-     * @param property the property of interest
+     * @param property the property name of interest
      * @return the property value
      */
     public static Object getAt(Object self, String property) {
@@ -653,10 +655,33 @@ public class DefaultGroovyMethods {
 
     // isCase methods
     //-------------------------------------------------------------------------
+
+    /**
+     * Method for overloading the behavior of the 'case' method in switch statements.
+     * The default implementation simply delegates to Object#equals, but this
+     * may be overridden for other types.  In this example:
+     * <pre> switch( a ) {
+     *   case b: //some code
+     * }</pre>
+     * "some code" is called when <code>b.isCase( a )</code> returns 
+     * <code>true</code>.
+     * 
+     */
     public static boolean isCase(Object caseValue, Object switchValue) {
         return caseValue.equals(switchValue);
     }
 
+	/**
+	 * 'Case' implementation for a String, which uses String#equals(Object)
+	 * in order to allow Strings to be used in switch statements. 
+	 * For example:
+	 * <pre>switch( str ) {
+	 *   case 'one' :
+	 *   // etc...
+	 * }</pre>
+	 * Note that this returns <code>true</code> for the case where both the
+	 * 'switch' and 'case' operand is <code>null</code>.
+	 */
     public static boolean isCase(String caseValue, Object switchValue) {
         if (switchValue == null) {
             return caseValue == null;
@@ -664,6 +689,18 @@ public class DefaultGroovyMethods {
         return caseValue.equals(switchValue.toString());
     }
 
+	/**
+	 * Special 'Case' implementation for Class, which allows testing 
+	 * for a certain class in a switch statement.  
+	 * For example:
+	 * <pre>switch( obj ) {
+	 *   case List :
+	 *     // obj is a list
+	 *     break;
+	 *   case Set :
+	 *     // etc
+	 * }<pre>
+	 */
     public static boolean isCase(Class caseValue, Object switchValue) {
         if (switchValue instanceof Class) {
             Class val = (Class) switchValue;
@@ -672,10 +709,33 @@ public class DefaultGroovyMethods {
         return caseValue.isInstance(switchValue);
     }
 
+	/**
+	 * 'Case' implementation for collections which tests if the 'switch' 
+	 * operand is contained in any of the 'case' values.
+	 * For example:
+	 * <pre>switch( item ) {
+	 *   case firstList :
+	 *     // item is contained in this list
+	 *     // etc
+	 * }</pre>
+	 * @see java.util.Collection#contains(Object)
+	 */
     public static boolean isCase(Collection caseValue, Object switchValue) {
         return caseValue.contains(switchValue);
     }
 
+	/**
+	 * 'Case' implementation for the {@link Pattern} class, which allows
+	 * testing a String against a number of regular expressions.
+	 * For example:
+	 * <pre>switch( str ) {
+	 *   case ~/one/ :
+	 *     // the regex 'one' matches the value of str
+	 * }
+	 * </pre>
+	 * Note that this returns true for the case where both the pattern and
+	 * the 'switch' values are <code>null</code>.
+	 */
     public static boolean isCase(Pattern caseValue, Object switchValue) {
         if (switchValue == null) {
             return caseValue == null;
@@ -689,6 +749,11 @@ public class DefaultGroovyMethods {
         }
     }
 
+	/**
+	 * Special 'case' implementation for all numbers, which delegates to the
+	 * <code>compareTo()</code> method for comparing numbers of different 
+	 * types.
+	 */
     public static boolean isCase(Number caseValue, Number switchValue) {
         return NumberMath.compareTo(caseValue, switchValue) == 0;
     }
@@ -696,6 +761,11 @@ public class DefaultGroovyMethods {
     // Collection based methods
     //-------------------------------------------------------------------------
 
+	/**
+	 * Modifies this collection to remove all duplicated items, using the 
+	 * default comparator.
+	 * @return this collection
+	 */
     public static Collection unique(Collection self) {
         if (self instanceof Set)
             return self;
@@ -720,7 +790,14 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * A convenience method for making a collection unique using a closure as a comparator.
+     * A convenience method for making a collection unique using a closure 
+     * as a comparator.  If the closure takes a single parameter, the 
+     * argument passed will be each element, and the closure  
+     * should return a value used for comparison (either using
+     * {@link Comparable#compareTo(Object)} or Object#equals() ).  If the 
+     * closure takes two parameters, two items from the collection 
+     * will be passed as arguments, and the closure should return an
+     * int value (with 0 indicating the items are not unique).
      *
      * @param self    a Collection
      * @param closure a Closure used as a comparator
@@ -808,7 +885,10 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Allows objects to be iterated through using a closure
+     * Iterates through an aggregate type or data structure, 
+     * passing each item to the given closure.  Custom types may utilize this
+     * method by simply providing an "iterator()" method.  The items returned
+     * from the resulting iterator will be passed to the closure. 
      *
      * @param self    the object over which we iterate
      * @param closure the closure applied on each element found
@@ -820,10 +900,12 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Allows object to be iterated through a closure with a counter
+     * Iterates through an aggregate type or data structure, 
+     * passing each item and the item's index (a counter starting at
+     * zero) to the given closure.
      *
      * @param self    an Object
-     * @param closure a Closure
+     * @param closure a Closure to operate on each item
      * @return the self Object
      */
     public static Object eachWithIndex(Object self, Closure closure) {
@@ -863,7 +945,7 @@ public class DefaultGroovyMethods {
      * Iterate over each element of the list in the reverse order.
      *
      * @param self    a List
-     * @param closure a closure
+     * @param closure a closure to which each item is passed.
      */
     public static List reverseEach(List self, Closure closure) {
         each(reverse(self).iterator(), closure);
@@ -871,7 +953,12 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Iterates over the iterations of an object, and checks whether a predicate is valid for all elements.
+     * Used to determine if the given predicate closure is valid (i.e. returns
+     * <code>true</code>) for all items in this data structure.  
+     * A simple example for a list:
+     * <pre>def list = [3,4,5]
+     * def greaterThanTwo = list.every { it > 2 }
+     * </pre>
      *
      * @param self    the object over which we iterate
      * @param closure the closure predicate used for matching
@@ -887,7 +974,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Iterates over the entries of a map, and checks whether a predicate is valid for all entries.
+     * Iterates over the entries of a map, and checks whether a predicate is 
+     * valid for all entries.
      *
      * @param self    the map over which we iterate
      * @param closure the closure predicate used for matching
@@ -904,8 +992,9 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Iterates over every element of a collection, and check whether all elements are true according to the Groovy Truth.
-     * Equivalent to self.every({element -> element})
+     * Iterates over every element of a collection, and checks whether all 
+     * elements are <code>true</code> according to the Groovy Truth.
+     * Equivalent to <code>self.every({element -> element})</code>
      *
      * @param self the object over which we iterate
      * @return true if every item in the collection matches the closure
@@ -921,7 +1010,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Iterates over the iterations of an object, and checks whether a predicate is valid for at least one element
+     * Iterates over the contents of an object or collection, and checks whether a 
+     * predicate is valid for at least one element.
      *
      * @param self    the object over which we iterate
      * @param closure the closure predicate used for matching
@@ -937,7 +1027,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Iterates over the entries of a map, and checks whether a predicate is valid for at least one entry
+     * Iterates over the entries of a map, and checks whether a predicate is 
+     * valid for at least one entry
      *
      * @param self    the map over which we iterate
      * @param closure the closure predicate used for matching
@@ -954,7 +1045,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Iterates over the elements of a collection, and checks whether at least one element is true according to the Groovy Truth.
+     * Iterates over the elements of a collection, and checks whether at least 
+     * one element is true according to the Groovy Truth.
      * Equivalent to self.any({element -> element})
      *
      * @param self the object over which we iterate
@@ -970,9 +1062,14 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Iterates over every element of the collection and return each object that matches
-     * the given filter - calling the isCase() method used by switch statements.
-     * This method can be used with different kinds of filters like regular expresions, classes, ranges etc.
+     * Iterates over every element of the collection and returns each item that matches
+     * the given filter - calling the <code>{@link #isCase(Object,Object)}</code> 
+     * method used by switch statements.  This method can be used with different 
+     * kinds of filters like regular expressions, classes, ranges etc.
+     * Example:
+     * <pre>def list = ['a', 'b', 'aa', 'bc' ]
+     * def filtered = list.grep( ~/a+/ ) //contains 'a' and 'aa'
+	 * </pre>
      *
      * @param self   the object over which we iterate
      * @param filter the filter to perform on the collection (using the isCase(object) method)
@@ -991,11 +1088,13 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Counts the number of occurencies of the given value inside this collection
+     * Counts the number of occurrences of the given value inside this collection.
+     * Comparison is done using Groovy's == operator (using 
+     * <code>compareTo(value) == 0</code> or <code>equals(value)</code> ).
      *
-     * @param self  the collection within which we count the number of occurencies
-     * @param value the value
-     * @return the number of occurrencies
+     * @param self  the collection within which we count the number of occurrences
+     * @param value the value being searched for
+     * @return the number of occurrences
      */
     public static int count(Collection self, Object value) {
         int answer = 0;
@@ -1020,11 +1119,15 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Iterates through this object transforming each object into a new value using the closure
+     * Iterates through this object transforming each item into a new value using the closure
      * as a transformer, returning a list of transformed values.
+     * Example:
+     * <pre>def list = [1, 'a', 1.23, true ]
+     * def types = list.collect { it.class }
+     * </pre>
      *
      * @param self    the values of the object to map
-     * @param closure the closure used to map each element of the collection
+     * @param closure the closure used to transform each element of the collection
      * @return a List of the mapped values
      */
     public static List collect(Object self, Closure closure) {
@@ -1036,9 +1139,9 @@ public class DefaultGroovyMethods {
      * as a transformer and adding it to the collection, returning the resulting collection.
      *
      * @param self       the values of the object to map
-     * @param collection the Collection to which the mapped values are added
+     * @param collection the Collection to which the transformed values are added
      * @param closure    the closure used to map each element of the collection
-     * @return the resultant collection
+     * @return the given collection after the items are added
      */
     public static Collection collect(Object self, Collection collection, Closure closure) {
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
@@ -1130,7 +1233,10 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Finds the first value matching the closure condition
+     * Finds the first value matching the closure condition.  Example:
+     * <pre>def list = [1,2,3]
+     * list.find { it > 1 } // returns 2
+     * </pre>
      *
      * @param self    a Collection
      * @param closure a closure condition
@@ -1147,7 +1253,9 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Finds the first value matching the closure condition
+     * Finds the first entry matching the closure condition.  If the closure takes
+     * two parameters, the entry key and value are passed.  If the closure takes
+     * one parameter, the Map.Entry object is passed.
      *
      * @param self    a Map
      * @param closure a closure condition
@@ -1164,7 +1272,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Finds all values matching the closure condition
+     * Finds all items matching the closure condition.
      *
      * @param self    an Object with an Iterator returning its values
      * @param closure a closure condition
@@ -1182,7 +1290,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Finds all values matching the closure condition
+     * Finds all values matching the closure condition.
      *
      * @param self    a Collection
      * @param closure a closure condition
@@ -1223,9 +1331,9 @@ public class DefaultGroovyMethods {
 
     /**
      * Finds all entries matching the closure condition. If the
-     * closure takes one parameter then it will be passed the Map.Entry
-     * otherwise if the closure takes two parameters then it will be
-     * passed the key and the value.
+     * closure takes one parameter then it will be passed the Map.Entry.
+     * Otherwise if the closure should take two parameters, which will be
+     * the key and the value.
      *
      * @param self    a Map
      * @param closure a closure condition applying on the entries
@@ -1243,8 +1351,11 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Groups all collection members into groups determined by the
-     * supplied mapping closure.
+     * Sorts all collection members into groups determined by the
+     * supplied mapping closure.  The closure should return the key that this 
+     * item should be grouped by.  The returned Map will have an entry for each 
+     * distinct key returned from the closure, with each value being a list of
+     * items for that group.   
      *
      * @param self    a collection to group (no map)
      * @param closure a closure mapping entries on keys
@@ -1262,7 +1373,12 @@ public class DefaultGroovyMethods {
 
     /**
      * Groups all map members into groups determined by the
-     * supplied mapping closure.
+     * supplied mapping closure. The closure will be passed a Map.Entry or
+     * key and value (depending on the number of parameters the closure accepts)
+     * and should return the key that each item should be grouped under.  The
+     * resulting map will have an entry for each 'group' key returned by the
+     * closure, with values being the a list of map entries that belong to each 
+     * group.
      *
      * @param self    a map to group
      * @param closure a closure mapping entries on keys
@@ -1376,7 +1492,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Sums the items in a collection.
+     * Sums the items in a collection.  This is equivalent to invoking the 
+     * "plus" method on all items in the collection.
      *
      * @param self Collection of values to add together.
      * @return The sum of all of the list itmems.
@@ -1386,7 +1503,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Sums the items in a collection to some initial value.
+     * Sums the items in a collection, adding the result to some initial value.
      *
      * @param self         a collection of values to sum.
      * @param initialValue the items in the collection will be summed to this initial value
@@ -1460,7 +1577,9 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Concatenates all of the items of the collection together with the given String as a separator
+     * Concatenates the <code>toString()</code> representation of each
+     * item in this collection, with the given String as a separator between
+     * each item.
      *
      * @param self      a Collection of objects
      * @param separator a String separator
@@ -1485,7 +1604,9 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Concatenates all of the elements of the array together with the given String as a separator
+     * Concatenates the <code>toString()</code> representation of each
+     * items in this array, with the given String as a separator between each
+     * item.
      *
      * @param self      an array of Object
      * @param separator a String separator
@@ -1512,6 +1633,7 @@ public class DefaultGroovyMethods {
     /**
      * Adds max() method to Collection objects.
      *
+     * @see GroovyCollections#max(Collection)
      * @param self a Collection
      * @return the maximum value
      */
@@ -1520,7 +1642,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Selects the maximum value found in the collection using the given comparator
+     * Selects the maximum value found in the collection using the given comparator.  
      *
      * @param self       a Collection
      * @param comparator a Comparator
@@ -1540,6 +1662,7 @@ public class DefaultGroovyMethods {
     /**
      * Adds min() method to Collection objects.
      *
+     * @see GroovyCollections#min(Collection)
      * @param self a Collection
      * @return the minimum value
      */
@@ -1548,7 +1671,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Selects the minimum value found in the collection using the given comparator
+     * Selects the minimum value found in the collection using the given comparator.
      *
      * @param self       a Collection
      * @param comparator a Comparator
@@ -1566,7 +1689,11 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Selects the minimum value found in the collection using the given closure as a comparator
+     * Selects the minimum value found in the collection using the given closure
+     * as a comparator.  The closure should return a comparable value (i.e. a 
+     * number) for each item passed.  The collection item for which the closure 
+     * returns the smallest comparable value will be returned from this method 
+     * as the minimum.
      *
      * @param self    a Collection
      * @param closure a closure used as a comparator
@@ -1591,7 +1718,11 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Selects the maximum value found in the collection using the given closure as a comparator
+     * Selects the maximum value found in the collection using the given closure 
+     * as a comparator.  The closure should return a comparable value (i.e. a 
+     * number) for each item passed.  The collection item for which the closure 
+     * returns the largest comparable value will be returned from this method 
+     * as the maximum.
      *
      * @param self    a Collection
      * @param closure a closure used as a comparator
@@ -2841,7 +2972,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Converts the given collection into a List
+     * Converts this collection to a List.  
      *
      * @param self a collection to be converted into a List
      * @return a newly created List if this collection is not already a List
