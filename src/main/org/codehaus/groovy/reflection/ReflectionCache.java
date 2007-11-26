@@ -18,6 +18,7 @@ package org.codehaus.groovy.reflection;
 import java.lang.ref.SoftReference;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.WeakHashMap;
 
 public class ReflectionCache {
     private static Map primitiveTypesMap = new HashMap();
@@ -82,17 +83,17 @@ public class ReflectionCache {
         return (String) mopNameEntry.value;
     }
 
-    static final Map /*<Class,SoftReference<CachedClass>>*/ CACHED_CLASS_MAP = new HashMap();
+    static final Map /*<Class,SoftReference<CachedClass>>*/ CACHED_CLASS_MAP = new WeakHashMap();
 
     public static boolean isArray(Class klazz) {
         CachedClass cachedClass = getCachedClass(klazz);
         return cachedClass.isArray;
     }
 
-    static DoubleKeyHashMap assignableMap = new DoubleKeyHashMap();
+    static WeakDoubleKeyHashMap assignableMap = new WeakDoubleKeyHashMap();
 
     public static boolean isAssignableFrom(Class klazz, Class aClass) {
-        DoubleKeyHashMap.Entry val = assignableMap.getOrPut(klazz, aClass);
+        WeakDoubleKeyHashMap.Entry val = assignableMap.getOrPut(klazz, aClass);
         if (val.value == null) {
             val.value = Boolean.valueOf(klazz.isAssignableFrom(aClass));
         }
