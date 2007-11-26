@@ -15,7 +15,11 @@ class MixedMarkupTestSupport {
         } else {
             assert children.size() == 3
             assert children[1].name() == 'a'
-            assert children[2].toString() == 'page'
+            if (isParser(root)) {
+                assert children[2] == 'page'
+            } else {
+                assert children[2].text() == 'page'
+            }
         }
     }
 
