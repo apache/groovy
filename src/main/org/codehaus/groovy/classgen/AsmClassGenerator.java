@@ -730,13 +730,17 @@ public class AsmClassGenerator extends ClassGenerator {
 
         Label l0 = new Label();
         mv.visitJumpInsn(IFEQ, l0);
+        compileStack.pushBooleanExpression();
         visitAndAutoboxBoolean(truePart);
-
+        compileStack.pop();
+        
         Label l1 = new Label();
         mv.visitJumpInsn(GOTO, l1);
         mv.visitLabel(l0);
-
+        compileStack.pushBooleanExpression();
         visitAndAutoboxBoolean(falsePart);
+        compileStack.pop();
+        
         mv.visitLabel(l1);
     }
 

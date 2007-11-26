@@ -53,4 +53,12 @@ class TernaryOperatorsTest extends GroovyTestCase {
         int anInt = b ? 100 : 100 / 3
         assert anInt.class == Integer
     }
-}
+    
+    void testBytecodeRegisters() {
+        // this code will blow up if the true and false parts
+        // are not handled correctly in regards to the registers.
+        def i = 1
+        def c= { false? { i } : it == i }
+        assert true
+    }
+}   
