@@ -82,6 +82,16 @@ public class SpreadDotTest extends GroovyTestCase {
         String[] pets = ['ant', 'bear', 'camel']
         assert pets*.length() == nums
     }
+
+    public void testSpreadDotOnArrays2 () {
+        def books = [Book1, Book2, Book3] as Object[]
+
+        books*.metaClass*.foo = { "Hello, ${delegate.class.name}" }
+
+        assertEquals "Hello, groovy.Book1", new Book1 ().foo ()
+        assertEquals "Hello, groovy.Book2", new Book2 ().foo ()
+        assertEquals "Hello, groovy.Book3", new Book3 ().foo ()
+    }
 }
 
 class SpreadDotDemo {
@@ -110,3 +120,9 @@ class SpreadDotDemo2 {
         return "CC$m"
     }
 }
+
+
+class Book1 {}
+class Book2 {}
+class Book3 {}
+
