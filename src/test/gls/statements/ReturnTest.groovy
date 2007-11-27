@@ -1,4 +1,4 @@
-package gls.statments
+package gls.statements
 
 import gls.scope.CompilableTestSupport
 
