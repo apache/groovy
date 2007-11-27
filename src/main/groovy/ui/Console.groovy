@@ -13,31 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package groovy.ui
 
 import groovy.inspect.swingui.ObjectBrowser
 import groovy.swing.SwingBuilder
+import groovy.ui.ConsoleTextEditor
+import groovy.ui.SystemOutputInterceptor
 import groovy.ui.text.FindReplaceUtility
-import java.awt.*
-import java.awt.image.BufferedImage
+import java.awt.Component
+import java.awt.EventQueue
+import java.awt.Font
+import java.awt.Toolkit
 import java.awt.event.ActionEvent
-import java.awt.event.InputEvent
-import java.awt.event.KeyEvent
-// to disambiguate from java.awt.List
-import java.util.List
+import java.util.prefs.Preferences
 import javax.swing.*
 import javax.swing.event.CaretEvent
 import javax.swing.event.CaretListener
-import javax.swing.event.DocumentListener
-import javax.swing.text.Style
-import javax.swing.text.StyleConstants
-import javax.swing.text.StyleContext
-import javax.swing.text.StyledDocument
 import javax.swing.text.Element
+import javax.swing.text.Style
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.StackTraceUtils
-import java.util.prefs.Preferences
 
 /**
  * Groovy Swing console.
@@ -51,8 +46,18 @@ import java.util.prefs.Preferences
  */
 class Console implements CaretListener {
 
+    private prefs = Preferences.userNodeForPackage(Console)
+
     // Whether or not std output should be captured to the console
-    def captureStdOut = true
+    boolean captureStdOut = prefs.getBoolean('captureStdOut', true)
+
+    boolean fullStackTraces = prefs.getBoolean('fullStackTraces',
+        Boolean.valueOf(System.getProperty("groovy.full.stacktrace", "false")))
+    Action fullStackTracesAction
+
+    boolean showToolbar = prefs.getBoolean('showToolbar', true)
+    Component toolbar
+    Action showToolbarAction
 
     // Maximum size of history
     int maxHistory = 10
@@ -63,10 +68,12 @@ class Console implements CaretListener {
     // UI
     SwingBuilder swing
     JFrame frame
+    ConsoleTextEditor inputEditor
     JTextPane inputArea
     JTextPane outputArea
     JLabel statusLabel
     JDialog runWaitDialog
+    JLabel rowNumAndColNum
 
     // row info
     Element rootElement
@@ -75,56 +82,68 @@ class Console implements CaretListener {
     int colNum
 
     // Styles for output area
-    Style promptStyle;
-    Style commandStyle;
-    Style outputStyle;
-    Style resultStyle;
+    Style promptStyle
+    Style commandStyle
+    Style outputStyle
+    Style resultStyle
 
     // Internal history
     List history = []
     int historyIndex = 1 // valid values are 0..history.length()
+    HistoryRecord pendingRecord = new HistoryRecord( allText: "", selectionStart: 0, selectionEnd: 0)
+    Action prevHistoryAction
+    Action nextHistoryAction
 
     // Current editor state
     boolean dirty
+    Action saveAction
     int textSelectionStart  // keep track of selections in inputArea
     int textSelectionEnd
     def scriptFile
-    File currentFileChooserDir = new File(Preferences.userNodeForPackage(Console).get('currentFileChooserDir', '.')) 
+    File currentFileChooserDir = new File(Preferences.userNodeForPackage(Console).get('currentFileChooserDir', '.'))
 
     // Running scripts
     GroovyShell shell
     int scriptNameCounter = 0
-    def systemOutInterceptor
+    SystemOutputInterceptor systemOutInterceptor
     def runThread = null
     Closure beforeExecution
     Closure afterExecution
 
-    static String ICON_PATH = '/groovy/ui/ConsoleIcon.png' // used by ObjectBrowser too
+    public static String ICON_PATH = '/groovy/ui/ConsoleIcon.png' // used by ObjectBrowser too
 
     static void main(args) {
+        // allow the full stack traces to bubble up to the root logger
         java.util.logging.Logger.getLogger(StackTraceUtils.STACK_LOG_NAME).useParentHandlers = true
         def console = new Console()
         console.run()
     }
 
     Console() {
-        shell = new GroovyShell()
+        this(new Binding())
     }
 
     Console(Binding binding) {
-        shell = new GroovyShell(binding)
+        this(null, binding)
     }
 
     Console(ClassLoader parent, Binding binding) {
         shell = new GroovyShell(parent,binding)
+        try {
+            System.setProperty("groovy.full.stacktrace",
+                Boolean.toString(Boolean.valueOf(System.getProperty("groovy.full.stacktrace", "false"))))
+        } catch (SecurityException se) {
+            fullStackTracesAction.enabled = false;
+        }
     }
 
     void run() {
         swing = new SwingBuilder()
 
+        //use the platform look and feel.  More tweaking takes place in the views 
         swing.lookAndFeel('system')
-        System.setProperty("apple.laf.useScreenMenuBar", "true")
-        System.setProperty("com.apple.mrj.application.apple.menu.about.name", "GroovyConsole")
+
+        // tweak what the stack traces filter out to be fairly broad
         System.setProperty("groovy.sanitized.stacktraces", """org.codehaus.groovy.runtime.
                 org.codehaus.groovy.
                 groovy.lang.
@@ -135,419 +154,31 @@ class Console implements CaretListener {
                 groovy.ui.Console""")
 
 
-        def inputEditor = new ConsoleTextEditor()
+        // add controller to the swingBuilder bindings
+        swing.controller = this
 
-        swing.actions {
-            action(id: 'newFileAction',
-                name: 'New File',
-                closure: this.&fileNewFile,
-                mnemonic: 'N',
-                accelerator: shortcut('N'),
-                smallIcon: imageIcon(resource:"icons/page.png", class:this),
-                shortDescription: 'New Groovy Script'
-            )
-            action(id: 'newWindowAction',
-                name: 'New Window',
-                closure: this.&fileNewWindow,
-                mnemonic: 'W',
-                accelerator: shortcut('shift N')
-            )
-            action(id: 'openAction',
-                name: 'Open',
-                closure: this.&fileOpen,
-                mnemonic: 'O',
-                accelerator: shortcut('O'),
-                smallIcon: imageIcon(resource:"icons/folder_page.png", class:this),
-                shortDescription: 'Open Groovy Script'
-            )
-            action(id: 'saveAction',
-                name: 'Save',
-                closure: this.&fileSave,
-                mnemonic: 'S',
-                accelerator: shortcut('S'),
-                smallIcon: imageIcon(resource:"icons/disk.png", class:this),
-                shortDescription: 'Save Groovy Script'
-            )
-            action(id: 'saveAsAction',
-                name: 'Save As...',
-                closure: this.&fileSaveAs,
-                mnemonic: 'A',
-            )
-            action(inputEditor.printAction,
-                id: 'printAction',
-                name: 'Print...',
-                mnemonic: 'P',
-                accelerator: shortcut('P')
-            )
-            action(id: 'exitAction',
-                name: 'Exit',
-                closure: this.&exit,
-                mnemonic: 'X'
-            )
-            // whether or not application exit should have an
-            // accellerator is debatable in usability circles
-            // at the very least a confirm dialog should dhow up
-            //accelerator: shortcut('Q')
-            action(inputEditor.undoAction,
-                id: 'undoAction',
-                name: 'Undo',
-                mnemonic: 'U',
-                accelerator: shortcut('Z'),
-                smallIcon: imageIcon(resource:"icons/arrow_undo.png", class:this),
-                shortDescription: 'Undo'
-            )
-            action(inputEditor.redoAction,
-                id: 'redoAction',
-                name: 'Redo',
-                mnemonic: 'R',
-                accelerator: shortcut('shift Z'), // is control-shift-Z or control-Y more common?
-                smallIcon: imageIcon(resource:"icons/arrow_redo.png", class:this),
-                shortDescription: 'Redo'
-            )
-            action(id: 'findAction',
-                name: 'Find...',
-                closure: this.&find,
-                mnemonic: 'F',
-                accelerator: shortcut('F'),
-                smallIcon: imageIcon(resource:"icons/find.png", class:this),
-                shortDescription: 'Find'
-            )
-            action(id: 'findNextAction',
-                name: 'Find Next',
-                closure: this.&findNext,
-                mnemonic: 'N',
-                accelerator: KeyStroke.getKeyStroke(KeyEvent.VK_F3, 0)
-            )
-            action(id: 'findPreviousAction',
-                name: 'Find Previous',
-                closure: this.&findPrevious,
-                mnemonic: 'V',
-                accelerator: KeyStroke.getKeyStroke(KeyEvent.VK_F3, InputEvent.SHIFT_DOWN_MASK)
-            )
-            action(id: 'replaceAction',
-                name: 'Replace...',
-                closure: this.&replace,
-                mnemonic: 'E',
-                accelerator: shortcut('H'),
-                smallIcon: imageIcon(resource:"icons/text_replace.png", class:this),
-                shortDescription: 'Replace'
-            )
-            action(id: 'cutAction',
-                name: 'Cut',
-                closure: this.&cut,
-                mnemonic: 'T',
-                accelerator: shortcut('X'),
-                smallIcon: imageIcon(resource:"icons/cut.png", class:this),
-                shortDescription: 'Cut'
-            )
-            action(id: 'copyAction',
-                name: 'Copy',
-                closure: this.&copy,
-                mnemonic: 'C',
-                accelerator: shortcut('C'),
-                smallIcon: imageIcon(resource:"icons/page_copy.png", class:this),
-                shortDescription: 'Copy'
-            )
-            action(id: 'pasteAction',
-                name: 'Paste',
-                closure: this.&paste,
-                mnemonic: 'P',
-                accelerator: shortcut('V'),
-                smallIcon: imageIcon(resource:"icons/page_paste.png", class:this),
-                shortDescription: 'Paste'
-            )
-            action(id: 'selectAllAction',
-                name: 'Select All',
-                closure: this.&selectAll,
-                mnemonic: 'A',
-                accelerator: shortcut('A')
-            )
-            action(id: 'historyPrevAction',
-                name: 'Previous',
-                closure: this.&historyPrev,
-                mnemonic: 'P',
-                accelerator: shortcut(KeyEvent.VK_COMMA),
-                smallIcon: imageIcon(resource:"icons/book_previous.png", class:this),
-                shortDescription: 'Previous Groovy Script'
-            )
-            action(id: 'historyNextAction',
-                name: 'Next',
-                closure: this.&historyNext,
-                mnemonic: 'N',
-                accelerator: shortcut(KeyEvent.VK_PERIOD),
-                smallIcon: imageIcon(resource:"icons/book_next.png", class:this),
-                shortDescription: 'Next Groovy Script'
-            )
-            action(id: 'clearOutputAction',
-                name: 'Clear Output',
-                closure: this.&clearOutput,
-                mnemonic: 'O',
-                accelerator: shortcut('W')
-            )
-            action(id: 'runAction',
-                name: 'Run',
-                closure: this.&runScript,
-                mnemonic: 'R',
-                keyStroke: shortcut('ENTER'),
-                accelerator: shortcut('R'),
-                smallIcon: imageIcon(resource:"icons/script_go.png", class:this),
-                shortDescription: 'Execute Groovy Script'
-            )
-            action(id: 'runSelectionAction',
-                name: 'Run Selection',
-                closure: this.&runSelectedScript,
-                mnemonic: 'E',
-                keyStroke: shortcut('shift ENTER'),
-                accelerator: shortcut('shift R')
-            )
-            action(id: 'inspectLastAction',
-                name: 'Inspect Last',
-                closure: this.&inspectLast,
-                mnemonic: 'I',
-                accelerator: shortcut('I')
-            )
-            action(id: 'inspectVariablesAction',
-                name: 'Inspect Variables',
-                closure: this.&inspectVariables,
-                mnemonic: 'V',
-                accelerator: shortcut('J')
-            )
-            action(id: 'captureStdOutAction',
-                name: 'Capture Standard Output',
-                closure: this.&captureStdOut,
-                mnemonic: 'C'
-            )
-            action(id: 'fullStackTracesAction',
-                name: 'Show Full Stack Traces',
-                closure: this.&fullStackTraces,
-                mnemonic: 'F'
-            )
-            try {
-                System.setProperty("groovy.full.stacktrace",
-                    Boolean.toString(Boolean.valueOf(System.getProperty("groovy.full.stacktrace", "false"))))
-            } catch (SecurityException se) {
-                fullStackTracesAction.enabled = false;
-            }
-            action(id: 'largerFontAction',
-                name: 'Larger Font',
-                closure: this.&largerFont,
-                mnemonic: 'L',
-                accelerator: shortcut('shift L')
-            )
-            action(id: 'smallerFontAction',
-                name: 'Smaller Font',
-                closure: this.&smallerFont,
-                mnemonic: 'S',
-                accelerator: shortcut('shift S')
-            )
-            action(id: 'aboutAction',
-                name: 'About',
-                closure: this.&showAbout,
-                mnemonic: 'A'
-            )
-            action(id: 'interruptAction',
-                name: 'Interrupt',
-                closure: this.&confirmRunInterrupt
-            )
-        }
+        // create the actions
+        swing.build(ConsoleActions)
 
-
-        frame = swing.frame(
-            title: 'GroovyConsole',
-            location: [100,100], // in groovy 2.0 use platform default location
-            iconImage: swing.imageIcon(ICON_PATH).image,
-            defaultCloseOperation: WindowConstants.DO_NOTHING_ON_CLOSE
-        ) {
-            menuBar {
-                menu(text: 'File', mnemonic: 'F') {
-                    menuItem(newFileAction)
-                    menuItem(newWindowAction)
-                    menuItem(openAction)
-                    separator()
-                    menuItem(saveAction)
-                    menuItem(saveAsAction)
-                    separator()
-                    menuItem(printAction)
-                    separator()
-                    menuItem(exitAction)
-                }
-
-                menu(text: 'Edit', mnemonic: 'E') {
-                    menuItem(undoAction)
-                    menuItem(redoAction)
-                    separator()
-                    menuItem(cutAction)
-                    menuItem(copyAction)
-                    menuItem(pasteAction)
-                    separator()
-                    menuItem(findAction)
-                    menuItem(findNextAction)
-                    menuItem(findPreviousAction)
-                    menuItem(replaceAction)
-                    separator()
-                    menuItem(selectAllAction)
-                }
-
-                menu(text: 'View', mnemonic: 'V') {
-                    menuItem(clearOutputAction)
-                    separator()
-                    menuItem(largerFontAction)
-                    menuItem(smallerFontAction)
-                    separator()
-                    checkBoxMenuItem(captureStdOutAction, selected: captureStdOut)
-                    checkBoxMenuItem(fullStackTracesAction, id:'fullStackTracesMenuItem')
-                    try {
-                        fullStackTracesMenuItem.selected =
-                            Boolean.valueOf(System.getProperty("groovy.full.stacktrace", "false"))
-                    } catch (SecurityException se) { }
-                }
-
-                menu(text: 'History', mnemonic: 'I') {
-                    menuItem(historyPrevAction)
-                    menuItem(historyNextAction)
-                }
-
-                menu(text: 'Script', mnemonic: 'S') {
-                    menuItem(runAction)
-                    menuItem(runSelectionAction)
-                    separator()
-                    menuItem(inspectLastAction)
-                    menuItem(inspectVariablesAction)
-                }
-
-                menu(text: 'Help', mnemonic: 'H') {
-                    menuItem(aboutAction)
-                }
-            }
-
-            borderLayout()
-
-            toolBar(rollover:true, constraints:BorderLayout.NORTH) {
-                button(newFileAction, text:null)
-                button(openAction, text:null)
-                button(saveAction, text:null)
-                separator(orientation:SwingConstants.VERTICAL)
-                button(undoAction, text:null)
-                button(redoAction, text:null)
-                separator(orientation:SwingConstants.VERTICAL)
-                button(cutAction, text:null)
-                button(copyAction, text:null)
-                button(pasteAction, text:null)
-                separator(orientation:SwingConstants.VERTICAL)
-                button(findAction, text:null)
-                button(replaceAction, text:null)
-                separator(orientation:SwingConstants.VERTICAL)
-                button(historyPrevAction, text:null)
-                button(historyNextAction, text:null)
-                separator(orientation:SwingConstants.VERTICAL)
-                button(runAction, text:null)
-            }
-
-            splitPane(id: 'splitPane', resizeWeight: 0.50F,
-                orientation: JSplitPane.VERTICAL_SPLIT, constraints: BorderLayout.CENTER)
-            {
-                widget(inputEditor, border:emptyBorder(0))
-                scrollPane(border:emptyBorder(0)) {
-                    textPane(id: 'outputArea',
-                        editable: false,
-                        background: new Color(255,255,218),
-                        border:emptyBorder(4)
-                    )
-                }
-            }
-
-            panel(id: 'statusPanel', constraints: BorderLayout.SOUTH) {
-                gridBagLayout()
-                separator(constraints:gbc(gridwidth:GridBagConstraints.REMAINDER, fill:GridBagConstraints.HORIZONTAL))
-                label('Welcome to Groovy.',
-                    id: 'status',
-                    constraints:gbc(weightx:1.0,
-                        anchor:GridBagConstraints.WEST,
-                        fill:GridBagConstraints.HORIZONTAL,
-                        insets: [1,3,1,3])
-                )
-                separator(orientation:SwingConstants.VERTICAL, constraints:gbc(fill:GridBagConstraints.VERTICAL))
-                label('1:1',
-                    id: 'rowNumAndColNum',
-                    constraints:gbc(insets: [1,3,1,3])
-                )
-            }
-        }   // end of frame
-
-        inputArea = inputEditor.textEditor
-
-        // attach ctrl-enter to input area
-        swing.container(inputArea, border:swing.emptyBorder(4)) {
-            action(runAction)
-            action(runSelectionAction)
-        }
-
-        outputArea = swing.outputArea
-        addStylesToDocument(outputArea)
-
-        Graphics g = GraphicsEnvironment.localGraphicsEnvironment.createGraphics (new BufferedImage(100, 100, BufferedImage.TYPE_INT_RGB))
-        FontMetrics fm = g.getFontMetrics(outputArea.font)
-        outputArea.preferredSize = [
-            fm.charWidth(0x77) * 81,
-            (fm.getHeight() + fm.leading) * 12] as Dimension
-        //inputArea.setFont(outputArea.font)
-        inputEditor.preferredSize = outputArea.preferredSize
-        // good enough, ther are margins and scrollbars and such to worry about for 80x12x2
-
-
-        statusLabel = swing.status
-
-        runWaitDialog = swing.dialog(title: 'Groovy executing',
-                owner: frame,
-                modal: true
-        ) {
-            vbox(border: emptyBorder(6)) {
-                label(text: "Groovy is now executing. Please wait.", alignmentX: 0.5f)
-                vstrut()
-                button(interruptAction,
-                    margin: new Insets(10, 20, 10, 20),
-                    alignmentX: 0.5f
-                )
-            }
-        } // end of runWaitDialog
-
-        // add listeners
-        frame.windowClosing = this.&exit
-        inputArea.addCaretListener(this)
-        inputArea.document.addDocumentListener({ setDirty(true) } as DocumentListener)
-
-        rootElement = inputArea.document.defaultRootElement
-
-        systemOutInterceptor = new SystemOutputInterceptor(this.&notifySystemOut)
-        systemOutInterceptor.start();
+        // create the view
+        swing.build(ConsoleView)
 
         bindResults()
 
-        frame.pack()
-        frame.show()
-        SwingUtilities.invokeLater({inputArea.requestFocus()});
+        // stitch some actions togeather
+        swing.bind(source:swing.inputEditor.undoAction, sourceProperty:'enabled', target:swing.undoAction, targetProperty:'enabled')
+        swing.bind(source:swing.inputEditor.redoAction, sourceProperty:'enabled', target:swing.redoAction, targetProperty:'enabled')
+
+        swing.consoleFrame.pack()
+        swing.consoleFrame.show()
+        installInterceptor()
+        swing.doLater inputArea.&requestFocus
     }
 
-    void addStylesToDocument(JTextPane outputArea) {
-        outputArea.setFont(new Font("Monospaced", outputArea.font.style, outputArea.font.size))
-        StyledDocument doc = outputArea.getStyledDocument();
 
-        Style defStyle = StyleContext.getDefaultStyleContext().getStyle(StyleContext.DEFAULT_STYLE);
-
-        Style regular = doc.addStyle("regular", defStyle);
-        StyleConstants.setFontFamily(regular, "Monospaced")
-
-        promptStyle = doc.addStyle("prompt", regular)
-        StyleConstants.setForeground(promptStyle, new Color(0, 128, 0))
-
-        commandStyle = doc.addStyle("command", regular);
-        StyleConstants.setForeground(commandStyle, Color.BLUE)
-
-        outputStyle = regular
-
-        resultStyle = doc.addStyle("result", regular)
-        StyleConstants.setForeground(resultStyle, Color.BLUE)
-        StyleConstants.setBackground(resultStyle, Color.YELLOW)
+    public void installInterceptor() {
+        systemOutInterceptor = new SystemOutputInterceptor(this.&notifySystemOut)
+        systemOutInterceptor.start()
     }
 
     void addToHistory(record) {
@@ -558,6 +189,7 @@ class Console implements CaretListener {
         }
         // history.size doesn't work here either
         historyIndex = history.size()
+        updateHistoryActions()
     }
 
     // Append a string to the output area
@@ -576,7 +208,7 @@ class Console implements CaretListener {
         def doc = outputArea.styledDocument
         def len = doc.length
         if (len > 0 && doc.getText(len - 1, 1) != "\n") {
-            appendOutput("\n", style);
+            appendOutput("\n", style)
         }
         appendOutput(text, style)
     }
@@ -612,11 +244,20 @@ class Console implements CaretListener {
     // Handles menu event
     void captureStdOut(EventObject evt) {
         captureStdOut = evt.source.selected
+        prefs.putBoolean('captureStdOut', captureStdOut)
     }
 
     void fullStackTraces(EventObject evt) {
+        fullStackTraces = evt.source.selected
         System.setProperty("groovy.full.stacktrace",
-            Boolean.toString(evt.source.selected))
+            Boolean.toString(fullStackTraces))
+        prefs.putBoolean('fullStackTraces', fullStackTraces)
+    }
+
+    void showToolbar(EventObject evt) {
+        showToolbar = evt.source.selected
+        prefs.putBoolean('showToolbar', showToolbar)
+        toolbar.visible = showToolbar
     }
 
     void caretUpdate(CaretEvent e){
@@ -646,7 +287,7 @@ class Console implements CaretListener {
             FindReplaceUtility.dispose()
         }
 
-        systemOutInterceptor.stop();
+        systemOutInterceptor.stop()
     }
 
     void fileNewFile(EventObject evt = null) {
@@ -659,13 +300,23 @@ class Console implements CaretListener {
 
     // Start a new window with a copy of current variables
     void fileNewWindow(EventObject evt = null) {
-      (new Console(new Binding(new HashMap(shell.context.variables)))).run()
+        Console consoleController = new Console(
+            new Binding(
+                new HashMap(shell.context.variables)))
+        consoleController.systemOutInterceptor = systemOutInterceptor
+        SwingBuilder swing = new SwingBuilder()
+        swing.controller = consoleController
+        swing.build(ConsoleActions)
+        swing.build(ConsoleView)
+        installInterceptor()
+        swing.consoleFrame.pack()
+        swing.consoleFrame.show()
     }
 
     void fileOpen(EventObject evt = null) {
-        scriptFile = selectFilename();
+        scriptFile = selectFilename()
         if (scriptFile != null) {
-            inputArea.text = scriptFile.readLines().join('\n');
+            inputArea.text = scriptFile.readLines().join('\n')
             setDirty(false)
             inputArea.caretPosition = 0
         }
@@ -677,17 +328,17 @@ class Console implements CaretListener {
             return fileSaveAs(evt)
         } else {
             scriptFile.write(inputArea.text)
-            setDirty(false);
+            setDirty(false)
             return true
         }
     }
 
     // Save file - return false if user cancelled save
     boolean fileSaveAs(EventObject evt = null) {
-        scriptFile = selectFilename("Save");
+        scriptFile = selectFilename("Save")
         if (scriptFile != null) {
             scriptFile.write(inputArea.text)
-            setDirty(false);
+            setDirty(false)
             return true
         } else {
             return false
@@ -744,8 +395,7 @@ class Console implements CaretListener {
 
     void historyNext(EventObject evt = null) {
         if (historyIndex < history.size()) {
-            historyIndex++;
-            setInputTextFromHistory()
+            setInputTextFromHistory(historyIndex + 1)
         } else {
             statusLabel.text = "Can't go past end of history (time travel not allowed)"
             beep()
@@ -754,8 +404,7 @@ class Console implements CaretListener {
 
     void historyPrev(EventObject evt = null) {
         if (historyIndex > 0) {
-            historyIndex--;
-            setInputTextFromHistory()
+            setInputTextFromHistory(historyIndex - 1)
         } else {
             statusLabel.text = "Can't go past start of history"
             beep()
@@ -777,6 +426,7 @@ class Console implements CaretListener {
 
     void largerFont(EventObject evt = null) {
         if (inputArea.font.size > 40) return
+        // don't worry, the fonts won't be changed to monospaced face, the styles will only derive from this
         def newFont = new Font('Monospaced', Font.PLAIN, inputArea.font.size + 2)
         inputArea.font = newFont
         outputArea.font = newFont
@@ -815,6 +465,7 @@ class Console implements CaretListener {
         def record = new HistoryRecord( allText: inputArea.getText().replaceAll(endLine, '\n'),
             selectionStart: textSelectionStart, selectionEnd: textSelectionEnd)
         addToHistory(record)
+        pendingRecord = new HistoryRecord(allText:'', selectionStart:0, selectionEnd:0)
 
         // Print the input text
         for (line in record.getTextToRun(selected).tokenize("\n")) {
@@ -822,7 +473,7 @@ class Console implements CaretListener {
             appendOutput(line, commandStyle)
         }
 
-        //appendOutputNl("") - with wrong number of args, causes StackOverFlowError;
+        //appendOutputNl("") - with wrong number of args, causes StackOverFlowError
         appendOutputNl("\n", promptStyle)
 
         // Kick off a new thread to do the evaluation
@@ -836,7 +487,7 @@ class Console implements CaretListener {
                 if(beforeExecution) {
                     beforeExecution()
                 }
-                def result = shell.evaluate(record.getTextToRun(selected), name);
+                def result = shell.evaluate(record.getTextToRun(selected), name)
                 if(afterExecution) {
                     afterExecution()
                 }
@@ -845,7 +496,7 @@ class Console implements CaretListener {
                 SwingUtilities.invokeLater { finishException(t) }
             } finally {
                 SwingUtilities.invokeLater {
-                    runWaitDialog.hide();
+                    runWaitDialog.hide()
                     runThread = null
                 }
             }
@@ -866,22 +517,37 @@ class Console implements CaretListener {
     }
 
     void setDirty(boolean newDirty) {
+        //TODO when @BoundProperty is live, this should be handled via listeners
         dirty = newDirty
+        saveAction.enabled = newDirty
         updateTitle()
     }
 
-    private void setInputTextFromHistory() {
+    private void setInputTextFromHistory(newIndex) {
+        def endLine = System.getProperty('line.separator')
+        if (historyIndex >= history.size()) {
+            pendingRecord = new HistoryRecord( allText: inputArea.getText().replaceAll(endLine, '\n'),
+                selectionStart: textSelectionStart, selectionEnd: textSelectionEnd)
+        }
+        historyIndex = newIndex
+        def record
         if (historyIndex < history.size()) {
-            def record = history[historyIndex]
-            inputArea.text = record.allText
-            inputArea.selectionStart = record.selectionStart
-            inputArea.selectionEnd = record.selectionEnd
-            setDirty(true) // Should calculate dirty flag properly (hash last saved/read text in each file)
+            record = history[historyIndex]
             statusLabel.text = "command history ${history.size() - historyIndex}"
         } else {
-            inputArea.text = ""
+            record = pendingRecord
             statusLabel.text = 'at end of history'
         }
+        inputArea.text = record.allText
+        inputArea.selectionStart = record.selectionStart
+        inputArea.selectionEnd = record.selectionEnd
+        setDirty(true) // Should calculate dirty flag properly (hash last saved/read text in each file)
+        updateHistoryActions()
+    }
+
+    private void updateHistoryActions() {
+        nextHistoryAction.enabled = historyIndex < history.size()
+        prevHistoryAction.enabled = historyIndex > 0
     }
 
     // Adds a variable to the binding
@@ -931,6 +597,7 @@ class Console implements CaretListener {
 
     void smallerFont(EventObject evt = null){
         if (inputArea.font.size < 5) return
+        // don't worry, the fonts won't be changed to monospaced face, the styles will only derive from this
         def newFont = new Font('Monospaced', Font.PLAIN, inputArea.font.size - 2)
         inputArea.font = newFont
         outputArea.font = newFont
@@ -974,27 +641,19 @@ class Console implements CaretListener {
         def rowElement = rootElement.getElement(rowNum - 1)
         colNum = cursorPos - rowElement.getStartOffset() + 1
 
-        swing.rowNumAndColNum.setText("$rowNum:$colNum")
-    }
-}
-
-/** A single time when the user selected "run" */
-class HistoryRecord {
-    def allText
-    def selectionStart
-    def selectionEnd
-    def scriptName
-    def result
-    def exception
-
-    def getTextToRun(boolean useSelection) {
-        if (useSelection && selectionStart != selectionEnd) {
-            return allText[selectionStart ..< selectionEnd]
-        }
-        return allText
+        rowNumAndColNum.setText("$rowNum:$colNum")
     }
 
-    def getValue() {
-        return exception ? exception : result
+    void print(EventObject evt = null) {
+        inputEditor.printAction.actionPerformed(evt)
     }
+
+    void undo(EventObject evt = null) {
+        inputEditor.undoAction.actionPerformed(evt)
+    }
+
+    void redo(EventObject evt = null) {
+        inputEditor.redoAction.actionPerformed(evt)
+    }
+
 }
