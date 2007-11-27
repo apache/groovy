@@ -40,16 +40,15 @@ class BeanFactory extends AbstractFactory {
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         if (FactoryBuilderSupport.checkValueIsTypeNotString(value, name, beanClass)) {
             return value
-        } else {
-            Object bean = beanClass.newInstance()
-            if (value instanceof String) {
-                try {
-                    bean.text = value
-                } catch (MissingPropertyException mpe) {
-                    throw new RuntimeException("In $name value argument of type String cannot be applied to property text:");
-                }
-            }
-            return bean
         }
+        Object bean = beanClass.newInstance()
+        if (value instanceof String) {
+            try {
+                bean.text = value
+            } catch (MissingPropertyException mpe) {
+                throw new RuntimeException("In $name value argument of type String cannot be applied to property text:");
+            }
+        }
+        return bean
     }
 }
