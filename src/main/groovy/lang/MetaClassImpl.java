@@ -2204,6 +2204,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 list.set(j, method);
                 return;
             }
+
+            if (match==null) {
+                return;
+            }
+
             if (bestMatch==null) bestMatch=match;
         }
         // false == add
