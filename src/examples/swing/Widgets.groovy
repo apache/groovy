@@ -1,10 +1,11 @@
-package groovy.swing
+package swing
 
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.GridBagConstraints
 import javax.swing.SwingConstants
 import javax.swing.WindowConstants
+import groovy.swing.SwingBuilder
 
 class Widgets {
 
