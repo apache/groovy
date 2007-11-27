@@ -48,15 +48,18 @@ import java.util.Map;
  * Compiles Groovy source files. This task can take the following
  * arguments:
  * <ul>
- * <li>sourcedir
+ * <li>srcdir
  * <li>destdir
  * <li>classpath
  * <li>stacktrace
  * <li>jointCompilation
+ * <li>verbose
+ * <li>encoding
+ * <li>failonerror
  * </ul>
- * Of these arguments, the <b>sourcedir</b> and <b>destdir</b> are required.
+ * Of these arguments, the <b>srcdir</b> and <b>destdir</b> are required.
  * <p>
- * When this task executes, it will recursively scan the sourcedir and
+ * When this task executes, it will recursively scan srcdir and
  * destdir looking for Groovy source files to compile. This task makes its
  * compile decision based on timestamp.
  * 
@@ -324,6 +327,13 @@ public class Groovyc extends MatchingTask
         createClasspath().setRefid(r);
     }
 
+    /**
+     * Returns the encoding to be used when creating files.<br/>
+     * If no encoding value has been set it will default to
+     * System.properties("file.encoding")
+     *
+     * @return the file encoding to use
+     */
     public String createEncoding() {
         if (encoding == null) {
             encoding = System.getProperty("file.encoding");
@@ -331,10 +341,18 @@ public class Groovyc extends MatchingTask
         return encoding;
     }
 
+    /**
+     * Sets the file encoding for generated files.
+     * @param encoding the file encoding to be used
+     */ 
     public void setEncoding(String encoding) {
         this.encoding = encoding;
     }
 
+    /**
+     * Returns the encoding to be used when creating files.
+     * @return the file encoding to use
+     */
     public String getEncoding() {
         return encoding;
     }
@@ -365,7 +383,7 @@ public class Groovyc extends MatchingTask
     }
 
     /**
-     * @param proceed inverse of failoferror
+     * @param proceed inverse of failonerror
      */
     public void setProceed(boolean proceed) {
         failOnError = !proceed;
