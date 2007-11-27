@@ -42,21 +42,21 @@ public class ScriptBytecodeAdapter {
     //  --------------------------------------------------------
     //                   exception handling
     //  --------------------------------------------------------
-    private static Object unwrap(GroovyRuntimeException gre) throws Throwable {
+    private static Throwable unwrap(GroovyRuntimeException gre) {
         if (gre instanceof MissingPropertyExceptionNoStack) {
             MissingPropertyExceptionNoStack noStack = (MissingPropertyExceptionNoStack) gre;
-            throw new MissingPropertyException(noStack.getProperty(), noStack.getType());
+            return new MissingPropertyException(noStack.getProperty(), noStack.getType());
         }
 
         if (gre instanceof MissingMethodExceptionNoStack) {
             MissingMethodExceptionNoStack noStack = (MissingMethodExceptionNoStack) gre;
-            throw new MissingMethodException(noStack.getMethod(), noStack.getType(), noStack.getArguments(), noStack.isStatic());
+            return new MissingMethodException(noStack.getMethod(), noStack.getType(), noStack.getArguments(), noStack.isStatic());
         }
 
         Throwable th = gre;
         if (th.getCause() != null && th.getCause() != gre) th = th.getCause();
-        if (th != gre && (th instanceof GroovyRuntimeException)) unwrap((GroovyRuntimeException) th);
-        throw th;
+        if (th != gre && (th instanceof GroovyRuntimeException)) return unwrap((GroovyRuntimeException) th);
+        return th;
     }
 
     //  --------------------------------------------------------
@@ -83,7 +83,7 @@ public class ScriptBytecodeAdapter {
                 }
             }
         } catch (GroovyRuntimeException t) {
-            unwrap(t);
+            throw unwrap(t);
         }
         return result;
     }
@@ -125,7 +125,7 @@ public class ScriptBytecodeAdapter {
         try {
             result = metaClass.invokeMethod(senderClass, receiver, messageName, messageArguments, true, true);
         } catch (GroovyRuntimeException t) {
-            unwrap(t);
+            throw unwrap(t);
         }
         return result;
     }
@@ -164,7 +164,7 @@ public class ScriptBytecodeAdapter {
         try {
             return InvokerHelper.invokeMethod(receiver, messageName, messageArguments);
         } catch (GroovyRuntimeException gre) {
-            return unwrap(gre);
+            throw unwrap(gre);
         }
     }
 
@@ -209,7 +209,7 @@ public class ScriptBytecodeAdapter {
         try {
             return InvokerHelper.invokeStaticMethod(receiver, messageName, messageArguments);
         } catch (GroovyRuntimeException gre) {
-            return unwrap(gre);
+            throw unwrap(gre);
         }
     }
 
@@ -224,7 +224,7 @@ public class ScriptBytecodeAdapter {
         try {
             return InvokerHelper.invokeConstructorOf(receiver, arguments);
         } catch (GroovyRuntimeException gre) {
-            return unwrap(gre);
+            throw unwrap(gre);
         }
     }
 
@@ -254,7 +254,7 @@ public class ScriptBytecodeAdapter {
                 return mc.getAttribute(senderClass, receiver, messageName, true);
             }
         } catch (GroovyRuntimeException gre) {
-            return unwrap(gre);
+            throw unwrap(gre);
         }
     }
 
@@ -286,7 +286,7 @@ public class ScriptBytecodeAdapter {
                 mc.setAttribute(senderClass, receiver, messageName, messageArgument, true, true);
             }
         } catch (GroovyRuntimeException gre) {
-            unwrap(gre);
+            throw unwrap(gre);
         }
     }
 
@@ -313,7 +313,7 @@ public class ScriptBytecodeAdapter {
         try {
             return InvokerHelper.getAttribute(receiver, messageName);
         } catch (GroovyRuntimeException gre) {
-            return unwrap(gre);
+            throw unwrap(gre);
         }
     }
 
@@ -343,7 +343,7 @@ public class ScriptBytecodeAdapter {
         try {
             InvokerHelper.setAttribute(receiver, messageName, messageArgument);
         } catch (GroovyRuntimeException gre) {
-            unwrap(gre);
+            throw unwrap(gre);
         }
     }
 
@@ -444,7 +444,7 @@ public class ScriptBytecodeAdapter {
         try {
             InvokerHelper.setAttribute(receiver, messageName, messageArgument);
         } catch (GroovyRuntimeException gre) {
-            unwrap(gre);
+            throw unwrap(gre);
         }
     }
 
@@ -471,7 +471,7 @@ public class ScriptBytecodeAdapter {
         try {
             return InvokerHelper.getProperty(receiver, messageName);
         } catch (GroovyRuntimeException gre) {
-            return unwrap(gre);
+            throw unwrap(gre);
         }
     }
 
@@ -500,7 +500,7 @@ public class ScriptBytecodeAdapter {
         try {
             InvokerHelper.setProperty(receiver, messageName, messageArgument);
         } catch (GroovyRuntimeException gre) {
-            unwrap(gre);
+            throw unwrap(gre);
         }
     }
 
@@ -582,6 +582,10 @@ public class ScriptBytecodeAdapter {
 
     /**
      * Returns the method pointer for the given object name
+     *
+     * @param object the object containing the method
+     * @param methodName the name of the method of interest
+     * @return the resulting Closure
      */
     public static Closure getMethodPointer(Object object, String methodName) {
         return InvokerHelper.getMethodPointer(object, methodName);
@@ -602,7 +606,7 @@ public class ScriptBytecodeAdapter {
      * @param type   of object to convert the given object to
      * @param object the object to be converted
      * @return the original object or a new converted value
-     * @throws Throwable
+     * @throws Throwable if the coercion fails
      */
     public static Object asType(Object object, Class type) throws Throwable {
         if (object == null) object = NullObject.getNullObject();
@@ -615,13 +619,13 @@ public class ScriptBytecodeAdapter {
      * @param type   of object to convert the given object to
      * @param object the object to be converted
      * @return the original object or a new converted value
-     * @throws Throwable
+     * @throws Throwable if the type casting fails
      */
     public static Object castToType(Object object, Class type) throws Throwable {
         try {
             return DefaultTypeTransformation.castToType(object, type);
         } catch (GroovyRuntimeException gre) {
-            return (Matcher) unwrap(gre);
+            throw unwrap(gre);
         }
     }
 
@@ -726,7 +730,7 @@ public class ScriptBytecodeAdapter {
         try {
             return InvokerHelper.findRegex(left, right);
         } catch (GroovyRuntimeException gre) {
-            return (Matcher) unwrap(gre);
+            throw unwrap(gre);
         }
     }
 
@@ -770,7 +774,7 @@ public class ScriptBytecodeAdapter {
         try {
             return InvokerHelper.unaryMinus(value);
         } catch (GroovyRuntimeException gre) {
-            return unwrap(gre);
+            throw unwrap(gre);
         }
     }
 
