@@ -89,15 +89,16 @@ public class Invoker {
 
     private Object invokePogoMethod(Object object, String methodName, Object arguments) {
         GroovyObject groovy = (GroovyObject) object;
+        boolean intercepting = groovy instanceof GroovyInterceptable;
         try {
             // if it's a pure interceptable object (even intercepting toString(), clone(), ...)
-            if (groovy instanceof GroovyInterceptable) {
+            if (intercepting) {
                 return groovy.invokeMethod(methodName, asUnwrappedArray(arguments));
             }
             //else try a statically typed method or a GDK method
             return groovy.getMetaClass().invokeMethod(object, methodName, asArray(arguments));
         } catch (MissingMethodException e) {
-            if (e.getMethod().equals(methodName) && object.getClass() == e.getType()) {
+            if (!intercepting && e.getMethod().equals(methodName) && object.getClass() == e.getType()) {
                 // in case there's nothing else, invoke the object's own invokeMethod()
                 return groovy.invokeMethod(methodName, asUnwrappedArray(arguments));
             }
