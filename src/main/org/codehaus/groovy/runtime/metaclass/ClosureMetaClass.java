@@ -17,6 +17,7 @@
 package org.codehaus.groovy.runtime.metaclass;
 
 import groovy.lang.*;
+
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedField;
 import org.codehaus.groovy.reflection.CachedMethod;
@@ -235,6 +236,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
                     };
                 }
             }
+            if (method==null) throw new MissingMethodException(methodName, theClass, arguments, false);
         } else if (CLOSURE_CURRY_METHOD.equals(methodName)) {
             return closure.curry(arguments);
         } else {

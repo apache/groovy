@@ -421,7 +421,9 @@ public class AsmClassGenerator extends ClassGenerator {
         String methodType = BytecodeHelper.getMethodDescriptor(node.getReturnType(), parameters);
 
         String signature = BytecodeHelper.getGenericsMethodSignature(node);
-        mv = cv.visitMethod(node.getModifiers(), node.getName(), methodType, signature, buildExceptions(node.getExceptions()));
+        int modifiers = node.getModifiers();
+        if (isVargs(node.getParameters())) modifiers |= Opcodes.ACC_VARARGS;
+        mv = cv.visitMethod(modifiers, node.getName(), methodType, signature, buildExceptions(node.getExceptions()));
         visitAnnotations(node, mv);
         for (int i = 0; i < parameters.length; i++) {
             visitParameterAnnotations(parameters[i], i, mv);
@@ -461,6 +463,12 @@ public class AsmClassGenerator extends ClassGenerator {
             mv.visitMaxs(0, 0);
         }
         mv.visitEnd();
+    }
+
+    private boolean isVargs(Parameter[] p) {
+        if (p.length==0) return false;
+        ClassNode clazz = p[p.length-1].getType();
+        return (clazz.isArray());
     }
 
     public void visitConstructor(ConstructorNode node) {

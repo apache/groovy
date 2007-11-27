@@ -394,7 +394,7 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
      *   This has to be an inner class!
      * 
      * Reason: 
-     *   Closure.this.call will call the outer call method, bur
+     *   Closure.this.call will call the outer call method, but
      * with the inner class as executing object. This means any
      * invokeMethod or getProperty call will be called on this 
      * inner class instead of the outer!
@@ -446,16 +446,24 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
          * @see groovy.lang.Closure#call()
          */
         public Object call() {
-            return Closure.this.call();
+            return ((Closure) getOwner()).call();
         }
 
         /* (non-Javadoc)
          * @see groovy.lang.Closure#call(java.lang.Object)
          */
         public Object call(Object arguments) {
-            return Closure.this.call(arguments);
+            return ((Closure) getOwner()).call(arguments);
+        }
+        
+        public Object call(Object[] args) {
+            return ((Closure) getOwner()).call(args);
         }
 
+        public Object doCall(Object[] args) {
+            return call(args);
+        }
+        
         /* (non-Javadoc)
          * @see groovy.lang.Closure#getDelegate()
          */

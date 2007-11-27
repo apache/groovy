@@ -147,15 +147,17 @@ public class ParameterTypes
             return newArgs;
         } else if (argumentArray.length == paramTypes.length) {
             // the number of arguments is correct, but if the last argument
-            // is no array we have to wrap it in a array. if the last argument
+            // is no array we have to wrap it in a array. If the last argument
             // is null, then we don't have to do anything
             Object lastArgument = argumentArray[argumentArray.length - 1];
             if (lastArgument != null && !lastArgument.getClass().isArray()) {
                 // no array so wrap it
-                Object vargs = MetaClassHelper.makeArray(lastArgument, vargsClass, 1);
-                System.arraycopy(argumentArray, argumentArray.length - 1, vargs, 0, 1);
-                argumentArray[argumentArray.length - 1] = vargs;
-                return argumentArray;
+                Object wrapped = MetaClassHelper.makeArray(lastArgument, vargsClass, 1);
+                System.arraycopy(argumentArray, argumentArray.length - 1, wrapped, 0, 1);
+                Object[] newArgs = new Object[paramTypes.length];
+                System.arraycopy(argumentArray, 0, newArgs, 0, paramTypes.length - 1);
+                newArgs[newArgs.length - 1] = wrapped;
+                return newArgs;
             } else {
                 // we may have to box the arguemnt!
                 return argumentArray;

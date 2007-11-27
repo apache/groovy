@@ -799,6 +799,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     final MetaClass ownerMetaClass = registry.getMetaClass(ownerClass);
                     return ownerMetaClass.invokeMethod(owner, methodName, curriedArguments);
                 }
+                if (method==null) invokeMissingMethod(object,methodName,arguments);
             } else if (CLOSURE_CURRY_METHOD.equals(methodName)) {
                 return closure.curry(arguments);
             }
@@ -2194,7 +2195,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             return;
         }
         
-        Boolean bestMatch = null;
         Object data[] = list.getArray();
         for (int j = 0; j != len; ++j) {
             MetaMethod aMethod = (MetaMethod) data[j];
@@ -2203,17 +2203,15 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             if (match==Boolean.TRUE) {
                 list.set(j, method);
                 return;
-            }
-
-            if (match==null) {
+            // null == ignore (we have a better method already)    
+            } else if (match==null) {
                 return;
             }
-
-            if (bestMatch==null) bestMatch=match;
         }
-        // false == add
-        if (bestMatch==Boolean.FALSE) list.add(method);
-        // only other value is null, which means to ignore that method
+        // the casese true and null for a match are through, the 
+        // remaining case is false and that means adding the method
+        // to our list
+        list.add(method);
     }
 
     private int findMatchingMethod(CachedMethod[] data, int from, int to, MetaMethod method) {
