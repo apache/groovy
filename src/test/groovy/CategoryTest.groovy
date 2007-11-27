@@ -59,6 +59,51 @@ class CategoryTest extends GroovyTestCase {
         }
         assert cth.aProperty == "aValue"
     }
+    
+    void testCategoryHiddenByClassMethod() {
+      assertScript """
+         class A{}
+         class B extends A{def m(){1}}
+         class Category{ static m(A a) {2}}
+         def b = new B()
+         use (Category) {
+           assert b.m() == 1
+         }
+      """
+    }
+    
+    void testCategoryOverridingClassMethod() {
+      assertScript """
+         class A {def m(){1}}
+         class Category{ static m(A a) {2}}
+         def a = new A()
+         use (Category) {
+           assert a.m() == 2
+         }
+      """
+      assertScript """
+         class A {def m(){1}}
+         class B extends A{}
+         class Category{ static m(A a) {2}}
+         def a = new B()
+         use (Category) {
+           assert a.m() == 2
+         }
+      """
+    }
+    
+    void testCategoryWithMixedOverriding() {
+      assertScript """
+         class A{def m(){0}}
+         class B extends A{def m(){1}}
+         class Category{ static m(A a) {2}}
+         def b = new B()
+         use (Category) {
+           assert b.m() == 1
+         }
+      """
+    }
+    
 }
 
 class StringCategory {
