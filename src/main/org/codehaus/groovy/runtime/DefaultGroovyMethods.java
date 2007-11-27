@@ -74,8 +74,8 @@ public class DefaultGroovyMethods {
      *
      * @param self  an object
      * @param other an object to compare identity with
-     * @return true if self and other are both references to the same 
-     * 	instance, false otherwise
+     * @return true if self and other are both references to the same
+     *         instance, false otherwise
      */
     public static boolean is(Object self, Object other) {
         return self == other;
@@ -663,25 +663,24 @@ public class DefaultGroovyMethods {
      * <pre> switch( a ) {
      *   case b: //some code
      * }</pre>
-     * "some code" is called when <code>b.isCase( a )</code> returns 
+     * "some code" is called when <code>b.isCase( a )</code> returns
      * <code>true</code>.
-     * 
      */
     public static boolean isCase(Object caseValue, Object switchValue) {
         return caseValue.equals(switchValue);
     }
 
-	/**
-	 * 'Case' implementation for a String, which uses String#equals(Object)
-	 * in order to allow Strings to be used in switch statements. 
-	 * For example:
-	 * <pre>switch( str ) {
-	 *   case 'one' :
-	 *   // etc...
-	 * }</pre>
-	 * Note that this returns <code>true</code> for the case where both the
-	 * 'switch' and 'case' operand is <code>null</code>.
-	 */
+    /**
+     * 'Case' implementation for a String, which uses String#equals(Object)
+     * in order to allow Strings to be used in switch statements.
+     * For example:
+     * <pre>switch( str ) {
+     *   case 'one' :
+     *   // etc...
+     * }</pre>
+     * Note that this returns <code>true</code> for the case where both the
+     * 'switch' and 'case' operand is <code>null</code>.
+     */
     public static boolean isCase(String caseValue, Object switchValue) {
         if (switchValue == null) {
             return caseValue == null;
@@ -689,18 +688,18 @@ public class DefaultGroovyMethods {
         return caseValue.equals(switchValue.toString());
     }
 
-	/**
-	 * Special 'Case' implementation for Class, which allows testing 
-	 * for a certain class in a switch statement.  
-	 * For example:
-	 * <pre>switch( obj ) {
-	 *   case List :
-	 *     // obj is a list
-	 *     break;
-	 *   case Set :
-	 *     // etc
-	 * }<pre>
-	 */
+    /**
+     * Special 'Case' implementation for Class, which allows testing
+     * for a certain class in a switch statement.
+     * For example:
+     * <pre>switch( obj ) {
+     *   case List :
+     *     // obj is a list
+     *     break;
+     *   case Set :
+     *     // etc
+     * }<pre>
+     */
     public static boolean isCase(Class caseValue, Object switchValue) {
         if (switchValue instanceof Class) {
             Class val = (Class) switchValue;
@@ -709,33 +708,34 @@ public class DefaultGroovyMethods {
         return caseValue.isInstance(switchValue);
     }
 
-	/**
-	 * 'Case' implementation for collections which tests if the 'switch' 
-	 * operand is contained in any of the 'case' values.
-	 * For example:
-	 * <pre>switch( item ) {
-	 *   case firstList :
-	 *     // item is contained in this list
-	 *     // etc
-	 * }</pre>
-	 * @see java.util.Collection#contains(Object)
-	 */
+    /**
+     * 'Case' implementation for collections which tests if the 'switch'
+     * operand is contained in any of the 'case' values.
+     * For example:
+     * <pre>switch( item ) {
+     *   case firstList :
+     *     // item is contained in this list
+     *     // etc
+     * }</pre>
+     *
+     * @see java.util.Collection#contains(Object)
+     */
     public static boolean isCase(Collection caseValue, Object switchValue) {
         return caseValue.contains(switchValue);
     }
 
-	/**
-	 * 'Case' implementation for the {@link Pattern} class, which allows
-	 * testing a String against a number of regular expressions.
-	 * For example:
-	 * <pre>switch( str ) {
-	 *   case ~/one/ :
-	 *     // the regex 'one' matches the value of str
-	 * }
-	 * </pre>
-	 * Note that this returns true for the case where both the pattern and
-	 * the 'switch' values are <code>null</code>.
-	 */
+    /**
+     * 'Case' implementation for the {@link Pattern} class, which allows
+     * testing a String against a number of regular expressions.
+     * For example:
+     * <pre>switch( str ) {
+     *   case ~/one/ :
+     *     // the regex 'one' matches the value of str
+     * }
+     * </pre>
+     * Note that this returns true for the case where both the pattern and
+     * the 'switch' values are <code>null</code>.
+     */
     public static boolean isCase(Pattern caseValue, Object switchValue) {
         if (switchValue == null) {
             return caseValue == null;
@@ -749,11 +749,11 @@ public class DefaultGroovyMethods {
         }
     }
 
-	/**
-	 * Special 'case' implementation for all numbers, which delegates to the
-	 * <code>compareTo()</code> method for comparing numbers of different 
-	 * types.
-	 */
+    /**
+     * Special 'case' implementation for all numbers, which delegates to the
+     * <code>compareTo()</code> method for comparing numbers of different
+     * types.
+     */
     public static boolean isCase(Number caseValue, Number switchValue) {
         return NumberMath.compareTo(caseValue, switchValue) == 0;
     }
@@ -761,11 +761,12 @@ public class DefaultGroovyMethods {
     // Collection based methods
     //-------------------------------------------------------------------------
 
-	/**
-	 * Modifies this collection to remove all duplicated items, using the 
-	 * default comparator.
-	 * @return this collection
-	 */
+    /**
+     * Modifies this collection to remove all duplicated items, using the
+     * default comparator.
+     *
+     * @return this collection
+     */
     public static Collection unique(Collection self) {
         if (self instanceof Set)
             return self;
@@ -790,12 +791,12 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * A convenience method for making a collection unique using a closure 
-     * as a comparator.  If the closure takes a single parameter, the 
-     * argument passed will be each element, and the closure  
+     * A convenience method for making a collection unique using a closure
+     * as a comparator.  If the closure takes a single parameter, the
+     * argument passed will be each element, and the closure
      * should return a value used for comparison (either using
-     * {@link Comparable#compareTo(Object)} or Object#equals() ).  If the 
-     * closure takes two parameters, two items from the collection 
+     * {@link Comparable#compareTo(Object)} or Object#equals() ).  If the
+     * closure takes two parameters, two items from the collection
      * will be passed as arguments, and the closure should return an
      * int value (with 0 indicating the items are not unique).
      *
@@ -885,10 +886,10 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Iterates through an aggregate type or data structure, 
+     * Iterates through an aggregate type or data structure,
      * passing each item to the given closure.  Custom types may utilize this
      * method by simply providing an "iterator()" method.  The items returned
-     * from the resulting iterator will be passed to the closure. 
+     * from the resulting iterator will be passed to the closure.
      *
      * @param self    the object over which we iterate
      * @param closure the closure applied on each element found
@@ -900,7 +901,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Iterates through an aggregate type or data structure, 
+     * Iterates through an aggregate type or data structure,
      * passing each item and the item's index (a counter starting at
      * zero) to the given closure.
      *
@@ -954,7 +955,7 @@ public class DefaultGroovyMethods {
 
     /**
      * Used to determine if the given predicate closure is valid (i.e. returns
-     * <code>true</code>) for all items in this data structure.  
+     * <code>true</code>) for all items in this data structure.
      * A simple example for a list:
      * <pre>def list = [3,4,5]
      * def greaterThanTwo = list.every { it > 2 }
@@ -974,7 +975,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Iterates over the entries of a map, and checks whether a predicate is 
+     * Iterates over the entries of a map, and checks whether a predicate is
      * valid for all entries.
      *
      * @param self    the map over which we iterate
@@ -992,7 +993,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Iterates over every element of a collection, and checks whether all 
+     * Iterates over every element of a collection, and checks whether all
      * elements are <code>true</code> according to the Groovy Truth.
      * Equivalent to <code>self.every({element -> element})</code>
      *
@@ -1010,7 +1011,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Iterates over the contents of an object or collection, and checks whether a 
+     * Iterates over the contents of an object or collection, and checks whether a
      * predicate is valid for at least one element.
      *
      * @param self    the object over which we iterate
@@ -1027,7 +1028,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Iterates over the entries of a map, and checks whether a predicate is 
+     * Iterates over the entries of a map, and checks whether a predicate is
      * valid for at least one entry
      *
      * @param self    the map over which we iterate
@@ -1045,7 +1046,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Iterates over the elements of a collection, and checks whether at least 
+     * Iterates over the elements of a collection, and checks whether at least
      * one element is true according to the Groovy Truth.
      * Equivalent to self.any({element -> element})
      *
@@ -1063,13 +1064,13 @@ public class DefaultGroovyMethods {
 
     /**
      * Iterates over every element of the collection and returns each item that matches
-     * the given filter - calling the <code>{@link #isCase(Object,Object)}</code> 
-     * method used by switch statements.  This method can be used with different 
+     * the given filter - calling the <code>{@link #isCase(Object,Object)}</code>
+     * method used by switch statements.  This method can be used with different
      * kinds of filters like regular expressions, classes, ranges etc.
      * Example:
      * <pre>def list = ['a', 'b', 'aa', 'bc' ]
      * def filtered = list.grep( ~/a+/ ) //contains 'a' and 'aa'
-	 * </pre>
+     * </pre>
      *
      * @param self   the object over which we iterate
      * @param filter the filter to perform on the collection (using the isCase(object) method)
@@ -1089,7 +1090,7 @@ public class DefaultGroovyMethods {
 
     /**
      * Counts the number of occurrences of the given value inside this collection.
-     * Comparison is done using Groovy's == operator (using 
+     * Comparison is done using Groovy's == operator (using
      * <code>compareTo(value) == 0</code> or <code>equals(value)</code> ).
      *
      * @param self  the collection within which we count the number of occurrences
@@ -1352,10 +1353,10 @@ public class DefaultGroovyMethods {
 
     /**
      * Sorts all collection members into groups determined by the
-     * supplied mapping closure.  The closure should return the key that this 
-     * item should be grouped by.  The returned Map will have an entry for each 
+     * supplied mapping closure.  The closure should return the key that this
+     * item should be grouped by.  The returned Map will have an entry for each
      * distinct key returned from the closure, with each value being a list of
-     * items for that group.   
+     * items for that group.
      *
      * @param self    a collection to group (no map)
      * @param closure a closure mapping entries on keys
@@ -1377,7 +1378,7 @@ public class DefaultGroovyMethods {
      * key and value (depending on the number of parameters the closure accepts)
      * and should return the key that each item should be grouped under.  The
      * resulting map will have an entry for each 'group' key returned by the
-     * closure, with values being the a list of map entries that belong to each 
+     * closure, with values being the a list of map entries that belong to each
      * group.
      *
      * @param self    a map to group
@@ -1492,7 +1493,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Sums the items in a collection.  This is equivalent to invoking the 
+     * Sums the items in a collection.  This is equivalent to invoking the
      * "plus" method on all items in the collection.
      *
      * @param self Collection of values to add together.
@@ -1633,16 +1634,16 @@ public class DefaultGroovyMethods {
     /**
      * Adds max() method to Collection objects.
      *
-     * @see GroovyCollections#max(Collection)
      * @param self a Collection
      * @return the maximum value
+     * @see GroovyCollections#max(Collection)
      */
     public static Object max(Collection self) {
         return GroovyCollections.max(self);
     }
 
     /**
-     * Selects the maximum value found in the collection using the given comparator.  
+     * Selects the maximum value found in the collection using the given comparator.
      *
      * @param self       a Collection
      * @param comparator a Comparator
@@ -1662,9 +1663,9 @@ public class DefaultGroovyMethods {
     /**
      * Adds min() method to Collection objects.
      *
-     * @see GroovyCollections#min(Collection)
      * @param self a Collection
      * @return the minimum value
+     * @see GroovyCollections#min(Collection)
      */
     public static Object min(Collection self) {
         return GroovyCollections.min(self);
@@ -1690,9 +1691,9 @@ public class DefaultGroovyMethods {
 
     /**
      * Selects the minimum value found in the collection using the given closure
-     * as a comparator.  The closure should return a comparable value (i.e. a 
-     * number) for each item passed.  The collection item for which the closure 
-     * returns the smallest comparable value will be returned from this method 
+     * as a comparator.  The closure should return a comparable value (i.e. a
+     * number) for each item passed.  The collection item for which the closure
+     * returns the smallest comparable value will be returned from this method
      * as the minimum.
      *
      * @param self    a Collection
@@ -1718,10 +1719,10 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Selects the maximum value found in the collection using the given closure 
-     * as a comparator.  The closure should return a comparable value (i.e. a 
-     * number) for each item passed.  The collection item for which the closure 
-     * returns the largest comparable value will be returned from this method 
+     * Selects the maximum value found in the collection using the given closure
+     * as a comparator.  The closure should return a comparable value (i.e. a
+     * number) for each item passed.  The collection item for which the closure
+     * returns the largest comparable value will be returned from this method
      * as the maximum.
      *
      * @param self    a Collection
@@ -2560,7 +2561,7 @@ public class DefaultGroovyMethods {
             sublist.add(value);
         }
     }
-    
+
     private static List resizeListWithRangeAndGetSublist(List self, IntRange range) {
         RangeInfo info = subListBorders(self.size(), range);
         int size = self.size();
@@ -2573,16 +2574,16 @@ public class DefaultGroovyMethods {
         sublist.clear();
         return sublist;
     }
-    
+
     /**
      * A helper method to allow lists to work with subscript operators
      *
      * @param self  a List
      * @param range the subset of the list to set
-     * @param col the collection of values to put at the given sublist
+     * @param col   the collection of values to put at the given sublist
      */
     public static void putAt(List self, IntRange range, Collection col) {
-        List sublist = resizeListWithRangeAndGetSublist(self,range);
+        List sublist = resizeListWithRangeAndGetSublist(self, range);
         if (col.isEmpty()) return;
         sublist.addAll(col);
     }
@@ -2595,7 +2596,7 @@ public class DefaultGroovyMethods {
      * @param value the value to put at the given sublist
      */
     public static void putAt(List self, IntRange range, Object value) {
-        List sublist = resizeListWithRangeAndGetSublist(self,range);
+        List sublist = resizeListWithRangeAndGetSublist(self, range);
         sublist.add(value);
     }
 
@@ -2972,7 +2973,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Converts this collection to a List.  
+     * Converts this collection to a List.
      *
      * @param self a collection to be converted into a List
      * @return a newly created List if this collection is not already a List
@@ -2985,17 +2986,18 @@ public class DefaultGroovyMethods {
         }
     }
 
-	/**
-	 * Converts the given collection to either a List, Set, or
-	 * SortedSet.  If the given class is something else, the 
-	 * call is defered to {link #asType(Object,Class)}.  If this
-	 * collection is already of the given type, the same instance is
-	 * returned.
-	 * @see #asType(Object,Class)
-	 * @param col
-	 * @param clazz
-	 * @return the object resulting from this type conversion
-	 */
+    /**
+     * Converts the given collection to either a List, Set, or
+     * SortedSet.  If the given class is something else, the
+     * call is defered to {link #asType(Object,Class)}.  If this
+     * collection is already of the given type, the same instance is
+     * returned.
+     *
+     * @param col
+     * @param clazz
+     * @return the object resulting from this type conversion
+     * @see #asType(Object,Class)
+     */
     public static Object asType(Collection col, Class clazz) {
         if (clazz == List.class) {
             return asList(col);
@@ -3009,14 +3011,15 @@ public class DefaultGroovyMethods {
         return asType((Object) col, clazz);
     }
 
-	/**
-	 * Convenience method which coerces the closure to an implementation
-	 * of the given class.  The class is assumed to be an interface or class
-	 * with a single method definition.
-	 * @param cl the implementaiton of the single method
-	 * @param clazz the target type
-	 * @return a Proxy of the given type which wraps this closure.
-	 */
+    /**
+     * Convenience method which coerces the closure to an implementation
+     * of the given class.  The class is assumed to be an interface or class
+     * with a single method definition.
+     *
+     * @param cl    the implementaiton of the single method
+     * @param clazz the target type
+     * @return a Proxy of the given type which wraps this closure.
+     */
     public static Object asType(Closure cl, Class clazz) {
         if (clazz.isInterface() && !(clazz.isInstance(cl))) {
             return Proxy.newProxyInstance(
@@ -3027,14 +3030,15 @@ public class DefaultGroovyMethods {
         return asType((Object) cl, clazz);
     }
 
-	/**
-	 * Coerces this map to the given type, using the map's keys as the public
-	 * method names, and values as the implementation.  Typically the value 
-	 * would be a closure which behaves like the method implementation.
-	 * @param map this map
-	 * @param clazz the target type
-	 * @return a Proxy of the given type, which defers calls to this map's elements.
-	 */
+    /**
+     * Coerces this map to the given type, using the map's keys as the public
+     * method names, and values as the implementation.  Typically the value
+     * would be a closure which behaves like the method implementation.
+     *
+     * @param map   this map
+     * @param clazz the target type
+     * @return a Proxy of the given type, which defers calls to this map's elements.
+     */
     public static Object asType(Map map, Class clazz) {
         if (!(clazz.isInstance(map)) && clazz.isInterface()) {
             return Proxy.newProxyInstance(
@@ -3055,7 +3059,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Reverses the list.  The result is a new List with the same items in 
+     * Reverses the list.  The result is a new List with the same items in
      * reverse order.
      *
      * @param self a List
@@ -3112,8 +3116,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Create a List composed of the elements of this list, repeated 
-     * a certain number of times.  Note that for non- primitive 
+     * Create a List composed of the elements of this list, repeated
+     * a certain number of times.  Note that for non- primitive
      * elements, multiple references to the same instance will be added.
      *
      * @param self   a Collection
@@ -3141,11 +3145,11 @@ public class DefaultGroovyMethods {
             return new ArrayList();
 
         if (left.size() < right.size()) {
-            Collection swaptemp=left;
-            left=right;
-            right=swaptemp;
+            Collection swaptemp = left;
+            left = right;
+            right = swaptemp;
         }
-        
+
         // TODO optimise if same type?
         // boolean nlgnSort = sameType(new Collection[]{left, right});
 
@@ -3167,8 +3171,8 @@ public class DefaultGroovyMethods {
      *
      * @param left  a Collection
      * @param right a Collection
-     * @return boolean   <code>true</code> if the intersection of two collections 
-     * 	is empty, <code>false</code> otherwise.
+     * @return boolean   <code>true</code> if the intersection of two collections
+     *         is empty, <code>false</code> otherwise.
      */
     public static boolean disjoint(Collection left, Collection right) {
 
@@ -3232,26 +3236,28 @@ public class DefaultGroovyMethods {
         return true;
     }
 
-	/**
-	 * Determines if the contents of this array are equal to the 
-	 * contents of the given list, in the same order.  This returns 
-	 * <code>false</code> if either collection is <code>null</code>.
-	 * @param left this array
-	 * @param right the list being compared
-	 * @return true if the contents of both collections are equal
-	 */
+    /**
+     * Determines if the contents of this array are equal to the
+     * contents of the given list, in the same order.  This returns
+     * <code>false</code> if either collection is <code>null</code>.
+     *
+     * @param left  this array
+     * @param right the list being compared
+     * @return true if the contents of both collections are equal
+     */
     public static boolean equals(Object[] left, List right) {
         return coercedEquals(left, right);
     }
 
-	/**
-	 * Determines if the contents of this list are equal to the 
-	 * contents of the given array in the same order.  This returns 
-	 * <code>false</code> if either collection is <code>null</code>.
-	 * @param left this List
-	 * @param right this Object[] being compared to
-	 * @return true if the contents of both collections are equal
-	 */
+    /**
+     * Determines if the contents of this list are equal to the
+     * contents of the given array in the same order.  This returns
+     * <code>false</code> if either collection is <code>null</code>.
+     *
+     * @param left  this List
+     * @param right this Object[] being compared to
+     * @return true if the contents of both collections are equal
+     */
     public static boolean equals(List left, Object[] right) {
         return coercedEquals(right, left);
     }
@@ -3293,8 +3299,8 @@ public class DefaultGroovyMethods {
      *
      * @param left  this List
      * @param right the List being compared to.
-     * @return boolean   <code>true</code> if the contents of both lists are identical, 
-     * 	<code>false</code> otherwise.
+     * @return boolean   <code>true</code> if the contents of both lists are identical,
+     *         <code>false</code> otherwise.
      */
     public static boolean equals(List left, List right) {
         if (left == null) {
@@ -3329,7 +3335,7 @@ public class DefaultGroovyMethods {
     /**
      * Create a Set composed of the elements of the first set minus the elements of the collection.
      * <p/>
-     * TODO: remove using number comparator
+     * TODO: remove using number comparator?
      *
      * @param self     a set object
      * @param operands the items to remove from the set
@@ -3488,7 +3494,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Overloads the left shift operator to provide an easy way to append 
+     * Overloads the left shift operator to provide an easy way to append
      * objects to a Collection.
      *
      * @param self  a Collection
@@ -3536,7 +3542,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Overloads the left shift operator to provide a mechanism to append 
+     * Overloads the left shift operator to provide a mechanism to append
      * values to a writer.
      *
      * @param self  a Writer
@@ -3856,7 +3862,7 @@ public class DefaultGroovyMethods {
     /**
      * Support the subscript operator for a Bitset
      *
-     * @param self a BitSet
+     * @param self  a BitSet
      * @param index index to retrieve
      * @return value of the bit at the given index
      * @see java.util.BitSet
@@ -3868,7 +3874,7 @@ public class DefaultGroovyMethods {
     /**
      * Support retrieving a subset of a BitSet using a Range
      *
-     * @param self a BitSet
+     * @param self  a BitSet
      * @param range a Range defining the desired subset
      * @return a new BitSet that represents the requested subset
      * @see java.util.BitSet
@@ -3884,7 +3890,7 @@ public class DefaultGroovyMethods {
         int adjuster = 1;
         int offset = from;
 
-        if(range.isReverse()) {
+        if (range.isReverse()) {
             adjuster = -1;
             offset = to;
         }
@@ -3961,7 +3967,7 @@ public class DefaultGroovyMethods {
     /**
      * Support assigning a range of values with a single assignment statement
      *
-     * @param self a BitSet
+     * @param self  a BitSet
      * @param range the range of values to set
      * @param value value
      * @see java.util.BitSet
@@ -3983,7 +3989,7 @@ public class DefaultGroovyMethods {
     /**
      * Support subscript style assignment for a BitSet
      *
-     * @param self a BitSet
+     * @param self  a BitSet
      * @param index index of the entry to set
      * @param value value
      * @see java.util.BitSet
@@ -4295,10 +4301,10 @@ public class DefaultGroovyMethods {
     /**
      * Tokenize a String based on the given string delimiter.
      *
-     * @see java.util.StringTokenizer#StringTokenizer(java.lang.String, java.lang.String)
      * @param self  a String
      * @param token the delimiter
      * @return a List of tokens
+     * @see java.util.StringTokenizer#StringTokenizer(java.lang.String, java.lang.String)
      */
     public static List tokenize(String self, String token) {
         return InvokerHelper.asList(new StringTokenizer(self, token));
@@ -5960,24 +5966,24 @@ public class DefaultGroovyMethods {
         if (self instanceof BufferedReader) {
             BufferedReader br = (BufferedReader) self;
             return br.readLine();
-        } else if(self.markSupported()) {
+        } else if (self.markSupported()) {
             return readLineFromReaderWithMark(self);
         }
         return readLineFromReaderWithoutMark(self);
     }
-    
+
 
     private static int charBufferSize = 4096;     // half the default stream buffer size
     private static int expectedLineLength = 160;  // double the default line length
     private static int EOF = -1;                  // End Of File
-    
+
 
     /*
-     * This method tries to read subsequent buffers from the reader using a mark
-     */
+    * This method tries to read subsequent buffers from the reader using a mark
+    */
     private static String readLineFromReaderWithMark(final Reader input)
-                throws IOException {
-        char [] cbuf = new char[charBufferSize];
+            throws IOException {
+        char[] cbuf = new char[charBufferSize];
         try {
             input.mark(charBufferSize);
         } catch (IOException e) {
@@ -5986,62 +5992,62 @@ public class DefaultGroovyMethods {
             // fallback 
             return readLineFromReaderWithoutMark(input);
         }
-        
+
         // could be changed into do..while, but then
         // we might create an additional StringBuffer
         // instance at the end of the stream
         int count = input.read(cbuf);
-        if(count == EOF) // we are at the end of the input data
+        if (count == EOF) // we are at the end of the input data
             return null;
 
         StringBuffer line = new StringBuffer(expectedLineLength);
         // now work on the buffer(s)
         int ls = lineSeparatorIndex(cbuf, count);
-        while(ls == -1) {
+        while (ls == -1) {
             line.append(cbuf, 0, count);
             count = input.read(cbuf);
-            if(count == EOF) {
+            if (count == EOF) {
                 // we are at the end of the input data
                 return line.toString();
             }
             ls = lineSeparatorIndex(cbuf, count);
         }
         line.append(cbuf, 0, ls);
-        
+
         // correct ls if we have \r\n
         int skipLS = 1;
-        if(ls + 1 < count) {
+        if (ls + 1 < count) {
             // we are not at the end of the buffer
-            if(cbuf[ls] == '\r' && cbuf[ls + 1] == '\n') {
+            if (cbuf[ls] == '\r' && cbuf[ls + 1] == '\n') {
                 skipLS++;
             }
         } else {
-            if(cbuf[ls] == '\r' && input.read() == '\n') {
+            if (cbuf[ls] == '\r' && input.read() == '\n') {
                 skipLS++;
             }
         }
-        
+
         //reset() and skip over last linesep
         input.reset();
         input.skip(line.length() + skipLS);
         return line.toString();
     }
-    
+
     /*
-     * This method reads without a buffer.
-     * It returns too many empty lines if \r\n combinations
-     * are used. Nothing can be done because we can't push
-     * back the character we have just read.
-     */
+    * This method reads without a buffer.
+    * It returns too many empty lines if \r\n combinations
+    * are used. Nothing can be done because we can't push
+    * back the character we have just read.
+    */
     private static String readLineFromReaderWithoutMark(Reader input)
-                throws IOException {
+            throws IOException {
 
         int c = input.read();
-        if(c == -1)
+        if (c == -1)
             return null;
         StringBuffer line = new StringBuffer(expectedLineLength);
-        
-        while(c != EOF && c != '\n' && c != '\r') {
+
+        while (c != EOF && c != '\n' && c != '\r') {
             char ch = (char) c;
             line.append(ch);
             c = input.read();
@@ -6054,21 +6060,21 @@ public class DefaultGroovyMethods {
      * Returns -1 if not found.
      */
     private static int lineSeparatorIndex(char[] array, int length) {
-        for(int k = 0; k < length ; k++) {
-            if(isLineSeparator(array[k])){
+        for (int k = 0; k < length; k++) {
+            if (isLineSeparator(array[k])) {
                 return k;
             }
         }
         return -1;
     }
-    
+
     /*
-     * true if either \n or \r
-     */
+    * true if either \n or \r
+    */
     private static boolean isLineSeparator(char c) {
         return c == '\n' || c == '\r';
     }
-    
+
     /**
      * Read a single, whole line from the given InputStream
      *
@@ -6080,8 +6086,8 @@ public class DefaultGroovyMethods {
     public static String readLine(InputStream stream) throws IOException {
         throw new DeprecationException(
                 "readLine() on InputStream is no longer supported. " +
-                "Either use a Reader or encapsulate the InputStream" +
-                "with a BufferedReader and an InputStreamReader."
+                        "Either use a Reader or encapsulate the InputStream" +
+                        "with a BufferedReader and an InputStreamReader."
         );
     }
 
@@ -6809,12 +6815,12 @@ public class DefaultGroovyMethods {
     public static void withPrintWriter(File file, Closure closure) throws IOException {
         withWriter(newPrintWriter(file), closure);
     }
-    
+
     /**
      * Helper method to create a new PrintWriter with a specified charset for a file
      * and then to pass it into the closure ensuring it's closed again afterwards
      *
-     * @param file a File
+     * @param file    a File
      * @param charset the charset
      * @param closure the closure to invoke with the PrintWriter
      * @throws IOException if an IOException occurs.
@@ -6975,9 +6981,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Allows a OutputStream to be used, calling the closure with the stream
-     * and then ensuring that the stream is closed down again irrespective
-     * of whether exceptions occur.
+     * Passes this OutputStream to the closure, ensuring that the stream
+     * is closed after the closure returns, regardless of errors.
      *
      * @param os      the stream which is used and then closed
      * @param closure the closure that the stream is passed into
@@ -7019,11 +7024,12 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Traverse through each byte of the specified File
+     * Traverse through each byte of this File
      *
      * @param self    a File
      * @param closure a closure
      * @throws IOException if an IOException occurs.
+     * @see eachByte(InputStream,Closure)
      */
     public static void eachByte(File self, Closure closure) throws IOException {
         BufferedInputStream is = newInputStream(self);
@@ -7058,11 +7064,13 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Traverse through each byte of the specified URL
+     * Reads the InputStream from this URL, passing each byte to the given
+     * closure.  The URL stream will be closed before this method returns.
      *
      * @param url     url to iterate over
      * @param closure closure to apply to each byte
      * @throws IOException if an IOException occurs.
+     * @see eachByte(InputStream,Closure)
      */
     public static void eachByte(URL url, Closure closure) throws IOException {
         InputStream is = url.openConnection().getInputStream();
@@ -7070,8 +7078,10 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Transforms the characters from a self with a Closure and
-     * writes them to a writer.
+     * Transforms each character from this reader by passing it to the given
+     * closure.  The Closure should return each transformed character, which
+     * will be passed to the Writer.  The reader and writer will be both be
+     * closed before this method returns.
      *
      * @param self    a Reader object
      * @param writer  a Writer to receive the transformed characters
@@ -7103,7 +7113,7 @@ public class DefaultGroovyMethods {
     /**
      * Transforms the lines from a reader with a Closure and
      * write them to a writer. Both Reader and Writer are
-     * closed after the operation
+     * closed after the operation.
      *
      * @param reader  Lines of text to be transformed. Reader is closed afterwards.
      * @param writer  Where transformed lines are written. Writer is closed afterwards.
@@ -7141,7 +7151,7 @@ public class DefaultGroovyMethods {
 
     /**
      * Filter the lines from a reader and write them on the writer,
-     * according to a closure which returns true or false.
+     * according to a closure which returns true if the line should be included.
      * Both Reader and Writer are closed after the operation.
      *
      * @param reader  a reader, closed after the call
@@ -7179,38 +7189,43 @@ public class DefaultGroovyMethods {
 
     /**
      * Filters the lines of a File and creates a Writeable in return to
-     * stream the filtered lines
+     * stream the filtered lines.
      *
      * @param self    a File
      * @param closure a closure which returns a boolean indicating to filter
      *                the line or not
      * @return a Writable closure
      * @throws IOException if <code>self</code> is not readable
+     * @see #filterLine(Reader,Closure)
      */
     public static Writable filterLine(File self, Closure closure) throws IOException {
         return filterLine(newReader(self), closure);
     }
 
     /**
-     * Filter the lines from a File and write them on a writer, according to a closure
-     * which returns true or false
+     * Filter the lines from this File, and write them to the given writer based
+     * on the given closure predicate.
      *
      * @param self    a File
-     * @param writer  a writer
-     * @param closure a closure which returns a boolean value and takes a line as input
+     * @param writer  a writer destination to write filtered lines to
+     * @param closure a closure which takes each line as a parameter and returns
+     *                <code>true</code> if the line should be written to this writer.
      * @throws IOException if <code>self</code> is not readable
+     * @see #filterLine(Reader,Writer,Closure)
      */
     public static void filterLine(File self, Writer writer, Closure closure) throws IOException {
         filterLine(newReader(self), writer, closure);
     }
 
     /**
-     * Filter the lines of a Reader and create a Writable in return to stream
-     * the filtered lines.
+     * Filter the lines from this Reader, and return a Writable which can be
+     * used to stream the filtered lines to a destination.  The closure should
+     * return <code>true</code> if the line should be passed to the writer.
      *
-     * @param reader  a reader
-     * @param closure a closure returning a boolean indicating to filter or not a line
-     * @return a Writable closure
+     * @param reader  this reader
+     * @param closure a closure used for filtering
+     * @return a Writable which will use the closure to filter each line
+     *         from the reader when the Writable#writeTo(Writer) is called.
      */
     public static Writable filterLine(Reader reader, final Closure closure) {
         final BufferedReader br = new BufferedReader(reader);
@@ -7241,24 +7256,30 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Filter lines from an input stream using a closure predicate
+     * Filter lines from an input stream using a closure predicate.  The closure
+     * will be passed each line as a String, and it should return
+     * <code>true</code> if the line should be passed to the writer.
      *
      * @param self      an input stream
      * @param predicate a closure which returns boolean and takes a line
-     * @return a filtered writer
+     * @return a writable which writes out the filtered lines
+     * @see #filterLine(Reader, Closure)
      */
     public static Writable filterLine(InputStream self, Closure predicate) {
         return filterLine(newReader(self), predicate);
     }
 
     /**
-     * Filters lines from an input stream, writing to a writer, using a closure which
-     * returns boolean and takes a line.
+     * Uses a closure to filter lines from this InputStream and pass them to
+     * the given writer. The closure will be passed each line as a String, and
+     * it should return <code>true</code> if the line should be passed to the
+     * writer.
      *
-     * @param self      an InputStream
+     * @param self      the InputStream
      * @param writer    a writer to write output to
-     * @param predicate a closure which returns a boolean and takes a line as input
+     * @param predicate a closure which returns true if a line should be accepted
      * @throws IOException if an IOException occurs.
+     * @see #filterLine(Reader,Writer,Closure)
      */
     public static void filterLine(InputStream self, Writer writer, Closure predicate)
             throws IOException {
@@ -7266,10 +7287,10 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Reads the content of the file into an array of byte
+     * Reads the content of the file into a byte array.
      *
      * @param file a File
-     * @return a List of Bytes
+     * @return a byte array with the contents of the file.
      * @throws IOException if an IOException occurs.
      */
     public static byte[] readBytes(File file) throws IOException {
@@ -7298,9 +7319,9 @@ public class DefaultGroovyMethods {
     // Socket and ServerSocket methods
 
     /**
-     * Allows an InputStream and an OutputStream from a Socket to be used,
-     * calling the closure with the streams and then ensuring that the streams
-     * are closed down again irrespective of whether exceptions occur.
+     * Passes the Socket's InputStream and OutputStream to the closure.  The
+     * streams will be closed after the closure returns, even if an exception
+     * is thrown.
      *
      * @param socket  a Socket
      * @param closure a Closure
@@ -7325,11 +7346,11 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Allows an InputObjectStream and an OutputObjectStream from a Socket to be used,
-     * calling the closure with the object streams and then ensuring that the streams
-     * are closed down again irrespective of whether exceptions occur.
+     * Creates an InputObjectStream and an OutputObjectStream from a Socket, and
+     * passes them to the closure.  The streams will be closed after the closure
+     * returns, even if an exception is thrown.
      *
-     * @param socket  a Socket
+     * @param socket  this Socket
      * @param closure a Closure
      * @throws IOException if an IOException occurs.
      * @since 1.1 beta 2
@@ -7432,12 +7453,14 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Allow to pass a Closure to the accept methods of ServerSocket
+     * Accepts a connection and passes the resulting Socket to the closure
+     * which runs in a new Thread.
      *
      * @param serverSocket a ServerSocket
      * @param closure      a Closure
      * @return a Socket
      * @throws IOException if an IOException occurs.
+     * @see java.net.ServerSocket#accept()
      */
     public static Socket accept(ServerSocket serverSocket, final Closure closure) throws IOException {
         final Socket socket = serverSocket.accept();
@@ -7459,13 +7482,23 @@ public class DefaultGroovyMethods {
 
 
     /**
-     * @param file a File
+     * Converts this File to a {@link Writable} or delegates to default
+     * {@link Object#asType(Class)}.
+     *
+     * @param this file
      * @return a File which wraps the input file and which implements Writable
      */
     public static File asWritable(File file) {
         return new WritableFile(file);
     }
 
+    /**
+     * Converts this File to a {@link Writable} or delegates to default
+     * {@link Object#asType(Class)}.
+     *
+     * @param c the desired class
+     * @return the converted object
+     */
     public static Object asType(File f, Class c) {
         if (c == Writable.class) {
             return asWritable(f);
@@ -7474,6 +7507,9 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * Allows a file to return a Writable implementation that can output itself
+     * to a Writer stream.
+     *
      * @param file     a File
      * @param encoding the encoding to be used when reading the file's contents
      * @return File which wraps the input file and which implements Writable
@@ -7483,7 +7519,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Converts the given String into a List of strings of one character
+     * Converts the given String into a List of strings of one character.
      *
      * @param self a String
      * @return a List of characters (a 1-character String)
@@ -7497,6 +7533,10 @@ public class DefaultGroovyMethods {
         return answer;
     }
 
+    /**
+     * Converts the GString to a File, or delegates to the default
+     * {@link Object#asType(Class)}
+     */
     public static Object asType(GString self, Class c) {
         if (c == File.class) {
             return new File(self.toString());
@@ -7504,24 +7544,24 @@ public class DefaultGroovyMethods {
         return asType((Object) self, c);
     }
 
-	/**
-	 * <p>Provides a method to perform custom 'dynamic' type conversion
-	 * to the given class using the <code>as</code> operator.</p>
-	 * <strong>Example:</strong> <code>'123' as Double</code>
-	 * <p>By default, the following types are supported:
-	 * <ul>
-	 *  <li>List</li>
-	 *  <li>BigDecimal</li>
-	 *  <li>BigInteger</li>
-	 *  <li>Character</li>
-	 *  <li>Character</li>
-	 *  <li>Double</li>
-	 *  <li>Float</li>
-	 *  <li>File</li>
-	 * </ul>
-	 * If any other type is given, the call is delegated to 
-	 * {@link #asType(Object,Class)}.
-	 */
+    /**
+     * <p>Provides a method to perform custom 'dynamic' type conversion
+     * to the given class using the <code>as</code> operator.</p>
+     * <strong>Example:</strong> <code>'123' as Double</code>
+     * <p>By default, the following types are supported:
+     * <ul>
+     * <li>List</li>
+     * <li>BigDecimal</li>
+     * <li>BigInteger</li>
+     * <li>Character</li>
+     * <li>Character</li>
+     * <li>Double</li>
+     * <li>Float</li>
+     * <li>File</li>
+     * </ul>
+     * If any other type is given, the call is delegated to
+     * {@link #asType(Object,Class)}.
+     */
     public static Object asType(String self, Class c) {
         if (c == List.class) {
             return toList(self);
@@ -7715,8 +7755,8 @@ public class DefaultGroovyMethods {
     /**
      * Iterates through the classloader parents until it finds a loader with a class
      * named "org.codehaus.groovy.tools.RootLoader". If there is no such class
-     * <code>null</code> will be returned. The name is used for comparison because 
-     * a direct comparison using == may fail as the class may be loaded through 
+     * <code>null</code> will be returned. The name is used for comparison because
+     * a direct comparison using == may fail as the class may be loaded through
      * different classloaders.
      *
      * @param self a ClassLoader
@@ -7743,23 +7783,24 @@ public class DefaultGroovyMethods {
         return DefaultTypeTransformation.castToType(obj, type);
     }
 
-	/**
-	 * Convenience method to dynamically create a new instance of this
-	 * class.  Calls the default constructor.
-	 *
-	 * @return a new instance of this class
-	 */
+    /**
+     * Convenience method to dynamically create a new instance of this
+     * class.  Calls the default constructor.
+     *
+     * @return a new instance of this class
+     */
     public static Object newInstance(Class c) {
         return InvokerHelper.getInstance().invokeConstructorOf(c, null);
     }
 
-	/**
-	 * Helper to construct a new instance from the given arguments.
-	 * The constructor is called based on the number and types in the
-	 * args array.  Use <code>newInstance(null)</code> or simply 
-	 * <code>newInstance()</code> for the default (no-arg) constructor.
-	 * @return a new instance of this class.
-	 */
+    /**
+     * Helper to construct a new instance from the given arguments.
+     * The constructor is called based on the number and types in the
+     * args array.  Use <code>newInstance(null)</code> or simply
+     * <code>newInstance()</code> for the default (no-arg) constructor.
+     *
+     * @return a new instance of this class.
+     */
     public static Object newInstance(Class c, Object[] args) {
         if (args == null) args = new Object[]{null};
         return InvokerHelper.getInstance().invokeConstructorOf(c, args);
@@ -7777,7 +7818,7 @@ public class DefaultGroovyMethods {
         MetaClassRegistry metaClassRegistry = GroovySystem.getMetaClassRegistry();
         MetaClass mc = metaClassRegistry.getMetaClass(c);
         if (mc instanceof ExpandoMetaClass
-         || mc instanceof DelegatingMetaClass && ((DelegatingMetaClass)mc).getAdaptee() instanceof ExpandoMetaClass)
+                || mc instanceof DelegatingMetaClass && ((DelegatingMetaClass) mc).getAdaptee() instanceof ExpandoMetaClass)
             return mc;
         else {
             MetaClass emc = ExpandoMetaClassCreationHandle.instance.create(c, metaClassRegistry);
@@ -7795,10 +7836,10 @@ public class DefaultGroovyMethods {
      * @return The MetaClass
      */
     public static MetaClass getMetaClass(Object obj) {
-        if(obj instanceof GroovyObject) {
-            return ((GroovyObject)obj).getMetaClass();
+        if (obj instanceof GroovyObject) {
+            return ((GroovyObject) obj).getMetaClass();
         }
-        return GroovySystem.getMetaClassRegistry().getMetaClass(obj.getClass());        
+        return GroovySystem.getMetaClassRegistry().getMetaClass(obj.getClass());
     }
 
     /**
@@ -7870,19 +7911,20 @@ public class DefaultGroovyMethods {
         }
     }
 
-	/**
-	 * Attempts to create an Iterator for the given object by first 
-	 * converting it to a Collection.
-	 * @see DefaultTypeTransformation#asCollection(Object)
-	 * @return an Iterator for the given Object.
-	 */
+    /**
+     * Attempts to create an Iterator for the given object by first
+     * converting it to a Collection.
+     *
+     * @return an Iterator for the given Object.
+     * @see DefaultTypeTransformation#asCollection(Object)
+     */
     public static Iterator iterator(Object o) {
         return DefaultTypeTransformation.asCollection(o).iterator();
     }
 
     /**
      * Allows an Enumeration to behave like an Iterator.  Note that the
-     * {@link Iterator#remove() remove()} method is unsupported since the 
+     * {@link Iterator#remove() remove()} method is unsupported since the
      * underlying Enumeration does not provide a mechanism for removing items.
      *
      * @param enumeration an Enumeration object
@@ -7910,8 +7952,9 @@ public class DefaultGroovyMethods {
     // TODO move into DOMCategory once we can make use of optional categories transparent
 
     /**
-     * Makes NodeList iterable by returning an Iterator that traverses each
-     * Node in the list.
+     * Makes NodeList iterable by returning a read-only Iterator which traverses
+     * over each Node.
+     *
      * @param nodeList a NodeList
      * @return an Iterator for a NodeList
      */
@@ -7935,9 +7978,10 @@ public class DefaultGroovyMethods {
 
     /**
      * Retuns an {@link Iterator} which traverses each match.
-     * @see Matcher#group()
+     *
      * @param matcher a Matcher object
      * @return an Iterator for a Matcher
+     * @see Matcher#group()
      */
     public static Iterator iterator(final Matcher matcher) {
         return new Iterator() {
@@ -7976,9 +8020,9 @@ public class DefaultGroovyMethods {
     /**
      * Creates an iterator which will traverse through the reader a line at a time.
      *
-     * @see java.io.BufferedReader#readLine()
      * @param self a Reader object
      * @return an Iterator for the Reader
+     * @see java.io.BufferedReader#readLine()
      */
     public static Iterator iterator(Reader self) {
         final BufferedReader bufferedReader;
@@ -8031,7 +8075,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Standard iterator for a input stream which iterates through the stream content in a byte-based fashion.
+     * Standard iterator for a input stream which iterates through the stream
+     * content in a byte-based fashion.
      *
      * @param self an InputStream object
      * @return an Iterator for the InputStream
@@ -8041,7 +8086,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Standard iterator for a data input stream which iterates through the stream content in a byte-based fashion.
+     * Standard iterator for a data input stream which iterates through the
+     * stream content a byte at a time.
      *
      * @param self a DataInputStream object
      * @return an Iterator for the DataInputStream
@@ -8087,7 +8133,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Standard iterator for a file which iterates through the file content in a line-based fashion.
+     * Standard iterator for a text file which iterates through the file content
+     * one line at a time.
      *
      * @param self a file object
      * @return a line-based iterator
