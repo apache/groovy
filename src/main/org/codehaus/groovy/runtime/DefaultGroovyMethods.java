@@ -5846,7 +5846,7 @@ public class DefaultGroovyMethods {
     //-------------------------------------------------------------------------
 
     /**
-     * Helper method to create an object input stream from the given file.
+     * Create an object input stream for this file.
      *
      * @param file a file
      * @return an object input stream
@@ -5857,7 +5857,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Helper method to create an object output stream from the given file.
+     * Create an object output stream for this file.
      *
      * @param file a file
      * @return an object output stream
@@ -5868,12 +5868,13 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Iterates through the given file object by object
+     * Iterates through the given file object by object.
      *
      * @param self    a File
      * @param closure a closure
      * @throws IOException            if an IOException occurs.
      * @throws ClassNotFoundException if the class  is not found.
+     * @see #eachObject(ObjectInputStream,Closure)
      */
     public static void eachObject(File self, Closure closure) throws IOException, ClassNotFoundException {
         eachObject(newObjectInputStream(self), closure);
@@ -5917,43 +5918,49 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Helper method to create a new ObjectInputStream for a file and then
-     * passes it into the closure and ensures its closed again afterwords
+     * Create a new ObjectInputStream for this file and pass it to the closure.
+     * This method ensures the stream is closed after the closure returns.
      *
      * @param file    a File
      * @param closure a closure
      * @throws IOException if an IOException occurs.
+     * @see #withStream(InputStream,Closure)
      */
     public static void withObjectInputStream(File file, Closure closure) throws IOException {
         withStream(newObjectInputStream(file), closure);
     }
 
     /**
-     * Helper method to create a new ObjectOutputStream for a file and then
-     * passes it into the closure and ensures its closed again afterwords
+     * Create a new ObjectOutputStream for this file and then pass it to the
+     * closure.  This method ensures the stream is closed after the closure
+     * returns.
      *
      * @param file    a File
      * @param closure a closure
      * @throws IOException if an IOException occurs.
+     * @see #withStream(OutputStream,Closure)
      */
     public static void withObjectOutputStream(File file, Closure closure) throws IOException {
         withStream(newObjectOutputStream(file), closure);
     }
 
     /**
-     * Iterates through the given file line by line
+     * Iterates through this file line by line.  Each line is passed
+     * to the given closure.  The file reader is closed before this method
+     * returns.
      *
      * @param self    a File
      * @param closure a closure
      * @throws IOException if an IOException occurs.
+     * @see #eachLine(Reader,Closure)
      */
     public static void eachLine(File self, Closure closure) throws IOException {
         eachLine(newReader(self), closure);
     }
 
     /**
-     * Iterates through the given reader line by line. The
-     * Reader is closed afterwards
+     * Iterates through the given reader line by line.  Each line is passed
+     * to the given closure.  The Reader is closed before this method returns.
      *
      * @param self    a Reader, closed after the method returns
      * @param closure a closure
@@ -5986,25 +5993,29 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Iterates through the given file line by line, splitting on the seperator
+     * Iterates through this file line by line, splitting on the seperator.
+     * The list of tokens for each line is then passed to the given closure.
      *
      * @param self    a File
      * @param sep     a String separator
      * @param closure a closure
      * @throws IOException if an IOException occurs.
+     * @see #splitEachLine(Reader,String,Closure)
      */
     public static void splitEachLine(File self, String sep, Closure closure) throws IOException {
         splitEachLine(newReader(self), sep, closure);
     }
 
     /**
-     * Iterates through the given reader line by line, splitting on the separator.
-     * The Reader is closed afterwards.
+     * Iterates through the given reader line by line, splitting each line using
+     * the given separator.  The list of tokens for each line is then passed to
+     * the given closure.  The Reader is closed afterwards.
      *
      * @param self    a Reader, closed after the method returns
      * @param sep     a String separator
      * @param closure a closure
      * @throws IOException if an IOException occurs.
+     * @see String#split(String)
      */
     public static void splitEachLine(Reader self, String sep, Closure closure) throws IOException {
         BufferedReader br /* = null */;
@@ -6034,7 +6045,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Read a single, whole line from the given Reader
+     * Read a single, whole line from the given Reader.
      *
      * @param self a Reader
      * @return a line
@@ -6067,7 +6078,7 @@ public class DefaultGroovyMethods {
         } catch (IOException e) {
             // this should never happen
             LOG.warning("Caught exception setting mark on supporting reader: " + e);
-            // fallback 
+            // fallback
             return readLineFromReaderWithoutMark(input);
         }
 
@@ -6170,7 +6181,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Reads the file into a list of Strings for each line
+     * Reads the file into a list of Strings, with one item for each line.
      *
      * @param file a File
      * @return a List of lines
@@ -6183,7 +6194,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Reads the content of the File opened with the specified encoding and returns it as a String
+     * Read the content of the File using the specified encoding and return it
+     * as a String.
      *
      * @param file    the file whose content we want to read
      * @param charset the charset used to read the content of the file
@@ -6196,7 +6208,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Reads the content of the File and returns it as a String
+     * Read the content of the File and returns it as a String.
      *
      * @param file the file whose content we want to read
      * @return a String containing the content of the file
@@ -6208,7 +6220,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Reads the content of this URL and returns it as a String
+     * Read the content of this URL and returns it as a String.
      *
      * @param url URL to read content from
      * @return the text from that URL
@@ -6219,12 +6231,14 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Reads the content of this URL and returns it as a String
+     * Read the data from this URL and return it as a String.  The connection
+     * stream is closed before this method returns.
      *
      * @param url     URL to read content from
      * @param charset opens the stream with a specified charset
      * @return the text from that URL
      * @throws IOException if an IOException occurs.
+     * @see URLConnection#getInputStream()
      */
     public static String getText(URL url, String charset) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(url.openConnection().getInputStream(), charset));
@@ -6232,7 +6246,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Reads the content of this InputStream and returns it as a String
+     * Read the content of this InputStream and return it as a String.
+     * The stream is closed before this method returns.
      *
      * @param is an input stream
      * @return the text from that URL
@@ -6244,7 +6259,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Reads the content of this InputStream with a specified charset and returns it as a String
+     * Read the content of this InputStream using specified charset and return
+     * it as a String.  The stream is closed before this method returns.
      *
      * @param is      an input stream
      * @param charset opens the stream with a specified charset
@@ -6257,11 +6273,13 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Reads the content of the Reader and returns it as a String
+     * Read the content of the Reader and return it as a String.  The reader
+     * is closed before this method returns.
      *
      * @param reader a Reader whose content we want to read
      * @return a String containing the content of the buffered reader
      * @throws IOException if an IOException occurs.
+     * @see #getText(BufferedReader)
      */
     public static String getText(Reader reader) throws IOException {
         BufferedReader bufferedReader = new BufferedReader(reader);
@@ -6269,7 +6287,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Reads the content of the BufferedReader and returns it as a String.
+     * Read the content of the BufferedReader and return it as a String.
      * The BufferedReader is closed afterwards.
      *
      * @param reader a BufferedReader whose content we want to read
@@ -6297,8 +6315,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Write the text and append a new line (depending on the platform
-     * line-ending)
+     * Write the text and append a newline (using the platform's line-ending).
      *
      * @param writer a BufferedWriter
      * @param line   the line to write
@@ -6345,7 +6362,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Write the text to the File with a specified encoding.
+     * Write the text to the File, using the specified encoding.
      *
      * @param file    a File
      * @param text    the text to write to the File
@@ -6368,7 +6385,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Append the text at the end of the File
+     * Append the text at the end of the File.
      *
      * @param file a File
      * @param text the text to append at the end of the File
@@ -6390,7 +6407,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Append the text at the end of the File with a specified encoding
+     * Append the text at the end of the File, using a specified encoding.
      *
      * @param file    a File
      * @param text    the text to append at the end of the File
@@ -6413,7 +6430,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Reads the reader into a list of Strings for each line
+     * Reads the reader into a list of Strings, with one entry for each line.
+     * The reader is closed before this method returns.
      *
      * @param reader a Reader
      * @return a List of lines
@@ -6469,13 +6487,14 @@ public class DefaultGroovyMethods {
      * @param closure a closure
      * @throws FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided File object does not represent a directory
+     * @see File#listFiles()
      */
     public static void eachFile(final File self, final Closure closure) throws FileNotFoundException, IllegalArgumentException {
         eachFile(self, closure, false);
     }
 
     /**
-     * Invokes the closure for each directory in the given directory,
+     * Invokes the closure for each directory in this directory,
      * ignoring regular files.
      *
      * @param self    a directory
@@ -6513,8 +6532,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Invokes the closure for each file in the given directory and recursively.
-     * It is a depth-first exploration, directories are included in the search.
+     * Invokes the closure for each descendant file in this directory.
+     * Sub-directories are recursively searched in a depth-first fashion.
      *
      * @param self    a File
      * @param closure a closure
@@ -6526,14 +6545,16 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Invokes the closure for each directory in the given directory and recursively ignoring regular files.
-     * It is a depth-first exploration, directories are included in the search.
+     * Invokes the closure for each descendant directory of this directory.
+     * Sub-directories are recursively searched in a depth-first fashion.
+     * Only directories are passed to the closure; regular files are ignored.
      *
      * @param self    a directory
      * @param closure a closure
      * @throws FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided File object does not represent a directory
      * @since 1.1 beta 1
+     * @see #eachFileRecurse(File,Closure,boolean)
      */
     public static void eachDirRecurse(final File self, final Closure closure) throws FileNotFoundException, IllegalArgumentException {
         eachFileRecurse(self, closure, true);
@@ -6741,7 +6762,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Creates a buffered writer for this file.
+     * Create a buffered writer for this file.
      *
      * @param file a File
      * @return a BufferedWriter
@@ -8181,7 +8202,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Standard iterator for an input stream which iterates through the stream
+     * Standard iterator for a input stream which iterates through the stream
      * content in a byte-based fashion.
      *
      * @param self an InputStream object
