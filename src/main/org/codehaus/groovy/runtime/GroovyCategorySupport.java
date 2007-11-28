@@ -180,6 +180,9 @@ public class GroovyCategorySupport {
      */
     private static void use(Class categoryClass) {
         Map properties = getProperties();
+        List stack = (List) LOCAL.get();
+        LinkedList clonedLists = new LinkedList();
+        
         Method[] methods = categoryClass.getMethods();
         for (int i = 0; i < methods.length; i++) {
             Method method = methods[i];
@@ -209,8 +212,13 @@ public class GroovyCategorySupport {
     private static synchronized void newScope() {
         categoriesInUse++;
         List stack = (List) LOCAL.get();
-    	Map properties = new WeakHashMap(getProperties());
-    	stack.add(properties);
+        Map properties = (Map) stack.get(stack.size() - 1);
+        Map newMap = new WeakHashMap(properties.size());
+        for (Iterator iterator = properties.entrySet().iterator(); iterator.hasNext();) {
+            Map.Entry entry = (Map.Entry) iterator.next();
+            newMap.put(entry.getKey(), copyMapOfList((Map) entry.getValue()));
+        }        
+        stack.add(newMap);
     }
 
     private static synchronized void endScope() {
@@ -218,7 +226,18 @@ public class GroovyCategorySupport {
     	stack.remove(stack.size() - 1);
         categoriesInUse--;
     }
-
+    
+    private static Map copyMapOfList(Map m) {
+        Map ret = new HashMap(m.size());
+        for (Iterator iterator = m.entrySet().iterator(); iterator.hasNext();) {
+            Map.Entry entry = (Map.Entry) iterator.next();
+            List l = (List) entry.getValue();
+            l = new ArrayList(l);
+            ret.put(entry.getKey(), l);
+        }
+        return ret;
+    }
+    
     private static Map getProperties() {
         List stack = (List) LOCAL.get();
         return (Map) stack.get(stack.size() - 1);
