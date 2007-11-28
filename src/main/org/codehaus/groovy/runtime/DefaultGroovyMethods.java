@@ -665,6 +665,10 @@ public class DefaultGroovyMethods {
      * }</pre>
      * "some code" is called when <code>b.isCase( a )</code> returns
      * <code>true</code>.
+     *
+     * @param caseValue   the case value
+     * @param switchValue the switch value
+     * @return true if the switchValue is deemed to be equal to the caseValue
      */
     public static boolean isCase(Object caseValue, Object switchValue) {
         return caseValue.equals(switchValue);
@@ -680,6 +684,10 @@ public class DefaultGroovyMethods {
      * }</pre>
      * Note that this returns <code>true</code> for the case where both the
      * 'switch' and 'case' operand is <code>null</code>.
+     *
+     * @param caseValue   the case value
+     * @param switchValue the switch value
+     * @return true if the switchValue's toString() equals the caseValue
      */
     public static boolean isCase(String caseValue, Object switchValue) {
         if (switchValue == null) {
@@ -699,6 +707,10 @@ public class DefaultGroovyMethods {
      *   case Set :
      *     // etc
      * }<pre>
+     *
+     * @param caseValue   the case value
+     * @param switchValue the switch value
+     * @return true if the switchValue is deemed to be assignable from the given class
      */
     public static boolean isCase(Class caseValue, Object switchValue) {
         if (switchValue instanceof Class) {
@@ -718,6 +730,9 @@ public class DefaultGroovyMethods {
      *     // etc
      * }</pre>
      *
+     * @param caseValue   the case value
+     * @param switchValue the switch value
+     * @return true if the caseValue is deemed to contain the switchValue
      * @see java.util.Collection#contains(Object)
      */
     public static boolean isCase(Collection caseValue, Object switchValue) {
@@ -735,6 +750,10 @@ public class DefaultGroovyMethods {
      * </pre>
      * Note that this returns true for the case where both the pattern and
      * the 'switch' values are <code>null</code>.
+     *
+     * @param caseValue   the case value
+     * @param switchValue the switch value
+     * @return true if the switchValue is deemed to match the caseValue
      */
     public static boolean isCase(Pattern caseValue, Object switchValue) {
         if (switchValue == null) {
@@ -753,6 +772,10 @@ public class DefaultGroovyMethods {
      * Special 'case' implementation for all numbers, which delegates to the
      * <code>compareTo()</code> method for comparing numbers of different
      * types.
+     *
+     * @param caseValue   the case value
+     * @param switchValue the switch value
+     * @return true if the numbers are deemed equal
      */
     public static boolean isCase(Number caseValue, Number switchValue) {
         return NumberMath.compareTo(caseValue, switchValue) == 0;
@@ -765,6 +788,7 @@ public class DefaultGroovyMethods {
      * Modifies this collection to remove all duplicated items, using the
      * default comparator.
      *
+     * @param self a collection
      * @return this collection
      */
     public static Collection unique(Collection self) {
@@ -947,6 +971,7 @@ public class DefaultGroovyMethods {
      *
      * @param self    a List
      * @param closure a closure to which each item is passed.
+     * @return the original list
      */
     public static List reverseEach(List self, Closure closure) {
         each(reverse(self).iterator(), closure);
@@ -2472,12 +2497,7 @@ public class DefaultGroovyMethods {
      * @return the array as a List
      */
     public static List toList(Object[] array) {
-        int size = array.length;
-        List list = new ArrayList(size);
-        for (int i = 0; i < size; i++) {
-            list.add(array[i]);
-        }
-        return list;
+        return new ArrayList(Arrays.asList(array));
     }
 
     /**
@@ -2993,8 +3013,8 @@ public class DefaultGroovyMethods {
      * collection is already of the given type, the same instance is
      * returned.
      *
-     * @param col
-     * @param clazz
+     * @param col   a collection
+     * @param clazz the desired class
      * @return the object resulting from this type conversion
      * @see #asType(Object,Class)
      */
@@ -3331,6 +3351,63 @@ public class DefaultGroovyMethods {
         }
         return true;
     }
+
+    /**
+     * Compare the contents of two Sets for equality using Groovy's coercion rules.
+     * WARNING: may not be included in 1.1
+     * <p/>
+     * Returns <tt>true</tt> if the two sets have the same size, and every member
+     * of the specified set is contained in this set (or equivalently, every member
+     * of this set is contained in the specified set).
+     * If numbers exist in the Lists, then they are compared as numbers,
+     * for example 2 == 2L.  If either list is <code>null</code>, the result
+     * is <code>false</code>.
+     *
+     * @param self  this List
+     * @param other the List being compared to
+     * @return <tt>true</tt> if the contents of both lists are identical
+     */
+    /*
+    public static boolean coercedEquals(Set self, Set other) {
+        if (self == null) {
+            return other == null;
+        }
+        if (other == null) {
+            return false;
+        }
+        if (self.size() != other.size()) {
+            return false;
+        }
+        final NumberAwareComparator numberAwareComparator = new NumberAwareComparator();
+        final Iterator it1 = self.iterator();
+        Collection otherItems = new HashSet(other);
+        while (it1.hasNext()) {
+            final Object o1 = it1.next();
+            if (o1 == null && !other.contains(null)) return false;
+            final Iterator it2 = otherItems.iterator();
+            Object foundItem = null;
+            while (it2.hasNext() && foundItem == null) {
+                final Object o2 = it2.next();
+                if (o1 instanceof Number) {
+                    if (o2 instanceof Number && numberAwareComparator.compare(o1, o2) == 0) {
+                        foundItem = o2;
+                    }
+                } else {
+                    try {
+                        if (DefaultTypeTransformation.compareEqual(o1, o2)) {
+                            foundItem = o2;
+                        }
+                    } catch (ClassCastException e) {
+                        // ignore
+                    }
+                }
+            }
+            if (foundItem == null) return false;
+            otherItems.remove(foundItem);
+        }
+        return otherItems.size() == 0;
+    }
+*/
 
     /**
      * Create a Set composed of the elements of the first set minus the elements of the collection.
@@ -4259,6 +4336,7 @@ public class DefaultGroovyMethods {
      * @param self     an object
      * @param idx      the index of interest
      * @param newValue the new value to be put into the index of interest
+     * @return the added value
      */
     protected static Object primitiveArrayPut(Object self, int idx, Object newValue) {
         Array.set(self, normaliseIndex(idx, Array.getLength(self)), newValue);
@@ -6551,7 +6629,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Create a buffered reader for this file, with using specified 
+     * Create a buffered reader for this file, with using specified
      * charset as the encoding.
      *
      * @param file    a File
@@ -6577,7 +6655,7 @@ public class DefaultGroovyMethods {
 
     /**
      * Create a new BufferedReader for this file and then
-     * passes it into the closure, ensuring the reader is closed after the 
+     * passes it into the closure, ensuring the reader is closed after the
      * closure returns.
      *
      * @param file    a file object
@@ -6674,7 +6752,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Creates a buffered writer for this file, optionally appending to the 
+     * Creates a buffered writer for this file, optionally appending to the
      * existing file content.
      *
      * @param file   a File
@@ -6687,8 +6765,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Helper method to create a buffered writer for a file.  If the given 
-     * charset is "UTF-16BE" or "UTF-16LE", the requisite byte order mark is 
+     * Helper method to create a buffered writer for a file.  If the given
+     * charset is "UTF-16BE" or "UTF-16LE", the requisite byte order mark is
      * written to the stream before the writer is returned.
      *
      * @param file    a File
@@ -6743,7 +6821,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Creates a new BufferedWriter for this file, passes it to the closure, and 
+     * Creates a new BufferedWriter for this file, passes it to the closure, and
      * ensures the stream is flushed and closed after the closure returns.
      *
      * @param file    a File
@@ -6755,8 +6833,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Creates a new BufferedWriter for this file, passes it to the closure, and 
-     * ensures the stream is flushed and closed after the closure returns.  
+     * Creates a new BufferedWriter for this file, passes it to the closure, and
+     * ensures the stream is flushed and closed after the closure returns.
      * The writer will use the given charset encoding.
      *
      * @param file    a File
@@ -6769,7 +6847,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Create a new BufferedWriter which will append to this 
+     * Create a new BufferedWriter which will append to this
      * file.  The writer is passed to the closure and will be closed before
      * this method returns.
      *
@@ -6806,7 +6884,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Create a new PrintWriter for this file, using specified 
+     * Create a new PrintWriter for this file, using specified
      * charset.
      *
      * @param file    a File
@@ -6820,7 +6898,7 @@ public class DefaultGroovyMethods {
 
     /**
      * Create a new PrintWriter for this file which is then
-     * passed it into the given closure.  This method ensures its the writer 
+     * passed it into the given closure.  This method ensures its the writer
      * is closed after the closure returns.
      *
      * @param file    a File
@@ -6832,8 +6910,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Create a new PrintWriter with a specified charset for 
-     * this file.  The writer is passed to the closure, and will be closed 
+     * Create a new PrintWriter with a specified charset for
+     * this file.  The writer is passed to the closure, and will be closed
      * before this method returns.
      *
      * @param file    a File
@@ -6922,7 +7000,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Iterates through this stream, passing each line to the closure.  The 
+     * Iterates through this stream, passing each line to the closure.  The
      * stream is closed after the closure returns.
      *
      * @param stream  a stream
@@ -6971,7 +7049,7 @@ public class DefaultGroovyMethods {
 
     /**
      * Creates a writer from this stream, passing it to the given closure.
-     * This method ensures the stream is closed after the closure returns. 
+     * This method ensures the stream is closed after the closure returns.
      *
      * @param stream  the stream which is used and then closed
      * @param closure the closure that the writer is passed into
@@ -6984,7 +7062,7 @@ public class DefaultGroovyMethods {
 
     /**
      * Creates a writer from this stream, passing it to the given closure.
-     * This method ensures the stream is closed after the closure returns. 
+     * This method ensures the stream is closed after the closure returns.
      *
      * @param stream  the stream which is used and then closed
      * @param charset the charset used
@@ -6997,7 +7075,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Passes this OutputStream to the closure, ensuring that the stream 
+     * Passes this OutputStream to the closure, ensuring that the stream
      * is closed after the closure returns, regardless of errors.
      *
      * @param os      the stream which is used and then closed
@@ -7042,11 +7120,10 @@ public class DefaultGroovyMethods {
     /**
      * Traverse through each byte of this File
      *
-     * @see eachByte(InputStream,Closure)
      * @param self    a File
      * @param closure a closure
      * @throws IOException if an IOException occurs.
-     * @see eachByte(InputStream,Closure)
+     * @see #eachByte(InputStream,Closure)
      */
     public static void eachByte(File self, Closure closure) throws IOException {
         BufferedInputStream is = newInputStream(self);
@@ -7082,13 +7159,12 @@ public class DefaultGroovyMethods {
 
     /**
      * Reads the InputStream from this URL, passing each byte to the given
-     * closure.  The URL stream will be closed before this method returns.   
+     * closure.  The URL stream will be closed before this method returns.
      *
-     * @see eachByte(InputStream,Closure)
      * @param url     url to iterate over
      * @param closure closure to apply to each byte
      * @throws IOException if an IOException occurs.
-     * @see eachByte(InputStream,Closure)
+     * @see #eachByte(InputStream,Closure)
      */
     public static void eachByte(URL url, Closure closure) throws IOException {
         InputStream is = url.openConnection().getInputStream();
@@ -7096,9 +7172,9 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Transforms each character from this reader by passing it to the given 
-     * closure.  The Closure should return each transformed character, which 
-     * will be passed to the Writer.  The reader and writer will be both be 
+     * Transforms each character from this reader by passing it to the given
+     * closure.  The Closure should return each transformed character, which
+     * will be passed to the Writer.  The reader and writer will be both be
      * closed before this method returns.
      *
      * @param self    a Reader object
@@ -7131,7 +7207,7 @@ public class DefaultGroovyMethods {
     /**
      * Transforms the lines from a reader with a Closure and
      * write them to a writer. Both Reader and Writer are
-     * closed after the operation.  
+     * closed after the operation.
      *
      * @param reader  Lines of text to be transformed. Reader is closed afterwards.
      * @param writer  Where transformed lines are written. Writer is closed afterwards.
@@ -7209,7 +7285,6 @@ public class DefaultGroovyMethods {
      * Filters the lines of a File and creates a Writeable in return to
      * stream the filtered lines.
      *
-     * @see #filterLine(Reader,Closure)
      * @param self    a File
      * @param closure a closure which returns a boolean indicating to filter
      *                the line or not
@@ -7225,11 +7300,10 @@ public class DefaultGroovyMethods {
      * Filter the lines from this File, and write them to the given writer based
      * on the given closure predicate.
      *
-     * @see #filterLine(Reader,Writer,Closure)
      * @param self    a File
      * @param writer  a writer destination to write filtered lines to
-     * @param closure a closure which takes each line as a parameter and returns 
-     * <code>true</code> if the line should be written to this writer.
+     * @param closure a closure which takes each line as a parameter and returns
+     *                <code>true</code> if the line should be written to this writer.
      * @throws IOException if <code>self</code> is not readable
      * @see #filterLine(Reader,Writer,Closure)
      */
@@ -7238,14 +7312,14 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Filter the lines from this Reader, and return a Writable which can be 
+     * Filter the lines from this Reader, and return a Writable which can be
      * used to stream the filtered lines to a destination.  The closure should
      * return <code>true</code> if the line should be passed to the writer.
      *
      * @param reader  this reader
      * @param closure a closure used for filtering
      * @return a Writable which will use the closure to filter each line
-     * 	from the reader when the Writable#writeTo(Writer) is called.
+     *         from the reader when the Writable#writeTo(Writer) is called.
      */
     public static Writable filterLine(Reader reader, final Closure closure) {
         final BufferedReader br = new BufferedReader(reader);
@@ -7277,13 +7351,13 @@ public class DefaultGroovyMethods {
 
     /**
      * Filter lines from an input stream using a closure predicate.  The closure
-     * will be passed each line as a String, and it should return 
+     * will be passed each line as a String, and it should return
      * <code>true</code> if the line should be passed to the writer.
      *
-     * @see #filterLine(Reader, Closure)
      * @param self      an input stream
      * @param predicate a closure which returns boolean and takes a line
      * @return a writable which writes out the filtered lines
+     * @see #filterLine(Reader, Closure)
      */
     public static Writable filterLine(InputStream self, Closure predicate) {
         return filterLine(newReader(self), predicate);
@@ -7291,11 +7365,10 @@ public class DefaultGroovyMethods {
 
     /**
      * Uses a closure to filter lines from this InputStream and pass them to
-     * the given writer. The closure will be passed each line as a String, and 
-     * it should return <code>true</code> if the line should be passed to the 
+     * the given writer. The closure will be passed each line as a String, and
+     * it should return <code>true</code> if the line should be passed to the
      * writer.
      *
-     * @see #filterLine(Reader,Writer,Closure)
      * @param self      the InputStream
      * @param writer    a writer to write output to
      * @param predicate a closure which returns true if a line should be accepted
@@ -7340,8 +7413,8 @@ public class DefaultGroovyMethods {
     // Socket and ServerSocket methods
 
     /**
-     * Passes the Socket's InputStream and OutputStream to the closure.  The 
-     * streams will be closed after the closure returns, even if an exception 
+     * Passes the Socket's InputStream and OutputStream to the closure.  The
+     * streams will be closed after the closure returns, even if an exception
      * is thrown.
      *
      * @param socket  a Socket
@@ -7367,7 +7440,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Creates an InputObjectStream and an OutputObjectStream from a Socket, and 
+     * Creates an InputObjectStream and an OutputObjectStream from a Socket, and
      * passes them to the closure.  The streams will be closed after the closure
      * returns, even if an exception is thrown.
      *
@@ -7477,7 +7550,6 @@ public class DefaultGroovyMethods {
      * Accepts a connection and passes the resulting Socket to the closure
      * which runs in a new Thread.
      *
-     * @see java.net.ServerSocket#accept()
      * @param serverSocket a ServerSocket
      * @param closure      a Closure
      * @return a Socket
@@ -7504,9 +7576,9 @@ public class DefaultGroovyMethods {
 
 
     /**
-     * Converts this File to a {@link Writable} or delegates to default 
-     * {@link Object#asType(Class)}.
-     * @param this file
+     * Converts this File to a {@link Writable}.
+     *
+     * @param file a File
      * @return a File which wraps the input file and which implements Writable
      */
     public static File asWritable(File file) {
@@ -7514,8 +7586,10 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Converts this File to a {@link Writable} or delegates to default 
-     * {@link Object#asType(Class)}.
+     * Converts this File to a {@link Writable} or delegates to default
+     * {@link #asType(Object,Class)}.
+     *
+     * @param f a File
      * @param c the desired class
      * @return the converted object
      */
@@ -7527,8 +7601,9 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Allows a file to return a Writable implementation that can output itself 
+     * Allows a file to return a Writable implementation that can output itself
      * to a Writer stream.
+     *
      * @param file     a File
      * @param encoding the encoding to be used when reading the file's contents
      * @return File which wraps the input file and which implements Writable
@@ -7553,8 +7628,12 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Converts the GString to a File, or delegates to the default 
-     * {@link Object#asType(Class)}
+     * Converts the GString to a File, or delegates to the default
+     * {@link #asType(Object,Class)}
+     *
+     * @param self a GString
+     * @param c    the desired class
+     * @return the converted object
      */
     public static Object asType(GString self, Class c) {
         if (c == File.class) {
@@ -7580,6 +7659,10 @@ public class DefaultGroovyMethods {
      * </ul>
      * If any other type is given, the call is delegated to
      * {@link #asType(Object,Class)}.
+     *
+     * @param self a String
+     * @param c    the desired class
+     * @return the converted object
      */
     public static Object asType(String self, Class c) {
         if (c == List.class) {
@@ -7806,6 +7889,7 @@ public class DefaultGroovyMethods {
      * Convenience method to dynamically create a new instance of this
      * class.  Calls the default constructor.
      *
+     * @param c a class
      * @return a new instance of this class
      */
     public static Object newInstance(Class c) {
@@ -7818,6 +7902,8 @@ public class DefaultGroovyMethods {
      * args array.  Use <code>newInstance(null)</code> or simply
      * <code>newInstance()</code> for the default (no-arg) constructor.
      *
+     * @param c    a class
+     * @param args the constructor arguments
      * @return a new instance of this class.
      */
     public static Object newInstance(Class c, Object[] args) {
@@ -7934,6 +8020,7 @@ public class DefaultGroovyMethods {
      * Attempts to create an Iterator for the given object by first
      * converting it to a Collection.
      *
+     * @param o an object
      * @return an Iterator for the given Object.
      * @see DefaultTypeTransformation#asCollection(Object)
      */
@@ -7968,9 +8055,12 @@ public class DefaultGroovyMethods {
         };
     }
 
+    // TODO move into DOMCategory once we can make use of optional categories transparent
+
     /**
-     * Makes NodeList iterable by returning a read-only Iterator which traverses 
+     * Makes NodeList iterable by returning a read-only Iterator which traverses
      * over each Node.
+     *
      * @param nodeList a NodeList
      * @return an Iterator for a NodeList
      */
@@ -8091,7 +8181,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Standard iterator for a input stream which iterates through the stream 
+     * Standard iterator for an input stream which iterates through the stream
      * content in a byte-based fashion.
      *
      * @param self an InputStream object
@@ -8102,7 +8192,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Standard iterator for a data input stream which iterates through the 
+     * Standard iterator for a data input stream which iterates through the
      * stream content a byte at a time.
      *
      * @param self a DataInputStream object
@@ -8149,8 +8239,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Standard iterator for a text file which iterates through the file content 
-     * one line at a time. 
+     * Standard iterator for a text file which iterates through the file content
+     * one line at a time.
      *
      * @param self a file object
      * @return a line-based iterator

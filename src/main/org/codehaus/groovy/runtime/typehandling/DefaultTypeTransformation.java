@@ -515,7 +515,8 @@ public class DefaultTypeTransformation {
             return comparable.compareTo(right);
         }
 
-        throw new GroovyRuntimeException("Cannot compare values: " + left + " and " + right);
+        throw new GroovyRuntimeException("Cannot compare " + left.getClass().getName() + " with value '" +
+                left + "' and " + right.getClass().getName() + " with value '" + right + "'");
     }
     
     public static boolean compareEqual(Object left, Object right) {
