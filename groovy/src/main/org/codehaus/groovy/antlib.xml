@@ -1,0 +1,4 @@
+<antlib>
+    <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc"/>
+    <taskdef name="groovy"  classname="org.codehaus.groovy.ant.Groovy"/>
+</antlib>

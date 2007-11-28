@@ -1,0 +1,526 @@
+\documentclass[10pt, landscape]{article}
+\usepackage{multicol}
+\usepackage{graphics}
+
+% turn off header and footer
+\pagestyle{empty}
+
+\setlength{\textheight}{7.5 in}
+\setlength{\textwidth}{11.2 in}
+%\setlength{\hoffset}{-2 in}
+%\setlength{\voffset}{-1 in}
+%\setlength{\footskip}{12 pt}
+\setlength{\oddsidemargin}{-0.74 in}
+\setlength{\evensidemargin}{0.5 in}
+\setlength{\topmargin}{-0.75 in}
+\setlength{\headheight}{0 in}
+\setlength{\headsep}{0 in}
+
+
+\makeatletter
+\renewcommand{\section}{\@startsection{section}{1}{0mm}%
+                                {-1ex plus -.5ex minus -.2ex}%
+                                {0.5ex plus .2ex}%x
+                                {\normalfont\large\bfseries}}
+\renewcommand{\subsection}{\@startsection{subsection}{2}{0mm}%
+                                {-1explus -.5ex minus -.2ex}%
+                                {0.5ex plus .2ex}%
+                                {\normalfont\normalsize\bfseries}}
+\renewcommand\subsubsection{\@startsection{subsubsection}{3}{0mm}%
+                                {-1ex plus -.5ex minus -.2ex}%
+                                {1ex plus .2ex}%
+                                {\normalfont\small\bfseries}}
+\makeatother
+
+% Don't print section numbers
+\setcounter{secnumdepth}{0}
+
+
+\setlength{\columnsep}{0.5 in}
+%\setlength{\columnseprule}{0.4 pt}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt plus 0.5ex}
+
+
+% -------------------------
+
+\begin{document}
+\raggedright
+\footnotesize
+
+
+
+% -- tabular, good for html output
+\newcommand{\keywordSummaryHeader}[1]{\begin{tabular}{ll} #1 \end{tabular}}
+\newcommand{\keywordSummary}[2]{{\bf #1} & #2 \\}
+
+\newcommand{\operatorSummaryHeader}[1]{\begin{tabular}{ll} #1 \end{tabular}}
+\newcommand{\operatorSummary}[2]{ #1 & {\bf #2} \\}
+%\newcommand{\methodDetailHeader}[1]{\begin{tabular}{rll} #1 \end{tabular}}
+%\newcommand{\methodDetail}[3]{#1 & #2 & #3 \\}
+
+% -- tabbing, good for pdf output
+%\newcommand{\keywordSummaryHeader}[1]{\begin{tabbing} jez \= jez-repeated-for-tab-settings-only \kill #1 \end{tabbing}}
+%\newcommand{\keywordSummary}[2]{#1 \\ \> #2 \\}
+
+\newcommand{\methodDetailHeader}[1]{\begin{tabbing} jezje \= jez-repeated-for-tab-settings-only \kill #1 \end{tabbing}}
+\newcommand{\methodDetail}[4]{#1\>{\bf #2}#3\\{\scriptsize #4}\\}
+
+\newcommand{\methodSummaryHeader}[1]{\begin{tabbing} jezj \= jez-repeated-for-tab-settings-only \kill #1 \end{tabbing}}
+\newcommand{\methodSummary}[4]{#1\>{\bf #2}#3\\}
+
+\newcommand{\toolDetailHeader}[1]{\begin{tabbing} je \= jez-repeated-for-tab-settings-only \kill #1 \end{tabbing}}
+\newcommand{\toolDetail}[4]{#1\>{\bf #2}#3\\{\scriptsize #4}\\}
+
+
+
+
+\newcommand{\head}[1]{{\large\textbf{#1}}\\}
+
+\begin{multicols}{3}
+\setlength{\premulticols}{1pt}
+\setlength{\postmulticols}{1pt}
+\setlength{\multicolsep}{1pt}
+\setlength{\columnsep}{2pt}
+
+
+\begin{tabular}{ll}
+\scalebox{0.35}{\includegraphics{one-groovy-logo.mps}}  &   {\large\textbf{Groovy}}      \\
+                                                        &   {\large\textbf{Reference}}   \\
+                                                        &   {\large\textbf{Summary}}
+\end{tabular}
+
+GROOVY-1.0
+
+{\em Fourth Edition\/} (May 2007)
+
+\vskip 0.05 in
+Italics are used, where possible, to show differences to Java
+\vskip 0.15 in
+
+\section{Keywords}
+\subsection{Grammar}
+\keywordSummaryHeader{
+\keywordSummary{{\em as}        }{   import {\em type\/} as {\em id\/}}
+\keywordSummary{                }{   {\em expr\/} as {\em type\/}}
+\keywordSummary{assert          }{   assert {\em expr expr?\/}}
+\keywordSummary{break           }{   break}
+\keywordSummary{case            }{   switch {\em expr\/} case {\em expr stmt*\/}}
+\keywordSummary{catch           }{   try {\em stmt*\/} catch {\em type id stmt*\/}}
+\keywordSummary{class           }{   {\em mod*\/} class {\em id\/}}
+\keywordSummary{continue        }{   continue}
+\keywordSummary{{\em def}       }{   def {\em methodDeclaration\/}}
+\keywordSummary{                }{   def {\em variableDeclaration\/}}
+\keywordSummary{default         }{   switch {\em expr\/} case default{\em stmt*\/} }
+\keywordSummary{else            }{   if {\em expr stmt*\/} else if {\em expr stmt*\/}}
+% todo - enum
+\keywordSummary{extends         }{   {\em mod*\/} class {\em id\/} extends {\em type\/}}
+% todo - syntax supports "generic" extends, but has no effect in groovy 1.0
+\keywordSummary{finally         }{   try {\em stmt*} finally {\em stmt*}}
+%\keywordSummary{for             }{   for {\em expr*};{\em expr};{\em expr} {\em stmt*\/}}
+\keywordSummary{{\em for}       }{   for {\em id\/} in {\em id stmt*\/}}
+\keywordSummary{if              }{   if {\em expr stmt*\/} else if {\em expr stmt*\/}}
+\keywordSummary{{\em in}        }{   for {\em id\/} in {\em id stmt*\/}}
+\keywordSummary{                }{   if {\em id\/} in {\em collection stmt*\/}}
+\keywordSummary{implements      }{   {\em mod*\/} class {\em id\/} implements {\em type*}}
+\keywordSummary{import          }{   import {\em type\/}}
+\keywordSummary{instanceof      }{   {\em expr\/} instanceof {\em type}}
+\keywordSummary{interface       }{   {\em mod*\/} interface {\em id\/}}
+%\keywordSummary{{\em mixin}     }{   {\em mod*\/} mixin {\em id\/}}
+\keywordSummary{new             }{   new {\em type\/} }
+\keywordSummary{package         }{   package {\em id\/}}
+\keywordSummary{return          }{   return {\em expr?/} }
+% not sure if 'super' and 'this' are worth including here?
+\keywordSummary{switch          }{   switch {\em expr\/} case {\em expr stmt*\/} }
+\keywordSummary{throw           }{   throw {\em expr\/} }
+\keywordSummary{throws          }{   {\em methodDeclaration} throws {\em type\/} }
+\keywordSummary{try             }{   try {\em stmt*\/} catch {\em type id stmt*\/}}
+\keywordSummary{while           }{   while {\em expr\/} {\em stmt*\/}}
+% quiet on statics, static imports etc (if they want to use statics, make em look! bwha ha ha)
+}
+
+
+\subsection{Modifiers}
+\keywordSummaryHeader{
+\keywordSummary{abstract        }{   abstract class {\em id\/}}
+\keywordSummary{Annotations     }{   @Annotation}
+\keywordSummary{Annotations     }{   @Annotation(x = 3, y = 5)}
+\keywordSummary{final           }{   final int {\em id\/} = 42}
+%todo - native
+\keywordSummary{private         }{   private String mySecret}
+\keywordSummary{protected       }{   protected List foo}
+\keywordSummary{public          }{   public Date newYear}
+\keywordSummary{static          }{   static int {\em id\/}}
+\keywordSummary{strictfp        }{   strictfp float {\em id\/}}
+\keywordSummary{synchronized    }{   synchronized myMethod()}
+\keywordSummary{transient       }{   transient long distance}
+\keywordSummary{volatile        }{   volatile int diamond}
+}
+
+\subsection{Lists and Maps}
+\keywordSummaryHeader{
+\keywordSummary{                }{   {\em type\/}[] {\em id\/} = new {\em type\/}[{\em size\/}]}
+\keywordSummary{                }{   List people = [fred, barney] }
+\keywordSummary{                }{   Map wilma = [friend:betty, age:unknown] }
+}
+\subsection{Operators}
+\operatorSummaryHeader{
+\operatorSummary{ {\em id\/}                =                                       {\em expr\/} }{ assign}
+\operatorSummary{ {\em expr\/}              \&                                      {\em expr\/} }{ bitwise-and}
+\operatorSummary{ {\em id\/}                \&=                                     {\em expr\/} }{ bitwise-and assign}
+\operatorSummary{ {\em id\/} =              ~                                       {\em expr\/} }{ bitwise-not} %todo - doesn't render
+\operatorSummary{ {\em expr\/}              \textbar\/                              {\em expr\/} }{ bitwise-or}
+\operatorSummary{ {\em id\/}                \textbar\/=                             {\em expr\/} }{ bitwise-or assign}
+\operatorSummary{ {\em expr\/}              \textgreater\textgreater\textgreater\/  {\em expr\/} }{ bitwise-shift-right}
+\operatorSummary{ {\em id\/}                \textgreater\textgreater\textgreater=\/ {\em expr\/} }{ bitwise-shift-right assign}
+%\operatorSummary{ {\em expr\/}              \wedge                                  {\em expr\/} }{ bitwise-exclusive-or}
+%\operatorSummary{ {\em expr\/}              \wedge\/=                                  {\em expr\/} }{ bitwise-exclusive-or assign}
+\operatorSummary{ {\em expr\/}              \textless=\textgreater\/                {\em expr\/} }{ {\em compare to\/}}
+\operatorSummary{                           $--$                                    {\em id\/}   }{ pre-decrement}
+\operatorSummary{ {\em expr\/}              $/$                                     {\em expr\/} }{ division}
+\operatorSummary{ {\em id\/}                $/=$                                    {\em expr\/} }{ division assign}
+\operatorSummary{ {\em expr\/}              ==                                      {\em expr\/} }{ equal}
+\operatorSummary{ {\em expr\/}              $>=$                                    {\em expr\/} }{ greater or equal}
+\operatorSummary{ {\em expr\/}              $>$                                     {\em expr\/} }{ greater than}
+\operatorSummary{                           $++$                                    {\em id\/}   }{ pre-increment}
+\operatorSummary{ {\em expr\/}              \&\&                                    {\em expr\/} }{ logical-and}
+\operatorSummary{ {\em expr\/}              $<=$                                    {\em expr\/} }{ less or equal}
+\operatorSummary{                           !                                       {\em expr\/} }{ logical-not}
+\operatorSummary{ {\em expr\/}              \textbar\textbar\/                      {\em expr\/} }{ logical-or}
+\operatorSummary{ {\em expr\/}              \textless\/                             {\em expr\/} }{ less}
+\operatorSummary{ {\em expr\/}              .\&                                     {\em expr\/} }{ {\em member-pointer\/}}
+\operatorSummary{ {\em expr\/}              -                                       {\em expr\/} }{ minus}
+\operatorSummary{ {\em id\/}                -=                                      {\em expr\/} }{ minus assign}
+\operatorSummary{ {\em expr\/}              \%                                      {\em expr\/} }{ modulus}
+\operatorSummary{ {\em id\/}                \%=                                     {\em expr\/} }{ modulus assign}
+\operatorSummary{ {\em expr\/}              !=                                      {\em expr\/} }{ not equal}
+\operatorSummary{ {\em expr\/}              ?.                                      {\em expr\/} }{ {\em optional dot\/}}
+\operatorSummary{ {\em expr\/}              +                                       {\em expr\/} }{ plus}
+\operatorSummary{ {\em id\/}                +=                                      {\em expr\/} }{ plus assign}
+\operatorSummary{ {\em id\/}                $++$                                                 }{ post-decrement}
+\operatorSummary{ {\em id\/}                $++$                                                 }{ post-increment}
+}
+\subsection{Operators2}
+\operatorSummaryHeader{
+\operatorSummary{ {\em expr\/}              ?                        {\em expr\/} : {\em expr\/} }{ ternary if/else}
+\operatorSummary{ {\em expr\/}              ..\textless                             {\em expr\/} }{ {\em range exclusive\/}}
+\operatorSummary{ {\em expr\/}              ..                                      {\em expr\/} }{ {\em range inclusive\/}}
+\operatorSummary{                           /{\em regex\/}/                                      }{ {\em regex literal\/}}
+\operatorSummary{ {\em id\/}                =~                                    /{\em regex\/}/}{ {\em regex find\/}} %todo - tilde doesn't render
+\operatorSummary{ {\em id\/}                ==~                                   /{\em regex\/}/}{ {\em regex match\/}} %todo - tilde doesn't render
+\operatorSummary{ {\em expr\/}              .@                                     {\em expr\/} }{ {\em select slot\/}}
+\operatorSummary{ {\em expr\/}              \textless\textless\/                   {\em expr\/} }{ shift-left}
+\operatorSummary{ {\em expr\/}              \textless\textless=\/                  {\em expr\/} }{ shift-left-assign}
+\operatorSummary{                           *                                      {\em cltn\/} }{ {\em spread arg\/}}
+\operatorSummary{ {\em cltn\/}              *.                                     {\em expr\/} }{ {\em spread dot\/}}
+\operatorSummary{                           *:                                     {\em map \/} }{ {\em spread-map arg\/}}
+\operatorSummary{ {\em expr\/}              \textgreater\textgreater\/             {\em expr\/} }{ shift-right}
+\operatorSummary{ {\em expr\/}              \textgreater\textgreater=\/            {\em expr\/} }{ shift-right-assign}
+\operatorSummary{ {\em expr\/}              *                                      {\em expr\/} }{ multiply}
+\operatorSummary{ {\em id\/}                *=                                     {\em expr\/} }{ multiply assign}
+\operatorSummary{ {\em expr\/}              **                                     {\em expr\/} }{ to-the-power-of}
+\operatorSummary{ {\em id\/}                **=                                    {\em expr\/} }{ to-the-power-of assign}
+\operatorSummary{                           `{\em string\/}'                                    }{ {\em string literal\/}}
+\operatorSummary{                           ``{\em string\/}"                                   }{ string literal}
+\operatorSummary{                           ` ` `{\em string\/}' ' '                            }{ {\em multi-line-string literal\/}}
+\operatorSummary{                           ``````{\em string\/}"""                             }{ {\em multi-line-string literal\/}} 
+\operatorSummary{                           $-$                                    {\em id\/}   }{ unary-minus}
+\operatorSummary{                           $+$                                    {\em id\/}   }{ unary-plus}
+\operatorSummary{ {\em type\/}              ...                                    {\em id\/}   }{ variable parameters}
+
+%todo - perhaps put index operators here, i.e. foo[1]
+
+}
+% not supported in groovy yet
+% "public @interface Foo{}"
+% "public @interface Foo{int bar() default 123}"
+
+
+% \subsection{Types}
+% \keywordSummaryHeader{
+% \keywordSummary{boolean         }{   true {\em or\/} false}
+% \keywordSummary{byte            }{   -128 to 127}
+% \keywordSummary{char            }{   u0000 to uFFFF }
+% \keywordSummary{double          }{   $\pm 4.9E^{-324}$ to $\pm 1.8E^{+308}$}
+% \keywordSummary{float           }{   $\pm 1.4E^{-45}$ to $\pm 3.4E^{+38}$}
+% \keywordSummary{int             }{   -2,147,483,648 to 2,147,483,647}
+% \keywordSummary{long            }{   -9,223,372,036,854,775,808 }
+% \keywordSummary{                }{   to 9,223,372,036,854,775,807}
+% \keywordSummary{short           }{   -32,768 to 32,767}
+% \keywordSummary{void            }{   }
+% todo - exponents e.g. 1.2e-10
+% todo - hex digits e.g. 0xCaFe
+% todo - big decimal/int literals e.g. 9.8g and 9g
+% todo - float and double literals e.g. 34.4f and 53.5d
+% todo - long literals e.g. 12l
+% }
+
+\vskip 0.5 in
+
+\section{Groovy JDK}
+% based upon DefaultGroovyMethods r1.114
+\subsection{Collections and properties}
+{\scriptsize {\em Note: cltn in this sense {\em can\/} include lists, sets, matchers, strings, charSeqs and arrays\/}}
+
+\methodDetailHeader{
+% a.getAt(b) and a.putAt(b,c) are equiv to a[b] and a[b] = c respectiv. 
+%\methodDetail{ cltn. }{ getAt}{(index\textbar indices\textbar range) }{ obtains objects at specified {\em indicies\/} or in {\em range\/}}
+%\methodDetail{ cltn. }{ getAt}{(property)                         }{ obtains {\em property\/} from each object in collection}
+%\methodDetail{  obj. }{ putAt}{(idx, value)                       }{ put {\em value\/} at position {\em idx\/} } 
+%\methodDetail{  obj. }{ putAt}{(propertyName, value)              }{ put {\em value\/} in the {\em propertyName\/} }
+\methodDetail{  cltn }{[}{index\textbar indices\textbar range\textbar property {\bf ]}}{ obtains objects at specified location}
+\methodDetail{   obj }{[}{index\textbar property{\bf ] =} value    }{ put {\em value\/} at location } 
+\methodDetail{  cltn }{ \textless\textless}{ obj                  }{ append obj to collection}
+\methodSummary{  cltn }{ $+$}{ obj                                   }{ append obj to collection}
+%\methodDetail{  cltn }{ $+$}{ cltn                                  }{ append collection to collection}
+\methodSummary{  list }{ $-$}{ cltn                                  }{ remove items from list}
+\methodDetail{  cltn }{ $*$}{ num                                   }{ repeat items in collection a number of times}
+\methodDetail{       }{  }{                                       }{ }
+% no count() or getAt(range) for matchers!
+\methodDetail{  obj. }{ getProperties}{()                         }{ obtain Map of properties on {\em obj\/}}
+\methodDetail{  obj. }{ getMetaPropertyValues}{()                 }{ obtain List of meta properties on {\em obj\/}}
+\methodDetail{ cltn. }{ count}{(obj) *                            }{ counts number of occurances of {\em obj\/} in collection}
+\methodSummary{  map. }{ get}{(key, defaultValue) *                }{ try to get {\em key \/} from map, otherwise put {\em defaultValue\/} in map and return }
+\methodSummary{ cltn. }{ size}{() *                                }{ returns size of an array or string }
+\methodDetail{       }{   }{                                      }{ }
+\methodDetail{ cltn. }{ collect}{() \{closure\} *                 }{ new collection of {\em closure \/} transformed items }
+\methodDetail{  obj. }{ each}{() \{closure\} *                    }{ iterate through object applying {\em closure\/} }
+\methodDetail{  obj. }{ eachWithIndex}{() \{closure\}             }{ iterate through object with a counter applying {\em closure\/} }
+\methodDetail{  obj. }{ find}{() \{closure\} *                    }{ find first item picked by {\em closure \/} condition }
+\methodDetail{  obj. }{ findAll}{() \{closure\} *                 }{ returns all items picked by {\em closure\/} condition }
+\methodDetail{  obj. }{ findIndexOf}{() \{closure\}               }{ return first index that matches condition {\em closure\/} }
+\methodSummary{  obj. }{ grep}{(regex\textbar range\textbar etc..) *               }{ returns all matching items }
+\methodDetail{ cltn. }{ inject}{(value) \{closure\}               }{ returns closure( closure( closure(value,item0) ,item1) ,item2) ... }
+\methodDetail{ cltn. }{ max}{([comparator]) \{closure\} *         }{ returns the maximum value found in the collection }
+\methodDetail{ cltn. }{ min}{([comparator]) \{closure\} *         }{ returns the minimum value found in the collection }
+\methodDetail{ list. }{ reverseEach}{() \{closure\}               }{ iterate backwards through list applying {\em closure\/}}
+\methodDetail{ cltn. }{ sort}{([comparator]) *                    }{ sorts collection into a list, optionally using a {\em comparator\/}}
+\methodDetail{ cltn. }{ sort}{() \{closure\} *                    }{ sorts collection into a list using closure as comparator}
+\methodDetail{       }{     }{                                    }{ }
+\methodSummary{ cltn. }{ asImmutable}{()                           }{ create an immutable collection }
+\methodSummary{ cltn. }{ asSynchronized}{()                        }{ create a synchronized collection }
+\methodSummary{ list. }{ flatten}{()                               }{ flattens list }
+\methodDetail{ list. }{ intersect}{(cltn)                         }{ returns intersection of list and collection }
+\methodDetail{ cltn. }{ join}{(separator) *                       }{ concatenate all the elements of {\em cltn\/} into a string }
+\methodDetail{ list. }{ pop}{() *                                   }{ remove and return last item from list }
+%todo: what happened to push() :-)
+\methodSummary{ cltn. }{ reverse}{()                               }{ reverses order of collection or string }
+\methodDetail{  map. }{ subMap}{(keys)                            }{ returns a map of the given keys }
+\methodSummary{ cltn. }{ toList}{()                                }{ turns any collection into a list }
+}
+
+\vskip 0.75 in
+
+\subsection{Strings}
+\methodDetailHeader{
+\methodDetail{  str }{ $++$}{                                      }{ increment the number at end of string}
+\methodDetail{  str }{ $--$}{                                      }{ reduce the number at end of string}
+\methodSummary{  str }{ $+$}{ obj                                  }{ concatenate {\em str\/} and {\em obj\/} together}
+\methodDetail{  str }{ $-$}{ obj                                   }{ remove the first {\em obj\/} from {\em str\/}}
+%\methodDetailHeader{  num }{ + str                                   }{ concatenate str to the end of num }
+\methodSummary{  str }{ \textless\textless}{ value                }{ }
+%\methodDetail{  strBuff }{ \textless\textless}{ value            }{ }
+%center and centre :-) !!!!
+\methodDetail{ str. }{ padRight}{(size,[padding])                }{ left justifies string padded out to {\em size\/}} 
+\methodDetail{ str. }{ center}{(size, [padding])                 }{ centers a string padded out to {\em size\/}}
+% name change for padLeft?
+\methodDetail{ str. }{ padLeft}{(size,[padding])                 }{ right justifies string padded out to {\em size\/}} 
+\methodDetail{ str. }{ contains}{(str2) *                        }{ true if {\em str} contains {\em str2}}
+\methodDetail{ str. }{ eachMatch}{(regex) \{closure\} *          }{ apply {\em closure\/} to each match of the specified {\em regex\/} }
+%leftshift
+\methodSummary{ str. }{ toCharacter}{()                           }{ }
+\methodSummary{ str. }{ toList}{()                                }{ }
+\methodSummary{ str. }{ toLong}{()                                }{ }
+\methodSummary{ str. }{ toURL}{()                                 }{ }
+\methodSummary{ str. }{ tokenize}{([token]) *                     }{ }
+}
+
+
+\subsection{Input/output}
+%todo: unify method names
+{\scriptsize {\em Note: url in this sense {\em can\/} include urls, files, streams and readers\/}}
+\methodDetailHeader{
+\methodDetail{   dir. }{ eachFile}{() \{closure\}                 }{ apply {\em closure\/} to each file in {\em dir\/}}
+\methodDetail{   dir. }{ eachFileRecurse}{() \{closure\}          }{ apply {\em closure\/} to each file in {\em dir\/} recursively}
+\methodDetail{ }{ }{ }{ }
+\methodSummary{   url. }{ eachByte}{() \{closure\}                 }{ apply {\em closure\/} to each byte in {\em file\/}}
+\methodDetail{    url. }{ eachLine}{() \{closure\}                 }{ apply {\em closure\/} to each line of input}
+%\methodDetail{  file. }{ newInputStream}{()                       }{ obtain Stream to read from {\em file\/}}
+%\methodDetail{  file. }{ newReader}{([charset])                   }{ obtain Reader from {\em file}}
+\methodSummary{  file. }{ readBytes}{()                            }{ read bytes from {\em file\/}}
+\methodDetail{    in. }{ readLine}{()                             }{ read a single, whole line from {\em in\/}}
+\methodDetail{  file. }{ readLines}{()                            }{ obtain List of lines from {\em file}}
+\methodDetail{   url. }{ getText}{([charset])                     }{ fetch all available text from resource }
+\methodDetail{  file. }{ splitEachLine}{(regEx) \{closure\}       }{ read in each line of {\em file\/}, apply {\em closure\/} to data delimited by {\em regEx\/}}
+%\methodDetail{  file. }{ withInputStream}{() \{closure\}          }{ apply {\em closure\/} to a new InputStream on {\em file\/}, then close}
+\methodDetail{   url. }{ withReader}{() \{closure\}               }{ apply {\em closure\/} to {\em in\/}, then close {\em in\/}}
+%\methodDetail{    in. }{ withStream}{() \{closure\}               }{ apply {\em closure\/} to {\em in\/}, then close {\em in\/}}
+\methodDetail{ }{ }{ }{ }
+\methodDetail{    out }{ \textless\textless}{ obj                 }{ append {\em obj\/} to stream, process or socket}
+\methodSummary{  file. }{ append}{(text, [charset])                }{ append {\em text\/} at end of {\em file\/} with {\em charset\/} encoding}
+%\methodSummary{  file. }{ asWritable}{([charset]) *                }{ wrap {\em file\/} as Writable }
+\methodSummary{ bytes. }{ encodeBase64}{()                         }{ wraps {\em file\/} in Writable with contents encoded as Base64}
+\methodSummary{   str. }{ decodeBase64}{()                         }{ unwraps bytes from Base64 encoded {\em str\/}}
+\methodDetail{     in. }{ filterLine}{([out]) \{closure\}            }{ read from {\em in\/} and write each line to {\em out\/} only if {\em closure\/}}
+%\methodDetail{  file. }{ newOutputStream}{()                      }{ obtain Stream to write to {\em file\/}}
+%\methodDetail{  file. }{ newPrintWriter}{([charset])              }{ obtain PrintWriter to {\em file\/}}
+%\methodDetail{  file. }{ newWriter}{([charset],[append])          }{ obtain Writer to {\em file\/}}
+% todo: transformChar(out) could be more in line with eachByte?
+\methodSummary{   in. }{ transformChar}{(out) \{closure\}           }{ read {\em in\/} and apply {\em closure\/} to each character being written {\em out\/}}  
+\methodDetail{   in. }{ transformLine}{(out) \{closure\}          }{ read {\em in\/} and apply {\em closure\/} to each line being written {\em out\/}}  
+\methodSummary{  file. }{ withOutputStream}{() \{closure\}         }{ apply {\em closure\/} to a new OutputStream on {\em file\/}, then close}
+\methodSummary{  file. }{ withPrintWriter}{() \{closure\}          }{ apply {\em closure\/} to a new PrintWriter on {\em file\/}, then close}
+\methodSummary{   out. }{ withStream}{() \{closure\}               }{ apply {\em closure\/} to {\em out\/}, then close {\em out\/}}
+\methodSummary{   skt. }{ withStreams}{() \{closure\}              }{ apply {\em closure\/} to [in,out], then close them}
+\methodSummary{   out. }{ withWriter}{([charset]) \{closure\}      }{ apply {\em closure\/} to {\em out\/} using {\em charset\/}, then close {\em out\/}}
+\methodDetail{  file. }{ withWriterAppend}{(charset) \{closure\}  }{ apply {\em closure\/} to a new appending Writer on {\em file\/}, then close}
+\methodSummary{  file. }{ write}{(text, [charset]) *               }{ write {\em text\/} to {\em file\/} using {\em charset\/}}
+\methodSummary{   out. }{ writeLine}{(line)                        }{ write {\em line\/} and append a newline}
+}
+
+\subsection{Misc}
+\methodDetailHeader{
+\methodSummary{   date }{ $++$}{                                       }{ add one day to the date }
+\methodSummary{   date }{ $--$}{                                       }{ subtract one day from the date }
+\methodSummary{   date }{ $+$}{ days                                   }{ add {\em days\/} to the date }
+\methodSummary{   date }{ $-$}{ days                                   }{ subtract {\em days\/} from the date }
+\methodDetail{   obj. }{ dump}{() *                                }{ returns a detailed dump string of {\em obj\/}}
+\methodDetail{   obj. }{ inspect}{() *                             }{ returns the groovy expression used to create this instance of {\em obj}}
+\methodSummary{   obj. }{ invokeMethod}{(method, args) *             }{ invokes {\em method\/} on {\em obj\/} }
+\methodSummary{   obj. }{ print}{(obj) *                             }{ print an object }
+\methodSummary{   obj. }{ print}{(out) *                             }{ print this object to {\em out} }
+\methodSummary{   obj. }{ println}{(object) *                        }{ print an object and then terminate line }
+\methodSummary{   obj. }{ println}{(out) *                           }{ print this object to {\em out} and then terminate line }
+\methodDetail{   num. }{ step}{(endNum, stepNum) \{closure\}        }{ iterates {\em closure\/} starting at this number, stepping up to {\em endNum} }
+\methodDetail{   num. }{ times}{() \{closure\} *                    }{ iterates {\em closure\/} num times }
+%todo: upTo() instead of upto()
+\methodDetail{   num. }{ upto}{(endNum) \{closure\}                 }{ iterates {\em closure\/} starting at this number, up to {\em endNum} }
+\methodDetail{   obj. }{ use}{(categoryClass) \{closure\} *         }{ attach {\em closure\/} to specified class }
+\methodDetail{   obj. }{ use}{(categoryClassList) \{closure\} *     }{ attach {\em closure\/} to specified classes }
+\methodSummary{    ps. }{ waitForOrKill}{(milliSecs)                 }{ wait for process to finish, or stop after specified {\em milliSecs} }
+\methodSummary{    ps. }{ getText}{()                                }{ }
+%Static methods shown with \em
+\methodSummary{    Thd.}{ {\em start}}{() \{closure\}                      }{ }
+\methodSummary{    Thd.}{ {\em startDaemon}}{() \{closure\}                }{ }
+\methodSummary{    Mtr.}{ {\em getLastMatcher}}{()                         }{ }
+}
+
+
+\section{Groovy Developers Kit}
+\subsection{Groovy SQL}
+%START
+% sql = Sql.newInstance(
+%END
+\methodSummaryHeader{
+%\methodSummary{      }{ newInstance}{(url,[props],[driver]) }
+\methodSummary{      }{ Sql}{(datasource\textbar connection\textbar sql)}{ }
+\methodSummary{      }{ newInstance}{(url,[user],[pass],[driver]) }{ }
+\methodSummary{ sql. }{ call}{(str,[params]) }{ }
+\methodSummary{ sql. }{ eachRow}{(str,[params]) \{closure\}}{ }
+\methodSummary{ sql. }{ execute}{(str,[params]) }{ }
+\methodSummary{ sql. }{ executeUpdate}{(str,[params]) }{ }
+\methodSummary{ sql. }{ close}{() }{ }
+}
+
+\section{Snippets}
+\begin{tabbing} jezjezjezjezjez \= jez-repeated-for-tab-settings-only \kill 
+{\bf Closures}\>
+{\scriptsize implicit/explicit}\\
+\verb+ { println it }+\\
+\verb+ { x, y -> println(x * y) }+\\
+{\bf Dynamic Members}\>
+{\scriptsize }\\
+\verb+ foo.bar.mooky."$randomProperty"+\\
+{\bf Construct and call setters}\>
+{\scriptsize }\\
+\verb+ new Foo(bar:123, mooky:'red')+\\
+{\bf Builder}\>
+{\scriptsize Markup, Node, StreamingMarkup, DOM, }\\
+{\scriptsize Ant, JavaDoc, Swt, JFace, Swing}\\
+\verb+farm = new NodeBuilder().farm(){animal(type:'pig')}+\\
+{\bf GPath}  \>
+{\scriptsize walks the tree}\\
+\verb+farm.animal.collect{it['@type']}.contains('pig')+\\
+\end{tabbing}
+%\section{Sample Groovy Builder}
+%{\scriptsize Builders are provided to construct these tree structures: {\em Markup, Node, StreamingMarkup, DOM, Ant, JavaDoc, Swt, JFace, Swing}}
+%\begin{verbatim}
+%builder = new NodeBuilder()
+%
+%farm = builder.farm(type:'livestock', acres:30) {
+%                 animal(type:'pig')
+%                 animal(type:'sheep')
+%                 tractor(wheelbase:90)
+%}
+%
+%assert farm.animal.collect{it['@type']}.contains('pig')
+%
+%\end{verbatim}
+
+%\section{Sample Groovy code}
+%\begin{verbatim}
+%package com.example
+%
+%import org.example.Cow
+%
+%/**
+% * This is a sample of Groovy
+% */
+%class HighlandCow extends Cow {
+%  
+%  void mooAtPeople() {
+%    sql = Sql.newInstance("jdbc:foo:bar")
+%    sql.eachRow("select * from PERSON") {
+%      println("Och-Aye ${it.firstname}")
+%    }
+%  }
+%}        
+%\end{verbatim}
+
+\section{Tools}
+\subsection{Ant tasks}
+\begin{verbatim}
+<taskdef
+    name="groovy" 
+    classname="org.codehaus.groovy.ant.Groovy"/>
+<groovy>ant.mkdir(dir:"myDir")</groovy>
+
+<taskdef
+    name="groovyc" 
+    classname="org.codehaus.groovy.ant.Groovyc"/>
+<groovyc 
+    destdir="${build.classes.dir}" 
+    srcdir="${src.dir}"/>
+
+<taskdef
+    name="groovydoc"
+    classname="org.codehaus.groovy.ant.Groovydoc"/>
+<groovydoc
+    sourcepath="${src.dir}" 
+    destdir="${javadoc.dir}" 
+    packagenames="${javadoc.packages}"/>
+\end{verbatim}
+\subsection{Command Line Tools}                                      
+\toolDetailHeader{
+\toolDetail{ \textgreater }{ groovy        }{ [options] Telson.groovy [args] }{ interpret and execute specified groovy script }
+\toolDetail{ \textgreater }{ groovyc       }{ [options] Darv.groovy          }{ compiles specified groovy script }
+\toolDetail{ \textgreater }{ groovysh      }{                                }{ begins an interactive groovy session }
+\toolDetail{ \textgreater }{ groovyConsole }{                                }{ begins a GUI based groovy session }
+\toolDetail{ \textgreater }{ java2groovy   }{ Astra.java                     }{ rough source code translation of Java into Groovy}
+
+%\toolDetail{ \textgreater }{ grok   }{                  }{ groovy javadoc }
+}
+
+\rule{0.3\linewidth}{0.25pt}
+\scriptsize
+
+Copyright \copyright\ 2004, 2007 Jeremy Rayner 
+\textless\/groovy@ross-rayner.com\textgreater\/\/http://javanicus.com/blog2
+
+$Revision$
+$Date$
+
+
+
+\end{multicols}
+\end{document}
