@@ -6520,7 +6520,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Allow simple syntax for using timers.
+     * Allows a simple syntax for using timers.  This timer will execute the
+     * given closure after the given delay.
      *
      * @param timer   a timer object
      * @param delay   the delay in milliseconds before running the closure code
@@ -6538,7 +6539,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Helper method to create a buffered reader for a file
+     * Create a buffered reader for this file.
      *
      * @param file a File
      * @return a BufferedReader
@@ -6550,7 +6551,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Helper method to create a buffered reader for a file, with a specified charset
+     * Create a buffered reader for this file, with using specified 
+     * charset as the encoding.
      *
      * @param file    a File
      * @param charset the charset with which we want to write in the File
@@ -6564,7 +6566,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Provides a reader for an arbitrary input stream
+     * Creates a reader for this input stream.
      *
      * @param self an input stream
      * @return a reader
@@ -6574,8 +6576,9 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Helper method to create a new BufferedReader for a file and then
-     * passes it into the closure and ensures its closed again afterwords
+     * Create a new BufferedReader for this file and then
+     * passes it into the closure, ensuring the reader is closed after the 
+     * closure returns.
      *
      * @param file    a file object
      * @param closure a closure
@@ -6586,7 +6589,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Helper method to create a buffered output stream for a file
+     * Create a buffered output stream for this file.
      *
      * @param file a file object
      * @return the created OutputStream
@@ -6597,7 +6600,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Helper method to create a data output stream for a file
+     * Creates a new data output stream for this file.
      *
      * @param file a file object
      * @return the created DataOutputStream
@@ -6608,55 +6611,59 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Helper method to create a new OutputStream for a file and then
-     * passes it into the closure and ensures its closed again afterwords
+     * Creates a new OutputStream for this file and passes it into the closure.
+     * This method ensures the stream is closed after the closure returns.
      *
      * @param file    a File
      * @param closure a closure
      * @throws IOException if an IOException occurs.
+     * @see #withStream(OutputStream,Closure)
      */
     public static void withOutputStream(File file, Closure closure) throws IOException {
         withStream(newOutputStream(file), closure);
     }
 
     /**
-     * Helper method to create a new InputStream for a file and then
-     * passes it into the closure and ensures its closed again afterwords
+     * Create a new InputStream for this file and passes it into the closure.
+     * This method ensures the stream is closed after the closure returns.
      *
      * @param file    a File
      * @param closure a closure
      * @throws IOException if an IOException occurs.
+     * @see #withStream(InputStream,Closure)
      */
     public static void withInputStream(File file, Closure closure) throws IOException {
         withStream(newInputStream(file), closure);
     }
 
     /**
-     * Helper method to create a new DataOutputStream for a file and then
-     * passes it into the closure and ensures its closed again afterwords
+     * Create a new DataOutputStream for this file and passes it into the closure.
+     * This method ensures the stream is closed after the closure returns.
      *
      * @param file    a File
      * @param closure a closure
      * @throws IOException if an IOException occurs.
+     * @see #withStream(OutputStream,Closure)
      */
     public static void withDataOutputStream(File file, Closure closure) throws IOException {
         withStream(newDataOutputStream(file), closure);
     }
 
     /**
-     * Helper method to create a new DataInputStream for a file and then
-     * passes it into the closure and ensures its closed again afterwords
+     * Create a new DataInputStream for this file and passes it into the closure.
+     * This method ensures the stream is closed after the closure returns.
      *
      * @param file    a File
      * @param closure a closure
      * @throws IOException if an IOException occurs.
+     * @see #withStream(InputStream,Closure)
      */
     public static void withDataInputStream(File file, Closure closure) throws IOException {
         withStream(newDataInputStream(file), closure);
     }
 
     /**
-     * Helper method to create a buffered writer for a file
+     * Creates a buffered writer for this file.
      *
      * @param file a File
      * @return a BufferedWriter
@@ -6667,10 +6674,11 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Helper method to create a buffered writer for a file in append mode
+     * Creates a buffered writer for this file, optionally appending to the 
+     * existing file content.
      *
      * @param file   a File
-     * @param append true if in append mode
+     * @param append true if data should be appended to the file
      * @return a BufferedWriter
      * @throws IOException if an IOException occurs.
      */
@@ -6679,7 +6687,9 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Helper method to create a buffered writer for a file
+     * Helper method to create a buffered writer for a file.  If the given 
+     * charset is "UTF-16BE" or "UTF-16LE", the requisite byte order mark is 
+     * written to the stream before the writer is returned.
      *
      * @param file    a File
      * @param charset the name of the encoding used to write in this file
@@ -6703,7 +6713,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Helper method to create a buffered writer for a file
+     * Creates a buffered writer for this file, writing data using the given
+     * encoding.
      *
      * @param file    a File
      * @param charset the name of the encoding used to write in this file
@@ -6732,8 +6743,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Helper method to create a new BufferedWriter for a file and then
-     * passes it into the closure and ensures it is closed again afterwords
+     * Creates a new BufferedWriter for this file, passes it to the closure, and 
+     * ensures the stream is flushed and closed after the closure returns.
      *
      * @param file    a File
      * @param closure a closure
@@ -6744,8 +6755,9 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Helper method to create a new BufferedWriter for a file in a specified encoding
-     * and then passes it into the closure and ensures it is closed again afterwords
+     * Creates a new BufferedWriter for this file, passes it to the closure, and 
+     * ensures the stream is flushed and closed after the closure returns.  
+     * The writer will use the given charset encoding.
      *
      * @param file    a File
      * @param charset the charset used
@@ -6757,8 +6769,9 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Helper method to create a new BufferedWriter for a file in a specified encoding
-     * in append mode and then passes it into the closure and ensures it is closed again afterwords
+     * Create a new BufferedWriter which will append to this 
+     * file.  The writer is passed to the closure and will be closed before
+     * this method returns.
      *
      * @param file    a File
      * @param charset the charset used
@@ -6770,8 +6783,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Helper method to create a new BufferedWriter for a file in append mode
-     * and then passes it into the closure and ensures it is closed again afterwords
+     * Create a new BufferedWriter for this file in append mode.  The writer
+     * is passed to the closure and is closed after the closure returns.
      *
      * @param file    a File
      * @param closure a closure
@@ -6782,7 +6795,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Helper method to create a new PrintWriter for a file
+     * Create a new PrintWriter for this file.
      *
      * @param file a File
      * @return the created PrintWriter
@@ -6793,7 +6806,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Helper method to create a new PrintWriter for a file with a specified charset
+     * Create a new PrintWriter for this file, using specified 
+     * charset.
      *
      * @param file    a File
      * @param charset the charset
@@ -6805,8 +6819,9 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Helper method to create a new PrintWriter for a file and then
-     * passes it into the closure and ensures its closed again afterwords
+     * Create a new PrintWriter for this file which is then
+     * passed it into the given closure.  This method ensures its the writer 
+     * is closed after the closure returns.
      *
      * @param file    a File
      * @param closure the closure to invoke with the PrintWriter
@@ -6817,8 +6832,9 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Helper method to create a new PrintWriter with a specified charset for a file
-     * and then to pass it into the closure ensuring it's closed again afterwards
+     * Create a new PrintWriter with a specified charset for 
+     * this file.  The writer is passed to the closure, and will be closed 
+     * before this method returns.
      *
      * @param file    a File
      * @param charset the charset
@@ -6830,9 +6846,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Allows a writer to be used, calling the closure with the writer
-     * and then ensuring that the writer is closed down again irrespective
-     * of whether exceptions occur or the
+     * Allows this writer to be used within the closure, ensuring that it
+     * is flushed and closed before this method returns.
      *
      * @param writer  the writer which is used and then closed
      * @param closure the closure that the writer is passed into
@@ -6855,9 +6870,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Allows a Reader to be used, calling the closure with the reader
-     * and then ensuring that the reader is closed down again irrespective
-     * of whether exceptions occur or the
+     * Allows this reader to be used within the closure, ensuring that it
+     * is closed before this method returns.
      *
      * @param reader  the reader which is used and then closed
      * @param closure the closure that the writer is passed into
@@ -6876,9 +6890,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Allows a InputStream to be used, calling the closure with the stream
-     * and then ensuring that the stream is closed down again irrespective
-     * of whether exceptions occur or the
+     * Allows this input stream to be used within the closure, ensuring that it
+     * is flushed and closed before this method returns.
      *
      * @param stream  the stream which is used and then closed
      * @param closure the closure that the stream is passed into
@@ -6897,22 +6910,25 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Reads the stream into a list of Strings for each line
+     * Reads the stream into a list, with one element for each line.
      *
      * @param stream a stream
      * @return a List of lines
      * @throws IOException if an IOException occurs.
+     * @see #readLines(Reader)
      */
     public static List readLines(InputStream stream) throws IOException {
         return readLines(new BufferedReader(new InputStreamReader(stream)));
     }
 
     /**
-     * Iterates through the given stream line by line
+     * Iterates through this stream, passing each line to the closure.  The 
+     * stream is closed after the closure returns.
      *
      * @param stream  a stream
      * @param closure a closure
      * @throws IOException if an IOException occurs.
+     * @see #eachLine(Reader,Closure)
      */
     public static void eachLine(InputStream stream, Closure closure) throws IOException {
         eachLine(new InputStreamReader(stream), closure);
@@ -6931,7 +6947,7 @@ public class DefaultGroovyMethods {
 
     /**
      * Helper method to create a new BufferedReader for a URL and then
-     * passes it into the closure and ensures its closed again afterwords.
+     * passes it to the closure.  The reader is closed after the closure returns.
      *
      * @param url     a URL
      * @param closure the closure to invoke with the reader
@@ -6943,7 +6959,7 @@ public class DefaultGroovyMethods {
 
     /**
      * Helper method to create a new BufferedReader for a stream and then
-     * passes it into the closure and ensures its closed again afterwords.
+     * passes it into the closure.  The reader is closed after the closure returns.
      *
      * @param in      a stream
      * @param closure the closure to invoke with the InputStream
@@ -6954,34 +6970,34 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Allows an output stream to be used, calling the closure with the output stream
-     * and then ensuring that the output stream is closed down again irrespective
-     * of whether exceptions occur
+     * Creates a writer from this stream, passing it to the given closure.
+     * This method ensures the stream is closed after the closure returns. 
      *
      * @param stream  the stream which is used and then closed
      * @param closure the closure that the writer is passed into
      * @throws IOException if an IOException occurs.
+     * @see #withWriter(Writer,Closure)
      */
     public static void withWriter(OutputStream stream, Closure closure) throws IOException {
         withWriter(new OutputStreamWriter(stream), closure);
     }
 
     /**
-     * Allows an output stream to be used, calling the closure with the output stream
-     * and then ensuring that the output stream is closed down again irrespective
-     * of whether exceptions occur.
+     * Creates a writer from this stream, passing it to the given closure.
+     * This method ensures the stream is closed after the closure returns. 
      *
      * @param stream  the stream which is used and then closed
      * @param charset the charset used
      * @param closure the closure that the writer is passed into
      * @throws IOException if an IOException occurs.
+     * @see #withWriter(Writer,Closure)
      */
     public static void withWriter(OutputStream stream, String charset, Closure closure) throws IOException {
         withWriter(new OutputStreamWriter(stream, charset), closure);
     }
 
     /**
-     * Passes this OutputStream to the closure, ensuring that the stream
+     * Passes this OutputStream to the closure, ensuring that the stream 
      * is closed after the closure returns, regardless of errors.
      *
      * @param os      the stream which is used and then closed
@@ -7002,7 +7018,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Helper method to create a buffered input stream for a file
+     * Creates a buffered input stream for this file.
      *
      * @param file a File
      * @return a BufferedInputStream of the file
@@ -7013,7 +7029,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Helper method to create a data input stream for a file
+     * Create a data input stream for this file
      *
      * @param file a File
      * @return a DataInputStream of the file
@@ -7026,6 +7042,7 @@ public class DefaultGroovyMethods {
     /**
      * Traverse through each byte of this File
      *
+     * @see eachByte(InputStream,Closure)
      * @param self    a File
      * @param closure a closure
      * @throws IOException if an IOException occurs.
@@ -7038,7 +7055,7 @@ public class DefaultGroovyMethods {
 
     /**
      * Traverse through each byte of the specified stream. The
-     * stream is closed afterwards.
+     * stream is closed after the closure returns.
      *
      * @param is      stream to iterate over, closed after the method call
      * @param closure closure to apply to each byte
@@ -7065,8 +7082,9 @@ public class DefaultGroovyMethods {
 
     /**
      * Reads the InputStream from this URL, passing each byte to the given
-     * closure.  The URL stream will be closed before this method returns.
+     * closure.  The URL stream will be closed before this method returns.   
      *
+     * @see eachByte(InputStream,Closure)
      * @param url     url to iterate over
      * @param closure closure to apply to each byte
      * @throws IOException if an IOException occurs.
@@ -7078,9 +7096,9 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Transforms each character from this reader by passing it to the given
-     * closure.  The Closure should return each transformed character, which
-     * will be passed to the Writer.  The reader and writer will be both be
+     * Transforms each character from this reader by passing it to the given 
+     * closure.  The Closure should return each transformed character, which 
+     * will be passed to the Writer.  The reader and writer will be both be 
      * closed before this method returns.
      *
      * @param self    a Reader object
@@ -7113,7 +7131,7 @@ public class DefaultGroovyMethods {
     /**
      * Transforms the lines from a reader with a Closure and
      * write them to a writer. Both Reader and Writer are
-     * closed after the operation.
+     * closed after the operation.  
      *
      * @param reader  Lines of text to be transformed. Reader is closed afterwards.
      * @param writer  Where transformed lines are written. Writer is closed afterwards.
@@ -7191,6 +7209,7 @@ public class DefaultGroovyMethods {
      * Filters the lines of a File and creates a Writeable in return to
      * stream the filtered lines.
      *
+     * @see #filterLine(Reader,Closure)
      * @param self    a File
      * @param closure a closure which returns a boolean indicating to filter
      *                the line or not
@@ -7206,10 +7225,11 @@ public class DefaultGroovyMethods {
      * Filter the lines from this File, and write them to the given writer based
      * on the given closure predicate.
      *
+     * @see #filterLine(Reader,Writer,Closure)
      * @param self    a File
      * @param writer  a writer destination to write filtered lines to
-     * @param closure a closure which takes each line as a parameter and returns
-     *                <code>true</code> if the line should be written to this writer.
+     * @param closure a closure which takes each line as a parameter and returns 
+     * <code>true</code> if the line should be written to this writer.
      * @throws IOException if <code>self</code> is not readable
      * @see #filterLine(Reader,Writer,Closure)
      */
@@ -7218,14 +7238,14 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Filter the lines from this Reader, and return a Writable which can be
+     * Filter the lines from this Reader, and return a Writable which can be 
      * used to stream the filtered lines to a destination.  The closure should
      * return <code>true</code> if the line should be passed to the writer.
      *
      * @param reader  this reader
      * @param closure a closure used for filtering
      * @return a Writable which will use the closure to filter each line
-     *         from the reader when the Writable#writeTo(Writer) is called.
+     * 	from the reader when the Writable#writeTo(Writer) is called.
      */
     public static Writable filterLine(Reader reader, final Closure closure) {
         final BufferedReader br = new BufferedReader(reader);
@@ -7257,13 +7277,13 @@ public class DefaultGroovyMethods {
 
     /**
      * Filter lines from an input stream using a closure predicate.  The closure
-     * will be passed each line as a String, and it should return
+     * will be passed each line as a String, and it should return 
      * <code>true</code> if the line should be passed to the writer.
      *
+     * @see #filterLine(Reader, Closure)
      * @param self      an input stream
      * @param predicate a closure which returns boolean and takes a line
      * @return a writable which writes out the filtered lines
-     * @see #filterLine(Reader, Closure)
      */
     public static Writable filterLine(InputStream self, Closure predicate) {
         return filterLine(newReader(self), predicate);
@@ -7271,10 +7291,11 @@ public class DefaultGroovyMethods {
 
     /**
      * Uses a closure to filter lines from this InputStream and pass them to
-     * the given writer. The closure will be passed each line as a String, and
-     * it should return <code>true</code> if the line should be passed to the
+     * the given writer. The closure will be passed each line as a String, and 
+     * it should return <code>true</code> if the line should be passed to the 
      * writer.
      *
+     * @see #filterLine(Reader,Writer,Closure)
      * @param self      the InputStream
      * @param writer    a writer to write output to
      * @param predicate a closure which returns true if a line should be accepted
@@ -7319,8 +7340,8 @@ public class DefaultGroovyMethods {
     // Socket and ServerSocket methods
 
     /**
-     * Passes the Socket's InputStream and OutputStream to the closure.  The
-     * streams will be closed after the closure returns, even if an exception
+     * Passes the Socket's InputStream and OutputStream to the closure.  The 
+     * streams will be closed after the closure returns, even if an exception 
      * is thrown.
      *
      * @param socket  a Socket
@@ -7346,7 +7367,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Creates an InputObjectStream and an OutputObjectStream from a Socket, and
+     * Creates an InputObjectStream and an OutputObjectStream from a Socket, and 
      * passes them to the closure.  The streams will be closed after the closure
      * returns, even if an exception is thrown.
      *
@@ -7456,6 +7477,7 @@ public class DefaultGroovyMethods {
      * Accepts a connection and passes the resulting Socket to the closure
      * which runs in a new Thread.
      *
+     * @see java.net.ServerSocket#accept()
      * @param serverSocket a ServerSocket
      * @param closure      a Closure
      * @return a Socket
@@ -7482,9 +7504,8 @@ public class DefaultGroovyMethods {
 
 
     /**
-     * Converts this File to a {@link Writable} or delegates to default
+     * Converts this File to a {@link Writable} or delegates to default 
      * {@link Object#asType(Class)}.
-     *
      * @param this file
      * @return a File which wraps the input file and which implements Writable
      */
@@ -7493,9 +7514,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Converts this File to a {@link Writable} or delegates to default
+     * Converts this File to a {@link Writable} or delegates to default 
      * {@link Object#asType(Class)}.
-     *
      * @param c the desired class
      * @return the converted object
      */
@@ -7507,9 +7527,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Allows a file to return a Writable implementation that can output itself
+     * Allows a file to return a Writable implementation that can output itself 
      * to a Writer stream.
-     *
      * @param file     a File
      * @param encoding the encoding to be used when reading the file's contents
      * @return File which wraps the input file and which implements Writable
@@ -7534,7 +7553,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Converts the GString to a File, or delegates to the default
+     * Converts the GString to a File, or delegates to the default 
      * {@link Object#asType(Class)}
      */
     public static Object asType(GString self, Class c) {
@@ -7949,12 +7968,9 @@ public class DefaultGroovyMethods {
         };
     }
 
-    // TODO move into DOMCategory once we can make use of optional categories transparent
-
     /**
-     * Makes NodeList iterable by returning a read-only Iterator which traverses
+     * Makes NodeList iterable by returning a read-only Iterator which traverses 
      * over each Node.
-     *
      * @param nodeList a NodeList
      * @return an Iterator for a NodeList
      */
@@ -8075,7 +8091,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Standard iterator for a input stream which iterates through the stream
+     * Standard iterator for a input stream which iterates through the stream 
      * content in a byte-based fashion.
      *
      * @param self an InputStream object
@@ -8086,7 +8102,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Standard iterator for a data input stream which iterates through the
+     * Standard iterator for a data input stream which iterates through the 
      * stream content a byte at a time.
      *
      * @param self a DataInputStream object
@@ -8133,8 +8149,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Standard iterator for a text file which iterates through the file content
-     * one line at a time.
+     * Standard iterator for a text file which iterates through the file content 
+     * one line at a time. 
      *
      * @param self a file object
      * @return a line-based iterator
