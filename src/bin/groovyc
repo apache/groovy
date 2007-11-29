@@ -11,6 +11,7 @@
 ## $Date$
 ##
 
+GROOVY_APP_NAME=GroovyC
 DIRNAME=`dirname "$0"`
 . "$DIRNAME/startGroovy"
 

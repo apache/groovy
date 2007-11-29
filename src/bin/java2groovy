@@ -11,6 +11,7 @@
 ## $Date: 2006-11-16 17:30:40 +0000 (Thu, 16 Nov 2006) $
 ##
 
+GROOVY_APP_NAME=Java2Groovy
 DIRNAME=`dirname "$0"`
 . "$DIRNAME/startGroovy"
 

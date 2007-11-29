@@ -1,4 +1,5 @@
 #!/bin/sh
+
 ##############################################################################
 ##                                                                          ##
 ##  Groovy Console script for UN*X                                          ##
@@ -6,9 +7,11 @@
 ##############################################################################
 
 ##
-## $Revision$ $Date$
+## $Revision$
+## $Date$
 ##
 
+GROOVY_APP_NAME=GroovyConsole
 DIRNAME=`dirname "$0"`
 . "$DIRNAME/startGroovy"
 

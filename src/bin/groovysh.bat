@@ -1,7 +1,7 @@
 @if "%DEBUG%" == "" @echo off
 
 @rem 
-@rem $Id$
+@rem $Revision$ $Date$
 @rem
 
 @rem Set local scope for the variables with windows NT shell

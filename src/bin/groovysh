@@ -2,14 +2,16 @@
 
 ##############################################################################
 ##                                                                          ##
-##  Groovy Console script for UN*X                                          ##
+##  Groovy Shell script for UN*X                                            ##
 ##                                                                          ##
 ##############################################################################
 
 ##
+## $Revision$
 ## $Id$
 ##
 
+GROOVY_APP_NAME=GroovyShell
 DIRNAME=`dirname "$0"`
 . "$DIRNAME/startGroovy"
 
