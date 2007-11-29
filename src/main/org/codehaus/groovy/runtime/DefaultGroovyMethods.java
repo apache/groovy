@@ -3744,6 +3744,9 @@ public class DefaultGroovyMethods {
         return self;
     }
 
+    /**
+     * Determines if all items of this array are of the same type.
+     */
     private static boolean sameType(Collection[] cols) {
         List all = new LinkedList();
         for (int i = 0; i < cols.length; i++) {
@@ -4042,7 +4045,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Support assigning a range of values with a single assignment statement
+     * Support assigning a range of values with a single assignment statement.
      *
      * @param self  a BitSet
      * @param range the range of values to set
@@ -4064,7 +4067,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Support subscript style assignment for a BitSet
+     * Support subscript-style assignment for a BitSet.
      *
      * @param self  a BitSet
      * @param index index of the entry to set
@@ -4075,62 +4078,129 @@ public class DefaultGroovyMethods {
         self.set(index, value);
     }
 
+    /**
+     * Allows arrays to behave similar to collections.
+     * @see Array#getLength(Object)
+     */
     public static int size(boolean[] array) {
         return Array.getLength(array);
     }
 
+    /**
+     * Allows arrays to behave similar to collections.
+     * @see Array#getLength(Object)
+     */
     public static int size(byte[] array) {
         return Array.getLength(array);
     }
 
+    /**
+     * Allows arrays to behave similar to collections.
+     * @see Array#getLength(Object)
+     */
     public static int size(char[] array) {
         return Array.getLength(array);
     }
 
+    /**
+     * Allows arrays to behave similar to collections.
+     * @see Array#getLength(Object)
+     */
     public static int size(short[] array) {
         return Array.getLength(array);
     }
 
+    /**
+     * Allows arrays to behave similar to collections.
+     * @see Array#getLength(Object)
+     */
     public static int size(int[] array) {
         return Array.getLength(array);
     }
 
+    /**
+     * Allows arrays to behave similar to collections.
+     * @see Array#getLength(Object)
+     */
     public static int size(long[] array) {
         return Array.getLength(array);
     }
 
+    /**
+     * Allows arrays to behave similar to collections.
+     * @see Array#getLength(Object)
+     */
     public static int size(float[] array) {
         return Array.getLength(array);
     }
 
+    /**
+     * Allows arrays to behave similar to collections.
+     * @see Array#getLength(Object)
+     */
     public static int size(double[] array) {
         return Array.getLength(array);
     }
 
+    /**
+     * Converts this array to a List of the same size, with each element
+     * added to the list.
+     * @return a list containing the contents of this array.
+     */
     public static List toList(byte[] array) {
         return DefaultTypeTransformation.primitiveArrayToList(array);
     }
 
+    /**
+     * Converts this array to a List of the same size, with each element
+     * added to the list.
+     * @return a list containing the contents of this array.
+     */
     public static List toList(char[] array) {
         return DefaultTypeTransformation.primitiveArrayToList(array);
     }
 
+    /**
+     * Converts this array to a List of the same size, with each element
+     * added to the list.
+     * @return a list containing the contents of this array.
+     */
     public static List toList(short[] array) {
         return DefaultTypeTransformation.primitiveArrayToList(array);
     }
 
+    /**
+     * Converts this array to a List of the same size, with each element
+     * added to the list.
+     * @return a list containing the contents of this array.
+     */
     public static List toList(int[] array) {
         return DefaultTypeTransformation.primitiveArrayToList(array);
     }
 
+    /**
+     * Converts this array to a List of the same size, with each element
+     * added to the list.
+     * @return a list containing the contents of this array.
+     */
     public static List toList(long[] array) {
         return DefaultTypeTransformation.primitiveArrayToList(array);
     }
 
+    /**
+     * Converts this array to a List of the same size, with each element
+     * added to the list.
+     * @return a list containing the contents of this array.
+     */
     public static List toList(float[] array) {
         return DefaultTypeTransformation.primitiveArrayToList(array);
     }
 
+    /**
+     * Converts this array to a List of the same size, with each element
+     * added to the list.
+     * @return a list containing the contents of this array.
+     */
     public static List toList(double[] array) {
         return DefaultTypeTransformation.primitiveArrayToList(array);
     }
@@ -4142,7 +4212,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Produce a Writable object which writes the base64 encoding of the byte array
+     * Produce a Writable object which writes the base64 encoding of the byte array.
      * Calling toString() on the result rerurns the encoding as a String
      *
      * @param data byte array to be encoded
@@ -4233,7 +4303,7 @@ public class DefaultGroovyMethods {
                     + "\u0031\u0032\u0033").getBytes();
 
     /**
-     * Decode the Sting from base64 into a byte array
+     * Decode the Sting from base64 into a byte array.
      *
      * @param value the string to be decoded
      * @return the decoded bytes as an array
@@ -4308,7 +4378,9 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Implements the getAt(Collection) method for primitve type arrays.
+     * Implements the getAt(Collection) method for primitve type arrays.  Each
+     * value in the collection argument is assumed to be a valid array index.
+     * The value at each index is then added to a list which is returned.
      *
      * @param self    an array object
      * @param indices the indices of interest
@@ -4331,7 +4403,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Implements the set(int idx) method for primitve type arrays.
+     * Implements the setAt(int idx) method for primitve type arrays.
      *
      * @param self     an object
      * @param idx      the index of interest
@@ -4348,7 +4420,7 @@ public class DefaultGroovyMethods {
 
     /**
      * Converts the given string into a Character object
-     * using the first character in the string
+     * using the first character in the string.
      *
      * @param self a String
      * @return the first Character
@@ -4359,7 +4431,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Converts the given string into a Boolean object
+     * Converts the given string into a Boolean object.
      * If the trimmed string is "true", "y" or "1" (ignoring case)
      * then the result is true othewrwise it is false.
      *
@@ -4389,28 +4461,29 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Tokenize a String (with a whitespace as delimiter)
+     * Tokenize a String (with a whitespace as the delimiter).
      *
      * @param self a String
      * @return a List of tokens
+     * @see StringTokenizer#StringTokenizer(java.lang.String)
      */
     public static List tokenize(String self) {
         return InvokerHelper.asList(new StringTokenizer(self));
     }
 
     /**
-     * Appends a String
+     * Appends the String representation of the given operand to this string.
      *
      * @param left  a String
      * @param value any Object
-     * @return a String
+     * @return the new string with the object appended
      */
     public static String plus(String left, Object value) {
         return left + toString(value);
     }
 
     /**
-     * Appends a String
+     * Appends a String to the string representation of this number.
      *
      * @param value a Number
      * @param right a String
@@ -4421,7 +4494,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Appends a String
+     * Appends a String to this StringBuffer.
      *
      * @param left  a StringBuffer
      * @param value a String
@@ -4433,11 +4506,13 @@ public class DefaultGroovyMethods {
 
 
     /**
-     * Remove a part of a String
+     * Remove a part of a String.  This essentially replaces the first
+     * occurrence of the operand with '' and returns the result.
      *
      * @param left  a String
      * @param value a String part to remove
      * @return a String minus the part to be removed
+     * @see String#replaceFirst(String,String)
      */
     public static String minus(String left, Object value) {
         String text = toString(value);
@@ -4445,7 +4520,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Provide an implementation of contains() like Collection to make Strings more polymorphic
+     * Provide an implementation of contains() like
+     * {@link Collection#contains(Object)} to make Strings more polymorphic.
      * This method is not required on JDK 1.5 onwards
      *
      * @param self a String
@@ -4458,7 +4534,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Count the number of occurencies of a substring
+     * Count the number of occurencies of a substring.
      *
      * @param self a String
      * @param text a substring
@@ -4625,11 +4701,11 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Repeat a String a certain number of times
+     * Repeat a String a certain number of times.
      *
      * @param self   a String to be repeated
      * @param factor the number of times the String should be repeated
-     * @return a String composed of a repeatition
+     * @return a String composed of a repetition
      * @throws IllegalArgumentException if the number of repeatition is &lt; 0
      */
     public static String multiply(String self, Number factor) {
@@ -4647,17 +4723,19 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Returns the string representation of the given map with bracket boundaries.
+     * Returns the string representation of the given map.
      *
      * @param self a Map
      * @return the string representation
+     * @see #toMapString(Map)
      */
     public static String toString(Map self) {
         return toMapString(self);
     }
 
     /**
-     * Returns the string representation of the given map with bracket boundaries.
+     * Returns the string representation of this map.  The string displays the
+     * contents of the map, i.e. <code>{one=1, two=2, three=3}</code>.
      *
      * @param self a Map
      * @return the string representation
@@ -4667,17 +4745,22 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Returns the string representation of the given collection with the bracket boundaries.
+     * Returns the string representation of the given collection.  The string
+     * displays the contents of the collection, i.e.
+     * <code>[1, 2, a]</code>.
      *
      * @param self a Collection
      * @return the string representation
+     * @see #toListString(Collection)
      */
     public static String toString(Collection self) {
         return toListString(self);
     }
 
     /**
-     * Returns the string representation of the given collection with the bracket boundaries.
+     * Returns the string representation of the given list.  The string
+     * displays the contents of the list, similar to a list literal, i.e.
+     * <code>[1, 2, a]</code>.
      *
      * @param self a Collection
      * @return the string representation
@@ -4687,17 +4770,20 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Returns the string representation of the given array with the brace boundaries.
+     * Returns the string representation of this array's contents.
      *
      * @param self an Object[]
      * @return the string representation
+     * @see #toArrayString(Object[])
      */
     public static String toString(Object[] self) {
         return toArrayString(self);
     }
 
     /**
-     * Returns the string representation of the given array with the brace boundaries.
+     * Returns the string representation of the given array.  The string
+     * displays the contents of the array, similar to an array literal, i.e.
+     * <code>{1, 2, "a"}</code>.
      *
      * @param self an Object[]
      * @return the string representation
@@ -4706,7 +4792,10 @@ public class DefaultGroovyMethods {
         return (self == null) ? "null" : InvokerHelper.toArrayString(self);
     }
 
-
+    /**
+     * Create a String representation of this object.
+     * @return a string.
+     */
     protected static String toString(Object value) {
         if (value instanceof Map)
             return toMapString((Map) value);
@@ -4722,7 +4811,7 @@ public class DefaultGroovyMethods {
     //-------------------------------------------------------------------------
 
     /**
-     * Increment a Character by one
+     * Increment a Character by one.
      *
      * @param self a Character
      * @return an incremented Number
@@ -4732,7 +4821,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Increment a Number by one
+     * Increment a Number by one.
      *
      * @param self a Number
      * @return an incremented Number
@@ -4742,7 +4831,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Decrement a Character by one
+     * Decrement a Character by one.
      *
      * @param self a Character
      * @return a decremented Number
@@ -4752,7 +4841,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Decrement a Number by one
+     * Decrement a Number by one.
      *
      * @param self a Number
      * @return a decremented Number
@@ -4762,7 +4851,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Add a Character and a Number
+     * Add a Character and a Number.
      *
      * @param left  a Character
      * @param right a Number
@@ -4773,7 +4862,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Add a Number and a Character
+     * Add a Number and a Character.
      *
      * @param left  a Number
      * @param right a Character
@@ -4784,7 +4873,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Add two Characters
+     * Add two Characters.
      *
      * @param left  a Character
      * @param right a Character
@@ -4806,7 +4895,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Compare a Character and a Number
+     * Compare a Character and a Number.
      *
      * @param left  a Character
      * @param right a Number
@@ -4817,7 +4906,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Compare a Number and a Character
+     * Compare a Number and a Character.
      *
      * @param left  a Number
      * @param right a Character
@@ -4828,7 +4917,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Compare two Characters
+     * Compare two Characters.
      *
      * @param left  a Character
      * @param right a Character
@@ -4839,7 +4928,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Compare two Numbers
+     * Compare two Numbers.  Equality (==) for numbers dispatches to this.
      *
      * @param left  a Number
      * @param right another Number to compare to
@@ -4851,7 +4940,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Subtract a Number from a Character
+     * Subtract a Number from a Character.
      *
      * @param left  a Character
      * @param right a Number
@@ -4862,7 +4951,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Subtract a Character from a Number
+     * Subtract a Character from a Number.
      *
      * @param left  a Number
      * @param right a Character
@@ -4873,7 +4962,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Subtraction two Characters
+     * Subtraction two Characters.
      *
      * @param left  a Character
      * @param right a Character
@@ -4884,7 +4973,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Substraction of two Numbers
+     * Substraction of two Numbers.
      *
      * @param left  a Number
      * @param right another Number to substract to the first one
@@ -4895,7 +4984,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Multiply a Character by a Number
+     * Multiply a Character by a Number.
      *
      * @param left  a Character
      * @param right a Number
@@ -4906,7 +4995,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Multiply a Number by a Character
+     * Multiply a Number by a Character.
      *
      * @param left  a Number
      * @param right a Character
@@ -4917,7 +5006,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Multiply two Characters
+     * Multiply two Characters.
      *
      * @param left  a Character
      * @param right another Character
@@ -4928,7 +5017,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Multiply two Numbers
+     * Multiply two Numbers.
      *
      * @param left  a Number
      * @param right another Number
@@ -4976,7 +5065,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Power of a Number to a certain exponent
+     * Power of a Number to a certain exponent.  Called by the '**' operator.
      *
      * @param self     a Number
      * @param exponent a Number exponent
@@ -4998,7 +5087,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Divide a Character by a Number
+     * Divide a Character by a Number.
      *
      * @param left  a Character
      * @param right a Number
@@ -5009,7 +5098,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Divide a Number by a Character
+     * Divide a Number by a Character.
      *
      * @param left  a Number
      * @param right a Character
@@ -5020,7 +5109,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Divide two Characters
+     * Divide two Characters.
      *
      * @param left  a Character
      * @param right another Character
@@ -5031,7 +5120,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Divide two Numbers
+     * Divide two Numbers.
      *
      * @param left  a Number
      * @param right another Number
@@ -5044,7 +5133,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Integer Divide a Character by a Number
+     * Integer Divide a Character by a Number.
      *
      * @param left  a Character
      * @param right a Number
@@ -5055,7 +5144,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Integer Divide a Number by a Character
+     * Integer Divide a Number by a Character.
      *
      * @param left  a Number
      * @param right a Character
@@ -5066,7 +5155,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Integer Divide two Characters
+     * Integer Divide two Characters.
      *
      * @param left  a Character
      * @param right another Character
@@ -5077,7 +5166,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Integer Divide two Numbers
+     * Integer Divide two Numbers.
      *
      * @param left  a Number
      * @param right another Number
@@ -5088,7 +5177,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Bitwise OR together two numbers
+     * Bitwise OR together two numbers.
      *
      * @param left  a Number
      * @param right another Number to bitwise OR
@@ -5099,7 +5188,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Bitwise AND together two Numbers
+     * Bitwise AND together two Numbers.
      *
      * @param left  a Number
      * @param right another Number to bitwise AND
@@ -5110,7 +5199,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Bitwise AND together two BitSets
+     * Bitwise AND together two BitSets.
      *
      * @param left  a BitSet
      * @param right another BitSet to bitwise AND
@@ -5123,7 +5212,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Bitwise XOR together two BitSets
+     * Bitwise XOR together two BitSets.  Called when the '^' operator is used
+     * between two bit sets.
      *
      * @param left  a BitSet
      * @param right another BitSet to bitwise AND
@@ -5136,7 +5226,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Bitwise NEGATE a BitSet
+     * Bitwise NEGATE a BitSet.
      *
      * @param self a BitSet
      * @return the bitwise NEGATE of the BitSet
@@ -5148,7 +5238,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Bitwise OR together two BitSets
+     * Bitwise OR together two BitSets.  Called when the '|' operator is used
+     * between two bit sets.
      *
      * @param left  a BitSet
      * @param right another BitSet to bitwise AND
@@ -5161,7 +5252,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Bitwise XOR together two Numbers
+     * Bitwise XOR together two Numbers.  Called when the '|' operator is used.
      *
      * @param left  a Number
      * @param right another Number to bitwse XOR
@@ -5172,7 +5263,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Performs a division modulus operation
+     * Performs a division modulus operation.  Called by the '%' operator.
      *
      * @param left  a Number
      * @param right another Number to mod
@@ -5183,7 +5274,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Negates the number
+     * Negates the number.  Equivalent to the '-' operator when it preceeds
+     * a single operand, i.e. <code>-10</code>
      *
      * @param left a Number
      * @return the negation of the number
@@ -5194,7 +5286,13 @@ public class DefaultGroovyMethods {
 
 
     /**
-     * Iterates a number of times
+     * Executes the closure this many times, starting from zero.  The current
+     * index is passed to the closure each time.
+     * Example:
+     * <pre>10.times {
+     *   println it
+     * }</pre>
+     * Prints the numbers 0 through 9.
      *
      * @param self    a Number
      * @param closure the closure to call a number of times
@@ -5209,7 +5307,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Iterates from this number up to the given number
+     * Iterates from this number up to the given number, inclusive,
+     * incrementing by one each time.
      *
      * @param self    a Number
      * @param to      another Number to go up to
@@ -5226,6 +5325,13 @@ public class DefaultGroovyMethods {
             throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to + ")");
     }
 
+    /**
+     * Iterates from this number up to the given number, inclusive,
+     * incrementing by one each time.
+  	 *
+     * @param to the end number
+     * @param closure the code to execute for each number
+     */
     public static void upto(long self, Number to, Closure closure) {
         long to1 = to.longValue();
         if (self <= to1) {
@@ -5236,6 +5342,13 @@ public class DefaultGroovyMethods {
             throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to + ")");
     }
 
+    /**
+     * Iterates from this number up to the given number, inclusive,
+     * incrementing by one each time.
+  	 *
+     * @param to the end number
+     * @param closure the code to execute for each number
+     */
     public static void upto(Long self, Number to, Closure closure) {
         long self1 = self.longValue();
         long to1 = to.longValue();
@@ -5247,6 +5360,13 @@ public class DefaultGroovyMethods {
             throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to + ")");
     }
 
+    /**
+     * Iterates from this number up to the given number, inclusive,
+     * incrementing by one each time.
+  	 *
+     * @param to the end number
+     * @param closure the code to execute for each number
+     */
     public static void upto(float self, Number to, Closure closure) {
         float to1 = to.floatValue();
         if (self <= to1) {
@@ -5257,6 +5377,13 @@ public class DefaultGroovyMethods {
             throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to + ")");
     }
 
+    /**
+     * Iterates from this number up to the given number, inclusive,
+     * incrementing by one each time.
+  	 *
+     * @param to the end number
+     * @param closure the code to execute for each number
+     */
     public static void upto(Float self, Number to, Closure closure) {
         float self1 = self.floatValue();
         float to1 = to.floatValue();
@@ -5268,6 +5395,13 @@ public class DefaultGroovyMethods {
             throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to + ")");
     }
 
+    /**
+     * Iterates from this number up to the given number, inclusive,
+     * incrementing by one each time.
+  	 *
+     * @param to the end number
+     * @param closure the code to execute for each number
+     */
     public static void upto(Double self, Number to, Closure closure) {
         double self1 = self.doubleValue();
         double to1 = to.doubleValue();
@@ -5279,6 +5413,17 @@ public class DefaultGroovyMethods {
             throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to + ")");
     }
 
+    /**
+     * Iterates from this number up to the given number, inclusive,
+     * incrementing by one each time.  Example:
+     * <pre>0.upto( 10 ) {
+  	 *   println it
+  	 * }</pre>
+  	 * Prints numbers 0 to 10
+  	 *
+     * @param to the end number
+     * @param closure the code to execute for each number
+     */
     public static void upto(BigInteger self, Number to, Closure closure) {
         if (to instanceof BigDecimal) {
             final BigDecimal one = new BigDecimal("1.0");
@@ -5311,6 +5456,17 @@ public class DefaultGroovyMethods {
         }
     }
 
+    /**
+     * Iterates from this number up to the given number, inclusive,
+     * incrementing by one each time.
+     * <pre>0.upto( 10 ) {
+  	 *   println it
+  	 * }</pre>
+  	 * Prints numbers 0.1, 1.1, 2.1... to 9.1
+     *
+     * @param to the end number
+     * @param closure the code to execute for each number
+     */
     public static void upto(BigDecimal self, Number to, Closure closure) {
         final BigDecimal one = new BigDecimal("1.0");
         if (to instanceof BigDecimal) {
@@ -5341,7 +5497,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Iterates from this number down to the given number
+     * Iterates from this number down to the given number, inclusive,
+     * decrementing by one each time.
      *
      * @param self    a Number
      * @param to      another Number to go down to
@@ -5358,6 +5515,13 @@ public class DefaultGroovyMethods {
             throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
     }
 
+    /**
+     * Iterates from this number down to the given number, inclusive,
+     * decrementing by one each time.
+     *
+     * @param to the end number
+     * @param closure the code to execute for each number
+     */
     public static void downto(long self, Number to, Closure closure) {
         long to1 = to.longValue();
         if (self >= to1) {
@@ -5368,6 +5532,13 @@ public class DefaultGroovyMethods {
             throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
     }
 
+    /**
+     * Iterates from this number down to the given number, inclusive,
+     * decrementing by one each time.
+     *
+     * @param to the end number
+     * @param closure the code to execute for each number
+     */
     public static void downto(Long self, Number to, Closure closure) {
         long self1 = self.longValue();
         long to1 = to.longValue();
@@ -5379,6 +5550,13 @@ public class DefaultGroovyMethods {
             throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
     }
 
+    /**
+     * Iterates from this number down to the given number, inclusive,
+     * decrementing by one each time.
+     *
+     * @param to the end number
+     * @param closure the code to execute for each number
+     */
     public static void downto(float self, Number to, Closure closure) {
         float to1 = to.floatValue();
         if (self >= to1) {
@@ -5389,6 +5567,13 @@ public class DefaultGroovyMethods {
             throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
     }
 
+    /**
+     * Iterates from this number down to the given number, inclusive,
+     * decrementing by one each time.
+     *
+     * @param to the end number
+     * @param closure the code to execute for each number
+     */
     public static void downto(Float self, Number to, Closure closure) {
         float self1 = self.floatValue();
         float to1 = to.floatValue();
@@ -5400,6 +5585,13 @@ public class DefaultGroovyMethods {
             throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
     }
 
+    /**
+     * Iterates from this number down to the given number, inclusive,
+     * decrementing by one each time.
+     *
+     * @param to the end number
+     * @param closure the code to execute for each number
+     */
     public static void downto(double self, Number to, Closure closure) {
         double to1 = to.doubleValue();
         if (self >= to1) {
@@ -5410,6 +5602,13 @@ public class DefaultGroovyMethods {
             throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
     }
 
+    /**
+     * Iterates from this number down to the given number, inclusive,
+     * decrementing by one each time.
+     *
+     * @param to the end number
+     * @param closure the code to execute for each number
+     */
     public static void downto(Double self, Number to, Closure closure) {
         double self1 = self.doubleValue();
         double to1 = to.doubleValue();
@@ -5421,6 +5620,13 @@ public class DefaultGroovyMethods {
             throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
     }
 
+    /**
+     * Iterates from this number down to the given number, inclusive,
+     * decrementing by one each time.
+     *
+     * @param to the end number
+     * @param closure the code to execute for each number
+     */
     public static void downto(BigInteger self, Number to, Closure closure) {
         if (to instanceof BigDecimal) {
             final BigDecimal one = new BigDecimal("1.0");
@@ -5453,6 +5659,18 @@ public class DefaultGroovyMethods {
         }
     }
 
+    /**
+     * Iterates from this number down to the given number, inclusive,
+     * decrementing by one each time.  Each number is passed to the closure.
+     * Example:
+     * <pre>10.5.downto(0) {
+     *   println it
+	 * }</pre>
+	 * Prints numbers 10.5, 9.5 ... to 0.5.
+	 *
+     * @param to the end number
+     * @param closure the code to execute for each number
+     */
     public static void downto(BigDecimal self, Number to, Closure closure) {
         final BigDecimal one = new BigDecimal("1.0");
         if (to instanceof BigDecimal) {
@@ -5483,10 +5701,15 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Iterates from this number up to the given number using a step increment
+     * Iterates from this number up to the given number using a step increment.
+     * Each intermediate number is passed to the given closure.  Example:
+     * <pre>0.step( 10, 2 ) {
+     *   println it
+     * }</pre>
+     * Prints even numbers 0 through 8.
      *
      * @param self       a Number to start with
-     * @param to         a Number to go up to
+     * @param to         a Number to go up to, exclusive
      * @param stepNumber a Number representing the step increment
      * @param closure    the closure to call
      */
@@ -5710,6 +5933,20 @@ public class DefaultGroovyMethods {
         return new BigDecimal(self.doubleValue());
     }
 
+    /**
+     * Transform this number to a the given type, using the 'as' operator.  The
+     * following types are supported in addition to the default
+     * {@link #asType(Object,Class)}:
+     * <ul>
+     *  <li>BigDecimal</li>
+     *  <li>BigInteger</li>
+     *  <li>Double</li>
+     *  <li>Float</li>
+     * </ul>
+     * @param self this number
+     * @param c the desired type of the transformed result
+     * @return an instance of the given type
+     */
     public static Object asType(Number self, Class c) {
         if (c == BigDecimal.class) {
             return toBigDecimal(self);
@@ -5724,7 +5961,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Transform a Number into a BigInteger
+     * Transform this Number into a BigInteger.
      *
      * @param self a Number
      * @return an BigInteger
@@ -5737,7 +5974,7 @@ public class DefaultGroovyMethods {
     //-------------------------------------------------------------------------
 
     /**
-     * Increments a Date by a day
+     * Increment a Date by one day.
      *
      * @param self a Date
      * @return the next days date
@@ -5747,7 +5984,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Increments a java.sql.Date by a day
+     * Increment a java.sql.Date by one day.
      *
      * @param self a java.sql.Date
      * @return the next days date
@@ -5757,7 +5994,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Decrement a Date by a day
+     * Decrement a Date by one day.
      *
      * @param self a Date
      * @return the previous days date
@@ -5767,7 +6004,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Decrement a java.sql.Date by a day
+     * Decrement a java.sql.Date by one day.
      *
      * @param self a java.sql.Date
      * @return the previous days date
@@ -5777,7 +6014,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Adds a number of days to this date and returns the new date
+     * Add a number of days to this date and returns the new date.
      *
      * @param self a Date
      * @param days the number of days to increase
@@ -5791,7 +6028,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Adds a number of days to this date and returns the new date
+     * Add a number of days to this date and returns the new date.
      *
      * @param self a java.sql.Date
      * @param days the number of days to increase
@@ -5802,7 +6039,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Subtracts a number of days from this date and returns the new date
+     * Subtract a number of days from this date and returns the new date.
      *
      * @param self a Date
      * @param days the number of days to subtract
@@ -5813,7 +6050,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Subtracts a number of days from this date and returns the new date
+     * Subtract a number of days from this date and returns the new date.
      *
      * @param self a java.sql.Date
      * @param days the number of days to subtract
