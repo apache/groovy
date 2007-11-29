@@ -455,7 +455,7 @@ public class Groovyc extends MatchingTask
         }
     }
     
-    private void addToCompileList(File[] newFiles) {
+    protected void addToCompileList(File[] newFiles) {
         if (newFiles.length > 0) {
             File[] newCompileList = new File[compileList.length + newFiles.length];
             System.arraycopy(compileList, 0, newCompileList, 0, compileList.length);
@@ -539,7 +539,7 @@ public class Groovyc extends MatchingTask
         }
     }
     
-    private CompilationUnit makeCompileUnit() {
+    protected CompilationUnit makeCompileUnit() {
         if (javac!=null) {
             Map compilerOptions =  new HashMap();
             compilerOptions.put("stubDir", createTempDir());    
@@ -598,7 +598,7 @@ public class Groovyc extends MatchingTask
         return tempFile;
     }
 
-    private GroovyClassLoader buildClassLoaderFor() {
+    protected GroovyClassLoader buildClassLoaderFor() {
         ClassLoader parent = this.getClass().getClassLoader();
         if (parent instanceof AntClassLoader) {
             AntClassLoader antLoader = (AntClassLoader) parent;
