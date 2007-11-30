@@ -142,7 +142,8 @@ class DocGenerator
 	}
 	private generateClassDetails(template, curPackage, aClass)
 	{
-		def dir = new File(outputFolder, curPackage.replaceAll('\\.', File.separator))
+        def packagePath = generatePackagePath(curPackage)
+		def dir = new File(outputFolder, packagePath)
 		dir.mkdirs()
 		def out = new File(dir, aClass.replaceAll('.*\\.', '') + '.html')
 		def listOfMethods = jdkEnhancedClasses[aClass].sort{ it.name }
@@ -199,9 +200,18 @@ class DocGenerator
 		return "<a href='$url' title='$title'>$shortClassName</a>"
 	}
 
+    private generatePackagePath(curPackage)
+    {
+        def fileSep = File.separator
+        // need to escape separator on windows for regex's sake
+        if (fileSep == '\\') fileSep *= 2
+        return curPackage.replaceAll('\\.', fileSep)
+    }
+
 	private generatePackageFrame(templatePackageFrame, curPackage, packageClasses)
 	{
-		def dir = new File(outputFolder, curPackage.replaceAll('\\.', File.separator))
+        def packagePath = generatePackagePath(curPackage)
+        def dir = new File(outputFolder, packagePath)
 		dir.mkdirs()
 		def out = new File(dir, 'package-frame.html')
 		def binding = [classes: packageClasses.sort().collect { it.replaceAll(/.*\./, '')},
