@@ -134,7 +134,12 @@ public class AnnotationVisitor {
             // there is nothing to check about ClassExpressions
         }
         else if(isEnum(attrType)) {
-            visitEnumExpression(attrName, (PropertyExpression) attrAst, ClassHelper.make(attrType));
+            if(attrAst instanceof PropertyExpression) {
+                visitEnumExpression(attrName, (PropertyExpression) attrAst, ClassHelper.make(attrType));
+            }
+            else {
+                addError("Value not defined for annotation attribute " + attrName, attrAst);
+            }
         }
         else if(isAnnotation(attrType)) {
             visitAnnotationExpression(attrName, (AnnotationConstantExpression) attrAst, attrType);
