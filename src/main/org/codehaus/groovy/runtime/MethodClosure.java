@@ -15,11 +15,11 @@
  */
 package org.codehaus.groovy.runtime;
 
+import groovy.lang.Closure;
+
 import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-
-import groovy.lang.Closure;
 
 
 /**
@@ -40,6 +40,7 @@ public class MethodClosure extends Closure {
         final Class clazz = owner.getClass()==Class.class?(Class) owner:owner.getClass();
         
         maximumNumberOfParameters = 0;
+        parameterTypes = new Class [0];
 
         Method[] methods = (Method[]) AccessController.doPrivileged(new  PrivilegedAction() {
             public Object run() {
@@ -48,7 +49,9 @@ public class MethodClosure extends Closure {
         });
         for (int j = 0; j < methods.length; j++) {
             if (method.equals(methods[j].getName()) && methods[j].getParameterTypes().length > maximumNumberOfParameters) {
-                maximumNumberOfParameters = methods[j].getParameterTypes().length;
+                Class[] pt = methods[j].getParameterTypes();
+                maximumNumberOfParameters = pt.length;
+                parameterTypes = pt;
             }
         }        
         methods = (Method[]) AccessController.doPrivileged(new  PrivilegedAction() {
@@ -58,7 +61,9 @@ public class MethodClosure extends Closure {
         });
         for (int j = 0; j < methods.length; j++) {
             if (method.equals(methods[j].getName()) && methods[j].getParameterTypes().length > maximumNumberOfParameters) {
-                maximumNumberOfParameters = methods[j].getParameterTypes().length;
+                Class[] pt = methods[j].getParameterTypes();
+                maximumNumberOfParameters = pt.length;
+                parameterTypes = pt;
             }
         }
 

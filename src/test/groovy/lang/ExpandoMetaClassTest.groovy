@@ -469,7 +469,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
 
         assertEquals "mine blah!", t.borrowMe("blah")
         // GROOVY-1993
-//        assertEquals "no args here!", t.borrowMeToo()
+        assertEquals "no args here!", t.borrowMeToo()
     }
 
     void testBorrowByName() {
@@ -486,7 +486,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
 
         assertEquals "mine blah!", t.borrowMe("blah")
         // GROOVY-1993
-//        assertEquals "no args here!", t.borrowMeToo()
+        assertEquals "no args here!", t.borrowMeToo()
     }
 
     void testAddIdenticalPropertyToChildAndParent() {

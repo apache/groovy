@@ -86,7 +86,7 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
 
     private Object delegate;
     private final Object owner;
-    private Class[] parameterTypes;
+    protected Class[] parameterTypes;
     protected int maximumNumberOfParameters;
     private final Object thisObject;
     private int resolveStrategy = OWNER_FIRST;
