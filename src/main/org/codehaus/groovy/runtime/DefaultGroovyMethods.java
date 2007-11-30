@@ -2460,7 +2460,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Support the subscript operator for an Array
+     * Support the subscript operator for an Array.
      *
      * @param array an Array of Objects
      * @param idx   an index
@@ -2471,7 +2471,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Support the subscript operator for an Array
+     * Support the subscript operator for an Array.
      *
      * @param array an Array of Objects
      * @param idx   an index
@@ -2491,7 +2491,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Allows conversion of arrays into a mutable List
+     * Allows conversion of arrays into a mutable List.
      *
      * @param array an Array of Objects
      * @return the array as a List
@@ -2501,7 +2501,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Support the subscript operator for a List
+     * Support the subscript operator for a List.
      *
      * @param self a List
      * @param idx  an index
@@ -2518,7 +2518,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * A helper method to allow lists to work with subscript operators
+     * A helper method to allow lists to work with subscript operators.
      *
      * @param self  a List
      * @param idx   an index
@@ -2539,7 +2539,8 @@ public class DefaultGroovyMethods {
 
 
     /**
-     * Support the range subscript operator for StringBuffer
+     * Support the range subscript operator for StringBuffer.  Index values are
+     * treated as characters within the buffer.
      *
      * @param self  a StringBuffer
      * @param range a Range
@@ -2551,7 +2552,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Support the range subscript operator for StringBuffer
+     * Support the range subscript operator for StringBuffer.
      *
      * @param self  a StringBuffer
      * @param range a Range
@@ -2563,7 +2564,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * A helper method to allow lists to work with subscript operators
+     * A helper method to allow lists to work with subscript operators.
      *
      * @param self  a List
      * @param range the subset of the list to set
@@ -2596,7 +2597,10 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * A helper method to allow lists to work with subscript operators
+     * List subscript assignment operator when given a range as the index and
+     * the assignment operand is a collection.
+     * Example: <code>myList[3..5] = anotherList</code>.  Items in the given
+     * range are relaced with items from the collection.
      *
      * @param self  a List
      * @param range the subset of the list to set
@@ -2609,7 +2613,10 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * A helper method to allow lists to work with subscript operators
+     * List subscript assignment operator when given a range as the index.
+     * Example: <code>myList[3..5] = newItem</code>.  Items in the given
+     * range are relaced with the operand.  The <code>value</code> operand is
+     * always treated as a single value.
      *
      * @param self  a List
      * @param range the subset of the list to set
@@ -2621,7 +2628,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * A helper method to allow lists to work with subscript operators
+     * A helper method to allow lists to work with subscript operators.
      *
      * @param self   a List
      * @param splice the subset of the list to set
@@ -2635,7 +2642,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * A helper method to allow lists to work with subscript operators
+     * A helper method to allow lists to work with subscript operators.
      *
      * @param self   a List
      * @param splice the subset of the list to set
@@ -2681,7 +2688,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Support the subscript operator for a List
+     * Support the subscript operator for a List.
      *
      * @param self a Map
      * @param key  an Object as a key for the map
@@ -2694,7 +2701,9 @@ public class DefaultGroovyMethods {
     /**
      * <p/>
      * Returns a new Map containg all entries from <code>left</code> and <code>right</code>,
-     * giving precedence to <code>right</code>.
+     * giving precedence to <code>right</code>.  Any keys appearing in both Maps
+     * will appear in the resultant map with values from the <code>right</code>
+     * operand.
      * </p>
      * <p/>
      * <p/>
@@ -2767,20 +2776,22 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * A convenience method for creating an immutable map
+     * A convenience method for creating an immutable map.
      *
      * @param self a Map
      * @return an immutable Map
+     * @see java.util.Collections#unmodifiableMap(java.util.Map)
      */
     public static Map asImmutable(Map self) {
         return Collections.unmodifiableMap(self);
     }
 
     /**
-     * A convenience method for creating an immutable sorted map
+     * A convenience method for creating an immutable sorted map.
      *
      * @param self a SortedMap
      * @return an immutable SortedMap
+     * @see java.util.Collections#unmodifiableSortedMap(java.util.SortedMap)
      */
     public static SortedMap asImmutable(SortedMap self) {
         return Collections.unmodifiableSortedMap(self);
@@ -2791,107 +2802,122 @@ public class DefaultGroovyMethods {
      *
      * @param self a List
      * @return an immutable List
+     * @see java.util.Collections#unmodifiableList(java.util.List)
      */
     public static List asImmutable(List self) {
         return Collections.unmodifiableList(self);
     }
 
     /**
-     * A convenience method for creating an immutable list
+     * A convenience method for creating an immutable list.
      *
      * @param self a Set
      * @return an immutable Set
+     * @see java.util.Collections#unmodifiableSet(java.util.Set)
      */
     public static Set asImmutable(Set self) {
         return Collections.unmodifiableSet(self);
     }
 
     /**
-     * A convenience method for creating an immutable sorted set
+     * A convenience method for creating an immutable sorted set.
      *
      * @param self a SortedSet
      * @return an immutable SortedSet
+     * @see java.util.Collections#unmodifiableSortedSet(java.util.SortedSet)
      */
     public static SortedSet asImmutable(SortedSet self) {
         return Collections.unmodifiableSortedSet(self);
     }
 
     /**
-     * A convenience method for creating an immutable Collection
+     * A convenience method for creating an immutable Collection.
      *
      * @param self a Collection
      * @return an immutable Collection
+     * @see java.util.Collections#unmodifiableCollection(java.util.Collection)
      */
     public static Collection asImmutable(Collection self) {
         return Collections.unmodifiableCollection(self);
     }
 
     /**
-     * A convenience method for creating a synchronized Map
+     * A convenience method for creating a synchronized Map.
      *
      * @param self a Map
      * @return a synchronized Map
+     * @see java.util.Collections#synchronizedMap(java.util.Map)
      */
     public static Map asSynchronized(Map self) {
         return Collections.synchronizedMap(self);
     }
 
     /**
-     * A convenience method for creating a synchronized SortedMap
+     * A convenience method for creating a synchronized SortedMap.
      *
      * @param self a SortedMap
      * @return a synchronized SortedMap
+     * @see java.util.Collections#synchronizedSortedMap(java.util.SortedMap)
      */
     public static SortedMap asSynchronized(SortedMap self) {
         return Collections.synchronizedSortedMap(self);
     }
 
     /**
-     * A convenience method for creating a synchronized Collection
+     * A convenience method for creating a synchronized Collection.
      *
      * @param self a Collection
      * @return a synchronized Collection
+     * @see java.util.Collections#synchronizedCollection(java.util.Collection)
      */
     public static Collection asSynchronized(Collection self) {
         return Collections.synchronizedCollection(self);
     }
 
     /**
-     * A convenience method for creating a synchronized List
+     * A convenience method for creating a synchronized List.
      *
      * @param self a List
      * @return a synchronized List
+     * @see java.util.Collections#synchronizedList(java.util.List)
      */
     public static List asSynchronized(List self) {
         return Collections.synchronizedList(self);
     }
 
     /**
-     * A convenience method for creating a synchronized Set
+     * A convenience method for creating a synchronized Set.
      *
      * @param self a Set
      * @return a synchronized Set
+     * @see java.util.Collections#synchronizedSet(java.util.Set)
      */
     public static Set asSynchronized(Set self) {
         return Collections.synchronizedSet(self);
     }
 
     /**
-     * A convenience method for creating a synchronized SortedSet
+     * A convenience method for creating a synchronized SortedSet.
      *
      * @param self a SortedSet
      * @return a synchronized SortedSet
+     * @see java.util.Collections#synchronizedSortedSet(java.util.SortedSet)
      */
     public static SortedSet asSynchronized(SortedSet self) {
         return Collections.synchronizedSortedSet(self);
     }
 
+    /**
+     * Synonym for {@link #toSpreadMap(Map)}.
+     * @param self a map
+     * @return a newly created Spreadmap
+     */
     public static SpreadMap spread(Map self) {
         return toSpreadMap(self);
     }
 
     /**
-     * Returns the converted <code>SpreadLMap</code> of the given <code>self</code>.
+     * Returns a new <code>SpreadMap</code> from this map.
      * <p/>
      * For examples, if there is defined a function like as
      * <blockquote><pre>
@@ -2906,6 +2932,7 @@ public class DefaultGroovyMethods {
      *
      * @param self a list to be converted into a spreadmap
      * @return a newly created Spreadmap if this list is not null and its size is positive.
+     * @see groovy.lang.SpreadMap#SpreadMap(java.util.Map)
      */
     public static SpreadMap toSpreadMap(Map self) {
         if (self == null)
@@ -2914,6 +2941,12 @@ public class DefaultGroovyMethods {
             return new SpreadMap(self);
     }
 
+    /**
+     * Creates a spreadable map from this array.
+     * @param self an object array
+     * @return a newly created Spreadmap
+     * @see groovy.lang.SpreadMap#SpreadMap(java.lang.Object[])
+     */
     public static SpreadMap toSpreadMap(Object[] self) {
         if (self == null)
             throw new GroovyRuntimeException("Fail to convert Object[] to SpreadMap, because it is null.");
@@ -2924,7 +2957,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Sorts the given collection into a sorted list.
+     * Sorts the given collection into a sorted list.  The collection items are
+     * assumed to be comparable.
      *
      * @param self the collection to be sorted
      * @return the sorted collection as a List
@@ -2961,7 +2995,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * A convenience method for sorting a Collection with a specific comparator
+     * Sorts the Collection using the given comparator.  The elements are
+     * sorted into a new list, and the existing collection is unchanged.
      *
      * @param self       a collection to be sorted
      * @param comparator a Comparator used for the comparison
@@ -2974,7 +3009,9 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * A convenience method for sorting a Collection using a closure as a comparator
+     * Sorts this Collection using the given closure as a comparator.  The
+     * closure is passed each item from the collection, and is assumed to
+     * return a comparable value (i.e. an int).
      *
      * @param self    a Collection to be sorted
      * @param closure a Closure used as a comparator
@@ -3009,7 +3046,7 @@ public class DefaultGroovyMethods {
     /**
      * Converts the given collection to either a List, Set, or
      * SortedSet.  If the given class is something else, the
-     * call is defered to {link #asType(Object,Class)}.  If this
+     * call is deferred to {link #asType(Object,Class)}.  If this
      * collection is already of the given type, the same instance is
      * returned.
      *
@@ -3032,9 +3069,9 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Convenience method which coerces the closure to an implementation
-     * of the given class.  The class is assumed to be an interface or class
-     * with a single method definition.
+     * Coerces the closure to an implementation of the given class.  The class
+     * is assumed to be an interface or class with a single method definition.
+     * The closure is used as the implementation of that single method.
      *
      * @param cl    the implementaiton of the single method
      * @param clazz the target type
@@ -3079,8 +3116,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Reverses the list.  The result is a new List with the same items in
-     * reverse order.
+     * Reverses the list.  The result is a new List with the identical contents
+     * in reverse order.
      *
      * @param self a List
      * @return a reversed List
@@ -3154,7 +3191,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Create a List composed of the intersection of both collections.
+     * Create a List composed of the intersection of both collections.  Any
+     * elements that exist in both collections are added to the resultant list.
      *
      * @param left  a Collection
      * @param right a Collection
@@ -3240,6 +3278,13 @@ public class DefaultGroovyMethods {
         }
     }
 
+    /**
+     * Compare the contents of this array to the contents of the given array.
+     *
+     * @param left an int array
+     * @param right the operand array.
+     * @return true if the contents of both arrays are equal.
+     */
     public static boolean equals(int[] left, int[] right) {
         if (left == null) {
             return right == null;
@@ -3410,7 +3455,8 @@ public class DefaultGroovyMethods {
 */
 
     /**
-     * Create a Set composed of the elements of the first set minus the elements of the collection.
+     * Create a Set composed of the elements of the first set minus the
+     * elements of the given collection.
      * <p/>
      * TODO: remove using number comparator?
      *
@@ -3444,7 +3490,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Create a List composed of the elements of the first list minus the elements of the collection
+     * Create a List composed of the elements of the first list minus the
+     * elements of the given collection.
      *
      * @param self     a List
      * @param removeMe a Collection of elements to remove
@@ -3519,7 +3566,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Create a new List composed of the elements of the first list minus the operand
+     * Create a new List composed of the elements of the first list minus the
+     * operand.
      *
      * @param self    a List object
      * @param operand an element to remove from the list
@@ -3536,7 +3584,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Flatten a list
+     * Flatten a list.  This collection and any nested collections have their
+     * contents (recursively) added to the new collection.
      *
      * @param self a List
      * @return a flattened List
@@ -3546,7 +3595,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Flatten a set
+     * Flatten a set.  This collection and any nested collections have their
+     * contents (recursively) added to the new collection.
      *
      * @param self a Set
      * @return a flattened Set
@@ -3746,6 +3796,8 @@ public class DefaultGroovyMethods {
 
     /**
      * Determines if all items of this array are of the same type.
+     * @param cols an array of collections
+     * @return true if the collections are all of the same type
      */
     private static boolean sameType(Collection[] cols) {
         List all = new LinkedList();
@@ -4080,6 +4132,8 @@ public class DefaultGroovyMethods {
 
     /**
      * Allows arrays to behave similar to collections.
+     * @param array a boolean array
+     * @return the length of the array
      * @see Array#getLength(Object)
      */
     public static int size(boolean[] array) {
@@ -4088,6 +4142,8 @@ public class DefaultGroovyMethods {
 
     /**
      * Allows arrays to behave similar to collections.
+     * @param array a byte array
+     * @return the length of the array
      * @see Array#getLength(Object)
      */
     public static int size(byte[] array) {
@@ -4096,6 +4152,8 @@ public class DefaultGroovyMethods {
 
     /**
      * Allows arrays to behave similar to collections.
+     * @param array a char array
+     * @return the length of the array
      * @see Array#getLength(Object)
      */
     public static int size(char[] array) {
@@ -4104,6 +4162,8 @@ public class DefaultGroovyMethods {
 
     /**
      * Allows arrays to behave similar to collections.
+     * @param array a short array
+     * @return the length of the array
      * @see Array#getLength(Object)
      */
     public static int size(short[] array) {
@@ -4112,6 +4172,8 @@ public class DefaultGroovyMethods {
 
     /**
      * Allows arrays to behave similar to collections.
+     * @param array an int array
+     * @return the length of the array
      * @see Array#getLength(Object)
      */
     public static int size(int[] array) {
@@ -4120,6 +4182,8 @@ public class DefaultGroovyMethods {
 
     /**
      * Allows arrays to behave similar to collections.
+     * @param array a long array
+     * @return the length of the array
      * @see Array#getLength(Object)
      */
     public static int size(long[] array) {
@@ -4128,6 +4192,8 @@ public class DefaultGroovyMethods {
 
     /**
      * Allows arrays to behave similar to collections.
+     * @param array a float array
+     * @return the length of the array
      * @see Array#getLength(Object)
      */
     public static int size(float[] array) {
@@ -4136,6 +4202,8 @@ public class DefaultGroovyMethods {
 
     /**
      * Allows arrays to behave similar to collections.
+     * @param array a double array
+     * @return the length of the array
      * @see Array#getLength(Object)
      */
     public static int size(double[] array) {
@@ -4145,6 +4213,8 @@ public class DefaultGroovyMethods {
     /**
      * Converts this array to a List of the same size, with each element
      * added to the list.
+     *
+     * @param array an array
      * @return a list containing the contents of this array.
      */
     public static List toList(byte[] array) {
@@ -4154,6 +4224,8 @@ public class DefaultGroovyMethods {
     /**
      * Converts this array to a List of the same size, with each element
      * added to the list.
+     *
+     * @param array an array
      * @return a list containing the contents of this array.
      */
     public static List toList(char[] array) {
@@ -4163,6 +4235,8 @@ public class DefaultGroovyMethods {
     /**
      * Converts this array to a List of the same size, with each element
      * added to the list.
+     *
+     * @param array an array
      * @return a list containing the contents of this array.
      */
     public static List toList(short[] array) {
@@ -4172,6 +4246,8 @@ public class DefaultGroovyMethods {
     /**
      * Converts this array to a List of the same size, with each element
      * added to the list.
+     *
+     * @param array an array
      * @return a list containing the contents of this array.
      */
     public static List toList(int[] array) {
@@ -4181,6 +4257,8 @@ public class DefaultGroovyMethods {
     /**
      * Converts this array to a List of the same size, with each element
      * added to the list.
+     *
+     * @param array an array
      * @return a list containing the contents of this array.
      */
     public static List toList(long[] array) {
@@ -4190,6 +4268,8 @@ public class DefaultGroovyMethods {
     /**
      * Converts this array to a List of the same size, with each element
      * added to the list.
+     *
+     * @param array an array
      * @return a list containing the contents of this array.
      */
     public static List toList(float[] array) {
@@ -4199,6 +4279,8 @@ public class DefaultGroovyMethods {
     /**
      * Converts this array to a List of the same size, with each element
      * added to the list.
+     *
+     * @param array an array
      * @return a list containing the contents of this array.
      */
     public static List toList(double[] array) {
@@ -4451,7 +4533,6 @@ public class DefaultGroovyMethods {
     /**
      * Convenience method to split a string (with whitespace as delimiter)
      * Like tokenize, but returns an Array of Strings instead of a List
-     * (by Michael Baehr)
      *
      * @param self the string to split
      * @return String[] result of split
@@ -4811,6 +4892,7 @@ public class DefaultGroovyMethods {
 
     /**
      * Create a String representation of this object.
+     * @param value an object
      * @return a string.
      */
     protected static String toString(Object value) {
@@ -5346,6 +5428,7 @@ public class DefaultGroovyMethods {
      * Iterates from this number up to the given number, inclusive,
      * incrementing by one each time.
   	 *
+     * @param self    a long
      * @param to the end number
      * @param closure the code to execute for each number
      */
@@ -5363,6 +5446,7 @@ public class DefaultGroovyMethods {
      * Iterates from this number up to the given number, inclusive,
      * incrementing by one each time.
   	 *
+     * @param self    a Long
      * @param to the end number
      * @param closure the code to execute for each number
      */
@@ -5381,6 +5465,7 @@ public class DefaultGroovyMethods {
      * Iterates from this number up to the given number, inclusive,
      * incrementing by one each time.
   	 *
+     * @param self    a float
      * @param to the end number
      * @param closure the code to execute for each number
      */
@@ -5398,6 +5483,7 @@ public class DefaultGroovyMethods {
      * Iterates from this number up to the given number, inclusive,
      * incrementing by one each time.
   	 *
+     * @param self    a Float
      * @param to the end number
      * @param closure the code to execute for each number
      */
@@ -5416,6 +5502,25 @@ public class DefaultGroovyMethods {
      * Iterates from this number up to the given number, inclusive,
      * incrementing by one each time.
   	 *
+     * @param self    a double
+     * @param to the end number
+     * @param closure the code to execute for each number
+     */
+    public static void upto(double self, Number to, Closure closure) {
+        double to1 = to.doubleValue();
+        if (self <= to1) {
+            for (double i = self; i <= to1; i++) {
+                closure.call(new Double(i));
+            }
+        } else
+            throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to + ")");
+    }
+
+    /**
+     * Iterates from this number up to the given number, inclusive,
+     * incrementing by one each time.
+  	 *
+     * @param self    a Double
      * @param to the end number
      * @param closure the code to execute for each number
      */
@@ -5438,6 +5543,7 @@ public class DefaultGroovyMethods {
   	 * }</pre>
   	 * Prints numbers 0 to 10
   	 *
+     * @param self    a BigInteger
      * @param to the end number
      * @param closure the code to execute for each number
      */
@@ -5481,6 +5587,7 @@ public class DefaultGroovyMethods {
   	 * }</pre>
   	 * Prints numbers 0.1, 1.1, 2.1... to 9.1
      *
+     * @param self    a BigDecimal
      * @param to the end number
      * @param closure the code to execute for each number
      */
@@ -5536,6 +5643,7 @@ public class DefaultGroovyMethods {
      * Iterates from this number down to the given number, inclusive,
      * decrementing by one each time.
      *
+     * @param self    a long
      * @param to the end number
      * @param closure the code to execute for each number
      */
@@ -5553,6 +5661,7 @@ public class DefaultGroovyMethods {
      * Iterates from this number down to the given number, inclusive,
      * decrementing by one each time.
      *
+     * @param self    a Long
      * @param to the end number
      * @param closure the code to execute for each number
      */
@@ -5571,6 +5680,7 @@ public class DefaultGroovyMethods {
      * Iterates from this number down to the given number, inclusive,
      * decrementing by one each time.
      *
+     * @param self    a float
      * @param to the end number
      * @param closure the code to execute for each number
      */
@@ -5588,6 +5698,7 @@ public class DefaultGroovyMethods {
      * Iterates from this number down to the given number, inclusive,
      * decrementing by one each time.
      *
+     * @param self    a Float
      * @param to the end number
      * @param closure the code to execute for each number
      */
@@ -5606,6 +5717,7 @@ public class DefaultGroovyMethods {
      * Iterates from this number down to the given number, inclusive,
      * decrementing by one each time.
      *
+     * @param self    a double
      * @param to the end number
      * @param closure the code to execute for each number
      */
@@ -5623,6 +5735,7 @@ public class DefaultGroovyMethods {
      * Iterates from this number down to the given number, inclusive,
      * decrementing by one each time.
      *
+     * @param self    a Double
      * @param to the end number
      * @param closure the code to execute for each number
      */
@@ -5641,6 +5754,7 @@ public class DefaultGroovyMethods {
      * Iterates from this number down to the given number, inclusive,
      * decrementing by one each time.
      *
+     * @param self    a BigInteger
      * @param to the end number
      * @param closure the code to execute for each number
      */
@@ -5685,6 +5799,7 @@ public class DefaultGroovyMethods {
 	 * }</pre>
 	 * Prints numbers 10.5, 9.5 ... to 0.5.
 	 *
+     * @param self    a BigDecimal
      * @param to the end number
      * @param closure the code to execute for each number
      */
@@ -8143,19 +8258,9 @@ public class DefaultGroovyMethods {
     public static ClassLoader getRootLoader(ClassLoader self) {
         while (true) {
             if (self == null) return null;
-            if (isRootLoaderClassOrSubClass(self)) return self;
+            if (self.getClass().getName().equals(RootLoader.class.getName())) return self;
             self = self.getParent();
         }
-    }
-
-    private static boolean isRootLoaderClassOrSubClass(ClassLoader self) {
-        Class current = self.getClass();
-        while(current.getName() != Object.class.getName()) {
-            if(current.getName().equals(RootLoader.class.getName())) return true;
-            current = current.getSuperclass();
-        }
-        
-        return false;
     }
 
     /**
