@@ -4449,6 +4449,23 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * Convenience method to split a string (with whitespace as delimiter)
+     * Like tokenize, but returns an Array of Strings instead of a List
+     * (by Michael Baehr)
+     *
+     * @param self the string to split
+     * @return String[] result of split
+     */
+    public static String[] split(String self) {
+        StringTokenizer st = new StringTokenizer(self);
+        String[] strings = new String[st.countTokens()];
+        for (int i = 0; i < strings.length; i++) {
+            strings[i] = st.nextToken();
+        }
+        return strings;
+    }
+
+    /**
      * Tokenize a String based on the given string delimiter.
      *
      * @param self  a String

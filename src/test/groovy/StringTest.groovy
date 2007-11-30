@@ -1,5 +1,25 @@
+/*
+ * Copyright 2003-2007 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package groovy
 
+/**
+ * Various tests for Strings.
+ *
+ * @author Michael Baehr
+ */
 class StringTest extends GroovyTestCase {
 
     void testString() {
@@ -18,9 +38,7 @@ class StringTest extends GroovyTestCase {
 
     void testStringPlusNull() {
         def y = null
-        
         def x = "hello " + y
-        
         assert x == "hello null"
     }
     
@@ -35,13 +53,10 @@ class StringTest extends GroovyTestCase {
     	z = 'z'
     	def b = z.next()
     	assert b != 'z'
-    	
-    	println(z.charAt(0))
-    	println(b.charAt(0))
-    	
-    	assert b > z
-    	
-    	println "Incremented z: " + b
+
+        assert b > z
+        assert z.charAt(0) == 'z'
+        assert b.charAt(0) == '{'
     }
     
     void testApppendToString() {
@@ -142,6 +157,31 @@ y''', 3, 'x\ny');
             fail("'something' should have evaluated to false, but didn't")
         }
         
+    }
+
+    void testSplit() {
+        def text = "hello there\nhow are you"
+        def splitted = text.split().toList()
+        assert splitted == ['hello', 'there', 'how', 'are', 'you']
+    }
+
+    void testSplitEmptyText() {
+        def text = ""
+        def splitted = text.split().toList()
+        assert splitted == []
+    }
+
+    void testSplitEqualsTokenize() {
+        def text = """
+        A text with different words and
+        numbers like 3453 and 3,345,454.97 and
+        special characters %&)( and also
+        everything mixed together 45!kw?
+      """
+
+        def splitted = text.split().toList()
+        def tokenized = text.tokenize()
+        assert splitted == tokenized
     }
 
 }
