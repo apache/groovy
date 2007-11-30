@@ -9,36 +9,21 @@ package groovy
 class PropertyTest extends GroovyTestCase {
 
     void testNormalPropertyGettersAndSetters() {
-        
-        println("About to create Foo")
-        
         def foo = new Foo()
-
-        println("created ${foo}")
-        
         def value = foo.getMetaClass()
-        
-        println("metaClass ${value}")
-        
-        println(foo.inspect())
-        
-        println("name ${foo.name}, blah ${foo.blah}")
-        
+
         assert foo.name == "James"
         assert foo.getName() == "James"
-        
         assert foo.location == "London"
         assert foo.getLocation() == "London"
-        
         assert foo.blah == 9
         assert foo.getBlah() == 9
-        
+
         foo.name = "Bob"
         foo.location = "Atlanta"
-        
+
         assert foo.name == "Bob"
         assert foo.getName() == "Bob"
-        
         assert foo.location == "Atlanta"
         assert foo.getLocation() == "Atlanta"
     }
@@ -50,28 +35,22 @@ class PropertyTest extends GroovyTestCase {
     }
 
     void testOverloadedGetter() {
-        
         def foo = new Foo()
-
-        println("count ${foo.count}")
-        
         assert foo.getCount() == 1
         assert foo.count == 1
-        
         foo.count = 7
-        
         assert foo.count == 7
         assert foo.getCount() == 7
     }
 
     void testNoSetterAvailableOnPrivateProperty() {
         def foo = new Foo()
-        
+
         // methods should fail on non-existent method calls
         //shouldFail { foo.blah = 4 }
-        shouldFail { foo.setBlah(4) }
+        shouldFail {foo.setBlah(4)}
     }
-    
+
     void testCannotSeePrivateProperties() {
         def foo = new Foo()
 
@@ -79,22 +58,19 @@ class PropertyTest extends GroovyTestCase {
         //shouldFail { def x = foo.invisible } //todo: correct handling of access rules
 
         // methods should fail on non-existent method calls
-        shouldFail { foo.getQ() }
+        shouldFail {foo.getQ()}
     }
 
     void testConstructorWithNamedProperties() {
-        def foo = new Foo(name:'Gromit', location:'Moon')
-        
+        def foo = new Foo(name: 'Gromit', location: 'Moon')
+
         assert foo.name == 'Gromit'
         assert foo.location == 'Moon'
-        
-        println("created bean ${foo.inspect()}")
     }
-    
-    void testToString() {
-        def foo = new Foo(name:'Gromit', location:'Moon')
 
-        println foo
+    void testToString() {
+        def foo = new Foo(name: 'Gromit', location: 'Moon')
+        assert foo.toString().endsWith('name: Gromit location: Moon')
     }
 
     void testArrayLengthProperty() {
@@ -111,10 +87,10 @@ class PropertyTest extends GroovyTestCase {
         assert s.length == 10
 
         // this def does not mean there is a getLength() method
-        shouldFail { i.getLength() }
+        shouldFail {i.getLength()}
 
         // verify we can't set this def, it's read-only
-        shouldFail { i.length = 6 }
+        shouldFail {i.length = 6}
     }
 
     void testGstringAssignment() {
@@ -122,10 +98,10 @@ class PropertyTest extends GroovyTestCase {
         foo.body = "${foo.name}"
         assert foo.body == "James"
     }
-    
+
     void testFinalProperty() {
-      def shell = new GroovyShell();
-      assertScript """
+        def shell = new GroovyShell();
+        assertScript """
         class A {
            final foo = 1
         }
@@ -135,26 +111,73 @@ class PropertyTest extends GroovyTestCase {
         }
         assert new A().foo==1
       """
-      shouldFail { 
-        shell.execute """
+        shouldFail {
+            shell.execute """
           class A {
             final foo = 1
           }
           new A().foo = 2
         """
-      }
-   }
+        }
+    }
 
-   void testBaseProperties() {
-       assert new Child().field == 'foobar'
-   }
+    void testBaseProperties() {
+        assert new Child().field == 'foobar'
+    }
+
+    // GROOVY-1736
+    void testGetSuperProperties() {
+        def c = new Child()
+        assert c.thing == 'bar thing'
+        assert c.superthing() == 'bar1foo thing'
+        assert c.x() == 'bar2foo x'
+        assert c.xprop == 'bar3foo x prop'
+        assert c.xpropViaMethod == 'bar4foo x prop'
+    }
+
+    void testSetSuperProperties() {
+        def c = new Child()
+        assert c.superField == 'bar'
+        c.setSuperField('baz1')
+        assert c.superField == 'baz1'
+        c.superField = 'baz2'
+        assert c.superField == 'baz2'
+
+        assert c.superthing() == 'bar1foo thing'
+        c.superThing = 'bar thing'
+        assert c.superthing() == 'bar1bar thing'
+    }
 }
 
 class Base {
     protected String field = 'bar'
+
+    protected thing = 'foo thing'
+    def getXprop() {'foo x prop'}
+    def x() {'foo x'}
+    def setThing(value) {thing = value}
 }
 
 class Child extends Base {
     protected String field = 'foo' + super.field
-    public getField() { field }
+    public getField() {field}
+    public setSuperField(value) {super.field = value}
+    public getSuperField() {super.field}
+
+    def thing = 'bar thing'
+    def superthing() {
+        'bar1' + super.thing
+    }
+    def x() {
+        'bar2' + super.x()
+    }
+    def getXprop() {
+        'bar3' + super.xprop
+    }
+    def getXpropViaMethod() {
+        'bar4' + super.getXprop()
+    }
+    def setSuperThing(value) {
+        super.thing = value
+    }
 }

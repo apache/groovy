@@ -24,6 +24,7 @@ import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.*;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.syntax.RuntimeParserException;
 import org.codehaus.groovy.syntax.Types;
@@ -1992,6 +1993,17 @@ public class AsmClassGenerator extends ClassGenerator {
                     visitFieldExpression(new FieldExpression(field));
                     return;
                 }
+            }
+            if (isSuperExpression(objectExpression)) {
+                String prefix;
+                if (leftHandExpression) {
+                    prefix = "set";
+                } else {
+                    prefix = "get";
+                }
+                String propName = prefix + MetaClassHelper.capitalize(name);
+                visitMethodCallExpression(new MethodCallExpression(objectExpression, propName, MethodCallExpression.NO_ARGUMENTS));
+                return;
             }
         }
 
