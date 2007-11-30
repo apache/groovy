@@ -55,6 +55,57 @@ class MarkupBuilderTest extends GroovyTestCase {
 </root1>''')
     }
 
+    // It is not recommended practice to use the value attribute
+    // when also using nested content as there is no way to specify
+    // the ordering of such mixed content. The default behaviour is
+    // to include the value as the first node in the resulting xml.
+    void testSmallTreeWithTextAndAttributes() {
+        xml.root1('hello1', a:5, b:7) {
+            elem1('hello2', c:4) {
+                elem2('hello3', d:4)
+            }
+            elem1('hello2', c:4) {
+                elem2('hello3')
+                elem2('hello3', d:4)
+            }
+            elem1('hello2', c:4) {
+                elem2('hello3', d:4)
+                elem2('hello3')
+            }
+            elem1('hello2', c:4) {
+                elem2(d:4)
+                elem2('hello3', d:4)
+            }
+            elem1('hello2', c:4) {
+                elem2('hello3', d:4)
+                elem2(d:4)
+            }
+            elem1('hello2') {
+                elem2('hello3', d:4)
+                elem2(d:4)
+            }
+        }
+        assertExpectedXml('''\
+<root1 a='5' b='7'>hello1<elem1 c='4'>hello2<elem2 d='4'>hello3</elem2>
+</elem1>
+<elem1 c='4'>hello2<elem2>hello3</elem2>
+<elem2 d='4'>hello3</elem2>
+</elem1>
+<elem1 c='4'>hello2<elem2 d='4'>hello3</elem2>
+<elem2>hello3</elem2>
+</elem1>
+<elem1 c='4'>hello2<elem2 d='4' />
+<elem2 d='4'>hello3</elem2>
+</elem1>
+<elem1 c='4'>hello2<elem2 d='4'>hello3</elem2>
+<elem2 d='4' />
+</elem1>
+<elem1>hello2<elem2 d='4'>hello3</elem2>
+<elem2 d='4' />
+</elem1>
+</root1>''')
+    }
+
     void testTree() {
         xml.root2(a:5, b:7) {
             elem1('hello1')

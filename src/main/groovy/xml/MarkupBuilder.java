@@ -138,10 +138,8 @@ public class MarkupBuilder extends BuilderSupport {
         }
 
         if (value != null) {
-            nodeIsEmpty = false;
-            out.print(">" + escapeElementContent(value.toString()) + "</" + name + ">");
-        }
-        else {
+            yield(value.toString());
+        } else {
             nodeIsEmpty = true;
         }
 
