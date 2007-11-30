@@ -17,7 +17,6 @@
 package org.codehaus.groovy.runtime.metaclass;
 
 import groovy.lang.*;
-
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedField;
 import org.codehaus.groovy.reflection.CachedMethod;
@@ -199,8 +198,15 @@ public final class ClosureMetaClass extends MetaClassImpl {
 
     private MetaMethod getDelegateMethod(Closure closure, Object delegate, String methodName, Class[] argClasses) {
         if (delegate == closure || delegate == null) return null;
-        MetaClass delegateMetaClass = lookupObjectMetaClass(delegate);
-        return delegateMetaClass.pickMethod(methodName, argClasses);
+        MetaClass delegateMetaClass;
+        if (delegate instanceof Class) {
+            delegateMetaClass = registry.getMetaClass((Class)delegate);
+            return delegateMetaClass.getStaticMetaMethod(methodName, argClasses);
+        }
+        else {
+            delegateMetaClass = lookupObjectMetaClass(delegate);
+            return delegateMetaClass.pickMethod(methodName, argClasses);
+        }
     }
 
     public Object invokeMethod(Class sender, Object object, String methodName, Object[] originalArguments, boolean isCallToSuper, boolean fromInsideClass) {
