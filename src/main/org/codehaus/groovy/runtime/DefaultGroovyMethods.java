@@ -1145,6 +1145,34 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * Convert an iterator to a List.
+     *
+     * @param self an iterator
+     * @return a List
+     */
+    public static List toList(Iterator self) {
+        List answer = new ArrayList();
+        while (self.hasNext()) {
+            answer.add(self.next());
+        }
+        return answer;
+    }
+
+    /**
+     * Convert an enumeration to a List.
+     *
+     * @param self an enumeration
+     * @return a List
+     */
+    public static List toList(Enumeration self) {
+        List answer = new ArrayList();
+        while (self.hasMoreElements()) {
+            answer.add(self.nextElement());
+        }
+        return answer;
+    }
+
+    /**
      * Iterates through this object transforming each item into a new value using the closure
      * as a transformer, returning a list of transformed values.
      * Example:

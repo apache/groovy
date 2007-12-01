@@ -151,6 +151,24 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert c.size() == l.size()
     }
 
+    void testIteratorToList() {
+        def c = [1, 2, 3, 4, 5]
+        def l = c.iterator().toList()
+        assert l.containsAll(c)
+        assert c.size() == l.size()
+    }
+
+    void testEnumerationToList() {
+        def c = [1, 2, 3, 4, 5]
+        def v = new Vector()
+        c.each {
+            v.add(it)
+        }
+        def l = v.elements().toList()
+        assert l.containsAll(c)
+        assert c.size() == l.size()
+    }
+
     void testStringToList() {
         String s = 'hello 10'
         def gs = "hello ${5+5}"
