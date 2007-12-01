@@ -966,7 +966,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
             }
             // handle varargs case
             if (name.equals(method.getName()) && method.isStatic() && method.getParameters().length > 0 &&
-                    method.getParameters()[method.getParameters().length - 1].getType().getTypeClass() == Object[].class) {
+                    method.getParameters()[method.getParameters().length - 1].getType().getTypeClass().isArray()) {
                 if (count >= method.getParameters().length - 1) return true;
             }
         }

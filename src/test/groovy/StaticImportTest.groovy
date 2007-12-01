@@ -9,6 +9,7 @@ import static junit.framework.Assert.assertEquals
 import static StaticImportTarget.x
 import static java.lang.Math.*
 import static java.util.Calendar.getInstance as now
+import static API.*
 
 class StaticImportTest extends GroovyTestCase {
     void testFieldWithAliasInExpression() {
@@ -72,5 +73,21 @@ class StaticImportTest extends GroovyTestCase {
         def nonstaticval = new StaticImportTarget().y("he", 3)
         def staticval = x("he", 3)
         assert nonstaticval == staticval
+    }
+
+    void testStaticImportWithVarArgs() {
+        assert noArrayMethod("one", 1) == 'noArrayMethod(one, 1)'
+        assert API.arrayMethod("two", 1, 2, 3) == 'arrayMethod(two, 1, 2, 3)'
+        assert arrayMethod("three", 1, 2, 3) == 'arrayMethod(three, 1, 2, 3)'
+    }
+}
+
+class API {
+    static noArrayMethod(String s, int value) {
+        "noArrayMethod(${s}, ${value})"
+    }
+
+    static arrayMethod(String s, int[] values) {
+        "arrayMethod(${s}, " + values.toList().join(", ") + ")"
     }
 }
