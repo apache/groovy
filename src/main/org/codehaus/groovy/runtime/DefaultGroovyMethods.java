@@ -6016,6 +6016,108 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * Determine if a String can be parsed into an Integer.
+     *
+     * @param self a String
+     * @return true if the string can be parsed
+     */
+    public static boolean isInteger(String self) {
+        try {
+            Integer.valueOf(self.trim());
+            return true;
+        } catch (NumberFormatException nfe) {
+            return false;
+        }
+    }
+
+    /**
+     * Determine if a String can be parsed into a Long.
+     *
+     * @param self a String
+     * @return true if the string can be parsed
+     */
+    public static boolean isLong(String self) {
+        try {
+            Long.valueOf(self.trim());
+            return true;
+        } catch (NumberFormatException nfe) {
+            return false;
+        }
+    }
+
+    /**
+     * Determine if a String can be parsed into a Float.
+     *
+     * @param self a String
+     * @return true if the string can be parsed
+     */
+    public static boolean isFloat(String self) {
+        try {
+            Float.valueOf(self.trim());
+            return true;
+        } catch (NumberFormatException nfe) {
+            return false;
+        }
+    }
+
+    /**
+     * Determine if a String can be parsed into a Double.
+     *
+     * @param self a String
+     * @return true if the string can be parsed
+     */
+    public static boolean isDouble(String self) {
+        try {
+            Double.valueOf(self.trim());
+            return true;
+        } catch (NumberFormatException nfe) {
+            return false;
+        }
+    }
+
+    /**
+     * Determine if a String can be parsed into a BigInteger.
+     *
+     * @param self a String
+     * @return true if the string can be parsed
+     */
+    public static boolean isBigInteger(String self) {
+        try {
+            new BigInteger(self.trim());
+            return true;
+        } catch (NumberFormatException nfe) {
+            return false;
+        }
+    }
+
+    /**
+     * Determine if a String can be parsed into a BigDecimal.
+     *
+     * @param self a String
+     * @return true if the string can be parsed
+     */
+    public static boolean isBigDecimal(String self) {
+        try {
+            new BigDecimal(self.trim());
+            return true;
+        } catch (NumberFormatException nfe) {
+            return false;
+        }
+    }
+
+    /**
+     * Determine if a String can be parsed into a Number.
+     * Synonym for 'isBigDecimal()'.
+     *
+     * @param self a String
+     * @return true if the string can be parsed
+     * @see #isBigDecimal(String)
+     */
+    public static boolean isNumber(String self) {
+        return isBigDecimal(self);
+    }
+
+    /**
      * Transform a Number into an Integer
      *
      * @param self a Number
