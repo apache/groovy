@@ -303,9 +303,25 @@ public class MetaClassHelper {
 
     public static long calculateParameterDistance(Class[] arguments, Class[] parameters) {
         long ret = 0;
-        for (int i = 0; i < arguments.length; i++) {
+        if (parameters.length == 0)
+          return 0;
+
+        int paramMinus1 = parameters.length-1;
+        for (int i = 0; i < paramMinus1; i++) {
             ret += calculateParameterDistance(arguments[i], parameters[i]);
         }
+
+        if (parameters[paramMinus1].isArray() && (arguments.length > parameters.length) ) {
+            ret++;
+            Class type = parameters[paramMinus1].getComponentType();
+            for (int i = paramMinus1; i != arguments.length; ++i) {
+                ret += calculateParameterDistance(arguments[paramMinus1], type);
+            }
+        }
+        else {
+           ret += calculateParameterDistance(arguments[paramMinus1], parameters[paramMinus1]);
+        }
+
         return ret;
     }
 
@@ -757,9 +773,23 @@ public class MetaClassHelper {
     }
 
     public static boolean parametersAreCompatible(Class[] arguments, Class[] parameters) {
-        if (arguments.length != parameters.length) return false;
-        for (int i = 0; i < arguments.length; i++) {
-            if (!isAssignableFrom(parameters[i], arguments[i])) return false;
+        if (arguments.length < parameters.length) return false;
+        if (parameters.length == 0)
+           return arguments.length == 0;
+        int paramMinus1 = parameters.length-1;
+        for (int i = 0; i < paramMinus1; i++) {
+            if (!isAssignableFrom(parameters[i], arguments[i]))
+               return false;
+        }
+        if (parameters[paramMinus1].isArray() && (arguments.length > parameters.length) ) {
+            Class type = parameters[paramMinus1].getComponentType();
+            for (int i = paramMinus1; i != arguments.length; ++i) {
+                if (!isAssignableFrom(type, arguments[i]))
+                   return false;
+            }
+        }
+        else {
+           return isAssignableFrom(parameters[paramMinus1], arguments[paramMinus1]);
         }
         return true;
     }
