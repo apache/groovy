@@ -15,7 +15,7 @@ class Groovy2350Bug extends GroovyTestCase{
          def a = new NoDefaultCtor("first")
          assertEquals "toS: first", a.toString()
 
-         def b = new NoDefaultCtor() // I wouldn't expect this to work
+         def b = new NoDefaultCtor()
          assertEquals "toS: null", b.toString()
      }
 }
