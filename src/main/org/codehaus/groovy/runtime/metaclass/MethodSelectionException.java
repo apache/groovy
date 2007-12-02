@@ -16,12 +16,12 @@
 
 package org.codehaus.groovy.runtime.metaclass;
 
-import java.lang.reflect.Modifier;
-
-import org.codehaus.groovy.reflection.FastArray;
-
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaMethod;
+import org.codehaus.groovy.reflection.CachedConstructor;
+import org.codehaus.groovy.reflection.FastArray;
+
+import java.lang.reflect.Modifier;
 
 /**
  * This exception is thrown if the runtime is unable to select
@@ -77,13 +77,23 @@ public class MethodSelectionException extends GroovyRuntimeException {
     private void appendMethods(StringBuffer buffer) {
         for (int i = 0; i < methods.size; i++) {
             buffer.append("\n  ");
-            MetaMethod method = (MetaMethod) methods.get(i);
-            buffer.append(Modifier.toString(method.getModifiers()));
-            buffer.append(" ").append(method.getReturnType().getName());
-            buffer.append(" ").append(method.getDeclaringClass().getName());
-            buffer.append("#");
-            buffer.append(method.getName());
-            appendClassNames(buffer,method.getNativeParameterTypes());
+            Object methodOrConstructor = methods.get(i);
+            if (methodOrConstructor instanceof MetaMethod) {
+                MetaMethod method = (MetaMethod) methodOrConstructor;
+                buffer.append(Modifier.toString(method.getModifiers()));
+                buffer.append(" ").append(method.getReturnType().getName());
+                buffer.append(" ").append(method.getDeclaringClass().getName());
+                buffer.append("#");
+                buffer.append(method.getName());
+                appendClassNames(buffer,method.getNativeParameterTypes());
+            }
+            else {
+                CachedConstructor method = (CachedConstructor) methodOrConstructor;
+                buffer.append(Modifier.toString(method.cachedConstructor.getModifiers()));
+                buffer.append(" ").append(method.cachedConstructor.getDeclaringClass().getName());
+                buffer.append("#<init>");
+                appendClassNames(buffer,method.getNativeParameterTypes());
+            }
         }
     }
 }
