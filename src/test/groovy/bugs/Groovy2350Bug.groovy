@@ -10,7 +10,26 @@ class Groovy2350Bug extends GroovyTestCase{
 
          assertEquals "NULL", new DefaultNoArgCtor2().value
      }
+
+     void testNoDefCtor () {
+         def a = new NoDefaultCtor("first")
+         assertEquals "toS: first", a.toString()
+
+         def b = new NoDefaultCtor() // I wouldn't expect this to work
+         assertEquals "toS: null", b.toString()
+     }
 }
+
+class NoDefaultCtor {
+    def field
+
+    NoDefaultCtor(param) { field= param }
+
+    String toString() {
+      return "toS: ${field}"
+    }
+}
+
 
 class DefaultNoArgCtor {
   DefaultNoArgCtor(String s) {}
