@@ -47,7 +47,7 @@ public class VariableExpression extends Expression implements Variable {
 
     public VariableExpression(String variable, ClassNode type) {
         this.variable = variable;
-        super.setType(ClassHelper.getWrapper(type));
+        setType(ClassHelper.getWrapper(type));
     }
     
     public VariableExpression(String variable) {
