@@ -115,6 +115,10 @@ class Console implements CaretListener {
     static void main(args) {
         // allow the full stack traces to bubble up to the root logger
         java.util.logging.Logger.getLogger(StackTraceUtils.STACK_LOG_NAME).useParentHandlers = true
+
+        //when starting via main set the look and feel to system
+        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); 
+
         def console = new Console()
         console.run()
     }
@@ -139,9 +143,6 @@ class Console implements CaretListener {
 
     void run() {
         swing = new SwingBuilder()
-
-        //use the platform look and feel.  More tweaking takes place in the views 
-        swing.lookAndFeel('system')
 
         // tweak what the stack traces filter out to be fairly broad
         System.setProperty("groovy.sanitized.stacktraces", """org.codehaus.groovy.runtime.
