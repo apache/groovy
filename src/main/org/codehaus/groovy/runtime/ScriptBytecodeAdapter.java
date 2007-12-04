@@ -593,7 +593,7 @@ public class ScriptBytecodeAdapter {
 
     // TODO: set sender class
     public static Object invokeClosure(Object closure, Object[] arguments) throws Throwable {
-        return invokeMethodN(closure.getClass(), closure, "doCall", arguments);
+        return invokeMethodN(closure.getClass(), closure, "call", arguments);
     }
 
     //  --------------------------------------------------------
