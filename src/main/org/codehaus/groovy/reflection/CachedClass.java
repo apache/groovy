@@ -27,6 +27,8 @@ import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
+import java.security.PrivilegedAction;
+import java.security.AccessController;
 
 /**
  * @author Alex.Tkachman
@@ -126,7 +128,12 @@ public class CachedClass {
 
     public synchronized CachedMethod[] getMethods() {
         if (methods == null) {
-            final Method[] declaredMethods = getCachedClass().getDeclaredMethods();
+            final Method[] declaredMethods = (Method[])
+               AccessController.doPrivileged(new PrivilegedAction/*<Method[]>*/() {
+                   public /*Method[]*/ Object run() {
+                       return getCachedClass().getDeclaredMethods();
+                   }
+               });
             ArrayList methods = new ArrayList(declaredMethods.length);
             ArrayList mopMethods = new ArrayList(declaredMethods.length);
             for (int i = 0; i != declaredMethods.length; ++i) {
@@ -163,7 +170,13 @@ public class CachedClass {
 
     public synchronized CachedField[] getFields() {
         if (fields == null) {
-            final Field[] declaredFields = getCachedClass().getDeclaredFields();
+
+            final Field[] declaredFields = (Field[])
+               AccessController.doPrivileged(new PrivilegedAction/*<Field[]>*/() {
+                   public /*Field[]*/ Object run() {
+                       return getCachedClass().getDeclaredFields();
+                   }
+               });
             fields = new CachedField[declaredFields.length];
             for (int i = 0; i != fields.length; ++i)
                 fields[i] = new CachedField(this, declaredFields[i]);
@@ -173,7 +186,12 @@ public class CachedClass {
 
     public synchronized CachedConstructor[] getConstructors() {
         if (constructors == null) {
-            final Constructor[] declaredConstructors = getCachedClass().getDeclaredConstructors();
+            final Constructor[] declaredConstructors = (Constructor[])
+               AccessController.doPrivileged(new PrivilegedAction/*<Constructor[]>*/() {
+                   public /*Constructor[]*/ Object run() {
+                       return getCachedClass().getDeclaredConstructors();
+                   }
+               });
             constructors = new CachedConstructor[declaredConstructors.length];
             for (int i = 0; i != constructors.length; ++i)
                 constructors[i] = new CachedConstructor(this, declaredConstructors[i]);
