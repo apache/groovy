@@ -22,5 +22,15 @@ class CallClosureFieldAsMethodTest extends GroovyTestCase {
     void testCallToClosureAsMethodFromStaticField() {
         assert CallClosureFieldAsMethodTest.staticClosureMethod("Hello") == "Hello"
     }
+    
+    void testEnsureCallMethodIsUsed() {
+      assertScript """
+        class Dummy {
+            def call(Object arguments) {"1"}
+        }
+        def c = new Dummy()
+        assert c(2) == "1"      
+      """    
+    }
 
 }
