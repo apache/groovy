@@ -25,8 +25,33 @@ package groovy.util
  */
 
 class  ConfigSlurperTest extends GroovyTestCase {
-	
-	void testConfigBinding() {
+
+
+    void testConfigSlurperNestedValues() {
+        def config = new ConfigSlurper().parse('''
+foo {
+    bar {
+        password="value"
+    }
+    fruit="orange"
+}
+''')
+
+        assertEquals "value", config.foo.bar.password
+        assertEquals "orange", config.foo.fruit
+        config = new ConfigSlurper().parse('''
+            foo {
+                bar.password="value"
+                fruit="orange"
+            }
+            ''')
+
+        assertEquals "value", config.foo.bar.password
+        assertEquals "orange", config.foo.fruit
+
+    }
+
+    void testConfigBinding() {
 		def slurper = new ConfigSlurper()
 		slurper.binding = [foo:"bar"]
 		def config = slurper.parse('''
