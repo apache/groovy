@@ -169,16 +169,14 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         for (Iterator cnIter = methods.iterator(); cnIter.hasNext();) {
             MethodNode method = (MethodNode) cnIter.next();
             Parameter[] params = method.getParameters();
-            for (ClassNode superCN = cn.getSuperClass(); superCN != null; superCN = superCN.getSuperClass()) {
-                List superMethods = superCN.getMethods(method.getName());
-                for (Iterator iter = superMethods.iterator(); iter.hasNext();) {
-                    MethodNode superMethod = (MethodNode) iter.next();
-                    Parameter[] superParams = superMethod.getParameters();
-                    if (!hasEqualParameterTypes(params, superParams)) continue;
-                    if (!Modifier.isFinal(superMethod.getModifiers())) return;
-                    addInvalidUseOfFinalError(method, params, superCN);
-                    return;
-                }
+            List superMethods = cn.getSuperClass().getMethods(method.getName());
+            for (Iterator iter = superMethods.iterator(); iter.hasNext();) {
+                MethodNode superMethod = (MethodNode) iter.next();
+                Parameter[] superParams = superMethod.getParameters();
+                if (!hasEqualParameterTypes(params, superParams)) continue;
+                if (!Modifier.isFinal(superMethod.getModifiers())) return;
+                addInvalidUseOfFinalError(method, params, superMethod.getDeclaringClass());
+                return;
             }
         }
     }

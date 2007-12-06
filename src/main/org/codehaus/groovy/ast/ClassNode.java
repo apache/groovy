@@ -30,6 +30,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -65,6 +66,27 @@ import java.util.Map;
  */
 public class ClassNode extends AnnotatedNode implements Opcodes {
 
+    private static class MapOfLists {
+        private Map map = new HashMap();
+        public List get(Object key) {
+            return (List) map.get(key);
+        }
+        public List getNotNull(Object key) {
+            List ret = get(key);
+            if (ret==null) ret = Collections.EMPTY_LIST;
+            return ret;
+        }
+        public void put(Object key, Object value) {
+            if (map.containsKey(key)) {
+                get(key).add(value);
+            } else {
+                ArrayList list = new ArrayList(2);
+                list.add(value);
+                map.put(key, list);
+            }
+        }        
+    }
+    
     public static ClassNode[] EMPTY_ARRAY = new ClassNode[0];
     
     public static ClassNode THIS = new ClassNode(Object.class);
@@ -76,7 +98,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     private MixinNode[] mixins;
     private List constructors = new ArrayList();
     private List  objectInitializers = new ArrayList();
-    private List methods = new ArrayList();
+    private MapOfLists methods;
+    private List methodsList;
     private List fields = new ArrayList();
     private List properties = new ArrayList();
     private Map fieldIndex = new HashMap();
@@ -270,6 +293,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
                 usesGenerics = usesGenerics || interfaces[i].isUsingGenerics();
             }
         }
+        this.methods = new MapOfLists();
+        this.methodsList = new ArrayList();
     }
 
     
@@ -313,11 +338,9 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * each method in the class represented by this ClassNode
      */    
     public List getMethods() {
-        if (!lazyInitDone) {
-            lazyClassInit();
-        }
+        if (!lazyInitDone) lazyClassInit();
         if (redirect!=null) return redirect().getMethods();
-        return methods;
+        return methodsList;
     }
 
     /**
@@ -478,7 +501,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
     public void addMethod(MethodNode node) {
         node.setDeclaringClass(this);
-        redirect().methods.add(node);
+        redirect().methodsList.add(node);
+        redirect().methods.put(node.getName(), node);
     }
 
     /**
@@ -630,35 +654,27 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     /**
-     * @return a list of methods which match the given name
+     * This methods returns a list of all methods of the given name
+     * defined in the current class
+     * @return the method list
+     * @see #getMethods(String)
      */
     public List getDeclaredMethods(String name) {
-        List answer = new ArrayList();
-        for (Iterator iter = getMethods().iterator(); iter.hasNext();) {
-            MethodNode method = (MethodNode) iter.next();
-            if (name.equals(method.getName())) {
-                answer.add(method);
-            }
-        }
-        return answer;
+        if (!lazyInitDone) lazyClassInit();
+        if (redirect!=null) return redirect().getDeclaredMethods(name);
+        return methods.getNotNull(name);
     }
 
     /**
-     * @return a list of methods which match the given name
+     * This methods creates a list of all methods with this name of the
+     * current class and of all super classes
+     * @return the methods list
+     * @see #getDeclaredMethods(String)
      */
     public List getMethods(String name) {
-        List answer = new ArrayList();
-        ClassNode node = this;
-        do {
-            for (Iterator iter = node.getMethods().iterator(); iter.hasNext();) {
-                MethodNode method = (MethodNode) iter.next();
-                if (name.equals(method.getName())) {
-                    answer.add(method);
-                }
-            }
-            node = node.getSuperClass();
-        }
-        while (node != null);
+        List answer = new ArrayList(getDeclaredMethods(name));
+        ClassNode parent = getSuperClass();
+        if (parent!=null) answer.addAll(parent.getMethods(name));
         return answer;
     }
 
@@ -666,9 +682,10 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * @return the method matching the given name and parameters or null
      */
     public MethodNode getDeclaredMethod(String name, Parameter[] parameters) {
-        for (Iterator iter = getMethods().iterator(); iter.hasNext();) {
+        List list = getDeclaredMethods(name);
+        for (Iterator iter = list.iterator(); iter.hasNext();) {
             MethodNode method = (MethodNode) iter.next();
-            if (name.equals(method.getName()) && parametersEqual(method.getParameters(), parameters)) {
+            if (parametersEqual(method.getParameters(), parameters)) {
                 return method;
             }
         }
@@ -854,7 +871,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public MethodNode getGetterMethod(String getterName) {
-        for (Iterator iter = getMethods().iterator(); iter.hasNext();) {
+        for (Iterator iter = getDeclaredMethods(getterName).iterator(); iter.hasNext();) {
             MethodNode method = (MethodNode) iter.next();
             if (getterName.equals(method.getName())
                     && ClassHelper.VOID_TYPE!=method.getReturnType()
@@ -862,18 +879,22 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
                 return method;
             }
         }
+        ClassNode parent = getSuperClass(); 
+        if (parent!=null) return parent.getGetterMethod(getterName); 
         return null;
     }
 
-    public MethodNode getSetterMethod(String getterName) {
-        for (Iterator iter = getMethods().iterator(); iter.hasNext();) {
+    public MethodNode getSetterMethod(String setterName) {
+        for (Iterator iter = getDeclaredMethods(setterName).iterator(); iter.hasNext();) {
             MethodNode method = (MethodNode) iter.next();
-            if (getterName.equals(method.getName())
+            if (setterName.equals(method.getName())
                     && ClassHelper.VOID_TYPE==method.getReturnType()
                     && method.getParameters().length == 1) {
                 return method;
             }
         }
+        ClassNode parent = getSuperClass(); 
+        if (parent!=null) return parent.getSetterMethod(setterName); 
         return null;
     }
 
@@ -936,9 +957,9 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         }
         ClassNode node = this;
         do {
-            for (Iterator iter = getMethods().iterator(); iter.hasNext();) {
+            for (Iterator iter = getDeclaredMethods(name).iterator(); iter.hasNext();) {
                 MethodNode method = (MethodNode) iter.next();
-                if (name.equals(method.getName()) && method.getParameters().length == count) {
+                if (method.getParameters().length == count) {
                     return true;
                 }
             }
@@ -959,14 +980,14 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
             // TODO this won't strictly be true when using list expansion in argument calls
             count = tuple.getExpressions().size();
         }
-        for (Iterator iter = getMethods().iterator(); iter.hasNext();) {
+        for (Iterator iter = getDeclaredMethods(name).iterator(); iter.hasNext();) {
             MethodNode method = (MethodNode) iter.next();
-            if (name.equals(method.getName()) && method.getParameters().length == count && method.isStatic()) {
+            if (method.getParameters().length == count && method.isStatic()) {
                 return true;
             }
             // handle varargs case
-            if (name.equals(method.getName()) && method.isStatic() && method.getParameters().length > 0 &&
-                    method.getParameters()[method.getParameters().length - 1].getType().getTypeClass().isArray()) {
+            if (method.isStatic() && method.getParameters().length > 0 &&
+                method.getParameters()[method.getParameters().length - 1].getType().isArray()) {
                 if (count >= method.getParameters().length - 1) return true;
             }
         }

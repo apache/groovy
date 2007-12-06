@@ -121,6 +121,13 @@ class PropertyTest extends GroovyTestCase {
         }
     }
 
+    void testFinalPropertyWithInheritance() {
+        def child = new Child()
+        assert child.finalProperty == 1
+        child.finalProperty = 22
+        assert child.finalProperty == 1
+    }
+
     void testBaseProperties() {
         assert new Child().field == 'foobar'
     }
@@ -156,6 +163,9 @@ class Base {
     def getXprop() {'foo x prop'}
     def x() {'foo x'}
     void setThing(value) {thing = value}
+    
+    //testing final property getter
+    final getFinalProperty() {1}
 }
 
 class Child extends Base {
@@ -180,4 +190,9 @@ class Child extends Base {
     def setSuperThing(value) {
         super.thing = value
     }
+    
+    // testing final property getter
+    // the following property should not add a new getter
+    // method, this would result in a verify error
+    def finalProperty = 32
 }
