@@ -8388,10 +8388,21 @@ public class DefaultGroovyMethods {
     public static ClassLoader getRootLoader(ClassLoader self) {
         while (true) {
             if (self == null) return null;
-            if (self.getClass().getName().equals(RootLoader.class.getName())) return self;
+            if (isRootLoaderClassOrSubClass(self)) return self;
             self = self.getParent();
         }
     }
+
+    private static boolean isRootLoaderClassOrSubClass(ClassLoader self) {
+        Class current = self.getClass();
+        while(current.getName() != Object.class.getName()) {
+            if(current.getName().equals(RootLoader.class.getName())) return true;
+            current = current.getSuperclass();
+        }
+        
+        return false;
+    }
+
 
     /**
      * Converts a given object to a type. This method is used through
