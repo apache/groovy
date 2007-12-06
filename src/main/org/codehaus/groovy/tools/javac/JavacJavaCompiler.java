@@ -19,6 +19,8 @@ package org.codehaus.groovy.tools.javac;
 import groovy.lang.GroovyClassLoader;
 
 import java.io.File;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.util.LinkedList;
 import java.util.List;
@@ -28,6 +30,7 @@ import java.util.Map;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.messages.ExceptionMessage;
+import org.codehaus.groovy.control.messages.SimpleMessage;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 public class JavacJavaCompiler implements JavaCompiler {
@@ -39,15 +42,50 @@ public class JavacJavaCompiler implements JavaCompiler {
 
     public void compile(List files, CompilationUnit cu) {
         String[] javacParameters = makeParameters(files);
-        org.apache.tools.ant.taskdefs.Javac c;
+        StringWriter javacOutput=null;
+        int javacReturnValue = 0;
         try {
             Class javac = findJavac(cu);
-            Method method = javac.getMethod("compile", new Class[]{String[].class});
-            method.invoke(null, new Object[]{javacParameters});
+            Method method=null;
+            try {
+                method = javac.getMethod("compile", new Class[]{String[].class, PrintWriter.class});
+                javacOutput = new StringWriter();
+                PrintWriter writer = new PrintWriter(javacOutput);
+                Object ret = method.invoke(null, new Object[]{javacParameters,writer});
+                javacReturnValue = ((Integer) ret).intValue();
+            } catch (NoSuchMethodException e) {}
+            if (method==null) {
+                method = javac.getMethod("compile", new Class[]{String[].class});
+                Object ret = method.invoke(null, new Object[]{javacParameters});
+                javacReturnValue = ((Integer) ret).intValue();
+            }
+            cu.getConfiguration().getOutput();
         } catch (Exception e) {
             cu.getErrorCollector().addFatalError(new ExceptionMessage(e, true, cu));
         }
+        if (javacReturnValue!=0) {
+            switch (javacReturnValue) {
+                case 1: addJavacError("Compile error during compilation with javac.",cu,javacOutput); break;
+                case 2: addJavacError("Invalid commandline usage for javac.",cu,javacOutput); break;
+                case 3: addJavacError("System error during compilation with javac.",cu,javacOutput); break;
+                case 4: addJavacError("Abnormal termination of javac.",cu,javacOutput); break;
+                default: addJavacError("unexpected return value by javac.",cu,javacOutput); break;
+            }
+        }        
     }
+    
+    private void addJavacError(String header, CompilationUnit cu, StringWriter msg) {
+        if (msg!=null)  {
+            header = header+"\n"+msg.getBuffer().toString();
+        } else {
+            header = header+
+            "\nThis javac version does not support compile(String[],PrintWriter), "+
+            "so no further details of the error are available. The message error text "+
+            "should be found on System.err.\n";
+        }
+        cu.getErrorCollector().addFatalError(new SimpleMessage(header,cu));
+    }
+    
 
     private String[] makeParameters(List files) {
         Map options = config.getJointCompilationOptions();
