@@ -155,13 +155,13 @@ class Base {
     protected thing = 'foo thing'
     def getXprop() {'foo x prop'}
     def x() {'foo x'}
-    def setThing(value) {thing = value}
+    void setThing(value) {thing = value}
 }
 
 class Child extends Base {
     protected String field = 'foo' + super.field
     public getField() {field}
-    public setSuperField(value) {super.field = value}
+    void setSuperField(value) {super.field = value}
     public getSuperField() {super.field}
 
     def thing = 'bar thing'

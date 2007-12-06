@@ -42,6 +42,7 @@ public class MetaClassHelper {
     public static final Object[] ARRAY_WITH_NULL = {null};
     protected static final Logger LOG = Logger.getLogger(MetaClassHelper.class.getName());
     private static final int MAX_ARG_LEN = 12;
+    private static final int VARGS_SHIFT = 28;
 
     public static boolean accessibleToConstructor(final Class at, final Constructor constructor) {
         boolean accessible = false;
@@ -249,29 +250,16 @@ public class MetaClassHelper {
         if (parameter == argument) return 0;
 
         if (parameter.isInterface()) {
-            long ret = PRIMITIVES.length;
-            ret = (ret << 32) | getMaximumInterfaceDistance(argument, parameter);
-            return ret;
+            return getMaximumInterfaceDistance(argument, parameter)<<1;
         }
 
         long objectDistance = 0;
         if (argument != null) {
-            if (parameter.isArray()) {
-                if (argument.isArray()) {
-                    return calculateParameterDistance(argument.getComponentType(), parameter.getComponentType());
-                } else {
-                    parameter = parameter.getComponentType();
-                    objectDistance++;
-                }
-            } else if (argument.isArray()) {
-                objectDistance++;
-            }
-
             long pd = getPrimitiveDistance(parameter, argument);
-            if (pd != -1) return pd << 33;
+            if (pd != -1) return pd << 32;
 
             // add one to dist to be sure interfaces are prefered
-            objectDistance += PRIMITIVES.length << 1 + 1;
+            objectDistance += PRIMITIVES.length + 1;
             Class clazz = ReflectionCache.autoboxType(argument);
             while (clazz != null) {
                 if (clazz == parameter) break;
@@ -302,25 +290,74 @@ public class MetaClassHelper {
     }
 
     public static long calculateParameterDistance(Class[] arguments, Class[] parameters) {
-        long ret = 0;
-        if (parameters.length == 0)
-          return 0;
+        if (parameters.length == 0) return 0;
 
-        int paramMinus1 = parameters.length-1;
-        for (int i = 0; i < paramMinus1; i++) {
+        long ret = 0;        
+        int noVargsLength = parameters.length-1;
+        
+        // if the number of parameters does not match we have 
+        // a vargs usage
+        //
+        // case A: arguments.length<parameters.length
+        //
+        //         In this case arguments.length is always equal to
+        //         noVargsLength because only the last parameter
+        //         might be a optional vargs parameter
+        //
+        // case B: arguments.lenth>parameters.length
+        //
+        //         In this case all arguments with a index bigger than
+        //         paramMinus1 are part of the vargs, so a 
+        //         distance calculaion needs to be done against 
+        //         parameters[noVargsLength].getComponentType()
+        //
+        // case C: arguments.length==parameters.length && 
+        //         isAssignableFrom( parameters[noVargsLength],
+        //                           arguments[noVargsLength] )
+        //
+        //         In this case we have no vargs, so calculate directly
+        //
+        // case D: arguments.length==parameters.length && 
+        //         !isAssignableFrom( parameters[noVargsLength],
+        //                            arguments[noVargsLength] )
+        //
+        //         In this case we have a vargs case again, we need 
+        //         to calculate arguments[noVargsLength] against
+        //         parameters[noVargsLength].getComponentType
+        
+        
+        
+        // first we calculate all arguments, that are for sure not part
+        // of vargs.  Since the minimum for arguments is noVargsLength
+        // we can safely iterate to this point
+        for (int i = 0; i < noVargsLength; i++) {
             ret += calculateParameterDistance(arguments[i], parameters[i]);
         }
-
-        if (parameters[paramMinus1].isArray() && (arguments.length > parameters.length) ) {
-            ret++;
-            Class type = parameters[paramMinus1].getComponentType();
-            for (int i = paramMinus1; i != arguments.length; ++i) {
-                ret += calculateParameterDistance(arguments[paramMinus1], type);
+        
+        if (arguments.length==parameters.length) {
+            // case C&D, we use baseType to calculate and set it
+            // to the value we need according to case C and D
+            Class baseType = parameters[noVargsLength]; // case C
+            if (!isAssignableFrom(parameters[noVargsLength],arguments[noVargsLength])) {
+                baseType=baseType.getComponentType(); // case D
+                ret+=2l<<VARGS_SHIFT; // penalty for vargs
             }
-        }
-        else {
-           ret += calculateParameterDistance(arguments[paramMinus1], parameters[paramMinus1]);
-        }
+            ret += calculateParameterDistance(arguments[noVargsLength], baseType);
+        } else if (arguments.length>parameters.length) {
+            // case B
+            // we give our a vargs penalty for each exceeding argument and iterate
+            // by using parameters[noVargsLength].getComponentType()
+            ret += (2+arguments.length-parameters.length)<<VARGS_SHIFT;
+            Class vargsType = parameters[noVargsLength].getComponentType();
+            for (int i = noVargsLength; i < arguments.length; i++) {
+                ret += calculateParameterDistance(arguments[i], vargsType);
+            }
+        } else {
+            // case A
+            // we give a penalty for vargs, since we have no direct
+            // match for the last argument
+            ret+=1l<<VARGS_SHIFT;            
+        }  
 
         return ret;
     }
@@ -696,6 +733,14 @@ public class MetaClassHelper {
         }
         return false;
     }
+    
+    public static boolean parametersAreCompatible(Class[] arguments, Class[] parameters) {
+        if (arguments.length != parameters.length) return false;
+        for (int i = 0; i < arguments.length; i++) {
+            if (!isAssignableFrom(parameters[i], arguments[i])) return false;
+        }
+        return true;
+    }
 
     public static boolean isValidMethod(ParameterTypes pt, Class[] arguments, boolean includeCoerce) {
         if (arguments == null) {
@@ -770,28 +815,6 @@ public class MetaClassHelper {
             value = shortName(argument);
         }
         return value;
-    }
-
-    public static boolean parametersAreCompatible(Class[] arguments, Class[] parameters) {
-        if (arguments.length < parameters.length) return false;
-        if (parameters.length == 0)
-           return arguments.length == 0;
-        int paramMinus1 = parameters.length-1;
-        for (int i = 0; i < paramMinus1; i++) {
-            if (!isAssignableFrom(parameters[i], arguments[i]))
-               return false;
-        }
-        if (parameters[paramMinus1].isArray() && (arguments.length > parameters.length) ) {
-            Class type = parameters[paramMinus1].getComponentType();
-            for (int i = paramMinus1; i != arguments.length; ++i) {
-                if (!isAssignableFrom(type, arguments[i]))
-                   return false;
-            }
-        }
-        else {
-           return isAssignableFrom(parameters[paramMinus1], arguments[paramMinus1]);
-        }
-        return true;
     }
 
     protected static String shortName(Object object) {

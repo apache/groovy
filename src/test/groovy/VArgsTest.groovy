@@ -95,4 +95,37 @@ class VArgsTest extends GroovyTestCase {
   void testArrayCoercion() {
     assert normalVargsMethod([1,2,3] as int[]) == 3
   }
-}
+  
+  
+  // GROOVY-2204
+  def m2204a(Map kwargs=[:], arg1, arg2, Object[] args) {
+    "arg1: $arg1, arg2: $arg2, args: $args, kwargs: $kwargs"
+  }
+
+  def m2204b(Map kwargs=[:], arg1, arg2="1", Object[] args) {
+    "arg1: $arg1, arg2: $arg2, args: $args, kwargs: $kwargs"
+  }
+
+  void test2204a() {
+     assert m2204a('hello', 'world') == 'arg1: hello, arg2: world, args: {}, kwargs: [:]'
+     assert m2204a('hello', 'world', 'from', 'list') == 'arg1: hello, arg2: world, args: {"from", "list"}, kwargs: [:]'
+     assert m2204a('hello', 'world', 'from', 'list', from: 'kwargs') == 'arg1: hello, arg2: world, args: {"from", "list"}, kwargs: ["from":"kwargs"]'
+     assert m2204a('hello', 'world', from: 'kwargs') == 'arg1: hello, arg2: world, args: {}, kwargs: ["from":"kwargs"]'
+     
+     assert m2204b('hello', 'world') == 'arg1: hello, arg2: 1, args: {"world"}, kwargs: [:]'
+     assert m2204b('hello', 'world', 'from', 'list') == 'arg1: hello, arg2: 1, args: {"world", "from", "list"}, kwargs: [:]'
+     assert m2204b('hello', 'world', 'from', 'list', from: 'kwargs') == 'arg1: hello, arg2: world, args: {"from", "list"}, kwargs: ["from":"kwargs"]'
+     assert m2204b('hello', 'world', from: 'kwargs') == 'arg1: hello, arg2: world, args: {}, kwargs: ["from":"kwargs"]'
+  }
+
+ 
+  // GROOVY-2351
+  
+  def m2351(Object... args)  {1}
+  def m2351(Integer... args) {2}
+ 
+  void test2351() {
+    assert m2351(1, 2, 3, 4, 5) == 2
+  }
+  
+}  

@@ -2349,7 +2349,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         for (Iterator iter = matchingMethods.iterator(); iter.hasNext();) {
             Object method = iter.next();
             Class[] paramTypes = MetaClassHelper.getParameterTypes(method).getNativeParameterTypes();
-            if (!MetaClassHelper.parametersAreCompatible(arguments, paramTypes)) continue;
             long dist = MetaClassHelper.calculateParameterDistance(arguments, paramTypes);
             if (dist == 0) return method;
             if (matches.size() == 0) {

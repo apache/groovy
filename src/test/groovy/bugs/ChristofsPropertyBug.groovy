@@ -13,5 +13,5 @@ class ChristofsPropertyBug extends GroovyTestCase {
     }
     
     def getMixedCaseProperty()    { mixedCaseProperty }
-    def setMixedCaseProperty(val) { this.mixedCaseProperty = val }
+    void setMixedCaseProperty(val) { this.mixedCaseProperty = val }
 }

@@ -2,6 +2,19 @@ package groovy
 
 class DefaultParamTest extends GroovyTestCase {
 
+    //GROOVY-2191
+
+    def m2191a(String one, String two = "two") {"$one $two"}
+    def m2191a(String one, String two = "two", String three = "three") {"$one $two $three"}
+    
+    def m2191b(String one, String two = "two", String three = "three") {"$one $two $three"}
+    def m2191b(String one, String two = "two") {"$one $two"}
+    
+    void test2191() {
+      assert m2191a("bar") == "bar two"
+      assert m2191b("bar") == "bar two three"
+    } 
+
     void testDefaultParameters() {
     
     	def value = doSomething("X", "Y", "Z")

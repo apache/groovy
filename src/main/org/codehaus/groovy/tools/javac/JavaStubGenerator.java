@@ -16,8 +16,6 @@
 
 package org.codehaus.groovy.tools.javac;
 
-import groovy.lang.GroovyObjectSupport;
-
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
@@ -26,6 +24,7 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.ResolveVisitor;
 import org.objectweb.asm.Opcodes;
 
@@ -72,6 +71,12 @@ public class JavaStubGenerator
         FileOutputStream fos = new FileOutputStream(file);
         PrintWriter out = new PrintWriter(fos);
 
+        Verifier verifier = new Verifier() {
+            public void addCovariantMethods(ClassNode cn) {}
+            protected void addTimeStamp(ClassNode node) {}
+        };
+        verifier.visitClass(classNode);
+        
         try {
             String packageName = classNode.getPackageName();
             if (packageName != null) {
@@ -97,14 +102,9 @@ public class JavaStubGenerator
 
             ClassNode superClass = classNode.getUnresolvedSuperClass(false);
 
-            if (!isInterface) {
-                if (superClass.equals(ClassHelper.OBJECT_TYPE)) {
-                    superClass = ClassHelper.make(GroovyObjectSupport.class);
-                }
-                if (!isEnum) {
-                    out.print("  extends ");
-                    printType(superClass,out);
-                }
+            if (!isInterface && !isEnum) {
+                out.print("  extends ");
+                printType(superClass,out);
             } 
 
             ClassNode[] interfaces = classNode.getInterfaces();
@@ -324,15 +324,6 @@ public class JavaStubGenerator
 
             out.println("}");
         }
-        
-        // handling of default values
-        Parameter[] params = getDefaultValueReducedParameters(constructorNode);
-        if (params!=constructorNode.getParameters()) {
-            ConstructorNode m = new ConstructorNode(
-                    constructorNode.getModifiers(), params,
-                    constructorNode.getExceptions(), constructorNode.getCode());
-            genConstructor(clazz,m,out);
-        }
     }
 
     private ConstructorNode selectAccessibleConstructorFromSuper(ConstructorNode node) {
@@ -454,29 +445,6 @@ public class JavaStubGenerator
             printReturn(out, retType);
             out.println("}");
         }
-        
-        // handling of default values
-        Parameter[] params = getDefaultValueReducedParameters(methodNode);
-        if (params!=methodNode.getParameters()) {
-            MethodNode m = new MethodNode(
-                    methodNode.getName(), methodNode.getModifiers(),
-                    methodNode.getReturnType(), params,
-                    methodNode.getExceptions(),null);
-            genMethod(clazz,m,out);
-        }
-    }
-
-    private Parameter[] getDefaultValueReducedParameters(MethodNode methodNode) {
-        Parameter[] params = methodNode.getParameters();
-        for (int i = params.length-1; i>-1; i--) {
-            if (params[i].hasInitialExpression()) {
-                Parameter[] newParams = new Parameter[params.length-1];
-                System.arraycopy(params, 0, newParams, 0, i);
-                System.arraycopy(params, i+1, newParams, i, params.length-i-1);
-                return newParams;
-            }
-        }
-        return params;
     }
 
     private void printReturn(PrintWriter out, ClassNode retType) {

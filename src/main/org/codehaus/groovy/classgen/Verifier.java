@@ -211,27 +211,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
         
         if (!(node instanceof InnerClassNode)) {// add a static timestamp field to the class
-            FieldNode timeTagField = new FieldNode(
-                    Verifier.__TIMESTAMP,
-                    Modifier.PUBLIC | Modifier.STATIC,
-                    ClassHelper.Long_TYPE,
-                    //"",
-                    node,
-                    new ConstantExpression(new Long(System.currentTimeMillis())));
-            // alternatively , FieldNode timeTagField = SourceUnit.createFieldNode("public static final long __timeStamp = " + System.currentTimeMillis() + "L");
-            timeTagField.setSynthetic(true);
-            node.addField(timeTagField);
-
-            timeTagField = new FieldNode(
-                    Verifier.__TIMESTAMP__ + String.valueOf(System.currentTimeMillis()),
-                    Modifier.PUBLIC | Modifier.STATIC,
-                    ClassHelper.Long_TYPE,
-                    //"",
-                    node,
-                    new ConstantExpression(new Long(0)));
-            // alternatively , FieldNode timeTagField = SourceUnit.createFieldNode("public static final long __timeStamp = " + System.currentTimeMillis() + "L");
-            timeTagField.setSynthetic(true);
-            node.addField(timeTagField);
+            addTimeStamp(node);
         }
         
         addInitialization(node);
@@ -240,6 +220,31 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         addCovariantMethods(node);
         node.visitContents(this);
     }
+    
+    protected void addTimeStamp(ClassNode node) {
+        FieldNode timeTagField = new FieldNode(
+                Verifier.__TIMESTAMP,
+                Modifier.PUBLIC | Modifier.STATIC,
+                ClassHelper.Long_TYPE,
+                //"",
+                node,
+                new ConstantExpression(new Long(System.currentTimeMillis())));
+        // alternatively , FieldNode timeTagField = SourceUnit.createFieldNode("public static final long __timeStamp = " + System.currentTimeMillis() + "L");
+        timeTagField.setSynthetic(true);
+        node.addField(timeTagField);
+
+        timeTagField = new FieldNode(
+                Verifier.__TIMESTAMP__ + String.valueOf(System.currentTimeMillis()),
+                Modifier.PUBLIC | Modifier.STATIC,
+                ClassHelper.Long_TYPE,
+                //"",
+                node,
+                new ConstantExpression(new Long(0)));
+        // alternatively , FieldNode timeTagField = SourceUnit.createFieldNode("public static final long __timeStamp = " + System.currentTimeMillis() + "L");
+        timeTagField.setSynthetic(true);
+        node.addField(timeTagField);
+    }
+
     private void checkReturnInObjectInitializer(List init) {
         CodeVisitorSupport cvs = new CodeVisitorSupport() {
             public void visitReturnStatement(ReturnStatement statement) {
@@ -463,7 +468,18 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                             arguments.addExpression(new VariableExpression(parameters[i].getName()));
                         }
                     }
+                    if (parameters.length>0 && parameters[parameters.length-1].getType().isArray()) {
+                        // vargs call... better expand the argument:
+                        Expression exp = arguments.getExpression(parameters.length-1);
+                        SpreadExpression se = new SpreadExpression(exp);
+                        arguments.getExpressions().set(parameters.length-1, se);
+                    }
                     action.call(arguments,newParams,method);
+                }
+                
+                for (int i = 0; i < parameters.length; i++) {
+                    // remove default expression
+                    parameters[i].setInitialExpression(null);
                 }
             }
         }
@@ -615,7 +631,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         return Long.MAX_VALUE;
     }
     
-    private void addCovariantMethods(ClassNode classNode) {
+    protected void addCovariantMethods(ClassNode classNode) {
         Map methodsToAdd = new HashMap();
         List declaredMethods = new ArrayList(classNode.getMethods());
         Map genericsSpec = new HashMap();
