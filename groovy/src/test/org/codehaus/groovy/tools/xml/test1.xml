@@ -1,0 +1,19 @@
+<html>
+    <head>
+        <title>XML encoding with Groovy</title>
+    </head>
+    <body>
+        <h1>XML encoding with Groovy</h1>
+        <p>this format can be used as an alternative markup to XML</p>
+        <!-- an element with attributes and text content -->
+        <a href="http://groovy.codehaus.org">Groovy</a>
+        <!-- mixed content -->
+        <p>This is some
+            <b>mixed</b>
+            text. For more see the
+            <a href="http://groovy.codehaus.org">Groovy</a>
+            project
+        </p>
+        <p>some text</p>
+    </body>
+</html>
